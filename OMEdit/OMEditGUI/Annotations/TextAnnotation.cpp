@@ -313,7 +313,7 @@ void TextAnnotation::updateTextString()
       QString textValue = mpComponent->getParameterDisplayString(variable.remove("%"));
       if (!textValue.isEmpty())
       {
-  mTextString = mTextString.replace(QString("%").append(variable), textValue);
+        mTextString = mTextString.replace(QString("%").append(variable), textValue);
       }
     }
   }

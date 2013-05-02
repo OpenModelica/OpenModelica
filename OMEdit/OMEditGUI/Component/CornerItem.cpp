@@ -51,7 +51,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   : QGraphicsItem(pParent), mConnectedPointIndex(connectedPointIndex)
 {
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
-     | QGraphicsItem::ItemSendsGeometryChanges);
+           | QGraphicsItem::ItemSendsGeometryChanges);
   setCursor(Qt::ArrowCursor);
   setToolTip("Click and drag to resize");
   setPos(x, y);

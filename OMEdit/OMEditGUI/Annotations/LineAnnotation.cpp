@@ -155,42 +155,42 @@ QPainterPath LineAnnotation::getShape() const
     {
       for (int i = 0 ; i < mPoints.size() ; i++)
       {
-  QPointF point3 = mPoints.at(i);
-  if (i == 0)
-    path.moveTo(point3);
-  else
-  {
-    // if points are only two then spline acts as simple line
-    if (i < 2)
-    {
-      if (mPoints.size() < 3)
-        path.lineTo(point3);
-    }
-    else
-    {
-      // calculate middle points for bezier curves
-      QPointF point2 = mPoints.at(i - 1);
-      QPointF point1 = mPoints.at(i - 2);
-      QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
-      QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
-      path.lineTo(point12);
-      path.cubicTo(point12, point2, point23);
-      // if its the last point
-      if (i == mPoints.size() - 1)
-        path.lineTo(point3);
-    }
-  }
+        QPointF point3 = mPoints.at(i);
+        if (i == 0)
+          path.moveTo(point3);
+        else
+        {
+          // if points are only two then spline acts as simple line
+          if (i < 2)
+          {
+            if (mPoints.size() < 3)
+              path.lineTo(point3);
+          }
+          else
+          {
+            // calculate middle points for bezier curves
+            QPointF point2 = mPoints.at(i - 1);
+            QPointF point1 = mPoints.at(i - 2);
+            QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
+            QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
+            path.lineTo(point12);
+            path.cubicTo(point12, point2, point23);
+            // if its the last point
+            if (i == mPoints.size() - 1)
+              path.lineTo(point3);
+          }
+        }
       }
     }
     else
     {
       for (int i = 0 ; i < mPoints.size() ; i++)
       {
-  QPointF point1 = mPoints.at(i);
-  if (i == 0)
-    path.moveTo(point1);
-  else
-    path.lineTo(point1);
+        QPointF point1 = mPoints.at(i);
+        if (i == 0)
+          path.moveTo(point1);
+        else
+          path.lineTo(point1);
       }
     }
   }
@@ -390,39 +390,39 @@ void LineAnnotation::addPoint(QPointF point)
   {
     case LineAnnotation::ConnectionType:
       if (mpStartComponent)
-  startAngle = StringHandler::getNormalizedAngle(mpStartComponent->getRootParentComponent()->getTransformation()->getRotateAngle());
+        startAngle = StringHandler::getNormalizedAngle(mpStartComponent->getRootParentComponent()->getTransformation()->getRotateAngle());
       if(mPoints.size() <= 2 && (startAngle >= 0 && startAngle < 90))
       {
-  mGeometries.push_back(LineAnnotation::Horizontal);
+        mGeometries.push_back(LineAnnotation::Horizontal);
       }
       else if(mPoints.size() <= 2 && (startAngle >= 90 && startAngle < 180))
       {
-  mGeometries.push_back(LineAnnotation::Vertical);
+        mGeometries.push_back(LineAnnotation::Vertical);
       }
       else if(mPoints.size() <= 2 && (startAngle >= 180 && startAngle < 270))
       {
-  mGeometries.push_back(LineAnnotation::Horizontal);
+        mGeometries.push_back(LineAnnotation::Horizontal);
       }
       else if(mPoints.size() <= 2 && (startAngle >= 270 && startAngle < 360))
       {
-  mGeometries.push_back(LineAnnotation::Vertical);
+        mGeometries.push_back(LineAnnotation::Vertical);
       }
       else if (mPoints.size() <= 2)
       {
-  mGeometries.push_back(LineAnnotation::Horizontal);
+        mGeometries.push_back(LineAnnotation::Horizontal);
       }
       else if(mPoints.size() > 2 && mGeometries.back() == LineAnnotation::Horizontal)
       {
-  mGeometries.push_back(LineAnnotation::Vertical);
+        mGeometries.push_back(LineAnnotation::Vertical);
       }
       else if(mPoints.size() > 2 && mGeometries.back() == LineAnnotation::Vertical)
       {
-  mGeometries.push_back(LineAnnotation::Horizontal);
+        mGeometries.push_back(LineAnnotation::Horizontal);
       }
       else if(mPoints.size() > 2 && mGeometries.back() == LineAnnotation::Diagonal)
       {
-  mGeometries.push_back(LineAnnotation::Diagonal);
-  //Give new line correct angle!
+        mGeometries.push_back(LineAnnotation::Diagonal);
+        //Give new line correct angle!
       }
       break;
     default:
@@ -463,15 +463,15 @@ void LineAnnotation::updateEndPoint(QPointF point)
     case LineAnnotation::ConnectionType:
       /* updated the last CornerItem */
       if (mCornerItemsList.size() > (mPoints.size() - 1))
-  mCornerItemsList[mPoints.size() - 1]->setPos(point);
+        mCornerItemsList[mPoints.size() - 1]->setPos(point);
       /* update the 2nd last point */
       if (mGeometries.back() == LineAnnotation::Horizontal)
-  mPoints[mPoints.size() - 2] = QPointF(mPoints[mPoints.size() - 2].x(),point.y());
+        mPoints[mPoints.size() - 2] = QPointF(mPoints[mPoints.size() - 2].x(),point.y());
       else if (mGeometries.back() == LineAnnotation::Vertical)
-  mPoints[mPoints.size() - 2] = QPointF(point.x(),mPoints[mPoints.size() - 2].y());
+        mPoints[mPoints.size() - 2] = QPointF(point.x(),mPoints[mPoints.size() - 2].y());
       /* updated the 2nd last CornerItem */
       if (mCornerItemsList.size() > (mPoints.size() - 2))
-  mCornerItemsList[mPoints.size() - 2]->setPos(mPoints[mPoints.size() - 2]);
+        mCornerItemsList[mPoints.size() - 2]->setPos(mPoints[mPoints.size() - 2]);
       break;
     default:
       break;
@@ -524,15 +524,15 @@ void LineAnnotation::handleComponentMoved()
     if (mpStartComponent->getRootParentComponent()->isSelected() && mpEndComponent->getRootParentComponent()->isSelected())
     {
       moveAllPoints(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).x() - mPoints[0].x(),
-              mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).y() - mPoints[0].y());
+                    mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()).y() - mPoints[0].y());
     }
     else
     {
       Component *pComponent = qobject_cast<Component*>(sender());
       if (pComponent == mpStartComponent->getRootParentComponent())
-  updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
+        updateStartPoint(mpStartComponent->mapToScene(mpStartComponent->boundingRect().center()));
       else if (pComponent == mpEndComponent->getRootParentComponent())
-  updateEndPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center()));
+        updateEndPoint(mpEndComponent->mapToScene(mpEndComponent->boundingRect().center()));
     }
   }
   else if (mpStartComponent)
@@ -576,7 +576,7 @@ void LineAnnotation::updateConnectionAnnotation()
   // update the connection
   OMCProxy *pOMCProxy = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   pOMCProxy->updateConnection(getStartComponentName(), getEndComponentName(),
-                        mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
+                              mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
 }
 
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
@@ -607,12 +607,12 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   QIntValidator *pIntValidator = new QIntValidator(this);
   pIntValidator->setBottom(0);
   mpStartComponentLabel = new Label(tr("Enter <b>index</b> value for <b>").append(pConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName())
-                              .append(".").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("<b>"));
+                                    .append(".").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("<b>"));
   mpStartComponentTextBox = new QLineEdit;
   mpStartComponentTextBox->setValidator(pIntValidator);
   // start component
   mpEndComponentLabel = new Label(tr("Enter <b>index</b> value for <b>").append(pConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName())
-                            .append(".").append(pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->getName()).append("</b>"));
+                                  .append(".").append(pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->getName()).append("</b>"));
   mpEndComponentTextBox = new QLineEdit;
   mpEndComponentTextBox->setValidator(pIntValidator);
   // Create the buttons
@@ -655,12 +655,12 @@ void ConnectionArray::saveArrayIndex()
   if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
   {
     startComponentName = QString(mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName()).append(".")
-  .append(mpConnectionLineAnnotation->getStartComponent()->getName());
+        .append(mpConnectionLineAnnotation->getStartComponent()->getName());
     if (mpStartComponentTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                      QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(startComponentName), Helper::ok);
+                            QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(startComponentName), Helper::ok);
       return;
     }
     startComponentName = QString(startComponentName).append("[").append(mpStartComponentTextBox->text()).append("]");
@@ -668,18 +668,18 @@ void ConnectionArray::saveArrayIndex()
   else
   {
     startComponentName = QString(mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName()).append(".")
-  .append(mpConnectionLineAnnotation->getStartComponent()->getName());
+        .append(mpConnectionLineAnnotation->getStartComponent()->getName());
   }
   // set end component name
   if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
   {
     endComponentName = QString(mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName()).append(".")
-  .append(mpConnectionLineAnnotation->getEndComponent()->getName());
+        .append(mpConnectionLineAnnotation->getEndComponent()->getName());
     if (mpEndComponentTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                      QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(endComponentName), Helper::ok);
+                            QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(endComponentName), Helper::ok);
       return;
     }
     endComponentName = QString(endComponentName).append("[").append(mpEndComponentTextBox->text()).append("]");
@@ -687,7 +687,7 @@ void ConnectionArray::saveArrayIndex()
   else
   {
     endComponentName = QString(mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName()).append(".")
-  .append(mpConnectionLineAnnotation->getEndComponent()->getName());
+        .append(mpConnectionLineAnnotation->getEndComponent()->getName());
   }
   mpGraphicsView->createConnection(startComponentName, endComponentName);
   accept();

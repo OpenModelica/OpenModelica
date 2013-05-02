@@ -44,7 +44,7 @@ class Parameter
 {
 public:
   Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-      QString componentClassName, QString componentName, bool parametersOnly);
+            QString componentClassName, QString componentName, bool parametersOnly);
   Label* getNameLabel();
   QLineEdit* getValueTextBox();
   Label* getUnitLabel();
@@ -82,7 +82,7 @@ public:
   void setUpDialog();
   void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString componentClassName);
   void createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName, QString componentClassName,
-                  QString componentName, int layoutIndex);
+                        QString componentName, int layoutIndex);
   QList<Parameter*> getParametersList();
 private:
   bool mParametersOnly;

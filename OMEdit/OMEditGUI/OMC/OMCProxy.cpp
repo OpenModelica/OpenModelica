@@ -201,7 +201,7 @@ cachedOMCCommand OMCProxy::getcachedOMCCommand(QString className, QString comman
     foreach (cachedOMCCommand omcCommand, commandsList)
     {
       if (omcCommand.mOMCCommand.compare(command) == 0)
-  return omcCommand;
+        return omcCommand;
     }
   }
   return cachedOMCCommand();
@@ -225,8 +225,8 @@ void OMCProxy::cacheOMCCommand(QString className, QString command, QString comma
     {
       if (omcCommand.mOMCCommand.compare(command) == 0)
       {
-  found = true;
-  break;
+        found = true;
+        break;
       }
     }
     if (!found)
@@ -319,8 +319,8 @@ bool OMCProxy::startServer()
       ticks++;
       if (ticks > 20)
       {
-  msg = "Unable to find " + Helper::applicationName + " server, Object reference file " + mObjectRefFile + " not created.";
-  throw std::runtime_error(msg.toStdString());
+        msg = "Unable to find " + Helper::applicationName + " server, Object reference file " + mObjectRefFile + " not created.";
+        throw std::runtime_error(msg.toStdString());
       }
     }
     // ORB initialization.
@@ -339,15 +339,15 @@ bool OMCProxy::startServer()
   {
     QString msg = e.what();
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),msg.append("\n\n")
-                    .append(Helper::applicationName).append(tr(" will close.")), Helper::ok);
+                          .append(Helper::applicationName).append(tr(" will close.")), Helper::ok);
     mHasInitialized = false;
     return false;
   }
   catch (CORBA::Exception&)
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    QString(tr("Unable to communicate with OpenModelica Compiler.")).append("\n\n").append(Helper::applicationName)
-                    .append(" will close."), Helper::ok);
+                          QString(tr("Unable to communicate with OpenModelica Compiler.")).append("\n\n").append(Helper::applicationName)
+                          .append(" will close."), Helper::ok);
     mHasInitialized = false;
     return false;
   }
@@ -560,8 +560,8 @@ void OMCProxy::exitApplication()
 {
   removeObjectRefFile();
   QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                  QString(tr("Connection with the OpenModelica Compiler has been lost."))
-                  .append("\n\n").append(Helper::applicationName).append(" will close."), Helper::ok);
+                        QString(tr("Connection with the OpenModelica Compiler has been lost."))
+                        .append("\n\n").append(Helper::applicationName).append(" will close."), Helper::ok);
   exit(EXIT_FAILURE);
 }
 
@@ -826,51 +826,51 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
       QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
       QStringList modelsList = result.split(",", QString::SkipEmptyParts);
       /*
-  Only allow loading of files that has just one nonstructured entity.
-  From Modelica specs section 13.2.2.2,
-  "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
-   matching the name of the nonstructured entity."
-  */
+        Only allow loading of files that has just one nonstructured entity.
+        From Modelica specs section 13.2.2.2,
+        "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
+         matching the name of the nonstructured entity."
+        */
       if (modelsList.size() > 1)
       {
-  QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
-  pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-  pMessageBox->setIcon(QMessageBox::Critical);
-  pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
-  pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
-                                  .arg(modelsList.join(",")));
-  pMessageBox->setStandardButtons(QMessageBox::Ok);
-  pMessageBox->exec();
-  return;
+        QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+        pMessageBox->setIcon(QMessageBox::Critical);
+        pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
+        pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
+                                        .arg(modelsList.join(",")));
+        pMessageBox->setStandardButtons(QMessageBox::Ok);
+        pMessageBox->exec();
+        return;
       }
       QStringList existingmodelsList;
       bool existModel = false;
       // check if the model already exists
       foreach(QString model, modelsList)
       {
-  if (existClass(model))
-  {
-    existingmodelsList.append(model);
-    existModel = true;
-  }
+        if (existClass(model))
+        {
+          existingmodelsList.append(model);
+          existModel = true;
+        }
       }
       // if existModel is true, show user an error message
       if (existModel)
       {
-  QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
-  pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
-  pMessageBox->setIcon(QMessageBox::Information);
-  pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(encoding)));
-  pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
-                                  .arg(existingmodelsList.join(",")).append("\n")
-                                  .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(encoding)));
-  pMessageBox->setStandardButtons(QMessageBox::Ok);
-  pMessageBox->exec();
+        QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
+        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+        pMessageBox->setIcon(QMessageBox::Information);
+        pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(encoding)));
+        pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                        .arg(existingmodelsList.join(",")).append("\n")
+                                        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(encoding)));
+        pMessageBox->setStandardButtons(QMessageBox::Ok);
+        pMessageBox->exec();
       }
       // if no conflicting model found then just load the file simply
       else
       {
-  loadFile(fileName, encoding);
+        loadFile(fileName, encoding);
       }
     }
   }
@@ -946,9 +946,9 @@ bool OMCProxy::isPackage(QString className)
 bool OMCProxy::isBuiltinType(QString typeName)
 {
   return (typeName == "Real" ||
-    typeName == "Integer" ||
-    typeName == "String" ||
-    typeName == "Boolean");
+          typeName == "Integer" ||
+          typeName == "String" ||
+          typeName == "Boolean");
 }
 
 /*!
@@ -1349,7 +1349,7 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
     QString docElement = docsList[ele];
     if (docElement.isEmpty())
       continue;
-    if (ele == 0)   // info section
+    if (ele == 0)         // info section
       doc += "<p style=\"font-size:12px;\"><strong><u>Information</u></strong></p>";
     else if (ele == 1)    // revisions section
       doc += "<p style=\"font-size:12px;\"><strong><u>Revisions</u></strong></p>";
@@ -1364,8 +1364,8 @@ QString OMCProxy::getDocumentationAnnotation(QString className)
       i = docElement.indexOf("<html>", 0, Qt::CaseInsensitive);
       if (i == -1) break;
       if (i != 0) {
-  doc += "<pre>" + docElement.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
-  docElement = docElement.remove(i);
+        doc += "<pre>" + docElement.left(i).replace("<","&lt;").replace(">","&gt;") + "</pre>";
+        docElement = docElement.remove(i);
       }
       j = docElement.indexOf("</html>", 0, Qt::CaseInsensitive);
       if (j == -1) break;
@@ -1804,10 +1804,10 @@ bool OMCProxy::updateConnection(QString from, QString to, QString className, QSt
   \return true on success.
   */
 bool OMCProxy::setComponentProperties(QString className, QString componentName, QString isFinal, QString isFlow, QString isProtected,
-                                QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality)
+                                      QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality)
 {
   sendCommand("setComponentProperties(" + className + "," + componentName + ",{" + isFinal + "," + isFlow + "," + isProtected + "," + isReplaceAble + "}, {\"" + variability + "\"}, {" + isInner +
-        "," + isOuter + "}, {\"" + causality + "\"})");
+              "," + isOuter + "}, {\"" + causality + "\"})");
 
   if (getResult().toLower().contains("error"))
     return false;
@@ -2034,7 +2034,7 @@ bool OMCProxy::translateModelXML(QString className)
   \return generated Modelica Code file path
   */
 QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors,
-                      bool generateOutputConnectors)
+                            bool generateOutputConnectors)
 {
   QString debugLoggingString = debugLogging ? "true" : "false";
   QString generateInputConnectorsString = generateInputConnectors ? "true" : "false";

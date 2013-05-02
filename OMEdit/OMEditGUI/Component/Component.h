@@ -68,10 +68,10 @@ class Component : public QObject, public QGraphicsItem
   Q_INTERFACES(QGraphicsItem)
 public:
   Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-          QPointF position, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent = 0);
+                QPointF position, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent = 0);
   Component(QString annotation, QString className, StringHandler::ModelicaClasses type, Component *pParent);
   Component(QString annotation, QString transformationString, ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type,
-          Component *pParent);
+                Component *pParent);
   /* Used for Library Component */
   Component(QString annotation, QString className, OMCProxy *pOMCProxy, Component *pParent = 0);
   ~Component();

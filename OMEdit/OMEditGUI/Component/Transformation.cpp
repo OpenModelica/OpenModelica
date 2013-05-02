@@ -100,44 +100,44 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
       mRotateAngleDiagram = static_cast<QString>(list.at(7)).toFloat();
       try
       {
-  // get transformations of icon now
-  // origin x position
-  bool ok = true;
-  mOriginIcon.setX(static_cast<QString>(list.at(8)).toFloat(&ok));
-  if (!ok)
-    throw std::runtime_error("Invalid number format exception");
-  // origin y position
-  mOriginIcon.setY(static_cast<QString>(list.at(9)).toFloat(&ok));
-  if (!ok)
-    throw std::runtime_error("Invalid number format exception");
-  // extent1 x
-  mExtent1Icon.setX(static_cast<QString>(list.at(10)).toFloat(&ok));
-  if (!ok)
-    throw std::runtime_error("Invalid number format exception");
-  // extent1 y
-  mExtent1Icon.setY(static_cast<QString>(list.at(11)).toFloat(&ok));
-  if (!ok)
-    throw std::runtime_error("Invalid number format exception");
-  // extent1 x
-  mExtent2Icon.setX(static_cast<QString>(list.at(12)).toFloat(&ok));
-  if (!ok)
-    throw std::runtime_error("Invalid number format exception");
-  // extent1 y
-  mExtent2Icon.setY(static_cast<QString>(list.at(13)).toFloat(&ok));
-  if (!ok)
-    throw std::runtime_error("Invalid number format exception");
-  // rotate angle
-  mRotateAngleIcon = static_cast<QString>(list.at(14)).toFloat(&ok);
-  if (!ok)
-    throw std::runtime_error("Invalid number format exception");
+        // get transformations of icon now
+        // origin x position
+        bool ok = true;
+        mOriginIcon.setX(static_cast<QString>(list.at(8)).toFloat(&ok));
+        if (!ok)
+          throw std::runtime_error("Invalid number format exception");
+        // origin y position
+        mOriginIcon.setY(static_cast<QString>(list.at(9)).toFloat(&ok));
+        if (!ok)
+          throw std::runtime_error("Invalid number format exception");
+        // extent1 x
+        mExtent1Icon.setX(static_cast<QString>(list.at(10)).toFloat(&ok));
+        if (!ok)
+          throw std::runtime_error("Invalid number format exception");
+        // extent1 y
+        mExtent1Icon.setY(static_cast<QString>(list.at(11)).toFloat(&ok));
+        if (!ok)
+          throw std::runtime_error("Invalid number format exception");
+        // extent1 x
+        mExtent2Icon.setX(static_cast<QString>(list.at(12)).toFloat(&ok));
+        if (!ok)
+          throw std::runtime_error("Invalid number format exception");
+        // extent1 y
+        mExtent2Icon.setY(static_cast<QString>(list.at(13)).toFloat(&ok));
+        if (!ok)
+          throw std::runtime_error("Invalid number format exception");
+        // rotate angle
+        mRotateAngleIcon = static_cast<QString>(list.at(14)).toFloat(&ok);
+        if (!ok)
+          throw std::runtime_error("Invalid number format exception");
       }
       catch(std::exception &exception)
       {
-  Q_UNUSED(exception);
-  mOriginIcon = mOriginDiagram;
-  mExtent1Icon = mExtent1Diagram;
-  mExtent2Icon = mExtent2Diagram;
-  mRotateAngleIcon = mRotateAngleDiagram;
+        Q_UNUSED(exception);
+        mOriginIcon = mOriginDiagram;
+        mExtent1Icon = mExtent1Diagram;
+        mExtent2Icon = mExtent2Diagram;
+        mRotateAngleIcon = mRotateAngleDiagram;
       }
     }
   }

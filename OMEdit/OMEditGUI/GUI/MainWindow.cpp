@@ -531,7 +531,7 @@ int MainWindow::askForExit()
   if (!mpOptionsDialog->getNotificationsPage()->getQuitApplicationCheckBox()->isChecked())
   {
     NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::QuitApplication,
-                                                                  NotificationsDialog::QuestionIcon, this);
+                                                                        NotificationsDialog::QuestionIcon, this);
     return pNotificationsDialog->exec();
   }
   return true;
@@ -576,7 +576,7 @@ void MainWindow::openDroppedFile(QDropEvent *event)
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setText(GUIMessages::getMessage(GUIMessages::FILE_FORMAT_NOT_SUPPORTED).arg(fileInfo.fileName())
-                     .arg(Helper::omFileTypes));
+                           .arg(Helper::omFileTypes));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     }
@@ -636,9 +636,9 @@ void MainWindow::instantiatesModel(LibraryTreeNode *pLibraryTreeNode)
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                   "Instantiation of " + pLibraryTreeNode->getName() + " failed.",
-                                                   Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                   mpMessagesWidget->getMessagesTreeWidget()));
+                                                         "Instantiation of " + pLibraryTreeNode->getName() + " failed.",
+                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                         mpMessagesWidget->getMessagesTreeWidget()));
   }
   // hide progress bar
   hideProgressBar();
@@ -669,9 +669,9 @@ void MainWindow::checkModel(LibraryTreeNode *pLibraryTreeNode)
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                   "Check of " + pLibraryTreeNode->getName() + " failed.",
-                                                   Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                   mpMessagesWidget->getMessagesTreeWidget()));
+                                                         "Check of " + pLibraryTreeNode->getName() + " failed.",
+                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                         mpMessagesWidget->getMessagesTreeWidget()));
   }
   // hide progress bar
   hideProgressBar();
@@ -695,9 +695,9 @@ void MainWindow::exportModelFMU(LibraryTreeNode *pLibraryTreeNode)
   if (mpOMCProxy->translateModelFMU(pLibraryTreeNode->getNameStructure()))
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::FMU_GENERATED)
-                                                   .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
-                                                   Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                   mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
+                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                         mpMessagesWidget->getMessagesTreeWidget()));
   }
   // hide progress bar
   hideProgressBar();
@@ -721,9 +721,9 @@ void MainWindow::exportModelXML(LibraryTreeNode *pLibraryTreeNode)
   if (mpOMCProxy->translateModelXML(pLibraryTreeNode->getNameStructure()))
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::XML_GENERATED)
-                                                   .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
-                                                   Helper::scriptingKind, Helper::notificationLevel, 0,
-                                                   mpMessagesWidget->getMessagesTreeWidget()));
+                                                         .arg(mpOMCProxy->changeDirectory()).arg(pLibraryTreeNode->getNameStructure()),
+                                                         Helper::scriptingKind, Helper::notificationLevel, 0,
+                                                         mpMessagesWidget->getMessagesTreeWidget()));
   }
   // hide progress bar
   hideProgressBar();
@@ -740,7 +740,7 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeNode *pLibraryTreeNode)
       return;
   }
   QString omnotebookFileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::exportToOMNotebook),
-                                                        NULL, Helper::omnotebookFileTypes, NULL, "onb", &pLibraryTreeNode->getName());
+                                                              NULL, Helper::omnotebookFileTypes, NULL, "onb", &pLibraryTreeNode->getName());
   // if user cancels the operation. or closes the export dialog box.
   if (omnotebookFileName.isEmpty())
     return;
@@ -796,7 +796,7 @@ void MainWindow::createOMNotebookTitleCell(LibraryTreeNode *pLibraryTreeNode, QD
 
 //! creates a image cell in omnotebook xml file
 void MainWindow::createOMNotebookImageCell(LibraryTreeNode *pLibraryTreeNode, QDomDocument xmlDocument, QDomElement domElement,
-                                     QString filePath)
+                                           QString filePath)
 {
   GraphicsView *pGraphicsView = pLibraryTreeNode->getModelWidget()->getDiagramGraphicsView();
   QPixmap modelImage(pGraphicsView->viewport()->size());
@@ -859,7 +859,7 @@ void MainWindow::openModelicaFile()
 {
   QStringList fileNames;
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
-                                        NULL, Helper::omFileTypes, NULL);
+                                              NULL, Helper::omFileTypes, NULL);
   if (fileNames.isEmpty())
     return;
   int progressValue = 0;
@@ -899,7 +899,7 @@ void MainWindow::showOpenModelicaFileDialog()
 void MainWindow::showOpenResultFileDialog()
 {
   QStringList fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
-                                                    NULL, Helper::omResultFileTypes, NULL);
+                                                          NULL, Helper::omResultFileTypes, NULL);
   if (fileNames.isEmpty())
     return;
   openResultFiles(fileNames);
@@ -1030,8 +1030,8 @@ void MainWindow::instantiatesModel()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                              .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel,
-                                              0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                    .arg(tr("instantiating")), Helper::scriptingKind, Helper::notificationLevel,
+                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1047,8 +1047,8 @@ void MainWindow::checkModel()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                              .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
-                                              0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                    .arg(tr("checking")), Helper::scriptingKind, Helper::notificationLevel,
+                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1083,8 +1083,8 @@ void MainWindow::exportModelFMU()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                              .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel,
-                                              0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                    .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel,
+                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1101,8 +1101,8 @@ void MainWindow::exportModelXML()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                              .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel,
-                                              0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                    .arg(tr("making XML")), Helper::scriptingKind, Helper::notificationLevel,
+                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1128,8 +1128,8 @@ void MainWindow::exportModelToOMNotebook()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                              .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel,
-                                              0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                    .arg(tr("exporting to OMNotebook")), Helper::scriptingKind, Helper::notificationLevel,
+                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1138,7 +1138,7 @@ void MainWindow::exportModelToOMNotebook()
 void MainWindow::importModelfromOMNotebook()
 {
   QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::importFromOMNotebook),
-                                              NULL, Helper::omnotebookFileTypes);
+                                                    NULL, Helper::omnotebookFileTypes);
   if (fileName.isEmpty())
     return;
   // create a progress bar
@@ -1153,7 +1153,7 @@ void MainWindow::importModelfromOMNotebook()
   if (!file.open(QIODevice::ReadOnly))
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    tr("Error opening the file"), Helper::ok);
+                          tr("Error opening the file"), Helper::ok);
     hideProgressBar();
     return;
   }
@@ -1163,7 +1163,7 @@ void MainWindow::importModelfromOMNotebook()
   if (!xmlDocument.setContent(&file))
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    tr("Error reading the xml file"), Helper::ok);
+                          tr("Error reading the xml file"), Helper::ok);
     hideProgressBar();
     return;
   }
@@ -1196,10 +1196,10 @@ void MainWindow::exportModelAsImage()
     if (pLibraryTreeNode)
     {
       QString fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::exportAsImage),
-                                                  NULL, Helper::imageFileTypes, NULL, "png", &pLibraryTreeNode->getName());
+                                                        NULL, Helper::imageFileTypes, NULL, "png", &pLibraryTreeNode->getName());
       // if user cancels the operation. or closes the export dialog box.
       if (fileName.isEmpty())
-  return;
+        return;
       bool oldSkipDrawBackground;
       // show the progressbar and set the message in status bar
       mpProgressBar->setRange(0, 0);
@@ -1209,48 +1209,48 @@ void MainWindow::exportModelAsImage()
       QSvgGenerator svgGenerator;
       GraphicsView *pGraphicsView;
       if (pLibraryTreeNode->getModelWidget()->getIconGraphicsView()->isVisible())
-  pGraphicsView = pLibraryTreeNode->getModelWidget()->getIconGraphicsView();
+        pGraphicsView = pLibraryTreeNode->getModelWidget()->getIconGraphicsView();
       else
-  pGraphicsView = pLibraryTreeNode->getModelWidget()->getDiagramGraphicsView();
+        pGraphicsView = pLibraryTreeNode->getModelWidget()->getDiagramGraphicsView();
       QPixmap modelImage(pGraphicsView->viewport()->size());
       // export svg
       if (fileName.endsWith(".svg"))
       {
-  QRect bbox = pGraphicsView->itemsBoundingRect().toAlignedRect();
-  QSize bigSize = pGraphicsView->viewport()->size();
-  svgGenerator.setTitle(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
-  svgGenerator.setDescription("Generated by OMEdit - OpenModelica Connection Editor");
-  svgGenerator.setSize(bigSize);
-  svgGenerator.setViewBox(bbox);
-  svgGenerator.setFileName(fileName);
-  painter.begin(&svgGenerator);
+        QRect bbox = pGraphicsView->itemsBoundingRect().toAlignedRect();
+        QSize bigSize = pGraphicsView->viewport()->size();
+        svgGenerator.setTitle(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
+        svgGenerator.setDescription("Generated by OMEdit - OpenModelica Connection Editor");
+        svgGenerator.setSize(bigSize);
+        svgGenerator.setViewBox(bbox);
+        svgGenerator.setFileName(fileName);
+        painter.begin(&svgGenerator);
       }
       else
       {
-  modelImage.fill(QColor(Qt::transparent));
-  painter.begin(&modelImage);
+        modelImage.fill(QColor(Qt::transparent));
+        painter.begin(&modelImage);
       }
       painter.setWindow(pGraphicsView->viewport()->rect());
       // paint the background color first
       if (!fileName.endsWith(".svg")) {
-  if (pGraphicsView->getViewType() == StringHandler::Diagram)
-    painter.fillRect(painter.viewport(), pGraphicsView->palette().background());
-  else
-    painter.fillRect(painter.viewport(), Qt::white);
+        if (pGraphicsView->getViewType() == StringHandler::Diagram)
+          painter.fillRect(painter.viewport(), pGraphicsView->palette().background());
+        else
+          painter.fillRect(painter.viewport(), Qt::white);
       }
       // paint all the items
       oldSkipDrawBackground = pGraphicsView->mSkipBackground;
       if (fileName.endsWith(".svg")) {
-  pGraphicsView->mSkipBackground = true;
+        pGraphicsView->mSkipBackground = true;
       }
       pGraphicsView->render(&painter);
       painter.end();
       pGraphicsView->mSkipBackground = oldSkipDrawBackground;
       if (!fileName.endsWith(".svg"))
       {
-  if (!modelImage.save(fileName))
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Error saving the image file"), Helper::ok);
+        if (!modelImage.save(fileName))
+          QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                                tr("Error saving the image file"), Helper::ok);
       }
       // hide the progressbar and clear the message in status bar
       mpStatusBar->clearMessage();
@@ -1260,8 +1260,8 @@ void MainWindow::exportModelAsImage()
   else
   {
     mpMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                              .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel,
-                                              0, mpMessagesWidget->getMessagesTreeWidget()));
+                                                    .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel,
+                                                    0, mpMessagesWidget->getMessagesTreeWidget()));
   }
 }
 
@@ -1273,14 +1273,14 @@ void MainWindow::openConfigurationOptions()
 void MainWindow::openUsersGuide()
 {
   QUrl usersGuidePath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                 .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
+                       .append("/share/doc/omc/OpenModelicaUsersGuide.pdf"));
   QDesktopServices::openUrl(usersGuidePath);
 }
 
 void MainWindow::openSystemDocumentation()
 {
   QUrl systemDocumentationPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                          .append("/share/doc/omc/OpenModelicaSystem.pdf"));
+                                .append("/share/doc/omc/OpenModelicaSystem.pdf"));
   QDesktopServices::openUrl(systemDocumentationPath);
 }
 
@@ -2075,7 +2075,7 @@ void AboutOMEditWidget::paintEvent(QPaintEvent *pEvent)
   QWidget::paintEvent(pEvent);
   QPainter painter(this);
   painter.drawPixmap((size().width() - mBackgroundPixmap.size().width())/2,
-               (size().height() - mBackgroundPixmap.size().height())/2, mBackgroundPixmap);
+                     (size().height() - mBackgroundPixmap.size().height())/2, mBackgroundPixmap);
 }
 
 /*!

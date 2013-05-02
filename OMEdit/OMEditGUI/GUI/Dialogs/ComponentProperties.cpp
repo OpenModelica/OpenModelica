@@ -50,7 +50,7 @@
   \param componentName - the name of the component.
   */
 Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-               QString componentClassName, QString componentName, bool parametersOnly)
+                     QString componentClassName, QString componentName, bool parametersOnly)
 {
   mpNameLabel = new Label(pComponentInfo->getName());
   mpValueTextBox = new QLineEdit;
@@ -152,9 +152,9 @@ QString Parameter::getUnitFromDerivedClass(OMCProxy *pOMCProxy, QString classNam
     {
       QString inheritedClass = pOMCProxy->getNthInheritedClass(className, i);
       if (pOMCProxy->isBuiltinType(inheritedClass))
-  return pOMCProxy->getDerivedClassModifierValue(className, "unit");
+        return pOMCProxy->getDerivedClassModifierValue(className, "unit");
       if (inheritedClass.compare(className) != 0)
-  return getUnitFromDerivedClass(pOMCProxy, inheritedClass);
+        return getUnitFromDerivedClass(pOMCProxy, inheritedClass);
     }
   }
   return "";
@@ -303,7 +303,7 @@ void ComponentParameters::setUpDialog()
   createTabsAndGroupBoxes(mpComponent->getOMCProxy(), mpComponent->getClassName());
   // create the parameters controls
   createParameters(mpComponent->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
-             "", mpComponent->getClassName(), mpComponent->getName(), 0);
+                   "", mpComponent->getClassName(), mpComponent->getName(), 0);
   /* if component doesn't have any parameters then hide the parameters Group Box */
   if (mParametersList.isEmpty())
   {
@@ -313,7 +313,7 @@ void ComponentParameters::setUpDialog()
     {
       QGroupBox *pGroupBox = pParametersScrollArea->getGroupBox("Parameters");
       if (pGroupBox)
-  pGroupBox->hide();
+        pGroupBox->hide();
     }
   }
   // create Modifiers tab
@@ -376,32 +376,32 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
     {
       if (dialogAnnotation.size() > 0)
       {
-  // get the tab value
-  tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
-  // get the group value
-  groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
-  if (!mTabsMap.contains(tab))
-  {
-    ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-    QGroupBox *pGroupBox = new QGroupBox(groupBox);
-    QGridLayout *pGroupBoxLayout = new QGridLayout;
-    pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
-    mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
-  }
-  else
-  {
-    ParametersScrollArea *pParametersScrollArea;
-    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
-    if (pParametersScrollArea)
-    {
-      if (!pParametersScrollArea->getGroupBox(groupBox))
-      {
-        QGroupBox *pGroupBox = new QGroupBox(groupBox);
-        QGridLayout *pGroupBoxLayout = new QGridLayout;
-        pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
-      }
-    }
-  }
+        // get the tab value
+        tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
+        // get the group value
+        groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
+        if (!mTabsMap.contains(tab))
+        {
+          ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
+          QGroupBox *pGroupBox = new QGroupBox(groupBox);
+          QGridLayout *pGroupBoxLayout = new QGridLayout;
+          pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
+          mTabsMap.insert(tab, mpParametersTabWidget->addTab(pParametersScrollArea, tab));
+        }
+        else
+        {
+          ParametersScrollArea *pParametersScrollArea;
+          pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
+          if (pParametersScrollArea)
+          {
+            if (!pParametersScrollArea->getGroupBox(groupBox))
+            {
+              QGroupBox *pGroupBox = new QGroupBox(groupBox);
+              QGridLayout *pGroupBoxLayout = new QGridLayout;
+              pParametersScrollArea->addGroupBox(pGroupBox, pGroupBoxLayout);
+            }
+          }
+        }
       }
     }
     i++;
@@ -426,7 +426,7 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
   \param layoutIndex - the index value of the layout, tells the layout where to put the parameter GUI controls.
   */
 void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-                                     QString componentClassName, QString componentName, int layoutIndex)
+                                           QString componentClassName, QString componentName, int layoutIndex)
 {
   int i = 0;
   QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(componentClassName);
@@ -445,33 +445,33 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     {
       if (dialogAnnotation.size() > 0)
       {
-  // get the tab value
-  tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
-  // get the group value
-  groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
+        // get the tab value
+        tab = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(0));
+        // get the group value
+        groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
       }
       i++;
       ParametersScrollArea *pParametersScrollArea;
       pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
       if (pParametersScrollArea)
       {
-  QGridLayout *pGroupBoxLayout = pParametersScrollArea->getGroupBoxLayout(groupBox);
-  if (pGroupBoxLayout)
-  {
-    Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
-                                          componentName, mParametersOnly);
-    pGroupBoxLayout->addWidget(pParameter->getNameLabel(), layoutIndex, 0);
-    if (dialogAnnotation.size() > 3)
-    {
-      if (dialogAnnotation.at(2).compare("false") == 0)
-        pParameter->getValueTextBox()->setEnabled(false);
-    }
-    pGroupBoxLayout->addWidget(pParameter->getValueTextBox(), layoutIndex, 1);
-    pGroupBoxLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, 2);
-    pGroupBoxLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, 3);
-    layoutIndex++;
-    mParametersList.append(pParameter);
-  }
+        QGridLayout *pGroupBoxLayout = pParametersScrollArea->getGroupBoxLayout(groupBox);
+        if (pGroupBoxLayout)
+        {
+          Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
+                                                componentName, mParametersOnly);
+          pGroupBoxLayout->addWidget(pParameter->getNameLabel(), layoutIndex, 0);
+          if (dialogAnnotation.size() > 3)
+          {
+            if (dialogAnnotation.at(2).compare("false") == 0)
+              pParameter->getValueTextBox()->setEnabled(false);
+          }
+          pGroupBoxLayout->addWidget(pParameter->getValueTextBox(), layoutIndex, 1);
+          pGroupBoxLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, 2);
+          pGroupBoxLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, 3);
+          layoutIndex++;
+          mParametersList.append(pParameter);
+        }
       }
     }
   }
@@ -511,7 +511,7 @@ void ComponentParameters::updateComponentParameters()
       QString componentModifier = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
       QString componentModifierValue = pValueTextBox->text().trimmed();
       if (mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("=")))
-  modifierValueChanged = true;
+        modifierValueChanged = true;
     }
   }
   // add modifiers
@@ -525,18 +525,18 @@ void ComponentParameters::updateComponentParameters()
       modifier = modifier.trimmed();
       if (modifierRegExp.exactMatch(modifier.trimmed()))
       {
-  QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
-  QString componentModifier = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
-  QString componentModifierValue = modifier.mid(modifier.indexOf("("));
-  mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue);
-  valueChanged = true;
+        QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+        QString componentModifier = QString(mpComponent->getName()).append(".").append(modifier.mid(0, modifier.indexOf("(")));
+        QString componentModifierValue = modifier.mid(modifier.indexOf("("));
+        mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue);
+        valueChanged = true;
       }
       else
       {
-  mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                        GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
-                                                                        Helper::scriptingKind, Helper::errorLevel, 0,
-                                                                        mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+        mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
+                                                                              GUIMessages::getMessage(GUIMessages::WRONG_MODIFIER).arg(modifier),
+                                                                              Helper::scriptingKind, Helper::errorLevel, 0,
+                                                                              mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
       }
     }
   }
@@ -676,7 +676,7 @@ void ComponentAttributes::setUpDialog()
 void ComponentAttributes::initializeDialog()
 {
   QList<ComponentInfo*> componentInfoList = mpComponent->getOMCProxy()->getComponents(
-  mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure());
+        mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure());
   foreach (ComponentInfo *pComponentInfo, componentInfoList)
   {
     if (pComponentInfo->getName() == mpComponent->getName())
@@ -692,13 +692,13 @@ void ComponentAttributes::initializeDialog()
       mpPathTextBox->setText(pComponentInfo->getClassName());
       // get Variability
       if (pComponentInfo->getVariablity() == "constant")
-  mpConstantRadio->setChecked(true);
+        mpConstantRadio->setChecked(true);
       else if (pComponentInfo->getVariablity() == "parameter")
-  mpParameterRadio->setChecked(true);
+        mpParameterRadio->setChecked(true);
       else if (pComponentInfo->getVariablity() == "discrete")
-  mpDiscreteRadio->setChecked(true);
+        mpDiscreteRadio->setChecked(true);
       else
-  mpDefaultRadio->setChecked(true);
+        mpDefaultRadio->setChecked(true);
       // get Properties
       mpFinalCheckBox->setChecked(pComponentInfo->getFinal());
       mpProtectedCheckBox->setChecked(pComponentInfo->getProtected());
@@ -706,11 +706,11 @@ void ComponentAttributes::initializeDialog()
       mIsFlow = pComponentInfo->getFlow() ? "true" : "false";
       // get Casuality
       if (pComponentInfo->getCasuality() == "input")
-  mpInputRadio->setChecked(true);
+        mpInputRadio->setChecked(true);
       else if (pComponentInfo->getCasuality() == "output")
-  mpOutputRadio->setChecked(true);
+        mpOutputRadio->setChecked(true);
       else
-  mpNoneRadio->setChecked(true);
+        mpNoneRadio->setChecked(true);
       // get InnerOuter
       mpInnerCheckBox->setChecked(pComponentInfo->getInner());
       mpOuterCheckBox->setChecked(pComponentInfo->getOuter());
@@ -737,8 +737,8 @@ void ComponentAttributes::updateComponentAttributes()
     if (!mpComponent->getGraphicsView()->checkComponentName(mpNameTextBox->text()))
     {
       QMessageBox::information(pModelWidget->getModelWidgetContainer()->getMainWindow(),
-                         QString(Helper::applicationName).append(" - ").append(Helper::information),
-                         GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME), Helper::ok);
+                               QString(Helper::applicationName).append(" - ").append(Helper::information),
+                               GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_NAME), Helper::ok);
       return;
     }
   }
@@ -768,10 +768,10 @@ void ComponentAttributes::updateComponentAttributes()
   OMCProxy *pOMCProxy = pModelWidget->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
   // update component attributes
   if (!pOMCProxy->setComponentProperties(modelName, mpComponentInfo->getName(), isFinal, mIsFlow, isProtected, isReplaceAble, variability,
-                                   isInner, isOuter, causality))
+                                         isInner, isOuter, causality))
   {
     QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
-                    QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+                          QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
     pOMCProxy->printMessagesStringInternal();
   }
   // update the component comment only if its changed.
@@ -781,7 +781,7 @@ void ComponentAttributes::updateComponentAttributes()
     if (!pOMCProxy->setComponentComment(modelName, mpComponentInfo->getName(), comment))
     {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
-                      QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
   }
@@ -796,7 +796,7 @@ void ComponentAttributes::updateComponentAttributes()
     else
     {
       QMessageBox::critical(pModelWidget->getModelWidgetContainer()->getMainWindow(),
-                      QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
+                            QString(Helper::applicationName).append(" - ").append(Helper::error), pOMCProxy->getResult(), Helper::ok);
       pOMCProxy->printMessagesStringInternal();
     }
   }

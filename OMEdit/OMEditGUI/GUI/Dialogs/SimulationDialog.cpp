@@ -332,7 +332,7 @@ void SimulationDialog::initializeFields()
   if (mIsInteractive)
   {
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::interactiveSimulation)
-             .append(" - ").append(mpLibraryTreeNode->getNameStructure()));
+                   .append(" - ").append(mpLibraryTreeNode->getNameStructure()));
     mpSimulationHeading->setText(QString(Helper::interactiveSimulation).append(" - ").append(mpLibraryTreeNode->getNameStructure()));
     mpSimulationIntervalGroupBox->setDisabled(true);
     return;
@@ -340,7 +340,7 @@ void SimulationDialog::initializeFields()
   else
   {
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulation)
-             .append(" - ").append(mpLibraryTreeNode->getNameStructure()));
+                   .append(" - ").append(mpLibraryTreeNode->getNameStructure()));
     mpSimulationHeading->setText(QString(Helper::simulation).append(" - ").append(mpLibraryTreeNode->getNameStructure()));
     mpSimulationIntervalGroupBox->setDisabled(false);
   }
@@ -402,7 +402,7 @@ void SimulationDialog::simulate()
 //    if (mpMainWindow->mpInteractiveSimualtionTabWidget->count() > 0)
 //    {
 //      QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-//                         GUIMessages::getMessage(GUIMessages::INTERACTIVE_SIMULATION_RUNNIG), Helper::ok);
+//                               GUIMessages::getMessage(GUIMessages::INTERACTIVE_SIMULATION_RUNNIG), Helper::ok);
 //      return;
 //    }
 //  }
@@ -415,9 +415,9 @@ void SimulationDialog::simulate()
     if (!mIsInteractive)
     {
       if (mpStartTimeTextBox->text().isEmpty())
-  simulationParameters.append("startTime=0.0");
+        simulationParameters.append("startTime=0.0");
       else
-  simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
+        simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
       simulationParameters.append(", stopTime=").append(mpStopTimeTextBox->text()).append(",");
     }
     if (mpNumberofIntervalsTextBox->text().isEmpty())
@@ -492,62 +492,62 @@ void SimulationDialog::simulate()
     }
     // setup Logging flags
     if (mpLogDasslSolverCheckBox->isChecked() ||
-  mpLogDebugCheckBox->isChecked() ||
-  mpLogDynamicStateSelectionCheckBox->isChecked() ||
-  mpLogJacobianDynamicStateSelectionCheckBox->isChecked() ||
-  mpLogEventsCheckBox->isChecked() ||
-  mpLogVerboseEventsCheckBox->isChecked() ||
-  mpLogInitializationCheckBox->isChecked() ||
-  mpLogJacobianCheckBox->isChecked() ||
-  mpLogNonLinearSystemsCheckBox->isChecked() ||
-  mpLogVerboseNonLinearSystemsCheckBox->isChecked() ||
-  mpLogJacobianNonLinearSystemsCheckBox->isChecked() ||
-  mpLogResidualsInitializationCheckBox->isChecked() ||
-  mpLogSimulationCheckBox->isChecked() ||
-  mpLogSolverCheckBox->isChecked() ||
-  mpLogFinalSolutionOfInitializationCheckBox->isChecked() ||
-  mpLogStatsCheckBox->isChecked() ||
-  mpLogStatsCheckBox->isChecked() ||
-  mpLogZeroCrossingsCheckBox->isChecked())
+        mpLogDebugCheckBox->isChecked() ||
+        mpLogDynamicStateSelectionCheckBox->isChecked() ||
+        mpLogJacobianDynamicStateSelectionCheckBox->isChecked() ||
+        mpLogEventsCheckBox->isChecked() ||
+        mpLogVerboseEventsCheckBox->isChecked() ||
+        mpLogInitializationCheckBox->isChecked() ||
+        mpLogJacobianCheckBox->isChecked() ||
+        mpLogNonLinearSystemsCheckBox->isChecked() ||
+        mpLogVerboseNonLinearSystemsCheckBox->isChecked() ||
+        mpLogJacobianNonLinearSystemsCheckBox->isChecked() ||
+        mpLogResidualsInitializationCheckBox->isChecked() ||
+        mpLogSimulationCheckBox->isChecked() ||
+        mpLogSolverCheckBox->isChecked() ||
+        mpLogFinalSolutionOfInitializationCheckBox->isChecked() ||
+        mpLogStatsCheckBox->isChecked() ||
+        mpLogStatsCheckBox->isChecked() ||
+        mpLogZeroCrossingsCheckBox->isChecked())
     {
       QString loggingFlagName, loggingFlagValues;
       loggingFlagName.append("-lv=");
       if (mpLogDasslSolverCheckBox->isChecked())
-  loggingFlagValues.append("LOG_DDASRT");
+        loggingFlagValues.append("LOG_DDASRT");
       if (mpLogDebugCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DEBUG") : loggingFlagValues.append(",LOG_DEBUG");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DEBUG") : loggingFlagValues.append(",LOG_DEBUG");
       if (mpLogDynamicStateSelectionCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DSS") : loggingFlagValues.append(",LOG_DSS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DSS") : loggingFlagValues.append(",LOG_DSS");
       if (mpLogJacobianDynamicStateSelectionCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DSS_JAC") : loggingFlagValues.append(",LOG_DSS_JAC");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_DSS_JAC") : loggingFlagValues.append(",LOG_DSS_JAC");
       if (mpLogEventsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS") : loggingFlagValues.append(",LOG_EVENTS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS") : loggingFlagValues.append(",LOG_EVENTS");
       if (mpLogVerboseEventsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS_V") : loggingFlagValues.append(",LOG_EVENTS_V");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_EVENTS_V") : loggingFlagValues.append(",LOG_EVENTS_V");
       if (mpLogInitializationCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_INIT") : loggingFlagValues.append(",LOG_INIT");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_INIT") : loggingFlagValues.append(",LOG_INIT");
       if (mpLogJacobianCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_JAC") : loggingFlagValues.append(",LOG_JAC");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_JAC") : loggingFlagValues.append(",LOG_JAC");
       if (mpLogNonLinearSystemsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS") : loggingFlagValues.append(",LOG_NLS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS") : loggingFlagValues.append(",LOG_NLS");
       if (mpLogVerboseNonLinearSystemsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS_V") : loggingFlagValues.append(",LOG_NLS_V");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS_V") : loggingFlagValues.append(",LOG_NLS_V");
       if (mpLogJacobianNonLinearSystemsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS_JAC") : loggingFlagValues.append(",LOG_NLS_JAC");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_NLS_JAC") : loggingFlagValues.append(",LOG_NLS_JAC");
       if (mpLogResidualsInitializationCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_RES_INIT") : loggingFlagValues.append(",LOG_RES_INIT");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_RES_INIT") : loggingFlagValues.append(",LOG_RES_INIT");
       if (mpLogSimulationCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SIMULATION") : loggingFlagValues.append(",LOG_SIMULATION");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SIMULATION") : loggingFlagValues.append(",LOG_SIMULATION");
       if (mpLogSolverCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOLVER") : loggingFlagValues.append(",LOG_SOLVER");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOLVER") : loggingFlagValues.append(",LOG_SOLVER");
       if (mpLogFinalSolutionOfInitializationCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOTI") : loggingFlagValues.append(",LOG_SOTI");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOTI") : loggingFlagValues.append(",LOG_SOTI");
       if (mpLogStatsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_STATS") : loggingFlagValues.append(",LOG_STATS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_STATS") : loggingFlagValues.append(",LOG_STATS");
       if (mpLogStatsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_UTIL") : loggingFlagValues.append(",LOG_UTIL");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_UTIL") : loggingFlagValues.append(",LOG_UTIL");
       if (mpLogZeroCrossingsCheckBox->isChecked())
-  loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
+        loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
 
       simulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
     }
@@ -576,9 +576,9 @@ void SimulationDialog::simulate()
     if (mpProfilingCheckBox->isChecked())
     {
       if (mpFileNameTextBox->text().isEmpty())
-  QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpLibraryTreeNode->getNameStructure() + "_prof.html"));
+        QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpLibraryTreeNode->getNameStructure() + "_prof.html"));
       else
-  QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpFileNameTextBox->text() + "_prof.html"));
+        QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpFileNameTextBox->text() + "_prof.html"));
     }
     accept();
   }
@@ -614,23 +614,23 @@ bool SimulationDialog::validate()
 {
   if (mpStartTimeTextBox->text().isEmpty())
     mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                    GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STARTTIME),
-                                                                    Helper::simulationKind, Helper::warningLevel, 0,
-                                                                    mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+                                                                          GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STARTTIME),
+                                                                          Helper::simulationKind, Helper::warningLevel, 0,
+                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
   if (mpStopTimeTextBox->text().isEmpty())
   {
     mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                    GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STOPTIME),
-                                                                    Helper::simulationKind, Helper::warningLevel, 0,
-                                                                    mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+                                                                          GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STOPTIME),
+                                                                          Helper::simulationKind, Helper::warningLevel, 0,
+                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
     return false;
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble())
   {
     mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                    GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME),
-                                                                    Helper::simulationKind, Helper::warningLevel, 0,
-                                                                    mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+                                                                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME),
+                                                                          Helper::simulationKind, Helper::warningLevel, 0,
+                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
     return false;
   }
   return true;
@@ -697,30 +697,30 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     {
       if (mpMainWindow->getDebugApplication()) qDebug() << "running the simulation process";
       if (mIsSimulationProcessFinished)
-  break;
+        break;
       if (!sock && server.hasPendingConnections()) {
-  sock = server.nextPendingConnection();
+        sock = server.nextPendingConnection();
       } else if (!sock) {
-  QEventLoop eventLoop;
-  QTimer timer;   /* in case we don't get any newConnection() from simulation executable we must quit the event loop.*/
-  connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
-  connect(&server, SIGNAL(newConnection()), &eventLoop, SLOT(quit()));
-  timer.start(1000);
-  eventLoop.exec();
-  //server.waitForNewConnection(100,0);
+        QEventLoop eventLoop;
+        QTimer timer;   /* in case we don't get any newConnection() from simulation executable we must quit the event loop.*/
+        connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+        connect(&server, SIGNAL(newConnection()), &eventLoop, SLOT(quit()));
+        timer.start(1000);
+        eventLoop.exec();
+        //server.waitForNewConnection(100,0);
       } else {
-  sock->waitForReadyRead(100);
-  while (sock->readLine(buf,SOCKMAXLEN) > 0) {
-    char *msg = 0;
-    double d = strtod(buf, &msg);
-    if (msg == buf || *msg != ' ') {
-      // do we really need to take care of this communication error?????
-      //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", buf);
-    } else {
-      mpProgressDialog->getProgressBar()->setValue(d/100.0);
-      //fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
-    }
-  }
+        sock->waitForReadyRead(100);
+        while (sock->readLine(buf,SOCKMAXLEN) > 0) {
+          char *msg = 0;
+          double d = strtod(buf, &msg);
+          if (msg == buf || *msg != ' ') {
+            // do we really need to take care of this communication error?????
+            //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", buf);
+          } else {
+            mpProgressDialog->getProgressBar()->setValue(d/100.0);
+            //fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
+          }
+        }
       }
       qApp->processEvents();
     }
@@ -732,7 +732,7 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     {
       pSimulationOutputDialog->getSimulationOutputTextBox()->insertPlainText("\n\n" + mpSimulationProcess->errorString());
       if (pSimulationOutputDialog->isHidden())
-  pSimulationOutputDialog->showSimulationOutputDialog();
+        pSimulationOutputDialog->showSimulationOutputDialog();
     }
     // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
     if (mpProgressDialog->isHidden() || mpSimulationProcess->exitStatus() != QProcess::NormalExit)

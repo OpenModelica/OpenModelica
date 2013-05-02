@@ -116,7 +116,7 @@ public:
   void loadSystemLibraries(QSplashScreen *pSplashScreen);
   void loadUserLibraries(QSplashScreen *pSplashScreen);
   QStringList getClassNames(QString className = QString(), QString recursive = QString("false"), QString qualified = QString("false"),
-                      QString showProtected = QString("true"));
+                            QString showProtected = QString("true"));
   QStringList searchClassNames(QString searchText, QString findInText = QString("false"));
   QStringList getClassInformation(QString className);
   bool isPackage(QString className);
@@ -171,7 +171,7 @@ public:
   bool renameComponentInClass(QString className, QString oldName, QString newName);
   bool updateConnection(QString from, QString to, QString className, QString annotation);
   bool setComponentProperties(QString className, QString componentName, QString isFinal, QString isFlow, QString isProtected,
-                        QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality);
+                              QString isReplaceAble, QString variability, QString isInner, QString isOuter, QString causality);
   bool setComponentComment(QString className, QString componentName, QString comment);
   bool addConnection(QString from, QString to, QString className, QString annotation);
   bool deleteConnection(QString from, QString to, QString className);

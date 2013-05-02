@@ -112,7 +112,7 @@ void PlotWindowContainer::addPlotWindow()
   catch (PlotException &e)
   {
     getMainWindow()->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind,
-                                                              Helper::errorLevel, 0, getMainWindow()->getMessagesWidget()->getMessagesTreeWidget()));
+                                                                    Helper::errorLevel, 0, getMainWindow()->getMessagesWidget()->getMessagesTreeWidget()));
   }
 }
 
@@ -134,7 +134,7 @@ void PlotWindowContainer::addPlotParametricWindow()
   catch (PlotException &e)
   {
     getMainWindow()->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind,
-                                                              Helper::errorLevel, 0, getMainWindow()->getMessagesWidget()->getMessagesTreeWidget()));
+                                                                    Helper::errorLevel, 0, getMainWindow()->getMessagesWidget()->getMessagesTreeWidget()));
   }
 }
 
@@ -144,7 +144,7 @@ void PlotWindowContainer::clearPlotWindow()
   if (!pPlotWindow)
   {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                       tr("No plot window is active for clearing curves."), Helper::ok);
+                             tr("No plot window is active for clearing curves."), Helper::ok);
     return;
   }
   int i = 0;
@@ -169,10 +169,10 @@ void PlotWindowContainer::updatePlotWindows(VariableTreeItem *pItem)
     {
       if (pItem->getNameStructure().compare(pPlotCurve->getFileName()) == 0)
       {
-  pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-  pPlotCurve->detach();
-  pPlotWindow->fitInView();
-  pPlotWindow->getPlot()->updateGeometry();
+        pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+        pPlotCurve->detach();
+        pPlotWindow->fitInView();
+        pPlotWindow->getPlot()->updateGeometry();
       }
     }
   }
@@ -194,38 +194,38 @@ void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeW
     {
       if (pPlotWindow->getPlotType() == PlotWindow::PLOT)
       {
-  QString curveNameStructure = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
-  VariableTreeItem *pVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(curveNameStructure);
-  if (pVariableTreeItem)
-  {
-    pVariableTreeItem->setCheckState(0, Qt::Checked);
-  }
-  else
-  {
-    pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-    pPlotCurve->detach();
-    pPlotWindow->fitInView();
-    pPlotWindow->getPlot()->updateGeometry();
-  }
+        QString curveNameStructure = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
+        VariableTreeItem *pVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(curveNameStructure);
+        if (pVariableTreeItem)
+        {
+          pVariableTreeItem->setCheckState(0, Qt::Checked);
+        }
+        else
+        {
+          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+          pPlotCurve->detach();
+          pPlotWindow->fitInView();
+          pPlotWindow->getPlot()->updateGeometry();
+        }
       }
       else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
       {
-  QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
-  VariableTreeItem *pXVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(xVariable);
-  QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
-  VariableTreeItem *pYVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(yVariable);
-  if (pXVariableTreeItem && pYVariableTreeItem)
-  {
-    pXVariableTreeItem->setCheckState(0, Qt::Checked);
-    pYVariableTreeItem->setCheckState(0, Qt::Checked);
-  }
-  else
-  {
-    pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-    pPlotCurve->detach();
-    pPlotWindow->fitInView();
-    pPlotWindow->getPlot()->updateGeometry();
-  }
+        QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
+        VariableTreeItem *pXVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(xVariable);
+        QString yVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getYVariable());
+        VariableTreeItem *pYVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(yVariable);
+        if (pXVariableTreeItem && pYVariableTreeItem)
+        {
+          pXVariableTreeItem->setCheckState(0, Qt::Checked);
+          pYVariableTreeItem->setCheckState(0, Qt::Checked);
+        }
+        else
+        {
+          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+          pPlotCurve->detach();
+          pPlotWindow->fitInView();
+          pPlotWindow->getPlot()->updateGeometry();
+        }
       }
     }
   }

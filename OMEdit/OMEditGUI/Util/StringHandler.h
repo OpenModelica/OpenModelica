@@ -49,12 +49,12 @@ public:
   ~StringHandler();
   enum ViewType {Icon, Diagram, ModelicaText};
   enum ModelicaClasses {Model, Class, Connector, ExpandableConnector, Record, Block, Function, Package, Primitive, Type, Operator,
-                  OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected};
+                        OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected};
   enum OpenModelicaErrors {Notification, Warning, OMError, NoOMError};
   enum OpenModelicaErrorKinds {Syntax, Grammar, Translation, Symbolic, Simulation, Scripting, NoOMErrorKind};
   enum LinePattern {LineNone, LineSolid, LineDash, LineDot, LineDashDot, LineDashDotDot};
   enum FillPattern {FillNone, FillSolid, FillHorizontal, FillVertical, FillCross, FillForward, FillBackward, FillCrossDiag,
-              FillHorizontalCylinder, FillVerticalCylinder, FillSphere};
+                    FillHorizontalCylinder, FillVerticalCylinder, FillSphere};
   enum BorderPattern {BorderNone, BorderRaised, BorderSunken, BorderEngraved};
   enum Smooth {SmoothNone, SmoothBezier};
   enum Arrow {ArrowNone, ArrowOpen, ArrowFilled, ArrowHalf};
@@ -112,11 +112,11 @@ public:
   // Returns false on failure
   static bool unparseBool(QString value);
   static QString getSaveFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
-                           QString * selectedFilter = 0, const QString &defaultSuffix = QString(), const QString *purposedName = 0);
+                                 QString * selectedFilter = 0, const QString &defaultSuffix = QString(), const QString *purposedName = 0);
   static QString getOpenFileName(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
-                           QString * selectedFilter = 0);
+                                 QString * selectedFilter = 0);
   static QStringList getOpenFileNames(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0, const QString & filter = QString(),
-                           QString * selectedFilter = 0);
+                                 QString * selectedFilter = 0);
   static QString getExistingDirectory(QWidget* parent = 0, const QString &caption = QString(), QString * dir = 0);
   static QString createTooltip(QStringList info, QString name, QString path);
   static void setLastOpenDirectory(QString lastOpenDirectory);

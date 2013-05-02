@@ -616,35 +616,35 @@ bool ShapePropertiesDialog::applyShapeProperties()
   if (mpOriginXTextBox->text().isEmpty())
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::originX), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::originX), Helper::ok);
     mpOriginXTextBox->setFocus();
     return false;
   }
   else if (mpOriginYTextBox->text().isEmpty())
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::originY), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::originY), Helper::ok);
     mpOriginYTextBox->setFocus();
     return false;
   }
   else if (mpRotationTextBox->text().isEmpty())
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::rotation), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::rotation), Helper::ok);
     mpRotationTextBox->setFocus();
     return false;
   }
   else if (mpLineThicknessTextBox->text().isEmpty())
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::thickness), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::thickness), Helper::ok);
     mpLineThicknessTextBox->setFocus();
     return false;
   }
   else if (mpLineArrowSizeTextBox->text().isEmpty())
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                    GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::arrowSize), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::arrowSize), Helper::ok);
     mpLineArrowSizeTextBox->setFocus();
     return false;
   }
@@ -657,8 +657,8 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (!Ok || pTableWidgetItem->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER)
-                      .arg("points item ("+  QString::number(i+1) +",0)"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER)
+                            .arg("points item ("+  QString::number(i+1) +",0)"), Helper::ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
       return false;
     }
@@ -667,8 +667,8 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (!Ok || pTableWidgetItem->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER)
-                      .arg("points table ["+  QString::number(i+1) +",1]"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER)
+                            .arg("points table ["+  QString::number(i+1) +",1]"), Helper::ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
       return false;
     }
@@ -679,28 +679,28 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpExtent1XTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent1X), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent1X), Helper::ok);
       mpExtent1XTextBox->setFocus();
       return false;
     }
     else if (mpExtent1YTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent1Y), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent1Y), Helper::ok);
       mpExtent1YTextBox->setFocus();
       return false;
     }
     else if (mpExtent2XTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent2X), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent2X), Helper::ok);
       mpExtent2XTextBox->setFocus();
       return false;
     }
     else if (mpExtent2YTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent2Y), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent2Y), Helper::ok);
       mpExtent2YTextBox->setFocus();
       return false;
     }
@@ -711,7 +711,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpRadiusTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::radius), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::radius), Helper::ok);
       mpRadiusTextBox->setFocus();
       return false;
     }
@@ -722,14 +722,14 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpStartAngleTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::startAngle), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::startAngle), Helper::ok);
       mpStartAngleTextBox->setFocus();
       return false;
     }
     else if (mpEndAngleTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::endAngle), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::endAngle), Helper::ok);
       mpEndAngleTextBox->setFocus();
       return false;
     }
@@ -740,7 +740,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpFontSizeTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::size), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::size), Helper::ok);
       mpFontSizeTextBox->setFocus();
       return false;
     }
@@ -751,7 +751,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpFileTextBox->text().isEmpty())
     {
       QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                      GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::file), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::file), Helper::ok);
       mpFileTextBox->setFocus();
       return false;
     }
@@ -864,7 +864,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
 void ShapePropertiesDialog::browseImageFile()
 {
   QString imageFileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                   NULL, Helper::imageFileTypes, NULL);
+                                                         NULL, Helper::imageFileTypes, NULL);
   if (imageFileName.isEmpty())
     return;
   mpFileTextBox->setText(imageFileName);
@@ -886,10 +886,10 @@ void ShapePropertiesDialog::storeImageInModelToggled(bool checked)
     {
       if (pMainWindow->getOptionsDialog()->getNotificationsPage()->getSaveModelForBitmapInsertionCheckBox()->isChecked())
       {
-  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::SaveModelForBitmapInsertion,
-                                                                      NotificationsDialog::InformationIcon,
-                                                                      pMainWindow);
-  pNotificationsDialog->exec();
+        NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::SaveModelForBitmapInsertion,
+                                                                            NotificationsDialog::InformationIcon,
+                                                                            pMainWindow);
+        pNotificationsDialog->exec();
       }
       mpStoreImageInModelCheckBox->blockSignals(true);
       mpStoreImageInModelCheckBox->setChecked(true);
