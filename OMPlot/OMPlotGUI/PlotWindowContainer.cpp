@@ -57,12 +57,12 @@ QString PlotWindowContainer::getUniqueName(QString name, int number)
 
     foreach (QMdiSubWindow *pWindow, subWindowList())
     {
-  PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pWindow->widget());
-  if (pPlotWindow->windowTitle().compare(newName) == 0)
-  {
-      newName = getUniqueName(name, ++number);
-      break;
-  }
+        PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pWindow->widget());
+        if (pPlotWindow->windowTitle().compare(newName) == 0)
+        {
+            newName = getUniqueName(name, ++number);
+            break;
+        }
     }
     return newName;
 }
@@ -70,24 +70,24 @@ QString PlotWindowContainer::getUniqueName(QString name, int number)
 PlotWindow* PlotWindowContainer::getCurrentWindow()
 {
     if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
-  return 0;
+        return 0;
     else
-  return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+        return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
 }
 
 void PlotWindowContainer::addPlotWindow(QStringList arguments)
 {
     PlotWindow *pPlotWindow = new PlotWindow(arguments, this);
     if (pPlotWindow->getPlotType() == PlotWindow::PLOT or pPlotWindow->getPlotType() == PlotWindow::PLOTALL)
-  pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(t)"));
+        pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(t)"));
     else
-  pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
+        pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
     connect(pPlotWindow, SIGNAL(closingDown()), SLOT(checkSubWindows()));
     setActiveSubWindow(addSubWindow(pPlotWindow));
     if (viewMode() == QMdiArea::TabbedView)
-  pPlotWindow->showMaximized();
+        pPlotWindow->showMaximized();
     else
-  pPlotWindow->show();
+        pPlotWindow->show();
     getPlotMainWindow()->activateWindow();
 }
 
@@ -100,5 +100,5 @@ void PlotWindowContainer::updateCurrentWindow(QStringList arguments)
 void PlotWindowContainer::checkSubWindows()
 {
     if (subWindowList().size() < 2)
-  getPlotMainWindow()->close();
+        getPlotMainWindow()->close();
 }

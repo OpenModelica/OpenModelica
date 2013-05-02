@@ -38,7 +38,7 @@
 using namespace OMPlot;
 
 Legend::Legend(Plot *pParent)
-{  
+{        
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(legendMenu(const QPoint&)));
     mpPlot = pParent;
@@ -63,19 +63,19 @@ Legend::~Legend()
 }
 
 void Legend::legendMenu(const QPoint& pos)
-{  
+{        
     QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(childAt(pos));
 
     if(lgdItem)
     {
-  mLegendItemStr = lgdItem->text().text();
+        mLegendItemStr = lgdItem->text().text();
 
-  QMenu menu(mpPlot);
-  menu.addAction(mpChangeColorAction);
-  menu.addAction(mpAutomaticColorAction);
-  menu.addSeparator();
-  menu.addAction(mpHideAction);
-  menu.exec(mapToGlobal(pos));
+        QMenu menu(mpPlot);
+        menu.addAction(mpChangeColorAction);
+        menu.addAction(mpAutomaticColorAction);
+        menu.addSeparator();
+        menu.addAction(mpHideAction);
+        menu.exec(mapToGlobal(pos));
     }
 }
 
@@ -86,18 +86,18 @@ void Legend::selectColor()
 
     if(c.isValid())
     {
-  for(int i = 0; i < list.length(); i++)
-  {
-      if(list[i]->title() == mLegendItemStr)
-      {
-          list[i]->setCustomColor(true);
-          QPen pen = list[i]->pen();
-          pen.setColor(c);
-          list[i]->setPen(pen);
-          mpAutomaticColorAction->setChecked(false);
-      }
-  }
-  mpPlot->replot();
+        for(int i = 0; i < list.length(); i++)
+        {
+            if(list[i]->title() == mLegendItemStr)
+            {
+                list[i]->setCustomColor(true);
+                QPen pen = list[i]->pen();
+                pen.setColor(c);
+                list[i]->setPen(pen);
+                mpAutomaticColorAction->setChecked(false);
+            }
+        }
+        mpPlot->replot();
     }
 }
 
@@ -107,23 +107,23 @@ void Legend::toggleHide(bool hide)
 
     for(int i = 0; i < list.length(); i++)
     {
-  if(list[i]->title().text() == mLegendItemStr)
-  {
-      if (hide)
-      {
-          QwtText text = list[i]->title();
-          text.setColor(QColor(Qt::gray));
-          list[i]->setTitle(text);
-          list[i]->setVisible(false);
-      }
-      else
-      {
-          QwtText text = list[i]->title();
-          text.setColor(QColor(Qt::black));
-          list[i]->setTitle(text.text());
-          list[i]->setVisible(true);
-      }
-  }
+        if(list[i]->title().text() == mLegendItemStr)
+        {
+            if (hide)
+            {
+                QwtText text = list[i]->title();
+                text.setColor(QColor(Qt::gray));
+                list[i]->setTitle(text);
+                list[i]->setVisible(false);
+            }
+            else
+            {
+                QwtText text = list[i]->title();
+                text.setColor(QColor(Qt::black));
+                list[i]->setTitle(text.text());
+                list[i]->setVisible(true);
+            }
+        }
     }
     mpPlot->replot();
 }
@@ -134,26 +134,26 @@ void Legend::automaticColor(bool automatic)
 
     for(int i = 0; i < list.length(); i++)
     {
-  if(list[i]->title().text() == mLegendItemStr)
-  {
-      if (automatic)
-      {
-          list[i]->setCustomColor(false);
-      }
-      else
-      {
-          if (list[i]->hasCustomColor())
-          {
-              list[i]->setCustomColor(true);
-          }
-          else
-          {
-              mpAutomaticColorAction->blockSignals(true);
-              mpAutomaticColorAction->setChecked(true);
-              mpAutomaticColorAction->blockSignals(false);
-          }
-      }
-  }
+        if(list[i]->title().text() == mLegendItemStr)
+        {
+            if (automatic)
+            {
+                list[i]->setCustomColor(false);
+            }
+            else
+            {
+                if (list[i]->hasCustomColor())
+                {
+                    list[i]->setCustomColor(true);
+                }
+                else
+                {
+                    mpAutomaticColorAction->blockSignals(true);
+                    mpAutomaticColorAction->setChecked(true);
+                    mpAutomaticColorAction->blockSignals(false);
+                }
+            }
+        }
     }
     mpPlot->replot();
 }

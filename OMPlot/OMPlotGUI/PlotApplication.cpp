@@ -43,26 +43,26 @@ PlotApplication::PlotApplication(int &argc, char *argv[], const QString uniqueKe
     mSharedMemory.setKey(uniqueKey);
 
     if (mSharedMemory.attach())
-  mIsRunning = true;
+        mIsRunning = true;
     else
     {
-  mIsRunning = false;
-  // attach data to shared memory.
-  QByteArray byteArray("0"); // default value to note that no message is available.
-  if (!mSharedMemory.create(4096))
-  {
-      printf("Unable to create shared memory for OMPlot.");
-      return;
-  }
-  mSharedMemory.lock();
-  char *to = (char*)mSharedMemory.data();
-  const char *from = byteArray.data();
-  memcpy(to, from, qMin(mSharedMemory.size(), byteArray.size()));
-  mSharedMemory.unlock();
-  // start checking for messages of other instances.
-  mpTimer = new QTimer(this);
-  connect(mpTimer, SIGNAL(timeout()), SLOT(checkForMessage()));
-  mpTimer->start(100);        // after every 0.1 second we check the shared memory
+        mIsRunning = false;
+        // attach data to shared memory.
+        QByteArray byteArray("0"); // default value to note that no message is available.
+        if (!mSharedMemory.create(4096))
+        {
+            printf("Unable to create shared memory for OMPlot.");
+            return;
+        }
+        mSharedMemory.lock();
+        char *to = (char*)mSharedMemory.data();
+        const char *from = byteArray.data();
+        memcpy(to, from, qMin(mSharedMemory.size(), byteArray.size()));
+        mSharedMemory.unlock();
+        // start checking for messages of other instances.
+        mpTimer = new QTimer(this);
+        connect(mpTimer, SIGNAL(timeout()), SLOT(checkForMessage()));
+        mpTimer->start(100);        // after every 0.1 second we check the shared memory
     }
 }
 
@@ -99,18 +99,18 @@ bool PlotApplication::notify(QObject *receiver, QEvent *event)
 {
     try
     {
-  return QApplication::notify(receiver, event);
+        return QApplication::notify(receiver, event);
     }
     catch (PlotException &e)
     {
-  QMessageBox *msgBox = new QMessageBox();
-  msgBox->setWindowTitle(QString(tr("OMPlot - Error")));
-  msgBox->setIcon(QMessageBox::Warning);
-  msgBox->setText(QString(e.what()));
-  msgBox->setStandardButtons(QMessageBox::Ok);
-  msgBox->setDefaultButton(QMessageBox::Ok);
-  msgBox->exec();
-  return true;
+        QMessageBox *msgBox = new QMessageBox();
+        msgBox->setWindowTitle(QString(tr("OMPlot - Error")));
+        msgBox->setIcon(QMessageBox::Warning);
+        msgBox->setText(QString(e.what()));
+        msgBox->setStandardButtons(QMessageBox::Ok);
+        msgBox->setDefaultButton(QMessageBox::Ok);
+        msgBox->exec();
+        return true;
     }
 }
 
@@ -120,9 +120,9 @@ void PlotApplication::checkForMessage()
     QByteArray byteArray = QByteArray((char*)mSharedMemory.constData(), mSharedMemory.size());
     mSharedMemory.unlock();
     if (byteArray.left(1) == "0")
-  return;
+        return;
     char type = byteArray.at(0);
-    byteArray.remove(0, 1);  // remove the one we put at the start of the bytearray while writing to memory
+    byteArray.remove(0, 1);        // remove the one we put at the start of the bytearray while writing to memory
     QStringList arguments = QString::fromUtf8(byteArray.constData()).split(";");
     // remove message from shared memory.
     byteArray = "0";
@@ -134,7 +134,7 @@ void PlotApplication::checkForMessage()
     // if type is 1 send message to current tab
     // if type is 2 launch a new tab
     if (type == '2')
-  emit newApplicationLaunched(arguments);
+        emit newApplicationLaunched(arguments);
     else
-  emit messageAvailable(arguments);
+        emit messageAvailable(arguments);
 }
