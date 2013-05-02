@@ -16,12 +16,12 @@ class MyAST : public ANTLR_USE_NAMESPACE(antlr)CommonAST {
 public:
    // copy constructor
    MyAST( const MyAST& other )
-	: CommonAST(other)
-	, line(other.line), column(other.column),
-	  endline(other.endline),
-	  endcolumn(other.endcolumn)
-	{
-	}
+  : CommonAST(other)
+  , line(other.line), column(other.column),
+    endline(other.endline),
+    endcolumn(other.endcolumn)
+  {
+  }
    // Default constructor
    MyAST( void ) : CommonAST(), line(0), column(0), endline(0), endcolumn(0) {}
    virtual ~MyAST( void ) {}
@@ -73,7 +73,7 @@ public:
       if ( endline != 0 ) return endline;
       if( getNextSibling() )
       {
-      	return ( RefMyAST(getNextSibling())->getLine() );
+        return ( RefMyAST(getNextSibling())->getLine() );
       }
       else if (getFirstChild()) return ( RefMyAST(getFirstChild())->getLine() );
       return 0;
@@ -94,7 +94,7 @@ public:
       if ( endcolumn != 0 ) return endcolumn;
       if( getNextSibling() )
       {
-      	return ( RefMyAST(getNextSibling())->getColumn() );
+        return ( RefMyAST(getNextSibling())->getColumn() );
       }
       else if (getFirstChild()) return ( RefMyAST(getFirstChild())->getColumn() );
       return 0;
@@ -118,9 +118,9 @@ public:
 
    virtual void initialize( ANTLR_USE_NAMESPACE(antlr)RefToken t )
    {
-      	CommonAST::initialize(t);
-      	line = t->getLine();
-	column = t->getColumn();
+        CommonAST::initialize(t);
+        line = t->getLine();
+  column = t->getColumn();
    }
 
    virtual void initialize( RefMyAST ast )

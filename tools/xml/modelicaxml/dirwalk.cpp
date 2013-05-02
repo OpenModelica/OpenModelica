@@ -26,140 +26,140 @@
 int getDirectoryStructure(char *_current, l_list &dirList, int _dlevel)
 //------------------------------------------------
 {
-	char            DirName[PATH_MAX];
-	static char     CurrDirName[PATH_MAX];
-	HANDLE          Hnd;
-	WIN32_FIND_DATA WFD;
+  char            DirName[PATH_MAX];
+  static char     CurrDirName[PATH_MAX];
+  HANDLE          Hnd;
+  WIN32_FIND_DATA WFD;
 
-	if (!_dlevel)
-	{
-		GetCurrentDirectory( PATH_MAX, CurrDirName );
-		//std::cout << "Get:" << CurrDirName << std::endl;
-	}
+  if (!_dlevel)
+  {
+    GetCurrentDirectory( PATH_MAX, CurrDirName );
+    //std::cout << "Get:" << CurrDirName << std::endl;
+  }
 
-	//  Set the new current directory
-	if (!SetCurrentDirectory( _current ))
-	{
-		std::cerr << "Error: could not open directory: " << _current << std::endl;
-		exit(1);
-	}
+  //  Set the new current directory
+  if (!SetCurrentDirectory( _current ))
+  {
+    std::cerr << "Error: could not open directory: " << _current << std::endl;
+    exit(1);
+  }
 
-	//std::cout << "+" << _current << " + " << _dlevel << std::endl;
+  //std::cout << "+" << _current << " + " << _dlevel << std::endl;
 
-	//  Starts the search
-	Hnd = FindFirstFile( "*.*", &WFD );
+  //  Starts the search
+  Hnd = FindFirstFile( "*.*", &WFD );
 
-	if (!_dlevel)
-	{
-		GetCurrentDirectory( PATH_MAX, DirName );
-		// add DirName to dirList
-		char *tmpDir = new char[sizeof(char)*strlen(DirName)+1];
-		strcpy(tmpDir, DirName);
-		tmpDir[strlen(DirName)]='\0';
-		dirList.push_back(tmpDir);
-		//printf("%s\n", DirName);
-	}
+  if (!_dlevel)
+  {
+    GetCurrentDirectory( PATH_MAX, DirName );
+    // add DirName to dirList
+    char *tmpDir = new char[sizeof(char)*strlen(DirName)+1];
+    strcpy(tmpDir, DirName);
+    tmpDir[strlen(DirName)]='\0';
+    dirList.push_back(tmpDir);
+    //printf("%s\n", DirName);
+  }
 
-	//  loop to get all inside the current directory
-	while ( FindNextFile( Hnd, &WFD ) )
-	{
-		//    If it is a real directory
-		if (
-			( WFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) &&
-			( strcmp(WFD.cFileName, "..") && strcmp(WFD.cFileName, ".") )
-			)
-		{
-			//       Get the current directory
-			GetCurrentDirectory( PATH_MAX, DirName );
+  //  loop to get all inside the current directory
+  while ( FindNextFile( Hnd, &WFD ) )
+  {
+    //    If it is a real directory
+    if (
+      ( WFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) &&
+      ( strcmp(WFD.cFileName, "..") && strcmp(WFD.cFileName, ".") )
+      )
+    {
+      //       Get the current directory
+      GetCurrentDirectory( PATH_MAX, DirName );
 
-			//       Put a "\" if necessary
-			if ( strncmp( &DirName[strlen(DirName)-1], PATH_SEPARATOR, 1 ) )
-				(void) strcat( DirName, PATH_SEPARATOR );
+      //       Put a "\" if necessary
+      if ( strncmp( &DirName[strlen(DirName)-1], PATH_SEPARATOR, 1 ) )
+        (void) strcat( DirName, PATH_SEPARATOR );
 
-			//       Create a new path
-			(void) strcat( DirName, WFD.cFileName );
+      //       Create a new path
+      (void) strcat( DirName, WFD.cFileName );
 
-			//       Show the new directory
-			// add DirName to dirList
-			char *tmpDir = new char[sizeof(char)*strlen(DirName)+1];
-			strcpy(tmpDir, DirName);
-			tmpDir[strlen(DirName)]='\0';
-			dirList.push_back(tmpDir);
-			//printf("%s\n", DirName);
+      //       Show the new directory
+      // add DirName to dirList
+      char *tmpDir = new char[sizeof(char)*strlen(DirName)+1];
+      strcpy(tmpDir, DirName);
+      tmpDir[strlen(DirName)]='\0';
+      dirList.push_back(tmpDir);
+      //printf("%s\n", DirName);
 
-			//       Make a new call to itself
-			getDirectoryStructure( DirName, dirList, ++_dlevel);
+      //       Make a new call to itself
+      getDirectoryStructure( DirName, dirList, ++_dlevel);
 
-			//       Go back one level
-			SetCurrentDirectory( ".." );
+      //       Go back one level
+      SetCurrentDirectory( ".." );
 
-			_dlevel--;
-		}
+      _dlevel--;
+    }
 
-	} // End while
+  } // End while
 
-	// End the search to this call
-	(void) FindClose( Hnd );
-	if (!_dlevel)
-	{
-		SetCurrentDirectory( CurrDirName );
-		//std::cout << "Set:" << CurrDirName << " + " << _dlevel << std::endl;
-	}
-	return 1;
+  // End the search to this call
+  (void) FindClose( Hnd );
+  if (!_dlevel)
+  {
+    SetCurrentDirectory( CurrDirName );
+    //std::cout << "Set:" << CurrDirName << " + " << _dlevel << std::endl;
+  }
+  return 1;
 }
 
 //-------------------------------------------------------------------------
 int getFileList(char *currentDir, l_list &fileList, char* fileFilter)
 //-------------------------------------------------------------------------
 {
-	char            CurrDirName[PATH_MAX];
-	HANDLE          Hnd;
-	WIN32_FIND_DATA WFD;
-	int fileNo = 0;
+  char            CurrDirName[PATH_MAX];
+  HANDLE          Hnd;
+  WIN32_FIND_DATA WFD;
+  int fileNo = 0;
 
-	GetCurrentDirectory( PATH_MAX, CurrDirName );
+  GetCurrentDirectory( PATH_MAX, CurrDirName );
 
-	//  Set the new current directory
-	SetCurrentDirectory( currentDir );
+  //  Set the new current directory
+  SetCurrentDirectory( currentDir );
 
-	//  Starts the search
-	Hnd = FindFirstFile( fileFilter, &WFD );
+  //  Starts the search
+  Hnd = FindFirstFile( fileFilter, &WFD );
 
-	if (Hnd == INVALID_HANDLE_VALUE)
-	{
-		SetCurrentDirectory( CurrDirName );
-		return 0;
-	}
+  if (Hnd == INVALID_HANDLE_VALUE)
+  {
+    SetCurrentDirectory( CurrDirName );
+    return 0;
+  }
 
-	//  loop to get all inside the current directory
-	do
-	{
-		//    If it is a real file
-		if (
-			(( WFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
-			!= FILE_ATTRIBUTE_DIRECTORY) &&
-			( strcmp(WFD.cFileName, "..") && strcmp(WFD.cFileName, ".") )
-			)
-		{
-			// add filename to fileList
-		  char *tmpFile = new char[sizeof(char)*
-					   (strlen(WFD.cFileName) +
-					    strlen(PATH_SEPARATOR) +
-					    strlen(currentDir))+1];
-		  tmpFile[0] = '\0';
-		  strcat(tmpFile, currentDir);
-		  strcat(tmpFile, PATH_SEPARATOR);
-		  strcat(tmpFile, WFD.cFileName);
-		  fileList.push_back(tmpFile);
-		  fileNo++;
-		}
-	} // End while
-	while ( FindNextFile( Hnd, &WFD ) );
+  //  loop to get all inside the current directory
+  do
+  {
+    //    If it is a real file
+    if (
+      (( WFD.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
+      != FILE_ATTRIBUTE_DIRECTORY) &&
+      ( strcmp(WFD.cFileName, "..") && strcmp(WFD.cFileName, ".") )
+      )
+    {
+      // add filename to fileList
+      char *tmpFile = new char[sizeof(char)*
+             (strlen(WFD.cFileName) +
+              strlen(PATH_SEPARATOR) +
+              strlen(currentDir))+1];
+      tmpFile[0] = '\0';
+      strcat(tmpFile, currentDir);
+      strcat(tmpFile, PATH_SEPARATOR);
+      strcat(tmpFile, WFD.cFileName);
+      fileList.push_back(tmpFile);
+      fileNo++;
+    }
+  } // End while
+  while ( FindNextFile( Hnd, &WFD ) );
 
-	// End the search to this call
-	(void) FindClose( Hnd );
-	SetCurrentDirectory( CurrDirName );
-	return fileNo;
+  // End the search to this call
+  (void) FindClose( Hnd );
+  SetCurrentDirectory( CurrDirName );
+  return fileNo;
 }
 
 bool endsWith ( std::string str, std::string suffix )
@@ -223,7 +223,7 @@ void CheckErrNo ( const char * path )
       break;
 
     case  ENOMEM  :   std::cout << path << ".  Insufficient kernel memory. "
-			   << "Exiting..." << std::endl;
+         << "Exiting..." << std::endl;
       exit ( ENOMEM );
       break;
 
@@ -231,7 +231,7 @@ void CheckErrNo ( const char * path )
       break;
 
     case ENOTDIR  :   std::cout << path << ".  Component in path not a directory."
-			   << std::endl;
+         << std::endl;
       break;
     }
 }
@@ -244,27 +244,27 @@ int push_dir(const char *fpath, const struct stat *sb, int tflag, struct FTW *ft
    switch ( tflag )
       {
       case FTW_F:       /* do nothing on file now. */
-	break;
+  break;
 
       case FTW_D:
       case FTW_DP:
-	dirListGlobal.push_front ( strdup(fpath) );
-	break;
+  dirListGlobal.push_front ( strdup(fpath) );
+  break;
       case FTW_DNR:
-	std::cout << "Directory cannot be read:  "
-	     << fpath << std::endl;
-	CheckErrNo ( fpath );
-	break;
+  std::cout << "Directory cannot be read:  "
+       << fpath << std::endl;
+  CheckErrNo ( fpath );
+  break;
 
 
       case FTW_NS:
-	std::cout << "Stat failure on:  "
-	     << fpath << std::endl;
-	CheckErrNo ( fpath );
-	break;
+  std::cout << "Stat failure on:  "
+       << fpath << std::endl;
+  CheckErrNo ( fpath );
+  break;
 
       default:
-	std::cout << "Weird flag for file  " << fpath << std::endl;
+  std::cout << "Weird flag for file  " << fpath << std::endl;
 
       }
    return result;
@@ -299,7 +299,7 @@ int file_select_mo(const struct dirent *entry)
   } else {
     ptr = (char*)rindex(entry->d_name, '.');
     if ((ptr != NULL) &&
-	((strcmp(ptr, ".mo") == 0))) {
+  ((strcmp(ptr, ".mo") == 0))) {
       return (1);
     } else {
       return (0);
@@ -322,9 +322,9 @@ int getFileList(char *currentDir, l_list &fileList, char* fileFilter)
     for(int i = 0; i <n; i++)
     {
       char *tmpFile = new char[sizeof(char)*
-			       (strlen(namelist[i]->d_name) +
-				strlen(PATH_SEPARATOR) +
-				strlen(currentDir))+1];
+             (strlen(namelist[i]->d_name) +
+        strlen(PATH_SEPARATOR) +
+        strlen(currentDir))+1];
       tmpFile[0] = '\0';
       strcat(tmpFile, currentDir);
       strcat(tmpFile, PATH_SEPARATOR);

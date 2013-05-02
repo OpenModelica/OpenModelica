@@ -7,8 +7,8 @@
 -------------------------------------------------------------------------------
   Source:
   Revision:
-  Author:	Adrian Pop
-  Date:		2004-05-26
+  Author:  Adrian Pop
+  Date:    2004-05-26
 *******************************************************************************
 */
 
@@ -48,88 +48,88 @@ using namespace std;
 // for the Modelica Simulator
 int main( int argc, char* argv[] )
 {
-	ifstream file;
-	//ofstream wfile;
+  ifstream file;
+  //ofstream wfile;
 
-	// check if the modelica file is present in the argument list
+  // check if the modelica file is present in the argument list
     if (argc < 2)
-	{
-  		cerr << "Incorrect number of arguments\n";
-  		return 1;
+  {
+      cerr << "Incorrect number of arguments\n";
+      return 1;
     }
 
-	//open the file passed as an argument
+  //open the file passed as an argument
     file.open(argv[1]);
 
-	//if the file cannot be opened
+  //if the file cannot be opened
     if (!file)
-	{
-  		cerr << "Could not open file: " << argv[1] << "\n";
-		getchar();
-  		return 2;
+  {
+      cerr << "Could not open file: " << argv[1] << "\n";
+    getchar();
+      return 2;
     }
 
     try
-	{
-	  antlr::ASTFactory my_factory("MyAST", MyAST::factory);
-	  flat_modelica_lexer lexer(file);
-	  lexer.setFilename(argv[1]);
-	  flat_modelica_parser parser(lexer);
-	  parser.initializeASTFactory(my_factory);
-	  parser.setASTFactory(&my_factory);
-	  parser.stored_definition();
-	  //wfile.open("output.txt");
-	  //wfile << parser.getAST()->toStringList() << std::endl;
-	  antlr::RefAST ast = parser.getAST();
-	  //parse_tree_dumper dumper(std::cout);
-	  std::cout << std::flush;
-	  if (ast)
-	  {
-	      //dumper.dump(ast);
-	      flat_modelica_tree_parser walker;
-		  walker.initializeASTFactory(my_factory);
-		  walker.setASTFactory(&my_factory);
-		  std::string xmlFile(argv[1]);
-		  /*
-		  http://www.ida.liu.se/~adrpo/modelica/xml/modelicaxml-v2.dtd
-		  c:\\dev\\src\\modelicaxml\\modelicaxml-v2.dtd
-		  */
-		  // set the doctype
-		  std::string docType(
-			  (argc > 2)?argv[2]:"http://www.ida.liu.se/~adrpo/modelica/xml/modelicaxml-v2.dtd");
-		  xmlFile += ".xml";
-		  walker.stored_definition(
-				RefMyAST(ast),
-				xmlFile,
-				argv[1],
-				docType);
-	  }
-	  else
-	  {
-			//wfile << std::endl << "Parse error: <NULL> AST\n";
-			std::cerr << std::endl << "Parse error: <NULL> AST\n";
-	  }
-	}
+  {
+    antlr::ASTFactory my_factory("MyAST", MyAST::factory);
+    flat_modelica_lexer lexer(file);
+    lexer.setFilename(argv[1]);
+    flat_modelica_parser parser(lexer);
+    parser.initializeASTFactory(my_factory);
+    parser.setASTFactory(&my_factory);
+    parser.stored_definition();
+    //wfile.open("output.txt");
+    //wfile << parser.getAST()->toStringList() << std::endl;
+    antlr::RefAST ast = parser.getAST();
+    //parse_tree_dumper dumper(std::cout);
+    std::cout << std::flush;
+    if (ast)
+    {
+        //dumper.dump(ast);
+        flat_modelica_tree_parser walker;
+      walker.initializeASTFactory(my_factory);
+      walker.setASTFactory(&my_factory);
+      std::string xmlFile(argv[1]);
+      /*
+      http://www.ida.liu.se/~adrpo/modelica/xml/modelicaxml-v2.dtd
+      c:\\dev\\src\\modelicaxml\\modelicaxml-v2.dtd
+      */
+      // set the doctype
+      std::string docType(
+        (argc > 2)?argv[2]:"http://www.ida.liu.se/~adrpo/modelica/xml/modelicaxml-v2.dtd");
+      xmlFile += ".xml";
+      walker.stored_definition(
+        RefMyAST(ast),
+        xmlFile,
+        argv[1],
+        docType);
+    }
+    else
+    {
+      //wfile << std::endl << "Parse error: <NULL> AST\n";
+      std::cerr << std::endl << "Parse error: <NULL> AST\n";
+    }
+  }
     catch(antlr::ANTLRException& e)
-	{
-		std::cerr << "Parser/Lexer/Walker Exception: " << e.toString() << std::endl;
-		file.close();
-		std::cerr << "ERROR! File:" << argv[1] << std::endl;
-		getchar();
-		return EXIT_FAILURE;
-	}
+  {
+    std::cerr << "Parser/Lexer/Walker Exception: " << e.toString() << std::endl;
+    file.close();
+    std::cerr << "ERROR! File:" << argv[1] << std::endl;
+    getchar();
+    return EXIT_FAILURE;
+  }
     catch(std::exception& e)
-	{
-		std::cerr << "Exception: " << e.what() << std::endl;
-		file.close();
-		std::cerr << "ERROR! File:" << argv[1] << std::endl;
-		getchar();
-		return EXIT_FAILURE;
-	}
+  {
+    std::cerr << "Exception: " << e.what() << std::endl;
+    file.close();
+    std::cerr << "ERROR! File:" << argv[1] << std::endl;
+    getchar();
+    return EXIT_FAILURE;
+  }
 
     file.close();
-	std::cout << "SUCCESS! File:" << argv[1] << std::endl;
-	//wfile << std::endl << "SUCCESS! File:" << argv[1] << std::endl;
-	//wfile.close();
+  std::cout << "SUCCESS! File:" << argv[1] << std::endl;
+  //wfile << std::endl << "SUCCESS! File:" << argv[1] << std::endl;
+  //wfile.close();
     return EXIT_SUCCESS;
 }

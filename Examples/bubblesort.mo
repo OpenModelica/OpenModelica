@@ -11,9 +11,9 @@ algorithm
     for j in 1:size(x,1) loop
 
       if y[i] > y[j] then
-	t := y[i];
-	y[i] := y[j];
-	y[j] := t;
+  t := y[i];
+  y[i] := y[j];
+  y[j] := t;
       end if;
     end for;
   end for;

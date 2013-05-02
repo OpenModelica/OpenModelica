@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
     if (!stream)
       {
-	std::cerr << "Error opening file" << std::endl;
+  std::cerr << "Error opening file" << std::endl;
       }
     RefMyAST t;
     if (parseFlatModelica){
@@ -61,51 +61,51 @@ int main(int argc, char **argv) {
       flat_parse->setASTFactory( &my_factory );
 
       try{
-	cout << "Parsing flat modelica" << endl;
-	flat_parse->stored_definition();
-	cout << "done" << endl;
-	t = RefMyAST(flat_parse->getAST());
+  cout << "Parsing flat modelica" << endl;
+  flat_parse->stored_definition();
+  cout << "done" << endl;
+  t = RefMyAST(flat_parse->getAST());
       }
       catch (ANTLR_USE_NAMESPACE(antlr)CharStreamException &e)
-	{
-	  std::cerr << "Lexical error. CharStreamException. "  << std::endl;
-	}
+  {
+    std::cerr << "Lexical error. CharStreamException. "  << std::endl;
+  }
       catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamRecognitionException &e)
-	{
-	  std::cerr << "Parsing error. TokenStreamRecognitionException on line "
-		    << flat_lex->getLine() << "near :"<< flat_lex->getText() << std::endl;
-	}
+  {
+    std::cerr << "Parsing error. TokenStreamRecognitionException on line "
+        << flat_lex->getLine() << "near :"<< flat_lex->getText() << std::endl;
+  }
       catch (ANTLR_USE_NAMESPACE(antlr)RecognitionException &e)
-	{
-	  std::cerr << "[" << filestring << ":" << e.getLine() << ":" << e.getColumn()
-		    << "]: error: " << e.getMessage() << std::endl;
-	}
+  {
+    std::cerr << "[" << filestring << ":" << e.getLine() << ":" << e.getColumn()
+        << "]: error: " << e.getMessage() << std::endl;
+  }
       catch (ANTLR_USE_NAMESPACE(antlr)TokenStreamException &e)
-	{
-	  std::cerr << "[" << filestring << ":" << flat_lex->getLine() << ":" << flat_lex->getColumn()
-		    << "]: error: illegal token" << std::endl;
-	}
+  {
+    std::cerr << "[" << filestring << ":" << flat_lex->getLine() << ":" << flat_lex->getColumn()
+        << "]: error: illegal token" << std::endl;
+  }
       catch (ANTLR_USE_NAMESPACE(antlr)ANTLRException &e)
-	{
-	  std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
-	}
+  {
+    std::cerr << "ANTLRException: " << e.getMessage() << std::endl;
+  }
       catch (std::exception &e)
-	{
-	  std::cerr << "Error while parsing:\n" << e.what() << "\n";
-	}
+  {
+    std::cerr << "Error while parsing:\n" << e.what() << "\n";
+  }
       catch (...)
-	{
-	  std::cerr << "Error while parsing\n";
-	}
+  {
+    std::cerr << "Error while parsing\n";
+  }
 
     }
 
     if (parsedump)
       {
-	parse_tree_dumper dumper(std::cout);
-	//dumper.initializeASTFactory(factory);
-	//dumper.setASTFactory(&factory);
-	dumper.dump(t);
+  parse_tree_dumper dumper(std::cout);
+  //dumper.initializeASTFactory(factory);
+  //dumper.setASTFactory(&factory);
+  dumper.dump(t);
       }
 
 

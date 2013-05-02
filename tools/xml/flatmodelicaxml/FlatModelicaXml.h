@@ -36,19 +36,19 @@ public :
     XStr(const char* const toTranscode)
     {
         // Call the private transcoding method
-		fUnicodeForm = XMLString::transcode(toTranscode);
+    fUnicodeForm = XMLString::transcode(toTranscode);
     }
 
     ~XStr()
     {
-		XMLString::release(&fUnicodeForm);
+    XMLString::release(&fUnicodeForm);
     }
 
 
     // -----------------------------------------------------------------------
     //  Getter methods
     // -----------------------------------------------------------------------
-	const XMLCh* unicodeForm() const
+  const XMLCh* unicodeForm() const
     {
         return fUnicodeForm;
     }
@@ -60,7 +60,7 @@ private :
     //  fUnicodeForm
     //      This is the Unicode XMLCh format of the string.
     // -----------------------------------------------------------------------
-	XMLCh*   fUnicodeForm;
+  XMLCh*   fUnicodeForm;
 };
 
 #define X(str) XStr(str).unicodeForm()

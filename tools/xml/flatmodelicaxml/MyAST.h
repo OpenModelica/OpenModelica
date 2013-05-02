@@ -16,10 +16,10 @@ class MyAST : public ANTLR_USE_NAMESPACE(antlr)CommonAST {
 public:
    // copy constructor
    MyAST( const MyAST& other )
-	: CommonAST(other)
-	, line(other.line), column(other.column)
-	{
-	}
+  : CommonAST(other)
+  , line(other.line), column(other.column)
+  {
+  }
    // Default constructor
    MyAST( void ) : CommonAST(), line(0), column(0) {}
    virtual ~MyAST( void ) {}
@@ -61,7 +61,7 @@ public:
       column = c;
    }
 
-	/** the initialize methods are called by the tree building constructs
+  /** the initialize methods are called by the tree building constructs
     * depending on which version is called the line number is filled in.
     * e.g. a bit depending on how the node is constructed it will have the
     * line number filled in or not (imaginary nodes!).
@@ -70,21 +70,21 @@ public:
    {
       CommonAST::initialize(t,txt);
       line = 0;
-	  column = 0;
+    column = 0;
    }
 
    virtual void initialize( ANTLR_USE_NAMESPACE(antlr)RefToken t )
    {
       CommonAST::initialize(t);
       line = t->getLine();
-	  column = t->getColumn();
+    column = t->getColumn();
    }
 
    virtual void initialize( RefMyAST ast )
    {
       CommonAST::initialize(ANTLR_USE_NAMESPACE(antlr)RefAST(ast));
       line = ast->getLine();
-	  line = ast->getColumn();
+    line = ast->getColumn();
    }
    // for convenience will also work without
    void addChild( RefMyAST c )

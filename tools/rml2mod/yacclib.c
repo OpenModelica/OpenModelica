@@ -11,8 +11,8 @@ void *alloc_bytes(unsigned nbytes)
 {
     void *p;
     if( (p = malloc(nbytes)) == 0 ) {
-	fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
-	exit(1);
+  fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
+  exit(1);
     }
     return p;
 }
@@ -57,7 +57,7 @@ void *mk_scon(char *s)
     unsigned nwords = RML_HDRSLOTS(header) + 1;
     struct rml_string *p = alloc_words(nwords);
     p->header = header;
-    memcpy(p->data, s, nbytes+1);	/* including terminating '\0' */
+    memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     return RML_TAGPTR(p);
 }
 
@@ -140,7 +140,7 @@ void *mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
 }
 
 void *mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5)
+        void *x5)
 {
     struct rml_struct *p = alloc_words(7);
     p->header = RML_STRUCTHDR(6, ctor);
@@ -154,7 +154,7 @@ void *mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
 }
 
 void *mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5, void *x6)
+        void *x5, void *x6)
 {
     struct rml_struct *p = alloc_words(8);
     p->header = RML_STRUCTHDR(7, ctor);
@@ -169,7 +169,7 @@ void *mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
 }
 
 void *mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5, void *x6, void *x7)
+        void *x5, void *x6, void *x7)
 {
     struct rml_struct *p = alloc_words(9);
     p->header = RML_STRUCTHDR(8, ctor);
@@ -185,7 +185,7 @@ void *mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
 }
 
 void *mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4,
-	      void *x5, void *x6, void *x7, void *x8)
+        void *x5, void *x6, void *x7, void *x8)
 {
     struct rml_struct *p = alloc_words(10);
     p->header = RML_STRUCTHDR(9, ctor);

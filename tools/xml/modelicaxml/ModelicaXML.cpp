@@ -8,8 +8,8 @@
 -------------------------------------------------------------------------------
   Source:
   Revision:
-  Author:	Adrian Pop
-  Date:		2004-05-12
+  Author:  Adrian Pop
+  Date:    2004-05-12
   modification: 2004-11-01 - added directory walking, ModelicaXML class
   modification: 2006-03-12 - updated to Modelica 2.2 and better command line parameters
   modification  2006-11-29 - fix a Linux version
@@ -97,7 +97,7 @@ int usageModelicaXML(void)
 // for the Modelica Simulator
 int main( int argc, char* argv[] )
 {
-	// check if the modelica file is present in the argument list
+  // check if the modelica file is present in the argument list
     if (argc < 2)
     {
       return usageModelicaXML();
@@ -129,69 +129,69 @@ int main( int argc, char* argv[] )
       argvList.pop_front();
       if (*front == "-f")
       {
-	string* file = NULL;
-	while (true)
-	{
-	  if (!argvList.size()) break;
-	  file = argvList.front();
-	  if (!file)
-	  {
-	    if (filesToConvert.size() == 0) return usageModelicaXML();
-	    break;
-	  }
-	  if (*file == "-f" || *file == "--help" ||
-	      *file == "-d" || *file == "-dtd"   ||
-	      *file == "-o")
-	  {
-	    if (filesToConvert.size() == 0) return usageModelicaXML();
-	    break;
-	  }
-	  argvList.pop_front();
-	  filesToConvert.push_back(file);
-	}
+  string* file = NULL;
+  while (true)
+  {
+    if (!argvList.size()) break;
+    file = argvList.front();
+    if (!file)
+    {
+      if (filesToConvert.size() == 0) return usageModelicaXML();
+      break;
+    }
+    if (*file == "-f" || *file == "--help" ||
+        *file == "-d" || *file == "-dtd"   ||
+        *file == "-o")
+    {
+      if (filesToConvert.size() == 0) return usageModelicaXML();
+      break;
+    }
+    argvList.pop_front();
+    filesToConvert.push_back(file);
+  }
       }
       else
-	if (*front == "-d")
-	{
-	  if (!argvList.size()) break;
-	  string *directory = argvList.front();
-	  if (!directory || /* if is empty or if is command line parameter */
-	      (directory && (*directory == "-f" || *directory == "--help" ||
-			     *directory == "-d" || *directory == "-dtd"   ||
-			     *directory == "-o"))) return usageModelicaXML();
-	  /* else just collect the directory to convert */
-	  directoryToConvert = directory;
-	  argvList.pop_front();
-	}
-	else
-	  if (*front == "-dtd")
-	  {
-	    if (!argvList.size()) break;
-	    string *url = argvList.front();
-	    if (!url || /* if is empty or if is command line parameter */
-		(url && (*url == "-f" || *url == "--help" ||
-			 *url == "-d" || *url == "-dtd"   ||
-			 *url == "-o"))) return usageModelicaXML();
-	    /* else just collect the dtd url */
-	    dtdUrl = url;
-	    argvList.pop_front();
-	  }
-	  else
-	    if (*front == "--help") return usageModelicaXML();
-	    else
-	      if (*front == "-o")
-	      {
-		if (!argvList.size()) break;
-		string *f = argvList.front();
-		if (!f || /* if is empty or if is command line parameter */
-		    (f && (*f == "-f" || *f == "--help" ||
-			   *f == "-d" || *f == "-dtd"   ||
-			   *f == "-o"))) return usageModelicaXML();
-		/* else just collect the output file */
-		serializedFile = f;
-		argvList.pop_front();
-	      }
-	      else return usageModelicaXML();
+  if (*front == "-d")
+  {
+    if (!argvList.size()) break;
+    string *directory = argvList.front();
+    if (!directory || /* if is empty or if is command line parameter */
+        (directory && (*directory == "-f" || *directory == "--help" ||
+           *directory == "-d" || *directory == "-dtd"   ||
+           *directory == "-o"))) return usageModelicaXML();
+    /* else just collect the directory to convert */
+    directoryToConvert = directory;
+    argvList.pop_front();
+  }
+  else
+    if (*front == "-dtd")
+    {
+      if (!argvList.size()) break;
+      string *url = argvList.front();
+      if (!url || /* if is empty or if is command line parameter */
+    (url && (*url == "-f" || *url == "--help" ||
+       *url == "-d" || *url == "-dtd"   ||
+       *url == "-o"))) return usageModelicaXML();
+      /* else just collect the dtd url */
+      dtdUrl = url;
+      argvList.pop_front();
+    }
+    else
+      if (*front == "--help") return usageModelicaXML();
+      else
+        if (*front == "-o")
+        {
+    if (!argvList.size()) break;
+    string *f = argvList.front();
+    if (!f || /* if is empty or if is command line parameter */
+        (f && (*f == "-f" || *f == "--help" ||
+         *f == "-d" || *f == "-dtd"   ||
+         *f == "-o"))) return usageModelicaXML();
+    /* else just collect the output file */
+    serializedFile = f;
+    argvList.pop_front();
+        }
+        else return usageModelicaXML();
     }
     /* see what we have */
     ModelicaXML* pModelicaXML = NULL;
@@ -248,15 +248,15 @@ ModelicaXML::ModelicaXML(char* dtdURL)
   // create the document type (according to modelica.dtd)
   pDoctype =
     pDOMImpl->createDocumentType(
-				 X("modelica"),
-				 NULL,
-				 (dtdURL) ? X(string(dtdURL).c_str()) : X(string(modelicaDTDUrl).c_str()));
+         X("modelica"),
+         NULL,
+         (dtdURL) ? X(string(dtdURL).c_str()) : X(string(modelicaDTDUrl).c_str()));
 
   // create the <program> root element
   pModelicaXMLDoc = pDOMImpl->createDocument(
-					     0,                    // root element namespace URI.
-					     X("modelica"),         // root element name
-					     pDoctype);                   // document type object (DTD).
+               0,                    // root element namespace URI.
+               X("modelica"),         // root element name
+               pDoctype);                   // document type object (DTD).
 
   pRootElementModelica = pModelicaXMLDoc->getDocumentElement();
 
@@ -272,9 +272,9 @@ ModelicaXML::ModelicaXML(char* dtdURL)
   theOutputDesc->setEncoding(gOutputEncoding);            
 
   DOMConfiguration* serializerConfig=domSerializer->getDomConfig();
-	// set the pretty print feature
-	if (serializerConfig->canSetParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true))
-	  serializerConfig->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
+  // set the pretty print feature
+  if (serializerConfig->canSetParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true))
+    serializerConfig->setParameter(XMLUni::fgDOMWRTFormatPrettyPrint, true);
 }
 
 ModelicaXML::~ModelicaXML()
@@ -445,14 +445,14 @@ DOMElement* ModelicaXML::createModelicaXMLDOMElement(const char* fileName)
 
 int ModelicaXML::serializeXMLDocumentToFile(mstring xmlFileName)
 {
-	// fix the file
-	XMLFormatTarget *myFormatTarget = new LocalFileFormatTarget(X(xmlFileName.c_str()));
+  // fix the file
+  XMLFormatTarget *myFormatTarget = new LocalFileFormatTarget(X(xmlFileName.c_str()));
   theOutputDesc->setByteStream(myFormatTarget);
 
-	// serialize a DOMNode to the local file "
-	domSerializer->write(pModelicaXMLDoc, theOutputDesc);
+  // serialize a DOMNode to the local file "
+  domSerializer->write(pModelicaXMLDoc, theOutputDesc);
 
-	myFormatTarget->flush();
+  myFormatTarget->flush();
 
   delete myFormatTarget;
 

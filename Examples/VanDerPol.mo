@@ -1,6 +1,6 @@
 // Van der Pol model
 
-model VanDerPol	"Van der Pol oscillator model"
+model VanDerPol  "Van der Pol oscillator model"
   Real x(start = 1);
   Real y(start = 1);
   parameter Real lambda = 0.3;

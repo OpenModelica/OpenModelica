@@ -57,25 +57,25 @@ RML_BEGIN_LABEL(ScanParse__scanparse)
     yyThisFileName = (char*)malloc(strlen(fileStr)+1);
 
     strcpy(yyThisFileName, fileStr);
-	/* printf("Parsing: %s\n", fileStr); */
+  /* printf("Parsing: %s\n", fileStr); */
 
     if( !freopen(fileStr, "r", stdin) )
-	{
-		fprintf(stderr, "freopen %s failed: %s\n",
-		RML_STRINGDATA(a0), strerror(errno));
-		RML_TAILCALLK(rmlFC);
+  {
+    fprintf(stderr, "freopen %s failed: %s\n",
+    RML_STRINGDATA(a0), strerror(errno));
+    RML_TAILCALLK(rmlFC);
     }
 
-	/* reinit the damn lexer */
-	rmlLexerInit();
-	/* parse the damn stuff */
+  /* reinit the damn lexer */
+  rmlLexerInit();
+  /* parse the damn stuff */
     if( yyparse() != 0 )
-	{
-		fprintf(stderr,"Fatal: parsing failed!\n");
-		RML_TAILCALLK(rmlFC);
-	}
-	rmlA0=absyntree;
-	RML_TAILCALLK(rmlSC);
+  {
+    fprintf(stderr,"Fatal: parsing failed!\n");
+    RML_TAILCALLK(rmlFC);
+  }
+  rmlA0=absyntree;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 

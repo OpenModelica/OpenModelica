@@ -267,7 +267,7 @@ BOOL GetSystemOSVersion(LPDWORD dwVersion)
         else if (osvi.dwMajorVersion == 6) { /* Windows 7 and Vista! */
             *dwVersion = OS_VERSION_WINNT;
         }        
-		else {
+    else {
             return FALSE;
         }
         break;
@@ -868,7 +868,7 @@ BOOL IsServiceRunning(LPCSTR szServiceName, LPCSTR szComputerName,
     SC_HANDLE schSCManager;
     SERVICE_STATUS schSStatus;
 
-	return TRUE;
+  return TRUE;
 
     if (g_dwOSVersion == OS_VERSION_WIN9X)
     {
@@ -942,7 +942,7 @@ BOOL FindRunningServices(void)
 BOOL GetOMCServicesStatus()
 {
     am_ClearServicesSt();
-	populateProcesses();
+  populateProcesses();
     FindRunningServices();
     return TRUE;
 }
@@ -1687,11 +1687,11 @@ TCHAR* getProcessName( DWORD processID )
 
     // Print the process name and identifier.
 
-	/*
+  /*
     _tprintf( TEXT("%s  (PID: %u)\n"), szProcessName, processID );
-	*/
+  */
     CloseHandle( hProcess );
-	return _strdup(szProcessName);
+  return _strdup(szProcessName);
 }
 
 void populateProcesses(void)
@@ -1711,17 +1711,17 @@ void populateProcesses(void)
     // Print the name and process identifier for each process.
 
     for ( i = 0; i < cProcesses; i++ )
-	{
+  {
         TCHAR* szPName = getProcessName( aProcesses[i] );
-		if (stricmp(szPName, "omc.exe") == 0)
-		{
-			g_stServices[j].dwPid = aProcesses[i];
-			g_stServices[j].szComputerName = _strdup(g_stComputers[0].szComputerName);
-			g_stServices[j].szDisplayName = _strdup(szPName);
-			g_stServices[j].szDescription = _strdup(szPName);
-			g_stServices[j].szImagePath = _strdup(szPName);
-			g_stServices[j].szServiceName = _strdup(szPName);
-			j++;
-		}
-	}
+    if (stricmp(szPName, "omc.exe") == 0)
+    {
+      g_stServices[j].dwPid = aProcesses[i];
+      g_stServices[j].szComputerName = _strdup(g_stComputers[0].szComputerName);
+      g_stServices[j].szDisplayName = _strdup(szPName);
+      g_stServices[j].szDescription = _strdup(szPName);
+      g_stServices[j].szImagePath = _strdup(szPName);
+      g_stServices[j].szServiceName = _strdup(szPName);
+      j++;
+    }
+  }
 }

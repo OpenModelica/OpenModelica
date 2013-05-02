@@ -46,18 +46,18 @@ RML_BEGIN_LABEL(LoadProgramDB__parse)
     yyrmldbin = fopen(yyrmldbfilename, "r");
     if(yyrmldbin==NULL)
     {
-		fprintf(stderr, "fopen %s failed: %s\n",
-		RML_STRINGDATA(a0), strerror(errno));
-		RML_TAILCALLK(rmlFC);
+    fprintf(stderr, "fopen %s failed: %s\n",
+    RML_STRINGDATA(a0), strerror(errno));
+    RML_TAILCALLK(rmlFC);
     }
     if( yyrmldbparse() != 0 )
-	{
-		fprintf(stderr,"Fatal: parsing failed!\n");
-		RML_TAILCALLK(rmlFC);
-	}
-	yyrmldbrestart();
-	rmlA0=yyrmldb_absyntree;
-	RML_TAILCALLK(rmlSC);
+  {
+    fprintf(stderr,"Fatal: parsing failed!\n");
+    RML_TAILCALLK(rmlFC);
+  }
+  yyrmldbrestart();
+  rmlA0=yyrmldb_absyntree;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
