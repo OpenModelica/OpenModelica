@@ -147,6 +147,8 @@ bom-error:
 tab-error:
 	! find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec echo -n "{} " ';' -exec grep -c "	" '{}' ';' | \
           grep -v " 0\$$" | egrep -v '/omc_release/|/omc_debug/|/omc_profiling/|/GenTest/|/antlr-3.2/|Parser/MetaModelica_|Parser/ParModelica_|Parser/Modelica_3_|Parser/ModelicaParser'
+fix-tab:
+	find . -type f \( ! -path '*/.svn/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i "s/        /  /" "{}"' ";"
 
 thumbsdb-error:
 	! find . -name "Thumbs.db" | grep Thumbs.db
