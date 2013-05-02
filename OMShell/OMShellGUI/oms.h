@@ -90,7 +90,7 @@ public slots:
   void paste();
   void fontSize();
   void aboutOMS();
-  void aboutQT();          // Added 2006-02-21 AF
+  void aboutQT();    // Added 2006-02-21 AF
   void print();
   static bool startServer();
   static void stopServer();
@@ -141,7 +141,7 @@ private:
   QAction* exit_;
   QAction* font_;
   QAction* aboutOMS_;
-  QAction* aboutQT_;        // Added 2006-02-21 AF
+  QAction* aboutQT_;  // Added 2006-02-21 AF
   QAction* clearWindow_;
 };
 

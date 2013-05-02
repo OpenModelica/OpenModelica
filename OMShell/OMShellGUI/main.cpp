@@ -69,13 +69,13 @@ QString unparse(QString value)
     QString res;
     value = value.trimmed();
     if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
-        value = value.mid(1, (value.length() - 2));
-        for (int i=0; i < value.length(); i++) {
-            CONSUME_CHAR(value,res,i);
-        }
-        return res;
+  value = value.mid(1, (value.length() - 2));
+  for (int i=0; i < value.length(); i++) {
+      CONSUME_CHAR(value,res,i);
+  }
+  return res;
     } else {
-        return "";
+  return "";
     }
 }
 

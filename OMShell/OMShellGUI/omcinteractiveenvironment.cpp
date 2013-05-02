@@ -56,7 +56,7 @@ namespace IAEX
     {
       if(!comm_.establishConnection())
       {
-         throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
+   throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
       }
     }
   }
@@ -93,7 +93,7 @@ namespace IAEX
     {
       if(!comm_.establishConnection())
       {
-        throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
+  throw runtime_error("OmcInteractiveEnvironment(): No connection to Omc established");
       }
     }
   }
@@ -135,9 +135,9 @@ namespace IAEX
       omcProcess->start( omc, parameters );
 
       if( omcProcess->waitForStarted(7000) )
-        flag = true;
+  flag = true;
       else
-        flag = false;
+  flag = false;
 
     }
     catch( exception &e )
