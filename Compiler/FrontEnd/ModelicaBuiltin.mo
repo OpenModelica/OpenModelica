@@ -1865,6 +1865,7 @@ end realpath;
 function uriToFilename
   input String uri;
   output String filename := "";
+  output String message := "";
 protected
   String [:,2] libraries;
   Integer numMatches;
@@ -1885,6 +1886,10 @@ algorithm
         return;
       end if;
       path := matches[2];
+      if path == "" then
+        message := "Malformed modelica:// URI path. Package name '" + matches[2]+"', path: '"+matches[3] + "'";
+        return;
+      end if;
       while path <> "" loop
         (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
         path := matches2[3];
@@ -1905,7 +1910,7 @@ algorithm
             end if;
           end for;
           if not isMatch then
-            print("Could not resolve URI: " + uri + "\n");
+            message := "Could not resolve URI: " + uri;
             filename := "";
             return;
           end if;
@@ -1921,12 +1926,13 @@ algorithm
       return;
     elseif not (isModelicaUri or isFileUri) then
       /* Not using else because OpenModelica handling of assertions at runtime is not very good */
-      str := "Unknown URI schema: " + uri;
-      print(str + "\n");
+      message := "Unknown URI schema: " + uri;
       filename := "";
       return;
     else
       /* empty */
+      message := "Unknown error";
+      filename := "";
     end if;
   else
     filename := if regularFileExists(uri) then realpath(uri) else if regexBool(uri, "^/") then uri else (realpath("./") + "/" + uri);

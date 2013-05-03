@@ -816,6 +816,14 @@ algorithm
       then
         (cache,v,stOpt);
 
+    // indexing for tuple[index]
+    case (cache, env, DAE.TSUB(exp = e,ix = indx), impl, stOpt, msg,_)
+      equation
+        (cache,Values.TUPLE(vals),stOpt) = ceval(cache,env, e, impl, stOpt,msg,numIter+1);
+        v = listGet(vals, indx);
+      then
+        (cache,v,stOpt);
+
     case (cache, env, DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = path, foldExp = foldExp, defaultValue = ov, exprType = ty), expr = daeExp, iterators = iterators), impl, stOpt, msg,_)
       equation
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forScopeName), NONE());
