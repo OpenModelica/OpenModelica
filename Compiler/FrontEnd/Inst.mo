@@ -282,7 +282,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
-        cmt = SCode.stripAnnotationFromComment(SCode.getElementComment(cdef));
+        cmt = SCode.getElementComment(cdef);
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
         //System.stopTimer();
         //print("\nSetSource+DAE: " +& realString(System.getTimerIntervalTime()));
@@ -586,7 +586,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
-        cmt = SCode.stripAnnotationFromComment(SCode.getElementComment(cdef));
+        cmt = SCode.getElementComment(cdef);
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,cmt)});
       then
         (cache,env_2,ih,dae);
@@ -789,7 +789,7 @@ algorithm
         dae = reEvaluateInitialIfEqns(cache, env, dae, true);
         elts = DAEUtil.daeElements(dae);
 
-        cmt = SCode.stripAnnotationFromComment(SCode.getElementComment(cls));
+        cmt = SCode.getElementComment(cls);
         dae = DAE.DAE({DAE.COMP(name, elts, inSource, cmt)});
       then
         (cache, env, ih, dae);

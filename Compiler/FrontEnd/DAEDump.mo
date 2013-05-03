@@ -329,7 +329,7 @@ algorithm
         ExpressionDump.printExp(e);
         Print.printBuf(",dims=");
         Dump.printList(dims, ExpressionDump.printSubscript, ", ");
-        comment_str = dumpCommentOptionStr(comment) "  dump_start_value start &" ;
+        comment_str = dumpCommentAnnotationStr(comment) "  dump_start_value start &" ;
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         Print.printBuf(", ");
@@ -348,7 +348,7 @@ algorithm
         Print.printBuf("((" +& s1);
         Print.printBuf("))");
         */
-        comment_str = dumpCommentOptionStr(comment) "  dump_start_value start &" ;
+        comment_str = dumpCommentAnnotationStr(comment) "  dump_start_value start &" ;
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         Print.printBuf(", ");
@@ -1122,70 +1122,69 @@ algorithm
   end match;
 end dumpVarParallelismStr;
 
-public function dumpCommentOptionStr "function: dumpCommentOptionStr
-  Dump Comment option to a string."
-  input Option<SCode.Comment> inAbsynCommentOption;
+protected function dumpCommentStr
+  "Dumps a comment to a string."
+  input Option<SCode.Comment> inComment;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inAbsynCommentOption)
+  outString := match(inComment)
     local
-      String str,cmt;
-      Option<SCode.Annotation> annopt;
-      list<SCode.Annotation> annl;
-      Option<SCode.Comment> cmtopt;
-      list<String> ann_strl;
-    // No comment.
-    case (NONE()) then "";
-    // String comment with possible annotation.
-    case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
-      equation
-        str = stringAppendList({" \"",cmt,"\""});
-        str = str +& dumpAnnotationOptionStr(annopt);
-      then
-        str;
-    // No string comment, but possible annotation.
-    case (SOME(SCode.COMMENT(annopt,NONE())))
-      equation
-        str = dumpAnnotationOptionStr(annopt);
-      then
-        str;
-  end matchcontinue;
-end dumpCommentOptionStr;
+      String cmt;
 
-protected function dumpAnnotationOptionStr
-  input Option<SCode.Annotation> inAnnotationOpt;
+    case SOME(SCode.COMMENT(comment = SOME(cmt)))
+      then stringAppendList({" \"", cmt, "\""});
+
+    else "";
+
+  end match;
+end dumpCommentStr;
+
+protected function dumpClassAnnotationStr
+  input Option<SCode.Comment> inComment;
   output String outString;
 algorithm
-  outString := matchcontinue(inAnnotationOpt)
-    local
-      SCode.Annotation ann;
-      String s;
-    case SOME(ann)
-      equation
-        true = Config.showAnnotations();
-        s = dumpAnnotationStr(ann);
-      then
-        s;
-    case _ then "";
-  end matchcontinue;
-end dumpAnnotationOptionStr;
+  outString := dumpAnnotationStr(inComment, "  ", ";\n");
+end dumpClassAnnotationStr;
+
+protected function dumpCompAnnotationStr
+  input Option<SCode.Comment> inComment;
+  output String outString;
+algorithm
+  outString := dumpAnnotationStr(inComment, " ", "");
+end dumpCompAnnotationStr;
 
 protected function dumpAnnotationStr
-  input SCode.Annotation inAnnotation;
+  input Option<SCode.Comment> inComment;
+  input String inPrefix;
+  input String inSuffix;
   output String outString;
 algorithm
-  outString := match(inAnnotation)
+  outString := matchcontinue(inComment, inPrefix, inSuffix)
     local
+      String ann;
       SCode.Mod ann_mod;
-      String s;
-    case SCode.ANNOTATION(modification = ann_mod)
+
+    case (SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(ann_mod)))), _, _)
       equation
-        s = " annotation" +& SCodeDump.printModStr(ann_mod);
+        true = Config.showAnnotations();
+        ann = inPrefix +& "annotation" +& SCodeDump.printModStr(ann_mod) +& inSuffix;
       then
-        s;
-  end match;
+        ann;
+
+    else "";
+
+  end matchcontinue;
 end dumpAnnotationStr;
+
+public function dumpCommentAnnotationStr
+  input Option<SCode.Comment> inComment;
+  output String outString;
+algorithm
+  outString := match(inComment)
+    case NONE() then "";
+    else dumpCommentStr(inComment) +& dumpCompAnnotationStr(inComment);
+  end match;
+end dumpCommentAnnotationStr;
 
 protected function dumpCommentOption "function: dumpCommentOption_str
   Dump Comment option."
@@ -1193,7 +1192,7 @@ protected function dumpCommentOption "function: dumpCommentOption_str
 protected
   String str;
 algorithm
-  str := dumpCommentOptionStr(comment);
+  str := dumpCommentAnnotationStr(comment);
   Print.printBuf(str);
 end dumpCommentOption;
 
@@ -1634,9 +1633,10 @@ algorithm
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
-        Print.printBuf(dumpCommentOptionStr(c));
+        Print.printBuf(dumpCommentStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
+        Print.printBuf(dumpClassAnnotationStr(c));
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
@@ -1657,11 +1657,12 @@ algorithm
         Print.printBuf(fstr);
         inlineTypeStr = dumpInlineTypeStr(inlineType);
         Print.printBuf(inlineTypeStr);
-        Print.printBuf(dumpCommentOptionStr(c));
+        Print.printBuf(dumpCommentStr(c));
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
         ext_decl_str = dumpExtDeclStr(ext_decl);
         Print.printBuf("\n  " +& ext_decl_str +& "\n");
+        Print.printBuf(dumpClassAnnotationStr(c));
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
@@ -2504,7 +2505,7 @@ algorithm
         ComponentReference.printComponentRef(cr);
         Print.printBuf(", ");
         dumpKind(vk);
-        comment_str = dumpCommentOptionStr(comment);
+        comment_str = dumpCommentAnnotationStr(comment);
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         tmp_str = dumpVariableAttributesStr(dae_var_attr);
@@ -2525,7 +2526,7 @@ algorithm
         dumpKind(vk);
         Print.printBuf(", binding: ");
         ExpressionDump.printExp(e);
-        comment_str = dumpCommentOptionStr(comment);
+        comment_str = dumpCommentAnnotationStr(comment);
         Print.printBuf("  comment:");
         Print.printBuf(comment_str);
         tmp_str = dumpVariableAttributesStr(dae_var_attr);
@@ -3222,9 +3223,10 @@ algorithm
       equation
         str = IOStream.append(str, "class ");
         str = IOStream.append(str, n);
-        str = IOStream.append(str, dumpCommentOptionStr(c));
+        str = IOStream.append(str, dumpCommentStr(c));
         str = IOStream.append(str, "\n");
         str = dumpElementsStream(l, str);
+        str = IOStream.append(str, dumpClassAnnotationStr(c));
         str = IOStream.append(str, "end ");
         str = IOStream.append(str, n);
         str = IOStream.append(str, ";\n");
@@ -3749,7 +3751,7 @@ algorithm
         s4 = ComponentReference.printComponentRefStr(id);
         s7 = dumpVarVisibilityStr(prot);
         sPrl = dumpVarParallelismStr(prl);
-        comment_str = dumpCommentOptionStr(comment);
+        comment_str = dumpCommentAnnotationStr(comment);
         s5 = dumpVariableAttributesStr(dae_var_attr);
         str = IOStream.appendList(str, {"  ",s7,sFinal,sPrl,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
       then
@@ -3774,7 +3776,7 @@ algorithm
         s3_subs = unparseDimensions(dims, printTypeDimension);
         s4 = ComponentReference.printComponentRefStr(id);
         s5 = ExpressionDump.printExpStr(e);
-        comment_str = dumpCommentOptionStr(comment);
+        comment_str = dumpCommentAnnotationStr(comment);
         s6 = dumpVariableAttributesStr(dae_var_attr);
         sPrl = dumpVarParallelismStr(prl);
         s7 = dumpVarVisibilityStr(prot);
@@ -3904,7 +3906,7 @@ protected function dumpFunctionStream
 algorithm
   outStream := matchcontinue (inElement, inStream)
     local
-      String fstr, ext_decl_str, impureStr;
+      String fstr, ext_decl_str, impureStr, ann_str;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
@@ -3925,9 +3927,10 @@ algorithm
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
-        str = IOStream.append(str, dumpCommentOptionStr(c));
+        str = IOStream.append(str, dumpCommentStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
+        str = IOStream.append(str, dumpClassAnnotationStr(c));
         str = IOStream.append(str, "end ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, ";\n\n");
@@ -3947,11 +3950,12 @@ algorithm
         str = IOStream.append(str, "function ");
         str = IOStream.append(str, fstr);
         str = IOStream.append(str, dumpInlineTypeStr(inlineType));
-        str = IOStream.append(str, dumpCommentOptionStr(c));
+        str = IOStream.append(str, dumpCommentStr(c));
         str = IOStream.append(str, "\n");
         str = dumpFunctionElementsStream(daeElts, str);
         ext_decl_str = dumpExtDeclStr(ext_decl);
-        str = IOStream.appendList(str, {"\n  ", ext_decl_str, "\nend ", fstr, ";\n\n"});
+        ann_str = dumpClassAnnotationStr(c);
+        str = IOStream.appendList(str, {"\n  ", ext_decl_str, "\n", ann_str, "end ", fstr, ";\n\n"});
       then
         str;
 
@@ -4106,13 +4110,13 @@ algorithm
 
     case ({c})
       equation
-        str = dumpCommentOptionStr(SOME(c));
+        str = dumpCommentAnnotationStr(SOME(c));
       then
         str;
 
     case (c::rest)
       equation
-        str = dumpCommentOptionStr(SOME(c));
+        str = dumpCommentAnnotationStr(SOME(c));
         str = str +& " " +& cmtListToString(rest);
       then
         str;
