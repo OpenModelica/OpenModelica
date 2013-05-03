@@ -1913,12 +1913,11 @@ algorithm
       end while;
       filename := if isMatch then filename + matches[3] else filename;
     elseif isFileUriAbsolute then
-      (,matches) := regex(uri,"file://(/.*)?",2);
+      (,matches) := regex(uri,"file://(/.*)?",2,caseInsensitive=true);
       filename := matches[2];
     elseif isFileUri and not isFileUriAbsolute then
-      str := "file:// schema without absolute paths are not supported: " + uri;
-      print(str + "\n");
-      filename := "";
+      (,matches) := regex(uri,"file://(.*)",2,caseInsensitive=true);
+      filename := realpath("./") + "/" + matches[2];
       return;
     elseif not (isModelicaUri or isFileUri) then
       /* Not using else because OpenModelica handling of assertions at runtime is not very good */
@@ -1930,7 +1929,7 @@ algorithm
       /* empty */
     end if;
   else
-    filename := uri;
+    filename := if regularFileExists(uri) then realpath(uri) else if regexBool(uri, "^/") then uri else (realpath("./") + "/" + uri);
   end if;
 annotation(Documentation(info="<html>
 Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
