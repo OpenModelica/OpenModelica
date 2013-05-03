@@ -5,6 +5,7 @@
 #include <Solver/IAlgLoopSolver.h>        // Interface for algebraic loops
 #include <Solver/INonLinSolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
+#include <boost/filesystem/path.hpp>
 /*****************************************************************************/
 /**
 Factory used by the system to create a solver for the solution of a (possibly
@@ -24,6 +25,6 @@ private:
   //std::vector<boost::shared_ptr<IKinsolSettings> > _algsolversettings;
   std::vector<boost::shared_ptr<INonLinSolverSettings> > _algsolversettings;
   std::vector<boost::shared_ptr<IAlgLoopSolver> > _algsolvers;
-   fs::path _libraries_path;
+   boost::filesystem::path _libraries_path;
    IGlobalSettings&  _global_settings;
 };

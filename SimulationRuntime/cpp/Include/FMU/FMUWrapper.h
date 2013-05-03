@@ -15,7 +15,7 @@ public:
 /*  independent variables and re-initialization of caching */
     virtual fmiStatus setTime                (fmiReal time);
     virtual fmiStatus setContinuousStates    (const fmiReal x[], size_t nx);
-    virtual fmiStatus completedIntegratorStep(fmiBoolean* callEventUpdate);
+    virtual fmiStatus completedIntegratorStep(fmiBoolean& callEventUpdate);
     virtual fmiStatus setReal                (const fmiValueReference vr[], size_t nvr, const fmiReal    value[]);
     virtual fmiStatus setInteger             (const fmiValueReference vr[], size_t nvr, const fmiInteger value[]);
     virtual fmiStatus setBoolean             (const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]);
@@ -41,7 +41,6 @@ public:
 private:
     FMUGlobalSettings _global_settings;
     boost::shared_ptr<MODEL_IDENTIFIER> _model;
-    double _time;
     double _need_update;
     void updateModel();
 };

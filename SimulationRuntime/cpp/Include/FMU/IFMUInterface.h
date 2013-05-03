@@ -45,7 +45,7 @@ class IFMUInterface
 /*  independent variables and re-initialization of caching */
     virtual fmiStatus setTime                (fmiReal time) = 0;
     virtual fmiStatus setContinuousStates    (const fmiReal x[], size_t nx) = 0;
-    virtual fmiStatus completedIntegratorStep(fmiBoolean* callEventUpdate) = 0;
+    virtual fmiStatus completedIntegratorStep(fmiBoolean& callEventUpdate) = 0;
     virtual fmiStatus setReal                (const fmiValueReference vr[], size_t nvr, const fmiReal    value[]) = 0;
     virtual fmiStatus setInteger             (const fmiValueReference vr[], size_t nvr, const fmiInteger value[]) = 0;
     virtual fmiStatus setBoolean             (const fmiValueReference vr[], size_t nvr, const fmiBoolean value[]) = 0;

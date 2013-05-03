@@ -265,6 +265,8 @@ install (FILES "Include/Core/DataExchange/IHistory.h"
         Include/Core/Utils/extension/impl/library_impl.hpp
         Include/Core/Utils/extension/impl/shared_library.hpp
         Include/Core/Utils/extension/impl/typeinfo.hpp
+        Include/FMU/fmiModelFunctions.h
+        Include/FMU/fmiModelTypes.h
         Include/FMU/FMUGlobalSettings.h
         Include/FMU/IFMUInterface.h
         Include/FMU/FMULibInterface.cpp

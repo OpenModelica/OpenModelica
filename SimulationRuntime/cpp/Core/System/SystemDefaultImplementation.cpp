@@ -4,7 +4,7 @@
 #define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
  
 #include <System/SystemDefaultImplementation.h>
-#include "AlgLoopSolverFactory.h"
+#include <System/AlgLoopSolverFactory.h>
 #include <System/EventHandling.h>
 #include <System/AlgLoopDefaultImplementation.h>
 #include <LibrariesConfig.h>

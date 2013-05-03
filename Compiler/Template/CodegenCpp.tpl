@@ -278,6 +278,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%checkForDiscreteEvents(discreteModelVars,simCode)%>
    <%giveZeroFunc1(zeroCrossings,simCode)%>
    <%setConditions(simCode)%>
+   <%giveConditions(simCode)%>
 
    <%isODE(simCode)%>
    <%DimZeroFunc(simCode)%>
@@ -2454,6 +2455,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Provides current values of root/zero functions
      virtual void giveZeroFunc(double* f);
       virtual void setConditions(bool* c);
+    virtual void giveConditions(bool* c);
     //Called to check conditions for event-handling
     virtual bool checkConditions(const bool* events, bool all);
      //Called to handle all  events occured at same time
@@ -6353,25 +6355,22 @@ end checkConditions2;
 
 template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> whenClauses,SimCode simCode)
 ::=
-  let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = handleSystemEvents1(zeroCrossings, &varDecls /*BUFD*/, simCode)
 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
    {
-    <%varDecls%>
     bool restart=true;
     int iter=0;
-    <%zeroCrossingsCode%>
 
-
+    checkConditions(events,false);
 
     while(restart && !(iter++ > 2*_dimZeroFunc))
     {
 
             //iterate and handle all events inside the eventqueue
+            saveAll();
             restart=_event_handling.IterateEventQueue(_conditions);
 
      }
@@ -6382,28 +6381,6 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
    }
   >>
 end handleSystemEvents;
-
-template handleSystemEvents1(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode)
-::=
-
-  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    handleSystemEvents2(i0, relation_, &varDecls /*BUFD*/,simCode)
-  ;separator="\n";empty)
-end handleSystemEvents1;
-
-template handleSystemEvents2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
-::=
-  match relation
-  case RELATION(index=zerocrossingIndex) then
-    let &preExp = buffer "" /*BUFD*/
-    <<
-    <%preExp%>
-    if(events[<%zerocrossingIndex%>])
-    {
-      checkConditions(events,false);
-    }
-   >>
- end handleSystemEvents2;
 
 template zeroCrossingOpFunc(Operator op)
  "Generates zero crossing function name for operator."
@@ -6434,9 +6411,6 @@ template giveZeroFunc1(list<ZeroCrossing> zeroCrossings,SimCode simCode)
 >>
 end giveZeroFunc1;
 
-
-
-
 template setConditions(SimCode simCode)
 ::=
  match simCode
@@ -6448,6 +6422,18 @@ template setConditions(SimCode simCode)
   }
 >>
 end setConditions;
+
+template giveConditions(SimCode simCode)
+::=
+ match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+<<
+ void <%lastIdentOfPath(modelInfo.name)%>::giveConditions(bool* c)
+  {
+    memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
+  }
+>>
+end giveConditions;
 
 template saveConditions(SimCode simCode)
 ::=

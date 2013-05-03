@@ -23,7 +23,8 @@ install (FILES
 install (FILES
 	${CMAKE_SOURCE_DIR}/Include/Core/System/IAlgLoop.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IAlgLoopSolverFactory.h
-		${CMAKE_SOURCE_DIR}/Include/Core/System/IContinuous.h
+        ${CMAKE_SOURCE_DIR}/Include/Core/System/AlgLoopSolverFactory.h
+        ${CMAKE_SOURCE_DIR}/Include/Core/System/IContinuous.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IMixedSystem.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IEvent.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemProperties.h

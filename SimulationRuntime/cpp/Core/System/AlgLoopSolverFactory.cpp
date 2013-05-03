@@ -1,6 +1,6 @@
 
 #include "stdafx.h"
-#include "AlgLoopSolverFactory.h"
+#include <System/AlgLoopSolverFactory.h>
 #include <LibrariesConfig.h>
  
 AlgLoopSolverFactory::AlgLoopSolverFactory(IGlobalSettings& global_settings)

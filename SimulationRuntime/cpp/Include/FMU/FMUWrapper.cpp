@@ -1,12 +1,18 @@
 #include "Modelica.h"
 #include "FMU/FMUWrapper.h"
+#include "System/AlgLoopSolverFactory.h"
+
 
 FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
     fmiCallbackFunctions functions, fmiBoolean loggingOn) :
   IFMUInterface(instanceName, GUID, functions, loggingOn),
   _global_settings()
 {
-  _model = boost::shared_ptr<MODEL_IDENTIFIER>(new MODEL_IDENTIFIER(_global_settings));
+  boost::shared_ptr<IAlgLoopSolverFactory>
+      solver_factory(new AlgLoopSolverFactory(_global_settings));
+  _model = boost::shared_ptr<MODEL_IDENTIFIER>
+      (new MODEL_IDENTIFIER(&_global_settings, solver_factory));
+  _model->setInitial(true);
 }
 
 FMUWrapper::~FMUWrapper() 
@@ -21,7 +27,6 @@ fmiStatus FMUWrapper::setDebugLogging(fmiBoolean loggingOn)
 /*  independent variables and re-initialization of caching */
 fmiStatus FMUWrapper::setTime(fmiReal time)
 {
-  _time = time;
   _model->setTime(time);
   _need_update = true;
   return fmiOK;
@@ -59,8 +64,10 @@ void FMUWrapper::updateModel()
   _need_update = false;
 }
 
-fmiStatus FMUWrapper::completedIntegratorStep(fmiBoolean* callEventUpdate)
+fmiStatus FMUWrapper::completedIntegratorStep(fmiBoolean& callEventUpdate)
 {
+  _model->saveAll();
+  callEventUpdate = false;
   return fmiOK;
 }
 
@@ -84,10 +91,22 @@ fmiStatus FMUWrapper::setString(const fmiValueReference vr[], size_t nvr,
 /*  of the model equations */
 fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo)
 {
-  double start_time = _time; // TODO set to useful values
-  double end_time = _time; // TODO set to useful values
-  _model->init(start_time, end_time);
-  _need_update = true;
+  _model->init();
+  _model->setInitial(true);
+
+  bool restart=true;
+  int iter=0;
+  while(restart && !(iter++ > 10))
+  {
+    _model->update(IContinuous::ALL);
+    restart = _model->checkForDiscreteEvents();
+  }
+
+  _model->saveAll();
+  _model->checkConditions(0,true);
+ 
+  _model->setInitial(false);
+  _need_update = false;
   // TODO set options for algerbraic solver according to toleranceControlled and relativeTolerance
   eventInfo.terminateSimulation = fmiFalse;
   eventInfo.upcomingTimeEvent = fmiFalse;
@@ -155,7 +174,7 @@ fmiStatus FMUWrapper::eventUpdate(fmiBoolean intermediateResults,
   // everything is done
   eventInfo.iterationConverged = fmiTrue;
   eventInfo.stateValueReferencesChanged = fmiFalse; // will never change for open Modelica Models
-  eventInfo.stateValuesChanged = fmiTrue; // TODO
+  eventInfo.stateValuesChanged = fmiFalse; // TODO
   eventInfo.terminateSimulation = fmiFalse;
   eventInfo.upcomingTimeEvent = fmiFalse;
   //eventInfo.nextEventTime = _time;
