@@ -3280,7 +3280,7 @@ algorithm
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(0),
                         boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
-                        DAEDump.dumpCommentOptionStr(comment));
+                        DAEDump.dumpCommentAnnotationStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
