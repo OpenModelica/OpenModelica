@@ -7262,7 +7262,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
      else
        let ass = '(<%argStr%> >= 0.0)'
        let &preExpMsg = buffer ""
-       let retPre = assertCommonVar(ass,'"Model error: Argument of sqrt(<%printExpStr(e1)%>) was %g should be >= 0", <%argStr%>', context, &preExpMsg, &varDecls, dummyInfo)
+       let retPre = assertCommonVar(ass,'"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%argStr%>', context, &preExpMsg, &varDecls, dummyInfo)
        let &preExp += '<%retPre%>'
        'sqrt(<%argStr%>)')
 

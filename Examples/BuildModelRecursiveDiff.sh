@@ -6,7 +6,7 @@ if ! test -f "$2"; then
 fi
 BUILD="(<tr><td bgcolor=.#ff0000)|(tr.*/td.*/td.*td bgcolor=..FF0000.*/td.*/td.*/td.*/td.*/td)"
 SIM="(<tr><td bgcolor=.#ff0000)|(tr.*/td.*td bgcolor=..FF0000.*/td.*/td.*/td.*/td)"
-SEARCH=">Modelica[A-Za-z0-9._]*(<| [(])"
+SEARCH=">[A-Z][A-Za-z0-9._]*(<| [(])"
 REV1=`grep -o "[(]r[0-9]*" "$1" | tr -d "("`
 REV2=`grep -o "[(]r[0-9]*" "$2" | tr -d "("`
 egrep "$BUILD" $1 | egrep -o "$SEARCH" | tr -d "<> (" > "$1.build"
