@@ -5655,6 +5655,7 @@ template indexedAssign(DAE.Type ty, String exp, DAE.ComponentRef cr,
   else
     let tmp = tempDecl("real_array", &varDecls)
     <<
+    alloc_<%type%>(&<%tmp%>, 1, size_of_dimension_<%type%>(<%exp%>, 1));
     indexed_assign_<%type%>(&<%exp%>, &<%tmp%>, &<%ispec%>);
     copy_<%type%>_data_mem(&<%tmp%>, &<%cref%>);
     >>
@@ -8247,8 +8248,7 @@ end outDecl;
 template tempDecl(String ty, Text &varDecls /*BUFP*/)
  "Declares a temporary variable in varDecls and returns the name."
 ::=
-  let newVar
-         =
+  let newVar =
     match ty /* TODO! FIXME! UGLY! UGLY! hack! */
       case "modelica_metatype"
       case "metamodelica_string"

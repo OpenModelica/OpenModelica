@@ -577,10 +577,11 @@ end ClassAttributes;
 
 /* TODO: create a backend and a simcode uniontype */
 public
-uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),
-    if statements (`if A then B; elseif C; else D;\'), for loops
-    (`for i in 1:10 loop ...; end for;\') and when statements
-    (`when E do S; end when;\')."
+uniontype Statement "There are four kinds of statements:
+    1. assignments ('a := b;')
+    2. if statements ('if A then B; elseif C; else D;')
+    3. for loops ('for i in 1:10 loop ...; end for;') 
+    4. when statements ('when E do S; end when;')"
   record STMT_ASSIGN
     Type type_;
     Exp exp1;
