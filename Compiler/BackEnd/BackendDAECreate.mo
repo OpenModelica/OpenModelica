@@ -2976,13 +2976,25 @@ algorithm
       DAE.Ident iteratorName;
       DAE.Exp e, iteratorExp;
       list<DAE.Exp> iteratorexps, expExpLst;
-
+      list<DAE.Subscript> subs;
+      
     case (v, _, {}, _) then v;
-    case (v, knv, (DAE.STMT_ASSIGN(exp1 =DAE.CREF(componentRef = cr))::xs), true)
+    case (v, knv, ((statement as  DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr)))::xs), true)
       equation
         ((var::_), _) = BackendVariable.getVar(cr, v);
         var = BackendVariable.setVarKind(var, BackendDAE.DISCRETE());
         v_1 = BackendVariable.addVar(var, v);
+        v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
+      then
+        v_2;
+
+    case (v, knv, ((statement as DAE.STMT_ASSIGN(exp1 = DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub= expExpLst)))::xs), true)
+      equation
+        subs = List.map(expExpLst, Expression.makeIndexSubscript);
+        cr = ComponentReference.subscriptCref(cr, subs);
+        (vars, _) = BackendVariable.getVar(cr, v);
+        vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());
+        v_1 = BackendVariable.addVars(vars, v);
         v_2 = detectImplicitDiscreteAlgsStatemens(v_1, knv, xs, true);
       then
         v_2;
@@ -3044,9 +3056,14 @@ algorithm
         v_3 = detectImplicitDiscreteAlgsStatemens(v_2, knv, xs, false);
       then
         v_3;
-    case (v, knv, (_::xs), b)
+    case (v, knv, (statement::xs), true)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, xs, b);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, xs, true);
+      then
+        v_1;
+    case (v, knv, (statement::xs), false)
+      equation
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, xs, false);
       then
         v_1;
   end matchcontinue;
@@ -3070,7 +3087,25 @@ algorithm
       Boolean b;
       DAE.Exp e, ie;
       list<DAE.Exp> rest;
-    case (_, {}, v, _, _, _) then v;
+
+    // case if the loop range can't extend, some vaiables
+    case (_, {}, v, knv, _, _)
+      equation
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, inStatementLst, true);
+      then v_1;
+    case (ie, e::{}, v, knv, statementLst, b)
+      equation
+        (statementLst1, _) = DAEUtil.traverseDAEEquationsStmts(statementLst, replaceExp, ((ie, e)));
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst1, true);
+      then
+        v_1;
+    case (ie, e::rest, v, knv, statementLst, b)
+      equation
+        (statementLst1, _) = DAEUtil.traverseDAEEquationsStmts(statementLst, replaceExp, ((ie, e)));
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, statementLst1, true);
+        v_2 = detectImplicitDiscreteAlgsStatemensFor(ie, rest, v_1, knv, statementLst, b);
+      then
+        v_2;
     case (ie, e::rest, v, knv, statementLst, b)
       equation
         (statementLst1, _) = DAEUtil.traverseDAEEquationsStmts(statementLst, replaceExp, ((ie, e)));
