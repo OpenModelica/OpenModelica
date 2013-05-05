@@ -127,52 +127,57 @@ typedef int mmc_switch_type;
 
 #endif
 
-#define MMC_TAGPTR(p)    ((void*)((char*)(p) + 3))
-#define MMC_UNTAGPTR(x)    ((void*)((char*)(x) - 3))
+#define MMC_TAGPTR(p)             ((void*)((char*)(p) + 3))
+#define MMC_UNTAGPTR(x)           ((void*)((char*)(x) - 3))
 #define MMC_STRUCTHDR(slots,ctor) (((slots) << 10) + (((ctor) & 255) << 2))
-#define MMC_NILHDR    MMC_STRUCTHDR(0,0)
-#define MMC_CONSHDR    MMC_STRUCTHDR(2,1)
-#define MMC_NONEHDR    MMC_STRUCTHDR(0,1)
-#define MMC_OFFSET(p,i)    ((void*)((void**)(p) + (i)))
-#define MMC_FETCH(p)    (*(void**)(p))
-#define MMC_CAR(X)  MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),1))
-#define MMC_CDR(X)  MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),2))
-#define MMC_NILTEST(x)  (MMC_GETHDR(x) == MMC_NILHDR)
-#define MMC_IMMEDIATE(i)  ((void*)(i))
-#define MMC_IS_IMMEDIATE(x)   (!((mmc_uint_t)(x) & 1))
-#define MMC_TAGFIXNUM(i)  ((i) << 1)
-#define MMC_UNTAGFIXNUM(X)  (((mmc_sint_t) X) >> 1)
-#define MMC_REALHDR    (((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
-#define MMC_HDR_IS_FORWARD(hdr) (((hdr) & 3) == 3)
+#define MMC_NILHDR                MMC_STRUCTHDR(0,0)
+#define MMC_CONSHDR               MMC_STRUCTHDR(2,1)
+#define MMC_NONEHDR               MMC_STRUCTHDR(0,1)
+#define MMC_OFFSET(p,i)           ((void*)((void**)(p) + (i)))
+#define MMC_FETCH(p)              (*(void**)(p))
+#define MMC_CAR(X)                MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),1))
+#define MMC_CDR(X)                MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),2))
+#define MMC_NILTEST(x)            (MMC_GETHDR(x) == MMC_NILHDR)
+#define MMC_IMMEDIATE(i)          ((void*)(i))
+#define MMC_IS_IMMEDIATE(x)       (!((mmc_uint_t)(x) & 1))
+#define MMC_TAGFIXNUM(i)          ((i) << 1)
+#define MMC_UNTAGFIXNUM(X)        (((mmc_sint_t) X) >> 1)
+#define MMC_REALHDR               (((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
+#define MMC_HDR_IS_FORWARD(hdr)   (((hdr) & 3) == 3)
 /*
 #define MMC_REALDATA(x) (*((double*)(((mmc_uint_t*)MMC_UNTAGPTR(x))+1)))
 */
-#define MMC_REALDATA(x) (((struct mmc_real*)MMC_UNTAGPTR(x))->data)
-#define MMC_STRINGHDR(nbytes)  (((nbytes)<<(10-MMC_LOG2_SIZE_INT))+((1<<10)+5))
-#define MMC_HDRSLOTS(hdr)  ((hdr) >> 10)
-#define MMC_GETHDR(x)    (*(mmc_uint_t*)MMC_UNTAGPTR(x))
-#define MMC_HDRCTOR(hdr) (((hdr) >> 2) & 255)
-#define MMC_HDRISSTRING(hdr)  (((hdr) & ((1<<(10-MMC_LOG2_SIZE_INT))-1)) == 5)
-#define MMC_HDRSTRLEN(hdr)  (((hdr) >> (10-MMC_LOG2_SIZE_INT)) - MMC_SIZE_INT)
-#define MMC_STRINGDATA(x) (((struct mmc_string*)MMC_UNTAGPTR(x))->data)
-#define MMC_HDRISSTRUCT(hdr) (!((hdr) & 3))
-#define MMC_STRUCTDATA(x) (((struct mmc_struct*)MMC_UNTAGPTR(x))->data)
-#define MMC_ARRAY_TAG 255
-#define MMC_STRLEN(x) (MMC_HDRSTRLEN(MMC_GETHDR(x)))
-#define MMC_OPTIONNONE(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
+#define MMC_REALDATA(x)           (((struct mmc_real*)MMC_UNTAGPTR(x))->data)
+
+#define MMC_GETHDR(x)             (*(mmc_uint_t*)MMC_UNTAGPTR(x))
+
+#define MMC_STRINGHDR(nbytes)     ((((mmc_uint_t)nbytes)<<(3))+((1<<(3+MMC_LOG2_SIZE_INT))+5))
+#define MMC_HDRISSTRING(hdr)      (((hdr) & (7)) == 5)
+#define MMC_HDRSTRLEN(hdr)        (((hdr) >> (3)) - MMC_SIZE_INT)
+#define MMC_STRINGDATA(x)         (((struct mmc_string*)MMC_UNTAGPTR(x))->data)
+#define MMC_HDRSTRINGSLOTS(hdr)   (hdr >> (3+MMC_LOG2_SIZE_INT))
+
+#define MMC_HDRSLOTS(hdr)         ((MMC_HDRISSTRING(hdr)) ? (MMC_HDRSTRINGSLOTS(hdr)) : ((hdr) >> 10))
+#define MMC_HDRCTOR(hdr)          (((hdr) >> 2) & 255)
+#define MMC_HDRISSTRUCT(hdr)      (!((hdr) & 3))
+#define MMC_STRUCTDATA(x)         (((struct mmc_struct*)MMC_UNTAGPTR(x))->data)
+
+#define MMC_ARRAY_TAG             255
+#define MMC_STRLEN(x)             (MMC_HDRSTRLEN(MMC_GETHDR(x)))
+#define MMC_OPTIONNONE(x)         (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)
 
 /*
  * adrpo: if a structure has pointers
  * Bit 0 is zero if the node contains pointers, 1 otherwise.
  */
-#define MMC_HDRHASPTRS(hdr)     (!((hdr) & 1))
+#define MMC_HDRHASPTRS(hdr)       (!((hdr) & 1))
 /*
  * adrpo: if this object was marked, used by GC!
  * [xxxxxxxx1x]        (used during garbage collection) a marked node;
  */
-#define MMC_HDRISMARKED(hdr)  ((hdr) &  2)
-#define MMC_HDR_MARK(hdr)     ((hdr) |  2)
-#define MMC_HDR_UNMARK(hdr)   ((hdr) & ~((mmc_uint_t)2))
+#define MMC_HDRISMARKED(hdr)      ((hdr) &  2)
+#define MMC_HDR_MARK(hdr)         ((hdr) |  2)
+#define MMC_HDR_UNMARK(hdr)       ((hdr) & ~((mmc_uint_t)2))
 
 
 #define MMC_INT_MAX ((1<<30)-1)
@@ -193,7 +198,7 @@ typedef int mmc_switch_type;
     } NAME = { MMC_STRINGHDR(LEN), VAL }
 #define MMC_REFSTRINGLIT(NAME) MMC_TAGPTR(&(NAME).header)
 
-/* adrpo: assume RML_DBL_PAD always! */
+/* adrpo: assume MMC_DBL_PAD always! */
 struct mmc_real_lit { /* there must be no padding between `header' and `data' */
     mmc_uint_t filler;
     mmc_uint_t header;
@@ -216,7 +221,7 @@ struct mmc_cons_struct {
     void *data[2];  /* `slots' elements */
 };
 
-/* adrpo: assume RML_DBL_STRICT always! */
+/* adrpo: assume MMC_DBL_STRICT always! */
 struct mmc_real {
     mmc_uint_t header;  /* MMC_REALHDR */
     mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
