@@ -41,6 +41,7 @@ encapsulated package GraphML
 protected import Util;
 protected import List;
 protected import System;
+protected import IOStream;
 
 /*************************************************
  * types
@@ -183,10 +184,13 @@ public function dumpGraph
   input String name;
 protected
   String str;
+  IOStream.IOStream is;
 algorithm
-  str := dumpStart();
-  str := dumpGraph_Internal(inGraph,"  ",str);
-  str := dumpEnd(str);
+  is := IOStream.create(name, IOStream.LIST());
+  is := dumpStart(is);
+  is := dumpGraph_Internal(inGraph,"  ",is);
+  is := dumpEnd(is);
+  str := IOStream.string(is);
   System.writeFile(name,str);
 end dumpGraph;
 
@@ -197,9 +201,15 @@ public function printGraph
   input Graph inGraph;
   input String name;
 algorithm
-  print(dumpStart());
-  print(dumpGraph_Internal(inGraph,"  ",""));
-  print(dumpEnd(""));
+protected
+  String str;
+  IOStream.IOStream is;
+algorithm
+  is := IOStream.create(name, IOStream.LIST());
+  is := dumpStart(is);
+  is := dumpGraph_Internal(inGraph,"  ",is);
+  is := dumpEnd(is);
+  IOStream.print(is, IOStream.stdOutput);
 end printGraph;
 
 /*************************************************
@@ -207,9 +217,10 @@ end printGraph;
  ************************************************/
 
 protected function dumpStart
-  output String os;
+  input IOStream.IOStream is;
+  output IOStream.IOStream os;
 algorithm
-  os := stringAppendList({
+  os := IOStream.appendList(is, {
    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n",
    "<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:y=\"http://www.yworks.com/xml/graphml\" xmlns:yed=\"http://www.yworks.com/xml/yed/3\" xsi:schemaLocation=\"http://graphml.graphdrawing.org/xmlns http://www.yworks.com/xml/schema/graphml/1.1/ygraphml.xsd\">\n",
    "  <!--Created by yFiles for Java 2.8-->\n",
@@ -227,10 +238,10 @@ algorithm
 end dumpStart;
 
 protected function dumpEnd
-  input String is;
-  output String os;
+  input IOStream.IOStream is;
+  output IOStream.IOStream os;
 algorithm
-  os := stringAppendList({is,
+  os := IOStream.appendList(is, {
    "  <data key=\"d0\">\n",
    "    <y:Resources/>\n",
    "  </data>\n",
@@ -247,59 +258,64 @@ end appendString;
 protected function dumpGraph_Internal
   input Graph inGraph;
   input String inStringDelemiter;
-  input String inString;
-  output String oString;
+  input IOStream.IOStream inIOs;
+  output IOStream.IOStream outIOs;
 algorithm
-  oString := match (inGraph,inStringDelemiter,inString)
+  outIOs := match (inGraph,inStringDelemiter,inIOs)
     local
       String id,sd,t,s;
       Boolean directed;
       list<Node> nodes;
       list<Edge> edges;
-     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges),_,_)
+      IOStream.IOStream is;
+      
+     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges),_,is)
        equation
          sd = Util.if_(directed,"directed","undirected");
          t = appendString(inStringDelemiter);
-         s = stringAppendList({inString,inStringDelemiter,"<graph edgedefault=\"", sd , "\" id=\"" , id , "\">\n"});
-         s = List.fold1(nodes,dumpNode,t,s);
-         s = List.fold1(edges,dumpEdge,t,s);
-         s = stringAppendList({s,t , "<data key=\"d7\"/>\n"});
-         s = stringAppendList({s,inStringDelemiter , "</graph>\n"});
+         is = IOStream.appendList(is, {inStringDelemiter, "<graph edgedefault=\"", sd, "\" id=\"", id, "\">\n"});
+         is = List.fold1(nodes, dumpNode, t, is);
+         is = List.fold1(edges, dumpEdge, t, is);
+         is = IOStream.appendList(is, {t, "<data key=\"d7\"/>\n"});
+         is = IOStream.appendList(is, {inStringDelemiter , "</graph>\n"});
        then
-        s;
+        is;
+   
    end match;
 end dumpGraph_Internal;
 
 protected function dumpNode
   input Node inNode;
   input String inString;
-  input String iAcc;
-  output String oAcc;
+  input IOStream.IOStream iAcc;
+  output IOStream.IOStream oAcc;
 algorithm
   oAcc := match (inNode,inString,iAcc)
-  local
-    String id,t,text,st_str,color,s;
-    ShapeType st;
-     case(NODE(id=id,text=text,color=color,shapeType=st) ,_,_)
-       equation
+    local
+      String id,t,text,st_str,color,s;
+      ShapeType st;
+      IOStream.IOStream is;
+     
+    case(NODE(id=id,text=text,color=color,shapeType=st), _, _)
+      equation
         t = appendString(inString);
         st_str = getShapeTypeString(st);
-        s = stringAppendList({iAcc,
-           inString , "<node id=\"" , id , "\">\n",
-           t , "<data key=\"d5\"/>\n",
-           t , "<data key=\"d6\">\n",
-           "        <y:ShapeNode>\n",
-           "          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n",
-           "          <y:Fill color=\"#" , color , "\" transparent=\"false\"/>\n",
-           "          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n",
-           "          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">" , text ,"</y:NodeLabel>\n",
-           "          <y:Shape type=\"" , st_str , "\"/>\n",
-           "        </y:ShapeNode>\n",
-           t , "</data>\n",
-           inString ,"</node>\n"});
-       then
-        s;
-   end match;
+        is = IOStream.appendList(iAcc, {
+          inString, "<node id=\"", id, "\">\n",
+          t, "<data key=\"d5\"/>\n",
+          t, "<data key=\"d6\">\n",
+          "        <y:ShapeNode>\n",
+          "          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n",
+          "          <y:Fill color=\"#", color, "\" transparent=\"false\"/>\n",
+          "          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n",
+          "          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">", text, "</y:NodeLabel>\n",
+          "          <y:Shape type=\"", st_str, "\"/>\n",
+          "        </y:ShapeNode>\n",
+          t, "</data>\n",
+          inString ,"</node>\n"});
+      then
+        is;
+  end match;
 end dumpNode;
 
 protected function getShapeTypeString
@@ -323,39 +339,42 @@ end getShapeTypeString;
 protected function dumpEdge
   input Edge inEdge;
   input String inString;
-  input String iAcc;
-  output String oAcc;
+  input IOStream.IOStream iAcc;
+  output IOStream.IOStream oAcc;
 algorithm
   oAcc := match (inEdge,inString,iAcc)
-  local
-    String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s;
-    LineType lt;
-    Option<ArrowType> sarrow,tarrow;
-    Option<EdgeLabel> label;
-   case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,label=label,arrows=(sarrow,tarrow)),_,_)
-     equation
-       t = appendString(inString);
-       lt_str = getLineTypeString(lt);
-       sl_str = getEdgeLabelString(label);
-       sa_str = getArrowTypeString(sarrow);
-       ta_str = getArrowTypeString(tarrow);
-       s = stringAppendList({iAcc,
-           inString , "<edge id=\"" , id , "\" source=\"" , source , "\" target=\"" , target , "\">\n",
-           t , "<data key=\"d8\"/>\n",
-           t , "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n",
-           t , "<data key=\"d10\">\n",
-           "        <y:PolyLineEdge>\n",
-           "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
-           "          <y:LineStyle color=\"#" , color , "\" type=\"" , lt_str , "\" width=\"2.0\"/>\n",
-           sl_str,
-           "          <y:Arrows source=\"" , sa_str , "\" target=\"" , ta_str , "\"/>\n",
-           "          <y:BendStyle smoothed=\"false\"/>\n",
-           "        </y:PolyLineEdge>\n",
-           t , "</data>\n",
-           inString , "</edge>\n"});
-     then
-      s;
-   end match;
+    local
+      String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s;
+      LineType lt;
+      Option<ArrowType> sarrow,tarrow;
+      Option<EdgeLabel> label;
+      IOStream.IOStream is;
+    
+    case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,label=label,arrows=(sarrow,tarrow)),_,_)
+      equation
+        t = appendString(inString);
+        lt_str = getLineTypeString(lt);
+        sl_str = getEdgeLabelString(label);
+        sa_str = getArrowTypeString(sarrow);
+        ta_str = getArrowTypeString(tarrow);
+        is = IOStream.appendList(iAcc, {
+          inString, "<edge id=\"", id, "\" source=\"", source, "\" target=\"", target, "\">\n",
+          t, "<data key=\"d8\"/>\n",
+          t, "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n",
+          t, "<data key=\"d10\">\n",
+          "        <y:PolyLineEdge>\n",
+          "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
+          "          <y:LineStyle color=\"#", color, "\" type=\"", lt_str, "\" width=\"2.0\"/>\n",
+          sl_str,
+          "          <y:Arrows source=\"", sa_str, "\" target=\"", ta_str, "\"/>\n",
+          "          <y:BendStyle smoothed=\"false\"/>\n",
+          "        </y:PolyLineEdge>\n",
+          t, "</data>\n",
+          inString, "</edge>\n"});
+      then
+        is;
+  
+  end match;
 end dumpEdge;
 
 protected function getEdgeLabelString

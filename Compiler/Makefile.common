@@ -145,7 +145,6 @@ Derive.mo \
 DumpHTML.mo \
 EvaluateParameter.mo \
 ExpressionSolve.mo \
-GraphML.mo \
 HashTableCrSimVars.mo \
 IndexReduction.mo \
 Initialization.mo \
@@ -216,6 +215,7 @@ HashTablePathToFunction.mo \
 HashTableStringToPath.mo \
 HashTableExpToExp.mo \
 HashTableExpToIndex.mo \
+GraphML.mo \
 IOStream.mo \
 List.mo \
 Util.mo \
