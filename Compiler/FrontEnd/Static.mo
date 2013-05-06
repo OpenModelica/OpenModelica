@@ -10794,6 +10794,7 @@ algorithm
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,_,_)
       equation
+        /* Disable warning since this seems to be the wrong place to check it or the message is at least wrong
         genWarning = Types.isFixedWithNoBinding(tt, SCode.PARAM());
         s = ComponentReference.printComponentRefStr(cr);
         genWarning = not (boolNot(genWarning) or
@@ -10803,6 +10804,7 @@ algorithm
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
         s = pre_str +& s;
         Debug.bcall3(genWarning,Error.addSourceMessage,Error.UNBOUND_PARAMETER_WARNING,{s}, info);
+        */
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
