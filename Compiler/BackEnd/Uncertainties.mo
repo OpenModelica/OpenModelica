@@ -23,6 +23,7 @@ package Uncertainties
   import BackendDAECreate;
   import BackendDAEUtil;
   import BackendDAETransform;
+  import BackendDump;
   import BackendEquation;
   import HashTable;
   import ComponentReference;
@@ -50,6 +51,7 @@ uniontype AliasSet
     HashSet.HashSet symbols;
     HashTable2.HashTable expl;
     HashTable.HashTable signs;
+    Option<DAE.ElementSource> source;
   end ALIASSET;
 end AliasSet;
 
@@ -92,7 +94,7 @@ algorithm
       BackendDAE.EqSystem currentSystem;
 
       ExtIncidenceMatrix mExt;
-      list<Integer> setS,setC,unknownsVarsMatch,remainingEquations;
+      list<Integer> setS,setC,unknownsVarsMatch,remainingEquations,removed_equations_squared;
 
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
@@ -114,8 +116,6 @@ algorithm
         //print("* Lowered Ok \n");
 
         dlow_1 = removeSimpleEquationsUC(dlow_1);
-
-
 
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
@@ -209,8 +209,11 @@ algorithm
               printSep(getMathematicaText("Remaining equations"));
               printSep(equationsToMathematicaGrid(remainingEquations,allEqs,allVars,sharedVars,mapIncRowEqn));
 
-        (setC)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
+        (setC,removed_equations_squared)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
 
+        print(Util.if_(listLength(removed_equations_squared)>0,"Warning: the system is ill-posed. One or more equations have been removed from squared system of knowns.\n",""));
+              printSep(getMathematicaText("Equations removed from squared blocks (with more than one equation)"));
+              printSep(equationsToMathematicaGrid(removed_equations_squared,allEqs,allVars,sharedVars,mapIncRowEqn));
 
               printSep(getMathematicaText("Final Equations"));
               printSep(equationsToMathematicaGrid(setC,allEqs,allVars,sharedVars,mapIncRowEqn));
@@ -363,10 +366,10 @@ out:=matchcontinue(vars,eqns)
     equation
     then {};
   case({},_)
-    equation print("Warning: The system of unknowns is not squared. There are more equations than variables.\n");
+    equation print("Warning: The system is ill-posed. When computing the unknowns, there are more equations than variables.\n");
     then {};
   case(_,{})
-    equation print("Warning: The system of unknowns is not squared. There are more variables than equations.\n");
+    equation print("Warning: The system is ill-posed. When computing the unknowns, there are more variables than equations.\n");
     then {};
   case(var::var_t,eqn::eqn_t)
       equation
@@ -708,25 +711,37 @@ protected function getEquationsForKnownsSystem
   input BackendDAE.Variables knownVariables;
   input array<Integer> mapIncRowEqn;
   output list<Integer> setCOut;
+  output list<Integer> removed_equations_squaredOut;
 algorithm
-(setCOut):=matchcontinue(m,knowns,unknowns,setS,allEqs,variables,knownVariables,mapIncRowEqn)
+(setCOut,removed_equations_squaredOut):=matchcontinue(m,knowns,unknowns,setS,allEqs,variables,knownVariables,mapIncRowEqn)
   local
     ExtIncidenceMatrix knownsSystem,knownsSystemComp;
     list<Integer> xEqMap,xVarMap;
     BackendDAE.IncidenceMatrix mx,mt;
     array<Integer> ass1,ass2;
     list<list<Integer>> comps,comps_fixed;
-    list<Integer> setC;
+    list<Integer> setC,removed_equations_squared;
     Integer nxVarMap,nxEqMap,size;
   case(_,{},_,_,_,_,_,_)
     equation
-    then ({});
+    then ({},{});
   case(_,_,_,_,_,_,_,_)
       equation
         //print("Knowns = ");printIntList(knowns);print(";\n");
         //print("Cleaning up system of knowns..");
         knownsSystem = removeEquations(m,setS);
         knownsSystem = removeUnrelatedEquations(knownsSystem,knowns);
+        true=intEq(listLength(knownsSystem),0);
+        print("Warning: The system is ill-posed. There are no remaining equations containing the knowns.\n");
+    then
+      ({},{});    
+  case(_,_,_,_,_,_,_,_)
+      equation
+        //print("Knowns = ");printIntList(knowns);print(";\n");
+        //print("Cleaning up system of knowns..");
+        knownsSystem = removeEquations(m,setS);
+        knownsSystem = removeUnrelatedEquations(knownsSystem,knowns);
+
 
         printSep(getMathematicaText("System of knowns after step 7"));
         printSep(equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn));
@@ -765,7 +780,7 @@ algorithm
         //BackendDump.dumpComponentsOLD(comps);
 
         comps_fixed =List.map1(comps,restoreIndicesEquivalence,xEqMap);
-        knownsSystem=removeEquationInSquaredBlock(knownsSystem,knowns,unknowns,comps_fixed);
+        (knownsSystem,removed_equations_squared)=removeEquationInSquaredBlock(knownsSystem,knowns,unknowns,comps_fixed);
         //BackendDump.dumpComponentsOLD(comps_fixed);
 
         comps_fixed = List.map1(comps_fixed,restoreIndicesEquivalence,arrayList(mapIncRowEqn)); // this is done to print the correct numbers
@@ -773,11 +788,12 @@ algorithm
         printSep("Grid["+&listString(List.map(comps_fixed,intListString))+&",Frame->All]");
 
 
-        printSep(equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn));
         printSep(getMathematicaText("System of knowns after step 8 and 9"));
+        printSep(equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn));
 
+        checkSystemContainsVars(knownsSystem,knowns,variables);
         setC=getEquationsNumber(knownsSystem);
-      then (setC);
+      then (setC,removed_equations_squared);
 end matchcontinue;
 end getEquationsForKnownsSystem;
 
@@ -1103,15 +1119,18 @@ protected function removeEquationInSquaredBlock
   input list<Integer> unknowns;
   input list<list<Integer>> components;
   output ExtIncidenceMatrix mOut;
+  output list<Integer> removedEquations;
 algorithm
-mOut:=matchcontinue(m,knowns,unknowns,components)
+(mOut,removedEquations):=matchcontinue(m,knowns,unknowns,components)
   local
     list<Integer> h,vars,usedKnowns;
     list<list<Integer>> t;
     ExtIncidenceMatrix compEqns,compsSorted,tailEquations,inner_ret;
+    Integer removeEquation;
+    list<Integer> removed_inner;
   case(_,_,_,{})
     equation
-    then {};
+    then ({},{});
   case(_,_,_,h::t)
     equation
        compEqns=getEquations(m,h);
@@ -1119,17 +1138,18 @@ mOut:=matchcontinue(m,knowns,unknowns,components)
        usedKnowns=List.intersectionOnTrue(vars,knowns,intEq);
        true=intEq(listLength(h),listLength(usedKnowns));
        compsSorted=listReverse(sortEquations(compEqns,unknowns));
-       tailEquations=listTail(compsSorted);
-       inner_ret=removeEquationInSquaredBlock(m,knowns,unknowns,t);
-    then listAppend(tailEquations,inner_ret);
+       (removeEquation,_)::tailEquations=compsSorted;
+       (inner_ret,removed_inner)=removeEquationInSquaredBlock(m,knowns,unknowns,t);
+       removed_inner = Util.if_(listLength(compsSorted)>1,removeEquation::removed_inner,removed_inner);
+    then (listAppend(tailEquations,inner_ret),removed_inner);
   case(_,_,_,h::t)
     equation
        compEqns=getEquations(m,h);
        vars=getVariables(compEqns);
        usedKnowns=List.intersectionOnTrue(vars,knowns,intEq);
        false=intEq(listLength(h),listLength(usedKnowns));
-       inner_ret=removeEquationInSquaredBlock(m,knowns,unknowns,t);
-    then listAppend(compEqns,inner_ret);
+       (inner_ret,removed_inner)=removeEquationInSquaredBlock(m,knowns,unknowns,t);
+    then (listAppend(compEqns,inner_ret),removed_inner);
 end matchcontinue;
 end removeEquationInSquaredBlock;
 
@@ -1298,6 +1318,35 @@ protected function removeUnrelatedEquations
 algorithm
 mOut:=List.filter1OnTrue(m,removeUnrelatedEquations2,knowns);
 end removeUnrelatedEquations;
+
+protected function checkSystemContainsVars "Check that each variable is contained in the system"
+    input ExtIncidenceMatrix m;
+    input list<Integer> knows;
+    input BackendDAE.Variables variables;
+algorithm
+    _:=matchcontinue(m,knows,variables)
+        local
+            Integer h;
+            list<Integer> t,ret;
+            BackendDAE.Var not_found_var;
+            String str;
+        case(_,{},_)
+        then ();
+        case(_,h::t,_)
+            equation
+                true=intEq(listLength(removeUnrelatedEquations(m,{h})),0);
+                not_found_var=BackendVariable.getVarAt(variables,h);
+                str = ComponentReference.crefStr(BackendVariable.varCref(not_found_var));
+                print("Warning: The variable '"+&str+&"' was not found in the system of knowns\n");
+                checkSystemContainsVars(m,t,variables);
+            then ();
+        case(_,h::t,_)
+            equation
+               false=intEq(listLength(removeUnrelatedEquations(m,{h})),0);
+                checkSystemContainsVars(m,t,variables);
+            then ();
+    end matchcontinue;
+end checkSystemContainsVars;
 
 protected function getSystemForUnknowns
   input ExtIncidenceMatrix m;
@@ -2685,16 +2734,15 @@ end fixSingOfExp;
 protected function generateEquation
   input DAE.ComponentRef cr;
   input DAE.Exp e;
+  input DAE.ElementSource source;
   output BackendDAE.Equation out;
 algorithm
-  out := match (cr,e)
+  out := match (cr,e,source)
     local
       Boolean differentiated;
-      DAE.ElementSource source;
-    case (_,_)
+    case (_,_,_)
       equation
         // These values are temporary
-        source=DAE.emptyElementSource;
         differentiated=false;
       then
         BackendDAE.SOLVED_EQUATION(cr,e,source,differentiated);
@@ -2723,6 +2771,7 @@ algorithm
       BackendVarTransform.VariableReplacements new_repl;
       list<BackendDAE.Equation> new_eqns;
       BackendDAE.Equation eqn;
+      DAE.ElementSource source;
     case(_,{},_,_,_,_,_,_)
       then (repl_acc,eqns_acc,removed_vars_acc);
     case(_,h::t,_,_,_,_,_,_)
@@ -2748,7 +2797,8 @@ algorithm
         (sign2,_)=getAliasSetExpressionAndSign(h,set);
         sign=Util.if_(sign2<0,-sign1,sign1);
         e=fixSingOfExp(sign,e);
-        eqn=generateEquation(h,e);
+        source=getAliasSetSource(set);
+        eqn=generateEquation(h,e,source);
         new_eqns=eqn::eqns_acc;
         (new_repl,new_eqns,new_removed_vars)=createReplacementsAndEquationsForSet(solution,t,set,vars,knvars,repl_acc,new_eqns,removed_vars_acc);
       then (new_repl,new_eqns,new_removed_vars);
@@ -2822,7 +2872,7 @@ algorithm
       then (new_sets,eqn_acc);
     case (eqn::t,_,_)
       equation
-        (new_sets,eqn_acc) = separateAliasSetsAndEquations(t,sets,eqn_accIn);
+        (new_sets,eqn_acc) = separateAliasSetsAndEquations(t,sets,eqn::eqn_accIn);
       then (new_sets,eqn_acc);
    end match;
 end separateAliasSetsAndEquations;
@@ -2846,26 +2896,31 @@ algorithm
       list<AliasSet> new_sets;
       DAE.Type tp;
       DAE.Exp e1,e2;
+      Option<DAE.ElementSource> source;
     // a = b;
     case (_,_,_,e1 as DAE.CREF(componentRef = cr1),e2 as DAE.CREF(componentRef = cr2))
       equation
+        source=getSourceIfApproximated(eqn);
         tp = DAE.T_REAL_DEFAULT; //Assume is real
-        new_sets=pushToSetList(sets,cr1,e1,1,cr2,e2,1);
+        new_sets=pushToSetList(sets,cr1,e1,1,cr2,e2,1,source);
       then (new_sets,eqn_acc);
     // a = -b;
     case (_,_,_,e1 as DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(tp),e2 as DAE.CREF(componentRef = cr2)))
       equation
-        new_sets=pushToSetList(sets,cr1,e1,1,cr2,e2,-1);
+        source=getSourceIfApproximated(eqn);
+        new_sets=pushToSetList(sets,cr1,e1,1,cr2,e2,-1,source);
       then (new_sets,eqn_acc);
     // -a = b;
     case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef = cr1)),e2 as DAE.CREF(componentRef = cr2))
       equation
-        new_sets=pushToSetList(sets,cr1,e1,-1,cr2,e2,1);
+        source=getSourceIfApproximated(eqn);
+        new_sets=pushToSetList(sets,cr1,e1,-1,cr2,e2,1,source);
       then (new_sets,eqn_acc);
     // -a = -b;
     case (_,_,_,e1 as DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef = cr1)),e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr2)))
       equation
-        new_sets=pushToSetList(sets,cr1,e1,-1,cr2,e2,-1);
+        source=getSourceIfApproximated(eqn);
+        new_sets=pushToSetList(sets,cr1,e1,-1,cr2,e2,-1,source);
       then (new_sets,eqn_acc);
     else
       equation
@@ -2873,6 +2928,14 @@ algorithm
     end match;
 end addPairToSet;
 
+protected function getSourceIfApproximated "Returns SOME(source) if the equation is approximated"
+    input BackendDAE.Equation eqn;    
+    output Option<DAE.ElementSource> source;
+    protected DAE.ElementSource temp;
+algorithm
+    temp:=BackendEquation.equationSource(eqn);
+    source:=Util.if_(isApproximatedEquation(eqn),SOME(temp),NONE());
+end getSourceIfApproximated;
 
 /*     Set handling functions    */
 
@@ -2885,15 +2948,16 @@ protected function createSet
   input DAE.ComponentRef cr2;
   input DAE.Exp e2;
   input Integer sign2In;
+  input Option<DAE.ElementSource> source;
   output AliasSet setOut;
 algorithm
-  setOut:=match(cr1,e1,sign1In,cr2,e2,sign2In)
+  setOut:=match(cr1,e1,sign1In,cr2,e2,sign2In,source)
     local
       Integer sign1,sign2;
       HashSet.HashSet new_symbols;
       HashTable.HashTable new_signs;
       HashTable2.HashTable new_expl;
-    case(_,_,sign1,_,_,sign2)
+    case(_,_,sign1,_,_,sign2,_)
       equation
         new_signs=HashTable.emptyHashTable();
         new_symbols=HashSet.emptyHashSet();
@@ -2904,7 +2968,7 @@ algorithm
         new_symbols=BaseHashSet.add(cr2,new_symbols);
         new_expl=BaseHashTable.add((cr1,e1),new_expl);
         new_expl=BaseHashTable.add((cr2,e2),new_expl);
-      then ALIASSET(new_symbols,new_expl,new_signs);
+      then ALIASSET(new_symbols,new_expl,new_signs,source);
   end match;
 end createSet;
 
@@ -2919,15 +2983,17 @@ protected function addToSet
   input DAE.ComponentRef cr2;
   input DAE.Exp e2;
   input Integer sign2In;
+  input Option<DAE.ElementSource> sourceIn;
   output AliasSet setOut;
 algorithm
-  setOut:=match(set,cr1,e1,sign1In,cr2,e2,sign2In)
+  setOut:=match(set,cr1,e1,sign1In,cr2,e2,sign2In,sourceIn)
     local
       Integer current_sign,sign1_temp,sign1,sign2;
       HashSet.HashSet symbols,new_symbols;
       HashTable.HashTable signs,new_signs;
       HashTable2.HashTable expl,new_expl;
-    case(ALIASSET(symbols,expl,signs),_,_,sign1,_,_,sign2)
+      Option<DAE.ElementSource> source_current,source_new;
+    case(ALIASSET(symbols,expl,signs,source_current),_,_,sign1,_,_,sign2,_)
       equation
         // fix the signs of the new alias
         current_sign=BaseHashTable.get(cr1,signs); // get existing sign of cr1
@@ -2937,9 +3003,31 @@ algorithm
         new_signs=BaseHashTable.add((cr2,sign2),signs);
         new_symbols=BaseHashSet.add(cr2,symbols);
         new_expl=BaseHashTable.add((cr2,e2),expl);
-      then ALIASSET(new_symbols,expl,new_signs);
+        source_new=updateSource(source_current,sourceIn);
+      then ALIASSET(new_symbols,expl,new_signs,source_new);
   end match;
 end addToSet;
+
+protected function updateSource "Takes the source of the current set and the new alias.
+If the existing source is NONE and the new SOME, if is replaced, otherwise the source is kept.
+Note: the source is only added when the equation is approximated."
+  input Option<DAE.ElementSource> source1;  
+  input Option<DAE.ElementSource> source2;  
+  output Option<DAE.ElementSource> sourceOut;  
+algorithm
+  sourceOut:=match(source1,source2)
+        local
+        DAE.ElementSource s;
+        case(NONE(),NONE())
+            then NONE();
+        case(SOME(s),NONE())
+            then SOME(s);
+        case(NONE(),SOME(s))
+            then SOME(s);    
+        case(SOME(s),SOME(_))
+            then SOME(s);
+  end match;  
+end updateSource;
 
 protected function existsInSet
 " Returns true if the cr belongs to an alias set."
@@ -2951,7 +3039,7 @@ algorithm
     local
       HashSet.HashSet symbols;
       Boolean ret;
-    case(ALIASSET(symbols,_,_),_)
+    case(ALIASSET(symbols,_,_,_),_)
       equation
         ret = BaseHashSet.has(cr,symbols);
       then ret;
@@ -2968,29 +3056,30 @@ protected function pushToSetList
   input DAE.ComponentRef cr2;
   input DAE.Exp e2;
   input Integer sign2;
+  input Option<DAE.ElementSource> source;
   output list<AliasSet> setsOut;
 algorithm
-  setsOut:=matchcontinue(sets,cr1,e1,sign1,cr2,e2,sign2)
+  setsOut:=matchcontinue(sets,cr1,e1,sign1,cr2,e2,sign2,source)
     local
       AliasSet new_set,h;
       list<AliasSet> t,inner_sets;
-    case({},_,_,_,_,_,_)
+    case({},_,_,_,_,_,_,_)
       equation  // None of the crs exist in a set. Create a new one
-        new_set = createSet(cr1,e1,sign1,cr2,e2,sign2);
+        new_set = createSet(cr1,e1,sign1,cr2,e2,sign2,source);
       then {new_set};
-    case(h::t,_,_,_,_,_,_)
+    case(h::t,_,_,_,_,_,_,_)
       equation
         true=existsInSet(h,cr1); // cr1 exists in a set
-        new_set=addToSet(h,cr1,e1,sign1,cr2,e2,sign2);
+        new_set=addToSet(h,cr1,e1,sign1,cr2,e2,sign2,source);
       then new_set::t;
-    case(h::t,_,_,_,_,_,_)
+    case(h::t,_,_,_,_,_,_,_)
       equation
         true=existsInSet(h,cr2); // cr2 exists in a set
-        new_set=addToSet(h,cr2,e2,sign2,cr1,e1,sign1);
+        new_set=addToSet(h,cr2,e2,sign2,cr1,e1,sign1,source);
       then new_set::t;
-    case(h::t,_,_,_,_,_,_)
+    case(h::t,_,_,_,_,_,_,_)
       equation
-        inner_sets=pushToSetList(t,cr1,e1,sign1,cr2,e2,sign2);
+        inner_sets=pushToSetList(t,cr1,e1,sign1,cr2,e2,sign2,source);
       then h::inner_sets;
   end matchcontinue;
 end pushToSetList;
@@ -3004,12 +3093,26 @@ out:=match(set)
   local
     list<DAE.ComponentRef> crl;
     HashSet.HashSet symbols;
-  case(ALIASSET(symbols,_,_))
+  case(ALIASSET(symbols,_,_,_))
     equation
       crl=BaseHashSet.hashSetList(symbols);
     then crl;
 end match;
 end getAliasSetSymbolList;
+
+protected function getAliasSetSource
+  input AliasSet set;
+  output DAE.ElementSource out;
+algorithm
+out:=match(set)
+  local
+    DAE.ElementSource source;
+  case(ALIASSET(_,_,_,SOME(source)))
+    then source;
+  case(ALIASSET(_,_,_,NONE()))
+    then DAE.emptyElementSource;  
+end match;
+end getAliasSetSource;
 
 protected function getAliasSetExpressionAndSign
   input DAE.ComponentRef cr;
@@ -3023,7 +3126,7 @@ algorithm
     HashTable.HashTable signs;
     Integer sign;
     DAE.Exp e;
-  case(_,ALIASSET(_,expl,signs))
+  case(_,ALIASSET(_,expl,signs,_))
     equation
       sign=BaseHashTable.get(cr,signs);
       e=BaseHashTable.get(cr,expl);
@@ -3043,13 +3146,15 @@ algorithm
       list<Integer> sign_values;
       HashSet.HashSet symbols;
       HashTable.HashTable signs;
+      Option<DAE.ElementSource> source;
     case({})
       then ();
-    case(ALIASSET(symbols,_,signs)::t)
+    case(ALIASSET(symbols,_,signs,source)::t)
       equation
         crefs=BaseHashSet.hashSetList(symbols);
         sign_values=List.map1(crefs,BaseHashTable.get,signs);
         dumpAliasSets2(crefs,sign_values);
+        dumpAliasSets3(source);
         print("\n");
         dumpAliasSets(t);
       then ();
@@ -3077,6 +3182,26 @@ algorithm
       then ();
   end match;
 end dumpAliasSets2;
+
+protected function dumpAliasSets3 "
+Auxiliary function of dumpAliasSets. Prints true if the alias came from an approximated equation."
+  input Option<DAE.ElementSource> sourceIn;
+algorithm
+  _ :=match(sourceIn)
+  local
+    list<SCode.Comment> comment;
+    String str;
+  case(NONE())
+  equation
+    print(" *Approximated = false");
+  then ();
+  case(SOME(DAE.SOURCE(comment=comment)))
+  equation
+    str = Util.if_(isApproximatedEquation2(comment),"true","false");    
+    print(" *Approximated = "+&str);
+  then ();
+  end match;
+end dumpAliasSets3; 
 
 end Uncertainties;
 
