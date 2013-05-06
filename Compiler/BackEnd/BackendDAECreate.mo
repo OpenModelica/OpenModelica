@@ -3056,14 +3056,9 @@ algorithm
         v_3 = detectImplicitDiscreteAlgsStatemens(v_2, knv, xs, false);
       then
         v_3;
-    case (v, knv, (statement::xs), true)
+    case (v, knv, (_::xs), b)
       equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, xs, true);
-      then
-        v_1;
-    case (v, knv, (statement::xs), false)
-      equation
-        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, xs, false);
+        v_1 = detectImplicitDiscreteAlgsStatemens(v, knv, xs, b);
       then
         v_1;
   end matchcontinue;
