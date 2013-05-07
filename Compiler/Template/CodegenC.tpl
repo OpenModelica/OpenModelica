@@ -1100,7 +1100,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations)
        <%body_initializeStaticNLSData%>
      }
 
-     void residualFunc<%index%>(void* dataIn, double* xloc, double* res, int* iflag)
+     void residualFunc<%index%>(void* dataIn, double* xloc, double* res, integer* iflag)
      {
        DATA* data = (DATA*) dataIn;
        state mem_state;
@@ -7397,8 +7397,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
-    '<%tvar%>'
+    match typeStr
+    case "modelica_real" then
+      let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, 6);<%\n%>'
+      '<%tvar%>'
+    else 
+      let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
+      '<%tvar%>'
+    end match
 
   case CALL(path=IDENT(name="String"), expLst={s, minlen, leftjust, signdig}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
