@@ -429,7 +429,7 @@ algorithm
       equation
         failure((_,_,_) = Lookup.lookupType(cache, env, callPath, NONE()));
         s = Absyn.pathString(callPath);
-        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_RECORD, {s}, info);
+        Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_RECORD, {s}, info);
       then fail();
   end matchcontinue;
 end elabPatternCall;
@@ -535,7 +535,7 @@ algorithm
         s = Dump.printExpStr(lhs);
         s1 = Absyn.pathString(path1);
         s2 = Absyn.pathString(path2);
-        Error.addSourceMessage(Error.META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
+        Error.addSourceMessage(Error.META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE, {s,s1,s2}, info);
       then fail();
   end matchcontinue;
 end validUniontype;

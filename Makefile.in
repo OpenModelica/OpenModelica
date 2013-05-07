@@ -150,6 +150,9 @@ tab-error:
 fix-tab:
 	find . -type f \( ! -path '*/.svn/*' -prune \) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec sh -c 'sed -i "s/	/  /g" "{}"' ";"
 
+spellcheck:
+	grep -oE 'gettext[(]["]([^"]|([\\]["]))*["]' `ls Compiler/*/*.mo | grep -v Flags.mo` | sed "s/[\\%]./ /g" | aspell -p ./.openmodelica.aspell --mode=ccpp --lang=en_US list | sort -u | sed 's/^/aspell: /' | tee aspell.log
+	@test ! -s aspell.log
 thumbsdb-error:
 	! find . -name "Thumbs.db" | grep Thumbs.db
 

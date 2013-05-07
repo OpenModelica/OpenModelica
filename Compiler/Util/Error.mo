@@ -166,7 +166,7 @@ public constant Message LOAD_MODEL_ERROR = MESSAGE(20, TRANSLATION(), ERROR(),
 public constant Message WRITING_FILE_ERROR = MESSAGE(21, SCRIPTING(), ERROR(),
   Util.gettext("Error writing to file %s."));
 public constant Message SIMULATOR_BUILD_ERROR = MESSAGE(22, TRANSLATION(), ERROR(),
-  Util.gettext("Error building simulator. Buildlog: %s"));
+  Util.gettext("Error building simulator. Build log: %s"));
 public constant Message DIMENSION_NOT_KNOWN = MESSAGE(23, TRANSLATION(), ERROR(),
   Util.gettext("Dimensions must be parameter or constant expression (in %s)."));
 public constant Message UNBOUND_VALUE = MESSAGE(24, TRANSLATION(), ERROR(),
@@ -186,9 +186,9 @@ public constant Message INVALID_COMPLEX_CONNECTOR_VARIABILITY = MESSAGE(30, TRAN
 public constant Message DIFFERENT_NO_EQUATION_IF_BRANCHES = MESSAGE(31, TRANSLATION(), ERROR(),
   Util.gettext("Different number of equations in the branches of the if equation: %s"));
 public constant Message UNDERDET_EQN_SYSTEM = MESSAGE(32, SYMBOLIC(), ERROR(),
-  Util.gettext("Too few equations, underdetermined system. The model has %s equation(s) and %s variable(s)"));
+  Util.gettext("Too few equations, under-determined system. The model has %s equation(s) and %s variable(s)"));
 public constant Message OVERDET_EQN_SYSTEM = MESSAGE(33, SYMBOLIC(), ERROR(),
-  Util.gettext("Too many equations, overdetermined system. The model has %s equation(s) and %s variable(s)"));
+  Util.gettext("Too many equations, over-determined system. The model has %s equation(s) and %s variable(s)"));
 public constant Message STRUCT_SINGULAR_SYSTEM = MESSAGE(34, SYMBOLIC(), ERROR(),
   Util.gettext("Model is structurally singular, error found sorting equations \n %s for variables \n %s"));
 public constant Message UNSUPPORTED_LANGUAGE_FEATURE = MESSAGE(35, TRANSLATION(), ERROR(),
@@ -330,7 +330,7 @@ public constant Message MISSING_INNER_PREFIX = MESSAGE(108, TRANSLATION(), WARNI
 public constant Message NON_PARAMETER_ITERATOR_RANGE = MESSAGE(109, TRANSLATION(), ERROR(),
   Util.gettext("The iteration range %s is not a constant or parameter expression."));
 public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, TRANSLATION(), ERROR(),
-  Util.gettext("Identificator %s of implicit for iterator must be present as array subscript in the loop body."));
+  Util.gettext("Identifier %s of implicit for iterator must be present as array subscript in the loop body."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
   Util.gettext("In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."));
 public constant Message CONNECT_INCOMPATIBLE_TYPES = MESSAGE(117, TRANSLATION(), ERROR(),
@@ -356,7 +356,7 @@ public constant Message INVALID_ENUM_LITERAL = MESSAGE(126, TRANSLATION(), ERROR
 public constant Message UNEXPECTED_FUNCTION_INPUTS_WARNING = MESSAGE(127, TRANSLATION(), WARNING(),
   Util.gettext("Function %s has not the expected inputs. Expected inputs are %s."));
 public constant Message DUPLICATE_CLASSES_NOT_EQUIVALENT = MESSAGE(128, TRANSLATION(), ERROR(),
-  Util.gettext("Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s"));
+  Util.gettext("Duplicate class definitions (due to inheritance) not equivalent, first definition is: %s, second definition is: %s"));
 public constant Message HIGHER_VARIABILITY_BINDING = MESSAGE(129, TRANSLATION(), ERROR(),
   Util.gettext("Component %s of variability %s has binding %s of higher variability %s."));
 public constant Message IF_EQUATION_WARNING = MESSAGE(131, SYMBOLIC(), WARNING(),
@@ -470,7 +470,7 @@ public constant Message ALGORITHM_TRANSITION_FAILURE = MESSAGE(187, TRANSLATION(
 public constant Message FAILURE_TO_DEDUCE_DIMS_NO_MOD = MESSAGE(188, TRANSLATION(), ERROR(),
   Util.gettext("Failed to deduce dimensions of %s due to missing binding equation."));
 public constant Message FUNCTION_MULTIPLE_ALGORITHM = MESSAGE(189, TRANSLATION(), WARNING(),
-  Util.gettext("The behaviour of multiple algorithm sections in function %s is not standard Modelica. OpenModelica will execute the sections in the order in which they were declared or inherited (same ordering as inherited input/output arguments, which also are not standardized)."));
+  Util.gettext("The behavior of multiple algorithm sections in function %s is not standard Modelica. OpenModelica will execute the sections in the order in which they were declared or inherited (same ordering as inherited input/output arguments, which also are not standardized)."));
 public constant Message STATEMENT_GENERIC_FAILURE = MESSAGE(190, TRANSLATION(), ERROR(),
   Util.gettext("Failed to instantiate statement:\n%s"));
 public constant Message EXTERNAL_NOT_SINGLE_RESULT = MESSAGE(191, TRANSLATION(), ERROR(),
@@ -480,7 +480,7 @@ public constant Message FUNCTION_UNUSED_INPUT = MESSAGE(192, SYMBOLIC(), WARNING
 public constant Message ARRAY_TYPE_MISMATCH = MESSAGE(193, TRANSLATION(), ERROR(),
   Util.gettext("Array types mismatch: %s and %s."));
 public constant Message VECTORIZE_TWO_UNKNOWN = MESSAGE(194, TRANSLATION(), ERROR(),
-  Util.gettext("Could not vectorize call with unknown dimensions due to finding two foreach arguments: %s and %s."));
+  Util.gettext("Could not vectorize call with unknown dimensions due to finding two for-iterators: %s and %s."));
 public constant Message FUNCTION_SLOT_VARIABILITY = MESSAGE(195, TRANSLATION(), ERROR(),
   Util.gettext("Function argument %s=%s is not a %sexpression"));
 public constant Message INVALID_ARRAY_DIM_IN_CONVERSION_OP = MESSAGE(196, TRANSLATION(), ERROR(),
@@ -509,7 +509,7 @@ public constant Message INVALID_FLAG_TYPE = MESSAGE(207, SCRIPTING(), ERROR(),
 public constant Message CHANGED_STD_VERSION = MESSAGE(208, SCRIPTING(), NOTIFICATION(),
   Util.gettext("Modelica language version set to %s due to loading of MSL %s."));
 public constant Message SIMPLIFY_FIXPOINT_MAXIMUM = MESSAGE(209, TRANSLATION(), WARNING(),
-  Util.gettext("Expression simplification iterated to the fixpoint maximum, which may be a performance bottleneck. The last two iterations were: %s, and %s"));
+  Util.gettext("Expression simplification iterated to the fix-point maximum, which may be a performance bottleneck. The last two iterations were: %s, and %s"));
 public constant Message UNKNOWN_OPTION = MESSAGE(210, SCRIPTING(), ERROR(),
   Util.gettext("Unknown option %s."));
 public constant Message SUBSCRIPTED_MODIFIER = MESSAGE(211, TRANSLATION(), ERROR(),
@@ -551,13 +551,13 @@ public constant Message REDECLARE_NONEXISTING_ELEMENT = MESSAGE(228, TRANSLATION
 public constant Message INVALID_ARGUMENT_TYPE_FIRST_ARRAY = MESSAGE(229, TRANSLATION(), ERROR(),
   Util.gettext("The first argument of %s must be an array expression."));
 public constant Message INVALID_ARGUMENT_TYPE_BRANCH_FIRST = MESSAGE(230, TRANSLATION(), ERROR(),
-  Util.gettext("The first argument of %s must be on the form A.R, where A is a connector and R an overdetermined type/record."));
+  Util.gettext("The first argument of %s must be on the form A.R, where A is a connector and R an over-determined type/record."));
 public constant Message INVALID_ARGUMENT_TYPE_BRANCH_SECOND = MESSAGE(231, TRANSLATION(), ERROR(),
-  Util.gettext("The second argument of %s must be on the form A.R, where A is a connector and R an overdetermined type/record."));
+  Util.gettext("The second argument of %s must be on the form A.R, where A is a connector and R an over-determined type/record."));
 public constant Message INVALID_ARGUMENT_TYPE_OVERDET_FIRST = MESSAGE(232, TRANSLATION(), ERROR(),
-  Util.gettext("The first argument of %s must be an overdetermined type or record."));
+  Util.gettext("The first argument of %s must be an over-determined type or record."));
 public constant Message INVALID_ARGUMENT_TYPE_OVERDET_SECOND = MESSAGE(233, TRANSLATION(), ERROR(),
-  Util.gettext("The second argument of %s must be an overdetermined type or record."));
+  Util.gettext("The second argument of %s must be an over-determined type or record."));
 public constant Message LIBRARY_ONE_PACKAGE_PER_FILE = MESSAGE(234, GRAMMAR(), ERROR(),
   Util.gettext("Modelica library files should contain exactly one package, but found the following classes: %s."));
 public constant Message LIBRARY_UNEXPECTED_WITHIN = MESSAGE(235, GRAMMAR(), ERROR(),
@@ -600,7 +600,7 @@ public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), 
 public constant Message BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER = MESSAGE(502, TRANSLATION(), WARNING(),
   Util.gettext("Function \"product\" has scalar as argument in %s in component %s"));
 public constant Message SETTING_FIXED_ATTRIBUTE = MESSAGE(503, TRANSLATION(), WARNING(),
-  Util.gettext("Using overdetermined solver for initialization. Setting fixed=false to the following variables: %s"));
+  Util.gettext("Using over-determined solver for initialization. Setting fixed=false to the following variables: %s"));
 public constant Message FAILED_TO_EVALUATE_FUNCTION = MESSAGE(506, TRANSLATION(), ERROR(),
   Util.gettext("Failed to evaluate function: %s"));
 public constant Message FINAL_OVERRIDE = MESSAGE(508, TRANSLATION(), ERROR(),
@@ -626,7 +626,7 @@ public constant Message ASSIGN_RHS_ELABORATION = MESSAGE(521, TRANSLATION(), ERR
 public constant Message FAILED_TO_EVALUATE_EXPRESSION = MESSAGE(522, TRANSLATION(), ERROR(),
   Util.gettext("Could not evaluate expression: %s"));
 public constant Message WARNING_JACOBIAN_EQUATION_SOLVE = MESSAGE(523, SYMBOLIC(), WARNING(),
-  Util.gettext("jacobian equation %s could not solve proper for %s. Assume %s=0."));
+  Util.gettext("Jacobian equation %s could not solve proper for %s. Assume %s=0."));
 public constant Message SIMPLIFICATION_COMPLEXITY = MESSAGE(523, SYMBOLIC(), NOTIFICATION(),
   Util.gettext("Simplification produced a higher complexity (%s) than the original (%s). The simplification was: %s => %s."));
 public constant Message ITERATOR_NON_ARRAY = MESSAGE(524, TRANSLATION(), ERROR(),
@@ -671,7 +671,7 @@ public constant Message NON_INSTANTIATED_FUNCTION = MESSAGE(5009, SYMBOLIC(), ER
 public constant Message META_UNSOLVED_POLYMORPHIC_BINDINGS = MESSAGE(5010, TRANSLATION(), ERROR(),
   Util.gettext("Could not solve the polymorphism in the function call to %s\n  Input bindings:\n%s\n  Solved bindings:\n%s\n  Unsolved bindings:\n%s"));
 public constant Message META_RECORD_FOUND_FAILURE = MESSAGE(5011, TRANSLATION(), ERROR(),
-  Util.gettext("In metarecord call %s: %s"));
+  Util.gettext("In record constructor %s: %s"));
 public constant Message META_INVALID_PATTERN = MESSAGE(5012, TRANSLATION(), ERROR(),
   Util.gettext("Invalid pattern: %s"));
 public constant Message META_MATCH_GENERAL_FAILURE = MESSAGE(5014, TRANSLATION(), ERROR(),
@@ -688,12 +688,12 @@ public constant Message META_INVALID_LOCAL_ELEMENT = MESSAGE(5019, TRANSLATION()
   Util.gettext("Only components without direction are allowed in local declarations, got: %s"));
 public constant Message META_INVALID_COMPLEX_TYPE = MESSAGE(5020, TRANSLATION(), ERROR(),
   Util.gettext("Invalid complex type name: %s"));
-public constant Message META_DECONSTRUCTOR_NOT_PART_OF_UNIONTYPE = MESSAGE(5021, TRANSLATION(), ERROR(),
+public constant Message META_CONSTRUCTOR_NOT_PART_OF_UNIONTYPE = MESSAGE(5021, TRANSLATION(), ERROR(),
   Util.gettext("In pattern %s: %s is not part of uniontype %s"));
 public constant Message META_TYPE_MISMATCH_PATTERN = MESSAGE(5022, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in pattern %s\nactual type:\n  %s\nexpected type:\n  %s"));
-public constant Message META_DECONSTRUCTOR_NOT_RECORD = MESSAGE(5023, TRANSLATION(), ERROR(),
-  Util.gettext("Call pattern is not a record deconstructor %s"));
+public constant Message META_CONSTRUCTOR_NOT_RECORD = MESSAGE(5023, TRANSLATION(), ERROR(),
+  Util.gettext("Call pattern is not a record constructor %s"));
 public constant Message META_MATCHEXP_RESULT_TYPES = MESSAGE(5024, TRANSLATION(), ERROR(),
   Util.gettext("Match expression has mismatched result types:%s"));
 public constant Message MATCHCONTINUE_TO_MATCH_OPTIMIZATION = MESSAGE(5025, TRANSLATION(), NOTIFICATION(),
