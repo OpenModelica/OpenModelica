@@ -541,5 +541,11 @@ algorithm
   outScalarizeMinMax := Flags.getConfigBool(Flags.SCALARIZE_MINMAX);
 end scalarizeMinMax;
 
+public function scalarizeBindings
+  output Boolean outScalarizeBindings;
+algorithm
+  outScalarizeBindings := Flags.getConfigBool(Flags.SCALARIZE_BINDINGS);
+end scalarizeBindings;
+
 end Config;
 

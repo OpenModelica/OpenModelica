@@ -8566,6 +8566,14 @@ algorithm
       DAE.Dimensions dims;
       DAE.ComponentRef cr;
       DAE.Type ty;
+
+    // Don't add array equations if +scalarizeBindings is set.
+    case (_, _, _, _, _, _, _, _, _, _, _)
+      equation
+        true = Config.scalarizeBindings();
+      then
+        (inCache, inDae);
+
     case (_,_,_,_,DAE.DAE(dae),_,_,DAE.C_VAR(),_,_,_)
       equation
         false = ClassInf.isFunctionOrRecord(inState);
@@ -8978,7 +8986,7 @@ algorithm
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
-        mod = Util.if_(listLength(inSubscripts) > 0 and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)),DAE.NOMOD(),inMod);
+        mod = Util.if_(listLength(inSubscripts) > 0 and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings(),DAE.NOMOD(),inMod);
         opt_binding = makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName, source);
         start = instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
 
