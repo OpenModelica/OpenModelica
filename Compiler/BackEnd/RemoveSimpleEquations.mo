@@ -73,6 +73,7 @@ protected import HashSet;
 protected import Inline;
 protected import List;
 protected import Util;
+protected import Types;
 
 protected type EquationAttributes = tuple<DAE.ElementSource,Boolean> "eqnAttributes";
 
@@ -1555,7 +1556,7 @@ algorithm
    case (_,_,_,_,_,_,_,_,_)
       equation
         // collect set
-        (rmax,smax,unremovable,const,_) = getAlias({index},NONE(),mark,simpleeqnsarr,iMT,iVars,unreplacable,NONE(),NONE(),NONE(),NONE());
+        (rmax,smax,unremovable,const,_) = getAlias({index},NONE(),mark,simpleeqnsarr,iMT,iVars,unreplacable,false,{},NONE(),NONE(),NONE(),NONE());
         // traverse set and add replacements, move vars, ...
         (vars,eqnslst,shared,repl) = handleSet(rmax,smax,unremovable,const,mark+1,simpleeqnsarr,iMT,unreplacable,iVars,iEqnslst,ishared,iRepl);
         // next
@@ -1576,6 +1577,8 @@ protected function getAlias
   input array<list<Integer>> iMT;
   input BackendDAE.Variables vars;
   input HashSet.HashSet unreplacable;
+  input Boolean negate;
+  input list<Integer> stack;
   input Option<tuple<Integer,Integer>> iRmax;
   input Option<tuple<Integer,Integer>> iSmax;
   input Option<Integer> iUnremovable;
@@ -1586,7 +1589,7 @@ protected function getAlias
   output Option<Integer> oConst;
   output Boolean oContinue;
 algorithm
-  (oRmax,oSmax,oUnremovable,oConst,oContinue) := match(rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst)
+  (oRmax,oSmax,oUnremovable,oConst,oContinue) := match(rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,stack,iRmax,iSmax,iUnremovable,iConst)
     local
       Integer r;
       list<Integer> rest;
@@ -1594,12 +1597,12 @@ algorithm
       Option<tuple<Integer,Integer>> rmax,smax;
       Option<Integer> unremovable,const;
       Boolean b,continue;
-    case ({},_,_,_,_,_,_,_,_,_,_) then (iRmax,iSmax,iUnremovable,iConst,true);
-    case (r::rest,_,_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_) then (iRmax,iSmax,iUnremovable,iConst,true);
+    case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         s = simpleeqnsarr[r];
         b = isVisited(mark,s);
-        (rmax,smax,unremovable,const,continue) = getAlias1(b,s,r,rest,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst);
+        (rmax,smax,unremovable,const,continue) = getAlias1(b,s,r,rest,i,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,stack,iRmax,iSmax,iUnremovable,iConst);
       then
         (rmax,smax,unremovable,const,continue);
   end match;
@@ -1618,6 +1621,8 @@ protected function getAlias1
   input array<list<Integer>> iMT;
   input BackendDAE.Variables vars;
   input HashSet.HashSet unreplacable;
+  input Boolean negate;
+  input list<Integer> stack;
   input Option<tuple<Integer,Integer>> iRmax;
   input Option<tuple<Integer,Integer>> iSmax;
   input Option<Integer> iUnremovable;
@@ -1629,29 +1634,102 @@ protected function getAlias1
   output Boolean oContinue;
 algorithm
   (oRmax,oSmax,oUnremovable,oConst,oContinue) :=
-  match(visited,s,r,rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst)
+  matchcontinue(visited,s,r,rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,stack,iRmax,iSmax,iUnremovable,iConst)
     local
       Option<tuple<Integer,Integer>> rmax,smax;
       Option<Integer> unremovable,const;
       Boolean continue;
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        // report error
-        Error.addMessage(Error.INTERNAL_ERROR, {"Circular Equalities Detected"});
-      then
-        fail();
-    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      String msg;
+      DAE.ComponentRef cr;
+    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // set visited
         _= arrayUpdate(simpleeqnsarr,r,setVisited(mark,s));
         // check alias connection
-        (rmax,smax,unremovable,const,continue) = getAlias2(s,r,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst);
+        (rmax,smax,unremovable,const,continue) = getAlias2(s,r,i,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,r::stack,iRmax,iSmax,iUnremovable,iConst);
         // next arm
-        (rmax,smax,unremovable,const,continue) = getAliasContinue(continue,rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,rmax,smax,unremovable,const);
+        (rmax,smax,unremovable,const,continue) = getAliasContinue(continue,rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,stack,rmax,smax,unremovable,const);
       then
         (rmax,smax,unremovable,const,continue);
-  end match;
+    // valid circular equality
+    case (true,_,_,_,_,_,_,_,_,_,true,_,_,_,SOME(_),_)
+      equation
+        // is only valid for real or int
+        ALIAS(cr1=cr) = simpleeqnsarr[r];
+        true = Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
+      then
+        (NONE(),NONE(),NONE(),iUnremovable,false);
+    case (true,_,_,_,_,_,_,_,_,_,true,_,_,_,_,_)
+      equation
+        // is only valid for real or int
+        ALIAS(cr1=cr) = simpleeqnsarr[r];
+        true = Types.isIntegerOrRealOrSubTypeOfEither(ComponentReference.crefLastType(cr));
+      then
+        (NONE(),NONE(),NONE(),SOME(r),false);
+    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        msg = "Circular Equalities Detected for Variables:\n";
+        msg = circularEqualityMsg(stack,r,simpleeqnsarr,msg);
+        // report error
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+      then
+        fail();
+  end matchcontinue;
 end getAlias1;
+
+protected function circularEqualityMsg
+"function circularEqualityMsg
+  author: Frenkel TUD 2013-05"
+  input list<Integer> stack;
+  input Integer iR;
+  input array<SimpleContainer> simpleeqnsarr;
+  input String iMsg;
+  output String oMsg;
+algorithm
+  oMsg := matchcontinue(stack,iR,simpleeqnsarr,iMsg)
+    local
+      Integer r;
+      list<Integer> rest;
+      String msg;
+      list<DAE.ComponentRef> names;
+      list<String> slst;
+    case ({},_,_,_) then iMsg;
+    case (r::rest,_,_,_)
+      equation
+        false = intEq(r,iR);
+        names = getVarsNames(simpleeqnsarr[r]);
+        slst = List.map(names,ComponentReference.crefStr);
+        msg = stringDelimitList(slst,"\n");
+        msg = stringAppendList({iMsg,msg,"\n"});
+      then
+        circularEqualityMsg(rest,iR,simpleeqnsarr,msg);
+    case (r::rest,_,_,_)
+      equation
+        true = intEq(r,iR);
+      then
+        iMsg;
+  end matchcontinue;
+end circularEqualityMsg;
+
+protected function getVarsNames
+"function: getVarsNames
+  author: Frenkel TUD 2013-05"
+  input SimpleContainer iS;
+  output list<DAE.ComponentRef> names;
+algorithm
+  names := match(iS)
+    local
+      DAE.ComponentRef cr1,cr2;
+      Integer i1,i2;
+      EquationAttributes eqnAttributes;
+      Boolean negate;
+      DAE.Exp exp;
+    case (ALIAS(cr1=cr1,cr2=cr2)) then {cr1,cr2};
+    case (PARAMETERALIAS(cr=cr1,paramcr=cr2)) then {cr1,cr2};
+    case (TIMEALIAS(cr=cr1)) equation  then {cr1,DAE.crefTime};
+    case (TIMEINDEPENTVAR(cr=cr1)) then {cr1};
+  end match;
+end getVarsNames;
 
 protected function getAlias2
 "function: getAlias2
@@ -1664,6 +1742,8 @@ protected function getAlias2
   input array<list<Integer>> iMT;
   input BackendDAE.Variables vars;
   input HashSet.HashSet unreplacable;
+  input Boolean negate;
+  input list<Integer> stack;
   input Option<tuple<Integer,Integer>> iRmax;
   input Option<tuple<Integer,Integer>> iSmax;
   input Option<Integer> iUnremovable;
@@ -1675,15 +1755,15 @@ protected function getAlias2
   output Boolean oContinue;
 algorithm
   (oRmax,oSmax,oUnremovable,oConst,oContinue) :=
-  match(s,r,oi,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst)
+  match(s,r,oi,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,stack,iRmax,iSmax,iUnremovable,iConst)
     local
       list<Integer> next;
       Option<tuple<Integer,Integer>> rmax,smax;
       Option<Integer> unremovable,const;
       BackendDAE.Var v;
       Integer i1,i2,i;
-      Boolean state,replacable,continue,replaceble1;
-    case (ALIAS(i1=i1,i2=i2),_,NONE(),_,_,_,_,_,_,_,_,_)
+      Boolean state,replacable,continue,replaceble1,neg;
+    case (ALIAS(i1=i1,i2=i2,negate=neg),_,NONE(),_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collect next rows
         next = List.removeOnTrue(r,intEq,iMT[i1]);
@@ -1693,7 +1773,8 @@ algorithm
         state = BackendVariable.isStateVar(v);
         (rmax,smax,unremovable) = getAlias3(v,i1,state,replacable and replaceble1,r,iRmax,iSmax,iUnremovable);
         // go deeper
-        (rmax,smax,unremovable,const,continue) = getAlias(next,SOME(i1),mark,simpleeqnsarr,iMT,vars,unreplacable,rmax,smax,unremovable,iConst);
+        neg = Util.if_(neg,not negate,negate);
+        (rmax,smax,unremovable,const,continue) = getAlias(next,SOME(i1),mark,simpleeqnsarr,iMT,vars,unreplacable,neg,stack,rmax,smax,unremovable,iConst);
         // collect next rows
         next = List.removeOnTrue(r,intEq,iMT[i2]);
         v = BackendVariable.getVarAt(vars,i2);
@@ -1702,10 +1783,10 @@ algorithm
         state = BackendVariable.isStateVar(v);
         (rmax,smax,unremovable) = getAlias3(v,i2,state,replacable and replaceble1,r,rmax,smax,unremovable);
         // go deeper
-        (rmax,smax,unremovable,const,continue) = getAliasContinue(continue,next,SOME(i2),mark,simpleeqnsarr,iMT,vars,unreplacable,rmax,smax,unremovable,const);
+        (rmax,smax,unremovable,const,continue) = getAliasContinue(continue,next,SOME(i2),mark,simpleeqnsarr,iMT,vars,unreplacable,neg,stack,rmax,smax,unremovable,const);
        then
          (rmax,smax,unremovable,const,continue);
-    case (ALIAS(i1=i1,i2=i2),_,SOME(i),_,_,_,_,_,_,_,_,_)
+    case (ALIAS(i1=i1,i2=i2,negate=neg),_,SOME(i),_,_,_,_,_,_,_,_,_,_,_)
       equation
         i = Util.if_(intEq(i,i1),i2,i1);
         // collect next rows
@@ -1716,16 +1797,17 @@ algorithm
         state = BackendVariable.isStateVar(v);
         (rmax,smax,unremovable) = getAlias3(v,i,state,replacable and replaceble1,r,iRmax,iSmax,iUnremovable);
         // go deeper
-        (rmax,smax,unremovable,const,continue) = getAlias(next,SOME(i),mark,simpleeqnsarr,iMT,vars,unreplacable,rmax,smax,unremovable,iConst);
+        neg = Util.if_(neg,not negate,negate);
+        (rmax,smax,unremovable,const,continue) = getAlias(next,SOME(i),mark,simpleeqnsarr,iMT,vars,unreplacable,neg,stack,rmax,smax,unremovable,iConst);
        then
          (rmax,smax,unremovable,const,continue);
-    case (PARAMETERALIAS(visited=_),_,_,_,_,_,_,_,_,_,_,_)
+    case (PARAMETERALIAS(visited=_),_,_,_,_,_,_,_,_,_,_,_,_,_)
        then
         (NONE(),NONE(),NONE(),SOME(r),false);
-    case (TIMEALIAS(visited=_),_,_,_,_,_,_,_,_,_,_,_)
+    case (TIMEALIAS(visited=_),_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (NONE(),NONE(),NONE(),SOME(r),false);
-    case (TIMEINDEPENTVAR(visited=_),_,_,_,_,_,_,_,_,_,_,_)
+    case (TIMEINDEPENTVAR(visited=_),_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (NONE(),NONE(),NONE(),SOME(r),false);
   end match;
@@ -1796,6 +1878,8 @@ protected function getAliasContinue
   input array<list<Integer>> iMT;
   input BackendDAE.Variables vars;
   input HashSet.HashSet unreplacable;
+  input Boolean negate;
+  input list<Integer> stack;
   input Option<tuple<Integer,Integer>> iRmax;
   input Option<tuple<Integer,Integer>> iSmax;
   input Option<Integer> iUnremovable;
@@ -1807,18 +1891,18 @@ protected function getAliasContinue
   output Boolean oContinue;
 algorithm
   (oRmax,oSmax,oUnremovable,oConst,oContinue) :=
-  match(iContinue,rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst)
+  match(iContinue,rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,stack,iRmax,iSmax,iUnremovable,iConst)
     local
       Option<tuple<Integer,Integer>> rmax,smax;
       Option<Integer> unremovable,const;
       Boolean continue;
-    case (true,_,_,_,_,_,_,_,_,_,_,_)
+    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // update candidates
-        (rmax,smax,unremovable,const,continue) = getAlias(rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,iRmax,iSmax,iUnremovable,iConst);
+        (rmax,smax,unremovable,const,continue) = getAlias(rows,i,mark,simpleeqnsarr,iMT,vars,unreplacable,negate,stack,iRmax,iSmax,iUnremovable,iConst);
       then
         (rmax,smax,unremovable,const,continue);
-    case (false,_,_,_,_,_,_,_,_,_,_,_)
+    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (iRmax,iSmax,iUnremovable,iConst,iContinue);
   end match;
@@ -2011,6 +2095,30 @@ algorithm
        (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp,NONE(),false,SOME(DAE.RCONST(0.0)),mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
      then
        (vars,eqnslst,shared,repl);
+   // valid circular equality
+   case (_,_,_,SOME(r),_,_,_,_,_,_,_,_)
+     equation
+       s = simpleeqnsarr[r];
+       ALIAS(i1=i,i2=i2,eqnAttributes=eqnAttributes) = s;
+       _= arrayUpdate(simpleeqnsarr,r,setVisited(mark,s));
+       (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(iVars,i);
+       exp = Util.if_(Types.isRealOrSubTypeReal(ComponentReference.crefLastType(cr)),DAE.RCONST(0.0),DAE.ICONST(0));
+       (replacable,replaceble1) = replaceableAlias(v,unreplacable);
+       (vars,shared,isState,eqnslst) = optMoveVarShared(replacable,v,i,eqnAttributes,exp,BackendVariable.addKnVarDAE,iMT,iVars,ishared,iEqnslst);
+       constExp = Expression.isConst(exp);
+       // add to replacements if constant
+       repl = Debug.bcallret4(replacable and constExp and replaceble1, BackendVarTransform.addReplacement,iRepl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator),iRepl);
+       // if state der(var) has to replaced to 0
+       repl = Debug.bcallret3(isState,BackendVarTransform.addDerConstRepl, cr, DAE.RCONST(0.0), repl, repl);
+       exp = Expression.crefExp(cr);
+       vsattr = addVarSetAttributes(v,false,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
+       rows = List.removeOnTrue(r,intEq,iMT[i2]);
+       _ = arrayUpdate(iMT,i2,rows);
+       rows = List.removeOnTrue(r,intEq,iMT[i]);
+       _ = arrayUpdate(iMT,i,{});
+       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp,NONE(),false,SOME(DAE.RCONST(0.0)),mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
+     then
+       (vars,eqnslst,shared,repl);  
    // variable set state
    case (_,SOME((i,_)),_,NONE(),_,_,_,_,_,_,_,_)
      equation
