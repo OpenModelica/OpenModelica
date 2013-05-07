@@ -606,7 +606,7 @@ public constant Message FAILED_TO_EVALUATE_FUNCTION = MESSAGE(506, TRANSLATION()
 public constant Message FINAL_OVERRIDE = MESSAGE(508, TRANSLATION(), ERROR(),
   Util.gettext("Trying to override final variable in component %s and scope %s by using modifiers: %s and %s that do not agree."));
 public constant Message WARNING_RELATION_ON_REAL = MESSAGE(509, TRANSLATION(), WARNING(),
-  Util.gettext("In component %s, in relation %s, %s on Reals is only allowed inside functions."));
+  Util.gettext("In component %s, in relation %s, %s on Real numbers is only allowed inside functions."));
 public constant Message OUTER_MODIFICATION = MESSAGE(512, TRANSLATION(), WARNING(),
   Util.gettext("Ignoring the modification on outer element: %s"));
 public constant Message DERIVATIVE_NON_REAL = MESSAGE(514, TRANSLATION(), ERROR(),
