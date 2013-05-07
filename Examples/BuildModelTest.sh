@@ -113,6 +113,7 @@ done > "$PUB/MSL_old/history.txt"
 (echo "<html><head><title>Coverage trend overview</title><body>";
 for lib in "$@"; do
   SHORTNAME=`echo $lib | cut -d, -f1`
+  rsvg-convert -o "MSL_old/$SHORTNAME-trend.png" "MSL_old/$SHORTNAME-trend.png"
   echo "<p><img src=\"MSL_old/$SHORTNAME-trend.svg\" /></p>"
 done;
 echo "</body></html>") > "$PUB/trend.html"
