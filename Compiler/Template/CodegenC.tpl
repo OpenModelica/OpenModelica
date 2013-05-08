@@ -3283,6 +3283,7 @@ template subscriptToCStr(Subscript subscript)
 ::=
   match subscript
   case INDEX(exp=ICONST(integer=i)) then i
+  case INDEX(exp=ENUM_LITERAL(index=i)) then i
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
@@ -3322,6 +3323,7 @@ template subscriptToMStr(Subscript subscript)
   let &varDecls = buffer ""
   match subscript
   case INDEX(exp=ICONST(integer=i)) then i
+  case INDEX(exp=ENUM_LITERAL(index=i)) then i
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
