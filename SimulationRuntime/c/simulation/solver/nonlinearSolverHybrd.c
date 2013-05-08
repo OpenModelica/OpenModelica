@@ -795,6 +795,7 @@ int solveHybrd(DATA *data, int sysNumber)
       local_tol = local_tol*10;
 
       solverData->factor = initial_factor;
+      solverData->mode = 1;
 
       retries = 0;
       retries2 = 0;
@@ -825,6 +826,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
   /* reset some solving data */
   solverData->factor = initial_factor;
+  solverData->mode = 1;
 
   return success;
 }
