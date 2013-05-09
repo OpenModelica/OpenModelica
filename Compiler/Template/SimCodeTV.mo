@@ -1588,6 +1588,10 @@ package DAE
       Integer size;
     end DIM_ENUM;
 
+    record DIM_EXP
+      Exp exp;
+    end DIM_EXP;
+
     record DIM_UNKNOWN
     end DIM_UNKNOWN;
   end Dimension;

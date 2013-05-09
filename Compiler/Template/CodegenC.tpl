@@ -8619,9 +8619,11 @@ end expTypeFromOpFlag;
 template dimension(Dimension d)
 ::=
   match d
+  case DAE.DIM_BOOLEAN(__) then '2'
   case DAE.DIM_INTEGER(__) then integer
   case DAE.DIM_ENUM(__) then size
   case DAE.DIM_UNKNOWN(__) then error(sourceInfo(),"Unknown dimensions may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
+  case DAE.DIM_EXP(exp=e) then error(sourceInfo(), 'dimension: INVALID_DIMENSION <%printExpStr(e)%>')
   else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
 
