@@ -646,6 +646,7 @@ int solveHybrd(DATA *data, int sysNumber)
     }
     else if((solverData->info == 4 || solverData->info == 5) && retries < 6)
     {
+      int scaling = 0;
       /* try to disable x-Scaling */
 
       /* set x vector */
@@ -654,7 +655,7 @@ int solveHybrd(DATA *data, int sysNumber)
       else
         memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
 
-      int scaling = solverData->useXScaling;
+      scaling = solverData->useXScaling;
       if(scaling)
         solverData->useXScaling = 0;
 
@@ -693,10 +694,11 @@ int solveHybrd(DATA *data, int sysNumber)
       }
     /* Then try with old values (instead of extrapolating )*/
     } else if((solverData->info == 4 || solverData->info == 5) && retries2 < 1) {
+      int scaling = 0;
       /* set x vector */
       memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
 
-      int scaling = solverData->useXScaling;
+      scaling = solverData->useXScaling;
       if(!scaling)
         solverData->useXScaling = 1;
 
