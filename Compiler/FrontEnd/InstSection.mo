@@ -3161,10 +3161,10 @@ algorithm
     // Case to display error for non constant subscripts in connectors
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
       equation
-        subs1 = Absyn.getSubsFromCref(c1);
-        crefs1 = Absyn.getCrefsFromSubs(subs1);
-        subs2 = Absyn.getSubsFromCref(c2);
-        crefs2 = Absyn.getCrefsFromSubs(subs2);
+        subs1 = Absyn.getSubsFromCref(c1,true,true);
+        crefs1 = Absyn.getCrefsFromSubs(subs1,true,true);
+        subs2 = Absyn.getSubsFromCref(c2,true,true);
+        crefs2 = Absyn.getCrefsFromSubs(subs2,true,true);
         //print("Crefs in " +& Dump.printComponentRefStr(c1) +& ": " +& stringDelimitList(List.map(crefs1,Dump.printComponentRefStr),", ") +& "\n");
         //print("Crefs in " +& Dump.printComponentRefStr(c2) +& ": " +& stringDelimitList(List.map(crefs2,Dump.printComponentRefStr),", ") +& "\n");
         s1 = Dump.printComponentRefStr(c1);

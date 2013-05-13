@@ -3194,12 +3194,14 @@ algorithm
       equation
         (cache, dimp, _, _) =
           elabExp(cache, env, dim, impl, NONE(), true, pre, info);
-        (cache, arraycrefe, _, _) =
+        (cache, arraycrefe, prop, _) =
           elabExp(cache, env, arraycr, impl, NONE(), false, pre, info);
         ety = Expression.typeof(arraycrefe);
         dims = Expression.arrayDimension(ety);
+        // sent in the props of the arraycrefe as if the array is constant then the size(x, 1) is constant!
+        // see Modelica.Media.Incompressible.Examples.Glycol47 and Modelica.Media.Incompressible.TableBased (hasDensity)
         (SOME(exp), SOME(prop)) =
-          elabBuiltinSizeIndex(arraycrefe, ety, dimp, dims, env, info);
+          elabBuiltinSizeIndex(arraycrefe, prop, ety, dimp, dims, env, info);
       then
         (cache, exp, prop);
 
@@ -3281,6 +3283,7 @@ end elabBuiltinSizeNoIndex;
 protected function elabBuiltinSizeIndex
   "Helper function to elabBuiltinSize. Elaborates the size(A, x) operator."
   input DAE.Exp inArrayExp;
+  input DAE.Properties inArrayProp;
   input DAE.Type inArrayType;
   input DAE.Exp inIndexExp;
   input DAE.Dimensions inDimensions;
@@ -3290,7 +3293,7 @@ protected function elabBuiltinSizeIndex
   output Option<DAE.Properties> outProperties;
 algorithm
   (outSizeExp, outProperties) :=
-  matchcontinue(inArrayExp, inArrayType, inIndexExp, inDimensions, inEnv, inInfo)
+  matchcontinue(inArrayExp, inArrayProp, inArrayType, inIndexExp, inDimensions, inEnv, inInfo)
     local
       Integer dim_int, dim_count;
       DAE.Exp exp;
@@ -3300,7 +3303,7 @@ algorithm
       String exp_str, index_str, size_str, dim_str;
 
     // size of a scalar is not allowed.
-    case (_, _, _, {}, _, _)
+    case (_, _, _, _, {}, _, _)
       equation
         // Make sure that we have a proper type here. We might get T_UNKNOWN if
         // the size expression is part of a modifier, in which case we can't
@@ -3315,7 +3318,7 @@ algorithm
 
     // size(A, x) for an array A with known dimensions and constant x.
     // Returns the size of the x:th dimension.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         dim_int = Expression.expInt(inIndexExp);
         dim_count = listLength(inDimensions);
@@ -3327,7 +3330,7 @@ algorithm
         (SOME(exp), SOME(prop));
 
     // The index is out of bounds.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         false = Types.isUnknownType(inArrayType);
         dim_int = Expression.expInt(inIndexExp);
@@ -3343,10 +3346,11 @@ algorithm
 
     // If we couldn't evaluate the size expression or find any problems with it,
     // just generate a call to size and let the runtime sort it out.
-    case (_, _, _, _, _, _)
+    case (_, _, _, _, _, _, _)
       equation
         exp = DAE.SIZE(inArrayExp, SOME(inIndexExp));
-        cnst = Util.if_(Env.inFunctionScope(inEnv), DAE.C_VAR(), DAE.C_PARAM());
+        cnst = DAE.C_PARAM(); // Types.getPropConst(inArrayProp);
+        cnst = Util.if_(Env.inFunctionScope(inEnv), DAE.C_VAR(), cnst);
         prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, cnst);
       then
         (SOME(exp), SOME(prop));
@@ -4914,8 +4918,8 @@ algorithm
 
     case (cache,env,{s1,s2},_,impl,pre,_)
       equation
-        cref_list1 = Absyn.getCrefFromExp(s1,true);
-        cref_list2 = Absyn.getCrefFromExp(s2,true);
+        cref_list1 = Absyn.getCrefFromExp(s1,true,false);
+        cref_list2 = Absyn.getCrefFromExp(s2,true,false);
         cref_list = listAppend(cref_list1, cref_list2);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable,
           DAE.T_REAL_DEFAULT);
@@ -4936,12 +4940,10 @@ algorithm
 end elabBuiltinDifferentiate;
 
 protected function elabBuiltinSimplify "function: elabBuiltinSimplify
-
   This function elaborates the simplify function.
   The call in mosh is: simplify(x+yx-x,\"Real\") if the variable should be
   Real or simplify(x+yx-x,\"Integer\") if the variable should be Integer
-  This function is only for testing ExpressionSimplify.simplify
-"
+  This function is only for testing ExpressionSimplify.simplify"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4967,7 +4969,7 @@ algorithm
       Prefix.Prefix pre;
     case (cache,env,{s1,Absyn.STRING(value = "Real")},_,impl,pre,_) /* impl */
       equation
-        cref_list = Absyn.getCrefFromExp(s1,true);
+        cref_list = Absyn.getCrefFromExp(s1,true,false);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable,
           DAE.T_REAL_DEFAULT);
         (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);
@@ -4977,7 +4979,7 @@ algorithm
         (cache, s1_1, st);
     case (cache,env,{s1,Absyn.STRING(value = "Integer")},_,impl,pre,_)
       equation
-        cref_list = Absyn.getCrefFromExp(s1,true);
+        cref_list = Absyn.getCrefFromExp(s1,true,false);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable,
           DAE.T_INTEGER_DEFAULT);
         (gen_env,_) = Interactive.buildEnvFromSymboltable(symbol_table);

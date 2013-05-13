@@ -1918,7 +1918,7 @@ algorithm
   end matchcontinue;
 end splitRedeclareMod;
 
-protected function isRedeclareOrConstant
+public function isRedeclareOrConstant
   input SCode.SubMod inSubMod;
   input SCode.Ident inName;
   output Boolean isOk;
@@ -1939,7 +1939,7 @@ algorithm
     case (SCode.NAMEMOD(A = SCode.MOD(subModLst = {}, binding = SOME((e, _)))), _)
       equation
         // no crefs means constant binding!
-        {} = Absyn.getCrefFromExp(e, true);
+        {} = Absyn.getCrefFromExp(e, true, true);
       then
         true;
 
@@ -1947,7 +1947,7 @@ algorithm
     case (SCode.NAMEMOD(ident=i, A = SCode.MOD(subModLst = {}, binding = SOME((e, _)))), _)
       equation
         // no crefs means constant binding!
-        _::_ = Absyn.getCrefFromExp(e, true);
+        _::_ = Absyn.getCrefFromExp(e, true, true);
         print("Ignoring class modifier: " +& inName +& "(" +& i +& " = " +& Dump.printExpStr(e) +& ")\n");
       then
         false;*/
@@ -2545,5 +2545,162 @@ algorithm
         newSubMods;
   end matchcontinue;
 end makeElementsIntoSubMods;
+
+public function constantBindingOrNone
+"@author: adrpo
+ keeps the constant binding and if not returns none"
+  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  output Option<tuple<Absyn.Exp, Boolean>> outBinding;
+algorithm
+  outBinding := matchcontinue(inBinding)
+    local
+      Absyn.Exp e;
+
+    // keep it
+    case (SOME((e, _)))
+      equation
+        {} = Absyn.getCrefFromExp(e, true, true);
+      then
+        inBinding; 
+    // else
+    else NONE();       
+  end matchcontinue;
+end constantBindingOrNone;
+
+public function removeNonConstantBindingsKeepRedeclares
+"@author: adrpo
+ keeps the redeclares and removes all non-constant bindings!
+ if onlyRedeclare is true then bindings are removed completely!"
+  input SCode.Mod inMod;
+  input Boolean onlyRedeclares;
+  output SCode.Mod outMod;
+algorithm
+  outMod := matchcontinue(inMod, onlyRedeclares)
+    local
+      list<SCode.SubMod> sl;
+      SCode.Final fp;
+      SCode.Each ep;
+      Absyn.Info i;
+      Option<tuple<Absyn.Exp, Boolean>> binding;
+
+    case (SCode.MOD(fp, ep, sl, binding, i), _)
+      equation
+        binding = Util.if_(onlyRedeclares, NONE(), constantBindingOrNone(binding));
+        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(sl, onlyRedeclares);
+      then
+        SCode.MOD(fp, ep, sl, binding, i);
+
+    case (SCode.REDECL(element = _), _) then inMod;
+
+    else inMod;
+
+  end matchcontinue;
+end removeNonConstantBindingsKeepRedeclares;
+
+protected function removeNonConstantBindingsKeepRedeclaresFromSubMod
+"@author: adrpo
+ removes the non-constant bindings in submods and keeps the redeclares"
+  input list<SCode.SubMod> inSl;
+  input Boolean onlyRedeclares;
+  output list<SCode.SubMod> outSl;
+algorithm
+  outSl := match(inSl, onlyRedeclares)
+    local
+      String n;
+      list<SCode.SubMod> sl,rest;
+      SCode.Mod m;
+      list<SCode.Subscript> ssl;
+
+    case ({}, _) then {};
+
+    case (SCode.NAMEMOD(n, m)::rest, _)
+      equation
+        m = removeNonConstantBindingsKeepRedeclares(m, onlyRedeclares);
+        sl = removeNonConstantBindingsKeepRedeclaresFromSubMod(rest, onlyRedeclares);
+      then
+        SCode.NAMEMOD(n, m)::sl;
+
+  end match;
+end removeNonConstantBindingsKeepRedeclaresFromSubMod;
+
+public function removeReferenceInBinding
+"@author: adrpo
+ remove the binding that contains a cref"
+  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input Absyn.ComponentRef inCref;
+  output Option<tuple<Absyn.Exp, Boolean>> outBinding;
+algorithm
+  outBinding := matchcontinue(inBinding, inCref)
+    local
+      Absyn.Exp e;
+      list<Absyn.ComponentRef> crlst1, crlst2; 
+
+    // if cref is not present keep the binding!
+    case (SOME((e, _)),_)
+      equation
+        crlst1 = Absyn.getCrefFromExp(e, true, true);
+        crlst2 = Absyn.removeCrefFromCrefs(crlst1, inCref);
+        true = intEq(listLength(crlst1), listLength(crlst2));
+      then
+        inBinding; 
+    // else
+    else NONE();       
+  end matchcontinue;
+end removeReferenceInBinding;
+
+public function removeSelfReferenceFromMod
+"@author: adrpo
+ remove the self reference from mod!"
+  input SCode.Mod inMod;
+  input Absyn.ComponentRef inCref;
+  output SCode.Mod outMod;
+algorithm
+  outMod := matchcontinue(inMod, inCref)
+    local
+      list<SCode.SubMod> sl;
+      SCode.Final fp;
+      SCode.Each ep;
+      Absyn.Info i;
+      Option<tuple<Absyn.Exp, Boolean>> binding;
+
+    case (SCode.MOD(fp, ep, sl, binding, i), _)
+      equation
+        binding = removeReferenceInBinding(binding, inCref);
+        sl = removeSelfReferenceFromSubMod(sl, inCref);
+      then
+        SCode.MOD(fp, ep, sl, binding, i);
+
+    case (SCode.REDECL(element = _), _) then inMod;
+
+    else inMod;
+
+  end matchcontinue;
+end removeSelfReferenceFromMod;
+
+protected function removeSelfReferenceFromSubMod
+"@author: adrpo
+ removes the self references from a submod"
+  input list<SCode.SubMod> inSl;
+  input Absyn.ComponentRef inCref;
+  output list<SCode.SubMod> outSl;
+algorithm
+  outSl := match(inSl, inCref)
+    local
+      String n;
+      list<SCode.SubMod> sl,rest;
+      SCode.Mod m;
+      list<SCode.Subscript> ssl;
+
+    case ({}, _) then {};
+
+    case (SCode.NAMEMOD(n, m)::rest, _)
+      equation
+        m = removeSelfReferenceFromMod(m, inCref);
+        sl = removeSelfReferenceFromSubMod(rest, inCref);
+      then
+        SCode.NAMEMOD(n, m)::sl;
+
+  end match;
+end removeSelfReferenceFromSubMod;
 
 end SCodeUtil;

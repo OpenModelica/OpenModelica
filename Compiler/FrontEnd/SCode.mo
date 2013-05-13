@@ -3522,71 +3522,6 @@ algorithm
   end match;
 end mergeAttributes;
 
-protected function propagateConnectorType
-  input ConnectorType inConnectorType1;
-  input ConnectorType inConnectorType2;
-  output ConnectorType outConnectorType;
-algorithm
-  outConnectorType := match(inConnectorType1, inConnectorType2)
-    case (_, POTENTIAL()) then inConnectorType1;
-    else inConnectorType2;
-  end match;
-end propagateConnectorType;
-
-protected function propagateParallelism
-"Helper function for mergeAttributes"
-  input Parallelism inParallelism1;
-  input Parallelism inParallelism2;
-  output Parallelism outParallelism;
-algorithm
-  outParallelism := match(inParallelism1, inParallelism2)
-    case (_, NON_PARALLEL()) then inParallelism1;
-    case (NON_PARALLEL(), _) then inParallelism2;
-    case(_,_)
-      equation
-        equality(inParallelism1 = inParallelism2);
-      then inParallelism1;
-    case(_,_)
-      equation
-        print(" failure in propagateParallelism, Parallelism mismatch.");
-      then
-        fail();
-  end match;
-end propagateParallelism;
-
-protected function propagateVariability
-"Helper function for mergeAttributes"
-  input Variability v1;
-  input Variability v2;
-  output Variability v;
-algorithm
-  v := matchcontinue(v1,v2)
-    case (_,VAR()) then v1;
-    case (_,_) then v1;
-  end matchcontinue;
-end propagateVariability;
-
-protected function propagateDirection
-"Helper function for mergeAttributes"
-  input Absyn.Direction d1;
-  input Absyn.Direction d2;
-  output Absyn.Direction d;
-algorithm
-  d := matchcontinue(d1,d2)
-    case(Absyn.BIDIR(),_) then d2;
-    case (_,Absyn.BIDIR()) then d1;
-    case(_,_)
-      equation
-        equality(d1 = d2);
-      then d1;
-    case(_,_)
-      equation
-        print(" failure in propagateAbsynDirection, inner outer mismatch");
-      then
-        fail();
-  end matchcontinue;
-end propagateDirection;
-
 public function prefixesVisibility
   input Prefixes inPrefixes;
   output Visibility outVisibility;
@@ -4915,6 +4850,362 @@ algorithm
 
   end match;
 end stripAnnotationFromComment;
+
+public function mergeWithOriginal
+"@author: adrpo
+ this function merges the original declaration with the redeclared declaration, see 7.3.2 in Spec.
+ - modifiers from the constraining class on derived classes are merged into the new declaration
+ - modifiers from the original derived classes are merged into the new declaration
+ - if the original declaration has no constraining type the 
+ - prefixes and attributes are merged
+ same with components
+ TODO! how about non-short class definitions with constrained by with modifications?"
+  input Element inNew;
+  input Element inOld;
+  output Element outNew;
+algorithm
+  outNew := matchcontinue(inNew, inOld)
+    local
+      Element n, o;
+      Ident name1,name2;
+      Prefixes prefixes1, prefixes2;
+      Encapsulated en1, en2;
+      Partial p1,p2;
+      Restriction restr1, restr2;
+      Attributes attr1,attr2;
+      Mod mod1,mod2;
+      Absyn.TypeSpec tp1,tp2;
+      Absyn.Import im1,im2;
+      Absyn.Path path1,path2;
+      Option<String> os1,os2;
+      Option<Real> or1,or2;
+      Option<Absyn.Exp> cond1, cond2;
+      ClassDef cd1,cd2;
+      Comment cm;
+      Absyn.Info i;
+
+
+    case (CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i),CLASS(name2,prefixes2,en2,p2,restr2,cd2,_,_))
+      equation
+        cd1 = mergeClassDef(cd1, cd2);
+        prefixes1 = propagatePrefixes(prefixes2, prefixes1);
+        n = CLASS(name1,prefixes1,en1,p1,restr1,cd1,cm,i);
+      then
+        n;
+    
+    else inNew;
+  
+  end matchcontinue;
+end mergeWithOriginal;
+
+public function mergeClassDef
+"@author: adrpo
+ see mergeWithOriginal"
+  input ClassDef inNew;
+  input ClassDef inOld;
+  output ClassDef outNew;
+algorithm
+  outNew := matchcontinue(inNew, inOld)
+    local
+      ClassDef n, o;
+      Absyn.TypeSpec ts1, ts2;
+      Mod m1, m2;
+      Attributes a1, a2;
+    
+    case (DERIVED(ts1,m1,a1),
+          DERIVED(ts2,m2,a2))
+      equation
+        m2 = mergeModifiers(m2, m1);
+        a2 = propagateAttributes(a2, a1); 
+        n = DERIVED(ts1,m2,a2);
+      then
+        n;
+      
+  end matchcontinue;
+end mergeClassDef;
+
+public function mergeModifiers
+  input Mod inNewMod;
+  input Mod inOldMod;
+  output Mod outMod;
+algorithm
+  outMod := matchcontinue(inNewMod, inOldMod)
+    local
+      Final f1, f2;
+      Each e1, e2;
+      list<SubMod> sl1, sl2, sl;
+      Option<tuple<Absyn.Exp, Boolean>> b1, b2, b;
+      Absyn.Info i1, i2;
+      Mod m;
+
+    case (NOMOD(), _) then inOldMod;
+    case (_, NOMOD()) then inNewMod;
+    case (REDECL(element = _), _) then inNewMod;
+
+    case (MOD(f1, e1, sl1, b1, i1),
+          MOD(f2, e2, sl2, b2, i2))
+      equation
+        b = mergeBindings(b1, b2);
+        sl = mergeSubMods(sl1, sl2);
+        m = MOD(f1, e1, sl, b1, i1);
+      then
+        m;
+
+    else inNewMod;
+
+  end matchcontinue;
+end mergeModifiers;
+
+protected function mergeBindings
+  input Option<tuple<Absyn.Exp, Boolean>> inNew;
+  input Option<tuple<Absyn.Exp, Boolean>> inOld;
+  output Option<tuple<Absyn.Exp, Boolean>> outBnd;
+algorithm
+  outBnd := match(inNew, inOld)
+    case (SOME(_), _) then inNew;
+    case (NONE(), _) then inOld;
+  end match;
+end mergeBindings;
+
+protected function mergeSubMods
+  input list<SubMod> inNew;
+  input list<SubMod> inOld;
+  output list<SubMod> outSubs;
+algorithm
+  outSubs := matchcontinue(inNew, inOld)
+    local
+      list<SubMod> sl, rest, old;
+      SubMod s;
+
+    case ({}, _) then inOld;
+
+    case (s::rest, _)
+      equation
+        old = removeSub(s, inOld);
+        sl = mergeSubMods(rest, old);
+      then
+        s::sl;
+
+     else inNew;
+  end matchcontinue;
+end mergeSubMods;
+
+protected function removeSub
+  input SubMod inSub;
+  input list<SubMod> inOld;
+  output list<SubMod> outSubs;
+algorithm
+  outSubs := matchcontinue(inSub, inOld)
+    local
+      list<SubMod>  rest;
+      Ident id1, id2;
+      list<Subscript> idxs1, idxs2;
+      SubMod s;
+
+    case (_, {}) then {};
+
+    case (NAMEMOD(id1, _), NAMEMOD(id2, _)::rest)
+      equation
+        true = stringEqual(id1, id2);
+      then
+        rest;
+
+    case (_, s::rest)
+      equation
+        rest = removeSub(inSub, rest);
+      then
+        s::rest;
+  end matchcontinue;
+end removeSub;
+
+public function mergeComponentModifiers
+  input Element inNewComp;
+  input Element inOldComp;
+  output Element outComp;
+algorithm
+  outComp := match(inNewComp, inOldComp)
+    local
+      Ident n1,n2;
+      Prefixes p1,p2;
+      Attributes a1,a2;
+      Absyn.TypeSpec t1,t2;
+      Mod m1,m2,m;
+      Comment c1,c2;
+      Option<Absyn.Exp> cnd1,cnd2;
+      Absyn.Info i1,i2;
+      Element c;
+
+    case (COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
+          COMPONENT(n2, p2, a2, t2, m2, c2, cnd2, i2))
+      equation
+        m = mergeModifiers(m1, m2);
+        c = COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
+      then
+        c;
+
+  end match;
+end mergeComponentModifiers;
+
+public function propagateAttributes
+  input Attributes inOriginalAttributes;
+  input Attributes inNewAttributes;
+  output Attributes outNewAttributes;
+protected
+  Absyn.ArrayDim dims1, dims2;
+  ConnectorType ct1, ct2;
+  Parallelism prl1,prl2;
+  Variability var1, var2;
+  Absyn.Direction dir1, dir2;
+algorithm
+  ATTR(dims1, ct1, prl1, var1, dir1) := inOriginalAttributes;
+  ATTR(dims2, ct2, prl2, var2, dir2) := inNewAttributes;
+  dims2 := propagateArrayDimensions(dims1, dims2);
+  ct2 := propagateConnectorType(ct1, ct2);
+  prl2 := propagateParallelism(prl1,prl2);
+  var2 := propagateVariability(var1, var2);
+  dir2 := propagateDirection(dir1, dir2);
+  outNewAttributes := ATTR(dims2, ct2, prl2, var2, dir2);
+end propagateAttributes;
+
+public function propagateArrayDimensions
+  input Absyn.ArrayDim inOriginalDims;
+  input Absyn.ArrayDim inNewDims;
+  output Absyn.ArrayDim outNewDims;
+algorithm
+  outNewDims := match(inOriginalDims, inNewDims)
+    case (_, {}) then inOriginalDims;
+    else inNewDims;
+  end match;
+end propagateArrayDimensions;
+
+public function propagateConnectorType
+  input ConnectorType inOriginalConnectorType;
+  input ConnectorType inNewConnectorType;
+  output ConnectorType outNewConnectorType;
+algorithm
+  outNewConnectorType := match(inOriginalConnectorType, inNewConnectorType)
+    case (_, POTENTIAL()) then inOriginalConnectorType;
+    else inNewConnectorType;
+  end match;
+end propagateConnectorType;
+
+public function propagateParallelism
+  input Parallelism inOriginalParallelism;
+  input Parallelism inNewParallelism;
+  output Parallelism outNewParallelism;
+algorithm
+  outNewParallelism := matchcontinue(inOriginalParallelism, inNewParallelism)
+    case (_, NON_PARALLEL()) then inOriginalParallelism;
+    case (_,_)
+      equation
+        // equality(inNewParallelism = inOriginalParallelism);
+      then inNewParallelism;
+    case (_,_)
+      equation
+        print("failure in propagateParallelism: parallelism mismatch.");
+      then
+        fail();
+  end matchcontinue;
+end propagateParallelism;
+
+public function propagateVariability
+  input Variability inOriginalVariability;
+  input Variability inNewVariability;
+  output Variability outNewVariability;
+algorithm
+  outNewVariability := match(inOriginalVariability, inNewVariability)
+    case (_, VAR()) then inOriginalVariability;
+    else inNewVariability;
+  end match;
+end propagateVariability;
+
+public function propagateDirection
+  input Absyn.Direction inOriginalDirection;
+  input Absyn.Direction inNewDirection;
+  output Absyn.Direction outNewDirection;
+algorithm
+  outNewDirection := matchcontinue(inOriginalDirection, inNewDirection)
+    case (_, Absyn.BIDIR()) then inOriginalDirection;
+    case(_,_)
+      equation
+        // equality(inNewDirection = inOriginalDirection);
+      then inNewDirection;
+    case(_,_)
+      equation
+        print(" failure in propagateDirection, inner outer mismatch");
+      then
+        fail();
+  end matchcontinue;
+end propagateDirection;
+
+public function propagateAttributesVar
+  input Element inOriginalVar;
+  input Element inNewVar;
+  output Element outNewVar;
+protected
+  Ident name;
+  Prefixes pref1, pref2;
+  Attributes attr1, attr2;
+  Absyn.TypeSpec ty;
+  Mod mod;
+  Comment cmt;
+  Option<Absyn.Exp> cond;
+  Absyn.Info info;
+algorithm
+  COMPONENT(prefixes = pref1, attributes = attr1) := inOriginalVar;
+  COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info) := inNewVar;
+  pref2 := propagatePrefixes(pref1, pref2);
+  attr2 := propagateAttributes(attr1, attr2);
+  outNewVar := COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info);
+end propagateAttributesVar;
+
+public function propagateAttributesClass
+  input Element inOriginalClass;
+  input Element inNewClass;
+  output Element outNewClass;
+protected
+  Ident name;
+  Prefixes pref1, pref2;
+  Encapsulated ep;
+  Partial pp;
+  Restriction res;
+  ClassDef cdef;
+  Comment cmt;
+  Absyn.Info info;
+algorithm
+  CLASS(prefixes = pref1) := inOriginalClass;
+  CLASS(name, pref2, ep, pp, res, cdef, cmt, info) := inNewClass;
+  pref2 := propagatePrefixes(pref1, pref2);
+  outNewClass := CLASS(name, pref2, ep, pp, res, cdef, cmt, info);
+end propagateAttributesClass;
+
+public function propagatePrefixes
+  input Prefixes inOriginalPrefixes;
+  input Prefixes inNewPrefixes;
+  output Prefixes outNewPrefixes;
+protected
+  Visibility vis1, vis2;
+  Absyn.InnerOuter io1, io2;
+  Redeclare rdp;
+  Final fp;
+  Replaceable rpp;
+algorithm
+  PREFIXES(visibility = vis1, innerOuter = io1) := inOriginalPrefixes;
+  PREFIXES(vis2, rdp, fp, io2, rpp) := inNewPrefixes;
+  io2 := propagatePrefixInnerOuter(io1, io2);
+  outNewPrefixes := PREFIXES(vis2, rdp, fp, io2, rpp);
+end propagatePrefixes;
+
+public function propagatePrefixInnerOuter
+  input Absyn.InnerOuter inOriginalIO;
+  input Absyn.InnerOuter inIO;
+  output Absyn.InnerOuter outIO;
+algorithm
+  outIO := match(inOriginalIO, inIO)
+    case (_, Absyn.NOT_INNER_OUTER()) then inOriginalIO;
+    else inIO;
+  end match;
+end propagatePrefixInnerOuter;
 
 end SCode;
 

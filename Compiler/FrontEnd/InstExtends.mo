@@ -130,6 +130,16 @@ algorithm
     // no further elements to instantiate
     case (cache,env,ih,mod,pre,{},_,ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
 
+    // instantiate a basic type base class
+    case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,elsExtendsScope,ci_state,className,impl,_)
+      equation
+        Absyn.IDENT(cn) = Absyn.makeNotFullyQualified(tp);
+        true = Inst.isBuiltInClass(cn);
+        // adrpo: maybe we should check here if what comes down from the other extends has components!
+        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst);        
+      then
+        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3);
+
     // instantiate a base class
     case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
@@ -161,6 +171,8 @@ algorithm
         //print("Found " +& cn +& "\n");
         // outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         outermod = mod;
+        
+        cenv = Env.addModification(cenv, Env.M(pre, className, {}, mod, env, {}));
 
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
         els = updateElementListVisibility(els, vis);
@@ -583,6 +595,13 @@ algorithm
       Prefix.Prefix pre;
       Absyn.Info info;
 
+    // from basic types return nothing
+    case (cache,env,ih,mod,pre,SCode.CLASS(name = name),_,info,_,_)
+      equation
+        true = Inst.isBuiltInClass(name);
+      then
+        (cache,env,ih,{},{},{},{},{});
+
     case (cache,env,ih,mod,pre,SCode.CLASS(name = name, classDef =
           SCode.PARTS(elementLst = elt,
                       normalEquationLst = eq,initialEquationLst = ieq,
@@ -935,6 +954,20 @@ algorithm
       HashTableStringToPath.HashTable ht;
       SCode.Element elt;
 
+    case (cache,env,SCode.COMPONENT(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)),
+                                    SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
+      equation
+        //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.printElementStr(elt));
+        // lookup as it might have been redeclared!!!
+        (_, _, elt as SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),
+         _, _, _) = Lookup.lookupIdentLocal(cache, env, name);
+        (cache,modifications) = fixModifications(cache,env,modifications,ht);
+        (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
+        (cache,SOME(ad)) = fixArrayDim(cache, env, SOME(ad), ht);
+      then
+        (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info));
+
+    // we failed above
     case (cache,env,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fix comp " +& SCodeDump.printElementStr(elt));
@@ -944,6 +977,18 @@ algorithm
       then
         (cache,SCode.COMPONENT(name, prefixes, SCode.ATTR(ad, ct, prl, var, dir), typeSpec, modifications, comment, condition, info));
 
+    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)), 
+                                SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
+      equation
+        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
+        // lookup as it might have been redeclared!!!
+        (elt as SCode.CLASS(classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
+        (cache,env) = Builtin.initialEnv(cache);
+        (cache,classDef) = fixClassdef(cache,env,classDef,ht);
+      then
+        (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+
+    // failed above
     case (cache,env,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name);
@@ -952,6 +997,17 @@ algorithm
       then
         (cache,SCode.CLASS(name, prefixes, SCode.ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
 
+    case (cache,env,SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_)), 
+                                SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
+      equation
+        //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
+        // lookup as it might have been redeclared!!!
+        (elt as SCode.CLASS(classDef=classDef),_) = Lookup.lookupClassLocal(env, name);
+        (cache,classDef) = fixClassdef(cache,env,classDef,ht);
+      then
+        (cache,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info));
+    
+    // failed above
     case (cache,env,SCode.CLASS(name, prefixes, SCode.NOT_ENCAPSULATED(), partialPrefix, restriction, classDef, comment, info),ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"fixClassdef " +& name +& str);
@@ -1455,6 +1511,14 @@ algorithm
         Debug.fprintln(Flags.DEBUG, "Path REPLACEABLE not fixed: " +& Absyn.pathString(path));
       then (cache,path);*/
 
+    // first indent is local in the env, DO NOT QUALIFY!
+    case (cache,env,path,ht)
+      equation
+        //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
+        (_, _) = Lookup.lookupClassLocal(env, Absyn.pathFirstIdent(path));
+        //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
+      then (cache,path);
+
     case (cache,env,path,ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
@@ -1696,39 +1760,48 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       HashTableStringToPath.HashTable ht;
+      Absyn.Path path;
 
     case (cache,env,Absyn.CREF(cref),ht)
       equation
         (cache,cref) = fixCref(cache,env,cref,ht);
       then (cache,Absyn.CREF(cref));
+    
+    // check that we can actually find it after fix
     case (cache,env,Absyn.CALL(cref,fargs),ht)
       equation
         (cache,fargs) = fixFarg(cache,env,fargs,ht);
         (cache,cref) = fixCref(cache,env,cref,ht);
       then (cache,Absyn.CALL(cref,fargs));
+    
     case (cache,env,Absyn.BINARY(exp1,op,exp2),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
       then (cache,Absyn.BINARY(exp1,op,exp2));
+    
     case (cache,env,Absyn.UNARY(op,exp),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
       then (cache,Absyn.UNARY(op,exp));
+    
     case (cache,env,Absyn.LBINARY(exp1,op,exp2),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
       then (cache,Absyn.LBINARY(exp1,op,exp2));
+    
     case (cache,env,Absyn.LUNARY(op,exp),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
       then (cache,Absyn.LUNARY(op,exp));
+    
     case (cache,env,Absyn.RELATION(exp1,op,exp2),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
       then (cache,Absyn.RELATION(exp1,op,exp2));
+    
     case (cache,env,Absyn.IFEXP(ifexp,truebranch,elsebranch,elseifbranches),ht)
       equation
         (cache,ifexp) = fixExp(cache,env,ifexp,ht);
@@ -1736,28 +1809,34 @@ algorithm
         (cache,elsebranch) = fixExp(cache,env,elsebranch,ht);
         (cache,elseifbranches) = fixListTuple2(cache,env,elseifbranches,ht,fixExp,fixExp);
       then (cache,Absyn.IFEXP(ifexp,truebranch,elsebranch,elseifbranches));
+    
     case (cache,env,Absyn.ARRAY(expl),ht)
       equation
         (cache,expl) = fixList(cache,env,expl,ht,fixExp);
       then (cache,Absyn.ARRAY(expl));
+    
     case (cache,env,Absyn.MATRIX(expll),ht)
       equation
         (cache,expll) = fixListList(cache,env,expll,ht,fixExp);
       then (cache,Absyn.MATRIX(expll));
+    
     case (cache,env,Absyn.RANGE(exp1,optExp,exp2),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
         (cache,optExp) = fixOption(cache,env,optExp,ht,fixExp);
       then (cache,Absyn.RANGE(exp1,optExp,exp2));
+    
     case (cache,env,Absyn.TUPLE(expl),ht)
       equation
         (cache,expl) = fixList(cache,env,expl,ht,fixExp);
       then (cache,Absyn.TUPLE(expl));
+    
     case (cache,env,exp as Absyn.INTEGER(_),ht) then (cache,exp);
     case (cache,env,exp as Absyn.REAL(_),ht) then (cache,exp);
     case (cache,env,exp as Absyn.STRING(_),ht) then (cache,exp);
     case (cache,env,exp as Absyn.BOOL(_),ht) then (cache,exp);
+    
     case (cache,env,exp,ht)
       equation
         Debug.fprintln(Flags.FAILTRACE,"InstExtends.fixExp failed: " +& Dump.printExpStr(exp));

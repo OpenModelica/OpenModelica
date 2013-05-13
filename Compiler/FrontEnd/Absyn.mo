@@ -1106,7 +1106,17 @@ uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
 
 end ExternalDecl;
 
-
+public uniontype Ref
+  record RCR
+    ComponentRef cr;
+  end RCR;
+  record RTS
+    TypeSpec ts;
+  end RTS;
+  record RIM
+    Import im;
+  end RIM;
+end Ref;
 
 /* "From here down, only Absyn helper functions should be present.
  Thus, no actual absyn uniontype definitions." */
@@ -3389,36 +3399,42 @@ end pathContainedIn;
 
 public function getCrefsFromSubs "
 Author BZ 2009-08
-Function for getting ComponentRefs out from Subscripts
-"
+Function for getting ComponentRefs out from Subscripts"
   input list<Subscript> isubs;
+  input Boolean includeSubs "include crefs from array subscripts";
+  input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<ComponentRef> crefs;
-algorithm crefs := match(isubs)
-  local
-    list<ComponentRef> crefs1;
-    Exp exp;
-    list<Subscript> subs;
-    case({}) then {};
-    case(NOSUB()::subs) then getCrefsFromSubs(subs);
-    case(SUBSCRIPT(exp)::subs)
+algorithm 
+  crefs := match(isubs,includeSubs,includeFunctions)
+    local
+      list<ComponentRef> crefs1;
+      Exp exp;
+      list<Subscript> subs;
+    
+    case({},_,_) then {};
+    
+    case(NOSUB()::subs,_,_) then getCrefsFromSubs(subs,includeSubs,includeFunctions);
+    
+    case(SUBSCRIPT(exp)::subs,_,_)
       equation
-        crefs1 = getCrefsFromSubs(subs);
-        crefs = getCrefFromExp(exp,true);
+        crefs1 = getCrefsFromSubs(subs,includeSubs,includeFunctions);
+        crefs = getCrefFromExp(exp,includeSubs,includeFunctions);
         crefs = listAppend(crefs,crefs1);
         //crefs = List.unionOnTrue(crefs,crefs1,crefEqual);
-        then
-          crefs;
-end match;
+      then
+        crefs;
+  end match;
 end getCrefsFromSubs;
 
 public function getCrefFromExp "
   Returns a flattened list of the
   component references in an expression"
   input Exp inExp;
-  input Boolean checkSubs;
+  input Boolean includeSubs "include crefs from array subscripts";
+  input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<ComponentRef> outComponentRefLst;
 algorithm
-  outComponentRefLst := matchcontinue (inExp,checkSubs)
+  outComponentRefLst := matchcontinue (inExp,includeSubs,includeFunctions)
     local
       ComponentRef cr;
       list<ComponentRef> l1,l2,res;
@@ -3432,128 +3448,138 @@ algorithm
       list<list<ComponentRef>> lstres1;
       list<list<ComponentRef>> crefll;
 
-    case (INTEGER(value = _),_) then {};
-    case (REAL(value = _),_) then {};
-    case (STRING(value = _),_) then {};
-    case (BOOL(value = _),_) then {};
-    case (CREF(componentRef = ALLWILD()),_) then {};
-    case (CREF(componentRef = WILD()),_) then {};
-    case (CREF(componentRef = CREF_INVALID(componentRef = _)), _) then {};
-    case (CREF(componentRef = cr),false) then {cr};
+    case (INTEGER(value = _),_,_) then {};
+    case (REAL(value = _),_,_) then {};
+    case (STRING(value = _),_,_) then {};
+    case (BOOL(value = _),_,_) then {};
+    case (CREF(componentRef = ALLWILD()),_,_) then {};
+    case (CREF(componentRef = WILD()),_,_) then {};
+    case (CREF(componentRef = CREF_INVALID(componentRef = _)), _,_) then {};
+    case (CREF(componentRef = cr),false,_) then {cr};
 
-    case (CREF(componentRef = (cr)),true)
+    case (CREF(componentRef = (cr)),true,_)
       equation
-        subs = getSubsFromCref(cr);
-        l1 = getCrefsFromSubs(subs);
+        subs = getSubsFromCref(cr,includeSubs,includeFunctions);
+        l1 = getCrefsFromSubs(subs,includeSubs,includeFunctions);
       then cr::l1;
 
-    case (BINARY(exp1 = e1,op = op,exp2 = e2),_)
+    case (BINARY(exp1 = e1,op = op,exp2 = e2),_,_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
+        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
+        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         res = listAppend(l1, l2);
       then
         res;
-    case (UNARY(op = op,exp = e1),_)
+    
+    case (UNARY(op = op,exp = e1),_,_)
       equation
-        res = getCrefFromExp(e1,checkSubs);
+        res = getCrefFromExp(e1,includeSubs,includeFunctions);
       then
         res;
-    case (LBINARY(exp1 = e1,op = op,exp2 = e2),_)
+    
+    case (LBINARY(exp1 = e1,op = op,exp2 = e2),_,_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
+        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
+        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         res = listAppend(l1, l2);
       then
         res;
-    case (LUNARY(op = op,exp = e1),_)
+    
+    case (LUNARY(op = op,exp = e1),_,_)
       equation
-        res = getCrefFromExp(e1,checkSubs);
+        res = getCrefFromExp(e1,includeSubs,includeFunctions);
       then
         res;
-    case (RELATION(exp1 = e1,op = op,exp2 = e2),_)
+    
+    case (RELATION(exp1 = e1,op = op,exp2 = e2),_,_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
+        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
+        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         res = listAppend(l1, l2);
       then
         res;
-    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),_)
+    
+    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),_,_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
+        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
+        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         l1 = listAppend(l1, l2);
-        l2 = getCrefFromExp(e3,checkSubs);
-        res = listAppend(l1, l2) "TODO elseif\'s e4" ;
+        l2 = getCrefFromExp(e3,includeSubs,includeFunctions);
+        res = listAppend(l1, l2) "TODO elseif\'s e4";
       then
         res;
-    case (CALL(functionArgs = farg),_)
+    
+    case (CALL(function_ = cr, functionArgs = farg),_,_)
       equation
-        res = getCrefFromFarg(farg,checkSubs) "res = List.map(expl,get_cref_from_exp)" ;
+        res = getCrefFromFarg(farg,includeSubs,includeFunctions);
+        res = Util.if_(includeFunctions, cr::res, res);
       then
         res;
-    case (PARTEVALFUNCTION(functionArgs = farg),_)
+    case (PARTEVALFUNCTION(function_ = cr, functionArgs = farg),_,_)
       equation
-        res = getCrefFromFarg(farg,checkSubs);
+        res = getCrefFromFarg(farg,includeSubs,includeFunctions);
+        res = Util.if_(includeFunctions, cr::res, res);
       then
         res;
-    case (ARRAY(arrayExp = expl),_)
+    case (ARRAY(arrayExp = expl),_,_)
       equation
-        lstres1 = List.map1(expl, getCrefFromExp, checkSubs);
+        lstres1 = List.map2(expl, getCrefFromExp, includeSubs, includeFunctions);
         res = List.flatten(lstres1);
       then
         res;
-    case (MATRIX(matrix = expll),_)
+    case (MATRIX(matrix = expll),_,_)
       equation
-        res = List.flatten(List.flatten(List.map1List(expll, getCrefFromExp,checkSubs)));
+        res = List.flatten(List.flatten(List.map2List(expll, getCrefFromExp, includeSubs, includeFunctions)));
       then
         res;
-    case (RANGE(start = e1,step = SOME(e3),stop = e2),_)
+    case (RANGE(start = e1,step = SOME(e3),stop = e2),_,_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
+        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
+        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         l2 = listAppend(l1, l2);
-        l2 = getCrefFromExp(e3,checkSubs);
+        l2 = getCrefFromExp(e3,includeSubs,includeFunctions);
         res = listAppend(l1, l2);
       then
         res;
-    case (RANGE(start = e1,step = NONE(),stop = e2),_)
+    case (RANGE(start = e1,step = NONE(),stop = e2),_,_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
+        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
+        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         res = listAppend(l1, l2);
       then
         res;
-    case (END(),_) then {};
+    
+    case (END(),_,_) then {};
 
-    case (TUPLE(expressions = expl),_)
+    case (TUPLE(expressions = expl),_,_)
       equation
-        crefll = List.map1(expl,getCrefFromExp,checkSubs);
+        crefll = List.map2(expl,getCrefFromExp,includeSubs,includeFunctions);
         res = List.flatten(crefll);
       then
         res;
 
-    case (CODE(_),_) then {};
+    case (CODE(_),_,_) then {};
 
-    case (AS(exp = e1),_) then getCrefFromExp(e1,checkSubs);
-    case (CONS(e1,e2),_)
+    case (AS(exp = e1),_,_) then getCrefFromExp(e1,includeSubs,includeFunctions);
+    
+    case (CONS(e1,e2),_,_)
       equation
-        l1 = getCrefFromExp(e1,checkSubs);
-        l2 = getCrefFromExp(e2,checkSubs);
+        l1 = getCrefFromExp(e1,includeSubs,includeFunctions);
+        l2 = getCrefFromExp(e2,includeSubs,includeFunctions);
         res = listAppend(l1, l2);
       then
         res;
 
-    case (LIST(expl),_)
+    case (LIST(expl),_,_)
       equation
-        crefll = List.map1(expl,getCrefFromExp,checkSubs);
+        crefll = List.map2(expl,getCrefFromExp,includeSubs,includeFunctions);
         res = List.flatten(crefll);
       then
         res;
 
-    case (MATCHEXP(matchTy = _),_) then fail();
+    case (MATCHEXP(matchTy = _),_,_) then fail();
 
-    case (e1,_)
+    case (e1,_,_)
       equation
         print("Internal error: Absyn.getCrefFromExp failed " +& Dump.printExpStr(e1) +& "\n");
       then fail();
@@ -3564,9 +3590,11 @@ public function getCrefFromFarg "function: getCrefFromFarg
   Returns the flattened list of all component references
   present in a list of function arguments."
   input FunctionArgs inFunctionArgs;
-  input Boolean checkSubs;
+  input Boolean includeSubs "include crefs from array subscripts";
+  input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<ComponentRef> outComponentRefLst;
-algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
+algorithm 
+  outComponentRefLst := match (inFunctionArgs,includeSubs,includeFunctions)
     local
       list<list<ComponentRef>> l1,l2;
       list<ComponentRef> fl1,fl2,fl3,res;
@@ -3574,26 +3602,28 @@ algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
       list<NamedArg> nargl;
       ForIterators iterators;
       Exp exp;
-    case (FUNCTIONARGS(args = expl,argNames = nargl),_)
+    
+    case (FUNCTIONARGS(args = expl,argNames = nargl),_,_)
       equation
-        l1 = List.map1(expl, getCrefFromExp,checkSubs);
+        l1 = List.map2(expl, getCrefFromExp, includeSubs, includeFunctions);
         fl1 = List.flatten(l1);
-        l2 = List.map1(nargl, getCrefFromNarg,checkSubs);
+        l2 = List.map2(nargl, getCrefFromNarg, includeSubs, includeFunctions);
         fl2 = List.flatten(l2);
         res = listAppend(fl1, fl2);
       then
         res;
-    case (FOR_ITER_FARG(exp,iterators),_)
+    
+    case (FOR_ITER_FARG(exp,iterators),_,_)
       equation
-        l1 = List.map1Option(List.map(iterators,iteratorRange),getCrefFromExp,checkSubs);
-        l2 = List.map1Option(List.map(iterators,iteratorGuard),getCrefFromExp,checkSubs);
+        l1 = List.map2Option(List.map(iterators,iteratorRange),getCrefFromExp,includeSubs,includeFunctions);
+        l2 = List.map2Option(List.map(iterators,iteratorGuard),getCrefFromExp,includeSubs,includeFunctions);
         fl1 = List.flatten(l1);
         fl2 = List.flatten(l2);
-        fl3 = getCrefFromExp(exp,checkSubs);
+        fl3 = getCrefFromExp(exp,includeSubs,includeFunctions);
         res = listAppend(fl1,listAppend(fl2, fl3));
       then
         res;
-
+        
   end match;
 end getCrefFromFarg;
 
@@ -3647,15 +3677,17 @@ protected function getCrefFromNarg "function: getCrefFromNarg
   Returns the flattened list of all component references
   present in a list of named function arguments."
   input NamedArg inNamedArg;
-  input Boolean checkSubs;
+  input Boolean includeSubs "include crefs from array subscripts";
+  input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<ComponentRef> outComponentRefLst;
-algorithm outComponentRefLst := match (inNamedArg,checkSubs)
+algorithm 
+  outComponentRefLst := match (inNamedArg,includeSubs,includeFunctions)
     local
       list<ComponentRef> res;
       ComponentCondition exp;
-    case (NAMEDARG(argValue = exp),_)
+    case (NAMEDARG(argValue = exp),_,_)
       equation
-        res = getCrefFromExp(exp,checkSubs);
+        res = getCrefFromExp(exp,includeSubs,includeFunctions);
       then
         res;
   end match;
@@ -4054,28 +4086,32 @@ end crefHasSubscripts;
 
 public function getSubsFromCref "
 Author: BZ, 2009-09
- Extract subscripts of crefs.
-"
+ Extract subscripts of crefs."
   input ComponentRef cr;
+  input Boolean includeSubs "include crefs from array subscripts";
+  input Boolean includeFunctions "note that if you say includeSubs = false then you won't get the functions from array subscripts";
   output list<Subscript> subscripts;
-
-algorithm subscripts := match(cr)
-  local
-    list<Subscript> subs2;
-    ComponentRef child;
-  case(CREF_IDENT(_,subs2)) then subs2;
-  case(CREF_QUAL(_,subs2,child))
-    equation
-      subscripts = getSubsFromCref(child);
-      subscripts = List.unionOnTrue(subscripts,subs2, subscriptEqual);
-    then
-      subscripts;
-  case(CREF_FULLYQUALIFIED(child))
-    equation
-      subscripts = getSubsFromCref(child);
-    then
-      subscripts;
-end match;
+algorithm 
+  subscripts := match(cr,includeSubs,includeFunctions)
+    local
+      list<Subscript> subs2;
+      ComponentRef child;
+    
+    case(CREF_IDENT(_,subs2), _, _) then subs2;
+    
+    case(CREF_QUAL(_,subs2,child), _, _)
+      equation
+        subscripts = getSubsFromCref(child, includeSubs, includeFunctions);
+        subscripts = List.unionOnTrue(subscripts,subs2, subscriptEqual);
+      then
+        subscripts;
+    
+    case(CREF_FULLYQUALIFIED(child), _, _)
+      equation
+        subscripts = getSubsFromCref(child, includeSubs, includeFunctions);
+      then
+        subscripts;  
+  end match;
 end getSubsFromCref;
 
 // stefan
@@ -5544,6 +5580,27 @@ algorithm
   (hasUnknownDimensions, outExps) := getExpsFromArrayDim_tail(inAd, {});
 end getExpsFromArrayDim;
 
+public function getExpsFromArrayDimOpt
+ "author: adrpo
+  returns all the expressions from array dimension as a list
+  also returns if we have unknown dimensions in the array dimension"
+  input Option<ArrayDim> inAdO;
+  output Boolean hasUnknownDimensions;
+  output list<Exp> outExps;
+algorithm
+  (hasUnknownDimensions, outExps) := match(inAdO)
+    local ArrayDim ad;
+    
+    case (NONE()) then (false, {});
+    
+    case (SOME(ad))
+      equation
+        (hasUnknownDimensions, outExps) = getExpsFromArrayDim_tail(ad, {}); 
+      then 
+        (hasUnknownDimensions, outExps);
+  
+  end match;
+end getExpsFromArrayDimOpt;
 
 public function getExpsFromArrayDim_tail
  "author: adrpo
@@ -5995,5 +6052,176 @@ public function annotationToElementArgs
 algorithm
   ANNOTATION(args) := ann;
 end annotationToElementArgs;
+
+public function pathToTypeSpec
+  input Path inPath;
+  output TypeSpec outTypeSpec;
+algorithm
+  outTypeSpec := TPATH(inPath, NONE());
+end pathToTypeSpec;
+
+public function typeSpecString
+  input TypeSpec inTs;
+  output String outStr;
+algorithm
+  outStr := Dump.unparseTypeSpec(inTs);
+end typeSpecString;
+
+public function crefString
+  input ComponentRef inCr;
+  output String outStr;
+algorithm
+  outStr := Dump.printComponentRefStr(inCr);
+end crefString;
+
+public function typeSpecStringNoQualNoDims
+  input TypeSpec inTs;
+  output String outStr;
+algorithm
+  outStr := match (inTs)
+    local
+      Ident str,s,str1,str2,str3;
+      Path path;
+      Option<list<Subscript>> adim;
+      list<TypeSpec> typeSpecLst;
+    
+    case (TPATH(path = path))
+      equation
+        str = pathString(makeNotFullyQualified(path));
+      then
+        str;
+    
+    case (TCOMPLEX(path = path,typeSpecs = typeSpecLst))
+      equation
+        str1 = pathString(makeNotFullyQualified(path));
+        str2 = typeSpecStringNoQualNoDimsLst(typeSpecLst);
+        str = stringAppendList({str1,"<",str2,">"});
+      then
+        str;
+  
+  end match;
+end typeSpecStringNoQualNoDims;
+
+public function typeSpecStringNoQualNoDimsLst
+  input list<TypeSpec> inTypeSpecLst;
+  output String outString;
+algorithm
+  outString := matchcontinue (inTypeSpecLst)
+    local
+      String str, str1, str2, str3;
+      TypeSpec x;
+      list<TypeSpec> rest;
+    
+    case ({x})
+      equation
+        str = typeSpecStringNoQualNoDims(x);
+      then
+        str;
+    
+    case (x::rest)
+      equation
+        str1 = typeSpecStringNoQualNoDims(x);
+        str2 = typeSpecStringNoQualNoDimsLst(rest);
+        str3 = stringAppendList({str1, ", ", str2});
+      then
+        str3;
+  
+  end matchcontinue;
+end typeSpecStringNoQualNoDimsLst;
+
+public function crefStringIgnoreSubs
+  input ComponentRef inCr;
+  output String outStr;
+protected
+  Path p;  
+algorithm
+  p := crefToPathIgnoreSubs(inCr);
+  outStr := pathString(makeNotFullyQualified(p));
+end crefStringIgnoreSubs;
+
+public function importString
+  input Import inImp;
+  output String outStr;
+algorithm
+  outStr := Dump.unparseImportStr(inImp);
+end importString;
+
+public function refString
+"@author: adrpo
+ full Ref -> string 
+ cref/path full qualified, type dims, subscripts in crefs"
+  input Ref inRef;
+  output String outStr;
+algorithm
+  outStr := match(inRef)
+    local ComponentRef cr; TypeSpec ts; Import im;
+    case (RCR(cr)) then crefString(cr);
+    case (RTS(ts)) then typeSpecString(ts);
+    case (RIM(im)) then importString(im);
+  end match;
+end refString;
+
+public function refStringBrief 
+"@author: adrpo
+ brief Ref -> string 
+ no cref/path full qualified, no type dims, no subscripts in crefs"
+  input Ref inRef;
+  output String outStr;
+algorithm
+  outStr := match(inRef)
+    local ComponentRef cr; TypeSpec ts; Import im;
+    case (RCR(cr)) then crefStringIgnoreSubs(cr);
+    case (RTS(ts)) then typeSpecStringNoQualNoDims(ts);
+    case (RIM(im)) then importString(im);
+  end match;
+end refStringBrief;
+
+public function getArrayDimOptAsList
+  input Option<ArrayDim> inArrayDim;
+  output ArrayDim outArrayDim;
+algorithm
+  outArrayDim := match(inArrayDim)
+    local ArrayDim ad;
+    case (SOME(ad)) then ad;
+    else {}; 
+  end match;
+end getArrayDimOptAsList;
+
+public function removeCrefFromCrefs
+"function: removeCrefFromCrefs
+  Removes a variable from a variable list"
+  input list<ComponentRef> inAbsynComponentRefLst;
+  input ComponentRef inComponentRef;
+  output list<ComponentRef> outAbsynComponentRefLst;
+algorithm
+  outAbsynComponentRefLst := matchcontinue (inAbsynComponentRefLst,inComponentRef)
+    local
+      String n1,n2;
+      list<ComponentRef> rest_1,rest;
+      ComponentRef cr1,cr2;
+    case ({},_) then {};
+    case ((cr1 :: rest),cr2)
+      equation
+        CREF_IDENT(name = n1,subscripts = {}) = cr1;
+        CREF_IDENT(name = n2,subscripts = {}) = cr2;
+        true = stringEq(n1, n2);
+        rest_1 = removeCrefFromCrefs(rest, cr2);
+      then
+        rest_1;
+    case ((cr1 :: rest),cr2) // If modifier like on comp like: T t(x=t.y) => t.y must be removed
+      equation
+        CREF_QUAL(name = n1) = cr1;
+        CREF_IDENT(name = n2) = cr2;
+        true = stringEq(n1, n2);
+        rest_1 = removeCrefFromCrefs(rest, cr2);
+      then
+        rest_1;
+    case ((cr1 :: rest),cr2)
+      equation
+        rest_1 = removeCrefFromCrefs(rest, cr2);
+      then
+        (cr1 :: rest_1);
+  end matchcontinue;
+end removeCrefFromCrefs;
 
 end Absyn;

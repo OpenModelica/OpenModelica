@@ -1478,22 +1478,21 @@ algorithm
       Env.AvlTree clsAndVars,tys;
       Env.CSetsType crs;
       list<SCode.Element> du;
-      Env.ExtendsTable et;
       Env.ImportTable it;
-      Option<Util.StatefulBoolean> iu;
       Env.Frame f;
+      Env.Extra extra;
 
-    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu), cr)
+    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra), cr)
       equation
         SOME(clsAndVars) = switchInnerToOuterInAvlTree(SOME(clsAndVars), cr);
       then
-        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu);
+        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra);
 
-    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu), cr)
+    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra), cr)
       equation
         // when above fails leave unchanged
       then
-        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu);
+        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra);
 
   end matchcontinue;
 end switchInnerToOuterInFrame;
@@ -1550,31 +1549,31 @@ algorithm
       SCode.Element e;
       DAE.Mod m;
       Env.InstStatus instStatus;
-      Option<Util.StatefulBoolean> iu;
       Env.Env env;
       SCode.ConnectorType ct;
       SCode.Parallelism parallelism "parallelism";
       SCode.Variability variability "variability" ;
       Absyn.Direction direction "direction" ;
       Option<DAE.Const> cnstForRange;
+      Env.ItemType it;
 
     // inner
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it), cr)
       equation
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
       then
-        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu);
+        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it);
 
     // inner outer
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it), cr)
       equation
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
       then
-        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu);
+        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, it);
 
     // leave unchanged
     case (_, _) then inItem;

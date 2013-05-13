@@ -2618,6 +2618,61 @@ algorithm
   end match;
 end map1Option_tail;
 
+public function map2Option
+  "The same as map2(map(inList, getOption), inMapFunc), but is more efficient and
+   it strips out NONE() instead of failing on them."
+  input list<Option<ElementInType>> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType1 inArg2;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := listReverse(map2Option_tail(inList, inFunc, inArg1, inArg2, {}));
+end map2Option;
+
+protected function map2Option_tail
+  "Tail-recursive implementation of map2Option."
+  input list<Option<ElementInType>> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType1 inArg2;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType1 inArg2;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := match(inList, inFunc, inArg1, inArg2, inAccumList)
+    local
+      ElementInType head;
+      ElementOutType new_head;
+      list<Option<ElementInType>> rest;
+
+    case ({}, _, _, _, _) then inAccumList;
+
+    case (SOME(head) :: rest, _, _, _, _)
+      equation
+        new_head = inFunc(head, inArg1, inArg2);
+      then
+        map2Option_tail(rest, inFunc, inArg1, inArg2, new_head :: inAccumList);
+
+    case (NONE() :: rest, _, _, _, _)
+      then map2Option_tail(rest, inFunc, inArg1, inArg2, inAccumList);
+  
+  end match;
+end map2Option_tail;
+
 public function map_0
   "Takes a list and a function which does not return a value. The function is
    probably a function with side effects, like print."

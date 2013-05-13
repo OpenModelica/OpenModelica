@@ -121,6 +121,7 @@ protected import Uncertainties;
 protected import OpenTURNS;
 protected import FMI;
 protected import FMIExt;
+protected import ErrorExt;
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
@@ -6196,7 +6197,6 @@ algorithm
   end match;
 end hasStopTime2;
 
-
 public function cevalCallFunctionEvaluateOrGenerate
 "This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and
@@ -6208,11 +6208,12 @@ public function cevalCallFunctionEvaluateOrGenerate
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSymTab;
   input Ceval.Msg inMsg;
+  input Boolean bIsCompleteFunction;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.SymbolTable> outSymTab;
 algorithm
-  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg)
+  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction)
     local
       Values.Value newval;
       list<Env.Frame> env;
@@ -6254,7 +6255,7 @@ algorithm
       DAE.Type ty;
 
     // try function interpretation
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg, _)
       equation
         true = Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
@@ -6282,11 +6283,11 @@ algorithm
 
     // see if function is in CF list and the build time is less than the edit time
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// (impl as true)
-      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
+      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg, _)
       equation
+        true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
-
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
@@ -6305,8 +6306,9 @@ algorithm
 
     // see if function is in CF list and the build time is less than the edit time
     case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// impl as true
-      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
+      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))), msg, _)
       equation
+        true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
@@ -6330,8 +6332,9 @@ algorithm
 
     // not in CF list, we have a symbol table, generate function and update symtab
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,
-          SOME(syt as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
+          SOME(syt as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)), msg, _) // yeha! we have a symboltable!
       equation
+        true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
@@ -6379,12 +6382,14 @@ algorithm
       then
         (cache,newval,SOME(syt));
 
-    // no symtab, WE SHOULD NOT EVALUATE!
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,NONE(),msg) // crap! we have no symboltable!
+    // no symtab, WE SHOULD NOT EVALUATE! but we do anyway with suppressed error messages!
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,NONE(), msg, _) // crap! we have no symboltable!
       equation
+        true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
-
+        ErrorExt.setCheckpoint("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
+        
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));
 
         // we might actually have a function loaded here already!
@@ -6400,11 +6405,21 @@ algorithm
         System.freeLibrary(libHandle, print_debug);
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
-
+        ErrorExt.rollBack("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
       then
         (cache,newval,NONE());
 
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg)
+    // cleanup the case below when we failed. we should delete generated files too
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,NONE(),msg, _) // crap! we have no symboltable!
+      equation
+        true = bIsCompleteFunction;
+        true = Flags.isSet(Flags.GEN);
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
+        ErrorExt.rollBack("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
+      then
+        fail();
+
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st, msg, _)
       equation
         Debug.fprintln(Flags.DYN_LOAD, "CALL: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath));
         error_Str = Absyn.pathString(funcpath);
@@ -6417,7 +6432,6 @@ algorithm
 
   end matchcontinue;
 end cevalCallFunctionEvaluateOrGenerate;
-
 
 protected function checkLibraryUsage
   input String inLibrary;
@@ -6523,6 +6537,7 @@ algorithm
       DAE.Type ty;
       Absyn.Info info;
       String str;
+      Boolean bIsCompleteFunction;
 
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg,_)
@@ -6560,11 +6575,11 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
 
-        true = isCompleteFunction(cache, env, funcpath);
+        bIsCompleteFunction = isCompleteFunction(cache, env, funcpath);
         false = Types.hasMetaArray(ty);
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: is complete function: " +& Absyn.pathString(funcpath));
-        (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg);
+        (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction);
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
       then
@@ -6619,7 +6634,6 @@ algorithm
    case (cache, env, fpath)
      equation
        true = System.getPartialInstantiation();
-       (_, SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix=SCode.REPLACEABLE(cc=_))), _) = Lookup.lookupClass(cache, env, fpath, false);
      then
        false;
 
@@ -6633,41 +6647,8 @@ algorithm
    case (cache, env, fpath)
      then true;
 
-   case (cache, env, fpath)
-     equation
-       // not partial instantiation
-       false = System.getPartialInstantiation();
-       /*
-       // not replaceable, replaceable + redeclare, not partial
-       (_, SCode.CLASS(partialPrefix = ppp,
-                       prefixes = SCode.PREFIXES(
-                                          replaceablePrefix=repp,
-                                          redeclarePrefix = redp)), _) = Lookup.lookupClass(cache, env, fpath, false);
-       // if is replaceable and not redeclared, no joy or partial
-       false = SCode.partialBool(ppp);
-       true = boolOr(boolAnd(SCode.replaceableBool(repp), SCode.redeclareBool(redp)),
-                     SCode.redeclareBool(redp));
-
-       // try at least to see if we can get all the dependencies
-       // (_, functionDependencies, _) = getFunctionDependencies(cache, fpath);
-
-       // we should do the same for ALL the dependencies but IS SLOW AS HELL!
-       // (_, functionDependencies, _) = getFunctionDependencies(cache, fpath);
-       // functionDependencies = List.deleteMember(functionDependencies, fpath);
-       // true = List.fold(List.map2r(functionDependencies, isCompleteFunction, cache, env), boolAnd, true);
-       */
-     then
-       true;
-
-   // if it fails above always assume the worst!
-   case (cache, env, fpath)
-     equation
-     then
-       false;
-
   end matchcontinue;
 end isCompleteFunction;
-
 
 public function cevalIsExternalObjectConstructor
   input Env.Cache cache;

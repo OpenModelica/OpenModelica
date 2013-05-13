@@ -4147,6 +4147,51 @@ extern struct record_description Absyn_ExternalDecl_EXTERNALDECL__desc;
 #endif
 #define Absyn__EXTERNALDECL_3dBOX5 3
 #define Absyn__EXTERNALDECL(funcName,lang,output_,args,annotation_) (mmc_mk_box6(3,&Absyn_ExternalDecl_EXTERNALDECL__desc,funcName,lang,output_,args,annotation_))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Ref_RCR__desc_added
+#define Absyn_Ref_RCR__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Ref_RCR__desc__fields[1] = {"cr"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Ref_RCR__desc = {
+  "Absyn_Ref_RCR",
+  "Absyn.Ref.RCR",
+  Absyn_Ref_RCR__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Ref_RCR__desc;
+#endif
+#define Absyn__RCR_3dBOX1 3
+#define Absyn__RCR(cr) (mmc_mk_box2(3,&Absyn_Ref_RCR__desc,cr))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Ref_RTS__desc_added
+#define Absyn_Ref_RTS__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Ref_RTS__desc__fields[1] = {"ts"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Ref_RTS__desc = {
+  "Absyn_Ref_RTS",
+  "Absyn.Ref.RTS",
+  Absyn_Ref_RTS__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Ref_RTS__desc;
+#endif
+#define Absyn__RTS_3dBOX1 4
+#define Absyn__RTS(ts) (mmc_mk_box2(4,&Absyn_Ref_RTS__desc,ts))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Ref_RIM__desc_added
+#define Absyn_Ref_RIM__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Ref_RIM__desc__fields[1] = {"im"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Ref_RIM__desc = {
+  "Absyn_Ref_RIM",
+  "Absyn.Ref.RIM",
+  Absyn_Ref_RIM__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Ref_RIM__desc;
+#endif
+#define Absyn__RIM_3dBOX1 5
+#define Absyn__RIM(im) (mmc_mk_box2(5,&Absyn_Ref_RIM__desc,im))
 #ifdef __cplusplus
 }
 #endif

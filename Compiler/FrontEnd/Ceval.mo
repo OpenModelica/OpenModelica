@@ -1866,13 +1866,15 @@ algorithm
         cr_lst = List.select1(crs, ComponentReference.crefContainedIn, cr);
         currentPrefixIdent = ComponentReference.crefLastIdent(prefix);
         currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.T_UNKNOWN_DEFAULT,{});
-         //  Select connect references that has cr as suffix and correct Prefix.
+        //  Select connect references that has cr as suffix and correct Prefix.
         cr_lst = List.select1r(cr_lst, ComponentReference.crefPrefixOf, currentPrefix);
 
         // Select connect references that are identifiers (inside connectors)
         cr_lst2 = List.select(crs,ComponentReference.crefIsIdent);
         cr_lst2 = List.select1(cr_lst2,ComponentReference.crefEqual,cr);
-
+        
+        // adrpo: do not do union! 
+        // see bug: https://trac.openmodelica.org/OpenModelica/ticket/2062
         cr_totlst = List.unionOnTrue(listAppend(cr_lst,cr_lst2),{},ComponentReference.crefEqual);
         res = listLength(cr_totlst);
         /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");

@@ -77,8 +77,7 @@ protected import Values;
 protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
-protected import FFlattenRedeclare;
-protected import FSCodeCheck;
+protected import Lookup;
 
 protected
 uniontype FullMod "used for error reporting"
@@ -256,7 +255,7 @@ protected function elabModRedeclareElement
   input Absyn.Info info;
   output tuple<SCode.Element, DAE.Mod> modElts "the elaborated modifiers";
 algorithm
-  modElts := match(inCache,inEnv,inIH,inPrefix,finalPrefix,inElt,impl,info)
+  modElts := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,inElt,impl,info)
     local
       Env.Cache cache; Env.Env env; Prefix.Prefix pre;
       SCode.Final f,fi;
@@ -278,8 +277,20 @@ algorithm
       SCode.Attributes attr1;
       list<SCode.Enum> enumLst;
       SCode.Comment cmt,comment;
-      SCode.Element element;
+      SCode.Element element, c;
 
+    // search for it locally in the freaking env as it might have been redeclared
+    case(cache,env,ih,pre,f,SCode.CLASS(name = cn),_,_)
+      equation
+        (c, _) = Lookup.lookupClassLocal(env, cn);
+        SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
+        (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
+        (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+        // unelab mod so we get constant evaluation of parameters
+        mod = unelabMod(emod);
+      then
+        ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));
+    
     // Only derived classdefinitions supported in redeclares for now.
     // TODO: What is allowed according to spec? adrpo: 2011-06-28: is not decided yet,
     //       but i think only derived even if in the Modelica.Media we have redeclare-as-element
@@ -288,8 +299,10 @@ algorithm
       SCode.CLASS(cn,
         SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i),_,_)
       equation
-       (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
-       (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+        (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
+        (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+        // unelab mod so we get constant evaluation of parameters
+        mod = unelabMod(emod);
       then
         ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp1,mod,attr1),cmt,i),emod));
 
@@ -305,16 +318,19 @@ algorithm
       equation
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+        // unelab mod so we get constant evaluation of parameters
+        mod = unelabMod(emod);
       then
         ((SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp1,mod,cmt,cond,i),emod));
 
     // redeclare failure?
     case(cache,env,ih,pre,f,element,_,_)
       equation
-        //print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element) +& "\n");
+        print("Unhandled element redeclare (we keep it as it is!): " +& SCodeDump.unparseElementStr(element) +& "\n");
       then
         ((element,DAE.NOMOD()));
-  end match;
+  
+  end matchcontinue;
 end elabModRedeclareElement;
 
 protected function elabModQualifyTypespec
@@ -333,6 +349,7 @@ algorithm
         Option<Absyn.ArrayDim> ad;
         Absyn.Path p,p1;
     case (cache, env,Absyn.TPATH(p,ad)) equation
+      // todo! elab the array dims too!!
       (cache,p1) = Inst.makeFullyQualified(cache,env,p);
     then (cache,Absyn.TPATH(p1,ad));
 
@@ -395,6 +412,7 @@ algorithm
       DAE.Exp dexp;
       String str;
       Absyn.Info info;
+      Values.Value v;
 
     case (DAE.NOMOD()) then SCode.NOMOD();
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = NONE())))
@@ -402,11 +420,22 @@ algorithm
         subs_1 = unelabSubmods(subs);
       then
         SCode.MOD(finalPrefix,each_,subs_1,NONE(),Absyn.dummyInfo);
+    
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))))
       equation
         subs_1 = unelabSubmods(subs);
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false)),info); // Default type checking non-delayed
+
+    // use the constant first!
+    case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
+                        eqModOption = SOME(DAE.TYPED(modifierAsValue = SOME(v), info = info)))))
+      equation
+        //es = ExpressionDump.printExpStr(e);
+        subs_1 = unelabSubmods(subs);
+        e_1 = Expression.unelabExp(ValuesUtil.valueExp(v));
+      then
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
 
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
                         eqModOption = SOME(DAE.TYPED(_,_,p,SOME(absynExp),info)))))
@@ -1755,8 +1784,8 @@ algorithm
         // if we have a constraint class we don't need the mod
         sm = unelabMod(m_2);
         emod = merge(emod1, emod2, env, pre);
-        pf = FFlattenRedeclare.propagatePrefixes(pf2, pf1);
-        attr = FFlattenRedeclare.propagateAttributes(attr2, attr1);
+        pf = SCode.propagatePrefixes(pf2, pf1);
+        attr = SCode.propagateAttributes(attr2, attr1);
       then
         DAE.REDECL(f1,each1,
           {(SCode.COMPONENT(id1,
@@ -1786,8 +1815,8 @@ algorithm
       equation
         true = stringEq(id1, id2);
         m = merge(m1_1, m2_1, env, pre);
-        pf = FFlattenRedeclare.propagatePrefixes(pf2, pf1);
-        (res, info) = FSCodeCheck.checkSameRestriction(res1, res2, info1, info2);
+        pf = SCode.propagatePrefixes(pf2, pf1);
+        (res, info) = Env.checkSameRestriction(res1, res2, info1, info2);
       then
         DAE.REDECL(f1, each1, {(SCode.CLASS(id1, pf, ep, pp, res, cdef, comment, info), m)});
 
@@ -3080,7 +3109,7 @@ algorithm
 
     case DAE.MOD(eqModOption = SOME(DAE.UNTYPED(exp = exp)))
       equation
-        crefs = Absyn.getCrefFromExp(exp, true);
+        crefs = Absyn.getCrefFromExp(exp, true, true);
       then
         crefs;
 

@@ -664,7 +664,7 @@ algorithm
 
         comp = inElement;
         comp = SCode.setComponentTypeSpec(comp, Absyn.TPATH(tpath, ad));
-        comp = mergeComponentModifiers(comp, orig);
+        comp = SCode.mergeComponentModifiers(comp, orig);
         infos = mkInfos(List.union(previousItem,inPreviousItem), {RP(replacements), EI(comp, env)});
 
         fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
@@ -995,7 +995,7 @@ algorithm
         mOld = SCode.getComponentMod(e);
         // in this case we merge component modifiers as NEW
         // and type modifiers as OLD
-        m = mergeModifiers(mOld, mNew);
+        m = SCode.mergeModifiers(mOld, mNew);
         e = SCode.setComponentTypeSpec(e, ts);
         e = SCode.setComponentMod(e, m);
         i1 = listAppend(i1, i2);
@@ -1075,7 +1075,7 @@ algorithm
       equation
         EI(o, env) = getEIFromInfos(inInfos);
         RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.VAR(e, _), denv), env) = getRIFromInfos(inInfos);
-        e = mergeComponentModifiers(e, o);
+        e = SCode.mergeComponentModifiers(e, o);
         infos = EI(e, env)::inInfos;
       then
         infos;
@@ -1095,7 +1095,7 @@ algorithm
         mOld = SCode.getComponentMod(e);
         // in this case we merge component modifiers as NEW
         // and type modifiers as OLD
-        m = mergeModifiers(mOld, mNew);
+        m = SCode.mergeModifiers(mOld, mNew);
         
         e = SCode.setComponentTypeSpec(e, ts);
         e = SCode.setComponentMod(e, m);
@@ -1106,128 +1106,6 @@ algorithm
 
   end matchcontinue;
 end replaceCompEIwithRI;
-
-protected function mergeComponentModifiers
-  input SCode.Element inNewComp;
-  input SCode.Element inOldComp;
-  output SCode.Element outComp;
-algorithm
-  outComp := match(inNewComp, inOldComp)
-    local
-      SCode.Ident n1,n2;
-      SCode.Prefixes p1,p2;
-      SCode.Attributes a1,a2;
-      Absyn.TypeSpec t1,t2;
-      SCode.Mod m1,m2,m;
-      SCode.Comment c1,c2;
-      Option<Absyn.Exp> cnd1,cnd2;
-      Absyn.Info i1,i2;
-      SCode.Element c;
-
-    case (SCode.COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
-          SCode.COMPONENT(n2, p2, a2, t2, m2, c2, cnd2, i2))
-      equation
-        m = mergeModifiers(m1, m2);
-        c = SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
-      then
-        c;
-
-  end match;
-end mergeComponentModifiers;
-
-protected function mergeModifiers
-  input SCode.Mod inNewMod;
-  input SCode.Mod inOldMod;
-  output SCode.Mod outMod;
-algorithm
-  outMod := matchcontinue(inNewMod, inOldMod)
-    local
-      SCode.Final f1, f2;
-      SCode.Each e1, e2;
-      list<SCode.SubMod> sl1, sl2, sl;
-      Option<tuple<Absyn.Exp, Boolean>> b1, b2, b;
-      Absyn.Info i1, i2;
-      SCode.Mod m;
-
-    case (SCode.NOMOD(), _) then inOldMod;
-    case (_, SCode.NOMOD()) then inNewMod;
-    case (SCode.REDECL(element = _), _) then inNewMod;
-
-    case (SCode.MOD(f1, e1, sl1, b1, i1),
-          SCode.MOD(f2, e2, sl2, b2, i2))
-      equation
-        b = mergeBindings(b1, b2);
-        sl = mergeSubMods(sl1, sl2);
-        m = SCode.MOD(f1, e1, sl, b1, i1);
-      then
-        m;
-
-    else inNewMod;
-
-  end matchcontinue;
-end mergeModifiers;
-
-protected function mergeBindings
-  input Option<tuple<Absyn.Exp, Boolean>> inNew;
-  input Option<tuple<Absyn.Exp, Boolean>> inOld;
-  output Option<tuple<Absyn.Exp, Boolean>> outBnd;
-algorithm
-  outBnd := match(inNew, inOld)
-    case (SOME(_), _) then inNew;
-    case (NONE(), _) then inOld;
-  end match;
-end mergeBindings;
-
-protected function mergeSubMods
-  input list<SCode.SubMod> inNew;
-  input list<SCode.SubMod> inOld;
-  output list<SCode.SubMod> outSubs;
-algorithm
-  outSubs := matchcontinue(inNew, inOld)
-    local
-      list<SCode.SubMod> sl, rest, old;
-      SCode.SubMod s;
-
-    case ({}, _) then inOld;
-
-    case (s::rest, _)
-      equation
-        old = removeSub(s, inOld);
-        sl = mergeSubMods(rest, old);
-      then
-        s::sl;
-
-     else inNew;
-  end matchcontinue;
-end mergeSubMods;
-
-protected function removeSub
-  input SCode.SubMod inSub;
-  input list<SCode.SubMod> inOld;
-  output list<SCode.SubMod> outSubs;
-algorithm
-  outSubs := matchcontinue(inSub, inOld)
-    local
-      list<SCode.SubMod>  rest;
-      SCode.Ident id1, id2;
-      list<SCode.Subscript> idxs1, idxs2;
-      SCode.SubMod s;
-
-    case (_, {}) then {};
-
-    case (SCode.NAMEMOD(id1, _), SCode.NAMEMOD(id2, _)::rest)
-      equation
-        true = stringEqual(id1, id2);
-      then
-        rest;
-
-    case (_, s::rest)
-      equation
-        rest = removeSub(inSub, rest);
-      then
-        s::rest;
-  end matchcontinue;
-end removeSub;
 
 public function replaceClassEIwithRI
   input Infos inInfos;
@@ -1467,7 +1345,7 @@ algorithm
 
     case (SCode.DERIVED(ts1, m1, atr1), SCode.DERIVED(ts2, m2, atr2))
       equation
-        m2 = mergeModifiers(m2, m1);
+        m2 = SCode.mergeModifiers(m2, m1);
         cd = SCode.DERIVED(ts2, m2, atr2);
       then
         cd;

@@ -1263,6 +1263,28 @@ algorithm
             Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,
             false);
         Util.setStatefulBoolean(inState,true);
+        
+        true = Env.hasModifications(env2);
+        // search directly in env2
+        (_, env5) = lookupClassLocal(env2, n);
+
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
+      then
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
+
+    // lookup of constants on form A.B in packages. instantiate package and look inside.
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a class. */
+      equation
+        (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) =
+          lookupClass2(
+            cache,
+            env,
+            Absyn.IDENT(id),
+            prevFrames,
+            Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,
+            false);
+        Util.setStatefulBoolean(inState,true);
 
         env3 = Env.openScope(env2, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
@@ -1557,16 +1579,27 @@ algorithm
       list<Absyn.Path> names;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      String str;
+      String str, name;
       Env.Cache cache;
-      Env.Env env;
-      Absyn.Path id;
+      Env.Env env, fs;
+      Absyn.Path id, scope;
       Absyn.Info info;
+
+    // uq paths are different!
+    case (cache,env,id,info)
+      equation
+        true = Env.hasModifications(env); // Absyn.pathContainsString(id, "$uq");
+        true = Absyn.pathPrefixOf(Absyn.stripLast(id), Env.getEnvName(env));
+        _::env = env;
+        name = Absyn.pathLastIdent(id);
+        (cache, res) = lookupFunctionsInEnv(cache, env, Absyn.IDENT(name), inInfo);
+      then
+        (cache,res);
 
     // Builtin operators are looked up in top frame directly
     case (cache,env,(id as Absyn.IDENT(name = str)),info)
       equation
-        _ = Static.elabBuiltinHandler(str) "Check for builtin operators" ;
+        _ = Static.elabBuiltinHandler(str) "Check for builtin operators";
         (cache,env as {Env.FRAME(clsAndVars = ht,types = httypes)}) = Builtin.initialEnv(cache);
         (cache,res) = lookupFunctionsInFrame(cache, ht, httypes, env, str, info);
       then

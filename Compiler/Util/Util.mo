@@ -1656,33 +1656,34 @@ public function modelicaStringToCStr "function modelicaStringToCStr
   input Boolean changeDerCall "if true, first change 'DER(v)' to $derivativev";
   output String res_str;
 algorithm
-
   res_str := matchcontinue(str,changeDerCall)
-    case(str,false) // BoschRexroth specifics
+    local String s;
+    case(s,false) // BoschRexroth specifics
       equation
         false = Flags.getConfigBool(Flags.TRANSLATE_DAE_STRING);
         then
-          str;
-    case(str,false)
+          s;
+    case(s,false)
       equation
         res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);
         // debug_print("prefix$", res_str);
       then res_str;
-    case(str,true) equation
-      str = modelicaStringToCStr2(str);
-    then str;
+    case(s,true) equation
+      s = modelicaStringToCStr2(s);
+    then s;
   end matchcontinue;
 end modelicaStringToCStr;
 
 protected function modelicaStringToCStr2 "help function to modelicaStringToCStr,
 first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with applied rules for v"
-  input String derName;
+  input String inDerName;
   output String outDerName;
 algorithm
-  outDerName := matchcontinue(derName)
-  local
-    String name;
-    list<String> names;
+  outDerName := matchcontinue(inDerName)
+    local
+      String name, derName;
+      list<String> names;
+      
     case(derName) equation
       0 = System.strncmp(derName,"der(",4);
       // adrpo: 2009-09-08

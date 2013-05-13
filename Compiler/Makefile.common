@@ -57,14 +57,6 @@ Env.mo \
 Expression.mo \
 ExpressionDump.mo \
 ExpressionSimplify.mo \
-FDependency.mo \
-FEnv.mo \
-FEnvExtends.mo \
-FFlatten.mo \
-FFlattenImports.mo \
-FFlattenRedeclare.mo \
-FLookup.mo \
-FSCodeCheck.mo \
 Graphviz.mo \
 Inline.mo \
 InnerOuter.mo \

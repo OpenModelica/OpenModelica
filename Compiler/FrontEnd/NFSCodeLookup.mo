@@ -1527,7 +1527,7 @@ algorithm
   outCref := matchcontinue(inCref, inEnv)
     local
       Absyn.Path env_path;
-      Absyn.ComponentRef cref;
+      Absyn.ComponentRef cref1, cref2;
 
     case (_, _)
       equation
@@ -1535,9 +1535,13 @@ algorithm
         // instantiation which handles this correctly.
         false = Flags.isSet(Flags.SCODE_INST);
         env_path = NFSCodeEnv.getEnvPath(inEnv);
-        cref = Absyn.unqualifyCref(inCref);
+        cref1 = Absyn.unqualifyCref(inCref);
+        // try to strip as much as possible
+        cref2 = crefStripEnvPrefix2(cref1, env_path);
+        // check if we really did anything, fail if we did nothing!
+        false = Absyn.crefEqual(cref1, cref2);
       then
-        crefStripEnvPrefix2(cref, env_path);
+        cref2;
 
     else inCref;
   end matchcontinue;
@@ -1548,7 +1552,7 @@ protected function crefStripEnvPrefix2
   input Absyn.Path inEnvPath;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inEnvPath)
+  outCref := matchcontinue(inCref, inEnvPath)
     local
       Absyn.Ident id1, id2;
       Absyn.ComponentRef cref;
@@ -1567,7 +1571,15 @@ algorithm
         true = stringEqual(id1, id2);
       then
         cref;
-  end match;
+    
+    // adrpo: leave it as stripped as you can if you can't match it above!
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
+          Absyn.IDENT(name = id2))
+      equation
+        false = stringEqual(id1, id2);
+      then
+        inCref;
+  end matchcontinue;
 end crefStripEnvPrefix2;
 
 public function lookupComponentRef

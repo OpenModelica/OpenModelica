@@ -3712,6 +3712,15 @@ algorithm
   end match;
 end propTuplePropList2;
 
+public function getPropConst "function: getPropConst
+  author: adrpo
+  Return the const from Properties (no tuples!)."
+  input Properties inProperties;
+  output Const outConst;
+algorithm
+   DAE.PROP(constFlag = outConst) := inProperties;
+end getPropConst;
+
 public function getPropType "function: getPropType
   author: LS
   Return the Type from Properties."

@@ -733,7 +733,7 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
 
   if (writeLogFile(resultfilename,&ddf,filename,reffilename,reltol,abstol))
   {
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Cannot write result file!\n"), msg, 0);
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Cannot write to the difference (.csv) file!\n"), msg, 0);
   }
 
   if ((ddf.n > 0) || (ngetfailedvars > 0)){

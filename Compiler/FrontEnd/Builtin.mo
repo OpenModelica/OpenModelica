@@ -707,7 +707,7 @@ algorithm
       env = initialEnvMetaModelica(env);
 
       Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
-      env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {}))) "Add classes in the initial env";
+      env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), SOME(Env.BUILTIN())) "Add classes in the initial env";
       cache = Env.setCachedInitialEnv(cache,env);
       _ = getSetInitialEnv(SOME(env));
     then (cache,env);

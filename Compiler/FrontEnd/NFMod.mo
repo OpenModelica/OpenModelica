@@ -893,7 +893,7 @@ algorithm
 
     case (SCode.NAMEMOD(ident = n, A = SCode.MOD(binding = SOME((e, _))))::rest, _)
       equation
-        cl = Absyn.getCrefFromExp(e,true);
+        cl = Absyn.getCrefFromExp(e,true,true);
         true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);
       then
         rest;
