@@ -1613,7 +1613,7 @@ algorithm
           ("simulation",str5),
           ("topics",str6)
         };
-        str = System.gettext("The available topics to get help on are as follows:\n");
+        str = System.gettext("The available topics (help(\"topics\")) are as follows:\n");
         strs = List.map(topics,makeTopicString);
         help = str +& stringDelimitList(strs,"\n");
       then help;
