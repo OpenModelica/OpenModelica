@@ -79,6 +79,7 @@ typedef struct DATA_HYBRD
   double* wa2;
   double* wa3;
   double* wa4;
+
 } DATA_HYBRD;
 
 static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data);
@@ -325,6 +326,7 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
   int i, currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
+  int continuous = ((DATA*)data)->simulationInfo.solveContinuous;
 
   /* debug output */
   INFO1(LOG_NLS_V, "# Call wrapper function with mode %d", (int)*iflag);
@@ -360,11 +362,22 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
       break;
 
     case 2:
+
+      /* set residual function continuous for jacobian calculation */
+      if(continuous)
+        ((DATA*)data)->simulationInfo.solveContinuous = 0;
+
       /* call apropreated jacobain function */
       if(systemData->jacobianIndex != -1)
         getAnalyticalJacobian(data, fjac);
       else
         getNumericalJacobian(data, fjac, x, f);
+
+      /* reset residual function again */
+      if(continuous)
+        ((DATA*)data)->simulationInfo.solveContinuous = 1;
+
+
       break;
 
     default:
@@ -400,11 +413,15 @@ int solveHybrd(DATA *data, int sysNumber)
   double initial_factor = solverData->factor;
   int nfunc_evals = 0;
   int continuous = 1;
+  int nonContinuousCase = 0;
 
   int giveUp = 0;
   int retries = 0;
   int retries2 = 0;
   int retries3 = 0;
+
+  modelica_boolean* relationsPreBackup;
+  relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
 
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS))
@@ -513,6 +530,7 @@ int solveHybrd(DATA *data, int sysNumber)
       storeRelations(data);
     }
 
+
     /* scaling residual vector */
     {
       int l=0;
@@ -565,6 +583,15 @@ int solveHybrd(DATA *data, int sysNumber)
 
     if(solverData->info == 1 && (xerror > local_tol && xerror_scaled > local_tol))
       solverData->info = 4;
+
+    /* reset non-contunuousCase */
+    if (nonContinuousCase && (solverData->info == 4 || solverData->info == 5)){
+      /* set x vector */
+      memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+
+      memcpy(data->simulationInfo.relationsPre, relationsPreBackup, sizeof(modelica_boolean)*data->modelData.nRelations);
+      nonContinuousCase = 0;
+    }
 
     /* solution found */
     if(solverData->info == 1 || xerror <= local_tol || xerror_scaled <= local_tol)
@@ -685,6 +712,9 @@ int solveHybrd(DATA *data, int sysNumber)
 
       /* try to solve a discontinuous system */
       continuous = 0;
+
+      nonContinuousCase = 1;
+      memcpy(relationsPreBackup, data->simulationInfo.relationsPre, sizeof(modelica_boolean)*data->modelData.nRelations);
 
       giveUp = 0;
       nfunc_evals += solverData->nfev;
@@ -852,6 +882,8 @@ int solveHybrd(DATA *data, int sysNumber)
   /* reset some solving data */
   solverData->factor = initial_factor;
   solverData->mode = 1;
+
+  free(relationsPreBackup);
 
   return success;
 }
