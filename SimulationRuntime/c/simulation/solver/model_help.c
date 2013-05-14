@@ -935,7 +935,7 @@ void setZCtol(double relativeTol)
 extern inline
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
-  double eps = tolZC*fabs(a-b)+tolZC;
+  double eps = (direction)? tolZC*fabs(b)+tolZC : tolZC*fabs(a)+tolZC;
   return (direction)? (a - b <= eps):(a - b <= -eps);
 }
 
@@ -948,7 +948,7 @@ modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 extern inline
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
-  double eps = tolZC*fabs(a-b)+tolZC;
+  double eps = (direction)? tolZC*fabs(a)+tolZC : tolZC*fabs(b)+tolZC;
   return (direction)? (a - b >= -eps ):(a - b >= eps);
 }
 
