@@ -277,6 +277,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   if(plotCommands) {
     fputs("set terminal svg\n", plotCommands);
     fputs("set nokey\n", plotCommands);
+    fputs("set format y \"%g\"\n", plotCommands);
     /* The column containing the time spent to calculate each step */
     printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelData.modelFilePrefix, data->modelData.modelDataXml.nFunctions+data->modelData.modelDataXml.nProfileBlocks, -1, 999, "");
   }
