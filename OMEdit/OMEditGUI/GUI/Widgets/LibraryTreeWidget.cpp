@@ -1614,6 +1614,9 @@ QPixmap LibraryComponent::getComponentPixmap(QSize size)
   QPixmap pixmap(size);
   pixmap.fill(QColor(Qt::transparent));
   QPainter painter(&pixmap);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::TextAntialiasing);
+  painter.setRenderHint(QPainter::SmoothPixmapTransform);
   painter.setWindow(mRectangle.toRect());
   painter.scale(1.0, -1.0);
   mpGraphicsView->scene()->render(&painter, mRectangle, mpGraphicsView->sceneRect());
