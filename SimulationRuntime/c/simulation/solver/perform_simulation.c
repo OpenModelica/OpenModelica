@@ -294,6 +294,11 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         retValue = -3;
         INFO1(LOG_STDOUT, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
+      else
+      {
+        retValue = -1;
+        INFO1(LOG_STDOUT, "model terminate | probably a strong component solver failed. For more information use flags -lv LOG_NLS, LOG_LS. | Simulation terminated at time %g", solverInfo->currentTime);
+      }
       break;
     }
   } /* end while solver */
