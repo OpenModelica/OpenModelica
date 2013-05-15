@@ -9,7 +9,7 @@ CXX = @CXX@
 CFLAGS = @CFLAGS@ -I../util
 CPPFLAGS = @CPPFLAGS@ -I.. -Dlinux
 REGEN = Makefile.in
-MODELICATABLES = libModelicaTables*@SHREXT@*
+MODELICATABLES = libModelicaStandardTables*@SHREXT@*
 PREFIX = --prefix="@prefix@" --libdir='$${exec_prefix}/lib/omc'
 
 include Makefile.common
