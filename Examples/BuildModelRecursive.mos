@@ -35,11 +35,17 @@ system("rm -f "+libraryString+"* " + log);
 min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
-writeFile(statFile,\"<tr><td bgcolor=\\\"#FF0000\\\">"+s+"</td></tr>\");getErrorString();
+writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
 "+loadModelCommand+"
 setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
 res:=buildModel("+s+");
 greenColor := \"#00FF00\";
+if res[1] == \"\" then
+  err:=getErrorString();
+  setCommandLineOptions(\"+d=scodeInstShortcut\");
+  res:=buildModel("+s+");
+  greenColor := \"#FFFF00\";
+end if;
 errFile:=\""+s+".err\";
 simFile:=\""+s+".sim\";
 err:=getErrorString();
@@ -106,7 +112,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
 <p>Flags: setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
-<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
+<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
 writeFile(log,"<table><tr><th>Model</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>",append=true);getErrorString();

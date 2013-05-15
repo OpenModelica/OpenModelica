@@ -553,7 +553,7 @@ For the MultiBody library this allows to avoid unnecessary small linear systems 
 OpenModelica, <b>rooted</b>(x) always returns true.
 See <a href=\"https://trac.modelica.org/Modelica/ticket/95\">rooted ticket in the Modelica Trac</a> for details.
 </p>
-</html>"),version="Dymola / MSL 3");
+</html>"),version="Deprecated in the upcoming Modelica 3.2 rev2");
 end rooted;
 
 function actualStream
