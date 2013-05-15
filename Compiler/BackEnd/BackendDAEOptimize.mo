@@ -6544,14 +6544,27 @@ algorithm
       list<String> strs;
       String str,eqstr;
       list<Integer> nrOfEquationsBranches;
-    case (_,_,_)
+
+    case (_, _, _)
       equation
         nrOfEquations = BackendEquation.equationLstSize(falseBranch);
         nrOfEquationsBranches = List.map(trueBranches, BackendEquation.equationLstSize);
         b = List.map1(nrOfEquationsBranches, intEq, nrOfEquations);
         true = List.reduce(b,boolAnd);
-      then (nrOfEquations);
-    case (_,_,_)
+      then
+        nrOfEquations;
+
+    // An if-equation with non-parameter conditions must have an else-clause.
+    case (_, {}, _)
+      equation
+        Error.addSourceMessage(Error.IF_EQUATION_MISSING_ELSE, {},
+          DAEUtil.getElementSourceFileInfo(source));
+      then
+        fail();
+
+    // If if-equation with non-parameter conditions must have the same number of
+    // equations in each branch.
+    case (_, _ :: _, _)
       equation
         nrOfEquations = BackendEquation.equationLstSize(falseBranch);
         nrOfEquationsBranches = List.map(trueBranches, BackendEquation.equationLstSize);
@@ -6560,7 +6573,9 @@ algorithm
         str = stringDelimitList(strs,",");
         str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
         Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str,eqstr},DAEUtil.getElementSourceFileInfo(source));
-      then fail();
+      then
+        fail();
+
   end matchcontinue;
 end countEquationsInBranches;
 

@@ -333,6 +333,8 @@ public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, 
   Util.gettext("Identifier %s of implicit for iterator must be present as array subscript in the loop body."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
   Util.gettext("In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."));
+public constant Message IF_EQUATION_MISSING_ELSE = MESSAGE(115, TRANSLATION(), ERROR(),
+  Util.gettext("Missing else-clause in if-equation with non-parameter conditions."));
 public constant Message CONNECT_INCOMPATIBLE_TYPES = MESSAGE(117, TRANSLATION(), ERROR(),
   Util.gettext("Incompatible components in connect statement: connect(%s, %s)\n- %s has components %s\n- %s has components %s"));
 public constant Message CONNECT_OUTER_OUTER = MESSAGE(118, TRANSLATION(), ERROR(),
