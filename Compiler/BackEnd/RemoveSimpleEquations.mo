@@ -3060,20 +3060,20 @@ algorithm
     case ({},NONE(),_,_) then inVar;
     case ({},SOME((e,cr,_)),_,_)
       equation
-        s = iStr +& "Select value from " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")";
+        s = iStr +& "         Select value from " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")";
         Error.addMessage(Error.COMPILER_WARNING,{s});
         v = BackendVariable.setVarStartValue(inVar, e);
       then
         v;
     case ((e,cr)::zerofreevalues,NONE(),_,_)
       equation
-        s = iStr +& "Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
+        s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
         i = ComponentReference.crefDepth(cr);
       then
         selectFreeValue1(zerofreevalues,SOME((e,cr,i)),s,inVar);
     case ((e,cr)::zerofreevalues,SOME((_,_,i1)),_,_)
       equation
-        s = iStr +& "Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
+        s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
         i = ComponentReference.crefDepth(cr);
         favorit = Util.if_(intLt(i,i1),SOME((e,cr,i)),iFavorit);
       then
