@@ -1609,6 +1609,22 @@ algorithm
   end match;
 end subscriptNonExpandedExp;
 
+public function subscriptIsFirst
+  "Returns true if the given subscript is the first index for a dimension, i.e.
+   1, false or the first enumeration literal in an enumeration."
+  input Subscript inSubscript;
+  output Boolean outIsFirst;
+algorithm
+  outIsFirst := match(inSubscript)
+    local
+
+    case DAE.INDEX(exp = DAE.ICONST(1)) then true;
+    case DAE.INDEX(exp = DAE.BCONST(false)) then true;
+    case DAE.INDEX(exp = DAE.ENUM_LITERAL(index = 1)) then true;
+
+  end match;
+end subscriptIsFirst;
+
 public function nthArrayExp
 "function: nthArrayExp
   author: PA

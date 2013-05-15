@@ -72,6 +72,7 @@ template subscriptStr(Subscript subscript)
 ::=
   match subscript
   case INDEX(exp=ICONST(integer=i)) then i
+  case INDEX(exp=ENUM_LITERAL(name=n)) then dotPath(n)
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"

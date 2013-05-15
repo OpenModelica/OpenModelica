@@ -1291,9 +1291,8 @@ algorithm
     case (cr)
       equation
         ((subs as (_ :: _))) = crefLastSubs(cr);
-        exps = List.map(subs, Expression.subscriptIndexExp);
         // fails if any mapped functions returns false
-      then List.mapAllValueBool(exps, Expression.isOne, true);
+      then List.mapAllValueBool(subs, Expression.subscriptIsFirst, true);
     else false;
   end matchcontinue;
 end crefIsFirstArrayElt;
