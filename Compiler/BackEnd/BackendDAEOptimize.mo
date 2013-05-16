@@ -2080,7 +2080,7 @@ algorithm
   match (syst,ishared,eqn_lst,eqn_indxs,var_lst,var_indxs,jac)
     local
       BackendDAE.Variables vars,vars1,v;
-      BackendDAE.EquationArray eqns,eqns1;
+      BackendDAE.EquationArray eqns,eqns1, eqns2;
       list<DAE.Exp> beqs;
       list<DAE.ElementSource> sources;
       list<Real> rhsVals,solvedVals;
@@ -2103,8 +2103,8 @@ algorithm
         names = List.map(var_lst,BackendVariable.varCref);
         checkLinearSystem(linInfo,names,jacVals,rhsVals,eqn_lst);
         sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));
-        (vars1,shared) = changeconstantLinearSystemVars(var_lst,solvedVals,sources,var_indxs,vars,ishared);
-        eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns);
+        (vars1,eqns2,shared) = changeconstantLinearSystemVars(var_lst,solvedVals,sources,var_indxs,vars,eqns,ishared);
+        eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns2);
       then
         (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching,stateSets),shared);
   end match;
@@ -2116,11 +2116,13 @@ protected function changeconstantLinearSystemVars
   input list<DAE.ElementSource> inSources;
   input list<Integer> var_indxs;
   input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray ieqns;
   input BackendDAE.Shared ishared;
   output BackendDAE.Variables outVars;
+  output BackendDAE.EquationArray oeqns;
   output BackendDAE.Shared oshared;
 algorithm
-    (outVars,oshared) := match (inVarLst,inSolvedVals,inSources,var_indxs,inVars,ishared)
+    (outVars,oeqns,oshared) := match (inVarLst,inSolvedVals,inSources,var_indxs,inVars,ieqns,ishared)
     local
       BackendDAE.Var v,v1;
       list<BackendDAE.Var> varlst;
@@ -2130,18 +2132,29 @@ algorithm
       Real r;
       list<Real> rlst;
       BackendDAE.Shared shared;
+      BackendDAE.EquationArray eqns;
       Integer indx;
       list<Integer> vindxs;
-    case ({},{},{},_,vars,_) then (vars,ishared);
-    case (v::varlst,r::rlst,s::slst,indx::vindxs,vars,_)
+      DAE.ComponentRef cref;
+      DAE.Type tp;
+      DAE.Exp e;
+    case ({},{},{},_,vars,eqns,_) then (vars,eqns,ishared);
+    case ((v as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE(index=_),varType=tp))::varlst,r::rlst,s::slst,indx::vindxs,vars,eqns,_)
+      equation
+        e = Expression.makeCrefExp(cref, tp);
+        e = Expression.expDer(e);
+        eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(e, DAE.RCONST(r), DAE.emptyElementSource, false), eqns);
+        (vars2,eqns,shared) = changeconstantLinearSystemVars(varlst,rlst,slst,vindxs,vars,eqns,ishared);
+      then (vars2,eqns,shared);
+    case (v::varlst,r::rlst,s::slst,indx::vindxs,vars,eqns,_)
       equation
         v1 = BackendVariable.setBindExp(v,DAE.RCONST(r));
         v1 = BackendVariable.setVarStartValue(v1,DAE.RCONST(r));
         // ToDo: merge source of var and equation
         (vars1,_) = BackendVariable.removeVar(indx, vars);
         shared = BackendVariable.addKnVarDAE(v1,ishared);
-        (vars2,shared) = changeconstantLinearSystemVars(varlst,rlst,slst,vindxs,vars1,shared);
-      then (vars2,shared);
+        (vars2,eqns,shared) = changeconstantLinearSystemVars(varlst,rlst,slst,vindxs,vars1,eqns,shared);
+      then (vars2,eqns,shared);
   end match;
 end changeconstantLinearSystemVars;
 
