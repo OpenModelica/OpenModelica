@@ -83,6 +83,19 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
     if (polygonPoints.size() >= 2)
       mPoints.append(QPointF(polygonPoints.at(0).toFloat(), polygonPoints.at(1).toFloat()));
   }
+  /* The polygon is automatically closed, if the first and the last points are not identical. */
+  if (mPoints.size() == 1)
+  {
+    mPoints.append(mPoints.first());
+    mPoints.append(mPoints.first());
+  }
+  else if (mPoints.size() == 2)
+  {
+    mPoints.append(mPoints.first());
+  }
+  if (mPoints.size() > 0)
+    if (mPoints.first() != mPoints.last())
+      mPoints.append(mPoints.first());
   // 10th item of the list is smooth.
   mSmooth = StringHandler::getSmoothType(list.at(9));
 }
