@@ -172,7 +172,7 @@ void Component::initialize()
   mpCoOrdinateSystem->setGrid(QPointF(2, 2));
   //Construct the temporary polygon that is shown when scaling
   mpResizerRectangle = new QGraphicsRectItem;
-  mpResizerRectangle->setZValue(1001);      // set to a very high value
+  mpResizerRectangle->setZValue(1001);  // set to a very high value
   if (mpGraphicsView) mpGraphicsView->scene()->addItem(mpResizerRectangle);
   QPen pen;
   pen.setStyle(Qt::DotLine);
@@ -1004,9 +1004,9 @@ void Component::deleteMe()
 
 void Component::duplicate()
 {
-  QPointF position(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
-  if (mpGraphicsView->addComponent(mClassName, scenePos() + position))
+  if (mpGraphicsView->addComponent(mClassName, scenePos() + gridStep))
   {
     if (mType == StringHandler::Connector)
     {
@@ -1307,7 +1307,9 @@ void Component::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
   Q_UNUSED(event);
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  if (mType == StringHandler::Connector && pMainWindow->getConnectModeAction()->isChecked())
+  if ((mType == StringHandler::Connector) &&
+      (pMainWindow->getConnectModeAction()->isChecked()) &&
+      (mpGraphicsView->getViewType() == StringHandler::Diagram))
     QApplication::setOverrideCursor(Qt::CrossCursor);
 }
 
@@ -1315,9 +1317,7 @@ void Component::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 void Component::hoverLeaveEvent(QGraphicsSceneHoverEvent *event)
 {
   Q_UNUSED(event);
-  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-  if (mType == StringHandler::Connector && pMainWindow->getConnectModeAction()->isChecked())
-    QApplication::restoreOverrideCursor();
+  QApplication::restoreOverrideCursor();
 }
 
 void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)

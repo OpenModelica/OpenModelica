@@ -1146,6 +1146,14 @@ void ShapeAnnotation::deleteMe()
 }
 
 /*!
+  Reimplemented by each child shape class to duplicate the shape.
+  */
+void ShapeAnnotation::duplicate()
+{
+  /* duplicate code is implement in each child shape class. */
+}
+
+/*!
   Slot activated when ctrl+r is pressed while selecting the shape.
   \sa rotateClockwise(),
       rotateAntiClockwise(),
@@ -1433,6 +1441,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   else
   {
     menu.addAction(mpGraphicsView->getDeleteAction());
+    menu.addAction(mpGraphicsView->getDuplicateAction());
     menu.addSeparator();
     menu.addAction(mpGraphicsView->getRotateClockwiseAction());
     menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
@@ -1471,9 +1480,11 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         else
         {
           connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), SLOT(deleteMe()), Qt::UniqueConnection);
+          connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), SLOT(rotateClockwiseMouseRightClick()), Qt::UniqueConnection);
           connect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), SLOT(rotateAntiClockwiseMouseRightClick()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressDelete()), SLOT(deleteMe()), Qt::UniqueConnection);
+          connect(mpGraphicsView, SIGNAL(keyPressDuplicate()), SLOT(duplicate()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), SLOT(rotateClockwiseKeyPress()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), SIGNAL(updateClassAnnotation()), Qt::UniqueConnection);
           connect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), SLOT(rotateAntiClockwiseKeyPress()), Qt::UniqueConnection);
@@ -1512,9 +1523,11 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
         else
         {
           disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
+          disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView->getRotateClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateClockwiseMouseRightClick()));
           disconnect(mpGraphicsView->getRotateAntiClockwiseAction(), SIGNAL(triggered()), this, SLOT(rotateAntiClockwiseMouseRightClick()));
           disconnect(mpGraphicsView, SIGNAL(keyPressDelete()), this, SLOT(deleteMe()));
+          disconnect(mpGraphicsView, SIGNAL(keyPressDuplicate()), this, SLOT(duplicate()));
           disconnect(mpGraphicsView, SIGNAL(keyPressRotateClockwise()), this, SLOT(rotateClockwiseKeyPress()));
           disconnect(mpGraphicsView, SIGNAL(keyReleaseRotateClockwise()), this, SIGNAL(updateClassAnnotation()));
           disconnect(mpGraphicsView, SIGNAL(keyPressRotateAntiClockwise()), this, SLOT(rotateAntiClockwiseKeyPress()));

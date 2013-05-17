@@ -579,6 +579,31 @@ void LineAnnotation::updateConnectionAnnotation()
                               mpGraphicsView->getModelWidget()->getLibraryTreeNode()->getNameStructure(), annotationString);
 }
 
+void LineAnnotation::duplicate()
+{
+  LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  pLineAnnotation->setOrigin(mOrigin + gridStep);
+  pLineAnnotation->setRotationAngle(mRotation);
+  pLineAnnotation->initializeTransformation();
+  pLineAnnotation->setLineColor(getLineColor());
+  pLineAnnotation->setLinePattern(getLinePattern());
+  pLineAnnotation->setLineThickness(getLineThickness());
+  pLineAnnotation->setStartArrow(getStartArrow());
+  pLineAnnotation->setEndArrow(getEndArrow());
+  pLineAnnotation->setArrowSize(getArrowSize());
+  pLineAnnotation->setSmooth(getSmooth());
+  pLineAnnotation->setPoints(getPoints());
+  pLineAnnotation->addPoint(QPoint(0, 0));
+  pLineAnnotation->drawCornerItems();
+  pLineAnnotation->setCornerItemsPassive();
+  pLineAnnotation->update();
+  mpGraphicsView->addShapeObject(pLineAnnotation);
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
+
 ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
   : QDialog(pParent, Qt::WindowTitleHint), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation)
 {

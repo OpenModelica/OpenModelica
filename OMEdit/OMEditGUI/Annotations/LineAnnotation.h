@@ -89,6 +89,7 @@ public slots:
   void handleComponentMoved();
   void handleComponentRotation();
   void updateConnectionAnnotation();
+  void duplicate();
 };
 
 class ConnectionArray : public QDialog

@@ -177,6 +177,7 @@ signals:
 public slots:
   void deleteConnection();
   void deleteMe();
+  virtual void duplicate();
   void rotateClockwiseKeyPress();
   void rotateAntiClockwiseKeyPress();
   void rotateClockwiseMouseRightClick();
