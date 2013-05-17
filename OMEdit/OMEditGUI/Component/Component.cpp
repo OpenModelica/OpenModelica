@@ -368,7 +368,6 @@ void Component::createActions()
   // Parameters Action
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
-  mpParametersAction->setDisabled(isSystemLibrary);
   connect(mpParametersAction, SIGNAL(triggered()), SLOT(showParameters()));
   // Attributes Action
   mpAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
@@ -1309,7 +1308,8 @@ void Component::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
   if ((mType == StringHandler::Connector) &&
       (pMainWindow->getConnectModeAction()->isChecked()) &&
-      (mpGraphicsView->getViewType() == StringHandler::Diagram))
+      (mpGraphicsView->getViewType() == StringHandler::Diagram) &&
+      (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary()))
     QApplication::setOverrideCursor(Qt::CrossCursor);
 }
 
