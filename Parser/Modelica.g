@@ -1132,10 +1132,12 @@ primary returns [void* ast] @declarations {
   | LBRACK el=matrix_expression_list RBRACK {$ast = Absyn__MATRIX(el);}
   | LBRACE for_or_el=for_or_expression_list RBRACE
     {
-      if (!for_or_el.isFor)
+      if (!for_or_el.isFor) {
+        modelicaParserAssert(RML_NILHDR != RML_GETHDR(for_or_el.ast) || metamodelica_enabled(), "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = Absyn__ARRAY(for_or_el.ast);
-      else
+      } else {
         $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),for_or_el.ast);
+      }
     }
   | T_END { $ast = Absyn__END; }
   )
