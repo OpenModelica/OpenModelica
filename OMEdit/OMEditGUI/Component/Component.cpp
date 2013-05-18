@@ -257,28 +257,28 @@ void Component::parseAnnotationString(QString annotation)
       LineAnnotation *pLineAnnotation = new LineAnnotation(shape, this);
       mpShapesList.append(pLineAnnotation);
     }
-    if (shape.startsWith("Polygon"))
+    else if (shape.startsWith("Polygon"))
     {
       shape = shape.mid(QString("Polygon").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, this);
       mpShapesList.append(pPolygonAnnotation);
     }
-    if (shape.startsWith("Rectangle"))
+    else if (shape.startsWith("Rectangle"))
     {
       shape = shape.mid(QString("Rectangle").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, this);
       mpShapesList.append(pRectangleAnnotation);
     }
-    if (shape.startsWith("Ellipse"))
+    else if (shape.startsWith("Ellipse"))
     {
       shape = shape.mid(QString("Ellipse").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, this);
       mpShapesList.append(pEllipseAnnotation);
     }
-    if (shape.startsWith("Text"))
+    else if (shape.startsWith("Text"))
     {
       QString textShapeAnnotation = shape.mid(QString("Text").length());
       textShapeAnnotation = StringHandler::removeFirstLastBrackets(textShapeAnnotation);
@@ -296,14 +296,7 @@ void Component::parseAnnotationString(QString annotation)
       TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
       mpShapesList.append(pTextAnnotation);
     }
-    if (shape.startsWith("Text"))
-    {
-      shape = shape.mid(QString("Text").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
-      mpShapesList.append(pTextAnnotation);
-    }
-    if (shape.startsWith("Bitmap"))
+    else if (shape.startsWith("Bitmap"))
     {
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);

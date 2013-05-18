@@ -2198,7 +2198,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
       pLineAnnotation->drawCornerItems();
       pLineAnnotation->setCornerItemsPassive();
     }
-    if (shape.startsWith("Polygon"))
+    else if (shape.startsWith("Polygon"))
     {
       shape = shape.mid(QString("Polygon").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2213,7 +2213,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
       pPolygonAnnotation->drawCornerItems();
       pPolygonAnnotation->setCornerItemsPassive();
     }
-    if (shape.startsWith("Rectangle"))
+    else if (shape.startsWith("Rectangle"))
     {
       shape = shape.mid(QString("Rectangle").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2222,7 +2222,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
       pRectangleAnnotation->drawCornerItems();
       pRectangleAnnotation->setCornerItemsPassive();
     }
-    if (shape.startsWith("Ellipse"))
+    else if (shape.startsWith("Ellipse"))
     {
       shape = shape.mid(QString("Ellipse").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2231,7 +2231,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
       pEllipseAnnotation->drawCornerItems();
       pEllipseAnnotation->setCornerItemsPassive();
     }
-    if (shape.startsWith("Text"))
+    else if (shape.startsWith("Text"))
     {
       shape = shape.mid(QString("Text").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
@@ -2240,7 +2240,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
       pTextAnnotation->drawCornerItems();
       pTextAnnotation->setCornerItemsPassive();
     }
-    if (shape.startsWith("Bitmap"))
+    else if (shape.startsWith("Bitmap"))
     {
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
