@@ -278,24 +278,37 @@ void Component::parseAnnotationString(QString annotation)
       EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, this);
       mpShapesList.append(pEllipseAnnotation);
     }
-    // don't parse the text annotation for library icon
-    //! @note We don't show text for Library Icons.
-    if (!isLibraryComponent())
+    if (shape.startsWith("Text"))
     {
-      if (shape.startsWith("Text"))
+      QString textShapeAnnotation = shape.mid(QString("Text").length());
+      textShapeAnnotation = StringHandler::removeFirstLastBrackets(textShapeAnnotation);
+      //! @note We don't show text annotation that contains % for Library Icons. Only static text for functions are shown.
+      if (isLibraryComponent())
       {
-        shape = shape.mid(QString("Text").length());
-        shape = StringHandler::removeFirstLastBrackets(shape);
-        TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
-        mpShapesList.append(pTextAnnotation);
+        if (mType != StringHandler::Function)
+          continue;
+        QStringList list = StringHandler::getStrings(textShapeAnnotation);
+        if (list.size() < 11)
+          continue;
+        if (list.at(9).contains("%"))
+          continue;
       }
+      TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
+      mpShapesList.append(pTextAnnotation);
+    }
+    if (shape.startsWith("Text"))
+    {
+      shape = shape.mid(QString("Text").length());
+      shape = StringHandler::removeFirstLastBrackets(shape);
+      TextAnnotation *pTextAnnotation = new TextAnnotation(shape, this);
+      mpShapesList.append(pTextAnnotation);
+    }
     if (shape.startsWith("Bitmap"))
     {
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
       BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(shape, this);
       mpShapesList.append(pBitmapAnnotation);
-    }
     }
   }
 }
