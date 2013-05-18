@@ -225,11 +225,11 @@ void Component::parseAnnotationString(QString annotation)
   if (list.size() < 4)
     return;
   // read the coordinate system
+  qreal left = qMin(list.at(0).toFloat(), list.at(2).toFloat());
+  qreal bottom = qMin(list.at(1).toFloat(), list.at(3).toFloat());
+  qreal right = qMax(list.at(0).toFloat(), list.at(2).toFloat());
+  qreal top = qMax(list.at(1).toFloat(), list.at(3).toFloat());
   QList<QPointF> extent;
-  qreal left = list.at(0).toFloat();
-  qreal bottom = list.at(1).toFloat();
-  qreal right = list.at(2).toFloat();
-  qreal top = list.at(3).toFloat();
   extent << QPointF(left, bottom) << QPointF(right, top);
   mpCoOrdinateSystem->setExtent(extent);
   // if the list is less that 5 then return
