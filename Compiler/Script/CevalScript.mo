@@ -122,6 +122,10 @@ protected import OpenTURNS;
 protected import FMI;
 protected import FMIExt;
 protected import ErrorExt;
+protected import FGraphEnv;
+protected import FGraphDump;
+protected import FGraph;
+protected import FNode;
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
@@ -3016,6 +3020,9 @@ algorithm
       NFSCodeEnv.Env senv;
       NFEnv.Env nfenv;
       DAE.FunctionTree funcs;
+      FGraphEnv.Env genv;
+      FGraph.Graph g;
+      FGraph.NodeId bm;
 
     case (cache, _, _, Interactive.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
       equation
@@ -3089,6 +3096,17 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         // ic_1 = ic;
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        
+        /*(cache, genv) = Builtin.initialGraphEnv(cache);
+        (genv as FGraphEnv.ENV(graph = g, builtinMark = bm))= FGraphEnv.extendEnvWithProgram(scodeP, FNode.topNodeId, genv);
+        // start after the builtin mark!
+        FGraphDump.dumpGraph(g, "model.graphml", bm);
+        
+        //(scodeP, env, cache) = FFlatten.flattenClassInProgram(className, scodeP, cache);
+        //(cache,env,_,dae) = Inst.instantiateClass(cache,env,InnerOuter.emptyInstHierarchy,scodeP,className);
+        //ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        ic_1 = ic;
+        dae = DAEUtil.emptyDae;*/
       then (cache,env,dae,Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
 
     case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),_,_)
@@ -6578,7 +6596,7 @@ algorithm
         bIsCompleteFunction = isCompleteFunction(cache, env, funcpath);
         false = Types.hasMetaArray(ty);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: is complete function: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: is complete function: " +& Absyn.pathString(funcpath) +& " " +&  Util.if_(bIsCompleteFunction, "[true]", "[false]"));
         (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction);
 
         Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));

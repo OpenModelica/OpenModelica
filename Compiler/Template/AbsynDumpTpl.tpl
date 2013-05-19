@@ -92,6 +92,10 @@ match exp
     let func_str = dumpCref(function_)
     let args_str = dumpFunctionArgs(functionArgs)
     '<%func_str%>(<%args_str%>)'
+  case PARTEVALFUNCTION(__) then
+    let func_str = dumpCref(function_)
+    let args_str = dumpFunctionArgs(functionArgs)
+    'function <%func_str%>(<%args_str%>)'
   case ARRAY(__) then
     let array_str = (arrayExp |> e => dumpExp(e) ;separator=", ")
     '{<%array_str%>}'
@@ -121,6 +125,7 @@ match exp
   case LIST(__) then
     let list_str = (exps |> e => dumpExp(e) ;separator=", ")
     '{<%list_str%>}'
+  case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 
 template dumpOperand(Absyn.Exp operand, Absyn.Exp operation)

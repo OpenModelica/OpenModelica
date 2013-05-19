@@ -384,6 +384,8 @@ constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(108, "NLSanalyticJacobian"
     Util.gettext("generates analytical jacobian for non-linear algebraic loops"));
 constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(109, "inlineSolver", false,
     Util.gettext("generates code for inline solver"));
+constant DebugFlag GEN_GRAPH = DEBUG_FLAG(110, "genGraph", false,
+  Util.gettext("Dups a graph of the program."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -498,7 +500,8 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_PROGRAM_CHANGES,
   SHOW_EQUATION_SOURCE,
   NLS_ANALYTIC_JACOBIAN,
-  INLINE_SOLVER
+  INLINE_SOLVER,
+  GEN_GRAPH
 };
 
 // CONFIGURATION FLAGS

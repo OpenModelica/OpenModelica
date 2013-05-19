@@ -1166,6 +1166,45 @@ algorithm
   end match;
 end setEnvName;
 
+public function mergeEnv
+"@author: adrpo
+ in order to keep track of where we are 
+ we merge environments when we switch scopes:
+ We are in A.B.C we lookup X.Y.Z for component z
+ -> merged env: A.B.C.z.X.Y.Z
+ This way we can generate unique environments in which fully qualifying works."
+  input Env inChildEnv;
+  input Env inParentEnv;
+  input SCode.Element inElement;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inChildEnv, inParentEnv, inElement)
+    local
+      Env u;
+      Ident name;    
+        
+    // merge envs.
+    case (_, _, _)
+      equation
+        u = listReverse(inChildEnv);
+        name = SCode.elementName(inElement);
+        u = setEnvName(u, SOME(name));
+        u = listReverse(u);
+        u = listAppend(u, inParentEnv);
+      then
+        u;
+    
+    case (_, _, _)
+      equation
+        print("Could not merge child env: " +& getEnvNameStr(inChildEnv) +& 
+              " with parent env: " +& getEnvNameStr(inParentEnv) +& 
+              " with element: " +& SCodeDump.unparseElementStr(inElement) +& "\n"); 
+      then
+        inChildEnv; 
+
+  end matchcontinue;
+end mergeEnv;
+
 public function uniquifyEnv
   input Env inEnv;
   input String inName;
@@ -3579,6 +3618,154 @@ algorithm
         (inResNew, inInfoNew);
   end matchcontinue;
 end checkSameRestriction;
+
+public function crefStripEnvPrefix
+  "Removes the entire environment prefix from the given component reference, or
+  returns the unchanged reference. This is done because models might import
+  local packages, for example:
+
+    package P
+      import myP = InsideP;
+
+      package InsideP
+        function f end f;
+      end InsideP;
+
+      constant c = InsideP.f();
+    end P;
+
+    package P2
+      extends P;
+    end P2;
+
+  When P2 is instantiated all elements from P will be brought into P2's scope
+  due to the extends. The binding of c will still point to P.InsideP.f though, so
+  the lookup will try to instantiate P which might fail if P is a partial
+  package or for other reasons. This is really a bug in Lookup (it shouldn't
+  need to instantiate the whole package just to find a function), but to work
+  around this problem for now this function will remove the environment prefix
+  when InsideP.f is looked up in P, so that it resolves to InsideP.f and not
+  P.InsideP.f. This allows P2 to find it in the local scope instead, since the
+  InsideP package has been inherited from P."
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnv)
+    local
+      Absyn.Path env_path;
+      Absyn.ComponentRef cref1, cref2;
+
+    case (_, _)
+      equation
+        SOME(env_path) = getEnvPath(inEnv);
+        cref1 = Absyn.unqualifyCref(inCref);
+        // try to strip as much as possible
+        cref2 = crefStripEnvPrefix2(cref1, env_path);
+        // check if we really did anything, fail if we did nothing!
+        false = Absyn.crefEqual(cref1, cref2);
+      then
+        cref2;
+
+    else inCref;
+  end matchcontinue;
+end crefStripEnvPrefix;
+
+protected function crefStripEnvPrefix2
+  input Absyn.ComponentRef inCref;
+  input Absyn.Path inEnvPath;
+  output Absyn.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnvPath)
+    local
+      Absyn.Ident id1, id2;
+      Absyn.ComponentRef cref;
+      Absyn.Path env_path;
+
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
+          Absyn.QUALIFIED(name = id2, path = env_path))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        crefStripEnvPrefix2(cref, env_path);
+
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
+          Absyn.IDENT(name = id2))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        cref;
+    
+    /*/ adrpo: leave it as stripped as you can if you can't match it above!
+    case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
+          Absyn.IDENT(name = id2))
+      equation
+        false = stringEqual(id1, id2);
+      then
+        inCref;*/
+  end matchcontinue;
+end crefStripEnvPrefix2;
+
+public function pathStripEnvPrefix
+"same as pathStripEnvPrefix"
+  input Absyn.Path inPath;
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEnv)
+    local
+      Absyn.Path env_path;
+      Absyn.Path path1, path2;
+
+    case (_, _)
+      equation
+        SOME(env_path) = getEnvPath(inEnv);
+        path1 = Absyn.makeNotFullyQualified(inPath);
+        // try to strip as much as possible
+        path2 = pathStripEnvPrefix2(path1, env_path);
+        // check if we really did anything, fail if we did nothing!
+        false = Absyn.pathEqual(path1, path2);
+      then
+        path2;
+
+    else inPath;
+  end matchcontinue;
+end pathStripEnvPrefix;
+
+protected function pathStripEnvPrefix2
+  input Absyn.Path inPath;
+  input Absyn.Path inEnvPath;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inEnvPath)
+    local
+      Absyn.Ident id1, id2;
+      Absyn.Path path;
+      Absyn.Path env_path;
+
+    case (Absyn.QUALIFIED(name = id1, path = path),
+          Absyn.QUALIFIED(name = id2, path = env_path))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        pathStripEnvPrefix2(path, env_path);
+
+    case (Absyn.QUALIFIED(name = id1, path = path),
+          Absyn.IDENT(name = id2))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        path;
+    
+    /*/ adrpo: leave it as stripped as you can if you can't match it above!
+    case (Absyn.QUALIFIED(name = id1, path = path),
+          Absyn.IDENT(name = id2))
+      equation
+        false = stringEqual(id1, id2);
+      then
+        inPath;*/
+  end matchcontinue;
+end pathStripEnvPrefix2;
 
 end Env;
 

@@ -555,6 +555,18 @@ algorithm
       then txt;
 
     case ( txt,
+           Absyn.PARTEVALFUNCTION(function_ = i_function__, functionArgs = i_functionArgs) )
+      equation
+        l_func__str = dumpCref(Tpl.emptyTxt, i_function__);
+        l_args__str = dumpFunctionArgs(Tpl.emptyTxt, i_functionArgs);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("function "));
+        txt = Tpl.writeText(txt, l_func__str);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = Tpl.writeText(txt, l_args__str);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then txt;
+
+    case ( txt,
            Absyn.ARRAY(arrayExp = i_arrayExp) )
       equation
         l_array__str = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -651,6 +663,8 @@ algorithm
 
     case ( txt,
            _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */"));
       then txt;
   end match;
 end dumpExp;

@@ -209,17 +209,8 @@ algorithm
         //Debug.traceln("fixed local idents " +& intString(tmp));
 
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst)
-        "continue with next element in list" ;
-        /*
-        corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod)
-        here and then apply the bindings to the be elaborated, because for instance extends
-        A(x=y) can reference a variable y defined in A and will thus not be found.
-        On the other hand: A(n=4), n might be a structural parameter that must be set
-        to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod
-        which transforms to a Mod, but set the type information to unknown. We can then perform the
-        merge, and update untyped modifications later (using update_mod), when we are instantiating
-        the components."
-        */
+        "continue with next element in list";
+        
         emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE());
         mods_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
         mods_1 = Mod.merge(mods_1, emod_1, env2, Prefix.NOPRE());
@@ -376,7 +367,7 @@ protected function instExtendsAndClassExtendsList2 "
   output list<SCode.AlgorithmSection> outSCodeInitialAlgorithmLst;
 algorithm
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
-  instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst, inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
+  instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   (outMod,outTplSCodeElementModLst):=instClassExtendsList(inEnv,outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
 end instExtendsAndClassExtendsList2;
 
@@ -478,12 +469,15 @@ algorithm
       list<Absyn.NamedArg> clats;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> rest;
       tuple<SCode.Element, DAE.Mod, Boolean> first;
-      SCode.Mod mods;
+      SCode.Mod mods, derivedMod;
       DAE.Mod mod1,emod;
       Absyn.Info info1, info2;
       Boolean b;
+      SCode.Attributes attrs;
+      Absyn.TypeSpec derivedTySpec;
 
-    case (_,emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2),mod1,b)::rest)
+    // found the base class with parts
+    case (_,emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.PARTS(elementLst = _)),mod1,b)::rest)
       equation
         true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
 
@@ -505,14 +499,40 @@ algorithm
       then
         (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
 
+    // found the base class which is derived
+    case (_,emod,name1,classExtendsElt,(cl as SCode.CLASS(name = name2, classDef = SCode.DERIVED(typeSpec = _)),mod1,b)::rest)
+      equation
+        true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
+
+        env_path = Absyn.pathString(Env.getEnvName(inEnv));
+        name2 = buildClassExtendsName(env_path,name2);
+        SCode.CLASS(_,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,SCode.DERIVED(derivedTySpec, derivedMod, attrs),comment2,info2) = cl;
+
+        SCode.CLASS(_, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classExtendsCdef, comment1, info1) = classExtendsElt;
+        SCode.CLASS_EXTENDS(_,mods,SCode.PARTS(els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,_,externalDecl1)) = classExtendsCdef;
+
+        classDef = SCode.DERIVED(derivedTySpec, derivedMod, attrs);
+        compelt = SCode.CLASS(name2,prefixes2,encapsulatedPrefix2,partialPrefix2,restriction2,classDef,comment2,info2);
+        vis2 = SCode.prefixesVisibility(prefixes2);
+        elt = SCode.EXTENDS(Absyn.IDENT(name2),vis2,mods,NONE(),info1);
+        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,inCons1,{},externalDecl1);
+        elt = SCode.CLASS(name1, prefixes1, encapsulatedPrefix1, partialPrefix1, restriction1, classDef, comment1, info1);
+        emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
+        //Debug.traceln("class extends: " +& SCodeDump.unparseElementStr(compelt) +& "  " +& SCodeDump.unparseElementStr(elt));
+      then
+        (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
+
+    // not this one, switch to next one
     case (_,emod,name1,classExtendsElt,first::rest)
       equation
         (emod,rest) = instClassExtendsList2(inEnv,emod,name1,classExtendsElt,rest);
       then
         (emod,first::rest);
 
+    // bah, we did not find it
     case (_,_,_,_,{})
       equation
+        
         Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
       then
         fail();
@@ -1483,6 +1503,7 @@ algorithm
 
     case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht)
       equation
+        // path1 = Env.pathStripEnvPrefix(path1, env);
         //Debug.fprintln(Flags.DEBUG, "Path FULLYQUAL: " +& Absyn.pathString(path));
       then
         (cache,path1);
@@ -1492,30 +1513,16 @@ algorithm
         id = Absyn.pathFirstIdent(path1);
         path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
+        path2 = Env.pathStripEnvPrefix(path2, env);
         //Debug.fprintln(Flags.DEBUG, "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
       then (cache,path2);
-    /*
-    // when a class is partial, do not fully qualify as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
-    case (cache,env,path,ht)
-      equation
-        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& Absyn.pathString(path));
-        (_,SCode.CLASS(partialPrefix = SCode.PARTIAL()),env) = Lookup.lookupClass(cache,env,path,false);
-        Debug.fprintln(Flags.DEBUG, "Path PARTIAL not fixed: " +& Absyn.pathString(path));
-      then (cache,path);
-
-    // when a class is replaceable, do not fully qualify it as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
-    case (cache,env,path,ht)
-      equation
-        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& Absyn.pathString(path));
-        (_,SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))),env) = Lookup.lookupClass(cache,env,path,false);
-        Debug.fprintln(Flags.DEBUG, "Path REPLACEABLE not fixed: " +& Absyn.pathString(path));
-      then (cache,path);*/
 
     // first indent is local in the env, DO NOT QUALIFY!
     case (cache,env,path,ht)
       equation
         //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
         (_, _) = Lookup.lookupClassLocal(env, Absyn.pathFirstIdent(path));
+        path = Env.pathStripEnvPrefix(path, env);
         //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
 
@@ -1523,11 +1530,13 @@ algorithm
       equation
         //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
+        path = Env.pathStripEnvPrefix(path, env);
         //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
 
     case (cache,env,path,_)
       equation
+        path = Env.pathStripEnvPrefix(path, env);
         //Debug.fprintln(Flags.DEBUG, "Path not fixed: " +& Absyn.pathString(path) +& "\n");
       then
         (cache,path);
@@ -1574,7 +1583,7 @@ algorithm
       Absyn.Path path;
       DAE.ComponentRef cref_;
       Env.Cache cache;
-      Env.Env env;
+      Env.Env env, denv;
       HashTableStringToPath.HashTable ht;
       Absyn.ComponentRef cref;
       SCode.Element c;
@@ -1586,6 +1595,7 @@ algorithm
         path = BaseHashTable.get(id,ht);
         //Debug.fprintln(Flags.DEBUG,"Got path " +& Absyn.pathString(path));
         cref = Absyn.crefReplaceFirstIdent(cref,path);
+        cref = Env.crefStripEnvPrefix(cref, env);
         //Debug.fprintln(Flags.DEBUG, "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
@@ -1595,41 +1605,25 @@ algorithm
         id = Absyn.crefFirstIdent(cref);
         cref_ = ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{});
         //Debug.fprintln(Flags.DEBUG,"Try lookupV " +& id);
-        (env,id) = lookupVarNoErrorMessage(cache,env,cref_);
+        (denv,id) = lookupVarNoErrorMessage(cache,env,cref_);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,SCode.ENCAPSULATED(),SOME(id),NONE());
-        cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env));
+        denv = Env.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
+        cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(denv));
+        cref = Env.crefStripEnvPrefix(cref, env);
         //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
-
-    /*// when a class is partial, do not fully qualify as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
-    case (cache,env,cref,ht)
-      equation
-        id = Absyn.crefFirstIdent(cref);
-        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
-        (_,SCode.CLASS(partialPrefix = SCode.PARTIAL()),env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
-        Debug.fprintln(Flags.DEBUG, "Cref PARTIAL CLASS fixed: " +& Absyn.printComponentRefStr(cref));
-      then (cache,cref);
-
-    // when a class is replaceable, do not fully qualify it as it SHOULD POINT TO THE ONE IN THE DERIVED CLASS!
-    case (cache,env,cref,ht)
-      equation
-        id = Absyn.crefFirstIdent(cref);
-        Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
-        (_,SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))),env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
-        Debug.fprintln(Flags.DEBUG, "Cref REPLACEABLE CLASS fixed: " +& Absyn.printComponentRefStr(cref));
-      then (cache,cref);*/
 
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
         //Debug.fprintln(Flags.DEBUG,"Try lookupC " +& id);
-        (_,c,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
+        (_,c,denv) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
         // id might come from named import, make sure you use the actual class name!
         id = SCode.getElementName(c);
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,SCode.ENCAPSULATED(),SOME(id),NONE());
-        cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env));
+        denv = Env.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
+        cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(denv));
+        cref = Env.crefStripEnvPrefix(cref, env);
         //Debug.fprintln(Flags.DEBUG, "Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
@@ -1767,12 +1761,17 @@ algorithm
         (cache,cref) = fixCref(cache,env,cref,ht);
       then (cache,Absyn.CREF(cref));
     
-    // check that we can actually find it after fix
     case (cache,env,Absyn.CALL(cref,fargs),ht)
       equation
         (cache,fargs) = fixFarg(cache,env,fargs,ht);
         (cache,cref) = fixCref(cache,env,cref,ht);
       then (cache,Absyn.CALL(cref,fargs));
+    
+    case (cache,env,Absyn.PARTEVALFUNCTION(cref,fargs),ht)
+      equation
+        (cache,fargs) = fixFarg(cache,env,fargs,ht);
+        (cache,cref) = fixCref(cache,env,cref,ht);
+      then (cache,Absyn.PARTEVALFUNCTION(cref,fargs));
     
     case (cache,env,Absyn.BINARY(exp1,op,exp2),ht)
       equation

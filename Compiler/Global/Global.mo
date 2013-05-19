@@ -48,6 +48,6 @@ constant Integer builtinEnvIndex = 4;
 constant Integer profilerTime1Index = 5;
 constant Integer profilerTime2Index = 6;
 constant Integer flagsIndex = 7;
-
+constant Integer builtinGraphEnvIndex = 8;
 
 end Global;

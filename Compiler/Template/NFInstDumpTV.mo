@@ -157,7 +157,7 @@ package NFInstTypes
 
     record RAW_BINDING
       Absyn.Exp bindingExp;
-      NFSCodeEnv.Env env;
+      NFEnv.Env env;
       Prefix prefix;
       Integer propagatedDims;
       Absyn.Info info;
@@ -203,7 +203,7 @@ package NFInstTypes
       SCode.Element element;
       Modifier modifier;
       Prefixes prefixes;
-      NFSCodeEnv.Env env;
+      NFEnv.Env env;
       Prefix prefix;
       Absyn.Info info;
     end CONDITIONAL_COMPONENT;

@@ -48,6 +48,7 @@ public import DAE;
 public import Env;
 public import Error;
 public import SCode;
+public import FGraphEnv;
 
 // protected imports
 protected import ClassInf;
@@ -60,6 +61,8 @@ protected import SCodeUtil;
 protected import Settings;
 protected import System;
 protected import Util;
+protected import FGraph;
+protected import FNode;
 
 /* These imports were used in e.g. MSL 1.6. They should not be here anymore...
    If you need them, add them to the initial environment and recompile; they are not standard Modelica.
@@ -121,7 +124,7 @@ public constant SCode.Prefixes commonPrefixes =
   SCode.PREFIXES(
     SCode.PUBLIC(),
     SCode.NOT_REDECLARE(),
-    SCode.FINAL(), /* make everything here final! */
+    SCode.FINAL(), // make everything here final!
     Absyn.NOT_INNER_OUTER(),
     SCode.NOT_REPLACEABLE());
 
@@ -129,7 +132,7 @@ public constant SCode.Prefixes commonPrefixesNotFinal =
   SCode.PREFIXES(
     SCode.PUBLIC(),
     SCode.NOT_REDECLARE(),
-    SCode.NOT_FINAL(), /* make everything here final! */
+    SCode.NOT_FINAL(), // make everything here final!
     Absyn.NOT_INNER_OUTER(),
     SCode.NOT_REPLACEABLE());
 
@@ -137,11 +140,11 @@ protected
 constant SCode.Attributes attrConst = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.CONST(),Absyn.BIDIR());
 constant SCode.Attributes attrParam = SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
 constant SCode.Attributes attrParamVectorNoDim = SCode.ATTR({Absyn.NOSUB()},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.PARAM(),Absyn.BIDIR());
-/*
-- The primitive types
-  These are the primitive types that are used to build the types
-  `Real\', `Integer\' etc.
-*/
+
+//
+// The primitive types
+// These are the primitive types that are used to build the types
+// Real, Integer etc.
 public constant SCode.Element rlType = SCode.CLASS("RealType",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) " real type ";
 
@@ -213,7 +216,7 @@ protected constant SCode.Element stateSelect = SCode.COMPONENT("stateSelect",com
           Absyn.CREF(
           Absyn.CREF_QUAL("StateSelect",{},Absyn.CREF_IDENT("default",{}))),false)), Absyn.dummyInfo),SCode.noComment,NONE(),Absyn.dummyInfo);
 
-/* Extensions for uncertainties */
+// Extensions for uncertainties          
 protected constant SCode.Element uncertainty=SCode.COMPONENT("uncertain",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("Uncertainty"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},
@@ -221,7 +224,7 @@ protected constant SCode.Element uncertainty=SCode.COMPONENT("uncertain",commonP
 
 protected constant SCode.Element distribution = SCode.COMPONENT("distribution",commonPrefixes,attrParam,Absyn.TPATH(Absyn.IDENT("Distribution"),NONE()),
           SCode.NOMOD(),SCode.noComment,NONE(),Absyn.dummyInfo); // Distribution is declared in ModelicaBuiltin.mo
-/* END Extensions for uncertainties */
+// END Extensions for uncertainties
 
 protected constant list<SCode.Element> stateSelectComps = {
           SCode.COMPONENT("never",commonPrefixes,
@@ -252,26 +255,29 @@ protected constant SCode.Element uncertaintyType = SCode.CLASS("Uncertainty",com
 public constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_CLASS(),
           SCode.PARTS({},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "ExternalObject type" ;
 
+// The Real type 
 public constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
           stateSelect,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Real\' type" ;
 
+// The Integer type
 protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Integer\' type" ;
 
+// The String type 
 protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({quantity,stringStart,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `String\' type" ;
 
+// The Boolean type 
 protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({quantity,booleanStart,fixed,startOrigin},{},{},{},{},{},{},NONE()),SCode.noComment,Absyn.dummyInfo) "- The `Boolean\' type" ;
 
-/* The builtin variable time. See also variableIsBuiltin */
+// The builtin variable time. See also variableIsBuiltin
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",
           DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
+          DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE());
 
 /* Optimica Extensions. Theses variables are considered builtin for Optimica: startTime, finalTime, objectiveIntegrand and objective */
-
 /* Optimica Extensions. The builtin variable startTime. */
 protected constant DAE.Var startTimeVar = DAE.TYPES_VAR("startTime",
           DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
@@ -617,12 +623,14 @@ algorithm
   (outCache,env) := matchcontinue(inCache)
     local
       list<Absyn.Class> initialClasses;
+      SCode.Program initialProgram;
 
     // First look for cached version
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
     then (cache,env);
-
+      
+    // then look in the global roots[builtinEnvIndex]
     case (cache)
       equation
         env = getSetInitialEnv(NONE());
@@ -632,25 +640,28 @@ algorithm
     // if no cached version found create initial env.
     case (cache) equation
       env = Env.openScope(Env.emptyEnv, SCode.NOT_ENCAPSULATED(), NONE(), NONE());
-      env = Env.extendFrameCBuiltin(env, rlType);
-      env = Env.extendFrameCBuiltin(env, intType);
-      env = Env.extendFrameCBuiltin(env, strType);
-      env = Env.extendFrameCBuiltin(env, boolType);
-      env = Env.extendFrameCBuiltin(env, enumType);
-      env = Env.extendFrameCBuiltin(env, ExternalObjectType);
-      env = Env.extendFrameCBuiltin(env, realType);
-      env = Env.extendFrameCBuiltin(env, integerType);
-      env = Env.extendFrameCBuiltin(env, stringType);
-      env = Env.extendFrameCBuiltin(env, booleanType);
-      env = Env.extendFrameCBuiltin(env, stateSelectType);
-      env = Env.extendFrameCBuiltin(env, uncertaintyType);
+      env = Env.extendFrameClasses(env,
+              {rlType, 
+               intType,
+               strType,
+               boolType,
+               enumType,
+               ExternalObjectType,
+               realType,
+               integerType,
+               stringType,
+               booleanType,
+               stateSelectType,
+               uncertaintyType},
+               SOME(Env.BASIC_TYPE()));
+
       env = Env.extendFrameV(
-             env,
-             timeVar,
-             timeComp,
-             DAE.NOMOD(),
-             Env.VAR_UNTYPED(),
-             {});
+              env, 
+              timeVar,
+              timeComp,
+              DAE.NOMOD(), 
+              Env.VAR_UNTYPED(), 
+              {});
 
       //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
       env = Util.if_(Config.acceptOptimicaGrammar(),
@@ -710,7 +721,9 @@ algorithm
       env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), SOME(Env.BUILTIN())) "Add classes in the initial env";
       cache = Env.setCachedInitialEnv(cache,env);
       _ = getSetInitialEnv(SOME(env));
-    then (cache,env);
+    then 
+      (cache,env);
+  
   end matchcontinue;
 end initialEnv;
 
@@ -846,9 +859,211 @@ algorithm
         setGlobalRoot(Global.builtinEnvIndex, (Flags.MODELICA,env)::assocLst);
       then 
         env;    
-  
   end matchcontinue;
 end getSetInitialEnv;
+
+public function initialGraphEnv
+"function: initialEnv
+  The initial environment where instantiation takes place is built
+  up using this function.  It creates an empty environment and adds
+  all the built-in definitions to it.
+  NOTE:
+    The following built in operators can not be described in
+    the type system, since they e.g. have arbitrary arguments, etc.
+  - fill
+  - cat
+    These operators are catched in the elabBuiltinHandler, along with all
+    others."
+  input Env.Cache inCache;
+  output Env.Cache outCache;
+  output FGraphEnv.Env env;
+protected
+  Env.Cache cache;
+algorithm
+  (outCache, env) := matchcontinue(inCache)
+    local
+      list<Absyn.Class> initialClasses;
+      SCode.Program initialProgram;
+
+    /*/ First look for cached version
+    case (cache) equation
+      env = Env.getCachedInitialGraphEnv(cache);
+    then (cache,env);
+      
+    // then look in the global roots[builtinEnvIndex]
+    case (cache)
+      equation
+        env = getSetInitialGraphEnv(NONE());
+      then 
+        (cache, env);*/
+
+    // if no cached version found create initial env.
+    case (cache) 
+      equation
+        env = FGraphEnv.openScope(FNode.topNodeId, FGraphEnv.emptyEnv);
+        env = FGraphEnv.extendEnvWithProgram(
+        {rlType, 
+         intType,
+         strType,
+         boolType,
+         enumType,
+         ExternalObjectType,
+         realType,
+         integerType,
+         stringType,
+         booleanType,
+         stateSelectType,
+         uncertaintyType},
+         FNode.topNodeId,
+         env);
+
+      /*
+      env = Env.extendFrameV(
+              env, 
+              timeVar,
+              timeComp,
+              DAE.NOMOD(), 
+              Env.VAR_UNTYPED(), 
+              {});
+
+      //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
+      env = Util.if_(Config.acceptOptimicaGrammar(),
+                     FGraphEnv.extendEnvWithComponent(
+                       objectiveVar,
+                       FGraph.getNodeId(FGraph.topNode),
+                       env),
+                     env);
+
+      env = Util.if_(Config.acceptOptimicaGrammar(),
+                     Env.extendFrameV(
+                       env,
+                       objectiveIntegrandVar,
+                       objectiveIntegrandComp,
+                       DAE.NOMOD(),
+                       Env.VAR_UNTYPED(),
+                       {}),
+                     env);
+
+      env = Util.if_(Config.acceptOptimicaGrammar(),
+                     Env.extendFrameV(
+                       env,
+                       startTimeVar,
+                       startTimeComp,
+                       DAE.NOMOD(),
+                       Env.VAR_UNTYPED(),
+                       {}),
+                     env);
+
+      env = Util.if_(Config.acceptOptimicaGrammar(),
+                     Env.extendFrameV(
+                       env,
+                       finalTimeVar,
+                       finalTimeComp,
+                       DAE.NOMOD(),
+                       Env.VAR_UNTYPED(),
+                       {}),
+                     env);
+      */
+
+      env = initialGraphEnvMetaModelica(env);
+
+      Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
+      initialProgram = listReverse(List.fold(initialClasses, SCodeUtil.translate2, {}));
+      // add the ModelicaBuiltin/MetaModelicaBuiltin classes in the initial env
+      env = FGraphEnv.extendEnvWithProgram(initialProgram, FNode.topNodeId, env);
+      
+      env = FGraphEnv.extendEnvWithType(anyNonExpandableConnector2int, "cardinality", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(anyExpandableConnector2int,    "cardinality", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(enumeration2int, "Integer", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(enumeration2int, "EnumToInteger", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(real2real, "noEvent", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(real2real, "actualStream", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(real2real, "inStream", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(realrealreal2real,                                     "constrain", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(array1dimrealarray1dimrealarray1dimreal2array1dimreal, "constrain", FNode.topNodeId, env);
+      env = FGraphEnv.extendEnvWithType(array1dimrealarray1dimrealarray1dimreal2array1dimreal, "constrain", FNode.topNodeId, env);
+      
+      // mark that the last node is the last added via the builtin
+      env = FGraphEnv.setBuiltinMark(env);      
+      
+      /*cache = Env.setCachedInitialGraphEnv(cache, env);
+      _ = getSetInitialGraphEnv(SOME(env));*/
+    then 
+      (cache,env);
+  
+  end matchcontinue;
+end initialGraphEnv;
+
+protected function getSetInitialGraphEnv
+"gets/sets the initial environment depending on grammar flags"
+  input Option<FGraphEnv.Env> inEnvOpt;
+  output FGraphEnv.Env initialEnv;
+algorithm
+  initialEnv := matchcontinue (inEnvOpt)
+    local
+      list<tuple<Integer,FGraphEnv.Env>> assocLst;
+      FGraphEnv.Env env;
+    
+    // nothing there
+    case (_)
+      equation
+        failure(_ = getGlobalRoot(Global.builtinGraphEnvIndex));
+        setGlobalRoot(Global.builtinGraphEnvIndex,FGraphEnv.emptyEnv);
+      then 
+        fail();
+    
+    // return the correct env depending on flags
+    case (NONE())
+      equation
+        assocLst = getGlobalRoot(Global.builtinGraphEnvIndex);
+      then 
+        Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
+    
+    case (SOME(env))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
+        assocLst = getGlobalRoot(Global.builtinGraphEnvIndex);
+        setGlobalRoot(Global.builtinGraphEnvIndex, (Flags.METAMODELICA,env)::assocLst);
+      then 
+        env;
+    
+    case (SOME(env))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
+        assocLst = getGlobalRoot(Global.builtinGraphEnvIndex);
+        setGlobalRoot(Global.builtinGraphEnvIndex, (Flags.PARMODELICA,env)::assocLst);
+      then 
+        env;
+    
+    case (SOME(env))
+      equation
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
+        assocLst = getGlobalRoot(Global.builtinGraphEnvIndex);
+        setGlobalRoot(Global.builtinGraphEnvIndex, (Flags.MODELICA,env)::assocLst);
+      then 
+        env;    
+  end matchcontinue;
+end getSetInitialGraphEnv;
+
+protected function initialGraphEnvMetaModelica
+  input FGraphEnv.Env inEnv;
+  output FGraphEnv.Env outEnv;
+algorithm
+  outEnv := matchcontinue(inEnv)
+    local
+      FGraphEnv.Env env;
+    
+    case (env)
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+        // getGlobalRoot can not be represented by a regular function...
+        env = FGraphEnv.extendEnvWithType(int2boxed, "getGlobalRoot", FNode.topNodeId, env);
+      then env;
+    
+    case env then env;
+  
+  end matchcontinue;
+end initialGraphEnvMetaModelica;
 
 end Builtin;
 

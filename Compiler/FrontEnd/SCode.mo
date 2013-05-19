@@ -4851,6 +4851,16 @@ algorithm
   end match;
 end stripAnnotationFromComment;
 
+public function isOverloadedFunction
+  input Element inElement;
+  output Boolean isOverloaded;
+algorithm
+  isOverloaded := match(inElement)
+    case CLASS(classDef = OVERLOAD(pathLst = _)) then true;
+    else false;
+  end match;
+end isOverloadedFunction;
+
 public function mergeWithOriginal
 "@author: adrpo
  this function merges the original declaration with the redeclared declaration, see 7.3.2 in Spec.

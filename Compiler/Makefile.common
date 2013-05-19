@@ -57,6 +57,13 @@ Env.mo \
 Expression.mo \
 ExpressionDump.mo \
 ExpressionSimplify.mo \
+FGraph.mo \
+FGraphBuild.mo \
+FGraphEnv.mo \
+FGraphDump.mo \
+FNode.mo \
+FRef.mo \
+FResolve.mo \
 Graphviz.mo \
 Inline.mo \
 InnerOuter.mo \
