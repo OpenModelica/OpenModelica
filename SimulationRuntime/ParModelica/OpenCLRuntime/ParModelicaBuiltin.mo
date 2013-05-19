@@ -118,7 +118,7 @@ function oclSetNumThreadsGlobalLocalError
   external "builtin";
 end oclSetNumThreadsGlobalLocalError;
 
-function oclSetNumThreads = overload(
+function oclSetNumThreads = $overload(
   oclSetNumThreadsOnlyGlobal,
   oclSetNumThreadsGlobalLocal1D,
   oclSetNumThreadsGlobalLocal2D,

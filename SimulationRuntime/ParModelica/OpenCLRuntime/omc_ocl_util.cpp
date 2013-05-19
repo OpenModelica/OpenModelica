@@ -195,6 +195,8 @@ void ocl_initialize(){
         ocl_create_context_and_comm_queue();
         ocl_build_p_from_src();
     }
+    
+    setenv("CUDA_CACHE_DISABLE", "1", 1);
 }
 
 void ocl_create_context_and_comm_queue(){

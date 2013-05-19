@@ -164,43 +164,43 @@ void free_device_array(base_array_t* dest){
 
 
 
-void copy_real_array_data(device_real_array* dev_array_ptr, real_array_t* host_array_ptr){
+void copy_real_array(device_real_array* dev_array_ptr, real_array_t* host_array_ptr){
 
-    //Assert size of device array (dev array should be changed to struct later)
+    //Assert size of device array (dev array should be changed to struct later) 
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_back_to_host_real(dev_array_ptr->data, (modelica_real* )host_array_ptr->data, nr_of_elm);
 
 }
 
-void copy_real_array_data(real_array_t* host_array_ptr, device_real_array* dev_array_ptr){
+void copy_real_array(real_array_t* host_array_ptr, device_real_array* dev_array_ptr){
 
-    //Assert size of device array (dev array should be changed to struct later)
+    //Assert size of device array (dev array should be changed to struct later) 
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_to_device_real(dev_array_ptr->data, (modelica_real* )host_array_ptr->data, nr_of_elm);
 
 }
 
-void copy_real_array_data(device_real_array* dev_array_ptr1, device_real_array* dev_array_ptr2){
+void copy_real_array(device_real_array* dev_array_ptr1, device_real_array* dev_array_ptr2){
 
-    //Assert size of device array (dev array should be changed to struct later)
+    //Assert size of device array (dev array should be changed to struct later) 
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = device_array_nr_of_elements(dev_array_ptr1);
     ocl_copy_device_to_device_real(dev_array_ptr1->data, dev_array_ptr2->data, nr_of_elm);
 
 }
 
-void copy_integer_array_data(device_integer_array* dev_array_ptr, integer_array_t* host_array_ptr){
+void copy_integer_array(device_integer_array* dev_array_ptr, integer_array_t* host_array_ptr){
 
-    //Assert size of device array (dev array should be changed to struct later)
+    //Assert size of device array (dev array should be changed to struct later) 
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_back_to_host_integer(dev_array_ptr->data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
 
 }
 
-void copy_integer_array_data(integer_array_t* host_array_ptr, device_integer_array* dev_array_ptr){
+void copy_integer_array(integer_array_t* host_array_ptr, device_integer_array* dev_array_ptr){
 
-    //Assert size of device array
+    //Assert size of device array 
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = modelica_array_nr_of_elements(host_array_ptr);
     ocl_copy_to_device_integer(dev_array_ptr->data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
@@ -208,9 +208,9 @@ void copy_integer_array_data(integer_array_t* host_array_ptr, device_integer_arr
 }
 
 
-void copy_integer_array_data(device_integer_array* dev_array_ptr1, device_integer_array* dev_array_ptr2){
+void copy_integer_array(device_integer_array* dev_array_ptr1, device_integer_array* dev_array_ptr2){
 
-    //Assert size of device array (dev array should be changed to struct later)
+    //Assert size of device array (dev array should be changed to struct later) 
     //mahge: Fix here move this to copy function and add error check (like copy_back_to_host -> copy_to_device)
     int nr_of_elm = device_array_nr_of_elements(dev_array_ptr1);
     ocl_copy_device_to_device_integer(dev_array_ptr1->data, dev_array_ptr2->data, nr_of_elm);

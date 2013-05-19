@@ -105,17 +105,17 @@ void alloc_integer_array(device_integer_array *dest, int ndims, ...);
 
 void alloc_real_array(device_integer_array *dest, int ndims, ...);
 
-void copy_real_array_data(device_real_array* dev_array_ptr, real_array_t* host_array_ptr);
+void copy_real_array(device_real_array* dev_array_ptr, real_array_t* host_array_ptr);
 
-void copy_real_array_data(real_array_t* host_array_ptr, device_real_array* dev_array_ptr);
+void copy_real_array(real_array_t* host_array_ptr, device_real_array* dev_array_ptr);
 
-void copy_real_array_data(device_real_array* dev_array_ptr1, device_real_array* dev_array_ptr2);
+void copy_real_array(device_real_array* dev_array_ptr1, device_real_array* dev_array_ptr2);
 
-void copy_integer_array_data(device_integer_array* dev_array_ptr, integer_array_t* host_array_ptr);
+void copy_integer_array(device_integer_array* dev_array_ptr, integer_array_t* host_array_ptr);
 
-void copy_integer_array_data(integer_array_t* host_array_ptr, device_integer_array* dev_array_ptr);
+void copy_integer_array(integer_array_t* host_array_ptr, device_integer_array* dev_array_ptr);
 
-void copy_integer_array_data(device_integer_array* dev_array_ptr1, device_integer_array* dev_array_ptr2);
+void copy_integer_array(device_integer_array* dev_array_ptr1, device_integer_array* dev_array_ptr2);
 
 
 //functions used for copying scalars. Scalars in the normal(serial C) code genertation

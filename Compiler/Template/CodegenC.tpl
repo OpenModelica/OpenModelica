@@ -5687,8 +5687,8 @@ template copyArrayDataAndFreeMemAfterCall(DAE.Type ty, String exp, DAE.Component
   match context
   case FUNCTION_CONTEXT(__) then
     <<
-    copy_<%type%>_data(&<%exp%>, &<%cref%>);
-    <%if acceptParModelicaGrammar() then 'free_device_array(&<%exp%>);'%>
+    <%if not acceptParModelicaGrammar() then  'copy_<%type%>_data(&<%exp%>, &<%cref%>);'%>
+    <%if acceptParModelicaGrammar() then 'free_device_array(&<%cref%>); <%cref%> = <%exp%>;'%>
     >>
   case PARALLEL_FUNCTION_CONTEXT(__) then
     'copy_<%type%>_data(&<%exp%>, &<%cref%>);'
@@ -5947,7 +5947,7 @@ case RANGE(__) then
   let stepValue = match step case SOME(eo) then
       daeExp(eo, context, &preExp, &varDecls)
     else
-      "(1)"
+      "(modelica_integer)1"
   let stopValue = daeExp(stop, context, &preExp, &varDecls)
 
   let cl_kernelVar = tempDecl("cl_kernel", &varDecls)
