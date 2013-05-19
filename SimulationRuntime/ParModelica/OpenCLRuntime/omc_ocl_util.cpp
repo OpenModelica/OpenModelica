@@ -62,6 +62,18 @@ modelica_integer WORK_DIM = 0;
 size_t GLOBAL_SIZE[3];
 size_t LOCAL_SIZE[3];
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+int setenv(const char* envname, const char* envvalue, int overwrite)
+{
+  int res;
+  char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
+  sprintf(temp,"%s=%s", envname, envvalue);
+  res = _putenv(temp);
+  free(temp);
+  return res;
+}
+#endif
+
 char* load_source_file(const char* file_name){
     char* source = NULL;
     FILE* f;
