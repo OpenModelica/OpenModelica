@@ -2315,7 +2315,7 @@ external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
 <p>Used to set annotations, like Diagrams and Icons in classes. The function is given the name of the class
 and the annotation to set.</p>
-<p>Usage: addClassAnnotation(Modelica, annotate = Documentation(info = \"<html></html>\"))</p>
+<p>Usage: addClassAnnotation(Modelica, annotate = Documentation(info = \"&lt;html&gt;&lt;/html&gt;\"))</p>
 </html>"));
 end addClassAnnotation;
 
@@ -2672,7 +2672,9 @@ algorithm
   end if;
   annotation(Documentation(info="<html>
 <h2>Usage</h2>
-<p>Modelica3D requires some changes to the standard ModelicaServices in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an object declared as: <pre>inner ModelicaServices.Modelica3D.Controller m3d_control</pre>. This API call will load the modified ModelicaServices 3.2.1 so Modelica3D runs. You can also simply call loadModel(ModelicaServices,{\"3.2.1 modelica3d\"});</p>
+<p>Modelica3D requires some changes to the standard ModelicaServices in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an object declared as:</p>
+<pre>inner ModelicaServices.Modelica3D.Controller m3d_control</pre>
+<p>This API call will load the modified ModelicaServices 3.2.1 so Modelica3D runs. You can also simply call loadModel(ModelicaServices,{\"3.2.1 modelica3d\"});</p>
 <p>You will also need to start an m3d backend to render the results. We hid them in $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py (or blender2.59).</p>
 <p>For more information and example models, visit the <a href=\"https://mlcontrol.uebb.tu-berlin.de/redmine/projects/modelica3d-public/wiki\">Modelica3D wiki</a>.</p>
  </html>"));
@@ -2919,7 +2921,7 @@ This release includes small improvements and some bugfixes of the OpenModelica C
 <ul>
 <li>Better support for if-equations, also inside when.</li>
 <li>Better support for calling functions in parameter expressions and interactively through dynamic loading of functions.</li>
-<li>Less memory consumtion during compilation and interactive evaluation.</li<
+<li>Less memory consumtion during compilation and interactive evaluation.</li>
 <li>A number of bug-fixes.</li>
 </ul>
 <h4>OpenModelica Notebook (OMNotebook)</h4>
@@ -2956,7 +2958,7 @@ A number of improvements, primarily in the plotting functionality and platform a
 <li>A number of improvements in the plotting functionality: scalable plots, zooming, logarithmic plots, grids, etc.</li>
 <li>Programmable plotting accessible through a Modelica API.</li>
 <li>Simple 3D visualization.</li>
-<li<Support for several platforms Linux, MacOS, Windows (2000, Xp, Vista).</li>
+<li>Support for several platforms Linux, MacOS, Windows (2000, Xp, Vista).</li>
 </ul>
 <h4>OpenModelica Shell (OMShell)</h4>
 Same as previously.
