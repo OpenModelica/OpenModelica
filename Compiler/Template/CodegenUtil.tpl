@@ -78,7 +78,6 @@ template subscriptStr(Subscript subscript)
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 
-
 template initValXml(Exp initialValue)
 ::=
   match initialValue

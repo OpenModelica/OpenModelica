@@ -69,6 +69,7 @@ encapsulated package Absyn
 protected import Debug;
 protected import Dump;
 protected import System;
+protected import Flags;
 
 public
 type Ident = String "An identifier, for example a variable name" ;
@@ -2663,6 +2664,7 @@ algorithm
     // second element is: .Modelica.Fluid.Interfaces.FluidPort_a__OMC__88 port_a;
     case(TPATH(p1,oad1), TPATH(p2,oad2))
       equation
+        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
         i1 = pathLastIdent(p1);
         i2 = pathLastIdent(p2);
         pos1 = System.stringFind(i1, "__OMC__");

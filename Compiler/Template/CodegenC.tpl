@@ -2876,8 +2876,11 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   #ifdef __cplusplus
   extern "C" {
   #endif
-  <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>  
+  <%\n%>
+  <%recordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n\n"%>
+  <%\n%>  
   <%functionHeaders(functions)%>
+  <%\n%>
   #ifdef __cplusplus
   }
   #endif
@@ -3282,10 +3285,18 @@ end subscriptsToCStr;
 template subscriptToCStr(Subscript subscript)
 ::=
   match subscript
-  case INDEX(exp=ICONST(integer=i)) then i
-  case INDEX(exp=ENUM_LITERAL(index=i)) then i
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
+  case INDEX(__) then
+   match exp 
+    case ICONST(integer=i) then i
+    case ENUM_LITERAL(index=i) then i
+    case _ then
+    let &varDecls = buffer "" /*BUFD*/
+    let &preExp = buffer "" /*BUFD*/
+    let index = daeExp(exp, contextOther, &preExp, &varDecls) 
+    '<%index%>'
+   end match
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStr;
 
@@ -3307,10 +3318,6 @@ template crefToMStr(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToMStr;
 
-
-
-
-
 template subscriptsToMStr(list<Subscript> subscripts)
 ::=
   if subscripts then
@@ -3319,16 +3326,21 @@ end subscriptsToMStr;
 
 template subscriptToMStr(Subscript subscript)
 ::=
-  let &preExp = buffer ""
-  let &varDecls = buffer ""
   match subscript
-  case INDEX(exp=ICONST(integer=i)) then i
-  case INDEX(exp=ENUM_LITERAL(index=i)) then i
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
+  case INDEX(__) then
+   match exp 
+    case ICONST(integer=i) then i
+    case ENUM_LITERAL(index=i) then i
+    case _ then
+    let &varDecls = buffer "" /*BUFD*/
+    let &preExp = buffer "" /*BUFD*/
+    let index = daeExp(exp, contextOther, &preExp, &varDecls) 
+    '<%index%>'
+   end match
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToMStr;
-
 
 template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."
@@ -3470,7 +3482,7 @@ template functionHeader(Function fn, Boolean inFunc)
         >>
       <<
       typedef struct <%fname%>_rettype_s {
-        struct <%fname%> c1;
+        <%fname%> c1;
       } <%fname%>_rettype;
 
       <%fname%>_rettype omc_<%fname%>(<%funArgsStr%>);
@@ -3542,9 +3554,66 @@ template recordDeclarationHeader(RecordDeclaration recDecl)
   match recDecl
   case RECORD_DECL_FULL(__) then
     <<
-    struct <%name%> {
+    typedef struct <%name%>_s {
       <%variables |> var as VARIABLE(__) => '<%varType(var)%> <%crefStr(var.name)%>;' ;separator="\n"%>
-    };
+    } <%name%>;
+    
+    /* functions for array operations on record <%name%> */
+    typedef base_array_t <%name%>_array;
+    static <%name%>* <%name%>_alloc(int n)
+    {
+      return alloc_elements(n,sizeof(<%name%>));
+    }
+    static <%name%> <%name%>_get(const <%name%>_array *a, size_t i) {
+      return ((<%name%> *) a->data)[i];
+    }
+    static <%name%> *<%name%>_ptrget(const <%name%>_array *a, size_t i) {
+      return ((<%name%> *) a->data) + i;
+    }
+    static void <%name%>_set(<%name%>_array *a, size_t i, <%name%> r) {
+      ((<%name%> *) a->data)[i] = r;
+    }    
+    static void alloc_<%name%>_array(<%name%>_array *dest, int ndims, ...) {
+      size_t elements = 0;
+      va_list ap;
+      va_start(ap, ndims);
+      elements = alloc_base_array(dest, ndims, ap);
+      va_end(ap);
+      dest->data = <%name%>_alloc(elements);
+    }
+    static void array_alloc_scalar_<%name%>_array(<%name%>_array* dest, int n, <%name%> first,...)
+    {
+      int i;
+      va_list ap;
+      simple_alloc_1d_base_array(dest, n, <%name%>_alloc(n));
+      va_start(ap,first);
+      <%name%>_set(dest, 0, first);
+      for(i = 1; i < n; ++i) {
+        <%name%>_set(dest, i, va_arg(ap,<%name%>));
+      }
+      va_end(ap);
+    }
+    static <%name%>* <%name%>_array_element_addr(const <%name%>_array * source,int ndims,...) {
+      va_list ap;
+      <%name%>* tmp;
+      va_start(ap,ndims);
+      tmp = <%name%>_ptrget(source, calc_base_index_va(source, ndims, ap));
+      va_end(ap);
+      return tmp;
+    }
+    static void copy_<%name%>_array_data(const <%name%>_array *source, <%name%>_array *dest)
+    {
+      size_t i, nr_of_elements;
+      assert(base_array_ok(source));
+      assert(base_array_ok(dest));
+      assert(base_array_shape_eq(source, dest));
+      nr_of_elements = base_array_nr_of_elements(source);
+      for(i = 0; i < nr_of_elements; ++i) {
+        <%name%>_set(dest, i, <%name%>_get(source, i));
+      }
+    }
+
+
     <%recordDefinitionHeader(dotPath(defPath),
                       underscorePath(defPath),
                       listLength(variables))%>
@@ -3873,7 +3942,7 @@ template extType(Type type, Boolean isInput, Boolean isArray)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then 'struct <%underscorePath(rname)%>'
+                      then '<%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
   else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
@@ -3892,7 +3961,7 @@ template extTypeF77(Type type, Boolean isReference)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                          then "void*"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                         then 'struct <%underscorePath(rname)%>'
+                         then '<%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__) then "void*"
   else error(sourceInfo(), 'Unknown external F77 type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isReference then '<%s%>*' else s
@@ -4445,7 +4514,7 @@ case RECORD_CONSTRUCTOR(__) then
   let fname = underscorePath(name)
   let retType = '<%fname%>_rettype'
   let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-  let structType = 'struct <%fname%>'
+  let structType = '<%fname%>'
   let structVar = tempDecl(structType, &varDecls /*BUFD*/)
   let _ = (locals |> var hasindex i1 fromindex 1 =>
       varInitRecord(var, i1, structVar, &varDecls /*BUFD*/, &varInits /*BUFC*/) ; empty /* increase the counter! */
@@ -4611,7 +4680,7 @@ template unboxRecord(String recordVar, Type ty, Text &preExp, Text &varDecls)
 ::=
 match ty
 case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
-  let tmpVar = tempDecl('struct <%underscorePath(path)%>', &varDecls)
+  let tmpVar = tempDecl('<%underscorePath(path)%>', &varDecls)
   let &preExp += (vars |> TYPES_VAR(name = compname) hasindex offset fromindex 2 =>
     let varType = mmcTypeShort(ty)
     let untagTmp = tempDecl('modelica_metatype', &varDecls)
@@ -7646,7 +7715,7 @@ case CAST(__) then
     let from = expTypeFromExpShort(exp)
     let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
-  case T_COMPLEX(complexClassType=rec as RECORD(__))   then '(*((struct <%underscorePath(rec.path)%>*)&<%expVar%>))'
+  case T_COMPLEX(complexClassType=rec as RECORD(__))   then '(*((<%underscorePath(rec.path)%>*)&<%expVar%>))'
   else
     '(<%expVar%>) /* could not cast, using the variable as it is */'
 end daeExpCast;
@@ -8417,7 +8486,7 @@ template expTypeShort(DAE.Type type)
   case T_ARRAY(__)       then expTypeShort(ty)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "complex"
-  case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'
+  case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then if acceptMetaModelicaGrammar() /* TODO: Don't do this to me! */
@@ -8514,7 +8583,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
       'modelica_<%expTypeShort(ty)%>'
     else match ty case T_COMPLEX(__) then
-      'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'
+      '<%underscorePath(ClassInf.getStateName(complexClassType))%>'
     else match ty case T_ARRAY(ty = t as T_COMPLEX(__)) then
       '<%expTypeShort(t)%>'
     else

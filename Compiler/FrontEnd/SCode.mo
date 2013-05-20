@@ -5217,5 +5217,18 @@ algorithm
   end match;
 end propagatePrefixInnerOuter;
 
+public function isPartial
+"function: isPartial
+  Return true if Class is a partial."
+  input Element inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inClass)
+    case CLASS(partialPrefix = PARTIAL()) then true;
+    case _ then false;
+  end matchcontinue;
+end isPartial;
+
+
 end SCode;
 
