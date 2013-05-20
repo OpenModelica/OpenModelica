@@ -8845,7 +8845,7 @@ protected function combinationMap_tail
   input list<list<ElementInType>> inElements;
   input MapFunc inMapFunc;
   input list<ElementInType> inCombination;
-  input list<ElementInType> inAccumElems;
+  input list<ElementOutType> inAccumElems;
   output list<ElementOutType> outElements;
  
   partial function MapFunc
@@ -8855,7 +8855,7 @@ protected function combinationMap_tail
 algorithm
   outElements := match(inElements, inMapFunc, inCombination, inAccumElems)
     local
-      ElementInType elem;
+      ElementOutType elem;
       list<ElementInType> head;
       list<list<ElementInType>> rest;
 
@@ -8876,7 +8876,7 @@ protected function combinationMap_tail2
   input list<list<ElementInType>> inRest;
   input MapFunc inMapFunc;
   input list<ElementInType> inCombination;
-  input list<ElementInType> inAccumElems;
+  input list<ElementOutType> inAccumElems;
   output list<ElementOutType> outElements;
 
   partial function MapFunc
@@ -8887,7 +8887,8 @@ algorithm
   outElements := match(inHead, inRest, inMapFunc, inCombination, inAccumElems)
     local
       ElementInType head;
-      list<ElementInType> rest, accum, comb;
+      list<ElementInType> rest, comb;
+      list<ElementOutType> accum;
 
     case (head :: rest, _, _, comb, accum)
       equation
@@ -8932,7 +8933,7 @@ protected function combinationMap1_tail
   input MapFunc inMapFunc;
   input ArgType1 inArg;
   input list<ElementInType> inCombination;
-  input list<ElementInType> inAccumElems;
+  input list<ElementOutType> inAccumElems;
   output list<ElementOutType> outElements;
  
   partial function MapFunc
@@ -8943,7 +8944,7 @@ protected function combinationMap1_tail
 algorithm
   outElements := match(inElements, inMapFunc, inArg, inCombination, inAccumElems)
     local
-      ElementInType elem;
+      ElementOutType elem;
       list<ElementInType> head;
       list<list<ElementInType>> rest;
 
@@ -8965,7 +8966,7 @@ protected function combinationMap1_tail2
   input MapFunc inMapFunc;
   input ArgType1 inArg;
   input list<ElementInType> inCombination;
-  input list<ElementInType> inAccumElems;
+  input list<ElementOutType> inAccumElems;
   output list<ElementOutType> outElements;
 
   partial function MapFunc
@@ -8977,7 +8978,8 @@ algorithm
   outElements := match(inHead, inRest, inMapFunc, inArg, inCombination, inAccumElems)
     local
       ElementInType head;
-      list<ElementInType> rest, accum, comb;
+      list<ElementInType> rest, comb;
+      list<ElementOutType> accum;
 
     case (head :: rest, _, _, _, comb, accum)
       equation
