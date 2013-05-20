@@ -338,6 +338,13 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
       then ((simplifyMetaModelica(e),(true,options)));
 
+    // Simplify asubs where some of the subscripts are slices.
+    case ((DAE.ASUB(exp = e, sub = subs), (_, options)))
+      equation
+        e = simplifyAsubSlicing(e, subs);
+      then
+        ((e, (true, options)));
+
     // other subscripting/asub simplifications where e is not simplified first.
     case ((DAE.ASUB(exp = e,sub = subs),(_,options)))
       equation
@@ -3201,6 +3208,37 @@ algorithm
   end matchcontinue;
 end simplifyAsubOperator;
 
+protected function simplifyAsubSlicing
+  "Simplifies asubs where some of the subscripts are slices.
+    Ex: x[i, 1:3] => {x[i, 1], x[i, 2], x[i, 3]}"
+  input DAE.Exp inExp;
+  input list<DAE.Exp> inSubscripts;
+  output DAE.Exp outAsubArray;
+protected
+  list<list<DAE.Exp>> indices;
+  list<DAE.Exp> asubs;
+  Integer sz;
+  DAE.Exp elem;
+  DAE.Type ty;
+algorithm
+  // Expand the subscripts.
+  indices := List.map(inSubscripts, Expression.splitArray);
+  // Make asubs from all combinations of the subscript indices.
+  asubs := List.combinationMap1(indices, simplifyAsubSlicing2, inExp);
+  // Make sure one or more dimensions were sliced, i.e. we got more than one element.
+  elem :: _ :: _ := asubs;
+  // Make an array expression from the asub list.
+  ty := Expression.typeof(elem);
+  outAsubArray := Expression.makeScalarArray(asubs, ty);
+end simplifyAsubSlicing;
+  
+protected function simplifyAsubSlicing2
+  input list<DAE.Exp> inSubscripts;
+  input DAE.Exp inExp;
+  output DAE.Exp outAsub;
+algorithm
+  outAsub := Expression.makeASUB(inExp, inSubscripts);
+end simplifyAsubSlicing2;
 
 protected function simplifyBinaryConst
 "function: simplifyBinaryConst

@@ -8819,4 +8819,177 @@ algorithm
   end matchcontinue;
 end splitEqualPrefix_tail;
 
+public function combinationMap
+  "Takes a two-dimensional list and calls the given function on the combinations
+   given by the cartesian product of the sublists.
+
+    Ex: combinationMap({{1, 2}, {3}, {4, 5}}, func) =>
+      {func({1, 3, 4}), func({1, 3, 5}), func({2, 3, 4}), func({2, 3, 5})}
+  "
+  input list<list<ElementInType>> inElements;
+  input MapFunc inMapFunc;
+  output list<ElementOutType> outElements;
+
+  partial function MapFunc
+    input list<ElementInType> inElements;
+    output ElementOutType outElement;
+  end MapFunc;
+protected
+  list<list<ElementInType>> elems;
+algorithm
+  elems := listReverse(inElements);
+  outElements := combinationMap_tail(elems, inMapFunc, {}, {});
+end combinationMap;
+
+protected function combinationMap_tail
+  input list<list<ElementInType>> inElements;
+  input MapFunc inMapFunc;
+  input list<ElementInType> inCombination;
+  input list<ElementInType> inAccumElems;
+  output list<ElementOutType> outElements;
+ 
+  partial function MapFunc
+    input list<ElementInType> inElements;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outElements := match(inElements, inMapFunc, inCombination, inAccumElems)
+    local
+      ElementInType elem;
+      list<ElementInType> head;
+      list<list<ElementInType>> rest;
+
+    case ({}, _, _, _)
+      equation
+        elem = inMapFunc(inCombination);
+      then
+        elem :: inAccumElems;
+
+    case (head :: rest, _, _, _)
+      then combinationMap_tail2(head, rest, inMapFunc, inCombination, inAccumElems);
+
+  end match;
+end combinationMap_tail;
+
+protected function combinationMap_tail2
+  input list<ElementInType> inHead;
+  input list<list<ElementInType>> inRest;
+  input MapFunc inMapFunc;
+  input list<ElementInType> inCombination;
+  input list<ElementInType> inAccumElems;
+  output list<ElementOutType> outElements;
+
+  partial function MapFunc
+    input list<ElementInType> inElements;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outElements := match(inHead, inRest, inMapFunc, inCombination, inAccumElems)
+    local
+      ElementInType head;
+      list<ElementInType> rest, accum, comb;
+
+    case (head :: rest, _, _, comb, accum)
+      equation
+        accum = combinationMap_tail(inRest, inMapFunc, head :: comb, accum);
+        accum = combinationMap_tail2(rest, inRest, inMapFunc, comb, accum);
+      then
+        accum;
+
+    case ({}, _, _, _, _)
+      then inAccumElems;
+        
+  end match;
+end combinationMap_tail2;
+
+public function combinationMap1
+  "Takes a two-dimensional list and calls the given function on the combinations
+   given by the cartesian product of the sublists. Also takes an extra constant
+   argument that is sent to the function.
+
+   Ex: combinationMap({{1, 2}, {3}, {4, 5}}, func, x) =>
+   {func({1, 3, 4}, x), func({1, 3, 5}, x), func({2, 3, 4}, x), func({2, 3, 5}, x)}
+  "
+  input list<list<ElementInType>> inElements;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg;
+  output list<ElementOutType> outElements;
+
+  partial function MapFunc
+    input list<ElementInType> inElements;
+    input ArgType1 inArg;
+    output ElementOutType outElement;
+  end MapFunc;
+protected
+  list<list<ElementInType>> elems;
+algorithm
+  elems := listReverse(inElements);
+  outElements := combinationMap1_tail(elems, inMapFunc, inArg, {}, {});
+end combinationMap1;
+
+protected function combinationMap1_tail
+  input list<list<ElementInType>> inElements;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg;
+  input list<ElementInType> inCombination;
+  input list<ElementInType> inAccumElems;
+  output list<ElementOutType> outElements;
+ 
+  partial function MapFunc
+    input list<ElementInType> inElements;
+    input ArgType1 inArg;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outElements := match(inElements, inMapFunc, inArg, inCombination, inAccumElems)
+    local
+      ElementInType elem;
+      list<ElementInType> head;
+      list<list<ElementInType>> rest;
+
+    case ({}, _, _, _, _)
+      equation
+        elem = inMapFunc(inCombination, inArg);
+      then
+        elem :: inAccumElems;
+
+    case (head :: rest, _, _, _, _)
+      then combinationMap1_tail2(head, rest, inMapFunc, inArg, inCombination, inAccumElems);
+
+  end match;
+end combinationMap1_tail;
+
+protected function combinationMap1_tail2
+  input list<ElementInType> inHead;
+  input list<list<ElementInType>> inRest;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg;
+  input list<ElementInType> inCombination;
+  input list<ElementInType> inAccumElems;
+  output list<ElementOutType> outElements;
+
+  partial function MapFunc
+    input list<ElementInType> inElements;
+    input ArgType1 inArg;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outElements := match(inHead, inRest, inMapFunc, inArg, inCombination, inAccumElems)
+    local
+      ElementInType head;
+      list<ElementInType> rest, accum, comb;
+
+    case (head :: rest, _, _, _, comb, accum)
+      equation
+        accum = combinationMap1_tail(inRest, inMapFunc, inArg, head :: comb, accum);
+        accum = combinationMap1_tail2(rest, inRest, inMapFunc, inArg, comb, accum);
+      then
+        accum;
+
+    case ({}, _, _, _, _, _)
+      then inAccumElems;
+        
+  end match;
+end combinationMap1_tail2;
+
 end List;

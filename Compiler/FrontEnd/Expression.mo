@@ -9133,6 +9133,23 @@ algorithm
   exp := makeCrefExp(ComponentReference.crefPrependIdent(cr, n, {}, ty), ty);
 end splitRecord2;
 
+public function splitArray
+  "Splits an array into a list of elements."
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExp;
+algorithm
+  outExp := match(inExp)
+    local
+      list<DAE.Exp> expl;
+      list<list<DAE.Exp>> mat;
+
+    case DAE.ARRAY(array = expl) then expl;
+    case DAE.MATRIX(matrix = mat) then List.flatten(mat);
+    else {inExp};
+
+  end match;
+end splitArray;
+
 public function equationExpEqual
   input DAE.EquationExp exp1;
   input DAE.EquationExp exp2;
