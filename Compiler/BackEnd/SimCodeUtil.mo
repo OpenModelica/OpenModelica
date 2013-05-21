@@ -8759,7 +8759,7 @@ algorithm
         arrayCref = getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement=arraydim1(inst_dims);
+        numArrayElement = List.map(inst_dims, Expression.subscriptString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */, 
@@ -11173,31 +11173,6 @@ algorithm
   SimCode.SIMVAR(name=name) := var;
 end varName;
 
-protected function arraydim
-  "Returns a string representation of a subscript."
-  input Expression.Subscript subscript;
-  output String str;
-algorithm
-  str := match(subscript)
-    local
-      Integer i;
-      String res;
-      Absyn.Path enum_lit;
-    case (DAE.INDEX(exp = DAE.ICONST(integer = i)))
-      equation
-        res = intString(i);
-        Debug.fcall(Flags.FAILTRACE, print, "arraydim1: " +& res  +& "\n" );
-      then
-        res;
-    case (DAE.INDEX(exp = DAE.ENUM_LITERAL(name = enum_lit)))
-      equation
-        res = Absyn.pathString(enum_lit);
-        Debug.fcall(Flags.FAILTRACE, print, "arraydim2: " +& res  +& "\n" );
-      then
-        res;
-  end match;
-end arraydim;
-
 public function countDynamicExternalFunctions
   input list<SimCode.Function> inFncLst;
   output Integer outDynLoadFuncs;
@@ -11241,25 +11216,6 @@ algorithm
         (inSimVar, files);               
   end match;
 end getFilesFromSimVar;
-
-public function arraydim1 ""
-  input list<DAE.Subscript> subscript1;
-  output list<String> outString;
-algorithm outString := match(subscript1)
-  local
-     DAE.Subscript subscript;
-    String s1;
-    list<String> s2;
-    list<DAE.Subscript> rest;
-  case({}) then {};
-  case( subscript::rest )
-    equation
-      s1=  arraydim(subscript);
-      s2= arraydim1(rest);
-    then
-       (s1 :: s2);
-end match;
-end arraydim1;
 
 protected function getFilesFromSimVars
   input SimCode.SimVars inSimVars;
