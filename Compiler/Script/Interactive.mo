@@ -15602,12 +15602,12 @@ algorithm
       Absyn.ArrayDim ad;
     case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim=ad))) :: (c2 :: rest))
       equation
-        lst = getComponentitemsName((c2 :: rest),false);
+        lst = getComponentitemsDimension((c2 :: rest));
         str = stringDelimitList(List.map(ad,Dump.printSubscriptStr),",");
       then (str :: lst);
     case ((_ :: rest))
       equation
-        res = getComponentitemsName(rest,false);
+        res = getComponentitemsDimension(rest);
       then
         res;
     case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(arrayDim = ad))})
