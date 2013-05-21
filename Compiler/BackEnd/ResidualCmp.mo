@@ -62,6 +62,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import List;
 protected import PartFn;
 protected import SCode;
@@ -609,7 +610,7 @@ algorithm
         nomVal = NONE();
         type_ = tp;
         arrayCref = SimCodeUtil.getArrayCref(cr);
-        numArrayElement=SimCodeUtil.arraydim1(inst_dims);
+        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
         kind = daeKindtoBackendDAEKind(daekind);
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,

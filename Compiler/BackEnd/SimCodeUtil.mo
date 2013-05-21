@@ -8759,7 +8759,7 @@ algorithm
         arrayCref = getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar, optAliasVars);
         caus = getCausality(dlowVar, vars);
-        numArrayElement = List.map(inst_dims, Expression.subscriptString);
+        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */, 
