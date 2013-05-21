@@ -1052,6 +1052,12 @@ algorithm
        e1 = Expression.makeBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
      then  Expression.expMul(DAE.RCONST(r1), e1);
 
+   // smooth of constant expression
+   case DAE.CALL(path=Absyn.IDENT("smooth"),expLst={_,e1})
+     equation
+       true = Expression.isConst(e1);
+     then e1;
+       
    // delay of constant expression
    case DAE.CALL(path=Absyn.IDENT("delay"),expLst={e1,_,_})
      equation
