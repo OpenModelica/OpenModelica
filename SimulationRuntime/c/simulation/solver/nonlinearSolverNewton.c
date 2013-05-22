@@ -68,9 +68,9 @@ typedef struct DATA_NEWTON
 
 
 static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, integer* maxfev,
-                  integer* nfev, int(*f)(integer*, double*, double*, integer*, void*),
-                  double* fjac, double* rwork, integer* iwork,
-                  integer* info, void* userdata);
+                       integer* nfev, int(*f)(integer*, double*, double*, integer*, void*),
+                       double* fjac, double* rwork, integer* iwork,
+                       integer* info, void* userdata);
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,8 +85,8 @@ extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, intege
 /*! \fn allocateNewtonData
  * allocate memory for nonlinear system solver
  */
-int allocateNewtonData(int size, void** voiddata){
-
+int allocateNewtonData(int size, void** voiddata)
+{
   DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
 
   *voiddata = (void*)data;
@@ -117,8 +117,8 @@ int allocateNewtonData(int size, void** voiddata){
  * free memory for nonlinear solver newton
  *
  */
-int freeNewtonData(void **voiddata){
-
+int freeNewtonData(void **voiddata)
+{
   DATA_NEWTON* data = (DATA_NEWTON*) *voiddata;
 
   free(data->resScaling);
@@ -131,7 +131,6 @@ int freeNewtonData(void **voiddata){
 
   return 0;
 }
-
 
 /*! \fn getAnalyticalJacobian
  *
@@ -193,8 +192,8 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac)
  *
  *
  */
-static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag, void* data){
-
+static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag, void* data)
+{
   int currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
   //NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   //DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
@@ -204,9 +203,6 @@ static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag,
   return 0;
 }
 
-
-
-
 /*! \fn solve non-linear system with newton method
  *
  *  \param  [in]  [data]
@@ -214,9 +210,8 @@ static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag,
  *
  *  \author wbraun
  */
-int solveNewton(DATA *data, int sysNumber) {
-
-
+int solveNewton(DATA *data, int sysNumber)
+{
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
   /*
@@ -227,7 +222,7 @@ int solveNewton(DATA *data, int sysNumber) {
 
   int i;
   double xerror, xerror_scaled;
-  char success = 0;
+  int success = 0;
   int nfunc_evals = 0;
   int continuous = 1;
 
@@ -242,9 +237,9 @@ int solveNewton(DATA *data, int sysNumber) {
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS))
   {
-    INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %e with Newton Solver",
+    INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %g with Newton Solver",
         modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name,
-      data->localData[0]->timeValue);
+        data->localData[0]->timeValue);
 
     INDENT(LOG_NLS);
     for(i = 0; i < solverData->n; i++)
@@ -257,19 +252,16 @@ int solveNewton(DATA *data, int sysNumber) {
       RELEASE(LOG_NLS);
       RELEASE(LOG_NLS);
     }
-    RELEASE(LOG_NLS);
   }
 
   /* start solving loop */
-  while (!giveUp && !success) {
-
-    /* set residual function continuous
-     */
-    if (continuous)
+  while(!giveUp && !success)
+  {
+    /* set residual function continuous */
+    if(continuous)
       ((DATA*)data)->simulationInfo.solveContinuous = 1;
     else
       ((DATA*)data)->simulationInfo.solveContinuous = 0;
-
 
     giveUp = 1;
     _omc_newton(&solverData->n, solverData->x, solverData->fvec, &solverData->xtol,
@@ -277,90 +269,82 @@ int solveNewton(DATA *data, int sysNumber) {
                 wrapper_fvec_newton, solverData->fjac, solverData->rwork,
                 solverData->iwork, &solverData->info, data);
 
-
     /* set residual function continuous */
-    if (continuous)
+    if(continuous)
       ((DATA*)data)->simulationInfo.solveContinuous = 0;
     else
       ((DATA*)data)->simulationInfo.solveContinuous = 1;
 
-
     /* check for proper inputs */
-    if (solverData->info == 0) {
+    if(solverData->info == 0)
       printErrorEqSyst(IMPROPER_INPUT, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
-    }
 
     /* check for error  */
     xerror_scaled = enorm_(&solverData->n, solverData->resScaling);
     xerror = enorm_(&solverData->n, solverData->fvec);
-
+    
     /* solution found */
-    if ((xerror <= solverData->ftol || xerror_scaled <= solverData->ftol) && solverData->info > 0) {
+    if((xerror <= solverData->ftol || xerror_scaled <= solverData->ftol) && solverData->info > 0)
+    {
       success = 1;
       nfunc_evals += solverData->nfev;
-      if (ACTIVE_STREAM(LOG_NLS)) {
+      if(ACTIVE_STREAM(LOG_NLS))
+      {
         INFO1(LOG_NLS, "*** System solved ***\n%d restarts", retries);
         INFO3(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
-        if (ACTIVE_STREAM(LOG_NLS)) {
-          for (i = 0; i < solverData->n; i++) {
-            INFO3(LOG_NLS, "x[%d] = %.15e\n\ttresidual = %e", i, solverData->x[i], solverData->fvec[i]);
-          }
-        }
+        for(i = 0; i < solverData->n; i++)
+          INFO3(LOG_NLS, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
       }
     /* Then try with old values (instead of extrapolating )*/
-    } else if (retries < 1){
+    }
+    else if(retries < 1)
+    {
       memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
 
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (ACTIVE_STREAM(LOG_NLS)) {
-        INFO(LOG_NLS, " - iteration making no progress:\t try old values.");
+      INFO(LOG_NLS, " - iteration making no progress:\t try old values.");
+    /* try to vary the initial values */
+    }
+    else if(retries < 2)
+    {
+      for(i = 0; i < solverData->n; i++)
+        solverData->x[i] += systemData->nominal[i] * 0.01;
+      retries++;
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      INFO(LOG_NLS, " - iteration making no progress:\t vary solution point by 1%%.");
+      /* try to vary the initial values */
       }
-    /* try to vary the initial values */
-    } else if(retries < 2) {
-      for(i = 0; i < solverData->n; i++) {
-          solverData->x[i] += systemData->nominal[i] * 0.1;
-        };
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        if(ACTIVE_STREAM(LOG_NLS)) {
-          INFO(LOG_NLS,
-              " - iteration making no progress:\t vary solution point by 1%%.");
-        }
-    /* try to vary the initial values */
-    } else if(retries < 2) {
-      for(i = 0; i < solverData->n; i++) {
+      else if(retries < 2)
+      {
+        for(i = 0; i < solverData->n; i++)
           solverData->x[i] = systemData->nominal[i];
-        };
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if(ACTIVE_STREAM(LOG_NLS)) {
-          INFO(LOG_NLS,
-              " - iteration making no progress:\t try nominal values as initial solution.");
-        }
-    } else {
-
+        INFO(LOG_NLS, " - iteration making no progress:\t try nominal values as initial solution.");
+    }
+    else
+    {
       printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
-
-      if (ACTIVE_STREAM(LOG_NLS)) {
+      if(ACTIVE_STREAM(LOG_NLS))
+      {
         INFO1(LOG_NLS, "### No Solution! ###\n after %d restarts", retries);
         INFO3(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
-        if (ACTIVE_STREAM(LOG_NLS)) {
-          for (i = 0; i < solverData->n; i++) {
-            INFO3(LOG_NLS, "x[%d] = %.15e\n\ttresidual = %e", i, solverData->x[i], solverData->fvec[i]);
-          }
-        }
+        if(ACTIVE_STREAM(LOG_NLS))
+          for(i = 0; i < solverData->n; i++)
+            INFO3(LOG_NLS, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
       }
     }
   }
-
+  
+  if(ACTIVE_STREAM(LOG_NLS))
+    RELEASE(LOG_NLS);
 
   /* take the best approximation */
   memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
-
   return success;
 }
 
@@ -384,8 +368,8 @@ static int fdjac(integer* n, int(*f)(integer*, double*, double*, integer*, void*
 
   int linear = systemData->method;
 
-  for (i = 0; i < *n; i++) {
-    if (linear){
+  for(i = 0; i < *n; i++) {
+    if(linear){
       delta_hh = 1;
     } else {
       delta_hh = delta_h * fmax(1, abs(x[i]));
@@ -397,7 +381,7 @@ static int fdjac(integer* n, int(*f)(integer*, double*, double*, integer*, void*
     delta_hh = 1. / delta_hh;
     f(n, x, wa, iflag, userdata);
 
-    for (j = 0; j < *n; j++) {
+    for(j = 0; j < *n; j++) {
       l = i * *n + j;
       fjac[l] = (wa[j] - fvec[j]) * delta_hh;
     }
@@ -420,8 +404,8 @@ static int fdjac(integer* n, int(*f)(integer*, double*, double*, integer*, void*
  *
  */
 static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double* fdeps, integer* maxfev,
-                  integer* nfev, int(*f)(integer*, double*, double*, integer*, void*),
-                  double* fjac, double* work, integer* iwork, integer* info, void* userdata)
+                       integer* nfev, int(*f)(integer*, double*, double*, integer*, void*),
+                       double* fjac, double* work, integer* iwork, integer* info, void* userdata)
 {
   int currentSys = ((DATA*)userdata)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)userdata)->simulationInfo.nonlinearSystemData[currentSys]);
@@ -441,29 +425,28 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
   error_f = 1.0 + tol_f;
   scaledError_f = 1.0 + tol_f;
 
-  if (ACTIVE_STREAM(LOG_NLS_V)) {
-    INFO1(LOG_NLS_V,"######### Start Newton maxfev :%d #########", (int)*maxfev);
-    for(i=0;i<*n;i++)
-      INFO2(LOG_NLS_V,"x[%d] : %e ", i, x[i]);
+  if(ACTIVE_STREAM(LOG_NLS_V))
+  {
+    INFO1(LOG_NLS_V, "######### Start Newton maxfev: %d #########", (int)*maxfev);
+    for(i=0; i<*n; i++)
+      INFO2(LOG_NLS_V, "x[%d]: %e ", i, x[i]);
   }
   *info = 1;
 
-  while (*info >= 0)
+  while(*info >= 0)
   {
-
-    DEBUG1(LOG_NLS_V, "**** start Iteration : %d  *****", *maxfev-l);
+    DEBUG1(LOG_NLS_V, "**** start Iteration: %d  *****", *maxfev-l);
     /* calculate the function values */
     (*f)(n, x, fvec, &iflag, userdata);
     (*nfev)++;
 
     /*  Debug output */
-    if (ACTIVE_STREAM(LOG_NLS_V)) {
-      for(i=0;i<*n;i++)
-        DEBUG2(LOG_NLS_V,"fvec[%d] : %e: ", i, fvec[i]);
-    }
+    if(ACTIVE_STREAM(LOG_NLS_V))
+      for(i=0; i<*n; i++)
+        DEBUG2(LOG_NLS_V, "fvec[%d]: %e: ", i, fvec[i]);
 
     /* calculate jacobian */
-    if (systemData->jacobianIndex != -1){
+    if(systemData->jacobianIndex != -1){
       getAnalyticalJacobianNewton(userdata, fjac);
     } else {
       fdjac(n, f, x, fvec, fjac, fdeps, &iflag, wa, userdata);
@@ -490,9 +473,11 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     /* scaling residual vector */
     {
       int i,j,l=0;
-      for(i=0;i<solverData->n;++i){
+      for(i=0; i<solverData->n; ++i)
+      {
         solverData->resScaling[i] = 1e-16;
-        for(j=0;j<solverData->n;++j){
+        for(j=0; j<solverData->n; ++j)
+        {
           solverData->resScaling[i] = (fabs(solverData->fjac[l]) > solverData->resScaling[i])
               ? fabs(solverData->fjac[l]) : solverData->resScaling[i];
           l++;
@@ -504,46 +489,51 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     /* calculate error by 2-norm */
     scaledError_f = enorm_(n, solverData->fvecScaled);
     error_f = enorm_(n, fvec);
-    DEBUG1(LOG_NLS_V,"scaled error = %e", scaledError_f);
-    DEBUG1(LOG_NLS_V,"error = %e", error_f);
-    if (scaledError_f <= tol_f) break;
-    if (error_f <= tol_f) break;
+    DEBUG1(LOG_NLS_V, "scaled error = %e", scaledError_f);
+    DEBUG1(LOG_NLS_V, "error = %e", error_f);
+    if(scaledError_f <= tol_f) break;
+    if(error_f <= tol_f) break;
 
     /* solve J*(x_{n+1} - x_n)=f */
     dgesv_(n, &nrsh, fjac, n, iwork, fvec, n, &lapackinfo);
 
-    if (ACTIVE_STREAM(LOG_NLS_V)) {
-      DEBUG(LOG_NLS_V,"Solved J*x=b");
-      for(i=0;i<*n;i++)
-        DEBUG2(LOG_NLS_V,"b[%d] = %e ", i, fvec[i]);;
+    if(ACTIVE_STREAM(LOG_NLS_V))
+    {
+      DEBUG(LOG_NLS_V, "Solved J*x=b");
+      for(i=0; i<*n; i++)
+        DEBUG2(LOG_NLS_V, "b[%d] = %e ", i, fvec[i]);
     }
 
-    if (lapackinfo > 0){
+    if(lapackinfo > 0)
+    {
       *info = -1;
-      WARNING(LOG_NLS,"Jacobian Matrix singular!");
-    }else if (lapackinfo < 0){
+      WARNING(LOG_NLS, "Jacobian Matrix singular!");
+    }
+    else if(lapackinfo < 0)
+    {
       *info = -1;
-      WARNING1(LOG_NLS,"illegal  input in argument %d", (int)lapackinfo);
-    }else{
+      WARNING1(LOG_NLS, "illegal  input in argument %d", (int)lapackinfo);
+    }
+    else
+    {
       /* if no error occurs update x vector */
-      for (i = 0; i < *n; i++){
+      for(i = 0; i<*n; i++)
         x[i] = x[i] - fvec[i];
-      }
 
       /* break if root convergence if reached */
       error_x = enorm_(n, fvec);
-      if (error_x <= tol_x) break;
-
+      if(error_x <= tol_x)
+        break;
     }
 
-    if (ACTIVE_STREAM(LOG_NLS_V)) {
-      for(i=0;i<*n;i++)
-        DEBUG2(LOG_NLS_V,"x[%d] = %e ", i, x[i]);
-    }
+    if(ACTIVE_STREAM(LOG_NLS_V))
+      for(i=0; i<*n; i++)
+        DEBUG2(LOG_NLS_V, "x[%d] = %e ", i, x[i]);
 
     /* check if maximum iteration is reached */
-    l = l - 1;
-    if (l < 0) {
+    l--;
+    if(l < 0)
+    {
       *info = -1;
       break;
     }

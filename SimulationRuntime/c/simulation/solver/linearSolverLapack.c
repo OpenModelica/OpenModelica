@@ -161,6 +161,6 @@ int solveLapack(DATA *data, int sysNumber)
 
   /* take the solution */
   memcpy(systemData->x, systemData->b, systemData->size*(sizeof(modelica_real)));
-
+  
   return success;
 }

@@ -215,7 +215,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
 /*! \fn check_nonlinear_solutions
  *   This function check whether some of non-linear systems
- *   are failed to solve. if one is failed it return true, otherwise false.
+ *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
  *  \param  [in]  [data]
  *
@@ -224,18 +224,13 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 int check_nonlinear_solutions(DATA *data)
 {
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
-  int i,returnValue = 0;
+  int i;
 
-  for(i=0;i<data->modelData.nNonLinearSystems;++i)
-  {
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
     if(nonlinsys[i].solved == 0)
-    {
-      returnValue = 1;
-      break;
-    }
-  }
+      return 1;
 
-  return returnValue;
+  return 0;
 }
 
 /*! \fn extraPolate

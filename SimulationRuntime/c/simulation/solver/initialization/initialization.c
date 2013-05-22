@@ -694,7 +694,7 @@ static int symbolic_initialization(DATA *data)
     if(stateSelection(data, 1, 1) == 1)
       WARNING(LOG_STDOUT, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
   }
-
+    
   return 0;
 }
 
@@ -968,6 +968,17 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
+  /* initialize all (nonlinear|linear|mixed) systems
+   * This is a workaround and should be removed as soon as possible.
+   */
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+    data->simulationInfo.nonlinearSystemData[i].solved = 1;
+  for(i=0; i<data->modelData.nLinearSystems; ++i)
+    data->simulationInfo.linearSystemData[i].solved = 1;
+  for(i=0; i<data->modelData.nMixedSystems; ++i)
+    data->simulationInfo.mixedSystemData[i].solved = 1;
+  /* end workaround */
+  
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
     retVal = 0;
@@ -977,6 +988,26 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     retVal = symbolic_initialization(data);
   else
     THROW("unsupported option -iim");
+    
+  /* check for unsolved (nonlinear|linear|mixed) systems
+   * This is a workaround and should be removed as soon as possible.
+   */   
+  if(check_nonlinear_solutions(data))
+  {
+    retVal = -2;
+    WARNING(LOG_NLS, "model terminate | non-linear system solver failed during initialization.");
+  }
+  else if(check_linear_solutions(data))
+  {
+    retVal = -3;
+    WARNING(LOG_LS, "model terminate | linear system solver failed during initialization.");
+  }
+  else if(check_mixed_solutions(data))
+  {
+    retVal = -4;
+    WARNING(LOG_NLS, "model terminate | mixed system solver failed during initialiazation.");
+  }
+  /* end workaround */
 
   dumpInitialSolution(data);
   INFO(LOG_INIT, "### END INITIALIZATION ###");

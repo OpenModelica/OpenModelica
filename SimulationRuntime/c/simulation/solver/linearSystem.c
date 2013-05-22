@@ -76,7 +76,7 @@ int allocatelinearSystem(DATA *data)
 
 /*! \fn freelinearSystem
  *
- *  Thi function frees memory of linear systems.
+ *  This function frees memory of linear systems.
  *
  *  \param [ref] [data]
  */
@@ -116,7 +116,8 @@ int freelinearSystem(DATA *data)
  */
 int solve_linear_system(DATA *data, int sysNumber)
 {
-  /* NONLINEAR_SYSTEM_DATA* system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
+  /* NONLINEAR_SYSTEM_DATA
+   * system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
   int success;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
@@ -136,7 +137,7 @@ int solve_linear_system(DATA *data, int sysNumber)
 
 /*! \fn check_linear_solutions
  *   This function check whether some of linear systems
- *   are failed to solve. if one is failed it return true, otherwise false.
+ *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
  *  \param  [in]  [data]
  *
@@ -145,16 +146,11 @@ int solve_linear_system(DATA *data, int sysNumber)
 int check_linear_solutions(DATA *data)
 {
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
-  int i,returnValue = 0;
+  int i;
 
-  for(i=0;i<data->modelData.nLinearSystems;++i)
-  {
+  for(i=0; i<data->modelData.nLinearSystems; ++i)
     if(linsys[i].solved == 0)
-    {
-      returnValue = 1;
-      break;
-    }
-  }
+      return 1;
 
-  return returnValue;
+  return 0;
 }

@@ -340,7 +340,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
 
   if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
   {
-    WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT for more information.");
+    WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
     simInfo->stopTime = simInfo->startTime;
     retValue = -1;
   }

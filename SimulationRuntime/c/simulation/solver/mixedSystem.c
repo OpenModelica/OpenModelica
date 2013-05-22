@@ -130,8 +130,8 @@ int solve_mixed_system(DATA *data, int sysNumber)
 }
 
 /*! \fn check_mixed_solutions
- *   This function check whether some of mixed systems
- *   are failed to solve. if one is failed it return true, otherwise false.
+ *   This function checks whether some of the mixed systems
+ *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
  *  \param  [in]  [data]
  *
@@ -140,16 +140,11 @@ int solve_mixed_system(DATA *data, int sysNumber)
 int check_mixed_solutions(DATA *data)
 {
   MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
-  int i,returnValue = 0;
+  int i;
 
-  for(i=0;i<data->modelData.nMixedSystems;++i)
-  {
+  for(i=0; i<data->modelData.nMixedSystems; ++i)
     if(system[i].solved == 0)
-    {
-      returnValue = 1;
-      break;
-    }
-  }
+      return 1;
 
-  return returnValue;
+  return 0;
 }
