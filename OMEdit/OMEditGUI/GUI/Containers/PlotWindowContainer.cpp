@@ -196,16 +196,13 @@ void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeW
       {
         QString curveNameStructure = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->title().text());
         VariableTreeItem *pVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(curveNameStructure);
+        pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+        pPlotCurve->detach();
+        pPlotWindow->fitInView();
+        pPlotWindow->getPlot()->updateGeometry();
         if (pVariableTreeItem)
         {
           pVariableTreeItem->setCheckState(0, Qt::Checked);
-        }
-        else
-        {
-          pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-          pPlotCurve->detach();
-          pPlotWindow->fitInView();
-          pPlotWindow->getPlot()->updateGeometry();
         }
       }
       else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)

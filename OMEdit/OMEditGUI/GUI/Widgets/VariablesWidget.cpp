@@ -262,13 +262,14 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
       parentStructure.append(".").append(variables[i]);
     }
   }
+  mpVariablesTreeWidget->blockSignals(false);
+  if (isResultFileRemoved)
+    emit resultFileUpdated(mpVariablesTreeWidget);
   // sort items and expand the current plot variables node.
   mpVariablesTreeWidget->setSortingEnabled(true);
   mpVariablesTreeWidget->sortItems(0, Qt::AscendingOrder);
+  mpVariablesTreeWidget->collapseAll();
   newTreePost->setExpanded(true);
-  if (isResultFileRemoved)
-    emit resultFileUpdated(mpVariablesTreeWidget);
-  mpVariablesTreeWidget->blockSignals(false);
 }
 
 void VariablesWidget::addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName,
