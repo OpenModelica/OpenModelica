@@ -101,6 +101,7 @@ private:
   bool mIsCustomScale;
   bool mCanAddClassAnnotation;
   bool mIsCreatingConnection;
+  bool mDeleteCreatingConnection;
   bool mIsCreatingLineShape;
   bool mIsCreatingPolygonShape;
   bool mIsCreatingRectangleShape;
@@ -139,6 +140,8 @@ public:
   bool canAddClassAnnotation();
   void setIsCreatingConnection(bool enable);
   bool isCreatingConnection();
+  void setDeleteCreatingConnection(bool enable);
+  bool canDeleteCreatingConnection();
   void setIsCreatingLineShape(bool enable);
   bool isCreatingLineShape();
   void setIsCreatingPolygonShape(bool enable);

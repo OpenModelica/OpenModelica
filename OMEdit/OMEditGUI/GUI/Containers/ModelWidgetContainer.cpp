@@ -150,6 +150,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   setIsCustomScale(false);
   setCanAddClassAnnotation(true);
   setIsCreatingConnection(false);
+  setDeleteCreatingConnection(false);
   setIsCreatingLineShape(false);
   setIsCreatingPolygonShape(false);
   setIsCreatingRectangleShape(false);
@@ -203,6 +204,16 @@ void GraphicsView::setIsCreatingConnection(bool enable)
 bool GraphicsView::isCreatingConnection()
 {
   return mIsCreatingConnection;
+}
+
+void GraphicsView::setDeleteCreatingConnection(bool enable)
+{
+  mDeleteCreatingConnection = enable;
+}
+
+bool GraphicsView::canDeleteCreatingConnection()
+{
+  return mDeleteCreatingConnection;
 }
 
 void GraphicsView::setIsCreatingLineShape(bool enable)
@@ -886,39 +897,44 @@ void GraphicsView::addConnection(Component *pComponent)
     MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
     if (pStartComponent == pComponent)
     {
-      removeConnection();
       QMessageBox::information(pMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
-      return;
-    }
-    bool showConnectionArrayDialog = false;
-    if (pStartComponent->getParentComponent())
-      if (pStartComponent->getComponentInfo()->isArray())
-        showConnectionArrayDialog = true;
-    if (pComponent->getParentComponent())
-      if (pComponent->getComponentInfo()->isArray())
-        showConnectionArrayDialog = true;
-    if (showConnectionArrayDialog)
-    {
-      ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
-                                                              getModelWidget()->getModelWidgetContainer()->getMainWindow());
-      pConnectionArray->show();
+      /* Ticket #2162 : We don't delete the connection here instead we set the flag and delete the connection in mousepressevent.
+         Deleting the connection here raises weird mousemoveevent segfaults, i don't know why :).
+        */
+      setDeleteCreatingConnection(true);
     }
     else
     {
-      QString startComponentName, endComponentName;
+      bool showConnectionArrayDialog = false;
       if (pStartComponent->getParentComponent())
-        startComponentName = QString(pStartComponent->getParentComponent()->getName()).append(".").append(pStartComponent->getComponentInfo()->getName());
-      else
-        startComponentName = pStartComponent->getName();
+        if (pStartComponent->getComponentInfo()->isArray())
+          showConnectionArrayDialog = true;
       if (pComponent->getParentComponent())
-        endComponentName = QString(pComponent->getParentComponent()->getName()).append(".").append(pComponent->getComponentInfo()->getName());
+        if (pComponent->getComponentInfo()->isArray())
+          showConnectionArrayDialog = true;
+      if (showConnectionArrayDialog)
+      {
+        ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
+                                                                getModelWidget()->getModelWidgetContainer()->getMainWindow());
+        pConnectionArray->show();
+      }
       else
-        endComponentName = pComponent->getName();
-      createConnection(startComponentName, endComponentName);
-      mpConnectionLineAnnotation->addPoint(QPointF(0, 0));
-      mpConnectionLineAnnotation->drawCornerItems();
-      mpConnectionLineAnnotation->setCornerItemsPassive();
+      {
+        QString startComponentName, endComponentName;
+        if (pStartComponent->getParentComponent())
+          startComponentName = QString(pStartComponent->getParentComponent()->getName()).append(".").append(pStartComponent->getComponentInfo()->getName());
+        else
+          startComponentName = pStartComponent->getName();
+        if (pComponent->getParentComponent())
+          endComponentName = QString(pComponent->getParentComponent()->getName()).append(".").append(pComponent->getComponentInfo()->getName());
+        else
+          endComponentName = pComponent->getName();
+        createConnection(startComponentName, endComponentName);
+        mpConnectionLineAnnotation->addPoint(QPointF(0, 0));
+        mpConnectionLineAnnotation->drawCornerItems();
+        mpConnectionLineAnnotation->setCornerItemsPassive();
+      }
     }
   }
 }
@@ -1279,13 +1295,18 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     }
   }
   QGraphicsView::mousePressEvent(event);
+  /* Ticket #2162 : Delete the same component connect connection here. */
+  if (isCreatingConnection() && canDeleteCreatingConnection())
+  {
+    setDeleteCreatingConnection(false);
+    removeConnection();
+  }
 }
 
 //! Defines what happens when the mouse is moving in a GraphicsView.
 //! @param event contains information of the mouse moving operation.
 void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 {
-  QGraphicsView::mouseMoveEvent(event);
   /* update the pointer position labels */
   Label *pPointerXPositionLabel = mpModelWidget->getModelWidgetContainer()->getMainWindow()->getPointerXPositionLabel();
   pPointerXPositionLabel->setText(QString("X: %1").arg(QString::number(mapToScene(event->pos()).x(), 'f', 2)));
@@ -1327,6 +1348,7 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
     mpBitmapShapeAnnotation->updateEndExtent(mapToScene(event->pos()));
     mpBitmapShapeAnnotation->update();
   }
+  QGraphicsView::mouseMoveEvent(event);
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
