@@ -2859,14 +2859,6 @@ algorithm
     case DAE.ARRAY(array = expl)
       then List.map(expl, Expression.makeIndexSubscript);
 
-    else
-      equation
-        exp_str = ExpressionDump.printExpStr(inSliceExp);
-        err_str = "ComponentReference.expandSlice: Unknown slice " +& exp_str;
-        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
-      then
-        fail();
-
   end match;
 end expandSlice;
 
