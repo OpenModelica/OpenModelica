@@ -59,6 +59,7 @@ private:
   Component *mpComponent;
 public slots:
   void updateTextString();
+  void duplicate();
 };
 
 #endif // TEXTANNOTATION_H

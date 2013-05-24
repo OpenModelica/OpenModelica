@@ -190,4 +190,3 @@ void EllipseAnnotation::duplicate()
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
 }
-

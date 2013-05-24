@@ -318,3 +318,29 @@ void TextAnnotation::updateTextString()
     }
   }
 }
+
+void TextAnnotation::duplicate()
+{
+  TextAnnotation *pTextAnnotation = new TextAnnotation("", mpGraphicsView);
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  pTextAnnotation->setOrigin(mOrigin + gridStep);
+  pTextAnnotation->setRotationAngle(mRotation);
+  pTextAnnotation->initializeTransformation();
+  pTextAnnotation->setLineColor(getLineColor());
+  pTextAnnotation->setFillColor(getFillColor());
+  pTextAnnotation->setLinePattern(getLinePattern());
+  pTextAnnotation->setFillPattern(getFillPattern());
+  pTextAnnotation->setLineThickness(getLineThickness());
+  pTextAnnotation->setExtents(getExtents());
+  pTextAnnotation->setTextString(getTextString());
+  pTextAnnotation->setFontSize(getFontSize());
+  pTextAnnotation->setFontName(getFontName());
+  pTextAnnotation->setTextStyles(getTextStyles());
+  pTextAnnotation->setTextHorizontalAlignment(getTextHorizontalAlignment());
+  pTextAnnotation->drawCornerItems();
+  pTextAnnotation->setCornerItemsPassive();
+  pTextAnnotation->update();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
