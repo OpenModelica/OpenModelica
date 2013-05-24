@@ -58,6 +58,8 @@ public:
   QString getShapeAnnotation();
   void addPoint(QPointF point);
   void updateEndPoint(QPointF point);
+public slots:
+  void duplicate();
 };
 
 #endif // POLYGONANNOTATION_H

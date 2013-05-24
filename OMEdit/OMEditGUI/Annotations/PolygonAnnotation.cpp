@@ -211,3 +211,27 @@ void PolygonAnnotation::updateEndPoint(QPointF point)
   // we update the second last point for polygon since the last point is connected to first one
   mPoints.replace(mPoints.size() - 2, point);
 }
+
+void PolygonAnnotation::duplicate()
+{
+  PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  pPolygonAnnotation->setOrigin(mOrigin + gridStep);
+  pPolygonAnnotation->setRotationAngle(mRotation);
+  pPolygonAnnotation->initializeTransformation();
+  pPolygonAnnotation->setLineColor(getLineColor());
+  pPolygonAnnotation->setFillColor(getFillColor());
+  pPolygonAnnotation->setLinePattern(getLinePattern());
+  pPolygonAnnotation->setFillPattern(getFillPattern());
+  pPolygonAnnotation->setLineThickness(getLineThickness());
+  pPolygonAnnotation->setSmooth(getSmooth());
+  pPolygonAnnotation->setPoints(getPoints());
+  pPolygonAnnotation->addPoint(QPoint(0, 0));
+  pPolygonAnnotation->drawCornerItems();
+  pPolygonAnnotation->setCornerItemsPassive();
+  pPolygonAnnotation->update();
+  mpGraphicsView->addShapeObject(pPolygonAnnotation);
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
