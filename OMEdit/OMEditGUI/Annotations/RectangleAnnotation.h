@@ -55,6 +55,8 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
   void drawRectangleAnnotaion(QPainter *painter);
   QString getShapeAnnotation();
+public slots:
+  void duplicate();
 };
 
 #endif // RECTANGLEANNOTATION_H

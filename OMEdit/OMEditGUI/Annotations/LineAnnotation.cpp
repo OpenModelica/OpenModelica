@@ -599,7 +599,6 @@ void LineAnnotation::duplicate()
   pLineAnnotation->drawCornerItems();
   pLineAnnotation->setCornerItemsPassive();
   pLineAnnotation->update();
-  mpGraphicsView->addShapeObject(pLineAnnotation);
   mpGraphicsView->addClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
 }

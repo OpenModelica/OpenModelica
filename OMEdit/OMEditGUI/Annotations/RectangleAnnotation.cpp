@@ -144,3 +144,26 @@ QString RectangleAnnotation::getShapeAnnotation()
     annotationString.append(QString("radius=").append(QString::number(mRadius)));
   return QString("Rectangle(").append(annotationString.join(",")).append(")");
 }
+
+void RectangleAnnotation::duplicate()
+{
+  RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  pRectangleAnnotation->setOrigin(mOrigin + gridStep);
+  pRectangleAnnotation->setRotationAngle(mRotation);
+  pRectangleAnnotation->initializeTransformation();
+  pRectangleAnnotation->setLineColor(getLineColor());
+  pRectangleAnnotation->setFillColor(getFillColor());
+  pRectangleAnnotation->setLinePattern(getLinePattern());
+  pRectangleAnnotation->setFillPattern(getFillPattern());
+  pRectangleAnnotation->setLineThickness(getLineThickness());
+  pRectangleAnnotation->setBorderPattern(getBorderPattern());
+  pRectangleAnnotation->setExtents(getExtents());
+  pRectangleAnnotation->setRadius(getRadius());
+  pRectangleAnnotation->drawCornerItems();
+  pRectangleAnnotation->setCornerItemsPassive();
+  pRectangleAnnotation->update();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
