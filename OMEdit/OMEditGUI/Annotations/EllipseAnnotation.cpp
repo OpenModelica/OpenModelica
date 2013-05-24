@@ -167,3 +167,27 @@ QString EllipseAnnotation::getShapeAnnotation()
     annotationString.append(QString("endAngle=").append(QString::number(mEndAngle)));
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }
+
+void EllipseAnnotation::duplicate()
+{
+  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  pEllipseAnnotation->setOrigin(mOrigin + gridStep);
+  pEllipseAnnotation->setRotationAngle(mRotation);
+  pEllipseAnnotation->initializeTransformation();
+  pEllipseAnnotation->setLineColor(getLineColor());
+  pEllipseAnnotation->setFillColor(getFillColor());
+  pEllipseAnnotation->setLinePattern(getLinePattern());
+  pEllipseAnnotation->setFillPattern(getFillPattern());
+  pEllipseAnnotation->setLineThickness(getLineThickness());
+  pEllipseAnnotation->setExtents(getExtents());
+  pEllipseAnnotation->setStartAngle(getStartAngle());
+  pEllipseAnnotation->setEndAngle(getEndAngle());
+  pEllipseAnnotation->drawCornerItems();
+  pEllipseAnnotation->setCornerItemsPassive();
+  pEllipseAnnotation->update();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}
+
