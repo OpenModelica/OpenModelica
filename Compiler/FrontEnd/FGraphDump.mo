@@ -39,9 +39,7 @@ encapsulated package FGraphDump
   This module builds a graph out of SCode 
 "
 
-public import Absyn;
 public import SCode;
-public import Util;
 public import FNode;
 public import DAE;
 public import FGraph;
@@ -55,11 +53,7 @@ public type Node = FNode.Node;
 public type NodeData = FNode.NodeData;
 public type Graph = FGraph.Graph;
 
-protected import System;
-protected import List;
 protected import Flags;
-protected import Error;
-protected import Dump;
 protected import GraphML;
 
 public function dumpGraph

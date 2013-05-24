@@ -48,9 +48,7 @@ protected import Dump;
 protected import Error;
 protected import Flags;
 protected import NFInstDump;
-protected import List;
 protected import SCodeDump;
-protected import Util;
 
 public function checkRecursiveShortDefinition
   input Absyn.TypeSpec inTypeSpec;

@@ -50,7 +50,6 @@ public import SCode;
 
 protected import Builtin;
 protected import Debug;
-protected import Dump;
 protected import Error;
 protected import Flags;
 protected import Global;

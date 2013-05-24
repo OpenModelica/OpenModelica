@@ -48,7 +48,6 @@ protected import ClassInf;
 protected import Config;
 protected import Debug;
 protected import Dump;
-protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;

@@ -42,14 +42,12 @@ encapsulated package NFSCodeAnalyseRedeclare
 "
 
 public import Absyn;
-public import DAE;
 public import NFInstTypes;
 public import NFInstTypesOld;
 public import SCode;
 public import NFSCodeEnv;
 public import NFSCodeFlattenRedeclare;
 
-protected import ClassInf;
 protected import Debug;
 protected import Error;
 protected import Flags;

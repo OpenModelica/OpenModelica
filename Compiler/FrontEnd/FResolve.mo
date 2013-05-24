@@ -41,7 +41,6 @@ encapsulated package FResolve
 
 public import Absyn;
 public import SCode;
-public import Util;
 public import FNode;
 public import DAE;
 public import FGraphEnv;

@@ -42,7 +42,6 @@ encapsulated package Parser
 public import Absyn;
 public import Interactive;
 protected import Config;
-protected import Dump;
 protected import Flags;
 protected import ParserExt;
 protected import SCodeUtil;

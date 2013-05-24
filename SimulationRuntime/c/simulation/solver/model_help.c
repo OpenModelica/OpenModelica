@@ -52,7 +52,6 @@ const size_t SIZERINGBUFFER = 3;
  */
 void updateDiscreteSystem(DATA *data)
 {
-
   int IterationNum = 0;
   int discreteChanged = 0;
   modelica_boolean relationChanged = 0;

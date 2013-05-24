@@ -40,7 +40,6 @@ encapsulated package FGraph
 "
 
 public import Absyn;
-public import SCode;
 public import Util;
 public import FNode;
 public import DAE;
@@ -72,11 +71,7 @@ public constant AvlTree emptyAvlTree = AVLTREENODE(NONE(), 0, NONE(), NONE());
 
 public constant Name tyNodeName = "$ty";
 
-protected import System;
-protected import List;
-protected import Flags;
 protected import Error;
-protected import Dump;
 
 public function newGraph
   output Graph outGraph;

@@ -93,7 +93,6 @@ protected import Types;
 protected import Util;
 protected import ValuesUtil;
 protected import ClassInf;
-protected import DAEUtil;
 
 public function ceval "
   This function is used when the value of a constant expression is

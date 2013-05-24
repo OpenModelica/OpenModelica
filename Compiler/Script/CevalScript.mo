@@ -123,9 +123,7 @@ protected import FMI;
 protected import FMIExt;
 protected import ErrorExt;
 protected import FGraphEnv;
-protected import FGraphDump;
 protected import FGraph;
-protected import FNode;
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;

@@ -40,9 +40,6 @@ encapsulated package FRef
 "
 
 public import Absyn;
-public import SCode;
-public import Util;
-public import DAE;
 public import FNode;
 
 public type Ident = FNode.Ident;

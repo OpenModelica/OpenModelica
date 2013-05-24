@@ -41,7 +41,6 @@ encapsulated package FGraphBuild
 
 public import Absyn;
 public import SCode;
-public import Util;
 public import FGraph;
 public import FNode;
 public import DAE;
@@ -54,10 +53,7 @@ type NodeData = FGraph.NodeData;
 
 protected import System;
 protected import List;
-protected import Flags;
-protected import Dump;
 protected import SCodeDump;
-protected import FRef;
 
 public function mkProgramGraph
 "builds nodes out of classes"

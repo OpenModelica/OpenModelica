@@ -39,9 +39,7 @@ encapsulated package FGraphEnv
   This module builds a graph out of SCode 
 "
 
-public import Absyn;
 public import SCode;
-public import Util;
 public import FGraph;
 public import FNode;
 public import DAE;
