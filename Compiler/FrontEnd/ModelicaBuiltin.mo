@@ -3233,11 +3233,9 @@ span:hover .anchor {
 
 @media screen {
  a.ext-link .icon {
-  background: url(../extlink.gif) center center no-repeat;
   padding-left: 12px;
  }
  a.mail-link .icon {
-  background: url(../envelope.png) center center no-repeat;
   padding-left: 14px;
  }
 }
@@ -3334,7 +3332,6 @@ label.disabled { color: #d7d7d7 }
 
 /* Main navigation bar */
 #mainnav {
- background: #fff url(../topbar_gradient.png) 0 0;
  border: 1px solid #000;
  font: normal 10px verdana,'Bitstream Vera Sans',helvetica,arial,sans-serif;
  margin: .66em 0 .33em;
@@ -3342,7 +3339,6 @@ label.disabled { color: #d7d7d7 }
 }
 #mainnav li { border-right: none; padding: .25em 0 }
 #mainnav :link, #mainnav :visited {
- background: url(../dots.gif) 0 0 no-repeat;
  border-right: 1px solid #fff;
  border-bottom: none;
  border-left: 1px solid #555;
@@ -3355,7 +3351,6 @@ label.disabled { color: #d7d7d7 }
  border-right: 1px solid #ddd;
 }
 #mainnav .active :link, #mainnav .active :visited {
- background: #000 url(../topbar_gradient2.png) 0 0 repeat-x;
  border-top: none;
  border-right: 1px solid #000;
  color: #eee;
@@ -3409,8 +3404,6 @@ label.disabled { color: #d7d7d7 }
  border: none;
  padding: 0 0 2px;
 }
-#altlinks li a.ics { background-image: url(../ics.png); padding-left: 22px }
-#altlinks li a.rss { background-image: url(../feed.png); padding-left: 20px }
 
 /* Footer */
 #footer {
@@ -3452,13 +3445,11 @@ label.disabled { color: #d7d7d7 }
 
 /* Section folding */
 .foldable :link, .foldable :visited {
- background: url(../expanded.png) 0 50% no-repeat;
  border: none;
  padding-left: 16px;
 }
 .foldable :link:hover, .foldable :visited:hover { background-color: transparent }
 .collapsed > .foldable :link, .collapsed > .foldable :visited {
- background-image: url(../collapsed.png);
 }
 .collapsed > div, .collapsed > table, .collapsed > ul, .collapsed > dl { display: none }
 fieldset > legend.foldable :link, fieldset > legend.foldable :visited {
@@ -3476,7 +3467,6 @@ fieldset > legend.foldable :link, fieldset > legend.foldable :visited {
  position: relative;
  margin: 0 1em 1em;
 }
-* html #prefs { width: 26em } /* Set width only for IE */
 #prefs input, #prefs select { font-size: 9px; vertical-align: middle }
 #prefs fieldset {
  background: transparent;
@@ -3575,7 +3565,6 @@ table.wiki th {
  width: 234px;
 }
 .wikitoolbar :link, .wikitoolbar :visited {
- background: transparent url(../edit_toolbar.png) no-repeat;
  border: 1px solid #fff;
  border-left-color: #d7d7d7;
  cursor: default;
@@ -3605,7 +3594,6 @@ div.trac-resizable textarea { display: block; margin-bottom: 0 }
 div.trac-grip {
  height: 5px;
  overflow: hidden;
- background: #eee url(../grip.png) no-repeat center 1px;
  border: 1px solid #ddd;
  border-top-width: 0;
  cursor: s-resize;
@@ -3656,8 +3644,6 @@ table.listing th.asc a, table.listing th.desc a {
  background-position: 100% 50%;
  background-repeat: no-repeat;
 }
-table.listing th.asc a { background-image: url(../asc.png) }
-table.listing th.desc a { background-image: url(../desc.png) }
 table.listing tbody td, table.listing tbody th {
  border: 1px dotted #ddd;
  padding: .3em .5em;

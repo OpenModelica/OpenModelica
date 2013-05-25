@@ -233,6 +233,7 @@ writeFile(filetmp, version + " (<a href=\"ModelicaDocumentation.tar.xz\">Offline
 writeFile(filetmp, "</body>\n</html>", append = true);
 
 writeFile("Tidy.py","#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from __future__ import with_statement
 from BeautifulSoup import BeautifulSoup
 import subprocess as sub
@@ -246,14 +247,19 @@ repls = ["+replaceCommands+"
  (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_]*#)'), r'\\1.html#'),
  (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_]*)'), r'\\1.html'),
 ]
+rehttp = re.compile(r'https?://',flags=re.IGNORECASE)
+links = open('tidy.links','w')
 
-def linkreplace(link):
+def linkreplace(link,filepath):
+  result = link
   for (regex,repl) in repls:
     try:
-      link = regex.sub(repl,link)
+      result = regex.sub(repl,result)
     except:
       pass
-  return link
+  if result <> link and not rehttp.match(result):
+    links.write('%s§%s\\n' % (result,filepath))
+  return result
 
 for filepath in sorted(glob.glob('*.html')):
   tag = '[Checking file %s]:\\n' % filepath
@@ -265,12 +271,12 @@ for filepath in sorted(glob.glob('*.html')):
       soup = BeautifulSoup(html_file, fromEncoding='utf-8')
       for a in soup.findAll('a'):
         try:
-          a['href'] = linkreplace(a['href'])
+          a['href'] = linkreplace(a['href'],filepath)
         except:
           pass
         for img in soup.findAll('img'):
           try:
-            img['src'] = linkreplace(img['src'])
+            img['src'] = linkreplace(img['src'],filepath)
           except:
             pass
     with open(filepath,'w') as html_file:
@@ -281,16 +287,17 @@ for filepath in sorted(glob.glob('*.html')):
 
 writeFile("FindFiles.sh","#!/bin/bash
 rm -f *.png *.pdf FindFiles.log
+touch FindFiles.log
 OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
-grep -v http:// *.html | grep -v [Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]:// | egrep -o \"[A-Za-z_0-9%.: -]*/[A-Za-z_0-9%.:/ -]*\\.(png|jpg|pdf)\" | cut -d: -f2- | sort -u | tr -d \\\"  > tmp
-for f in `cat tmp`; do
-  f=`echo $f | sed 's/%20/ /'`
+for f in `uniq tidy.links`; do
+  f=`echo $f | cut -d§ -f1 | sed 's/%20/ /'`
   if test -f \"$OMLIBRARY/$f\"; then
     d=`dirname \"$f\"`
     mkdir -p \"$d\"
     cp \"$OMLIBRARY/$f\" \"$f\"
   else
-    echo Not found: $f | tee -a FindFiles.log
+    inFile=`echo $f | cut -d§ -f2`
+    echo \"$inFile: Not found: $f\" | tee -a FindFiles.log
   fi
 done
 rm -f tmp
