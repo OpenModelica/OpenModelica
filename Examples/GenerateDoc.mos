@@ -343,7 +343,7 @@ grep -v DOCTYPE tidy.err | grep -v \"<body>\" |grep -v \"<html>\\|</html>\" |gre
 
 echo(true);
 "Removing previous generation output files...";
-system("rm -f tidy.out tidy.err tidy.filtered");
+system("rm -f tidy.links tidy.out tidy.err tidy.filtered");
 
 "Copying original HTML files to 'old-html-tmp'";
 system("mkdir -p old-html-tmp");
@@ -361,6 +361,6 @@ system("rm -f ModelicaDocumentation.tar.xz");
 system("mkdir -p " + dirs);
 "tar";
 dirs;
-cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html " + dirs + " GenerateDoc.mos FindFiles.log tidy.filtered";
+cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html " + dirs + " GenerateDoc.mos FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
