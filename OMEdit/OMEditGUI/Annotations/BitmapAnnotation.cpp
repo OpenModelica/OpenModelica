@@ -146,3 +146,21 @@ QString BitmapAnnotation::getShapeAnnotation()
   return QString("Bitmap(").append(annotationString.join(",")).append(")");
 }
 
+void BitmapAnnotation::duplicate()
+{
+  BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation("", mpGraphicsView);
+  QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
+                   mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
+  pBitmapAnnotation->setOrigin(mOrigin + gridStep);
+  pBitmapAnnotation->setRotationAngle(mRotation);
+  pBitmapAnnotation->initializeTransformation();
+  pBitmapAnnotation->setExtents(getExtents());
+  pBitmapAnnotation->setFileName(getFileName());
+  pBitmapAnnotation->setImageSource(getImageSource());
+  pBitmapAnnotation->setImage(getImage());
+  pBitmapAnnotation->drawCornerItems();
+  pBitmapAnnotation->setCornerItemsPassive();
+  pBitmapAnnotation->update();
+  mpGraphicsView->addClassAnnotation();
+  mpGraphicsView->setCanAddClassAnnotation(true);
+}

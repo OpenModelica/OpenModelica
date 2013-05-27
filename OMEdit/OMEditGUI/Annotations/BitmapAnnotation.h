@@ -57,6 +57,8 @@ public:
   QString getShapeAnnotation();
 private:
   Component *mpComponent;
+public slots:
+  void duplicate();
 };
 
 #endif // BITMAPANNOTATION_H
