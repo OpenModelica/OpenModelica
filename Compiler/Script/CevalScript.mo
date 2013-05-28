@@ -1102,21 +1102,25 @@ algorithm
       then
         (cache,Values.BOOL(true),newst);
 
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.BOOL(anyCode)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.ENUM_LITERAL(name=path)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
-        str = Debug.bcallret2(not anyCode, Dump.unparseStr, p, false, "");
-        str = Debug.bcallret1(anyCode, System.anyStringCode, p, str);
+        name = Absyn.pathLastIdent(path);
+        str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
+        str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b1),Values.BOOL(b2),Values.BOOL(anyCode)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(b1),Values.BOOL(b2),Values.ENUM_LITERAL(name=path)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
-        absynClass = Interactive.getPathedClassInProgram(path, p);
+        name = Absyn.pathLastIdent(path);
+        absynClass = Interactive.getPathedClassInProgram(className, p);
         absynClass = Debug.bcallret1(b1,Absyn.getFunctionInterface,absynClass,absynClass);
         absynClass = Debug.bcallret1(b2,Absyn.getShortClass,absynClass,absynClass);
         p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
-        str = Debug.bcallret2(not anyCode, Dump.unparseStr, p, false, "");
-        str = Debug.bcallret1(anyCode, System.anyStringCode, p, str);
+        str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
+        str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
+        scodeP = Debug.bcallret2(name ==& "SCode", SCodeUtil.translateAbsyn2SCode2, p, false, {});
+        str = Debug.bcallret1(name ==& "SCode", SCodeDump.programStr, scodeP, str);
       then
         (cache,Values.STRING(str),st);
 

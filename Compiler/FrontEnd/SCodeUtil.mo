@@ -73,12 +73,27 @@ public function translateAbsyn2SCode
   input Absyn.Program inProgram;
   output SCode.Program outProgram;
 algorithm
-  outProgram := match(inProgram)
+  outProgram := translateAbsyn2SCode2(inProgram,true);
+end translateAbsyn2SCode;
+
+public function translateAbsyn2SCode2
+"function: translateAbsyn2SCode2
+  This function takes an Absyn.Program
+  and constructs a SCode.Program from it.
+  This particular version of translate tries to fix any uniontypes
+  in the inProgram before translating further. This should probably
+  be moved into Parser.parse since you have to modify the tree every
+  single time you translate..."
+  input Absyn.Program inProgram;
+  input Boolean withInitial;
+  output SCode.Program outProgram;
+algorithm
+  outProgram := match(inProgram,withInitial)
     local
       SCode.Program spInitial, spAbsyn, sp;
       list<Absyn.Class> inClasses,initialClasses;
 
-    case _
+    case (_,_)
       equation
         setGlobalRoot(Global.instHashIndex, Inst.emptyInstHashTable());
         setGlobalRoot(Global.typesIndex,  Types.createEmptyTypeMemory());
@@ -87,6 +102,7 @@ algorithm
         Absyn.PROGRAM(classes=inClasses) = MetaUtil.createMetaClassesInProgram(inProgram);
 
         Absyn.PROGRAM(classes=initialClasses) = Builtin.getInitialFunctions();
+        initialClasses = Util.if_(withInitial,initialClasses,{});
 
         // set the external flag that signals the presence of inner/outer components in the model
         System.setHasInnerOuterDefinitions(false);
@@ -109,7 +125,7 @@ algorithm
       then
         sp;
   end match;
-end translateAbsyn2SCode;
+end translateAbsyn2SCode2;
 
 public function translate2
 "Folds an Absyn.Program into SCode.Program."

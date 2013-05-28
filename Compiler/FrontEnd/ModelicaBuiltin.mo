@@ -1821,11 +1821,13 @@ external "builtin";
 annotation(preferredView="text");
 end stringReplace;
 
+type ExportKind = enumeration(Absyn "Normal Absyn",SCode "Normal SCode",Internal "True unparsing of the Absyn");
+
 function list "Lists the contents of the given class, or all loaded classes."
   input TypeName class_ := $TypeName(AllLoadedClasses);
   input Boolean interfaceOnly := false;
   input Boolean shortOnly := false "only short class definitions";
-  input Boolean exportAsCode := false "true if we want a true unparsing of the program";
+  input ExportKind exportKind := ExportKind.Absyn;
   output String contents;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1845,6 +1847,7 @@ empty string is returned.</p>
 </html>",revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>16124</td><td>sjoelund.se</td><td>Added replaced exportAsCode option with exportKind (selecting which kind of unparsing to use)</td></tr>
 <tr><td>10796</td><td>sjoelund.se</td><td>Added shortOnly option</td></tr>
 <tr><td>10756</td><td>sjoelund.se</td><td>Added interfaceOnly option</td></tr>
 </table>
