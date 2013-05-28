@@ -2179,11 +2179,16 @@ QString OMCProxy::makeDocumentationImagesUriToFileName(QString documentation)
 QString OMCProxy::uriToFilename(QString uri)
 {
   sendCommand("uriToFilename(\"" + uri + "\")");
-  QString result = StringHandler::unparse(getResult());
+  QString result = StringHandler::removeFirstLastBrackets(getResult());
+  result = result.prepend("{").append("}");
+  QStringList results = StringHandler::unparseStrings(result);
   /* uriToFilename does not set errors.
   printMessagesStringInternal();
   */
-  return result;
+  if (results.size() > 0)
+    return results.first();
+  else
+    return "";
 }
 
 /*!

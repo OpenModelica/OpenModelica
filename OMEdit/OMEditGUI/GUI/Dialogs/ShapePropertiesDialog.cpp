@@ -294,7 +294,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpBrowseFileButton = new QPushButton(Helper::browse);
   connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(browseImageFile()));
   mpStoreImageInModelCheckBox = new QCheckBox(tr("Store image in model"));
-  mpStoreImageInModelCheckBox->setChecked(true);
+  mpStoreImageInModelCheckBox->setChecked(mpShapeAnnotation->getFileName().isEmpty());
   connect(mpStoreImageInModelCheckBox, SIGNAL(toggled(bool)), SLOT(storeImageInModelToggled(bool)));
   mpPreviewImageLabel = new Label;
   mpPreviewImageLabel->setAlignment(Qt::AlignCenter);
@@ -748,12 +748,25 @@ bool ShapePropertiesDialog::applyShapeProperties()
   /* validate the bitmap file name */
   if (mpBitmapAnnotation)
   {
-    if (mpFileTextBox->text().isEmpty())
+    if (mpStoreImageInModelCheckBox->isChecked() && mpShapeAnnotation->getImageSource().isEmpty())
     {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::file), Helper::ok);
-      mpFileTextBox->setFocus();
-      return false;
+      if (mpFileTextBox->text().isEmpty())
+      {
+        QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::file), Helper::ok);
+        mpFileTextBox->setFocus();
+        return false;
+      }
+    }
+    else if (!mpStoreImageInModelCheckBox->isChecked())
+    {
+      if (mpFileTextBox->text().isEmpty())
+      {
+        QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::file), Helper::ok);
+        mpFileTextBox->setFocus();
+        return false;
+      }
     }
   }
   /* apply properties */
@@ -816,10 +829,27 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpStoreImageInModelCheckBox->isChecked())
     {
       mpShapeAnnotation->setFileName("");
-      QFile imageFile(mpFileTextBox->text());
-      imageFile.open(QIODevice::ReadOnly);
-      QByteArray imageByteArray = imageFile.readAll();
-      mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
+      if (!mpFileTextBox->text().isEmpty())
+      {
+        QUrl fileUrl(mpFileTextBox->text());
+        QFileInfo fileInfo(mpFileTextBox->text());
+        QFileInfo classFileInfo(mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getFileName());
+        MainWindow *pMainWindow = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+        /* if its a modelica:// link then make it absolute path */
+        QString fileName;
+        if (fileUrl.scheme().toLower().compare("modelica") == 0)
+          fileName = pMainWindow->getOMCProxy()->uriToFilename(mpFileTextBox->text());
+        else if (fileInfo.isRelative())
+          fileName = QString(classFileInfo.absoluteDir().absolutePath()).append("/").append(mpFileTextBox->text());
+        else if (fileInfo.isAbsolute())
+          fileName = mpFileTextBox->text();
+        else
+          fileName = "";
+        QFile imageFile(fileName);
+        imageFile.open(QIODevice::ReadOnly);
+        QByteArray imageByteArray = imageFile.readAll();
+        mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
+      }
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
     }
     else
