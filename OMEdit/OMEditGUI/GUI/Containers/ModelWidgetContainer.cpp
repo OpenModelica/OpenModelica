@@ -2072,6 +2072,32 @@ void ModelWidget::setModelModified()
     }
     pLibraryTreeNode->setIsSaved(false);
   }
+  /*
+    If this model is child model inside a package then reflect the change in the text view of the package as well.
+    */
+  if (!mpLibraryTreeNode->getParentName().isEmpty())
+    updateParentModelsText(mpLibraryTreeNode->getNameStructure());
+}
+
+void ModelWidget::updateParentModelsText(QString className)
+{
+  LibraryTreeWidget *pLibraryTreeWidget = mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget();
+  className = StringHandler::removeLastWordAfterDot(className);
+  LibraryTreeNode *pLibraryTreeNode;
+  pLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(className);
+  if (pLibraryTreeNode)
+  {
+    /* if the parent model's modelica text view is visible then update it. */
+    if (pLibraryTreeNode->getModelWidget())
+    {
+      // clean up the OMC cache for this particular model classname.
+      mpModelWidgetContainer->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(className);
+      if (pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
+        pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(className));
+    }
+    if (!pLibraryTreeNode->getParentName().isEmpty())
+      updateParentModelsText(className);
+  }
 }
 
 /*!

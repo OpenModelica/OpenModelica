@@ -294,6 +294,7 @@ public:
   void setModelFilePathLabel(QString path);
   Label* getCursorPositionLabel();
   void setModelModified();
+  void updateParentModelsText(QString className);
   void getModelComponents(QString className, bool inheritedCycle = false);
   void getModelIconDiagramShapes(QString className);
   void getModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType);
