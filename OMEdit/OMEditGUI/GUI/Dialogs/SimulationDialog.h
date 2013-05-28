@@ -109,6 +109,9 @@ private:
   QLineEdit *mpLinearizationTimeTextBox;
   Label *mpOutputVariablesLabel;
   QLineEdit *mpOutputVariablesTextBox;
+  QCheckBox *mpProfilingCheckBox;
+  QCheckBox *mpCPUTimeCheckBox;
+  QCheckBox *mpEnableAllWarningsCheckBox;
   QGroupBox *mpLoggingGroupBox;
   QCheckBox *mpLogDasslSolverCheckBox;
   QCheckBox *mpLogDebugCheckBox;
@@ -128,8 +131,6 @@ private:
   QCheckBox *mpLogStatsCheckBox;
   QCheckBox *mpLogUtilCheckBox;
   QCheckBox *mpLogZeroCrossingsCheckBox;
-  QCheckBox *mpProfilingCheckBox;
-  QCheckBox *mpCPUTimeCheckBox;
   // buttons
   QPushButton *mpCancelButton;
   QPushButton *mpSimulateButton;

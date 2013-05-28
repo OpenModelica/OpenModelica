@@ -196,6 +196,12 @@ void SimulationDialog::setUpForm()
   mpOutputVariablesLabel = new Label(tr("Output Variables (Optional):"));
   mpOutputVariablesLabel->setToolTip(tr("Comma separated list of variables. Output the variables at the end of the simulation to the standard output."));
   mpOutputVariablesTextBox = new QLineEdit;
+  // measure simulation time checkbox
+  mpProfilingCheckBox = new QCheckBox(tr("Profiling (~5-25% overhead)"));
+  // cpu-time checkbox
+  mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
+  // enable all warnings
+  mpEnableAllWarningsCheckBox = new QCheckBox(tr("Enable All Warnings"));
   // Logging
   mpLogDasslSolverCheckBox = new QCheckBox(tr("DASSL Solver Information"));
   mpLogDasslSolverCheckBox->setToolTip(tr("additional information about dassl solver"));
@@ -256,10 +262,6 @@ void SimulationDialog::setUpForm()
   pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox, 8, 1);
   mpLoggingGroupBox = new QGroupBox(tr("Logging (Optional)"));
   mpLoggingGroupBox->setLayout(pLoggingGroupLayout);
-  // measure simulation time checkbox
-  mpProfilingCheckBox = new QCheckBox(tr("Profiling (~5-25% overhead)"));
-  // cpu-time checkbox
-  mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // set Output Tab Layout
   QGridLayout *pSimulationFlagsTabLayout = new QGridLayout;
   pSimulationFlagsTabLayout->setAlignment(Qt::AlignTop);
@@ -287,7 +289,8 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 9, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpProfilingCheckBox, 10, 0);
   pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 11, 0);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 12, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 12, 0);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 13, 0, 1, 3);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
@@ -500,6 +503,16 @@ void SimulationDialog::simulate()
     {
       simulationFlags.append(QString("-output=").append(mpOutputVariablesTextBox->text()));
     }
+    // setup cpu time flag
+    if (mpCPUTimeCheckBox->isChecked())
+    {
+      simulationFlags.append("-cpu");
+    }
+    // setup enable all warnings flag
+    if (mpEnableAllWarningsCheckBox->isChecked())
+    {
+      simulationFlags.append("-w");
+    }
     // setup Logging flags
     if (mpLogDasslSolverCheckBox->isChecked() ||
         mpLogDebugCheckBox->isChecked() ||
@@ -560,11 +573,6 @@ void SimulationDialog::simulate()
         loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
 
       simulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
-    }
-    // setup cpu time flag
-    if (mpCPUTimeCheckBox->isChecked())
-    {
-      simulationFlags.append("-cpu");
     }
     // before simulating save the simulation options.
     saveSimulationOptions();
