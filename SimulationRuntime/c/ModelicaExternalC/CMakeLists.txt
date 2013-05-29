@@ -1,10 +1,12 @@
 # Sources and Headers
-set(ModelicaExternalC_sources ModelicaInternal.c
-                              ModelicaStrings.c
+set(ModelicaExternalC_sources ./../../../libraries/Modelica\ 3.2.1/Modelica/Resources/C-Sources/ModelicaInternal.c
+                              ./../../../libraries/Modelica\ 3.2.1/Modelica/Resources/C-Sources/ModelicaStrings.c
+							  ./../../../libraries/Modelica\ 3.2.1/Modelica/Resources/C-Sources/ModelicaMatIO.c
+							  ./../../../libraries/Modelica\ 3.2.1/Modelica/Resources/C-Sources/ModelicaStandardTables.c
+							  ./../../../libraries/Modelica\ 3.2.1/Modelica/Resources/C-Sources/win32_dirent.c
 							  ModelicaTablesImpl.c
 							  ../util/ModelicaUtilities.c
 							  tables.c)
-							  #win32_dirent.c)
 
 SET(ModelicaExternalC_headers ModelicaTables.h
                               ../util/ModelicaUtilities.h
