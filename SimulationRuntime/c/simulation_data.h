@@ -314,7 +314,7 @@ typedef struct STATE_SET_DATA
 {
   modelica_integer nCandidates;
   modelica_integer nStates;
-  modelica_integer nDummyStates;
+  modelica_integer nDummyStates;    /* nCandidates - nStates */
 
   VAR_INFO* A;
   modelica_integer* rowPivot;
