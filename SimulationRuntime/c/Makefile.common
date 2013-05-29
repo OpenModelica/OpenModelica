@@ -175,7 +175,6 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 
 clean:
 	rm -f $(ALL_PATHS_CLEAN_OBJS) *.a
-	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
-	(! test -f $(TABLEBUILDDIR)/Makefile) || make -C $(TABLEBUILDDIR) distclean
-	rm -f $(TABLEBUILDDIR)/Makefile $(TABLEBUILDDIR)/configure
+	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
+	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
