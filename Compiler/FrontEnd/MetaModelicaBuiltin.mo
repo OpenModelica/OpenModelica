@@ -736,7 +736,7 @@ external "builtin";
 <p>This is a very fast comparison of two values which only checks if the pointers are equal.</p>
 <p>The intended way of using the function is to speed up comparisons.</p>
 <p>If you know that all occurances of REC(1.5) are the same pointer (e.g. if you made a pass on your datastructure that replaced all occurances with a single one),
-you can use referenceEq instead of structural equality (<a href=\"modelica://valueEq\">valueEq</a> or a user-provided comparison).</p>
+you can use referenceEq instead of structural equality (<a href=\"modelica://MetaModelica.valueEq\">valueEq</a> or a user-provided comparison).</p>
 <p>You can also use the function to speed up comparsions if the rate of success is expected to be high or the cost of structural equality is high. But then you need to do a structural equality check after to make sure nothing is wrong.</p>
 <p>You can use the function to avoid reconstructing an identical datastructure on traversals, which saves memory and time spent on garbage collection: case rec as REC(x) equation nx = f(x); then if referenceEq(x,nx) then rec else REC(nx);</p>
 </html>"));
