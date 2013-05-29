@@ -1344,11 +1344,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           fillPattern=FillPattern.Solid,
           lineThickness=0.5),
         Text(
-          extent={{-100,20},{100,-20}},
+          extent={{-100,40},{100,0}},
           lineColor={0,0,0},
           textString="%name"),
         Text(
-          extent={{-100,80},{100,-80}},
+          extent={{-100,-50},{100,-90}},
           lineColor={0,0,0},
           textString="V1.0")}));
   protected
@@ -1577,11 +1577,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           fillPattern=FillPattern.Solid,
           lineThickness=0.5),
         Text(
-          extent={{-100,20},{100,-20}},
+          extent={{-100,40},{100,0}},
           lineColor={0,0,0},
           textString="%name"),
         Text(
-          extent={{-100,80},{100,-80}},
+          extent={{-100,-50},{100,-90}},
           lineColor={0,0,0},
           textString="V2.0")}));
   protected
@@ -1775,11 +1775,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           fillPattern=FillPattern.Solid,
           lineThickness=0.5),
         Text(
-          extent={{-100,20},{100,-20}},
+          extent={{-100,40},{100,0}},
           lineColor={0,0,0},
           textString="%name"),
         Text(
-          extent={{-100,80},{100,-80}},
+          extent={{-100,-50},{100,-90}},
           lineColor={0,0,0},
           textString="V1.0")}));
   protected
