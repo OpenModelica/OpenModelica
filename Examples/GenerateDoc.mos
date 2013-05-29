@@ -61,7 +61,7 @@ if genMetaModelica then
 end if;
 
 echo(false);
-allClassNames:=getClassNames(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b,builtin=genBuiltin,recursive=true,sort=true);
+allClassNames:=getClassNames(builtin=genBuiltin,recursive=true,sort=true);
 system("date -u +%FT%TZ > tmp");
 genTimeStamp := readFile("tmp");
 version := "<hr />Generated at " + genTimeStamp + " by <a href=\"http://openmodelica.org\">OpenModelica</a>" + getVersion() + " using <a href=\"GenerateDoc.mos\">GenerateDoc.mos</a>";
