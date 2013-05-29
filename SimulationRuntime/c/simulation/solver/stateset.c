@@ -349,7 +349,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
     res = comparePivot(oldColPivot, set->colPivot, set->nCandidates, set->nDummyStates, set->nStates, set->A, set->states, set->statescandidates, data, switchStates);
     if (!switchStates){
       memcpy(set->colPivot, oldColPivot, set->nCandidates*sizeof(modelica_integer));
-      memcpy(set->rowPivot, oldRowPivot, set->nCandidates*sizeof(modelica_integer));
+      memcpy(set->rowPivot, oldRowPivot, set->nDummyStates*sizeof(modelica_integer));
     }
     if(res)
       globalres = 1;
