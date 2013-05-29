@@ -202,6 +202,7 @@ void SimulationDialog::setUpForm()
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
   mpEnableAllWarningsCheckBox = new QCheckBox(tr("Enable All Warnings"));
+  mpEnableAllWarningsCheckBox->setChecked(true);
   // Logging
   mpLogDasslSolverCheckBox = new QCheckBox(tr("DASSL Solver Information"));
   mpLogDasslSolverCheckBox->setToolTip(tr("additional information about dassl solver"));
