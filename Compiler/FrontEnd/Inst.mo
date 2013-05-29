@@ -12705,11 +12705,30 @@ protected
 algorithm
   (vars,_,_,_,algs,_,_,_) := DAEUtil.splitElements(elts);
   invars := List.filter(vars,DAEUtil.isInputVar);
+  invars := List.select(invars,checkInputUsedAnnotation);
   invars := checkExternalDeclInputUsed(invars,decl);
   invars := List.select1(invars,checkVarBindingsInputUsed,vars);
   (_,invars) := DAEUtil.traverseDAE2(algs,checkExpInputUsed,invars);
   List.map1_0(invars,warnUnusedFunctionVar,name);
 end checkFunctionInputUsed;
+
+public function checkInputUsedAnnotation "
+  True if __OpenModelica_UnusedVariable does not exist in the element.
+"
+  input DAE.Element inElement;
+  output Boolean result;
+algorithm
+  result := match (inElement)
+    local
+      Option<SCode.Comment> cmt;
+      DAE.ComponentRef cr;
+    case DAE.VAR(componentRef=cr,absynCommentOption = cmt)
+      equation
+        result = SCode.optCommentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnusedVariable");
+      then not result;
+    else true;
+  end match;
+end checkInputUsedAnnotation;
 
 protected function warnUnusedFunctionVar
   input DAE.Element v;

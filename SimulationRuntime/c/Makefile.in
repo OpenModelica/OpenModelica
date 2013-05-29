@@ -32,6 +32,10 @@ LIBSIMULATION=@LIBSIMULATION@
 LIBRUNTIME=@LIBRUNTIME@
 LIBFMIRUNTIME=@LIBFMIRUNTIME@
 
+REGEN = Makefile.in
+MODELICAEXTERNALC = libModelicaExternalC*@SHREXT@*
+PREFIX = --prefix="@prefix@" --libdir='$${exec_prefix}/lib/omc'
+
 EXTERNALCMAKEFILE=Makefile
 
 include Makefile.common

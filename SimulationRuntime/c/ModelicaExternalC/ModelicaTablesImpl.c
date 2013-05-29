@@ -9,7 +9,7 @@
 #include "ModelicaTables.h"
 #include "tables.h"
 #include <math.h>
-#include <omc_msvc.h>
+#include "../util/omc_msvc.h"
 
 #ifdef __cplusplus
 extern "C" {

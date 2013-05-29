@@ -733,7 +733,6 @@ OMVisualize/OMVisualizeGUI/OMVisualizeGUI.config \
 testsuite/openmodelica/bootstrapping/LinkMain.makefile \
 SimulationRuntime/fmi/import/Makefile \
 SimulationRuntime/c/Makefile \
-SimulationRuntime/c/ModelicaExternalC/Makefile \
 SimulationRuntime/c/simulation/libf2c/makefile.u \
 SimulationRuntime/ParModelica/OpenCLRuntime/Makefile \
 SimulationRuntime/interactive/Makefile \

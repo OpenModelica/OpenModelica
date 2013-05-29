@@ -11,6 +11,7 @@ CFLAGS = $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 CXXFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
+builddir = ../../build
 
 RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./omc_inline.h \
@@ -70,7 +71,7 @@ RUNTIME_HEADERS_FMU = \
 ./simulation/solver/solver_main.h \
 ./util/list.h \
 
-.PHONY : clean all ModelicaExternalC/libModelicaExternalC.a $(LIBF2C)
+.PHONY : clean all $(LIBF2C) ModelicaExternalC ModelicaTables
 
 all : install
 
@@ -135,9 +136,6 @@ $(SIMOBJSPATHC):%.o: %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 	@echo Deps: $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
 
-ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
-	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)
-
 ifeq ($(LIBF2C),)
 simulation/libf2c/libf2c.a:
 else
@@ -145,9 +143,18 @@ simulation/libf2c/libf2c.a:
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 endif
 
-install: ModelicaExternalC/libModelicaExternalC.a $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS)
+EXTERNALCBUILDDIR = ModelicaExternalC
+
+ModelicaExternalC : $(EXTERNALCBUILDDIR)/Makefile
+	$(MAKE) -C $(EXTERNALCBUILDDIR)
+$(EXTERNALCBUILDDIR)/Makefile : $(EXTERNALCBUILDDIR)/configure $(REGEN)
+	cd $(EXTERNALCBUILDDIR) && ./configure $(PREFIX) CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
+	make -C $(EXTERNALCBUILDDIR) clean
+$(EXTERNALCBUILDDIR)/configure : $(EXTERNALCBUILDDIR)/autogen.sh
+	cd $(EXTERNALCBUILDDIR) && ./autogen.sh
+
+install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a ModelicaExternalC $(ALL_OBJS)
 	# copy libraries
-	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) install
 	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
@@ -160,6 +167,7 @@ install: ModelicaExternalC/libModelicaExternalC.a $(LIBSIMULATION) $(LIBRUNTIME)
 	   ../fmi/export/fmu_model_interface.c \
 	   ../fmi/import/fmuWrapper.h \
 	   ../fmi/import/xmlparser.h $(builddir_inc)
+	cp -Pp $(EXTERNALCBUILDDIR)/.libs/$(MODELICAEXTERNALC) $(builddir)/lib/omc
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
@@ -169,4 +177,5 @@ clean:
 	rm -f $(ALL_PATHS_CLEAN_OBJS) *.a
 	$(MAKE) -C ModelicaExternalC -f ${LIBMAKEFILE} clean
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
-
+	(! test -f $(TABLEBUILDDIR)/Makefile) || make -C $(TABLEBUILDDIR) distclean
+	rm -f $(TABLEBUILDDIR)/Makefile $(TABLEBUILDDIR)/configure

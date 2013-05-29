@@ -28,7 +28,7 @@
  *
  */
 
-#include "omc_error.h"
+#include "../util/omc_error.h"
 #include "tables.h"
 
 #include <stdio.h>
@@ -37,9 +37,9 @@
 #include <ctype.h>
 #include <math.h>
 
-#include "omc_inline.h"
+#include "../omc_inline.h"
 #ifdef _MSC_VER
-#include "omc_msvc.h"
+#include "../util/omc_msvc.h"
 #endif
 
 /* Definition to get some Debug information if interface is called */
