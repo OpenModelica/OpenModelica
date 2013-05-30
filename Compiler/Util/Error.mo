@@ -653,6 +653,8 @@ public constant Message RECURSION_DEPTH_WARNING = MESSAGE(532, TRANSLATION(), ER
   Util.gettext("The maximum recursion depth was reached when evaluating expression %s in scope %s. Translation may still succeed but you are recommended to fix the problem."));
 public constant Message RECURSION_DEPTH_DERIVED = MESSAGE(533, TRANSLATION(), ERROR(),
   Util.gettext("The maximum recursion depth was reached when instantiating a derived class. Current class %s in scope %s."));
+public constant Message EVAL_EXTERNAL_OBJECT_CONSTRUCTOR = MESSAGE(534, TRANSLATION(), ERROR(),
+  Util.gettext("OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd runtime failures, but %s is a variable."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
