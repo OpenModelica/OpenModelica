@@ -443,7 +443,7 @@ void LineAnnotation::updateStartPoint(QPointF point)
   if (mCornerItemsList.size() > 0)
     mCornerItemsList[0]->setPos(point);
   /* update the 2nd point */
-  if (mPoints.size() != 1)
+  if (mPoints.size() > 2)
   {
     if (mGeometries[0] == LineAnnotation::Horizontal)
       mPoints[1] = QPointF(mPoints[1].x(),mPoints[0].y());
@@ -464,14 +464,17 @@ void LineAnnotation::updateEndPoint(QPointF point)
       /* updated the last CornerItem */
       if (mCornerItemsList.size() > (mPoints.size() - 1))
         mCornerItemsList[mPoints.size() - 1]->setPos(point);
-      /* update the 2nd last point */
-      if (mGeometries.back() == LineAnnotation::Horizontal)
-        mPoints[mPoints.size() - 2] = QPointF(mPoints[mPoints.size() - 2].x(),point.y());
-      else if (mGeometries.back() == LineAnnotation::Vertical)
-        mPoints[mPoints.size() - 2] = QPointF(point.x(),mPoints[mPoints.size() - 2].y());
-      /* updated the 2nd last CornerItem */
-      if (mCornerItemsList.size() > (mPoints.size() - 2))
-        mCornerItemsList[mPoints.size() - 2]->setPos(mPoints[mPoints.size() - 2]);
+      if (mPoints.size() > 2)
+      {
+        /* update the 2nd last point */
+        if (mGeometries.back() == LineAnnotation::Horizontal)
+          mPoints[mPoints.size() - 2] = QPointF(mPoints[mPoints.size() - 2].x(),point.y());
+        else if (mGeometries.back() == LineAnnotation::Vertical)
+          mPoints[mPoints.size() - 2] = QPointF(point.x(),mPoints[mPoints.size() - 2].y());
+        /* updated the 2nd last CornerItem */
+        if (mCornerItemsList.size() > (mPoints.size() - 2))
+          mCornerItemsList[mPoints.size() - 2]->setPos(mPoints[mPoints.size() - 2]);
+      }
       break;
     default:
       break;

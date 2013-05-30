@@ -581,7 +581,7 @@ void ShapePropertiesDialog::addPoint()
     {
       /* get middle of two surronding points */
       QPointF point1(mpPointsTableWidget->item(row, 0)->text().toFloat(), mpPointsTableWidget->item(row, 1)->text().toFloat());
-      QPointF point2(mpPointsTableWidget->item(row + 1, 0)->text().toFloat(), mpPointsTableWidget->item(row + 1, 0)->text().toFloat());
+      QPointF point2(mpPointsTableWidget->item(row + 1, 0)->text().toFloat(), mpPointsTableWidget->item(row + 1, 1)->text().toFloat());
       QPointF point3 = (point1 + point2) / 2;
       /* insert new row */
       mpPointsTableWidget->insertRow(row + 1);
@@ -592,6 +592,25 @@ void ShapePropertiesDialog::addPoint()
       pTableWidgetItemX->setFlags(pTableWidgetItemX->flags() | Qt::ItemIsEditable);
       mpPointsTableWidget->setItem(row + 1, 1, pTableWidgetItemY);
       mpPointsTableWidget->setCurrentCell(row + 1, 0);
+    }
+  }
+  else if (mpLineAnnotation && mpPointsTableWidget->rowCount() == 2)
+  {
+    if (mpLineAnnotation->getLineType() == LineAnnotation::ConnectionType)
+    {
+      /* get middle of two surronding points */
+      QPointF point1(mpPointsTableWidget->item(0, 0)->text().toFloat(), mpPointsTableWidget->item(0, 1)->text().toFloat());
+      QPointF point2(mpPointsTableWidget->item(1, 0)->text().toFloat(), mpPointsTableWidget->item(1, 1)->text().toFloat());
+      QPointF point3 = (point1 + point2) / 2;
+      /* insert new row */
+      mpPointsTableWidget->insertRow(1);
+      QTableWidgetItem *pTableWidgetItemX = new QTableWidgetItem(QString::number(point3.x()));
+      pTableWidgetItemX->setFlags(pTableWidgetItemX->flags() | Qt::ItemIsEditable);
+      mpPointsTableWidget->setItem(1, 0, pTableWidgetItemX);
+      QTableWidgetItem *pTableWidgetItemY = new QTableWidgetItem(QString::number(point3.y()));
+      pTableWidgetItemX->setFlags(pTableWidgetItemX->flags() | Qt::ItemIsEditable);
+      mpPointsTableWidget->setItem(1, 1, pTableWidgetItemY);
+      mpPointsTableWidget->setCurrentCell(1, 0);
     }
   }
 }
@@ -872,6 +891,9 @@ bool ShapePropertiesDialog::applyShapeProperties()
   if (mpLineAnnotation) lineType = mpLineAnnotation->getLineType();
   if (mpLineAnnotation && lineType == LineAnnotation::ConnectionType)
   {
+    mpShapeAnnotation->removeCornerItems();
+    mpLineAnnotation->addPoint(QPointF(0, 0));
+    mpShapeAnnotation->drawCornerItems();
     mpLineAnnotation->updateConnectionAnnotation();
     mpLineAnnotation->update();
   }
