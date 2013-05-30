@@ -241,7 +241,7 @@ constant DebugFlag EXEC_STAT = DEBUG_FLAG(37, "execstat", false,
   Util.gettext("Prints out execution statistics for the compiler."));
 constant DebugFlag TRANSFORMS_BEFORE_DUMP = DEBUG_FLAG(38, "transformsbeforedump", false,
   Util.notrans(""));
-constant DebugFlag BEFORE_FIX_MOD_OUT = DEBUG_FLAG(40, "beforefixmodout", false,
+constant DebugFlag BEFORE_FIX_MOD_OUT = DEBUG_FLAG(39, "beforefixmodout", false,
   Util.notrans(""));
 constant DebugFlag FLAT_MODELICA = DEBUG_FLAG(40, "flatmodelica", false,
   Util.notrans(""));
@@ -670,77 +670,77 @@ constant ConfigFlag KEEP_ARRAYS = CONFIG_FLAG(20, "keepArrays",
 constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(21, "modelicaOutput",
   SOME("m"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.notrans(""));
-constant ConfigFlag SILENT = CONFIG_FLAG(23, "silent",
+constant ConfigFlag SILENT = CONFIG_FLAG(22, "silent",
   SOME("q"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Turns on silent mode."));
-constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(24, "corbaSessionName",
+constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the name of the corba session if +d=interactiveCorba is used."));
-constant ConfigFlag NUM_PROC = CONFIG_FLAG(25, "numProcs",
+constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the number of processors to use."));
-constant ConfigFlag LATENCY = CONFIG_FLAG(26, "latency",
+constant ConfigFlag LATENCY = CONFIG_FLAG(25, "latency",
   SOME("l"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the latency for parallel execution."));
-constant ConfigFlag BANDWIDTH = CONFIG_FLAG(27, "bandwidth",
+constant ConfigFlag BANDWIDTH = CONFIG_FLAG(26, "bandwidth",
   SOME("b"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the bandwidth for parallel execution."));
-constant ConfigFlag INST_CLASS = CONFIG_FLAG(28, "instClass",
+constant ConfigFlag INST_CLASS = CONFIG_FLAG(27, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Instantiate the class given by the fully qualified path."));
-constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(29, "vectorizationLimit",
+constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(28, "vectorizationLimit",
   SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."));
-constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(30, "simulationCg",
+constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(29, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Turns on simulation code generation."));
-constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(31,
+constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(30,
   "evalAnnotationParams", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Sets whether to evaluate parameters in annotations or not."));
-constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(32,
+constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(31,
   "checkModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Set when checkModel is used to turn on specific features for checking."));
-constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(33,
+constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(32,
   "cevalEquation", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   Util.notrans(""));
-constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(34,
+constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(33,
   "unitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.notrans(""));
-constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(35,
+constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(34,
   "translateDAEString", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   Util.notrans(""));
-constant ConfigFlag ENV_CACHE = CONFIG_FLAG(36,
+constant ConfigFlag ENV_CACHE = CONFIG_FLAG(35,
   "envCache", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.notrans(""));
-constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(37,
+constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(36,
   "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Turns on labeled SimCode generation for reduction algorithms."));
-constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(38,
+constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(37,
   "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Turns on reducing terms for reduction algorithms."));
-constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(39, "reductionMethod",
+constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(38, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
     Util.gettext("Sets the reduction method to be used."));
-constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent",
+constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(39, "plotSilent",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."));
-constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale",
+constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(40, "locale",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Override the locale from the environment."));
-constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
+constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(41, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
-constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(43, "maxTraversals",
+constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(42, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   Util.gettext("Maximal traversals to find find simple equations in the acausal system."));
-constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(44, "dumpTarget",
+constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(43, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Redirect the dump to file. If the file ends with .html HTML code is generated."));
-constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(45, "delayBreakLoop",
+constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(44, "delayBreakLoop",
   NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
   Util.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
-constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(46, "tearingMethod",
+constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(45, "tearingMethod",
   NONE(), EXTERNAL(), STRING_FLAG("omcTearing"),
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("skip tearing")),
@@ -750,16 +750,16 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(46, "tearingMethod",
     ("olleroAmselem", Util.gettext("Ollero-Amselem tearing")),
     ("steward", Util.gettext("Steward tearing"))})),
     Util.gettext("tearing method to use.select no tearing or choose tearing method"));
-constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(47, "scalarizeMinMax",
+constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(46, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
-constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(48, "wsm-testsuite",
+constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(47, "wsm-testsuite",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Used when running the WSM testsuite."));
-constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(49, "correctCrefTypes",
+constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(48, "correctCrefTypes",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Set to true to set correct types in component references. Doesn't work for OpenModelica backend."));
-constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(50, "scalarizeBindings",
+constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(49, "scalarizeBindings",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Always scalarizes bindings if set."));
 
