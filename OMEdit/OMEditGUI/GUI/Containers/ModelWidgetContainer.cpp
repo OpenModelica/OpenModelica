@@ -1599,7 +1599,6 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   if (isCreatingConnection())
   {
     QMenu menu(mpModelWidget->getModelWidgetContainer()->getMainWindow());
-    mpCancelConnectionAction->setText("Cancel Connection");
     menu.addAction(mpCancelConnectionAction);
     menu.exec(event->globalPos());
     return;         // return from it because at a time we only want one context menu.
