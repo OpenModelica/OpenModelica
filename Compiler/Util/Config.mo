@@ -69,12 +69,6 @@ algorithm
   outBoolean := not Flags.getConfigBool(Flags.KEEP_ARRAYS);
 end splitArrays;
 
-public function paramsStruct
-  output Boolean outBoolean;
-algorithm
-  outBoolean := Flags.getConfigBool(Flags.PARAMS_STRUCT);
-end paramsStruct;
-
 public function modelicaOutput
   output Boolean outBoolean;
 algorithm

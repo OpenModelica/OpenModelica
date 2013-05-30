@@ -101,7 +101,7 @@ algorithm
 
     case (_, _, _)
       equation
-        false = Flags.isSet(Flags.SCODE_FLATTEN);
+        false = Flags.isSet(Flags.SCODE_INST);
       then
         inProgram;
 
