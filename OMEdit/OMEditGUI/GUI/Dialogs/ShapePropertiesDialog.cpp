@@ -619,7 +619,8 @@ void ShapePropertiesDialog::removePoint()
 {
   if (mpPointsTableWidget->selectedItems().size() > 0)
   {
-    mpPointsTableWidget->removeRow(mpPointsTableWidget->selectedItems().at(0)->row());
+    if ((mpLineAnnotation && mpPointsTableWidget->rowCount() > 2) || (mpPolygonAnnotation && mpPointsTableWidget->rowCount() > 4))
+      mpPointsTableWidget->removeRow(mpPointsTableWidget->selectedItems().at(0)->row());
   }
 }
 
