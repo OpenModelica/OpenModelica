@@ -198,6 +198,7 @@ QString Helper::viewClassTip;
 QString Helper::viewDocumentation;
 QString Helper::viewDocumentationTip;
 QString Helper::dontShowThisMessageAgain;
+QString Helper::clickAndDragToResize;
 
 void Helper::initHelperVariables()
 {
@@ -310,6 +311,7 @@ void Helper::initHelperVariables()
   Helper::viewDocumentation = tr("View Documentation");
   Helper::viewDocumentationTip = tr("Opens the class documentation");
   Helper::dontShowThisMessageAgain = tr("Don't show this message again");
+  Helper::clickAndDragToResize = tr("Click and drag to resize");
 }
 
 QString GUIMessages::getMessage(int type)

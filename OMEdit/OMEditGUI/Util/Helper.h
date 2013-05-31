@@ -204,6 +204,7 @@ public:
   static QString viewDocumentation;
   static QString viewDocumentationTip;
   static QString dontShowThisMessageAgain;
+  static QString clickAndDragToResize;
 };
 
 class GUIMessages : public QObject

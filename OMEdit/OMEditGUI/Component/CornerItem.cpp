@@ -53,7 +53,7 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
            | QGraphicsItem::ItemSendsGeometryChanges);
   setCursor(Qt::ArrowCursor);
-  setToolTip("Click and drag to resize");
+  setToolTip(Helper::clickAndDragToResize);
   setPos(x, y);
   mRectangle = QRectF (-3, -3, 6, 6);
   mpShapeAnnotation = pParent;
@@ -168,7 +168,7 @@ ResizerItem::ResizerItem(QGraphicsItem *pParent)
 {
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsSelectable);
   setCursor(Qt::ArrowCursor);
-  setToolTip("Click and drag to resize");
+  setToolTip(Helper::clickAndDragToResize);
   mActivePen = QPen(Qt::red);
   mPassivePen = QPen(Qt::transparent);
   mRectangle = QRectF (-3, -3, 6, 6);
