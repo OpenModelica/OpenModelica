@@ -1139,7 +1139,6 @@ void ShapeAnnotation::deleteMe()
 {
   // delete the shape
   mpGraphicsView->deleteShapeObject(this);
-  mpGraphicsView->scene()->removeItem(this);
   emit updateClassAnnotation();
   mpGraphicsView->setCanAddClassAnnotation(true);
   deleteLater();
