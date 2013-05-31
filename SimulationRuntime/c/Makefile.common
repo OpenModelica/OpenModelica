@@ -168,6 +168,7 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	   ../fmi/import/fmuWrapper.h \
 	   ../fmi/import/xmlparser.h $(builddir_inc)
 	cp -Pp $(EXTERNALCBUILDDIR)/.libs/$(MODELICAEXTERNALC) $(builddir)/lib/omc
+	cp -Pp $(EXTERNALCBUILDDIR)/.libs/$(MODELICASTANDARDTABLES) $(builddir)/lib/omc
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \

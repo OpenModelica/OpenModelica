@@ -34,6 +34,7 @@ LIBFMIRUNTIME=@LIBFMIRUNTIME@
 
 REGEN = Makefile.in
 MODELICAEXTERNALC = libModelicaExternalC*@SHREXT@*
+MODELICASTANDARDTABLES = libModelicaStandardTables*@SHREXT@*
 PREFIX = --prefix="@prefix@" --libdir='$${exec_prefix}/lib/omc'
 
 EXTERNALCMAKEFILE=Makefile
