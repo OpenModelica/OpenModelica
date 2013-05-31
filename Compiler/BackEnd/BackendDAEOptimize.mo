@@ -2321,7 +2321,7 @@ algorithm
     case (_,_,{}) then (({},({},{})),{});
     case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2)))::{}, shared=shared),indiffVars,indiffedVars)
       equation
-        Debug.fcall(Flags.JAC_DUMP,print," start getting sparsity pattern diff Vars : " +& intString(listLength(indiffedVars))  +& " diffed vars: " +& intString(listLength(indiffVars)) +&"\n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print," start getting sparsity pattern diff Vars : " +& intString(listLength(indiffedVars))  +& " diffed vars: " +& intString(listLength(indiffVars)) +&"\n");
         // prepare crefs
         diffCompRefs = List.map(indiffVars, BackendVariable.varCref);
         diffedCompRefs = List.map(indiffedVars, BackendVariable.varCref);
@@ -2336,11 +2336,11 @@ algorithm
         adjSizeT = arrayLength(adjMatrixT) "number of variables";
 
         // Debug dumping
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.printVarList,BackendVariable.varList(varswithDiffs));
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.printEquationList,BackendEquation.equationList(orderedEqns));
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,BackendDump.printVarList,BackendVariable.varList(varswithDiffs));
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,BackendDump.printEquationList,BackendEquation.equationList(orderedEqns));
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,BackendDump.dumpIncidenceMatrix,adjMatrix);
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE, BackendDump.dumpFullMatching, bdaeMatching);
 
         // get indexes of diffed vars (rows)
         diffedVars = BackendVariable.listVar1(indiffedVars);
@@ -2348,10 +2348,10 @@ algorithm
         nodesEqnsIndex = List.map1(nodesEqnsIndex, Util.arrayGetIndexFirst, ass1);
 
         // debug dump
-        Debug.fcall(Flags.JAC_DUMP2, print, "nodesEqnsIndexs: ");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, nodesEqnsIndex);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse graph: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE, print, "nodesEqnsIndexs: ");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE, BackendDump.dumpIncidenceRow, nodesEqnsIndex);
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE, print, "\n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print,"analytical Jacobians[SPARSE] -> build sparse graph: " +& realString(clock()) +& "\n");
 
         // prepare data for getSparsePattern
         eqnSparse = arrayCreate(adjSizeT, {});
@@ -2364,8 +2364,8 @@ algorithm
         eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
         //Debug.execStat("generateSparsePattern -> end ",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // debug dump
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePatternArray,eqnSparse);
-        Debug.fcall(Flags.JAC_DUMP,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,BackendDump.dumpSparsePatternArray,eqnSparse);
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
 
         // select nodesEqnsIndex and map index to incoming vars
         sparseArray = Util.arraySelect(eqnSparse, nodesEqnsIndex);
@@ -2378,13 +2378,13 @@ algorithm
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
-        Debug.execStat("generateSparsePattern -> postProcess2 " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> postProcess2 " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // dump statistics
         nonZeroElements = List.lengthListElements(sparsepattern);
-        dumpSparsePatternStatistics(Flags.isSet(Flags.JAC_DUMP),nonZeroElements,sparsepatternT);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepatternT);
+        dumpSparsePatternStatistics(Flags.isSet(Flags.DUMP_SPARSE),nonZeroElements,sparsepatternT);
+        Debug.fcall(Flags.DUMP_SPARSE,BackendDump.dumpSparsePattern,sparsepattern);
+        Debug.fcall(Flags.DUMP_SPARSE,BackendDump.dumpSparsePattern,sparsepatternT);
         //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // translated to DAE.ComRefs
@@ -2392,18 +2392,18 @@ algorithm
         sparsetuple = List.threadTuple(diffCompRefs, translated);
 
         // build up a bi-partied graph of pattern
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse graph.\n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print,"analytical Jacobians[SPARSE] -> build sparse graph.\n");
         sparseArray = listArray(sparsepattern);
         nodesList = List.intRange2(1,adjSize);
         sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
         sparseGraphT = Graph.buildGraph(List.intRange2(1,sizeN),createBipartiteGraph,sparseArrayT);
 
         // debug dump
-        Debug.fcall(Flags.JAC_DUMP2,print,"sparse graph: \n");
-        Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraph);
-        Debug.fcall(Flags.JAC_DUMP2,print,"transposed sparse graph: \n");
-        Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraphT);
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print,"sparse graph: \n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,Graph.printGraphInt,sparseGraph);
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print,"transposed sparse graph: \n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,Graph.printGraphInt,sparseGraphT);
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
 
         // color sparse bipartite graph
         forbiddenColor = arrayCreate(sizeN,NONE());
@@ -2419,14 +2419,14 @@ algorithm
         coloredArray = arrayCreate(maxColor, {});
         coloredlist = arrayList(mapIndexColors(colored1, listLength(diffCompRefs), coloredArray));
 
-        Debug.fcall(Flags.JAC_DUMP2, print, "Print Coloring Cols: \n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpSparsePattern, coloredlist);
+        Debug.fcall(Flags.DUMP_SPARSE, print, "Print Coloring Cols: \n");
+        Debug.fcall(Flags.DUMP_SPARSE, BackendDump.dumpSparsePattern, coloredlist);
 
         coloring = List.mapList1_1(coloredlist, List.getIndexFirst, diffCompRefs);
 
         //without coloring
         //coloring = List.transposeList({diffCompRefs});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians[SPARSE] -> ready! " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.DUMP_SPARSE_VERBOSE, print, "analytical Jacobians[SPARSE] -> ready! " +& realString(clock()) +& "\n");
       then ((sparsetuple, (diffCompRefs, diffedCompRefs)), coloring);
         else
       equation
@@ -3209,7 +3209,6 @@ algorithm
   (symJacA , sparsePattern, sparseColoring ):= createSymbolicJacobianforStates(inBackendDAE);
   shared := BackendDAEUtil.addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
-  _ := Flags.enableDebug(Flags.JACOBIAN);
   _ := System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicJacobianPast;
 
@@ -3226,7 +3225,6 @@ algorithm
   linearModelMatrixes := createLinearModelMatrixes(inBackendDAE);
   shared := BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
-  _ := Flags.enableDebug(Flags.JACOBIAN);
   _ := System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicLinearizationPast;
 
@@ -3258,7 +3256,7 @@ algorithm
     case (backendDAE)
       equation
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> start generate system for matrix A time : " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> start generate system for matrix A time : " +& realString(clock()) +& "\n");
 
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = collapseIndependentBlocks(backendDAE2);
@@ -3283,7 +3281,7 @@ algorithm
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> prepared vars for symbolic matrix A time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> prepared vars for symbolic matrix A time: " +& realString(clock()) +& "\n");
         (outJacobian, outSparsePattern, outSparseColoring)  = createJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A");
 
       then
@@ -3349,25 +3347,25 @@ algorithm
         // Differentiate the System w.r.t states for matrices A
         (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
 
 
         // Differentiate the System w.r.t inputs for matrices B
         (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
 
 
         // Differentiate the System w.r.t states for matrices C
         (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
 
 
         // Differentiate the System w.r.t inputs for matrices D
         (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
 
       then
         linearModelMatrices;
@@ -3426,20 +3424,20 @@ algorithm
 
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared)) = generateSymbolicJacobian(inBackendDAE, comref_vars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated equations for Jacobian " +& inName +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated equations for Jacobian " +& inName +& " time: " +& realString(clock()) +& "\n");
 
         knvars1 = BackendVariable.daeKnVars(shared);
         knvarsTmp = BackendVariable.varList(knvars1);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> sorted know temp vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> sorted know temp vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
 
         (backendDAE as BackendDAE.DAE(shared=shared)) = optimizeJacobianMatrix(backendDAE,comref_differentiatedVars,comref_vars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated Jacobian DAE time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated Jacobian DAE time: " +& realString(clock()) +& "\n");
 
         knvars = BackendVariable.daeKnVars(shared);
         diffVarsTmp = BackendVariable.varList(knvars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> sorted know diff vars(" +& intString(listLength(diffVarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> sorted know diff vars(" +& intString(listLength(diffVarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
         (_,knvarsTmp,_) = List.intersection1OnTrue(diffVarsTmp, knvarsTmp, BackendVariable.varEqual);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> sorted know vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> sorted know vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
         knvars = BackendVariable.listVar1(knvarsTmp);
         backendDAE = BackendDAEUtil.addBackendDAEKnVars(knvars,backendDAE);
         Debug.execStat("analytical Jacobians -> generated optimized jacobians", CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -3490,7 +3488,7 @@ algorithm
         then (BackendDAE.DAE(BackendDAE.EQSYSTEM(v,e,om,omT,BackendDAE.MATCHING(ea,ea,{}),stateSets)::{},shared));
       case (backendDAE,_,_)
         equation
-          Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> optimize jacobians time: " +& realString(clock()) +& "\n");
+          Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> optimize jacobians time: " +& realString(clock()) +& "\n");
 
           b = Flags.disableDebug(Flags.EXEC_STAT);
 
@@ -3503,7 +3501,7 @@ algorithm
                                                                          "removeSimpleEquations",
                                                                          "collapseIndependentBlocks"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
-          //Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",backendDAE2));
+          Debug.fcall(Flags.JAC_DUMP, BackendDump.bltdump, ("Symbolic Jacobian",backendDAE2));
         then backendDAE2;
      else
        equation
@@ -3587,10 +3585,10 @@ algorithm
       x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
 
       // differentiate the equation system
-      Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> derived all algorithms time: " +& realString(clock()) +& "\n");
+      Debug.fcall(Flags.JAC_DUMP2, print, "*** analytical Jacobians -> derived all algorithms time: " +& realString(clock()) +& "\n");
       derivedEquationslst = deriveAll(BackendEquation.equationList(orderedEqs),arrayList(ass2), {x}, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, vars, (matrixName,false), {});
       derivedEquations = List.flatten(derivedEquationslst);
-      Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> created all derived equation time: " +& realString(clock()) +& "\n");
+      Debug.fcall(Flags.JAC_DUMP2, print, "*** analytical Jacobians -> created all derived equation time: " +& realString(clock()) +& "\n");
 
       // create BackendDAE.DAE with derivied vars and equations
 
@@ -3625,11 +3623,11 @@ algorithm
 
       diffvars = BackendVariable.varList(orderedVars);
       (derivedVariables,comref_diffvars) = generateJacobianVars(diffvars, vars, (inMatrixName,false));
-      Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> created all derived vars: " +& "No. :" +& intString(listLength(comref_diffvars)) +& "time: " +& realString(clock()) +& "\n");
+      Debug.fcall(Flags.JAC_DUMP2, print, "*** analytical Jacobians -> created all derived vars: " +& "No. :" +& intString(listLength(comref_diffvars)) +& "time: " +& realString(clock()) +& "\n");
       derivedEquationslst = deriveAll(BackendEquation.equationList(orderedEqs),arrayList(ass2), vars, functions, inputVars, paramVars, stateVars, knownVars, orderedVars, comref_diffvars, (inMatrixName,false), {});
       derivedEquations = List.flatten(derivedEquationslst);
       false = (listLength(derivedVariables) == listLength(derivedEquations));
-      Debug.fcall(Flags.JAC_DUMP, print, "*** analytical Jacobians -> failed vars are not equal to equations: " +& intString(listLength(derivedEquations)) +& " time: " +& realString(clock()) +& "\n");
+      Debug.fcall(Flags.JAC_WARNINGS, print, "*** analytical Jacobians -> failed vars are not equal to equations: " +& intString(listLength(derivedEquations)) +& " time: " +& realString(clock()) +& "\n");
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSymbolicJacobian failed"});
     then fail();
 
@@ -3882,14 +3880,14 @@ algorithm
       String dumpBuffer;
 
     case(currEquation as BackendDAE.WHEN_EQUATION(size=_),_, vars, functions, inputVars, paramVars, stateVars, knownVars,  _, _, _) equation
-      Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
+      Debug.fcall(Flags.JAC_WARNINGS, print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
     then {};
 
     //remove dicrete Equation
     case(currEquation,_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
       solvedvars = List.map1r(solvedfor,BackendVariable.getVarAt,inorderedVars);
       List.mapAllValue(solvedvars, BackendVariable.isVarDiscrete, true);
-      Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: discrete equation has been removed.\n");
+      Debug.fcall(Flags.JAC_WARNINGS, print,"BackendDAEOptimize.derive: discrete equation has been removed.\n");
     then {};
 
     case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _,  _, _) equation
@@ -4307,7 +4305,7 @@ algorithm
     equation
       true = BackendDAEUtil.isDiscreteExp(lhs,allVars,knownVars);
       true = BackendDAEUtil.isDiscreteExp(rhs,allVars,knownVars);
-      Debug.fcall(Flags.JAC_DUMP,print,"BackendDAEOptimize.differentiateAlgorithmStatements: discrete equation has been removed.\n");
+      Debug.fcall(Flags.JAC_WARNINGS,print,"BackendDAEOptimize.differentiateAlgorithmStatements: discrete equation has been removed.\n");
     then {};
 
     case((currStatement as DAE.STMT_ASSIGN(type_=type_, exp1=lhs, exp=rhs,source=source_))::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, _)
@@ -4386,7 +4384,7 @@ algorithm
     case(DAE.STMT_WHEN(exp=exp)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, _)
     equation
       //derivedStatements1 = differentiateAlgorithmStatements(restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, inMatrixName);
-      Debug.fcall(Flags.JAC_DUMP,print,"BackendDAEOptimize.differentiateAlgorithmStatements: WHEN has been removed.\n");
+      Debug.fcall(Flags.JAC_WARNINGS,print,"BackendDAEOptimize.differentiateAlgorithmStatements: WHEN has been removed.\n");
     then {};
 
     case((currStatement as DAE.STMT_ASSERT(cond=exp))::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars,  diffVars, _)
@@ -4618,7 +4616,7 @@ algorithm
 
     case(e, xlist, _, _, _, _, _, _,_, _)
       equation
-        true = Flags.isSet(Flags.FAILTRACE_JAC);
+        true = Flags.isSet(Flags.JAC_WARNINGS);
         str = "BackendDAEOptimize.differentiateWithRespectToXVec failed: " +& ExpressionDump.printExpStr(e) +& "\n";
         print(str);
         //Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -4658,7 +4656,7 @@ algorithm
 
      case(e, diff_cref::rest, _, _)
        equation
-        true = Flags.isSet(Flags.FAILTRACE_JAC);
+        true = Flags.isSet(Flags.JAC_WARNINGS);
          str = "BackendDAEOptimize.createDiffListMeta failed: " +& ExpressionDump.printExpStr(e) +& " | " +& ComponentReference.printComponentRefStr(diff_cref) +& "\n";
          print(str);
         //Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -4837,14 +4835,10 @@ algorithm
     case ((e as DAE.CALL(path=fname, expLst=expList1), x, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName))))
       equation
         //(SOME((functions, inputVars, paramVars, stateVars, knownVars, diffVars))) = inTpl;
-        Debug.fcall(Flags.JAC_DUMP,print,"differentiate function call " +& Absyn.pathString(fname) +& "(" +& ExpressionDump.printExpListStr(expList1) +& ") numerical.\n");
         nArgs = listLength(expList1);
         expList2 = deriveExpListwrtstate2(expList1, nArgs, x, functions, inputVars, paramVars, stateVars, knownVars, allVars, diffVars, inMatrixName);
-        Debug.fcall(Flags.JAC_DUMP,print,"derived ExpList args: (" +& ExpressionDump.printExpListStr(expList2) +& "\n");
         e1 = partialNumericalDifferentiation(expList1, expList2, x, e);
-        Debug.fcall(Flags.JAC_DUMP,print,"derived exp : (" +& ExpressionDump.printExpStr(e1) +& "\n");
         (e1,_) = ExpressionSimplify.simplify(e1);
-        Debug.fcall(Flags.JAC_DUMP,print,"derived exp simplify: (" +& ExpressionDump.printExpStr(e1) +& "\n");
       then e1;
  end matchcontinue;
 end diffNumCall;

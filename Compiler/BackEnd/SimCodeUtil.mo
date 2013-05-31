@@ -4591,9 +4591,9 @@ algorithm
         Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpVariables, independentVars, "---+++ independent variables +++---");
 
         // createSymbolicJacobianssSimCode
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, true, syst, shared, comps, iuniqueEqIndex, itempvars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
 
         // create SimCode.SimVars from jacobian vars
         dummyVar = ("dummyVar" +& name);
@@ -4603,7 +4603,7 @@ algorithm
         columnVars = creatallDiffedVars(dependentVarsLst, x, residualVars, 0, (name, false), {});
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ diffed column variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
 
         //all differentiated vars
         //((columnVarsKn, _)) =  BackendVariable.traverseBackendDAEVars(allvars, traversingdlowvarToSimvar, ({}, emptyVars));
@@ -4611,26 +4611,26 @@ algorithm
         columnVars = listReverse(columnVars);
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ all column variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
         ((seedVars, _)) =  BackendVariable.traverseBackendDAEVars(independentVars, traversingdlowvarToSimvar, ({}, emptyVars));
         ((indexVars, _)) =  BackendVariable.traverseBackendDAEVars(residualVars, traversingdlowvarToSimvar, ({}, emptyVars));
         seedVars = listReverse(seedVars);
         indexVars = listReverse(indexVars);
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ seedVars variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
         
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ indexVars variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
         
         // generate sparse pattern
         ((sparsepatternComRefs, (_, _)), sparseColoring) = BackendDAEOptimize.generateSparsePattern(backendDAE, independentVarsLst, residualVarsLst);
         maxColor = listLength(sparseColoring);        
         s =  intString(listLength(residualVarsLst));
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
         then (({(columnEquations, columnVars, s)}, seedVars, name, (sparsepatternComRefs, (seedVars, indexVars)), sparseColoring, maxColor), uniqueEqIndex, tempvars);
     else
@@ -4842,9 +4842,9 @@ algorithm
         Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpVariables, independentVars, "---+++ independent variables +++---");
 
         // createSymbolicJacobianssSimCode
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         (columnEquations, _, uniqueEqIndex, tempvars) = createEquations(false, false, false, false, true, syst, shared, comps, iuniqueEqIndex, itempvars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
         
         // create SimCode.SimVars from jacobian vars
         dummyVar = ("dummyVar" +& name);
@@ -4854,7 +4854,7 @@ algorithm
         columnVars = creatallDiffedVars(dependentVarsLst, x, residualVars, 0, (name, false), {});
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ diffed column variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
         
         //all differentiated vars
         //((columnVarsKn, _)) =  BackendVariable.traverseBackendDAEVars(allvars, traversingdlowvarToSimvar, ({}, emptyVars));
@@ -4862,26 +4862,26 @@ algorithm
         columnVars = listReverse(columnVars);
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ all column variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, columnVars));
         
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
         ((seedVars, _)) =  BackendVariable.traverseBackendDAEVars(independentVars, traversingdlowvarToSimvar, ({}, emptyVars));
         ((indexVars, _)) =  BackendVariable.traverseBackendDAEVars(residualVars, traversingdlowvarToSimvar, ({}, emptyVars));
         seedVars = listReverse(seedVars);
         indexVars = listReverse(indexVars);
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ seedVars variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, seedVars));
         
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ indexVars variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
+        Debug.fcall(Flags.JAC_DUMP2, print, Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
         
         // generate sparse pattern
         ((sparsepatternComRefs, (_, _)), sparseColoring) = BackendDAEOptimize.generateSparsePattern(backendDAE, independentVarsLst, residualVarsLst);
         maxColor = listLength(sparseColoring);        
         s =  intString(listLength(residualVarsLst));
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
         then (SOME(({(columnEquations, columnVars, s)}, seedVars, name, (sparsepatternComRefs, (seedVars, indexVars)), sparseColoring, maxColor)), uniqueEqIndex, tempvars);
     case(_, _, _, _, _, _, _, _, _, _)
@@ -4906,7 +4906,6 @@ algorithm
     local 
     case (_, _, _)
       equation
-        //true = Flags.isSet(Flags.JACOBIAN);
         System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
         //b = Flags.disableDebug(Flags.EXEC_STAT);
         // The jacobian code requires single systems;
@@ -4994,9 +4993,9 @@ algorithm
                                     diffVars, diffedVars, alldiffedVars)), (sparsepattern, (diffCompRefs, diffedCompRefs)), colsColors))::rest, 
                                     SimCode.MODELINFO(vars=simvars), _, _::restnames)
       equation
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         (columnEquations, _, uniqueEqIndex, _) = createEquations(false, false, false, false, true, syst, shared, comps, iuniqueEqIndex, {});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
 
         // create SimCode.SimVars from jacobian vars
         dummyVar = ("dummyVar" +& name);
@@ -5010,14 +5009,14 @@ algorithm
         columnVars = listAppend(columnVars, columnVarsKn);
         columnVars = listReverse(columnVars);
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
               
         (_, (_, seedVars)) = traveseSimVars(simvars, findSimVars, (diffCompRefs, {}));
         (_, (_, indexVars)) = traveseSimVars(simvars, findSimVars, (diffedCompRefs, {}));
         maxColor = listLength(colsColors);        
         s =  intString(listLength(diffedVars));
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inModelInfo, uniqueEqIndex, restnames);
         linearModelMatrices = (({((columnEquations, columnVars, s))}, seedVars, name, (sparsepattern, (seedVars, indexVars)), colsColors, maxColor))::linearModelMatrices;
@@ -5183,9 +5182,9 @@ algorithm
            name, diffVars, diffedVars, alldiffedVars), 
           BackendDAE.DAE(eqs=systs), uniqueEqIndex) equation
        /*
-      Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+      Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
       (columnEquations, _, uniqueEqIndex, _) = createEquations(false, false, false, false, true, syst, shared, comps, {}, uniqueEqIndex, {});
-      Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
+      Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
       
       // create SimCode.SimVars from jacobian vars
       dummyVar = ("dummyVar" +& name);
@@ -5199,7 +5198,7 @@ algorithm
       columnVars = listAppend(columnVars, columnVarsKn);
       columnVars = listReverse(columnVars);
 
-      Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+      Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
             
       (_, (_, seedVars)) = traveseSimVars(simvars, findSimVars, (diffCompRefs, {}));
       (_, (_, indexVars)) = traveseSimVars(simvars, findSimVars, (diffedCompRefs, {}));
