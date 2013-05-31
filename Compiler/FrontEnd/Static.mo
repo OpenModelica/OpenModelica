@@ -9579,12 +9579,13 @@ algorithm
     case (_,_,_,_,_,_,_)
       equation
         true = Types.isParameterOrConstant(const);
+        false = Expression.isConst(inExp);
         (outCache, val, _) = Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Ceval.MSG(info), 0);
         outExp = ValuesUtil.valueExp(val);
       then (outCache,outExp);
     case (_,_,_,_,_,_,_)
       equation
-        true = Types.isParameterOrConstant(const) or Types.isExternalObject(ty);
+        true = Types.isParameterOrConstant(const) or Types.isExternalObject(ty) or Expression.isConst(inExp);
       then (inCache,inExp);
     else
       equation
