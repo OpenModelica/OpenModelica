@@ -70,6 +70,7 @@ void printOMEditUsage()
 {
   printf("Usage: OMEdit [--OMCLogger=true|false] [files]\n");
   printf("    --OMCLogger=[true|false]    Allows sending OMC commands from OMCLogger. Default is false.\n");
+  printf("    --debug=[true|false]        Prints the debug information related to the GUI. Default is false.\n");
   printf("    files                       List of Modelica files(*.mo) to open.\n");
 }
 
