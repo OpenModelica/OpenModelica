@@ -238,6 +238,7 @@ algorithm
       DAE.ComponentRef cref, badcref;
       SimCode.SimVar sv;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
+      String errstr;
       
     case (cref, SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) )
       equation
@@ -247,8 +248,8 @@ algorithm
     case (cref, _)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
-        //errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
-        //Error.addMessage(Error.INTERNAL_ERROR, {errstr});
+        errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
+        Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
         SimCode.SIMVAR(badcref, BackendDAE.STATE(1,NONE()), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.INTERNAL(), NONE(), {});
   end matchcontinue;
@@ -9003,9 +9004,10 @@ algorithm
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         isLinux = stringEq("linux",System.os());
+        //please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);        
       then libs;
     case (_, _, _, libs)
       equation
@@ -9014,9 +9016,10 @@ algorithm
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         isLinux = stringEq("linux",System.os());
+        //please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryFlags2(true, str, isLinux, libs);
-        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform2,""), str +& "/" +& platform2, isLinux, libs);
+        libs = generateExtFunctionLibraryDirectoryFlags2(not stringEq(platform1,""), str +& "/" +& platform1, isLinux, libs);        
       then libs;
     else inLibs;
   end matchcontinue;

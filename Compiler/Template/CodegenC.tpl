@@ -139,7 +139,7 @@ template simulationFile(SimCode simCode, String guid)
     #else
     int measure_time_flag = 0;
     #endif
-    
+
         
     #ifdef _OPENMP
     #include <omp.h>
@@ -1464,9 +1464,9 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
            'copy_real_array_data_mem(&<%val%>, &<%cref(stateVar)%>);'
          else
            '<%cref(stateVar)%> = <%val%>;'
-      let needToIterate = match initialCall
-         case false then 'data->simulationInfo.needToIterate = 1;'
-         else ''
+      let needToIterate = 
+        if not initialCall then
+          "data->simulationInfo.needToIterate = 1;"         
       <<
       INFO1(LOG_EVENTS, "|        | reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
@@ -1530,30 +1530,40 @@ end functionXXX_system;
 
 template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls)
 ::=
-  let funcs = eqs |> eq hasindex i1 fromindex 0 => functionXXX_system(eq,name,i1) ; separator="\n"
-  let nFuncs = listLength(eqs)
-  let funcNames = eqs |> e hasindex i1 fromindex 0 => 'function<%name%>_system<%i1%>' ; separator=",\n"
-  let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
-  let &varDecls += 'int id;<%\n%>'
-  let &loop +=
-  /* Text for the loop body that calls the equations */
+  let funcs = eqs |> eq hasindex i0 fromindex 0 => functionXXX_system(eq,name,i0) ; separator="\n"    
   match listLength(eqs)
-  case 0 then ""
-  case 1 then 'function<%name%>_systems[0](data);'
-  else
-  <<
-  <%head%>
-  for(id=0; id<<%nFuncs%>; id++) {
-    function<%name%>_systems[id](data);
-  }
-  >>
-  /* Text before the function head */
-  <<
-  <%funcs%>
-  static void (*function<%name%>_systems[<%nFuncs%>])(DATA *) = {
-    <%funcNames%>
-  };
-  >>
+  case 0 then //empty case
+    let &loop += 
+        <<
+        /* no <%name%> systems */
+        >> 
+    ""    
+  case 1 then //1 function
+    let &loop += 
+        <<
+        function<%name%>_system0(data);
+        >>
+    funcs //just the one function
+  case nFuncs then //2 and more
+    let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
+    let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
+    let &varDecls += 'int id;<%\n%>'
+  
+    let &loop +=
+      /* Text for the loop body that calls the equations */
+      <<
+      <%head%>
+      for(id=0; id<<%nFuncs%>; id++) {
+        function<%name%>_systems[id](data);
+      }
+      >>
+    /* Text before the function head */
+    <<
+    <%funcs%>
+    static void (*function<%name%>_systems[<%nFuncs%>])(DATA *) = {
+      <%funcNames%>
+    };
+    >>
 end functionXXX_systems;
 
 template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
@@ -2247,15 +2257,16 @@ template equationIndex(SimEqSystem eq)
  "Generates an equation."
 ::=
   match eq
-  case SES_RESIDUAL(__) then '<%index%>'
-  case SES_SIMPLE_ASSIGN(__) then '<%index%>'
-  case SES_ARRAY_CALL_ASSIGN(__) then '<%index%>'
-  case SES_IFEQUATION(__) then '<%index%>'
-  case SES_ALGORITHM(__) then '<%index%>'
-  case SES_LINEAR(__) then '<%index%>'
-  case SES_NONLINEAR(__) then '<%index%>'
-  case SES_MIXED(__) then '<%index%>'
-  case SES_WHEN(__) then '<%index%>'
+  case SES_RESIDUAL(__) 
+  case SES_SIMPLE_ASSIGN(__)
+  case SES_ARRAY_CALL_ASSIGN(__) 
+  case SES_IFEQUATION(__)
+  case SES_ALGORITHM(__)
+  case SES_LINEAR(__)
+  case SES_NONLINEAR(__)
+  case SES_MIXED(__)
+  case SES_WHEN(__) 
+    then index
 end equationIndex;
 
 template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqs)
@@ -2636,9 +2647,11 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
   match eq
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
       let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-      let initial_assign = match initialCall
-        case true then whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
-        else '<%cref(left)%> = $P$PRE<%cref(left)%>;'
+      let initial_assign = 
+        if initialCall then
+          whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
+        else 
+          '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       <<
       if(initial())
@@ -2656,9 +2669,11 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
       >>
     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
       let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
-      let initial_assign = match initialCall
-        case true then whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
-        else '<%cref(left)%> = $P$PRE<%cref(left)%>;'
+      let initial_assign = 
+        if initialCall then
+          whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
+        else 
+          '<%cref(left)%> = $P$PRE<%cref(left)%>;'
       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
       let elseWhen = equationElseWhen(elseWhenEq,context,varDecls)
       <<
@@ -5385,15 +5400,15 @@ case SIMEXTARG(outputIndex=oi, isArray=true, cref=c, type_=ty) then
   'unpack_integer_array(&out.c<%oi%>);'
   else ""
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
-  let cr = '<%extVarName(c)%>'
-  <<
-  out.c<%oi%> = (<%expTypeModelica(ty)%>)<%
-    if acceptMetaModelicaGrammar() then
-      (match ty
-        case T_STRING(__) then 'mmc_mk_scon(<%cr%>)'
-        else cr)
-    else cr %>;
-  >>
+    let cr = '<%extVarName(c)%>'
+    <<
+    out.c<%oi%> = (<%expTypeModelica(ty)%>)<%
+      if acceptMetaModelicaGrammar() then
+        (match ty
+          case T_STRING(__) then 'mmc_mk_scon(<%cr%>)'
+          else cr)
+      else cr %>;
+    >>
 end extFunCallVarcopy;
 
 template extFunCallVarcopyF77(SimExtArg arg)
@@ -7473,8 +7488,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
       let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, 6);<%\n%>'
       '<%tvar%>'
     else 
-      let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
-      '<%tvar%>'
+    let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
+    '<%tvar%>'
     end match
 
   case CALL(path=IDENT(name="String"), expLst={s, minlen, leftjust, signdig}) then

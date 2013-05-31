@@ -667,7 +667,7 @@ int solveHybrd(DATA *data, int sysNumber)
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS))
       {
-        INFO(LOG_NLS, "iteration making no progress:\t try without scaling at all.");
+        INFO(LOG_NLS, "iteration making no progress:\t try old values as scaling factors.");
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     }
