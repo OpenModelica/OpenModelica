@@ -586,8 +586,8 @@ template aliasVarInfos(String regionName, list<SimVar> varsLst, /*Integer varsCn
       let aliasLookup =
         match aliasvar
         case NOALIAS(__)  then
-      	  error(sourceInfo(), "Unexpected non-alias variable amongst aliases.")
-      	case ALIAS(__) then
+          error(sourceInfo(), "Unexpected non-alias variable amongst aliases.")
+        case ALIAS(__) then
           'fvd["<%crefStrWithDerOnLast(varName, simCode)%>"]'           
         case NEGATEDALIAS(__)   then 
           '-fvd["<%crefStrWithDerOnLast(varName, simCode)%>"]'          
