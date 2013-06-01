@@ -994,8 +994,6 @@ void Component::deleteMe()
 {
   // delete the component from model
   mpGraphicsView->deleteComponentObject(this);
-  // remove the component from the scene
-  mpGraphicsView->scene()->removeItem(this);
   deleteLater();
   // make the model modified
   mpGraphicsView->getModelWidget()->setModelModified();

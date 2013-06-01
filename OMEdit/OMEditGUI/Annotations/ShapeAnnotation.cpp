@@ -608,7 +608,6 @@ void ShapeAnnotation::removeCornerItems()
 {
   foreach (CornerItem *pCornerItem, mCornerItemsList)
   {
-    mpGraphicsView->scene()->removeItem(pCornerItem);
     pCornerItem->deleteLater();
   }
   mCornerItemsList.clear();
@@ -1124,7 +1123,6 @@ void ShapeAnnotation::deleteConnection()
   {
     mpGraphicsView->deleteConnection(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName());
     mpGraphicsView->deleteConnectionObject(pLineAnnotation);
-    mpGraphicsView->scene()->removeItem(this);
     deleteLater();
   }
 }

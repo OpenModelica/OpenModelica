@@ -798,7 +798,6 @@ void GraphicsView::createBitmapShape(QPointF point)
     if (!pShapePropertiesDialog->exec())
     {
       /* if user cancels the bitmap shape properties then remove the bitmap shape from the scene */
-      scene()->removeItem(mpBitmapShapeAnnotation);
       deleteShapeObject(mpBitmapShapeAnnotation);
       mpBitmapShapeAnnotation->deleteLater();
     }
@@ -945,7 +944,6 @@ void GraphicsView::removeConnection()
   if (isCreatingConnection())
   {
     setIsCreatingConnection(false);
-    scene()->removeItem(mpConnectionLineAnnotation);
     mpConnectionLineAnnotation->deleteLater();
   }
 }
@@ -960,7 +958,6 @@ void GraphicsView::removeConnection(LineAnnotation *pConnection)
   {
     if(mConnectionsList[i] == pConnection)
     {
-      scene()->removeItem(pConnection);
       doDelete = true;
       break;
     }
