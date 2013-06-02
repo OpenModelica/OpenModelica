@@ -2339,6 +2339,11 @@ void ModelWidget::getModelConnections(QString className)
       {
         pStartConnectorComponent = pStartComponent;
       }
+      /* if class doesn't exist then connect with the red cross box */
+      else if (!pMainWindow->getOMCProxy()->existClass(pStartComponent->getClassName()))
+      {
+        pStartConnectorComponent = pStartComponent;
+      }
       // look for port from the parent component
       else
       {
@@ -2357,6 +2362,11 @@ void ModelWidget::getModelConnections(QString className)
       pMainWindow->getOMCProxy()->sendCommand("getClassRestriction(" + pEndComponent->getClassName() + ")");
       isExpandableConnector = pMainWindow->getOMCProxy()->getResult().toLower().contains("expandable connector");
       if (endComponentList.size() < 2 || isExpandableConnector)
+      {
+        pEndConnectorComponent = pEndComponent;
+      }
+      /* if class doesn't exist then connect with the red cross box */
+      else if (!pMainWindow->getOMCProxy()->existClass(pEndComponent->getClassName()))
       {
         pEndConnectorComponent = pEndComponent;
       }
