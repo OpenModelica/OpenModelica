@@ -298,10 +298,14 @@ void Component::parseAnnotationString(QString annotation)
     }
     else if (shape.startsWith("Bitmap"))
     {
-      shape = shape.mid(QString("Bitmap").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(shape, this);
-      mpShapesList.append(pBitmapAnnotation);
+      //! @note No Bitmaps for library icons.
+      if (!isLibraryComponent())
+      {
+        shape = shape.mid(QString("Bitmap").length());
+        shape = StringHandler::removeFirstLastBrackets(shape);
+        BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(shape, this);
+        mpShapesList.append(pBitmapAnnotation);
+      }
     }
   }
 }
