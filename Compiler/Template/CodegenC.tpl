@@ -2269,6 +2269,112 @@ template equationIndex(SimEqSystem eq)
     then index
 end equationIndex;
 
+template dumpEqs(list<SimEqSystem> eqs)
+::= eqs |> eq hasindex i0 =>
+  match eq
+    case e as SES_RESIDUAL(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: RESIDUAL
+      
+      <%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%>
+      >>
+    case e as SES_SIMPLE_ASSIGN(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: SIMPLE_ASSIGN
+      
+      <%crefStr(e.cref)%> = <%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%>
+      >>
+    case e as SES_ARRAY_CALL_ASSIGN(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: ARRAY_CALL_ASSIGN
+      
+      <%crefStr(e.componentRef)%> = <%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%>
+      >>
+    case e as SES_ALGORITHM(statements={}) then
+      <<
+      empty algorithm
+      >>
+    case e as SES_ALGORITHM(statements=first::_) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: ALGORITHM
+      
+      <%e.statements |> stmt => System.stringReplace(System.stringReplace(ppStmtStr(stmt,2), "/*", "(*"), "*/", "*)")%>
+      >>
+    case e as SES_LINEAR(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: LINEAR
+      
+      <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+      <row>
+        <%beqs |> exp => '<cell><%System.stringReplace(System.stringReplace(printExpStr(exp), "/*", "(*"), "*/", "*)")%></cell>' ; separator = "\n" %><%\n%>
+      </row>
+      <matrix>
+        <%simJac |> (i1,i2,eq) =>
+        <<
+        <cell row="<%i1%>" col="<%i2%>">
+          <%match eq case e as SES_RESIDUAL(__) then
+            <<
+            <residual><%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%></residual>
+            >>
+           %>
+        </cell>
+        >>
+        %>
+      </matrix>
+      >>
+    case e as SES_NONLINEAR(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      indexNonlinear: <%indexNonLinearSystem%>
+      type: NONLINEAR
+      
+      vars: {<%e.crefs |> cr => '<%crefStr(cr)%>' ; separator = ", "%>}
+      eqns: {<%e.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
+      >>
+    case e as SES_MIXED(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: MIXED
+      
+      <%dumpEqs(fill(e.cont,1))%>
+      <%dumpEqs(e.discEqs)%><%\n%>
+      
+      <mixed>
+        <continuous index="<%equationIndex(e.cont)%>" />
+        <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
+        <%e.discEqs |> eq => '<discrete index="<%equationIndex(eq)%>" />'%>
+      </mixed>
+      >>
+    case e as SES_WHEN(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: WHEN
+      
+      when {<%conditions |> cond => '<%crefStr(cond)%>' ; separator=", " %>} then
+        <%crefStr(e.left)%> = <%System.stringReplace(System.stringReplace(printExpStr(e.right), "/*", "(*"), "*/", "*)")%>;
+      end when;
+      >>
+    case e as SES_IFEQUATION(__) then
+      let branches = ifbranches |> (_,eqs) => dumpEqs(eqs)
+      let elsebr = dumpEqs(elsebranch)
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: IFEQUATION
+
+      <%branches%>
+      <%elsebr%>      
+      >>
+    else
+      <<
+      unknown equation
+      >>
+end dumpEqs;
+
 template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqs)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
@@ -2314,6 +2420,9 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   <<
 
   <%tempeqns%>
+  /*
+   <%dumpEqs(fill(eq,1))%>
+   */
   static void eqFunction_<%ix%>(DATA *data)
   {
     <%&varD%>
