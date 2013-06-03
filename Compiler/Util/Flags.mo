@@ -638,19 +638,19 @@ constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the name of the corba session if +d=interactiveCorba is used."));
 constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
-  SOME("n"), EXTERNAL(), INT_FLAG(1), NONE(),
+  SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the number of processors to use."));
 constant ConfigFlag LATENCY = CONFIG_FLAG(25, "latency",
-  SOME("l"), EXTERNAL(), INT_FLAG(1), NONE(),
+  SOME("l"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the latency for parallel execution."));
 constant ConfigFlag BANDWIDTH = CONFIG_FLAG(26, "bandwidth",
-  SOME("b"), EXTERNAL(), INT_FLAG(1), NONE(),
+  SOME("b"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the bandwidth for parallel execution."));
 constant ConfigFlag INST_CLASS = CONFIG_FLAG(27, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Instantiate the class given by the fully qualified path."));
 constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(28, "vectorizationLimit",
-  SOME("v"), EXTERNAL(), INT_FLAG(1), NONE(),
+  SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."));
 constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(29, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),
@@ -690,10 +690,10 @@ constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(40, "locale",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Override the locale from the environment."));
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(41, "defaultOCLDevice",
-  SOME("o"), EXTERNAL(), INT_FLAG(1), NONE(),
+  SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
 constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(42, "maxTraversals",
-  NONE(), EXTERNAL(), INT_FLAG(3),NONE(),
+  NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   Util.gettext("Maximal traversals to find find simple equations in the acausal system."));
 constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(43, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
@@ -707,7 +707,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(45, "tearingMethod",
     ("noTearing", Util.gettext("skip tearing")),
     ("omcTearing", Util.gettext("tearing method developed by TU Dresden: Frenkel,Schubert")),
     ("cellier", Util.gettext("Cellier tearing")),
-    ("carpanzano3", Util.gettext("Carpanzano2 tearing")),
+    ("carpanzano2", Util.gettext("Carpanzano2 tearing")),
     ("olleroAmselem", Util.gettext("Ollero-Amselem tearing")),
     ("steward", Util.gettext("Steward tearing"))})),
     Util.gettext("tearing method to use.select no tearing or choose tearing method"));
