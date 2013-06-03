@@ -5036,36 +5036,27 @@ public function printListDebug "function: printListDebug
     input Type_a inTypeA;
   end FuncTypeType_aTo;
 algorithm
-  _:=
-  matchcontinue (inString1,inTypeALst2,inFuncTypeTypeATo3,inString4)
+  _ := match(inString1,inTypeALst2,inFuncTypeTypeATo3,inString4)
     local
       Ident caller,s1,sep;
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> rest;
-    case (_,{},_,_)
-      equation
-        Debug.fprintln(Flags.DUMPTR, "print_list_debug-1");
-      then
-        ();
+    case (_,{},_,_) then ();
     case (caller,{h},r,_)
       equation
-        Debug.fprintl(Flags.DUMPTR, {"print_list_debug-2 from ",caller,"\n"});
         r(h);
-        Debug.fprintln(Flags.DUMPTR, "//print_list_debug-2");
       then
         ();
     case (caller,(h :: rest),r,sep)
       equation
         s1 = stringAppend("print_list_debug-3 from ", caller);
-        Debug.fprintl(Flags.DUMPTR, {s1,"\n"});
         r(h);
         Print.printBuf(sep);
-        Debug.fprintln(Flags.DUMPTR, "//print_list_debug-3");
         printListDebug(s1, rest, r, sep);
       then
         ();
-  end matchcontinue;
+  end match;
 end printListDebug;
 
 public function printList "function: printList

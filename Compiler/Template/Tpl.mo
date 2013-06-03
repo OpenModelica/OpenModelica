@@ -1802,7 +1802,7 @@ algorithm
         Print.writeBuf(file);
         Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
         Print.clearBuf();
-        Debug.fprintln(Flags.PERF_TIMES,
+        Debug.fprintln(Flags.TPL_PERF_TIMES,
                 "textFile " +& file
            +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
            +& "\n   write:" +& realString(realSub(System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL), rtTickW))

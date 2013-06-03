@@ -2123,7 +2123,7 @@ algorithm
       equation
         // this should be placed in the global environment
         // how do we do that??
-        true = Flags.isSet(Flags.ENV);
+        true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("<<<< Env.addCachedEnv - failed to add env to cache for: " +& printEnvPathStr(env) +& " [" +& id +& "]");
       then inCache;
 
@@ -2244,7 +2244,6 @@ algorithm
         // print(id);print(" already added\n");
         true = stringEq(id1, id2);
         // shouldn't we replace it?
-        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
       then tree;
 
     // simple names try next
@@ -2255,8 +2254,6 @@ algorithm
 
     // Simple names, not found
     case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,{}),_)
-      equation
-        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then CACHETREE(globalID,globalEnv,{CACHETREE(id1,env,{})});
 
     // Qualified names.
@@ -2298,8 +2295,6 @@ algorithm
     case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,_)
       equation
         true = stringEq(id1, id2);
-        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
-        //print("single name, found matching\n");
       then CACHETREE(id2,env2,children2)::children;
 
     // try next
@@ -2313,18 +2308,13 @@ algorithm
     case (Absyn.QUALIFIED(id1,path),{},_)
       equation
         children = cacheAddEnv2(path,{},env);
-        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
-        //print("qualified name no child found, create one.\n");
       then {CACHETREE(id1,emptyEnv,children)};
 
     // simple name no child found, create one.
     case (Absyn.IDENT(id1),{},_)
-      equation
-        // print("simple name no child found, create one.\n");
-        // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then {CACHETREE(id1,env,{})};
 
-    case (_,_,_) equation print("cacheAddEnv2 failed\n"); then fail();
+    else equation print("cacheAddEnv2 failed\n"); then fail();
   end matchcontinue;
 end cacheAddEnv2;
 

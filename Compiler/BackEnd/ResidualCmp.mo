@@ -137,7 +137,6 @@ algorithm
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
         funcelems = List.union(part_func_elems, part_func_elems);
         //funcelems = List.union(funcelems, part_func_elems);
-        //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
         (fns, recordDecls, includes2, includeDirs2, libs2) = SimCodeUtil.elaborateFunctions(program, funcelems, {}, {}, {}); // Do we need metarecords here as well?
       then
         (libs2, includes2, includeDirs2, recordDecls, fns);

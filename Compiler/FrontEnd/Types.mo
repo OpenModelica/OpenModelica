@@ -4761,22 +4761,6 @@ algorithm
       then
         (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},DAE.CALL_ATTR(t,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL())),t2);
 
-    /* See printFailure()
-    case (exp,t1,t2,printFailtrace)
-      equation
-        Debug.fprint(Flags.TCVT, "- type conversion failed: ");
-        str = ExpressionDump.printExpStr(exp);
-        Debug.fprint(Flags.TCVT, str);
-        Debug.fprint(Flags.TCVT, "  ");
-        str = unparseType(t1);
-        Debug.fprint(Flags.TCVT, str);
-        Debug.fprint(Flags.TCVT, ", ");
-        str = unparseType(t2);
-        Debug.fprint(Flags.TCVT, str);
-        Debug.fprint(Flags.TCVT, "\n");
-      then
-        fail();
-      */
   end matchcontinue;
 end typeConvert;
 

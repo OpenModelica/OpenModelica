@@ -512,7 +512,7 @@ algorithm
   _ := matchcontinue (inStringLst)
     local
       Absyn.Program p, pLibs;
-      DAE.DAElist d_1,d;
+      DAE.DAElist d;
       String s,str,f;
       list<String>  libs;
       Absyn.Path cname;
@@ -551,36 +551,20 @@ algorithm
 
         p = transformFlatProgram(p,f);
 
-        Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
-        Debug.fprint(Flags.INFO, "---elaborating\n");
-        Debug.fprint(Flags.INFO, "\n------------------------------------------------------------ \n");
-        Debug.fprint(Flags.INFO, "---instantiating\n");
         Debug.execStat("Parsed file",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Instantiate the program.
-        (cache, env, d_1, cname) = instantiate(p);
-
-        Debug.fprint(Flags.BEFORE_FIX_MOD_OUT, "Explicit part:\n");
-        Debug.fcall(Flags.BEFORE_FIX_MOD_OUT, DAEDump.dumpDebug, d_1);
-
-        d = fixModelicaOutput(d_1);
+        (cache, env, d, cname) = instantiate(p);
 
         d = Debug.bcallret3(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
 
         funcs = Env.getFunctionTree(cache);
 
         Print.clearBuf();
-        Debug.fprint(Flags.INFO, "---dumping\n");
         Debug.execStat("Transformations before Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        s = Debug.fcallret2(Flags.FLAT_MODELICA, DAEDump.dumpStr, d, funcs, "");
-        Debug.fcall(Flags.FLAT_MODELICA, Print.printBuf, s);
-        Debug.execStat("Dump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         s = DAEDump.dumpStr(d, funcs);
         Debug.execStat("DAEDump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         Print.printBuf(s);
-        Debug.fcall2(Flags.DAE_DUMP, DAEDump.dump, d, funcs);
-        Debug.fcall(Flags.DAE_DUMP2, DAEDump.dump2, d);
-        Debug.fcall(Flags.DAE_DUMP_DEBUG, DAEDump.dumpDebug, d);
         Debug.fcall(Flags.DAE_DUMP_GRAPHV, DAEDump.dumpGraphviz, d);
         Debug.execStat("Misc Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
 
@@ -708,24 +692,6 @@ algorithm
   end matchcontinue;
 end instantiate;
 
-protected function runBackendQ
-"function: runBackendQ
-  Determine if backend, i.e. BLT etc. should be run.
-  It should be run if either \"blt\" flag is set or if
-  parallelization is enabled by giving flag -n=<no proc.>"
-  output Boolean res_1;
-protected
-  Boolean bltflag,sim_cg,par,res;
-  Integer n;
-algorithm
-  bltflag := Flags.isSet(Flags.BLT);
-  sim_cg := Config.simulationCg();
-  n := Config.noProc();
-  par := (n > 0);
-  res := boolOr(bltflag, par);
-  res_1 := boolOr(res, sim_cg);
-end runBackendQ;
-
 protected function optimizeDae
 "function: optimizeDae
   Run the backend. Used for both parallization and for normal execution."
@@ -745,7 +711,7 @@ algorithm
 
     case (cache,env,_,_,classname)
       equation
-        true = runBackendQ();
+        true = Config.simulationCg();
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
         modpar(dlow_1);
@@ -755,7 +721,7 @@ algorithm
         ();
     else
       equation
-        false = runBackendQ() "so main can print error messages" ;
+        false = Config.simulationCg() "so main can print error messages" ;
       then ();
   end matchcontinue;
 end optimizeDae;
@@ -876,32 +842,6 @@ algorithm
   n := Config.noProc();
   res := (n > 0);
 end runModparQ;
-
-protected function fixModelicaOutput
-"function: fixModelicaOutput
-  Transform the dae, replacing dots with underscore in variables and
-  equations."
-  input DAE.DAElist inDAElist;
-  output DAE.DAElist outDAElist;
-algorithm
-  outDAElist:=
-  matchcontinue (inDAElist)
-    local
-      list<DAE.Element> dae;
-      DAE.DAElist d;
-    case d
-      equation
-        true = Config.modelicaOutput();
-        print("DEPRECATED: modelicaOutput option no longer needed\n");
-      then
-        d;
-    case ((d as DAE.DAE(elementLst = dae)))
-      equation
-        false = Config.modelicaOutput();
-      then
-        d;
-  end matchcontinue;
-end fixModelicaOutput;
 
 protected function interactivemode
 "function: interactivemode

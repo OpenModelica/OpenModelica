@@ -658,11 +658,9 @@ algorithm
 
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
       equation
-        Debug.fprintln(Flags.SEI, "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         c = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
-        Debug.fprintln(Flags.SEI, "elab_exp CALL done");
       then
         (cache,e_1,prop,st_1);
 
@@ -1819,9 +1817,7 @@ algorithm
     //     (cache,dexp,prop);
     case (cache,env,Absyn.CREF(componentRef = cr),impl,pre,_)
       equation
-        Debug.fprint(Flags.TCVT,"before Static.elabCref in elabGraphicsExp\n");
         (cache,SOME((dexp,prop,_))) = elabCref(cache,env, cr, impl,true /*perform vectorization*/,pre,info);
-        Debug.fprint(Flags.TCVT,"after Static.elabCref in elabGraphicsExp\n");
       then
         (cache,dexp,prop);
 
@@ -6466,12 +6462,9 @@ algorithm
       equation
         false = hasBuiltInHandler(fn);
         ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
-        Debug.fprintln(Flags.SEI, "elab_call 3");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
-        Debug.fprint(Flags.SEI, "elab_call 3 succeeded: ");
         fnstr = Dump.printComponentRefStr(fn);
-        Debug.fprintln(Flags.SEI, fnstr);
         ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
       then
         (cache,e,prop,st);
@@ -6480,30 +6473,26 @@ algorithm
     case (cache,env,fn,args,nargs,(impl as false),st,pre,_,_)
       equation
         false = hasBuiltInHandler(fn);
-        Debug.fprint(Flags.SEI, "elab_call 4: ");
         fnstr = Dump.printComponentRefStr(fn);
-        Debug.fprintln(Flags.SEI, fnstr);
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
-        Debug.fprint(Flags.SEI, "elab_call 4 succeeded: ");
-        Debug.fprintln(Flags.SEI, fnstr);
       then
         (cache,e,prop,st);
 
     case (cache,env,fn,args,nargs,impl,st,pre,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- Static.elabCall failed\n");
-        Debug.fprint(Flags.FAILTRACE, " function: ");
+        Debug.traceln("- Static.elabCall failed\n");
+        Debug.trace(" function: ");
         fnstr = Dump.printComponentRefStr(fn);
-        Debug.fprint(Flags.FAILTRACE, fnstr);
-        Debug.fprint(Flags.FAILTRACE, "   posargs: ");
+        Debug.trace(fnstr);
+        Debug.trace("   posargs: ");
         argstrs = List.map(args, Dump.printExpStr);
         argstr = stringDelimitList(argstrs, ", ");
-        Debug.fprintln(Flags.FAILTRACE, argstr);
-        Debug.fprint(Flags.FAILTRACE, " prefix: ");
+        Debug.traceln(argstr);
+        Debug.trace(" prefix: ");
         prestr = PrefixUtil.printPrefixStr(pre);
-        Debug.fprintln(Flags.FAILTRACE, prestr);
+        Debug.traceln(prestr);
       then
         fail();
     case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */

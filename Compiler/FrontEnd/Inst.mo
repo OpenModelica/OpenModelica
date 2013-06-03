@@ -15246,7 +15246,7 @@ algorithm
       DAE.Dimensions dimexp;
       DAE.Type tp_1;
       DAE.Binding bind;
-      String id,str;
+      String id;
       SCode.Replaceable repl;
       SCode.Visibility vis;
       SCode.ConnectorType ct;
@@ -15289,21 +15289,14 @@ algorithm
         dir = Absyn.INPUT();
         attr = SCode.ATTR(dim,ct,prl,var,dir);
 
-        //Debug.fprint(Flags.REC_CONST, "inst_record_constructor_elt called\n");
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, true);
-        //Debug.fprint(Flags.REC_CONST, "looked up class\n");
         (cache,mod_1) = Mod.elabMod(cache, env, ih, Prefix.NOPRE(), mod, impl, info);
         mod_1 = Mod.merge(outerMod,mod_1,cenv,Prefix.NOPRE());
         owncref = Absyn.CREF_IDENT(id,{});
         (cache,dimexp) = elabArraydim(cache, env, owncref, t, dim, NONE(), false, NONE(), true, false, Prefix.NOPRE(), info, {});
-        //Debug.fprint(Flags.REC_CONST, "calling inst_var\n");
         cenv = Env.addModification(cenv, Env.M(Prefix.NOPRE(), id, dim, mod_1, env, {}));
         (cache,_,ih,_,_,_,tp_1,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ClassInf.FUNCTION(Absyn.IDENT(""), false), mod_1, Prefix.NOPRE(),
           id, cl, attr, prefixes, dimexp, {}, {}, impl, comment, info, ConnectionGraph.EMPTY, Connect.emptySet, env);
-        //Debug.fprint(Flags.REC_CONST, "Type of argument:");
-        Debug.fprint(Flags.REC_CONST, Types.printTypeStr(tp_1));
-        //Debug.fprint(Flags.REC_CONST, "\nMod=");
-        Debug.fcall(Flags.REC_CONST, Mod.printMod, mod_1);
         (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id, info);
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(ct,prl,var,dir,Absyn.NOT_INNER_OUTER(),vis),tp_1,bind,NONE()));
@@ -15311,10 +15304,8 @@ algorithm
     case (cache,env,ih,elt,outerMod,impl)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "- Inst.instRecordConstructorElt failed.,elt:");
-        str = SCodeDump.printElementStr(elt);
-        Debug.fprint(Flags.FAILTRACE, str);
-        Debug.fprint(Flags.FAILTRACE, "\n");
+        Debug.trace("- Inst.instRecordConstructorElt failed.,elt:");
+        Debug.traceln(SCodeDump.printElementStr(elt));
       then
         fail();
   end matchcontinue;

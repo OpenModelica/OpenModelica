@@ -1781,14 +1781,12 @@ algorithm
       then ();
     case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = DAE.ICONST(integer = ival)))
       equation
-        false = Config.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrMathMLNumberAttr(res,MathMLType,MathMLReal);
       then ();
     case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))))
       equation
-        false = Config.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
         dumpStrOpenTag(MathMLApply);
@@ -1798,16 +1796,10 @@ algorithm
       then ();
     case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = e))
       equation
-        false = Config.modelicaOutput();
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLReal);
         dumpExp2(e);
         dumpStrCloseTag(MathMLApply);
-      then ();
-    case (DAE.CAST(ty = DAE.T_REAL(source = _),exp = e))
-      equation
-        true = Config.modelicaOutput();
-        dumpExp2(e);
       then ();
     case (DAE.CAST(ty = tp,exp = e))
       equation

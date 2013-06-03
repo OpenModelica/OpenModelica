@@ -554,7 +554,6 @@ algorithm
         funcelems = List.union(part_func_elems, part_func_elems);
         //funcelems = List.union(funcelems, part_func_elems);
         funcelems = Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
-        //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
         (funcelems, literals as (_, _, lits)) = simulationFindLiterals(dlow, funcelems);
         (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
       then

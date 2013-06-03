@@ -205,7 +205,7 @@ static void printSSDCalculation(long nStates, long nAlgebraic, long nParameters)
  */
 THREAD_RET_TYPE threadSimulationCalculation(THREAD_PARAM_TYPE lpParam)
 {
-  int retValue = -1; //Not used yet
+  long retValue = -1; //Not used yet
 
   if (debugCalculation) {
     cout << "Calculation:\tMessage: Calculation Thread Start*****" << endl;

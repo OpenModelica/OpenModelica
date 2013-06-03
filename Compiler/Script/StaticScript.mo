@@ -498,11 +498,9 @@ algorithm
       Prefix.Prefix pre;
   case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
       equation
-        Debug.fprintln(Flags.SEI, "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
         c = Types.propAllConst(prop);
         (e_1,_) = ExpressionSimplify.simplify1(e_1);
-        Debug.fprintln(Flags.SEI, "elab_exp CALL done");
       then
         (cache,e_1,prop,st_1);
     case (cache,env,exp,impl,st,doVect,pre,_,_)
