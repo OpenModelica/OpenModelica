@@ -652,6 +652,7 @@ algorithm
       DAE.Ident s,str,strrest,strseb;
       list<DAE.Subscript> subs;
       ComponentRef cr;
+      Boolean b;
       Integer ix;
     
     // Optimize -- a function call less
@@ -680,9 +681,11 @@ algorithm
     // Qualified - non Modelica output
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
+        b = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
         strrest = printComponentRefStr(cr);
-        str = stringAppendList({str, ".", strrest});
+        strseb = Util.if_(b,"__",".");
+        str = stringAppendList({str, strseb, strrest});
       then
         str;
     
@@ -700,8 +703,9 @@ public function printComponentRef2Str
 algorithm
   outString := match (inIdent,inSubscriptLst)
     local
-      DAE.Ident s,str;
+      DAE.Ident s,str,strseba,strsebb;
       list<DAE.Subscript> l;
+      Boolean b;
     
     // no subscripts
     case (s,{}) then s;
@@ -710,8 +714,10 @@ algorithm
     // some subscripts, non Modelica output
     case (s,l)
       equation
+        b = Config.modelicaOutput();
         str = ExpressionDump.printListStr(l, ExpressionDump.printSubscriptStr, ",");
-        str = stringAppendList({s, "[", str, "]"});
+        ((strseba,strsebb)) = Util.if_(b,("_L","_R"),("[","]")); 
+        str = stringAppendList({s, strseba, str, strsebb});
       then
         str;
     
@@ -743,6 +749,7 @@ algorithm
     
     case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
       equation
+        false = Config.modelicaOutput();
         str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
         str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "]", "");
         str2 = Types.unparseType(ty);
@@ -752,6 +759,17 @@ algorithm
         str;
     
     case DAE.WILD() then "_";
+      
+    // Does not handle names with underscores
+    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
+      equation
+        true = Config.modelicaOutput();
+        str = printComponentRef2Str(s, subs);
+        str2 = Types.unparseType(ty);
+        strrest = debugPrintComponentRefTypeStr(cr);
+        str = stringAppendList({str," [",str2,"] ", "__", strrest});
+      then
+        str;
       
   end matchcontinue;
 end debugPrintComponentRefTypeStr;
@@ -2298,8 +2316,18 @@ algorithm
         printComponentRef2(s, subs);
       then
         ();
+    // qualified crefs, does not handle names with underscores
     case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
       equation
+        true = Config.modelicaOutput();
+        printComponentRef2(s, subs);
+        Print.printBuf("__");
+        printComponentRef(cr);
+      then
+        ();
+    case DAE.CREF_QUAL(ident = s,subscriptLst = subs,componentRef = cr)
+      equation
+        false = Config.modelicaOutput();
         printComponentRef2(s, subs);
         Print.printBuf(".");
         printComponentRef(cr);
@@ -2325,6 +2353,16 @@ algorithm
         ();
     case (s,l)
       equation
+        true = Config.modelicaOutput();
+        Print.printBuf(s);
+        Print.printBuf("_L");
+        ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");
+        Print.printBuf("_R");
+      then
+        ();
+    case (s,l)
+      equation
+        false = Config.modelicaOutput();
         Print.printBuf(s);
         Print.printBuf("[");
         ExpressionDump.printList(l, ExpressionDump.printSubscript, ",");

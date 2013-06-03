@@ -69,6 +69,12 @@ algorithm
   outBoolean := not Flags.getConfigBool(Flags.KEEP_ARRAYS);
 end splitArrays;
 
+public function modelicaOutput 
+  output Boolean outBoolean; 
+algorithm 
+  outBoolean := Flags.getConfigBool(Flags.MODELICA_OUTPUT); 
+end modelicaOutput; 
+
 public function noProc
   output Integer outInteger;
 algorithm
