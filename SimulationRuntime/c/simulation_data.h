@@ -62,8 +62,8 @@ typedef struct VAR_INFO
   int id;
   const char *name;
   const char *comment;
-  const FILE_INFO info;
-}VAR_INFO;
+  FILE_INFO info;
+} VAR_INFO;
 
 typedef struct EQUATION_INFO
 {
@@ -71,7 +71,7 @@ typedef struct EQUATION_INFO
   int profileBlockIndex;
   const char *name;
   int numVar;
-  const VAR_INFO** vars;               /* The variables involved in the equation. Not sure we need this anymore as the info.xml has this information. */
+  VAR_INFO** vars;
 }EQUATION_INFO;
 
 typedef struct FUNCTION_INFO

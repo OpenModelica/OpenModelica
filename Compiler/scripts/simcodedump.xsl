@@ -55,7 +55,7 @@
   <h3>Nonlinear System (index <xsl:value-of select="../@index"/>)</h3>
   <p>Solves for variables (<xsl:value-of select="count(var)"/> variables, <xsl:value-of select="count(equation)"/> equations): <xsl:for-each select="var">
     <xsl:if test="not(position() = 1)">, </xsl:if>
-    <a href="#var_{.}"><xsl:value-of select="."/></a>
+    <a href="#var_{@name}"><xsl:value-of select="@name"/></a>
   </xsl:for-each></p>
   <p>Equations <xsl:for-each select="eq"><a href="#eq_{@index}">#<xsl:value-of select="@index"/></a><xsl:text> </xsl:text></xsl:for-each></p>
 </xsl:template>
@@ -101,7 +101,7 @@
   <h3>Linear equation (index <xsl:value-of select="../@index"/>)</h3>
   Solves for variables (<xsl:value-of select="count(var)"/>): <xsl:for-each select="var">
     <xsl:if test="not(position() = 1)">, </xsl:if>
-    <a href="#var_{.}"><xsl:value-of select="."/></a>
+    <a href="#var_{@name}"><xsl:value-of select="@name"/></a>
   </xsl:for-each>
   <table class="linear-matrix">
     <tr>

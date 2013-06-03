@@ -34,6 +34,33 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include "uthash.h"
+
+typedef struct hash_variable {
+  const char *id;
+  VAR_INFO var_info;
+  UT_hash_handle hh;
+} hash_variable;
+
+static hash_variable *variables = NULL;
+static VAR_INFO var_info;
+static FILE_INFO file_info;
+static int maxVarsBuffer = 0;
+static VAR_INFO *varsBuffer = 0;
+
+static void add_variable(VAR_INFO vi) {
+  hash_variable *s = (hash_variable*) malloc(sizeof(hash_variable));
+  s->id = vi.name;
+  s->var_info = vi;
+  HASH_ADD_KEYPTR(hh,variables,s->id,strlen(s->id),s);
+}
+
+static VAR_INFO* findVariable(const char *name) {
+  hash_variable *s;
+  HASH_FIND_STR(variables,name,s);
+  ASSERT(s, "Referenced a variable that was not declared as a <variable>");
+  return &s->var_info;
+}
 
 static void XMLCALL startElement(void *userData, const char *name, const char **attr) {
   MODEL_DATA_XML* xml = (MODEL_DATA_XML*) ((void**)userData)[0];
@@ -41,6 +68,39 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   //long curProfileIndex = (long) ((void**)userData)[2];
   long curFunctionIndex = (long) ((void**)userData)[3];
 
+  if (0==strcmp("var",name)) {
+    ASSERT(((0==strcmp(attr[0],"name")) && attr[2] == NULL),"<var> needs to have exactly one attribute: name");
+    if (varsBuffer == 0 || maxVarsBuffer == 0) {
+      maxVarsBuffer = 32;
+      varsBuffer = (VAR_INFO*) malloc(sizeof(VAR_INFO)*maxVarsBuffer);
+    } else if (xml->equationInfo[curIndex].numVar+2 >= maxVarsBuffer) {
+      maxVarsBuffer *= 2;
+      varsBuffer = realloc(varsBuffer,sizeof(VAR_INFO)*maxVarsBuffer);
+    }
+    varsBuffer[xml->equationInfo[curIndex].numVar++] = *findVariable(attr[1]);
+    return;
+  }
+  if (0==strcmp("info",name)) {
+    while (attr[0]) {
+      if (0==strcmp("file",attr[0])) {
+        file_info.filename = strdup(attr[1]);
+      } else if (0==strcmp("lineStart",attr[0])) {
+        file_info.lineStart = strtol(attr[1],NULL,10);
+      } else if (0==strcmp("lineEnd",attr[0])) {
+        file_info.lineEnd = strtol(attr[1],NULL,10);
+      } else if (0==strcmp("colStart",attr[0])) {
+        file_info.colStart = strtol(attr[1],NULL,10);
+      } else if (0==strcmp("colEnd",attr[0])) {
+        file_info.colEnd = strtol(attr[1],NULL,10);
+      } else if (0==strcmp("readonly",attr[0])) {
+        file_info.readonly = 0==strcmp(attr[1],"true");
+      } else {
+        THROW1("%s: Unknown attribute in <info>", xml->fileName);
+      }
+      attr += 2;
+    }
+    return;
+  }
   if (0==strcmp("equation",name)) {
     long ix;
     if (curIndex > xml->nEquations) {
@@ -57,7 +117,23 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     xml->equationInfo[curIndex].profileBlockIndex = -1; /* TODO: Set when parsing other tags */
     xml->equationInfo[curIndex].name = "SOME NICE EQUATION NAME (to be set a little later)"; /* TODO: Set when parsing other tags */
     xml->equationInfo[curIndex].numVar = 0; /* TODO: Set when parsing other tags */
-    xml->equationInfo[curIndex].vars = NULL; /* TODO: Set when parsing other tags. Also needs to be... Bla bla bla. Not sure we need this anymore */
+    xml->equationInfo[curIndex].vars = NULL; /* Set when parsing other tags (on close). */
+    return;
+  }
+  if (0==strcmp("variable",name)) {
+    var_info.name = NULL;
+    var_info.comment = NULL;
+    while (attr[0]) {
+      if (0==strcmp(attr[0],"name")) {
+        var_info.name = strdup(attr[1]);
+      } else if (0==strcmp(attr[0],"comment")) {
+        var_info.comment = strdup(attr[1]);
+      }
+      attr+=2;
+    }
+    ASSERT(var_info.name && var_info.comment, "<var>-tag did not set name and comment");
+    var_info.id = -1; /* ??? */
+    var_info.info = file_info;
     return;
   }
   if (0==strcmp("function",name)) {
@@ -74,12 +150,20 @@ static void XMLCALL endElement(void *userData, const char *name) {
   long curProfileIndex = (long) ((void**)userData)[2];
   long curFunctionIndex = (long) ((void**)userData)[3];
 
-  if (0==strcmp("equation",name)) {
-    ((void**)userData)[1] = (void*) (curIndex+1);
+  if (0==strcmp("variable",name)) {
+    add_variable(var_info);
     return;
   }
-  if (0==strcmp("var",name)) {
-    xml->equationInfo[curIndex].numVar++;
+  if (0==strcmp("equation",name)) {
+    int i;
+    xml->equationInfo[curIndex].vars = malloc(sizeof(VAR_INFO)*xml->equationInfo[curIndex].numVar);
+    for (i=0; i<xml->equationInfo[curIndex].numVar; i++) {
+      VAR_INFO *var = (VAR_INFO*) malloc(sizeof(VAR_INFO));
+      *var = varsBuffer[i];
+      xml->equationInfo[curIndex].vars[i] = var;
+    }
+    ((void**)userData)[1] = (void*) (curIndex+1);
+    
     return;
   }
   if (0==strcmp("nonlinear",name)) {

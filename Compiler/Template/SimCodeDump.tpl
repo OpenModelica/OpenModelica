@@ -154,7 +154,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       <<
       <equation index="<%eqIndex(eq)%>">
         <linear>
-          <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+          <%e.vars |> SIMVAR(name=cr) => '<var name="<%crefStr(cr)%>" />' ; separator = "\n" %>
           <row>
             <%beqs |> exp => '<cell><%printExpStrEscaped(exp)%></cell>' ; separator = "\n" %><%\n%>
           </row>
@@ -180,7 +180,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       <%dumpEqs(SimCodeUtil.sortEqSystems(e.eqs),withOperations)%>
       <equation index="<%eqIndex(eq)%>">
         <nonlinear indexNonlinear="<%indexNonLinearSystem%>">
-          <%e.crefs |> cr => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+          <%e.crefs |> cr => '<var name="<%crefStr(cr)%>" />' ; separator = "\n" %>
           <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
         </nonlinear>
       </equation><%\n%>
@@ -192,7 +192,7 @@ template dumpEqs(list<SimEqSystem> eqs, Boolean withOperations)
       <equation index="<%eqIndex(eq)%>">
         <mixed>
           <continuous index="<%eqIndex(e.cont)%>" />
-          <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
+          <%e.discVars |> SIMVAR(name=cr) => '<var name="<%crefStr(cr)%>" />' ; separator = ","%>
           <%e.discEqs |> eq => '<discrete index="<%eqIndex(eq)%>" />'%>
         </mixed>
       </equation>
@@ -407,7 +407,7 @@ template dumpEqsSys(list<SimEqSystem> eqs, Boolean withOperations)
       <<
       <%dumpEqsSys(SimCodeUtil.sortEqSystems(e.eqs),withOperations)%>
       <%eqIndex(eq)%>     
-          <%e.crefs |> cr => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
+          <%e.crefs |> cr => '<var name="<%crefStr(cr)%>" />' ; separator = "\n" %>
           <%e.eqs |> eq => '<eq index="<%eqIndex(eq)%>"/>' ; separator = "\n" %>
         </nonlinear>
       </equation><%\n%>
@@ -420,7 +420,7 @@ template dumpEqsSys(list<SimEqSystem> eqs, Boolean withOperations)
       <equation index="<%eqIndex(eq)%>">
         <mixed>
           <continuous index="<%eqIndex(e.cont)%>" />
-          <%e.discVars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = ","%>
+          <%e.discVars |> SIMVAR(name=cr) => '<var name="<%crefStr(cr)%>" />' ; separator = ","%>
           <%e.discEqs |> eq => '<discrete index="<%eqIndex(eq)%>" />'%>
         </mixed>
       </equation>
