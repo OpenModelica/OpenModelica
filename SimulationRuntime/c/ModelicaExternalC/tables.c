@@ -28,7 +28,6 @@
  *
  */
 
-#include "../util/omc_error.h"
 #include "tables.h"
 
 #include <stdio.h>
@@ -47,7 +46,6 @@
 
 /* Definition to make a copy of the arrays */
 #define COPY_ARRAYS
-
 
 typedef struct InterpolationTable
 {
@@ -153,7 +151,9 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 #endif
   /* increase array */
   tmp = (InterpolationTable**)malloc((ninterpolationTables+1)*sizeof(InterpolationTable*));
-  ASSERT3(tmp, "Not enough memory for new Table[%lu] Tablename %s Filename %s", (unsigned long)ninterpolationTables, tableName, fileName);
+  if (!tmp) {
+    ModelicaFormatError("Not enough memory for new Table[%lu] Tablename %s Filename %s", (unsigned long)ninterpolationTables, tableName, fileName);
+  }
   for(i = 0; i < ninterpolationTables; ++i)
   {
     tmp[i] = interpolationTables[i];
@@ -247,7 +247,9 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
 #endif
   /* increase array */
   tmp = (InterpolationTable2D**)malloc((ninterpolationTables2D+1)*sizeof(InterpolationTable2D*));
-  ASSERT3(tmp, "Not enough memory for new Table[%lu] Tablename %s Filename %s", (unsigned long)ninterpolationTables, tableName, fileName);
+  if (!tmp) {
+    ModelicaFormatError("Not enough memory for new Table[%lu] Tablename %s Filename %s", (unsigned long)ninterpolationTables, tableName, fileName);
+  }
   for(i = 0; i < ninterpolationTables2D; ++i)
   {
     tmp[i] = interpolationTables2D[i];
@@ -323,16 +325,22 @@ static TEXT_FILE *Text_open(const char *filename)
 {
   size_t l,i;
   TEXT_FILE *f=(TEXT_FILE*)calloc(1,sizeof(TEXT_FILE));
-  ASSERT1(f,"Not enough memory for Filename %s",filename);
+  if (!f) {
+    ModelicaFormatError("Not enough memory for Filename: %s",filename);
+  }
   l = strlen(filename);
   f->filename = (char*)malloc((l+1)*sizeof(char));
-  ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
+  if (!f->filename) {
+    ModelicaFormatError("Not enough memory for Filename: %s",filename);
+  }
   for(i=0;i<=l;i++)
   {
     f->filename[i] = filename[i];
   }
   f->fp = fopen(filename,"r");
-  ASSERT1(f->fp,"Cannot open File %s",filename);
+  if (!f->fp) {
+    ModelicaFormatError("Cannot open File %s",filename);
+  }
   return f;
 }
 
@@ -388,26 +396,26 @@ static char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char *
   if(!readChr(&hdr, &hLen, '('))
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
+    ModelicaFormatError("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
   *rows = (size_t)strtol(hdr, &endptr, 10);
   if(hdr == endptr)
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
+    ModelicaFormatError("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
   hLen -= endptr-hdr;
   hdr = endptr;
   if(!readChr(&hdr, &hLen, ','))
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
+    ModelicaFormatError("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
   *cols = (size_t)strtol(hdr, &endptr, 10);
   if(hdr == endptr)
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
+    ModelicaFormatError("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
   hLen -= endptr-hdr;
   hdr = endptr;
@@ -416,7 +424,7 @@ static char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char *
   if((hLen > 0) && ((*hdr) != '#'))
   {
     fclose(f->fp);
-    THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
+    ModelicaFormatError("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)(hdrLen-hLen));
   }
 
   return 1;
@@ -438,7 +446,9 @@ static size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
     {
       size_t s = *size * 2 + 1024;
       char *tmp = (char*)calloc(s, sizeof(char));
-      ASSERT1(tmp, "Not enough memory for loading file %s", f->filename);
+      if (!tmp) {
+        ModelicaFormatError("Not enough memory for loading file %s",f->filename);
+      }
       for(i = 0; i < *size; i++)
         tmp[i] = buf[i];
       if(buf)
@@ -451,7 +461,7 @@ static size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
     if(ferror(f->fp))
     {
       fclose(f->fp);
-      THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)col);
+      ModelicaFormatError("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)col);
     }
     if(ch == '\n')
       break;
@@ -548,17 +558,23 @@ static MAT_FILE *Mat_open(const char *filename)
 {
   size_t l,i;
   MAT_FILE *f=(MAT_FILE*)calloc(1,sizeof(MAT_FILE));
-  ASSERT1(f,"Not enough memory for Filename %s",filename);
+  if (!f) {
+    ModelicaFormatError("Not enough memory for Filename %s",filename);
+  }
   memset(&(f->hdr),0,sizeof(hdr_t));
   l = strlen(filename);
   f->filename = (char*)malloc((l+1)*sizeof(char));
-  ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
+  if (!f->filename) {
+    ModelicaFormatError("Not enough memory for Filename %s",filename);
+  }
   for(i=0;i<=l;i++)
   {
     f->filename[i] = filename[i];
   }
   f->fp = fopen(filename,"rb");
-  ASSERT1(f->fp,"Cannot open File %s",filename);
+  if (!f->fp) {
+    ModelicaFormatError("Cannot open File %s",filename);
+  }
   return f;
 }
 
@@ -589,7 +605,7 @@ static size_t Mat_getTypeSize(MAT_FILE *f, long type)
     return 1;
   default:
     fclose(f->fp);
-    THROW1("Corrupted MAT-file: `%s'",f->filename);
+    ModelicaFormatError("Corrupted MAT-file: `%s'",f->filename);
   }
 }
 
@@ -604,7 +620,7 @@ static char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size
     if(ferror(f->fp))
     {
       fclose(f->fp);
-      THROW1("Could not read from file `%s'.",f->filename);
+      ModelicaFormatError("Could not read from file `%s'.",f->filename);
     }
     returnTmp = fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
     if(strncmp(tableName,name,strlen(tableName)) == 0)
@@ -612,17 +628,17 @@ static char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size
       if(f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
       {
         fclose(f->fp);
-        THROW1("Table `%s' not in supported format.",tableName);
+        ModelicaFormatError("Table `%s' not in supported format.",tableName);
       }
       if(f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
         fclose(f->fp);
-        THROW1("Table `%s' has zero dimensions.",tableName);
+        ModelicaFormatError("Table `%s' has zero dimensions.",tableName);
       }
       if(f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
         fclose(f->fp);
-        THROW3("Table `%s' has zero dimensions [%lu,%lu].", tableName, (unsigned long)f->hdr.mrows, (unsigned long)f->hdr.ncols);
+        ModelicaFormatError("Table `%s' has zero dimensions [%lu,%lu].", tableName, (unsigned long)f->hdr.mrows, (unsigned long)f->hdr.ncols);
       }
       *rows = f->hdr.mrows;
       *cols = f->hdr.ncols;
@@ -714,7 +730,7 @@ static void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
       if(ferror(f->fp))
       {
         fclose(f->fp);
-        THROW1("Could not read from file `%s'.",f->filename);
+        ModelicaFormatError("Could not read from file `%s'.",f->filename);
       }
       buf[i*cols+j] = Mat_getElem(&readbuf,(char)P,isBigEndian);
     }
@@ -735,16 +751,22 @@ static CSV_FILE *csv_open(const char *filename)
 {
   size_t l,i;
   CSV_FILE *f=(CSV_FILE*)calloc(1,sizeof(CSV_FILE));
-  ASSERT1(f,"Not enough memory for Filename %s",filename);
+  if (!f) {
+    ModelicaFormatError("Not enough memory for Filename %s",filename);
+  }
   l = strlen(filename);
   f->filename = (char*)malloc((l+1)*sizeof(char));
-  ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
+  if (!f->filename) {
+    ModelicaFormatError("Not enough memory for Filename %s",filename);
+  }
   for(i=0;i<=l;i++)
   {
     f->filename[i] = filename[i];
   }
   f->fp = fopen(filename,"r");
-  ASSERT1(f->fp,"Cannot open File %s",filename);
+  if (!f->fp) {
+    ModelicaFormatError("Cannot open File %s",filename);
+  }
   return f;
 }
 
@@ -775,7 +797,9 @@ static size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
     {
       size_t s = *size * 2 + 1024;
       char *tmp = (char*)calloc(s, sizeof(char));
-      ASSERT1(tmp, "Not enough memory for loading file %s", f->filename);
+      if (!tmp) {
+        ModelicaFormatError("Not enough memory for loading file %s",f->filename);
+      }
       for(i = 0; i < *size; i++)
         tmp[i] = buf[i];
       if(buf)
@@ -788,7 +812,7 @@ static size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
     if(ferror(f->fp))
     {
       fclose(f->fp);
-      THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)col);
+      ModelicaFormatError("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)col);
     }
     if(ch == '\n')
       break;
@@ -821,7 +845,7 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
       if(ferror(f->fp))
       {
         perror ("The following error occurred");
-        THROW1("Cannot get File Position! from File %s",f->filename);
+        ModelicaFormatError("Cannot get File Position! from File %s",f->filename);
       }
       while(!feof(f->fp) && (stop==0))
       {
@@ -923,13 +947,15 @@ static void openFile(const char *filename, const char* tableName, size_t *rows, 
     if(csv_findTable(f,tableName,cols,rows))
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
-      ASSERT1(*data,"Not enough memory for Table: %s",tableName);
+      if (!*data) {
+        ModelicaFormatError("Not enough memory for Table: %s",tableName);
+      }
       csv_readTable(f,tableName,*data,*rows,*cols);
       csv_close(f);
       return;
     }
     csv_close(f);
-    THROW2("No table named `%s' in file `%s'.",tableName,filename);
+    ModelicaFormatError("No table named `%s' in file `%s'.",tableName,filename);
   }
   else if(strncmp(filetype,".mat",4) == 0) /* mat file */
   {
@@ -937,13 +963,15 @@ static void openFile(const char *filename, const char* tableName, size_t *rows, 
     if(Mat_findTable(f,tableName,cols,rows))
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
-      ASSERT1(*data,"Not enough memory for Table: %s",tableName);
+      if (!*data) {
+        ModelicaFormatError("Not enough memory for Table: %s",tableName);
+      }
       Mat_readTable(f,*data,*rows,*cols);
       Mat_close(f);
       return;
     }
     Mat_close(f);
-    THROW2("No table named `%s' in file `%s'.",tableName,filename);
+    ModelicaFormatError("No table named `%s' in file `%s'.",tableName,filename);
   }
   else if(strncmp(filetype,".txt",4) == 0) /* csv file */
   {
@@ -951,15 +979,17 @@ static void openFile(const char *filename, const char* tableName, size_t *rows, 
     if(Text_findTable(f,tableName,cols,rows))
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
-      ASSERT1(*data,"Not enough memory for Table: %s",tableName);
+      if (!*data) {
+        ModelicaFormatError("Not enough memory for Table: %s",tableName);
+      }
       Text_readTable(f,*data,*rows,*cols);
       Text_close(f);
       return;
     }
     Text_close(f);
-    THROW2("No table named `%s' in file `%s'.",tableName,filename);
+    ModelicaFormatError("No table named `%s' in file `%s'.",tableName,filename);
   }
-  THROW3("Interpolation table: %s from file %s uknown file extension -- `%s'.",tableName,filename,filetype);
+  ModelicaFormatError("Interpolation table: %s from file %s uknown file extension -- `%s'.",tableName,filename,filetype);
 }
 
 /*
@@ -975,7 +1005,9 @@ static char *copyTableNameFile(const char *name)
   if(l==0)
     l = 6;
   dst = (char*)malloc((l+1)*sizeof(char));
-  ASSERT1(dst,"Not enough memory for Table: %s",name);
+  if (!dst) {
+    ModelicaFormatError("Not enough memory for Table: %s",name);
+  }
   if(name)
   {
     for(i=0;i<=l;i++)
@@ -1001,7 +1033,9 @@ static InterpolationTable* InterpolationTable_init(double time, double startTime
   size_t size = tableDim1*tableDim2;
   InterpolationTable *tpl = 0;
   tpl = (InterpolationTable*)calloc(1,sizeof(InterpolationTable));
-  ASSERT1(tpl,"Not enough memory for Table: %s",tableName);
+  if (!tpl) {
+    ModelicaFormatError("Not enough memory for Table: %s",tableName);
+  }
 
   tpl->rows = tableDim1;
   tpl->cols = tableDim2;
@@ -1020,12 +1054,16 @@ static InterpolationTable* InterpolationTable_init(double time, double startTime
   } else
   {
 #ifndef COPY_ARRAYS
-    ASSERT1(table,"No data for Table: %s",tableName);
+    if (!table) {
+      ModelicaFormatError("Not enough memory for Table: %s",tableName);
+    }
     tpl->data = *(double**)((void*)&table);
 #else
     //tpl->data = const_cast<double*>(table);
     tpl->data = (double*)malloc(size*sizeof(double));
-    ASSERT1(tpl->data,"Not enough memory for Table: %s",tableName);
+    if (!tpl->data) {
+      ModelicaFormatError("Not enough memory for Table: %s",tableName);
+    }
     tpl->own_data = 1;
 
     for(i=0;i<size;i++)
@@ -1137,12 +1175,12 @@ static double InterpolationTable_interpolateLin(InterpolationTable *tpl, double 
 static const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col)
 {
   /* is this really correct? doesn't it depends on tpl>colWise? */
-  ASSERT6(
-      row < tpl->rows && col < tpl->cols,
-      "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] out of range!",
+  if (!(row < tpl->rows && col < tpl->cols)) {
+    ModelicaFormatError("In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] out of range!",
       tpl->tablename, tpl->filename,
       (unsigned long)tpl->rows, (unsigned long)tpl->cols,
       (unsigned long)row, (unsigned long)col);
+  }
 
   return tpl->data[tpl->colWise ? col*tpl->rows+row : row*tpl->cols+col];
 }
@@ -1156,7 +1194,7 @@ static void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
   /* else check the validity */
   for(i = 1; i < maxSize; ++i)
     if(InterpolationTable_getElt(tpl,i-1,0) > InterpolationTable_getElt(tpl,i,0))
-      THROW2("TimeTable: Column with time variable not monotonous: %g >= %g.", InterpolationTable_getElt(tpl,i-1,0),InterpolationTable_getElt(tpl,i,0));
+      ModelicaFormatError("TimeTable: Column with time variable not monotonous: %g >= %g.", InterpolationTable_getElt(tpl,i-1,0),InterpolationTable_getElt(tpl,i,0));
 }
 
 
@@ -1172,9 +1210,12 @@ static InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* 
   size_t size = tableDim1*tableDim2;
   InterpolationTable2D *tpl = 0;
   tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
-  ASSERT1(tpl,"Not enough memory for Table: %s",tableName);
-  ASSERT3((0 < ipoType) & (ipoType < 3),"Unknown interpolation Type %d for Table %s from file %s!",ipoType,tableName,fileName);
-
+  if (!tpl) {
+    ModelicaFormatError("Not enough memory for Table: %s",tableName);
+  }
+  if (!((0 < ipoType) & (ipoType < 3))) {
+    ModelicaFormatError("Unknown interpolation Type %d for Table %s from file %s!",ipoType,tableName,fileName);
+  }
   tpl->rows = tableDim1;
   tpl->cols = tableDim2;
   tpl->colWise = colWise;
@@ -1189,11 +1230,15 @@ static InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* 
     tpl->own_data = 1;
   } else {
 #ifndef COPY_ARRAYS
-    ASSERT1(table,"No data for Table: %s",tableName);
+    if (!table) {
+      ModelicaFormatError("Not enough memory for Table: %s",tableName);
+    }
     tpl->data = *(double**)((void*)&table);
 #else
     tpl->data = (double*)malloc(size*sizeof(double));
-    ASSERT1(tpl->data,"Not enough memory for Table: %s",tableName);
+    if (!tpl->data) {
+      ModelicaFormatError("Not enough memory for Table: %s",tableName);
+    }
     tpl->own_data = 1;
 
     for(i=0;i<size;i++)
@@ -1224,7 +1269,9 @@ static double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, do
   size_t index=0;
   size_t pos=0;
   size_t i=0;
-  ASSERT(tlen>0,"InterpolationTable2D_akime called with empty table!");
+  if (!(tlen>0)) {
+    ModelicaFormatError("InterpolationTable2D_akime called with empty table!");
+  }
   /* smooth interpolation with Akima Splines such that der(y) is continuous */
   if((tlen < 4) | (x < tx[2]) | (x > tx[tlen-3]))
   {
@@ -1516,7 +1563,9 @@ static double InterpolationTable2D_linInterpolate(double x, double x_1, double x
 
 static const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, size_t col)
 {
-  ASSERT6(row < tpl->rows && col < tpl->cols, "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] out of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
+  if (!(row < tpl->rows && col < tpl->cols)) {
+    ModelicaFormatError("In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] out of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
+  }
   return tpl->data[row*tpl->cols+col];
 }
 
@@ -1524,18 +1573,20 @@ static void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl)
 {
   size_t i = 0;
   /* check if table has values */
-  ASSERT2((tpl->rows > 1) && (tpl->cols > 1), "Table %s from file %s has no data!", tpl->tablename, tpl->filename);
+  if (!((tpl->rows > 1) && (tpl->cols > 1))) {
+    ModelicaFormatError("Table %s from file %s has no data!", tpl->tablename, tpl->filename);
+  }
   /* check that first row and column are strictly monotonous */
   for(i=2; i < tpl->rows; ++i)
   {
     if(InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
-      THROW3("Table: %s independent variable u1 not strictly \
+      ModelicaFormatError("Table: %s independent variable u1 not strictly \
              monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
   }
   for(i=2; i < tpl->cols; ++i)
   {
     if(InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
-      THROW3("Table: %s independent variable u2 not strictly \
+      ModelicaFormatError("Table: %s independent variable u2 not strictly \
              monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));
   }
 }
