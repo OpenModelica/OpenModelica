@@ -785,17 +785,26 @@ QString OMCProxy::getEnvironmentVar(QString name)
 void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+  bool forceModelicaLoad = settings.contains("forceModelicaLoad");
+  settings.setValue("forceModelicaLoad", false);
   settings.beginGroup("libraries");
   QStringList libraries = settings.childKeys();
-  if (!settings.contains("Modelica"))
+  /*
+    Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
+    Later user must use the libraries options dialog.
+    */
+  if (!forceModelicaLoad)
   {
-    settings.setValue("Modelica","default");
-    libraries.prepend("Modelica");
-  }
-  if (!settings.contains("ModelicaReference"))
-  {
-    settings.setValue("ModelicaReference","default");
-    libraries.prepend("ModelicaReference");
+    if (!settings.contains("Modelica"))
+    {
+      settings.setValue("Modelica","default");
+      libraries.prepend("Modelica");
+    }
+    if (!settings.contains("ModelicaReference"))
+    {
+      settings.setValue("ModelicaReference","default");
+      libraries.prepend("ModelicaReference");
+    }
   }
   foreach (QString lib, libraries)
   {
@@ -805,6 +814,8 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
     sendCommand(command);
     printMessagesStringInternal();
   }
+  settings.endGroup();
+  mpMainWindow->getOptionsDialog()->readLibrariesSettings();
 }
 
 /*!
@@ -874,6 +885,7 @@ void OMCProxy::loadUserLibraries(QSplashScreen *pSplashScreen)
       }
     }
   }
+  settings.endGroup();
 }
 
 /*!
