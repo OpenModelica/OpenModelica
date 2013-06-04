@@ -2750,12 +2750,35 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
     else if (preferredView.compare("text") == 0)
+    {
       pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
+    }
     else
+    {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
+    }
   }
   else
-    pModelWidget->getDiagramViewToolButton()->setChecked(true);
+  {
+    QString defaultView = mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getDefaultView();
+    if (defaultView.compare(Helper::iconView) == 0)
+    {
+      pModelWidget->getIconViewToolButton()->setChecked(true);
+    }
+    else if (defaultView.compare(Helper::modelicaTextView) == 0)
+    {
+      pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
+    }
+    else if (defaultView.compare(Helper::documentationView) == 0)
+    {
+      pModelWidget->showDocumentationView();
+      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+    }
+    else
+    {
+      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+    }
+  }
 }
 
 ModelWidget* ModelWidgetContainer::getCurrentModelWidget()

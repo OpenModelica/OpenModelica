@@ -785,15 +785,16 @@ QString OMCProxy::getEnvironmentVar(QString name)
 void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
 {
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  bool forceModelicaLoad = settings.contains("forceModelicaLoad");
-  settings.setValue("forceModelicaLoad", false);
+  bool forceModelicaLoad = true;
+  if (settings.contains("forceModelicaLoad"))
+    forceModelicaLoad = settings.value("forceModelicaLoad").toBool();
   settings.beginGroup("libraries");
   QStringList libraries = settings.childKeys();
   /*
     Only force loading of Modelica & ModelicaReference if user is using OMEdit for the first time.
     Later user must use the libraries options dialog.
     */
-  if (!forceModelicaLoad)
+  if (forceModelicaLoad)
   {
     if (!settings.contains("Modelica"))
     {

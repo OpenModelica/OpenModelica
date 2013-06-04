@@ -130,6 +130,8 @@ public:
   QString getModelingViewMode();
   void setPlottingViewMode(QString value);
   QString getPlottingViewMode();
+  void setDefaultView(QString value);
+  QString getDefaultView();
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -147,6 +149,11 @@ private:
   QGroupBox *mpPlottingViewModeGroupBox;
   QRadioButton *mpPlottingTabbedViewRadioButton;
   QRadioButton *mpPlottingSubWindowViewRadioButton;
+  QGroupBox *mpDefaultViewGroupBox;
+  QRadioButton *mpIconViewRadioButton;
+  QRadioButton *mpDiagramViewRadioButton;
+  QRadioButton *mpTextViewRadioButton;
+  QRadioButton *mpDocumentationViewRadioButton;
 public slots:
   void selectWorkingDirectory();
 };
@@ -157,6 +164,7 @@ class LibrariesPage : public QWidget
 public:
   LibrariesPage(OptionsDialog *pParent);
   QTreeWidget* getSystemLibrariesTree();
+  QCheckBox* getForceModelicaLoadCheckBox();
   QTreeWidget* getUserLibrariesTree();
   OptionsDialog *mpOptionsDialog;
 private:
@@ -167,6 +175,7 @@ private:
   QPushButton *mpRemoveSystemLibraryButton;
   QPushButton *mpEditSystemLibraryButton;
   QDialogButtonBox *mpSystemLibrariesButtonBox;
+  QCheckBox *mpForceModelicaLoadCheckBox;
   QGroupBox *mpUserLibrariesGroupBox;
   QTreeWidget *mpUserLibrariesTree;
   QPushButton *mpAddUserLibraryButton;

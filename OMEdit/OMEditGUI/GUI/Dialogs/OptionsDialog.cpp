@@ -114,6 +114,9 @@ void OptionsDialog::readGeneralSettings()
   // read the plotting view mode
   if (mSettings.contains("plotting/viewmode"))
     mpGeneralSettingsPage->setPlottingViewMode(mSettings.value("plotting/viewmode").toString());
+  // read the default view
+  if (mSettings.contains("defaultView"))
+    mpGeneralSettingsPage->setDefaultView(mSettings.value("defaultView").toString());
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -137,6 +140,9 @@ void OptionsDialog::readLibrariesSettings()
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
   mSettings.endGroup();
+  // read the forceModelicaLoad
+  if (mSettings.contains("forceModelicaLoad"))
+    mpLibrariesPage->getForceModelicaLoadCheckBox()->setChecked(mSettings.value("forceModelicaLoad").toBool());
   // read user libraries
   i = 0;
   while(i < mpLibrariesPage->getUserLibrariesTree()->topLevelItemCount())
@@ -351,6 +357,8 @@ void OptionsDialog::saveGeneralSettings()
   {
     mpMainWindow->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
   }
+  // save default view
+  mSettings.setValue("defaultView", mpGeneralSettingsPage->getDefaultView());
 }
 
 //! Saves the Libraries section settings to omedit.ini
@@ -370,6 +378,7 @@ void OptionsDialog::saveLibrariesSettings()
     ++systemLibrariesIterator;
   }
   mSettings.endGroup();
+  mSettings.setValue("forceModelicaLoad", mpLibrariesPage->getForceModelicaLoadCheckBox()->isChecked());
   // read the settings and add user libraries
   mSettings.beginGroup("userlibraries");
   foreach (QString lib, mSettings.childKeys())
@@ -721,10 +730,34 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   pPlottingRadioButtonsLayout->addWidget(mpPlottingTabbedViewRadioButton);
   pPlottingRadioButtonsLayout->addWidget(mpPlottingSubWindowViewRadioButton);
   // set the layout of plotting view mode group
-  QGridLayout *plottingViewModeLayout = new QGridLayout;
-  plottingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  plottingViewModeLayout->addLayout(pPlottingRadioButtonsLayout, 0, 0);
-  mpPlottingViewModeGroupBox->setLayout(plottingViewModeLayout);
+  QGridLayout *pPlottingViewModeLayout = new QGridLayout;
+  pPlottingViewModeLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pPlottingViewModeLayout->addLayout(pPlottingRadioButtonsLayout, 0, 0);
+  mpPlottingViewModeGroupBox->setLayout(pPlottingViewModeLayout);
+  // Default View
+  mpDefaultViewGroupBox = new QGroupBox(tr("Default View"));
+  mpDefaultViewGroupBox->setToolTip(tr("This settings will be used when no preferredView annotation is defined."));
+  mpIconViewRadioButton = new QRadioButton(Helper::iconView);
+  mpDiagramViewRadioButton = new QRadioButton(Helper::diagramView);
+  mpDiagramViewRadioButton->setChecked(true);
+  mpTextViewRadioButton = new QRadioButton(Helper::modelicaTextView);
+  mpDocumentationViewRadioButton = new QRadioButton(Helper::documentationView);
+  QButtonGroup *pDefaultViewButtonGroup = new QButtonGroup;
+  pDefaultViewButtonGroup->addButton(mpIconViewRadioButton);
+  pDefaultViewButtonGroup->addButton(mpDiagramViewRadioButton);
+  pDefaultViewButtonGroup->addButton(mpTextViewRadioButton);
+  pDefaultViewButtonGroup->addButton(mpDocumentationViewRadioButton);
+  // default view radio buttons layout
+  QHBoxLayout *pDefaultViewRadioButtonsLayout = new QHBoxLayout;
+  pDefaultViewRadioButtonsLayout->addWidget(mpIconViewRadioButton);
+  pDefaultViewRadioButtonsLayout->addWidget(mpDiagramViewRadioButton);
+  pDefaultViewRadioButtonsLayout->addWidget(mpTextViewRadioButton);
+  pDefaultViewRadioButtonsLayout->addWidget(mpDocumentationViewRadioButton);
+  // set the layout of default view group
+  QGridLayout *pDefautlViewLayout = new QGridLayout;
+  pDefautlViewLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDefautlViewLayout->addLayout(pDefaultViewRadioButtonsLayout, 0, 0);
+  mpDefaultViewGroupBox->setLayout(pDefautlViewLayout);
   // set the layout
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setContentsMargins(0, 0, 0, 0);
@@ -733,6 +766,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   layout->addWidget(mpLibrariesBrowserGroupBox);
   layout->addWidget(mpModelingViewModeGroupBox);
   layout->addWidget(mpPlottingViewModeGroupBox);
+  layout->addWidget(mpDefaultViewGroupBox);
   setLayout(layout);
 }
 
@@ -809,6 +843,30 @@ QString GeneralSettingsPage::getPlottingViewMode()
     return Helper::tabbed;
 }
 
+void GeneralSettingsPage::setDefaultView(QString value)
+{
+  if (value.compare(Helper::iconView) == 0)
+    mpIconViewRadioButton->setChecked(true);
+  else if (value.compare(Helper::modelicaTextView) == 0)
+    mpTextViewRadioButton->setChecked(true);
+  else if (value.compare(Helper::documentationView) == 0)
+    mpDocumentationViewRadioButton->setChecked(true);
+  else
+    mpDiagramViewRadioButton->setChecked(true);
+}
+
+QString GeneralSettingsPage::getDefaultView()
+{
+  if (mpIconViewRadioButton->isChecked())
+    return Helper::iconView;
+  else if (mpTextViewRadioButton->isChecked())
+    return Helper::modelicaTextView;
+  else if (mpDocumentationViewRadioButton->isChecked())
+    return Helper::documentationView;
+  else
+    return Helper::diagramView;
+}
+
 //! Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.
 //! Allows user to choose a new working directory.
 void GeneralSettingsPage::selectWorkingDirectory()
@@ -862,6 +920,10 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   pSystemLibrariesLayout->addWidget(mpSystemLibrariesTree, 2, 0);
   pSystemLibrariesLayout->addWidget(mpSystemLibrariesButtonBox, 2, 1);
   mpSystemLibrariesGroupBox->setLayout(pSystemLibrariesLayout);
+  // force Modelica load checkbox
+  mpForceModelicaLoadCheckBox = new QCheckBox(tr("Force loading of Modelica Standard Library"));
+  mpForceModelicaLoadCheckBox->setToolTip(tr("This will make sure that Modelica and ModelicaReference will always load even if user has removed them from the list of system libraries."));
+  mpForceModelicaLoadCheckBox->setChecked(true);
   // user libraries groupbox
   mpUserLibrariesGroupBox = new QGroupBox(tr("User Libraries"));
   // user libraries tree
@@ -899,6 +961,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   QVBoxLayout *layout = new QVBoxLayout;
   layout->setContentsMargins(0, 0, 0, 0);
   layout->addWidget(mpSystemLibrariesGroupBox);
+  layout->addWidget(mpForceModelicaLoadCheckBox);
   layout->addWidget(mpUserLibrariesGroupBox);
   layout->addWidget(mpLibrariesNoteLabel);
   setLayout(layout);
@@ -908,6 +971,11 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
 QTreeWidget* LibrariesPage::getSystemLibrariesTree()
 {
   return mpSystemLibrariesTree;
+}
+
+QCheckBox* LibrariesPage::getForceModelicaLoadCheckBox()
+{
+  return mpForceModelicaLoadCheckBox;
 }
 
 //! Returns the User Libraries Tree instance.
