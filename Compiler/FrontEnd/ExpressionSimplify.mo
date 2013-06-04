@@ -3651,12 +3651,11 @@ algorithm
       then
         e2;
 
-    // (e1/e2)e3 => (e1e3)/e2
+    // e1*(e2/e3) => (e1e2)/e3
     case (DAE.MUL(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
       equation
-        res = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2),DAE.DIV(tp2),e3);
-      then
-        res;
+        (e,true) = simplify1(DAE.BINARY(e1,DAE.MUL(tp),e2));
+      then DAE.BINARY(e,DAE.DIV(tp2),e3);
 
     // 0 * a = 0
     case (DAE.MUL(ty = ty),_,e2)
@@ -4035,23 +4034,22 @@ algorithm
       then
         DAE.BINARY(e1_1,DAE.DIV(ty),e2);
 
-    // e2*e3 / e1 => e3/e1 * e2
+    // (e2*e3)/e1 => (e3/e1)*e2
     case (DAE.DIV(ty = tp2),DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp),exp2 = e3),e1)
       equation
-        true = Expression.isConst(e3) "(c1x)/c2" ;
         true = Expression.isConst(e1);
-        e = DAE.BINARY(e3,DAE.DIV(tp2),e1);
+        true = Expression.isConst(e3);
+        (e,true) = simplify1(DAE.BINARY(e3,DAE.DIV(tp2),e1));
       then
         DAE.BINARY(e,DAE.MUL(tp),e2);
 
     // e2*e3 / e1 => e2 / e1 * e3
     case (DAE.DIV(ty = tp2),DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp),exp2 = e3),e1)
       equation
-        true = Expression.isConst(e2) ;
         true = Expression.isConst(e1);
-        e = DAE.BINARY(e2,DAE.DIV(tp2),e1);
-      then
-        DAE.BINARY(e,DAE.MUL(tp),e3);
+        true = Expression.isConst(e2);
+        (e,true) = simplify1(DAE.BINARY(e2,DAE.DIV(tp2),e1));
+      then DAE.BINARY(e,DAE.MUL(tp),e3);
 
     // e ^ 1 => e
     case (DAE.POW(ty = _),e1,e)
