@@ -1,0 +1,1 @@
+/* The OSX linker cannot handle empty libraries */
