@@ -37,6 +37,7 @@
 #include <math.h>
 
 #include "../omc_inline.h"
+#include "../util/ModelicaUtilities.h"
 #ifdef _MSC_VER
 #include "../util/omc_msvc.h"
 #endif
@@ -432,7 +433,6 @@ static char parseHead(TEXT_FILE *f, const char* hdr, size_t hdrLen, const char *
 
 static size_t Text_readLine(TEXT_FILE *f, char **data, size_t *size)
 {
-  char *tmp = NULL;
   size_t col = 0;
   size_t i = 0;
   int ch = 0;
@@ -475,11 +475,9 @@ static char Text_findTable(TEXT_FILE *f, const char* tableName, size_t *cols, si
 {
   char *strLn=0;
   const char *tblName=0;
-  int ch=0;
   size_t buflen=0;
   size_t _cols = 0;
   size_t _rows = 0;
-  size_t i=0;
   size_t col = 0;
 
   while(!feof(f->fp))
@@ -515,7 +513,6 @@ static void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
   char *strLn=0;
   size_t buflen=0;
   size_t sl=0;
-  size_t nlen=0;
   char *number=0;
   char *entp = 0;
   for(i = 0; i < rows; ++i)
@@ -606,6 +603,7 @@ static size_t Mat_getTypeSize(MAT_FILE *f, long type)
   default:
     fclose(f->fp);
     ModelicaFormatError("Corrupted MAT-file: `%s'",f->filename);
+    return 0; /* Cannot reach this */
   }
 }
 
@@ -783,7 +781,6 @@ static void csv_close(CSV_FILE *f)
 
 static size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
 {
-  char *tmp = NULL;
   size_t col = 0;
   size_t i = 0;
   int ch = 0;
@@ -884,7 +881,6 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
 
 static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows, size_t cols)
 {
-  char stop=0;
   char *strLn=NULL;
   size_t buflen=0;
   size_t c=0;
@@ -929,7 +925,6 @@ static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size
 */
 static void openFile(const char *filename, const char* tableName, size_t *rows, size_t *cols, double **data)
 {
-  size_t i = 0;
   size_t sl = 0;
   char filetype[5] = {0};
   /* get File Type */
@@ -1029,7 +1024,6 @@ static InterpolationTable* InterpolationTable_init(double time, double startTime
                int tableDim2, int colWise)
 {
   size_t i=0;
-  size_t l=0;
   size_t size = tableDim1*tableDim2;
   InterpolationTable *tpl = 0;
   tpl = (InterpolationTable*)calloc(1,sizeof(InterpolationTable));
@@ -1206,7 +1200,6 @@ static InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* 
            int tableDim1, int tableDim2, int colWise)
 {
   size_t i=0;
-  size_t l=0;
   size_t size = tableDim1*tableDim2;
   InterpolationTable2D *tpl = 0;
   tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
