@@ -35,14 +35,6 @@
 #include <stdlib.h>
 #include "openmodelica.h"
 
-#define NR_REAL_ELEMENTS    1000000
-#define NR_INTEGER_ELEMENTS 1000000
-#define NR_STRING_ELEMENTS  10000
-#define NR_BOOLEAN_ELEMENTS 10000
-#define NR_SIZE_ELEMENTS    1000000
-#define NR_INDEX_ELEMENTS   1000000
-#define NR_CHAR_ELEMENTS    10000
-
 extern int (*get_thread_index)(void); /* Implemented by generated code; different for each thread implementation */
 extern state get_memory_state(void);
 extern void restore_memory_state(state restore_state);

@@ -1215,7 +1215,10 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
    *      currently it only possible to call it with discontinuities
    */
   let body = (parameterEquations |> eq  =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+      <<
+      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)%>
+      restore_memory_state(mem_state);
+      >>
     ;separator="\n")
   <<
   <%&tmp%>
@@ -1225,7 +1228,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
     <%varDecls%>
     mem_state = get_memory_state();
     <%body%>
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -1309,7 +1311,10 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
   let body = (initalEquations |> eq  =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+      <<
+      <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)%>
+      restore_memory_state(mem_state);
+      >>
     ;separator="\n")
   let info = match useSymbolicInitialization
          case true then
@@ -1334,7 +1339,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     data->simulationInfo.discreteCall = 1;
     <%body%>
     data->simulationInfo.discreteCall = 0;
-    restore_memory_state(mem_state);
 
     return 0;
   }
