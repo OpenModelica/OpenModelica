@@ -333,23 +333,39 @@ function abs = $overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.real
   See <a href=\"modelica://ModelicaReference.Operators.'abs()'\">abs()</a>
 </html>"));
 
-function outerProduct = $overload(OpenModelica.Internal.outerProductInt,OpenModelica.Internal.outerProductReal)
-  "Outer product of two vectors"
-  annotation(Documentation(info="<html>
+function outerProduct "Outer product of two vectors"
+  input Real[:] v1;
+  input Real[:] v2;
+  output Real[size(v1,1),size(v2,1)] o;
+algorithm
+  o := matrix(v1) * transpose(matrix(v2));
+annotation(__OpenModelica_EarlyInline=true,preferredView="text",Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'outerProduct()'\">outerProduct()</a>
 </html>"));
+end outerProduct;
 
-function cross = $overload(OpenModelica.Internal.crossInt,OpenModelica.Internal.crossReal)
-  "Cross product of two 3-vectors"
-  annotation(Documentation(info="<html>
+function cross "Cross product of two 3-vectors"
+  input Real[3] x;
+  input Real[3] y;
+  output Real[3] z;
+/* Not working due to problems with non-builtin overloaded functions? Maybe it works now. Maybe it's bad to inline due to evaluating the same element many times?
+algorithm
+  z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
+*/
+external "builtin" cross(x,y,z);
+  annotation(__OpenModelica_EarlyInline = true, preferredView="text",Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cross()'\">cross()</a>
 </html>"));
+end cross;
 
-function skew = $overload(OpenModelica.Internal.skewInt,OpenModelica.Internal.skewReal)
-  "The skew matrix associated with the vector"
+function skew "The skew matrix associated with the vector"
+  input Real[3] x;
+  output Real[3,3] y;
+external "builtin" skew(x,y);
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'skew()'\">skew()</a>
 </html>"));
+end skew;
 
 // Dummy functions that can't be properly defined in Modelica, but used by
 // SCodeFlatten to define which builtin functions exist (SCodeFlatten doesn't
@@ -772,61 +788,6 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   external "builtin" z=rem(x,y);
   annotation(preferredView="text");
   end realRem;
-
-  function outerProductInt
-    input Integer[:] v1;
-    input Integer[:] v2;
-    output Integer[size(v1,1),size(v2,1)] o;
-  algorithm
-    o := matrix(v1) * transpose(matrix(v2));
-  annotation(__OpenModelica_EarlyInline=true,preferredView="text");
-  end outerProductInt;
-
-  function outerProductReal
-    input Real[:] v1;
-    input Real[:] v2;
-    output Real[size(v1,1),size(v2,1)] o;
-  algorithm
-    o := matrix(v1) * transpose(matrix(v2));
-  annotation(__OpenModelica_EarlyInline=true,preferredView="text");
-  end outerProductReal;
-
-  function crossInt
-    input Integer[3] x;
-    input Integer[3] y;
-    output Integer[3] z;
-    external "builtin" cross(x,y,z);
-  /* Not working due to problems with non-builtin overloaded functions
-  algorithm
-    z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
-  */
-  annotation(__OpenModelica_EarlyInline = true, preferredView="text");
-  end crossInt;
-
-  function crossReal
-    input Real[3] x;
-    input Real[3] y;
-    output Real[3] z;
-    external "builtin" cross(x,y,z);
-  /* Not working due to problems with non-builtin overloaded functions
-  algorithm
-    z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
-  */
-  annotation(__OpenModelica_EarlyInline = true, preferredView="text");
-  end crossReal;
-
-  function skewInt
-    input Integer[3] x;
-    output Integer[3,3] y;
-    external "builtin" skew(x,y);
-  annotation(preferredView="text");
-  end skewInt;
-
-  function skewReal
-    input Real[3] x;
-    output Real[3,3] y;
-    external "builtin" skew(x,y);
-  end skewReal;
 
   package Architecture
     function numBits
