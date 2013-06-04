@@ -651,8 +651,8 @@ function is called.
 </p>
 
 <p>
-If MyLib.Vehicle is simulated, the call of <pre>getInstanceName()</pre> might return:
-  <pre>Vehicle.engine.controller</pre>
+If MyLib.Vehicle is simulated, the call of <b>getInstanceName()</b> might return:
+  <em>Vehicle.engine.controller</em>
 </p>
 <p>
 Outside of a model or block, the return value is not specified.
