@@ -374,7 +374,6 @@ bool Component::canUseDefaultAnnotation(Component *pComponent)
 
 void Component::createActions()
 {
-  bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
   // Parameters Action
   mpParametersAction = new QAction(Helper::parameters, mpGraphicsView);
   mpParametersAction->setStatusTip(tr("Shows the component parameters"));
@@ -382,7 +381,6 @@ void Component::createActions()
   // Attributes Action
   mpAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpAttributesAction->setStatusTip(tr("Shows the component attributes"));
-  mpAttributesAction->setDisabled(isSystemLibrary);
   connect(mpAttributesAction, SIGNAL(triggered()), SLOT(showAttributes()));
   // View Class Action
   mpViewClassAction = new QAction(QIcon(":/Resources/icons/model.png"), Helper::viewClass, mpGraphicsView);

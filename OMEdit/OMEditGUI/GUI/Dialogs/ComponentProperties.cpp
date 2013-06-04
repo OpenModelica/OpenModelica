@@ -657,6 +657,8 @@ void ComponentAttributes::setUpDialog()
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+    mpOkButton->setDisabled(true);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
