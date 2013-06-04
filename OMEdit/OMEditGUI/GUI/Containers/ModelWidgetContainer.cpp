@@ -1438,17 +1438,14 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
   ShapeAnnotation *pShapeAnnotation = dynamic_cast<ShapeAnnotation*>(itemAt(event->pos()));
   if (pShapeAnnotation)
   {
-    if (!getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
-    {
-      /*
+    /*
         Double click on Component also end up here.
         But we don't have GraphicsView for the shapes inside the Component so we can go out of this block.
         */
-      if (pShapeAnnotation->getGraphicsView())
-      {
-        pShapeAnnotation->showShapeProperties();
-        return;
-      }
+    if (pShapeAnnotation->getGraphicsView())
+    {
+      pShapeAnnotation->showShapeProperties();
+      return;
     }
   }
   QGraphicsView::mouseDoubleClickEvent(event);

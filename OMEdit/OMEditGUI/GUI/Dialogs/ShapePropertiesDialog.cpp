@@ -390,6 +390,11 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpApplyButton = new QPushButton(tr("Apply"));
   mpApplyButton->setAutoDefault(false);
   connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applyShapeProperties()));
+  if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  {
+    mpOkButton->setDisabled(true);
+    mpApplyButton->setDisabled(true);
+  }
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);

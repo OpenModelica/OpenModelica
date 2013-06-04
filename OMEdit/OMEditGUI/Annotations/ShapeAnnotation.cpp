@@ -420,10 +420,8 @@ void ShapeAnnotation::setUserDefaults()
   */
 void ShapeAnnotation::createActions()
 {
-  bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
   mpShapePropertiesAction = new QAction(Helper::properties, mpGraphicsView);
   mpShapePropertiesAction->setStatusTip(tr("Shows the shape properties"));
-  mpShapePropertiesAction->setDisabled(isSystemLibrary);
   connect(mpShapePropertiesAction, SIGNAL(triggered()), SLOT(showShapeProperties()));
 }
 
