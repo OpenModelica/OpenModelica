@@ -828,7 +828,6 @@ void GraphicsView::createActions()
   bool isSystemLibrary = mpModelWidget->getLibraryTreeNode()->isSystemLibrary();
   // Graphics View Properties Action
   mpPropertiesAction = new QAction(Helper::properties, this);
-  mpPropertiesAction->setDisabled(isSystemLibrary);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
   // Connection Delete Action
   mpCancelConnectionAction = new QAction(QIcon(":/Resources/icons/delete.png"), tr("Cancel Connection"), this);
