@@ -22,7 +22,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall boehm-gc
+.PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns install-casadi runtimeCPPinstall boehm-gc
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -37,6 +37,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
+	mkdir -p $(builddir_share)/casadi/scripts/
 
 release: omc-diff omc
 
@@ -45,6 +46,9 @@ install-python:
 
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
+	
+install-casadi: mkbuilddirs
+	(time cp -rp 3rdParty/casadi/* $(builddir_share)/casadi/)
 
 interactive: .testvariables mkbuilddirs boehm-gc fmil
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
