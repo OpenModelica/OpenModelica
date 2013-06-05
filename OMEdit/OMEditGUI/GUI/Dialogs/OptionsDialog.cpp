@@ -1047,8 +1047,8 @@ void LibrariesPage::openEditUserLibrary()
     AddUserLibraryDialog *pAddUserLibraryWidget = new AddUserLibraryDialog(this);
     pAddUserLibraryWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Edit User Library")));
     pAddUserLibraryWidget->mEditFlag = true;
-    pAddUserLibraryWidget->mpEncodingTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(0));
-    pAddUserLibraryWidget->mpPathTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(1));
+    pAddUserLibraryWidget->mpPathTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(0));
+    pAddUserLibraryWidget->mpEncodingTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(1));
     pAddUserLibraryWidget->show();
   }
 }
