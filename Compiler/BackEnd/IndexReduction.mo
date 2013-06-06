@@ -7523,11 +7523,11 @@ algorithm
   outGraph := match(inNode, eqns, mapIncRowEqn, numberMode, inGraph)
     case(_,_,_,false,_)
       equation
-			  eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
-			  str = BackendDump.equationString(eqn);
-			  //str := intString(inNode);
-			  str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
-			  str = Util.xmlEscape(str);
+        eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
+        str = BackendDump.equationString(eqn);
+        //str := intString(inNode);
+        str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
+        str = Util.xmlEscape(str);
       then GraphML.addNode("n" +& intString(inNode),str,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),NONE(),inGraph);
     case(_,_,_,true,_)
       equation

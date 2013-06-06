@@ -580,11 +580,11 @@ algorithm
   _ := match(iGraph, fileName)
     case(GRAPH(components = components), _)
       equation 
-			  graph = GraphML.getGraph("TaskGraph", true);
-			  graph = List.fold(components, addSccToGraphML, graph);
-			  GraphML.dumpGraph(graph, fileName);
-			then ();
-	end match;
+        graph = GraphML.getGraph("TaskGraph", true);
+        graph = List.fold(components, addSccToGraphML, graph);
+        GraphML.dumpGraph(graph, fileName);
+      then ();
+  end match;
 end dumpAsGraphML_SccLevel;
 
 
