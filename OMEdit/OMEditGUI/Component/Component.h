@@ -68,15 +68,16 @@ class Component : public QObject, public QGraphicsItem
   Q_INTERFACES(QGraphicsItem)
 public:
   Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-                QPointF position, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent = 0);
+            QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent = 0);
   Component(QString annotation, QString className, StringHandler::ModelicaClasses type, Component *pParent);
   Component(QString annotation, QString transformationString, ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type,
-                Component *pParent);
+            Component *pParent);
   /* Used for Library Component */
   Component(QString annotation, QString className, OMCProxy *pOMCProxy, Component *pParent = 0);
   ~Component();
   void initialize();
   bool isLibraryComponent();
+  bool isInheritedComponent();
   void getClassInheritedComponents(bool isRootComponent = false);
   void parseAnnotationString(QString annotation);
   void getClassComponents();
@@ -125,6 +126,7 @@ private:
   GraphicsView *mpGraphicsView;
   Component *mpParentComponent;
   bool mIsLibraryComponent;
+  bool mIsInheritedComponent;
   CoOrdinateSystem *mpCoOrdinateSystem;
   Transformation *mpTransformation;
   QGraphicsRectItem *mpResizerRectangle;

@@ -49,8 +49,8 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, Component *pParent)
   setPos(mOrigin);
 }
 
-EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(pGraphicsView, 0)
+EllipseAnnotation::EllipseAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   // set the default values
@@ -60,8 +60,8 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
-  /* Only set the ItemIsMovable flag on shape if the class is not a system library class. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
     setFlag(QGraphicsItem::ItemIsMovable);
   mpGraphicsView->addShapeObject(this);
   mpGraphicsView->scene()->addItem(this);
@@ -170,7 +170,7 @@ QString EllipseAnnotation::getShapeAnnotation()
 
 void EllipseAnnotation::duplicate()
 {
-  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
+  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", false, mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pEllipseAnnotation->setOrigin(mOrigin + gridStep);

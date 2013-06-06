@@ -39,11 +39,12 @@
 #include "ComponentProperties.h"
 
 Component::Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-                             QPointF position, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent)
+                     QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent)
   : QGraphicsItem(pParent), mName(name), mClassName(className), mType(type), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
     mpParentComponent(pParent)
 {
   mIsLibraryComponent = false;
+  mIsInheritedComponent = inheritedComponent;
   initialize();
   mpComponentInfo = 0;
   setComponentFlags();
@@ -86,6 +87,7 @@ Component::Component(QString annotation, QString className, StringHandler::Model
   : QGraphicsItem(pParent), mName(""), mClassName(className), mType(type), mpParentComponent(pParent)
 {
   mIsLibraryComponent = mpParentComponent->isLibraryComponent() ? true : false;
+  mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
   mpComponentInfo = 0;
   mpTransformation = 0;
   mpOMCProxy = pParent->getOMCProxy();
@@ -108,6 +110,7 @@ Component::Component(QString annotation, QString transformationString, Component
   mName = mpComponentInfo->getName();
   mClassName = mpComponentInfo->getClassName();
   mIsLibraryComponent = mpParentComponent->isLibraryComponent() ? true : false;
+  mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
   mpOMCProxy = pParent->getOMCProxy();
   mpGraphicsView = isLibraryComponent() ? 0 : pParent->getGraphicsView();
   initialize();
@@ -129,6 +132,7 @@ Component::Component(QString annotation, QString className, OMCProxy *pOMCProxy,
   : QGraphicsItem(pParent), mName(className), mClassName(className), mpParentComponent(pParent)
 {
   mIsLibraryComponent = true;
+  mIsInheritedComponent = false;
   mpGraphicsView = 0;
   initialize();
   mpParentComponent = pParent;
@@ -186,6 +190,11 @@ bool Component::isLibraryComponent()
   return mIsLibraryComponent;
 }
 
+bool Component::isInheritedComponent()
+{
+  return mIsInheritedComponent;
+}
+
 void Component::getClassInheritedComponents(bool isRootComponent)
 {
   // read the component inheritance
@@ -237,8 +246,8 @@ void Component::parseAnnotationString(QString annotation)
     return;
   // read aspectratio, scale, grid
   //! @note Don't get the preserAspectRatio and InitialScale. Use the values defined for the layer.
-//  mpCoOrdinateSystem->setPreserveAspectRatio(list.at(4).contains("true"));
-//  mpCoOrdinateSystem->setInitialScale(list.at(5).toFloat());
+  //  mpCoOrdinateSystem->setPreserveAspectRatio(list.at(4).contains("true"));
+  //  mpCoOrdinateSystem->setInitialScale(list.at(5).toFloat());
   qreal horizontal = list.at(6).toFloat();
   qreal vertical = list.at(7).toFloat();
   mpCoOrdinateSystem->setGrid(QPointF(horizontal, vertical));
@@ -340,7 +349,7 @@ void Component::getClassComponents()
       {
         QString result = mpOMCProxy->getIconAnnotation(pComponentInfo->getClassName());
         Component *pComponent = new Component(result, componentsAnnotations.at(i), pComponentInfo, StringHandler::Connector,
-                                                      getRootParentComponent());
+                                              getRootParentComponent());
         mpComponentsList.append(pComponent);
       }
     }
@@ -405,7 +414,7 @@ void Component::createResizerItems()
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
-  mpBottomLeftResizerItem->blockSignals(isSystemLibrary);
+  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
   mpTopLeftResizerItem->setPos(mapFromScene(x1, y2));
@@ -414,7 +423,7 @@ void Component::createResizerItems()
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
-  mpTopLeftResizerItem->blockSignals(isSystemLibrary);
+  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
   mpTopRightResizerItem->setPos(mapFromScene(x2, y2));
@@ -423,7 +432,7 @@ void Component::createResizerItems()
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
-  mpTopRightResizerItem->blockSignals(isSystemLibrary);
+  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
   mpBottomRightResizerItem->setPos(mapFromScene(x2, y1));
@@ -432,7 +441,7 @@ void Component::createResizerItems()
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(int,QPointF)), SLOT(resizeComponent(int,QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SIGNAL(componentTransformHasChanged()));
-  mpBottomRightResizerItem->blockSignals(isSystemLibrary);
+  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
 }
 
 void Component::getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2)
@@ -602,16 +611,16 @@ QPointF Component::getOldPosition()
 void Component::setComponentFlags()
 {
   // set the item flags
-  /* Only set the ItemIsMovable flag on component if the class is not a system library class. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  /* Set the ItemIsMovable flag on component if the class is not a system library class OR component is not an inherited component. */
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
   {
     if(!flags().testFlag((QGraphicsItem::ItemIsMovable)))
       setFlag(QGraphicsItem::ItemIsMovable);
   }
-    if(!flags().testFlag((QGraphicsItem::ItemIsSelectable)))
-      setFlag(QGraphicsItem::ItemIsSelectable);
-    if(!flags().testFlag((QGraphicsItem::ItemSendsGeometryChanges)))
-      setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  if(!flags().testFlag((QGraphicsItem::ItemIsSelectable)))
+    setFlag(QGraphicsItem::ItemIsSelectable);
+  if(!flags().testFlag((QGraphicsItem::ItemSendsGeometryChanges)))
+    setFlag(QGraphicsItem::ItemSendsGeometryChanges);
 }
 
 void Component::unsetComponentFlags()
@@ -682,7 +691,7 @@ QString Component::getPlacementAnnotation()
   // create the placement annotation string
   QString placementAnnotationString = "annotate=Placement(";
   if (mpTransformation)
-  placementAnnotationString.append("visible=").append(mpTransformation->getVisible() ? "true" : "false");
+    placementAnnotationString.append("visible=").append(mpTransformation->getVisible() ? "true" : "false");
   if (mType == StringHandler::Connector)
   {
     if (mpGraphicsView->getViewType() == StringHandler::Icon)
@@ -819,7 +828,7 @@ void Component::duplicateHelper(GraphicsView *pGraphicsView)
       QString originalModifierName = QString(mName).append(".").append(componentModifier);
       QString duplicatedModifierName = QString(pComponent->getName()).append(".").append(componentModifier);
       if (mpOMCProxy->setComponentModifierValue(className, duplicatedModifierName,
-                                            mpOMCProxy->getComponentModifierValue(className, originalModifierName).prepend("=")))
+                                                mpOMCProxy->getComponentModifierValue(className, originalModifierName).prepend("=")))
         modifierValueChanged = true;
 
     }
@@ -1298,12 +1307,9 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
  */
 void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
-  {
-    MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
-    if (!pMainWindow->getConnectModeAction()->isChecked())
-      getRootParentComponent()->showParameters(); /* if user has double clicked on a component and not on a connector. */
-  }
+  MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  if (!pMainWindow->getConnectModeAction()->isChecked())
+    getRootParentComponent()->showParameters(); /* if user has double clicked on a component and not on a connector. */
   QGraphicsItem::mouseDoubleClickEvent(event);
 }
 
@@ -1347,6 +1353,15 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
   menu.addAction(pComponent->getViewClassAction());
   menu.addAction(pComponent->getViewDocumentationAction());
   menu.addSeparator();
+  if (pComponent->isInheritedComponent())
+  {
+    mpGraphicsView->getDeleteAction()->setDisabled(true);
+    mpGraphicsView->getDuplicateAction()->setDisabled(true);
+    mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
+    mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
+    mpGraphicsView->getFlipHorizontalAction()->setDisabled(true);
+    mpGraphicsView->getFlipVerticalAction()->setDisabled(true);
+  }
   menu.addAction(mpGraphicsView->getDeleteAction());
   menu.addAction(mpGraphicsView->getDuplicateAction());
   menu.addSeparator();
@@ -1366,8 +1381,8 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
     {
       showResizerItems();
       setCursor(Qt::SizeAllCursor);
-      /* Only allow manipulations on component if the class is not a system library class. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+      /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
       {
         connect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), SLOT(deleteMe()), Qt::UniqueConnection);
         connect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), SLOT(duplicate()), Qt::UniqueConnection);
@@ -1408,12 +1423,12 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
           if (!mpTopRightResizerItem->isPressed())
             if (!mpBottomRightResizerItem->isPressed())
               hideResizerItems();
-      /* Always hide ResizerItem's for system library class. */
-      if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+      /* Always hide ResizerItem's for system library class and inherited components. */
+      if (mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || isInheritedComponent())
         hideResizerItems();
       unsetCursor();
-      /* Only allow manipulations on component if the class is not a system library class. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+      /* Only allow manipulations on component if the class is not a system library class OR component is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedComponent())
       {
         disconnect(mpGraphicsView->getDeleteAction(), SIGNAL(triggered()), this, SLOT(deleteMe()));
         disconnect(mpGraphicsView->getDuplicateAction(), SIGNAL(triggered()), this, SLOT(duplicate()));

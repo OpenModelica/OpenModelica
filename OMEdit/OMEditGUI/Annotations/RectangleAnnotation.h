@@ -48,7 +48,7 @@ class RectangleAnnotation : public ShapeAnnotation
   Q_OBJECT
 public:
   RectangleAnnotation(QString annotation, Component *pParent);
-  RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  RectangleAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;

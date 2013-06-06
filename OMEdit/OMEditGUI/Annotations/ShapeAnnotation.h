@@ -105,15 +105,17 @@ class ShapeAnnotation : public QObject, public QGraphicsItem, public GraphicItem
   Q_INTERFACES(QGraphicsItem)
 private:
   bool mIsCustomShape;
+  bool mIsInheritedShape;
   QPointF mOldPosition;
   bool mIsCornerItemClicked;
   QAction *mpShapePropertiesAction;
 public:
   ShapeAnnotation(QGraphicsItem *pParent);
-  ShapeAnnotation(GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
+  ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
   ~ShapeAnnotation();
   void setDefaults();
   void setUserDefaults();
+  bool isInheritedShape();
   void createActions();
   QPainterPath addPathStroker(QPainterPath &path) const;
   QRectF getBoundingRect() const;

@@ -48,8 +48,8 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, Component *pParent)
   setPos(mOrigin);
 }
 
-RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(pGraphicsView, 0)
+RectangleAnnotation::RectangleAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   // set the default values
@@ -59,8 +59,8 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, GraphicsView *pGrap
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
-  /* Only set the ItemIsMovable flag on shape if the class is not a system library class. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
     setFlag(QGraphicsItem::ItemIsMovable);
   mpGraphicsView->addShapeObject(this);
   mpGraphicsView->scene()->addItem(this);
@@ -147,7 +147,7 @@ QString RectangleAnnotation::getShapeAnnotation()
 
 void RectangleAnnotation::duplicate()
 {
-  RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", mpGraphicsView);
+  RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", false, mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pRectangleAnnotation->setOrigin(mOrigin + gridStep);

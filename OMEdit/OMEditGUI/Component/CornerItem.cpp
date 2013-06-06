@@ -57,8 +57,10 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   setPos(x, y);
   mRectangle = QRectF (-3, -3, 6, 6);
   mpShapeAnnotation = pParent;
-  /* Only shapes manipulation via CornerItem's if the class is not a system library class. */
-  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  if (mpShapeAnnotation->isInheritedShape())
+    setFlag(QGraphicsItem::ItemIsMovable, false);
+  /* Only shapes manipulation via CornerItem's if the class is not a system library class OR not an inherited shape. */
+  if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !mpShapeAnnotation->isInheritedShape())
   {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
     connect(this, SIGNAL(cornerItemPress()), mpShapeAnnotation, SLOT(cornerItemPressed()));

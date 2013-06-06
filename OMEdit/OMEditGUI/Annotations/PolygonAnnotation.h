@@ -48,7 +48,7 @@ class PolygonAnnotation : public ShapeAnnotation
   Q_OBJECT
 public:
   PolygonAnnotation(QString annotation, Component *pParent);
-  PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  PolygonAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QPainterPath getShape() const;
   QRectF boundingRect() const;

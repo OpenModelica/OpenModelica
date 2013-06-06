@@ -50,8 +50,8 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pParent)
   setPos(mOrigin);
 }
 
-LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(pGraphicsView, 0)
+LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ShapeType;
@@ -63,8 +63,8 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   // set users default value by reading the settings file.
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation(annotation);
-  /* Only set the ItemIsMovable flag on shape if the class is not a system library class. */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
     setFlag(QGraphicsItem::ItemIsMovable);
   mpGraphicsView->addShapeObject(this);
   mpGraphicsView->scene()->addItem(this);
@@ -86,8 +86,9 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
   setStartComponent(pStartComponent);
 }
 
-LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, Component *pEndComponent, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(pGraphicsView, 0)
+LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Component *pStartComponent, Component *pEndComponent,
+                               GraphicsView *pGraphicsView)
+  : ShapeAnnotation(inheritedShape, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
@@ -584,7 +585,7 @@ void LineAnnotation::updateConnectionAnnotation()
 
 void LineAnnotation::duplicate()
 {
-  LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
+  LineAnnotation *pLineAnnotation = new LineAnnotation("", false, mpGraphicsView);
   QPointF gridStep(mpGraphicsView->getCoOrdinateSystem()->getHorizontalGridStep(),
                    mpGraphicsView->getCoOrdinateSystem()->getVerticalGridStep());
   pLineAnnotation->setOrigin(mOrigin + gridStep);

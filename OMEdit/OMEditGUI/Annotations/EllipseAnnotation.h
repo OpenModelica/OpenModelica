@@ -48,7 +48,7 @@ class EllipseAnnotation : public ShapeAnnotation
   Q_OBJECT
 public:
   EllipseAnnotation(QString annotation, Component *pParent);
-  EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView);
+  EllipseAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;

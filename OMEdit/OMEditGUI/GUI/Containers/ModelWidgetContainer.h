@@ -165,7 +165,7 @@ public:
   QAction* getFlipVerticalAction();
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, QString className, QString transformationString, QPointF point, StringHandler::ModelicaClasses type,
-                          bool addObject = true, bool openingClass = false);
+                          bool addObject = true, bool openingClass = false, bool inheritedClass = false);
   void addComponentObject(Component *pComponent);
   void deleteComponentObject(Component *pComponent);
   Component* getComponentObject(QString componentName);
@@ -296,9 +296,9 @@ public:
   void setModelModified();
   void updateParentModelsText(QString className);
   void getModelComponents(QString className, bool inheritedCycle = false);
-  void getModelIconDiagramShapes(QString className);
-  void getModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType);
-  void getModelConnections(QString className);
+  void getModelIconDiagramShapes(QString className, bool inheritedCycle = false);
+  void getModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle = false);
+  void getModelConnections(QString className, bool inheritedCycle = false);
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void refresh();
 private:

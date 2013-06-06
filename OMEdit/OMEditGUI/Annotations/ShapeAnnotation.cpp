@@ -333,6 +333,7 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   mpGraphicsView = 0;
   mpTransformation = 0;
   mIsCustomShape = false;
+  mIsInheritedShape = false;
   setOldPosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
 }
@@ -341,12 +342,13 @@ ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   \param pGraphicsView - pointer to GraphicsView
   \param pParent - pointer to QGraphicsItem
   */
-ShapeAnnotation::ShapeAnnotation(GraphicsView *pGraphicsView, QGraphicsItem *pParent)
+ShapeAnnotation::ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
   mpGraphicsView = pGraphicsView;
   mpTransformation = new Transformation(StringHandler::Diagram);
   mIsCustomShape = true;
+  mIsInheritedShape = inheritedShape;
   setOldPosition(QPointF(0, 0));
   mIsCornerItemClicked = false;
   createActions();
@@ -413,6 +415,11 @@ void ShapeAnnotation::setUserDefaults()
   if (pOptionsDialog->getFillStylePage()->getFillColor().isValid())
     mFillColor = pOptionsDialog->getFillStylePage()->getFillColor();
   mFillPattern = StringHandler::getFillPatternType(pOptionsDialog->getFillStylePage()->getFillPattern());
+}
+
+bool ShapeAnnotation::isInheritedShape()
+{
+  return mIsInheritedShape;
 }
 
 /*!
@@ -1429,6 +1436,13 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   QMenu menu(mpGraphicsView);
   menu.addAction(mpShapePropertiesAction);
   menu.addSeparator();
+  if (isInheritedShape())
+  {
+    mpGraphicsView->getDeleteAction()->setDisabled(true);
+    mpGraphicsView->getDuplicateAction()->setDisabled(true);
+    mpGraphicsView->getRotateClockwiseAction()->setDisabled(true);
+    mpGraphicsView->getRotateAntiClockwiseAction()->setDisabled(true);
+  }
   if (lineType == LineAnnotation::ConnectionType)
   {
     menu.addAction(mpGraphicsView->getDeleteConnectionAction());
@@ -1464,8 +1478,8 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     {
       setCornerItemsActive();
       setCursor(Qt::SizeAllCursor);
-      /* Only allow manipulations on shapes if the class is not a system library class. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+      /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
       {
         if (lineType == LineAnnotation::ConnectionType)
         {
@@ -1507,8 +1521,8 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     {
       setCornerItemsPassive();
       unsetCursor();
-      /* Only allow manipulations on shapes if the class is not a system library class. */
-      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+      /* Only allow manipulations on shapes if the class is not a system library class OR shape is not an inherited component. */
+      if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
       {
         if (lineType == LineAnnotation::ConnectionType)
         {

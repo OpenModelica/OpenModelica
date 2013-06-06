@@ -442,7 +442,7 @@ bool GraphicsView::addComponent(QString className, QPointF position)
 }
 
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
-                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass)
+                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass, bool inheritedClass)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotation;
@@ -451,8 +451,8 @@ void GraphicsView::addComponentToView(QString name, QString className, QString t
     annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
   else
     annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-  Component *pComponent;
-  pComponent = new Component(annotation, name, className, type, transformationString, point, pMainWindow->getOMCProxy(), this);
+  Component *pComponent = new Component(annotation, name, className, type, transformationString, point, inheritedClass,
+                                        pMainWindow->getOMCProxy(), this);
   if (!openingClass)
   {
     // unselect all items
@@ -635,7 +635,7 @@ void GraphicsView::createLineShape(QPointF point)
   if (!isCreatingLineShape())
   {
     setIsCreatingLineShape(true);
-    mpLineShapeAnnotation = new LineAnnotation("", this);
+    mpLineShapeAnnotation = new LineAnnotation("", false, this);
     mpLineShapeAnnotation->addPoint(point);
     mpLineShapeAnnotation->addPoint(point);
   }
@@ -654,7 +654,7 @@ void GraphicsView::createPolygonShape(QPointF point)
   if (!isCreatingPolygonShape())
   {
     setIsCreatingPolygonShape(true);
-    mpPolygonShapeAnnotation = new PolygonAnnotation("", this);
+    mpPolygonShapeAnnotation = new PolygonAnnotation("", false, this);
     mpPolygonShapeAnnotation->addPoint(point);
     mpPolygonShapeAnnotation->addPoint(point);
     mpPolygonShapeAnnotation->addPoint(point);
@@ -674,7 +674,7 @@ void GraphicsView::createRectangleShape(QPointF point)
   if (!isCreatingRectangleShape())
   {
     setIsCreatingRectangleShape(true);
-    mpRectangleShapeAnnotation = new RectangleAnnotation("", this);
+    mpRectangleShapeAnnotation = new RectangleAnnotation("", false, this);
     mpRectangleShapeAnnotation->replaceExtent(0, point);
     mpRectangleShapeAnnotation->replaceExtent(1, point);
   }
@@ -707,7 +707,7 @@ void GraphicsView::createEllipseShape(QPointF point)
   if (!isCreatingEllipseShape())
   {
     setIsCreatingEllipseShape(true);
-    mpEllipseShapeAnnotation = new EllipseAnnotation("", this);
+    mpEllipseShapeAnnotation = new EllipseAnnotation("", false, this);
     mpEllipseShapeAnnotation->replaceExtent(0, point);
     mpEllipseShapeAnnotation->replaceExtent(1, point);
   }
@@ -740,7 +740,7 @@ void GraphicsView::createTextShape(QPointF point)
   if (!isCreatingTextShape())
   {
     setIsCreatingTextShape(true);
-    mpTextShapeAnnotation = new TextAnnotation("", this);
+    mpTextShapeAnnotation = new TextAnnotation("", false, this);
     mpTextShapeAnnotation->setTextString("text");
     mpTextShapeAnnotation->replaceExtent(0, point);
     mpTextShapeAnnotation->replaceExtent(1, point);
@@ -775,7 +775,7 @@ void GraphicsView::createBitmapShape(QPointF point)
   if (!isCreatingBitmapShape())
   {
     setIsCreatingBitmapShape(true);
-    mpBitmapShapeAnnotation = new BitmapAnnotation("", this);
+    mpBitmapShapeAnnotation = new BitmapAnnotation("", false, this);
     mpBitmapShapeAnnotation->replaceExtent(0, point);
     mpBitmapShapeAnnotation->replaceExtent(1, point);
   }
@@ -2150,19 +2150,19 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
     if (!transformation.isEmpty())
     {
       mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                                QPointF(0.0, 0.0), type, false, true);
+                                                QPointF(0.0, 0.0), type, false, true, inheritedCycle);
       if (type == StringHandler::Connector && !pComponentInfo->getProtected())
       {
         // add the component to the icon view.
         mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                               QPointF(0.0, 0.0), type, false, true);
+                                               QPointF(0.0, 0.0), type, false, true, inheritedCycle);
       }
     }
     i++;
   }
 }
 
-void ModelWidget::getModelIconDiagramShapes(QString className)
+void ModelWidget::getModelIconDiagramShapes(QString className, bool inheritedCycle)
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   // get the inherited components of the class
@@ -2177,16 +2177,16 @@ void ModelWidget::getModelIconDiagramShapes(QString className)
       */
     if (pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)
       return;
-    getModelIconDiagramShapes(inheritedClass);
+    getModelIconDiagramShapes(inheritedClass, true);
   }
   OMCProxy *pOMCProxy = mpModelWidgetContainer->getMainWindow()->getOMCProxy();
   QString iconAnnotationString = pOMCProxy->getIconAnnotation(className);
-  getModelIconDiagramShapes(iconAnnotationString, StringHandler::Icon);
+  getModelIconDiagramShapes(iconAnnotationString, StringHandler::Icon, inheritedCycle);
   QString diagramAnnotationString = pOMCProxy->getDiagramAnnotation(className);
-  getModelIconDiagramShapes(diagramAnnotationString, StringHandler::Diagram);
+  getModelIconDiagramShapes(diagramAnnotationString, StringHandler::Diagram, inheritedCycle);
 }
 
-void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType)
+void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHandler::ViewType viewType, bool inheritedCycle)
 {
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
   if (annotationString.isEmpty())
@@ -2228,7 +2228,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
     {
       shape = shape.mid(QString("Line").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      LineAnnotation *pLineAnnotation = new LineAnnotation(shape, pGraphicsView);
+      LineAnnotation *pLineAnnotation = new LineAnnotation(shape, inheritedCycle, pGraphicsView);
       /*
         before drawing the corner items add one point to line since drawcorneritems
         deletes one point. Why? because we end the line shape with double click which adds an extra
@@ -2243,7 +2243,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
     {
       shape = shape.mid(QString("Polygon").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, pGraphicsView);
+      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, inheritedCycle, pGraphicsView);
       /*
         before drawing the corner items add one point to polygon since drawcorneritems
         deletes one point. Why? because we end the polygon shape with double click which adds an extra
@@ -2258,7 +2258,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
     {
       shape = shape.mid(QString("Rectangle").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, pGraphicsView);
+      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, inheritedCycle, pGraphicsView);
       pRectangleAnnotation->initializeTransformation();
       pRectangleAnnotation->drawCornerItems();
       pRectangleAnnotation->setCornerItemsPassive();
@@ -2267,7 +2267,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
     {
       shape = shape.mid(QString("Ellipse").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, pGraphicsView);
+      EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, inheritedCycle, pGraphicsView);
       pEllipseAnnotation->initializeTransformation();
       pEllipseAnnotation->drawCornerItems();
       pEllipseAnnotation->setCornerItemsPassive();
@@ -2276,7 +2276,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
     {
       shape = shape.mid(QString("Text").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      TextAnnotation *pTextAnnotation = new TextAnnotation(shape, pGraphicsView);
+      TextAnnotation *pTextAnnotation = new TextAnnotation(shape, inheritedCycle, pGraphicsView);
       pTextAnnotation->initializeTransformation();
       pTextAnnotation->drawCornerItems();
       pTextAnnotation->setCornerItemsPassive();
@@ -2285,7 +2285,7 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
     {
       shape = shape.mid(QString("Bitmap").length());
       shape = StringHandler::removeFirstLastBrackets(shape);
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(shape, pGraphicsView);
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(shape, inheritedCycle, pGraphicsView);
       pBitmapAnnotation->initializeTransformation();
       pBitmapAnnotation->drawCornerItems();
       pBitmapAnnotation->setCornerItemsPassive();
@@ -2293,10 +2293,23 @@ void ModelWidget::getModelIconDiagramShapes(QString annotationString, StringHand
   }
 }
 
-void ModelWidget::getModelConnections(QString className)
+void ModelWidget::getModelConnections(QString className, bool inheritedCycle)
 {
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
-  // get the inherited components of the class
+  // get the inherited connections of the class
+  int inheritanceCount = pMainWindow->getOMCProxy()->getInheritanceCount(className);
+  for(int i = 1 ; i <= inheritanceCount ; i++)
+  {
+    QString inheritedClass = pMainWindow->getOMCProxy()->getNthInheritedClass(className, i);
+    /*
+      If the inherited class is one of the builtin type such as Real we can
+      stop here, because the class can not contain any components, etc.
+      Also check for cyclic loops.
+      */
+    if (pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(className) == 0)
+      return;
+    getModelConnections(inheritedClass, true);
+  }
   int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(className);
   for (int i = 1 ; i <= connectionCount ; i++)
   {
@@ -2384,7 +2397,8 @@ void ModelWidget::getModelConnections(QString className)
       {
         shape = shape.mid(QString("Line").length());
         shape = StringHandler::removeFirstLastBrackets(shape);
-        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
+        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(shape, inheritedCycle, pStartConnectorComponent,
+                                                                       pEndConnectorComponent, mpDiagramGraphicsView);
         if (pStartConnectorComponent)
           pStartConnectorComponent->getRootParentComponent()->addConnectionDetails(pConnectionLineAnnotation);
         pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
