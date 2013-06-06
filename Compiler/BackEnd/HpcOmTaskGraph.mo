@@ -159,7 +159,7 @@ protected function fillSccList
   output List<Integer> oRequiredSccs;
 
 algorithm
-  outBool := matchcontinue(variable,varSccMapping,iRequiredSccs)
+  oRequiredSccs := matchcontinue(variable,varSccMapping,iRequiredSccs)
     local
       Integer varIdx,varState, sccIdx;
       List<Integer> tmpRequiredSccs;
