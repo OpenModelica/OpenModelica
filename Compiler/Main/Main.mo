@@ -714,7 +714,7 @@ algorithm
         true = Config.simulationCg();
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
-        modpar(dlow_1);
+        //modpar(dlow_1);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,classname,ap,dae);
       then

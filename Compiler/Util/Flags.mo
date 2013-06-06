@@ -356,7 +356,9 @@ constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(94, "inlineSolver", false,
   Util.gettext("Generates code for inline solver."));
 constant DebugFlag GEN_GRAPH = DEBUG_FLAG(95, "genGraph", false,
   Util.gettext("Dumps a graph of the program."));
-
+constant DebugFlag HPCOM = DEBUG_FLAG(96, "hpcom", false,
+  Util.gettext("Enables parallel calculation based on task-graphs."));
+    
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -456,7 +458,8 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_EQUATION_SOURCE,
   NLS_ANALYTIC_JACOBIAN,
   INLINE_SOLVER,
-  GEN_GRAPH
+  GEN_GRAPH,
+  HPCOM
 };
 
 // CONFIGURATION FLAGS
@@ -500,7 +503,8 @@ constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
 protected constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).");
 public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    "evaluateReplaceFinalEvaluateParameters",
+    //"evaluateReplaceFinalEvaluateParameters",
+    "evaluateFinalEvaluateParameters",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
     "partitionIndependentBlocks",
@@ -569,6 +573,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "relaxSystem",
+    "evaluateReplaceFinalEvaluateParameters",
     "inlineArrayEqn",
     "constantLinearSystem",
     "simplifysemiLinear",

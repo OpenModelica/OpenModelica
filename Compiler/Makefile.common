@@ -145,6 +145,8 @@ DumpHTML.mo \
 EvaluateParameter.mo \
 ExpressionSolve.mo \
 HashTableCrSimVars.mo \
+HpcOmSimCode.mo \
+HpcOmTaskGraph.mo \
 IndexReduction.mo \
 Initialization.mo \
 InlineSolver.mo \

@@ -72,6 +72,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Flags;
+protected import HpcOmSimCode;
 protected import Settings;
 protected import SimCodeDump;
 protected import SimCodeUtil;
@@ -365,7 +366,7 @@ algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE,
+  simCode := createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
@@ -375,6 +376,38 @@ algorithm
   callTargetTemplates(simCode,inBackendDAE,Config.simCodeTarget());
   timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_TEMPLATES);
 end generateModelCode;
+
+protected function createSimCode
+  "SimCode generator switch - if the NUMPROC-Flag is set, the simcode will be extended with parallel informations."
+  input BackendDAE.BackendDAE inBackendDAE;
+  input Absyn.Path inClassName;
+  input String filenamePrefix;
+  input String inString11;
+  input list<SimCode.Function> functions;
+  input list<String> externalFunctionIncludes;
+  input list<String> includeDirs;
+  input list<String> libs;
+  input Option<SimCode.SimulationSettings> simSettingsOpt;
+  input list<SimCode.RecordDeclaration> recordDecls;
+  input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  input Absyn.FunctionArgs args;
+  output SimCode.SimCode simCode;
+  
+algorithm
+  simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
+    local
+      Integer numProc;
+    case(_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        true = Flags.isSet(Flags.HPCOM);
+        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+        true = (numProc > 0);
+    then
+      HpcOmSimCode.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+    else
+       then SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+  end matchcontinue;
+end createSimCode;
 
 // TODO: use another switch ... later make it first class option like -target or so
 // Update: inQSSrequiredData passed in order to call BackendQSS and generate the extra structures needed for QSS simulation.
@@ -507,7 +540,7 @@ algorithm
       //DAE.Exp fileprefix;
       Env.Cache cache;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-
+      
     case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,_, _,_)
       equation
         // calculate stuff that we need to create SimCode data structure

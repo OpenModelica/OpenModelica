@@ -87,6 +87,7 @@ public uniontype Node
     String text;
     String color;
     ShapeType shapeType;
+    Option<String> optDesc;
   end NODE;
 end Node;
 
@@ -141,6 +142,7 @@ public function addNode
   input String text;
   input String color;
   input ShapeType shapeType;
+  input Option<String> optDesc;
   input Graph inG;
   output Graph outG;
 protected
@@ -150,7 +152,7 @@ protected
   list<Edge> e;
 algorithm
   GRAPH(gid,d,n,e) := inG;
-  outG := GRAPH(gid,d,NODE(id,text,color,shapeType)::n,e);
+  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc)::n,e);
 end addNode;
 
 public function addEgde
@@ -292,7 +294,7 @@ protected function dumpNode
 algorithm
   oAcc := match (inNode,inString,iAcc)
     local
-      String id,t,text,st_str,color,s;
+      String id,t,text,st_str,color,s,desc;
       ShapeType st;
       IOStream.IOStream is;
      
@@ -300,9 +302,10 @@ algorithm
       equation
         t = appendString(inString);
         st_str = getShapeTypeString(st);
+        desc = getNodeDesc(inNode);
         is = IOStream.appendList(iAcc, {
           inString, "<node id=\"", id, "\">\n",
-          t, "<data key=\"d5\"/>\n",
+          t, "<data key=\"d5\">", desc, "</data>\n",
           t, "<data key=\"d6\">\n",
           "        <y:ShapeNode>\n",
           "          <y:Geometry height=\"30.0\" width=\"30.0\" x=\"17.0\" y=\"60.0\"/>\n",
@@ -317,6 +320,22 @@ algorithm
         is;
   end match;
 end dumpNode;
+
+protected function getNodeDesc
+"Returns the description of the node. The string is empty if no value was assigned."
+  input Node node;
+  output String desc_out;
+
+algorithm
+  desc_out := match(node)
+    local
+      String desc;
+    case(NODE(optDesc=SOME(desc)))
+    then desc;
+    else
+    then "";
+  end match;
+end getNodeDesc;
 
 protected function getShapeTypeString
   input ShapeType st;

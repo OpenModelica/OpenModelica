@@ -8298,7 +8298,7 @@ algorithm
         funcs = getFunctions(ishared);
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);
-//        IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"Comps" +& intString(systemSize(syst)) +& ".graphml");
+//        IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"Comps" +& intString(systemSize(syst)) +& ".graphml",false);
         Debug.execStat("transformDAE -> sort components",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);
     else
