@@ -299,8 +299,8 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
  *  function to select the actual states
  *
  *  \param [ref] [data]
- *  \param [char] [reportError]
- *  \param [int] [switchStates] flag for switch states, function does switch only if this switchStates = 1
+ *  \param [in]  [reportError]
+ *  \param [in]  [switchStates] flag for switch states, function does switch only if this switchStates = 1
  *  \return ???
  *
  *  \author Frenkel TUD
