@@ -351,10 +351,6 @@ int initializeModel(DATA* data, const char* init_initMethod,
   if(ACTIVE_STREAM(LOG_DEBUG))
     printParameters(data, LOG_DEBUG);
 
-  /* initial delay again, due to maybe change
-   * parameters during Initialization */
-  initDelay(data, simInfo->startTime);
-
   storePreValues(data);
   storeOldValues(data);
   function_storeDelayed(data);
@@ -491,14 +487,10 @@ int solver_main(DATA* data, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
     int lambda_steps, int flag, const char* outputVariablesAtEnd)
 {
-  int i;
+  int i, retVal = 0;;
   unsigned int ui;
-
-  int retVal = 0;
-
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
-
 
   solverInfo.solverMethod = flag;
 
@@ -506,21 +498,18 @@ int solver_main(DATA* data, const char* init_initMethod,
   retVal = initializeSolverData(data, &solverInfo);
 
   /* initialize all parts of the model */
-  if (!retVal)
+  if (0 == retVal)
     retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);
 
   /* starts the simulation main loop */
-  if (!retVal)
+  if (0 == retVal)
   {
-    INFO(LOG_SOLVER, "Performed initialization.");
     INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
     retVal = performSimulation(data, &solverInfo);
+    
+    /* terminate the simulation */
+    finishSimulation(data, &solverInfo, outputVariablesAtEnd);
   }
-  else
-    WARNING(LOG_STDOUT, "Initialization failed.");
-
-  /* terminate the simulation */
-  finishSimulation(data, &solverInfo, outputVariablesAtEnd);
 
   /* free SolverInfo memory */
   freeSolverData(data, &solverInfo);

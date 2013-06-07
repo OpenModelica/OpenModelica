@@ -565,7 +565,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 
   retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod, init_file, init_time, init_lambda_steps, outputVariablesAtEnd, cpuTime);
 
-  if(retVal == 0 && create_linearmodel)
+  if(0 == retVal && create_linearmodel)
   {
     rt_tick(SIM_TIMER_LINEARIZE);
     retVal = linearize(data);
@@ -578,12 +578,10 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
    * was not activated while compiling, it was
    * just used for measure simulation time for LOG_STATS.
    */
-  if(measureSimTime){
+  if(measureSimTime)
     measure_time_flag = 0;
-  }
 
-
-  if(retVal == 0 && measure_time_flag)
+  if(0 == retVal && measure_time_flag)
   {
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
@@ -911,7 +909,6 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
     signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
-
     if(interactiveSimulation)
     {
       cout << "startInteractiveSimulation: " << endl;
@@ -922,12 +919,9 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
       retVal = startNonInteractiveSimulation(argc, argv, data);
     }
 
-    /* free mixed system data */
-    freemixedSystem(data);
-    /* free linear system data */
-    freelinearSystem(data);
-    /* free nonlinear system data */
-    freeNonlinearSystem(data);
+    freemixedSystem(data);        /* free mixed system data */
+    freelinearSystem(data);       /* free linear system data */
+    freeNonlinearSystem(data);    /* free nonlinear system data */
 
     callExternalObjectDestructors(data);
     deInitializeDataStruc(data);

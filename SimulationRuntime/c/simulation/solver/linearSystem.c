@@ -37,6 +37,7 @@
 #include "omc_error.h"
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
+#include "simulation_info_xml.h"
 #include "blaswrap.h"
 #include "f2c.h"
 
@@ -147,11 +148,21 @@ int solve_linear_system(DATA *data, int sysNumber)
 int check_linear_solutions(DATA *data, int printFailingSystems)
 {
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
-  int i;
+  int i, j, retVal=0;
 
   for(i=0; i<data->modelData.nLinearSystems; ++i)
     if(linsys[i].solved == 0)
-      return 1;
+    {
+      retVal = 1;
+      if(printFailingSystems)
+      {
+        WARNING2(LOG_LS, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).name, data->localData[0]->timeValue);
+        INDENT(LOG_LS);
+        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).numVar; ++j)
+          WARNING2(LOG_LS, "[%ld] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
+        RELEASE(LOG_LS);
+      }
+    }
 
-  return 0;
+  return retVal;
 }

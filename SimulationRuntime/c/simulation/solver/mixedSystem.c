@@ -37,6 +37,7 @@
 #include "omc_error.h"
 #include "mixedSystem.h"
 #include "mixedSearchSolver.h"
+#include "simulation_info_xml.h"
 
 /*! \fn int allocatemixedSystem(DATA *data)
  *
@@ -141,11 +142,21 @@ int solve_mixed_system(DATA *data, int sysNumber)
 int check_mixed_solutions(DATA *data, int printFailingSystems)
 {
   MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
-  int i;
+  int i, j, retVal=0;
 
   for(i=0; i<data->modelData.nMixedSystems; ++i)
     if(system[i].solved == 0)
-      return 1;
+    {
+      retVal = 1;
+      if(printFailingSystems)
+      {
+        WARNING2(LOG_NLS, "mixed system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).name, data->localData[0]->timeValue);
+        INDENT(LOG_NLS);
+        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).numVar; ++j)
+          WARNING2(LOG_NLS, "[%ld] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).vars[j]->name);
+        RELEASE(LOG_NLS);
+      }
+    }
 
-  return 0;
+  return retVal;
 }

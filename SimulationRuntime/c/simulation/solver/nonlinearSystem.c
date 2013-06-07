@@ -39,6 +39,7 @@
 #include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 #include "nonlinearSolverNewton.h"
+#include "simulation_info_xml.h"
 #include "blaswrap.h"
 #include "f2c.h"
 
@@ -113,7 +114,7 @@ int allocateNonlinearSystem(DATA *data)
 
 /*! \fn freeNonlinearSystem
  *
- *  Thi function frees memory of nonlinear systems.
+ *  This function frees memory of nonlinear systems.
  *
  *  \param [ref] [data]
  */
@@ -122,7 +123,7 @@ int freeNonlinearSystem(DATA *data)
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
 
-  for(i=0;i<data->modelData.nNonLinearSystems;++i)
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
   {
     free(nonlinsys[i].nlsx);
     free(nonlinsys[i].nlsxExtrapolation);
@@ -162,7 +163,7 @@ int freeNonlinearSystem(DATA *data)
 /*! \fn solve non-linear systems
  *
  *  \param [in]  [data]
- *                [sysNumber] index of corresponding non-linear System
+ *  \param [in]  [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
  */
@@ -225,13 +226,23 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 {
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
-  int i;
+  int i, j, retVal=0;
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
     if(nonlinsys[i].solved == 0)
-      return 1;
+    {
+      retVal = 1;
+      if(printFailingSystems)
+      {
+        WARNING2(LOG_NLS, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).name, data->localData[0]->timeValue);
+        INDENT(LOG_NLS);
+        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).numVar; ++j)
+          WARNING2(LOG_NLS, "[%ld] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).vars[j]->name);
+        RELEASE(LOG_NLS);
+      }
+    }
 
-  return 0;
+  return retVal;
 }
 
 /*! \fn extraPolate
