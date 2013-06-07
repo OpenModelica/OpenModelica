@@ -503,8 +503,7 @@ constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
 protected constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).");
 public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
-    //"evaluateReplaceFinalEvaluateParameters",
-    "evaluateFinalEvaluateParameters",
+    "evaluateReplaceFinalEvaluateParameters",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
     "partitionIndependentBlocks",
@@ -573,7 +572,6 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "relaxSystem",
-    "evaluateReplaceFinalEvaluateParameters",
     "inlineArrayEqn",
     "constantLinearSystem",
     "simplifysemiLinear",
