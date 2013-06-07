@@ -581,13 +581,11 @@ int solveHybrd(DATA *data, int sysNumber)
     xerror_scaled = enorm_(&solverData->n, solverData->fvecScaled);
     xerror = enorm_(&solverData->n, solverData->fvec);
 
-    if(solverData->info == 1 && (xerror > local_tol && xerror_scaled > local_tol))
+    if (solverData->info < 4 && xerror > local_tol && xerror_scaled > local_tol)
       solverData->info = 4;
 
     /* reset non-contunuousCase */
-    if (nonContinuousCase && (solverData->info == 4 || solverData->info == 5)){
-      /* set x vector */
-      memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+    if (nonContinuousCase && xerror > local_tol && xerror_scaled > local_tol){
 
       memcpy(data->simulationInfo.relationsPre, relationsPreBackup, sizeof(modelica_boolean)*data->modelData.nRelations);
       nonContinuousCase = 0;
