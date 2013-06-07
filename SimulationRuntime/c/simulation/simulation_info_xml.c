@@ -65,7 +65,7 @@ static VAR_INFO* findVariable(const char *name) {
 static void XMLCALL startElement(void *userData, const char *name, const char **attr) {
   MODEL_DATA_XML* xml = (MODEL_DATA_XML*) ((void**)userData)[0];
   long curIndex = (long) ((void**)userData)[1];
-  //long curProfileIndex = (long) ((void**)userData)[2];
+  /* long curProfileIndex = (long) ((void**)userData)[2]; */
   long curFunctionIndex = (long) ((void**)userData)[3];
 
   if (0==strcmp("var",name)) {

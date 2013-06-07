@@ -136,7 +136,7 @@
 
   /*! \fn functionJacG_sparse
    *
-   *  \param [ref]  [data]
+   *  \param [ref] [data]
    *  \param [out] [jac]
    *
    *  \author lochel

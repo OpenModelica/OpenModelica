@@ -62,6 +62,6 @@ typedef void* LS_SOLVER_DATA;
 int allocatelinearSystem(DATA *data);
 int freelinearSystem(DATA *data);
 int solve_linear_system(DATA *data, int sysNumber);
-int check_linear_solutions(DATA *data);
+int check_linear_solutions(DATA *data, int printFailingSystems);
 
 #endif

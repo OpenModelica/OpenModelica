@@ -161,7 +161,7 @@ int freeNonlinearSystem(DATA *data)
 
 /*! \fn solve non-linear systems
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *                [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
@@ -217,11 +217,12 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
  *   This function check whether some of non-linear systems
  *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
+ *  \param [in]  [printFailingSystems]
  *
  *  \author wbraun
  */
-int check_nonlinear_solutions(DATA *data)
+int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 {
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
   int i;
@@ -237,7 +238,7 @@ int check_nonlinear_solutions(DATA *data)
  *   This function extrapolates linear next value from
  *   the both old values,
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *
  *  \author wbraun
  */

@@ -192,7 +192,7 @@ extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
  *  This function evaluates current continuous relations.
  *
  *  \param [ref] [data]
- *  \param [in] [evalZeroCross] flag for evaluating Relation with hysteresis
+ *  \param [in]  [evalZeroCross] flag for evaluating Relation with hysteresis
  *                              function or without
  */
 extern int function_updateRelations(DATA *data, int evalZeroCross);

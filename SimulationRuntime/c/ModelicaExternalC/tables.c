@@ -1053,7 +1053,7 @@ static InterpolationTable* InterpolationTable_init(double time, double startTime
     }
     tpl->data = *(double**)((void*)&table);
 #else
-    //tpl->data = const_cast<double*>(table);
+    /* tpl->data = const_cast<double*>(table); */
     tpl->data = (double*)malloc(size*sizeof(double));
     if (!tpl->data) {
       ModelicaFormatError("Not enough memory for Table: %s",tableName);

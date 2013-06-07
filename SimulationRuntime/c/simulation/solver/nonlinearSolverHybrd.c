@@ -159,10 +159,10 @@ int freeHybrdData(void **voiddata)
 
 /*! \fn printVector
  *
- *  \param  [in]  [vector]
- *  \param  [in]  [size]
- *  \param  [in]  [logLevel]
- *  \param  [in]  [name]
+ *  \param [in]  [vector]
+ *  \param [in]  [size]
+ *  \param [in]  [logLevel]
+ *  \param [in]  [name]
  *
  *  \author wbraun
  */
@@ -179,11 +179,11 @@ static void printVector(const double *vector, integer *size, const int logLevel,
 
 /*! \fn printStatus
  *
- *  \param  [in]  [solverData]
- *  \param  [in]  [nfunc_evals]
- *  \param  [in]  [xerror]
- *  \param  [in]  [xerror_scaled]
- *  \param  [in]  [logLevel]
+ *  \param [in]  [solverData]
+ *  \param [in]  [nfunc_evals]
+ *  \param [in]  [xerror]
+ *  \param [in]  [xerror_scaled]
+ *  \param [in]  [logLevel]
  *
  *  \author wbraun
  */
@@ -220,8 +220,8 @@ static void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals, const do
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  *
- *  \param  [ref]  [data]
- *  \param  [out]  [jac]
+ *  \param [ref] [data]
+ *  \param [out] [jac]
  *
  *  \author wbraun
  *
@@ -265,8 +265,8 @@ static int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
  *
  *  function calculates analytical jacobian
  *
- *  \param  [ref]  [data]
- *  \param  [out]  [jac]
+ *  \param [ref] [data]
+ *  \param [out] [jac]
  *
  *  \author wbraun
  *
@@ -390,7 +390,7 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
 
 /*! \fn solve non-linear system with hybrd method
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *                [sysNumber] index of the corresponing non-linear system
  *
  *  \author wbraun

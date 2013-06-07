@@ -136,8 +136,8 @@ int freeNewtonData(void **voiddata)
  *
  *  function calculates analytical jacobian
  *
- *  \param  [ref]  [data]
- *  \param  [out]  [jac]
+ *  \param [ref] [data]
+ *  \param [out] [jac]
  *
  *  \author wbraun
  *
@@ -195,8 +195,8 @@ int getAnalyticalJacobianNewton(DATA* data, double* jac)
 static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag, void* data)
 {
   int currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
-  //NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
-  //DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+  /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]); */
+  /* DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData); */
 
   (*((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data,
       x, f, iflag);
@@ -205,7 +205,7 @@ static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag,
 
 /*! \fn solve non-linear system with newton method
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *                [sysNumber] index of the corresponding non-linear system
  *
  *  \author wbraun
@@ -393,7 +393,7 @@ static int fdjac(integer* n, int(*f)(integer*, double*, double*, integer*, void*
 
 /*! \fn solve system with Newton-Raphson
  *
- *  \param  [in]  [n] size of equation
+ *  \param [in]  [n] size of equation
  *                [eps] tolerance for x
  *                [h] tolerance for f'
  *                [k] maximum number of iterations

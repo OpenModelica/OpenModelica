@@ -59,7 +59,7 @@ static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_statu
  */
 void* fmi1ImportContext_OMC(int fmi_log_level)
 {
-  // JM callbacks
+  /* JM callbacks */
   static int init = 0;
   static jm_callbacks callbacks;
   if (!init) {
@@ -91,7 +91,7 @@ void fmi1ImportFreeContext_OMC(void* context)
  */
 void* fmi1ImportInstance_OMC(void* context, char* working_directory)
 {
-  // FMI callback functions
+  /* FMI callback functions */
   static int init = 0;
   fmi1_callback_functions_t callback_functions;
   if (!init) {
@@ -100,14 +100,14 @@ void* fmi1ImportInstance_OMC(void* context, char* working_directory)
     callback_functions.allocateMemory = calloc;
     callback_functions.freeMemory = free;
   }
-  // parse the xml file
+  /* parse the xml file */
   fmi1_import_t* fmi;
   fmi = fmi1_import_parse_xml((fmi_import_context_t*)context, working_directory);
   if(!fmi) {
     fprintf(stderr, "Error parsing the XML file contained in %s\n", working_directory);
     return 0;
   }
-  // Load the binary (dll/so)
+  /* Load the binary (dll/so) */
   jm_status_enu_t status;
   status = fmi1_import_create_dllfmu(fmi, callback_functions, 0);
   if (status == jm_status_error) {

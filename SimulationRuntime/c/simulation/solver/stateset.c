@@ -38,7 +38,7 @@
  *
  *  initialize jacobians for state selection
  *
- *  \param  [ref] [data] ???
+ *  \param [ref] [data] ???
  *
  *  \author ???
  */
@@ -63,7 +63,7 @@ void initializeStateSetJacobians(DATA *data)
  *
  *  initialize pivoting data for state selection
  *
- *  \param  [ref] [data] ???
+ *  \param [ref] [data] ???
  *
  *  \author ???
  */
@@ -100,7 +100,7 @@ void initializeStateSetPivoting(DATA *data)
  *
  *  free jacobians for state selection
  *
- *  \param  [ref] [data] ???
+ *  \param [ref] [data] ???
  *
  *  \author ???
  */
@@ -124,8 +124,8 @@ void freeStateSetData(DATA *data)
  *
  *  function calculates analytical jacobian
  *
- *  \param  [ref] [data] ???
- *  \param  [out] [index] ???
+ *  \param [ref] [data] ???
+ *  \param [out] [index] ???
  *
  *  \author wbraun
  */
@@ -206,13 +206,13 @@ static void getAnalyticalJacobianSet(DATA* data, unsigned int index)
  *
  *  ??? desc ???
  *
- *  \param  [ref] [newEnable]
- *  \param  [ref] [nCandidates]
- *  \param  [ref] [nStates]
- *  \param  [ref] [Ainfo]
- *  \param  [ref] [states]
- *  \param  [ref] [statecandidates]
- *  \param  [ref] [data]
+ *  \param [ref] [newEnable]
+ *  \param [ref] [nCandidates]
+ *  \param [ref] [nStates]
+ *  \param [ref] [Ainfo]
+ *  \param [ref] [states]
+ *  \param [ref] [statecandidates]
+ *  \param [ref] [data]
  *
  *  \author ???
  */
@@ -246,15 +246,15 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
  *
  *  ??? desc ???
  *
- *  \param  [ref] [oldPivot]
- *  \param  [ref] [newPivot]
- *  \param  [ref] [nCandidates]
- *  \param  [ref] [nDummyStates]
- *  \param  [ref] [nStates]
- *  \param  [ref] [A]
- *  \param  [ref] [states]
- *  \param  [ref] [statecandidates]
- *  \param  [ref] [data]
+ *  \param [ref] [oldPivot]
+ *  \param [ref] [newPivot]
+ *  \param [ref] [nCandidates]
+ *  \param [ref] [nDummyStates]
+ *  \param [ref] [nStates]
+ *  \param [ref] [A]
+ *  \param [ref] [states]
+ *  \param [ref] [statecandidates]
+ *  \param [ref] [data]
  *  \return ???
  *
  *  \author ???
@@ -298,9 +298,9 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
  *
  *  function to select the actual states
  *
- *  \param  [ref] [data]
- *  \param  [char] [reportError]
- *  \param  [int] [switchStates] flag for switch states, function does switch only if this switchStates = 1
+ *  \param [ref] [data]
+ *  \param [char] [reportError]
+ *  \param [int] [switchStates] flag for switch states, function does switch only if this switchStates = 1
  *  \return ???
  *
  *  \author Frenkel TUD

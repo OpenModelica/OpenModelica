@@ -649,7 +649,7 @@ double getNextSampleTimeFMU(DATA *data)
  *
  *  function initialize DATA structure
  *
- *  \param [ref]  [data]
+ *  \param [ref] [data]
  *
  */
 void initializeDataStruc(DATA *data)
@@ -791,7 +791,7 @@ void initializeDataStruc(DATA *data)
  *
  *  function de-initialize DATA structure
  *
- *  \param [ref]  [data]
+ *  \param [ref] [data]
  *
  */
 void deInitializeDataStruc(DATA *data)
@@ -1007,8 +1007,8 @@ modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *d
 
 /*! \fn _event_floor
  *
- *  \param [in] [x]
- *  \param [in] [index]
+ *  \param [in]  [x]
+ *  \param [in]  [index]
  *  \param [ref] [data]
  *
  * Returns the largest integer not greater than x.
@@ -1029,8 +1029,8 @@ modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
 
 /*! \fn _event_ceil
  *
- *  \param [in] [x]
- *  \param [in] [index]
+ *  \param [in]  [x]
+ *  \param [in]  [index]
  *  \param [ref] [data]
  *
  * Returns the smallest integer not less than x.
@@ -1051,9 +1051,9 @@ modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
 
 /*! \fn _event_div_integer
  *
- *  \param [in] [x1]
- *  \param [in] [x2]
- *  \param [in] [index]
+ *  \param [in]  [x1]
+ *  \param [in]  [x2]
+ *  \param [in]  [index]
  *  \param [ref] [data]
  *
  * Returns the algebraic quotient x/y with any fractional part discarded.
@@ -1079,9 +1079,9 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
 
 /*! \fn _event_div_real
  *
- *  \param [in] [x1]
- *  \param [in] [x2]
- *  \param [in] [index]
+ *  \param [in]  [x1]
+ *  \param [in]  [x2]
+ *  \param [in]  [index]
  *  \param [ref] [data]
  *
  * Returns the algebraic quotient x/y with any fractional part discarded.

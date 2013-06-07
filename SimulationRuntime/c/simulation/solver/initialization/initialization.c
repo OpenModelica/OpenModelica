@@ -992,17 +992,17 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   /* check for unsolved (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */   
-  if(check_nonlinear_solutions(data))
+  if(check_nonlinear_solutions(data, 1))
   {
     retVal = -2;
     WARNING(LOG_NLS, "model terminate | non-linear system solver failed during initialization.");
   }
-  else if(check_linear_solutions(data))
+  else if(check_linear_solutions(data, 1))
   {
     retVal = -3;
     WARNING(LOG_LS, "model terminate | linear system solver failed during initialization.");
   }
-  else if(check_mixed_solutions(data))
+  else if(check_mixed_solutions(data, 1))
   {
     retVal = -4;
     WARNING(LOG_NLS, "model terminate | mixed system solver failed during initialiazation.");

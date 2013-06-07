@@ -387,7 +387,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
  *  and included in the generrated code. The things we do for
  *  OPENMP.
  */ 
-// int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
+/* int performSimulation(DATA* data, SOLVER_INFO* solverInfo) */
 
 
 /*! \fn finishSimulation(DATA* data, SOLVER_INFO* solverInfo)

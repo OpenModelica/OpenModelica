@@ -91,8 +91,8 @@ void initSample(DATA* data, double startTime, double stopTime)
 
 /*! \fn checkForSampleEvent
  *
- *  \param [ref]  [data]
- *  \param [ref]  [solverInfo]
+ *  \param [ref] [data]
+ *  \param [ref] [solverInfo]
  *  \return indicates if a sample event is occuered or not.
  *
  *  Function check if a sample expression should be activated

@@ -20,9 +20,9 @@
 /* Matrixes using column major order (as in Fortran) */
 /* colInd, rowInd, n_rows is added implicitly, makes code easier to read but may be considered bad programming style! */
 #define set_pivot_matrix_elt(A,r,c,value) set_matrix_elt(A,rowInd[r],colInd[c],n_rows,value)
-//#define set_pivot_matrix_elt(A,r,c,value) set_matrix_elt(A,colInd[c],rowInd[r],n_cols,value)
+/* #define set_pivot_matrix_elt(A,r,c,value) set_matrix_elt(A,colInd[c],rowInd[r],n_cols,value) */
 #define get_pivot_matrix_elt(A,r,c) get_matrix_elt(A,rowInd[r],colInd[c],n_rows)
-//#define get_pivot_matrix_elt(A,r,c) get_matrix_elt(A,colInd[c],rowInd[r],n_cols)
+/* #define get_pivot_matrix_elt(A,r,c) get_matrix_elt(A,colInd[c],rowInd[r],n_cols) */
 #define swap(a,b) { modelica_integer _swap=a; a=b; b=_swap; }
 
 #ifndef min
@@ -62,7 +62,7 @@ int maxsearch( double *A, modelica_integer start, modelica_integer n_rows, model
   /* assert that the matrix is not identical to zero */
   if ((mrow < 0) || (mcol < 0)) return -1;
 
-  // return result */
+  /* return result */
   *maxrow = mrow;
   *maxcol = mcol;
   *maxabsval = mabsval;
@@ -80,7 +80,7 @@ They hold the old (and new) pivoting information, such that
 int pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd )
 {
   /* parameter, determines how much larger an element should be before rows and columns are interchanged */
-  const double fac = 1.125; // approved by dymola ;)
+  const double fac = 1.125; /* approved by dymola ;) */
 
   /* temporary variables */
   modelica_integer row;

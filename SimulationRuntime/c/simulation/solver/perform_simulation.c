@@ -260,9 +260,9 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
      */
     if( data->simulationInfo.simulationSuccess != 0
         || retValIntegrator != 0
-        || check_nonlinear_solutions(data)
-        || check_linear_solutions(data)
-        || check_mixed_solutions(data)
+        || check_nonlinear_solutions(data, 0)
+        || check_linear_solutions(data, 0)
+        || check_mixed_solutions(data, 0)
         )
     {
       data->simulationInfo.terminal = 1;
@@ -279,17 +279,17 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         retValue = -1 + retValIntegrator;
         INFO1(LOG_STDOUT, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
-      else if(check_nonlinear_solutions(data))
+      else if(check_nonlinear_solutions(data, 0))
       {
         retValue = -2;
         INFO1(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
-      else if(check_linear_solutions(data))
+      else if(check_linear_solutions(data, 0))
       {
         retValue = -3;
         INFO1(LOG_STDOUT, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
       }
-      else if(check_mixed_solutions(data))
+      else if(check_mixed_solutions(data, 0))
       {
         retValue = -3;
         INFO1(LOG_STDOUT, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);

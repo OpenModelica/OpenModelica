@@ -157,8 +157,8 @@ int fmi1CompletedIntegratorStep_OMC(void* fmi, double flowStates)
  */
 int fmi1Terminate_OMC(void* fmi)
 {
-//  fmi1_status_t fmistatus = fmi1_import_terminate((fmi1_import_t*)fmi);
-//  return fmistatus;
+/*  fmi1_status_t fmistatus = fmi1_import_terminate((fmi1_import_t*)fmi); */
+/*  return fmistatus; */
   return 0;
 }
 

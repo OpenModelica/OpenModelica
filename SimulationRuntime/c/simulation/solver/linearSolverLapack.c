@@ -85,7 +85,7 @@ int freeLapackData(void **voiddata)
 
 /*! \fn solve linear system with lapack method
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *                [sysNumber] index of the corresponing non-linear system
  *
  *  \author wbraun
@@ -97,7 +97,7 @@ int solveLapack(DATA *data, int sysNumber)
 
   /* We are given the number of the linear system.
    * We want to look it up among all equations. */
-  // int eqSystemNumber = systemData->equationIndex;
+  /* int eqSystemNumber = systemData->equationIndex; */
   int success = 1;
 
   /* reset matrix A */

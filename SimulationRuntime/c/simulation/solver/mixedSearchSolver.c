@@ -162,7 +162,7 @@ modelica_boolean nextVar(modelica_boolean *b, int n) {
 
 /*! \fn solve mixed system with extended search
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *                [sysNumber] index of the corresponing mixed system
  *
  *  \author wbraun

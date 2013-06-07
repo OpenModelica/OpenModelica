@@ -109,7 +109,7 @@ int freelinearSystem(DATA *data)
 
 /*! \fn solve non-linear systems
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *                [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
@@ -139,11 +139,12 @@ int solve_linear_system(DATA *data, int sysNumber)
  *   This function check whether some of linear systems
  *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
+ *  \param [in]  [printFailingSystems]
  *
  *  \author wbraun
  */
-int check_linear_solutions(DATA *data)
+int check_linear_solutions(DATA *data, int printFailingSystems)
 {
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
   int i;

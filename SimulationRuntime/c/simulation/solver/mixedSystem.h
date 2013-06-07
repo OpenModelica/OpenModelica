@@ -50,6 +50,6 @@ typedef void* MIXED_SOLVER_DATA;
 int allocatemixedSystem(DATA *data);
 int freemixedSystem(DATA *data);
 int solve_mixed_system(DATA *data, int sysNumber);
-int check_mixed_solutions(DATA *data);
+int check_mixed_solutions(DATA *data, int printFailingSystems);
 
 #endif

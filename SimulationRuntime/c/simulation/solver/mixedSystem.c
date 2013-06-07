@@ -105,7 +105,7 @@ int freemixedSystem(DATA *data)
 
 /*! \fn solve mixed systems
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
  *                [sysNumber] index of corresponding mixed System
  *
  *  \author wbraun
@@ -133,11 +133,12 @@ int solve_mixed_system(DATA *data, int sysNumber)
  *   This function checks whether some of the mixed systems
  *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
- *  \param  [in]  [data]
+ *  \param [in]  [data]
+ *  \param [in]  [printFailingSystems]
  *
  *  \author wbraun
  */
-int check_mixed_solutions(DATA *data)
+int check_mixed_solutions(DATA *data, int printFailingSystems)
 {
   MIXED_SYSTEM_DATA* system = data->simulationInfo.mixedSystemData;
   int i;
