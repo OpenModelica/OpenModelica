@@ -852,15 +852,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   return 0;
 }
 
+static DATA *SimulationRuntime_printStatus_data = NULL;
 void SimulationRuntime_printStatus(int sig)
 {
+  DATA *data = SimulationRuntime_printStatus_data;
   printf("<status>\n");
-  printf("<phase>UNKNOWN</phase>\n");
-  /*
-   * FIXME: Variables needed here are no longer global.
-   *        and (int sig) is too small for pointer to data.
-   */
-  /*
   printf("<model>%s</model>\n", data->modelData.modelFilePrefix);
   printf("<phase>UNKNOWN</phase>\n");
   printf("<currentStepSize>%g</currentStepSize>\n", data->simulationInfo.stepSize);
@@ -869,7 +865,6 @@ void SimulationRuntime_printStatus(int sig)
   printf("<diffOldTime>%g</diffOldTime>\n", data->localData[1]->timeValue-data->localData[2]->timeValue);
   printf("<currentTime>%g</currentTime>\n", data->localData[0]->timeValue);
   printf("<diffCurrentTime>%g</diffCurrentTime>\n", data->localData[0]->timeValue-data->localData[1]->timeValue);
-  */
   printf("</status>\n");
 }
 
@@ -906,6 +901,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 
     /* sighandler_t oldhandler = different type on all platforms... */
 #ifdef SIGUSR1
+    SimulationRuntime_printStatus_data = data; /* Global, but at least we get something back; doesn't matter which simulation run */
     signal(SIGUSR1, SimulationRuntime_printStatus);
 #endif
 
