@@ -61,14 +61,14 @@ void updateDiscreteSystem(DATA *data)
   storeRelations(data);
   updateHysteresis(data);
 
-  if(ACTIVE_STREAM(LOG_EVENTS_V))
-    printRelations(data);
+  /* should we print the relations before functionDAE?
+   * printRelations(data, LOG_EVENTS_V);
+   */
 
   functionDAE(data);
   DEBUG(LOG_EVENTS_V, "updated discrete System");
 
-  if(ACTIVE_STREAM(LOG_EVENTS_V))
-    printRelations(data);
+  printRelations(data, LOG_EVENTS_V);
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data);
@@ -83,8 +83,8 @@ void updateDiscreteSystem(DATA *data)
 
     storePreValues(data);
     storeRelations(data);
-    if(ACTIVE_STREAM(LOG_EVENTS_V))
-      printRelations(data);
+    
+    printRelations(data, LOG_EVENTS_V);
 
     functionDAE(data);
 
@@ -179,49 +179,37 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   INFO(stream, "states variables");
   INDENT(stream);
   for(i=0; i<mData->nStates; ++i)
-  {
     INFO4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
   RELEASE(stream);
 
   INFO(stream, "derivatives variables");
   INDENT(stream);
   for(i=mData->nStates; i<2*mData->nStates; ++i)
-  {
     INFO4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
   RELEASE(stream);
 
   INFO(stream, "other real values");
   INDENT(stream);
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-  {
     INFO4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
   RELEASE(stream);
 
   INFO(stream, "integer variables");
   INDENT(stream);
   for(i=0; i<mData->nVariablesInteger; ++i)
-  {
     INFO4(stream, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-  }
   RELEASE(stream);
 
   INFO(stream, "boolean variables");
   INDENT(stream);
   for(i=0; i<mData->nVariablesBoolean; ++i)
-  {
     INFO4(stream, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-  }
   RELEASE(stream);
 
   INFO(stream, "string variables");
   INDENT(stream);
   for(i=0; i<mData->nVariablesString; ++i)
-  {
     INFO4(stream, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
-  }
   RELEASE(stream);
 
   RELEASE(stream);
@@ -235,67 +223,54 @@ void printAllVars(DATA *data, int ringSegment, int stream)
  *  \param [in]  [data]
  *  \param [in]  [ringSegment]
  */
-void printAllVarsDebug(DATA *data, int ringSegment)
+void printAllVarsDebug(DATA *data, int ringSegment, int stream)
 {
   long i;
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  DEBUG2(LOG_DEBUG, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-  INDENT(LOG_DEBUG);
+  DEBUG2(stream, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
+  INDENT(stream);
 
-  DEBUG(LOG_DEBUG, "states variables");
-  INDENT(LOG_DEBUG);
+  DEBUG(stream, "states variables");
+  INDENT(stream);
   for(i=0; i<mData->nStates; ++i)
-  {
-    DEBUG4(LOG_DEBUG, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
-  RELEASE(LOG_DEBUG);
+    DEBUG4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  RELEASE(stream);
 
-  DEBUG(LOG_DEBUG, "derivatives variables");
-  INDENT(LOG_DEBUG);
+  DEBUG(stream, "derivatives variables");
+  INDENT(stream);
   for(i=mData->nStates; i<2*mData->nStates; ++i)
-  {
-    DEBUG4(LOG_DEBUG, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
-  RELEASE(LOG_DEBUG);
+    DEBUG4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  RELEASE(stream);
 
-  DEBUG(LOG_DEBUG, "other real values");
-  INDENT(LOG_DEBUG);
+  DEBUG(stream, "other real values");
+  INDENT(stream);
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-  {
-    DEBUG4(LOG_DEBUG, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  }
-  RELEASE(LOG_DEBUG);
+    DEBUG4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  RELEASE(stream);
 
-  DEBUG(LOG_DEBUG, "integer variables");
-  INDENT(LOG_DEBUG);
+  DEBUG(stream, "integer variables");
+  INDENT(stream);
   for(i=0; i<mData->nVariablesInteger; ++i)
-  {
-    DEBUG4(LOG_DEBUG, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-  }
-  RELEASE(LOG_DEBUG);
+    DEBUG4(stream, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+  RELEASE(stream);
 
-  DEBUG(LOG_DEBUG, "boolean variables");
-  INDENT(LOG_DEBUG);
+  DEBUG(stream, "boolean variables");
+  INDENT(stream);
   for(i=0; i<mData->nVariablesBoolean; ++i)
-  {
-    DEBUG4(LOG_DEBUG, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-  }
-  RELEASE(LOG_DEBUG);
+    DEBUG4(stream, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
+  RELEASE(stream);
 
-  DEBUG(LOG_DEBUG, "string variables");
-  INDENT(LOG_DEBUG);
+  DEBUG(stream, "string variables");
+  INDENT(stream);
   for(i=0; i<mData->nVariablesString; ++i)
-  {
-    DEBUG4(LOG_DEBUG, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
-  }
-  RELEASE(LOG_DEBUG);
+    DEBUG4(stream, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
+  RELEASE(stream);
 
-  RELEASE(LOG_DEBUG);
+  RELEASE(stream);
 }
 #endif
-
 
 /*! \fn printParameters
  *
@@ -341,25 +316,46 @@ void printParameters(DATA *data, int stream)
   RELEASE(stream);
 }
 
+#ifdef USE_DEBUG_OUTPUT
+/*! \fn printRelationsDebug
+ *
+ *  print all relations
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [stream]
+ */
+void printRelationsDebug(DATA *data, int stream)
+{
+  long i;
+
+  DEBUG(stream, "status of relations");
+  INDENT(stream);
+
+  for(i=0; i<data->modelData.nRelations; i++)
+    DEBUG5(stream, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+
+  RELEASE(stream);
+}
+#endif
+
 /*! \fn printRelations
  *
  *  print all relations
  *
- *  \param [ref] [data]
- *
- *  \author wbraun
+ *  \param [in]  [data]
+ *  \param [in]  [stream]
  */
-void printRelations(DATA *data)
+void printRelations(DATA *data, int stream)
 {
   long i;
 
-  DEBUG(LOG_EVENTS, "status of relations");
-  INDENT(LOG_EVENTS);
+  INFO(stream, "status of relations");
+  INDENT(stream);
 
   for(i=0; i<data->modelData.nRelations; i++)
-    DEBUG5(LOG_EVENTS, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+    INFO5(stream, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
 
-  RELEASE(LOG_EVENTS);
+  RELEASE(stream);
 }
 
 /*! \fn overwriteOldSimulationData
@@ -640,7 +636,6 @@ double getNextSampleTimeFMU(DATA *data)
     INFO1(LOG_EVENTS, "Next event time = %f", data->simulationInfo.nextSampleEvent);
     return data->simulationInfo.nextSampleEvent;
   }
-
 
   return -1;
 }

@@ -433,7 +433,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     INFO(LOG_STATS, "events");
     INDENT(LOG_STATS);
     INFO1(LOG_STATS, "%5ld state events", solverInfo->stateEvents);
-    INFO1(LOG_STATS, "%5ld sample events", solverInfo->sampleEvents);
+    INFO1(LOG_STATS, "%5ld time events", solverInfo->sampleEvents);
     RELEASE(LOG_STATS);
 
     INFO(LOG_STATS, "solver");

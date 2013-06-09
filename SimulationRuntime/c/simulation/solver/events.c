@@ -93,11 +93,11 @@ void initSample(DATA* data, double startTime, double stopTime)
  *
  *  \param [ref] [data]
  *  \param [ref] [solverInfo]
- *  \return indicates if a sample event is occuered or not.
+ *  \return indicates if a time event is occuered or not.
  *
  *  Function check if a sample expression should be activated
  *  before next step and sets then the next step size to the
- *  sample event.
+ *  time event.
  *
  */
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
@@ -157,11 +157,11 @@ int checkForStateEvent(DATA* data, LIST *eventList)
  *  \param [in]  [eventTime]
  *  \param [ref] [solverInfo]
  *
- *  This function check if a sample event or a state event should
+ *  This function check if a time event or a state event should
  *  processed. If sample and state event have the same event-time
- *  then sample events are prioritize, since they handle also
- *  state event. It returns 1 if state event is before sample event
- *  then it de-activate the sample events.
+ *  then time events are prioritize, since they handle also
+ *  state event. It returns 1 if state event is before time event
+ *  then it de-activate the time events.
  */
 int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
@@ -193,12 +193,12 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
 
   sim_result.emit(&sim_result,data);
 
-  /* sample event */
+  /* time event */
   if(data->simulationInfo.sampleActivated)
   {
     storePreValues(data);
 
-    /* activate sample event */
+    /* activate time event */
     for(i=0; i<data->modelData.nSamples; ++i)
       if(data->simulationInfo.nextSampleTimes[i] <= time + eps)
       {
@@ -225,10 +225,10 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
   saveZeroCrossingsAfterEvent(data);
   /*sim_result_emit(data);*/
 
-  /* sample event */
+  /* time event */
   if(data->simulationInfo.sampleActivated)
   {
-    /* deactivate sample events */
+    /* deactivate time events */
     for(i=0; i<data->modelData.nSamples; ++i)
     {
       if(data->simulationInfo.samples[i])

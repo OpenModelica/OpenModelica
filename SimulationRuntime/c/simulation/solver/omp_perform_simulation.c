@@ -112,9 +112,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         free(filename);
     }
 
-#ifdef USE_DEBUG_OUTPUT
-    printAllVarsDebug(data, 0);
-#endif
+    printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
 
     omp_set_num_threads(4);
 
@@ -156,7 +154,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
                 solverInfo->currentStepSize = simInfo->stopTime - solverInfo->currentTime;
                 /***** End calculation next step size *****/
 
-                /* check for next sample event */
+                /* check for next time event */
                 checkForSampleEvent(data, solverInfo);
                 INFO3(LOG_SOLVER, "call solver from %g to %g (stepSize: %g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
 
@@ -247,9 +245,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
                 }
                 sim_result.emit(&sim_result,data);
 
-#ifdef USE_DEBUG_OUTPUT
-                printAllVarsDebug(data, 0);
-#endif
+                printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
 
                 /***** end of Emit this time step *****/
 
