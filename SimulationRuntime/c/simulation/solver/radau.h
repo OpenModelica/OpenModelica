@@ -78,7 +78,7 @@
       double *max;
       double *derx;
       double *s;
-      double **c;
+      long double **c;
       double *a;
     }NLPODE;
 

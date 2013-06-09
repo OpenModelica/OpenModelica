@@ -43,12 +43,19 @@ extern int functionODE(DATA *data);
 extern "C" {
 #endif
 int KINSpbcg(void *kinmem, int maxl);
+extern int KINSetErrHandlerFn(void * kmem,  KINErrHandlerFn kinsol_errorHandler, void *);
+extern int KINSetInfoHandlerFn(void *kinmem, KINInfoHandlerFn ihfun, void *ih_data);
 #ifdef __cplusplus
 }
 #endif
 
 static int allocateNlpOde(KINODE *kinOde);
 static int allocateKINSOLODE(KINODE *kinOde);
+
+
+static void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data);
+
+static void kinsol_infoHandler(int error_code, const char* module, const char* function, char* msg, void* user_data);
 
 static int freeImOde(void *nlpode, int N);
 static int freeKinsol(void * kOde);
@@ -92,7 +99,8 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   //KINSetEtaForm(kinOde->kData->kmem, KIN_ETACHOICE2);
   KINSetMaxSetupCalls(kinOde->kData->kmem, kinOde->kData->mset);
   kinOde->nlp->currentStep = &kinOde->solverInfo->currentStepSize;
-
+  KINSetErrHandlerFn(kinOde->kData->kmem, kinsol_errorHandler, NULL);
+  KINSetInfoHandlerFn(kinOde->kData->kmem, kinsol_infoHandler, NULL);
   switch(kinOde->flag)
   {
     case 6:
@@ -119,10 +127,10 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   }
   /* Call KINDense to specify the linear solver */
  /*KINSpbcg*/
-  if(kinOde->nlp->nStates<10)
+  if(kinOde->nlp->nStates < 10)
     KINSpgmr(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
   else
-   KINSpbcg(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
+    KINSpbcg(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
   kinOde->kData->glstr = KIN_LINESEARCH; 
   
   return 0;
@@ -162,6 +170,18 @@ static int allocateNlpOde(KINODE *kinOde)
   return 0;
 }
 
+static void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data)
+  {
+      WARNING3(LOG_SOLVER, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+      if(msg)WARNING1(LOG_SOLVER, "%s", msg);
+  }
+
+static void kinsol_infoHandler(int error_code, const char* module, const char* function, char* msg, void* user_data)
+  {
+    INFO2(LOG_SOLVER, " %s: %s ", module, function);
+    if(msg)INFO1(LOG_SOLVER, "%s", msg);
+  }
+
 static int boundsVars(KINODE *kinOde)
 {
   int i;
@@ -190,9 +210,9 @@ static int radau5Coeff(KINODE *kinOde)
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   N = kinOde->N;
 
-  nlp->c = (double**) malloc(N * sizeof(double*));
+  nlp->c = (long double**) malloc(N * sizeof(long double*));
   for(i = 0; i < N; i++)
-    nlp->c[i] = (double*) calloc(N+1, sizeof(double));
+    nlp->c[i] = (long double*) calloc(N+1, sizeof(long double));
 
   nlp->a = (double*) malloc(N * sizeof(double));
 
@@ -223,9 +243,9 @@ static int radau3Coeff(KINODE *kinOde)
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   N = kinOde->N;
 
-  nlp->c = (double**) malloc(N * sizeof(double*));
+  nlp->c = (long double**) malloc(N * sizeof(long double*));
   for(i = 0; i < N; i++)
-    nlp->c[i] = (double*) calloc(N+1, sizeof(double));
+    nlp->c[i] = (long double*) calloc(N+1, sizeof(long double));
 
   nlp->a = (double*) malloc(N * sizeof(double));
 
@@ -245,8 +265,8 @@ static int radau3Coeff(KINODE *kinOde)
 static int radau1Coeff(KINODE *kinOde)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
-  nlp->c = (double**) malloc(kinOde->N * sizeof(double*));
-  nlp->c[0] = (double*) malloc(kinOde->N * sizeof(double));
+  nlp->c = (long double**) malloc(kinOde->N * sizeof(long double*));
+  nlp->c[0] = (long double*) malloc(kinOde->N * sizeof(long double));
   nlp->a = (double*) malloc(kinOde->N * sizeof(double));
   nlp->a[0] = 1.0;
   return 0;
@@ -255,9 +275,9 @@ static int radau1Coeff(KINODE *kinOde)
 static int lobatto4Coeff(KINODE *kinOde)
 {
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
-  nlp->c = (double**) malloc(kinOde->N * sizeof(double*));
-  nlp->c[0] = (double*) malloc(kinOde->N * sizeof(double));
-  nlp->c[1] = (double*) malloc(kinOde->N * sizeof(double));
+  nlp->c = (long double**) malloc(kinOde->N * sizeof(long double*));
+  nlp->c[0] = (long double*) malloc(kinOde->N * sizeof(long double));
+  nlp->c[1] = (long double*) malloc(kinOde->N * sizeof(long double));
   nlp->a = (double*) malloc(kinOde->N * sizeof(double));
   nlp->a[0] = 0.5;
   nlp->a[1] = 1.0;
@@ -270,9 +290,9 @@ static int lobatto6Coeff(KINODE *kinOde)
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   N = kinOde->N;
 
-  nlp->c = (double**) malloc(N * sizeof(double*));
+  nlp->c = (long double**) malloc(N * sizeof(long double*));
   for(i = 0; i < N; i++)
-    nlp->c[i] = (double*) malloc((N+2)* sizeof(double));
+    nlp->c[i] = (long double*) malloc((N+2)* sizeof(long double));
 
   nlp->a = (double*) malloc(N * sizeof(double));
 
@@ -421,7 +441,6 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   int i,k;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
-  int N = kinOde->N*nlp->nStates;
 
   double *x0,*x1,*x2,*x3;
   double*derx = nlp->derx;
@@ -462,7 +481,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
 
 static int radau3Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i,k,N;
+  int i,k;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -472,9 +491,6 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
   double *x0,*x1,*x2;
 
   double*derx = nlp->derx;
- 
-
-  N = kinOde->N*nlp->nStates;
 
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
@@ -529,9 +545,9 @@ static int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
 
-  double* feq = NV_DATA_S(f);
+  double *feq = NV_DATA_S(f);
   double *x0,*x1, *f0;
-  double*derx = nlp->derx;
+  double *derx = nlp->derx;
 
   x0 = nlp->x0;
   f0 = nlp->f0;
@@ -548,7 +564,7 @@ static int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
 
 static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i,k, N;
+  int i,k;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -557,8 +573,6 @@ static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
 
   double *x0, *x1, *x2, *f0;
   double*derx = nlp->derx;
-
-  N = kinOde->N*nlp->nStates;
 
   f0 = nlp->f0;
   x0 = nlp->x0;
@@ -583,7 +597,7 @@ static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
 
 static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
 {
-  int i, k, N;
+  int i, k;
   KINODE* kinOde = (KINODE*)user_data;
   NLPODE *nlp = kinOde->nlp;
   DATA *data = kinOde->data;
@@ -591,8 +605,6 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   double* feq = NV_DATA_S(f);
   double *x0, *x1, *x2, *x3, *f0;
   double*derx = nlp->derx;
-
-  N = kinOde->N*nlp->nStates;
 
   f0 = nlp->f0;
   x0 = nlp->x0;
@@ -642,17 +654,17 @@ int kinsolOde(void* ode)
    if(i == 0)
     {
      KINLapackDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-     INFO(LOG_STDOUT,"Restart Kinsol: change linear solver to KINLapackDense.");
+     INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINLapackDense.");
     }
    else if(i == 1)
    { 
      KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-     INFO(LOG_STDOUT,"Restart Kinsol: change linear solver to KINSptfqmr.");
+     INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINSptfqmr.");
    }
    else if(i == 2)
    {
      KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-     INFO(LOG_STDOUT,"Restart Kinsol: change linear solver to KINSpbcg.");
+     INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINSpbcg.");
    }
 
   
