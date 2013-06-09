@@ -88,7 +88,8 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   KINSetScaledStepTol(kinOde->kData->kmem, kinOde->kData->scsteptol);
   KINSetNumMaxIters(kinOde->kData->kmem, 500);
   if(ACTIVE_STREAM(LOG_SOLVER))
-    KINSetPrintLevel(kinOde->kData->kmem,1);
+    KINSetPrintLevel(kinOde->kData->kmem,2);
+  //KINSetEtaForm(kinOde->kData->kmem, KIN_ETACHOICE2);
   KINSetMaxSetupCalls(kinOde->kData->kmem, kinOde->kData->mset);
   kinOde->nlp->currentStep = &kinOde->solverInfo->currentStepSize;
 
@@ -117,9 +118,13 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
       assert(0);
   }
   /* Call KINDense to specify the linear solver */
-  KINSpbcg(kinOde->kData->kmem, N*kinOde->nlp->nStates+10);
+ /*KINSpbcg*/
+  if(kinOde->nlp->nStates<10)
+    KINSpgmr(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
+  else
+   KINSpbcg(kinOde->kData->kmem, N*kinOde->nlp->nStates+1);
   kinOde->kData->glstr = KIN_LINESEARCH; 
-
+  
   return 0;
 }
 
@@ -164,9 +169,9 @@ static int boundsVars(KINODE *kinOde)
   NLPODE * nlp = (NLPODE*) kinOde->nlp;
   DATA * data = (DATA*) kinOde->data;
 
-  nlp->min = (double*) calloc(nlp->nStates, sizeof(double));
-  nlp->max = (double*) calloc(nlp->nStates, sizeof(double));
-  nlp->s = (double*) calloc(nlp->nStates, sizeof(double));
+  nlp->min = (double*) malloc(nlp->nStates* sizeof(double));
+  nlp->max = (double*) malloc(nlp->nStates* sizeof(double));
+  nlp->s = (double*) malloc(nlp->nStates* sizeof(double));
 
   for(i =0;i<nlp->nStates;i++)
   {
@@ -360,7 +365,7 @@ static int initKinsol(KINODE *kinOde)
 {
   int i,j,k, m, n;
   double *scal_eq, *scal_var, *x, *f2;
-  double tmp, h, hf;
+  long double tmp, h, hf, hf_min;
   DATA *data;
   NLPODE *nlp;
   KDATAODE * kData;
@@ -382,18 +387,21 @@ static int initKinsol(KINODE *kinOde)
   scal_var = NV_DATA_S(kData->sVars);
   scal_eq = NV_DATA_S(kData->sEqns);
 
+  hf_min = 1e-6;
   for(j=0, k=0; j<kinOde->N; ++j)
   {
     for(i=0;i<n;++i,++k)
     {
-      hf = 0.5*nlp->dt*nlp->a[j]*(3*nlp->f0[i]-f2[i]); 
-      x[k] = nlp->x0[i] + hf;
-      tmp = fabs(x[k]) + fabs(nlp->x0[i]);
+      hf = 0.5*nlp->dt*nlp->a[j]*(3*nlp->f0[i]-f2[i]);
+      if(fabs(hf) < hf_min) hf_min = fabs(hf); 
+      x[k] = (nlp->x0[i] + hf);
+      tmp = fabs(x[k] + nlp->x0[i]) + 1e-12;
       tmp = (tmp < 1e-9) ? nlp->s[i] : 2.0/tmp;
       scal_var[k] = tmp + 1e-9;
-      scal_eq[k] = 1.0/(scal_var[k])+ 1e-9;
+      scal_eq[k] = 1.0/(scal_var[k])+ 1e-12;
     }
   }
+  KINSetMaxNewtonStep(kinOde->kData->kmem, hf_min);
   return 0;
 }
 
@@ -500,8 +508,6 @@ static int radau1Res(N_Vector x, N_Vector f, void* user_data)
   double* feq = NV_DATA_S(f);
 
   double *x0,*x1;
-
-  double* xlow, *xup;
   double*derx = nlp->derx;
 
   x0 = nlp->x0;
@@ -624,19 +630,12 @@ int kinsolOde(void* ode)
   KDATAODE *kData = kinOde->kData;
   int i;
   initKinsol(kinOde);
-  for(i = 0; i<2; ++i)
-  {
-    kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
+  kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
                             kData->x,              /* initial guess on input; solution vector */
                             kData->glstr,          /* global stragegy choice */
                             kData->sVars,          /* scaling vector, for the variable cc */
                             kData->sEqns );
-    if(kData->error_code != 0)
-      kData->glstr = 1 -kData->glstr;
-    else
-      return 0;
-  }
-  return -1;
+  return (kData->error_code<0) ? -1 : 0;
 }
 #else
 

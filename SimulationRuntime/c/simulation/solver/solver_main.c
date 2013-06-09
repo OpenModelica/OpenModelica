@@ -71,12 +71,7 @@ typedef struct RK4
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
 
-static int radau5_step(DATA* data, SOLVER_INFO* solverInfo);
-static int radau3_step(DATA* data, SOLVER_INFO* solverInfo);
-static int radau1_step(DATA* data, SOLVER_INFO* solverInfo);
-static int lobatto2_step(DATA* data, SOLVER_INFO* solverInfo);
-static int lobatto4_step(DATA* data, SOLVER_INFO* solverInfo);
-static int lobatto6_step(DATA* data, SOLVER_INFO* solverInfo);
+static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
 static void writeOutputVars(char* names, DATA* data);
 
@@ -97,17 +92,17 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
 
 #ifdef WITH_SUNDIALS
   case 6:
-    return radau5_step(data, solverInfo);
+    return radau_lobatto_step(data, solverInfo);
   case 7:
-    return radau3_step(data, solverInfo);
+    return radau_lobatto_step(data, solverInfo);
   case 8:
-    return radau1_step(data, solverInfo);
+    return radau_lobatto_step(data, solverInfo);
   case 9:
-    return lobatto2_step(data, solverInfo);
+    return radau_lobatto_step(data, solverInfo);
   case 10:
-    return lobatto4_step(data, solverInfo);
+    return radau_lobatto_step(data, solverInfo);
   case 11:
-    return lobatto6_step(data, solverInfo);
+    return radau_lobatto_step(data, solverInfo);
 #endif
 
   case 1:
@@ -582,52 +577,15 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 }
 
 #ifdef WITH_SUNDIALS
-/***************************************    Radau5 IIA     ***********************************/
-int radau5_step(DATA* data, SOLVER_INFO* solverInfo)
+/***************************************    Radau/Lobatto     ***********************************/
+int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  kinsolOde(solverInfo->solverData);
-  solverInfo->currentTime += solverInfo->currentStepSize;
-  return 0;
-}
-
-/***************************************    Radau3 IIA     ***********************************/
-int radau3_step(DATA* data, SOLVER_INFO* solverInfo)
-{
-  kinsolOde(solverInfo->solverData);
-  solverInfo->currentTime += solverInfo->currentStepSize;
-  return 0;
-}
-
-/***************************************    Radau1 IIA     ***********************************/
-int radau1_step(DATA* data, SOLVER_INFO* solverInfo)
-{
-  kinsolOde(solverInfo->solverData);
-  solverInfo->currentTime += solverInfo->currentStepSize;
-  return 0;
-}
-
-/***************************************    Lobatto2 IIA     ***********************************/
-int lobatto2_step(DATA* data, SOLVER_INFO* solverInfo)
-{
-  kinsolOde(solverInfo->solverData);
-  solverInfo->currentTime += solverInfo->currentStepSize;
-  return 0;
-}
-
-/***************************************    Lobatto4 IIA     ***********************************/
-int lobatto4_step(DATA* data, SOLVER_INFO* solverInfo)
-{
-  kinsolOde(solverInfo->solverData);
-  solverInfo->currentTime += solverInfo->currentStepSize;
-  return 0;
-}
-
-/***************************************    Lobatto6 IIA     ***********************************/
-int lobatto6_step(DATA* data, SOLVER_INFO* solverInfo)
-{
-  kinsolOde(solverInfo->solverData);
-  solverInfo->currentTime += solverInfo->currentStepSize;
-  return 0;
+  if(kinsolOde(solverInfo->solverData) == 0)
+  {
+    solverInfo->currentTime += solverInfo->currentStepSize;
+    return 0;
+  }
+  return -1; 
 }
 #endif
 
