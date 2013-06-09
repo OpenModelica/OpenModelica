@@ -625,17 +625,17 @@ int kinsolOde(void* ode)
   int i;
   initKinsol(kinOde);
   for(i = 0; i<2; ++i)
-	{
-	  kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
-		                        kData->x,              /* initial guess on input; solution vector */
-		                        kData->glstr,          /* global stragegy choice */
-		                        kData->sVars,          /* scaling vector, for the variable cc */
-		                        kData->sEqns );
-	  if(kData->error_code != 0)
-	    kData->glstr = 1 -kData->glstr;
-	  else
-	    return 0;
-	}
+  {
+    kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
+                            kData->x,              /* initial guess on input; solution vector */
+                            kData->glstr,          /* global stragegy choice */
+                            kData->sVars,          /* scaling vector, for the variable cc */
+                            kData->sEqns );
+    if(kData->error_code != 0)
+      kData->glstr = 1 -kData->glstr;
+    else
+      return 0;
+  }
   return -1;
 }
 #else
