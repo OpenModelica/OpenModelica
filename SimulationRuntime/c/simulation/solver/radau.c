@@ -86,7 +86,7 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
 
   KINSetFuncNormTol(kinOde->kData->kmem, kinOde->kData->fnormtol);
   KINSetScaledStepTol(kinOde->kData->kmem, kinOde->kData->scsteptol);
-  KINSetNumMaxIters(kinOde->kData->kmem, 500);
+  KINSetNumMaxIters(kinOde->kData->kmem, 10000);
   if(ACTIVE_STREAM(LOG_SOLVER))
     KINSetPrintLevel(kinOde->kData->kmem,2);
   //KINSetEtaForm(kinOde->kData->kmem, KIN_ETACHOICE2);
@@ -630,11 +630,33 @@ int kinsolOde(void* ode)
   KDATAODE *kData = kinOde->kData;
   int i;
   initKinsol(kinOde);
+  for(i = 0;i <3; ++i)
+  {
+   
   kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
                             kData->x,              /* initial guess on input; solution vector */
                             kData->glstr,          /* global stragegy choice */
                             kData->sVars,          /* scaling vector, for the variable cc */
                             kData->sEqns );
+  if(kData->error_code>=0) return 0;
+   if(i == 0)
+    {
+     KINLapackDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+     INFO(LOG_STDOUT,"Restart Kinsol: change linear solver to KINLapackDense.");
+    }
+   else if(i == 1)
+   { 
+     KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+     INFO(LOG_STDOUT,"Restart Kinsol: change linear solver to KINSptfqmr.");
+   }
+   else if(i == 2)
+   {
+     KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+     INFO(LOG_STDOUT,"Restart Kinsol: change linear solver to KINSpbcg.");
+   }
+
+  
+  }
   return (kData->error_code<0) ? -1 : 0;
 }
 #else
