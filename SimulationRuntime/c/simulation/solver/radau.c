@@ -79,14 +79,16 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
   allocateNlpOde(kinOde);
   allocateKINSOLODE(kinOde);
   kinOde->solverInfo = solverInfo;
-  kinOde->kData->mset = 10;
+  kinOde->kData->mset = 50;
 
   kinOde->kData->fnormtol = kinOde->data->simulationInfo.tolerance;
   kinOde->kData->scsteptol = kinOde->data->simulationInfo.tolerance;
 
   KINSetFuncNormTol(kinOde->kData->kmem, kinOde->kData->fnormtol);
   KINSetScaledStepTol(kinOde->kData->kmem, kinOde->kData->scsteptol);
-  KINSetNumMaxIters(kinOde->kData->kmem, 10000);
+  KINSetNumMaxIters(kinOde->kData->kmem, 500);
+  if(ACTIVE_STREAM(LOG_SOLVER))
+    KINSetPrintLevel(kinOde->kData->kmem,1);
   KINSetMaxSetupCalls(kinOde->kData->kmem, kinOde->kData->mset);
   kinOde->nlp->currentStep = &kinOde->solverInfo->currentStepSize;
 
@@ -115,8 +117,8 @@ int allocateKinOde(DATA* data, SOLVER_INFO* solverInfo, int flag, int N)
       assert(0);
   }
   /* Call KINDense to specify the linear solver */
-  KINSpbcg(kinOde->kData->kmem, 3*N*kinOde->nlp->nStates);
-  kinOde->kData->glstr = KIN_LINESEARCH;
+  KINSpbcg(kinOde->kData->kmem, N*kinOde->nlp->nStates+10);
+  kinOde->kData->glstr = KIN_LINESEARCH; 
 
   return 0;
 }
@@ -298,31 +300,21 @@ static int allocateKINSOLODE(KINODE *kinOde)
   int m;
   DATA *data = kinOde->data;
   int n = data->modelData.nStates;
-  int nn; /* 3*N*n = N*(subintervalls) * 3*var(eq,low,up)*nStates */
   int i, j, k;
-  double* ceq,*clow,*cup;
+  double* c;
   KDATAODE * kData = (kinOde)->kData;
-  m =  kinOde->N*n;
-  nn = 3*m;  
-  kData->x = N_VNew_Serial(nn);
-  kData->sVars = N_VNew_Serial(nn);
-  kData->sEqns = N_VNew_Serial(nn);
-  kData->c = N_VNew_Serial(nn);
+  m =  kinOde->N*n;  
+  kData->x = N_VNew_Serial(m);
+  kData->sVars = N_VNew_Serial(m);
+  kData->sEqns = N_VNew_Serial(m);
+  kData->c = N_VNew_Serial(m);
   kData->kmem = KINCreate();
-  ceq = NV_DATA_S(kData->c);
-
-  clow = ceq + m;
-  cup = clow + m;
+  c = NV_DATA_S(kData->c);
 
   for(j=0, k=0; j< kinOde->N; ++j)
-  {
     for(i=0; i<n; ++i, ++k)
-    {
-      ceq[k] = 0;
-      clow[k] = 1;
-      cup[k] = -1;
-    }
-  }
+      c[k] = 0;
+
   KINSetUserData(kinOde->kData->kmem, (void*) kinOde);
   KINSetConstraints(kinOde->kData->kmem, kData->c);
   return 0;
@@ -366,52 +358,40 @@ static int freeKinsol(void * kOde)
 
 static int initKinsol(KINODE *kinOde)
 {
-  int i,j,k, N;
-  double* seq,*slow,*sup;
-  double* sveq,*svlow,*svup;
-  double* xlow,*xup;
-  double tmp,h,hf;
-  int nStates = kinOde->nlp->nStates;
-  DATA *data= kinOde->data;
-  KDATAODE *kData = kinOde->kData;
-  double* xeq = NV_DATA_S(kData->x);
-  NLPODE *nlp = kinOde->nlp;
-  double *f2 = data->localData[2]->realVars + nStates;
+  int i,j,k, m, n;
+  double *scal_eq, *scal_var, *x, *f2;
+  double tmp, h, hf;
+  DATA *data;
+  NLPODE *nlp;
+  KDATAODE * kData;
+
+  n = kinOde->nlp->nStates;
+  data= kinOde->data;
+  kData = kinOde->kData;
+  x = NV_DATA_S(kData->x);
+  nlp = kinOde->nlp;
+  f2 = data->localData[2]->realVars + n;
   nlp->dt = *(nlp->currentStep);
-  nlp->derx = data->localData[0]->realVars + nStates;
+  nlp->derx = data->localData[0]->realVars + n;
   nlp->x0 = data->localData[1]->realVars;
-  nlp->f0 = data->localData[1]->realVars + nStates;
+  nlp->f0 = data->localData[1]->realVars + n;
   nlp->t0 = data->localData[1]->timeValue;
 
-  N = kinOde->N*nStates;
-  xlow = xeq + N;
-  xup  = xlow + N;
+  m = kinOde->N*n;
 
-  sveq = NV_DATA_S(kData->sVars);
-  svlow = sveq + N;
-  svup = svlow + N;
+  scal_var = NV_DATA_S(kData->sVars);
+  scal_eq = NV_DATA_S(kData->sEqns);
 
-  seq = NV_DATA_S(kData->sEqns);
-  slow = seq + N;
-  sup = slow + N;
-
-  for(j=0,k=0;j<kinOde->N;j++)
+  for(j=0, k=0; j<kinOde->N; ++j)
   {
-    tmp = 0.5*nlp->a[j]*nlp->dt;
-    for(i=0;i<nStates;i++,k++)
+    for(i=0;i<n;++i,++k)
     {
-      hf = tmp*(nlp->f0[i] + f2[i]);
-      xeq[k] = nlp->x0[i] + hf;
-      seq[k] = 1e-12 + 1.0/(fabs(hf) + 1e-6);
-      xlow[k] = xeq[k] - nlp->min[i];
-      xup[k] = xeq[k] - nlp->max[i];
-
-      sveq[k] = 1.0/(fabs(xeq[k])+1e-6) + 1e-6;
-      svlow[k] = sveq[k];
-      svup[k] = sveq[k];
-      slow[k] = seq[k];
-      sup[k] = seq[k];
-
+      hf = 0.5*nlp->dt*nlp->a[j]*(3*nlp->f0[i]-f2[i]); 
+      x[k] = nlp->x0[i] + hf;
+      tmp = fabs(x[k]) + fabs(nlp->x0[i]);
+      tmp = (tmp < 1e-9) ? nlp->s[i] : 2.0/tmp;
+      scal_var[k] = tmp + 1e-9;
+      scal_eq[k] = 1.0/(scal_var[k])+ 1e-9;
     }
   }
   return 0;
@@ -436,30 +416,21 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   int N = kinOde->N*nlp->nStates;
 
   double *x0,*x1,*x2,*x3;
-  double* xlow, *xup;
   double*derx = nlp->derx;
   double*a = nlp->a;
-  double* flow, *fup;
   double* feq = NV_DATA_S(f);
-  flow = feq + N;
-  fup  = flow + N;
 
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
   x2 = x1 + nlp->nStates;
   x3 = x2 + nlp->nStates;
 
-  xlow = x1 + N;
-  xup  = xlow + N;
-
   refreshModell(kinOde->data, x1,nlp->t0 + a[0]*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i] + nlp->dt*derx[i]) -
              (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
-
-    flow[i] = xlow[i] - x1[i] + nlp->min[i];
-    fup[i] = xup[i] - x1[i] +  nlp->max[i];
+    if(isnan(feq[i])) return -1;
   }
 
   refreshModell(kinOde->data, x2,nlp->t0 + a[1]*nlp->dt);
@@ -467,9 +438,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   {
     feq[k] = (nlp->c[1][1]*x1[i] + nlp->dt*derx[i]) -
                 (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
-
-    flow[k] = xlow[k] - x2[i] + nlp->min[i];
-    fup[k] = xup[k] -  x2[i] + nlp->max[i];
+   if(isnan(feq[k])) return -1;
   }
 
   refreshModell(kinOde->data, x3, nlp->t0 + nlp->dt);
@@ -477,9 +446,7 @@ static int radau5Res(N_Vector x, N_Vector f, void* user_data)
   {
     feq[k] =  (nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i] + nlp->dt*derx[i]) -
                  (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
-
-    flow[k] = xlow[k] - x3[i] + nlp->min[i];
-    fup[k] = xup[k] - x3[i] + nlp->max[i];
+    if(isnan(feq[k])) return -1;
   }
 
   return 0;
@@ -495,27 +462,22 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
   double* feq = NV_DATA_S(f);
 
   double *x0,*x1,*x2;
-  double* xlow, *xup;
+
   double*derx = nlp->derx;
-  double* flow, *fup;
+ 
 
   N = kinOde->N*nlp->nStates;
-  flow = feq + N;
-  fup  = flow + N;
 
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
   x2 = x1 + nlp->nStates;
 
-  xlow = x2 + nlp->nStates;
-  xup  = xlow + N;
   refreshModell(data, x1,nlp->t0 + 0.5*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->c[0][0]*x0[i] + nlp->dt*derx[i]) -
              (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
-    flow[i] = xlow[i] - x1[i] + nlp->min[i];
-    fup[i] = xup[i] - x1[i] +  nlp->max[i];
+    if(isnan(feq[i])) return -1;
   }
 
   refreshModell(data, x2,nlp->t0 + nlp->dt);
@@ -523,8 +485,7 @@ static int radau3Res(N_Vector x, N_Vector f, void* user_data)
   {
     feq[k] = (nlp->c[1][1]*x1[i] + nlp->dt*derx[i]) -
                 (nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i]);
-    flow[k] = xlow[k] - x2[i] + nlp->min[i];
-    fup[k] = xup[k] -  x2[i] + nlp->max[i];
+    if(isnan(feq[k])) return -1;
   }
 
   return 0;
@@ -542,22 +503,15 @@ static int radau1Res(N_Vector x, N_Vector f, void* user_data)
 
   double* xlow, *xup;
   double*derx = nlp->derx;
-  double* flow, *fup;
-
-  flow = feq + nlp->nStates;
-  fup  = flow + nlp->nStates;
 
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
 
-  xlow = x1 + nlp->nStates;
-  xup  = xlow + nlp->nStates;
   refreshModell(kinOde->data, x1, nlp->t0 + nlp->dt);
   for(i = 0; i<nlp->nStates; ++i)
   {
     feq[i] = x0[i] - x1[i] + nlp->dt*derx[i];
-    flow[i] = xlow[i] - x1[i] + nlp->min[i];
-    fup[i] = xup[i] - x1[i] +  nlp->max[i];
+    if(isnan(feq[i])) return -1;
   }
   return 0;
 }
@@ -571,25 +525,17 @@ static int lobatto2Res(N_Vector x, N_Vector f, void* user_data)
 
   double* feq = NV_DATA_S(f);
   double *x0,*x1, *f0;
-  double* xlow, *xup;
   double*derx = nlp->derx;
-  double* flow, *fup;
-
-  flow = feq + nlp->nStates;
-  fup  = flow + nlp->nStates;
 
   x0 = nlp->x0;
   f0 = nlp->f0;
   x1 = NV_DATA_S(x);
-  xlow = x1 + nlp->nStates;
-  xup  = xlow + nlp->nStates;
 
   refreshModell(data, x1,nlp->t0 + nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = x0[i] - x1[i] + 0.5*nlp->dt*(f0[i]+derx[i]);
-    flow[i] = xlow[i] - x1[i] + nlp->min[i];
-    fup[i] = xup[i] - x1[i] +  nlp->max[i];
+    if(isnan(feq[i])) return -1;
   }
   return 0;
 }
@@ -604,36 +550,27 @@ static int lobatto4Res(N_Vector x, N_Vector f, void* user_data)
   double* feq = NV_DATA_S(f);
 
   double *x0, *x1, *x2, *f0;
-  double* xlow, *xup;
   double*derx = nlp->derx;
-  double* flow, *fup;
 
   N = kinOde->N*nlp->nStates;
-
-  flow = feq + N;
-  fup  = flow + N;
 
   f0 = nlp->f0;
   x0 = nlp->x0;
   x1 = NV_DATA_S(x);
   x2 = x1 + nlp->nStates;
-  xlow = x2 + nlp->nStates;
-  xup  = xlow + N;
 
   refreshModell(data, x1,nlp->t0 + 0.5*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->dt*(2.0*derx[i] +f0[i]) + 5.0*x0[i]) - (4*x1[i] + x2[i]);
-    flow[i] = xlow[i] - x1[i] + nlp->min[i];
-    fup[i] = xup[i] - x1[i] +  nlp->max[i];
+    if(isnan(feq[i])) return -1;
   }
 
   refreshModell(data, x2,nlp->t0 + nlp->dt);
   for(i = 0,k=nlp->nStates;i<nlp->nStates;i++,k++)
   {
     feq[k] = (2.0*nlp->dt*derx[i] + 16.0*x1[i]) - (8.0*(x0[i] + x2[i]) +2.0*nlp->dt*f0[i]);
-    flow[k] = xlow[k] - x2[i] + nlp->min[i];
-    fup[k] = xup[k] - x2[i] +  nlp->max[i];
+    if(isnan(feq[k])) return -1;
   }
   return 0;
 }
@@ -646,16 +583,10 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   DATA *data = kinOde->data;
 
   double* feq = NV_DATA_S(f);
-
   double *x0, *x1, *x2, *x3, *f0;
-  double* xlow, *xup;
   double*derx = nlp->derx;
-  double* flow, *fup;
 
   N = kinOde->N*nlp->nStates;
-
-  flow = feq + N;
-  fup  = flow + N;
 
   f0 = nlp->f0;
   x0 = nlp->x0;
@@ -663,31 +594,25 @@ static int lobatto6Res(N_Vector x, N_Vector f, void* user_data)
   x2 = x1 + nlp->nStates;
   x3 = x2 + nlp->nStates;
 
-  xlow = x3 + nlp->nStates;
-  xup  = xlow + N;
-
   refreshModell(data, x1,nlp->t0 + nlp->a[0]*nlp->dt);
   for(i = 0;i<nlp->nStates;i++)
   {
     feq[i] = (nlp->dt*(derx[i] + nlp->c[0][4]*f0[i]) + nlp->c[0][0]*x0[i] + nlp->c[0][3]*x3[i]) - (nlp->c[0][1]*x1[i] + nlp->c[0][2]*x2[i]);
-    flow[i] = xlow[i] - x1[i] + nlp->min[i];
-    fup[i] = xup[i] - x1[i] +  nlp->max[i];
+   if(isnan(feq[i])) return -1;
   }
 
   refreshModell(data, x2,nlp->t0 + nlp->a[1]*nlp->dt);
   for(i = 0,k=nlp->nStates;i<nlp->nStates;i++,k++)
   {
     feq[k] = (nlp->dt*derx[i] + nlp->c[1][1]*x1[i]) - (nlp->dt*nlp->c[1][4]*f0[i] + nlp->c[1][0]*x0[i] + nlp->c[1][2]*x2[i] + nlp->c[1][3]*x3[i]);
-    flow[k] = xlow[k] - x2[i] + nlp->min[i];
-    fup[k] = xup[k] - x2[i] +  nlp->max[i];
+   if(isnan(feq[k])) return -1;
   }
 
   refreshModell(data, x3,nlp->t0 + nlp->dt);
   for(i = 0;i<nlp->nStates;i++,k++)
   {
     feq[k] = (nlp->dt*(f0[i] + derx[i]) +  nlp->c[2][0]*x0[i] + nlp->c[2][2]*x2[i]) - (nlp->c[2][1]*x1[i] + nlp->c[2][3]*x3[i]);
-    flow[k] = xlow[k] - x3[i] + nlp->min[i];
-    fup[k] = xup[k] - x3[i] +  nlp->max[i];
+    if(isnan(feq[k])) return -1;
   }
 
   return 0;
@@ -697,14 +622,21 @@ int kinsolOde(void* ode)
 {
   KINODE *kinOde = (KINODE*) ode;
   KDATAODE *kData = kinOde->kData;
+  int i;
   initKinsol(kinOde);
-  kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
-                                kData->x,              /* initial guess on input; solution vector */
-                                kData->glstr,          /* global stragegy choice */
-                                kData->sVars,          /* scaling vector, for the variable cc */
-                                kData->sEqns );
-
-  return kData->error_code;
+  for(i = 0; i<2; ++i)
+	{
+	  kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
+		                        kData->x,              /* initial guess on input; solution vector */
+		                        kData->glstr,          /* global stragegy choice */
+		                        kData->sVars,          /* scaling vector, for the variable cc */
+		                        kData->sEqns );
+	  if(kData->error_code != 0)
+	    kData->glstr = 1 -kData->glstr;
+	  else
+	    return 0;
+	}
+  return -1;
 }
 #else
 
