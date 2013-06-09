@@ -152,16 +152,17 @@ int checkForStateEvent(DATA* data, LIST *eventList)
 
 /*! \fn checkEvents
  *
- *  \param [ref] [data]
- *  \param [ref] [eventList]
- *  \param [in]  [eventTime]
- *  \param [ref] [solverInfo]
- *
  *  This function check if a time event or a state event should
  *  processed. If sample and state event have the same event-time
  *  then time events are prioritize, since they handle also
  *  state event. It returns 1 if state event is before time event
  *  then it de-activate the time events.
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [eventList]
+ *  \param [in]  [eventTime]
+ *  \param [ref] [solverInfo]
+ *  \return 0: no event; 1: time event; 2: state event
  */
 int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
@@ -172,7 +173,7 @@ int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solv
   if(data->simulationInfo.sampleActivated == 1)
     return 1;
   if(listLen(eventLst)>0)
-    return 1;
+    return 2;
 
   return 0;
 }
@@ -457,12 +458,12 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
 
 /*! \fn checkZeroCrossings
  *
+ *  Function checks for an event list on events
+ *
  *  \param [ref] [data]
  *  \param [ref] [eventListTmp]
  *  \param [in]  [eventList]
  *  \return boolean value
- *
- *  Function checks for an event list on events
  */
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 {
@@ -494,15 +495,15 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 
 /*! \fn saveZeroCrossingsAfterEvent
  *
- *  \param [ref] [data]
- *
  *  Function saves all zero-crossing values as pre(zero-crossing)
+ *
+ *  \param [ref] [data]
  */
 void saveZeroCrossingsAfterEvent(DATA *data)
 {
   long i=0;
 
-  INFO(LOG_ZEROCROSSINGS, "save all zerocrossings after an event");
+  INFO(LOG_ZEROCROSSINGS, "save all zerocrossings after an event"); /* ??? */
 
   function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
   for(i=0; i<data->modelData.nZeroCrossings; i++)

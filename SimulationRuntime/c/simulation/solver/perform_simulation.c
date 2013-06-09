@@ -81,7 +81,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   int retValIntegrator = 0;
   int retValue = 0;
-  int i, ui;
+  int i, ui, eventType;
 
   FILE *fmt = NULL;
   unsigned int stepNo = 0;
@@ -159,9 +159,10 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     if(measure_time_flag)
       rt_tick(SIM_TIMER_EVENT);
 
-    if(checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo))
+    eventType = checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
+    if(eventType > 0)
     {
-      INFO1(LOG_EVENTS, "event handling at time %g", solverInfo->currentTime);
+      INFO2(LOG_EVENTS, "%s event at time %g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
       INDENT(LOG_EVENTS);
       handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       RELEASE(LOG_EVENTS);

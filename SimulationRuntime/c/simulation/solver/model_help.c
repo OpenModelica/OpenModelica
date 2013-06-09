@@ -134,7 +134,7 @@ void saveZeroCrossings(DATA* data)
 {
   long i = 0;
 
-  INFO(LOG_ZEROCROSSINGS, "save all zerocrossings");
+  DEBUG(LOG_ZEROCROSSINGS, "save all zerocrossings"); /* ??? */
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
@@ -923,7 +923,7 @@ static double tolZC = 1e-10;
 void setZCtol(double relativeTol)
 {
   tolZC = 1e-4*relativeTol;
-  INFO1(LOG_EVENTS, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
+  INFO1(LOG_EVENTS_V, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 }
 
 extern inline
