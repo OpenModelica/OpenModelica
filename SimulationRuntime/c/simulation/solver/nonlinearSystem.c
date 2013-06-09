@@ -226,7 +226,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 {
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
-  int i, j, retVal=0;
+  long i, j, retVal=0;
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
     if(nonlinsys[i].solved == 0)
@@ -236,8 +236,34 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
       {
         WARNING2(LOG_NLS, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).name, data->localData[0]->timeValue);
         INDENT(LOG_NLS);
-        for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).numVar; ++j)
-          WARNING2(LOG_NLS, "[%ld] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).vars[j]->name);
+        if(data->simulationInfo.initial)
+        {
+          WARNING(LOG_NLS, "proper start-values for some of the following iteration variables might help");
+          INDENT(LOG_NLS);
+          for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).numVar; ++j)
+          {
+            int done=0;
+            long k;
+            const MODEL_DATA *mData = &(data->modelData);
+            for(k=0; k<mData->nVariablesReal && !done; ++k)
+            {
+              if(!strcmp(mData->realVarsData[k].info.name, modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).vars[j]->name))
+              {
+                done = 1;
+                WARNING4(LOG_NLS, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
+                                                                         mData->realVarsData[k].info.name,
+                                                                         mData->realVarsData[k].attribute.start,
+                                                                         mData->realVarsData[k].attribute.nominal);
+              }
+            }
+            if(!done)
+              WARNING2(LOG_NLS, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).vars[j]->name);
+          }
+          RELEASE(LOG_NLS);
+        }
+        else
+          for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).numVar; ++j)
+            WARNING2(LOG_NLS, "[%ld] Real %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, nonlinsys->equationIndex).vars[j]->name);
         RELEASE(LOG_NLS);
       }
     }
