@@ -645,29 +645,29 @@ int kinsolOde(void* ode)
   for(i = 0;i <3; ++i)
   {
    
-  kData->error_code = KINSol( kData->kmem,           /* KINSol memory block */
-                            kData->x,              /* initial guess on input; solution vector */
-                            kData->glstr,          /* global stragegy choice */
-                            kData->sVars,          /* scaling vector, for the variable cc */
-                            kData->sEqns );
-  if(kData->error_code>=0) return 0;
-   if(i == 0)
+    kData->error_code = KINSol(kData->kmem,           /* KINSol memory block */
+                               kData->x,              /* initial guess on input; solution vector */
+                               kData->glstr,          /* global stragegy choice */
+                               kData->sVars,          /* scaling vector, for the variable cc */
+                               kData->sEqns );
+    if(kData->error_code>=0)
+      return 0;
+      
+    if(i == 0)
     {
-     KINLapackDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+     KINDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
      INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINLapackDense.");
     }
-   else if(i == 1)
-   { 
-     KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-     INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINSptfqmr.");
-   }
-   else if(i == 2)
-   {
-     KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-     INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINSpbcg.");
-   }
-
-  
+    else if(i == 1)
+    { 
+      KINSptfqmr(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+      INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINSptfqmr.");
+    }
+    else if(i == 2)
+    {
+      KINSpbcg(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
+      INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINSpbcg.");
+    }
   }
   return (kData->error_code<0) ? -1 : 0;
 }
