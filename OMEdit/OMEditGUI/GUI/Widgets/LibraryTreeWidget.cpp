@@ -901,8 +901,6 @@ bool LibraryTreeWidget::saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
     if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveInOneFile)
     {
       result = saveLibraryTreeNodeOneFileHelper(pLibraryTreeNode);
-      if (result)
-        getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
     }
     /* A root model with sub models.
      * If its a new model then its fileName is <interactive> then check its mSaveContentsType.
@@ -911,9 +909,13 @@ bool LibraryTreeWidget::saveLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode)
     else if (pLibraryTreeNode->getFileName().isEmpty() && pLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure)
     {
       result = saveLibraryTreeNodeFolderHelper(pLibraryTreeNode);
-      if (result)
-        getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
     }
+    else
+    {
+      result = saveLibraryTreeNodeOneFileOrFolderHelper(pLibraryTreeNode);
+    }
+    if (result)
+      getMainWindow()->addRecentFile(pLibraryTreeNode->getFileName(), Helper::utf8);
   }
   else if (!pLibraryTreeNode->getParentName().isEmpty())
   {
@@ -964,6 +966,12 @@ bool LibraryTreeWidget::saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeN
   {
     fileName = pLibraryTreeNode->getFileName();
   }
+  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+      return false;
+  }
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
   // save the model through OMC
   if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
@@ -999,7 +1007,8 @@ bool LibraryTreeWidget::saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibra
   // set the fileName for the model.
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
   // set the fileName for the sub models
-  setSubModelsFileNameOneFileHelper(pLibraryTreeNode, fileName);
+  if (!setSubModelsFileNameOneFileHelper(pLibraryTreeNode, fileName))
+    return false;
   // save the model through OMC
   if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
   {
@@ -1020,17 +1029,36 @@ bool LibraryTreeWidget::saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibra
   }
 }
 
-void LibraryTreeWidget::setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath)
+bool LibraryTreeWidget::setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath)
 {
+  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+      return false;
+  }
   for (int i = 0 ; i < pLibraryTreeNode->childCount(); i++)
   {
     LibraryTreeNode *pChildLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(pLibraryTreeNode->child(i));
     if (pChildLibraryTreeNode->childCount() > 0)
-      setSubModelsFileNameOneFileHelper(pChildLibraryTreeNode, filePath);
+    {
+      if (!setSubModelsFileNameOneFileHelper(pChildLibraryTreeNode, filePath))
+        return false;
+    }
+    else
+    {
+      /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+      if (pChildLibraryTreeNode->getModelWidget())
+      {
+        if (!pChildLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+          return false;
+      }
+    }
     mpMainWindow->getStatusBar()->showMessage(QString(tr("Saving")).append(" ").append(pChildLibraryTreeNode->getNameStructure()));
     mpMainWindow->getOMCProxy()->setSourceFile(pChildLibraryTreeNode->getNameStructure(), filePath);
     pChildLibraryTreeNode->setFileName(filePath);
   }
+  return true;
 }
 
 void LibraryTreeWidget::setSubModelsSavedOneFileHelper(LibraryTreeNode *pLibraryTreeNode)
@@ -1069,6 +1097,12 @@ bool LibraryTreeWidget::saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibrar
     QFileInfo fileInfo(fileName);
     directoryName = fileInfo.absoluteDir().absolutePath();
   }
+  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+      return false;
+  }
   mpMainWindow->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
   // save the model through OMC
   if (mpMainWindow->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
@@ -1080,7 +1114,8 @@ bool LibraryTreeWidget::saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibrar
       pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure());
       pLibraryTreeNode->getModelWidget()->setModelFilePathLabel(fileName);
     }
-    saveSubModelsFolderHelper(pLibraryTreeNode, directoryName);
+    if (!saveSubModelsFolderHelper(pLibraryTreeNode, directoryName))
+      return false;
     return true;
   }
   else
@@ -1090,11 +1125,17 @@ bool LibraryTreeWidget::saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibrar
   }
 }
 
-void LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeNode, QString directoryName)
+bool LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeNode, QString directoryName)
 {
   for (int i = 0 ; i < pLibraryTreeNode->childCount(); i++)
   {
     LibraryTreeNode *pChildLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(pLibraryTreeNode->child(i));
+    /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+    if (pChildLibraryTreeNode->getModelWidget())
+    {
+      if (!pChildLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+        return false;
+    }
     QString directory;
     if (pChildLibraryTreeNode->getType() != StringHandler::Package)
     {
@@ -1115,6 +1156,7 @@ void LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeN
       else
       {
         mpMainWindow->getOMCProxy()->printMessagesStringInternal();
+        return false;
       }
     }
     else
@@ -1140,12 +1182,14 @@ void LibraryTreeWidget::saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeN
         else
         {
           mpMainWindow->getOMCProxy()->printMessagesStringInternal();
+          return false;
         }
       }
     }
     if (pChildLibraryTreeNode->childCount() > 0)
       saveSubModelsFolderHelper(pChildLibraryTreeNode, directory);
   }
+  return true;
 }
 
 bool LibraryTreeWidget::saveLibraryTreeNodeOneFileOrFolderHelper(LibraryTreeNode *pLibraryTreeNode)

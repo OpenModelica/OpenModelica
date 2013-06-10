@@ -185,10 +185,10 @@ private:
   QAction *mpExportXMLAction;
   bool saveLibraryTreeNodeHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeOneFileHelper(LibraryTreeNode *pLibraryTreeNode);
-  void setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath);
+  bool setSubModelsFileNameOneFileHelper(LibraryTreeNode *pLibraryTreeNode, QString filePath);
   void setSubModelsSavedOneFileHelper(LibraryTreeNode *pLibraryTreeNode);
   bool saveLibraryTreeNodeFolderHelper(LibraryTreeNode *pLibraryTreeNode);
-  void saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeNode, QString directoryName);
+  bool saveSubModelsFolderHelper(LibraryTreeNode *pLibraryTreeNode, QString directoryName);
   bool saveLibraryTreeNodeOneFileOrFolderHelper(LibraryTreeNode *pLibraryTreeNode);
 public slots:
   void expandLibraryTreeNode(QTreeWidgetItem *item);

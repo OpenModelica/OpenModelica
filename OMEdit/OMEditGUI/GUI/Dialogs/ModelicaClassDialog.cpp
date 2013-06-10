@@ -662,6 +662,20 @@ bool SaveChangesDialog::getUnsavedClasses()
         QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
         pListItem->setText(pLibraryTreeNode->getNameStructure());
       }
+      else
+      {
+        LibraryTreeNode *pParentLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
+        if (pParentLibraryTreeNode)
+        {
+          QFileInfo fileInfo(pParentLibraryTreeNode->getFileName());
+          if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0))
+          {
+            hasUnsavedClasses = true;
+            QListWidgetItem *pListItem = new QListWidgetItem(mpUnsavedClassesListWidget);
+            pListItem->setText(pParentLibraryTreeNode->getNameStructure());
+          }
+        }
+      }
     }
   }
   mpUnsavedClassesListWidget->selectAll();
