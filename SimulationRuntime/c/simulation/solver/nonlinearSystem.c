@@ -45,6 +45,27 @@
 
 extern doublereal enorm_(integer *n, doublereal *x);
 
+
+const char *NLS_NAME[NLS_MAX+1] = {
+  "NLS_UNKNOWN",
+
+  /* NLS_HYBRID */       "hybrid",
+  /* NLS_KINSOL */       "kinsol",
+  /* NLS_NEWTON */       "newton",
+
+  "NLS_MAX"
+};
+
+const char *NLS_DESC[NLS_MAX+1] = {
+  "unknown",
+
+  /* NLS_HYBRID */       "default method",
+  /* NLS_KINSOL */       "sundials/kinsol",
+  /* NLS_NEWTON */       "Newton Raphson",
+
+  "NLS_MAX"
+};
+
 /*! \fn int allocateNonlinearSystem(DATA *data)
  *
  *  This function allocates memory for all nonlinear systems.
@@ -72,7 +93,6 @@ int allocateNonlinearSystem(DATA *data)
       }
     }
 
-
     /* allocate system data */
     nonlinsys[i].nlsx = (double*) malloc(size*sizeof(double));
     nonlinsys[i].nlsxExtrapolation = (double*) malloc(size*sizeof(double));
@@ -93,13 +113,13 @@ int allocateNonlinearSystem(DATA *data)
     {
       switch(data->simulationInfo.nlsMethod)
       {
-      case NS_HYBRID:
+      case NLS_HYBRID:
         allocateHybrdData(size, &nonlinsys[i].solverData);
         break;
-      case NS_KINSOL:
+      case NLS_KINSOL:
         nls_kinsol_allocate(data, &nonlinsys[i]);
         break;
-      case NS_NEWTON:
+      case NLS_NEWTON:
         allocateNewtonData(size, &nonlinsys[i].solverData);
         break;
       default:
@@ -141,13 +161,13 @@ int freeNonlinearSystem(DATA *data)
     {
       switch(data->simulationInfo.nlsMethod)
       {
-      case NS_HYBRID:
+      case NLS_HYBRID:
         freeHybrdData(&nonlinsys[i].solverData);
         break;
-      case NS_KINSOL:
+      case NLS_KINSOL:
         nls_kinsol_free(&nonlinsys[i]);
         break;
-      case NS_NEWTON:
+      case NLS_NEWTON:
         freeNewtonData(&nonlinsys[i].solverData);
         break;
       default:
@@ -193,13 +213,13 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   {
     switch(data->simulationInfo.nlsMethod)
     {
-    case NS_HYBRID:
+    case NLS_HYBRID:
       success = solveHybrd(data, sysNumber);
       break;
-    case NS_KINSOL:
+    case NLS_KINSOL:
       success = nonlinearSolve_kinsol(data, sysNumber);
       break;
-    case NS_NEWTON:
+    case NLS_NEWTON:
       success = solveNewton(data, sysNumber);
       break;
     default:

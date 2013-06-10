@@ -52,12 +52,18 @@ extern "C" {
 
 enum NONLINEAR_SOLVER
 {
-  NS_NONE = 0,
-  NS_HYBRID,
-  NS_KINSOL,
-  NS_NEWTON,
-  NS_MAX
+  NLS_NONE = 0,
+  
+  NLS_HYBRID,
+  NLS_KINSOL,
+  NLS_NEWTON,
+  
+  NLS_MAX
 };
+
+
+extern const char *NLS_NAME[NLS_MAX+1];
+extern const char *NLS_DESC[NLS_MAX+1];
 
 typedef void* NLS_SOLVER_DATA;
 

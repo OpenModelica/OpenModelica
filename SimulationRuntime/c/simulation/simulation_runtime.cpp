@@ -238,27 +238,25 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
 int getNonlinearSolverMethod(int argc, char**argv)
 {
+  int i;
   const char *cflags = omc_flagValue[FLAG_NLS];
   const string *method = cflags ? new string(cflags) : NULL;
 
   if(!method)
-    return NS_HYBRID; /* default method */
+    return NLS_HYBRID; /* default method */
 
-  if(*method == string("hybrid"))
-    return NS_HYBRID;
-  else if(*method == string("kinsol"))
-    return NS_KINSOL;
-  else if(*method == string("newton"))
-    return NS_NEWTON;
+  for(i=1; i<NLS_MAX; ++i)
+    if(*method == NLS_NAME[i])
+      return i;
 
-  WARNING1(LOG_STDOUT, "unrecognized option -nls %s", method->c_str());
+  WARNING1(LOG_STDOUT, "unrecognized option -nls=%s", method->c_str());
   WARNING(LOG_STDOUT, "current options are:");
   INDENT(LOG_STDOUT);
-  WARNING2(LOG_STDOUT, "%-18s [%s]", "hybrid", "default method");
-  WARNING2(LOG_STDOUT, "%-18s [%s]", "kinsol", "sundials/kinsol");
-  WARNING2(LOG_STDOUT, "%-18s [%s]", "newton", "newton Raphson");
+  for(i=1; i<NLS_MAX; ++i)
+    WARNING2(LOG_STDOUT, "%-18s [%s]", NLS_NAME[i], NLS_DESC[i]);
   THROW("see last warning");
-  return NS_NONE;
+  
+  return NLS_NONE;
 }
 
 int getlinearSolverMethod(int argc, char**argv)
@@ -277,7 +275,7 @@ int getlinearSolverMethod(int argc, char**argv)
   INDENT(LOG_STDOUT);
   WARNING2(LOG_STDOUT, "%-18s [%s]", "lapack", "default method");
   THROW("see last warning");
-  return NS_NONE;
+  return LS_NONE;
 }
 
 /**

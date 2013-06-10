@@ -700,7 +700,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.samples = (modelica_boolean*) calloc(data->modelData.nSamples, sizeof(modelica_boolean));
 
   /* set default solvers for algebraic loops */
-  data->simulationInfo.nlsMethod = NS_HYBRID;
+  data->simulationInfo.nlsMethod = NLS_HYBRID;
   data->simulationInfo.lsMethod = LS_LAPACK;
   data->simulationInfo.mixedMethod = MIXED_SEARCH;
 

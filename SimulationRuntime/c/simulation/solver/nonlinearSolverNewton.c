@@ -198,8 +198,7 @@ static int wrapper_fvec_newton(integer* n, double* x, double* f, integer* iflag,
   /* NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]); */
   /* DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData); */
 
-  (*((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data,
-      x, f, iflag);
+  (*((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data, x, f, iflag);
   return 0;
 }
 
