@@ -94,6 +94,7 @@ QString Helper::errorComponentAnnotationString = QString("{-100.0,-100.0,100.0,1
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFile;
+QString Helper::libraries;
 QString Helper::clearRecentFiles;
 QString Helper::encoding;
 QString Helper::file;
@@ -206,6 +207,7 @@ void Helper::initHelperVariables()
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
   Helper::openModelicaFile = tr("Open Modelica File(s)");
+  Helper::libraries = tr("Libraries");
   Helper::clearRecentFiles = tr("Clear Recent Files");
   Helper::encoding = tr("Encoding:");
   Helper::file = tr("File:");
@@ -349,13 +351,13 @@ QString GUIMessages::getMessage(int type)
     case NO_OPENMODELICA_KEYWORDS:
       return tr("Please make sure you are not using any OpenModelica Keywords like (model, package, record, class etc.)");
     case UNABLE_TO_LOAD_FILE:
-      return tr("Error has occurred while loading the file <b>%1</b>. Unable to load the file.");
+      return tr("Error has occurred while loading the file/library <b>%1</b>. Unable to load the file/library.");
     case FILE_NOT_FOUND:
       return tr("The file <b>%1</b> not found.");
     case UNABLE_TO_LOAD_MODEL:
       return tr("Error has occurred while loading the model : \n%1.");
     case DELETE_AND_LOAD:
-      return tr("Delete the existing class(es) before loading the file <b>%1</b>.");
+      return tr("Delete the existing class(es) before loading the file/library <b>%1</b>.");
     case REDEFINING_EXISTING_CLASSES:
       return tr("Redefining class(es) <b>%1</b> which already exists.");
     case MULTIPLE_TOP_LEVEL_CLASSES:

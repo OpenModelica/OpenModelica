@@ -237,6 +237,7 @@ private:
   QAction *mpExportAsImageAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
+  QMenu *mpLibrariesMenu;
   QToolBar *mpFileToolBar;
   QToolBar *mpEditToolBar;
   QToolBar *mpViewToolBar;
@@ -251,6 +252,7 @@ public slots:
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void showOpenResultFileDialog();
+  void loadSystemLibrary();
   void focusSearchClassWidget(bool visible);
   void openRecentFile();
   void clearRecentFilesList();

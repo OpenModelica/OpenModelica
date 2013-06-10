@@ -440,7 +440,7 @@ LibraryTreeWidget::LibraryTreeWidget(bool isSearchTree, MainWindow *pParent)
   setItemDelegate(new ItemDelegate(this));
   setTextElideMode(Qt::ElideMiddle);
   setIsSearchedTree(isSearchTree);
-  setHeaderLabel(isSearchTree ? tr("Searched Items") : tr("Libraries"));
+  setHeaderLabel(isSearchTree ? tr("Searched Items") : Helper::libraries);
   setIndentation(Helper::treeIndentation);
   setDragEnabled(true);
   setIconSize(Helper::iconSize);
@@ -1443,7 +1443,7 @@ void LibraryTreeWidget::openFile(QString fileName, QString encoding, bool showPr
         }
         foreach (QString model, modelsList)
         {
-          LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(model, mpMainWindow->getOMCProxy()->getClassRestriction(model), tr(""));
+          LibraryTreeNode *pLibraryTreeNode = addLibraryTreeNode(model, mpMainWindow->getOMCProxy()->getClassRestriction(model), "");
           createLibraryTreeNodes(pLibraryTreeNode);
           if (showProgress) mpMainWindow->getProgressBar()->setValue(++progressvalue);
         }

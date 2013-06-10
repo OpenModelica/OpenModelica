@@ -811,9 +811,7 @@ void OMCProxy::loadSystemLibraries(QSplashScreen *pSplashScreen)
   {
     pSplashScreen->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
     QString version = settings.value(lib).toString();
-    QString command = "loadModel(" + lib + ",{\"" + version + "\"})";
-    sendCommand(command);
-    printMessagesStringInternal();
+    loadModel(lib, version);
   }
   settings.endGroup();
   mpMainWindow->getOptionsDialog()->readLibrariesSettings();
@@ -1420,6 +1418,20 @@ QString OMCProxy::changeDirectory(QString directory)
     sendCommand("cd(\"" + directory + "\")");
   }
   return StringHandler::unparse(getResult());
+}
+
+/*!
+  Loads the library.
+  \param library - the library name.
+  \param version -  the version of the library.
+  \return true on success
+  */
+bool OMCProxy::loadModel(QString library, QString version)
+{
+  sendCommand("loadModel(" + library + ",{\"" + version + "\"})");
+  bool result = StringHandler::unparseBool(getResult());
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!

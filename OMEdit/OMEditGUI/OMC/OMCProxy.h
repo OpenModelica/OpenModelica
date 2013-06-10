@@ -145,6 +145,7 @@ public:
   QString getDocumentationAnnotation(QString className);
   QString getClassComment(QString className);
   QString changeDirectory(QString directory = QString());
+  bool loadModel(QString library, QString version = QString("default"));
   bool loadFile(QString fileName, QString encoding = Helper::utf8);
   bool loadString(QString value);
   bool parseFile(QString fileName, QString encoding = Helper::utf8);

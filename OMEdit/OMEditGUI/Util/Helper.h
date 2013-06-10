@@ -100,6 +100,7 @@ public:
   static QString newModelicaClass;
   static QString createNewModelicaClass;
   static QString openModelicaFile;
+  static QString libraries;
   static QString clearRecentFiles;
   static QString encoding;
   static QString file;

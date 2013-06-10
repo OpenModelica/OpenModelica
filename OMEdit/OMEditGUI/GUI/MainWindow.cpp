@@ -905,6 +905,44 @@ void MainWindow::showOpenResultFileDialog()
   openResultFiles(fileNames);
 }
 
+void MainWindow::loadSystemLibrary()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction)
+  {
+    /* check if library is already loaded. */
+    if (mpOMCProxy->existClass(pAction->text()))
+    {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
+      pMessageBox->setIcon(QMessageBox::Information);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(pAction->text())));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                      .arg(pAction->text()).append("\n")
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(pAction->text())));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    }
+    /* if library is not loaded then load it. */
+    else
+    {
+      if (mpOMCProxy->loadModel(pAction->text()))
+      {
+        // create library tree nodes
+        mpProgressBar->setRange(0, 0);
+        showProgressBar();
+        LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(pAction->text(),
+                                                                                    mpOMCProxy->getClassRestriction(pAction->text()), "");
+        pLibraryTreeNode->setSystemLibrary(true);
+        mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(pAction->text()));
+        mpLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
+        mpStatusBar->clearMessage();
+        hideProgressBar();
+      }
+    }
+  }
+}
+
 void MainWindow::focusSearchClassWidget(bool visible)
 {
   if (visible)
@@ -937,10 +975,10 @@ void MainWindow::showGotoLineNumberDialog()
 //! Opens the recent file.
 void MainWindow::openRecentFile()
 {
-  QAction *action = qobject_cast<QAction*>(sender());
-  if (action)
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction)
   {
-    QStringList dataList = action->data().toStringList();
+    QStringList dataList = pAction->data().toStringList();
     mpLibraryTreeWidget->openFile(dataList.at(0), dataList.at(1), true, true);
   }
 }
@@ -1652,10 +1690,23 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
+  pFileMenu->addSeparator();
+  mpLibrariesMenu = new QMenu(pMenuBar);
+  mpLibrariesMenu->setObjectName("LibrariesMenu");
+  mpLibrariesMenu->setTitle(tr("&System Libraries"));
+  // get the available libraries.
+  QStringList libraries = mpOMCProxy->getAvailableLibraries();
+  for (int i = 0; i < libraries.size(); ++i)
+  {
+    QAction *pAction = new QAction(libraries[i], this);
+    connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
+    mpLibrariesMenu->addAction(pAction);
+  }
+  pFileMenu->addMenu(mpLibrariesMenu);
+  pFileMenu->addSeparator();
   mpRecentFilesMenu = new QMenu(pMenuBar);
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");
   mpRecentFilesMenu->setTitle(tr("Recent &Files"));
-  pFileMenu->addSeparator();
   for (int i = 0; i < MaxRecentFiles; ++i)
     mpRecentFilesMenu->addAction(mpRecentFileActions[i]);
   pFileMenu->addMenu(mpRecentFilesMenu);
