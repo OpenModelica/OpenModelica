@@ -198,7 +198,7 @@ algorithm
       BackendDAE.Variables orderedVars;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
-  case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),iEqDesc)
+  case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
       equation
        eqnLst = BackendEquation.equationList(orderedEqs);  //get the equation string 
        eqn = listGet(eqnLst,i);
@@ -218,7 +218,7 @@ algorithm
        desc = (eqString +& " FOR " +& varString);
        descLst = desc::iEqDesc;
      then descLst;
-  case(BackendDAE.EQUATIONSYSTEM(eqns = es, vars = vs, jac = jac, jacType = jacT), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),iEqDesc)
+  case(BackendDAE.EQUATIONSYSTEM(eqns = es, vars = vs, jac = jac, jacType = jacT), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
       equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
