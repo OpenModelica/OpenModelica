@@ -79,7 +79,7 @@ private:
   QLineEdit *mpFileTextBox;
   QPushButton *mpFileBrowseButton;
   Label *mpEncodingLabel;
-  QLineEdit *mpEncodingTextBox;
+  QComboBox *mpEncodingComboBox;
   Label *mpEncodingNoteLabel;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;

@@ -251,9 +251,40 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   mpFileTextBox = new QLineEdit;
   mpFileBrowseButton = new QPushButton(Helper::browse);
   connect(mpFileBrowseButton, SIGNAL(clicked()), SLOT(browseForFile()));
-  // create the encoding label, textbox and encoding note.
+  // create the encoding label, combobox and encoding note.
+  mpEncodingComboBox = new QComboBox;
+  mpEncodingComboBox->setEditable(true);
+  /* Since the default QCompleter for QComboBox is case insenstive. */
+  QCompleter *pEncodingComboBoxCompleter = mpEncodingComboBox->completer();
+  pEncodingComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
+  mpEncodingComboBox->setCompleter(pEncodingComboBoxCompleter);
   mpEncodingLabel = new Label(Helper::encoding);
-  mpEncodingTextBox = new QLineEdit;
+  /* get the available MIBS and sort them. */
+  QList<int> mibs = QTextCodec::availableMibs();
+  qSort(mibs);
+  QList<int> sortedMibs;
+  foreach (int mib, mibs)
+    if (mib >= 0)
+      sortedMibs += mib;
+  foreach (int mib, mibs)
+    if (mib < 0)
+      sortedMibs += mib;
+  int i = 0;
+  foreach (int mib, sortedMibs)
+  {
+    /* get the codec from MIB */
+    QTextCodec *pCodec = QTextCodec::codecForMib(mib);
+    QString codecName = QString::fromLatin1(pCodec->name());
+    QString codecNameWithAliases = codecName;
+    /* get all the aliases of the codec */
+    foreach (const QByteArray &alias, pCodec->aliases())
+      codecNameWithAliases += QLatin1String(" / ") + QString::fromLatin1(alias);
+    mpEncodingComboBox->addItem(codecName);
+    mpEncodingComboBox->setItemData(i, codecNameWithAliases, Qt::ToolTipRole);
+    i++;
+  }
+  mpEncodingComboBox->setEditText(Helper::utf8);
+  mpEncodingComboBox->setCurrentIndex(mpEncodingComboBox->findText(Helper::utf8));
   mpEncodingNoteLabel = new Label(tr("* The default encoding value is UTF-8."));
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -273,7 +304,7 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   mainLayout->addWidget(mpFileTextBox, 0, 1);
   mainLayout->addWidget(mpFileBrowseButton, 0, 2);
   mainLayout->addWidget(mpEncodingLabel, 1, 0);
-  mainLayout->addWidget(mpEncodingTextBox, 1, 1, 1, 2);
+  mainLayout->addWidget(mpEncodingComboBox, 1, 1, 1, 2);
   mainLayout->addWidget(mpEncodingNoteLabel, 2, 0, 1, 3);
   mainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
   setLayout(mainLayout);
@@ -323,10 +354,10 @@ void OpenModelicaFile::openModelicaFile()
     else
     {
       QString encoding;
-      if (mpEncodingTextBox->text().isEmpty())
+      if (mpEncodingComboBox->currentText().isEmpty())
         encoding = Helper::utf8;
       else
-        encoding = mpEncodingTextBox->text();
+        encoding = mpEncodingComboBox->currentText();
       mpMainWindow->getLibraryTreeWidget()->openFile(file, encoding, false);
     }
   }
