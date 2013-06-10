@@ -382,6 +382,10 @@ AC_TRY_LINK([
 
 LIBS=""
 
+AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR([pthreads not found])])
+
+LIBS=""
+
 dnl should we use ipopt?
 
 AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use ipopt for initialization], 
