@@ -190,7 +190,7 @@ public constant Message UNDERDET_EQN_SYSTEM = MESSAGE(32, SYMBOLIC(), ERROR(),
 public constant Message OVERDET_EQN_SYSTEM = MESSAGE(33, SYMBOLIC(), ERROR(),
   Util.gettext("Too many equations, over-determined system. The model has %s equation(s) and %s variable(s)."));
 public constant Message STRUCT_SINGULAR_SYSTEM = MESSAGE(34, SYMBOLIC(), ERROR(),
-  Util.gettext("Model is structurally singular, error found sorting equations \n %s for variables \n %s."));
+  Util.gettext("Model is structurally singular, error found sorting equations \n %s for variables \n %s"));
 public constant Message UNSUPPORTED_LANGUAGE_FEATURE = MESSAGE(35, TRANSLATION(), ERROR(),
   Util.gettext("The language feature %s is not supported. Suggested workaround: %s"));
 public constant Message NON_EXISTING_DERIVATIVE = MESSAGE(36, SYMBOLIC(), ERROR(),
@@ -296,7 +296,7 @@ public constant Message INHERIT_BASIC_WITH_COMPS = MESSAGE(87, TRANSLATION(), ER
 public constant Message MODIFIER_TYPE_MISMATCH_ERROR = MESSAGE(88, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in modifier of component %s, expected type %s, got modifier %s of type %s."));
 public constant Message ERROR_FLATTENING = MESSAGE(89, TRANSLATION(), ERROR(),
-  Util.gettext("Error occurred while flattening model %s."));
+  Util.gettext("Error occurred while flattening model %s"));
 public constant Message DUPLICATE_ELEMENTS_NOT_IDENTICAL = MESSAGE(90, TRANSLATION(), ERROR(),
   Util.gettext("Duplicate elements (due to inherited elements) not identical:\n  first element is:  %s\n  second element is: %s"));
 public constant Message PACKAGE_VARIABLE_NOT_CONSTANT = MESSAGE(91, TRANSLATION(), ERROR(),
@@ -362,7 +362,7 @@ public constant Message HIGHER_VARIABILITY_BINDING = MESSAGE(129, TRANSLATION(),
 public constant Message IF_EQUATION_WARNING = MESSAGE(131, SYMBOLIC(), WARNING(),
   Util.gettext("If-equations are only partially supported. Ignoring %s."));
 public constant Message IF_EQUATION_UNBALANCED_2 = MESSAGE(132, SYMBOLIC(), ERROR(),
-  Util.gettext("If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch:\n%s."));
+  Util.gettext("If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch:\n%s"));
 public constant Message EQUATION_GENERIC_FAILURE = MESSAGE(133, TRANSLATION(), ERROR(),
   Util.gettext("Failed to instantiate equation %s."));
 public constant Message INST_PARTIAL_CLASS_CHECK_MODEL_WARNING = MESSAGE(134, TRANSLATION(), WARNING(),
@@ -396,7 +396,7 @@ public constant Message LOOKUP_FUNCTION_GOT_CLASS = MESSAGE(148, TRANSLATION(), 
 public constant Message NON_STREAM_OPERAND_IN_STREAM_OPERATOR = MESSAGE(149, TRANSLATION(), ERROR(),
   Util.gettext("Operand %s to operator %s is not a stream variable."));
 public constant Message UNBALANCED_CONNECTOR = MESSAGE(150, TRANSLATION(), WARNING(),
-  Util.gettext("Connector %s is not balanced: %s."));
+  Util.gettext("Connector %s is not balanced: %s"));
 public constant Message RESTRICTION_VIOLATION = MESSAGE(151, TRANSLATION(), ERROR(),
   Util.gettext("Restriction violation: %s is a %s, not a %s."));
 public constant Message ZERO_STEP_IN_ARRAY_CONSTRUCTOR = MESSAGE(152, TRANSLATION(), ERROR(),
