@@ -41,6 +41,8 @@ public import DAE;
 
 protected import BackendDAEUtil;
 protected import BackendDump;
+protected import BackendEquation;
+protected import BackendVariable;
 protected import GraphML;
 protected import List;
 
@@ -58,6 +60,7 @@ public uniontype StrongConnectedComponent
     Integer compIdx;
     list<Integer> equations;
     list<Integer> dependencySCCs;
+    String description;
   end STRONGCONNECTEDCOMPONENT;
 end StrongConnectedComponent;
 
@@ -88,6 +91,7 @@ algorithm
 end createTaskGraph;
 
 protected function createTaskGraph0
+
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared,Boolean> ishared; //second argument of tuple is an extra argument
   output BackendDAE.EqSystem osyst;
@@ -103,6 +107,7 @@ algorithm
       DAE.FunctionTree sharedFuncs;
       Integer numberOfVars;
       array<Integer> varSccMapping; //Map each variable to the scc which solves her
+      list<String> eqDescs; 
       
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars)),(BackendDAE.SHARED(functionTree=sharedFuncs),_))
       equation
@@ -111,7 +116,10 @@ algorithm
         graph = GRAPH("TaskGraph",{},{});
         //(_,incidenceMatrix,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs)); //normale incidenzmatrix reicht
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
-        ((graph,_)) = List.fold3(comps,createTaskGraph1,incidenceMatrix,varSccMapping,comps,(graph,1));
+        BackendDump.dumpIncidenceMatrix(incidenceMatrix);
+        eqDescs = getEquationStrings(comps,isyst);
+        //((graph,_)) = List.fold3(comps,createTaskGraph1,incidenceMatrix,varSccMapping,comps,(graph,1));
+        ((graph,_)) = List.fold3(comps,createTaskGraph1,incidenceMatrix,varSccMapping,eqDescs,(graph,1));      //swapped comps a an extra argument with eqDescs, comps not used in createTeaskgraph1
         //GraphML.dumpGraph(graph, "taskgraph.graphml");
         dumpAsGraphML_SccLevel(graph, "taskgraph.graphml");
       then
@@ -125,10 +133,9 @@ protected function createTaskGraph1
   input BackendDAE.StrongComponent component;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   input array<Integer> varSccMapping;
-  input BackendDAE.StrongComponents components;
+  input List<String> eqDescs;
   input tuple<Graph,Integer> igraph;
   output tuple<Graph,Integer> ograph;
-
 protected
   Graph tmpGraph;
   StrongConnectedComponent graphComponent;
@@ -137,20 +144,125 @@ protected
   List<Option<Integer>> requiredSccs_option;
   List<Integer> requiredSccs;
   String nodeDesc;
-
+  String eqDesc;
 algorithm
   (tmpGraph,componentIndex) := igraph;
   nodeDesc := BackendDump.strongComponentString(component);
+  eqDesc := listGet(eqDescs,componentIndex);
   unsolvedVars := getUnsolvedVarsBySCC(component,incidenceMatrix);
   //requiredSccs_option := List.map4(unsolvedVars, getSCCByVar, components, incidenceMatrix, 1, varSccMapping); //mittels List.fold
   //requiredSccs_option := List.removeOnTrue(NONE(), bothOptionsNone, requiredSccs_option); //remove all NONE()-Elements
   requiredSccs := List.fold1(unsolvedVars,fillSccList,varSccMapping,{});
   //requiredSccs := List.map(requiredSccs_option, Util.getOption);
-  graphComponent := STRONGCONNECTEDCOMPONENT(nodeDesc, componentIndex, {}, requiredSccs);
+  graphComponent := STRONGCONNECTEDCOMPONENT(nodeDesc, componentIndex, {}, requiredSccs,eqDesc);
   tmpGraph := addSccToGraph(graphComponent, tmpGraph); //array der angibt ob scc schon in liste ist
-  
   ograph := (tmpGraph,componentIndex+1);
 end createTaskGraph1;
+
+
+protected function getEquationStrings " gets the equation for every StrongComponent
+author:Waurich TUD 2013-06"
+  input BackendDAE.StrongComponents iComps;
+  input BackendDAE.EqSystem iEqSystem;
+  output List<String> eqDescs;
+algorithm
+  eqDescs := List.fold1(iComps,getEquationStrings2,iEqSystem,{});
+  eqDescs := listReverse(eqDescs);
+end getEquationStrings;   
+
+
+protected function getEquationStrings2 "implementation for getEquationStrings
+author:Waurich TUD 2013-06"
+  input BackendDAE.StrongComponent comp;
+  input BackendDAE.EqSystem iEqSystem;
+  input List<String> iEqDesc;
+  output List<String> oEqDesc;
+algorithm
+  oEqDesc := matchcontinue(comp,iEqSystem,iEqDesc)
+    local
+      Integer i;
+      Integer v;
+      List<BackendDAE.Equation> eqnLst;
+      List<BackendDAE.Var> varLst;
+      List<Integer> es;
+      List<Integer> vs;
+      List<String> descLst;
+      List<String> eqDescLst;
+      List<String> varDescLst;
+      String eqString;
+      String varString;
+      String desc;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
+      BackendDAE.JacobianType jacT;
+      BackendDAE.EquationArray orderedEqs;      
+      BackendDAE.Variables orderedVars;
+      BackendDAE.Equation eqn;
+      BackendDAE.Var var;
+  case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),iEqDesc)
+      equation
+       eqnLst = BackendEquation.equationList(orderedEqs);  //get the equation string 
+       eqn = listGet(eqnLst,i);
+       eqString = BackendDump.equationString(eqn);
+       eqDescLst = stringListStringChar(eqString);
+       eqDescLst = List.map(eqDescLst,prepareXML);
+       eqString =stringCharListString(eqDescLst);
+       print("eq"+&intString(i)+&" var"+&intString(v)+&"\n");
+       //// check matching between vars and eqs!!!!!!!!!!!!!!!!/////////////////////////
+       
+       varLst = BackendVariable.varList(orderedVars);  //get the variable string 
+       var = listGet(varLst,v);
+       varString = BackendDump.varString(var);
+       varDescLst = stringListStringChar(varString);
+       varDescLst = shortenVarString(varDescLst);
+       varString =stringCharListString(varDescLst);
+       desc = (eqString +& " FOR " +& varString);
+       descLst = desc::iEqDesc;
+     then descLst;
+  case(BackendDAE.EQUATIONSYSTEM(eqns = es, vars = vs, jac = jac, jacType = jacT), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),iEqDesc)
+      equation
+       eqnLst = BackendEquation.equationList(orderedEqs);
+       desc = ("Equation System");
+       descLst = desc::iEqDesc;
+     then descLst;
+  else
+      equation
+        desc = ("no singleEquation");
+        descLst = desc::iEqDesc;
+    then descLst;
+  end matchcontinue; 
+end getEquationStrings2;
+
+protected function prepareXML " map-function for deletion of forbidden chars from given string
+author:Waurich TUD 2013-06"
+  input String iString;
+  output String oString;
+algorithm
+  oString := matchcontinue(iString)
+    local
+    case(_)
+      equation
+      true = stringEq(iString, ">");
+      then " greater ";
+    case(_)
+      equation
+      true = stringEq(iString, "<");
+      then " less ";
+    else
+    then iString;
+  end matchcontinue;
+end prepareXML;
+
+protected function shortenVarString " terminates var string at :
+author:Waurich TUD 2013-06"
+  input List<String> iString;
+  output List<String> oString;
+protected
+  Integer pos;
+algorithm
+  pos := List.position(":",iString);
+  (oString,_) := List.split(iString,pos);
+end shortenVarString;
+
 
 protected function fillSccList
   input tuple<Integer,Integer> variable;
@@ -598,14 +710,14 @@ protected
   Integer compIdx;
   String nodeDesc;
   List<Integer> dependencySCCs;
-
+  String description;
 algorithm
   oGraph := match(component,iGraph)
     local
       GraphML.Graph tmpGraph;
-    case(STRONGCONNECTEDCOMPONENT(text=compText,compIdx=compIdx, dependencySCCs=dependencySCCs),_)
+    case(STRONGCONNECTEDCOMPONENT(text=compText,compIdx=compIdx, dependencySCCs=dependencySCCs, description=nodeDesc),_)
       equation
-        nodeDesc = "";
+        //nodeDesc = intString(compIdx);  // just for debug
         tmpGraph = GraphML.addNode("Component" +& intString(compIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), iGraph);
         tmpGraph = List.fold1(dependencySCCs, addSccDepToGraph, compIdx, tmpGraph);
       then tmpGraph;
@@ -620,7 +732,7 @@ protected function addSccDepToGraph
   output GraphML.Graph oGraph;
  
 algorithm
-  oGraph := GraphML.addEgde("Edge" +& intString(comp2Idx) +& intString(comp1Idx), "Component" +& intString(comp2Idx), "Component" +& intString(comp1Idx), GraphML.COLOR_GREEN, GraphML.LINE(), NONE(), (SOME(GraphML.ARROWSTANDART()),NONE()), iGraph);
+  oGraph := GraphML.addEgde("Edge" +& intString(comp2Idx) +& intString(comp1Idx), "Component" +& intString(comp1Idx), "Component" +& intString(comp2Idx), GraphML.COLOR_GREEN, GraphML.LINE(), NONE(), (SOME(GraphML.ARROWSTANDART()),NONE()), iGraph);
  
 end addSccDepToGraph;
 
