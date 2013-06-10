@@ -235,6 +235,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 }
 
 /*! \fn check_nonlinear_solutions
+ *
  *   This function check whether some of non-linear systems
  *   are failed to solve. If one is failed it returns 1 otherwise 0.
  *
@@ -246,12 +247,11 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 int check_nonlinear_solutions(DATA *data, int printFailingSystems)
 {
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
-  long i, j, retVal=0;
+  long i, j;
 
   for(i=0; i<data->modelData.nNonLinearSystems; ++i)
     if(nonlinsys[i].solved == 0)
     {
-      retVal = 1;
       if(printFailingSystems)
       {
         WARNING2(LOG_NLS, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).name, data->localData[0]->timeValue);
@@ -286,9 +286,10 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
             WARNING2(LOG_NLS, "[%ld] Real %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, (nonlinsys[i]).equationIndex).vars[j]->name);
         RELEASE(LOG_NLS);
       }
+      return 1;
     }
 
-  return retVal;
+  return 0;
 }
 
 /*! \fn extraPolate
