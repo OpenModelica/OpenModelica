@@ -60,6 +60,7 @@
  */
 void updateContinuousSystem(DATA *data)
 {
+  input_function(data);
   functionODE(data);
   functionAlgebraics(data);
   output_function(data);
