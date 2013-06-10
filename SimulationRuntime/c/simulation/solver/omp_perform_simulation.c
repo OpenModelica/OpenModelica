@@ -65,7 +65,7 @@ void updateContinuousSystem(DATA *data)
 {
 #pragma omp master 
     {
-        input_function(data);	
+        input_function(data);  
         functionODE(data);
         functionAlgebraics(data);
         output_function(data);
