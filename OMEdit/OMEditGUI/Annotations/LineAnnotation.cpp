@@ -72,7 +72,7 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Graphics
 }
 
 LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(pGraphicsView, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
