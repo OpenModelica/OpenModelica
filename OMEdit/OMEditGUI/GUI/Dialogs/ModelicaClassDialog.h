@@ -81,12 +81,17 @@ private:
   Label *mpEncodingLabel;
   QComboBox *mpEncodingComboBox;
   Label *mpEncodingNoteLabel;
-  QPushButton *mpOkButton;
+  QCheckBox *mpConvertAllFilesCheckBox;
+  QPushButton *mpOpenWithEncodingButton;
+  QPushButton *mpOpenAndConvertToUTF8Button;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  void convertModelicaFiles(QStringList filesAndDirectories, QString path);
+  void convertModelicaFile(QString fileName);
 private slots:
   void browseForFile();
-  void openModelicaFile();
+  void openModelicaFiles(bool convertedToUTF8 = false);
+  void convertModelicaFiles();
 };
 
 class RenameClassDialog : public QDialog

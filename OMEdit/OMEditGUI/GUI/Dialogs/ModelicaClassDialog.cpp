@@ -286,28 +286,82 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   mpEncodingComboBox->setEditText(Helper::utf8);
   mpEncodingComboBox->setCurrentIndex(mpEncodingComboBox->findText(Helper::utf8));
   mpEncodingNoteLabel = new Label(tr("* The default encoding value is UTF-8."));
+  mpConvertAllFilesCheckBox = new QCheckBox(tr("Convert all files within the selected directory and sub-directories"));
   // Create the buttons
-  mpOkButton = new QPushButton(Helper::ok);
-  mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(openModelicaFile()));
+  /* Open with selected encoding button */
+  mpOpenWithEncodingButton = new QPushButton(tr("Open with selected encoding"));
+  mpOpenWithEncodingButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  mpOpenWithEncodingButton->setAutoDefault(true);
+  connect(mpOpenWithEncodingButton, SIGNAL(clicked()), SLOT(openModelicaFiles()));
+  /* Open and convert to utf-8 button */
+  mpOpenAndConvertToUTF8Button = new QPushButton(tr("Open and convert to UTF-8"));
+  mpOpenAndConvertToUTF8Button->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  mpOpenAndConvertToUTF8Button->setAutoDefault(false);
+  connect(mpOpenAndConvertToUTF8Button, SIGNAL(clicked()), SLOT(convertModelicaFiles()));
+  /* cancel button */
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
-  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpOpenWithEncodingButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpOpenAndConvertToUTF8Button, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
-  QGridLayout *mainLayout = new QGridLayout;
-  mainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  mainLayout->addWidget(mpFileLabel, 0, 0);
-  mainLayout->addWidget(mpFileTextBox, 0, 1);
-  mainLayout->addWidget(mpFileBrowseButton, 0, 2);
-  mainLayout->addWidget(mpEncodingLabel, 1, 0);
-  mainLayout->addWidget(mpEncodingComboBox, 1, 1, 1, 2);
-  mainLayout->addWidget(mpEncodingNoteLabel, 2, 0, 1, 3);
-  mainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
-  setLayout(mainLayout);
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpFileLabel, 0, 0);
+  pMainLayout->addWidget(mpFileTextBox, 0, 1);
+  pMainLayout->addWidget(mpFileBrowseButton, 0, 2);
+  pMainLayout->addWidget(mpEncodingLabel, 1, 0);
+  pMainLayout->addWidget(mpEncodingComboBox, 1, 1, 1, 2);
+  pMainLayout->addWidget(mpEncodingNoteLabel, 2, 0, 1, 3);
+  pMainLayout->addWidget(mpConvertAllFilesCheckBox, 3, 0, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+  Looks for the files and directories for conversion to UTF-8.
+  \param filesAndDirectories - the list of files and directories that should be converted.
+  \param path - the directory path where files and directories are located.
+  */
+void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QString path)
+{
+  foreach (QString fileOrDirectory, filesAndDirectories)
+  {
+    QFileInfo fileOrDirectoryInfo(QString(path).append("/").append(fileOrDirectory));
+    if (fileOrDirectoryInfo.isDir())
+    {
+      QDir directory(QString(path).append("/").append(fileOrDirectory));
+      QStringList nameFilter("*.mo");
+      QStringList filesAndDirectories = directory.entryList(nameFilter, QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
+                                                            QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+      convertModelicaFiles(filesAndDirectories, directory.absolutePath());
+    }
+    else
+    {
+      convertModelicaFile(QString(path).append("/").append(fileOrDirectory));
+    }
+  }
+}
+
+/*!
+  Converts the file to UTF-8 encoding.
+  \param fileName - the full name of the file to convert.
+  */
+void OpenModelicaFile::convertModelicaFile(QString fileName)
+{
+  QFile file(fileName);
+  file.open(QIODevice::ReadOnly);
+  QString fileData(file.readAll());
+  file.close();
+  file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+  QTextStream out(&file);
+  out.setCodec("UTF-8");
+  out.setGenerateByteOrderMark(true);
+  out << QString::fromUtf8(fileData.toStdString().data());
+  file.close();
 }
 
 /*!
@@ -329,41 +383,73 @@ void OpenModelicaFile::browseForFile()
 
 /*!
   Opens the selected Modelica file(s).\n
-  Slot activated when mpOkButton clicked signal is raised.
+  Slot activated when mpOpenButton clicked signal is raised.
   */
-void OpenModelicaFile::openModelicaFile()
+void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
 {
   int progressValue = 0;
   mpMainWindow->getProgressBar()->setRange(0, mFileNames.size());
   mpMainWindow->showProgressBar();
-  foreach (QString file, mFileNames)
+  foreach (QString fileName, mFileNames)
   {
-    mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpMainWindow->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
     mpMainWindow->getProgressBar()->setValue(++progressValue);
     // if file doesn't exists
-    if (!QFile::exists(file))
+    if (!QFile::exists(fileName))
     {
       QMessageBox *pMessageBox = new QMessageBox(mpMainWindow);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     }
     else
     {
       QString encoding;
-      if (mpEncodingComboBox->currentText().isEmpty())
+      if (mpEncodingComboBox->currentText().isEmpty() || convertedToUTF8)
         encoding = Helper::utf8;
       else
         encoding = mpEncodingComboBox->currentText();
-      mpMainWindow->getLibraryTreeWidget()->openFile(file, encoding, false);
+      mpMainWindow->getLibraryTreeWidget()->openFile(fileName, encoding, false);
     }
   }
   mpMainWindow->getStatusBar()->clearMessage();
   mpMainWindow->hideProgressBar();
   accept();
+}
+
+/*!
+  Converts the selected Modelica file(s).\n
+  Slot activated when mpOpenAndConvertToUTF8Button clicked signal is raised.
+  */
+void OpenModelicaFile::convertModelicaFiles()
+{
+  mpMainWindow->getStatusBar()->showMessage(tr("Converting files to UTF-8"));
+  QApplication::setOverrideCursor(Qt::WaitCursor);
+  foreach (QString fileName, mFileNames)
+  {
+    if (QFile::exists(fileName))
+    {
+      if (mpConvertAllFilesCheckBox->isChecked())
+      {
+        QFileInfo fileInfo(fileName);
+        QDir directory = fileInfo.absoluteDir();
+        QStringList nameFilter("*.mo");
+        QStringList filesAndDirectories = directory.entryList(nameFilter, QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
+                                                              QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+        convertModelicaFiles(filesAndDirectories, directory.absolutePath());
+      }
+      else
+      {
+        convertModelicaFile(fileName);
+      }
+    }
+  }
+  mpMainWindow->getStatusBar()->clearMessage();
+  QApplication::restoreOverrideCursor();
+  openModelicaFiles(true);
 }
 
 /*!

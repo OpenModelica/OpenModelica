@@ -1438,7 +1438,7 @@ void MainWindow::createActions()
   // File Menu
   // create new Modelica class action
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.png"), Helper::newModelicaClass, this);
-  mpNewModelicaClassAction->setStatusTip(tr("Create New Modelica Class"));
+  mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
   // open Modelica file action
