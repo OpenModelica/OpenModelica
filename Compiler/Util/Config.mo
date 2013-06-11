@@ -129,7 +129,7 @@ end versionRequest;
 public function helpRequest
   output Boolean outBoolean;
 algorithm
-  outBoolean := Flags.getConfigBool(Flags.HELP);
+  outBoolean := not stringEq(Flags.getConfigString(Flags.HELP), "");
 end helpRequest;
 
 public function acceptedGrammar

@@ -330,11 +330,11 @@ public constant Message NON_PARAMETER_ITERATOR_RANGE = MESSAGE(109, TRANSLATION(
 public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, TRANSLATION(), ERROR(),
   Util.gettext("Identifier %s of implicit for iterator must be present as array subscript in the loop body."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
-  Util.gettext("In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch"));
+  Util.gettext("In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."));
 public constant Message IF_EQUATION_MISSING_ELSE = MESSAGE(115, TRANSLATION(), ERROR(),
   Util.gettext("Missing else-clause in if-equation with non-parameter conditions."));
 public constant Message CONNECT_INCOMPATIBLE_TYPES = MESSAGE(117, TRANSLATION(), ERROR(),
-  Util.gettext("Incompatible components in connect statement: connect(%s, %s)\n- %s has components %s\n- %s has components %s."));
+  Util.gettext("Incompatible components in connect statement: connect(%s, %s)\n- %s has components %s\n- %s has components %s"));
 public constant Message CONNECT_OUTER_OUTER = MESSAGE(118, TRANSLATION(), ERROR(),
   Util.gettext("Illegal connecting two outer connectors in statement connect(%s, %s)."));
 public constant Message CONNECTOR_ARRAY_NONCONSTANT = MESSAGE(119, TRANSLATION(), ERROR(),
@@ -371,10 +371,6 @@ public constant Message VARIABLE_BINDING_TYPE_MISMATCH = MESSAGE(135, TRANSLATIO
   Util.gettext("Type mismatch in binding %s = %s, expected subtype of %s, got type %s."));
 public constant Message COMPONENT_NAME_SAME_AS_TYPE_NAME = MESSAGE(136, TRANSLATION(), WARNING(),
   Util.gettext("Component %s has the same name as its type %s.\n\tThis is forbidden by Modelica specification and may lead to lookup errors."));
-public constant Message MODIFICATION_INDEX_OVERLAP = MESSAGE(137, TRANSLATION(), WARNING(),
-  Util.gettext("Index modifications: %s for array component: %s are overlapping.\n\tThe final bindings will be set by the last modifications given for the same index."));
-public constant Message MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP = MESSAGE(138, TRANSLATION(), WARNING(),
-  Util.gettext("Index modifications: %s are overlapping with array binding modification %s for array component: %s.\n\tThe final bindings will be set by the last index modification given for the same index."));
 public constant Message MODIFICATION_INDEX_NOT_FOUND = MESSAGE(140, TRANSLATION(), ERROR(),
   Util.gettext("Instantiation of array component: %s failed because index modification: %s is invalid.\n\tArray component: %s has more dimensions than binding %s."));
 public constant Message DUPLICATE_MODIFICATIONS_WARNING = MESSAGE(141, TRANSLATION(), WARNING(),

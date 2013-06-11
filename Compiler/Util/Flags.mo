@@ -190,7 +190,7 @@ constant DebugFlag GENERATE_CODE_CHEAT = DEBUG_FLAG(11, "generateCodeCheat", fal
 constant DebugFlag CGRAPH_GRAPHVIZ_FILE = DEBUG_FLAG(12, "cgraphGraphVizFile", false,
   Util.gettext("Generates a graphviz file of the connection graph."));
 constant DebugFlag CGRAPH_GRAPHVIZ_SHOW = DEBUG_FLAG(13, "cgraphGraphVizShow", false,
-  Util.gettext("Displays the connection graph with the GraphViz lefty tool"));
+  Util.gettext("Displays the connection graph with the GraphViz lefty tool."));
 constant DebugFlag FRONTEND_INLINE_EULER = DEBUG_FLAG(14, "frontendInlineEuler", false,
   Util.notrans(""));
 constant DebugFlag USEDEP = DEBUG_FLAG(15, "usedep", false,
@@ -252,17 +252,17 @@ constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(42, "dumpParamrepl", false,
 constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(43, "dumpPPrepl", false,
   Util.gettext("Dump the found replacements for protected parameters."));
 constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(44, "dumpEArepl", false,
-  Util.gettext("Dump the found replacements for evaluate annotations (evaluate=true) parameters"));
+  Util.gettext("Dump the found replacements for evaluate annotations (evaluate=true) parameters."));
 constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(45, "debugAlias", false,
-  Util.gettext("Dump the found alias variables"));
+  Util.gettext("Dump the found alias variables."));
 constant DebugFlag TEARING_DUMP = DEBUG_FLAG(46, "tearingdump", false,
   Util.gettext("Dumps tearing information."));
 constant DebugFlag JAC_DUMP = DEBUG_FLAG(47, "symjacdump", false,
   Util.gettext("Dumps information about symbolic jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
 constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(48, "symjacdumpverbose", false,
-  Util.gettext("Dumps information in verbose mode about symbolic jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization"));
+  Util.gettext("Dumps information in verbose mode about symbolic jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
 constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(49, "symjacdumpeqn", false,
-  Util.gettext("Dump for debug purpose of symbolic jacobians. (deactivated now)"));
+  Util.gettext("Dump for debug purpose of symbolic jacobians. (deactivated now)."));
 constant DebugFlag JAC_WARNINGS = DEBUG_FLAG(50, "symjacwarnings", false,
   Util.gettext("Prints warnings regarding symoblic jacbians."));
 constant DebugFlag DUMP_SPARSE = DEBUG_FLAG(51, "dumpSparsePattern", false,
@@ -272,7 +272,7 @@ constant DebugFlag DUMP_SPARSE_VERBOSE = DEBUG_FLAG(52, "dumpSparsePatternVerbos
 constant DebugFlag BLT_DUMP = DEBUG_FLAG(53, "bltdump", false,
   Util.gettext("Dumps information from index reduction."));
 constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(54, "dummyselect", false,
-  Util.gettext("Dumps information from dummy state selection heuristic"));
+  Util.gettext("Dumps information from dummy state selection heuristic."));
 constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(55, "dumpdaelow", false,
   Util.gettext("Dumps the equation system at the beginning of the back end."));
 constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(56, "dumpindxdae", false,
@@ -286,13 +286,13 @@ constant DebugFlag EXEC_FILES = DEBUG_FLAG(59, "execFiles", false,
 constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(60, "paramdlowdump", false,
   Util.notrans(""));
 constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(61, "dumpEncapsulateWhenConditions", false,
-  Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions"));
+  Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions."));
 constant DebugFlag ON_RELAXATION = DEBUG_FLAG(62, "onRelaxation", false,
-  Util.gettext("Perform O(n) Relaxation"));
+  Util.gettext("Perform O(n) relaxation."));
 constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(63, "shortOutput", false,
   Util.gettext("Enables short output of the simulate() command. Useful for tools like OMNotebook."));
 constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(64, "countOperations", false,
-  Util.gettext("Count operations"));
+  Util.gettext("Count operations."));
 constant DebugFlag CGRAPH = DEBUG_FLAG(65, "cgraph", false,
   Util.gettext("Prints out connection graph information."));
 constant DebugFlag UPDMOD = DEBUG_FLAG(66, "updmod", false,
@@ -316,19 +316,19 @@ constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(74, "stateselection", f
 constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(75, "dumpderrepl", false,
   Util.gettext("Enables dumping of selected states. Works only in combination with backenddaeinfo."));
 constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(76, "dumpeqninorder", false,
-  Util.gettext("Enables dumping of the equations in the order they are calculated"));
+  Util.gettext("Enables dumping of the equations in the order they are calculated."));
 constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(77, "symbolicInitialization", false,
-  Util.gettext("Enables using of symbolic matrices for initialization (ipopt only)"));
+  Util.gettext("Enables using of symbolic matrices for initialization (ipopt only)."));
 constant DebugFlag DUMPOPTINIT = DEBUG_FLAG(78, "dumpoptinit", false,
-  Util.gettext("Enables dumping of the optimization information when optimizing the initial system"));
+  Util.gettext("Enables dumping of the optimization information when optimizing the initial system."));
 constant DebugFlag SEMILINEAR = DEBUG_FLAG(79, "semiLinear", false,
-  Util.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear"));
+  Util.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear."));
 constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(80, "uncertainties", false,
-  Util.gettext("Enables dumping of status when calling modelEquationsUC"));
+  Util.gettext("Enables dumping of status when calling modelEquationsUC."));
 constant DebugFlag DUMP_DAE= DEBUG_FLAG(81, "daeunparser", false,
-  Util.gettext("Enables dumping of the DAE"));
+  Util.gettext("Enables dumping of the DAE."));
 constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(82, "showStartOrigin", false,
-  Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));
+  Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables."));
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
 constant DebugFlag MIXED_TEARING = DEBUG_FLAG(83, "MixedTearing", true,
   Util.gettext("Disables tearing of mixed system."));
@@ -343,7 +343,7 @@ constant DebugFlag SHOW_SCODE = DEBUG_FLAG(87, "showSCode", false,
 constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(88, "dumpConstrepl", false,
   Util.gettext("Dump the found replacements for constants."));
 constant DebugFlag PEDANTIC = DEBUG_FLAG(89, "pedantic", false,
-  Util.gettext("Switch into pedantic debug-mode, to get much more feedback,"));
+  Util.gettext("Switch into pedantic debug-mode, to get much more feedback."));
 constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(90, "showRedeclareAnalysis", false,
   Util.gettext("Prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)."));
 constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(91, "showProgramChanges", false,
@@ -467,9 +467,8 @@ constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",
   SOME("d"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets debug flags. Use +help=debug to see available flags."));
 constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
-  NONE(), EXTERNAL(), BOOL_FLAG(false),
-  SOME(STRING_OPTION({"debug", "optmodules"})),
-  Util.gettext("Displays the help text."));
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Util.gettext("Displays the help text. Use +help=topics for more information."));
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Used when running the testsuite."));
@@ -524,50 +523,50 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("evaluateReplaceEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
-    ("removeProtectedParameters", Util.gettext("replace all parameters with protected=true in the system")),
-    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system")),
-    ("removeUnusedVariables", Util.gettext("Strips all variables not present in the equations from the system")),
-    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)")),
-    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
+    ("removeProtectedParameters", Util.gettext("Replace all parameters with protected=true in the system.")),
+    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),
+    ("removeUnusedVariables", Util.gettext("Strips all variables not present in the equations from the system.")),
+    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations).")),
+    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks).")),
     ("expandDerOperator", Util.notrans("DESCRIBE ME")),
-    ("simplifyIfEquations", Util.gettext("tries to simplify if equations by use of information from evaluated parameters")),
-    ("replaceEdgeChange", Util.gettext("replace edge(b) = b and not pre(b) and change(b) = v <> pre(v)")),
-    ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x"))})),
+    ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
+    ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
+    ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x."))})),
   Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",
   NONE(), EXTERNAL(), INT_FLAG(3),
   SOME(STRING_DESC_OPTION({
     ("0", Util.gettext("No cheap matching.")),
-    ("1", Util.gettext("cheap matching, traveres all equations and match the first free variable")),
+    ("1", Util.gettext("Cheap matching, traverses all equations and match the first free variable.")),
     ("3", Util.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))})),
     Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));
 constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
   NONE(), EXTERNAL(), STRING_FLAG("PFPlusExt"),
   SOME(STRING_DESC_OPTION({
-    ("BFSB", Util.gettext("Breath First Search based Algorithm")),
-    ("DFSB", Util.gettext("Depth First Search based Algorithm")),
-    ("MC21A", Util.gettext("Depth First Search based Algorithm with look ahead feature")),
-    ("PF", Util.gettext("Depth First Search based Algorithm with look ahead feature")),
-    ("PFPlus", Util.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal")),
-    ("HK", Util.gettext("Combined BFS and DFS algorithm")),
-    ("HKDW", Util.gettext("Combined BFS and DFS algorithm")),
-    ("ABMP", Util.gettext("Combined BFS and DFS algorithm")),
-    ("PR", Util.gettext("matching algorithm using push relabel mechanism")),
-    ("DFSBExt", Util.gettext("Depth First Search based Algorithm external c implementation")),
-    ("BFSBExt", Util.gettext("Breath First Search based Algorithm external c implementation")),
-    ("MC21AExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation")),
-    ("PFExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation")),
-    ("PFPlusExt", Util.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation")),
-    ("HKExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
-    ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
-    ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
-    ("PRExt", Util.gettext("matching algorithm using push relabel mechanism external c implementation"))})),
+    ("BFSB", Util.gettext("Breadth First Search based algorithm.")),
+    ("DFSB", Util.gettext("Depth First Search based algorithm.")),
+    ("MC21A", Util.gettext("Depth First Search based algorithm with look ahead feature.")),
+    ("PF", Util.gettext("Depth First Search based algorithm with look ahead feature.")),
+    ("PFPlus", Util.gettext("Depth First Search based algorithm with look ahead feature and fair row traversal.")),
+    ("HK", Util.gettext("Combined BFS and DFS algorithm.")),
+    ("HKDW", Util.gettext("Combined BFS and DFS algorithm.")),
+    ("ABMP", Util.gettext("Combined BFS and DFS algorithm.")),
+    ("PR", Util.gettext("Matching algorithm using push relabel mechanism.")),
+    ("DFSBExt", Util.gettext("Depth First Search based Algorithm external c implementation.")),
+    ("BFSBExt", Util.gettext("Breadth First Search based Algorithm external c implementation.")),
+    ("MC21AExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation.")),
+    ("PFExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation.")),
+    ("PFPlusExt", Util.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation.")),
+    ("HKExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
+    ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
+    ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation.")),
+    ("PRExt", Util.gettext("Matching algorithm using push relabel mechanism external c implementation."))})),
     Util.gettext("Sets the matching algorithm to use. See +help=optmodules for more info."));
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
-    ("uode", Util.gettext("use the underlying ode without the constraints")),
-    ("dynamicStateSelection", Util.gettext("simple index reduction method, select (dynamic) dummy states based on analysis of the system"))})),
+    ("uode", Util.gettext("Use the underlying ODE without the constraints.")),
+    ("dynamicStateSelection", Util.gettext("Simple index reduction method, select (dynamic) dummy states based on analysis of the system."))})),
     Util.gettext("Sets the index reduction method to use. See +help=optmodules for more info."));
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
@@ -587,8 +586,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
 //    "partitionIndependentBlocks"
   }),
   SOME(STRING_DESC_OPTION({
-    ("encapsulateWhenConditions", Util.gettext("replace each when-condition with an discrete variable")),
-    ("lateInlineFunction", Util.gettext("perform function inlining for function with annotation LateInline=true")),
+    ("encapsulateWhenConditions", Util.gettext("Replace each when-condition with an discrete variable.")),
+    ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
@@ -599,29 +598,29 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("evaluateReplaceFinalEvaluateParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
     ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
     ("inlineArrayEqn", Util.notrans("DESCRIBE ME")),
-    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system")),
-    ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time")),
-    ("tearingSystem",Util.notrans("for method selection use flag tearingMethod")),
+    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system.")),
+    ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
+    ("tearingSystem",Util.notrans("For method selection use flag tearingMethod.")),
     ("relaxSystem",Util.notrans("DESCRIBE ME")),
-    ("coundOperations", Util.gettext("count the mathematic operations of the system")),
+    ("coundOperations", Util.gettext("Count the mathematic operations of the system.")),
     ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
-    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian")),
+    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian.")),
     ("generateSymbolicLinearization", Util.gettext("Generates symbolic Linearization Matrixes A,B,C,D for Linear Model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
-    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
-    ("removeUnusedFunctions", Util.gettext("removed all unused functions from functionTree")),
-    ("simplifyTimeIndepFuncCalls", Util.gettext("simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")),
-    ("inputDerivativesUsed", Util.gettext("checks if derivatives of inputs are need to calculate the model.")),
-    ("simplifysemiLinear", Util.gettext("simplifies calls to semiLinear")),
-    ("removeConstants", Util.gettext("remove all constants in the system")),
-    ("optimizeInitialSystem", Util.gettext("simplifies time initial system")),
-    ("detectJacobianSparsePattern", Util.gettext("detects the sparse pattern for Jacobian A")),
-    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)"))
+    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks).")),
+    ("removeUnusedFunctions", Util.gettext("Removed all unused functions from functionTree.")),
+    ("simplifyTimeIndepFuncCalls", Util.gettext("Simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false.")),
+    ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
+    ("simplifysemiLinear", Util.gettext("Simplifies calls to semiLinear.")),
+    ("removeConstants", Util.gettext("Remove all constants in the system.")),
+    ("optimizeInitialSystem", Util.gettext("Simplifies time initial system.")),
+    ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for Jacobian A.")),
+    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)."))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
   SOME(STRING_OPTION({"C", "CSharp", "Cpp", "Adevs", "QSS", "Dump", "XML", "Java","ResidualCMP", "None"})),
-  Util.gettext("Sets the target language for the code generation"));
+  Util.gettext("Sets the target language for the code generation."));
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Util.gettext("Orders connect equations alphabetically if set."));
@@ -697,7 +696,7 @@ constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(41, "defaultOCLDevice",
   Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
 constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(42, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
-  Util.gettext("Maximal traversals to find find simple equations in the acausal system."));
+  Util.gettext("Maximal traversals to find simple equations in the acausal system."));
 constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(43, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Redirect the dump to file. If the file ends with .html HTML code is generated."));
@@ -707,13 +706,13 @@ constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(44, "delayBreakLoop",
 constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(45, "tearingMethod",
   NONE(), EXTERNAL(), STRING_FLAG("omcTearing"),
   SOME(STRING_DESC_OPTION({
-    ("noTearing", Util.gettext("skip tearing")),
-    ("omcTearing", Util.gettext("tearing method developed by TU Dresden: Frenkel,Schubert")),
-    ("cellier", Util.gettext("Cellier tearing")),
-    ("carpanzano2", Util.gettext("Carpanzano2 tearing")),
-    ("olleroAmselem", Util.gettext("Ollero-Amselem tearing")),
-    ("steward", Util.gettext("Steward tearing"))})),
-    Util.gettext("tearing method to use.select no tearing or choose tearing method"));
+    ("noTearing", Util.gettext("Skip tearing.")),
+    ("omcTearing", Util.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
+    ("cellier", Util.gettext("Cellier tearing.")),
+    ("carpanzano2", Util.gettext("Carpanzano2 tearing.")),
+    ("olleroAmselem", Util.gettext("Ollero-Amselem tearing.")),
+    ("steward", Util.gettext("Steward tearing."))})),
+    Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(46, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
@@ -1091,7 +1090,7 @@ algorithm
         values = List.map(inValues, System.tolower);
         System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "","C",getConfigString(LOCALE_FLAG)));
         print(printHelp(values));
-        setConfigBool(HELP, true);
+        setConfigString(HELP, "omc");
       then
         ();
 
@@ -1539,7 +1538,7 @@ public function printHelp
   input list<String> inTopics;
   output String help;
 algorithm
-  help := match (inTopics)
+  help := matchcontinue (inTopics)
     local
       Util.TranslatableContent desc;
       list<String>  rest_topics, strs;
@@ -1551,7 +1550,7 @@ algorithm
 
     case {"omc"} then printUsage();
 
-    case {"mos"} then System.gettext("TODO: Write help-text");
+    //case {"mos"} then System.gettext("TODO: Write help-text");
 
     case {"topics"}
       equation
@@ -1561,18 +1560,20 @@ algorithm
         str3 = System.gettext("Flags that enable debugging, diagnostics, and research prototypes.");
         str4 = System.gettext("Flags that determine which symbolic methods are used to produce the causalized equation system.");
         str5 = System.gettext("The command-line options available for simulation executables generated by OpenModelica.");
-        str6 = System.gettext("This help-text.");
+        str6 = System.gettext("Displays option descriptions for multi-option flag <flagname>.");
+        str7 = System.gettext("This help-text.");
         topics = {
-          ("mos",str1),
+          //("mos",str1),
           ("omc",str2),
           ("debug",str3),
           ("optmodules",str4),
           ("simulation",str5),
-          ("topics",str6)
+          ("<flagname>",str6),
+          ("topics",str7)
         };
         str = System.gettext("The available topics (help(\"topics\")) are as follows:\n");
         strs = List.map(topics,makeTopicString);
-        help = str +& stringDelimitList(strs,"\n");
+        help = str +& stringDelimitList(strs,"\n") +& "\n";
       then help;
 
     case {"simulation"}
@@ -1624,7 +1625,7 @@ algorithm
         help = printHelp(rest_topics);
       then str +& help;
 
-  end match;
+  end matchcontinue;
 end printHelp;
 
 protected function compareDebugFlags
@@ -1662,23 +1663,23 @@ algorithm
   Print.printBuf(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
   Print.printBuf(System.gettext("\n* +omcOptions:\n"));
   Print.printBuf(printAllConfigFlags());
-  Print.printBuf(System.gettext("For more details on a specific topic, use +help=topic or help(\"topic\")\n\n"));
+  Print.printBuf(System.gettext("\nFor more details on a specific topic, use +help=topics or help(\"topics\")\n\n"));
   Print.printBuf(System.gettext("* Examples:\n"));
-  Print.printBuf(System.gettext("  omc Model.mo             will produce flattened Model on standard output\n"));
+  Print.printBuf(System.gettext("  omc Model.mo             will produce flattened Model on standard output.\n"));
   Print.printBuf(System.gettext("  omc +s Model.mo          will produce simulation code for the model:\n"));
-  Print.printBuf(System.gettext("                            * Model.c           the model C code\n"));
-  Print.printBuf(System.gettext("                            * Model_functions.c the model functions C code\n"));
-  Print.printBuf(System.gettext("                            * Model.makefile    the makefile to compile the model.\n"));
-  Print.printBuf(System.gettext("                            * Model_init.xml    the initial values\n"));
+  Print.printBuf(System.gettext("                            * Model.c           The model C code.\n"));
+  Print.printBuf(System.gettext("                            * Model_functions.c The model functions C code.\n"));
+  Print.printBuf(System.gettext("                            * Model.makefile    The makefile to compile the model.\n"));
+  Print.printBuf(System.gettext("                            * Model_init.xml    The initial values.\n"));
   //Print.printBuf("\tomc Model.mof            will produce flattened Model on standard output\n");
-  Print.printBuf(System.gettext("  omc Script.mos           will run the commands from Script.mos\n"));
-  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce \n\t                         flattened Model on standard output\n"));
-  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n\t                         flattened Model1 on standard output\n"));
+  Print.printBuf(System.gettext("  omc Script.mos           will run the commands from Script.mos.\n"));
+  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce \n                            flattened Model on standard output.\n"));
+  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n                            flattened Model1 on standard output.\n"));
   Print.printBuf(System.gettext("  *.mo (Modelica files) \n"));
   //Print.printBuf("\t*.mof (Flat Modelica files) \n");
   Print.printBuf(System.gettext("  *.mos (Modelica Script files)\n\n"));
-  Print.printBuf(System.gettext("For available simulation flags, use +help=simulation\n\n"));
-  Print.printBuf(System.gettext("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>\n"));
+  Print.printBuf(System.gettext("For available simulation flags, use +help=simulation.\n\n"));
+  Print.printBuf(System.gettext("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"));
   usage := Print.getString();
   Print.clearBuf();
 end printUsage;
