@@ -326,7 +326,7 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   \param filesAndDirectories - the list of files and directories that should be converted.
   \param path - the directory path where files and directories are located.
   */
-void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QString path)
+void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QString path, QTextCodec *codec)
 {
   foreach (QString fileOrDirectory, filesAndDirectories)
   {
@@ -337,11 +337,11 @@ void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QSt
       QStringList nameFilter("*.mo");
       QStringList filesAndDirectories = directory.entryList(nameFilter, QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
                                                             QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-      convertModelicaFiles(filesAndDirectories, directory.absolutePath());
+      convertModelicaFiles(filesAndDirectories, directory.absolutePath(), codec);
     }
     else
     {
-      convertModelicaFile(QString(path).append("/").append(fileOrDirectory));
+      convertModelicaFile(QString(path).append("/").append(fileOrDirectory), codec);
     }
   }
 }
@@ -350,17 +350,17 @@ void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QSt
   Converts the file to UTF-8 encoding.
   \param fileName - the full name of the file to convert.
   */
-void OpenModelicaFile::convertModelicaFile(QString fileName)
+void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *codec)
 {
   QFile file(fileName);
   file.open(QIODevice::ReadOnly);
-  QString fileData(file.readAll());
+  QString fileData(codec->toUnicode(file.readAll()));
   file.close();
   file.open(QIODevice::WriteOnly | QIODevice::Truncate);
   QTextStream out(&file);
   out.setCodec("UTF-8");
-  out.setGenerateByteOrderMark(true);
-  out << QString::fromUtf8(fileData.toStdString().data());
+  out.setGenerateByteOrderMark(false);
+  out << fileData;
   file.close();
 }
 
@@ -426,24 +426,27 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
   */
 void OpenModelicaFile::convertModelicaFiles()
 {
-  mpMainWindow->getStatusBar()->showMessage(tr("Converting files to UTF-8"));
-  QApplication::setOverrideCursor(Qt::WaitCursor);
-  foreach (QString fileName, mFileNames)
-  {
-    if (QFile::exists(fileName))
+  QTextCodec *codec = QTextCodec::codecForName(mpEncodingComboBox->currentText().toStdString().data());
+  if (codec != NULL) {
+    mpMainWindow->getStatusBar()->showMessage(tr("Converting files to UTF-8"));
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    foreach (QString fileName, mFileNames)
     {
-      if (mpConvertAllFilesCheckBox->isChecked())
+      if (QFile::exists(fileName))
       {
-        QFileInfo fileInfo(fileName);
-        QDir directory = fileInfo.absoluteDir();
-        QStringList nameFilter("*.mo");
-        QStringList filesAndDirectories = directory.entryList(nameFilter, QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
-                                                              QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-        convertModelicaFiles(filesAndDirectories, directory.absolutePath());
-      }
-      else
-      {
-        convertModelicaFile(fileName);
+        if (mpConvertAllFilesCheckBox->isChecked())
+        {
+          QFileInfo fileInfo(fileName);
+          QDir directory = fileInfo.absoluteDir();
+          QStringList nameFilter("*.mo");
+          QStringList filesAndDirectories = directory.entryList(nameFilter, QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
+                                                                QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+          convertModelicaFiles(filesAndDirectories, directory.absolutePath(), codec);
+        }
+        else
+        {
+          convertModelicaFile(fileName, codec);
+        }
       }
     }
   }

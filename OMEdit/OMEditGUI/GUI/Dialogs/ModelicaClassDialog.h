@@ -86,8 +86,8 @@ private:
   QPushButton *mpOpenAndConvertToUTF8Button;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  void convertModelicaFiles(QStringList filesAndDirectories, QString path);
-  void convertModelicaFile(QString fileName);
+  void convertModelicaFiles(QStringList filesAndDirectories, QString path, QTextCodec *codec);
+  void convertModelicaFile(QString fileName, QTextCodec *codec);
 private slots:
   void browseForFile();
   void openModelicaFiles(bool convertedToUTF8 = false);
