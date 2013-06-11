@@ -74,13 +74,6 @@ extern "C" {
 #include <unistd.h>
 #include <dlfcn.h>
 
-/* MacOS malloc.h is in sys */
-#ifndef __APPLE_CC__
-#include <malloc.h>
-#else
-#include <sys/malloc.h>
-#endif
-
 #endif
 
 #if defined(_MSC_VER)

@@ -250,7 +250,11 @@ int rtclock_compare(uint64_t t1, uint64_t t2) {
 static clockid_t omc_clock = OMC_CLOCK_MONOTONIC;
 
 int rt_set_clock(enum omc_rt_clock_t newClock) {
+#if defined(linux)
   omc_clock = newClock == OMC_CLOCK_REALTIME ? OMC_CLOCK_MONOTONIC : CLOCK_PROCESS_CPUTIME_ID;
+#else
+  omc_clock = OMC_CLOCK_MONOTONIC;
+#endif
   return 0;
 }
 

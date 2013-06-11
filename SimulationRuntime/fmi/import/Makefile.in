@@ -6,14 +6,14 @@ CC   = @CC@
 RES  =
 OBJS  = xmlparser.o stack.o moGenerator.o $(RES)
 LINKOBJS  = $(OBJS)
-LIBS =  -lexpat -ldl
 INCS =
 CXXINCS =  -I"../include/"
 BIN  = ../../../build/bin/fmigenerator
 LIB  = ../../../build/lib/omc/libfmuWrapper.a
 CXXFLAGS = $(CXXINCS)
 CFLAGS = @CFLAGS@ -Wall -pedantic -std=c99
-CPPFLAGS = -I"../../../build/include/omc"
+CPPFLAGS = -I"../../../build/include/omc" @CPPFLAGS@
+LDFLAGS = @LDFLAGS@ -lexpat
 RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom
@@ -40,7 +40,7 @@ clean: clean-custom
 	${RM} $(OBJS) $(BIN) fmuWrapper.o
 
 $(BIN): $(OBJS)
-	$(CC) -Wall -o $@ $(CPPFLAGS) $(LINKOBJS) $(LIBS)
+	$(CC) -Wall -o $@ $(CPPFLAGS) $(LINKOBJS) $(LDFLAGS)
 
 Makefile: Makefile.in
 	(cd ../../../ ; ./config.status)

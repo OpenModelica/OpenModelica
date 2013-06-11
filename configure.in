@@ -100,7 +100,7 @@ AC_MSG_CHECKING([x86_64 CFLAGS])
 if echo $CFLAGS | grep -q -- -fPIC; then
   AC_MSG_RESULT([already got -fPIC])
 else
-  CFLAGS+=" -fPIC"
+  CFLAGS="$CFLAGS -fPIC"
   AC_MSG_RESULT([adding -fPIC])
 fi
 
@@ -655,7 +655,7 @@ if test "Darwin" = `uname`; then
 else
   EXE=""
   SHREXT=".so"
-  LIBGC="build/lib/omc/libgc.so build/lib/omc/libgc.so.1 build/lib/omc/libgc.so.1.0.3"
+  LIBGC="build/lib/omc/libgc.so"
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a

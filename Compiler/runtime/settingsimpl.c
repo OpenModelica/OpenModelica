@@ -35,13 +35,6 @@
 #include <assert.h>
 #include "config.h"
 
-/* malloc.h is in sys in Mac OS */
-#ifdef __APPLE_CC__
-#include <sys/malloc.h>
-#else /* Linux or Windows here */
-#include <malloc.h>
-#endif
-
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #else
 #include <unistd.h>

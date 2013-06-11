@@ -30,7 +30,7 @@
 
 /* Stack overflow handling */
 
-#if !defined(__MINGW32__) && !defined(_MSC_VER)
+#if defined(linux) || defined(__APPLE_CC__)
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>

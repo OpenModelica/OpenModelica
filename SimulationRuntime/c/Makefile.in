@@ -12,6 +12,7 @@ builddir_inc=$(top_builddir)/build/include/omc
 AR = sh ar.sh
 CC = @CC@
 CXX = @CXX@
+CONFIG_CPPFLAGS = @CPPFLAGS@
 CONFIG_CFLAGS = @CFLAGS@ @IPOPT_CFLAGS@
 FPMATHFORTRAN = @FPMATHFORTRAN@
 

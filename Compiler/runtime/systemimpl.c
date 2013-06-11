@@ -113,13 +113,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 #include <sys/wait.h> /* only available in Linux, not windows */
 #include <unistd.h>
 #include <dlfcn.h>
-
-/* MacOS malloc.h is in sys */
-#ifndef __APPLE_CC__
-#include <malloc.h>
-#else
-#include <sys/malloc.h>
-#endif
+#include <stdlib.h>
 
 #define HAVE_SCANDIR
 

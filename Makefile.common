@@ -52,7 +52,7 @@ interactive: .testvariables mkbuilddirs boehm-gc fmil
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
 
 docs: mkbuilddirs
-	make -C Compiler/Translation release
+	$(MAKE) -C Compiler/Translation release
 	(cp -p doc/*.pdf doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
@@ -83,7 +83,7 @@ build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h
 build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 	cp -pP $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
-	(cd 3rdParty/gc-7.2 && ./configure --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)")
+	(cd 3rdParty/gc-7.2 && ./configure --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
 
 fmi: interactive
 	$(MAKE) -C SimulationRuntime/fmi/import -f $(defaultMakefileTarget)
@@ -123,7 +123,7 @@ runtimeCPPclean:
 fmil:
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || $(CMAKE) -D FMILIB_BUILD_SHARED_LIB:Bool=OFF -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D FMILIB_BUILD_SHARED_LIB:Bool=OFF -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/FMIL/build/libfmilib.a || $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
 	cp -p 3rdParty/FMIL/install/lib/libfmilib.a $(builddir_lib)/omc/
