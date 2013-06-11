@@ -4259,86 +4259,119 @@ algorithm
   printListDebug("print_row", es, printExp, ",");
 end printRow;
 
-
-public function expPriority "function: expPriority
-
- Returns a priority number for an expression.
- This function is used to output parenthesis when needed, e.g., 3(1+2) should output 3(1+2)
- and not 31+2.
-"
+public function expPriority
+  "Returns an integer priority given an expression, which is used by
+   printOperatorStr to add parentheses around operands when dumping expressions.
+   The inLhs argument should be true if the expression occurs on the left side
+   of a binary operation, otherwise false. This is because we don't need to add
+   parentheses to expressions such as x * y / z, but x / (y * z) needs them, so
+   the priorities of some binary operations differ depending on which side they
+   are."
   input Absyn.Exp inExp;
-  output Integer outInteger;
+  input Boolean inLhs;
+  output Integer outPriority;
 algorithm
-  outInteger:=
-  matchcontinue (inExp)
-    case (Absyn.INTEGER(value = _)) then 0;
-    case (Absyn.REAL(value = _)) then 0;
-    case (Absyn.STRING(value = _)) then 0;
-    case (Absyn.BOOL(value = _)) then 0;
-    case (Absyn.CREF(componentRef = _)) then 0;
-    case (Absyn.END()) then 0;
-    case (Absyn.CALL(function_ = _)) then 0;
-    case (Absyn.PARTEVALFUNCTION(function_= _)) then 0;
-    case (Absyn.ARRAY(arrayExp = _)) then 0;
-    case (Absyn.LIST(exps = _)) then 0;
-    case (Absyn.MATRIX(matrix = _)) then 0;
-    /* arithmetic operators */
-    case (Absyn.BINARY(op = Absyn.POW())) then 1;
-    case (Absyn.BINARY(op = Absyn.DIV())) then 2;
-    case (Absyn.BINARY(op = Absyn.MUL())) then 3;
-    case (Absyn.UNARY(op = Absyn.UPLUS())) then 4;
-    case (Absyn.UNARY(op = Absyn.UMINUS())) then 4;
-    case (Absyn.BINARY(op = Absyn.ADD())) then 5;
-    case (Absyn.BINARY(op = Absyn.SUB())) then 5;
-    /* the new arithmetic operators element-wise from Modelica 3.0  */
-    case (Absyn.BINARY(op = Absyn.POW_EW())) then 1;
-    case (Absyn.BINARY(op = Absyn.DIV_EW())) then 2;
-    case (Absyn.BINARY(op = Absyn.MUL_EW())) then 3;
-    case (Absyn.UNARY(op = Absyn.UPLUS_EW())) then 4;
-    case (Absyn.UNARY(op = Absyn.UMINUS_EW())) then 4;
-    case (Absyn.BINARY(op = Absyn.ADD_EW())) then 5;
-    case (Absyn.BINARY(op = Absyn.SUB_EW())) then 5;
-    /* relational operators */
-    case (Absyn.RELATION(op = Absyn.LESS())) then 6;
-    case (Absyn.RELATION(op = Absyn.LESSEQ())) then 6;
-    case (Absyn.RELATION(op = Absyn.GREATER())) then 6;
-    case (Absyn.RELATION(op = Absyn.GREATEREQ())) then 6;
-    case (Absyn.RELATION(op = Absyn.EQUAL())) then 6;
-    case (Absyn.RELATION(op = Absyn.NEQUAL())) then 6;
-    /* logical operatos */
-    case (Absyn.LUNARY(op = Absyn.NOT())) then 7;
-    case (Absyn.LBINARY(op = Absyn.AND())) then 8;
-    case (Absyn.LBINARY(op = Absyn.OR())) then 9;
-    case (Absyn.RANGE(start = _)) then 10;
-    case (Absyn.IFEXP(ifExp = _)) then 11;
-    case (Absyn.TUPLE(expressions = _)) then 12;  /* Not valid in inner expressions, only included here for completeness */
-    case (_) then 13;
-  end matchcontinue;
+  outPriority := match(inExp, inLhs)
+    local
+      Absyn.Operator op;
+
+    case (Absyn.BINARY(op = op), false) then priorityBinopRhs(op);
+    case (Absyn.BINARY(op = op), true) then priorityBinopLhs(op);
+    case (Absyn.UNARY(op = _), _) then 4;
+    case (Absyn.LBINARY(op = op), _) then priorityLBinop(op);
+    case (Absyn.LUNARY(op = _), _) then 7;
+    case (Absyn.RELATION(op = op), _) then 6;
+    case (Absyn.RANGE(start = _), _) then 10;
+    case (Absyn.IFEXP(ifExp = _), _) then 11;
+    else 0;
+  end match;
 end expPriority;
 
-protected function parenthesize
-"function: parenthesize
-  Adds parentheisis to a string if expression
-  and parent expression priorities requires it."
-  input String inString1;
-  input Integer inInteger2;
-  input Integer inInteger3;
+protected function priorityBinopLhs
+  "Returns the priority for a binary operation on the left hand side. Add and
+   sub has the same priority, and mul and div too, in contrast with
+   priorityBinopRhs."
+  input Absyn.Operator inOp;
+  output Integer outPriority;
+algorithm
+  outPriority := match(inOp)
+    case Absyn.ADD() then 5;
+    case Absyn.SUB() then 5;
+    case Absyn.MUL() then 2;
+    case Absyn.DIV() then 2;
+    case Absyn.POW() then 1;
+    case Absyn.ADD_EW() then 5;
+    case Absyn.SUB_EW() then 5;
+    case Absyn.MUL_EW() then 2;
+    case Absyn.DIV_EW() then 2;
+    case Absyn.POW_EW() then 1;
+  end match;
+end priorityBinopLhs;
+
+protected function priorityBinopRhs
+  "Returns the priority for a binary operation on the right hand side. Add and
+   sub has different priorities, and mul and div too, in contrast with
+   priorityBinopLhs."
+  input Absyn.Operator inOp;
+  output Integer outPriority;
+algorithm
+  outPriority := match(inOp)
+    case Absyn.ADD() then 6;
+    case Absyn.SUB() then 5;
+    case Absyn.MUL() then 3;
+    case Absyn.DIV() then 2;
+    case Absyn.POW() then 1;
+    case Absyn.ADD_EW() then 6;
+    case Absyn.SUB_EW() then 5;
+    case Absyn.MUL_EW() then 3;
+    case Absyn.DIV_EW() then 2;
+    case Absyn.POW_EW() then 1;
+  end match;
+end priorityBinopRhs;
+
+protected function priorityLBinop
+  input Absyn.Operator inOp;
+  output Integer outPriority;
+algorithm
+  outPriority := match(inOp)
+    case Absyn.AND() then 8;
+    case Absyn.OR() then 9;
+  end match;
+end priorityLBinop;
+
+protected function printOperandStr
+  "Prints an operand to a string."
+  input Absyn.Exp inOperand "The operand expression.";
+  input Absyn.Exp inOperation "The unary/binary operation which the operand belongs to.";
+  input Boolean inLhs "True if the operand is the left hand operand, otherwise false.";
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inString1,inInteger2,inInteger3)
+  outString := matchcontinue(inOperand, inOperation, inLhs)
     local
-      Ident str_1,str;
-      Integer pparent,pexpr;
-    case (str,pparent,pexpr) /* expr, prio. parent expr, prio. expr */
+      String op_str;
+
+    // Special case for unary operation on rhs, always print parentheses.
+    case (Absyn.UNARY(op = _), _, false)
       equation
-        (pparent > pexpr) = true;
-        str_1 = stringAppendList({"(",str,")"});
+        op_str = printExpStr(inOperand);
+        op_str = stringAppendList({"(", op_str, ")"});
       then
-        str_1;
-    case (str,_,_) then str;
+        op_str;
+
+    // Print parentheses around an operand if the priority of the operation is
+    // less than the priority of the operand.
+    case (_, _, _)
+      equation
+        true = intLt(expPriority(inOperation, inLhs), expPriority(inOperand, inLhs));
+        op_str = printExpStr(inOperand);
+        op_str = stringAppendList({"(", op_str, ")"});
+      then
+        op_str;
+
+    else printExpStr(inOperand);
+
   end matchcontinue;
-end parenthesize;
+end printOperandStr;
 
 public function printExpLstStr "exp
 
@@ -4361,7 +4394,7 @@ algorithm
   matchcontinue (inExp)
     local
       String s,s_1,s_2,s_3,sym,s1,s2,s1_1,s2_1,cs,ts,fs,cs_1,ts_1,fs_1,el,str,argsstr,s3,s3_1,res,res_1;
-      String s4, s5;
+      String s4, s5, lhs_str, rhs_str, op_str;
       Integer i,p,p1,p2,pc,pt,pf,pstart,pstop,pstep;
       Absyn.ComponentRef c,fcn;
       Boolean b;
@@ -4410,85 +4443,54 @@ algorithm
 
     case ((e as Absyn.BINARY(exp1 = e1,op = op,exp2 = e2)))
       equation
-        sym = opSymbol(op);
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        p2 = expPriority(e2);
-        s1_1 = parenthesize(s1, p1, p);
-        s2_1 = parenthesize(s2, p2, p);
-        s = stringAppend(s1_1, sym);
-        s_1 = stringAppend(s, s2_1);
+        lhs_str = printOperandStr(e1, e, true);
+        rhs_str = printOperandStr(e2, e, false);
+        op_str = opSymbol(op);
+        s = stringAppendList({lhs_str, op_str, rhs_str});
       then
-        s_1;
+        s;
 
     case ((e as Absyn.UNARY(op = op,exp = e1)))
       equation
-        sym = opSymbol(op);
-        s = printExpStr(e1);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        s_1 = parenthesize(s, p1, p);
-        s_2 = stringAppend(sym, s_1);
+        s = printOperandStr(e1, e, false);
+        op_str = opSymbol(op);
+        s = stringAppendList({op_str, s});
       then
-        s_2;
+        s;
 
     case ((e as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)))
       equation
-        sym = opSymbol(op);
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        p2 = expPriority(e2);
-        s1_1 = parenthesize(s1, p1, p);
-        s2_1 = parenthesize(s2, p2, p);
-        s = stringAppend(s1_1, sym);
-        s_1 = stringAppend(s, s2_1);
+        lhs_str = printOperandStr(e1, e, true);
+        rhs_str = printOperandStr(e2, e, false);
+        op_str = opSymbol(op);
+        s = stringAppendList({lhs_str, op_str, rhs_str});
       then
-        s_1;
+        s;
 
     case ((e as Absyn.LUNARY(op = op,exp = e1)))
       equation
-        sym = opSymbol(op);
-        s = printExpStr(e1);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        s_1 = parenthesize(s, p1, p);
-        s_2 = stringAppend(sym, s_1);
+        s = printOperandStr(e1, e, false);
+        op_str = opSymbol(op);
+        s = stringAppendList({op_str, s});
       then
-        s_2;
+        s;
 
     case ((e as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)))
       equation
-        sym = opSymbol(op);
-        s1 = printExpStr(e1);
-        s2 = printExpStr(e2);
-        p = expPriority(e);
-        p1 = expPriority(e1);
-        p2 = expPriority(e2);
-        s1_1 = parenthesize(s1, p1, p);
-        s2_1 = parenthesize(s2, p1, p);
-        s = stringAppend(s1_1, sym);
-        s_1 = stringAppend(s, s2_1);
+        lhs_str = printOperandStr(e1, e, true);
+        rhs_str = printOperandStr(e2, e, false);
+        op_str = opSymbol(op);
+        s = stringAppendList({lhs_str, op_str, rhs_str});
       then
-        s_1;
+        s;
 
     case ((e as Absyn.IFEXP(ifExp = cond,trueBranch = t,elseBranch = f,elseIfBranch = elseif_)))
       equation
         cs = printExpStr(cond);
         ts = printExpStr(t);
         fs = printExpStr(f);
-        p = expPriority(e);
-        pc = expPriority(cond);
-        pt = expPriority(t);
-        pf = expPriority(f);
-        cs_1 = parenthesize(cs, pc, p);
-        ts_1 = parenthesize(ts, pt, p);
-        fs_1 = parenthesize(fs, pf, p);
         el = printElseifStr(elseif_);
-        str = stringAppendList({"if ",cs_1," then ",ts_1,el," else ",fs_1});
+        str = stringAppendList({"if ",cs," then ",ts,el," else ",fs});
       then
         str;
 
@@ -4547,30 +4549,18 @@ algorithm
 
     case ((e as Absyn.RANGE(start = start,step = NONE(),stop = stop)))
       equation
-        s1 = printExpStr(start);
-        s3 = printExpStr(stop);
-        p = expPriority(e);
-        pstart = expPriority(start);
-        pstop = expPriority(stop);
-        s1_1 = parenthesize(s1, pstart, p);
-        s3_1 = parenthesize(s3, pstop, p);
-        s = stringAppendList({s1_1,":",s3_1});
+        s1 = printOperandStr(start, e, false);
+        s3 = printOperandStr(stop, e, false);
+        s = stringAppendList({s1, ":", s3});
       then
         s;
 
     case ((e as Absyn.RANGE(start = start,step = SOME(step),stop = stop)))
       equation
-        s1 = printExpStr(start);
-        s2 = printExpStr(step);
-        s3 = printExpStr(stop);
-        p = expPriority(e);
-        pstart = expPriority(start);
-        pstop = expPriority(stop);
-        pstep = expPriority(step);
-        s1_1 = parenthesize(s1, pstart, p);
-        s3_1 = parenthesize(s3, pstop, p);
-        s2_1 = parenthesize(s2, pstep, p);
-        s = stringAppendList({s1_1,":",s2_1,":",s3_1});
+        s1 = printOperandStr(start, e, false);
+        s2 = printOperandStr(step, e, false);
+        s3 = printOperandStr(stop, e, false);
+        s = stringAppendList({s1, ":", s2, ":", s3});
       then
         s;
 

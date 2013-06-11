@@ -315,6 +315,7 @@ end Absyn;
 package Dump
   function expPriority
     input Absyn.Exp inExp;
+    input Boolean inLhs;
     output Integer outInteger;
   end expPriority;
 end Dump;

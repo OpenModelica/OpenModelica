@@ -444,8 +444,8 @@ algorithm
       Tpl.Text l_func__str;
       Tpl.Text l_exp__str;
       Tpl.Text l_op__str;
-      Tpl.Text l_lhs__str;
       Tpl.Text l_rhs__str;
+      Tpl.Text l_lhs__str;
 
     case ( txt,
            Absyn.INTEGER(value = i_value) )
@@ -482,20 +482,20 @@ algorithm
     case ( txt,
            (i_e as Absyn.BINARY(exp1 = i_exp1, exp2 = i_exp2, op = i_op)) )
       equation
-        l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e);
-        l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e);
+        l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e, true);
+        l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e, false);
         l_op__str = dumpOperator(Tpl.emptyTxt, i_op);
-        txt = Tpl.writeText(txt, l_rhs__str);
+        txt = Tpl.writeText(txt, l_lhs__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = Tpl.writeText(txt, l_op__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeText(txt, l_lhs__str);
+        txt = Tpl.writeText(txt, l_rhs__str);
       then txt;
 
     case ( txt,
            (i_e as Absyn.UNARY(exp = i_exp, op = i_op)) )
       equation
-        l_exp__str = dumpOperand(Tpl.emptyTxt, i_exp, i_e);
+        l_exp__str = dumpOperand(Tpl.emptyTxt, i_exp, i_e, false);
         l_op__str = dumpOperator(Tpl.emptyTxt, i_op);
         txt = Tpl.writeText(txt, l_op__str);
         txt = Tpl.writeText(txt, l_exp__str);
@@ -504,20 +504,20 @@ algorithm
     case ( txt,
            (i_e as Absyn.LBINARY(exp1 = i_exp1, exp2 = i_exp2, op = i_op)) )
       equation
-        l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e);
-        l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e);
+        l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e, true);
+        l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e, false);
         l_op__str = dumpOperator(Tpl.emptyTxt, i_op);
-        txt = Tpl.writeText(txt, l_rhs__str);
+        txt = Tpl.writeText(txt, l_lhs__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = Tpl.writeText(txt, l_op__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeText(txt, l_lhs__str);
+        txt = Tpl.writeText(txt, l_rhs__str);
       then txt;
 
     case ( txt,
            (i_e as Absyn.LUNARY(exp = i_exp, op = i_op)) )
       equation
-        l_exp__str = dumpOperand(Tpl.emptyTxt, i_exp, i_e);
+        l_exp__str = dumpOperand(Tpl.emptyTxt, i_exp, i_e, false);
         l_op__str = dumpOperator(Tpl.emptyTxt, i_op);
         txt = Tpl.writeText(txt, l_op__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
@@ -527,14 +527,14 @@ algorithm
     case ( txt,
            (i_e as Absyn.RELATION(exp1 = i_exp1, exp2 = i_exp2, op = i_op)) )
       equation
-        l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e);
-        l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e);
+        l_lhs__str = dumpOperand(Tpl.emptyTxt, i_exp1, i_e, true);
+        l_rhs__str = dumpOperand(Tpl.emptyTxt, i_exp2, i_e, false);
         l_op__str = dumpOperator(Tpl.emptyTxt, i_op);
-        txt = Tpl.writeText(txt, l_rhs__str);
+        txt = Tpl.writeText(txt, l_lhs__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
         txt = Tpl.writeText(txt, l_op__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
-        txt = Tpl.writeText(txt, l_lhs__str);
+        txt = Tpl.writeText(txt, l_rhs__str);
       then txt;
 
     case ( txt,
@@ -591,9 +591,9 @@ algorithm
     case ( txt,
            (i_e as Absyn.RANGE(step = SOME(i_step), start = i_start, stop = i_stop)) )
       equation
-        l_start__str = dumpOperand(Tpl.emptyTxt, i_start, i_e);
-        l_step__str = dumpOperand(Tpl.emptyTxt, i_step, i_e);
-        l_stop__str = dumpOperand(Tpl.emptyTxt, i_stop, i_e);
+        l_start__str = dumpOperand(Tpl.emptyTxt, i_start, i_e, false);
+        l_step__str = dumpOperand(Tpl.emptyTxt, i_step, i_e, false);
+        l_stop__str = dumpOperand(Tpl.emptyTxt, i_stop, i_e, false);
         txt = Tpl.writeText(txt, l_start__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"));
         txt = Tpl.writeText(txt, l_step__str);
@@ -604,8 +604,8 @@ algorithm
     case ( txt,
            (i_e as Absyn.RANGE(step = NONE(), start = i_start, stop = i_stop)) )
       equation
-        l_start__str = dumpOperand(Tpl.emptyTxt, i_start, i_e);
-        l_stop__str = dumpOperand(Tpl.emptyTxt, i_stop, i_e);
+        l_start__str = dumpOperand(Tpl.emptyTxt, i_start, i_e, false);
+        l_stop__str = dumpOperand(Tpl.emptyTxt, i_stop, i_e, false);
         txt = Tpl.writeText(txt, l_start__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"));
         txt = Tpl.writeText(txt, l_stop__str);
@@ -704,6 +704,7 @@ public function dumpOperand
   input Tpl.Text txt;
   input Absyn.Exp a_operand;
   input Absyn.Exp a_operation;
+  input Boolean a_lhs;
 
   output Tpl.Text out_txt;
 protected
@@ -713,8 +714,8 @@ protected
   Tpl.Text l_op__str;
 algorithm
   l_op__str := dumpExp(Tpl.emptyTxt, a_operand);
-  ret_1 := Dump.expPriority(a_operation);
-  ret_2 := Dump.expPriority(a_operand);
+  ret_1 := Dump.expPriority(a_operation, a_lhs);
+  ret_2 := Dump.expPriority(a_operand, a_lhs);
   ret_3 := intLt(ret_1, ret_2);
   out_txt := fun_18(txt, ret_3, l_op__str);
 end dumpOperand;

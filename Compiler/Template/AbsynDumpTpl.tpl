@@ -65,28 +65,28 @@ match exp
   case STRING(__) then '"<%value%>"'
   case BOOL(__) then value
   case e as BINARY(__) then
-    let rhs_str = dumpOperand(exp1, e)
-    let lhs_str = dumpOperand(exp2, e)
+    let lhs_str = dumpOperand(exp1, e, true)
+    let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%rhs_str%> <%op_str%> <%lhs_str%>'
+    '<%lhs_str%> <%op_str%> <%rhs_str%>'
   case e as UNARY(__) then
-    let exp_str = dumpOperand(exp, e)
+    let exp_str = dumpOperand(exp, e, false)
     let op_str = dumpOperator(op)
     '<%op_str%><%exp_str%>'
   case e as LBINARY(__) then
-    let rhs_str = dumpOperand(exp1, e)
-    let lhs_str = dumpOperand(exp2, e)
+    let lhs_str = dumpOperand(exp1, e, true)
+    let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%rhs_str%> <%op_str%> <%lhs_str%>'
+    '<%lhs_str%> <%op_str%> <%rhs_str%>'
   case e as LUNARY(__) then
-    let exp_str = dumpOperand(exp, e)
+    let exp_str = dumpOperand(exp, e, false)
     let op_str = dumpOperator(op)
     '<%op_str%> <%exp_str%>'
   case e as RELATION(__) then
-    let rhs_str = dumpOperand(exp1, e)
-    let lhs_str = dumpOperand(exp2, e)
+    let lhs_str = dumpOperand(exp1, e, true)
+    let rhs_str = dumpOperand(exp2, e, false)
     let op_str = dumpOperator(op)
-    '<%rhs_str%> <%op_str%> <%lhs_str%>'
+    '<%lhs_str%> <%op_str%> <%rhs_str%>'
   case IFEXP(__) then dumpIfExp(exp)
   case CALL(__) then
     let func_str = dumpCref(function_)
@@ -104,13 +104,13 @@ match exp
         (row |> e => dumpExp(e) ;separator=", ") ;separator="; ")
     '[<%matrix_str%>]'
   case e as RANGE(step = SOME(step)) then
-    let start_str = dumpOperand(start, e)
-    let step_str = dumpOperand(step, e)
-    let stop_str = dumpOperand(stop, e)
+    let start_str = dumpOperand(start, e, false)
+    let step_str = dumpOperand(step, e, false)
+    let stop_str = dumpOperand(stop, e, false)
     '<%start_str%>:<%step_str%>:<%stop_str%>'
   case e as RANGE(step = NONE()) then
-    let start_str = dumpOperand(start, e)
-    let stop_str = dumpOperand(stop, e)
+    let start_str = dumpOperand(start, e, false)
+    let stop_str = dumpOperand(stop, e, false)
     '<%start_str%>:<%stop_str%>'
   case TUPLE(__) then
     let tuple_str = (expressions |> e => dumpExp(e); separator=", ")
@@ -128,10 +128,10 @@ match exp
   case _ then '/* AbsynDumpTpl.dumpExp: UNHANDLED Abyn.Exp */'
 end dumpExp;
 
-template dumpOperand(Absyn.Exp operand, Absyn.Exp operation)
+template dumpOperand(Absyn.Exp operand, Absyn.Exp operation, Boolean lhs)
 ::=
   let op_str = dumpExp(operand)
-  if intLt(expPriority(operation), expPriority(operand)) then
+  if intLt(expPriority(operation, lhs), expPriority(operand, lhs)) then
     '(<%op_str%>)'
   else
     op_str
