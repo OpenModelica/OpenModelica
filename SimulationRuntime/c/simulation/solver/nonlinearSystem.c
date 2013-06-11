@@ -33,6 +33,7 @@
  */
 
 #include <math.h>
+#include <string.h>
 
 #include "omc_error.h"
 #include "nonlinearSystem.h"

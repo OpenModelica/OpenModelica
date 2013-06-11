@@ -159,7 +159,7 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
         WARNING2(LOG_LS, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).name, data->localData[0]->timeValue);
         INDENT(LOG_LS);
         for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).numVar; ++j)
-          WARNING2(LOG_LS, "[%ld] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
+          WARNING2(LOG_LS, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
         RELEASE(LOG_LS);
       }
     }
