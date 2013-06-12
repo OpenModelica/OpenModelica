@@ -80,14 +80,13 @@ private:
   QPushButton *mpFileBrowseButton;
   Label *mpEncodingLabel;
   QComboBox *mpEncodingComboBox;
-  Label *mpEncodingNoteLabel;
   QCheckBox *mpConvertAllFilesCheckBox;
   QPushButton *mpOpenWithEncodingButton;
   QPushButton *mpOpenAndConvertToUTF8Button;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  void convertModelicaFiles(QStringList filesAndDirectories, QString path, QTextCodec *codec);
-  void convertModelicaFile(QString fileName, QTextCodec *codec);
+  void convertModelicaFiles(QStringList filesAndDirectories, QString path, QTextCodec *pCodec);
+  void convertModelicaFile(QString fileName, QTextCodec *pCodec);
 private slots:
   void browseForFile();
   void openModelicaFiles(bool convertedToUTF8 = false);

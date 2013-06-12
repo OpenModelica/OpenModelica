@@ -253,11 +253,6 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   connect(mpFileBrowseButton, SIGNAL(clicked()), SLOT(browseForFile()));
   // create the encoding label, combobox and encoding note.
   mpEncodingComboBox = new QComboBox;
-  mpEncodingComboBox->setEditable(true);
-  /* Since the default QCompleter for QComboBox is case insenstive. */
-  QCompleter *pEncodingComboBoxCompleter = mpEncodingComboBox->completer();
-  pEncodingComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
-  mpEncodingComboBox->setCompleter(pEncodingComboBoxCompleter);
   mpEncodingLabel = new Label(Helper::encoding);
   /* get the available MIBS and sort them. */
   QList<int> mibs = QTextCodec::availableMibs();
@@ -269,7 +264,6 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   foreach (int mib, mibs)
     if (mib < 0)
       sortedMibs += mib;
-  int i = 0;
   foreach (int mib, sortedMibs)
   {
     /* get the codec from MIB */
@@ -279,13 +273,11 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
     /* get all the aliases of the codec */
     foreach (const QByteArray &alias, pCodec->aliases())
       codecNameWithAliases += QLatin1String(" / ") + QString::fromLatin1(alias);
-    mpEncodingComboBox->addItem(codecName);
-    mpEncodingComboBox->setItemData(i, codecNameWithAliases, Qt::ToolTipRole);
-    i++;
+    mpEncodingComboBox->addItem(codecNameWithAliases, codecName);
   }
-  mpEncodingComboBox->setEditText(Helper::utf8);
-  mpEncodingComboBox->setCurrentIndex(mpEncodingComboBox->findText(Helper::utf8));
-  mpEncodingNoteLabel = new Label(tr("* The default encoding value is UTF-8."));
+  int currentIndex = mpEncodingComboBox->findData(Helper::utf8);
+  if (currentIndex > -1)
+    mpEncodingComboBox->setCurrentIndex(currentIndex);
   mpConvertAllFilesCheckBox = new QCheckBox(tr("Convert all files within the selected directory and sub-directories"));
   // Create the buttons
   /* Open with selected encoding button */
@@ -315,9 +307,8 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   pMainLayout->addWidget(mpFileBrowseButton, 0, 2);
   pMainLayout->addWidget(mpEncodingLabel, 1, 0);
   pMainLayout->addWidget(mpEncodingComboBox, 1, 1, 1, 2);
-  pMainLayout->addWidget(mpEncodingNoteLabel, 2, 0, 1, 3);
-  pMainLayout->addWidget(mpConvertAllFilesCheckBox, 3, 0, 1, 3);
-  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpConvertAllFilesCheckBox, 2, 0, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -326,7 +317,7 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   \param filesAndDirectories - the list of files and directories that should be converted.
   \param path - the directory path where files and directories are located.
   */
-void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QString path, QTextCodec *codec)
+void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QString path, QTextCodec *pCodec)
 {
   foreach (QString fileOrDirectory, filesAndDirectories)
   {
@@ -337,11 +328,11 @@ void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QSt
       QStringList nameFilter("*.mo");
       QStringList filesAndDirectories = directory.entryList(nameFilter, QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
                                                             QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-      convertModelicaFiles(filesAndDirectories, directory.absolutePath(), codec);
+      convertModelicaFiles(filesAndDirectories, directory.absolutePath(), pCodec);
     }
     else
     {
-      convertModelicaFile(QString(path).append("/").append(fileOrDirectory), codec);
+      convertModelicaFile(QString(path).append("/").append(fileOrDirectory), pCodec);
     }
   }
 }
@@ -350,11 +341,11 @@ void OpenModelicaFile::convertModelicaFiles(QStringList filesAndDirectories, QSt
   Converts the file to UTF-8 encoding.
   \param fileName - the full name of the file to convert.
   */
-void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *codec)
+void OpenModelicaFile::convertModelicaFile(QString fileName, QTextCodec *pCodec)
 {
   QFile file(fileName);
   file.open(QIODevice::ReadOnly);
-  QString fileData(codec->toUnicode(file.readAll()));
+  QString fileData(pCodec->toUnicode(file.readAll()));
   file.close();
   file.open(QIODevice::WriteOnly | QIODevice::Truncate);
   QTextStream out(&file);
@@ -426,8 +417,8 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
   */
 void OpenModelicaFile::convertModelicaFiles()
 {
-  QTextCodec *codec = QTextCodec::codecForName(mpEncodingComboBox->currentText().toStdString().data());
-  if (codec != NULL) {
+  QTextCodec *pCodec = QTextCodec::codecForName(mpEncodingComboBox->currentText().toStdString().data());
+  if (pCodec != NULL) {
     mpMainWindow->getStatusBar()->showMessage(tr("Converting files to UTF-8"));
     QApplication::setOverrideCursor(Qt::WaitCursor);
     foreach (QString fileName, mFileNames)
@@ -441,11 +432,11 @@ void OpenModelicaFile::convertModelicaFiles()
           QStringList nameFilter("*.mo");
           QStringList filesAndDirectories = directory.entryList(nameFilter, QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
                                                                 QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-          convertModelicaFiles(filesAndDirectories, directory.absolutePath(), codec);
+          convertModelicaFiles(filesAndDirectories, directory.absolutePath(), pCodec);
         }
         else
         {
-          convertModelicaFile(fileName, codec);
+          convertModelicaFile(fileName, pCodec);
         }
       }
     }
