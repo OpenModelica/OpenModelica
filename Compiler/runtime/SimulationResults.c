@@ -7,6 +7,10 @@
 #include "read_csv.h"
 #include <math.h>
 #include "omc_msvc.h" /* For INFINITY and NAN */
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
+#include <time.h>
+#include <sys/stat.h>
+#endif
 
 #if defined(_MSC_VER)
 #define fmax(x, y) ((x>y)?x:y)
@@ -25,6 +29,9 @@ const char *PlotFormatStr[] = {"Unknown","MATLAB4","PLT","CSV"};
 typedef struct {
   PlotFormat curFormat;
   char *curFileName;
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
+  time_t mtime;
+#endif
   ModelicaMatReader matReader;
   FILE *pltReader;
   FILE *csvReader;
@@ -48,7 +55,19 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   PlotFormat format;
   int len = strlen(filename);
   const char *msg[] = {"",""};
-  if (simresglob->curFileName && 0==strcmp(filename,simresglob->curFileName)) return simresglob->curFormat; // Super cache :)
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
+  struct stat buf;
+#endif
+  if (simresglob->curFileName && 0==strcmp(filename,simresglob->curFileName)) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    return simresglob->curFormat; // Super cache :)
+#else
+    /* Also check that the file was not modified */
+    if (stat(filename, &buf)==0 && difftime(buf.st_mtime,simresglob->mtime)==0.0) {
+      return simresglob->curFormat; // Super cache :)
+    }
+#endif
+  }
   // Start by closing the old file...
   SimulationResultsImpl__close(simresglob);
 
@@ -93,6 +112,9 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
 
   simresglob->curFormat = format;
   simresglob->curFileName = strdup(filename);
+#if !defined(__MINGW32__) && !defined(_MSC_VER)
+  simresglob->mtime = buf.st_mtime;
+#endif
   // fprintf(stderr, "SimulationResultsImpl__openFile(%s) => %s\n", filename, PlotFormatStr[curFormat]);
   return simresglob->curFormat;
 }

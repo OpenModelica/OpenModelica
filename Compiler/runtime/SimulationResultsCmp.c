@@ -63,8 +63,8 @@ typedef struct {
 #define DOUBLEEQUAL_TOTAL 0.0000000001
 #define DOUBLEEQUAL_REL 0.00001
 
-static SimulationResult_Globals simresglob_c = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
-static SimulationResult_Globals simresglob_ref = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
+static SimulationResult_Globals simresglob_c = {UNKNOWN_PLOT,0};
+static SimulationResult_Globals simresglob_ref = {UNKNOWN_PLOT,0};
 
 /* from an array of string creates flatten 'char*'-array suitable to be */
 /* stored as MAT-file matrix */

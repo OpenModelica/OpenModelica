@@ -36,7 +36,7 @@
 #include "SimulationResults.c"
 #include "SimulationResultsCmp.c"
 
-static SimulationResult_Globals simresglob = {UNKNOWN_PLOT,NULL,{NULL,NULL,0,NULL,0,NULL,0,0,0,NULL},NULL,NULL};
+static SimulationResult_Globals simresglob = {UNKNOWN_PLOT,0};
 
 void SimulationResults_5finit(void)
 {
