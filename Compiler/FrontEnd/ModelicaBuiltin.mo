@@ -2623,7 +2623,7 @@ Returns true if <b>className</b> has a class annotation called <b>annotationName
 </html>",revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
-<tr><td>16307</td><td>sjoelund.se</td><td>Added to omc</td></tr>
+<tr><td>16311</td><td>sjoelund.se</td><td>Added to omc</td></tr>
 </table>
 </html>"));
 end classAnnotationExists;
@@ -2638,7 +2638,7 @@ Returns the value of the class annotation <b>annotationName</b> of class <b>clas
 </html>",revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
-<tr><td>16307</td><td>sjoelund.se</td><td>Added to omc</td></tr>
+<tr><td>16311</td><td>sjoelund.se</td><td>Added to omc</td></tr>
 </table>
 </html>"));
 end getBooleanClassAnnotation;
