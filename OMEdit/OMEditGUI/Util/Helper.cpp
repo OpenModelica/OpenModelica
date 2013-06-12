@@ -277,7 +277,7 @@ void Helper::initHelperVariables()
   Helper::smooth = tr("Smooth:");
   Helper::bezier = tr("Bezier");
   Helper::startArrow = tr("Start Arrow:");
-  Helper::endArrow = tr("End Arrow::");
+  Helper::endArrow = tr("End Arrow:");
   Helper::arrowSize = tr("Arrow Size:");
   Helper::size = tr("Size:");
   Helper::lineStyle = tr("Line Style");
