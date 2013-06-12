@@ -398,7 +398,10 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
     }
     else
     {
-      mpMainWindow->getLibraryTreeWidget()->openFile(fileName, mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString(), false);
+      if (convertedToUTF8)
+        mpMainWindow->getLibraryTreeWidget()->openFile(fileName, Helper::utf8, false);
+      else
+        mpMainWindow->getLibraryTreeWidget()->openFile(fileName, mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString(), false);
     }
   }
   mpMainWindow->getStatusBar()->clearMessage();
@@ -413,7 +416,8 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
 void OpenModelicaFile::convertModelicaFiles()
 {
   QTextCodec *pCodec = QTextCodec::codecForName(mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString().toStdString().data());
-  if (pCodec != NULL) {
+  if (pCodec != NULL)
+  {
     mpMainWindow->getStatusBar()->showMessage(tr("Converting files to UTF-8"));
     QApplication::setOverrideCursor(Qt::WaitCursor);
     foreach (QString fileName, mFileNames)
