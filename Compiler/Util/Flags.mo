@@ -1088,7 +1088,7 @@ algorithm
     case ("help", _, _)
       equation
         values = List.map(inValues, System.tolower);
-        System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "","C",getConfigString(LOCALE_FLAG)));
+        System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "",getConfigString(LOCALE_FLAG),"C"));
         print(printHelp(values));
         setConfigString(HELP, "omc");
       then

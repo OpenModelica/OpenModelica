@@ -650,6 +650,8 @@ public constant Message RECURSION_DEPTH_DERIVED = MESSAGE(533, TRANSLATION(), ER
   Util.gettext("The maximum recursion depth was reached when instantiating a derived class. Current class %s in scope %s."));
 public constant Message EVAL_EXTERNAL_OBJECT_CONSTRUCTOR = MESSAGE(534, TRANSLATION(), ERROR(),
   Util.gettext("OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but %s is a variable."));
+public constant Message CLASS_ANNOTATION_DOES_NOT_EXIST = MESSAGE(535, SCRIPTING(), ERROR(),
+  Util.gettext("Could not find class annotation %s in class %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

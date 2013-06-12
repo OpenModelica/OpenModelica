@@ -2613,6 +2613,36 @@ function isExperiment "An experiment is defined as having annotation Experiment(
 external "builtin";
 end isExperiment;
 
+function classAnnotationExists "Check if annotation exists"
+  input TypeName className;
+  input TypeName annotationName;
+  output Boolean exists;
+external "builtin";
+annotation(Documentation(info="<html>
+Returns true if <b>className</b> has a class annotation called <b>annotationName</b>.
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>16307</td><td>sjoelund.se</td><td>Added to omc</td></tr>
+</table>
+</html>"));
+end classAnnotationExists;
+
+function getBooleanClassAnnotation "Check if annotation exists and returns its value"
+  input TypeName className;
+  input TypeName annotationName;
+  output Boolean value;
+external "builtin";
+annotation(Documentation(info="<html>
+Returns the value of the class annotation <b>annotationName</b> of class <b>className</b>. If there is no such annotation, or if it is not true or false, this function fails.
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>16307</td><td>sjoelund.se</td><td>Added to omc</td></tr>
+</table>
+</html>"));
+end getBooleanClassAnnotation;
+
 function extendsFrom "returns true if the given class extends from the given base class"
   input TypeName className;
   input TypeName baseClassName;

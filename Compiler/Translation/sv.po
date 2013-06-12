@@ -1271,7 +1271,7 @@ msgstr "Misslyckades infoga klass %s %s de tillgängliga klasserna var:%s"
 #: ../Util/Error.mo:519
 #, c-format
 msgid "Modified element %s not found in class %s."
-msgstr "Modifierat element %s hittades inte i klass %s.\n"
+msgstr "Modifierat element %s hittades inte i klass %s."
 
 #: ../Util/Error.mo:521
 msgid "Invalid redeclaration, attributes of basic types can not be redeclared."
@@ -1280,7 +1280,7 @@ msgstr "Ogiltig omdeklaration, attribut för grundtyper kan inte omdeklareras."
 #: ../Util/Error.mo:523
 #, c-format
 msgid "Invalid stream connector %s: %s"
-msgstr "Ogiltig stream connector %s: %s\n"
+msgstr "Ogiltig stream connector %s: %s"
 
 #: ../Util/Error.mo:525
 #, c-format
@@ -1323,7 +1323,7 @@ msgstr "Connect-ekvationer är inte tillåtna i en initial equation sektion."
 #: ../Util/Error.mo:535
 #, c-format
 msgid "Trying to override final component %s with modifier %s."
-msgstr "Försöker överskrida slutgiltig komponent %s med modifikation %s.\n"
+msgstr "Försöker överskrida slutgiltig komponent %s med modifikation %s."
 
 #: ../Util/Error.mo:537
 #, c-format
@@ -1564,7 +1564,7 @@ msgid ""
 "modifiers: %s and %s that do not agree."
 msgstr ""
 "Försöker överskrida slutgiltig variabel i komponent %s och omgivning %s med "
-"modifikationer: %s och %s some inte stämmer överens.\n"
+"modifikationer: %s och %s some inte stämmer överens."
 
 #: ../Util/Error.mo:606
 #, c-format
@@ -2895,7 +2895,7 @@ msgid ""
 "Flags that determine which symbolic methods are used to produce the "
 "causalized equation system."
 msgstr ""
-"Flaggor som bestämmer vilken symbolsk metod som används för att producera "
+"Flaggor som bestämmer vilken symbolisk metod som används för att producera "
 "det kausaliserade ekvationssystemet."
 
 #: ../Util/Flags.mo:1562
@@ -2916,11 +2916,11 @@ msgstr "Visar hjälptexten."
 
 #: ../Util/Flags.mo:1574
 msgid "The available topics (help(\"topics\")) are as follows:\n"
-msgstr "De tillgängliga ämnena (help(\"topics\")) är följande:"
+msgstr "De tillgängliga ämnena (help(\"topics\")) är följande:\n"
 
 #: ../Util/Flags.mo:1581
 msgid "The simulation executable takes the following flags:\n"
-msgstr "Simuleringsprogram tar följande flaggor:"
+msgstr "Simuleringsprogram tar följande flaggor:\n"
 
 #: ../Util/Flags.mo:1586
 msgid ""
@@ -2976,7 +2976,7 @@ msgid ""
 msgstr ""
 "Flaggan +postOptModules anger de optimeringsmoduler som används efter "
 "index-reduktion, specificerad som en komma-separerad lista. De giltiga "
-"modulerna är:\n"
+"modulerna är:"
 
 #: ../Util/Flags.mo:1660
 msgid "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
@@ -3038,7 +3038,7 @@ msgstr "  omc Model.mo             producerar platt Model på standard ut.\n"
 #: ../Util/Flags.mo:1669
 msgid ""
 "  omc +s Model.mo          will produce simulation code for the model:\n"
-msgstr "..omc +s Model.mo          producerar simuleringskod för modellen:\n"
+msgstr "  omc +s Model.mo          producerar simuleringskod för modellen:\n"
 
 #: ../Util/Flags.mo:1670
 msgid "                            * Model.c           The model C code.\n"
@@ -3157,12 +3157,12 @@ msgstr "Okänd resultatfil med ändelse '%s'"
 #: ../runtime/SimulationResults.c:84
 #, c-format
 msgid "Failed to open simulation result %s: %s"
-msgstr "Misslyckades öppna simuleringsresultat %s: %s\n"
+msgstr "Misslyckades öppna simuleringsresultat %s: %s"
 
 #: ../runtime/SimulationResults.c:90
 #, c-format
 msgid "Failed to open simulation result %s"
-msgstr "Misslyckades öppna simuleringsresultat %s\n"
+msgstr "Misslyckades öppna simuleringsresultat %s"
 
 #: ../runtime/SimulationResults.c:113 ../runtime/SimulationResults.c:141
 #, c-format

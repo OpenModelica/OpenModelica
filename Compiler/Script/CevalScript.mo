@@ -473,7 +473,7 @@ algorithm
           Interactive.getNamedAnnotation(
             inModelPath,
             Interactive.getSymbolTableAST(inSymTab),
-            "experiment",
+            Absyn.IDENT("experiment"),
             SOME("{}"),
             Interactive.getExperimentAnnotationString);
                 // parse the string we get back, either {} or {StopTime=5, Tolerance = 0.10};
@@ -749,7 +749,7 @@ algorithm
     case ((path,str1::_),_,false,_)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
-        ostr2 = Interactive.getNamedAnnotationInClass(cdef,"version",Interactive.getAnnotationStringValueOrFail);
+        ostr2 = Interactive.getNamedAnnotationInClass(cdef,Absyn.IDENT("version"),Interactive.getAnnotationStringValueOrFail);
         checkValidVersion(path,str1,ostr2);
       then true;
     case (_,_,_,NONE()) then false;
@@ -2046,7 +2046,7 @@ algorithm
 
     case (cache,env,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
-        ((str1,str2)) = Interactive.getNamedAnnotation(classpath, p, "Documentation", SOME(("","")),Interactive.getDocumentationAnnotationString);
+        ((str1,str2)) = Interactive.getNamedAnnotation(classpath, p, Absyn.IDENT("Documentation"), SOME(("","")),Interactive.getDocumentationAnnotationString);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2)}),st);
 
@@ -2130,13 +2130,32 @@ algorithm
 
     case (cache,env,"isExperiment",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
-        b = Interactive.getNamedAnnotation(classpath, p, "experiment", SOME(false), hasStopTime);
+        b = Interactive.getNamedAnnotation(classpath, p, Absyn.IDENT("experiment"), SOME(false), hasStopTime);
       then
         (cache,Values.BOOL(b),st);
 
     case (cache,env,"isExperiment",_,st as Interactive.SYMBOLTABLE(ast=p),_)
       then
         (cache,Values.BOOL(false),st);
+
+    case (cache,env,"classAnnotationExists",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        b = Interactive.getNamedAnnotation(classpath, p, path, SOME(false), Util.isSome);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,"getBooleanClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        Absyn.BOOL(b) = Interactive.getNamedAnnotation(classpath, p, path, NONE(), Interactive.getAnnotationExp);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,"getBooleanClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        str1 = Absyn.pathString(path);
+        str2 = Absyn.pathString(classpath);
+        Error.addMessage(Error.CLASS_ANNOTATION_DOES_NOT_EXIST, {str1,str2});
+      then fail();
 
     case (cache,env,"searchClassNames",{Values.STRING(str), Values.BOOL(b)},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
@@ -6184,7 +6203,7 @@ algorithm
     case (_,_)
       equation
         Config.setEvaluateParametersInAnnotations(true);
-        Absyn.STRING(version) = Interactive.getNamedAnnotation(path, p, "version", SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+        Absyn.STRING(version) = Interactive.getNamedAnnotation(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
         Config.setEvaluateParametersInAnnotations(false);
       then version;
     else "";

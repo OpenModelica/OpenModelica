@@ -1782,7 +1782,7 @@ algorithm
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getExperimentAnnotation");
-        resstr = getNamedAnnotation(modelpath, p, "experiment", SOME("{}"), getExperimentAnnotationString);
+        resstr = getNamedAnnotation(modelpath, p, Absyn.IDENT("experiment"), SOME("{}"), getExperimentAnnotationString);
         ErrorExt.rollBack("getExperimentAnnotation");
       then
         (resstr,st);
@@ -1811,7 +1811,7 @@ algorithm
         modelpath = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getNamedAnnotation");
         Config.setEvaluateParametersInAnnotations(true);
-        resstr = getNamedAnnotation(modelpath, p, str, SOME("{}"), getAnnotationValue);
+        resstr = getNamedAnnotation(modelpath, p, Absyn.IDENT(str), SOME("{}"), getAnnotationValue);
         Config.setEvaluateParametersInAnnotations(false);
         ErrorExt.rollBack("getNamedAnnotation");
       then
@@ -10132,7 +10132,7 @@ algorithm
   (io,redecl,attr) := match(p,className)
   local String str;
     case(_,_) equation
-      str = getNamedAnnotation(className,p,"defaultComponentPrefixes",SOME("{}"),getDefaultComponentPrefixesModStr);
+      str = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
       io = getDefaultInnerOuter(str);
       redecl = getDefaultReplaceable(str);
       redecl = makeReplaceableIfPartial(p, className, redecl);
@@ -12251,7 +12251,7 @@ public function getNamedAnnotation
   first argument."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
-  input Absyn.Ident id;
+  input Absyn.Path id;
   input Option<T> default;
   input ModFunc f;
   partial function ModFunc
@@ -12293,7 +12293,7 @@ algorithm
 
     case (Absyn.PROGRAM(classes={cdef}))
       equation
-        SOME(usesStr) = getNamedAnnotationInClass(cdef,"uses",getUsesAnnotationString);
+        SOME(usesStr) = getNamedAnnotationInClass(cdef,Absyn.IDENT("uses"),getUsesAnnotationString);
       then
         usesStr;
 
@@ -13105,7 +13105,7 @@ public function getNamedAnnotationInClass
   Retrieve the documentation annotation as a
   string from the class passed as argument."
   input Absyn.Class inClass;
-  input Absyn.Ident id;
+  input Absyn.Path id;
   input ModFunc f;
   output Option<TypeA> outString;
   replaceable type TypeA subtypeof Any;
@@ -13170,7 +13170,7 @@ algorithm
   compName := match(className,p)
     case(_,_)
       equation
-        compName = getNamedAnnotation(className,p,"defaultComponentName",SOME("{}"),getDefaultComponentNameModStr);
+        compName = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentName"),SOME("{}"),getDefaultComponentNameModStr);
       then
         compName;
   end match;
@@ -13209,7 +13209,7 @@ algorithm
   compName := match(className,p)
     case(_,_)
       equation
-        compName = getNamedAnnotation(className,p,"defaultComponentPrefixes",SOME("{}"),getDefaultComponentPrefixesModStr);
+        compName = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
       then
         compName;
   end match;
@@ -13219,7 +13219,7 @@ protected function getNamedAnnotationStr
 "function: getNamedAnnotationStr
   Helper function to getNamedAnnotationInElementitemlist."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input Absyn.Ident id;
+  input Absyn.Path id;
   input ModFunc f;
   output Option<TypeA> outString;
   replaceable type TypeA subtypeof Any;
@@ -13235,13 +13235,19 @@ algorithm
       Option<Absyn.Modification> mod;
       list<Absyn.ElementArg> xs;
       Absyn.Ident id1,id2;
+      Absyn.Path rest;
 
-    case (((ann as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = mod)) :: _),id2,_)
+    case (((ann as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = mod)) :: _),Absyn.IDENT(id2),_)
       equation
         true = stringEq(id1, id2);
         str = f(mod);
       then
         SOME(str);
+
+    case (((ann as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = SOME(Absyn.CLASSMOD(elementArgLst=xs)))) :: _),Absyn.QUALIFIED(name=id2,path=rest),_)
+      equation
+        true = stringEq(id1, id2);
+      then getNamedAnnotationStr(xs,rest,f);
 
     case ((_ :: xs),_,_) then getNamedAnnotationStr(xs,id,f);
   end matchcontinue;
