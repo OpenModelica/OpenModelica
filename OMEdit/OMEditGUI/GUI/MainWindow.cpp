@@ -62,7 +62,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   pSplashScreen->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   setObjectName("MainWindow");
   setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
-  setWindowIcon(QIcon(":/Resources/icons/omedit.png"));
+  setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   setMinimumSize(400, 300);
   resize(800, 600);
   setContentsMargins(1, 1, 1, 1);
