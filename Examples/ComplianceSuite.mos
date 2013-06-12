@@ -14,7 +14,7 @@ end last;
 deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps);getErrorString();
 deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed);getErrorString();
 deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName);getErrorString();
-// system("rm -f ModelicaCompliance.*.res");getErrorString();
+system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
 min(writeFile(typeNameString(cl)+".mos","
@@ -30,7 +30,7 @@ writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+last(OpenModelic
 ") for cl in allClasses);
 getErrorString();
 commands:={"ulimit -t 120 && omc " + OpenModelica.Scripting.typeNameString(cl) + ".mos" for cl in allClasses};
-// system_parallel(commands);getErrorString();
+system_parallel(commands);getErrorString();
 
 writeFile("ComplianceSuite.sh","#!/bin/bash
 OMCRESULT=openmodelica.xml
