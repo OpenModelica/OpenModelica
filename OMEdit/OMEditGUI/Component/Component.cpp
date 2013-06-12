@@ -98,7 +98,7 @@ Component::Component(QString annotation, QString className, StringHandler::Model
   parseAnnotationString(annotation);
   // if type is connector and component is not a library component and not a system library class.
   bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
-  if (mType == StringHandler::Connector && !isLibraryComponent() && mpParentComponent->getType() != StringHandler::Connector && !isSystemLibrary)
+  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
     connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
@@ -123,7 +123,7 @@ Component::Component(QString annotation, QString transformationString, Component
   setToolTip(QString("<b>").append(mClassName).append("</b> <i>").append(mName).append("</i>"));
   // if type is connector and component is not a library component and not a system library class.
   bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
-  if (mType == StringHandler::Connector && !isLibraryComponent() && mpParentComponent->getType() != StringHandler::Connector && !isSystemLibrary)
+  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
     connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
@@ -1284,9 +1284,16 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
     return;
   // if component is a connector type then emit the componentClicked signal
   MainWindow *pMainWindow = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow();
+  /*
+    #2236
+    If a user has a connector with components that are also connectors then we need to consume the event and don't propogate it.
+    So we can get the correct clicked component.
+    */
+  bool eventConsumed = false;
   if (event->button() == Qt::LeftButton && pMainWindow->getConnectModeAction()->isChecked() && mType == StringHandler::Connector)
   {
     emit componentClicked(this);
+    eventConsumed = true;
   }
   // if we are creating the connector then make sure user can not select and move components
   if ((mpGraphicsView->isCreatingConnection()) && !mpParentComponent)
@@ -1299,7 +1306,8 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
   {
     setComponentFlags();
   }
-  QGraphicsItem::mousePressEvent(event);
+  if (!eventConsumed)
+    QGraphicsItem::mousePressEvent(event);
 }
 
 /*! Event when mouse is double clicked on a component.
