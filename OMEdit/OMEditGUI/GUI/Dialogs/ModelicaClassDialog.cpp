@@ -412,7 +412,7 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
   */
 void OpenModelicaFile::convertModelicaFiles()
 {
-  QTextCodec *pCodec = QTextCodec::codecForName(mpEncodingComboBox->currentText().toStdString().data());
+  QTextCodec *pCodec = QTextCodec::codecForName(mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString().toStdString().data());
   if (pCodec != NULL) {
     mpMainWindow->getStatusBar()->showMessage(tr("Converting files to UTF-8"));
     QApplication::setOverrideCursor(Qt::WaitCursor);
