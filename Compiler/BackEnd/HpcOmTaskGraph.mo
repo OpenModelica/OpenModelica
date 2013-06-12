@@ -81,7 +81,6 @@ public uniontype Graph
 end Graph;
 
 
-
 public function createTaskGraph
   input BackendDAE.BackendDAE inDAE;
 
@@ -89,6 +88,7 @@ algorithm
   //Iterate over each system
   (_,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE, createTaskGraph0, false);
 end createTaskGraph;
+
 
 protected function createTaskGraph0
 
@@ -108,7 +108,6 @@ algorithm
       Integer numberOfVars;
       array<Integer> varSccMapping; //Map each variable to the scc which solves her
       list<String> eqDescs; 
-      
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars)),(BackendDAE.SHARED(functionTree=sharedFuncs),_))
       equation
         varSccMapping = createVarSccMapping(comps, numberOfVars); 
@@ -160,7 +159,7 @@ algorithm
 end createTaskGraph1;
 
 
-protected function getEquationStrings " gets the equation for every StrongComponent
+protected function getEquationStrings " gets the equation and the variable its solved for for every StrongComponent
 author:Waurich TUD 2013-06"
   input BackendDAE.StrongComponents iComps;
   input BackendDAE.EqSystem iEqSystem;
@@ -184,6 +183,7 @@ algorithm
       Integer v;
       List<BackendDAE.Equation> eqnLst;
       List<BackendDAE.Var> varLst;
+      array<Integer> ass2;
       List<Integer> es;
       List<Integer> vs;
       List<String> descLst;
@@ -194,43 +194,88 @@ algorithm
       String desc;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jacT;
-      BackendDAE.EquationArray orderedEqs;      
+      BackendDAE.EquationArray orderedEqs;     
       BackendDAE.Variables orderedVars;
       BackendDAE.Equation eqn;
       BackendDAE.Var var;
-  case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
+    case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
       equation
-       eqnLst = BackendEquation.equationList(orderedEqs);  //get the equation string 
+       //get the equation string
+       eqnLst = BackendEquation.equationList(orderedEqs);   
        eqn = listGet(eqnLst,i);
        eqString = BackendDump.equationString(eqn);
        eqDescLst = stringListStringChar(eqString);
        eqDescLst = List.map(eqDescLst,prepareXML);
        eqString =stringCharListString(eqDescLst);
-       print("eq"+&intString(i)+&" var"+&intString(v)+&"\n");
-       //// check matching between vars and eqs!!!!!!!!!!!!!!!!/////////////////////////
-       
-       varLst = BackendVariable.varList(orderedVars);  //get the variable string 
+       //get the variable string
+       varLst = BackendVariable.varList(orderedVars);   
        var = listGet(varLst,v);
-       varString = BackendDump.varString(var);
-       varDescLst = stringListStringChar(varString);
-       varDescLst = shortenVarString(varDescLst);
-       varString =stringCharListString(varDescLst);
+       varString = getVarString(var);
        desc = (eqString +& " FOR " +& varString);
        descLst = desc::iEqDesc;
      then descLst;
   case(BackendDAE.EQUATIONSYSTEM(eqns = es, vars = vs, jac = jac, jacType = jacT), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
-      equation
+     equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
      then descLst;
+   case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+     equation
+      //get the equation string
+      eqnLst = BackendEquation.equationList(orderedEqs);
+      eqn = listGet(eqnLst,i);
+      eqString = BackendDump.equationString(eqn);
+      eqDescLst = stringListStringChar(eqString);
+      eqDescLst = List.map(eqDescLst,prepareXML);
+      eqString =stringCharListString(eqDescLst);
+      //get the variable string
+      varLst = BackendVariable.varList(orderedVars);   
+      var = listGet(varLst,arrayGet(ass2,i));
+      varString = getVarString(var);
+      desc = (eqString +& " FOR " +& varString);
+      descLst = desc::iEqDesc;
+    then descLst;
   else
-      equation
-        desc = ("no singleEquation");
-        descLst = desc::iEqDesc;
+    equation
+      desc = ("no singleEquation");
+      descLst = desc::iEqDesc;
     then descLst;
   end matchcontinue; 
 end getEquationStrings2;
+
+
+protected function getVarString "get the var string for a given variable. shortens the String. if necessary insert der operator 
+author:waurich TUD 2013-06"
+  input BackendDAE.Var inVar;
+  output String varString;
+algorithm
+  varString := matchcontinue(inVar)
+    local
+      BackendDAE.VarKind kind;
+      list<String> varDescLst;
+    case(_)
+      equation
+      true = BackendVariable.isNonStateVar(inVar);
+      varString = BackendDump.varString(inVar);
+      varDescLst = stringListStringChar(varString);
+      varDescLst = shortenVarString(varDescLst);
+      varString = stringCharListString(varDescLst);
+    then
+      varString;
+  case(_)
+    equation
+    false = BackendVariable.isNonStateVar(inVar);
+    varString = BackendDump.varString(inVar);
+    varDescLst = stringListStringChar(varString);
+    varDescLst = shortenVarString(varDescLst);
+    varString = stringCharListString(varDescLst);
+    varString = (" der(" +& varString +& ")");
+    then
+      varString;   
+  end matchcontinue;  
+end getVarString;
+   
 
 protected function prepareXML " map-function for deletion of forbidden chars from given string
 author:Waurich TUD 2013-06"
@@ -310,6 +355,13 @@ algorithm
         tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
         print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
       then tmpVars;
+    case(BackendDAE.SINGLEWHENEQUATION(vars=varIdc),_)
+      equation
+        tmpVars = getVarsBySCC(component, incidenceMatrix);
+        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
+        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+      then tmpVars;
    end matchcontinue;
 end getUnsolvedVarsBySCC;
 
@@ -374,6 +426,13 @@ algorithm
     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns),_)
       equation
         eqnVars = List.flatten(List.map1(eqns, getVarsByEqn, incidenceMatrix));
+        //print("Error in createTaskGraph1! Unsupported component-type Equationsystem with jacType varying.\n");
+      then eqnVars;
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx),_)
+      equation
+        eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
+        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
         //print("Error in createTaskGraph1! Unsupported component-type Equationsystem with jacType varying.\n");
       then eqnVars;
     else
@@ -524,6 +583,10 @@ algorithm
       equation
         tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
       then iSccIdx+1;
+    case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc),_,_)
+      equation
+        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then iSccIdx+1;
     else
       equation
         print("createVarSccMapping0 - Unsupported component-type.");
@@ -659,6 +722,7 @@ algorithm
       String name;
       list<Variable> variables;
     case(_, GRAPH(name = name, components = components, variables = variables))
+        equation
       then GRAPH(name, component::components, variables);
   end match;
 end addSccToGraph;
@@ -717,7 +781,6 @@ algorithm
       GraphML.Graph tmpGraph;
     case(STRONGCONNECTEDCOMPONENT(text=compText,compIdx=compIdx, dependencySCCs=dependencySCCs, description=nodeDesc),_)
       equation
-        //nodeDesc = intString(compIdx);  // just for debug
         tmpGraph = GraphML.addNode("Component" +& intString(compIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), iGraph);
         tmpGraph = List.fold1(dependencySCCs, addSccDepToGraph, compIdx, tmpGraph);
       then tmpGraph;
