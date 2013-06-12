@@ -398,12 +398,7 @@ void OpenModelicaFile::openModelicaFiles(bool convertedToUTF8)
     }
     else
     {
-      QString encoding;
-      if (mpEncodingComboBox->currentText().isEmpty() || convertedToUTF8)
-        encoding = Helper::utf8;
-      else
-        encoding = mpEncodingComboBox->currentText();
-      mpMainWindow->getLibraryTreeWidget()->openFile(fileName, encoding, false);
+      mpMainWindow->getLibraryTreeWidget()->openFile(fileName, mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString(), false);
     }
   }
   mpMainWindow->getStatusBar()->clearMessage();
