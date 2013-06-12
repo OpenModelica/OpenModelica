@@ -22,6 +22,7 @@ CXX=@CXX@
 CFLAGS=@CFLAGS@
 CPPFLAGS=@CPPFLAGS@
 CXXFLAGS=@CXXFLAGS@
+LINK=cp -frl
 
 include Makefile.common
 

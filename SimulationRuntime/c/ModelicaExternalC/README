@@ -1,9 +1,0 @@
-Minimal files needed to compile on Unix. Requires the autotools installed.
-
-For more detailed installation instructions:
-./autogen.sh
-cat INSTALL
-./configure
-make
-sudo make install
-sudo make uninstall

@@ -71,7 +71,7 @@ RUNTIME_HEADERS_FMU = \
 ./simulation/solver/solver_main.h \
 ./util/list.h \
 
-.PHONY : clean all $(LIBF2C) ModelicaExternalC ModelicaTables
+.PHONY : clean all $(LIBF2C)
 
 all : install
 
@@ -143,17 +143,7 @@ simulation/libf2c/libf2c.a:
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 endif
 
-EXTERNALCBUILDDIR = ModelicaExternalC
-
-ModelicaExternalC : $(EXTERNALCBUILDDIR)/Makefile
-	$(MAKE) -C $(EXTERNALCBUILDDIR)
-$(EXTERNALCBUILDDIR)/Makefile : $(EXTERNALCBUILDDIR)/configure $(REGEN)
-	cd $(EXTERNALCBUILDDIR) && ./configure $(PREFIX) CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
-	make -C $(EXTERNALCBUILDDIR) clean
-$(EXTERNALCBUILDDIR)/configure : $(EXTERNALCBUILDDIR)/autogen.sh
-	cd $(EXTERNALCBUILDDIR) && ./autogen.sh
-
-install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a ModelicaExternalC $(ALL_OBJS)
+install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS)
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
 	   ../interactive/libinteractive.a $(builddir_lib)
@@ -167,8 +157,6 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	   ../fmi/export/fmu_model_interface.c \
 	   ../fmi/import/fmuWrapper.h \
 	   ../fmi/import/xmlparser.h $(builddir_inc)
-	cp -Pp $(EXTERNALCBUILDDIR)/.libs/$(MODELICAEXTERNALC) $(builddir)/lib/omc
-	cp -Pp $(EXTERNALCBUILDDIR)/.libs/$(MODELICASTANDARDTABLES) $(builddir)/lib/omc
 	# copy java interface stuff
 	@$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) && \
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install || \
