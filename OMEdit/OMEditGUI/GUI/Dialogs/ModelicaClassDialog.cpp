@@ -60,25 +60,25 @@ ModelicaClassDialog::ModelicaClassDialog(MainWindow *pParent)
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit;
-  // Create the restriction label and combo box
-  mpRestrictionLabel = new Label(tr("Restriction:"));
-  mpRestrictionComboBox = new QComboBox;
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Model));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Class));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Connector));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::ExpandableConnector));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Record));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Block));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Function));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Package));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Type));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Operator));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OperatorRecord));
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OperatorFunction));
+  // Create the specialization label and combo box
+  mpSpecializationLabel = new Label(tr("Specialization:"));
+  mpSpecializationComboBox = new QComboBox;
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Model));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Class));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Connector));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::ExpandableConnector));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Record));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Block));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Function));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Package));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Type));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::Operator));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OperatorRecord));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OperatorFunction));
   /* Don't add optimization restriction for now.
-  mpRestrictionComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OPTIMIZATION));
+  mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OPTIMIZATION));
   */
-  connect(mpRestrictionComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
+  connect(mpSpecializationComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
   // Create the parent package label, text box, browse button
   mpParentPackageLabel = new Label(tr("Insert in class (optional):"));
   mpParentClassComboBox = new QComboBox;
@@ -114,8 +114,8 @@ ModelicaClassDialog::ModelicaClassDialog(MainWindow *pParent)
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpNameLabel, 0, 0);
   pMainLayout->addWidget(mpNameTextBox, 0, 1);
-  pMainLayout->addWidget(mpRestrictionLabel, 1, 0);
-  pMainLayout->addWidget(mpRestrictionComboBox, 1, 1);
+  pMainLayout->addWidget(mpSpecializationLabel, 1, 0);
+  pMainLayout->addWidget(mpSpecializationComboBox, 1, 1);
   pMainLayout->addWidget(mpParentPackageLabel, 2, 0);
   pMainLayout->addWidget(mpParentClassComboBox, 2, 1);
   pMainLayout->addWidget(mpPartialCheckBox, 3, 0);
@@ -139,7 +139,7 @@ void ModelicaClassDialog::createModelicaClass()
   if (mpNameTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                            GUIMessages::ENTER_NAME).arg(mpRestrictionComboBox->currentText()), Helper::ok);
+                            GUIMessages::ENTER_NAME).arg(mpSpecializationComboBox->currentText()), Helper::ok);
     return;
   }
 
@@ -168,14 +168,14 @@ void ModelicaClassDialog::createModelicaClass()
   if (mpMainWindow->getOMCProxy()->existClass(model))
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                            GUIMessages::MODEL_ALREADY_EXISTS).arg(mpRestrictionComboBox->currentText()).arg(model)
+                            GUIMessages::MODEL_ALREADY_EXISTS).arg(mpSpecializationComboBox->currentText()).arg(model)
                           .arg(parentPackage), Helper::ok);
     return;
   }
   // create the model.
   QString modelicaClass = mpEncapsulatedCheckBox->isChecked() ? "encapsulated " : "";
   modelicaClass.append(mpPartialCheckBox->isChecked() ? "partial " : "");
-  modelicaClass.append(mpRestrictionComboBox->currentText().toLower());
+  modelicaClass.append(mpSpecializationComboBox->currentText().toLower());
   if (mpParentClassComboBox->currentText().isEmpty())
   {
     if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text()))
@@ -200,7 +200,7 @@ void ModelicaClassDialog::createModelicaClass()
   LibraryTreeWidget *pLibraryTree = mpMainWindow->getLibraryTreeWidget();
   LibraryTreeNode *pLibraryTreeNode;
   pLibraryTreeNode = pLibraryTree->addLibraryTreeNode(mpNameTextBox->text(),
-                                                      StringHandler::getModelicaClassType(mpRestrictionComboBox->currentText()),
+                                                      StringHandler::getModelicaClassType(mpSpecializationComboBox->currentText()),
                                                       mpParentClassComboBox->currentText(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTree->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
@@ -213,7 +213,7 @@ void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
   QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
   if (pComboBox)
   {
-    if (pComboBox == mpRestrictionComboBox)
+    if (pComboBox == mpSpecializationComboBox)
     {
       if ((text.toLower().compare("package") == 0) && mpParentClassComboBox->currentText().isEmpty())
         mpSaveContentsInOneFileCheckBox->setVisible(true);
@@ -222,7 +222,7 @@ void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
     }
     else if (pComboBox == mpParentClassComboBox)
     {
-      if (text.isEmpty() && (mpRestrictionComboBox->currentText().toLower().compare("package") == 0))
+      if (text.isEmpty() && (mpSpecializationComboBox->currentText().toLower().compare("package") == 0))
         mpSaveContentsInOneFileCheckBox->setVisible(true);
       else
         mpSaveContentsInOneFileCheckBox->setVisible(false);

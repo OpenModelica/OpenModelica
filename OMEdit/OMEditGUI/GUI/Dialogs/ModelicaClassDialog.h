@@ -52,8 +52,8 @@ private:
   MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
-  Label *mpRestrictionLabel;
-  QComboBox *mpRestrictionComboBox;
+  Label *mpSpecializationLabel;
+  QComboBox *mpSpecializationComboBox;
   Label *mpParentPackageLabel;
   QComboBox *mpParentClassComboBox;
   QCheckBox *mpPartialCheckBox;
