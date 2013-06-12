@@ -1748,6 +1748,7 @@ void MainWindow::createMenus()
   // add actions to View menu
   // Add Actions to Toolbars View Sub Menu
   pViewToolbarsMenu->addAction(mpFileToolBar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpEditToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpViewToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpShapesToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpSimulationToolBar->toggleViewAction());
@@ -1875,7 +1876,7 @@ void MainWindow::createToolbars()
 {
   setIconSize(QSize(16, 16));
   // File Toolbar
-  mpFileToolBar = addToolBar("File Toolbar");
+  mpFileToolBar = addToolBar(tr("File Toolbar"));
   mpFileToolBar->setObjectName("File Toolbar");
   mpFileToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to File Toolbar
@@ -1885,7 +1886,7 @@ void MainWindow::createToolbars()
   mpFileToolBar->addAction(mpSaveAsAction);
   mpFileToolBar->addAction(mpSaveAllAction);
   // Edit Toolbar
-  mpEditToolBar = addToolBar("Edit Toolbar");
+  mpEditToolBar = addToolBar(tr("Edit Toolbar"));
   mpEditToolBar->setObjectName("Edit Toolbar");
   mpEditToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to edit toolbar
@@ -1893,7 +1894,7 @@ void MainWindow::createToolbars()
   mpEditToolBar->addAction(mpCopyAction);
   mpEditToolBar->addAction(mpPasteAction);
   // View Toolbar
-  mpViewToolBar = addToolBar("View Toolbar");
+  mpViewToolBar = addToolBar(tr("View Toolbar"));
   mpViewToolBar->setObjectName("View Toolbar");
   mpViewToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to View Toolbar
@@ -1903,7 +1904,7 @@ void MainWindow::createToolbars()
   mpViewToolBar->addAction(mpZoomInAction);
   mpViewToolBar->addAction(mpZoomOutAction);
   // Shapes Toolbar
-  mpShapesToolBar = addToolBar("Shapes Toolbar");
+  mpShapesToolBar = addToolBar(tr("Shapes Toolbar"));
   mpShapesToolBar->setObjectName("Shapes Toolbar");
   mpShapesToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to Shapes Toolbar
@@ -1916,7 +1917,7 @@ void MainWindow::createToolbars()
   mpShapesToolBar->addSeparator();
   mpShapesToolBar->addAction(mpConnectModeAction);
   // Simulation Toolbar
-  mpSimulationToolBar = addToolBar("Simulation Toolbar");
+  mpSimulationToolBar = addToolBar(tr("Simulation Toolbar"));
   mpSimulationToolBar->setObjectName("Simulation Toolbar");
   mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to Simulation Toolbar
@@ -1924,7 +1925,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpInstantiateModelAction);
   mpSimulationToolBar->addAction(mpCheckModelAction);
   // Model Swithcer Toolbar
-  mpModelSwitcherToolBar = addToolBar("ModelSwitcher Toolbar");
+  mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");
   mpModelSwitcherToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // Model Switcher Menu
@@ -1941,7 +1942,7 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolButton->setIcon(QIcon(":/Resources/icons/switch.png"));
   mpModelSwitcherToolBar->addWidget(mpModelSwitcherToolButton);
   // Plot Toolbar
-  mpPlotToolBar = addToolBar("Plot Toolbar");
+  mpPlotToolBar = addToolBar(tr("Plot Toolbar"));
   mpPlotToolBar->setObjectName("Plot Toolbar");
   mpPlotToolBar->setAllowedAreas(Qt::TopToolBarArea);
   mpPlotToolBar->setEnabled(false);
