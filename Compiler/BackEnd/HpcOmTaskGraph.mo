@@ -236,6 +236,17 @@ algorithm
       desc = (eqString +& " FOR " +& varString);
       descLst = desc::iEqDesc;
     then descLst;
+   case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+     equation
+      //get the equation string
+      eqnLst = BackendEquation.equationList(orderedEqs);
+      eqn = listGet(eqnLst,i);
+      eqString = BackendDump.equationString(eqn);
+      eqDescLst = stringListStringChar(eqString);
+      eqDescLst = List.map(eqDescLst,prepareXML);
+      eqString = stringCharListString(eqDescLst);
+      descLst = eqString::iEqDesc;
+    then descLst;
   else
     equation
       desc = ("no singleEquation");
@@ -362,6 +373,18 @@ algorithm
         tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
         print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
       then tmpVars;
+    case(BackendDAE.SINGLEALGORITHM(vars=varIdc),_)
+      equation 
+        tmpVars = getVarsBySCC(component,incidenceMatrix);
+        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
+        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+      then tmpVars;
+    else
+      equation
+        print("getUnsolvedVarsBySCC failed\n");
+        
+        then fail();
    end matchcontinue;
 end getUnsolvedVarsBySCC;
 
@@ -433,7 +456,12 @@ algorithm
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
         dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
         print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
-        //print("Error in createTaskGraph1! Unsupported component-type Equationsystem with jacType varying.\n");
+      then eqnVars;
+    case (BackendDAE.SINGLEALGORITHM(eqn=eqnIdx),_)
+      equation
+        eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
+        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
       then eqnVars;
     else
       equation
@@ -587,6 +615,35 @@ algorithm
       equation
         tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
       then iSccIdx+1;
+    case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc),_,_)
+      equation
+        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+        then iSccIdx+1;
+    case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars = compVarIdc),_,_)
+      equation
+        print("MIXEDEQUATIONSYSTEMS is not supported yet\n");
+        //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then fail();
+    case(BackendDAE.SINGLEARRAY(vars = compVarIdc),_,_)
+      equation
+        print("SINGLEARRAY not is supported yet\n");
+        //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then fail();
+    case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc),_,_)
+      equation
+        print("SINGLECOMPLEXEQUATION is not supported yet\n");
+        //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then fail();
+    case(BackendDAE.SINGLEIFEQUATION(vars = compVarIdc),_,_)
+      equation
+        print("SINGLEIFEQUATION is not supported yet\n");
+        //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then fail();
+    case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc),_,_)
+      equation
+        print("TORNSYSTEM is not supported yet\n");
+        //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then fail();
     else
       equation
         print("createVarSccMapping0 - Unsupported component-type.");
