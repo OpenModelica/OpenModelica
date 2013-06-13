@@ -1234,7 +1234,7 @@ void MainWindow::exportModelAsImage()
     if (pLibraryTreeNode)
     {
       QString fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::exportAsImage),
-                                                        NULL, Helper::imageFileTypes, NULL, "png", &pLibraryTreeNode->getName());
+                                                        NULL, Helper::imageFileTypes, NULL, "svg", &pLibraryTreeNode->getName());
       // if user cancels the operation. or closes the export dialog box.
       if (fileName.isEmpty())
         return;
