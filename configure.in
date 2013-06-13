@@ -524,6 +524,7 @@ FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 dnl Check for Qt
 
 AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
+AC_CHECK_PROGS(LRELEASE,lrelease-qt4 lrelease,"")
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
