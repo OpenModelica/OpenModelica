@@ -2409,7 +2409,8 @@ public function xmlEscape "Escapes a String so that it can be used in xml"
   input String s1;
   output String s2;
 algorithm
-  s2 := stringReplaceChar(s1,"<","&lt;");
+  s2 := stringReplaceChar(s1,"&","&amp;");
+  s2 := stringReplaceChar(s2,"<","&lt;");
   s2 := stringReplaceChar(s2,">","&gt;");
   s2 := stringReplaceChar(s2,"\"","&quot;");
 end xmlEscape;
