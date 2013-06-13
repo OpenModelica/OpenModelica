@@ -29,7 +29,7 @@ success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,
 writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+last(OpenModelica.Scripting.typeNameStrings(cl))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\\\"/>\" else \"\")+\"</testcase>\");
 ") for cl in allClasses);
 getErrorString();
-commands:={"ulimit -t 120 && omc " + OpenModelica.Scripting.typeNameString(cl) + ".mos" for cl in allClasses};
+commands:={"ulimit -t 120 && omc " + OpenModelica.Scripting.typeNameString(cl) + ".mos > /dev/null" for cl in allClasses};
 system_parallel(commands);getErrorString();
 
 writeFile("ComplianceSuite.sh","#!/bin/bash

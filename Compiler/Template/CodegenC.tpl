@@ -7453,7 +7453,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     'fabs(<%var1%>)'
 
-    //sqrt
   case CALL(path=IDENT(name="sqrt"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     (if isPositiveOrZero(e1)
@@ -7466,7 +7465,23 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
        let &preExp += '<%retPre%>'
        'sqrt(<%argStr%>)')
 
-  /* Beginn code generation of event triggering math functions */
+  case CALL(path=IDENT(name="log"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
+    let argStr = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let ass = '(<%argStr%> > 0.0)'
+    let &preExpMsg = buffer ""
+    let retPre = assertCommonVar(ass,'"Model error: Argument of log(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%argStr%>', context, &preExpMsg, &varDecls, dummyInfo)
+    let &preExp += '<%retPre%>'
+    'log(<%argStr%>)'
+
+  case CALL(path=IDENT(name="log10"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
+    let argStr = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let ass = '(<%argStr%> > 0.0)'
+    let &preExpMsg = buffer ""
+    let retPre = assertCommonVar(ass,'"Model error: Argument of log10(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%argStr%>', context, &preExpMsg, &varDecls, dummyInfo)
+    let &preExp += '<%retPre%>'
+    'log10(<%argStr%>)'
+
+  /* Begin code generation of event triggering math functions */
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
