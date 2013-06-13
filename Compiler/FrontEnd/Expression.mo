@@ -2474,6 +2474,10 @@ algorithm
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
       then e::acc;
+    case ((e as DAE.TSUB(exp = _)),acc,_,_)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
     case ((e as DAE.SIZE(exp = _)),acc,_,_)
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
