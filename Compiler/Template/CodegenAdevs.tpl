@@ -2117,7 +2117,7 @@ template recordDefinition(String origName, String encName, String fieldNames, In
   let fieldsDescription =
       match numFields
        case 0 then
-         'const char* <%encName%>__desc__fields[1] = {"no fileds"};'
+         'const char* <%encName%>__desc__fields[1] = {"no fields"};'
        case _ then
          'const char* <%encName%>__desc__fields[<%numFields%>] = {<%fieldNames%>};'
   <<

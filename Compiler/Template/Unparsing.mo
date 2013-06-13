@@ -373,7 +373,7 @@ algorithm
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINTIONS const char* "));
         txt = Tpl.writeText(txt, a_omcname);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields[1] = {\"no fileds\"};"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields[1] = {\"no fields\"};"));
       then txt;
 
     case ( txt,
