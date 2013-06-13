@@ -530,7 +530,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   string init_time_string = "";
   double init_time = 0.0;
   string init_lambda_steps_string = "";
-  int init_lambda_steps = 5;
+  int init_lambda_steps = 1;
   string outputVariablesAtEnd = "";
   int cpuTime = omc_flag[FLAG_CPU];
 

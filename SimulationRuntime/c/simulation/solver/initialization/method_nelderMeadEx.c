@@ -50,7 +50,7 @@
  *  special changes for initialization.
  *
  *  \param [ref] [initData] number of unfixed states and unfixed parameters
- *  \param [in]  [lambda_step]
+ *  \param [in]  [lambda_steps] number of steps for homotopy process
  *  \param [in]  [acc]
  *  \param [in]  [maxIt]
  *  \param [in]  [dump]
@@ -61,7 +61,7 @@
  *  \author lochel
  */
 static void NelderMeadOptimization(INIT_DATA* initData,
-  double lambda_step, double acc, long maxIt, long dump, double* pLambda, long* pIteration,
+  long lambda_steps, double acc, long maxIt, long dump, double* pLambda, long* pIteration,
   double (*leastSquare)(INIT_DATA*, double))
 {
   long N = initData->nVars;
@@ -220,7 +220,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     {
       if(lambda < 1.0)
       {
-        lambda += lambda_step;
+        lambda += ((double)1.0)/(lambda_steps-1);
         if(lambda > 1.0)
           lambda = 1.0;
 
@@ -372,21 +372,26 @@ static void NelderMeadOptimization(INIT_DATA* initData,
  *
  *  \author lochel
  */
-int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda, int lambda_steps)
+int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda, long lambda_steps)
 {
-  double lambda_stepsize = 1.0 / (double)lambda_steps;
   double STOPCR = 1.e-12;
   long NLOOP = 1000 * initData->nVars * lambda_steps;
   long iteration = 0;
+  int retVal;
 
   INFO(LOG_INIT, "NelderMeadOptimization");
   INDENT(LOG_INIT);
-  NelderMeadOptimization(initData, lambda_stepsize, STOPCR, NLOOP, ACTIVE_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
+  NelderMeadOptimization(initData, lambda_steps, STOPCR, NLOOP, ACTIVE_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
   INFO1(LOG_INIT, "iterations: %ld", iteration);
   RELEASE(LOG_INIT);
 
   if(*lambda < 1.0)
     return -1;
 
-  return reportResidualValue(initData);
+  retVal = reportResidualValue(initData);
+  
+  if(0 != retVal)
+    WARNING(LOG_INIT, "try -ils to activate start value homotopy");
+    
+  return retVal;
 }

@@ -83,7 +83,6 @@ enum INIT_OPTI_METHOD
   IOM_SIMPLEX,
   IOM_NEWUOA,
   IOM_NELDER_MEAD_EX,
-  IOM_NELDER_MEAD_EX2,
   IOM_KINSOL,
   IOM_KINSOL_SCALED,
   IOM_IPOPT,
@@ -95,7 +94,6 @@ static const char *optiMethodStr[IOM_MAX] = {
   "simplex",
   "newuoa",
   "nelder_mead_ex",
-  "nelder_mead_ex2",
   "kinsol",
   "kinsol_scaled",
   "ipopt"
@@ -104,8 +102,7 @@ static const char *optiMethodDescStr[IOM_MAX] = {
   "unknown",
   "Nelder-Mead method",
   "Brent's method",
-  "Nelder-Mead method with global homotopy - default",
-  "Nelder-Mead method without global homotopy",
+  "Nelder-Mead method with global homotopy (see -ils for global homotopy) - default",
   "sundials/kinsol",
   "sundials/kinsol with scaling",
   "Interior Point OPTimizer"
@@ -358,7 +355,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
   DATA *data = initData->simData;
 
   double STOPCR = 1.e-12;
-  double lambda = (optiMethod == IOM_NELDER_MEAD_EX2) ? 1.0 : 0.0;
+  double lambda = 0.0;
   double funcValue;
 
   long i, j;
@@ -387,8 +384,6 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
       retVal = newuoa_initialization(initData);
     else if(optiMethod == IOM_NELDER_MEAD_EX)
       retVal = nelderMeadEx_initialization(initData, &lambda, lambda_steps);
-    else if(optiMethod == IOM_NELDER_MEAD_EX2)
-      retVal = nelderMeadEx_initialization(initData, &lambda, 1);
     else if(optiMethod == IOM_KINSOL)
       retVal = kinsol_initialization(initData);
     else if(optiMethod == IOM_KINSOL_SCALED)
@@ -565,8 +560,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
 
   /* with scaling */
   if(optiMethod == IOM_KINSOL_SCALED ||
-    optiMethod == IOM_NELDER_MEAD_EX ||
-    optiMethod == IOM_NELDER_MEAD_EX2)
+     optiMethod == IOM_NELDER_MEAD_EX)
   {
     INFO(LOG_INIT, "start with scaling");
 
