@@ -142,13 +142,25 @@ void ModelicaClassDialog::createModelicaClass()
                             GUIMessages::ENTER_NAME).arg(mpSpecializationComboBox->currentText()), Helper::ok);
     return;
   }
-
+  /* if insert in class doesn't exist. */
   if (!mpParentClassComboBox->currentText().isEmpty())
   {
     if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassComboBox->currentText()))
     {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            tr("Insert in class <b>%1</b> does not exist.").arg(mpParentClassComboBox->currentText()), Helper::ok);
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                              GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpParentClassComboBox->currentText()), Helper::ok);
+      return;
+    }
+  }
+  /* if insert in class is system library. */
+  LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
+  LibraryTreeNode *pParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(mpParentClassComboBox->currentText());
+  if (pParentLibraryTreeNode)
+  {
+    if (pParentLibraryTreeNode->isSystemLibrary())
+    {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                              GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassComboBox->currentText()), Helper::ok);
       return;
     }
   }
@@ -197,14 +209,13 @@ void ModelicaClassDialog::createModelicaClass()
     }
   }
   //open the new tab in central widget and add the model to library tree.
-  LibraryTreeWidget *pLibraryTree = mpMainWindow->getLibraryTreeWidget();
   LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTree->addLibraryTreeNode(mpNameTextBox->text(),
-                                                      StringHandler::getModelicaClassType(mpSpecializationComboBox->currentText()),
-                                                      mpParentClassComboBox->currentText(), false);
+  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(),
+                                                            StringHandler::getModelicaClassType(mpSpecializationComboBox->currentText()),
+                                                            mpParentClassComboBox->currentText(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
-  pLibraryTree->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-  pLibraryTree->showModelWidget(pLibraryTreeNode, true);
+  pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+  pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true);
   accept();
 }
 
@@ -527,13 +538,25 @@ void SaveAsClassDialog::saveAsModelicaClass()
                             GUIMessages::ENTER_NAME).arg(type), Helper::ok);
     return;
   }
-
+  /* if insert in class doesn't exist. */
   if (!mpParentClassComboBox->currentText().isEmpty())
   {
     if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassComboBox->currentText()))
     {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            tr("Insert in class <b>%1</b> does not exist.").arg(mpParentClassComboBox->currentText()), Helper::ok);
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                              GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpParentClassComboBox->currentText()), Helper::ok);
+      return;
+    }
+  }
+  /* if insert in class is system library. */
+  LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
+  LibraryTreeNode *pParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(mpParentClassComboBox->currentText());
+  if (pParentLibraryTreeNode)
+  {
+    if (pParentLibraryTreeNode->isSystemLibrary())
+    {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                              GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassComboBox->currentText()), Helper::ok);
       return;
     }
   }
@@ -579,13 +602,12 @@ void SaveAsClassDialog::saveAsModelicaClass()
     return;
   }
   //open the new tab in central widget and add the model to library tree.
-  LibraryTreeWidget *pLibraryTree = mpMainWindow->getLibraryTreeWidget();
   LibraryTreeNode *pLibraryTreeNode;
-  pLibraryTreeNode = pLibraryTree->addLibraryTreeNode(mpNameTextBox->text(), mpModelWidget->getLibraryTreeNode()->getType(),
+  pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(), mpModelWidget->getLibraryTreeNode()->getType(),
                                                       mpParentClassComboBox->currentText(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
-  pLibraryTree->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-  pLibraryTree->showModelWidget(pLibraryTreeNode);
+  pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+  pLibraryTreeWidget->showModelWidget(pLibraryTreeNode);
   accept();
 }
 

@@ -336,6 +336,10 @@ QString GUIMessages::getMessage(int type)
       return tr("Simulation Start Time should be less than or equal to Stop Time.");
     case ENTER_NAME:
       return tr("Please enter <b>%1</b> Name.");
+    case INSERT_IN_CLASS_NOT_FOUND:
+      return tr("Insert in class <b>%1</b> does not exist.");
+    case INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED:
+      return tr("Insert in class <b>%1</b> is a system library. System libraries are read-only.");
     case MODEL_ALREADY_EXISTS:
       return tr("<b>%1</b> <i>%2</i> already exists in <b>%3</b>.");
     case ITEM_ALREADY_EXISTS:
