@@ -2005,15 +2005,7 @@ function moveClass
  output Boolean result;
 end moveClass;
 
-function linearize "creates a model with the symbolic linearization matrixes.
-At stopTime the linearization matrixes are evaluated and a modelica model is created.
- The only required argument is the className, while all others have some efault values.
- linerize(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix],
-           [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
- Example command:
-  linearize(A, stopTime=0.0);
-  => create the file \"linear_A.mo\" that contain the linearized matrixes at stopTime.
-"
+function linearize "creates a model with symbolic linearization matrixes"
   input TypeName className "the class that should simulated";
   input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
   input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
@@ -2032,7 +2024,19 @@ At stopTime the linearization matrixes are evaluated and a modelica model is cre
   input String simflags := "<default>" "simflags. <default> = \"\"";
   output String linearizationResult;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+<p>Creates a model with symbolic linearization matrixes.</p>
+<p>At stopTime the linearization matrixes are evaluated and a modelica model is created.</p>
+<p>The only required argument is the className, while all others have some default values.</p>
+<h2>Usage:</h2>
+<p><b>linearize</b>(<em>A</em>, stopTime=0.0);</p>
+<p>Creates the file \"linear_A.mo\" that contains the linearized matrixes at stopTime.</p>
+</html>", revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>13421</td><td>wbraun</td><td>Added to omc</td></tr>
+</table>
+</html>"),preferredView="text");
 end linearize;
 
 function getSourceFile "Returns the filename of the class."
