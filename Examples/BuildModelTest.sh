@@ -79,11 +79,11 @@ set style line 2 linecolor rgb "green"
 set style line 3 linecolor rgb "blue"
 set style line 4 linecolor rgb "#EE82EE" pt 1 ps 1
 set style line 5 linecolor rgb "#00FFEF" pt 1 ps 1
-plot goal(x) t 'Target: $GOAL' ls 1, \
+plot "${SECTION}-trend.csv" using 1:2 title 'Target: $GOAL' ls 1, \
      currentC(x) t 'Now Compile: $CURC' ls 2, \
      currentS(x) t 'Now Simulate: $CURS' ls 3, \
-     "${SECTION}-trend.csv" using 1:2 title 'Compile' with lp ls 4, \
-     "${SECTION}-trend.csv" using 1:3 title 'Simulate' with lp ls 5
+     "${SECTION}-trend.csv" using 1:3 title 'Compile' with lp ls 4, \
+     "${SECTION}-trend.csv" using 1:4 title 'Simulate' with lp ls 5
 EOF
 rm -f $OLD/${SECTION}-trend.csv
 for f in `grep -H "Simulation Results:" "$OLD/${SECTION}"*.html | cut -d: -f1` ; do
@@ -94,7 +94,7 @@ for f in `grep -H "Simulation Results:" "$OLD/${SECTION}"*.html | cut -d: -f1` ;
   TOT=`echo "$SIM" | cut -d/ -f2 | cut -d" " -f1`
   REV=`grep -o "[(]r[0-9]*" "$f" | tr -d "("`
   #`cut -d / -f1 $f`
-  echo "$DATE,$BUILD,$SIMSUC" >> "$OLD/${SECTION}-trend.csv"
+  echo "$DATE,$TOT,$BUILD,$SIMSUC" >> "$OLD/${SECTION}-trend.csv"
   echo -n "$DATE $REV"
   echo -n " - total $TOT"
   echo -n " - build $BUILD" "($((100 * $BUILD / $TOT))%)"
