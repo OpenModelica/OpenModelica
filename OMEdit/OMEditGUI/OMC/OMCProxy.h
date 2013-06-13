@@ -152,7 +152,6 @@ public:
   QStringList parseString(QString value);
   bool createClass(QString type, QString className);
   bool createSubClass(QString type, QString className, QString parentClassName);
-  bool updateSubClass(QString parentClassName, QString modelText);
   bool existClass(QString className);
   bool renameClass(QString oldName, QString newName);
   bool deleteClass(QString className);

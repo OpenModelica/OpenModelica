@@ -1549,21 +1549,6 @@ bool OMCProxy::createSubClass(QString type, QString className, QString parentCla
 }
 
 /*!
-  Updates the sub class in OMC.
-  \param parentClassName - the parent class name.
-  \param modelText - the model text
-  \return true on successs.
-  */
-bool OMCProxy::updateSubClass(QString parentClassName, QString modelText)
-{
-  sendCommand("within " + parentClassName + "; " + modelText);
-  if (getResult().toLower().contains("error"))
-    return false;
-  else
-    return true;
-}
-
-/*!
   Checks whether the class already exists in OMC or not.
   \param className - the name for the class to check.
   \return true on successs.

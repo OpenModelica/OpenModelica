@@ -2678,45 +2678,6 @@ ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
   connect(mpMainWindow->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
 }
 
-void ModelWidgetContainer::printModel()
-{
-#ifndef QT_NO_PRINTER
-  if (ModelWidget *pModelWidget = getCurrentModelWidget())
-  {
-    QPrinter printer(QPrinter::ScreenResolution);
-
-    if (pModelWidget->getModelicaTextWidget()->isVisible())
-    {
-      ModelicaTextEdit  *pModelicaTextEdit = pModelWidget->getModelicaTextWidget()->getModelicaTextEdit();
-      QPrintDialog *pPrintDialog = new QPrintDialog(&printer, this);
-      pPrintDialog->setWindowTitle(tr("Print Document"));
-      if (pModelicaTextEdit->textCursor().hasSelection())
-         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
-      if (pPrintDialog->exec() == QDialog::Accepted)
-         pModelicaTextEdit->print(&printer);
-      delete pPrintDialog;
-    }
-    else
-    {
-      GraphicsView *pGraphicsView;
-      if (pModelWidget->getIconGraphicsView()->isVisible())
-        pGraphicsView = pModelWidget->getIconGraphicsView();
-      else
-        pGraphicsView = pModelWidget->getDiagramGraphicsView();
-
-      printer.setPageSize(QPrinter::A4);
-      if (QPrintDialog(&printer).exec() == QDialog::Accepted)
-      {
-        QPainter painter(&printer);
-        painter.setRenderHint(QPainter::HighQualityAntialiasing);
-        pGraphicsView->render(&painter);
-        painter.end();
-      }
-    }
-  }
-#endif
-}
-
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
 {
   if (pModelWidget->isVisible() || pModelWidget->isMinimized())
@@ -2991,7 +2952,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 
 void ModelWidgetContainer::saveModelWidget()
 {
-  //saveModelWidget(false);
   ModelWidget *pModelWidget = getCurrentModelWidget();
   // if pModelWidget = 0
   if (!pModelWidget)
@@ -3010,46 +2970,57 @@ void ModelWidgetContainer::saveModelWidget()
 
 void ModelWidgetContainer::saveAsModelWidget()
 {
-  saveModelWidget(true);
-}
-
-void ModelWidgetContainer::saveModelWidget(bool saveAs)
-{
   ModelWidget *pModelWidget = getCurrentModelWidget();
-  MessagesWidget *pMessagesWidget = getMainWindow()->getMessagesWidget();
   // if pModelWidget = 0
   if (!pModelWidget)
   {
-    pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
-                                                   .arg(tr("saving")), Helper::scriptingKind, Helper::notificationLevel,
-                                                   0, pMessagesWidget->getMessagesTreeWidget()));
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("save as")), Helper::ok);
     return;
   }
-  LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
-  QString fileName;
-  if (pLibraryTreeNode->getFileName().isEmpty() || saveAs)
-  {
-    QString name = pLibraryTreeNode->getName();
-    fileName = StringHandler::getSaveFileName(this, saveAs ? QString(Helper::applicationName).append(" - ").append(tr("Save File As"))
-                                                           : QString(Helper::applicationName).append(" - ").append(tr("Save File")),
-                                              NULL, Helper::omFileTypes, NULL, "mo",
-                                              &name);
-    if (fileName.isEmpty())   // if user press ESC
-      return;
-  }
-  getMainWindow()->getOMCProxy()->setSourceFile(pLibraryTreeNode->getNameStructure(), fileName);
-  // save the model through OMC
-  if (getMainWindow()->getOMCProxy()->save(pLibraryTreeNode->getNameStructure()))
-  {
-    pLibraryTreeNode->setIsSaved(true);
-    pLibraryTreeNode->setFileName(fileName);
-    pModelWidget->setWindowTitle(pLibraryTreeNode->getName());
-    pModelWidget->setModelFilePathLabel(pLibraryTreeNode->getFileName());
-    getMainWindow()->addRecentFile(fileName, Helper::utf8);
-  }
-  else
-  {
-    getMainWindow()->getOMCProxy()->printMessagesStringInternal();
+  /* if user has done some changes in the Modelica text view then save & validate it in the AST before saving it to file. */
+  if (!pModelWidget->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
     return;
+  SaveAsClassDialog *pSaveAsClassDialog = new SaveAsClassDialog(pModelWidget, mpMainWindow);
+  pSaveAsClassDialog->exec();
+  saveModelWidget();
+}
+
+void ModelWidgetContainer::printModel()
+{
+#ifndef QT_NO_PRINTER
+  if (ModelWidget *pModelWidget = getCurrentModelWidget())
+  {
+    QPrinter printer(QPrinter::ScreenResolution);
+
+    if (pModelWidget->getModelicaTextWidget()->isVisible())
+    {
+      ModelicaTextEdit  *pModelicaTextEdit = pModelWidget->getModelicaTextWidget()->getModelicaTextEdit();
+      QPrintDialog *pPrintDialog = new QPrintDialog(&printer, this);
+      pPrintDialog->setWindowTitle(tr("Print Document"));
+      if (pModelicaTextEdit->textCursor().hasSelection())
+         pPrintDialog->addEnabledOption(QAbstractPrintDialog::PrintSelection);
+      if (pPrintDialog->exec() == QDialog::Accepted)
+         pModelicaTextEdit->print(&printer);
+      delete pPrintDialog;
+    }
+    else
+    {
+      GraphicsView *pGraphicsView;
+      if (pModelWidget->getIconGraphicsView()->isVisible())
+        pGraphicsView = pModelWidget->getIconGraphicsView();
+      else
+        pGraphicsView = pModelWidget->getDiagramGraphicsView();
+
+      printer.setPageSize(QPrinter::A4);
+      if (QPrintDialog(&printer).exec() == QDialog::Accepted)
+      {
+        QPainter painter(&printer);
+        painter.setRenderHint(QPainter::HighQualityAntialiasing);
+        pGraphicsView->render(&painter);
+        painter.end();
+      }
+    }
   }
+#endif
 }

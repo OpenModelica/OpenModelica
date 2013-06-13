@@ -446,6 +446,158 @@ void OpenModelicaFile::convertModelicaFiles()
 }
 
 /*!
+  \class SaveAsClassDialog
+  \brief Creates a dialog to allow users to save as the Modelica class.
+  */
+
+/*!
+  \param pParent - pointer to MainWindow
+  */
+SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pParent)
+  : QDialog(pParent, Qt::WindowTitleHint)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Save As Modelica Class")));
+  setMinimumWidth(400);
+  mpModelWidget = pModelWidget;
+  mpMainWindow = pParent;
+  setModal(true);
+  // Create the name label and text box
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit(pModelWidget->getLibraryTreeNode()->getName());
+  // Create the parent package label, text box, browse button
+  mpParentPackageLabel = new Label(tr("Insert in class (optional):"));
+  mpParentClassComboBox = new QComboBox;
+  mpParentClassComboBox->setEditable(true);
+  /* Since the default QCompleter for QComboBox is case insenstive. */
+  QCompleter *pParentClassComboBoxCompleter = mpParentClassComboBox->completer();
+  pParentClassComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
+  mpParentClassComboBox->setCompleter(pParentClassComboBoxCompleter);
+  mpParentClassComboBox->addItem("");
+  mpParentClassComboBox->addItems(mpMainWindow->getLibraryTreeWidget()->getNonSystemLibraryTreeNodeList());
+  int currentIndex = mpParentClassComboBox->findText(pModelWidget->getLibraryTreeNode()->getParentName(), Qt::MatchExactly);
+  if (currentIndex > -1)
+    mpParentClassComboBox->setCurrentIndex(currentIndex);
+  connect(mpParentClassComboBox, SIGNAL(editTextChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
+  // create save contents of package in one file checkbox
+  mpSaveContentsInOneFileCheckBox = new QCheckBox(tr("Save contents in one file"));
+  mpSaveContentsInOneFileCheckBox->setChecked(true);
+  if (pModelWidget->getLibraryTreeNode()->getType() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
+    mpSaveContentsInOneFileCheckBox->setVisible(true);
+  else
+    mpSaveContentsInOneFileCheckBox->setVisible(false);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(saveAsModelicaClass()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpParentPackageLabel, 1, 0);
+  pMainLayout->addWidget(mpParentClassComboBox, 1, 1);
+  pMainLayout->addWidget(mpSaveContentsInOneFileCheckBox, 2, 0);
+  pMainLayout->addWidget(mpButtonBox, 2, 1, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+QComboBox* SaveAsClassDialog::getParentClassComboBox()
+{
+  return mpParentClassComboBox;
+}
+
+/*!
+  Creates a new Modelica class restriction.\n
+  Slot activated when mpOkButton clicked signal is raised.
+  */
+void SaveAsClassDialog::saveAsModelicaClass()
+{
+  QString type = StringHandler::getModelicaClassType(mpModelWidget->getLibraryTreeNode()->getType());
+  if (mpNameTextBox->text().isEmpty())
+  {
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                            GUIMessages::ENTER_NAME).arg(type), Helper::ok);
+    return;
+  }
+
+  if (!mpParentClassComboBox->currentText().isEmpty())
+  {
+    if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassComboBox->currentText()))
+    {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            tr("Insert in class <b>%1</b> does not exist.").arg(mpParentClassComboBox->currentText()), Helper::ok);
+      return;
+    }
+  }
+
+  QString model, parentPackage;
+  if (mpParentClassComboBox->currentText().isEmpty())
+  {
+    model = mpNameTextBox->text();
+    parentPackage = "Global Scope";
+  }
+  else
+  {
+    model = QString(mpParentClassComboBox->currentText()).append(".").append(mpNameTextBox->text());
+    parentPackage = QString("in Package '").append(mpParentClassComboBox->currentText()).append("'");
+  }
+  // Check whether model exists or not.
+  if (mpMainWindow->getOMCProxy()->existClass(model))
+  {
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                            GUIMessages::MODEL_ALREADY_EXISTS).arg(type).arg(model).arg(parentPackage), Helper::ok);
+    return;
+  }
+  // duplicate the model.
+  QString sourceModelText = mpMainWindow->getOMCProxy()->list(mpModelWidget->getLibraryTreeNode()->getNameStructure());
+  QString duplicateModelText = sourceModelText;
+  /* remove the starting and ending text strings of the model. */
+  duplicateModelText.remove(0, QString(type.toLower()).append(" ").append(mpModelWidget->getLibraryTreeNode()->getName()).length());
+  QString endString = QString("end ").append(mpModelWidget->getLibraryTreeNode()->getName()).append(";");
+  duplicateModelText.remove(duplicateModelText.lastIndexOf(endString), endString.length());
+  /* add the starting and ending text strings. */
+  duplicateModelText.prepend(QString(type.toLower()).append(" ").append(mpNameTextBox->text()));
+  duplicateModelText.append(QString("end ").append(mpNameTextBox->text()).append(";"));
+  if (!mpParentClassComboBox->currentText().isEmpty())
+  {
+    duplicateModelText.prepend(QString("within ").append(mpParentClassComboBox->currentText()).append(";"));
+  }
+  mpMainWindow->getOMCProxy()->sendCommand(duplicateModelText);
+  if (mpMainWindow->getOMCProxy()->getResult().toLower().contains("error"))
+  {
+    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                            GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
+                          append(GUIMessages::getMessage(GUIMessages::NO_OPENMODELICA_KEYWORDS)), Helper::ok);
+    return;
+  }
+  //open the new tab in central widget and add the model to library tree.
+  LibraryTreeWidget *pLibraryTree = mpMainWindow->getLibraryTreeWidget();
+  LibraryTreeNode *pLibraryTreeNode;
+  pLibraryTreeNode = pLibraryTree->addLibraryTreeNode(mpNameTextBox->text(), mpModelWidget->getLibraryTreeNode()->getType(),
+                                                      mpParentClassComboBox->currentText(), false);
+  pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
+  pLibraryTree->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
+  pLibraryTree->showModelWidget(pLibraryTreeNode);
+  accept();
+}
+
+void SaveAsClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
+{
+  if (text.isEmpty() && mpModelWidget->getLibraryTreeNode()->getType() == StringHandler::Package)
+    mpSaveContentsInOneFileCheckBox->setVisible(true);
+  else
+    mpSaveContentsInOneFileCheckBox->setVisible(false);
+}
+
+/*!
   \class RenameClassDialog
   \brief Creates a dialog to allow users to rename the Modelica class.
   */

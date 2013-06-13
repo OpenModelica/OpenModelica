@@ -93,6 +93,29 @@ private slots:
   void convertModelicaFiles();
 };
 
+class ModelWidget;
+class SaveAsClassDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pParent);
+  QComboBox* getParentClassComboBox();
+private:
+  ModelWidget *mpModelWidget;
+  MainWindow *mpMainWindow;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpParentPackageLabel;
+  QComboBox *mpParentClassComboBox;
+  QCheckBox *mpSaveContentsInOneFileCheckBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void saveAsModelicaClass();
+  void showHideSaveContentsInOneFileCheckBox(QString text);
+};
+
 class RenameClassDialog : public QDialog
 {
   Q_OBJECT
