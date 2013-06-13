@@ -65,7 +65,8 @@ set timefmt "%Y-%m-%d"
 #set xrange ["2012-10-17":"2012-11-22"]
 set format x "%m-%d"
 set xrange ["$FIRST_DATE":"$LAST_DATE"]
-set yrange [0:$(( (($GOAL+9)/10)*10 ))]
+# set yrange [0:$(( (($GOAL+9)/10)*10 ))]
+set yrange [0:]
 # set ytics 10
 # set xtics rotate by -13 font "Helvetica,8"
 set title '$SECTION Coverage'
@@ -74,16 +75,12 @@ goal(x) = $GOAL
 currentC(x) = $CURC
 currentS(x) = $CURS
 set key right bottom Left title 'Legend'
-set style line 1 linecolor rgb "red"
-set style line 2 linecolor rgb "green"
-set style line 3 linecolor rgb "blue"
-set style line 4 linecolor rgb "#EE82EE" pt 1 ps 1
-set style line 5 linecolor rgb "#00FFEF" pt 1 ps 1
-plot "${SECTION}-trend.csv" using 1:2 title 'Target: $GOAL' ls 1, \
-     currentC(x) t 'Now Compile: $CURC' ls 2, \
-     currentS(x) t 'Now Simulate: $CURS' ls 3, \
-     "${SECTION}-trend.csv" using 1:3 title 'Compile' with lp ls 4, \
-     "${SECTION}-trend.csv" using 1:4 title 'Simulate' with lp ls 5
+set style line 1 linecolor rgb "red" pt 1 ps 1
+set style line 2 linecolor rgb "green" pt 1 ps 1
+set style line 3 linecolor rgb "blue" pt 1 ps 1
+plot "${SECTION}-trend.csv" using 1:2 title 'Target: $GOAL'   with lp ls 1, \
+     "${SECTION}-trend.csv" using 1:3 title 'Compile: $CURC'  with lp ls 2, \
+     "${SECTION}-trend.csv" using 1:4 title 'Simulate: $CURS' with lp ls 3
 EOF
 rm -f $OLD/${SECTION}-trend.csv
 for f in `grep -H "Simulation Results:" "$OLD/${SECTION}"*.html | cut -d: -f1` ; do
