@@ -43,7 +43,6 @@
 #include <QPen>
 #include <QGraphicsSceneMouseEvent>
 #include "ShapeAnnotation.h"
-#include "Component.h"
 
 class CornerItem : public QObject, public QGraphicsItem
 {

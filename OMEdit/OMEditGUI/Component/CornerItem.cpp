@@ -36,6 +36,7 @@
  */
 
 #include "CornerItem.h"
+#include "Component.h"
 
 /*!
   \class CornerItem

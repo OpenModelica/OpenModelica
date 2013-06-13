@@ -833,7 +833,7 @@ GotoLineDialog::GotoLineDialog(ModelicaTextEdit *pModelicaEditor, MainWindow *pM
   mpModelicaEditor = pModelicaEditor;
   mpLineNumberLabel = new Label;
   mpLineNumberTextBox = new QLineEdit;
-  mpOkButton = new QPushButton(tr("OK"));
+  mpOkButton = new QPushButton(Helper::ok);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(goToLineNumber()));
   // set layout
   QGridLayout *mainLayout = new QGridLayout;

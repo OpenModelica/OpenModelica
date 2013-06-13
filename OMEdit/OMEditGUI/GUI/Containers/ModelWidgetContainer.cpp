@@ -1078,7 +1078,7 @@ void GraphicsView::addClassAnnotation()
   else
   {
     pMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                    "Error in class annotation " + pMainWindow->getOMCProxy()->getResult(),
+                                                                    tr("Error in class annotation ") + pMainWindow->getOMCProxy()->getResult(),
                                                                     Helper::scriptingKind, Helper::errorLevel, 0,
                                                                     pMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
   }

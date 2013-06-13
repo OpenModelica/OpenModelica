@@ -622,15 +622,16 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   mpHorizontalLine->setFrameShape(QFrame::HLine);
   mpHorizontalLine->setFrameShadow(QFrame::Sunken);
   // Description text
+  QString indexString = tr("<b>[index]</b>");
   QString startComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName())
       .append(".").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("</b>");
   if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
-    startComponentDescription.append("<b>[index]</b>");
+    startComponentDescription.append(indexString);
   QString endComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName())
       .append(".").append(pConnectionLineAnnotation->getEndComponent()->getName()).append("</b>");
   if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
-    endComponentDescription.append("<b>[index]</b>");
-  mpDescriptionLabel = new Label(QString("Connect ").append(startComponentDescription).append(" with ").append(endComponentDescription));
+    endComponentDescription.append(indexString);
+  mpDescriptionLabel = new Label(tr("Connect ").append(startComponentDescription).append(tr(" with ")).append(endComponentDescription));
   // start component
   QIntValidator *pIntValidator = new QIntValidator(this);
   pIntValidator->setBottom(0);
