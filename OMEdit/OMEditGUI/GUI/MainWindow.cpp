@@ -818,7 +818,7 @@ void MainWindow::createOMNotebookImageCell(LibraryTreeNode *pLibraryTreeNode, QD
   // create rule Element
   QDomElement ruleElement = xmlDocument.createElement("Rule");
   ruleElement.setAttribute("name", "TextAlignment");
-  ruleElement.appendChild(xmlDocument.createTextNode(tr("Center")));
+  ruleElement.appendChild(xmlDocument.createTextNode("Center"));
   textCellElement.appendChild(ruleElement);
   // create image Element
   QDomElement imageElement = xmlDocument.createElement("Image");
@@ -844,7 +844,7 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeNode *pLibraryTreeNode, QDo
   textCellElement.appendChild(inputElement);
   // create output Element
   QDomElement outputElement = xmlDocument.createElement("Output");
-  outputElement.appendChild(xmlDocument.createTextNode(tr("")));
+  outputElement.appendChild(xmlDocument.createTextNode(""));
   textCellElement.appendChild(outputElement);
 }
 
@@ -1207,7 +1207,7 @@ void MainWindow::importModelfromOMNotebook()
   }
   mpProgressBar->setValue(value++);
   // read the file
-  QDomNodeList nodes = xmlDocument.elementsByTagName(tr("Input"));
+  QDomNodeList nodes = xmlDocument.elementsByTagName("Input");
   endtime = endtime + nodes.size();
   mpProgressBar->setMaximum(endtime);
   for (int i = 0; i < nodes.size(); i++)
