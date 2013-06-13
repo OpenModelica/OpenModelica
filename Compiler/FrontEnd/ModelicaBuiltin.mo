@@ -1779,8 +1779,20 @@ public function stringReplace
   input String target;
   output String res;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+Replaces all occurances of the string <em>source</em> with <em>target</em>.
+</html>"),preferredView="text");
 end stringReplace;
+
+public function escapeXML
+  input String inStr;
+  output String outStr;
+algorithm
+  outStr := stringReplace(inStr, "&", "&amp;");
+  outStr := stringReplace(outStr, "<", "&lt;");
+  outStr := stringReplace(outStr, ">", "&gt;");
+  outStr := stringReplace(outStr, "\"", "&quot;");
+end escapeXML;
 
 type ExportKind = enumeration(Absyn "Normal Absyn",SCode "Normal SCode",Internal "True unparsing of the Absyn");
 
