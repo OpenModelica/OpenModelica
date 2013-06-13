@@ -2,7 +2,7 @@
 SET(util_sources  base_array.c boolean_array.c omc_error.c division.c index_spec.c
  				  integer_array.c java_interface.c list.c memory_pool.c modelica_string.c
 				  read_write.c read_matlab4.c real_array.c ringbuffer.c
-				  rtclock.c simulation_options.c string_array.c utility.c varinfo.c omc_msvc.c)
+				  rtclock.c simulation_options.c string_array.c utility.c varinfo.c omc_msvc.c OldModelicaTables.c)
 
 
 SET(util_headers  base_array.h boolean_array.h division.h omc_error.h index_spec.h integer_array.h
