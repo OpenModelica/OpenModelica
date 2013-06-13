@@ -115,12 +115,12 @@ msgstr "Fehler beim Schreiben auf Datei %s."
 #: ../Util/Error.mo:168
 #, c-format
 msgid "Error building simulator. Buildlog: %s"
-msgstr ""
+msgstr "Fehler beim Bauen des Simulators. Buildlog: %s"
 
 #: ../Util/Error.mo:170
 #, c-format
 msgid "Dimensions must be parameter or constant expression (in %s)."
-msgstr ""
+msgstr "Dimensionen müssen Parameter oder Konstante Ausdrücke sein (in %s)."
 
 #: ../Util/Error.mo:172
 #, c-format
@@ -320,9 +320,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:242
-#, c-format
+#, fuzzy, c-format
 msgid "Operand of %s in component %s must be builtin-type in %s"
-msgstr ""
+msgstr "Operand von %s in Komponente %s muss builtin-Typ sein in %s"
 
 #: ../Util/Error.mo:244
 #, c-format
