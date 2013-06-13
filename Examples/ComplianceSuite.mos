@@ -33,7 +33,7 @@ resultFile := rec.resultFile;
 messages := rec.messages;
 messages := escapeXML(messages);
 success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then"<>"else"==")+" \"\";
-writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+last(OpenModelica.Scripting.typeNameStrings(cl))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\");
+writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+last(OpenModelica.Scripting.typeNameStrings(cl))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" /><system-out>\"+messages+\"</system-out>\" else \"\")+\"</testcase>\");
 ") for cl in allClasses);
 getErrorString();
 system_parallel(commands);getErrorString();
