@@ -557,17 +557,6 @@ algorithm
   end match;
 end variableIsBuiltin;
 
-public function isSubstring
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  match (inPath)
-    case (Absyn.IDENT(name = "substring")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Utilities", path = Absyn.QUALIFIED(name = "Strings",path = Absyn.IDENT(name = "substring"))))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSubstring(inPath); then ();
-  end match;
-end isSubstring;
-
 public function isDer
   input Absyn.Path inPath;
 algorithm

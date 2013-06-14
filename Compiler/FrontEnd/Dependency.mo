@@ -110,15 +110,13 @@ This function does not check the +d=usedep flag"
 algorithm
   outP := matchcontinue(modelName,p)
   local AbsynDep.Depends dep; AbsynDep.AvlTree uses; Absyn.Program p2,p1;
-    case(modelName,p) equation
-      dep = getTotalProgram2(modelName,p);
-      uses = AbsynDep.getUsesTransitive(dep,modelName);
-      uses = AbsynDep.avlTreeAdd(uses,modelName,{});
-      p1 = extractProgram(p,uses);
-      p = p1;
-      // Debug.fprintln(Flags.DEPS, Dump.unparseStr(p, false));
-    then p;
-    case(modelName,p) then p;
+    case(_,_)
+      equation
+        dep = getTotalProgram2(modelName,p);
+        uses = AbsynDep.getUsesTransitive(dep,modelName);
+        uses = AbsynDep.avlTreeAdd(uses,modelName,{});
+      then extractProgram(p,uses);
+    else p;
   end matchcontinue;
 end getTotalProgramFromPath;
 

@@ -3194,11 +3194,11 @@ public function crefPrefixOf
   output Boolean out;
 algorithm
   out := matchcontinue(prefixCr, cr)
-    case(prefixCr, cr)
+    case(_, _)
       equation
         true = crefEqualNoSubs(prefixCr, cr);
       then true;
-    case(prefixCr, cr)
+    case(_, _)
       then crefPrefixOf(prefixCr, crefStripLast(cr));
     case(_, _) then false;
   end matchcontinue;
@@ -3377,12 +3377,12 @@ algorithm
       Ident ident;
       Path newPath,newSubPath;
     // A suffix, e.g. C.D in A.B.C.D
-    case (subPath,path)
+    case (_,_)
       equation
         true=pathSuffixOf(subPath,path);
       then path;
      // strip last ident of path and recursively check if suffix.
-    case (subPath,path)
+    case (_,_)
       equation
         ident = pathLastIdent(path);
         newPath = stripLast(path);
@@ -3390,7 +3390,7 @@ algorithm
       then joinPaths(newPath,IDENT(ident));
 
         // strip last ident of subpath and recursively check if suffix.
-    case (subPath,path)
+    case (_,_)
       equation
         ident = pathLastIdent(subPath);
         newSubPath = stripLast(subPath);
@@ -4267,15 +4267,6 @@ algorithm
   end match;
 end restrString;
 
-public function printRestr "function: printRestr
-  This is a utility function for printing an Absyn.Restriction."
-  input Restriction restr;
-  Ident str;
-algorithm
-  str := restrString(restr);
-  Print.printBuf(str);
-end printRestr;
-
 public function lastClassname "function: lastClassname
   Returns the path (=name) of the last class in a program"
   input Program inProgram;
@@ -4351,7 +4342,7 @@ algorithm
       Restriction r;
       ClassDef body;
       Info nfo;
-    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),newName)
+    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),_)
       then CLASS(newName,p,f,e,r,body,INFO("",false,0,0,0,0, TIMESTAMP(0.0,0.0))  );
   end matchcontinue;
 end setClassName;
@@ -4557,89 +4548,6 @@ public function getClassName "function getClassName
 algorithm
   CLASS(name=outName) := inClass;
 end getClassName;
-
-public function mergeElementAttributes "
-Author BZ 2008-05
-Function that is used with Derived classes,
-merge the derived ElementAttributes with the optional ElementAttributes returned from ~instClass~.
-"
-  input ElementAttributes ele;
-  input Option<ElementAttributes> oEle;
-  output Option<ElementAttributes> outoEle;
-algorithm outoEle := match(ele, oEle)
-  local
-    Boolean b1,b2,bStream1,bStream2,bStream;
-    Parallelism p1,p2;
-    Variability v1,v2;
-    Direction d1,d2;
-    ArrayDim ad1,ad2;
-  case(ele,NONE()) then SOME(ele);
-  case(ATTR(b1,bStream1,p1,v1,d1,ad1), SOME(ATTR(b2,bStream2,p2,v2,d2,ad2)))
-    equation
-      b1 = boolOr(b1,b2);
-      bStream = boolOr(bStream1,bStream2);
-      p1 = propagateAbsynParallelism(p1,p2);
-      v1 = propagateAbsynVariability(v1,v2);
-      d1 = propagateAbsynDirection(d1,d2);
-    then
-      SOME(ATTR(b1,bStream,p1,v1,d1,ad1));
-end match;
-end mergeElementAttributes;
-
-//mahge930: Not sure what to do here for now.
-protected function propagateAbsynParallelism "
-Helper function for mergeElementAttributes
-"
-  input Parallelism p1;
-  input Parallelism p2;
-  output Parallelism p3;
-algorithm p3 := matchcontinue(p1,p2)
-  case(p1,NON_PARALLEL()) then p1;
-  case(NON_PARALLEL(),p2) then p2;
-  case(p1,p2)
-    equation
-      equality(p1 = p2);
-    then p1;
-  case(_,_)
-    equation
-      print(" failure in propagateAbsynParallelism, parglobal-parlocal mismatch");
-    then
-      fail();
-end matchcontinue;
-end propagateAbsynParallelism;
-
-protected function propagateAbsynVariability "
-Helper function for mergeElementAttributes
-"
-  input Variability v1;
-  input Variability v2;
-  output Variability v3;
-algorithm v3 := matchcontinue(v1,v2)
-  case(v1,VAR()) then v1;
-  case(v1,_) then v1;
-end matchcontinue;
-end propagateAbsynVariability;
-
-protected function propagateAbsynDirection "
-Helper function for mergeElementAttributes
-"
-  input Direction v1;
-  input Direction v2;
-  output Direction v3;
-algorithm v3 := matchcontinue(v1,v2)
-  case(BIDIR(),v2) then v2;
-  case(v1,BIDIR()) then v1;
-  case(v1,v2)
-    equation
-      equality(v1 = v2);
-    then v1;
-  case(_,_)
-    equation
-      print(" failure in propagateAbsynDirection, input-output mismatch");
-    then
-      fail();
-end matchcontinue;
-end propagateAbsynDirection;
 
 protected function findIteratorInElseIfExpBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;

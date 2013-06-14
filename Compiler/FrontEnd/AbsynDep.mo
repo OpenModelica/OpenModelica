@@ -90,12 +90,14 @@ public function dumpAvlTreeKeys "prints all keys in an Avltree to stdout"
   input AvlTree used;
 algorithm
   _ := matchcontinue(used)
-  local AvlTree usedBy;
-    list<tuple<AvlKey,AvlValue>> usedLst;
-    case(used) equation
-      usedLst = avlTreeToList(used);
-      print(stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
-    then ();
+    local
+      AvlTree usedBy;
+      list<tuple<AvlKey,AvlValue>> usedLst;
+    case _
+      equation
+        usedLst = avlTreeToList(used);
+        print(stringDelimitList(List.map(usedLst, printKeyValueTupleStr),"\n"));
+      then ();
    end matchcontinue;
 end dumpAvlTreeKeys;
 
@@ -277,14 +279,16 @@ public function getUsedBy "returns the classes that uses the class 'cl' e.g. as 
   input Depends depends;
   input Absyn.Path cl;
   output AvlTree usedBy;
- algorithm
-   usedBy := matchcontinue(depends,cl)
-   local AvlValue v;
-     case(DEPENDS(_,usedBy),cl) equation
-       v = avlTreeGet(usedBy,cl);
-       usedBy= avlAddUses(avlTreeNew(),v);
-     then usedBy;
-   end matchcontinue;
+algorithm
+  usedBy := matchcontinue(depends,cl)
+    local
+      AvlValue v;
+    case(DEPENDS(_,usedBy),_)
+      equation
+        v = avlTreeGet(usedBy,cl);
+        usedBy= avlAddUses(avlTreeNew(),v);
+      then usedBy;
+  end matchcontinue;
 end getUsedBy;
 
 public function getUsedBySub "
@@ -296,12 +300,14 @@ If inpu cl is 'A.B' it returns classes using A.B, but also classes that uses A.B
   output AvlTree usedBy;
 algorithm
   usedBy := matchcontinue(depends,cl)
-    local AvlValue v;
-    case(DEPENDS(_,usedBy),cl) equation
-      v = avlTreeGetSubs(usedBy,cl);
-      //print("included: " +& stringDelimitList(List.map(v,Absyn.pathString),", ") +& "\n");
-      usedBy= avlAddUses(avlTreeNew(),v);
-    then usedBy;
+    local
+      AvlValue v;
+    case(DEPENDS(_,usedBy),_)
+      equation
+        v = avlTreeGetSubs(usedBy,cl);
+        //print("included: " +& stringDelimitList(List.map(v,Absyn.pathString),", ") +& "\n");
+        usedBy= avlAddUses(avlTreeNew(),v);
+      then usedBy;
   end matchcontinue;
 end getUsedBySub;
 
@@ -723,11 +729,12 @@ protected function avlTreeGetSubsopt
   input Option<AvlTree> inAvlTree;
   input AvlKey inKey;
   output AvlValue outValue;
+protected
   AvlTree item;
 algorithm
   outValue := matchcontinue(inAvlTree,inKey)
     case(NONE(),_) then {};
-    case(SOME(item),inKey) then avlTreeGetSubs (item,inKey);
+    case(SOME(item),_) then avlTreeGetSubs (item,inKey);
   end matchcontinue;
 end avlTreeGetSubsopt;
 

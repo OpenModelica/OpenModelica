@@ -164,90 +164,6 @@ algorithm
   crefMemory := arrayCreate(3, {});
 end createEmptyCrefMemory;
 
-protected function searchInMememoryLst
-"@author: adrpo
-  This function searches in memory for already existing ComponentRef"
-  input ComponentRef inCref;
-  input list<ComponentRef> inMem;
-  output ComponentRef outCref;
-algorithm
-  outCref := matchcontinue (inCref, inMem)
-    local
-      list<ComponentRef> rest;
-      ComponentRef cref;
-    
-    // fail if we couldn't find it
-    case (inCref, {}) then fail();
-    
-    // see if we have it in memory, return the already existing!
-    case (inCref, cref::rest)
-      equation
-        equality(inCref = cref);
-      then
-        cref;
-    
-    // try the next    
-    case (inCref, cref::rest)
-      equation
-        failure(equality(inCref = cref));
-        cref = searchInMememoryLst(inCref, rest);
-      then
-        cref;
-  end matchcontinue;
-end searchInMememoryLst;
-
-protected function shareCref 
-"@author: adrpo
-  searches in the global cache for the given cref and if 
-  there is one, returns that pointer, otherwise adds it"
-  input ComponentRef inCref;
-  output ComponentRef outCref;
-algorithm
-  outCref := matchcontinue (inCref)
-    local
-      array<list<ComponentRef>> crefMem;
-      list<ComponentRef> crefLst;
-      ComponentRef cref;
-      Integer indexBasedOnValueConstructor;
-
-    // see if we have it in memory
-    case (inCref) then inCref;
-
-    // see if we have it in memory
-    case (inCref)
-      equation        
-        // oh the horror. if you don't understand this, contact adrpo
-        // get from global roots
-        crefMem = getGlobalRoot(Global.crefIndex);
-        // select a list based on the constructor of ComponentRef value
-        indexBasedOnValueConstructor = valueConstructor(inCref);
-        crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
-        // search in the list for already existing one
-        cref = searchInMememoryLst(inCref, crefLst);
-        
-        // print("Lst: " +& intString(listLength(crefLst)) +& 
-        //       " Shared: " +& printComponentRefStr(cref) +& "\n");
-      then
-        cref;
-    
-    // we didn't find it, add it
-    case (inCref)
-      equation
-        // oh the horror. if you don't understand this, contact adrpo
-        // get from global roots        
-        crefMem = getGlobalRoot(Global.crefIndex);
-        // select a list based on the constructor of ComponentRef value
-        indexBasedOnValueConstructor = valueConstructor(inCref);
-        crefLst = arrayGet(crefMem, indexBasedOnValueConstructor + 1);
-        // add the translation to the list and set the array
-        crefMem = arrayUpdate(crefMem, indexBasedOnValueConstructor + 1, inCref::crefLst);
-        // set the global cache with the new value
-        setGlobalRoot(Global.crefIndex, crefMem);
-      then 
-        inCref;
-  end matchcontinue;
-end shareCref;
-
 /***************************************************/
 /* generate a ComponentRef */
 /***************************************************/
@@ -258,7 +174,7 @@ public function makeDummyCref
   output ComponentRef outCrefIdent;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outCrefIdent := dummyCref; // shareCref(dummyCref);
+  outCrefIdent := dummyCref;
 end makeDummyCref;
 
 public function makeCrefIdent
@@ -270,7 +186,7 @@ public function makeCrefIdent
   output ComponentRef outCrefIdent;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst); // shareCref(DAE.CREF_IDENT(ident, identType, subscriptLst));
+  outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst);
 end makeCrefIdent;
 
 public function makeUntypedCrefIdent
@@ -964,7 +880,7 @@ algorithm
   outBoolean := matchcontinue(cr1, cr2)
     // first is qualified, second is an unqualified ident, return false!
     case (DAE.CREF_QUAL(ident = _), DAE.CREF_IDENT(ident = _)) then true;
-    case (cr1, cr2) then (not crefPrefixOf(cr1,cr2));
+    else (not crefPrefixOf(cr1,cr2));
   end matchcontinue;
 end crefNotPrefixOf;
 
@@ -1415,7 +1331,7 @@ algorithm
       then 
         b;
     
-    case(_::ssl,inType)
+    case(_::ssl,_)
       equation
         wholedim = containWholeDim2(ssl,inType);
       then
@@ -1650,11 +1566,11 @@ algorithm
       DAE.Ident name;
       String s;
     
-    case(inRef as DAE.CREF_IDENT(name,t2,_)) then (name,t2);
+    case(DAE.CREF_IDENT(name,t2,_)) then (name,t2);
     
-    case(inRef as DAE.CREF_QUAL(name,t2,_,_)) then (name,t2);
+    case(DAE.CREF_QUAL(name,t2,_,_)) then (name,t2);
     
-    case(inRef)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprint(Flags.FAILTRACE, "-ComponentReference.crefType failed on Cref:");
@@ -1992,21 +1908,21 @@ algorithm
     //    fail();
       
     // Case where we try to find a Expression.DAE.SLICE()
-    case(DAE.CREF_IDENT(name,identType,subs),newSub)
+    case(DAE.CREF_IDENT(name,identType,subs),_)
       equation
         subs = replaceSliceSub(subs, newSub);
       then
         makeCrefIdent(name,identType,subs);
         
     // case where there is not existant Expression.DAE.SLICE() as subscript
-    case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),newSub)
+    case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),_)
       equation
         true = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+1));
         child = subscriptCref(child,newSub);
       then
         child;
         
-    case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),newSub)
+    case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),_)
       equation
         false = (listLength(Expression.arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
         child = subscriptCref(child,newSub);
@@ -2015,14 +1931,14 @@ algorithm
         child;
         
     // Try DAE.CREF_QUAL with DAE.SLICE subscript
-    case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
+    case(DAE.CREF_QUAL(name,identType,subs,child),_)
       equation
         subs = replaceSliceSub(subs, newSub);
       then
         makeCrefQual(name,identType,subs,child);
         
     // case where there is not existant Expression.DAE.SLICE() as subscript in CREF_QUAL
-    case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
+    case(DAE.CREF_QUAL(name,identType,subs,child),_)
       equation
         true = (listLength(Expression.arrayTypeDimensions(identType)) >= (listLength(subs)+1));
         subs = listAppend(subs,newSub);
@@ -2030,13 +1946,13 @@ algorithm
         makeCrefQual(name,identType,subs,child);
         
     // DAE.CREF_QUAL without DAE.SLICE, search child
-    case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
+    case(DAE.CREF_QUAL(name,identType,subs,child),_)
       equation
         child = replaceCrefSliceSub(child,newSub);
       then
         makeCrefQual(name,identType,subs,child);
         
-    case(_,_)
+    else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Expression.replaceCref_SliceSub failed\n ");
       then
@@ -2055,7 +1971,7 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.Subscript sub;
     
-    case((sub as DAE.SLICE(_))::subs,inSub)
+    case((sub as DAE.SLICE(_))::subs,_)
       equation
         subs = listAppend(inSub,subs);
       then
@@ -2065,13 +1981,13 @@ algorithm
     //   WHOLEDIM is *also* a special case of SLICE
     //   that contains the all subscripts, so we need
     //   to handle that too here!
-    case((sub as DAE.WHOLEDIM())::subs,inSub)
+    case((sub as DAE.WHOLEDIM())::subs,_)
       equation
         subs = listAppend(inSub,subs);
       then
         subs;
     
-    case((sub)::subs,inSub)
+    case((sub)::subs,_)
       equation
         subs = replaceSliceSub(subs,inSub);
       then
@@ -2115,15 +2031,15 @@ helper function for stripCrefIdentSliceSubs"
   output list<DAE.Subscript> osubs;
 algorithm
   osubs := matchcontinue(subs)
-    local DAE.Subscript s;
+    local DAE.Subscript s; list<DAE.Subscript> rest;
     
     case({}) then {};
     
-    case(DAE.SLICE(exp=_)::subs) then removeSliceSubs(subs);
+    case(DAE.SLICE(exp=_)::rest) then removeSliceSubs(rest);
     
-    case(s::subs)
+    case (s::rest)
       equation
-        osubs = removeSliceSubs(subs);
+        osubs = removeSliceSubs(rest);
       then
         s::osubs;
   end matchcontinue;

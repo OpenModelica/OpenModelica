@@ -100,34 +100,6 @@ algorithm
   end matchcontinue;
 end isNotAssertStatement;
 
-public function splitReinits ""
-  input list<Algorithm> inAlgs;
-  output list<Algorithm> reinits;
-  output list<Statement> rest;
-algorithm (reinits, rest) := matchcontinue(inAlgs)
-  local
-    Statement a;
-    list<Statement> al;
-  case({}) then ({}, {});
-  case(DAE.ALGORITHM_STMTS(al as {a as DAE.STMT_REINIT(var = _)})::inAlgs)
-    equation
-      (reinits, rest) = splitReinits(inAlgs);
-    then
-      (DAE.ALGORITHM_STMTS({a})::reinits, rest);
-  case(DAE.ALGORITHM_STMTS(al as {a})::inAlgs)
-    equation
-      (reinits, rest) = splitReinits(inAlgs);
-    then
-      (reinits, a::rest);
-  case( DAE.ALGORITHM_STMTS((a::al)):: inAlgs )
-    equation
-      inAlgs = listAppend({DAE.ALGORITHM_STMTS({a}), DAE.ALGORITHM_STMTS(al)}, inAlgs);
-      (reinits, rest) = splitReinits(inAlgs);
-    then
-      (reinits, rest);
-end matchcontinue;
-end splitReinits;
-
 public function makeAssignment
 "function: makeAssignment
   This function creates an `DAE.STMT_ASSIGN\' construct, and checks that the

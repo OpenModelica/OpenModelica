@@ -98,8 +98,10 @@ public function expTypeElementType "returns the element type of an array"
   output DAE.Type eltTp;
 algorithm
   eltTp := matchcontinue(tp)
-    case(DAE.T_ARRAY(ty=tp)) then expTypeElementType(tp);
-    case(tp) then tp;
+    local
+      DAE.Type ty;
+    case (DAE.T_ARRAY(ty=ty)) then expTypeElementType(ty);
+    else tp;
   end matchcontinue;
 end expTypeElementType;
 
@@ -196,22 +198,22 @@ algorithm
       Option<Boolean> ip,fn;
       String s;
 
-    case (bindExp,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,unc,distOption,_,ip,fn,so)))
+    case (_,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,unc,distOption,_,ip,fn,so)))
     then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,unc,distOption,SOME(bindExp),ip,fn,so)));
 
-    case (bindExp,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,unc,distOption,_,ip,fn,so)))
+    case (_,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,unc,distOption,_,ip,fn,so)))
     then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,unc,distOption,SOME(bindExp),ip,fn,so));
 
-    case (bindExp,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn,so)))
+    case (_,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn,so)))
     then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn,so));
 
-    case (bindExp,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn,so)))
+    case (_,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn,so)))
     then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn,so));
 
-    case (bindExp,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,_,ip,fn,so)))
+    case (_,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,_,ip,fn,so)))
     then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,SOME(bindExp),ip,fn,so));
 
-    case(_,_) equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
+    else equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
   end matchcontinue;
 end addEquationBoundString;
 
@@ -469,20 +471,20 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt;
 
-    case(var,DAE.DAE({})) then DAE.DAE({});
+    case(_,DAE.DAE({})) then DAE.DAE({});
 
-    case(var,DAE.DAE((v as DAE.VAR(componentRef = cr))::elist))
+    case(_,DAE.DAE((v as DAE.VAR(componentRef = cr))::elist))
       equation
         true = ComponentReference.crefEqualNoStringCompare(var,cr);
       then DAE.DAE(elist);
 
-    case(var,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
+    case(_,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
       equation
         DAE.DAE(elist) = removeVariable(var,DAE.DAE(elist));
         DAE.DAE(elist2) = removeVariable(var,DAE.DAE(elist2));
       then DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2);
 
-    case(var,DAE.DAE(e::elist))
+    case(_,DAE.DAE(e::elist))
       equation
         DAE.DAE(elist) = removeVariable(var,DAE.DAE(elist));
       then DAE.DAE(e::elist);
@@ -607,12 +609,12 @@ algorithm ocr := matchcontinue(cr,removalString)
     DAE.Type ty;
     DAE.ComponentRef child,child_2;
     list<DAE.Subscript> subs;
-  case(DAE.CREF_IDENT(str,ty,subs),removalString)
+  case(DAE.CREF_IDENT(str,ty,subs),_)
     equation
       str2 = System.stringReplace(str, removalString, "");
       then
         ComponentReference.makeCrefIdent(str2,ty,subs);
-  case(DAE.CREF_QUAL(str,ty,subs,child),removalString)
+  case(DAE.CREF_QUAL(str,ty,subs,child),_)
     equation
       child_2 = unNameInnerouterUniqueCref(child,removalString);
       str2 = System.stringReplace(str, removalString, "");
@@ -626,24 +628,6 @@ algorithm ocr := matchcontinue(cr,removalString)
       then fail();
   end matchcontinue;
 end unNameInnerouterUniqueCref;
-
-protected function getOuterBinding "
-Author: BZ, 2008-11
-Aquire the binding on the outer/innerouter variable, to transfer to inner variable."
-input DAE.ComponentRef currVar;
-input list<tuple<DAE.ComponentRef, DAE.Exp>> inlst;
-output Option<DAE.Exp> binding;
-algorithm binding := matchcontinue(currVar,inlst)
-  local DAE.ComponentRef cr1,cr2; DAE.Exp e;
-  case(_,{}) then NONE();
-  case(cr1,(cr2,e)::inlst)
-    equation
-      true = ComponentReference.crefEqualNoStringCompare(cr1,cr2);
-      then
-        SOME(e);
-  case(cr1,(_,_)::inlst) then getOuterBinding(cr1,inlst);
-  end matchcontinue;
-end getOuterBinding;
 
 protected function removeInnerAttribute "Help function to removeInnerAttr"
    input Absyn.InnerOuter io;
@@ -691,7 +675,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))),_) then r;
-    case(_,optExp) then optExp;
+    else optExp;
   end matchcontinue;
 end getStartAttrEmpty;
 
@@ -1244,22 +1228,21 @@ public function getAllMatchingElements "function getAllMatchingElements
 algorithm
   outElist := matchcontinue(elist,cond)
     local
-      list<DAE.Element> elist2;
+      list<DAE.Element> elist1,elist2;
       DAE.Element e;
-    case({},_) then {};
-    case(DAE.COMP(dAElist=elist)::elist2,cond) equation
-      elist= getAllMatchingElements(elist,cond);
-      elist2 = getAllMatchingElements(elist2,cond);
-      elist2 = listAppend(elist,elist2);
-      then elist2;
-    case(e::elist,cond) equation
-      cond(e);
-      elist = getAllMatchingElements(elist,cond);
-    then e::elist;
-
-    case(e::elist,cond) equation
-      elist = getAllMatchingElements(elist,cond);
-    then elist;
+    case ({},_) then {};
+    case (DAE.COMP(dAElist=elist1)::elist2,_)
+      equation
+        elist1 = getAllMatchingElements(elist1,cond);
+        elist2 = getAllMatchingElements(elist2,cond);
+      then listAppend(elist1,elist2);
+    case(e::elist2,_)
+      equation
+        cond(e);
+        elist2 = getAllMatchingElements(elist2,cond);
+      then e::elist2;
+    case(e::elist2,_)
+      then getAllMatchingElements(elist2,cond);
   end matchcontinue;
 end getAllMatchingElements;
 
@@ -1765,21 +1748,23 @@ Get variable-bindings from element list.
   input list<DAE.Element> inElementLst;
   output list<DAE.ComponentRef> outc;
   output list<DAE.Exp> oute;
-algorithm (outc,oute) := matchcontinue (inElementLst)
+algorithm
+  (outc,oute) := matchcontinue (inElementLst)
     local
       DAE.ComponentRef cr;
       DAE.Exp e;
-      case({}) then ({},{});
-    case (DAE.VAR(componentRef = cr,binding = SOME(e))::inElementLst)
+      list<DAE.Element> rest;
+    case({}) then ({},{});
+    case (DAE.VAR(componentRef = cr,binding = SOME(e))::rest)
       equation
-        (outc,oute) = getBindings(inElementLst);
+        (outc,oute) = getBindings(rest);
       then
         (cr::outc,e::oute);
-    case (DAE.VAR(componentRef = cr,binding  = NONE())::inElementLst)
+    case (DAE.VAR(componentRef = cr,binding  = NONE())::rest)
       equation
-        (outc,oute) = getBindings(inElementLst);
+        (outc,oute) = getBindings(rest);
       then (outc,oute);
-    case (_) equation print(" error in getBindings \n"); then fail();
+    else equation print(" error in getBindings \n"); then fail();
   end matchcontinue;
 end getBindings;
 
@@ -2630,59 +2615,6 @@ algorithm (outrefs,matching) := matchcontinue(inCrefs)
   end matchcontinue;
 end compareCrefList;
 
-public function transformIfEqToExpr
-"function: transformIfEqToExpr
-  transform all if equations to ordinary equations involving if-expressions"
-  input DAE.DAElist inDAElist;
-  input Boolean onlyConstantEval "if true, only perform the constant evaluation part, not transforming to if-expr";
-  output DAE.DAElist outDAElist;
-algorithm
-  outDAElist := match (inDAElist,onlyConstantEval)
-    local
-      list<DAE.Element> elts;
-    case (DAE.DAE(elts),onlyConstantEval)
-      equation
-        elts = transformIfEqToExpr2(elts,onlyConstantEval,{});
-      then DAE.DAE(elts);
-  end match;
-end transformIfEqToExpr;
-
-protected function transformIfEqToExpr2
-"function: transformIfEqToExpr
-  transform all if equations to ordinary equations involving if-expressions"
-  input list<DAE.Element> inElts;
-  input Boolean onlyConstantEval "if true, only perform the constant evaluation part, not transforming to if-expr";
-  input list<DAE.Element> inAcc;
-  output list<DAE.Element> outElts;
-algorithm
-  outElts := match (inElts,onlyConstantEval,inAcc)
-    local
-      list<DAE.Element> rest_result,rest,sublist_result,sublist,res,res2,acc,elts;
-      DAE.Element subresult,el;
-      String name;
-      DAE.ElementSource source "the origin of the element";
-
-    case ({},onlyConstantEval,acc) then listReverse(acc);
-    case (DAE.COMP(ident = name,dAElist = sublist,source=source)::rest,onlyConstantEval,acc)
-      equation
-        sublist_result = transformIfEqToExpr2(sublist,onlyConstantEval,{});
-        subresult = DAE.COMP(name,sublist_result,source,NONE());
-        acc = transformIfEqToExpr2(rest,onlyConstantEval,subresult::acc);
-      then acc;
-    case ((el as (DAE.IF_EQUATION(source = _)))::rest,onlyConstantEval,acc)
-      equation
-        elts= ifEqToExpr(el,onlyConstantEval);
-        acc = transformIfEqToExpr2(rest,onlyConstantEval,listAppend(elts,acc));
-      then
-        acc;
-    case (el::rest,onlyConstantEval,acc)
-      equation
-        elts = transformIfEqToExpr2(rest,onlyConstantEval,el::acc);
-      then
-        elts;
-  end match;
-end transformIfEqToExpr2;
-
 public function evaluateAnnotation
 "function: evaluateAnnotation
   evaluates the annotation Evaluate"
@@ -2762,7 +2694,7 @@ algorithm
     case((exp as DAE.CREF(componentRef = _),(ht,i,j)))
       then ((exp,(ht,i+1,j)));
 
-    case(itpl) then itpl;
+    else itpl;
   end matchcontinue;
 end evaluateAnnotationTraverse;
 
@@ -2810,12 +2742,12 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       list<DAE.Element> elts;
 
-    case (DAE.COMP(dAElist = elts),ht) then List.fold(elts,getParameterVars2,ht);
+    case (DAE.COMP(dAElist = elts),_) then List.fold(elts,getParameterVars2,ht);
 
-    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)),ht)
+    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e)),_)
       then BaseHashTable.add((cr,e),ht);
 
-    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),variableAttributesOption=dae_var_attr),ht)
+    case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),variableAttributesOption=dae_var_attr),_)
       equation
         e = getStartAttrFail(dae_var_attr);
       then BaseHashTable.add((cr,e),ht);
@@ -2857,7 +2789,7 @@ algorithm
       list<SCode.Annotation> annos;
       DAE.Exp e,e1;
       Boolean b,b1;
-    case (tpl,DAE.COMP(dAElist = sublist),pv)
+    case (_,DAE.COMP(dAElist = sublist),pv)
       then List.fold1r(sublist,evaluateAnnotation1Fold,pv,tpl);
     case ((ht,_),DAE.VAR(componentRef = cr,kind=DAE.PARAM(),binding=SOME(e),absynCommentOption=SOME(comment)),pv)
       equation
@@ -2867,7 +2799,7 @@ algorithm
         ht1 = BaseHashTable.add((cr,e1),ht);
       then
         ((ht1,true));
-    case (tpl,_,_) then tpl;
+    else tpl;
   end matchcontinue;
 end evaluateAnnotation1Fold;
 
@@ -3060,498 +2992,6 @@ algorithm
   end matchcontinue;
 end evaluateAnnotation4;
 
-protected function selectBranches
-"@author: adrpo
- this function will select the equations in the
- correct branch IF (and only if) the conditions
- are boolean literals. We need this here as
- Connections.isRoot is replaced by true/false
- at the end of instatiation"
- input list<DAE.Exp> cond;
- input list<list<DAE.Element>> true_branch;
- input list<DAE.Element> false_branch;
- input DAE.ElementSource source "the origin of the element";
- input Boolean recursiveCall "true if is a recursive call; we need this to avoid stack overflow!";
- input Boolean onlyConstantEval;
- output list<DAE.Element> equations;
-algorithm
- equations := matchcontinue(cond, true_branch, false_branch, source, recursiveCall, onlyConstantEval)
-   local
-     list<DAE.Exp> rest;
-     list<list<DAE.Element>> restTrue;
-     list<DAE.Element> eqs;
-
-   // nothing selects the else
-   case ({}, {}, false_branch, _, _, onlyConstantEval)
-   then false_branch;
-
-   // if true select the head from the true_branch
-   case (DAE.BCONST(true)::rest, eqs::restTrue, false_branch, _, recursiveCall, onlyConstantEval)
-     equation
-       // transform further if needed
-       DAE.DAE(eqs) = transformIfEqToExpr(DAE.DAE(eqs),onlyConstantEval);
-     then eqs;
-
-   // if false recurse with rest on both lists
-   case (DAE.BCONST(false)::rest, eqs::restTrue, false_branch, source, _, onlyConstantEval)
-     equation
-       eqs = selectBranches(rest, restTrue, false_branch, source, true, onlyConstantEval);
-       // transform further if needed
-       DAE.DAE(eqs) = transformIfEqToExpr(DAE.DAE(eqs),onlyConstantEval);
-     then eqs;
-   // if is not a boolean literal, and is a recursive call just return the if equation!
-   case (cond, true_branch, false_branch, source, true, onlyConstantEval)
-     equation
-       eqs = ifEqToExpr(DAE.IF_EQUATION(cond, true_branch, false_branch, source), onlyConstantEval);
-     then eqs;
-   // failure?!
-   case (_, _, _, source, false, onlyConstantEval)
-     equation
-       // Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.selectBranches failed: the IF equation is malformed!");
-     then fail();
- end matchcontinue;
-end selectBranches;
-
-protected function ifEqToExpr
-"function: ifEqToExpr
-  Transform one if-equation into equations involving if-expressions"
-  input DAE.Element inElement;
-  input Boolean onlyConstantEval;
-  output list<DAE.Element> outElementLst;
-algorithm
-  outElementLst := matchcontinue (inElement,onlyConstantEval)
-    local
-      String elt_str;
-      DAE.Element elt;
-      list<DAE.Exp> cond,fbsExp;
-      list<list<DAE.Exp>> tbsExp;
-      list<DAE.Element> false_branch,equations;
-      list<list<DAE.Element>> true_branch;
-      DAE.ElementSource source "the origin of the element";
-      Absyn.Path fpath;
-
-    // adrpo: handle selection of branches if conditions are boolean literals
-    //        this is needed as Connections.isRoot becomes true/false at the
-    //        end of instantiation.
-    case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch, source = source)),onlyConstantEval)
-      equation
-        equations = selectBranches(cond, true_branch, false_branch,source,false,onlyConstantEval);
-        // transform further if needed
-      then transformIfEqToExpr2(equations,onlyConstantEval,{});
-    // handle the erroneous case where the number of equations are not equal in different branches
-    /* BUG: The comparison of # equations in different branches below is wrong.
-    The Modelica.Blocks.Examples.PID_Controller shows why. if an assert is present in one of the branches, the number
-    does not match, but the "counting of equations" is still the same
-    Therfore I comment this out for now.
-    /PA
-    */
-
-    /*case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)),onlyConstantEval)
-      equation
-        true_eq = ifEqToExpr2(true_branch);
-        false_eq = listLength(false_branch);
-        (true_eq == false_eq) = false; // Bug here, must count the equations properly...
-        elt_str = DAEDump.dumpEquationsStr({elt});
-        Error.addMessage(Error.DIFFERENT_NO_EQUATION_IF_BRANCHES, {elt_str});
-      then
-        {};*/
-
-    // This case does not work correctly if a branch contains an if-equation, see bug 1229
-    /*case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
-      equation
-        true_eq = ifEqToExpr2(true_branch);
-        false_eq = listLength(false_branch);
-        (true_eq == false_eq) = true;
-        equations = makeEquationsFromIf(cond, true_branch, false_branch, source);
-      then
-        equations;*/
-
-    // adrpo: if we are running checkModel and condition is initial(), ignore error!
-    case (DAE.IF_EQUATION(condition1 = cond as {DAE.CALL(path = fpath)},equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = Util.isEqual(fpath, Absyn.IDENT("initial"));
-        // leave the if equation as it is!
-      then {inElement};
-
-    // handle the default case.
-    case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
-      equation
-        _ = countEquationsInBranches(true_branch, false_branch, source);
-        fbsExp = makeEquationLstToResidualExpLst(false_branch);
-        tbsExp = List.map(true_branch, makeEquationLstToResidualExpLst);
-        equations = makeEquationsFromResiduals(cond, tbsExp, fbsExp, source);
-      then
-        equations;
-    case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval as true)
-      then
-        {elt};
-    case (elt as DAE.IF_EQUATION(source=source),onlyConstantEval) // only display failure on if equation
-      equation
-        // TODO: Do errors in the other functions...
-        true = Flags.isSet(Flags.FAILTRACE);
-        elt_str = DAEDump.dumpElementsStr({elt});
-        Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.ifEqToExpr failed " +& elt_str);
-      then fail();
-  end matchcontinue;
-end ifEqToExpr;
-
-protected function countEquations
-  input list<DAE.Element> equations;
-  output Integer nrOfEquations;
-algorithm
-  nrOfEquations := matchcontinue(equations)
-    local
-      list<list<DAE.Element>> tb;
-      list<DAE.Element> rest,fb;
-      DAE.ElementSource source;
-      DAE.Element elt;
-      Integer nr,n;
-    // empty case
-    case ({}) then 0;
-    // ignore assert!
-    case (DAE.ASSERT(condition = _)::rest)
-      then countEquations(rest);
-    // ignore terminate!
-    case (DAE.TERMINATE(message=_)::rest)
-      then countEquations(rest);
-    // ignore noretcall
-    case (DAE.NORETCALL(functionName=_)::rest)
-      then countEquations(rest);
-    // For an if-equation, count equations in branches
-    case (DAE.IF_EQUATION(equations2=tb,equations3=fb,source=source)::rest)
-      equation
-        n = countEquationsInBranches(tb,fb,source);
-        nr = countEquations(rest);
-      then nr + n;
-    case (DAE.INITIAL_IF_EQUATION(equations2=tb,equations3=fb,source=source)::rest)
-      equation
-        n = countEquationsInBranches(tb,fb,source);
-        nr = countEquations(rest);
-      then nr + n;
-    // any other case, just add 1
-    case (elt::rest)
-      equation
-        failure(isIfEquation(elt));
-        nr = countEquations(rest);
-      then nr + 1;
-  end matchcontinue;
-end countEquations;
-
-protected function countEquationsInBranches "
-Checks that the number of equations is the same in all branches
-of an if-equation"
-  input list<list<DAE.Element>> trueBranches;
-  input list<DAE.Element> falseBranch;
-  input DAE.ElementSource source;
-  output Integer nrOfEquations;
-algorithm
-  nrOfEquations := matchcontinue(trueBranches,falseBranch,source)
-    local
-      list<Boolean> b;
-      list<String> strs;
-      String str,eqstr;
-      list<Integer> nrOfEquationsBranches;
-    case (trueBranches,falseBranch,source)
-      equation
-        nrOfEquations = countEquations(falseBranch);
-        nrOfEquationsBranches = List.map(trueBranches, countEquations);
-        b = List.map1(nrOfEquationsBranches, intEq, nrOfEquations);
-        true = List.reduce(b,boolAnd);
-      then (nrOfEquations);
-    case (trueBranches,falseBranch,source)
-      equation
-        nrOfEquations = countEquations(falseBranch);
-        nrOfEquationsBranches = List.map(trueBranches, countEquations);
-        eqstr = stringDelimitList(List.map1(List.mapList(listAppend(trueBranches,{falseBranch}),DAEDump.dumpEquationStr),stringDelimitList,","),"\n");
-        strs = List.map(nrOfEquationsBranches, intString);
-        str = stringDelimitList(strs,",");
-        str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
-        Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str,eqstr},getElementSourceFileInfo(source));
-      then fail();
-  end matchcontinue;
-end countEquationsInBranches;
-
-protected function makeEquationsFromIf
-  input list<DAE.Exp> inExp1;
-  input list<list<DAE.Element>> inElementLst2;
-  input list<DAE.Element> inElementLst3;
-  input DAE.ElementSource source;
-  output list<DAE.Element> outElementLst;
-algorithm
-  outElementLst := matchcontinue (inExp1,inElementLst2,inElementLst3,source)
-    local
-      list<list<DAE.Element>> tbs,rest1,tbsRest,tbsFirstL;
-      list<DAE.Element> tbsFirst,fbs,rest_res,tb;
-      DAE.Element fb,eq;
-      list<DAE.Exp> conds,tbsexp;
-      DAE.Exp fbexp,ifexp, cond;
-
-    case (_,tbs,{},_)
-      equation
-        List.map_0(tbs, List.assertIsEmpty);
-      then {};
-
-    // adrpo: not all equations can be transformed using makeEquationToResidualExp
-    //        for example, assert, terminate, etc. TODO! FIXME!
-    //        if cond then assert(cnd, ...); endif; can be translated to:
-    //        assert(cond AND cnd, ...
-
-    case (conds,tbs,fb::fbs,source)
-      equation
-        tbsRest = List.map(tbs,List.rest);
-        rest_res = makeEquationsFromIf(conds, tbsRest, fbs, source);
-
-        tbsFirst = List.map(tbs,List.first);
-        tbsexp = List.map(tbsFirst,makeEquationToResidualExp);
-        fbexp = makeEquationToResidualExp(fb);
-
-        ifexp = Expression.makeNestedIf(conds,tbsexp,fbexp);
-        eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,source);
-      then
-        (eq::rest_res);
-  end matchcontinue;
-end makeEquationsFromIf;
-
-protected function makeEquationToResidualExpLst "
-If-equations with more than 1 equation in each branch cannot be transformed
-to a single equation with residual if-expression. This function translates such
-equations to a list of residual if-expressions. Normal equations are translated
-to a list with a single residual expression."
-  input DAE.Element eq;
-  output list<DAE.Exp> oExpLst;
-algorithm
-  oExpLst := matchcontinue(eq)
-    local
-      list<list<DAE.Element>> tbs;
-      list<DAE.Element> fbs;
-      list<DAE.Exp> conds, fbsExp,exps;
-      list<list<DAE.Exp>> tbsExp;
-      DAE.Element elt;
-      DAE.Exp exp;
-
-    case (DAE.IF_EQUATION(condition1=conds,equations2=tbs,equations3=fbs))
-      equation
-        fbsExp = makeEquationLstToResidualExpLst(fbs);
-        tbsExp = List.map(tbs, makeEquationLstToResidualExpLst);
-        exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
-      then
-        exps;
-    case (DAE.INITIAL_IF_EQUATION(condition1=conds,equations2=tbs,equations3=fbs))
-      equation
-        fbsExp = makeEquationLstToResidualExpLst(fbs);
-        tbsExp = List.map(tbs, makeEquationLstToResidualExpLst);
-        exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
-      then
-        exps;
-    case (elt)
-      equation
-        exp=makeEquationToResidualExp(elt);
-      then
-        {exp};
-  end matchcontinue;
-end makeEquationToResidualExpLst;
-
-protected function makeEquationToResidualExp ""
-  input DAE.Element eq;
-  output DAE.Exp oExp;
-algorithm
-  oExp := matchcontinue(eq)
-    local
-      DAE.Exp e1,e2;
-      DAE.ComponentRef cr1,cr2;
-      DAE.Type ty,ty1,ty2;
-      String str;
-      Absyn.Info info;
-
-    // normal equation
-    case(DAE.EQUATION(e1,e2,_))
-      equation
-        ty = Expression.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
-      then
-        oExp;
-    // initial equation
-    case(DAE.INITIALEQUATION(e1,e2,_))
-      equation
-        ty = Expression.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
-      then
-        oExp;
-    // complex equation
-    case(DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2))
-      equation
-        ty = Expression.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
-      then
-        oExp;
-    // complex initial equation
-    case(DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2))
-      equation
-        ty = Expression.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
-      then
-        oExp;
-    // equation from connect
-    case(DAE.EQUEQUATION(cr1, cr2, _))
-      equation
-        ty1 = ComponentReference.crefLastType(cr1);
-        ty2 = ComponentReference.crefLastType(cr2);
-        e1 = Expression.makeCrefExp(cr1,ty1);
-        e2 = Expression.makeCrefExp(cr2,ty2);
-        oExp = DAE.BINARY(e1, DAE.SUB(ty1), e2);
-      then
-        oExp;
-    // equation from define
-    case(DAE.DEFINE(cr1, e2, _))
-      equation
-        ty1 = ComponentReference.crefLastType(cr1);
-        e1 = Expression.makeCrefExp(cr1,ty1);
-        oExp = DAE.BINARY(e1, DAE.SUB(ty1), e2);
-      then
-        oExp;
-    // equation from initial define
-    case(DAE.INITIALDEFINE(cr1, e2, _))
-      equation
-        ty1 = ComponentReference.crefLastType(cr1);
-        e1 = Expression.makeCrefExp(cr1,ty1);
-        oExp = DAE.BINARY(e1, DAE.SUB(ty1), e2);
-      then
-        oExp;
-    // equation from array TODO! check if this works!
-    case(DAE.ARRAY_EQUATION(_, e1, e2, _))
-      equation
-        ty = Expression.typeof(e1);
-        oExp = DAE.BINARY(e1, DAE.SUB_ARR(ty), e2);
-      then
-        oExp;
-    // initial array equation
-    case(DAE.INITIAL_ARRAY_EQUATION(_, e1, e2, _))
-      equation
-        ty = Expression.typeof(e1);
-        oExp = DAE.BINARY(e1,DAE.SUB_ARR(ty),e2);
-      then
-        oExp;
-    // failure
-    case(eq)
-      equation
-        str = "- DAEUtil.makeEquationToResidualExp failed to transform equation: " +& DAEDump.dumpEquationStr(eq) +& " to residual form!";
-        info = getElementSourceFileInfo(getElementSource(eq));
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
-      then fail();
-  end matchcontinue;
-end makeEquationToResidualExp;
-
-protected function makeEquationLstToResidualExpLst
-  input list<DAE.Element> eqLst;
-  output list<DAE.Exp> oExpLst;
-algorithm
-  oExpLst := matchcontinue(eqLst)
-    local
-      list<DAE.Element> rest;
-      list<DAE.Exp> exps1,exps2,exps;
-      DAE.Element eq;
-      DAE.ElementSource source;
-      String str;
-    case ({}) then {};
-    case ((eq as DAE.ASSERT(source = source))::rest)
-      equation
-        str = DAEDump.dumpEquationStr(eq);
-        str = Util.stringReplaceChar(str,"\n","");
-        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},getElementSourceFileInfo(source));
-        exps = makeEquationLstToResidualExpLst(rest);
-      then exps;
-    case ((eq as DAE.TERMINATE(source = source))::rest)
-      equation
-        str = DAEDump.dumpEquationStr(eq);
-        str = Util.stringReplaceChar(str,"\n","");
-        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},getElementSourceFileInfo(source));
-        exps = makeEquationLstToResidualExpLst(rest);
-      then exps;
-    case ((eq as DAE.NORETCALL(source = source))::rest)
-      equation
-        str = DAEDump.dumpEquationStr(eq);
-        str = Util.stringReplaceChar(str,"\n","");
-        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},getElementSourceFileInfo(source));
-        exps = makeEquationLstToResidualExpLst(rest);
-      then exps;
-    case (eq::rest)
-      equation
-        exps1 = makeEquationToResidualExpLst(eq);
-        exps2 = makeEquationLstToResidualExpLst(rest);
-        exps = listAppend(exps1,exps2);
-      then
-        exps;
-  end matchcontinue;
-end makeEquationLstToResidualExpLst;
-
-protected function makeResidualIfExpLst
-  input list<DAE.Exp> inExp1;
-  input list<list<DAE.Exp>> inExpLst2;
-  input list<DAE.Exp> inExpLst3;
-  output list<DAE.Exp> outExpLst;
-algorithm
-  outExpLst := match (inExp1,inExpLst2,inExpLst3)
-    local
-      list<list<DAE.Exp>> tbs,tbsRest;
-      list<DAE.Exp> tbsFirst,fbs,rest_res;
-      list<DAE.Exp> conds;
-      DAE.Exp ifexp,fb;
-
-    case (_,tbs,{})
-      equation
-        List.map_0(tbs, List.assertIsEmpty);
-      then {};
-
-    case (conds,tbs,fb::fbs)
-      equation
-        tbsRest = List.map(tbs,List.rest);
-        rest_res = makeResidualIfExpLst(conds, tbsRest, fbs);
-
-        tbsFirst = List.map(tbs,List.first);
-
-        ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
-      then
-        (ifexp::rest_res);
-  end match;
-end makeResidualIfExpLst;
-
-protected function makeEquationsFromResiduals
-  input list<DAE.Exp> inExp1;
-  input list<list<DAE.Exp>> inExpLst2;
-  input list<DAE.Exp> inExpLst3;
-  input DAE.ElementSource source "the origin of the element";
-  output list<DAE.Element> outExpLst;
-algorithm
-  outExpLst := match (inExp1,inExpLst2,inExpLst3,source)
-    local
-      list<list<DAE.Exp>> tbs,tbsRest;
-      list<DAE.Exp> tbsFirst,fbs;
-      list<DAE.Exp> conds;
-      DAE.Exp ifexp,fb;
-      DAE.Element eq;
-      list<DAE.Element> rest_res;
-      DAE.ElementSource src;
-
-    case (_,tbs,{},_)
-      equation
-        List.map_0(tbs, List.assertIsEmpty);
-      then {};
-
-    case (conds,tbs,fb::fbs,src)
-      equation
-        tbsRest = List.map(tbs,List.rest);
-        rest_res = makeEquationsFromResiduals(conds, tbsRest,fbs,src);
-
-        tbsFirst = List.map(tbs,List.first);
-
-        ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
-        eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,src);
-      then
-        (eq::rest_res);
-  end match;
-end makeEquationsFromResiduals;
-
 public function renameTimeToDollarTime "
 Author: BZ, 2009-1
 rename the keyword time to globalData->timeValue, this is a special case for functions since they do not get translated in to c_crefs."
@@ -3596,7 +3036,7 @@ algorithm
       then
         ((exp,oarg));
 
-    case(inTplExpExpString) then inTplExpExpString;
+    else inTplExpExpString;
 
   end matchcontinue;
 end renameTimeToDollarTimeFromCref;
@@ -3645,7 +3085,7 @@ algorithm
       then
         ((exp,oarg));
 
-    case(inTplExpExpString) then inTplExpExpString;
+    else inTplExpExpString;
 
   end matchcontinue;
 end removeUniqieIdentifierFromCref;
@@ -6000,11 +5440,11 @@ algorithm
   d := matchcontinue (dae)
     local
       HashTable.HashTable ht;
-    case (dae)
+    case _
       equation
         false = Flags.isSet(Flags.FRONTEND_INLINE_EULER);
       then dae;
-    case (dae)
+    case _
       equation
         ht = HashTable.emptyHashTable();
         (d,_,ht) = traverseDAE(dae,emptyFuncTree,simpleInlineDerEuler,ht);

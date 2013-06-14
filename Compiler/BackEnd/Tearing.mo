@@ -2916,13 +2916,14 @@ author: Waurich TUD 2012-11"
   input BackendDAE.IncidenceMatrix m,mt;
   output list<Integer> potentials;
 protected
+  list<list<Integer>> selectedcolsLst;
   list<Integer> selectedcols1,selectedcols2,selectedrows;
   BackendDAE.IncidenceMatrix mtsel,msel2,msel2t;
 algorithm
 // Cellier heuristic
 // 1. choose rows(eqs) with most nonzero entries and write the column indexes(vars) for nonzeros in a list
-((_,selectedcols1)) := Util.arrayFold(m,findMostEntries,(0,{}));
-selectedcols1 := List.unique(List.flatten(selectedcols1));
+((_,selectedcolsLst)) := Util.arrayFold(m,findMostEntries,(0,{}));
+selectedcols1 := List.unique(List.flatten(selectedcolsLst));
 //print("1st " +& stringDelimitList(List.map(selectedcols1,intString),", ") +& "\n");
 // 2. gather these columns in a new array (reduced mt)
 mtsel := Util.arraySelect(mt,selectedcols1);

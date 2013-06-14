@@ -1542,17 +1542,15 @@ protected function printExpIfDiff ""
   output String s;
 algorithm
   s := matchcontinue(e1,e2)
-    case(e1,e2)
+    case (_,_)
       equation
         true = Expression.expEqual(e1,e2);
-      then
-        "";
-    case(e1,e2)
+      then "";
+    case (_,_)
       equation
         false = Expression.expEqual(e1,e2);
         s = printExpStr(e1) +& " =!= " +& printExpStr(e2) +& "\n";
-      then
-        s;
+      then s;
   end matchcontinue;
 end printExpIfDiff;
 

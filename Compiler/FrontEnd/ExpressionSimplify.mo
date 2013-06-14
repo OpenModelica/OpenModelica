@@ -4681,17 +4681,6 @@ algorithm
   end match;
 end hasZeroLengthIterator;
 
-protected function hasGuardExp
-  input list<DAE.ReductionIterator> iters;
-  output Boolean b;
-algorithm
-  b := match iters
-    case {} then false;
-    case DAE.REDUCTIONITER(guardExp=SOME(_))::_ then true;
-    case _::iters then hasGuardExp(iters);
-  end match;
-end hasGuardExp;
-
 public function simplifyList
   input list<DAE.Exp> expl;
   input list<DAE.Exp> acc;

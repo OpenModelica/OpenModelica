@@ -361,7 +361,7 @@ algorithm
       then
         c3;
 
-    case (prefixedCref,innerCref)
+    case (_,_)
       equation
         c2 = ComponentReference.crefStripLastIdent(innerCref);
         cr3 = extractCommonPart(prefixedCref,c2);
@@ -381,19 +381,15 @@ public function renameUniqueVarsInTopScope
 algorithm
   odae := matchcontinue(isTopScope,dae)
     // adrpo: don't do anything if there are no inner/outer declarations in the model!
-    case (_, dae)
+    case (_, _)
       equation
         false = System.getHasInnerOuterDefinitions();
-      then
-        dae;
+      then dae;
     // we are in top level scope (isTopScope=true) and we need to rename
-    case (true,dae)
-      equation
-        odae = DAEUtil.renameUniqueOuterVars(dae);
-      then
-        odae;
+    case (true,_)
+      then DAEUtil.renameUniqueOuterVars(dae);
     // we are NOT in top level scope (isTopScope=false) and we need to rename
-    case (false,dae) then dae;
+    case (false,_) then dae;
   end matchcontinue;
 end renameUniqueVarsInTopScope;
 
@@ -685,7 +681,7 @@ algorithm
     case(cache,env,ih,pre,_,true,_,_,_,_,_,_,_) then inSets;
 
     // if it was not added, add it (first component found: cr1)
-    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,cr1,io1,f1,cr2,io2,f2,info)
+    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,_,io1,_,_,io2,_,_)
       equation
         (cache,DAE.ATTR(connectorType = ct,variability=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
@@ -703,7 +699,7 @@ algorithm
         Connect.SETS(sets, sc, cl, cc, oc);
 
     // if it was not added, add it (first component found: cr2)
-    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,cr1,io1,f1,cr2,io2,f2,info)
+    case(cache,env,ih,pre, Connect.SETS(sets, sc, cl, cc, oc),false,_,io1,_,_,io2,_,_)
       equation
         pre = Prefix.NOPRE();
         (cache,DAE.ATTR(connectorType = ct,variability=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
@@ -807,20 +803,19 @@ protected
 algorithm
   _ := matchcontinue(inDae,callScope)
     // adrpo, do nothing if we have no inner/outer components
-    case(inDae,_)
+    case (_,_)
       equation
         false = System.getHasInnerOuterDefinitions();
       then ();
     // if call scope is TOP level (true) do the checking
-    case(inDae,true)
+    case (_,true)
       equation
         //print("DAE has :" +& intString(listLength(inDae)) +& " elements\n");
         (DAE.DAE(innerVars),DAE.DAE(outerVars)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
         checkMissingInnerDecl1(DAE.DAE(innerVars),DAE.DAE(outerVars));
       then ();
     // if call scope is NOT TOP level (false) do nothing
-    case(inDae,false)
-      then ();
+    case (_,false) then ();
    end matchcontinue;
 end checkMissingInnerDecl;
 
@@ -847,12 +842,12 @@ algorithm
       DAE.ElementSource source;
       Absyn.Info info;
 
-    case(DAE.VAR(componentRef=cr),innerVars)
+    case(DAE.VAR(componentRef=cr),_)
       equation
         crs = List.map(innerVars, DAEUtil.varCref);
         {_} = List.select1(crs, isInnerOuterMatch, cr);
       then ();
-    case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)
+    case(DAE.VAR(componentRef=cr, innerOuter = io),_)
       equation
         // ?? adrpo: NOT USED! TODO! FIXME! str2 = Dump.unparseInnerouterStr(io);
         crs = List.map(innerVars,DAEUtil.varCref);
@@ -860,7 +855,7 @@ algorithm
         // ?? adrpo: NOT USED! TODO! FIXME! str = ComponentReference.printComponentRefStr(cr);
         failExceptForCheck();
       then ();
-    case(DAE.VAR(componentRef=cr, innerOuter = io, source = source),innerVars)
+    case(DAE.VAR(componentRef=cr, innerOuter = io, source = source),_)
       equation
         crs = List.map(innerVars,DAEUtil.varCref);
         {} = List.select1(crs, isInnerOuterMatch, cr);
@@ -915,7 +910,7 @@ algorithm
     local Boolean b1,b2;
     case(Absyn.INNER_OUTER(),Absyn.NOT_INNER_OUTER()) then (true,false);
     case(Absyn.INNER_OUTER(),Absyn.OUTER()) then (false,true);
-    case(io1,io2)
+    case(_,_)
       equation
         (_,b1) = innerOuterBooleans(io1);
         (_,b2) = innerOuterBooleans(io2);
@@ -949,13 +944,13 @@ public function assertDifferentFaces
 algorithm
   _ := matchcontinue (env,inIH,inComponentRef1,inComponentRef2)
     local DAE.ComponentRef c1,c2;
-    case (env,inIH,c1,c2)
+    case (_,_,c1,c2)
       equation
         Connect.INSIDE()  = ConnectUtil.componentFace(env,inIH,c1);
         Connect.OUTSIDE() = ConnectUtil.componentFace(env,inIH,c1);
       then
         ();
-    case (env,inIH,c1,c2)
+    case (_,_,c1,c2)
       equation
         Connect.OUTSIDE() = ConnectUtil.componentFace(env,inIH,c1);
         Connect.INSIDE()  = ConnectUtil.componentFace(env,inIH,c1);
@@ -1135,7 +1130,7 @@ public function switchInnerToOuterAndPrefix
                    source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
-                   innerOuter=Absyn.INNER()) :: r),io,pre)
+                   innerOuter=Absyn.INNER()) :: r),_,_)
       equation
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,pre, cr);
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
@@ -1143,21 +1138,21 @@ public function switchInnerToOuterAndPrefix
         (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
 
     // If var already have inner/outer, keep it.
-    case ( (v as DAE.VAR(componentRef = _)) :: r,io,pre)
+    case ( (v as DAE.VAR(componentRef = _)) :: r,_,_)
       equation
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
         v :: r_1;
 
     // Traverse components
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),io,pre)
+    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),_,_)
       equation
         lst_1 = switchInnerToOuterAndPrefix(lst, io, pre);
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
         (DAE.COMP(idName,lst_1,source,comment) :: r_1);
 
-    case ((x :: r),io, pre)
+    case ((x :: r),_,_)
       equation
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
@@ -1209,7 +1204,7 @@ public function prefixOuterDaeVars
                    source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
-                   innerOuter=io) :: r),crefPrefix)
+                   innerOuter=io) :: r),_)
       equation
         (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,crefPrefix, cr);
         r_1 = prefixOuterDaeVars(r, crefPrefix);
@@ -1217,14 +1212,14 @@ public function prefixOuterDaeVars
         (DAE.VAR(cr,vk,dir,prl,prot,t,e,id,ct,source,dae_var_attr,comment,io) :: r_1);
 
     // Traverse components
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),crefPrefix)
+    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),_)
       equation
         lst_1 = prefixOuterDaeVars(lst, crefPrefix);
         r_1 = prefixOuterDaeVars(r, crefPrefix);
       then
         (DAE.COMP(idName,lst_1,source,comment) :: r_1);
 
-    case ((x :: r),crefPrefix)
+    case ((x :: r),_)
       equation
         r_1 = prefixOuterDaeVars(r, crefPrefix);
       then
@@ -1979,7 +1974,7 @@ algorithm
       Key key;
       Value value;
     // Adding when not existing previously
-    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+    case ((v as (key,value)),HASHTABLE(hashvec,varr,bsize,n))
       equation
         hval = hashFunc(key);
         indx = intMod(hval, bsize);
@@ -1989,11 +1984,10 @@ algorithm
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
-    case (_,_)
+    else
       equation
         print("- InnerOuter.addNoUpdCheck failed\n");
-      then
-        fail();
+      then fail();
   end matchcontinue;
 end addNoUpdCheck;
 
@@ -2017,18 +2011,17 @@ algorithm
       tuple<Key,Value> v,newv;
       Value value;
     // adding when already present => Updating value
-    case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+    case (_,HASHTABLE(hashvec,varr,bsize,n))
       equation
         (_,indx) = get1(key, hashTable);
         indx_1 = indx - 1;
         varr_1 = valueArrayClearnth(varr, indx);
       then HASHTABLE(hashvec,varr_1,bsize,n);
-    case (_,hashTable)
+    else
       equation
         print("-InstHierarchyHashTable.delete failed\n");
         print("content:"); dumpInstHierarchyHashTable(hashTable);
-      then
-        fail();
+      then fail();
   end matchcontinue;
 end delete;
 
@@ -2274,13 +2267,13 @@ algorithm
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
       Integer n,size;
-    case (VALUE_ARRAY(n,size,arr),pos)
+    case (VALUE_ARRAY(n,size,arr),_)
       equation
         (pos < size) = true;
         arr_1 = arrayUpdate(arr, pos + 1,NONE());
       then
         VALUE_ARRAY(n,size,arr_1);
-    case (_,_)
+    else
       equation
         print("-InstHierarchyHashTable.valueArrayClearnth failed\n");
       then

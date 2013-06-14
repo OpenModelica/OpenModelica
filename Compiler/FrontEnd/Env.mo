@@ -458,25 +458,24 @@ end getScopeName;
 public function getScopeNames "function: getScopeName
  Returns the name of a scope, if no name exist, the function fails."
   input Env inEnv;
-  output list<Ident> names;
+  output list<String> names;
 algorithm
   names := matchcontinue (inEnv)
-    local String name;
-
+    local
+      String name;
+      Env rest;
     // empty list
     case ({}) then {};
     // frame with a name
-    case ((FRAME(name = SOME(name))::inEnv))
+    case ((FRAME(name = SOME(name)):: rest))
       equation
-        names = getScopeNames(inEnv);
-      then
-        name::names;
+        names = getScopeNames(rest);
+      then name::names;
     // frame without a name
-    case ((FRAME(name = NONE())::inEnv))
+    case ((FRAME(name = NONE())::rest))
       equation
-        names = getScopeNames(inEnv);
-      then
-        "-NONAME-"::names;
+        names = getScopeNames(rest);
+      then "-NONAME-"::names;
   end matchcontinue;
 end getScopeNames;
 
@@ -1802,6 +1801,7 @@ end printEnvStr;
 public function printEnv "function: printEnv
   Print the environment to the Print buffer."
   input Env e;
+protected
   Ident s;
 algorithm
   s := printEnvStr(e);
@@ -1816,14 +1816,13 @@ algorithm
       list<DAE.ComponentRef> crs;
       CSetsType clst;
 
-    case(env as (FRAME(connectionSet = clst)::_))
+    case (FRAME(connectionSet = clst)::_)
       equation
         crs = List.flatten(List.map(clst, Util.tuple21));
         print(printEnvPathStr(env));print(" :   ");
         print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
         print("\n");
-      then
-        ();
+      then ();
   end matchcontinue;
 end printEnvConnectionCrefs;
 
@@ -2354,7 +2353,7 @@ algorithm
       list<CacheTree> children;
       String s,s1;
 
-    case (CACHETREE(id,_,children),indent)
+    case (CACHETREE(id,_,children),_)
       equation
         s = stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
         s1 = stringAppendList(List.fill(" ",indent));
@@ -2362,32 +2361,6 @@ algorithm
       then str;
   end matchcontinue;
 end printCacheTreeStr;
-
-protected function dummyDump "
-  Author: BZ, 2009-05
-  Debug function, print subscripts."
-  input list<DAE.Subscript> subs;
-  output String str;
-algorithm
-  str := matchcontinue(subs)
-    local DAE.Subscript s;
-    case(subs)
-      equation
-        str = " subs: " +& stringDelimitList(List.map(subs,ExpressionDump.printSubscriptStr),", ") +& "\n";
-        print(str);
-      then
-        str;
-  end matchcontinue;
-end dummyDump;
-
-protected function integer2Subscript "
-@author adrpo
- given an integer transform it into an DAE.Subscript"
-  input  Integer       index;
-  output DAE.Subscript subscript;
-algorithm
- subscript := DAE.INDEX(DAE.ICONST(index));
-end integer2Subscript;
 
 /* AVL impementation */
 public type AvlKey = String;
@@ -2603,7 +2576,7 @@ algorithm
     // type can replace type
     case (TYPE(tys = _),       TYPE(tys = _)) then ();
     // anything else is an error!
-    case (val1, val2)
+    else
       equation
         (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2);
         Error.addSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
@@ -2643,7 +2616,7 @@ algorithm
         (n1, n2, aInfo);
 
     // anything else that might happen??
-    case (val1, val2)
+    else
       equation
         n1 = valueStr(val1);
         n2 = valueStr(val2);

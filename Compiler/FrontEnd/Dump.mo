@@ -5357,6 +5357,7 @@ end unparseTypeSpecLst;
 
 public function printTypeSpec
   input Absyn.TypeSpec typeSpec;
+protected
   Ident str;
 algorithm
   str := unparseTypeSpec(typeSpec);
@@ -5368,6 +5369,7 @@ public function stdout "function: stdout
   Prints the text sent to the print buffer (Print.mo) to stdout (i.e.
   using MetaModelica Compiler (MMC) standard print). After printing, the print buffer is cleared.
 "
+protected
   Ident str;
 algorithm
   str := Print.getString();

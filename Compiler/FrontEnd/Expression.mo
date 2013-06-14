@@ -362,15 +362,7 @@ public function stringifyCrefs
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp)
-    local
-      DAE.Exp e;
-    case(inExp)
-      equation
-        ((e,_)) = traverseExp(inExp, traversingstringifyCrefFinder, {});
-      then
-        e;
-  end matchcontinue;
+  ((outExp,_)) := traverseExp(inExp, traversingstringifyCrefFinder, {});
 end stringifyCrefs;
 
 public function traversingstringifyCrefFinder "
@@ -398,7 +390,7 @@ algorithm
       then
       ((makeCrefExp(crs,ty), ilst ));
 
-    case(inExp) then inExp;
+    else inExp;
 
   end matchcontinue;
 end traversingstringifyCrefFinder;
@@ -602,7 +594,7 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e21),op,DAE.BINARY(e1,DAE.MUL(tp),e22));
 
-    case(e) then e;
+    else e;
   end matchcontinue;
 end expand;
 
@@ -826,7 +818,7 @@ algorithm
       list<Subscript> subs;
       DAE.Exp e;
 
-    case(DAE.CREF(cr,t),subscr)
+    case (DAE.CREF(cr,t),_)
       equation
         cr1 = ComponentReference.crefStripLastSubs(cr);
         subs = ComponentReference.crefLastSubs(cr);
@@ -3479,16 +3471,14 @@ public function makeAsubAddIndex "creates an ASUB given an expression and an ind
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(e,indx)
-    local list<DAE.Exp> subs;
-
-    case(DAE.ASUB(e,subs),indx)
+    local
+      list<DAE.Exp> subs;
+      DAE.Exp exp;
+    case (DAE.ASUB(exp,subs),_)
       equation
         subs = listAppend(subs,{DAE.ICONST(indx)});
-      then
-        makeASUB(e,subs);
-
-    case(e,indx) then makeASUB(e,{DAE.ICONST(indx)});
-
+      then makeASUB(exp,subs);
+    else makeASUB(e,{DAE.ICONST(indx)});
   end matchcontinue;
 end makeAsubAddIndex;
 
@@ -5288,7 +5278,7 @@ algorithm
       then
         ((e, (crefs,dcrefs) ));
 
-    case(inExp) then inExp;
+    else inExp;
 
   end matchcontinue;
 end traversingDerAndComponentRefFinder;
@@ -5300,16 +5290,7 @@ public function expHasCref "function expHasCref
   input ComponentRef inCr;
   output Boolean hasCref;
 algorithm
-  hasCref := match(inExp,inCr)
-    local
-      Boolean b;
-
-    case(_,_)
-      equation
-        ((_,(_,b))) = traverseExpTopDown(inExp, traversingexpHasCref, (inCr,false));
-      then
-        b;
-  end match;
+  ((_,(_,hasCref))) := traverseExpTopDown(inExp, traversingexpHasCref, (inCr,false));
 end expHasCref;
 
 public function traversingexpHasCref "
@@ -5513,14 +5494,7 @@ Author: Frenkel TUD 2010-02, Extracts all Division DAE.Exp from an Expression."
   input DAE.Exp inExp;
   output list<DAE.Exp> outExps;
 algorithm
-  outExps := match(inExp)
-    local list<DAE.Exp> exps;
-    case(inExp)
-      equation
-        ((_,exps)) = traverseExp(inExp, traversingDivExpFinder, {});
-      then
-        exps;
-  end match;
+  ((_,outExps)) := traverseExp(inExp, traversingDivExpFinder, {});
 end extractDivExpFromExp;
 
 protected function traversingDivExpFinder "
@@ -5546,7 +5520,7 @@ algorithm outExp := matchcontinue(inExp)
   case( ( e as DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), exps) )
     then ((e, e2::exps ));
 
-  case(inExp) then inExp;
+  else inExp;
 
 end matchcontinue;
 end traversingDivExpFinder;
@@ -6694,14 +6668,7 @@ public function isExpReal ""
   input DAE.Exp e;
   output Boolean re;
 algorithm
-  re := matchcontinue(e)
-    local Type t;
-    case(e)
-      equation
-        t = typeof(e);
-        then
-          isReal(t);
-  end matchcontinue;
+  re := isReal(typeof(e));
 end isExpReal;
 
 public function isConstZeroLength

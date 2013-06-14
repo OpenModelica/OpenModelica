@@ -142,12 +142,7 @@ public function dumpFunctionNamesStr "return all function names in a string  (co
   input DAE.FunctionTree funcs;
   output String str;
 algorithm
-  str := matchcontinue(funcs)
-    case funcs
-      equation
-        str = stringDelimitList(List.map(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
-    then str;
-  end matchcontinue;
+  str := stringDelimitList(List.map(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
 end dumpFunctionNamesStr;
 
 public function functionNameStr
@@ -167,7 +162,7 @@ algorithm
        equation
          res = Absyn.pathStringNoQual(fpath);
        then res;
-     case _ then "";
+     else "";
   end matchcontinue;
 end functionNameStr;
 
@@ -1509,37 +1504,6 @@ algorithm
   end matchcontinue;
 end dumpInitialAlgorithm;
 
-public function dumpFunctionNames "
-  Author BZ
-  print function names"
-  input list<DAE.Function> fs;
-  output list<String> names;
-algorithm
-  names := matchcontinue(fs)
-    local
-      Absyn.Path p;
-      String s1;
-
-    case({}) then {};
-
-    case(DAE.FUNCTION(path=p)::fs)
-      equation
-        s1 = Absyn.pathStringNoQual(p);
-        names = dumpFunctionNames(fs);
-      then
-        s1::names;
-
-    case(DAE.RECORD_CONSTRUCTOR(path=p)::fs)
-      equation
-        s1 = Absyn.pathStringNoQual(p);
-        names = dumpFunctionNames(fs);
-      then
-        s1::names;
-
-    case(_::fs) then dumpFunctionNames(fs);
-  end matchcontinue;
-end dumpFunctionNames;
-
 protected function dumpExtObjectClass
 "function: dumpExtObjectClass
   Dump External Object class"
@@ -1582,28 +1546,6 @@ algorithm
     case(DAE.ZERO_DERIVATIVE()) then "zeroDerivative";
   end matchcontinue;
 end derivativeCondStr;
-
-public function dumpDerivativeCond "debug function "
-  input list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
-  output list<String> oStrings;
-algorithm
-  oStrings := matchcontinue( conditionRefs)
-    local
-      DAE.derivativeCond derCond;
-      String s1;
-      Integer name;
-
-    case({}) then {};
-
-    case((name,derCond)::conditionRefs)
-      equation
-        oStrings = dumpDerivativeCond(conditionRefs);
-        s1 = derivativeCondStr(derCond);
-        s1 = intString(name) +& " = " +& s1;
-      then
-        s1::oStrings;
-  end matchcontinue;
-end dumpDerivativeCond;
 
 protected function dumpFunction
 "function: dumpFunction
