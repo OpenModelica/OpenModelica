@@ -117,6 +117,7 @@ public:
   static QString save;
   static QString chooseDirectory;
   static QString general;
+  static QString output;
   static QString parameters;
   static QString name;
   static QString comment;

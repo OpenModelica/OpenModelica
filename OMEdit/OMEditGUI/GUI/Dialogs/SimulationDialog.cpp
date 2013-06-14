@@ -129,6 +129,8 @@ void SimulationDialog::setUpForm()
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit;
+  // show generated files checkbox
+  mpShowGeneratedFilesCheckBox = new QCheckBox(tr("Show Generated Files"));
   // set Output Tab Layout
   QGridLayout *pOutputTabLayout = new QGridLayout;
   pOutputTabLayout->setAlignment(Qt::AlignTop);
@@ -140,9 +142,10 @@ void SimulationDialog::setUpForm()
   pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1);
   pOutputTabLayout->addWidget(mpVariableFilterLabel, 3, 0);
   pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 4, 0, 1, 2);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpOutputTab, tr("Output"));
+  mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
   // Simulation Flags Tab
   mpSimulationFlagsTab = new QWidget;
   // Simulation Flags Tab scroll area
@@ -705,7 +708,9 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
 #endif
     mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
     mpSimulationProcess->setProcessChannelMode(QProcess::MergedChannels);
-    SimulationOutputDialog *pSimulationOutputDialog = new SimulationOutputDialog(mpLibraryTreeNode->getNameStructure(), mpSimulationProcess, mpMainWindow);
+    SimulationOutputDialog *pSimulationOutputDialog;
+    pSimulationOutputDialog = new SimulationOutputDialog(mpLibraryTreeNode->getNameStructure(), output_file,
+                                                         mpShowGeneratedFilesCheckBox->isChecked(), mpSimulationProcess, mpMainWindow);
     connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputDialog, SLOT(writeSimulationOutput()));
     connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputDialog, SLOT(showSimulationOutputDialog()));
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
@@ -766,6 +771,11 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     if (mpSimulationProcess->error() != QProcess::UnknownError)
     {
       pSimulationOutputDialog->getSimulationOutputTextBox()->insertPlainText("\n\n" + mpSimulationProcess->errorString());
+      if (pSimulationOutputDialog->isHidden())
+        pSimulationOutputDialog->showSimulationOutputDialog();
+    }
+    else if (mpShowGeneratedFilesCheckBox->isChecked())
+    {
       if (pSimulationOutputDialog->isHidden())
         pSimulationOutputDialog->showSimulationOutputDialog();
     }
@@ -883,24 +893,46 @@ void ProgressDialog::setText(QString text)
   \param pSimulationProcess - the simulation process.
   \param pParent - pointer to MainWindow.
   */
-SimulationOutputDialog::SimulationOutputDialog(QString modelName, QProcess *pSimulationProcess, MainWindow *pParent)
+SimulationOutputDialog::SimulationOutputDialog(QString className, QString outputFile, bool showGeneratedFiles,
+                                               QProcess *pSimulationProcess, MainWindow *pParent)
   : QDialog(pParent, Qt::WindowTitleHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(modelName).append(" ").append(tr("Simulation Output")));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(className).append(" ").append(tr("Simulation Output")));
   setMinimumSize(550, 300);
   mpSimulationProcess = pSimulationProcess;
   mpMainWindow = pParent;
+  // Generated Files tab widget
+  mpGeneratedFilesTabWidget = new QTabWidget;
   // Simulation Output TextBox
   mpSimulationOutputTextBox = new QPlainTextEdit;
   mpSimulationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBox, Helper::output);
+  if (showGeneratedFiles)
+  {
+    QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
+    /* className.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append(".c"));
+    /* className_functions.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_functions.c"));
+    /* className_functions.h tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_functions.h"));
+    /* className_info.xml tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_info.xml"));
+    /* className_init.xml tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_init.xml"));
+    /* className_model.h tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_model.h"));
+    /* className_records.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_records.c"));
+  }
   // Close Button
   mpCloseButton = new QPushButton(Helper::close);
   connect(mpCloseButton, SIGNAL(clicked()), SLOT(close()));
   // layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
-  pMainLayout->addWidget(mpSimulationOutputTextBox);
+  pMainLayout->addWidget(mpGeneratedFilesTabWidget);
   pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignRight);
   setLayout(pMainLayout);
 }
@@ -912,6 +944,20 @@ SimulationOutputDialog::SimulationOutputDialog(QString modelName, QProcess *pSim
 QPlainTextEdit* SimulationOutputDialog::getSimulationOutputTextBox()
 {
   return mpSimulationOutputTextBox;
+}
+
+void SimulationOutputDialog::addGeneratedFileTab(QString fileName)
+{
+  QFile file(fileName);
+  QFileInfo fileInfo(fileName);
+  if (file.exists())
+  {
+    file.open(QIODevice::ReadOnly);
+    QPlainTextEdit *pPlainTextEdit = new QPlainTextEdit(QString(file.readAll()));
+    pPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
+    mpGeneratedFilesTabWidget->addTab(pPlainTextEdit, fileInfo.fileName());
+    file.close();
+  }
 }
 
 /*!

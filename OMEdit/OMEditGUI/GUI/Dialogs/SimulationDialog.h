@@ -84,6 +84,7 @@ private:
   QLineEdit *mpFileNameTextBox;
   Label *mpVariableFilterLabel;
   QLineEdit *mpVariableFilterTextBox;
+  QCheckBox *mpShowGeneratedFilesCheckBox;
   // Simulation Flags Tab
   QWidget *mpSimulationFlagsTab;
   QScrollArea *mpSimulationFlagsTabScrollArea;
@@ -166,11 +167,14 @@ class SimulationOutputDialog : public QDialog
 {
   Q_OBJECT
 public:
-  SimulationOutputDialog(QString modelName, QProcess *pSimulationProcess, MainWindow *pParent);
+  SimulationOutputDialog(QString className, QString outputFile, bool showGeneratedFiles, QProcess *pSimulationProcess,
+                         MainWindow *pParent);
   QPlainTextEdit* getSimulationOutputTextBox();
+  void addGeneratedFileTab(QString fileName);
 private:
   QProcess *mpSimulationProcess;
   MainWindow *mpMainWindow;
+  QTabWidget *mpGeneratedFilesTabWidget;
   QPlainTextEdit *mpSimulationOutputTextBox;
   QPushButton *mpCloseButton;
 public slots:

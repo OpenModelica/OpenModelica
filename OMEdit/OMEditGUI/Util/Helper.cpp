@@ -111,6 +111,7 @@ QString Helper::edit;
 QString Helper::save;
 QString Helper::chooseDirectory;
 QString Helper::general;
+QString Helper::output;
 QString Helper::parameters;
 QString Helper::name;
 QString Helper::comment;
@@ -225,6 +226,7 @@ void Helper::initHelperVariables()
   Helper::importFMU = tr("Import FMU");
   Helper::chooseDirectory = tr("Choose Directory");
   Helper::general = tr("General");
+  Helper::output = tr("Output");
   Helper::parameters = tr("Parameters");
   Helper::name = tr("Name:");
   Helper::comment = tr("Comment:");
