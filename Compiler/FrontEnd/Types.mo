@@ -2210,8 +2210,7 @@ algorithm
       equation
         res = unparseType(ty);
         res = "#" /* this is a box */ +& res;
-      then
-        res;
+      then res;
 
     // MetaModelica Option type
     case (DAE.T_METAOPTION(optionType = DAE.T_UNKNOWN(_))) then "Option<Any>";
@@ -5468,6 +5467,7 @@ algorithm
     case (DAE.T_ANYTYPE(anyClassType = _)) then true;
     case (DAE.T_UNKNOWN(_)) then true;
     case (DAE.T_METATYPE(ty = _)) then true;
+    case (DAE.T_NORETCALL(source = _)) then true;
     case _ then false;
   end matchcontinue;
 end isBoxedType;
@@ -5483,8 +5483,7 @@ algorithm
     case (DAE.T_TUPLE(tupleType = tys))
       equation
         tys = List.map(tys, boxIfUnboxedType);
-      then
-        DAE.T_METATUPLE(tys,DAE.emptyTypeSource); // TODO?! should now propagate the type source?
+      then DAE.T_METATUPLE(tys,DAE.emptyTypeSource); // TODO?! should now propagate the type source?
 
     case _ then Util.if_(isBoxedType(ty), ty, DAE.T_METABOXED(ty,DAE.emptyTypeSource));
 

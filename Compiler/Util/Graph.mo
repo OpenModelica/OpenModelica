@@ -405,13 +405,13 @@ algorithm
       tuple<NodeType, list<NodeType>> graph_node;
       list<tuple<NodeType, list<NodeType>>> rest_graph;
 
-    case (_, (node, _) :: _, _, inIndex)
+    case (_, (node, _) :: _, _, _)
       equation
         true = inEqualFunc(inNode, node);
       then
         inIndex;
 
-    case (_, _ :: rest_graph, _, inIndex)
+    case (_, _ :: rest_graph, _, _)
       then findIndexofNodeInGraph(inNode, rest_graph, inEqualFunc, inIndex+1);
 
   end matchcontinue;
@@ -480,14 +480,13 @@ algorithm
       list<NodeType> nodeList;
       tuple<NodeType, list<NodeType>> vertex;
       list<tuple<NodeType, list<NodeType>>> restGraph,tmpGraph;
-    case(intmpGraph,{},inEqualFunc)
-    then intmpGraph;
-    case(intmpGraph,(node,nodeList)::restGraph,inEqualFunc)
+    case(_,{},_) then intmpGraph;
+    case(_,(node,nodeList)::restGraph,_)
       equation
         tmpGraph = List.fold2(nodeList,insertNodetoGraph,node,inEqualFunc,intmpGraph);
         tmpGraph = transposeGraph(tmpGraph,restGraph,inEqualFunc);
       then tmpGraph;
-        else
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.transpose failed."});
       then fail();
@@ -518,14 +517,14 @@ algorithm
     list<NodeType> rest;
     list<tuple<NodeType, list<NodeType>>> restGraph;
 
-  case (inNode, inVertex, inEqualFunc, {}) then {};
-  case (inNode, inVertex, inEqualFunc, (node,rest)::restGraph)
+  case (_, _, _, {}) then {};
+  case (_, _, _, (node,rest)::restGraph)
     equation
       true = inEqualFunc(node, inNode);
       rest = List.unionList({rest, {inVertex}});
       restGraph = insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
     then (node,rest)::restGraph;
-  case (inNode, inVertex, inEqualFunc, (node,rest)::restGraph)
+  case (_, _, _, (node,rest)::restGraph)
     equation
       false = inEqualFunc(node, inNode);
       restGraph = insertNodetoGraph(inNode, inVertex, inEqualFunc, restGraph);
@@ -555,9 +554,8 @@ algorithm
       NodeType node;
       list<NodeType> edges,M,L;
       list<tuple<NodeType, list<NodeType>>> restGraph;
-    case(({},L),inGraph,inEqualFunc)
-    then L;
-    case((node::M,L),inGraph,inEqualFunc)
+    case (({},L),_,_) then L;
+    case ((node::M,L),_,_)
       equation
         L = listAppend(L,{node});
         //print(" List size 1 " +& intString(listLength(L)) +& "\n");
@@ -569,7 +567,7 @@ algorithm
         //print("Start new round! \n");
         reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
       then reachableNodes;
-    case((node::M,L),inGraph,inEqualFunc)
+    case ((node::M,L),_,_)
       equation
         L = listAppend(L,{node});
         failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
@@ -624,8 +622,8 @@ algorithm
     array<Option<list<NodeType>>> forbiddenColor;
     array<Integer> colored;
     Integer color, index;
-    case ({},_,_,_,_,inColored, _, _) then inColored;
-    case (node::rest, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
+    case ({},_,_,_,_,_, _, _) then inColored;
+    case (node::rest, _, _, _, _, _, _, _)
       equation
         index = arrayLength(inColored) - listLength(rest);
         ((_,nodes)) = findNodeInGraph(node, inGraphT, inEqualFunc);
@@ -633,8 +631,8 @@ algorithm
         color = arrayFindMinColorIndex(forbiddenColor, node, 1, arrayLength(inColored)+1, inEqualFunc, inPrintFunc);
         colored = arrayUpdate(inColored, index, color);
         colored = partialDistance2color(rest, forbiddenColor, inColors, inGraph, inGraphT, colored, inEqualFunc, inPrintFunc);
-    then colored;
-      else
+      then colored;
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2color failed."});
       then fail();
@@ -675,8 +673,8 @@ algorithm
     array<Option<list<NodeType>>> forbiddenColor,forbiddenColor1;
     list<Option<list<NodeType>>> listOptFobiddenColors;
     list<list<NodeType>> listFobiddenColors;
-    case (inNode, {}, _, inForbiddenColor, _, _, _) then inForbiddenColor;
-    case (inNode, node::rest, inColored, forbiddenColor, inGraph, inEqualFunc, inPrintFunc)
+    case (_, {}, _, _, _, _, _) then inForbiddenColor;
+    case (_, node::rest, _, forbiddenColor, _, _, _)
       equation
         ((_,nodes)) = findNodeInGraph(node, inGraph, inEqualFunc);
         indexes = List.map3(nodes, findIndexofNodeInGraph, inGraph, inEqualFunc, 1);
@@ -721,13 +719,13 @@ protected
   list<NodeType> arrayElem;
 algorithm
   _ := matchcontinue(inIndex, inArray, inNode)
-  local
-     list<NodeType> arrElem;
-    case (inIndex, inArray, inNode)
+    local
+      list<NodeType> arrElem;
+    case (_, _, _)
       equation
-      _ = arrayUpdate(inArray, inIndex, SOME({inNode}));
-    then ();
-      else
+        _ = arrayUpdate(inArray, inIndex, SOME({inNode}));
+      then ();
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.arrayUpdateListAppend failed."});
       then fail();
@@ -767,19 +765,19 @@ algorithm
   local
     list<NodeType> nodes;
     Integer index;
-    case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+    case (_, _, _, _, _, _)
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);
         //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;
-    case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+    case (_, _, _, _, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
         failure(_ = List.getMemberOnTrue(inNode, nodes, inEqualFunc));
         //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;
-    case (inForbiddenColor, inNode, inIndex, inmaxIndex, inEqualFunc, inPrintFunc)
+    case (_, _, _, _, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
@@ -857,13 +855,13 @@ public function printNodesInt
   input String inName;
 algorithm
  _ := match(inListNodes, inName)
-   local
-     list<String> strNodes;
-     case ({}, inName)
+     local
+       list<String> strNodes;
+     case ({}, _)
        equation
-       print(inName +& "\n");
+         print(inName +& "\n");
        then ();
-     case (inListNodes, inName)
+     case (_, _)
        equation
          print(inName +& " : ");
          strNodes = List.map(inListNodes, intString);
@@ -889,9 +887,8 @@ algorithm
       tuple<list<Integer>, list<Integer>> tmpstorage;
       Integer node;
       list<Integer> edges,M,L;
-    case(({},L),inGraph,_,_)
-    then L;
-    case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
+    case (({},L),_,_,_) then L;
+    case ((node::M,L),_,_,_)
       equation
         L = List.union(L,{node});
         false = intGe(node,inMaxGraphNode);
@@ -900,13 +897,13 @@ algorithm
         M = List.union(M,edges);
         reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;
-    case((node::M,L),inGraph,inMaxGraphNode,inMaxNodexIndex)
+    case ((node::M,L),_,_,_)
       equation
         L = List.union(L,{node});
         true = intGe(node,inMaxGraphNode);
         reachableNodes = allReachableNodesInt((M,L),inGraph,inMaxGraphNode,inMaxNodexIndex);
       then reachableNodes;
-        else
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNodesInt failed."});
       then fail();

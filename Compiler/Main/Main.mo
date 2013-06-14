@@ -833,16 +833,6 @@ algorithm
   end matchcontinue;
 end simcodegen;
 
-protected function runModparQ
-"function: runModparQ
-  Returns true if parallelization should be run."
-  output Boolean res;
-  Integer n;
-algorithm
-  n := Config.noProc();
-  res := (n > 0);
-end runModparQ;
-
 protected function interactivemode
 "function: interactivemode
   Initiate the interactive mode using socket communication."

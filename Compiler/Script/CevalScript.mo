@@ -2888,27 +2888,6 @@ algorithm
  end matchcontinue;
 end cevalInteractiveFunctions2;
 
-protected function visualizationVarShouldBeAdded
-  input String var;
-  input list<String> inIds;
-algorithm
-  _ := matchcontinue (var,inIds)
-    local
-      String id;
-      list<String> ids;
-
-    case (var,id::ids)
-      equation
-        false = 0 == stringLength(id);
-        true = 0 == System.strncmp(var,id,stringLength(id));
-      then ();
-    case (var,_::ids)
-      equation
-        visualizationVarShouldBeAdded(var,ids);
-      then ();
-  end matchcontinue;
-end visualizationVarShouldBeAdded;
-
 protected function sconstToString
 "@author: adrpo
   Transform an DAE.SCONST into a string.
@@ -3878,23 +3857,6 @@ algorithm
   end matchcontinue;
 end compileModel;
 
-protected function readEnvNoFail
-"@author: adrpo
- System.readEnv can fail, if it does this function returns the empty string"
-  input String variableName;
-  output String variableValue;
-algorithm
-    variableValue := matchcontinue(variableName)
-      local String vValue;
-      case (variableName)
-        equation
-          vValue = System.readEnv(variableName);
-        then
-          vValue;
-      case (variableName) then "";
-  end matchcontinue;
-end readEnvNoFail;
-
 protected function winCitation "function: winCitation
   author: PA
   Returns a citation mark if platform is windows, otherwise empty string.
@@ -3906,8 +3868,7 @@ algorithm
     case ()
       equation
         "WIN32" = System.platform();
-      then
-        "\"";
+      then "\"";
     case () then "";
   end matchcontinue;
 end winCitation;
@@ -4010,7 +3971,7 @@ algorithm
 
     case (_, "") then "";
 
-    case (inString, selector)
+    else
       equation
         s = inString +& selector;
       then s;
@@ -4090,10 +4051,11 @@ public function subtractDummy
   output Integer outVarSize;
 algorithm
   (outEqnSize,outVarSize) := matchcontinue(vars,eqnSize,varSize)
-    case(vars,eqnSize,varSize) equation
-      (_,_) = BackendVariable.getVar(ComponentReference.makeCrefIdent("$dummy",DAE.T_UNKNOWN_DEFAULT,{}),vars);
-    then (eqnSize-1,varSize-1);
-    case(vars,eqnSize,varSize) then (eqnSize,varSize);
+    case(_,_,_)
+      equation
+        (_,_) = BackendVariable.getVar(ComponentReference.makeCrefIdent("$dummy",DAE.T_UNKNOWN_DEFAULT,{}),vars);
+      then (eqnSize-1,varSize-1);
+    else (eqnSize,varSize);
   end matchcontinue;
 end subtractDummy;
 
@@ -4292,24 +4254,6 @@ algorithm
   end matchcontinue;
 end getAllClassPathsRecursive;
 
-protected function filterLib
-  input Absyn.Path path;
-  output Boolean b;
-  Boolean b1, b2, b3;
-algorithm
-  b1 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Media")), path);
-  b2 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Fluid")), path);
-  b3 := not Absyn.pathPrefixOf(
-              Absyn.QUALIFIED("Modelica",
-                Absyn.QUALIFIED("Mechanics",
-                  Absyn.QUALIFIED("MultiBody",
-                    Absyn.QUALIFIED("Examples",
-                      Absyn.QUALIFIED("Loops",
-                        Absyn.QUALIFIED("Utilities",
-                          Absyn.IDENT("EngineV6_analytic"))))))), path);
-  b  := b1 and b2; // and b3;
-end filterLib;
-
 public function checkAllModelsRecursive
 "@author adrpo
  checks all models and returns number of variables and equations"
@@ -4338,8 +4282,6 @@ algorithm
     case (cache,env,_,b,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, b, p);
-        // allClassPaths = List.select(allClassPaths, filterLib);
-        // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
         // print ("All paths: \n" +& stringDelimitList(List.map(allClassPaths, Absyn.pathString), "\n") +& "\n");
         checkAll(cache, env, allClassPaths, st, msg);

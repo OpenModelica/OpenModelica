@@ -1668,10 +1668,10 @@ algorithm
                                 crefToSimVarHT);
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
-      Debug.fcall(Flags.EXEC_FILES, print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
+      // print("*** SimCode -> collect all files started: " +& realString(clock()) +& "\n");
       // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
       // simCode = collectAllFiles(simCode);
-      Debug.fcall(Flags.EXEC_FILES, print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
+      // print("*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n");
     then simCode;
       
     else equation

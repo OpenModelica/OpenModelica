@@ -3517,16 +3517,16 @@ protected function renameComponentInIterators
   output Absyn.ForIterators iteratorsRenamed;
 algorithm
   iteratorsRenamed := matchcontinue(iterators, oldComp, newComp)
-  local
-    Absyn.ForIterators rest, restNew;
-    Absyn.Exp exp, expNew; String i;
+    local
+      Absyn.ForIterators rest, restNew;
+      Absyn.Exp exp, expNew; String i;
     case ({}, _, _) then {};
-    case (Absyn.ITERATOR(i, NONE(), SOME(exp))::rest, oldComp, newComp)
+    case (Absyn.ITERATOR(i, NONE(), SOME(exp))::rest, _, _)
       equation
         expNew = renameComponentInExp(exp, oldComp, newComp);
         restNew = renameComponentInIterators(rest, oldComp, newComp);
       then Absyn.ITERATOR(i, NONE(), SOME(expNew))::restNew;
-    case (Absyn.ITERATOR(i, NONE(), NONE())::rest, oldComp, newComp)
+    case (Absyn.ITERATOR(i, NONE(), NONE())::rest, _, _)
       equation
         restNew = renameComponentInIterators(rest, oldComp, newComp);
       then Absyn.ITERATOR(i, NONE(), NONE())::restNew;
@@ -15080,14 +15080,16 @@ public function getDefineunitsInElements "retrives defineunit definitions in ele
   output list<Absyn.Element> outElts;
 algorithm
   outElts := matchcontinue(elts)
-  local Absyn.Element e;
-    case({}) then {};
-    case(Absyn.ELEMENTITEM(e as Absyn.DEFINEUNIT(name=_))::elts) equation
-      outElts = getDefineunitsInElements(elts);
-    then e::outElts;
-    case(_::elts) equation
-      outElts = getDefineunitsInElements(elts);
-    then outElts;
+    local
+      Absyn.Element e;
+      list<Absyn.ElementItem> rest;
+    case {} then {};
+    case (Absyn.ELEMENTITEM(e as Absyn.DEFINEUNIT(name=_))::rest)
+      equation
+        outElts = getDefineunitsInElements(rest);
+      then e::outElts;
+    case (_::rest)
+      then getDefineunitsInElements(rest);
   end matchcontinue;
 end getDefineunitsInElements;
 

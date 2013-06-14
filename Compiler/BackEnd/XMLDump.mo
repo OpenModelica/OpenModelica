@@ -755,22 +755,21 @@ algorithm
   _:=
   matchcontinue (crefIdxLstArr,Content,inInteger)
     local String error_msg;
-    case (crefIdxLstArr,Content,inInteger)
+    case (_,_,_)
       equation
         listLength(crefIdxLstArr[inInteger]) >= 1  = true;
         dumpCrefIdxLst(crefIdxLstArr[inInteger],Content);
       then ();
-    case (crefIdxLstArr,Content,inInteger)
+    case (_,_,_)
       equation
         listLength(crefIdxLstArr[inInteger]) >= 1  = false;
       then ();
-    case (_,_,inInteger)
+    case (_,_,_)
       equation
         error_msg = "in XMLDump.dumpCrefIdxLstArr - failed for var number:";
         error_msg = error_msg +& intString(inInteger);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
-      then
-        fail();
+      then fail();
   end matchcontinue;
 end dumpCrefIdxLstArr;
 
@@ -792,12 +791,12 @@ algorithm
    local Integer len;
     case ({},_)
       then ();
-    case (crefIdxLst,Content)
+    case (_,_)
       equation
         len = listLength(crefIdxLst);
         len >= 1 = false;
       then ();
-    case (crefIdxLst,Content)
+    else
       equation
         len = listLength(crefIdxLst);
         len >= 1 = true;

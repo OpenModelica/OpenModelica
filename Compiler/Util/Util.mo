@@ -202,15 +202,11 @@ public function applyAndAppend
     input Type_a inTypeA;
     output Type_b outTypeB;
   end FuncTypeType_aToType_b;
+protected
+  Type_b result;
 algorithm
-  outLst := matchcontinue(element, f, accLst)
-    local Type_b result;
-    case(element, f, accLst)
-      equation
-        result = f(element);
-        accLst = listAppend(accLst, {result});
-      then accLst;
-  end matchcontinue;
+  result := f(element);
+  outLst := listAppend(accLst, {result});
 end applyAndAppend;
 
 
@@ -228,14 +224,11 @@ public function applyAndCons
     input Type_a inTypeA;
     output Type_b outTypeB;
   end FuncTypeType_aToType_b;
+protected
+  Type_b e;
 algorithm
-  outLst := matchcontinue(element, f, accLst)
-    local Type_b result;
-    case(element, f, accLst)
-      equation
-        result = f(element);
-      then result::accLst;
-  end matchcontinue;
+  e := f(element);
+  outLst := e :: accLst;
 end applyAndCons;
 
 public function arrayMapNoCopy "Takes an array and a function over the elements of the array, which is applied for each element.
@@ -272,15 +265,17 @@ algorithm
     local
       Type_a newElt;
 
-    case(array,func,pos,len) equation
-      true = pos > len;
-    then array;
+    case (_,_,_,_)
+      equation
+        true = pos > len;
+      then array;
 
-    case(array,func,pos,len) equation
-      newElt = func(array[pos]);
-      array = arrayUpdate(array,pos,newElt);
-      array = arrayMapNoCopyHelp1(array,func,pos+1,len);
-    then array;
+    case (_,_,_,_)
+      equation
+        newElt = func(array[pos]);
+        _ = arrayUpdate(array,pos,newElt);
+        _ = arrayMapNoCopyHelp1(array,func,pos+1,len);
+      then array;
   end matchcontinue;
 end arrayMapNoCopyHelp1;
 
@@ -325,15 +320,17 @@ algorithm
       Type_a newElt;
       Type_b extarg,extarg1;
 
-    case(inArray,func,pos,len,inArg) equation
-      true = pos > len;
-    then (inArray,inArg);
+    case(_,_,_,_,_)
+      equation
+        true = pos > len;
+      then (inArray,inArg);
 
-    case(inArray,func,pos,len,inArg) equation
-      ((newElt,extarg)) = func((inArray[pos],inArg));
-      a = arrayUpdate(inArray,pos,newElt);
-      (a1,extarg1) = arrayMapNoCopyHelp1_1(a,func,pos+1,len,extarg);
-    then (a1,extarg1);
+    else
+      equation
+        ((newElt,extarg)) = func((inArray[pos],inArg));
+        a = arrayUpdate(inArray,pos,newElt);
+        (a1,extarg1) = arrayMapNoCopyHelp1_1(a,func,pos+1,len,extarg);
+      then (a1,extarg1);
   end matchcontinue;
 end arrayMapNoCopyHelp1_1;
 
@@ -593,7 +590,7 @@ algorithm
     local
       Integer i;
     case (0,_,_) then ();
-    case (ix,array,func)
+    case (_,_,_)
       equation
         i = arrayLength(array)-ix+1;
         func(array[i]);
@@ -711,11 +708,10 @@ usable with List.map..."
 
 algorithm
   _ := match(inListA, inStartListLength, inArrayA, inArrayB)
-  local
-    ElementType a;
-    list<ElementType> rest;
+    local
+      list<Integer> rest;
     case ({}, _, _, _) then ();
-    case (a::rest, inStartListLength, inArrayA, inArrayB)
+    case (_::rest, _, _, _)
       equation
         arrayUpdatewithArrayIndexFirst(inStartListLength, inArrayA, inArrayB);
         arrayUpdatewithListIndexFirst(rest, inStartListLength+1, inArrayA, inArrayB);
@@ -778,19 +774,23 @@ end arrayGetIndexFirst;
 public function selectFirstNonEmptyString "Selects the first non-empty string from a list of strings.
 If all strings a empty or empty list return empty string.
 "
-input list<String> slst;
-output String res;
+  input list<String> slst;
+  output String res;
 algorithm
   res := matchcontinue(slst)
-  local String s;
-    case(s::slst) equation
-      true = (s ==& "");
-      res = selectFirstNonEmptyString(slst);
-    then res;
-    case(s::slst) equation
-      false= (s ==& "");
-    then s;
-    case({}) then "";
+    local
+      String s;
+      list<String> rest;
+    case (s::rest)
+      equation
+        true = (s ==& "");
+        res = selectFirstNonEmptyString(rest);
+      then res;
+    case (s::rest)
+      equation
+        false = stringEq(s,"");
+      then s;
+    case {} then "";
   end matchcontinue;
 end selectFirstNonEmptyString;
 
@@ -1351,20 +1351,20 @@ algorithm
       Type_a head;
       Integer x;
       list<Integer> xs;
-    case({},_,_) then {};
-    case(lst,{},_) then lst;
-    case(head::tail,x::xs,pos)
+    case ({},_,_) then {};
+    case (_,{},_) then lst;
+    case (head::tail,x::xs,_)
       equation
         true = intEq(x, pos); // equality(x=pos);
         res = filterList(tail,xs,pos+1);
       then
         res;
-    case(head::tail,x::xs,pos)
+    case (head::tail,x::xs,_)
       equation
         res = filterList(tail,x::xs,pos+1);
       then
         head::res;
-end matchcontinue;
+  end matchcontinue;
 end filterList;
 
 public function if_ "function: if_
@@ -1391,10 +1391,11 @@ public function stringContainsChar "Returns true if a string contains a specifie
   output Boolean res;
 algorithm
   res := matchcontinue(str,char)
-    case(str,char) equation
-      _::_::_ = stringSplitAtChar(str,char);
+    case (_,_)
+      equation
+        _::_::_ = stringSplitAtChar(str,char);
       then true;
-    case(str,char) then false;
+    else false;
   end matchcontinue;
 end stringContainsChar;
 
@@ -2311,13 +2312,12 @@ algorithm
     local
       Integer ii, iii;
       list<Option<Integer>> rest;
-    case ({}, acc) then acc;
-    case (SOME(ii)::rest, acc)
+    case ({}, _) then acc;
+    case (SOME(ii)::rest, _)
       equation
-        acc = ii * acc;
-        iii = mulListIntegerOpt(rest, acc);
+        iii = mulListIntegerOpt(rest, ii * acc);
       then iii;
-    case (NONE()::rest, acc)
+    case (NONE()::rest, _)
       equation
         iii = mulListIntegerOpt(rest, acc);
       then iii;
@@ -2861,18 +2861,16 @@ algorithm
       Integer i, len, pos;
 
     // array is empty
-    case (arr, inFilledSize, inElement)
+    case (arr, _, _)
       equation
         true = intEq(0, inFilledSize);
-      then
-        0;
+      then 0;
 
     // array is not empty
-    case (arr, inFilledSize, inElement)
+    case (arr, _, _)
       equation
         i = arrayMemberLoop(arr, inElement, 1, inFilledSize);
-      then
-        i;
+      then i;
   end matchcontinue;
 end arrayMember;
 
@@ -2894,28 +2892,25 @@ algorithm
       Option<Type_a> e;
 
     // we're at the end
-    case (arr, inElement, i, len)
+    case (arr, _, i, len)
       equation
         true = intEq(i, len);
-      then
-        0;
+      then 0;
 
     // not at the end, see if we find it
-    case (arr, inElement, i, len)
+    case (arr, _, i, len)
       equation
         e = arrayGet(arr, i);
         true = valueEq(e, inElement);
-      then
-        i;
+      then i;
 
     // not at the end, see if we find it
-    case (arr, inElement, i, len)
+    case (arr, _, i, len)
       equation
         e = arrayGet(arr, i);
         false = valueEq(e, inElement);
         i = arrayMemberLoop(arr, inElement, i + 1, len);
-      then
-        i;
+      then i;
   end matchcontinue;
 end arrayMemberLoop;
 
@@ -2938,22 +2933,19 @@ protected
 algorithm
   index := matchcontinue(inArr, inFilledSize, inFunc, inExtra)
     local
-      array<Option<Type_a>> arr;
       Integer i, len, pos;
 
     // array is empty
-    case (arr, inFilledSize, inFunc, inExtra)
+    case (_, _, _, _)
       equation
         true = intEq(0, inFilledSize);
-      then
-        0;
+      then 0;
 
     // array is not empty
-    case (arr, inFilledSize, inFunc, inExtra)
+    case (_, _, _, _)
       equation
-        i = arrayFindLoop(arr, inFunc, inExtra, 1, inFilledSize);
-      then
-        i;
+        i = arrayFindLoop(inArr, inFunc, inExtra, 1, inFilledSize);
+      then i;
   end matchcontinue;
 end arrayFind;
 
@@ -2989,7 +2981,7 @@ algorithm
         0;
 
     // not at the end, see if we find it
-    case (arr, inFunc, inExtra, i, len)
+    case (arr, _, _, i, len)
       equation
         SOME(e) = arrayGet(arr, i);
         true = inFunc(e, inExtra);
@@ -2997,7 +2989,7 @@ algorithm
         i;
 
     // not at the end, see if we find it
-    case (arr, inFunc, inExtra, i, len)
+    case (arr, _, _, i, len)
       equation
         SOME(e) = arrayGet(arr, i);
         false = inFunc(e, inExtra);
@@ -3006,7 +2998,7 @@ algorithm
         i;
 
     // not at the end, see if we find it
-    case (arr, inFunc, inExtra, i, len)
+    case (arr, _, _, i, len)
       equation
         NONE() = arrayGet(arr, i);
         i = arrayFindLoop(arr, inFunc, inExtra, i + 1, len);
@@ -3036,18 +3028,16 @@ algorithm
       Integer i, len, pos;
 
     // array is empty
-    case (arr, inFilledSize, inFunc, inExtra)
+    case (arr, _, _, _)
       equation
         true = intEq(0, inFilledSize);
-      then
-        arr;
+      then arr;
 
     // array is not empty
-    case (arr, inFilledSize, inFunc, inExtra)
+    case (arr, _, _, _)
       equation
         arr = arrayApplyLoop(arr, inFunc, inExtra, 1, inFilledSize);
-      then
-        arr;
+      then arr;
   end matchcontinue;
 end arrayApply;
 
@@ -3082,13 +3072,12 @@ algorithm
         arr;
 
     // not at the end, see if we find it
-    case (arr, inFunc, inExtra, i, len)
+    case (arr, _, _, i, len)
       equation
         e = arrayGet(arr, i);
         inFunc(e, inExtra);
         arr = arrayApplyLoop(arr, inFunc, inExtra, i + 1, len);
-      then
-        arr;
+      then arr;
   end matchcontinue;
 end arrayApplyLoop;
 
@@ -3114,18 +3103,16 @@ algorithm
       Integer i, len, pos;
 
     // array is empty
-    case (arr, inFilledSize, inFunc, inExtra)
+    case (arr, _, _, _)
       equation
         true = intEq(0, inFilledSize);
-      then
-        arr;
+      then arr;
 
     // array is not empty
-    case (arr, inFilledSize, inFunc, inExtra)
+    case (arr, _, _, _)
       equation
         arr = arrayApplyRLoop(arr, inFunc, inExtra, 1, inFilledSize);
-      then
-        arr;
+      then arr;
   end matchcontinue;
 end arrayApplyR;
 
@@ -3160,13 +3147,12 @@ algorithm
         arr;
 
     // not at the end, see if we find it
-    case (arr, inFunc, inExtra, i, len)
+    case (arr, _, _, i, len)
       equation
         e = arrayGet(arr, i);
         inFunc(inExtra, e);
         arr = arrayApplyRLoop(arr, inFunc, inExtra, i + 1, len);
-      then
-        arr;
+      then arr;
   end matchcontinue;
 end arrayApplyRLoop;
 
@@ -3193,14 +3179,14 @@ algorithm
       Integer i, len, pos;
 
     // array is empty
-    case (arr, inFilledSize, inElement, _)
+    case (arr, _, _, _)
       equation
         true = intEq(0, inFilledSize);
       then
         0;
 
     // array is not empty
-    case (arr, inFilledSize, inElement, inEqualityCheckFunction)
+    case (arr, _, _, _)
       equation
         i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, 1, inFilledSize);
       then
@@ -3232,28 +3218,25 @@ algorithm
       Option<Type_a> e;
 
     // we're at the end
-    case (arr, inElement, _, i, len)
+    case (arr, _, _, i, len)
       equation
         true = intEq(i, len);
-      then
-        0;
+      then 0;
 
     // not at the end, see if we find it
-    case (arr, inElement, inEqualityCheckFunction, i, len)
+    case (arr, _, _, i, len)
       equation
         e = arrayGet(arr, i);
         true = inEqualityCheckFunction(e, inElement);
-      then
-        i;
+      then i;
 
     // not at the end, see if we find it
-    case (arr, inElement, inEqualityCheckFunction, i, len)
+    case (arr, _, _, i, len)
       equation
         e = arrayGet(arr, i);
         false = inEqualityCheckFunction(e, inElement);
         i = arrayMemberEqualityFuncLoop(arr, inElement, inEqualityCheckFunction, i + 1, len);
-      then
-        i;
+      then i;
   end matchcontinue;
 end arrayMemberEqualityFuncLoop;
 

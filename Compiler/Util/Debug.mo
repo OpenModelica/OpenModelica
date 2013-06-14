@@ -336,13 +336,12 @@ public function fcallret3
   replaceable type Type_d subtypeof Any;
 algorithm
   res := matchcontinue (inFlag,func,arg1,arg2,arg3,default)
-    case (_,func,arg1,arg2,arg3,_)
+    case (_,_,_,_,_,_)
       equation
         true = Flags.isSet(inFlag);
         res = func(arg1,arg2,arg3);
-      then
-        res;
-    case (_,_,_,_,_,default) then default;
+      then res;
+    else default;
   end matchcontinue;
 end fcallret3;
 

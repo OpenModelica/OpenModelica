@@ -193,7 +193,6 @@ TplParser.mo \
 Unparsing.mo
 
 UTIL = \
-AvlTree.mo \
 BaseHashTable.mo \
 BaseHashSet.mo \
 Config.mo \

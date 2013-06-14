@@ -2553,7 +2553,7 @@ algorithm
     local
       ElementInType head;
       ElementOutType new_head;
-      list<ElementInType> rest;
+      list<Option<ElementInType>> rest;
 
     case ({}, _, _) then inAccumList;
 
@@ -7632,7 +7632,7 @@ algorithm
       list<ElementType> rest;
       Boolean b;
 
-    case (e :: rest, _, arg1)
+    case (e :: rest, _, _)
       equation
         b = inFunc(e,arg1);
         e = Debug.bcallret3(not b,selectFirst1,rest,inFunc,arg1,e);

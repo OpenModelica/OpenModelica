@@ -55,9 +55,9 @@ partial function FuncTypeValToStr
 end FuncTypeValToStr;
 
 partial function FuncTypeItemUpdateCheck "function to print an error on duplicate items"
- input Item<Key,Val> inItemNew "the new item";
- input Item<Key,Val> inItemOld "the old item in the tree";
- output Boolean updateAllowed "returns true, the update is performed, false no update, fail, the update will fail";
+  input Item<tuple<Key,Val>> inItemNew "the new item";
+  input Item<tuple<Key,Val>> inItemOld "the old item in the tree";
+  output Boolean updateAllowed "returns true, the update is performed, false no update, fail, the update will fail";
 end FuncTypeItemUpdateCheck;
 
 partial function FuncTypeKeyCompare "function to compare keys"

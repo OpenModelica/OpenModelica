@@ -1612,7 +1612,7 @@ algorithm str := matchcontinue(inExp)
       s1 = "{" +& stringAppendList(List.map(expl,debugPrintComponentRefExp)) +& "}";
     then
       s1;
-  case(inExp) then printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
+  else printExpStr(inExp); // when not cref, print expression anyways since it is used for some debugging.
 end matchcontinue;
 end debugPrintComponentRefExp;
 

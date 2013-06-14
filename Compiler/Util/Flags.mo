@@ -192,7 +192,7 @@ constant DebugFlag CGRAPH_GRAPHVIZ_FILE = DEBUG_FLAG(12, "cgraphGraphVizFile", f
 constant DebugFlag CGRAPH_GRAPHVIZ_SHOW = DEBUG_FLAG(13, "cgraphGraphVizShow", false,
   Util.gettext("Displays the connection graph with the GraphViz lefty tool."));
 constant DebugFlag FRONTEND_INLINE_EULER = DEBUG_FLAG(14, "frontendInlineEuler", false,
-  Util.notrans(""));
+  Util.gettext("Does a very simple inlining of der(name) using explicit euler."));
 constant DebugFlag USEDEP = DEBUG_FLAG(15, "usedep", false,
   Util.gettext("Turns on/off dependency analysis for getTotalProgram."));
 constant DebugFlag CHECK_DAE_CREF_TYPE = DEBUG_FLAG(16, "checkDAECrefType", false,
@@ -280,83 +280,81 @@ constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(56, "dumpindxdae", false,
 constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(57, "optdaedump", false,
   Util.gettext("Dumps information from the optimization modules."));
 constant DebugFlag EXEC_HASH = DEBUG_FLAG(58, "execHash", false,
-  Util.notrans(""));
-constant DebugFlag EXEC_FILES = DEBUG_FLAG(59, "execFiles", false,
-  Util.notrans(""));
-constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(60, "paramdlowdump", false,
+  Util.gettext("Measures the time it takes to hash all simcode variables before code generation."));
+constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(59, "paramdlowdump", false,
   Util.gettext("Enables dumping of the parameters in the order they are calculated."));
-constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(61, "dumpEncapsulateWhenConditions", false,
+constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(60, "dumpEncapsulateWhenConditions", false,
   Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions."));
-constant DebugFlag ON_RELAXATION = DEBUG_FLAG(62, "onRelaxation", false,
+constant DebugFlag ON_RELAXATION = DEBUG_FLAG(61, "onRelaxation", false,
   Util.gettext("Perform O(n) relaxation."));
-constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(63, "shortOutput", false,
+constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(62, "shortOutput", false,
   Util.gettext("Enables short output of the simulate() command. Useful for tools like OMNotebook."));
-constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(64, "countOperations", false,
+constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(63, "countOperations", false,
   Util.gettext("Count operations."));
-constant DebugFlag CGRAPH = DEBUG_FLAG(65, "cgraph", false,
+constant DebugFlag CGRAPH = DEBUG_FLAG(64, "cgraph", false,
   Util.gettext("Prints out connection graph information."));
-constant DebugFlag UPDMOD = DEBUG_FLAG(66, "updmod", false,
+constant DebugFlag UPDMOD = DEBUG_FLAG(65, "updmod", false,
   Util.gettext("Prints information about modification updates."));
-constant DebugFlag STATIC = DEBUG_FLAG(67, "static", false,
+constant DebugFlag STATIC = DEBUG_FLAG(66, "static", false,
   Util.gettext("Enables extra debug output from the static elaboration."));
-constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(68, "tplPerfTimes", false,
+constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(67, "tplPerfTimes", false,
   Util.gettext("Enables output of template performance data for rendering text to file."));
-constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(69, "checkSimplify", false,
+constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(68, "checkSimplify", false,
   Util.gettext("Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed."));
-constant DebugFlag SCODE_INST = DEBUG_FLAG(70, "scodeInst", false,
+constant DebugFlag SCODE_INST = DEBUG_FLAG(69, "scodeInst", false,
   Util.gettext("Enables experimental SCode instantiation phase."));
-constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(71, "writeToBuffer", false,
+constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(70, "writeToBuffer", false,
   Util.gettext("Enables writing simulation results to buffer."));
-constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(72, "backenddaeinfo", false,
+constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(71, "backenddaeinfo", false,
   Util.gettext("Enables dumping of backend information about system (Number of equations before backend,...)."));
-constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(73, "gendebugsymbols", false,
+constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(72, "gendebugsymbols", false,
   Util.gettext("Generate code with debugging symbols."));
-constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(74, "stateselection", false,
+constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(73, "stateselection", false,
   Util.gettext("Enables dumping of selected states. Works only in combination with backenddaeinfo."));
-constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(75, "dumpderrepl", false,
+constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(74, "dumpderrepl", false,
   Util.gettext("Enables dumping of selected states. Works only in combination with backenddaeinfo."));
-constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(76, "dumpeqninorder", false,
+constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(75, "dumpeqninorder", false,
   Util.gettext("Enables dumping of the equations in the order they are calculated."));
-constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(77, "symbolicInitialization", false,
+constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(76, "symbolicInitialization", false,
   Util.gettext("Enables using of symbolic matrices for initialization (ipopt only)."));
-constant DebugFlag DUMPOPTINIT = DEBUG_FLAG(78, "dumpoptinit", false,
+constant DebugFlag DUMPOPTINIT = DEBUG_FLAG(77, "dumpoptinit", false,
   Util.gettext("Enables dumping of the optimization information when optimizing the initial system."));
-constant DebugFlag SEMILINEAR = DEBUG_FLAG(79, "semiLinear", false,
+constant DebugFlag SEMILINEAR = DEBUG_FLAG(78, "semiLinear", false,
   Util.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear."));
-constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(80, "uncertainties", false,
+constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(79, "uncertainties", false,
   Util.gettext("Enables dumping of status when calling modelEquationsUC."));
-constant DebugFlag DUMP_DAE= DEBUG_FLAG(81, "daeunparser", false,
+constant DebugFlag DUMP_DAE= DEBUG_FLAG(80, "daeunparser", false,
   Util.gettext("Enables dumping of the DAE."));
-constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(82, "showStartOrigin", false,
+constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(81, "showStartOrigin", false,
   Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables."));
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
-constant DebugFlag MIXED_TEARING = DEBUG_FLAG(83, "MixedTearing", true,
+constant DebugFlag MIXED_TEARING = DEBUG_FLAG(82, "MixedTearing", true,
   Util.gettext("Disables tearing of mixed system."));
-constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(84, "doLinearTearing", false,
+constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(83, "doLinearTearing", false,
   Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
-constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(85, "dumpinitialsystem", false,
+constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(84, "dumpinitialsystem", false,
   Util.gettext("Dumps the initial equation system."));
-constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(86, "scodeInstShortcut", false,
+constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(85, "scodeInstShortcut", false,
   Util.gettext("Enables experimental SCode instantiation shortcut phase."));
-constant DebugFlag SHOW_SCODE = DEBUG_FLAG(87, "showSCode", false,
+constant DebugFlag SHOW_SCODE = DEBUG_FLAG(86, "showSCode", false,
   Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
-constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(88, "dumpConstrepl", false,
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(87, "dumpConstrepl", false,
   Util.gettext("Dump the found replacements for constants."));
-constant DebugFlag PEDANTIC = DEBUG_FLAG(89, "pedantic", false,
+constant DebugFlag PEDANTIC = DEBUG_FLAG(88, "pedantic", false,
   Util.gettext("Switch into pedantic debug-mode, to get much more feedback."));
-constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(90, "showRedeclareAnalysis", false,
+constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(89, "showRedeclareAnalysis", false,
   Util.gettext("Prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)."));
-constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(91, "showProgramChanges", false,
+constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(90, "showProgramChanges", false,
   Util.gettext("Prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)."));
-constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(92, "showEquationSource", false,
+constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(91, "showEquationSource", false,
   Util.gettext("Display the element source information in the dumped DAE for easier debugging."));
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(93, "NLSanalyticJacobian", false,
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(92, "NLSanalyticJacobian", false,
   Util.gettext("Generates analytical jacobian for non-linear algebraic loops."));
-constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(94, "inlineSolver", false,
+constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(93, "inlineSolver", false,
   Util.gettext("Generates code for inline solver."));
-constant DebugFlag GEN_GRAPH = DEBUG_FLAG(95, "genGraph", false,
+constant DebugFlag GEN_GRAPH = DEBUG_FLAG(94, "genGraph", false,
   Util.gettext("Dumps a graph of the program."));
-constant DebugFlag HPCOM = DEBUG_FLAG(96, "hpcom", false,
+constant DebugFlag HPCOM = DEBUG_FLAG(95, "hpcom", false,
   Util.gettext("Enables parallel calculation based on task-graphs."));
     
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -422,7 +420,6 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_INDX_DAE,
   OPT_DAE_DUMP,
   EXEC_HASH,
-  EXEC_FILES,
   PARAM_DLOW_DUMP,
   DUMP_ENCAPSULATEWHENCONDITIONS,
   ON_RELAXATION,
