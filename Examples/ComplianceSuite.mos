@@ -18,7 +18,7 @@ system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 echo(false);
 allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
-commands:={"ulimit -t 120 && omc " + OpenModelica.Scripting.typeNameString(cl) + ".mos > /dev/null 2>&1" for cl in allClasses};
+commands:={"ulimit -t 120 && omc +d=noevalfunc " + OpenModelica.Scripting.typeNameString(cl) + ".mos > /dev/null 2>&1" for cl in allClasses};
 echo(true);
 String(size(allClasses,1)) + " number of classes";
 

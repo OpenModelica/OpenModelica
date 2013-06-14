@@ -1389,15 +1389,6 @@ algorithm
       then
         (cache,simValue,newst);
 
-    // Remove output.log before simulate in case it already exists.
-    // This is so we can check for the presence of output.log later.
-    case (cache,env,"simulate",vals,st,_)
-      equation
-        true = System.regularFileExists("output.log");
-        false = 0 == System.removeFile("output.log");
-        simValue = createSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
-      then (cache,simValue,st);
-
     // adrpo: see if the model exists before simulation!
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
@@ -1422,14 +1413,15 @@ algorithm
         simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);
         executable1=Util.if_(ifcpp,"OMCppSimulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
-        // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
-        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > output.log 2>&1"});
+        logFile = stringAppend(executable1,".log");
+        0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > ",logFile," 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         resI = System.systemCall(sim_call);
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
-        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file);
+        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
 
@@ -1510,9 +1502,10 @@ algorithm
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
         executable1=Util.if_(ifcpp,"Simulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
+        logFile = stringAppend(executable1,".log");
+        0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         strlinearizeTime = realString(linearizeTime);
-        // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
-        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags," > output.log 2>&1"});
+        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags," > ",logFile," 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);
@@ -1523,7 +1516,7 @@ algorithm
         simValue = createSimulationResult(
            result_file,
            simOptionsAsString(vals),
-           System.readFile("output.log"),
+           System.readFile(logFile),
            ("timeTotal", Values.REAL(timeTotal)) ::
            ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
@@ -3648,22 +3641,23 @@ protected function createSimulationResultFromcallModelExecutable
   input list<Values.Value> inVals;
   input Interactive.SymbolTable inSt;
   input String result_file;
+  input String logFile;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (callRet,timeTotal,timeSimulation,resultValues,inCache,className,inVals,inSt,result_file)
+  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (callRet,timeTotal,timeSimulation,resultValues,inCache,className,inVals,inSt,result_file,logFile)
     local
       Interactive.SymbolTable newst;
       String res,str;
       Values.Value simValue;
 
-    case (0,_,_,_,_,_,_,_,_)
+    case (0,_,_,_,_,_,_,_,_,_)
       equation
         simValue = createSimulationResult(
            result_file,
            simOptionsAsString(inVals),
-           System.readFile("output.log"),
+           System.readFile(logFile),
            ("timeTotal", Values.REAL(timeTotal)) ::
            ("timeSimulation", Values.REAL(timeSimulation)) ::
           resultValues);
@@ -3674,8 +3668,8 @@ algorithm
         (inCache,simValue,newst);
     else
       equation
-        true = System.regularFileExists("output.log");
-        res = System.readFile("output.log");
+        true = System.regularFileExists(logFile);
+        res = System.readFile(logFile);
         str = Absyn.pathString(className);
         res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
         simValue = createSimulationResult("", simOptionsAsString(inVals), res, resultValues);
@@ -3683,53 +3677,6 @@ algorithm
         (inCache,simValue,inSt);
   end matchcontinue;
 end createSimulationResultFromcallModelExecutable;
-
-protected function createDrModelicaSimulationResultFromcallModelExecutable
-"function createSimulationResultFromcallModelExecutable
-  This function calls the compiled simulation executable."
-  input Integer callRet;
-  //input Real timeTotal;
-  input Real timeSimulation;
-  input list<tuple<String,Values.Value>> resultValues;
-  input Env.Cache inCache;
-  input Absyn.Path className;
-  input list<Values.Value> inVals;
-  input Interactive.SymbolTable inSt;
-  input String result_file;
-  output Env.Cache outCache;
-  output Values.Value outValue;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
-algorithm
-  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (callRet, timeSimulation,resultValues,inCache,className,inVals,inSt,result_file)
-    local
-      Interactive.SymbolTable newst;
-      String res,str;
-      Values.Value ret_val,simValue;
-
-    case (0,_,_,_,_,_,_,_)
-      equation
-        simValue = createDrModelicaSimulationResult(
-           result_file,
-           simOptionsAsString(inVals),
-           System.readFile("output.log"),
-           ("simulationTime", Values.REAL(timeSimulation)) ::
-          {});
-        newst = Interactive.addVarToSymboltable(
-          DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
-          Values.STRING(result_file), Env.emptyEnv, inSt);
-      then
-        (inCache,simValue,newst);
-    else
-      equation
-        true = System.regularFileExists("output.log");
-        res = System.readFile("output.log");
-        str = Absyn.pathString(className);
-        res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
-        simValue = createDrModelicaSimulationResult("", simOptionsAsString(inVals), res, {});
-      then
-        (inCache,simValue,inSt);
-  end matchcontinue;
-end createDrModelicaSimulationResultFromcallModelExecutable;
 
 protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
   input Env.Cache inCache;
