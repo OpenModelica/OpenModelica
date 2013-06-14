@@ -196,10 +196,10 @@ algorithm
       NFSCodeEnv.ClassType cls_ty;
 
     // builtin class, do not enter!
-    case (env, inName, NFSCodeEnv.BUILTIN()) then env;
+    case (env, _, NFSCodeEnv.BUILTIN()) then env;
 
     // builtin, do not enter!
-    case (env, inName, _)
+    case (env, _, _)
       equation
         (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) =
           NFSCodeLookup.lookupInClass(inName, env);
@@ -210,7 +210,7 @@ algorithm
         env;
 
     // not builtin
-    case (env, inName, _)
+    case (env, _, _)
       equation
         (NFSCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) =
           NFSCodeLookup.lookupInClass(inName, env);
@@ -223,7 +223,7 @@ algorithm
         env;
 
     // failure
-    case (env, inName, inClassType)
+    case (env, _, _)
       equation
         print("- NFSCodeHashTable.enterScope failed on: " +& inName +& " in scope: " +& NFSCodeEnv.getEnvName(env) +& "\n");
       then
@@ -240,7 +240,7 @@ algorithm
       SCode.Program program;
       list<HashValue> els;
 
-    case (inHash)
+    case _
       equation
         els = BaseHashTable.hashTableValueList(inHash);
         els = List.sort(els, compare);
@@ -266,7 +266,7 @@ algorithm
       Option<HashTable> hashTable;
 
     case ({}, env, hashTable, _) then hashTable;
-    case (cl::rest, env, hashTable, seqNumber)
+    case (cl::rest, env, hashTable, _)
       equation
         hashTable = hashTableFromTopClass(Absyn.CREF_IDENT(".", {}), cl, env, hashTable, seqNumber);
         hashTable = hashTableFromProgram(rest, env, hashTable, seqNumber + 1);
@@ -297,7 +297,7 @@ algorithm
       SCode.ClassDef cDef;
       Absyn.Info info;
 
-    case (inParentCref, cl as SCode.CLASS(classDef = cDef, info = info), env, hashTable, seqNumber)
+    case (_, cl as SCode.CLASS(classDef = cDef, info = info), env, hashTable, _)
       equation
         className = SCode.className(cl);
         element = cl;
@@ -325,26 +325,26 @@ algorithm
     local
       SCode.Element element;
 
-    case ({}, parent, section)
+    case ({}, _, _)
       then LOCAL_SECTION(parent, section);
 
-    case ({element as SCode.EXTENDS(baseClassPath = _)}, parent, section)
+    case ({element as SCode.EXTENDS(baseClassPath = _)}, _, _)
       then EXTENDS_SECTION(parent, element, section);
 
-    case ({element as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))}, parent, section)
+    case ({element as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))}, _, _)
       then EXTENDS_SECTION(parent, element, section);
 
-    case ({element as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _))}, parent, section)
+    case ({element as SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _))}, _, _)
       then DERIVED_SECTION(parent, element, section);
 
-    case ({element}, parent, section)
+    case ({element}, _, _)
       equation
         // something is wrong!
         // print("wrong: " +& SCodeDump.printElementStr(element) +& "\n");
       then
         LOCAL_SECTION(parent, section);
 
-    case (modifiers as _::_, parent, section)
+    case (_::_, _, _)
       equation
         element = List.last(modifiers);
       then createSectionStructure({element}, parent, section);
@@ -363,28 +363,28 @@ algorithm
       SCode.Element mod;
       SCode.Element parent, base;
 
-    case ({}, parentOpt, baseOpt, element)
+    case ({}, _, _, _)
       then LOCAL_ELEMENT(parentOpt, element);
 
-    case (SCode.EXTENDS(baseClassPath = _)::_, SOME(parent), SOME(base), element)
+    case (SCode.EXTENDS(baseClassPath = _)::_, SOME(parent), SOME(base), _)
       then EXTENDS_ELEMENT(parent, base, element, modifiers);
 
-    case (SCode.EXTENDS(baseClassPath = _)::_, SOME(parent), NONE(), element)
+    case (SCode.EXTENDS(baseClassPath = _)::_, SOME(parent), NONE(), _)
       then EXTENDS_ELEMENT(parent, parent, element, modifiers);
 
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))::_, SOME(parent), SOME(base), element)
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))::_, SOME(parent), SOME(base), _)
       then EXTENDS_ELEMENT(parent, base, element, modifiers);
 
-    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))::_, SOME(parent), NONE(), element)
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))::_, SOME(parent), NONE(), _)
       then EXTENDS_ELEMENT(parent, parent, element, modifiers);
 
-    case (SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _))::_, SOME(parent), SOME(base), element)
+    case (SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _))::_, SOME(parent), SOME(base), _)
       then DERIVED_ELEMENT(parent, base, element, modifiers);
 
-    case (SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _))::_, SOME(parent), NONE(), element)
+    case (SCode.CLASS(classDef = SCode.DERIVED(typeSpec = _))::_, SOME(parent), NONE(), _)
       then DERIVED_ELEMENT(parent, parent, element, modifiers);
 
-    case (modifiers, parentOpt, baseOpt, element)
+    else
       equation
         print("- NFSCodeHashTable.createElementStructure failed on: " +&
           " modifiers:" +& stringDelimitList(List.map(modifiers, SCodeDump.shortElementStr), ", ") +&
@@ -445,12 +445,12 @@ protected function hashTableFromClassDef
   input SCode.ClassDef inClassDef;
   input NFSCodeEnv.Env inEnv;
   input Option<HashTable> inHashTable;
-  input Integer seqNumber;
-  input Absyn.Info info;
+  input Integer inSeqNumber;
+  input Absyn.Info inInfo;
   output Option<HashTable> outHashTable;
   output Integer outSeqNumber;
 algorithm
-  (outHashTable, outSeqNumber) := matchcontinue(inParentCref, inElementParent, inModifiers, inBaseClassOpt, inClassDef, inEnv, inHashTable, seqNumber, info)
+  (outHashTable, outSeqNumber) := matchcontinue(inParentCref, inElementParent, inModifiers, inBaseClassOpt, inClassDef, inEnv, inHashTable, inSeqNumber, inInfo)
     local
       NFSCodeEnv.Env env;
       SCode.Element cl, newCls, parentElement;
@@ -475,33 +475,32 @@ algorithm
       SCode.ClassDef cDef;
       Option<SCode.Element> baseClassOpt;
       FlatStructure structure;
+      Integer seqNumber;
+      Absyn.Info info;
 
     // handle parts
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.PARTS(els, ne, ie, na, ia, co, _, ed), env, hashTable, seqNumber, info)
+    case (_, parentElement, modifiers, baseClassOpt, SCode.PARTS(els, ne, ie, na, ia, co, _, ed), env, hashTable, seqNumber, info)
       equation
         modifiers = addRedeclaresAndClassExtendsToModifiers(modifiers, els);
         (hashTable, seqNumber) = hashTableAddElements(inParentCref, parentElement, modifiers, baseClassOpt, els, env, hashTable, seqNumber);
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT("$sections", {}));
         structure = createSectionStructure(modifiers, parentElement, SECTION(ne, ie, na, ia, co, ed));
         hashTable = add((fullCref, VALUE({seqNumber}, {structure}, NONE())), hashTable);
-      then
-        (hashTable, seqNumber + 1);
+      then (hashTable, seqNumber + 1);
 
     // handle class extends
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.CLASS_EXTENDS(baseClassName = baseClassName), env, hashTable, seqNumber, info)
+    case (_, parentElement, modifiers, baseClassOpt, SCode.CLASS_EXTENDS(baseClassName = baseClassName), env, hashTable, seqNumber, info)
       equation
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT(baseClassName, {}));
 
         structure = createElementStructure(modifiers, SOME(parentElement), baseClassOpt, parentElement);
 
         hashTable = add((fullCref, VALUE({seqNumber}, {structure}, NONE())), hashTable);
-      then
-        (hashTable, seqNumber + 1);
+      then (hashTable, seqNumber + 1);
 
     // handle derived!
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), env, hashTable, seqNumber, info)
+    case (_, parentElement, modifiers, baseClassOpt, SCode.DERIVED(typeSpec = Absyn.TPATH(path = path)), env, hashTable, seqNumber, info)
       equation
-
         // Remove the extends from the local scope before flattening the derived
         // type, because the type should not be looked up via itself.
         env = NFSCodeEnv.removeExtendsFromLocalScope(env);
@@ -527,23 +526,19 @@ algorithm
             inHashTable,
             seqNumber,
             info);
-      then
-        (hashTable, seqNumber);
+      then (hashTable, seqNumber);
 
     // handle enumeration
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.ENUMERATION(enumLst = _), env, hashTable, seqNumber, info)
-      then
-        (hashTable, seqNumber + 1);
+    case (_, parentElement, modifiers, baseClassOpt, SCode.ENUMERATION(enumLst = _), env, hashTable, seqNumber, info)
+      then (hashTable, seqNumber + 1);
 
     // handle overload
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.OVERLOAD(pathLst = _), env, hashTable, seqNumber, info)
-      then
-        (hashTable, seqNumber + 1);
+    case (_, parentElement, modifiers, baseClassOpt, SCode.OVERLOAD(pathLst = _), env, hashTable, seqNumber, info)
+      then (hashTable, seqNumber + 1);
 
     // handle pder
-    case (inParentCref, parentElement, modifiers, baseClassOpt, SCode.PDER(functionPath = _), env, hashTable, seqNumber, info)
-      then
-        (hashTable, seqNumber + 1);
+    case (_, parentElement, modifiers, baseClassOpt, SCode.PDER(functionPath = _), env, hashTable, seqNumber, info)
+      then (hashTable, seqNumber + 1);
   end matchcontinue;
 end hashTableFromClassDef;
 
@@ -556,11 +551,11 @@ protected function hashTableAddElements
   input list<SCode.Element> inElements;
   input NFSCodeEnv.Env inEnv;
   input Option<HashTable> inHashTable;
-  input Integer seqNumber;
+  input Integer inSeqNumber;
   output Option<HashTable> outHashTable;
   output Integer outSeqNumber;
 algorithm
-  (outHashTable, outSeqNumber) := matchcontinue(inParentCref, inElementParent, inModifiers, inBaseClassOpt, inElements, inEnv, inHashTable, seqNumber)
+  (outHashTable, outSeqNumber) := matchcontinue(inParentCref, inElementParent, inModifiers, inBaseClassOpt, inElements, inEnv, inHashTable, inSeqNumber)
     local
       NFSCodeEnv.Env env;
       Option<HashTable> hashTable;
@@ -569,9 +564,10 @@ algorithm
       FlatStructure structure;
       Absyn.Info info;
       Absyn.ComponentRef fullCref;
+      Integer seqNumber;
 
     // handle classes without elements!
-    case (inParentCref, inElementParent, inModifiers, inBaseClassOpt, {}, env, hashTable, seqNumber)
+    case (_, _, _, _, {}, env, hashTable, seqNumber)
       equation
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT("$noElements", {}));
 
@@ -601,14 +597,14 @@ algorithm
         (hashTable, seqNumber + 1);
 
     // handle 1 element
-    case (inParentCref, inElementParent, inModifiers, inBaseClassOpt, {el}, env, hashTable, seqNumber)
+    case (_, _, _, _, {el}, env, hashTable, seqNumber)
       equation
         (hashTable, seqNumber) = hashTableAddElement(inParentCref, inElementParent, inModifiers, inBaseClassOpt, el, env, hashTable, seqNumber);
       then
         (hashTable, seqNumber);
 
     // handle rest
-    case (inParentCref, inElementParent, inModifiers, inBaseClassOpt, el::rest, env, hashTable, seqNumber)
+    case (_, _, _, _, el::rest, env, hashTable, seqNumber)
       equation
         (hashTable, seqNumber) = hashTableAddElement(inParentCref, inElementParent, inModifiers, inBaseClassOpt, el, env, hashTable, seqNumber);
         (hashTable, seqNumber) = hashTableAddElements(inParentCref, inElementParent, inModifiers, inBaseClassOpt, rest, env, hashTable, seqNumber);
@@ -653,7 +649,7 @@ algorithm
       Integer seqNumber;
 
     // handle extends
-    case (inParentCref, parentElement, modifiers, inBaseClassOpt, el as SCode.EXTENDS(baseClassPath = path, modifications = mod, visibility = vis, info = info), env, hashTable, seqNumber)
+    case (_, parentElement, modifiers, _, el as SCode.EXTENDS(baseClassPath = path, modifications = mod, visibility = vis, info = info), env, hashTable, seqNumber)
       equation
         // Remove the extends from the local scope before flattening the extends
         // type, because the type should not be looked up via itself.
@@ -686,7 +682,7 @@ algorithm
         (hashTable, seqNumber);
 
     // handle classdef
-    case (inParentCref, parentElement, modifiers, inBaseClassOpt, el as SCode.CLASS(name = name, classDef = cDef, info = info), env, hashTable, seqNumber)
+    case (_, parentElement, modifiers, _, el as SCode.CLASS(name = name, classDef = cDef, info = info), env, hashTable, seqNumber)
       equation
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT(name, {}));
 
@@ -706,7 +702,7 @@ algorithm
         (hashTable, seqNumber + 1);
 
     // handle import, WE SHOULD NOT HAVE ANY!
-    case (inParentCref, parentElement, modifiers, inBaseClassOpt, el as SCode.IMPORT(imp = imp), env, hashTable, seqNumber)
+    case (_, parentElement, modifiers, _, el as SCode.IMPORT(imp = imp), env, hashTable, seqNumber)
       equation
         name = Dump.unparseImportStr(imp);
         fullCref = joinCrefs(inParentCref, Absyn.CREF_QUAL("$import", {}, Absyn.CREF_IDENT(name, {})));
@@ -721,7 +717,7 @@ algorithm
         (hashTable, seqNumber + 1);
 
     // handle component
-    case (inParentCref, parentElement, modifiers, inBaseClassOpt, el as SCode.COMPONENT(name = name), env, hashTable, seqNumber)
+    case (_, parentElement, modifiers, _, el as SCode.COMPONENT(name = name), env, hashTable, seqNumber)
       equation
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT(name, {}));
 
@@ -735,7 +731,7 @@ algorithm
         (hashTable, seqNumber + 1);
 
     // handle defineunit
-    case (inParentCref, parentElement, modifiers, inBaseClassOpt, el as SCode.DEFINEUNIT(name = name), env, hashTable, seqNumber)
+    case (_, parentElement, modifiers, _, el as SCode.DEFINEUNIT(name = name), env, hashTable, seqNumber)
       equation
         fullCref = joinCrefs(inParentCref, Absyn.CREF_IDENT(name, {}));
 
@@ -748,7 +744,7 @@ algorithm
       then
         (hashTable, seqNumber + 1);
 
-     case (inParentCref, parentElement, modifiers, inBaseClassOpt, el, env, hashTable, seqNumber)
+     case (_, parentElement, modifiers, _, el, env, hashTable, seqNumber)
        equation
          print("- NFSCodeHashTable.hashTableAddElement failed on element: " +& SCodeDump.shortElementStr(el) +& "\n");
        then
@@ -768,14 +764,11 @@ algorithm
       HashValue hashValue;
 
     // found something
-    case (SOME(hashTable), key)
-      equation
-        hashValue = BaseHashTable.get(key, hashTable);
-      then
-        hashValue;
+    case (SOME(hashTable), _)
+      then BaseHashTable.get(key, hashTable);
 
     // found nothing!
-    case (_, key)
+    else
       equation
         print("Lookup failed for: " +&  Dump.printComponentRefStr(key) +& "\n");
       then
@@ -830,19 +823,7 @@ protected function printStructuresStr
   input AggregatedStructures inStructures;
   output String outStr;
 algorithm
-  outStr := matchcontinue(inStructures)
-    local
-      String str;
-
-    case (inStructures)
-      equation
-        str = stringDelimitList(
-                List.map(inStructures,
-                printStructureStr), ", ");
-      then
-        str;
-
-  end matchcontinue;
+  outStr := stringDelimitList(List.map(inStructures,printStructureStr), ", ");
 end printStructuresStr;
 
 protected function printStructureStr
@@ -1039,7 +1020,7 @@ algorithm
       Value newValue;
 
     // not there, add it
-    case (inKeyValue as (key, _), optHashTable)
+    case ((key, _), optHashTable)
       equation
         SOME(hashTable) = createSomeHash(optHashTable);
         failure((_) = BaseHashTable.get(key, hashTable));
@@ -1048,7 +1029,7 @@ algorithm
         SOME(hashTable);
 
     // there, update it
-    case (inKeyValue as (key, newValue), optHashTable)
+    case ((key, newValue), optHashTable)
       equation
         SOME(hashTable) = createSomeHash(optHashTable);
         hashValue = BaseHashTable.get(key, hashTable);
@@ -1092,15 +1073,14 @@ algorithm
       Absyn.ComponentRef cref;
 
     // handle "", return the suffix
-    case (Absyn.CREF_IDENT(name = "."), inCrefSuffix)
+    case (Absyn.CREF_IDENT(name = "."), _)
       then inCrefSuffix;
 
     // handle != "", return the joined prefix.suffix
-    case (inCrefPrefix, inCrefSuffix)
+    else
       equation
         cref = Absyn.joinCrefs(inCrefPrefix, inCrefSuffix);
-      then
-        cref;
+      then cref;
   end matchcontinue;
 end joinCrefs;
 

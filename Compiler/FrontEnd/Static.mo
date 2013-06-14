@@ -916,9 +916,9 @@ algorithm
       list<DAE.Type> typeList;
       DAE.Type t2;
 
-    case (cache,env,{},prop,_,st,_,_,info) then (cache,DAE.LIST({}),prop,st);
+    case (cache,env,{},prop,_,st,_,_,_) then (cache,DAE.LIST({}),prop,st);
 
-    case (cache,env,expList,prop as DAE.PROP(DAE.T_METALIST(listType = t),c),impl,st,doVect,pre,info)
+    case (cache,env,expList,prop as DAE.PROP(DAE.T_METALIST(listType = t),c),impl,st,doVect,pre,_)
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect,pre,info);
         typeList = List.map(propList, Types.getPropType);
@@ -926,7 +926,7 @@ algorithm
       then
         (cache,DAE.LIST(expExpList),DAE.PROP(DAE.T_METALIST(t,DAE.emptyTypeSource),c),st);
 
-    case (_,_,_,_,_,_,_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- elabListExp failed, non-matching args in list constructor?");
       then
@@ -8970,6 +8970,7 @@ protected function buildTupleConst
   parameters as done below"
   input list<DAE.Const> blist;
   output DAE.TupleConst outTupleConst;
+protected
   list<DAE.TupleConst> clist;
 algorithm
   clist := buildTupleConstList(blist);

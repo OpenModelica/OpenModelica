@@ -1743,9 +1743,8 @@ algorithm
       Option<Absyn.ConstrainClass> a13;
       SCode.Prefixes p;
 
-    case(SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,_), nfo)
-      then
-        SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,nfo);
+    case(SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,_), _)
+      then SCode.COMPONENT(a1,p,a6,a7,a8,a10,a11,nfo);
 
     else elem;
   end matchcontinue;

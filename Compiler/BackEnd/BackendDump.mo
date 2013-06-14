@@ -619,7 +619,7 @@ algorithm
       DAE.ComponentRef cr;
 
     case ({}, _) then ();
-    case (BackendDAE.EQUATION(e1, e2, source, diffed)::res, printExpTree) equation /*done*/
+    case (BackendDAE.EQUATION(e1, e2, source, diffed)::res, _) equation /*done*/
       str = "EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
@@ -637,7 +637,7 @@ algorithm
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source)::res, printExpTree) equation /*done*/
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source)::res, _) equation /*done*/
       str = "COMPLEX_EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
@@ -655,7 +655,7 @@ algorithm
 
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e,source=source)::res,printExpTree) equation
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e,source=source)::res,_) equation
       print("SOLVED_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -666,7 +666,7 @@ algorithm
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e,source=source)::res, printExpTree) equation /*done*/
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e,source=source)::res, _) equation /*done*/
       str = "RESIDUAL_EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e);
       str = str +& "\n";
@@ -679,7 +679,7 @@ algorithm
 
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source)::res,printExpTree) equation
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source)::res,_) equation
       print("ARRAY_EQUATION: ");
       str = ExpressionDump.printExpStr(e1);
       print(str);
@@ -690,13 +690,13 @@ algorithm
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.ALGORITHM(alg=alg,source=source)::res,printExpTree) equation
+    case (BackendDAE.ALGORITHM(alg=alg,source=source)::res,_) equation
       print("ALGORITHM: ");
       dumpAlgorithms({alg},0);
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),source=source)::res, printExpTree) equation
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(right=e/*TODO handle elsewhe also*/),source=source)::res, _) equation
       print("WHEN_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -707,7 +707,7 @@ algorithm
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (_::res, printExpTree) equation
+    case (_::res, _) equation
       print("SKIPED EQUATION\n");
       dumpBackendDAEEqnList2(res, printExpTree);
     then ();
@@ -923,7 +923,7 @@ algorithm
       list<Integer> l;
       list<list<Integer>> lst;
     case ({},_,_,_) then ();
-    case ((l :: lst),i,v2,vars)
+    case ((l :: lst),i,_,_)
       equation
         print("{");
         ls = List.map(l, intString);
@@ -934,8 +934,7 @@ algorithm
         print("\n");
         i_1 = i + 1;
         dumpComponentsAdvanced2(lst, i_1,v2,vars);
-      then
-        ();
+      then ();
   end match;
 end dumpComponentsAdvanced2;
 
@@ -957,7 +956,7 @@ algorithm
       BackendDAE.Var var;
       Boolean b;
     case ({},_,_) then ();
-    case (i::{},v2,vars)
+    case (i::{},_,_)
       equation
         v = v2[i];
         var = BackendVariable.getVarAt(vars,v);
@@ -969,9 +968,8 @@ algorithm
         print(s);
         s = Util.if_(b,") "," ");
         print(s);
-      then
-        ();
-    case (i::l,v2,vars)
+      then ();
+    case (i::l,_,_)
       equation
         v = v2[i];
         var = BackendVariable.getVarAt(vars,v);
@@ -984,8 +982,7 @@ algorithm
         s = Util.if_(b,") "," ");
         print(s);
         dumpComponentsAdvanced3(l,v2,vars);
-      then
-        ();
+      then ();
   end match;
 end dumpComponentsAdvanced3;
 
@@ -2127,7 +2124,7 @@ algorithm
       list<DAE.Algorithm> algs;
 
     case({},_) then ();
-    case(DAE.ALGORITHM_STMTS(stmts)::algs,indx)
+    case(DAE.ALGORITHM_STMTS(stmts)::algs,_)
       equation
         is = intString(indx);
         myStream = IOStream.create("", IOStream.LIST());
@@ -3193,7 +3190,7 @@ algorithm
         s = stringAppendList({scr," = ",se,"\n"});
         print(s);
       then ((v,{}));
-    case inTpl then inTpl;
+    else inTpl;
   end matchcontinue;
 end dumpAliasVariable;
 
@@ -3230,7 +3227,7 @@ algorithm
         print(intString(pos)); print(": ");
         print(scr); print("\n");
       then ((v,pos+1));
-    case inTpl then inTpl;
+    else inTpl;
   end matchcontinue;
 end dumpStateVariable;
 

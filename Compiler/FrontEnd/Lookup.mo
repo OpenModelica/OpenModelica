@@ -338,27 +338,6 @@ algorithm
   end matchcontinue;
 end lookupMetarecordsRecursive3;
 
-public function isPrimitive
-"function: isPrimitive
-  author: PA
-
-  Returns true if classname is any of the builtin classes:
-  Real, Integer, String, Boolean
-"
-  input Absyn.Path inPath;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inPath)
-    case(Absyn.FULLYQUALIFIED(inPath)) then isPrimitive(inPath);
-    case (Absyn.IDENT(name = "Integer")) then true;
-    case (Absyn.IDENT(name = "Real")) then true;
-    case (Absyn.IDENT(name = "Boolean")) then true;
-    case (Absyn.IDENT(name = "String")) then true;
-    case (_) then false;
-  end matchcontinue;
-end isPrimitive;
-
 public function lookupClass "Tries to find a specified class in an environment"
   input Env.Cache inCache;
   input Env.Env inEnv "Where to look";
@@ -1459,65 +1438,6 @@ algorithm
         (cl,env);
   end match;
 end lookupClassLocal;
-
-public function lookupAndInstantiate
- "performs a lookup of a class and then instantiate that class
-  to return its environment. Helper function used e.g by Inst.mo"
-  input Env.Cache inCache;
-  input Env.Env env;
-  input Absyn.Path path;
-  input SCode.Mod mod;
-  input Boolean msg;
-  output Env.Cache outCache;
-  output Env.Env classEnv;
-algorithm
-  (outCache,classEnv) := matchcontinue(inCache,env,path,mod,msg)
-    local  Env.Cache cache;
-      String cn2;
-      SCode.Encapsulated enc,enc2;
-      SCode.Restriction r;
-      ClassInf.State new_ci_state;
-      Env.Env cenv,cenv_2;
-      Absyn.Path scope;
-      SCode.Element c;
-      Absyn.Ident ident;
-      DAE.Mod dmod;
-
-    // Try to find in cache.
-    case(cache,env,path,mod,msg) /* Should we only lookup if it is SCode.NOMOD? */
-      equation
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass(cache,env,path,msg);
-        scope = Env.getEnvName(cenv);
-        ident = Absyn.pathLastIdent(path);
-       classEnv = Env.cacheGet(scope,Absyn.IDENT(ident),cache);
-      then
-        (cache,classEnv);
-
-    // Not found in cache, lookup and instantiate.
-    case(cache,env,path,mod,msg)
-      equation
-        // Debug.traceln("lookupAndInstantiate " +& Absyn.pathString(path) +& ", s:" +& Env.printEnvPathStr(env) +& "m:" +& SCodeDump.printModStr(mod));
-        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass(cache, env, path, msg);
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
-        dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
-        //(cache,dmod,_ /* Return fn's here */) = Mod.elabMod(cache,env,Prefix.NOPRE(),mod,true); - breaks things but is needed for other things... bleh
-        // Debug.traceln("dmod: " +& Mod.printModStr(dmod));
-        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP AND INST ICD: " +& Env.printEnvPathStr(cenv) +& "." +& cn2);
-        (cache,classEnv,_,_) =
-        Inst.partialInstClassIn(cache, cenv_2, InnerOuter.emptyInstHierarchy,
-          dmod, Prefix.NOPRE(), new_ci_state, c, SCode.PUBLIC(), {}, 0);
-      then
-        (cache,classEnv);
-
-    case(cache,env,path,mod,msg)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " with mod: " +& SCodeDump.printModStr(mod) +& " in scope " +& Env.printEnvPathStr(env));
-     then
-       fail();
-  end matchcontinue;
-end lookupAndInstantiate;
 
 public function lookupIdent
 "function: lookupIdent

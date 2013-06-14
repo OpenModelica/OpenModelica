@@ -507,7 +507,7 @@ algorithm
       then
         ((e1,(knvars,true)));
 
-    case tpl then tpl;
+    else tpl;
   end matchcontinue;
 end traverserExpreplaceFinalParameter;
 
@@ -1200,13 +1200,12 @@ algorithm
     local
       list<Integer> rest,olst;
       Integer o;
-    case (r,_,_,_)
+    case (_,_,_,_)
       equation
         false = intEq(r,preorphan);
         false = intGt(ass1[r],0);
-      then
-        {r};
-    case (r,_,_,_)
+      then {r};
+    else
       equation
         false = intEq(r,preorphan);
         true = intGt(ass1[r],0);
@@ -3856,7 +3855,6 @@ algorithm
       list<BackendDAE.Var> rest;
       DAE.ComponentRef cr;
       DAE.Exp e1,e2;
-      Integer i;
     case (v::rest,_,_,_)
       equation
         cr = BackendVariable.varCref(v);

@@ -654,6 +654,7 @@ public function writeToFileAsArgs "function: writeToFileAsArgs
 "
   input list<Value> vallst;
   input String filename;
+protected
   String str;
 algorithm
   str := unparseValues(vallst);
@@ -2435,6 +2436,7 @@ end reverseMatrix;
 public function printVal "function: printVal
   This function prints a value."
   input Value v;
+protected
   String s;
 algorithm
   s := valString(v);

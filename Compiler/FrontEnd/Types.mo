@@ -1845,31 +1845,32 @@ algorithm
       Type t;
       Integer i;
       DAE.Exp e;
+      list<DAE.Subscript> rest;
     case (t,{}) then t;
-    case (t,DAE.WHOLEDIM()::lst)
+    case (t,DAE.WHOLEDIM()::rest)
       equation
-        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),lst);
+        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),rest);
       then
         t;
-    case (t,DAE.SLICE(e)::lst)
+    case (t,DAE.SLICE(e)::rest)
       equation
-        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),lst);
+        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),rest);
       then
         t;
-    case (t,DAE.WHOLE_NONEXP(e)::lst)
+    case (t,DAE.WHOLE_NONEXP(e)::rest)
       equation
-        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),lst);
+        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),rest);
       then
         t;
 
-    case (t,DAE.INDEX(DAE.ICONST(i))::lst)
+    case (t,DAE.INDEX(DAE.ICONST(i))::rest)
       equation
-        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),lst);
+        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),rest);
       then
         t;
-     case (t,DAE.INDEX(_)::lst)
+     case (t,DAE.INDEX(_)::rest)
       equation
-        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),lst);
+        t = makeArraySubscripts(DAE.T_ARRAY(t,{DAE.DIM_UNKNOWN()},DAE.emptyTypeSource),rest);
       then
         t;
   end matchcontinue;
@@ -2907,13 +2908,7 @@ public function getClassname "function: getClassname
   input Type inType;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (inType)
-    local Absyn.Path p;
-    case (inType)
-      equation
-        {p} = getTypeSource(inType);
-      then p;
-  end matchcontinue;
+  {outPath} := getTypeSource(inType);
 end getClassname;
 
 public function getClassnameOpt "function: getClassname
@@ -5226,6 +5221,7 @@ end printPropStr;
 public function printProp "function: printProp
   Print the Properties to the Print buffer."
   input Properties p;
+protected
   Ident str;
 algorithm
   str := printPropStr(p);

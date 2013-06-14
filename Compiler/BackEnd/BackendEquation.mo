@@ -474,7 +474,7 @@ algorithm
       then
         ((e, (crefs,vars) ));
 
-    case(inExp) then inExp;
+    else inExp;
 
   end matchcontinue;
 end traversingStateRefFinder;
@@ -554,7 +554,7 @@ algorithm
          ((_,tpl)) = Expression.traverseExp(exp,checkEquationsUnknownCrefsExp,tpl);
        then
         ((exp,tpl));
-    case inTpl then inTpl;
+    else inTpl;
   end matchcontinue;
 end checkEquationsUnknownCrefs;
 
@@ -622,7 +622,7 @@ algorithm
       then
         ((e, (vars,knvars,ht)));
 
-    case inTuple then inTuple;
+    else inTuple;
   end matchcontinue;
 end checkEquationsUnknownCrefsExp;
 

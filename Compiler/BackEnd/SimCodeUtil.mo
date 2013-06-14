@@ -572,15 +572,16 @@ public function getCalledFunctionReferences
   input DAE.DAElist dae;
   input BackendDAE.BackendDAE dlow;
   output list<Absyn.Path> res;
+protected
   list<DAE.Exp> explist, fcallexps;
   list<Absyn.Path> calledfuncs;
 algorithm
   res := matchcontinue(dae, dlow)
-    case (dae, dlow)
+    case (_, _)
       equation
         false = Config.acceptMetaModelicaGrammar();
       then {};
-    case (dae, dlow)
+    case (_, _)
       equation
         true = Config.acceptMetaModelicaGrammar();
         fcallexps = BackendDAEUtil.traverseBackendDAEExps(dlow, matchFnRefs, {});
@@ -5696,13 +5697,12 @@ algorithm
       list<DAE.Algorithm> varasserts;
       list<SimCode.SimEqSystem> simvarasserts;
       
-    case (BackendDAE.EQSYSTEM(orderedVars = vars), BackendDAE.SHARED(removedEqs=r), acc)
+    case (BackendDAE.EQSYSTEM(orderedVars = vars), BackendDAE.SHARED(removedEqs=r), _)
       equation
         // get minmax and nominal asserts
         varasserts = BackendVariable.traverseBackendDAEVars(vars, createVarMinMaxAssert, {});
         (simvarasserts, _) = List.mapFold(varasserts, dlowAlgToSimEqSystem, 0);
         removedEquations = listAppend(simvarasserts, acc);
-        
       then removedEquations;
     else
       equation
@@ -9266,7 +9266,7 @@ algorithm
       then
         ((e, e2::acc));
         
-    case itpl then itpl;
+    else itpl;
         
   end matchcontinue;
 end matchFnRefs;
@@ -9947,7 +9947,7 @@ algorithm
       SimCode.Value value;
       
       // adding when not existing previously 
-    case ((v as (key, value)), (hashTable as SimCode.HASHTABLE(hashvec, varr, bsize, n)))
+    case ((v as (key, value)), SimCode.HASHTABLE(hashvec, varr, bsize, n))
       equation
         indx = ComponentReference.hashComponentRefMod(key,bsize);
         newpos = valueArrayLength(varr);
@@ -9958,7 +9958,7 @@ algorithm
       then SimCode.HASHTABLE(hashvec_1, varr_1, bsize, n_1);
         
         // failure
-    case (_, _)
+    else
       equation
         print("- HashTableCrefToSimVar.addNoUpdCheck failed\n");
       then
@@ -11375,16 +11375,7 @@ protected function getFilesFromSimEqSystems
   input SimCode.Files inFiles;
   output SimCode.Files outFiles;
 algorithm
-  outFiles := match(inSimEqSystems, inFiles)
-    local
-      SimCode.Files files;
-      
-    case (inSimEqSystems, files)
-      equation
-        (_, files) = List.mapFoldList(inSimEqSystems, getFilesFromSimEqSystem, files);
-      then 
-        files;               
-  end match;
+  (_, outFiles) := List.mapFoldList(inSimEqSystems, getFilesFromSimEqSystem, inFiles);
 end getFilesFromSimEqSystems;
 
 protected function getFilesFromStatementsElse
@@ -11742,11 +11733,10 @@ algorithm
       list<SimCode.Function> functions;
       SimCode.Files files "all the files from Absyn.Info and DAE.ELementSource";      
 
-    case inSimCode
+    case _
       equation
         true = Config.acceptMetaModelicaGrammar();
-      then
-        inSimCode;
+      then inSimCode;
     
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
@@ -11769,7 +11759,7 @@ algorithm
                   parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                   discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
                   
-    case inSimCode
+    case _
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function collectAllFiles failed to collect files from SimCode!"});        
       then
@@ -11851,16 +11841,7 @@ protected function getFileIndexFromFiles
   input SimCode.Files files;
   output Integer index;
 algorithm
-  index := matchcontinue(file, files)
-    local
-      Integer i;
-      
-    case (file, files)
-      equation
-        i = List.positionOnTrue(SimCode.FILEINFO(file, false), files, equalFileInfo);
-      then
-        i; 
-  end matchcontinue;
+  index := List.positionOnTrue(SimCode.FILEINFO(file, false), files, equalFileInfo);
 end getFileIndexFromFiles;
 
 public function fileName2fileIndex

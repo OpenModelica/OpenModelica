@@ -166,6 +166,7 @@ public function newIdent
   This function creates a new, unique identifer.
   The same name is never returned twice."
   output DAE.ComponentRef outComponentRef;
+protected
   Integer i;
   String is,s;
 algorithm
@@ -1288,111 +1289,6 @@ algorithm
   end matchcontinue;
 end extractConnectorPrefix;
 
-protected function updateTypesInUnconnectedConnectors
-"Author: BZ, 2009-09
-  Given a set of zeroequations (unconnected flow variables) and the subset dae containing flow-variable declaration:
-  Set same type to variable as the equations have.
-  Note: This is a hack to readd the typing of the variables."
-  input DAE.DAElist zeroEqnDae;
-  input DAE.DAElist fullDae;
-  output DAE.DAElist outdae;
-algorithm
-  outdae := matchcontinue(zeroEqnDae,fullDae)
-    local
-      DAE.Element ze;
-      DAE.Exp e;
-      DAE.ComponentRef cr;
-      list<DAE.Element> zeroEqns;
-      DAE.FunctionTree funcs;
-
-    case(DAE.DAE({}),fullDae) then fullDae;
-
-    case(_, DAE.DAE({})) equation print(" error in updateTypesInUnconnectedConnectors\n"); then fail();
-
-    case(DAE.DAE((ze as DAE.EQUATION(exp = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
-      equation
-        //print(ComponentReference.printComponentRefStr(cr));
-        cr = extractConnectorPrefix(cr);
-        //print(" ===> " +& ComponentReference.printComponentRefStr(cr) +& "\n");
-        fullDae = updateTypesInUnconnectedConnectors2(cr,fullDae);
-        fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
-      then
-        fullDae;
-
-    case(DAE.DAE((ze as DAE.EQUATION(scalar = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
-      equation
-        //print(ComponentReference.printComponentRefStr(cr));
-        cr = extractConnectorPrefix(cr);
-        //print(" ===> " +& ComponentReference.printComponentRefStr(cr) +& "\n");
-        fullDae = updateTypesInUnconnectedConnectors2(cr,fullDae);
-        fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
-      then
-        fullDae;
-
-    case(DAE.DAE((ze as DAE.EQUATION(exp = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
-      equation
-        failure(cr = extractConnectorPrefix(cr));
-        //print("Var is not a outside connector: " +& ComponentReference.printComponentRefStr(cr));
-        fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
-      then
-        fullDae;
-
-    case(DAE.DAE((ze as DAE.EQUATION(scalar = (e as DAE.CREF(cr,_))))::zeroEqns), fullDae)
-      equation
-        failure(cr = extractConnectorPrefix(cr));
-        //print("Var is not a outside connector: " +& ComponentReference.printComponentRefStr(cr));
-        fullDae = updateTypesInUnconnectedConnectors(DAE.DAE(zeroEqns),fullDae);
-      then
-        fullDae;
-
-    case(_,_) equation print(" ERROR -- updateTypesInUnconnectedConnectors\n"); then fail();
-
-  end matchcontinue;
-end updateTypesInUnconnectedConnectors;
-
-protected function updateTypesInUnconnectedConnectors2
-"Author: BZ, 2009-09
-  Helper function for updateTypesInUnconnectedConnectors"
-  input DAE.ComponentRef inCr;
-  input DAE.DAElist elems;
-  output DAE.DAElist outelems;
-algorithm
-  outelems := matchcontinue(inCr, elems)
-    local
-      DAE.ComponentRef cr1,cr2;
-      DAE.Element elem,elem2;
-      DAE.FunctionTree funcs;
-      list<DAE.Element> elts;
-
-    case(cr1,DAE.DAE({}))
-      equation
-        // print("error updateTypesInUnconnectedConnectors2\n");
-        // print(" no match for: " +& ComponentReference.printComponentRefStr(cr1) +& "\n");
-      then
-        DAE.DAE({});
-
-    case(inCr,DAE.DAE((elem2 as DAE.VAR(componentRef = cr2))::elts))
-      equation
-        true = ComponentReference.crefPrefixOf(inCr,cr2);
-        //print(" Found: " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
-        cr1 = updateCrefTypesWithConnectorPrefix(inCr,cr2);
-        elem = DAEUtil.replaceCrefInVar(cr1,elem2);
-        //print(" replaced to: " ); print(DAE.dump2str(DAE.DAE({elem}))); print("\n");
-        DAE.DAE(elts) = updateTypesInUnconnectedConnectors2(inCr, DAE.DAE(elts));
-      then
-        DAE.DAE(elem::elts);
-
-    case(cr1,DAE.DAE(elem2::elts))
-      equation
-        DAE.DAE(elts) = updateTypesInUnconnectedConnectors2(cr1, DAE.DAE(elts));
-      then
-        DAE.DAE(elem2::elts);
-
-    case(_,_) equation print(" ERROR updateTypesInUnconnectedConnectors2\n"); then fail();
-
-  end matchcontinue;
-end updateTypesInUnconnectedConnectors2;
-
 protected function updateCrefTypesWithConnectorPrefix "
 Author: BZ, 2009-09
 Helper function for updateTypesInUnconnectedConnectors2"
@@ -1404,23 +1300,22 @@ algorithm outCref := matchcontinue(cr1,cr2)
     DAE.ComponentRef child,child2;
     DAE.Type ty;
     list<DAE.Subscript> subs;
-  case(DAE.CREF_IDENT(name,ty,subs),DAE.CREF_QUAL(name2,_,_,child2))
+  case (DAE.CREF_IDENT(name,ty,subs),DAE.CREF_QUAL(name2,_,_,child2))
     equation
       true = stringEq(name,name2);
     then
       ComponentReference.makeCrefQual(name,ty,subs,child2);
 
-  case(DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
+  case (DAE.CREF_QUAL(name,ty,subs,child),DAE.CREF_QUAL(name2,_,_,child2))
     equation
       true = stringEq(name,name2);
       outCref = updateCrefTypesWithConnectorPrefix(child,child2);
     then
       ComponentReference.makeCrefQual(name,ty,subs,outCref);
-  case(cr1,cr2)
+  else
     equation
       print(" ***** FAILURE with " +& ComponentReference.printComponentRefStr(cr1) +& " _and_ " +& ComponentReference.printComponentRefStr(cr2) +& "\n");
-      then
-        fail();
+    then fail();
   end matchcontinue;
 end updateCrefTypesWithConnectorPrefix;
 
@@ -1786,7 +1681,7 @@ algorithm
       SCode.ClassDef cd1, cd2;
 
     // when +g=MetaModelica, check class equality!
-    case (c1,c2)
+    case (_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         failure(equality(c1 = c2));
@@ -1825,7 +1720,7 @@ algorithm
       then
         true;
     // anything else, false!
-    case (c1,c2) then false;
+    else false;
   end matchcontinue;
 end checkClassEqual;
 
@@ -3116,26 +3011,25 @@ algorithm
       then ();
 
     // we haven't found the class, do nothing
-    case (inCache, inEnv, inIH, r1, {SCode.EXTENDS(baseClassPath=p)})
+    case (_, _, _, _, {SCode.EXTENDS(baseClassPath=p)})
       equation
         failure((_, _, _) = Lookup.lookupClass(inCache, inEnv, p, false));
       then ();
 
     // we found te class, check the restriction
-    case (inCache, inEnv, inIH, r1, {SCode.EXTENDS(baseClassPath=p)})
+    case (_, _, _, r1, {SCode.EXTENDS(baseClassPath=p)})
       equation
         (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache,inEnv,p,false);
         checkExtendsRestrictionMatch(r1, r2);
       then ();
 
     // make some waves that this is not correct
-    case (inCache, inEnv, inIH, r1, {SCode.EXTENDS(baseClassPath=p)})
+    case (_, _, _, r1, {SCode.EXTENDS(baseClassPath=p)})
       equation
         (_,SCode.CLASS(restriction=r2),_) = Lookup.lookupClass(inCache, inEnv, p, false);
         print("Error!: " +& SCodeDump.restrString(r1) +& " " +& Env.printEnvPathStr(inEnv) +&
               " cannot be extended by " +& SCodeDump.restrString(r2) +& " " +& Absyn.pathString(p) +& " due to derived/base class restrictions.\n");
-      then
-        fail();
+      then fail();
   end matchcontinue;
 end checkExtendsForTypeRestiction;
 
@@ -7661,7 +7555,7 @@ algorithm
       then
         (cache,SCode.MOD(fi,ea,subs,NONE(), info));
 
-    case(cache,id,inMod) then (cache,inMod);
+    case (cache,_,_) then (cache,inMod);
 
   end matchcontinue;
 end removeSelfModReference;
@@ -7682,15 +7576,15 @@ algorithm
      SCode.Mod mod;
      String ident;
 
-   case (cache,id,{}) then (cache,{});
+   case (cache,_,{}) then (cache,{});
 
-   case(cache, id,SCode.NAMEMOD(ident,mod)::subs)
+   case(cache,_,SCode.NAMEMOD(ident,mod)::subs)
      equation
        (cache,SCode.NOMOD()) = removeSelfModReference(cache,id,mod);
        (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
      then (cache,subs);
 
-   case(cache, id,SCode.NAMEMOD(ident,mod)::subs)
+   case(cache,_,SCode.NAMEMOD(ident,mod)::subs)
      equation
        (cache,mod) = removeSelfModReference(cache,id,mod);
        (cache,subs) = removeSelfModReferenceSubs(cache,id,subs);
@@ -15282,7 +15176,7 @@ algorithm
                           typeSpec = Absyn.TPATH(t, _),modifications = mod,
                           comment = comment,
                           info = info),
-          outerMod,impl)
+          _,impl)
       equation
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
         var = SCode.VAR();
@@ -15301,7 +15195,7 @@ algorithm
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(ct,prl,var,dir,Absyn.NOT_INNER_OUTER(),vis),tp_1,bind,NONE()));
 
-    case (cache,env,ih,elt,outerMod,impl)
+    case (cache,env,ih,elt,_,impl)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.trace("- Inst.instRecordConstructorElt failed.,elt:");
@@ -15680,7 +15574,7 @@ algorithm
       SCode.Element cdef,imp,ext;
       Absyn.InnerOuter io;
 
-    case (elts)
+    case _
       equation
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(elts);
         // put inner elements first in the list of
@@ -15902,23 +15796,23 @@ algorithm
       list<SCode.Element> compElts;
 
     // input/output come first!
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.INPUT())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.INPUT())), _)
       then inComp::inCompElts;
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.OUTPUT())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(direction = Absyn.OUTPUT())), _)
       then inComp::inCompElts;
     // put inner/outer in front.
-    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER())), inCompElts)
+    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER())), _)
       then inComp::inCompElts;
-    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER())), inCompElts)
+    case (SCode.COMPONENT(name=_,prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER())), _)
       then inComp::inCompElts;
     // put constants in front
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.CONST())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.CONST())), _)
       then inComp::inCompElts;
     // put parameters in front
-    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.PARAM())), inCompElts)
+    case (SCode.COMPONENT(name=_,attributes = SCode.ATTR(variability = SCode.PARAM())), _)
       then inComp::inCompElts;
     // all other append to the end.
-    case (SCode.COMPONENT(name=_), inCompElts)
+    case (SCode.COMPONENT(name=_), _)
       equation
         compElts = listAppend(inCompElts, {inComp});
       then compElts;
@@ -17069,25 +16963,6 @@ algorithm
 
   end matchcontinue;
 end makeCrefBaseType2;
-
-protected function liftNonBasicTypesNDimensions
-"function: liftNonBasicTypesNDimensions
-  This is to handle a Option<integer> list of dimensions."
-  input DAE.Type tp;
-  input DAE.Dimensions dimt;
-  output DAE.Type otype;
-algorithm
-  otype := matchcontinue(tp,dimt)
-    local DAE.Dimension x;
-    case(tp,{}) then tp;
-    case(tp, x::dimt)
-      equation
-        tp = liftNonBasicTypes(tp,x);
-        tp = liftNonBasicTypesNDimensions(tp,dimt);
-      then
-        tp;
-  end matchcontinue;
-end liftNonBasicTypesNDimensions;
 
 protected function getCrefFromCompDim
 "Author: BZ, 2009-07

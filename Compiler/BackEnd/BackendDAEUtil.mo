@@ -1338,26 +1338,26 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.Statement> stmts;
 
-    case(BackendDAE.EQUATION(exp = e1,scalar = e2),vars,knvars) equation
+    case(BackendDAE.EQUATION(exp = e1,scalar = e2),_,_) equation
       b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
-    case(BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),vars,knvars) equation
+    case(BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),_,_) equation
       b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
-    case(BackendDAE.ARRAY_EQUATION(left = e1,right = e2),vars,knvars) equation
+    case(BackendDAE.ARRAY_EQUATION(left = e1,right = e2),_,_) equation
       b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
-    case(BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),vars,knvars) equation
+    case(BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),_,_) equation
       e1 = Expression.crefExp(cr);
       b = boolAnd(isDiscreteExp(e1,vars,knvars), isDiscreteExp(e2,vars,knvars));
     then b;
-    case(BackendDAE.RESIDUAL_EQUATION(exp = e1),vars,knvars) equation
+    case(BackendDAE.RESIDUAL_EQUATION(exp = e1),_,_) equation
       b = isDiscreteExp(e1,vars,knvars);
     then b;
-    case(BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(stmts)),vars,knvars) equation
+    case(BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(stmts)),_,_) equation
       (_,(_,_,true)) = DAEUtil.traverseDAEEquationsStmts(stmts, isDiscreteExp1, (vars,knvars,false));
     then true;
-    case(BackendDAE.WHEN_EQUATION(whenEquation = _),vars,knvars) then true;
+    case(BackendDAE.WHEN_EQUATION(whenEquation = _),_,_) then true;
     // returns false otherwise!
     case(_,_,_) then false;
   end matchcontinue;
@@ -1582,17 +1582,9 @@ public function statesAndVarsExp
   outputs: DAE.Exp list"
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  output list<DAE.Exp> outExpExpLst;
+  output list<DAE.Exp> exps;
 algorithm
-  outExpExpLst :=
-  match(inExp,inVariables)
-    local list<DAE.Exp> exps;
-  case(inExp,inVariables)
-    equation
-      ((_,(_,exps))) = Expression.traverseExpTopDown(inExp, traversingstatesAndVarsExpFinder, (inVariables,{}));
-      then
-        exps;
-  end match;
+  ((_,(_,exps))) := Expression.traverseExpTopDown(inExp, traversingstatesAndVarsExpFinder, (inVariables,{}));
 end statesAndVarsExp;
 
 public function traversingstatesAndVarsExpFinder "
@@ -2064,7 +2056,7 @@ algorithm
       EquationArray e,se,ie;
       array<Integer> ass1,ass2;
       array<list<Integer>> m,mt;
-    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps)))
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps)))
       equation
         size = arrayLength(ass1) "equation_size(e) => size &" ;
         arr = arrayCreate(size, 0);
@@ -2426,8 +2418,8 @@ algorithm
     list<Var> var_lst;
     EquationArray eqnsNew;
     BackendDAE.Variables varsNew;
-    case ({},inEqns,inVars,eqnsNew,varsNew) then (eqnsNew,varsNew);
-    case (comp::rest,inEqns,inVars,eqnsNew,varsNew)
+    case ({},_,_,eqnsNew,varsNew) then (eqnsNew,varsNew);
+    case (comp::rest,_,_,eqnsNew,varsNew)
       equation
       (eqnsNew,varsNew) = splitoutEquationAndVars(rest,inEqns,inVars,eqnsNew,varsNew);
       (eqn_lst,var_lst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, inEqns, inVars);
@@ -6140,7 +6132,7 @@ algorithm
         reqn = BackendEquation.equationToResidualForm(eqn);
       then
         ((eqn,reqn::eqns));
-    case (inTpl) then inTpl;
+    else inTpl;
   end matchcontinue;
 end traverseequationToResidualForm;
 

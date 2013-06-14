@@ -4432,21 +4432,22 @@ public function crefEqualNoSubs "
 algorithm
   outBoolean := matchcontinue (cr1,cr2)
     local
+      ComponentRef rest1,rest2;
       Ident id,id2;
     case (CREF_IDENT(name = id),CREF_IDENT(name = id2))
       equation
         true = stringEq(id, id2);
       then
         true;
-    case (CREF_QUAL(name = id,componentRef = cr1),CREF_QUAL(name = id2,componentRef = cr2))
+    case (CREF_QUAL(name = id,componentRef = rest1),CREF_QUAL(name = id2,componentRef = rest2))
       equation
         true = stringEq(id, id2);
-        true = crefEqualNoSubs(cr1, cr2);
+        true = crefEqualNoSubs(rest1, rest2);
       then
         true;
-    case (CREF_FULLYQUALIFIED(componentRef = cr1),CREF_FULLYQUALIFIED(componentRef = cr2))
-      then crefEqualNoSubs(cr1, cr2);
-    case (_,_) then false;
+    case (CREF_FULLYQUALIFIED(componentRef = rest1),CREF_FULLYQUALIFIED(componentRef = rest2))
+      then crefEqualNoSubs(rest1, rest2);
+    else false;
   end matchcontinue;
 end crefEqualNoSubs;
 

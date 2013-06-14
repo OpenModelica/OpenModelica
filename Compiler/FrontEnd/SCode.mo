@@ -1754,14 +1754,13 @@ algorithm
       Comment cmt;
 
     // check if restrictions are equal, so you can return the same thing!
-    case(r, CLASS(restriction = oldR))
+    case(_, CLASS(restriction = oldR))
       equation
         true = restrictionEqual(r, oldR);
-      then
-        cl;
+      then cl;
 
     // not equal, change
-    case(r, CLASS(id,prefixes,e,p,_,parts,cmt,info))
+    case(_, CLASS(id,prefixes,e,p,_,parts,cmt,info))
       then CLASS(id,prefixes,e,p,r,parts,cmt,info);
   end matchcontinue;
 end setClassRestriction;
@@ -3324,7 +3323,7 @@ public function boolReplaceable
   output Replaceable outReplaceable;
 algorithm
   outReplaceable := matchcontinue(inBoolReplaceable, inOptConstrainClass)
-    case (true, inOptConstrainClass) then REPLACEABLE(inOptConstrainClass);
+    case (true, _) then REPLACEABLE(inOptConstrainClass);
     case (false, SOME(_))
       equation
         print("Ignoring constraint class because replaceable prefix is not present!\n");

@@ -150,6 +150,7 @@ end printPrefixStrIgnoreNoPre;
 public function printPrefix "function: printPrefix
   Prints a prefix to the Print buffer."
   input Prefix.Prefix p;
+protected
   String s;
 algorithm
   s := printPrefixStr(p);

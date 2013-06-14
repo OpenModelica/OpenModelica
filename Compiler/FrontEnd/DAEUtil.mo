@@ -516,12 +516,12 @@ algorithm
       DAE.VarVisibility prot;
       DAE.ElementSource source "the origin of the element";
 
-    case(var,DAE.DAE({})) then DAE.DAE({});
+    case (_,DAE.DAE({})) then DAE.DAE({});
      /* When having an inner outer, we declare two variables on the same line.
         Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
         These are named uniqly and renamed later in "instClass"
      */
-    case(var,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,(io as Absyn.INNER_OUTER()))::elist))
+    case(_,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,(io as Absyn.INNER_OUTER()))::elist))
       equation
         true = compareUniquedVarWithNonUnique(var,oldVar);
         newVar = nameInnerouterUniqueCref(oldVar);
@@ -532,20 +532,20 @@ algorithm
       then
         DAE.DAE(elist);
 
-    case(var,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io)::elist))
+    case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io)::elist))
       equation
         true = ComponentReference.crefEqualNoStringCompare(var,cr);
         io2 = removeInnerAttribute(io);
       then
         DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io2)::elist);
 
-    case(var,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
+    case(_,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
       equation
         DAE.DAE(elist) = removeInnerAttr(var,DAE.DAE(elist));
         DAE.DAE(elist2) = removeInnerAttr(var,DAE.DAE(elist2));
       then DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2);
 
-    case(var,DAE.DAE(e::elist))
+    case(_,DAE.DAE(e::elist))
       equation
         DAE.DAE(elist)= removeInnerAttr(var,DAE.DAE(elist));
       then DAE.DAE(e::elist);
@@ -559,6 +559,7 @@ This function strips the 'unique identifer' from the cref and compares.
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   output Boolean equal;
+protected
   String s1,s2,s3;
 algorithm
   s1 := ComponentReference.printComponentRefStr(cr1);
@@ -651,7 +652,7 @@ algorithm
   ioOut := matchcontinue(io)
     case(Absyn.INNER()) then Absyn.NOT_INNER_OUTER();
     case(Absyn.INNER_OUTER()) then Absyn.OUTER();
-    case(io) then io;
+    else io;
   end matchcontinue;
 end removeInnerAttribute;
 
@@ -1282,7 +1283,7 @@ algorithm
     // handle the empty case
     case(DAE.DAE({}),_,_) then (DAE.DAE({}),DAE.DAE({}));
     // handle the dive-in case
-    case(DAE.DAE(DAE.COMP(dAElist=lst)::rest),cond1,cond2)
+    case(DAE.DAE(DAE.COMP(dAElist=lst)::rest),_,_)
       equation
         (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(lst),cond1,cond2);
         (DAE.DAE(elist1a),DAE.DAE(elist2a)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
@@ -1290,26 +1291,26 @@ algorithm
         elist2 = listAppend(elist2,elist2a);
       then (DAE.DAE(elist1),DAE.DAE(elist2));
     // handle both first and second condition true!
-    case(DAE.DAE(e::rest),cond1,cond2)
+    case(DAE.DAE(e::rest),_,_)
       equation
         cond1(e);
         cond2(e);
         (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
       then (DAE.DAE(e::elist1),DAE.DAE(e::elist2));
     // handle first condition true
-    case(DAE.DAE(e::rest),cond1,cond2)
+    case(DAE.DAE(e::rest),_,_)
       equation
         cond1(e);
         (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
       then (DAE.DAE(e::elist1),DAE.DAE(elist2));
     // handle the second condition
-    case(DAE.DAE(e::rest),cond1,cond2)
+    case(DAE.DAE(e::rest),_,_)
       equation
         cond2(e);
         (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
       then (DAE.DAE(elist1),DAE.DAE(e::elist2));
     // move to next element.
-    case(DAE.DAE(e::rest),cond1,cond2)
+    case(DAE.DAE(e::rest),_,_)
       equation
         (DAE.DAE(elist1),DAE.DAE(elist2)) = findAllMatchingElements(DAE.DAE(rest),cond1,cond2);
       then (DAE.DAE(elist1),DAE.DAE(elist2));

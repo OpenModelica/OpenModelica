@@ -1124,19 +1124,19 @@ algorithm
       SCode.Each e;
       SCode.Final f;
 
-    case(inMod,inIdent)
+    case (_,_)
       equation
         DAE.NOMOD() = lookupCompModification(inMod,inIdent);
       then
         DAE.NOMOD();
 
-    case(inMod,inIdent)
+    case (_,_)
       equation
         (m as DAE.MOD(_,_, {}, SOME(_))) = lookupCompModification(inMod,inIdent);
       then
         m;
 
-    case(inMod,inIdent)
+    case (_,_)
       equation
         m = lookupCompModification(inMod,inIdent);
       then
@@ -2195,14 +2195,15 @@ algorithm
     Boolean b1,b2,b3;
     list<Integer> indx1,indx2;
     list<Boolean> blst1;
+    list<DAE.SubMod> rest1,rest2;
 
     case ({},{}) then true;
 
-    case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
+    case (DAE.NAMEMOD(id1,mod1)::rest1,DAE.NAMEMOD(id2,mod2)::rest2)
       equation
         true = stringEq(id1,id2);
         true = modEqual(mod1,mod2);
-        true = subModsEqual(subModLst1,subModLst2);
+        true = subModsEqual(rest1,rest2);
       then
         true;
 
@@ -2441,6 +2442,7 @@ end printModStr;
 public function printMod "function: printMod
   Print a modifier on the Print buffer."
   input DAE.Mod m;
+protected
   Ident str;
 algorithm
   str := printModStr(m);
@@ -3224,12 +3226,11 @@ protected
   String s;
 algorithm
   outMod := match(inMod,remStrings)
-    case(inMod,{}) then inMod;
-    case(inMod, s::remStrings)
-      equation
-        inMod = removeMod(inMod,s);
-      then
-        removeModList(inMod,remStrings);
+    local
+      list<String> rest;
+    case(_,{}) then inMod;
+    case(_, s::rest)
+      then removeModList(removeMod(inMod,s),remStrings);
   end match;
 end removeModList;
 

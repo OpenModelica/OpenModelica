@@ -144,14 +144,16 @@ are referenced in the model are picked up
   input Absyn.Program prg;
 algorithm
   _ := matchcontinue(prg)
-    case(prg) equation
-      true = Flags.getConfigBool(Flags.UNIT_CHECKING);
-      ((_,_,_)) = Interactive.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
-    then ();
+    case _
+      equation
+        true = Flags.getConfigBool(Flags.UNIT_CHECKING);
+        ((_,_,_)) = Interactive.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
+      then ();
 
-    case(prg) equation
-      false = Flags.getConfigBool(Flags.UNIT_CHECKING);
-    then ();
+    case _
+      equation
+        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+      then ();
   end matchcontinue;
 end registerUnits;
 
@@ -214,10 +216,10 @@ algorithm
        });
      then ();
 
-     case(elts) equation
-       registerDefineunits2(elts);
-     then ();
-
+     else
+       equation
+         registerDefineunits2(elts);
+       then ();
   end matchcontinue;
 end registerDefineunits;
 
@@ -226,10 +228,13 @@ protected function registerDefineunits2 "help function to registerUnitInClass"
 algorithm
    _ := matchcontinue(elts)
      local
-       String name; list<Absyn.NamedArg> args; Absyn.Element du;
-       String exp; Real weight;
+       String exp,name;
+       list<Absyn.NamedArg> args;
+       Absyn.Element du;
+       Real weight;
+       list<Absyn.Element> rest;
 
-     case({}) then ();
+     case {} then ();
      /* Derived unit with weigth */
      /*case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
        {SCode.DEFINEUNIT(name,SOME(exp),_)} = SCodeUtil.translateElement(du,false);
@@ -238,24 +243,25 @@ algorithm
      then ();*/
 
      /* Derived unit without weigth */
-     case((du as Absyn.DEFINEUNIT(name=_))::elts) equation
-       {SCode.DEFINEUNIT(name,_,SOME(exp),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
-       UnitParserExt.addDerived(name,exp);
-       registerDefineunits2(elts);
-     then ();
+     case ((du as Absyn.DEFINEUNIT(name=_))::rest)
+       equation
+         {SCode.DEFINEUNIT(name,_,SOME(exp),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
+         UnitParserExt.addDerived(name,exp);
+         registerDefineunits2(rest);
+       then ();
 
        /* base unit does not not have weight*/
-     case((du as Absyn.DEFINEUNIT(name=_))::elts)
+     case((du as Absyn.DEFINEUNIT(name=_))::rest)
        equation
-       {SCode.DEFINEUNIT(name,_,NONE(),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
-       UnitParserExt.addBase(name);
-       registerDefineunits2(elts);
-     then ();
+         {SCode.DEFINEUNIT(name,_,NONE(),_)} = SCodeUtil.translateElement(du,SCode.PUBLIC());
+         UnitParserExt.addBase(name);
+         registerDefineunits2(rest);
+       then ();
 
-     case(_) equation
-       print("registerDefineunits failed\n");
-     then fail();
-
+     else
+       equation
+         print("registerDefineunits failed\n");
+       then fail();
   end matchcontinue;
 end registerDefineunits2;
 
@@ -286,8 +292,8 @@ public function updateInstStore "  "
 algorithm
   outStore := matchcontinue(store,st)
   local HashTable.HashTable ht; Option<UnitAbsyn.UnitCheckResult> res;
-    case(UnitAbsyn.INSTSTORE(_,ht,res),st) then UnitAbsyn.INSTSTORE(st,ht,res);
-    case(UnitAbsyn.NOSTORE(),st) then UnitAbsyn.NOSTORE();
+    case(UnitAbsyn.INSTSTORE(_,ht,res),_) then UnitAbsyn.INSTSTORE(st,ht,res);
+    case(UnitAbsyn.NOSTORE(),_) then UnitAbsyn.NOSTORE();
   end matchcontinue;
 end updateInstStore;
 
@@ -536,14 +542,16 @@ input list<Option<UnitAbsyn.Unit>> lst;
 input Integer indx;
 algorithm
   _ := matchcontinue(lst,indx)
-  local UnitAbsyn.Unit unit;
+    local
+      UnitAbsyn.Unit unit;
+      list<Option<UnitAbsyn.Unit>> rest;
     case({},_) then ();
 
-    case(SOME(unit)::lst,indx) equation
+    case(SOME(unit)::rest,_) equation
       print(intString(indx));print("->");
       printUnit(unit);
       print("\n");
-      printStore2(lst,indx+1);
+      printStore2(rest,indx+1);
     then();
     case(NONE()::_,_) then ();
   end matchcontinue;
@@ -558,11 +566,11 @@ algorithm
     /*case(unit) equation
       print(unit2str(unit));
     then();*/
-    case(unit as UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT({},baseunits))) equation
+    case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT({},baseunits))) equation
       print(printBaseUnitsStr(baseunits));
       print(" [");print(unit2str(unit)); print("]");
     then();
-    case(unit as UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeparams,baseunits))) equation
+    case(UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeparams,baseunits))) equation
       print(stringDelimitList(List.map(typeparams,printTypeParameterStr),","));
       print(printBaseUnitsStr(baseunits));
       print(" [");print(unit2str(unit)); print("]");
@@ -584,7 +592,7 @@ algorithm
     +&  "s^("+&intString(i3)+&"/"+&intString(i4)+&")" ;
     then str;
     case({}) then "";
-    case(lst) then "printBaseUnitsStr failed len:" +& intString(listLength(lst)) +& "\n";
+    else "printBaseUnitsStr failed len:" +& intString(listLength(lst)) +& "\n";
   end matchcontinue;
 end printBaseUnitsStr;
 
@@ -1379,49 +1387,57 @@ end buildTermOp;
 
 protected function buildStores2 "help function"
   input DAE.DAElist dae;
-  input UnitAbsyn.Store store;
-  input HashTable.HashTable ht;
+  input UnitAbsyn.Store inStore;
+  input HashTable.HashTable inHt;
   output UnitAbsyn.Store outStore;
   output HashTable.HashTable outHt;
 algorithm
-  (outStore,outHt) := matchcontinue(dae,store,ht)
-  local DAE.ComponentRef cr; Option<DAE.VariableAttributes> attropt;
-    Integer indx; String unitStr;
-    list<MMath.Rational> units;
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
-    UnitAbsyn.Unit unit;
-    DAE.Exp e1,e2;
-    DAE.FunctionTree funcs;
-    list<DAE.Element> elts;
-    case(DAE.DAE(elementLst = {}),store,ht) then (store,ht);
-    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),store,ht) equation
-      DAE.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
-      unit = str2unit(unitStr,NONE()); /* Scale and offset not used yet*/
-      (store,indx) = add(unit,store);
-      ht = BaseHashTable.add((cr,indx),ht);
-      (store,ht) = buildStores2(DAE.DAE(elts),store,ht);
-    then (store,ht);
+  (outStore,outHt) := matchcontinue(dae,inStore,inHt)
+    local
+      DAE.ComponentRef cr;
+      Option<DAE.VariableAttributes> attropt;
+      Integer indx;
+      String unitStr;
+      list<MMath.Rational> units;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
+      UnitAbsyn.Unit unit;
+      DAE.Exp e1,e2;
+      DAE.FunctionTree funcs;
+      list<DAE.Element> elts;
+      UnitAbsyn.Store store;
+      HashTable.HashTable ht;
+    case(DAE.DAE(elementLst = {}),_,_) then (inStore,inHt);
+    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),_,_)
+      equation
+        DAE.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
+        unit = str2unit(unitStr,NONE()); /* Scale and offset not used yet*/
+        (store,indx) = add(unit,inStore);
+        ht = BaseHashTable.add((cr,indx),inHt);
+        (store,ht) = buildStores2(DAE.DAE(elts),store,ht);
+      then (store,ht);
 
     /* Failed to parse will give unspecified unit*/
-    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),store,ht) equation
-      (store,indx) = add(UnitAbsyn.UNSPECIFIED(),store);
-      ht = BaseHashTable.add((cr,indx),ht);
-    then (store,ht);
+    case(DAE.DAE(elementLst = DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts),_,_)
+      equation
+        (store,indx) = add(UnitAbsyn.UNSPECIFIED(),inStore);
+        ht = BaseHashTable.add((cr,indx),inHt);
+      then (store,ht);
 
-    case(DAE.DAE(elementLst = _::elts),store,ht) equation
-      (store,ht) = buildStores2(DAE.DAE(elts),store,ht);
-    then (store,ht);
+    case(DAE.DAE(elementLst = _::elts),_,_)
+      equation
+        (store,ht) = buildStores2(DAE.DAE(elts),inStore,inHt);
+      then (store,ht);
   end matchcontinue;
 end buildStores2;
 
 protected function buildStores3 "help function"
   input DAE.DAElist dae;
-  input UnitAbsyn.Store store;
-  input HashTable.HashTable ht;
+  input UnitAbsyn.Store inStore;
+  input HashTable.HashTable inHt;
   output UnitAbsyn.Store outStore;
   output HashTable.HashTable outHt;
 algorithm
-  (outStore,outHt) := matchcontinue(dae,store,ht)
+  (outStore,outHt) := matchcontinue(dae,inStore,inHt)
   local DAE.ComponentRef cr; Option<DAE.VariableAttributes> attropt;
     Integer indx; String unitStr;
     list<MMath.Rational> units;
@@ -1430,6 +1446,8 @@ algorithm
     DAE.Exp e1,e2;
     DAE.FunctionTree funcs;
     list<DAE.Element> elts;
+    UnitAbsyn.Store store;
+    HashTable.HashTable ht;
 
     case(DAE.DAE({}),store,ht) then (store,ht);
     case(DAE.DAE(DAE.EQUATION(e1,e2,_)::elts),store,ht) equation
@@ -1446,17 +1464,19 @@ end buildStores3;
 
 protected function buildStoreExp " build stores from constants in expressions and from function calls"
   input DAE.Exp exp;
-  input UnitAbsyn.Store store;
-  input HashTable.HashTable ht;
+  input UnitAbsyn.Store inStore;
+  input HashTable.HashTable inHt;
   input Option<DAE.Operator> parentOp;
   output UnitAbsyn.Store outStore;
   output HashTable.HashTable outHt;
 algorithm
-  (outStore,outHt) := matchcontinue(exp,store,ht,parentOp)
+  (outStore,outHt) := matchcontinue(exp,inStore,inHt,parentOp)
   local Real r; String s1; Integer i,indx; UnitAbsyn.Unit unit; DAE.Exp e1,e2; DAE.Operator op;
     DAE.ComponentRef cref_;
+    UnitAbsyn.Store store;
+    HashTable.HashTable ht;
     /* Constant on top level, e.g. x = 1 => unspecified type */
-    case(DAE.RCONST(r),store,ht,parentOp) equation
+    case(DAE.RCONST(r),store,ht,_) equation
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = realString(r);
@@ -1464,7 +1484,7 @@ algorithm
       ht = BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
-   case(DAE.CAST(_,DAE.ICONST(i)),store,ht,parentOp) equation
+   case(DAE.CAST(_,DAE.ICONST(i)),store,ht,_) equation
       unit = selectConstantUnit(parentOp);
       (store,indx) = add(unit,store);
       s1 = intString(i);
@@ -1472,21 +1492,21 @@ algorithm
       ht = BaseHashTable.add((cref_,indx),ht);
     then (store,ht);
 
-    case(DAE.BINARY(e1,op,e2),store,ht,parentOp) equation
+    case(DAE.BINARY(e1,op,e2),store,ht,_) equation
       (store,ht) = buildStoreExp(e1,store,ht,SOME(op));
       (store,ht) = buildStoreExp(e2,store,ht,SOME(op));
     then (store,ht);
 
-    case(DAE.UNARY(_,e1),store,ht,parentOp) equation
+    case(DAE.UNARY(_,e1),store,ht,_) equation
       (store,ht) = buildStoreExp(e1,store,ht,parentOp);
     then (store,ht);
 
-    case(DAE.IFEXP(_,e1,e2),store,ht,parentOp) equation
+    case(DAE.IFEXP(_,e1,e2),store,ht,_) equation
       (store,ht) = buildStoreExp(e1,store,ht,parentOp);
       (store,ht) = buildStoreExp(e2,store,ht,parentOp);
     then (store,ht);
 
-    case(_,store,ht,parentOp) then (store,ht);
+    case(_,store,ht,_) then (store,ht);
   end matchcontinue;
 end buildStoreExp;
 

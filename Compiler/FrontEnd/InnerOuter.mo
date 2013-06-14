@@ -182,216 +182,6 @@ algorithm
   end matchcontinue;
 end handleInnerOuterEquations;
 
-public function changeOuterReferences "
-Changes the outer references in a dae to the corresponding
-inner reference, given that an inner reference exist in the DAE.
-Update connection sets incase of Absyn.INNER_OUTER()"
-  input DAE.DAElist inDae;
-  input Connect.Sets csets;
-  input InstHierarchy inIH;
-  input ConnectionGraph.ConnectionGraph inGraph;
-  input Boolean isTopLevel;
-  output DAE.DAElist outDae;
-  output Connect.Sets ocsets;
-  output InstHierarchy outIH;
-  output ConnectionGraph.ConnectionGraph outGraph;
-algorithm
-  (outDae,ocsets,outIH,outGraph) := matchcontinue(inDae,csets,inIH,inGraph,isTopLevel)
-    local
-      list<DAE.Element> innerVars,outerVars,allDAEelts;
-      VarTransform.VariableReplacements repl;
-      list<DAE.ComponentRef> sources,targets;
-      Boolean updateGraph ;
-      list<DAE.ComponentRef> definiteRoots "Roots defined with Connection.root" ;
-      list<tuple<DAE.ComponentRef, Real>> potentialRoots "Roots defined with Connection.potentialRoot" ;
-      ConnectionGraph.Edges branches "Edges defined with Connection.branch" ;
-      ConnectionGraph.DaeEdges connections "Edges defined with connect statement" ;
-      ConnectionGraph.ConnectionGraph graph;
-      InstHierarchy ih;
-
-    // adrpo: is not top level so return the same
-    case(inDae,csets,ih,graph,false)
-      then (inDae,csets,ih,graph);
-
-    // adrpo: return the same if we have no inner/outer components!
-    case(inDae,csets,ih,graph,true)
-      equation
-        // print("changeOuterReferences: " +& ConnectUtil.printSetsStr(csets));
-        false = System.getHasInnerOuterDefinitions();
-      then (inDae,csets,ih,graph);
-
-    // adrpo: specific faster case when there are *no inner* elements!
-    case(inDae as DAE.DAE(allDAEelts),csets,ih,graph,true)
-      equation
-        // when we have no inner elements we can return the same!
-        (DAE.DAE({}),_) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
-      then (inDae,csets,ih,graph);
-
-    // adrpo: specific faster case when there are *no outer* elements!
-    case(inDae as DAE.DAE(allDAEelts),csets,ih,graph,true)
-      equation
-        // when we have no outer elements we can return the same!
-        (_,DAE.DAE({})) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
-      then (inDae,csets,ih,graph);
-
-    // general case
-    case(inDae as DAE.DAE(allDAEelts),csets,ih,
-         graph as ConnectionGraph.GRAPH(updateGraph,
-                                        definiteRoots,
-                                        potentialRoots,
-                                        branches,
-                                        connections),true)
-      equation
-        (DAE.DAE(innerVars),DAE.DAE(outerVars)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
-        repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
-        // Debug.fprintln(Flags.INNER_OUTER, "Number of elts/inner vars/outer vars: " +&
-        //        intString(listLength(allDAEelts)) +&
-        //        "/" +& intString(listLength(innerVars)) +&
-        //        "/" +& intString(listLength(outerVars)));
-        sources = VarTransform.replacementSources(repl);
-        targets = VarTransform.replacementTargets(repl);
-        inDae = DAEUtil.removeVariables(inDae,sources);
-        inDae = DAEUtil.removeInnerAttrs(inDae,targets);
-        outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE());
-        // adrpo: send in the sources/targets so we avoid building them again!
-        ocsets = changeOuterReferences2(repl,csets,sources,targets);
-      then
-        (outDae,ocsets,ih,graph);
-    // failtrace
-    case(inDae,csets,ih,graph,true)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.changeOuterReferences failed!");
-      then
-        fail();
-  end matchcontinue;
-end changeOuterReferences;
-
-protected function changeOuterReferences2 "
-Author: BZ, 2008-09
-Helper function for changeOuterReferences
-Verfify that we have replacement rules, then apply them for the outerconnect.
-With the difference that we add the scope of the inner declaration to the connection set variables."
-  input VarTransform.VariableReplacements repl;
-  input Connect.Sets csets;
-  input list<DAE.ComponentRef> sources;
-  input list<DAE.ComponentRef> targets;
-  output Connect.Sets ocsets;
-algorithm
-  ocsets := matchcontinue(repl,csets,sources,targets)
-    local
-      list<Connect.OuterConnect> ocs;
-    // no outer connects!
-    case(repl,Connect.SETS(outerConnects = {}),_,_) then csets;
-    // no targets!
-    case(repl,csets,sources,{})
-      equation
-        // adrpo: not needed as the targets are send from up ABOVE :)
-        // targets = VarTransform.replacementTargets(repl);
-        // true = intEq(listLength(targets),0);
-      then
-        csets;
-    // we have something
-    case(repl,Connect.SETS(outerConnects = ocs),sources,targets)
-      equation
-        // adrpo: send in the sources/targets so we avoid building them again!
-        ocs = changeOuterReferences3(ocs,repl,sources,targets);
-        csets = ConnectUtil.setOuterConnects(csets, ocs);
-      then
-        csets;
-  end matchcontinue;
-end changeOuterReferences2;
-
-protected function changeOuterReferences3 "
-Author: BZ, 2008-09
-Helper function for changeOuterReferences
-Extract the innouter declared connections. "
-  input list<Connect.OuterConnect> ocs;
-  input VarTransform.VariableReplacements repl;
-  input list<DAE.ComponentRef> sources;
-  input list<DAE.ComponentRef> targets;
-  output list<Connect.OuterConnect> oocs;
-algorithm
-  oocs := matchcontinue(ocs,repl,sources,targets)
-    local
-      list<Connect.OuterConnect> recRes;
-      Connect.OuterConnect oc;
-      DAE.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
-      Absyn.InnerOuter io1,io2;
-      Connect.Face f1,f2;
-      Prefix.Prefix scope;
-      list<DAE.ComponentRef> src,dst;
-      String s1,s2;
-      DAE.ElementSource source "the origin of the element";
-    // handle nothingness
-    case({},_,_,_) then {};
-    // the left hand side is an outer!
-    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs,repl,sources,targets)
-      equation
-        (_,true) = innerOuterBooleans(io1);
-        (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr1);
-        // adrpo: not needed as the sources/targets are send from up ABOVE :)
-        src = sources; // VarTransform.replacementSources(repl);
-        dst = targets; // VarTransform.replacementTargets(repl);
-        ncr1 = changeOuterReferences4(cr3,src,dst);
-        false = ComponentReference.crefFirstCrefEqual(ncr1,cr1);
-        recRes = changeOuterReferences3(ocs,repl,src,dst);
-      then
-        Connect.OUTERCONNECT(scope,ncr1,Absyn.INNER(),f1,cr2,io2,f2,source)::recRes;
-    // the right hand side is an outer!
-    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs,repl,sources,targets)
-      equation
-        (_,true) = innerOuterBooleans(io2);
-        (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr2);
-        // adrpo: not needed as the sources/targets are send from up ABOVE :)
-        src = sources; // VarTransform.replacementSources(repl);
-        dst = targets; // VarTransform.replacementTargets(repl);
-        ncr2 = changeOuterReferences4(cr3,src,dst);
-        false = ComponentReference.crefFirstCrefEqual(ncr2,cr2);
-        recRes = changeOuterReferences3(ocs,repl,src,dst);
-      then
-        Connect.OUTERCONNECT(scope,cr1,io1,f1,ncr2,Absyn.INNER(),f2,source)::recRes;
-    // none of left or right hand side are outer
-    case((oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source))::ocs,repl,sources,targets)
-      equation
-        //s1 = ComponentReference.printComponentRefStr(cr1);
-        //s2 = ComponentReference.printComponentRefStr(cr2);
-        recRes = changeOuterReferences3(ocs,repl,sources,targets);
-      then
-        oc::recRes;
-  end matchcontinue;
-end changeOuterReferences3;
-
-protected function changeOuterReferences4 "
-Author: BZ, 2008-12
-Helper function for changeOuterReferences.
-Finds the common part of the variable and it's source of replacement.
-Then uses the first common part of the replacement destination.
-ex:
- m1.m2.m3, m1.m2.m3.m4, m2.m3.m4
- ==> m2.$unique'ified$m3"
-  input DAE.ComponentRef inCr;
-  input list<DAE.ComponentRef> src,dst;
-  output DAE.ComponentRef outCr;
-algorithm outCr := matchcontinue(inCr,src,dst)
-  local DAE.ComponentRef s,d,cr1,cr2;
-  case(inCr,s::src,d::dst)
-    equation
-      true = ComponentReference.crefPrefixOf(inCr,s);
-      cr1 = extractCommonPart(inCr,d);
-      false = ComponentReference.crefIsIdent(cr1); // an ident can not be the inner part of an innerouter.
-      outCr = DAEUtil.nameInnerouterUniqueCref(cr1);
-      then
-        outCr;
-  case(inCr,s::src,d::dst)
-    equation
-      false = ComponentReference.crefPrefixOf(inCr,s);
-      outCr = changeOuterReferences4(inCr,src,dst);
-      then
-        outCr;
-  end matchcontinue;
-end changeOuterReferences4;
-
 public function changeInnerOuterInOuterConnect
   "changes inner to outer and outer to inner where needed"
   input Connect.Sets inSets;
@@ -454,12 +244,15 @@ protected function buildInnerOuterRepl
   output VarTransform.VariableReplacements outRepl;
 algorithm
   outRepl := matchcontinue(innerVars,outerVars,inRepl)
-    local VarTransform.VariableReplacements repl; DAE.Element v;
+    local
+      VarTransform.VariableReplacements repl;
+      DAE.Element v;
+      list<DAE.Element> rest;
     case({},_,repl) then repl;
-    case(v::innerVars,outerVars,repl)
+    case(v::rest,_,repl)
       equation
       repl = buildInnerOuterReplVar(v,outerVars,repl);
-      repl = buildInnerOuterRepl(innerVars,outerVars,repl);
+      repl = buildInnerOuterRepl(rest,outerVars,repl);
     then repl;
   end matchcontinue;
 end buildInnerOuterRepl;
@@ -475,14 +268,14 @@ algorithm
     local
         list<DAE.ComponentRef> outerCrs,ourOuterCrs;
       DAE.ComponentRef cr; VarTransform.VariableReplacements repl;
-    case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNER_OUTER()),outerVars,repl)
+    case(DAE.VAR(componentRef = cr, innerOuter = Absyn.INNER_OUTER()),_,repl)
       equation
         outerCrs = List.map(outerVars,DAEUtil.varCref);
         ourOuterCrs = List.select1(outerCrs,isInnerOuterMatch,cr);
         cr = DAEUtil.nameInnerouterUniqueCref(cr);
         repl = List.fold1r(ourOuterCrs,VarTransform.addReplacement,Expression.crefExp(cr),repl);
       then repl;
-    case(DAE.VAR(componentRef = cr),outerVars,repl)
+    case(DAE.VAR(componentRef = cr),_,repl)
       equation
         outerCrs = List.map(outerVars,DAEUtil.varCref);
         ourOuterCrs = List.select1(outerCrs,isInnerOuterMatch,cr);
@@ -504,13 +297,13 @@ algorithm
       DAE.Ident id1, id2;
     // try a simple comparison first.
     // adrpo: this case is just to speed up the checking!
-    case(outerCr,innerCr)
+    case(_,_)
       equation
         // try to compare last ident first!
         false = ComponentReference.crefLastIdentEqual(outerCr,innerCr);
       then false;
     // try the hard and expensive case.
-    case(outerCr,innerCr)
+    case(_,_)
       equation
         // Strip the common part of inner outer cr.
         // For instance, innerCr = e.f.T1, outerCr = e.f.g.h.a.b.c.d.T1 results in
@@ -559,7 +352,7 @@ algorithm
       DAE.Type ty,ty2;
       DAE.ComponentRef c1,c2,c3;
 
-    case(prefixedCref,innerCref)
+    case (_,_)
       equation
         c1 = ComponentReference.crefLastCref(prefixedCref);
         c2 = ComponentReference.crefLastCref(innerCref);
@@ -568,7 +361,7 @@ algorithm
       then
         c3;
 
-    case(prefixedCref,innerCref)
+    case (prefixedCref,innerCref)
       equation
         c2 = ComponentReference.crefStripLastIdent(innerCref);
         cr3 = extractCommonPart(prefixedCref,c2);

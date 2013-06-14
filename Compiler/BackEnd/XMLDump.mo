@@ -851,12 +851,12 @@ content of the list. The output could be something like:
 algorithm
     _ := matchcontinue (arry_Dim,Content)
    local Integer len;
-    case (arry_Dim,Content)
+    case (_,_)
       equation
         len = listLength(arry_Dim);
         len >= 1 = false;
       then ();
-    case (arry_Dim,Content)
+    else
       equation
         len = listLength(arry_Dim);
         len >= 1 = true;
@@ -2314,12 +2314,12 @@ algorithm
       Integer len;
       String Lst;
     case ({},_,_) then ();
-    case (inLstExp,inContent,_)
+    case (_,_,_)
       equation
         len = listLength(inLstExp);
         len >= 1 = false;
       then();
-    case (inLstExp,inContent,addMathMLCode)
+    else
       equation
         len = listLength(inLstExp);
         len >= 1 = true;
@@ -2360,17 +2360,17 @@ algorithm
   _:=
   match (inLstExp,Content,addMathMLCode)
     local
-      String s,inContent;
+      String s;
       DAE.Exp e;
       list<DAE.Exp> es;
     case ({},_,_) then ();
-    case ((e :: es),inContent,addMathMLCode)
+    case ((e :: es),_,_)
       equation
         s = printExpStr(e);
-        dumpStrOpenTagAttr(inContent, EXP_STRING, s);
+        dumpStrOpenTagAttr(Content, EXP_STRING, s);
         dumpExp(e,addMathMLCode);
-        dumpStrCloseTag(inContent);
-        dumpLstExp2(es,inContent,addMathMLCode);
+        dumpStrCloseTag(Content);
+        dumpLstExp2(es,Content,addMathMLCode);
       then ();
   end match;
 end dumpLstExp2;
@@ -3089,23 +3089,22 @@ The output is very simple and is like:
 algorithm
     _ := matchcontinue (crefIdxLstArr,i)
     local String error_msg;
-    case (crefIdxLstArr,i)
+    case (_,_)
       equation
         listLength(crefIdxLstArr[1]) >= 1  = false;
       then ();
-    case (crefIdxLstArr,i)
+    case (_,_)
       equation
         listLength(crefIdxLstArr[1]) >= 1  = true;
         dumpStrOpenTag(ADDITIONAL_INFO);
         dumpCrefIdxLstArr(crefIdxLstArr,HASH_TB_CREFS_LIST,i);
         dumpStrCloseTag(ADDITIONAL_INFO);
       then ();
-    case (_,_)
+    else
       equation
         error_msg = "in XMLDump.dumpVarsAdditionalInfo - Unknown info";
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
-      then
-        ();
+      then ();
   end matchcontinue;
 end dumpVarsAdditionalInfo;
 
@@ -3241,9 +3240,9 @@ See dumpVariable for more details on the XML output.
   input list<BackendDAE.Var> inVarLst;
   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
   input Integer inInteger;
-  input Boolean addMathMLCode;
+  input Boolean addMMLCode;
 algorithm
-  _ := match (inVarLst,crefIdxLstArr,inInteger,addMathMLCode)
+  _ := match (inVarLst,crefIdxLstArr,inInteger,addMMLCode)
     local
       Integer varno;
       BackendDAE.Var v;
@@ -3260,7 +3259,6 @@ algorithm
       DAE.InstDims arry_Dim;
       Option<Values.Value> b;
       Integer var_1;
-      Boolean addMMLCode;
       DAE.ElementSource source;
       String error_msg;
 
@@ -3275,7 +3273,7 @@ algorithm
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
-                            connectorType = ct)) :: xs),crefIdxLstArr,varno,addMMLCode)
+                            connectorType = ct)) :: xs),_,varno,_)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(0),
                         boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
@@ -3292,7 +3290,7 @@ algorithm
         var_1 = varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then ();
-    case (v::xs,crefIdxLstArr,varno,addMMLCode)
+    case (v::xs,_,varno,_)
       equation
         error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
         error_msg = error_msg +& intString(varno);

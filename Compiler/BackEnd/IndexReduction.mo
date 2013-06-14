@@ -6711,13 +6711,12 @@ algorithm
       list<tuple<Integer,DAE.Exp>> row;
       list<list<tuple<Integer,DAE.Exp>>> rows;
     case ({},_) then ();
-    case ((row :: rows),rowIndex)
+    case ((row :: rows),_)
       equation
         print(intString(rowIndex));print(":");
         dumpDigraph2(row);
         dumpDigraph1(rows,rowIndex+1);
-      then
-        ();
+      then ();
   end match;
 end dumpDigraph1;
 
@@ -8212,7 +8211,7 @@ algorithm
         DAE.ComponentRef dcr,cr1;
         list<DAE.ComponentRef> crlst;
         Boolean b;
-    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
       equation
         dcr = BaseHashTable.get(acr,ht);
         failure(_ = BaseHashTable.get(cr,ht));
@@ -8225,7 +8224,7 @@ algorithm
       then
         BackendDAE.STATEORDER(ht1,dht1);
         //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
-    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
       equation
         dcr = BaseHashTable.get(acr,ht);
         failure(_ = BaseHashTable.get(cr,ht));
@@ -8237,7 +8236,7 @@ algorithm
       then
         BackendDAE.STATEORDER(ht1,dht1);
         //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
-    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
       equation
         dcr = BaseHashTable.get(acr,ht);
         _ = BaseHashTable.get(cr,ht);
@@ -8249,7 +8248,7 @@ algorithm
       then
         BackendDAE.STATEORDER(ht1,dht1);
         //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
-    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
       equation
         dcr = BaseHashTable.get(acr,ht);
         _ = BaseHashTable.get(cr,ht);

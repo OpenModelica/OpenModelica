@@ -4120,7 +4120,7 @@ algorithm
       equation
         true = BackendDAEUtil.isVarDiscrete(v);
       then ((v,v::v_lst));
-    case inTpl then inTpl;
+    else inTpl;
   end matchcontinue;
 end traversingisisVarDiscreteFinder;
 

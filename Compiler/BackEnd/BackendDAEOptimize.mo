@@ -836,7 +836,7 @@ algorithm
       BackendDAE.BackendDAE dlow;
       BackendDAE.EquationArray eqns;
       Integer n;
-    case (dlow,inM)
+    case (dlow,_)
       equation
         // check equations
        (_,(_,n)) = traverseIncidenceMatrix(inM,countSimpleEquationsFinder,(dlow,0));
@@ -4436,10 +4436,8 @@ protected function createDiffStatements
   input DAE.Statement inStmt;
   input DAE.ElementSource Source;
   output list<DAE.Statement> outEqn;
-algorithm outEqn := match(inLHS,inRHS,inType,inStmt,Source)
-  local
-  case (inLHS,inRHS,inType,inStmt,Source) then {DAE.STMT_ASSIGN(inType, inLHS, inRHS, Source), inStmt};
- end match;
+algorithm
+  outEqn := {DAE.STMT_ASSIGN(inType, inLHS, inRHS, Source), inStmt};
 end createDiffStatements;
 
 protected function differentiateWithRespectToXVec "function differentiateWithRespectToXVec
@@ -5042,14 +5040,7 @@ protected function mergeRelation
   input Option<tuple<DAE.Exp,Integer,Integer>> inOptionExpisASUB;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue(inExp0,inExp1,inExp2,inOp, inIndex, inOptionExpisASUB)
-  local
-    DAE.Exp e;
-    case (inExp0,inExp1,inExp2,inOp,inIndex,inOptionExpisASUB)
-      equation
-        e = DAE.RELATION(inExp1,inOp,inExp2,inIndex,inOptionExpisASUB);
-    then e;
- end matchcontinue;
+  outExp := DAE.RELATION(inExp1,inOp,inExp2,inIndex,inOptionExpisASUB);
 end mergeRelation;
 
 protected function mergeArray
@@ -5393,7 +5384,7 @@ protected function printPartition
   input array<Integer> ixs;
 algorithm
   _ := match (b,ixs)
-    case (true,ixs)
+    case (true,_)
       equation
         print("Got partition!\n");
         print(stringDelimitList(List.map(arrayList(ixs), intString), ","));

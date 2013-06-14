@@ -305,7 +305,7 @@ algorithm
     case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_,_)
       then bt;
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),keystr,keyhash)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),_,_)
       equation
         0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         (rightmost,right) = treeDeleteRightmostValue(right);
@@ -313,19 +313,19 @@ algorithm
       then
         TREENODE(SOME(rightmost),optLeft,optRight);
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),keystr,keyhash)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),_,_)
       equation
         0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
       then
         left;
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = NONE(),rightSubTree = NONE()),keystr,keyhash)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = NONE(),rightSubTree = NONE()),_,_)
       equation
         0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
       then
         TREENODE(NONE(),NONE(),NONE());
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),keystr,keyhash)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),_,_)
       equation
         1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t = treeDelete2(t, keystr, keyhash);
@@ -333,7 +333,7 @@ algorithm
       then
         TREENODE(optVal,optLeft,optTree);
 
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),keystr,keyhash)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),_,_)
       equation
         -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t = treeDelete2(t, keystr, keyhash);

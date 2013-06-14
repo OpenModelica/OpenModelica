@@ -135,6 +135,7 @@ public function printRestr
 "function: printRestr
   Prints SCode.Restriction to the Print buffer."
   input SCode.Restriction restr;
+protected
   String str;
 algorithm
   str := restrString(restr);
@@ -179,6 +180,7 @@ public function printElement
 "function: printElement
   Print SCode.Element to Print buffer."
   input SCode.Element elt;
+protected
   String str;
 algorithm
   str := printElementStr(elt);
