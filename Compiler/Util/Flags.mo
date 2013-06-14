@@ -284,7 +284,7 @@ constant DebugFlag EXEC_HASH = DEBUG_FLAG(58, "execHash", false,
 constant DebugFlag EXEC_FILES = DEBUG_FLAG(59, "execFiles", false,
   Util.notrans(""));
 constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(60, "paramdlowdump", false,
-  Util.notrans(""));
+  Util.gettext("Enables dumping of the parameters in the order they are calculated."));
 constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(61, "dumpEncapsulateWhenConditions", false,
   Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions."));
 constant DebugFlag ON_RELAXATION = DEBUG_FLAG(62, "onRelaxation", false,

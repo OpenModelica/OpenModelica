@@ -6821,16 +6821,12 @@ algorithm
         syst = BackendDAE.EQSYSTEM(v, pe, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
         shared = BackendDAE.SHARED(kn, extobj, alisvars, emptyeqns, emptyeqns, constrs, clsAttrs, cache, env, funcs, BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0), extObjClasses, BackendDAE.PARAMETERSYSTEM(), {});
         (syst, m, mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
-        paramdlow = BackendDAE.DAE({syst}, shared);
-        //mT = BackendDAEUtil.transposeMatrix(m);
         v1 = listArray(lv1);
         v2 = listArray(lv2);
-        Debug.fcall2(Flags.PARAM_DLOW_DUMP, BackendDump.dumpBackendDAE, paramdlow, "Param DAE");
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrix, m);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrixT, mT);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpMatching, v1);
         syst = BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
         (syst, comps) = BackendDAETransform.strongComponents(syst, shared);
+        paramdlow = BackendDAE.DAE({syst}, shared);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpEqnsSolved, paramdlow);
         (parameterEquations, _, uniqueEqIndex, _) = createEquations(false, false, true, false, false, syst, shared, comps, iuniqueEqIndex, {});
     
         ialgs = BackendEquation.traverseBackendDAEEqns(ie, traverseAlgorithmFinder, {});
