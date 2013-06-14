@@ -34,7 +34,7 @@ encapsulated package HpcOmTaskGraph
   package:     HpcOmTaskGraph
   description: HpcOmTaskGraph contains the whole logic to create a TaskGraph on BLT-Level
 
-  RCS: $Id: HpcOmTaskGraph.mo 15486 2013-05-24 11:12:35Z marcusw $
+  RCS: $Id: HpcOmTaskGraph.mo 2013-05-24 11:12:35Z marcusw $
 "
 public import BackendDAE;
 public import DAE;
@@ -81,7 +81,9 @@ public uniontype Graph
 end Graph;
 
 
-public function createTaskGraph
+public function createTaskGraph "function createTaskGraph
+  author: marcusw,waurich
+  Creates a task graph on blt-level and stores it as a graphml-file."
   input BackendDAE.BackendDAE inDAE;
 
 algorithm
@@ -89,37 +91,48 @@ algorithm
   (_,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE, createTaskGraph0, false);
 end createTaskGraph;
 
-
-protected function createTaskGraph0
-
-  input BackendDAE.EqSystem isyst;
+//TODO: Get rid of the boolean parameter
+protected function createTaskGraph0 "function createTaskGraph0
+  author: marcusw,waurich
+  Creates a task graph out of the given system and stores it as a graphml-file."
+  input BackendDAE.EqSystem isyst; //The input system which should be analysed
   input tuple<BackendDAE.Shared,Boolean> ishared; //second argument of tuple is an extra argument
-  output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> oshared;
+  output BackendDAE.EqSystem osyst; //no change here -> this is always isyst
+  output tuple<BackendDAE.Shared,Boolean> oshared; //no change here -> this is always ishared
   
 algorithm
   (osyst,oshared) := match(isyst,ishared)
     local
       BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
       Graph graph;
       BackendDAE.IncidenceMatrix incidenceMatrix;
       DAE.FunctionTree sharedFuncs;
       Integer numberOfVars;
       array<Integer> varSccMapping; //Map each variable to the scc which solves her
       list<String> eqDescs; 
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars)),(BackendDAE.SHARED(functionTree=sharedFuncs),_))
+      array<list<Integer>> adjLst;
+      list<Integer> roots;
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs),_))
       equation
         varSccMapping = createVarSccMapping(comps, numberOfVars); 
-        BackendDump.dumpEqSystem(isyst, "TaskGraph Input");
+        //BackendDump.dumpEqSystem(isyst, "TaskGraph Input");
+        //Create a new task graph
         graph = GRAPH("TaskGraph",{},{});
         //(_,incidenceMatrix,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs)); //normale incidenzmatrix reicht
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         BackendDump.dumpIncidenceMatrix(incidenceMatrix);
         eqDescs = getEquationStrings(comps,isyst);
         //((graph,_)) = List.fold3(comps,createTaskGraph1,incidenceMatrix,varSccMapping,comps,(graph,1));
-        ((graph,_)) = List.fold3(comps,createTaskGraph1,incidenceMatrix,varSccMapping,eqDescs,(graph,1));      //swapped comps a an extra argument with eqDescs, comps not used in createTeaskgraph1
+        ((graph,_)) = List.fold3(comps,createTaskGraph1,(incidenceMatrix,isyst,shared),varSccMapping,eqDescs,(graph,1));      //swapped comps a an extra argument with eqDescs, comps not used in createTeaskgraph1
         //GraphML.dumpGraph(graph, "taskgraph.graphml");
+        (adjLst,roots) = getAdjacencyListFromGraph(graph);
+        
+        print("TASKGRAPH represented as an adjacencyList\n");
+        BackendDump.dumpIncidenceMatrix(adjLst);
+        print("and the roots: "+&stringDelimitList(List.map(roots,intString),",")+&"\n");
+        
         dumpAsGraphML_SccLevel(graph, "taskgraph.graphml");
       then
         (isyst,ishared);
@@ -128,9 +141,11 @@ algorithm
   end match;
 end createTaskGraph0;
 
-protected function createTaskGraph1
+protected function createTaskGraph1 "function createTaskGraph1
+  author: marcusw,waurich
+  Appends the task-graph informations for the given StrongComponent to the given graph."
   input BackendDAE.StrongComponent component;
-  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.EqSystem,BackendDAE.Shared> isystInfo; //<incidenceMatrix,isyst,ishared> in very compact form
   input array<Integer> varSccMapping;
   input List<String> eqDescs;
   input tuple<Graph,Integer> igraph;
@@ -138,26 +153,108 @@ protected function createTaskGraph1
 protected
   Graph tmpGraph;
   StrongConnectedComponent graphComponent;
-  Integer componentIndex;
+  Integer componentIndex, calculationTime;
   List<tuple<Integer,Integer>> unsolvedVars;
-  List<Option<Integer>> requiredSccs_option;
+  BackendDAE.IncidenceMatrix incidenceMatrix;
+  BackendDAE.EqSystem isyst;
+  BackendDAE.Shared ishared;
   List<Integer> requiredSccs;
   String nodeDesc;
   String eqDesc;
 algorithm
+  (incidenceMatrix,isyst,ishared) := isystInfo;
   (tmpGraph,componentIndex) := igraph;
   nodeDesc := BackendDump.strongComponentString(component);
+  //calculationTime := HpcOmBenchmark.timeForCalculation(component, isyst, ishared);
   eqDesc := listGet(eqDescs,componentIndex);
   unsolvedVars := getUnsolvedVarsBySCC(component,incidenceMatrix);
-  //requiredSccs_option := List.map4(unsolvedVars, getSCCByVar, components, incidenceMatrix, 1, varSccMapping); //mittels List.fold
-  //requiredSccs_option := List.removeOnTrue(NONE(), bothOptionsNone, requiredSccs_option); //remove all NONE()-Elements
   requiredSccs := List.fold1(unsolvedVars,fillSccList,varSccMapping,{});
-  //requiredSccs := List.map(requiredSccs_option, Util.getOption);
   graphComponent := STRONGCONNECTEDCOMPONENT(nodeDesc, componentIndex, {}, requiredSccs,eqDesc);
   tmpGraph := addSccToGraph(graphComponent, tmpGraph); //array der angibt ob scc schon in liste ist
   ograph := (tmpGraph,componentIndex+1);
 end createTaskGraph1;
+  
 
+protected function getAdjacencyListFromGraph" computes an adjacency list from a directed Graph
+author:Waurich TUD 2013-06"
+  input Graph graph;
+  output array<list<Integer>> adjacencyLst;
+  output list<Integer> roots;
+algorithm
+  (adjacencyLst,roots) := matchcontinue(graph)
+    local
+      list<StrongConnectedComponent> comps;
+      list<Variable> vars;
+      String name;
+      Integer size;
+      list<Integer> roots;
+    case(GRAPH(name=name,components=comps,variables=vars))
+      equation
+        size = listLength(comps);
+        print(intString(size)+&" comps all in all\n");
+        adjacencyLst = arrayCreate(size,{});
+        ((adjacencyLst,roots)) = List.fold(comps,AdjacencyListFill,(adjacencyLst,{}));
+      then
+        (adjacencyLst,roots);
+    case(GRAPH(name=name,components=comps,variables=vars))
+      equation
+        true = List.isEmpty(comps);
+        print(name+&" is an empty graph\n");
+        adjacencyLst = arrayCreate(0,{});
+      then 
+        (adjacencyLst,{});
+  end matchcontinue;
+end getAdjacencyListFromGraph;  
+
+
+protected function AdjacencyListFill "fills the adjacencylist.
+author:Waurich TUD 2013-06"
+  input StrongConnectedComponent comp; 
+  input tuple<array<list<Integer>>,list<Integer>> inValue;
+  output tuple<array<list<Integer>>,list<Integer>> outValue;
+algorithm
+  outValue := matchcontinue(comp,inValue)
+    local
+      Integer Id;
+      list<Integer> depSCCs;      
+      list<Integer> row;
+      list<Integer> rootsIn;
+      list<Integer> rootsOut;
+      array<list<Integer>> adjacencyLstIn;
+      array<list<Integer>> adjacencyLstOut;
+    case(STRONGCONNECTEDCOMPONENT(compIdx=Id, dependencySCCs=depSCCs),((adjacencyLstIn,rootsIn)))  
+      equation
+        false = intEq(listLength(depSCCs),0);
+        //print("compIndex "+&intString(Id)+&"is dependent of "+&stringDelimitList(List.map(depSCCs,intString),",")+&"\n");
+        adjacencyLstOut = List.fold1(depSCCs,AdjacencyListEntry,Id,adjacencyLstIn);
+      then
+        ((adjacencyLstOut,rootsIn));
+    case(STRONGCONNECTEDCOMPONENT(compIdx=Id, dependencySCCs=depSCCs),((adjacencyLstIn,rootsIn)))  
+      equation
+        true = intEq(listLength(depSCCs),0);
+        rootsOut = Id::rootsIn;
+      then
+        ((adjacencyLstIn,rootsOut));
+  end matchcontinue;
+end AdjacencyListFill;
+    
+    
+protected function AdjacencyListEntry "helper function for AdjacencyListFill
+author:Waurich TUD 2013-06"
+  input Integer parent;
+  input Integer child;
+  input array<list<Integer>> adjacencyLstIn;
+  output array<list<Integer>> adjacencyLstOut;
+protected
+  list<Integer> row;
+algorithm
+      //print("put the childnode "+& intString(child)+&"in the parent node "+&intString(parent)+&"\n");
+      row := arrayGet(adjacencyLstIn,parent);
+      row := child::row;
+      //print("to get the row"+&stringDelimitList(List.map(row,intString),",")+&"\n");
+      adjacencyLstOut := arrayUpdate(adjacencyLstIn,parent,row);      
+end AdjacencyListEntry;
+    
 
 protected function getEquationStrings " gets the equation and the variable its solved for for every StrongComponent
 author:Waurich TUD 2013-06"
@@ -213,13 +310,15 @@ algorithm
        varString = getVarString(var);
        desc = (eqString +& " FOR " +& varString);
        descLst = desc::iEqDesc;
-     then descLst;
+     then 
+       descLst;
   case(BackendDAE.EQUATIONSYSTEM(eqns = es, vars = vs, jac = jac, jacType = jacT), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
      equation
        eqnLst = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
-     then descLst;
+     then 
+       descLst;
    case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
      equation
       //get the equation string
@@ -235,7 +334,25 @@ algorithm
       varString = getVarString(var);
       desc = (eqString +& " FOR " +& varString);
       descLst = desc::iEqDesc;
-    then descLst;
+    then 
+      descLst;
+   case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+     equation
+      //get the equation string
+      eqnLst = BackendEquation.equationList(orderedEqs);
+      eqn = listGet(eqnLst,i);
+      eqString = BackendDump.equationString(eqn);
+      eqDescLst = stringListStringChar(eqString);
+      eqDescLst = List.map(eqDescLst,prepareXML);
+      eqString =stringCharListString(eqDescLst);
+      //get the variable string
+      varLst = BackendVariable.varList(orderedVars);   
+      var = listGet(varLst,arrayGet(ass2,i));
+      varString = getVarString(var);
+      desc = (eqString +& " FOR " +& varString);
+      descLst = desc::iEqDesc;
+    then 
+      descLst;
    case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
      equation
       //get the equation string
@@ -246,12 +363,30 @@ algorithm
       eqDescLst = List.map(eqDescLst,prepareXML);
       eqString = stringCharListString(eqDescLst);
       descLst = eqString::iEqDesc;
-    then descLst;
+    then 
+      descLst;
+  case(BackendDAE.TORNSYSTEM(residualequations = es, tearingvars = vs, linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+     equation
+      //get the equation string
+       eqnLst = BackendEquation.equationList(orderedEqs);
+       desc = ("Torn linear System");
+       descLst = desc::iEqDesc;
+    then 
+      descLst;  
+  case(BackendDAE.TORNSYSTEM(residualequations = es, tearingvars = vs, linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING(ass2 = ass2)),_)
+     equation
+      //get the equation string
+       eqnLst = BackendEquation.equationList(orderedEqs);
+       desc = ("Torn nonlinear System");
+       descLst = desc::iEqDesc;
+    then 
+      descLst; 
   else
     equation
       desc = ("no singleEquation");
       descLst = desc::iEqDesc;
-    then descLst;
+    then 
+      descLst;
   end matchcontinue; 
 end getEquationStrings2;
 
@@ -287,7 +422,7 @@ algorithm
   end matchcontinue;  
 end getVarString;
    
-
+//TODO: Replace with CDATA
 protected function prepareXML " map-function for deletion of forbidden chars from given string
 author:Waurich TUD 2013-06"
   input String iString;
@@ -320,7 +455,9 @@ algorithm
 end shortenVarString;
 
 
-protected function fillSccList
+protected function fillSccList "function fillSccList
+  author: marcusw
+  This function appends the scc, which solves the given variable, to the requiredsccs-list."
   input tuple<Integer,Integer> variable;
   input array<Integer> varSccMapping;
   input List<Integer> iRequiredSccs;
@@ -335,13 +472,16 @@ algorithm
       equation
         true = intEq(varState,1);
         sccIdx = varSccMapping[varIdx];
+        //print("index der var "+&intString(varIdx)+&"mapped to the component "+&intString(sccIdx)+&"\n");
       then sccIdx::iRequiredSccs;
    else then iRequiredSccs;
   end matchcontinue;
 end fillSccList;
 
-
-protected function getUnsolvedVarsBySCC
+//TODO: Remove prints if not required
+protected function getUnsolvedVarsBySCC "function getUnsolvedVarsBySCC
+  author: marcusw,waurich
+  Returns all required variables which are not solved inside the given component."
   input BackendDAE.StrongComponent component;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   output List<tuple<Integer,Integer>> unsolvedVars;
@@ -355,41 +495,62 @@ algorithm
     case(BackendDAE.SINGLEEQUATION(var=varIdx),_)
       equation
         tmpVars = getVarsBySCC(component, incidenceMatrix);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
         tmpVars = List.removeOnTrue(varIdx, compareTupleByVarIdx, tmpVars);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
-      then tmpVars;
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+      then 
+        tmpVars;
     case(BackendDAE.EQUATIONSYSTEM(vars=varIdc),_)
       equation
         tmpVars = getVarsBySCC(component, incidenceMatrix);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
         tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
-      then tmpVars;
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+      then 
+        tmpVars;
     case(BackendDAE.SINGLEWHENEQUATION(vars=varIdc),_)
       equation
         tmpVars = getVarsBySCC(component, incidenceMatrix);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
         tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
       then tmpVars;
     case(BackendDAE.SINGLEALGORITHM(vars=varIdc),_)
       equation 
         tmpVars = getVarsBySCC(component,incidenceMatrix);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
         tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
-        print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
-      then tmpVars;
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+      then 
+        tmpVars;
+    case(BackendDAE.SINGLEARRAY(vars=varIdc),_)
+      equation
+        tmpVars = getVarsBySCC(component, incidenceMatrix);
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+      then 
+        tmpVars;
+    case(BackendDAE.TORNSYSTEM(tearingvars=varIdc),_)
+      equation
+        tmpVars = getVarsBySCC(component, incidenceMatrix);
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_pre", "{", ";", "}", true) +& "\n");
+        tmpVars = List.filter1OnTrue(tmpVars, isTupleMember, varIdc);
+        //print(List.toString(tmpVars, tupleToString, "Component " +& BackendDump.strongComponentString(component) +& " unsolved vars_post", "{", ";", "}", true) +& "\n");
+      then 
+        tmpVars;    
     else
       equation
         print("getUnsolvedVarsBySCC failed\n");
-        
         then fail();
    end matchcontinue;
 end getUnsolvedVarsBySCC;
 
 
-protected function isTupleMember
+protected function isTupleMember "function isTupleMember
+  author: marcusw
+  Checks if the given variable (stored as tuple <id,state>) is part of the variable-list. This is only possible if the 
+  second tuple-argument is one - this means that the variable is not derived."
   input tuple<Integer,Integer> inTuple;
   input List<Integer> varIdc;
   output Boolean isNotMember;
@@ -411,8 +572,10 @@ algorithm
   end matchcontinue;
 end isTupleMember;
 
-
-protected function compareTupleByVarIdx
+//TODO: Maybe we can easily replace the tuple-notation with negativ and positiv integers.
+protected function compareTupleByVarIdx "function compareTupleByVarIdx
+  author: marcusw
+  Checks if the given varIdx is the same as the first tuple-argument." 
   input Integer varIdx;
   input tuple<Integer,Integer> var2Idx;
   output Boolean equal;
@@ -428,7 +591,9 @@ algorithm
 end compareTupleByVarIdx;
 
 
-protected function getVarsBySCC
+protected function getVarsBySCC "function getVarsBySCC
+  author: marcusw,waurich
+  Returns all variables of all equations which are part of the component." 
   input BackendDAE.StrongComponent component;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   output List<tuple<Integer,Integer>> vars;
@@ -445,24 +610,41 @@ algorithm
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
         dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
         print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
-      then eqnVars;
+      then 
+        eqnVars;
     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns),_)
       equation
         eqnVars = List.flatten(List.map1(eqns, getVarsByEqn, incidenceMatrix));
         //print("Error in createTaskGraph1! Unsupported component-type Equationsystem with jacType varying.\n");
-      then eqnVars;
+      then 
+        eqnVars;
     case (BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
         dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
         print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
-      then eqnVars;
+      then 
+        eqnVars;
+    case (BackendDAE.SINGLEARRAY(eqn=eqnIdx),_)
+      equation
+        eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
+        dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
+      then 
+        eqnVars;
     case (BackendDAE.SINGLEALGORITHM(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
         dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
         print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
-      then eqnVars;
+      then 
+        eqnVars;
+    case (BackendDAE.TORNSYSTEM(residualequations=eqns),_)
+      equation
+        eqnVars = List.flatten(List.map1(eqns, getVarsByEqn, incidenceMatrix));
+        //print("Error in createTaskGraph1! Unsupported component-type Equationsystem with jacType varying.\n");
+      then 
+        eqnVars;
     else
       equation
         print("Error in createTaskGraph1! Unsupported component-type \n");
@@ -470,7 +652,9 @@ algorithm
   end match;  
 end getVarsBySCC;
 
-protected function tupleToString
+protected function tupleToString "function tupleToString
+  author: marcusw
+  Returns the given tuple as string." 
   input tuple<Integer,Integer> inTuple;
   output String result;
   
@@ -483,7 +667,9 @@ algorithm
   end match;
 end tupleToString;
 
-protected function checkIfEquationContainsVar
+protected function checkIfEquationContainsVar "function checkIfEquationContainsVar
+  author: marcusw
+  Returns true if given variable is part of the given equation." 
   input tuple<Integer,Integer> var;
   input Integer eqnIdx;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
@@ -503,7 +689,9 @@ algorithm
 end checkIfEquationContainsVar;
 
 
-protected function getVarsByEqn
+protected function getVarsByEqn "function getVarsByEqn
+  author: marcusw
+  Returns all variables of the given equation." 
   input Integer eqnIdx;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
   output list<tuple<Integer,Integer>> vars_out;
@@ -517,7 +705,11 @@ algorithm
 end getVarsByEqn;
 
 
-protected function getVarTuple
+protected function getVarTuple "function getVarTuple
+  author: marcusw
+  Converts the given variable to tuple-notation.
+  Example:  varIdx = -4 --> (4,0)
+            varIdx = 5  --> (5,1)"
   input Integer varIdx;
   output tuple<Integer,Integer> outIdx; //variable index and variable state
   
@@ -532,7 +724,9 @@ algorithm
    end matchcontinue;
 end getVarTuple;
 
-protected function compareVarTuple
+protected function compareVarTuple "function compareVarTuple
+  author: marcusw
+  Compares the two given tuples. The result is true if the first and second elements are equal."
   input tuple<Integer,Integer> tuple1;
   input tuple<Integer,Integer> tuple2;
   output Boolean equals;
@@ -550,7 +744,9 @@ algorithm
  end matchcontinue;
 end compareVarTuple;
 
-protected function getSCCByVar
+protected function getSCCByVar "function getSCCByVar
+  author: marcusw
+  Gets the scc which solves the given variable."
   input tuple<Integer,Integer> varIdx; //variable index and variable state
   input BackendDAE.StrongComponents components;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
@@ -575,7 +771,10 @@ algorithm
   end matchcontinue;
 end getSCCByVar;
 
-protected function createVarSccMapping
+protected function createVarSccMapping "function createVarSccMapping
+  author: marcusw
+  Create a mapping between variables and strong-components. The returned array (one element for each variable) contains the 
+  scc-index which solves the variable."
   input BackendDAE.StrongComponents components;
   input Integer varCount;
   output array<Integer> oVarSccMapping;
@@ -590,7 +789,9 @@ algorithm
   
 end createVarSccMapping;
 
-protected function createVarSccMapping0
+protected function createVarSccMapping0 "function createVarSccMapping
+  author: marcusw,waurich
+  Updates all array elements which are solved in the given component. The array-elements will be set to iSccIdx."
   input BackendDAE.StrongComponent component;
   input array<Integer> varSccMapping;
   input Integer iSccIdx;
@@ -601,7 +802,11 @@ algorithm
     local
       Integer compVarIdx;
       List<Integer> compVarIdc;
+      List<Integer> residuals;
+      List<Integer> othereqs;
+      List<Integer> othervars;
       array<Integer> tmpVarSccMapping;
+      list<tuple<Integer,list<Integer>>> tearEqVarTpl;
     case(BackendDAE.SINGLEEQUATION(var = compVarIdx),_,_)
       equation
         //print("Var " +& intString(compVarIdx) +& " solved in scc " +& BackendDump.strongComponentString(component) +& "\n");
@@ -610,26 +815,38 @@ algorithm
     case(BackendDAE.EQUATIONSYSTEM(vars = compVarIdc),_,_)
       equation
         tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-      then iSccIdx+1;
+      then 
+        iSccIdx+1;
     case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc),_,_)
       equation
         tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-      then iSccIdx+1;
+      then 
+        iSccIdx+1;
+    case(BackendDAE.SINGLEARRAY(vars = compVarIdc),_,_)
+      equation
+        tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then 
+        iSccIdx+1;        
     case(BackendDAE.SINGLEALGORITHM(vars = compVarIdc),_,_)
       equation
         tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-        then iSccIdx+1;
+        then 
+          iSccIdx+1;
+    case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_)
+      equation
+      print("Tearingvars in Tornsystem "+& stringDelimitList(List.map(compVarIdc,intString),",")+&"\n"+&"residualEquations "+&stringDelimitList(List.map(residuals,intString),",")+&"\n"); 
+      ((othereqs,othervars)) = List.fold(tearEqVarTpl,othersInTearComp,(({},{})));
+      print("other vars in Tornsystem "+& stringDelimitList(List.map(othervars,intString),",")+&"\n"+&"other eqs in Tornsystem "+& stringDelimitList(List.map(othereqs,intString),",")+&"\n");
+      compVarIdc = listAppend(othervars,compVarIdc);
+      tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+      then 
+        iSccIdx+1;    
     case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars = compVarIdc),_,_)
       equation
         print("MIXEDEQUATIONSYSTEMS is not supported yet\n");
         //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
       then fail();
-    case(BackendDAE.SINGLEARRAY(vars = compVarIdc),_,_)
-      equation
-        print("SINGLEARRAY not is supported yet\n");
-        //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-      then fail();
-    case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc),_,_)
+        case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc),_,_)
       equation
         print("SINGLECOMPLEXEQUATION is not supported yet\n");
         //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
@@ -639,17 +856,67 @@ algorithm
         print("SINGLEIFEQUATION is not supported yet\n");
         //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
       then fail();
-    case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc),_,_)
-      equation
-        print("TORNSYSTEM is not supported yet\n");
-        //tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
-      then fail();
     else
       equation
         print("createVarSccMapping0 - Unsupported component-type.");
       then fail();
   end matchcontinue;
 end createVarSccMapping0;
+
+//protected function tearingVarsInComp " gets the remaining algebraic vars that are solved in the torn block.
+//author:Waurich TUD 2013-06"
+//  input tuple<Integer,list<Integer>> otherEqnVarTpl;
+//  input list<Integer> compVarIdcIn;
+//  output list<Integer> compVarIdcOut;
+//algorithm
+//  compVarIdc := matchcontinue(otherEqnVarTpl,compVarIdcIn)
+//  local
+//    Integer eq;
+//    list<Integer> varLst;
+//    case(((eq,varLst)),_)
+//     equation
+//      print("the Vars in othereqnvartpl "+&stringDelimitList(List.map(varLst,intString)",")+&"\n");
+//      compVarIdcOut = List.fold(varLst,cons,compVarIdcIn);
+//      then
+//        compVarIdcOut;
+//    else
+//      then
+ //       compVarIdIn;
+//  end matchcontinue;
+//end tearingVarsInComp;  
+
+
+protected function othersInTearComp " gets the remaining algebraic vars and equations from the torn block.
+author:Waurich TUD 2013-06"
+  input tuple<Integer,list<Integer>> otherEqnVarTpl;
+  input tuple<list<Integer>,list<Integer>> othersIn;
+  output tuple<list<Integer>,list<Integer>> othersOut;
+algorithm
+  othersOut := matchcontinue(otherEqnVarTpl,othersIn)
+    local
+      Integer eq;
+      Integer var;
+      list<Integer> eqLst;
+      list<Integer> varTplLst;
+      list<Integer> varLst;
+    case(_,_)
+      equation
+      (eq,varTplLst)=otherEqnVarTpl;  
+      true = intEq(listLength(varTplLst),1);
+      var = listGet(varTplLst,1);
+      (eqLst,varLst) = othersIn;
+      varLst = var::varLst;
+      eqLst = eq::eqLst;
+      then
+        ((eqLst,varLst));
+    else
+      equation
+      print("check number of vars in relation to number of eqs in otherEqnVarTpl int the torn system\n");
+      then
+        fail();  
+  end matchcontinue;   
+end othersInTearComp;  
+  
 
 protected function updateMapping
   input Integer varIdx;
@@ -767,6 +1034,9 @@ end updateMapping;
 //------------------------------------------
 
 public function addSccToGraph
+  "function addSccToGraph
+  author: marcusw
+  Adds the given component as node to the given graph."
   input StrongConnectedComponent component;
   input Graph iGraph;
   output Graph oGraph;
@@ -785,7 +1055,9 @@ algorithm
 end addSccToGraph;
 
 
-protected function compScc
+protected function compScc "function compScc
+  author: marcusw
+  Compares two StrongConnectedComponent-nodes. They are equal if they have the same index."
   input Integer compIdx;
   input StrongConnectedComponent comp2;
   output Boolean equals;
@@ -801,7 +1073,9 @@ algorithm
   end match;
 end compScc;
 
-public function dumpAsGraphML_SccLevel
+public function dumpAsGraphML_SccLevel "function dumpAsGraphML_SccLevel
+  author: marcusw
+  Write out the given graph as a graphml file."
   input Graph iGraph;
   input String fileName;
 
@@ -821,7 +1095,9 @@ algorithm
 end dumpAsGraphML_SccLevel;
 
 
-protected function addSccToGraphML
+protected function addSccToGraphML "function addSccToGraphML
+  author: marcusw
+  Adds the given component to the given graph as a new node."
   input StrongConnectedComponent component;
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
@@ -845,7 +1121,9 @@ algorithm
 end addSccToGraphML;
 
 
-protected function addSccDepToGraph
+protected function addSccDepToGraph "function addSccDepToGraph
+  author: marcusw
+  Adds a new edge between the component-nodes with index comp1Idx and comp2Idx to the graph."
   input Integer comp1Idx;
   input Integer comp2Idx;
   input GraphML.Graph iGraph;
@@ -856,9 +1134,4 @@ algorithm
  
 end addSccDepToGraph;
 
-
-//public function dumpAsXML
-//  input Graph iGraph;
-//  input String fileName;
-//end dumpAsXML;
 end HpcOmTaskGraph;
