@@ -187,15 +187,15 @@ algorithm
       list<Variable> vars;
       String name;
       Integer size;
-      list<Integer> roots;
+      list<Integer> roots1;
     case(GRAPH(name=name,components=comps,variables=vars))
       equation
         size = listLength(comps);
         print(intString(size)+&" comps all in all\n");
         adjacencyLst = arrayCreate(size,{});
-        ((adjacencyLst,roots)) = List.fold(comps,AdjacencyListFill,(adjacencyLst,{}));
+        ((adjacencyLst,roots1)) = List.fold(comps,AdjacencyListFill,(adjacencyLst,{}));
       then
-        (adjacencyLst,roots);
+        (adjacencyLst,roots1);
     case(GRAPH(name=name,components=comps,variables=vars))
       equation
         true = List.isEmpty(comps);
