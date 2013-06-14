@@ -1316,16 +1316,8 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
       restore_memory_state(mem_state);
       >>
     ;separator="\n")
-  let info = match useSymbolicInitialization
-         case true then
-           'INFO(LOG_INIT, "The symbolic initialization was generated.");'
-         else
-           'ERROR0(LOG_INIT, "The symbolic initialization was not generated.");'
-  let useSymbolicInitializationToInt = match useSymbolicInitialization
-         case true then
-           '1'
-         else
-           '0'
+  let useSymbolicInitializationToInt = if useSymbolicInitialization then '1' else '0'
+  let errorMsg = if not useSymbolicInitialization then 'ERROR0(LOG_INIT, "The symbolic initialization was not generated.");'
   <<
   <%&tmp%>
   const int useSymbolicInitialization = <%useSymbolicInitializationToInt%>; /* <%useSymbolicInitialization%> */
@@ -1335,7 +1327,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     <%varDecls%>
 
     mem_state = get_memory_state();
-    <%info%>
+    <%errorMsg%>
     data->simulationInfo.discreteCall = 1;
     <%body%>
     data->simulationInfo.discreteCall = 0;
