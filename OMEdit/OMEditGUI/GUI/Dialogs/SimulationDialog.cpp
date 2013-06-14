@@ -665,14 +665,30 @@ bool SimulationDialog::validate()
   */
 void SimulationDialog::buildModel(QString simulationParameters, QStringList simulationFlags)
 {
+  QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
+  QDateTime lastModifiedDateTime = QDateTime::currentDateTime();
+  QString output_file;
+  // if simualtion output format is not plt, csv and mat then dont show plot window.
+  QRegExp regExp("\\b(mat|plt|csv)\\b");
+  if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
+  {
+    output_file = mpLibraryTreeNode->getNameStructure();
+    if (!mpFileNameTextBox->text().isEmpty())
+      output_file = mpFileNameTextBox->text().trimmed();
+    QFileInfo fileInfo(QString(workingDirectory).append("/").prepend(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
+    if (fileInfo.exists())
+    {
+      lastModifiedDateTime = fileInfo.lastModified();
+    }
+  }
   if (mpMainWindow->getOMCProxy()->buildModel(mpLibraryTreeNode->getNameStructure(), simulationParameters))
   {
     // read the file path according to the file prefix variable
     QString file;
     if (mpFileNameTextBox->text().isEmpty())
-      file = QString(mpMainWindow->getOMCProxy()->changeDirectory()).append("/").append(mpLibraryTreeNode->getNameStructure());
+      file = QString(workingDirectory).append("/").append(mpLibraryTreeNode->getNameStructure());
     else
-      file = QString(mpMainWindow->getOMCProxy()->changeDirectory()).append("/").append(mpFileNameTextBox->text());
+      file = QString(workingDirectory).append("/").append(mpFileNameTextBox->text());
 
     file = file.replace("//", "/");
     // run the simulation executable to create the result file
@@ -754,15 +770,10 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
         pSimulationOutputDialog->showSimulationOutputDialog();
     }
     // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
-    if (mpProgressDialog->isHidden() || mpSimulationProcess->exitStatus() != QProcess::NormalExit)
+    if (mpProgressDialog->isHidden())
       return;
     // read the output file
-    QString output_file = mpLibraryTreeNode->getNameStructure();
-    if (!mpFileNameTextBox->text().isEmpty())
-      output_file = mpFileNameTextBox->text().trimmed();
-    // if simualtion output format is not plt, csv and mat then dont show plot window.
-    QRegExp regExp("\\b(mat|plt|csv)\\b");
-    if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
+    if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1 && fileInfo.exists() && lastModifiedDateTime < fileInfo.lastModified())
     {
       VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
       OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
