@@ -242,7 +242,7 @@ constant DebugFlag INTERACTIVE_CORBA = DEBUG_FLAG(37, "interactiveCorba", false,
 constant DebugFlag INTERACTIVE_DUMP = DEBUG_FLAG(38, "interactivedump", false,
   Util.gettext("Prints out debug information for the interactive server."));
 constant DebugFlag RELIDX = DEBUG_FLAG(39, "relidx", false,
-  Util.notrans(""));
+  Util.notrans("Prints out debug information about relations, that are used as zero-crossings."));
 constant DebugFlag DUMP_REPL = DEBUG_FLAG(40, "dumprepl", false,
   Util.gettext("Dump the found replacements for simple equation removal."));
 constant DebugFlag DUMP_FP_REPL = DEBUG_FLAG(41, "dumpFPrepl", false,
