@@ -134,7 +134,7 @@ algorithm
       System.tmpTickReset(0);
       
       //Create TaskGraph
-      HpcOmTaskGraph.createTaskGraph(inBackendDAE);
+      HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
       
 //      uniqueEqIndex = 1;
 //      ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
