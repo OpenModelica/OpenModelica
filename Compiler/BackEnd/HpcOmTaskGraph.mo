@@ -193,7 +193,7 @@ author:Waurich TUD 2013-06"
   output array<list<Integer>> adjacencyLst;
   output list<Integer> rootLstOut;
 algorithm
-  (adjacencyLst,roots1) := matchcontinue(graph)
+  (adjacencyLst,rootLstOut) := matchcontinue(graph)
     local
       list<StrongConnectedComponent> comps;
       list<Variable> vars;
