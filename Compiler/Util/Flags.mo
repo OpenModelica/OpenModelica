@@ -212,11 +212,11 @@ constant DebugFlag LOOKUP = DEBUG_FLAG(22, "lookup", false,
 constant DebugFlag PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS = DEBUG_FLAG(23, "patternmSkipFilterUnusedBindings", false,
   Util.notrans(""));
 constant DebugFlag PATTERNM_ALL_INFO = DEBUG_FLAG(24, "patternmAllInfo", false,
-  Util.notrans(""));
-constant DebugFlag PATTERNM_SKIP_MCDCE = DEBUG_FLAG(25, "patternmSkipMCDCE", false,
-  Util.notrans(""));
-constant DebugFlag PATTERNM_SKIP_MOVE_LAST_EXP = DEBUG_FLAG(26, "patternmSkipMoveLastExp", false,
-  Util.notrans(""));
+  Util.gettext("Adds notifications of all pattern-matching optimizations that are performed."));
+constant DebugFlag PATTERNM_DCE = DEBUG_FLAG(25, "patternmDeadCodeEliminiation", true,
+  Util.gettext("Performs dead code elimination in match-expressions."));
+constant DebugFlag PATTERNM_MOVE_LAST_EXP = DEBUG_FLAG(26, "patternmMoveLastExp", true,
+  Util.gettext("Optimization that moves the last assignment(s) into the result of a match-expression. For example: equation c = fn(b); then c; => then fn(b);"));
 constant DebugFlag EXPERIMENTAL_REDUCTIONS = DEBUG_FLAG(27, "experimentalReductions", false,
   Util.gettext("Turns on custom reduction functions (OpenModelica extension)."));
 constant DebugFlag EVAL_PARAM = DEBUG_FLAG(28, "evalparam", false,
@@ -388,8 +388,8 @@ constant list<DebugFlag> allDebugFlags = {
   LOOKUP,
   PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS,
   PATTERNM_ALL_INFO,
-  PATTERNM_SKIP_MCDCE,
-  PATTERNM_SKIP_MOVE_LAST_EXP,
+  PATTERNM_DCE,
+  PATTERNM_MOVE_LAST_EXP,
   EXPERIMENTAL_REDUCTIONS,
   EVAL_PARAM,
   TYPES,

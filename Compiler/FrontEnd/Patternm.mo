@@ -1278,7 +1278,7 @@ algorithm
       */
     case (Absyn.MATCHCONTINUE(),DAE.CASE(patterns=pats,body={},result=NONE(),info=info)::rest,_,acc,_)
       equation
-        false = Flags.isSet(Flags.PATTERNM_SKIP_MCDCE);
+        true = Flags.isSet(Flags.PATTERNM_DCE);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
         acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       then acc;
@@ -1709,7 +1709,7 @@ algorithm
     case (cache,env,body,_,_,st,_,_,info)
       equation
         (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
-        (body,elabExp,info) = elabResultExp2(Flags.isSet(Flags.PATTERNM_SKIP_MOVE_LAST_EXP),body,elabExp,info);
+        (body,elabExp,info) = elabResultExp2(not Flags.isSet(Flags.PATTERNM_MOVE_LAST_EXP),body,elabExp,info);
         ty = Types.getPropType(prop);
       then (cache,body,SOME(elabExp),info,SOME(ty),st);
   end matchcontinue;
