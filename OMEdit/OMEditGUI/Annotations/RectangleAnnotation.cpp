@@ -46,6 +46,7 @@ RectangleAnnotation::RectangleAnnotation(QString annotation, Component *pParent)
   ShapeAnnotation::setDefaults();
   parseShapeAnnotation(annotation);
   setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 RectangleAnnotation::RectangleAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)

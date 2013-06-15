@@ -47,6 +47,7 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, Component *pParent)
   ShapeAnnotation::setDefaults();
   parseShapeAnnotation(annotation);
   setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 EllipseAnnotation::EllipseAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)

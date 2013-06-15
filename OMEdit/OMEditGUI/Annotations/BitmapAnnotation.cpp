@@ -45,6 +45,7 @@ BitmapAnnotation::BitmapAnnotation(QString annotation, Component *pParent)
   ShapeAnnotation::setDefaults();
   parseShapeAnnotation(annotation);
   setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 BitmapAnnotation::BitmapAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)

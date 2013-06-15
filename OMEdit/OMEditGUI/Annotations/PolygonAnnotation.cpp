@@ -46,6 +46,7 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, Component *pParent)
   ShapeAnnotation::setDefaults();
   parseShapeAnnotation(annotation);
   setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 PolygonAnnotation::PolygonAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)

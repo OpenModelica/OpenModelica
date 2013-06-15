@@ -117,7 +117,7 @@ Component::Component(QString annotation, QString transformationString, Component
   setAcceptHoverEvents(true);
   getClassInheritedComponents();
   parseAnnotationString(annotation);
-  mpTransformation = new Transformation(isLibraryComponent() ? StringHandler::Icon : mpGraphicsView->getViewType());
+  mpTransformation = new Transformation(StringHandler::Icon);
   mpTransformation->parseTransformationString(transformationString, boundingRect().width(), boundingRect().height());
   setTransform(mpTransformation->getTransformationMatrix());
   setToolTip(QString("<b>").append(mClassName).append("</b> <i>").append(mName).append("</i>"));

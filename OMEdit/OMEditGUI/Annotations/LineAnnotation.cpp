@@ -48,6 +48,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pParent)
   ShapeAnnotation::setDefaults();
   parseShapeAnnotation(annotation);
   setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)

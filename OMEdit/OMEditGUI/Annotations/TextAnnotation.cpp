@@ -46,6 +46,7 @@ TextAnnotation::TextAnnotation(QString annotation, Component *pParent)
   ShapeAnnotation::setDefaults();
   parseShapeAnnotation(annotation);
   setPos(mOrigin);
+  setRotation(mRotation);
 }
 
 TextAnnotation::TextAnnotation(QString annotation, bool inheritedShape, GraphicsView *pGraphicsView)
