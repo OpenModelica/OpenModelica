@@ -94,8 +94,8 @@ template translateFunctions(FunctionCode functionCode)
   case FUNCTIONCODE(__) then
     let filePrefix = name
     let _= (if mainFunction then textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile'))
-    let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes, literals), '<%filePrefix%>.h')
-    let()= textFile(functionsFile(filePrefix, mainFunction, functions), '<%filePrefix%>.c')
+    let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
+    let()= textFile(functionsFile(filePrefix, mainFunction, functions, literals), '<%filePrefix%>.c')
     let()= textFile(recordsFile(filePrefix, extraRecordDecls), '<%filePrefix%>_records.c')
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -3275,11 +3275,15 @@ end commonHeader;
 
 template functionsFile(String filePrefix,
                        Option<Function> mainFunction,
-                       list<Function> functions)
+                       list<Function> functions,
+                       list<Exp> literals)
  "Generates the contents of the main C file for the function case."
 ::=
   <<
   #include "<%filePrefix%>.h"
+  <% /* Note: The literals may not be part of the header due to separate compilation */
+     literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty
+  %>
   #include "modelica.h"
   void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
   void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
@@ -3296,8 +3300,7 @@ template functionsHeaderFile(String filePrefix,
                        Option<Function> mainFunction,
                        list<Function> functions,
                        list<RecordDeclaration> extraRecordDecls,
-                       list<String> includes,
-                       list<Exp> literals)
+                       list<String> includes)
  "Generates the contents of the main C file for the function case."
 ::=
   <<
@@ -3312,8 +3315,6 @@ template functionsHeaderFile(String filePrefix,
   <%match mainFunction case SOME(fn) then functionHeader(fn,true)%>
   <%functionHeaders(functions)%>
   <%externalFunctionIncludes(includes)%>
-
-  <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
 
   #ifdef __cplusplus
   }

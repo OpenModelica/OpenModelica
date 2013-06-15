@@ -4556,7 +4556,7 @@ protected function generateFunctions
   input list<tuple<String,list<String>>> iacc;
   output list<tuple<String,list<String>>> deps;
 algorithm
-  deps := match (icache,ienv,p,isp,iacc)
+  deps := matchcontinue (icache,ienv,p,isp,iacc)
     local
       String name;
       list<String> names,dependencies;
@@ -4568,14 +4568,14 @@ algorithm
       list<SCode.Element> sp;
       Env.Cache cache;
       Env.Env env;
+      String file;
+      Integer n;
+      Absyn.Info info;
 
     case (cache,env,_,{},acc) then acc;
-    case (cache,env,_,SCode.CLASS(name="OpenModelica")::sp,acc)
+    case (cache,env,_,SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst),info=info as Absyn.INFO(fileName=file))::sp,acc)
       equation
-        acc = generateFunctions(cache,env,p,sp,acc);
-      then acc;
-    case (cache,env,_,SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp,acc)
-      equation
+        (0,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
         names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
         paths = List.map1r(names,Absyn.makeQualifiedPathFromStrings,name);
         cache = instantiateDaeFunctions(cache, env, paths);
@@ -4589,11 +4589,13 @@ algorithm
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
         acc = generateFunctions(cache,env,p,sp,acc);
       then acc;
-    case (cache,env,_,_::sp,acc)
+    case (cache,env,_,SCode.CLASS(name=name,info=info as Absyn.INFO(fileName=file))::sp,acc)
       equation
+        (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
+        Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " +& name, info);
         acc = generateFunctions(cache,env,p,sp,acc);
       then acc;
-  end match;
+  end matchcontinue;
 end generateFunctions;
 
 protected function matchQualifiedCalls

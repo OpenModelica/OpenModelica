@@ -1,4 +1,4 @@
-package MathematicaDump "Copyright (C) MathCore Engineering AB, 2005 "
+encapsulated package MathematicaDump "Copyright (C) MathCore Engineering AB, 2005 "
 
   import BackendDAE;
   import BackendVariable;
@@ -23,7 +23,7 @@ algorithm
     local
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.Equation> eqns,ieqns;
-      String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s3,s4,res;
+      String allVarStr,s1_1,s1_2,s1_3,s1_4,s1_5,s3,s4;
       list<String> params,inputs,states,algs,outputs,inputsStates;
     case((vars,knvars,eqns,ieqns)) equation
 
@@ -793,7 +793,7 @@ algorithm
   (params, inputs) := match(knvars)
     local
       list<BackendDAE.Var> varLst;
-    case(knvars) equation
+    case _ equation
       varLst = BackendVariable.varList(knvars);
       params = List.map(varLst,printMmaParamStr);
       inputs = List.map(varLst,printMmaInputStr);

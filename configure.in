@@ -59,6 +59,7 @@ AC_SUBST(LIBSIMULATION)
 AC_SUBST(LIBRUNTIME)
 AC_SUBST(LIBFMIRUNTIME)
 AC_SUBST(SHREXT)
+AC_SUBST(LINK)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -653,6 +654,7 @@ if test "Darwin" = `uname`; then
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   RT_LDFLAGS="$RT_LDFLAGS -liconv -lgc $OPENMP"
+  LINK="cp -fr"
 else
   EXE=""
   SHREXT=".so"
@@ -661,6 +663,7 @@ else
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc $OPENMP"
+  LINK="cp -frl"
 fi
 
 dnl should we compile modpar

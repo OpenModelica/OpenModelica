@@ -1,4 +1,4 @@
-package Uncertainties
+encapsulated package Uncertainties
 
   import DAE;
   import Absyn;
