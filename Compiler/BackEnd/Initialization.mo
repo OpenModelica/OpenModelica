@@ -372,7 +372,7 @@ algorithm
     then (inEqns, iVars);
 
     case (cr::rest, _, _, _) equation
-      identType = ComponentReference.crefType(cr);
+      identType = ComponentReference.crefTypeConsiderSubs(cr);
       preCR = ComponentReference.crefPrefixPre(cr);
       eqn = BackendDAE.EQUATION(DAE.CREF(cr, identType), DAE.CREF(preCR, identType), inSource, false);
       (eqns, vars) = generateInactiveWhenEquationForInitialization(rest, inSource, eqn::inEqns, iVars);
