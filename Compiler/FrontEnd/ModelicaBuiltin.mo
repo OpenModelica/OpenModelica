@@ -1981,9 +1981,8 @@ end importFMU;
 /* Under Development */
 
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
- The only required argument is the className, while all others have some efault values.
- simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix],
-           [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ The only required argument is the className, while all others have some default values.
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
  Example command:
   simulate(A);
 "

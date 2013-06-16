@@ -11,9 +11,6 @@ function last
 end last;
 ");getErrorString();
 
-deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps);getErrorString();
-deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed);getErrorString();
-deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName);getErrorString();
 system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 echo(false);
