@@ -223,7 +223,7 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
 	build/bin/omc build/bin/omc.exe build/bin/omc-diff build/bin/omc-diff.exe \
 	bom-error.log bom-error.sh tab-error.log
-	rm -rf libraries/Resources
+	rm -rf libraries/Resources libraries/link-external-libs
 install-dirs:
 	@test ! "${DESTDIR}/${prefix}" -ef "${top_builddir}/build" || (echo Error: Install and build dirs are the same && false)
 	if [ "$(EXE)" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
