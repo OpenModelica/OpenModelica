@@ -6362,6 +6362,8 @@ algorithm
 
     case (DAE.RELATION(exp1=e1,exp2=e2),_) then isConstWork(e1,isConstWork(e2,true));
 
+    case (DAE.CALL(expLst = ae),_) then isConstWorkList(ae,true);
+
     case (DAE.ARRAY(array = ae),_) then isConstWorkList(ae,true);
 
     case (DAE.MATRIX(matrix = matrix),_)
@@ -7104,6 +7106,14 @@ algorithm
         true = containFunctioncall(e2);
       then
         true;
+
+    // asub    
+    case(DAE.ASUB(e1,elst)) 
+      equation
+        blst = List.map(e1::elst, containVectorFunctioncall);
+        res = Util.boolOrList(blst);
+      then
+        res;    
 
     // anything else
     case (_) then false;

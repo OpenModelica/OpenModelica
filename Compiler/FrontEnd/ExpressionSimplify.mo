@@ -221,85 +221,12 @@ algorithm
       DAE.Dimension dim;
       Options options;
       DAE.CallAttributes attr;
-
-    // noEvent propagated to relations and event triggering functions
-    case ((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),(b,options)))
+    // component references
+    case ((DAE.CREF(componentRef = c_1 as DAE.CREF_IDENT(idn,_,s),ty=t),(_,options)))
       equation
-        (e1,_) = simplify1WithOptions(Expression.stripNoEvent(e),options);
-        e2 = Expression.addNoEventToRelations(e1);
-        e3 = Expression.addNoEventToEventTriggeringFunctions(e2);
-        // TODO: Do this better?
+        exp1 = simplifyCref(c_1,t);
       then
-        ((e3,(b,options)));
-
-    // der(-v) -> -der(v)
-    case ((DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS(tp),e1 as DAE.CREF(componentRef=_))},attr=attr), (b, options)))
-      then
-        ((DAE.UNARY(DAE.UMINUS(tp),DAE.CALL(Absyn.IDENT("der"),{e1},attr)),(true,options)));
-    case ((DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS_ARR(tp),e1 as DAE.CREF(componentRef=_))},attr=attr), (b, options)))
-      then
-        ((DAE.UNARY(DAE.UMINUS_ARR(tp),DAE.CALL(Absyn.IDENT("der"),{e1},attr)),(true,options)));
-
-    case ((e as DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
-      then
-        ((e,(b,options)));
-    case ((e as DAE.CALL(path=Absyn.IDENT("change"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
-      then
-        ((e,(b,options)));
-    case ((e as DAE.CALL(path=Absyn.IDENT("edge"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
-      then
-        ((e,(b,options)));
-
-    case ((e1 as DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
-      equation
-        b2 = Expression.isConst(exp);
-        e1 = Util.if_(b2,e,e1);
-      then
-        ((e1,(b or b2,options)));
-    case ((e1 as DAE.CALL(path=Absyn.IDENT("change"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
-      equation
-        b2 = Expression.isConst(exp);
-        e1 = Util.if_(b2,DAE.BCONST(false),e1);
-      then
-        ((e1,(b or b2,options)));
-    case ((e1 as DAE.CALL(path=Absyn.IDENT("edge"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
-      equation
-        b2 = Expression.isConst(exp);
-        e1 = Util.if_(b2,DAE.BCONST(false),e1);
-      then
-        ((e1,(b or b2,options)));
-
-    // move pre inside
-    case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e}), (b, options)))
-      equation
-        ((e,b2)) = Expression.traverseExpTopDown(e,preCref,false);
-      then
-        ((e,(b or b2,options)));
-    case ((DAE.CALL(path=Absyn.IDENT("change"), expLst={e}), (b, options)))
-      equation
-        ((e,b2)) = Expression.traverseExpTopDown(e,changeCref,false);
-      then
-        ((e,(b or b2,options)));
-    case ((DAE.CALL(path=Absyn.IDENT("edge"), expLst={e}), (b, options)))
-      equation
-        ((e,b2)) = Expression.traverseExpTopDown(e,edgeCref,false);
-      then
-        ((e,(b or b2,options)));
-
-    // normal (pure) call
-    case ((e as DAE.CALL(expLst=expl, attr=DAE.CALL_ATTR(isImpure=false)),(_,options)))
-      equation
-        true = Expression.isConstWorkList(expl, true);
-        e2 = simplifyBuiltinConstantCalls(e);
-      then
-        ((e2,(true,options)));
-
-    // simplify some builtin calls, like cross, etc
-    case ((e as DAE.CALL(attr=DAE.CALL_ATTR(builtin = true)),(_,options)))
-      equation
-        e2 = simplifyBuiltinCalls(e);
-      then
-        ((e2,(true,options)));
+        ((exp1,(true,options)));
 
     // simplify size operator
     case ((e as DAE.SIZE(exp=e1,sz=SOME(e2)),(_,options)))
@@ -322,14 +249,6 @@ algorithm
     case ((DAE.CAST(ty = tp,exp=e),(_,options)))
       equation
         e = simplifyCast(e,tp);
-      then ((e,(true,options)));
-
-    // simplify identity
-    case ((DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)}),(_,options)))
-      equation
-        matrix = simplifyIdentity(1,n);
-        e = DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),
-          false,matrix);
       then ((e,(true,options)));
 
     // MetaModelica builtin operators are calls
@@ -414,18 +333,16 @@ algorithm
         e = simplifyIfExp(e1,e2,e3);
       then ((e,(true,options)));
 
-    // component references
-    case ((DAE.CREF(componentRef = c_1 as DAE.CREF_IDENT(idn,_,s),ty=t),(_,options)))
-      equation
-        exp1 = simplifyCref(c_1,t);
-      then
-        ((exp1,(true,options)));
-
     case ((DAE.REDUCTION(reductionInfo,e1,riters),(_,options)))
       equation
         (riters,b2) = simplifyReductionIterators(riters, {}, false);
         exp1 = DAE.REDUCTION(reductionInfo,e1,riters);
       then ((simplifyReduction(exp1,b2),(true,options)));
+
+    case(inTpl as (DAE.CALL(path=_),(b,options))) 
+      equation
+        tpl = simplifyWorkCall(inTpl);
+    then tpl;
 
       // Look for things we really *should* have simplified, but only if we did not modify anything!
     case ((e,(false,_)))
@@ -441,6 +358,119 @@ algorithm
     else inTpl;
   end matchcontinue;
 end simplifyWork;
+
+public function simplifyWorkCall
+"help function to simplifyWork"
+  input tuple<DAE.Exp,tuple<Boolean,Options>> inTpl;
+  output tuple<DAE.Exp,tuple<Boolean,Options>> tpl;
+algorithm
+  tpl := matchcontinue (inTpl)
+    local
+      Integer n,i;
+      DAE.Exp e,exp,e1,e_1,e2,e3,exp1;
+      Type t,tp;
+      Boolean b,b2;
+      String idn,str;
+      list<DAE.Exp> expl,matrix,subs;
+      list<Subscript> s;
+      ComponentRef c_1;
+      Operator op;
+      Integer index_;
+      Option<tuple<DAE.Exp,Integer,Integer>> isExpisASUB;
+      DAE.ReductionInfo reductionInfo;
+      DAE.ReductionIterators riters;
+      DAE.Dimensions dims;
+      DAE.Dimension dim;
+      Options options;
+      DAE.CallAttributes attr;
+      // noEvent propagated to relations and event triggering functions
+    case ((DAE.CALL(path=Absyn.IDENT("noEvent"),expLst={e}),(b,options)))
+      equation
+        (e1,_) = simplify1WithOptions(Expression.stripNoEvent(e),options);
+        e2 = Expression.addNoEventToRelations(e1);
+        e3 = Expression.addNoEventToEventTriggeringFunctions(e2);
+        // TODO: Do this better?
+      then
+        ((e3,(b,options)));
+  
+    // der(-v) -> -der(v)
+    case ((DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS(tp),e1 as DAE.CREF(componentRef=_))},attr=attr), (b, options)))
+      then
+        ((DAE.UNARY(DAE.UMINUS(tp),DAE.CALL(Absyn.IDENT("der"),{e1},attr)),(true,options)));
+    case ((DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS_ARR(tp),e1 as DAE.CREF(componentRef=_))},attr=attr), (b, options)))
+      then
+        ((DAE.UNARY(DAE.UMINUS_ARR(tp),DAE.CALL(Absyn.IDENT("der"),{e1},attr)),(true,options)));
+
+    case ((e as DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
+      then
+        ((e,(b,options)));
+    case ((e as DAE.CALL(path=Absyn.IDENT("change"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
+      then
+        ((e,(b,options)));
+    case ((e as DAE.CALL(path=Absyn.IDENT("edge"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
+      then
+        ((e,(b,options)));
+
+    case ((e1 as DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
+      equation
+        b2 = Expression.isConst(exp);
+        e1 = Util.if_(b2,e,e1);
+      then
+        ((e1,(b or b2,options)));
+    case ((e1 as DAE.CALL(path=Absyn.IDENT("change"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
+      equation
+        b2 = Expression.isConst(exp);
+        e1 = Util.if_(b2,DAE.BCONST(false),e1);
+      then
+        ((e1,(b or b2,options)));
+    case ((e1 as DAE.CALL(path=Absyn.IDENT("edge"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
+      equation
+        b2 = Expression.isConst(exp);
+        e1 = Util.if_(b2,DAE.BCONST(false),e1);
+      then
+        ((e1,(b or b2,options)));
+
+    // move pre inside
+    case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e}), (b, options)))
+      equation
+        ((e,b2)) = Expression.traverseExpTopDown(e,preCref,false);
+      then
+        ((e,(b or b2,options)));
+    case ((DAE.CALL(path=Absyn.IDENT("change"), expLst={e}), (b, options)))
+      equation
+        ((e,b2)) = Expression.traverseExpTopDown(e,changeCref,false);
+      then
+        ((e,(b or b2,options)));
+    case ((DAE.CALL(path=Absyn.IDENT("edge"), expLst={e}), (b, options)))
+      equation
+        ((e,b2)) = Expression.traverseExpTopDown(e,edgeCref,false);
+      then
+        ((e,(b or b2,options)));
+
+    // simplify identity
+    case ((DAE.CALL(path = Absyn.IDENT(name = "identity"), expLst = {DAE.ICONST(n)}),(_,options)))
+      equation
+        matrix = simplifyIdentity(1,n);
+        e = DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n),DAE.DIM_INTEGER(n)},DAE.emptyTypeSource),
+          false,matrix);
+      then ((e,(true,options)));
+
+    // normal (pure) call
+    case ((e as DAE.CALL(expLst=expl, attr=DAE.CALL_ATTR(isImpure=false)),(_,options)))
+      equation
+        true = Expression.isConstWorkList(expl, true);
+        e2 = simplifyBuiltinConstantCalls(e);
+      then
+        ((e2,(true,options)));
+
+    // simplify some builtin calls, like cross, etc
+    case ((e as DAE.CALL(attr=DAE.CALL_ATTR(builtin = true)),(_,options)))
+      equation
+        e2 = simplifyBuiltinCalls(e);
+      then
+        ((e2,(true,options)));
+  end matchcontinue;
+end simplifyWorkCall;
 
 protected function preCref
   input tuple<DAE.Exp,Boolean> iExp;

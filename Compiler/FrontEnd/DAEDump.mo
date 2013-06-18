@@ -1641,7 +1641,7 @@ algorithm
 end match;
 end dumpParallelismStr;
 
-protected function dumpInlineTypeStr
+public function dumpInlineTypeStr
   input DAE.InlineType inlineType;
   output String str;
 algorithm

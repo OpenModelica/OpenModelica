@@ -2003,14 +2003,12 @@ public function valString "function: valString
   input Value inValue;
   output String outString;
 protected
-  String oldBuffer;
+  Integer handle;
 algorithm
-  oldBuffer := Print.getString();
-  Print.clearBuf();
+  handle := Print.saveAndClearBuf();
   valString2(inValue);
   outString := Print.getString();
-  Print.clearBuf();
-  Print.printBuf(oldBuffer);
+  Print.restoreBuf(handle);
 end valString;
 
 public function valString2 "function: valString
