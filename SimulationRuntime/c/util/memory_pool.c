@@ -74,8 +74,7 @@ void pop_memory_states(void* new_states)
 
 state get_memory_state(void)
 {
-  if(current_states == NULL)
-  {
+  if (current_states == NULL) {
     push_memory_states(1);
   }
   return current_states[get_thread_index()].current_state;
@@ -86,18 +85,19 @@ void print_current_state(void)
   state current_state = current_states[0].current_state;
   printf("=== Current state ===\n");
   printf("  buffer: %d\n",(int)current_state.buffer);
-  printf("  offste: %d\n",(int)current_state.offset);
+  printf("  offset: %d\n",(int)current_state.offset);
 }
 
 void print_state(state s)
 {
   printf("=== State ===\n");
   printf("  buffer: %d\n",(int)s.buffer);
-  printf("  offste: %d\n",(int)s.offset);
+  printf("  offset: %d\n",(int)s.offset);
 }
 
 void restore_memory_state(state restore_state)
 {
+  assert(restore_state.buffer == 0);
   current_states[get_thread_index()].current_state = restore_state;
 }
 
@@ -119,8 +119,9 @@ void* alloc_elements(int n, int sz)
     if(current_states[ix].nbuffers == (current_states[ix].current_state.buffer + 1)) {
       /* We need to allocate another region */
       current_states[ix].buffer=realloc(current_states[ix].buffer,sizeof(int*)*current_states[ix].nbuffers);
-      current_states[ix].buffer[current_states[ix].nbuffers]=malloc(sizeof(int)*NR_ELEMENTS);
       assert(current_states[ix].buffer);
+      current_states[ix].buffer[current_states[ix].nbuffers]=malloc(sizeof(int)*NR_ELEMENTS);
+      assert(current_states[ix].buffer[current_states[ix].nbuffers]);
     }
     current_states[ix].current_state.buffer = current_states[ix].nbuffers++;
     current_states[ix].current_state.offset = 0;

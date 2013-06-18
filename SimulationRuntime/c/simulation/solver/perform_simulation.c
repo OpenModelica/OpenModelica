@@ -114,16 +114,15 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
   {
+    mem_state = get_memory_state();
     /* try */
-    if (!setjmp(simulationJmpbuf))
-    {
-      mem_state = get_memory_state();
+    if (!setjmp(simulationJmpbuf)) {
       currectJumpState = ERROR_SIMULATION;
 
-      if(measure_time_flag)
-      {
-        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
+      if (measure_time_flag) {
+        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
           rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
+        }
         rt_clear(SIM_TIMER_STEP);
         rt_tick(SIM_TIMER_STEP);
       }
@@ -138,14 +137,15 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         if(solverInfo->offset + DBL_EPSILON > simInfo->stepSize)
           solverInfo->offset = 0;
         INFO1(LOG_SOLVER, "offset value for the next step: %.10f", solverInfo->offset);
-      }
-      else
+      } else {
         solverInfo->offset = 0;
+      }
       solverInfo->currentStepSize = simInfo->stepSize - solverInfo->offset;
 
       /* adjust final step? */
-      if(solverInfo->currentTime + solverInfo->currentStepSize > simInfo->stopTime)
+      if(solverInfo->currentTime + solverInfo->currentStepSize > simInfo->stopTime) {
         solverInfo->currentStepSize = simInfo->stopTime - solverInfo->currentTime;
+      }
       /***** End calculation next step size *****/
 
       /* check for next time event */

@@ -504,25 +504,20 @@ int functionODE_residual(double *t, double *y, double *yd, double *delta,
   saveJumpState = currectJumpState;
   currectJumpState = ERROR_INTEGRATOR;
 
+  mem_state = get_memory_state();
   /* try */
   if (!setjmp(integratorJmpbuf))
   {
-    mem_state = get_memory_state();
-
     functionODE(data);
 
     /* get the difference between the temp_xd(=localData->statesDerivatives)
        and xd(=statesDerivativesBackup) */
-    for(i=0; i < data->modelData.nStates; i++)
-    {
+    for(i=0; i < data->modelData.nStates; i++) {
       delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
     }
 
     restore_memory_state(mem_state);
-  }
-  /* catch */
-  else
-  {
+  } else { /* catch */
     restore_memory_state(mem_state);
     *ires = -1;
   }
