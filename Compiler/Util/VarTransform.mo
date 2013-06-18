@@ -945,6 +945,25 @@ algorithm
   end matchcontinue;
 end replacementTargets;
 
+public function addReplacementLst " adds several replacements given by list of crefs and list of expressions by repeatedly calling addReplacement"
+  input VariableReplacements inRepl;
+  input list<DAE.ComponentRef> crs;
+  input list<DAE.Exp> dsts;
+  output VariableReplacements repl;
+algorithm
+  repl := matchcontinue(inRepl,crs,dsts) 
+  local 
+    DAE.ComponentRef cr;
+    DAE.Exp dst;
+    
+    case(repl,{},{}) then repl;
+    case(repl,cr::crs,dst::dsts) equation
+      repl = addReplacement(repl,cr,dst);
+      repl = addReplacementLst(repl,crs,dsts);
+    then repl;
+  end matchcontinue;
+end addReplacementLst;
+
 public function addReplacement "function: addReplacement
 
   Adds a replacement rule to the set of replacement rules given as argument.
@@ -1090,15 +1109,27 @@ algorithm
     case (_,_,_)
       equation
         srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
-        srcs = List.union({},src::srcs);
+        srcs = amortizeUnion(src::srcs);//List.union({},src::srcs);
         invHt_1 = BaseHashTable.add((dst, srcs),invHt);
       then
         invHt_1;
   end matchcontinue;
 end addReplacementInv2;
 
+protected function amortizeUnion "performs listUnion but in an 'amortized' way, by only doing it occasionally"
+  input list<DAE.ComponentRef> in_crefs;
+  output list<DAE.ComponentRef> crefs;
+algorithm
+  crefs := matchcontinue(in_crefs)
+    case(in_crefs) equation
+      true = intMod(listLength(in_crefs),7)==0; // Experiments performed on different values: {{5, 102}, {6, 99}, {7, 98.8}, {8, 101}, {10, 101}, 20, 104}}
+      then List.union({},in_crefs);
+    case(crefs) then crefs;
+  end matchcontinue;
+end amortizeUnion;
+
 public function addReplacementIfNot "function: addReplacementIf
-  Calls addReplacement() if condition (first argument) is true,
+  Calls addReplacement() if condition (first argument) is false,
   otherwise does nothing.
 
   Author: asodja, 2010-03-03
@@ -1114,11 +1145,12 @@ algorithm
       DAE.ComponentRef src;
       DAE.Exp dst;
       VariableReplacements repl_1;
-    case (false,_,src,dst) /* source dest */
+    case (false,repl,src,dst) /* source dest */
       equation
         repl_1 = addReplacement(repl,src,dst);
       then repl_1;
-    case (true,_,_,_) then repl;
+    case (true,repl,src,dst)
+      then repl;
   end matchcontinue;
 end addReplacementIfNot;
 
