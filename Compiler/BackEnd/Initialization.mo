@@ -491,7 +491,7 @@ protected
   HashSet.HashSet hs;
 algorithm
   (e, hs) := inTpl;
-  ((_, hs)) := Expression.traverseExp(e, collectPreVariablesTrverseExp2, hs);
+  ((_, hs)) := Expression.traverseExp(e, collectPreVariablesTrverseExp, hs);
   outTpl := (e, hs);
 end collectPreVariablesEquation;
 
@@ -803,13 +803,8 @@ algorithm
       ((vars, fixvars, eqns, reeqns, _)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs)));
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
 
-      // replace initial() with true and sample(..) with false
-      _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunktions, false);
-
-      // generate initial system
-      initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-      // remove unused variables
-      initsyst = removeUnusedInitialVars(initsyst);
+      // replace initial(), sample(...) and delay(...)
+      _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
 
       evars = BackendVariable.emptyVars();
       eavars = BackendVariable.emptyVars();
@@ -829,9 +824,15 @@ algorithm
                                  BackendDAE.INITIALSYSTEM(),
                                  {});
 
+      // generate initial system
+      initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
+      // remove unused variables
+      initsyst = removeUnusedInitialVars(initsyst);
+
       // split it in independend subsystems
       (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
       initdae = BackendDAE.DAE(systs, shared);
+      
       // analzye initial system
       initdae = analyzeInitialSystem(initdae, inDAE, inInitVars);
 
@@ -849,7 +850,7 @@ algorithm
   end matchcontinue;
 end solveInitialSystem1;
 
-protected function simplifyInitialFunktions "function simplifyInitialFunktions
+protected function simplifyInitialFunctions "function simplifyInitialFunctions
   author: Frenkel TUD 2012-12
   simplify initial() with true and sample with false"
   input tuple<DAE.Exp, Boolean> inTpl;
@@ -859,12 +860,12 @@ protected
   Boolean b;
 algorithm
   (exp, b) := inTpl;
-  outTpl := Expression.traverseExp(exp, simplifyInitialFunktionsExp, b);
-end simplifyInitialFunktions;
+  outTpl := Expression.traverseExp(exp, simplifyInitialFunctionsExp, b);
+end simplifyInitialFunctions;
 
-protected function simplifyInitialFunktionsExp "function simplifyInitialFunktionsExp
+protected function simplifyInitialFunctionsExp "function simplifyInitialFunctionsExp
   author: Frenkel TUD 2012-12
-  helper for simplifyInitialFunktions"
+  helper for simplifyInitialFunctions"
   input tuple<DAE.Exp, Boolean> inExp;
   output tuple<DAE.Exp, Boolean> outExp;
 algorithm
@@ -876,7 +877,7 @@ algorithm
     case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ),_)) then ((e1, true));
     else then inExp;
   end matchcontinue;
-end simplifyInitialFunktionsExp;
+end simplifyInitialFunctionsExp;
 
 protected function solveInitialSystem3 "function solveInitialSystem3
   author: jfrenkel, lochel
@@ -886,8 +887,7 @@ protected function solveInitialSystem3 "function solveInitialSystem3
   output BackendDAE.EqSystem osyst;
   output tuple<BackendDAE.Shared, BackendDAE.BackendDAE> osharedOptimized;
 algorithm
-  (osyst, osharedOptimized):=
-  matchcontinue (isyst, sharedOptimized)
+  (osyst, osharedOptimized) := matchcontinue(isyst, sharedOptimized)
     local
       Integer nVars, nEqns;
 
@@ -1026,7 +1026,7 @@ algorithm
 end analyzeInitialSystem;
 
 protected function analyzeInitialSystem2 "function analyzeInitialSystem2
-  author lochel"
+  author: lochel"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables>> sharedOptimized;
   output BackendDAE.EqSystem osyst;
@@ -1111,13 +1111,13 @@ protected function fixUnderDeterminedInitialSystem "function fixUnderDeterminedI
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inInitVars;
-  input BackendDAE.Shared iShared;
+  input BackendDAE.Shared inShared;
   output Boolean outSucceed;
   output BackendDAE.Variables outVars;
   output BackendDAE.EquationArray outEqns;
   output BackendDAE.Shared oShared;
 algorithm
-  (outSucceed, outVars, outEqns, oShared) := matchcontinue(inDAE, inVars, inEqns, inInitVars, iShared)
+  (outSucceed, outVars, outEqns, oShared) := matchcontinue(inDAE, inVars, inEqns, inInitVars, inShared)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -1141,7 +1141,7 @@ algorithm
       nVars = BackendVariable.varsSize(inVars);
       nEqns = BackendDAEUtil.equationSize(inEqns);
       syst = BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-      funcs = BackendDAEUtil.getFunctions(iShared);
+      funcs = BackendDAEUtil.getFunctions(inShared);
       (syst, m, mt, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
       //  BackendDump.printEqSystem(syst);
       vec1 = arrayCreate(nVars, -1);
@@ -1161,7 +1161,7 @@ algorithm
       // add for all free variables an equation
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
       initVarList = List.map1r(unassigned, BackendVariable.getVarAt, inVars);
-      (vars, eqns, shared) = addStartValueEquations(initVarList, inVars, inEqns, iShared);
+      (vars, eqns, shared) = addStartValueEquations(initVarList, inVars, inEqns, inShared);
     then (true, vars, eqns, shared);
 
     // fix all free variables
@@ -1173,7 +1173,7 @@ algorithm
 
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
       initVarList = BackendVariable.varList(inInitVars);
-      (vars, eqns, shared) = addStartValueEquations(initVarList, inVars, eqns, iShared);
+      (vars, eqns, shared) = addStartValueEquations(initVarList, inVars, eqns, inShared);
     then (true, vars, eqns, shared);
 
     // fix a subset of unfixed variables
@@ -1194,16 +1194,16 @@ algorithm
 
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
       (eqns) = addStartValueEquations1(selectedVars, eqns);
-    then (true, inVars, eqns, iShared);
+    then (true, inVars, eqns, inShared);
 
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"It is not possible to determine unique which additional initial conditions should be added by auto-fixed variables."});
-    then (false, inVars, inEqns, iShared);
+    then (false, inVars, inEqns, inShared);
   end matchcontinue;
 end fixUnderDeterminedInitialSystem;
 
 protected function replaceFixedCandidates "function replaceFixedCandidates
-  author Frenkel TUD 2012-12
+  author: Frenkel TUD 2012-12
   try to switch to more appropriate candidates for fixed variables"
   input list<Integer> iUnassigned;
   input Integer nVars;
@@ -1446,7 +1446,7 @@ algorithm
 end reasign;
 
 protected function collectIndependentVars "function collectIndependentVars
-  author lochel"
+  author: lochel"
   input list<tuple< DAE.ComponentRef, list< DAE.ComponentRef>>> inPattern;
   input list< DAE.ComponentRef> inVars;
   output list< DAE.ComponentRef> outVars;
@@ -1480,16 +1480,16 @@ algorithm
 end collectIndependentVars;
 
 protected function addStartValueEquations "function addStartValueEquations
-  author lochel"
+  author: lochel"
   input list<BackendDAE.Var> inVarLst;
   input BackendDAE.Variables iVars;
   input BackendDAE.EquationArray inEqns;
-  input BackendDAE.Shared iShared;
+  input BackendDAE.Shared inShared;
   output BackendDAE.Variables oVars;
   output BackendDAE.EquationArray outEqns;
   output BackendDAE.Shared oShared;
 algorithm
-  (oVars, outEqns, oShared) := matchcontinue(inVarLst, iVars, inEqns, iShared)
+  (oVars, outEqns, oShared) := matchcontinue(inVarLst, iVars, inEqns, inShared)
     local
       BackendDAE.Variables vars;
       BackendDAE.Var var, preVar;
@@ -1503,7 +1503,7 @@ algorithm
       DAE.InstDims arryDim;
       BackendDAE.Shared shared;
 
-    case ({}, _, _, _) then (iVars, inEqns, iShared);
+    case ({}, _, _, _) then (iVars, inEqns, inShared);
 
     case (var::varlst, _, _, _) equation
       preCref = BackendVariable.varCref(var);
@@ -1523,7 +1523,7 @@ algorithm
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, inEqns);
-      (vars, eqns, shared) = addStartValueEquations(varlst, iVars, eqns, iShared);
+      (vars, eqns, shared) = addStartValueEquations(varlst, iVars, eqns, inShared);
     then (vars, eqns, shared);
 
     case ((var as BackendDAE.VAR(varName=cref, varType=tp, arryDim=arryDim))::varlst, _, _, _) equation
@@ -1547,7 +1547,7 @@ algorithm
       ({preVar}, _) = BackendVariable.getVar(preCref, iVars);
       preVar = BackendVariable.setVarFixed(preVar, true);
       vars = BackendVariable.deleteVar(preCref, iVars);
-      shared = BackendVariable.addKnVarDAE(preVar, iShared);
+      shared = BackendVariable.addKnVarDAE(preVar, inShared);
       //eqns = BackendEquation.equationAdd(eqn, inEqns);
       (vars, eqns, shared) = addStartValueEquations(varlst, vars, inEqns, shared);
     then (vars, eqns, shared);
@@ -1568,7 +1568,7 @@ algorithm
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [continuous] " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, inEqns);
-      (vars, eqns, shared) = addStartValueEquations(varlst, iVars, eqns, iShared);
+      (vars, eqns, shared) = addStartValueEquations(varlst, iVars, eqns, inShared);
     then (vars, eqns, shared);
 
     else equation
@@ -1578,7 +1578,7 @@ algorithm
 end addStartValueEquations;
 
 protected function addStartValueEquations1 "function addStartValueEquations1
-  author lochel
+  author: lochel
   Same as addStartValueEquations - just with list<DAE.ComponentRef> instead of list<BackendDAE.Var>"
   input list<DAE.ComponentRef> inVars;
   input BackendDAE.EquationArray inEqns;
@@ -1660,7 +1660,7 @@ algorithm
 end collectInitialVarsEqnsSystem;
 
 // protected function collectInitialStateSetVars "function collectInitialStateSetVars
-//    author Frenkel TUD
+//    author: Frenkel TUD
 //    add the vars for state set to the initial system
 //    Because the statevars are calculated by
 //    set.x = set.A*dummystates we add set.A to the
