@@ -379,7 +379,7 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
  *
  *  \author wbraun
  */
-static int solveHybrdWork(DATA *data, int sysNumber)
+int solveHybrd(DATA *data, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)systemData->solverData;
@@ -443,10 +443,12 @@ static int solveHybrdWork(DATA *data, int sysNumber)
     if(scaling)
       solverData->useXScaling = 0;
 
+    state mem_state = get_memory_state();
     /* try */
     if (!setjmp(nonlinearJmpbuf)) {
       wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
     } else { /* catch */
+      restore_memory_state(mem_state);
       WARNING(LOG_STDOUT, "Non-Linear Solver try to handle a problem with a called assert.");
     }
     if(scaling) {
@@ -489,6 +491,7 @@ static int solveHybrdWork(DATA *data, int sysNumber)
 
     giveUp = 1;
 
+    state mem_state = get_memory_state();
     /* try */
     if (!setjmp(nonlinearJmpbuf)) {
       _omc_hybrj_(wrapper_fvec_hybrj, &solverData->n, solverData->x,
@@ -505,6 +508,7 @@ static int solveHybrdWork(DATA *data, int sysNumber)
       assertRetries = 0;
       assertCalled = 0;
     } else { /* catch */
+      restore_memory_state(mem_state);
       if (!assertMessage){
         INDENT(LOG_STDOUT);
         WARNING(LOG_STDOUT, "While solving non-linear system an assert was called.");
@@ -548,11 +552,13 @@ static int solveHybrdWork(DATA *data, int sysNumber)
 
         ((DATA*)data)->simulationInfo.solveContinuous = 0;
 
+        state mem_state = get_memory_state();
         /* try */
         if (!setjmp(nonlinearJmpbuf))
         {
           wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
         } else { /* catch */
+          restore_memory_state(mem_state);
           WARNING(LOG_STDOUT, "Non-Linear Solver try to handle a problem with a called assert.");
 
           solverData->info = -1;
@@ -957,13 +963,4 @@ static int solveHybrdWork(DATA *data, int sysNumber)
   free(relationsPreBackup);
 
   return success;
-}
-
-int solveHybrd(DATA *data, int sysNumber)
-{
-  int res;
-  state mem_state = get_memory_state();
-  res = solveHybrdWork(data,sysNumber);
-  restore_memory_state(mem_state);
-  return res;
 }
