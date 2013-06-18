@@ -1117,13 +1117,13 @@ algorithm
 end addReplacementInv2;
 
 protected function amortizeUnion "performs listUnion but in an 'amortized' way, by only doing it occasionally"
-  input list<DAE.ComponentRef> in_crefs;
+  input list<DAE.ComponentRef> inCrefs;
   output list<DAE.ComponentRef> crefs;
 algorithm
-  crefs := matchcontinue(in_crefs)
-    case(in_crefs) equation
-      true = intMod(listLength(in_crefs),7)==0; // Experiments performed on different values: {{5, 102}, {6, 99}, {7, 98.8}, {8, 101}, {10, 101}, 20, 104}}
-      then List.union({},in_crefs);
+  crefs := matchcontinue(inCrefs)
+    case(_) equation
+      true = intMod(listLength(inCrefs),7)==0; // Experiments performed on different values: {{5, 102}, {6, 99}, {7, 98.8}, {8, 101}, {10, 101}, 20, 104}}
+      then List.union({},inCrefs);
     case(crefs) then crefs;
   end matchcontinue;
 end amortizeUnion;
