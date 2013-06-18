@@ -29,12 +29,14 @@
  */
 
 #include <string.h>
+#include <setjmp.h>
 
 #include "openmodelica.h"
 #include "openmodelica_func.h"
 #include "simulation_data.h"
 
 #include "omc_error.h"
+#include "memory_pool.h"
 
 #include "simulation_runtime.h"
 #include "solver_main.h"
@@ -265,7 +267,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     dasslData->idid = 0;
   }
 
-
   /* Calculate time steps until TOUT is reached
    * (DASSL calculates beyond TOUT unless info[6] is set to 1!) */
   tout = solverInfo->currentTime + solverInfo->currentStepSize;
@@ -300,7 +301,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       sDataOld = (SIMULATION_DATA*) simData->localData[1];
       stateDer = sDataOld->realVars + mData->nStates;
       sData->timeValue = solverInfo->currentTime;
-
     }
 
     /* read input vars */
@@ -383,11 +383,13 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       fflush(stderr);
       fflush(stdout);
       retVal = continue_DASRT(&dasslData->idid, &simData->simulationInfo.tolerance);
-      solverInfo->currentTime = solverInfo->currentTime + solverInfo->currentStepSize;
-      sData->timeValue = solverInfo->currentTime;
       functionODE(simData);
       WARNING1(LOG_STDOUT, "can't continue. time = %f", sData->timeValue);
       return retVal;
+    }
+    else if(dasslData->idid == 4)
+    {
+      currectJumpState = ERROR_EVENTSEARCH;
     }
 
   } while(dasslData->idid == 1 ||
@@ -466,7 +468,7 @@ continue_DASRT(fortran_integer* idid, double* atol)
     retValue = -9;
     break;
   case -10:
-    INFO(LOG_STDOUT, "The corrector could not converge because IRES was equal to minus one.");
+    WARNING(LOG_STDOUT, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_DDASRT");
     retValue = -10;
     break;
   case -11:
@@ -493,18 +495,38 @@ int functionODE_residual(double *t, double *y, double *yd, double *delta,
 
   double timeBackup;
   long i;
+  state mem_state;
+  int saveJumpState;
 
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = *t;
 
-  functionODE(data);
+  saveJumpState = currectJumpState;
+  currectJumpState = ERROR_INTEGRATOR;
 
-  /* get the difference between the temp_xd(=localData->statesDerivatives)
-     and xd(=statesDerivativesBackup) */
-  for(i=0; i < data->modelData.nStates; i++)
+  /* try */
+  if (!setjmp(integratorJmpbuf))
   {
-    delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
+    mem_state = get_memory_state();
+
+    functionODE(data);
+
+    /* get the difference between the temp_xd(=localData->statesDerivatives)
+       and xd(=statesDerivativesBackup) */
+    for(i=0; i < data->modelData.nStates; i++)
+    {
+      delta[i] = data->localData[0]->realVars[data->modelData.nStates + i] - yd[i];
+    }
+
+    restore_memory_state(mem_state);
   }
+  /* catch */
+  else
+  {
+    restore_memory_state(mem_state);
+    *ires = -1;
+  }
+  currectJumpState = saveJumpState;
 
   data->localData[0]->timeValue = timeBackup;
 
@@ -517,6 +539,10 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
 
   double timeBackup;
+  int saveJumpState;
+
+  saveJumpState = currectJumpState;
+  currectJumpState = ERROR_EVENTSEARCH;
 
   timeBackup = data->localData[0]->timeValue;
 
@@ -526,6 +552,7 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
 
   function_ZeroCrossings(data, gout, t);
 
+  currectJumpState = saveJumpState;
   data->localData[0]->timeValue = timeBackup;
 
   return 0;
@@ -543,6 +570,7 @@ int functionJacAColored(DATA* data, double* jac)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
     /*
+    // debug output
     if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC))){
       printf("Caluculate one col:\n");
       for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
@@ -560,7 +588,6 @@ int functionJacAColored(DATA* data, double* jac)
           ii = 0;
         else
           ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        /*INFO2((LOG_JAC | LOG_ENDJAC)," take for %d -> %d\n",j,ii);*/
         while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
         {
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
@@ -575,6 +602,7 @@ int functionJacAColored(DATA* data, double* jac)
       if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
 
     /*
+   // debug output
     if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC))){
       INFO("Print jac:");
       for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
@@ -600,6 +628,7 @@ int functionJacASym(DATA* data, double* jac)
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
 
     /*
+    // debug output
     if(ACTIVE_STREAM((LOG_JAC | LOG_ENDJAC)))
     {
       printf("Caluculate one col:\n");
@@ -619,6 +648,7 @@ int functionJacASym(DATA* data, double* jac)
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
   /*
+  // debug output
   if(ACTIVE_STREAM(LOG_DEBUG))
   {
     INFO("Print jac:");
@@ -737,12 +767,6 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
     for(j = data->modelData.nStates-1; j >= 0 ; j--)
     {
       matrixA[i*data->modelData.nStates+j] = (dasslData->newdelta[j] - delta[j]) * deltaInv;
-      /*
-      if(ACTIVE_STREAM(LOG_JAC))
-      {
-        printf("%d: %e\n",i*data->modelData.nStates+j,matrixA[i*data->modelData.nStates+j]);
-      }
-       */
     }
     y[i] = ysave;
   }
@@ -805,7 +829,9 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   double* delta_hh = dasslData->delta_hh;
   double* ysave = dasslData->ysave;
 
+
   int i,j,l,k,ii;
+
 
   for(i = 0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
   {
@@ -835,7 +861,6 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
           j = 0;
         else
           j = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[ii-1];
-        /*INFO2(ACTIVE_STREAM(LOG_JAC)," take for %d -> %d\n",j,ii); */
         while(j < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[ii])
         {
           l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];

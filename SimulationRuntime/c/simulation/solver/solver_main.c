@@ -333,13 +333,24 @@ int initializeModel(DATA* data, const char* init_initMethod,
   /* set tolerance for ZeroCrossings */
   setZCtol(simInfo->tolerance);
 
-  if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
-  {
-    WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
-    simInfo->stopTime = simInfo->startTime;
-    retValue = -1;
-  }
 
+  /* try */
+  if (!setjmp(simulationJmpbuf))
+  {
+    currectJumpState = ERROR_SIMULATION;
+    if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
+    {
+      WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
+      simInfo->stopTime = simInfo->startTime;
+      retValue = -1;
+    }
+  }
+  /* catch */
+  else
+  {
+    retValue =  -1;
+    INFO(LOG_STDOUT, "model terminate | Simulation terminated by an assert at initialization");
+  }
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result.writeParameterData(&sim_result,data);
   INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
@@ -589,34 +600,6 @@ int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo)
 }
 #endif
 
-/*! \fn checkTermination
- *  \author wbraun
- *
- *  function checks if the model should really terminated.
- */
-void checkTermination(DATA *data)
-{
-  if(terminationAssert)
-  {
-    data->simulationInfo.simulationSuccess = -1;
-    printInfo(stdout, TermInfo);
-    fputc('\n', stdout);
-  }
-
-  if(terminationAssert)
-  {
-    if(warningLevelAssert)
-    {
-      /* terminated from assert, etc. */
-      INFO2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : warning\nMessage : %s", data->localData[0]->timeValue, TermMsg);
-    }
-    else
-    {
-      INFO2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : error\nMessage : %s", data->localData[0]->timeValue, TermMsg);
-      /* THROW1("timeValue = %f", data->localData[0]->timeValue); */
-    }
-  }
-}
 
 static void writeOutputVars(char* names, DATA* data)
 {

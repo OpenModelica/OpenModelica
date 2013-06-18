@@ -191,7 +191,7 @@ int freeNonlinearSystem(DATA *data)
 int solve_nonlinear_system(DATA *data, int sysNumber)
 {
   /* NONLINEAR_SYSTEM_DATA* system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
-  int success;
+  int success, saveJumpState;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
 
   data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
@@ -215,7 +215,10 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
     switch(data->simulationInfo.nlsMethod)
     {
     case NLS_HYBRID:
+      saveJumpState = currectJumpState;
+      currectJumpState = ERROR_NONLINEARSOLVER;
       success = solveHybrd(data, sysNumber);
+      currectJumpState = saveJumpState;
       break;
     case NLS_KINSOL:
       success = nonlinearSolve_kinsol(data, sysNumber);

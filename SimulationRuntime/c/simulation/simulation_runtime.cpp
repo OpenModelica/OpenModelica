@@ -96,10 +96,7 @@ int interactiveSimulation = 0; /* This variable signals if an simulation session
   static int sim_communication_port_open = 0;
 #endif
 
-int modelTermination = 0;     /* Becomes non-zero when simulation terminates. */
 int terminationTerminate = 0; /* Becomes non-zero when user terminates simulation. */
-int terminationAssert = 0;    /* Becomes non-zero when model call assert simulation. */
-int warningLevelAssert = 0;   /* Becomes non-zero when model call assert with warning level. */
 FILE_INFO TermInfo;           /* message for termination. */
 
 char* TermMsg;                /* message for termination. */
@@ -937,11 +934,46 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
-  va_start(ap,msg);
-  terminationAssert = 1;
-  setTermMsg(msg,ap);
-  va_end(ap);
-  TermInfo = info;
+  switch (currectJumpState)
+  {
+  case ERROR_SIMULATION:
+    va_start(ap,msg);
+    fputs("Error: ",stderr);
+    vfprintf(stderr,msg,ap);
+    fputs("\n",stderr);
+    va_end(ap);
+    longjmp(simulationJmpbuf,1);
+    break;
+  case ERROR_NONLINEARSOLVER:
+    if(ACTIVE_STREAM(LOG_NLS))
+    {
+      va_start(ap,msg);
+      fputs("Error: ",stderr);
+      vfprintf(stderr,msg,ap);
+      fputs("\n",stderr);
+      va_end(ap);
+    }
+    longjmp(nonlinearJmpbuf,1);
+    break;
+  case ERROR_INTEGRATOR:
+    if(ACTIVE_STREAM(LOG_DDASRT))
+    {
+      va_start(ap,msg);
+      fputs("Error: ",stderr);
+      vfprintf(stderr,msg,ap);
+      fputs("\n",stderr);
+      va_end(ap);
+    }
+    longjmp(integratorJmpbuf,1);
+    break;
+  case ERROR_EVENTSEARCH:
+    /* Ignore asserts for event search, since to find events we need to
+     * step over in regions, which may trigger asserts.
+     */
+    break;
+  default:
+    THROW("Unhandled Assertion-Error");
+  }
 }
 
 static void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...)
@@ -958,7 +990,6 @@ static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
 {
   va_list ap;
   va_start(ap,msg);
-  modelTermination=1;
   terminationTerminate = 1;
   setTermMsg(msg,ap);
   va_end(ap);
@@ -968,9 +999,9 @@ static void omc_terminate_simulation(FILE_INFO info, const char *msg, ...)
 static void omc_throw_simulation()
 {
   va_list ap;
-  terminationAssert = 1;
   setTermMsg("Assertion triggered by external C function", ap);
   set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
+  longjmp(globalJmpbuf, 1);
 }
 
 void (*omc_assert)(FILE_INFO info, const char *msg, ...) = omc_assert_simulation;

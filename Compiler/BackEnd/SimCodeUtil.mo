@@ -5607,11 +5607,8 @@ algorithm
       
     case (BackendDAE.EQSYSTEM(orderedEqs=eqns, orderedVars = vars), BackendDAE.SHARED(removedEqs=reqns), (uniqueEqIndex, simeqns))
       equation
-        // get Modelica and sqrt asserts
-        res = BackendEquation.traverseBackendDAEEqns(eqns, createAlgorithmAndEquationAssertsFromAlgsEqnTraverser, {});
-        res = BackendEquation.traverseBackendDAEEqns(reqns, createAlgorithmAndEquationAssertsFromAlgsEqnTraverser, res);
         // get minmax and nominal asserts
-        res = BackendVariable.traverseBackendDAEVars(vars, createVarMinMaxAssert, res);
+        res = BackendVariable.traverseBackendDAEVars(vars, createVarMinMaxAssert, {});
         (result, uniqueEqIndex) = List.mapFold(res, dlowAlgToSimEqSystem, uniqueEqIndex);
         result = listAppend(result, simeqns);
       then ((uniqueEqIndex, result));
@@ -5653,36 +5650,8 @@ algorithm
         res = List.fold(stmts, assertCollector, res);
       then
         ((eqn, res));
-    // get sqrt asserts
-    case((eqn, res))
-      equation
-        (eqn, (_, res)) = BackendEquation.traverseBackendDAEExpsEqn(eqn, Expression.traverseSubexpressionsHelper, (findSqrtCallsforAssertsExps, res));
-      then 
-        ((eqn, res));
   end match;
 end createAlgorithmAndEquationAssertsFromAlgsEqnTraverser;
-
-protected function findSqrtCallsforAssertsExps
-  input tuple<DAE.Exp, list<DAE.Algorithm>> inTuple;
-  output tuple<DAE.Exp, list<DAE.Algorithm>> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      DAE.Exp e, e1;
-      String estr;
-      DAE.Algorithm addAssert;
-      list<DAE.Algorithm> inasserts;
-    
-    // sqrt 
-    case (((e as DAE.CALL(path=Absyn.IDENT(name="sqrt"), expLst={e1})), inasserts))
-      equation
-        estr = "Model error: Argument of sqrt(" +& ExpressionDump.printExpStr(e1) +& ") should be >= 0";
-        addAssert = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(DAE.RELATION(e1, DAE.GREATEREQ(DAE.T_REAL_DEFAULT), DAE.RCONST(0.0), -1, NONE()), DAE.SCONST(estr), DAE.ASSERTIONLEVEL_ERROR, DAE.emptyElementSource)});
-      then ((e, addAssert::inasserts));
-    
-    case _ then inTuple;
-  end matchcontinue;
-end findSqrtCallsforAssertsExps;
 
 protected function createRemovedEquations
   input BackendDAE.EqSystem syst;

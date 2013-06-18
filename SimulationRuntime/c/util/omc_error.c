@@ -38,6 +38,18 @@
 /* Global JumpBuffer */
 jmp_buf globalJmpbuf;
 
+/* simulation JumpBuffer */
+jmp_buf simulationJmpbuf;
+
+/* integrator JumpBuffer */
+jmp_buf integratorJmpbuf;
+
+/* nonlinear JumpBuffer */
+jmp_buf nonlinearJmpbuf;
+
+/* indicates the current possible jump place */
+int currectJumpState;
+
 const int firstOMCErrorStream = 3;
 
 const char *LOG_STREAM_NAME[LOG_MAX] = {

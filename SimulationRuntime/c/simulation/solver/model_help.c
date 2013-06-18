@@ -497,7 +497,31 @@ void storeOldValues(DATA *data)
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
   sInfo->timeValueOld = sData->timeValue;
-  memcpy(sInfo->realVarsOld, sData->realVars, sizeof(modelica_real)*mData->nStates);
+  memcpy(sInfo->realVarsOld, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
+  memcpy(sInfo->integerVarsOld, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
+  memcpy(sInfo->booleanVarsOld, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
+  memcpy(sInfo->stringVarsOld, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
+}
+
+/*! \fn restoreOldValues
+ *
+ *  This function copys old-values to currenct localData
+ *
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
+ */
+void restoreOldValues(DATA *data)
+{
+  SIMULATION_DATA *sData = data->localData[0];
+  MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  sData->timeValue = sInfo->timeValueOld;
+  memcpy(sData->realVars, sInfo->realVarsOld, sizeof(modelica_real)*mData->nVariablesReal);
+  memcpy(sData->integerVars, sInfo->integerVarsOld, sizeof(modelica_integer)*mData->nVariablesInteger);
+  memcpy(sData->booleanVars, sInfo->booleanVarsOld,  sizeof(modelica_boolean)*mData->nVariablesBoolean);
+  memcpy( sData->stringVars, sInfo->stringVarsOld, sizeof(modelica_string)*mData->nVariablesString);
 }
 
 /*! \fn storePreValues
@@ -715,8 +739,11 @@ void initializeDataStruc(DATA *data)
   for(i=0; i<data->modelData.nZeroCrossings; i++)
     data->simulationInfo.zeroCrossingIndex[i] = (long)i;
 
-  /* buffer for old state variables */
-  data->simulationInfo.realVarsOld = (modelica_real*)calloc(data->modelData.nStates, sizeof(modelica_real));
+  /* buffer for old values */
+  data->simulationInfo.realVarsOld = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+  data->simulationInfo.integerVarsOld = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+  data->simulationInfo.booleanVarsOld = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+  data->simulationInfo.stringVarsOld = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
 
   /* buffer for all variable pre values */
   data->simulationInfo.realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
@@ -867,6 +894,9 @@ void deInitializeDataStruc(DATA *data)
 
   /* free buffer for old state variables */
   free(data->simulationInfo.realVarsOld);
+  free(data->simulationInfo.integerVarsOld);
+  free(data->simulationInfo.booleanVarsOld);
+  free(data->simulationInfo.stringVarsOld);
 
   /* free buffer for all variable pre values */
   free(data->simulationInfo.realVarsPre);
