@@ -1590,6 +1590,7 @@ void MainWindow::createActions()
   // open options action
   mpOptionsAction = new QAction(QIcon(":/Resources/icons/options.png"), tr("Options"), this);
   mpOptionsAction->setStatusTip(tr("Shows the options window"));
+  mpOptionsAction->setMenuRole(QAction::PreferencesRole);
   connect(mpOptionsAction, SIGNAL(triggered()), SLOT(openConfigurationOptions()));
   // Help Menu
   // users guide action
@@ -1676,10 +1677,9 @@ void MainWindow::createActions()
 void MainWindow::createMenus()
 {
   //Create the menubar
-  QMenuBar *pMenuBar = new QMenuBar();
   //Create the menus
   // File menu
-  QMenu *pFileMenu = new QMenu(pMenuBar);
+  QMenu *pFileMenu = new QMenu(menuBar());
   pFileMenu->setObjectName("menuFile");
   pFileMenu->setTitle(tr("&File"));
   // add actions to File menu
@@ -1691,7 +1691,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
   pFileMenu->addSeparator();
-  mpLibrariesMenu = new QMenu(pMenuBar);
+  mpLibrariesMenu = new QMenu(menuBar());
   mpLibrariesMenu->setObjectName("LibrariesMenu");
   mpLibrariesMenu->setTitle(tr("&System Libraries"));
   // get the available libraries.
@@ -1704,7 +1704,7 @@ void MainWindow::createMenus()
   }
   pFileMenu->addMenu(mpLibrariesMenu);
   pFileMenu->addSeparator();
-  mpRecentFilesMenu = new QMenu(pMenuBar);
+  mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");
   mpRecentFilesMenu->setTitle(tr("Recent &Files"));
   for (int i = 0; i < MaxRecentFiles; ++i)
@@ -1716,9 +1716,9 @@ void MainWindow::createMenus()
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpQuitAction);
   // add File menu to menu bar
-  pMenuBar->addAction(pFileMenu->menuAction());
+  menuBar()->addAction(pFileMenu->menuAction());
   // Edit menu
-  QMenu *pEditMenu = new QMenu(pMenuBar);
+  QMenu *pEditMenu = new QMenu(menuBar());
   pEditMenu->setTitle(tr("&Edit"));
   // add actions to Edit menu
   pEditMenu->addAction(mpCutAction);
@@ -1729,20 +1729,20 @@ void MainWindow::createMenus()
   pEditMenu->addAction(mpClearFindReplaceTextsAction);
   pEditMenu->addAction(mpGotoLineNumberAction);
   // add Edit menu to menu bar
-  pMenuBar->addAction(pEditMenu->menuAction());
+  menuBar()->addAction(pEditMenu->menuAction());
   // View menu
-  QMenu *pViewMenu = new QMenu(pMenuBar);
+  QMenu *pViewMenu = new QMenu(menuBar());
   pViewMenu->setTitle(tr("&View"));
   // Toolbars View Menu
-  QMenu *pViewToolbarsMenu = new QMenu(pMenuBar);
+  QMenu *pViewToolbarsMenu = new QMenu(menuBar());
   pViewToolbarsMenu->setObjectName("ToolbarsViewMenu");
   pViewToolbarsMenu->setTitle(tr("Toolbars"));
   // Windows View Menu
-  QMenu *pViewWindowsMenu = new QMenu(pMenuBar);
+  QMenu *pViewWindowsMenu = new QMenu(menuBar());
   pViewWindowsMenu->setObjectName("WindowsViewMenu");
   pViewWindowsMenu->setTitle(tr("Windows"));
   // Perspectives View Menu
-  QMenu *pViewPerspectivesMenu = new QMenu(pMenuBar);
+  QMenu *pViewPerspectivesMenu = new QMenu(menuBar());
   pViewPerspectivesMenu->setObjectName("PerspectivesViewMenu");
   pViewPerspectivesMenu->setTitle(tr("Perspectives"));
   // add actions to View menu
@@ -1770,33 +1770,33 @@ void MainWindow::createMenus()
   pViewMenu->addAction(mpZoomInAction);
   pViewMenu->addAction(mpZoomOutAction);
   // add View menu to menu bar
-  pMenuBar->addAction(pViewMenu->menuAction());
+  menuBar()->addAction(pViewMenu->menuAction());
   // Simulation Menu
-  QMenu *pSimulationMenu = new QMenu(pMenuBar);
+  QMenu *pSimulationMenu = new QMenu(menuBar());
   pSimulationMenu->setTitle(tr("&Simulation"));
   // add actions to Simulation menu
   pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpCheckModelAction);
   pSimulationMenu->addAction(mpSimulationAction);
   // add Simulation menu to menu bar
-  pMenuBar->addAction(pSimulationMenu->menuAction());
+  menuBar()->addAction(pSimulationMenu->menuAction());
   // FMI menu
-  QMenu *pFMIMenu = new QMenu(pMenuBar);
+  QMenu *pFMIMenu = new QMenu(menuBar());
   pFMIMenu->setTitle(tr("F&MI"));
   // add actions to FMI menu
   pFMIMenu->addAction(mpExportFMUAction);
   pFMIMenu->addAction(mpImportFMUAction);
   // add FMI menu to menu bar
-  pMenuBar->addAction(pFMIMenu->menuAction());
+  menuBar()->addAction(pFMIMenu->menuAction());
   // XML menu
-  QMenu *pXMLMenu = new QMenu(pMenuBar);
+  QMenu *pXMLMenu = new QMenu(menuBar());
   pXMLMenu->setTitle(tr("&XML"));
   // add actions to XML menu
   pXMLMenu->addAction(mpExportXMLAction);
   // add XML menu to menu bar
-  pMenuBar->addAction(pXMLMenu->menuAction());
+  menuBar()->addAction(pXMLMenu->menuAction());
   // Tools menu
-  QMenu *pToolsMenu = new QMenu(pMenuBar);
+  QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));
   // add actions to Tools menu
   pToolsMenu->addAction(mpOmcLoggerAction);
@@ -1806,18 +1806,16 @@ void MainWindow::createMenus()
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpOptionsAction);
   // add Tools menu to menu bar
-  pMenuBar->addAction(pToolsMenu->menuAction());
+  menuBar()->addAction(pToolsMenu->menuAction());
   // Help menu
-  QMenu *pHelpMenu = new QMenu(pMenuBar);
+  QMenu *pHelpMenu = new QMenu(menuBar());
   pHelpMenu->setTitle(tr("&Help"));
   // add actions to Help menu
   pHelpMenu->addAction(mpUsersGuideAction);
   pHelpMenu->addAction(mpSystemDocumentationAction);
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
-  pMenuBar->addAction(pHelpMenu->menuAction());
-  // set menubar
-  setMenuBar(pMenuBar);
+  menuBar()->addAction(pHelpMenu->menuAction());
 }
 
 void MainWindow::switchToWelcomePerspective()
