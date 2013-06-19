@@ -160,6 +160,7 @@ void SimulationDialog::setUpForm()
   mpModelSetupFileTextBox = new QLineEdit;
   mpModelSetupFileBrowseButton = new QPushButton(Helper::browse);
   connect(mpModelSetupFileBrowseButton, SIGNAL(clicked()), SLOT(browseModelSetupFile()));
+  mpModelSetupFileBrowseButton->setAutoDefault(false);
   // Initialization Methods
   mpInitializationMethodLabel = new Label(tr("Initialization Method (Optional):"));
   mpInitializationMethodLabel->setToolTip(tr("Specifies the initialization method."));
@@ -176,6 +177,7 @@ void SimulationDialog::setUpForm()
   mpEquationSystemInitializationFileTextBox = new QLineEdit;
   mpEquationSystemInitializationFileBrowseButton = new QPushButton(Helper::browse);
   connect(mpEquationSystemInitializationFileBrowseButton, SIGNAL(clicked()), SLOT(browseEquationSystemInitializationFile()));
+  mpEquationSystemInitializationFileBrowseButton->setAutoDefault(false);
   // Equation System time
   mpEquationSystemInitializationTimeLabel = new Label(tr("Equation System Initialization Time (Optional):"));
   mpEquationSystemInitializationTimeLabel->setToolTip(tr("Specifies a time for the initialization of the model."));
