@@ -60,7 +60,71 @@ extern int SystemImpl__directoryExists(const char*);
 
 static char* winPath = NULL;
 
-// Do not free or modify the returned variable. It's part of the environment!
+/* Helper function to strip /bin/... from the executable path of omc */
+static void stripbinpath(char *omhome)
+{
+  char *tmp;
+  assert(tmp = strrchr(omhome,'/'));
+  *tmp = '\0';
+  assert(tmp = strrchr(omhome,'/'));
+  *tmp = '\0';
+}
+
+/* Do not free or modify the returned variable of getInstallationDirectoryPath. It's part of the environment! */
+#if defined(linux)
+#include <sys/stat.h>
+#include <linux/limits.h>
+#include <unistd.h>
+const char* SettingsImpl__getInstallationDirectoryPath() {
+  struct stat sb;
+  static char omhome[PATH_MAX];
+  static int init = 0;
+  ssize_t r;
+  /* This is bad code using hard-coded limits; but we cannot query the size of symlinks on /proc
+   * because that FS is not POSIX-compliant.
+   */
+  if (init) {
+    return omhome;
+  }
+  r = readlink("/proc/self/exe", omhome, sizeof(omhome)-1);
+  if (r < 0) {
+    perror("readlink");
+    exit(EXIT_FAILURE);
+  }
+  assert(r < sizeof(omhome)-1);
+  omhome[r] = '\0';
+  stripbinpath(omhome);
+  init = 1;
+  return omhome;
+}
+#elif defined(__APPLE_CC__)
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <libproc.h>
+
+const char* SettingsImpl__getInstallationDirectoryPath() {
+  int ret;
+  pid_t pid; 
+  static char omhome[PROC_PIDPATHINFO_MAXSIZE];
+  static int init = 0;
+  if (init) {
+    return omhome;
+  }
+  pid = getpid();
+  ret = proc_pidpath(pid, omhome, sizeof(omhome));
+  if (ret <= 0) {
+    fprintf(stderr, "proc_pidpath() failed: %s\n", strerror(errno));
+    exit(EXIT_FAILURE);
+  } else {
+    stripbinpath(omhome);
+  }
+  init = 1;
+  return omhome;
+}
+
+#else
 const char* SettingsImpl__getInstallationDirectoryPath() {
   const char *path = getenv("OPENMODELICAHOME");
   int i = 0;
@@ -89,6 +153,7 @@ const char* SettingsImpl__getInstallationDirectoryPath() {
 #endif
   return path;
 }
+#endif
 
 char* winLibPath = NULL;
 
