@@ -643,9 +643,9 @@ int solveHybrd(DATA *data, int sysNumber)
     /* solution found */
     if(solverData->info == 1 || xerror <= local_tol || xerror_scaled <= local_tol)
     {
-	  int scaling;
+    int scaling;
       
-	  success = 1;
+    success = 1;
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS))
       {
