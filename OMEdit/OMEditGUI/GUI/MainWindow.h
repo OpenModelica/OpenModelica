@@ -200,9 +200,9 @@ private:
   QAction *mpZoomInAction;
   QAction *mpZoomOutAction;
   // Simulation Menu
-  QAction *mpSimulationAction;
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
+  QAction *mpSimulationAction;
   // FMI Menu
   QAction *mpExportFMUAction;
   QAction *mpImportFMUAction;

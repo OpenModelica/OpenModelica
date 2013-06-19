@@ -1541,12 +1541,6 @@ void MainWindow::createActions()
   mpZoomOutAction->setEnabled(false);
   connect(mpZoomOutAction, SIGNAL(triggered()), SLOT(zoomOut()));
   // Simulation Menu
-  // simulate action
-  mpSimulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
-  mpSimulationAction->setStatusTip(Helper::simulateTip);
-  mpSimulationAction->setShortcut(QKeySequence("Ctrl+b"));
-  mpSimulationAction->setEnabled(false);
-  connect(mpSimulationAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
   // instantiate model action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), tr("Instantiate Model"), this);
   mpInstantiateModelAction->setStatusTip(tr("Instantiates the modelica model"));
@@ -1557,6 +1551,12 @@ void MainWindow::createActions()
   mpCheckModelAction->setStatusTip(tr("Check the modelica model"));
   mpCheckModelAction->setEnabled(false);
   connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+  // simulate action
+  mpSimulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
+  mpSimulationAction->setStatusTip(Helper::simulateTip);
+  mpSimulationAction->setShortcut(QKeySequence("Ctrl+b"));
+  mpSimulationAction->setEnabled(false);
+  connect(mpSimulationAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
   // FMI Menu
   // export FMU action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.png"), Helper::exportFMU, this);
@@ -1775,9 +1775,9 @@ void MainWindow::createMenus()
   QMenu *pSimulationMenu = new QMenu(pMenuBar);
   pSimulationMenu->setTitle(tr("&Simulation"));
   // add actions to Simulation menu
-  pSimulationMenu->addAction(mpSimulationAction);
   pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpCheckModelAction);
+  pSimulationMenu->addAction(mpSimulationAction);
   // add Simulation menu to menu bar
   pMenuBar->addAction(pSimulationMenu->menuAction());
   // FMI menu
@@ -1921,9 +1921,9 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->setObjectName("Simulation Toolbar");
   mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to Simulation Toolbar
-  mpSimulationToolBar->addAction(mpSimulationAction);
   mpSimulationToolBar->addAction(mpInstantiateModelAction);
   mpSimulationToolBar->addAction(mpCheckModelAction);
+  mpSimulationToolBar->addAction(mpSimulationAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");
