@@ -3087,8 +3087,8 @@ algorithm
         //print("\nInst.instantiateClass: " +& realString(System.getTimerIntervalTime()));
 
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
-        // ic_1 = ic;
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        ic_1 = ic;
+        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         
         /*(cache, genv) = Builtin.initialGraphEnv(cache);
         (genv as FGraphEnv.ENV(graph = g, builtinMark = bm))= FGraphEnv.extendEnvWithProgram(scodeP, FNode.topNodeId, genv);
