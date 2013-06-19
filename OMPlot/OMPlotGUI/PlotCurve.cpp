@@ -137,14 +137,14 @@ bool PlotCurve::hasCustomColor()
 
 void PlotCurve::setData(const double* xData, const double* yData, int size)
 {
-#if QWT_VERSION >= 0x060100
+#if QWT_VERSION >= 0x060000
   setRawSamples(xData, yData, size);
 #else
   setRawData(xData, yData, size);
 #endif
 }
 
-#if QWT_VERSION < 0x060100
+#if QWT_VERSION < 0x060000
 void PlotCurve::updateLegend(QwtLegend *legend) const
 {
     QwtPlotCurve::updateLegend(legend);

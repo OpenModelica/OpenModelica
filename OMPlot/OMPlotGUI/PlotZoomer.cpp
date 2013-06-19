@@ -43,7 +43,9 @@ PlotZoomer::PlotZoomer(int xAxis, int yAxis, QWidget *pParent)
 PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
     : QwtPlotZoomer(xAxis, yAxis, pParent)
 {
+#if QWT_VERSION < 0x060000
     setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);
+#endif
 #endif
     setTrackerMode(QwtPicker::AlwaysOff);
     setRubberBand(QwtPicker::RectRubberBand);

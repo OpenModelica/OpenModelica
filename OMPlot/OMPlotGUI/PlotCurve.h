@@ -71,7 +71,7 @@ public:
     void setCustomColor(bool value);
     bool hasCustomColor();
     void setData(const double* xData, const double* yData, int size);
-#if QWT_VERSION < 0x060100
+#if QWT_VERSION < 0x060000
     virtual void updateLegend(QwtLegend *legend) const;
 #endif
 };
