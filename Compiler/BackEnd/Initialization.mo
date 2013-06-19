@@ -1868,7 +1868,7 @@ algorithm
 
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, preVar, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
-    then ((var, (vars, fixvars, hs, preVar::tempVar)));
+    then ((var, (vars, fixvars, hs, tempVar)));
 
    // additionally used pre-calls (e.g. continuous states)
    case((var as BackendDAE.VAR(varName=cr, varKind=varKind, varType=ty, arryDim=arryDim), (vars, fixvars, hs, tempVar))) equation
@@ -1876,7 +1876,7 @@ algorithm
 
      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $pre.cr
      preVar = BackendDAE.VAR(preCR, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-   then ((var, (vars, fixvars, hs, preVar::tempVar)));
+   then ((var, (vars, fixvars, hs, tempVar)));
 
     else then inTpl;
   end matchcontinue;
