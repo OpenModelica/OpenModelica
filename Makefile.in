@@ -65,7 +65,9 @@ omplot: mkbuilddirs
 omedit: mkbuilddirs omplot
 	$(MAKE) -C OMEdit/OMEditGUI -f Makefile.unix
 ifeq (@with_paradiseo@,)
-omoptim: mkbuilddirs
+omoptim:
+	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
+omoptimbasis:
 	@echo "*** OpenModelica configured without support for OMOptim (--without-paradisEO)"
 else
 omoptim: mkbuilddirs omoptimbasis
