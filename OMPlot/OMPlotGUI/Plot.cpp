@@ -32,7 +32,9 @@
  */
 
 #include "PlotWindow.h"
-#include <qwt_legend_item.h>
+#if QWT_VERSION < 0x060100
+#include "qwt_legend_item.h"
+#endif
 
 using namespace OMPlot;
 

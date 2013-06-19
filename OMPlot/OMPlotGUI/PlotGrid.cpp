@@ -37,15 +37,19 @@ using namespace OMPlot;
 
 PlotGrid::PlotGrid(Plot *pParent)
 {
-    attach(pParent);
-    setMajPen(QPen(Qt::gray));
-    enableXMin(true);
-    enableYMin(true);
-    setMinPen(QPen(Qt::lightGray, 0.0, Qt::DotLine));
+  attach(pParent);
+#if QWT_VERSION >= 0x060100
+  setMajorPen(QPen(Qt::gray));
+  setMinorPen(QPen(Qt::lightGray, 0.0, Qt::DotLine));
+#else
+  setMajPen(QPen(Qt::gray));
+  setMinPen(QPen(Qt::lightGray, 0.0, Qt::DotLine));
+#endif
+  enableXMin(true);
+  enableYMin(true);
 }
 
 PlotGrid::~PlotGrid()
 {
 
 }
-

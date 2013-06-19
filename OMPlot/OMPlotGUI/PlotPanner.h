@@ -42,7 +42,11 @@ class PlotPanner : public QwtPlotPanner
 {    
     Q_OBJECT
 public:
-    PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent);
+#if QWT_VERSION >= 0x060100
+  PlotPanner(QWidget *pCanvas, Plot *pParent);
+#else
+  PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent);
+#endif
     ~PlotPanner();
 public Q_SLOTS:
     void updateView(int, int);

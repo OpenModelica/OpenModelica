@@ -36,9 +36,15 @@
 
 using namespace OMPlot;
 
+#if QWT_VERSION >= 0x060100
+PlotPanner::PlotPanner(QWidget *pCanvas, Plot *pParent)
+    : QwtPlotPanner(pCanvas)
+{
+#else
 PlotPanner::PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent)
     : QwtPlotPanner(pCanvas)
 {
+#endif
     setEnabled(false);
     connect(this, SIGNAL(moved(int,int)), SLOT(updateView(int, int)));
     mpParentPlot = pParent;

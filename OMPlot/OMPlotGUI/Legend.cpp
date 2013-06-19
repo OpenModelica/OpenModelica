@@ -33,7 +33,11 @@
 
 #include "Legend.h"
 #include "iostream"
+#if QWT_VERSION < 0x060100
 #include "qwt_legend_item.h"
+#else
+#include "qwt_legend_label.h"
+#endif
 
 using namespace OMPlot;
 
@@ -64,12 +68,15 @@ Legend::~Legend()
 
 void Legend::legendMenu(const QPoint& pos)
 {        
-    QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(childAt(pos));
-
-    if(lgdItem)
+#if QWT_VERSION >= 0x060100
+  QwtLegendLabel *pItem = dynamic_cast<QwtLegendLabel*>(childAt(pos));
+#else
+  QwtLegendItem *pItem = dynamic_cast<QwtLegendItem*>(childAt(pos));
+#endif
+    if(pItem)
     {
-        mLegendItemStr = lgdItem->text().text();
-
+        mLegendItemStr = pItem->text().text();
+        /* context menu */
         QMenu menu(mpPlot);
         menu.addAction(mpChangeColorAction);
         menu.addAction(mpAutomaticColorAction);

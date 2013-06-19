@@ -32,7 +32,9 @@
  */
 
 #include "PlotCurve.h"
+#if QWT_VERSION < 0x060100
 #include "qwt_legend_item.h"
+#endif
 #include "qwt_symbol.h"
 
 using namespace OMPlot;
@@ -135,24 +137,23 @@ bool PlotCurve::hasCustomColor()
 
 void PlotCurve::setData(const double* xData, const double* yData, int size)
 {
-#if QWT_VERSION >= 0x060000
+#if QWT_VERSION >= 0x060100
   setRawSamples(xData, yData, size);
 #else
   setRawData(xData, yData, size);
 #endif
 }
 
+#if QWT_VERSION < 0x060100
 void PlotCurve::updateLegend(QwtLegend *legend) const
 {
     QwtPlotCurve::updateLegend(legend);
-#if QWT_VERSION < 0x060000
     QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(legend->find(this));
     if (lgdItem)
     {
         lgdItem->setIdentifierMode(QwtLegendItem::ShowSymbol | QwtLegendItem::ShowText);
         lgdItem->setSymbol(QwtSymbol(QwtSymbol::Rect, QBrush(pen().color()), QPen(Qt::black),QSize(20,20)));
     }
-
     QwtPlotItem::updateLegend(legend);
-#endif
 }
+#endif

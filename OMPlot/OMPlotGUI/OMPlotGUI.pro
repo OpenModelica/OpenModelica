@@ -38,12 +38,12 @@ HEADERS  += ../../SimulationRuntime/c/util/read_matlab4.h \
 win32 {
 QMAKE_LFLAGS += -enable-auto-import
 CONFIG(debug, debug|release){
-LIBS += -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwtd5
+LIBS += -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib -lqwtd
 }
 else {
-LIBS += -L$$(OMDEV)/lib/qwt-5.2.1-mingw/lib -lqwt5
+LIBS += -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib -lqwt
 }
-INCLUDEPATH += $$(OMDEV)/lib/qwt-5.2.1-mingw/include
+INCLUDEPATH += $$(OMDEV)/lib/qwt-6.1.0-mingw/include
 } else {
   include(OMPlotGUI.config)
 }

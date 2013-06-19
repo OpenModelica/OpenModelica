@@ -35,11 +35,15 @@
 
 using namespace OMPlot;
 
+#if QWT_VERSION >= 0x060100
+PlotZoomer::PlotZoomer(int xAxis, int yAxis, QWidget *pParent)
+    : QwtPlotZoomer(xAxis, yAxis, pParent)
+{
+#else
 PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
     : QwtPlotZoomer(xAxis, yAxis, pParent)
 {
-#if QWT_VERSION < 0x060000
-    setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);    
+    setSelectionFlags(QwtPicker::DragSelection | QwtPicker::CornerToCorner);
 #endif
     setTrackerMode(QwtPicker::AlwaysOff);
     setRubberBand(QwtPicker::RectRubberBand);
