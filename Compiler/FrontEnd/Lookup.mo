@@ -1505,6 +1505,16 @@ algorithm
       Absyn.Path id, scope;
       Absyn.Info info;
 
+    // handle EnumToInteger! search directly in the top env, no matter where the function is!
+    case (cache,env,id,info)
+      equation
+        name = Absyn.pathLastIdent(id);
+        true = stringEq("EnumToInteger", name);
+        (cache,env as {Env.FRAME(clsAndVars = ht,types = httypes)}) = Builtin.initialEnv(cache);
+        (cache,res) = lookupFunctionsInFrame(cache, ht, httypes, env, name, info);
+      then
+        (cache,res);
+
     // uq paths are different!
     case (cache,env,id,info)
       equation
