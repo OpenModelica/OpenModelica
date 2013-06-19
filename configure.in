@@ -666,7 +666,7 @@ else
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc $OPENMP"
   LINK="cp -frl"
-  RPATH="-Wl,-rpath,'$$ORIGIN/../lib/omc'"
+  RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
 fi
 
 dnl should we compile modpar
