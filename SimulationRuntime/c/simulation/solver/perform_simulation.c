@@ -115,9 +115,9 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   while(solverInfo->currentTime < simInfo->stopTime)
   {
     mem_state = get_memory_state();
+    currectJumpState = ERROR_SIMULATION;
     /* try */
     if (!setjmp(simulationJmpbuf)) {
-      currectJumpState = ERROR_SIMULATION;
 
       if (measure_time_flag) {
         for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {

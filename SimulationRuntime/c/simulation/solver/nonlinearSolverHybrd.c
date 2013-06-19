@@ -406,6 +406,7 @@ int solveHybrd(DATA *data, int sysNumber)
   int assertCalled = 0;
   int assertRetries = 0;
   int assertMessage = 0;
+  static state mem_state;
 
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData.nRelations*sizeof(modelica_boolean));
@@ -443,10 +444,11 @@ int solveHybrd(DATA *data, int sysNumber)
     if(scaling)
       solverData->useXScaling = 0;
 
-    state mem_state = get_memory_state();
+    mem_state = get_memory_state();
     /* try */
     if (!setjmp(nonlinearJmpbuf)) {
       wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
+      restore_memory_state(mem_state);
     } else { /* catch */
       restore_memory_state(mem_state);
       WARNING(LOG_STDOUT, "Non-Linear Solver try to handle a problem with a called assert.");
@@ -491,7 +493,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
     giveUp = 1;
 
-    state mem_state = get_memory_state();
+    mem_state = get_memory_state();
     /* try */
     if (!setjmp(nonlinearJmpbuf)) {
       _omc_hybrj_(wrapper_fvec_hybrj, &solverData->n, solverData->x,
@@ -501,6 +503,7 @@ int solveHybrd(DATA *data, int sysNumber)
           &solverData->nfev, &solverData->njev, solverData->r__,
           &solverData->lr, solverData->qtf, solverData->wa1,
           solverData->wa2, solverData->wa3, solverData->wa4, data);
+      restore_memory_state(mem_state);
       if (assertCalled){
         INFO(LOG_NLS, "After asserts was called, values reached which avoided assert call.");
         memcpy(systemData->nlsxOld, solverData->x, solverData->n*(sizeof(double)));
@@ -552,11 +555,12 @@ int solveHybrd(DATA *data, int sysNumber)
 
         ((DATA*)data)->simulationInfo.solveContinuous = 0;
 
-        state mem_state = get_memory_state();
+        mem_state = get_memory_state();
         /* try */
         if (!setjmp(nonlinearJmpbuf))
         {
           wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
+          restore_memory_state(mem_state);
         } else { /* catch */
           restore_memory_state(mem_state);
           WARNING(LOG_STDOUT, "Non-Linear Solver try to handle a problem with a called assert.");
@@ -651,6 +655,32 @@ int solveHybrd(DATA *data, int sysNumber)
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS);
 
       }
+      int scaling = solverData->useXScaling;
+      if(scaling)
+        solverData->useXScaling = 0;
+
+      /* take the solution */
+      memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
+ 
+      mem_state = get_memory_state();
+      /* try */
+      if (!setjmp(nonlinearJmpbuf))
+      {
+        wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
+        restore_memory_state(mem_state);
+      } else { /* catch */
+        restore_memory_state(mem_state);
+        WARNING(LOG_STDOUT, "Non-Linear Solver try to handle a problem with a called assert.");
+
+        solverData->info = 4;
+        xerror_scaled = 1;
+        xerror = 1;
+        assertCalled = 1;
+        success = 0;
+        giveUp = 0;
+      }
+      if(scaling)
+        solverData->useXScaling = 1;
     }
     else if((solverData->info == 4 || solverData->info == 5) && assertRetries < 1+solverData->n && assertCalled)
     {
@@ -950,11 +980,10 @@ int solveHybrd(DATA *data, int sysNumber)
         INFO1(LOG_NLS, "### No Solution! ###\n after %d restarts", retries*retries2*retries3);
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS);
       }
+      /* take the best approximation */
+      memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
     }
   }
-
-  /* take the best approximation */
-  memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
 
   /* reset some solving data */
   solverData->factor = initial_factor;

@@ -314,6 +314,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
     int lambda_steps)
 {
   int retValue = 0;
+  state mem_state;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
@@ -334,20 +335,23 @@ int initializeModel(DATA* data, const char* init_initMethod,
   setZCtol(simInfo->tolerance);
 
 
+  currectJumpState = ERROR_SIMULATION;
+  mem_state = get_memory_state();
   /* try */
   if (!setjmp(simulationJmpbuf))
   {
-    currectJumpState = ERROR_SIMULATION;
     if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
     {
       WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
     }
+    restore_memory_state(mem_state);
   }
   /* catch */
   else
   {
+    restore_memory_state(mem_state);
     retValue =  -1;
     INFO(LOG_STDOUT, "model terminate | Simulation terminated by an assert at initialization");
   }
