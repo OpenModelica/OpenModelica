@@ -34,7 +34,9 @@
 #include <QtSvg/QSvgGenerator>
 #include "PlotWindow.h"
 #include "iostream"
+#if QWT_VERSION >= 0x060000
 #include "qwt_plot_renderer.h"
+#endif
 
 using namespace OMPlot;
 
