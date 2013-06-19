@@ -1425,15 +1425,25 @@ algorithm
     case(DAE.CALL(path=Absyn.IDENT("sin"),expLst={e}))
       equation
         r = realSin(Expression.getRealConst(e));
-      then
-        DAE.RCONST(r);
+      then DAE.RCONST(r);
 
     // cos function
     case(DAE.CALL(path=Absyn.IDENT("cos"),expLst={e}))
       equation
         r = realCos(Expression.getRealConst(e));
-      then
-        DAE.RCONST(r);
+      then DAE.RCONST(r);
+
+    // sin function
+    case(DAE.CALL(path=Absyn.IDENT("asin"),expLst={e}))
+      equation
+        r = realAsin(Expression.getRealConst(e));
+      then DAE.RCONST(r);
+
+    // cos function
+    case(DAE.CALL(path=Absyn.IDENT("acos"),expLst={e}))
+      equation
+        r = realAcos(Expression.getRealConst(e));
+      then DAE.RCONST(r);
 
     // tangent function
     case(DAE.CALL(path=Absyn.IDENT("tan"),expLst={e}))
@@ -1441,15 +1451,13 @@ algorithm
         v1 = realSin(Expression.getRealConst(e));
         v2 = realCos(Expression.getRealConst(e));
         r = v1 /. v2;
-      then
-        DAE.RCONST(r);
+      then DAE.RCONST(r);
 
     // DAE.Exp function
     case(DAE.CALL(path=Absyn.IDENT("exp"),expLst={e}))
       equation
         r = realExp(Expression.getRealConst(e));
-      then
-        DAE.RCONST(r);
+      then DAE.RCONST(r);
 
     // log function
     case(DAE.CALL(path=Absyn.IDENT("log"),expLst={e}))
