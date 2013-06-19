@@ -643,7 +643,9 @@ int solveHybrd(DATA *data, int sysNumber)
     /* solution found */
     if(solverData->info == 1 || xerror <= local_tol || xerror_scaled <= local_tol)
     {
-      success = 1;
+	  int scaling;
+      
+	  success = 1;
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS))
       {
@@ -655,7 +657,7 @@ int solveHybrd(DATA *data, int sysNumber)
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS);
 
       }
-      int scaling = solverData->useXScaling;
+      scaling = solverData->useXScaling;
       if(scaling)
         solverData->useXScaling = 0;
 
