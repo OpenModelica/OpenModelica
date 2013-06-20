@@ -687,6 +687,8 @@ end equality;
 function setGlobalRoot<A>
   "Sets the index of the root variable with index 0..1023.
   This is a global mutable value and should be used sparingly.
+
+  You are recommended not to use 0 or false since the runtime system may treat these values as uninitialized and fail getGlobalRoot later on.
   "
   input Integer index;
   input A value;

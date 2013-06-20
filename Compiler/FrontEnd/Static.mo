@@ -100,6 +100,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import Global;
 protected import Inline;
 protected import Inst;
 protected import InnerOuter;
@@ -7809,6 +7810,11 @@ algorithm
   end matchcontinue;
 end elabCallArgsMetarecord;
 
+protected uniontype ForceFunctionInst
+  record FORCE_FUNCTION_INST "Used when blocking function instantiation to instantiate the function anyway" end FORCE_FUNCTION_INST;
+  record NORMAL_FUNCTION_INST "Used when blocking function instantiation to instantiate the function anyway" end NORMAL_FUNCTION_INST;
+end ForceFunctionInst;
+
 public function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
   input Env.Cache inCache;
@@ -7820,8 +7826,22 @@ functiontree of a newly created dae"
   output Env.Cache outCache;
   output Util.Status status;
 algorithm
-  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg);
+  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg, Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions)), NORMAL_FUNCTION_INST());
 end instantiateDaeFunction;
+
+public function instantiateDaeFunctionForceInst "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
+functiontree of a newly created dae"
+  input Env.Cache inCache;
+  input Env.Env env;
+  input Absyn.Path name;
+  input Boolean builtin "builtin functions create empty dae";
+  input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
+  input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
+  output Env.Cache outCache;
+  output Util.Status status;
+algorithm
+  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg, Util.isSome(getGlobalRoot(Global.instOnlyForcedFunctions)), FORCE_FUNCTION_INST());
+end instantiateDaeFunctionForceInst;
 
 protected function instantiateDaeFunction2 "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"
@@ -7832,10 +7852,12 @@ functiontree of a newly created dae"
   input Option<SCode.Element> clOpt "if not present, looked up by name in environment";
   input Integer numError "if errors were added, do not add a generic error message";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
+  input Boolean instOnlyForcedFunctions;
+  input ForceFunctionInst forceFunctionInst;
   output Env.Cache outCache;
   output Util.Status status;
 algorithm
-  (outCache,status) := matchcontinue(inCache,inEnv,inName,builtin,clOpt,numError,printErrorMsg)
+  (outCache,status) := matchcontinue(inCache,inEnv,inName,builtin,clOpt,numError,printErrorMsg,instOnlyForcedFunctions,forceFunctionInst)
     local
       Env.Cache cache;
       Env.Env env;
@@ -7844,24 +7866,30 @@ algorithm
       DAE.ComponentRef cref;
       Absyn.Path name;
 
+    // Skip function instantiation if we set those flags
+    case(cache,env,name,_,_,_,_,true,NORMAL_FUNCTION_INST())
+      equation
+        // print("Skipping: " +& Absyn.pathString(name) +& "\n");
+      then (cache,Util.SUCCESS());
+
     // Builtin functions skipped
-    case(cache,env,name,true,_,_,_) then (cache,Util.SUCCESS());
+    case(cache,env,name,true,_,_,_,_,_) then (cache,Util.SUCCESS());
 
     // External object functions skipped
-    case(cache,env,name,_,_,_,_)
+    case(cache,env,name,_,_,_,_,_,_)
       equation
         (_,true) = isExternalObjectFunction(cache,env,name);
       then (cache,Util.SUCCESS());
 
     // Recursive calls (by looking at envinronment) skipped
-    case(cache,env,name,_,NONE(),_,_)
+    case(cache,env,name,_,NONE(),_,_,_,_)
       equation
         false = Env.isTopScope(env);
         true = Absyn.pathSuffixOf(name,Env.getEnvName(env));
       then (cache,Util.SUCCESS());
 
     // Recursive calls (by looking in cache) skipped
-    case(cache,env,name,_,_,_,_)
+    case(cache,env,name,_,_,_,_,_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
@@ -7869,7 +7897,7 @@ algorithm
       then (cache,Util.SUCCESS());
 
     // class must be looked up
-    case(cache,env,name,_,NONE(),_,_)
+    case(cache,env,name,_,NONE(),_,_,_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
@@ -7878,20 +7906,20 @@ algorithm
       then (cache,Util.SUCCESS());
 
     // class already available
-    case(cache,env,name,_,SOME(cl),_,_)
+    case(cache,env,name,_,SOME(cl),_,_,_,_)
       equation
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then (cache,Util.SUCCESS());
 
     // call to function reference variable
-    case (cache,env,name,_,NONE(),_,_)
+    case (cache,env,name,_,NONE(),_,_,_,_)
       equation
         cref = pathToComponentRef(name);
         (cache,_,DAE.T_FUNCTION(funcArg = _),_,_,_,env,_,_) = Lookup.lookupVar(cache,env,cref);
       then (cache,Util.SUCCESS());
 
-    case(cache,env,name,_,_,_,true)
+    case(cache,env,name,_,_,_,true,_,_)
       equation
         true = Error.getNumErrorMessages() == numError;
         envStr = Env.printEnvPathStr(env);
@@ -7899,7 +7927,7 @@ algorithm
         Error.addMessage(Error.GENERIC_INST_FUNCTION, {pathStr, envStr});
       then fail();
 
-    case (cache,env,name,_,_,_,_) then (cache,Util.FAILURE());
+    else (inCache,Util.FAILURE());
   end matchcontinue;
 end instantiateDaeFunction2;
 

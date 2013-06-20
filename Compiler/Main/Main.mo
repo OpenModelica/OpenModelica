@@ -61,6 +61,7 @@ protected import Env;
 protected import Error;
 protected import ErrorExt;
 protected import Flags;
+protected import Global;
 protected import Interactive;
 protected import List;
 protected import Parser;
@@ -1041,6 +1042,7 @@ algorithm
   _ := matchcontinue args
     case _
       equation
+        setGlobalRoot(Global.instOnlyForcedFunctions,  NONE());
         System.realtimeTick(CevalScript.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));

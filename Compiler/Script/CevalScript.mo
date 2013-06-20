@@ -85,6 +85,7 @@ protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Flags;
+protected import Global;
 protected import Inst;
 protected import InnerOuter;
 protected import List;
@@ -908,6 +909,7 @@ algorithm
       Boolean dumpExtractionSteps;
       list<tuple<Absyn.Path,list<String>>> uses;
       Config.LanguageStandard oldLanguageStd;
+      SCode.Element cl;
 
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
@@ -1897,10 +1899,24 @@ algorithm
     case (cache,env,"generateSeparateCode",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
+        setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
         deps = generateFunctions(cache,env,p,sp,{});
+        setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
+      then (cache,Values.BOOL(true),st);
+
+    case (cache,env,"generateSeparateCode",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str)))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+      equation
+        false = stringEqual(str,"AllLoadedClasses");
+        sp = SCodeUtil.translateAbsyn2SCode(p);
+        cl = List.getMemberOnTrue(str, sp, SCode.isClassNamed);
+        setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
+        deps = generateFunctions(cache,env,p,{cl},{});
+        setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
     case (cache,env,"generateSeparateCode",_,st,_)
+      equation
+        setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(false),st);
 
     case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str)},
@@ -4578,6 +4594,7 @@ algorithm
         (0,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
         names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
         paths = List.map1r(names,Absyn.makeQualifiedPathFromStrings,name);
+        // print("paths to generate:" +& stringDelimitList(List.map(paths,Absyn.pathString),",") +& "\n");
         cache = instantiateDaeFunctions(cache, env, paths);
         funcs = Env.getFunctionTree(cache);
         d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
@@ -4642,7 +4659,9 @@ algorithm
     case (cache,env,{}) then cache;
     case (cache,env,path::paths)
       equation
-        (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache,env,path,false,NONE(),true);
+        // print("force inst: " +& Absyn.pathString(path));
+        (cache,Util.SUCCESS()) = Static.instantiateDaeFunctionForceInst(cache,env,path,false,NONE(),true);
+        // print(" ok\n");
         cache = instantiateDaeFunctions(cache,env,paths);
       then cache;
   end match;

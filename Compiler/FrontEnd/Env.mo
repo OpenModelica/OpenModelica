@@ -1356,7 +1356,8 @@ algorithm
 
     case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo))::fs, _)
       equation
-        mo = List.union(inPMs, mo);
+        // Cannot List.union stuff that contains arrays; need a comparison function
+        // mo = List.union(inPMs, mo);
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo))::fs;
   
