@@ -39,6 +39,7 @@
 #define VARIABLESWIDGET_H
 
 #include "MainWindow.h"
+#include "PlotWindow.h"
 
 class MainWindow;
 
@@ -102,7 +103,7 @@ signals:
   void resultFileRemoved(VariableTreeItem *item);
   void resultFileUpdated(VariablesTreeWidget *pVariablesTreeWidget);
 public slots:
-  void plotVariables(QTreeWidgetItem *item, int column);
+  void plotVariables(QTreeWidgetItem *item, int column, OMPlot::PlotWindow *pPlotWindow = 0);
   void updatePlotVariablesTree(QMdiSubWindow *window);
   void showContextMenu(QPoint point);
   void deleteVariablesTreeItem();

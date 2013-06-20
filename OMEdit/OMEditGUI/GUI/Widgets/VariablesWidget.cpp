@@ -327,15 +327,16 @@ void VariablesWidget::unHideChildItems(QTreeWidgetItem *pItem)
   }
 }
 
-void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column)
+void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindow *pPlotWindow)
 {
   if (!item->parent())
     return;
   VariableTreeItem *pItem = dynamic_cast<VariableTreeItem*>(item);
   try
   {
-    // get the current window, if no window found simply return
-    PlotWindow *pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
+    // if pPlotWindow is 0 then get the current window, if no window found simply return
+    if (!pPlotWindow)
+      pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
     if (!pPlotWindow)
     {
       mpVariablesTreeWidget->blockSignals(true);

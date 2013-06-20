@@ -187,7 +187,7 @@ void PlotWindowContainer::updatePlotWindows(VariableTreeItem *pItem)
   */
 void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeWidget)
 {
-  foreach (QMdiSubWindow *pSubWindow, subWindowList())
+  foreach (QMdiSubWindow *pSubWindow, subWindowList(QMdiArea::StackingOrder))
   {
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
     foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
@@ -202,7 +202,10 @@ void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeW
         pPlotWindow->getPlot()->updateGeometry();
         if (pVariableTreeItem)
         {
+          pVariablesTreeWidget->blockSignals(true);
           pVariableTreeItem->setCheckState(0, Qt::Checked);
+          pVariablesTreeWidget->getVariablesWidget()->plotVariables(pVariableTreeItem, 0, pPlotWindow);
+          pVariablesTreeWidget->blockSignals(false);
         }
       }
       else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
@@ -213,8 +216,12 @@ void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeW
         VariableTreeItem *pYVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(yVariable);
         if (pXVariableTreeItem && pYVariableTreeItem)
         {
+          pVariablesTreeWidget->blockSignals(true);
           pXVariableTreeItem->setCheckState(0, Qt::Checked);
+          pVariablesTreeWidget->getVariablesWidget()->plotVariables(pXVariableTreeItem, 0, pPlotWindow);
           pYVariableTreeItem->setCheckState(0, Qt::Checked);
+          pVariablesTreeWidget->getVariablesWidget()->plotVariables(pYVariableTreeItem, 0, pPlotWindow);
+          pVariablesTreeWidget->blockSignals(false);
         }
         else
         {
