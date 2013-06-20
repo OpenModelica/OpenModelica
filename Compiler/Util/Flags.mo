@@ -356,6 +356,8 @@ constant DebugFlag GEN_GRAPH = DEBUG_FLAG(94, "genGraph", false,
   Util.gettext("Dumps a graph of the program."));
 constant DebugFlag HPCOM = DEBUG_FLAG(95, "hpcom", false,
   Util.gettext("Enables parallel calculation based on task-graphs."));
+constant DebugFlag INITIALIZATION = DEBUG_FLAG(96, "initialization", false,
+  Util.gettext("Shows additional information from the initialization process."));
     
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -456,7 +458,8 @@ constant list<DebugFlag> allDebugFlags = {
   NLS_ANALYTIC_JACOBIAN,
   INLINE_SOLVER,
   GEN_GRAPH,
-  HPCOM
+  HPCOM,
+  INITIALIZATION
 };
 
 // CONFIGURATION FLAGS

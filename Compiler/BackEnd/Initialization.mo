@@ -222,7 +222,7 @@ algorithm
       nEqns = BackendDAEUtil.systemSize(isyst);
       true = intGt(nEqns, nVars);
 
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the over-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "It was not possible to solve the over-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
     then fail();
 
     // equal
@@ -238,7 +238,7 @@ algorithm
       nEqns = BackendDAEUtil.systemSize(isyst);
       true = intLt(nEqns, nVars);
 
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the under-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "It was not possible to solve the under-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
     then fail();
   end matchcontinue;
 end solveInitialSystemEqSystem;
@@ -961,7 +961,7 @@ algorithm
       true = ComponentReference.isPreCref(cref);
       
       (vars, rvarlst) = BackendVariable.removeVars({n}, inVars, {});
-      // Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpVarList, rvarlst, "removed unused variables");
+      // Debug.fcall2(Flags.INITIALIZATION, BackendDump.dumpVarList, rvarlst, "removed unused variables");
       
       (vars, eqs, b) = preBalanceInitialSystem1(n-1, mt, vars, inEqs, true);
     then (vars, eqs, b);
@@ -976,7 +976,7 @@ algorithm
       
       (vars, eqs, b) = preBalanceInitialSystem1(n-1, mt, inVars, inEqs, true);
       
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following variable:");
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following variable:");
       (eqs) = addStartValueEquations1({cref}, eqs);
     then (vars, eqs, b);
     
@@ -1064,7 +1064,7 @@ algorithm
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intGt(nEqns, nVars);
-      Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, isyst, "Trying to fix over-determined initial system");
+      Debug.fcall2(Flags.INITIALIZATION, BackendDump.dumpEqSystem, isyst, "Trying to fix over-determined initial system");
       msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
       Error.addCompilerWarning(msg);
 
@@ -1166,7 +1166,7 @@ algorithm
       //unassigned = List.firstN(listReverse(unassigned), nVars-nEqns);
       unassigned = replaceFixedCandidates(unassigned, nVars, nEqns, m, mt, vec1, vec2, inVars, inInitVars, 1, arrayCreate(nEqns, -1), {});
       // add for all free variables an equation
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
       initVarList = List.map1r(unassigned, BackendVariable.getVarAt, inVars);
       (vars, eqns, shared) = addStartValueEquations(initVarList, inVars, inEqns, inShared);
     then (true, vars, eqns, shared);
@@ -1178,7 +1178,7 @@ algorithm
       nEqns = BackendDAEUtil.equationSize(inEqns);
       true = intEq(nVars, nEqns+nInitVars);
 
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
       initVarList = BackendVariable.varList(inInitVars);
       (vars, eqns, shared) = addStartValueEquations(initVarList, inVars, eqns, inShared);
     then (true, vars, eqns, shared);
@@ -1199,7 +1199,7 @@ algorithm
       Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpSparsityPattern, sparsityPattern, "Sparsity Pattern");
       true = intEq(nVars-nEqns, listLength(selectedVars));  // fix only if it is definite
 
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
       (eqns) = addStartValueEquations1(selectedVars, eqns);
     then (true, inVars, eqns, inShared);
 
@@ -1527,7 +1527,7 @@ algorithm
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
 
       crStr = ComponentReference.crefStr(cref);
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [discrete] " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, inEqns);
       (vars, eqns, shared) = addStartValueEquations(varlst, iVars, eqns, inShared);
@@ -1549,7 +1549,7 @@ algorithm
       //eqn = BackendEquation.generateEquation(crefExp, startExp, tp, DAE.emptyElementSource, false);
 
       crStr = ComponentReference.crefStr(cref);
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [discrete] " +& crStr);
 
       ({preVar}, _) = BackendVariable.getVar(preCref, iVars);
       preVar = BackendVariable.setVarFixed(preVar, true);
@@ -1572,7 +1572,7 @@ algorithm
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
 
       crStr = ComponentReference.crefStr(cref);
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [continuous] " +& crStr);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [continuous] " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, inEqns);
       (vars, eqns, shared) = addStartValueEquations(varlst, iVars, eqns, inShared);
@@ -1616,7 +1616,7 @@ algorithm
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
 
       crStr = ComponentReference.crefStr(cref);
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [discrete] " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, eqns);
       eqns = addStartValueEquations1(vars, eqns);
@@ -1632,7 +1632,7 @@ algorithm
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
 
       crStr = ComponentReference.crefStr(var);
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [continuous] " +& crStr);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [continuous] " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, eqns);
       eqns = addStartValueEquations1(vars, eqns);
