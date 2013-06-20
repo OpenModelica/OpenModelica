@@ -2887,10 +2887,9 @@ algorithm
   end matchcontinue;
 end removeCref;
 
-public function removeVars
-"function: removeVar
+public function removeVars "function removeVars
   author: Frenkel TUD 2012-09
-  Removes  vars from the vararray but does not scaling down the array"
+  Removes vars from the vararray but does not scaling down the array"
   input list<Integer> inVarPos "Position of vars to delete 1 based";
   input BackendDAE.Variables inVariables;
   input list<BackendDAE.Var> iAcc;
@@ -2943,8 +2942,7 @@ algorithm
   end match;
 end removeVarDAE;
 
-public function removeVar
-"function: removeVar
+public function removeVar "function removeVar
   author: Frenkel TUD 2011-04
   Removes a var from the vararray but does not scaling down the array"
   input Integer inVarPos "1 based index";
