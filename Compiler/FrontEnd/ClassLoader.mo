@@ -284,7 +284,8 @@ algorithm
     case (CLASSLOAD(id),_,_,_,_)
       equation
         pd = System.pathDelimiter();
-        true = System.directoryExists(mp +& pd +& id);
+        file = mp +& pd +& id +& "/package.mo";
+        true = System.directoryExists(mp +& pd +& id) and System.regularFileExists(file);
         cl = loadCompletePackageFromMp(id,id,mp,encoding,w1,Error.getNumErrorMessages());
         ei = Absyn.makeClassElement(cl);
         cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
@@ -293,7 +294,8 @@ algorithm
     case (CLASSLOAD(id),_,_,_,_)
       equation
         pd = System.pathDelimiter();
-        false = System.directoryExists(mp +& pd +& id);
+        file = mp +& pd +& id +& "/package.mo";
+        false = System.directoryExists(mp +& pd +& id) and System.regularFileExists(file);
         file = mp +& pd +& id +& ".mo";
         true = System.regularFileExists(file);
         cl = parsePackageFile(file,encoding,false,w1,id);
