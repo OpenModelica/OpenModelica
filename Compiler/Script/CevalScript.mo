@@ -1894,13 +1894,13 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateSeparateCode",{},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCode",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         deps = generateFunctions(cache,env,p,sp,{});
       then (cache,Values.BOOL(true),st);
 
-    case (cache,env,"generateSeparateCode",{},st,_)
+    case (cache,env,"generateSeparateCode",_,st,_)
       then (cache,Values.BOOL(false),st);
 
     case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str)},
@@ -4582,7 +4582,7 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
-        print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
+        // print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
         acc = (name,dependencies)::acc;
         dependencies = List.map1(dependencies,stringAppend,".h\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");

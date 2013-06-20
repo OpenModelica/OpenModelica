@@ -951,17 +951,19 @@ public function addReplacementLst " adds several replacements given by list of c
   input list<DAE.Exp> dsts;
   output VariableReplacements repl;
 algorithm
-  repl := matchcontinue(inRepl,crs,dsts) 
-  local 
-    DAE.ComponentRef cr;
-    DAE.Exp dst;
+  repl := match (inRepl,crs,dsts) 
+    local 
+      DAE.ComponentRef cr;
+      DAE.Exp dst;
+      list<DAE.ComponentRef> crrest;
+      list<DAE.Exp> dstrest;
     
-    case(repl,{},{}) then repl;
-    case(repl,cr::crs,dst::dsts) equation
+    case (repl,{},{}) then repl;
+    case (repl,cr::crrest,dst::dstrest) equation
       repl = addReplacement(repl,cr,dst);
-      repl = addReplacementLst(repl,crs,dsts);
+      repl = addReplacementLst(repl,crrest,dstrest);
     then repl;
-  end matchcontinue;
+  end match;
 end addReplacementLst;
 
 public function addReplacement "function: addReplacement
@@ -1145,11 +1147,11 @@ algorithm
       DAE.ComponentRef src;
       DAE.Exp dst;
       VariableReplacements repl_1;
-    case (false,repl,src,dst) /* source dest */
+    case (false,_,src,dst) /* source dest */
       equation
         repl_1 = addReplacement(repl,src,dst);
       then repl_1;
-    case (true,repl,src,dst)
+    case (true,_,src,dst)
       then repl;
   end matchcontinue;
 end addReplacementIfNot;

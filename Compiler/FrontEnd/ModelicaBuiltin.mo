@@ -998,9 +998,11 @@ annotation(preferredView="text");
 end generateHeader;
 
 function generateSeparateCode
+  input TypeName className := $TypeName(AllLoadedClasses);
   output Boolean success;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html><p>Under construction.</p>
+</html>"),preferredView="text");
 end generateSeparateCode;
 
 function getLinker
