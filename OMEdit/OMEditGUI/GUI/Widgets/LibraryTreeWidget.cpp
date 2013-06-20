@@ -501,10 +501,6 @@ void LibraryTreeWidget::createActions()
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.png"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
-  // simulation Action
-  mpSimulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
-  mpSimulationAction->setStatusTip(Helper::simulateTip);
-  connect(mpSimulationAction, SIGNAL(triggered()), SLOT(simulate()));
   // instantiate Model Action
   mpInstantiateModelAction = new QAction(QIcon(":/Resources/icons/flatmodel.png"), Helper::instantiateModel, this);
   mpInstantiateModelAction->setStatusTip(Helper::instantiateModelTip);
@@ -513,6 +509,10 @@ void LibraryTreeWidget::createActions()
   mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), Helper::checkModel, this);
   mpCheckModelAction->setStatusTip(Helper::checkModelTip);
   connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
+  // simulation Action
+  mpSimulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
+  mpSimulationAction->setStatusTip(Helper::simulateTip);
+  connect(mpSimulationAction, SIGNAL(triggered()), SLOT(simulate()));
   // unload Action
   mpUnloadClassAction = new QAction(QIcon(":/Resources/icons/delete.png"), Helper::unloadClass, this);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
@@ -1240,9 +1240,9 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
       menu.addAction(mpNewModelicaClassAction);
     }
     menu.addSeparator();
-    menu.addAction(mpSimulationAction);
     menu.addAction(mpInstantiateModelAction);
     menu.addAction(mpCheckModelAction);
+    menu.addAction(mpSimulationAction);
     if (!(pLibraryTreeNode->isSystemLibrary() || isSearchedTree()))
     {
       menu.addSeparator();

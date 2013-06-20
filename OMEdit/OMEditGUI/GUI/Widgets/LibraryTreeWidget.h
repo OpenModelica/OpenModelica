@@ -176,9 +176,9 @@ private:
   QAction *mpViewClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpNewModelicaClassAction;
-  QAction *mpSimulationAction;
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
+  QAction *mpSimulationAction;
   QAction *mpUnloadClassAction;
   QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
