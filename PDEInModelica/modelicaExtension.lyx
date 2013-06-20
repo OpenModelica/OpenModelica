@@ -1,0 +1,667 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass report
+\use_default_options false
+\maintain_unincluded_children false
+\language english
+\language_package none
+\inputencoding auto
+\fontencoding default
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 0
+\use_mathdots 0
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language swedish
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Modelica extension for PDE
+\end_layout
+
+\begin_layout Section*
+Space & coordinates
+\end_layout
+
+\begin_layout Subsubsection*
+What should be specified
+\end_layout
+
+\begin_layout Itemize
+Dimension of the problem (1,2 or 3D)
+\end_layout
+
+\begin_layout Itemize
+?? Coordinates (cartesian, cylindrical, spherical ...) -- where this information
+ will be used (if at all):
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+in differential operators as grad, div, rot etc.
+\end_layout
+
+\begin_layout Itemize
+in visualization of results
+\end_layout
+
+\begin_layout Itemize
+?? in computation -- perhaps equations should be transformed and the calculation
+ would be performed in cartesian coordinates
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Names of independent (coordinate) variables (
+\begin_inset Formula $x$
+\end_inset
+
+, 
+\begin_inset Formula $y$
+\end_inset
+
+, 
+\begin_inset Formula $z$
+\end_inset
+
+, 
+\begin_inset Formula $r$
+\end_inset
+
+, 
+\begin_inset Formula $\varphi$
+\end_inset
+
+, 
+\begin_inset Formula $\theta$
+\end_inset
+
+...)
+\end_layout
+
+\begin_layout Section*
+Domain & boundary
+\end_layout
+
+\begin_layout Subsection*
+What should be specified
+\end_layout
+
+\begin_layout Itemize
+the domain where we perform the computation and where equations hold
+\end_layout
+
+\begin_layout Itemize
+boundary and its subsets where particular boundary conditions hold
+\end_layout
+
+\begin_layout Itemize
+normal vector of the boundary
+\end_layout
+
+\begin_layout Subsection*
+Possible approaches
+\end_layout
+
+\begin_layout Description
+Parametrization
+\begin_inset space ~
+\end_inset
+
+of
+\begin_inset space ~
+\end_inset
+
+the
+\begin_inset space ~
+\end_inset
+
+domain with shape function and ranges -- from The Book (Principles of ...),
+ section 8.5.2
+\end_layout
+
+\begin_layout Standard
+Example from the book:
+\end_layout
+
+\begin_layout Standard
+\align left
+
+\family typewriter
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+model HeatCircular2D 
+\end_layout
+
+\begin_layout Plain Layout
+
+	import DifferentialOperators2D.*;
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter DomainCircular2DGrid omega;
+\end_layout
+
+\begin_layout Plain Layout
+
+	FieldCircular2DGrid u(domain=omega, FieldValueType=SI.Temperature);
+\end_layout
+
+\begin_layout Plain Layout
+
+equation 
+\end_layout
+
+\begin_layout Plain Layout
+
+	der (u) = pder (u,D.x2)+ pder (u,D .
+ y 2 )	in omega.interior;
+\end_layout
+
+\begin_layout Plain Layout
+
+	nder(u) = 0		in omega.boundary; 
+\end_layout
+
+\begin_layout Plain Layout
+
+end HeatCircular2D;
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+\end_layout
+
+\begin_layout Plain Layout
+
+record DomainCircular2DGrid "Domain being a circular region"
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Real radius = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Integer nx = 100;
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Integer ny = 100;
+\end_layout
+
+\begin_layout Plain Layout
+
+	replaceable function shapeFunc = circular2Dfunc "2D circular region";
+\end_layout
+
+\begin_layout Plain Layout
+
+	DomainGe2D interior(shape=shapeFunc,range={{O,radius},{O,l}},geom= ...
+ );
+\end_layout
+
+\begin_layout Plain Layout
+
+	DomainGe2D boundary (shape=shapeFunc, range={{radius, radius), { 0,1}}
+ ,geom=);
+\end_layout
+
+\begin_layout Plain Layout
+
+	function shapeFunc = circular2Dfunc "Function spanning circular region";
+\end_layout
+
+\begin_layout Plain Layout
+
+end DomainCircular2DGrid; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+function circular2Dfunc "Spanned circular region for v in range 0..1" 
+\end_layout
+
+\begin_layout Plain Layout
+
+	input Real r,v; 
+\end_layout
+
+\begin_layout Plain Layout
+
+	output Real x,y; 
+\end_layout
+
+\begin_layout Plain Layout
+
+algorithm 
+\end_layout
+
+\begin_layout Plain Layout
+
+	x : = r*cos (2*PI*v);
+\end_layout
+
+\begin_layout Plain Layout
+
+	y := r*sin(2*PI*v); 
+\end_layout
+
+\begin_layout Plain Layout
+
+end circular2Dfunc; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+record FieldCircular2DGrid 
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter DomainCircular2DGrid domain;
+\end_layout
+
+\begin_layout Plain Layout
+
+	replaceable type FieldValueType = Real;
+\end_layout
+
+\begin_layout Plain Layout
+
+	replaceable type FieldType = Real[domain.nx,domain.ny,domain.nz];
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter FieldType start = zeros(domain.nx,domain.ny,domain.nz.);
+\end_layout
+
+\begin_layout Plain Layout
+
+	FieldType Val;
+\end_layout
+
+\begin_layout Plain Layout
+
+end FieldCircularZDGrid; 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And modified version, where all numerical stuff (grid, number of points
+ -- this should be configured using simulation setup or annotations ) omitted,
+ modified 
+\family typewriter
+pder
+\family default
+ operator, 
+\family typewriter
+Field
+\family default
+ as Modelica build-in type:
+\end_layout
+
+\begin_layout Standard
+\align left
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+\align left
+
+model HeatCircular2D
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	parameter DomainCircular2D omega;
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	Field Real u(domain=omega, start = 0, FieldValueType=SI.Temperature);
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+equation 
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	pder(u,time) = pder(u,x)+ pder(u,y) in omega.interior;
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+	pder(u,omega.boundary.n) = 0   in omega.boundary; 
+\end_layout
+
+\begin_layout Plain Layout
+\align left
+
+end HeatCircular2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+record DomainCircular2D "Domain being a circular region"
+\end_layout
+
+\begin_layout Plain Layout
+
+	parameter Real radius = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+	function shapeFunc = circular2Dfunc "Function spanning circular region";
+\end_layout
+
+\begin_layout Plain Layout
+
+	DomainGe2D interior(shape=shapeFunc, range={{O,radius},{O,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+	DomainGe2D boundary (shape=shapeFunc, range={{radius, radius), {0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+end DomainCircular2DGrid; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+function circular2Dfunc "Spanned circular region for v in range 0..1" 
+\end_layout
+
+\begin_layout Plain Layout
+
+	input Real r,v; 
+\end_layout
+
+\begin_layout Plain Layout
+
+	output Real x,y; 
+\end_layout
+
+\begin_layout Plain Layout
+
+algorithm 
+\end_layout
+
+\begin_layout Plain Layout
+
+	x : = r*cos (2*PI*v);
+\end_layout
+
+\begin_layout Plain Layout
+
+	y := r*sin(2*PI*v); 
+\end_layout
+
+\begin_layout Plain Layout
+
+end circular2Dfunc; 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+Description
+\begin_inset space ~
+\end_inset
+
+by
+\begin_inset space ~
+\end_inset
+
+the
+\begin_inset space ~
+\end_inset
+
+boundary Domain is defined by closed boundary curve, which may by composed
+ of several connected curves.
+ Needs new operator 
+\emph on
+interior
+\emph default
+ and type 
+\emph on
+Domain2d
+\emph default
+ (and 
+\emph on
+Domain1D
+\emph default
+ and 
+\emph on
+Domain3d
+\emph default
+).
+ (similarly used in FlexPDE -- http://www.pdesolutions.com/.) 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/janek/Dokumenty/PDEInModelica/languageExtension/boundaryRepresentation.mo"
+lstparams "breaklines=true,caption={Description by boundary -- example},captionpos=b,frame=tb"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+Constructive
+\begin_inset space ~
+\end_inset
+
+solid
+\begin_inset space ~
+\end_inset
+
+geometry used in Matlab PDE toolbox, http://en.wikipedia.org/wiki/Constructive_sol
+id_geometry 
+\end_layout
+
+\begin_layout Standard
+Domain is build from primitives (cuboids, cylinders, spheres, cones, user
+ defined shapes ...) applying boolean operations 
+\emph on
+union
+\emph default
+, 
+\emph on
+intersection
+\emph default
+ and 
+\emph on
+difference.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename /home/janek/Dokumenty/PDEInModelica/languageExtension/img/Csg_tree.png
+	lyxscale 30
+	width 40text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+constructive solid geometry
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Description
+Listing
+\begin_inset space ~
+\end_inset
+
+of
+\begin_inset space ~
+\end_inset
+
+points -- export from CAD
+\end_layout
+
+\begin_layout Description
+Inequalities
+\end_layout
+
+\begin_layout Description
+Boundary
+\begin_inset space ~
+\end_inset
+
+representation
+\begin_inset space ~
+\end_inset
+
+(BRep) (NETGEN, STEP)
+\end_layout
+
+\begin_layout Section*
+Fields
+\end_layout
+
+\begin_layout Section*
+Partial derivative
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+\begin_inset Formula $\frac{\partial^{2}u}{\partial x\partial y}$
+\end_inset
+
+ ...
+ pder(u,x,y)
+\end_layout
+
+\begin_layout Standard
+directional derivative ...
+ 
+\family typewriter
+pder(u,n)
+\end_layout
+
+\begin_layout Section*
+Equations & boundary conditions
+\end_layout
+
+\end_body
+\end_document
