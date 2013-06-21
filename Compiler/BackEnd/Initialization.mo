@@ -188,11 +188,13 @@ algorithm
 
       // simplify system
      (initdae, Util.SUCCESS()) = BackendDAEUtil.pastoptimiseDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
-
       Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae, "solved initial system");
       
+      // warn about iteration variables with default zero start attribute
+      Debug.fcall(Flags.INITIALIZATION, warnAboutIterationVariablesWithDefaultZeroStartAttribute, initdae);
+      
       b = Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM);
-      Debug.bcall(b, BackendDump.dumpEqnsSolved, initdae);
+      Debug.bcall2(b, BackendDump.dumpEqnsSolved, initdae, "initial system: eqns in order");
     then SOME(initdae);
 
     else then NONE();
@@ -648,6 +650,132 @@ algorithm
   ((_, hs)) := Expression.traverseExp(e, collectPreVariablesTrverseExp, hs);
   outTpl := (e, hs);
 end collectPreVariablesEquation;
+
+// =============================================================================
+// warn about iteration variables with default zero start attribute
+//
+// =============================================================================
+
+public function warnAboutIterationVariablesWithDefaultZeroStartAttribute "function warnAboutIterationVariablesWithDefaultZeroStartAttribute
+  author: lochel
+  This function ... read the function name."
+  input BackendDAE.BackendDAE inBackendDAE;
+protected
+  BackendDAE.EqSystems eqs;
+algorithm
+  BackendDAE.DAE(eqs=eqs) := inBackendDAE;
+  List.map_0(eqs, warnAboutIterationVariablesWithDefaultZeroStartAttribute1);
+end warnAboutIterationVariablesWithDefaultZeroStartAttribute;
+
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute1 "function warnAboutIterationVariablesWithDefaultZeroStartAttribute1
+  author: lochel"
+  input BackendDAE.EqSystem inEqSystem;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.StrongComponents comps;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars,
+                      matching=BackendDAE.MATCHING(comps=comps)) := inEqSystem;
+  warnAboutIterationVariablesWithDefaultZeroStartAttribute2(comps, vars);
+end warnAboutIterationVariablesWithDefaultZeroStartAttribute1;
+
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute2 "function warnAboutIterationVariablesWithDefaultZeroStartAttribute2
+  author: lochel"
+  input BackendDAE.StrongComponents inComps;
+  input BackendDAE.Variables inVars;
+algorithm
+  _ := matchcontinue(inComps, inVars)
+    local
+      BackendDAE.StrongComponents rest;
+      list<BackendDAE.Var> varlst;
+      list<Integer> vlst;
+      Boolean linear;
+      String str;
+      
+    case ({}, _) then ();
+    
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_vars=vlst)::rest, _) equation
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
+      varlst = filterVarsWithoutStartValue(varlst);
+      false = List.isEmpty(varlst);
+            
+      Error.addCompilerWarning("Iteration variables with default zero start attribute in mixed equation system:");
+      warnAboutVars(varlst);
+      warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
+    then ();
+    
+    case (BackendDAE.EQUATIONSYSTEM(vars=vlst)::rest, _) equation
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
+      varlst = filterVarsWithoutStartValue(varlst);
+      false = List.isEmpty(varlst);
+      
+      Error.addCompilerWarning("Iteration variables with default zero start attribute in equation system:");
+      warnAboutVars(varlst);
+      warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
+    then ();
+        
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, linear=linear)::rest, _) equation
+      varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
+      varlst = filterVarsWithoutStartValue(varlst);
+      false = List.isEmpty(varlst);
+      
+      str = Util.if_(linear, "linear", "nonlinear");
+      Error.addCompilerWarning("Iteration variables with default zero start attribute in torn " +& str +& "equation system:");
+      warnAboutVars(varlst);
+      warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
+    then ();
+      
+    case (_::rest, _) equation
+      warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
+    then ();
+  end matchcontinue;
+end warnAboutIterationVariablesWithDefaultZeroStartAttribute2;
+
+function filterVarsWithoutStartValue "function filterVarsWithoutStartValue
+  author: lochel"
+  input list<BackendDAE.Var> inVars;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  outVars := matchcontinue(inVars)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vars;
+      
+    case ({}) then {};
+    
+    case (v::vars) equation
+      _ = BackendVariable.varStartValueFail(v);
+      vars = filterVarsWithoutStartValue(vars);
+    then vars;
+    
+    case (v::vars) equation
+      vars = filterVarsWithoutStartValue(vars);
+    then v::vars;
+    
+    else then fail();
+  end matchcontinue;
+end filterVarsWithoutStartValue;
+
+function warnAboutVars "function warnAboutVars
+  author: lochel"
+  input list<BackendDAE.Var> inVars;
+algorithm
+  _ := match(inVars)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vars;
+      String crStr;
+
+    case ({}) then ();
+    
+    case (v::vars) equation
+      crStr = BackendDump.varString(v);
+      Error.addCompilerWarning(" " +& crStr);
+      
+      warnAboutVars(vars);
+    then ();
+  end match;
+end warnAboutVars;
 
 // =============================================================================
 // section for selecting initialization variables

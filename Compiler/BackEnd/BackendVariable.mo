@@ -254,8 +254,7 @@ algorithm
   end match;
 end setVarStartValue;
 
-public function setVarStartValueOption
-"function: setVarStartValueOption
+public function setVarStartValueOption "function setVarStartValueOption
   author: Frenkel TUD
   Sets the start value attribute of a variable."
   input BackendDAE.Var inVar;

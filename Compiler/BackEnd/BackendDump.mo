@@ -726,11 +726,14 @@ end dumpBackendDAEVarList;
 public function dumpEqnsSolved "function dumpEqnsSolved
   This function dumps the equations in the order they have to be calculate."
   input BackendDAE.BackendDAE inBackendDAE;
+  input String heading;
 protected
   BackendDAE.EqSystems eqs;
 algorithm
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   BackendDAE.DAE(eqs=eqs) := inBackendDAE;
   List.map_0(eqs, dumpEqnsSolved1);
+  print("\n");
 end dumpEqnsSolved;
 
 protected function dumpEqnsSolved1 "function dumpEqnsSolved1

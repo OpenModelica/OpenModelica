@@ -6791,7 +6791,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(syst, BackendDAE.MATCHING(v1, v2, {}));
         (syst, comps) = BackendDAETransform.strongComponents(syst, shared);
         paramdlow = BackendDAE.DAE({syst}, shared);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpEqnsSolved, paramdlow);
+        Debug.fcall2(Flags.PARAM_DLOW_DUMP, BackendDump.dumpEqnsSolved, paramdlow, "parameters: eqns in order");
         (parameterEquations, _, uniqueEqIndex, _) = createEquations(false, false, true, false, false, syst, shared, comps, iuniqueEqIndex, {});
     
         ialgs = BackendEquation.traverseBackendDAEEqns(ie, traverseAlgorithmFinder, {});

@@ -8014,7 +8014,7 @@ algorithm
   Debug.execStat("expandAlgorithmsbyInitStmts",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
-  Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
+  Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "indxdae: eqns in order");
   checkBackendDAEWithErrorMsg(outSODE);
 end getSolvedSystem;
 
@@ -8462,7 +8462,7 @@ algorithm
 
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
-  Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
+  Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "system for jacobians");
 end getSolvedSystemforJacobians;
 
 /*************************************************
