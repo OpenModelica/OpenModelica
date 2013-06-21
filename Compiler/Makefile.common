@@ -145,6 +145,7 @@ DumpHTML.mo \
 EvaluateParameter.mo \
 ExpressionSolve.mo \
 HashTableCrSimVars.mo \
+HpcOmBenchmark.mo \
 HpcOmSimCode.mo \
 HpcOmTaskGraph.mo \
 IndexReduction.mo \
@@ -240,11 +241,13 @@ ErrorExt.mo \
 Database.mo \
 ParserExt.mo \
 UnitParserExt.mo \
+HpcOmBenchmarkExt.mo \
 IOStreamExt.mo \
 Lapack.mo \
 Print.mo \
 Settings.mo \
 SimulationResults.mo \
+TaskGraphResults.mo \
 Socket.mo \
 System.mo \
 TaskGraphExt.mo \

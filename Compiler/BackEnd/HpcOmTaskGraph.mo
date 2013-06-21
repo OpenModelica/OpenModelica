@@ -44,7 +44,9 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import GraphML;
+protected import HpcOmBenchmark;
 protected import List;
+protected import Util;
 
 
 public uniontype Equation
@@ -58,8 +60,9 @@ public uniontype StrongConnectedComponent
   record STRONGCONNECTEDCOMPONENT
     String text;
     Integer compIdx;
+    Integer calcTime;
     list<Integer> equations;
-    list<Integer> dependencySCCs;
+    list<tuple<Integer,Integer>> dependencySCCs; //The tuple holds the following values: <SccIdx,NumberOfDepVars>
     String description;
   end STRONGCONNECTEDCOMPONENT;
 end StrongConnectedComponent;
@@ -127,13 +130,13 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps), orderedVars=BackendDAE.VARIABLES(numberOfVars=numberOfVars)),(shared as BackendDAE.SHARED(functionTree=sharedFuncs)),_,_)
       equation
         varSccMapping = createVarSccMapping(comps, numberOfVars); 
-        BackendDump.dumpEqSystem(isyst, "TaskGraph Input");
+        //BackendDump.dumpEqSystem(isyst, "TaskGraph Input");
         //Create a new task graph
         graph = GRAPH("TaskGraph",{},{});
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
-        BackendDump.dumpIncidenceMatrix(incidenceMatrix);
+        //BackendDump.dumpIncidenceMatrix(incidenceMatrix);
         eqDescs = getEquationStrings(comps,isyst);
-        ((graph,_)) = List.fold3(comps,createTaskGraph1,(incidenceMatrix,isyst,shared),varSccMapping,eqDescs,(graph,1));
+        ((graph,_)) = List.fold3(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),varSccMapping,eqDescs,(graph,1));
         (adjLst,rootLst) = getAdjacencyListFromGraph(graph);
         
         //print("TASKGRAPH represented as an adjacencyList\n");
@@ -156,7 +159,7 @@ protected function createTaskGraph1 "function createTaskGraph1
   author: marcusw,waurich
   Appends the task-graph information for the given StrongComponent to the given graph."
   input BackendDAE.StrongComponent component;
-  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.EqSystem,BackendDAE.Shared> isystInfo; //<incidenceMatrix,isyst,ishared> in very compact form
+  input tuple<BackendDAE.IncidenceMatrix,BackendDAE.EqSystem,BackendDAE.Shared,Integer> isystInfo; //<incidenceMatrix,isyst,ishared,numberOfComponents> in very compact form
   input array<Integer> varSccMapping;
   input List<String> eqDescs;
   input tuple<Graph,Integer> igraph;
@@ -164,26 +167,179 @@ protected function createTaskGraph1 "function createTaskGraph1
 protected
   Graph tmpGraph;
   StrongConnectedComponent graphComponent;
-  Integer componentIndex, calculationTime;
+  Integer componentIndex, calculationTime, numberOfComps;
   List<tuple<Integer,Integer>> unsolvedVars;
   BackendDAE.IncidenceMatrix incidenceMatrix;
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
-  List<Integer> requiredSccs;
+  array<Integer> requiredSccs;
+  list<tuple<Integer,Integer>> requiredSccs_RefCount;
   String nodeDesc;
   String eqDesc;
 algorithm
-  (incidenceMatrix,isyst,ishared) := isystInfo;
+  (incidenceMatrix,isyst,ishared,numberOfComps) := isystInfo;
   (tmpGraph,componentIndex) := igraph;
   nodeDesc := BackendDump.strongComponentString(component);
-  //calculationTime := HpcOmBenchmark.timeForCalculation(component, isyst, ishared);
+  calculationTime := HpcOmBenchmark.timeForCalculation(component, isyst, ishared);
   eqDesc := listGet(eqDescs,componentIndex);
   unsolvedVars := getUnsolvedVarsBySCC(component,incidenceMatrix);
-  requiredSccs := List.fold1(unsolvedVars,fillSccList,varSccMapping,{});
-  graphComponent := STRONGCONNECTEDCOMPONENT(nodeDesc, componentIndex, {}, requiredSccs,eqDesc);
-  tmpGraph := addSccToGraph(graphComponent, tmpGraph); //array der angibt ob scc schon in liste ist
+  requiredSccs := arrayCreate(numberOfComps,0); //create a ref-counter for each component
+  requiredSccs := List.fold1(unsolvedVars,fillSccList,varSccMapping,requiredSccs);
+  //print("Required sccs for scc " +& nodeDesc +& " (idx: " +& intString(componentIndex) +& ") \n");
+  //printReqScc(1, requiredSccs);
+  //print("----------------------------------------\n");
+  ((_,requiredSccs_RefCount)) := Util.arrayFold(requiredSccs, convertRefArrayToList, (1,{}));
+  graphComponent := STRONGCONNECTEDCOMPONENT(nodeDesc, componentIndex, calculationTime, {}, requiredSccs_RefCount,eqDesc);
+  tmpGraph := addSccToGraph(graphComponent, tmpGraph);
   ograph := (tmpGraph,componentIndex+1);
 end createTaskGraph1;   
+
+protected function printReqScc
+  input Integer refSccIdx;
+  input array<Integer> requiredSccs;
+
+protected
+  Integer refCount;
+  String refIdxStr,refCountStr;
+algorithm 
+  _ := matchcontinue(refSccIdx,requiredSccs)
+    case(_,_)
+      equation
+        true = intLe(refSccIdx,arrayLength(requiredSccs));
+        true = intGt(refSccIdx,-1);
+        refCount = requiredSccs[refSccIdx];
+        refIdxStr = intString(refSccIdx);
+        refCountStr = intString(refCount);
+        print(refIdxStr +& ":" +& refCountStr +& " ");
+        printReqScc(refSccIdx+1,requiredSccs);
+      then ();
+    else then ();
+  end matchcontinue;
+end printReqScc;
+
+protected function getAdjacencyListFromGraph" computes an adjacency list from a directed Graph
+author:Waurich TUD 2013-06"
+  input Graph graph;
+  output array<list<Integer>> adjacencyLst;
+  output list<Integer> rootLstOut;
+algorithm
+  (adjacencyLst,rootLstOut) := matchcontinue(graph)
+    local
+      list<StrongConnectedComponent> comps;
+      list<Variable> vars;
+      String name;
+      Integer size;
+      list<Integer> rootLst;
+    case(GRAPH(name=name,components=comps,variables=vars))
+      equation
+        size = listLength(comps);
+        adjacencyLst = arrayCreate(size,{});
+        ((adjacencyLst,rootLst)) = List.fold(comps,adjacencyListFill,(adjacencyLst,{}));
+      then
+        (adjacencyLst,rootLst);
+    case(GRAPH(name=name,components=comps,variables=vars))
+      equation
+        true = List.isEmpty(comps);
+        print(name+&" is an empty graph\n");
+        adjacencyLst = arrayCreate(0,{});
+      then 
+        (adjacencyLst,{});
+  end matchcontinue;
+end getAdjacencyListFromGraph;  
+
+
+protected function adjacencyListFill "fills the adjacencylist.
+author:Waurich TUD 2013-06"
+  input StrongConnectedComponent comp; 
+  input tuple<array<list<Integer>>,list<Integer>> inValue;
+  output tuple<array<list<Integer>>,list<Integer>> outValue;
+algorithm
+  outValue := matchcontinue(comp,inValue)
+    local
+      Integer Id;
+      list<tuple<Integer,Integer>> depSCCs;      
+      list<Integer> row;
+      list<Integer> roots1In;
+      list<Integer> roots1Out;
+      array<list<Integer>> adjacencyLstIn;
+      array<list<Integer>> adjacencyLstOut;
+    case(STRONGCONNECTEDCOMPONENT(compIdx=Id, dependencySCCs=depSCCs),((adjacencyLstIn,roots1In)))  
+      equation
+        false = intEq(listLength(depSCCs),0);
+        //print("compIndex "+&intString(Id)+&"is dependent of "+&stringDelimitList(List.map(depSCCs,intString),",")+&"\n");
+        adjacencyLstOut = List.fold1(depSCCs,adjacencyListEntry,Id,adjacencyLstIn);
+      then
+        ((adjacencyLstOut,roots1In));
+    case(STRONGCONNECTEDCOMPONENT(compIdx=Id, dependencySCCs=depSCCs),((adjacencyLstIn,roots1In)))  
+      equation
+        true = intEq(listLength(depSCCs),0);
+        roots1Out = Id::roots1In;
+      then
+        ((adjacencyLstIn,roots1Out));
+  end matchcontinue;
+end adjacencyListFill;
+    
+    
+protected function adjacencyListEntry "helper function for adjacencyListFill
+author:Waurich TUD 2013-06"
+  input tuple<Integer,Integer> iParent;
+  input Integer child;
+  input array<list<Integer>> adjacencyLstIn;
+  output array<list<Integer>> adjacencyLstOut;
+protected
+  list<Integer> row;
+  Integer parent;
+algorithm
+      (parent,_) := iParent;
+      //print("put the childnode "+& intString(child)+&"in the parent node "+&intString(parent)+&"\n");
+      row := arrayGet(adjacencyLstIn,parent);
+      row := child::row;
+      //print("to get the row"+&stringDelimitList(List.map(row,intString),",")+&"\n");
+      adjacencyLstOut := arrayUpdate(adjacencyLstIn,parent,row);      
+end adjacencyListEntry;
+
+
+//protected function fillCalcTimeArray "function fillCalcTimeArray
+//  author: marcusw
+//  Fills the calculation-time-array."
+//  input Graph igraph;
+//  input array<Integer> calcTimes;
+//  
+//algorithm
+//  _ := match(igraph,calcTimes)
+//    local
+//      list<StrongConnectedComponent> components;
+//    case(GRAPH(components=components),_)
+//      equation 
+//        fillCalcTimeArrayTail(components,calcTimes);
+//      then ();
+//    else
+//      then fail();
+//  end match;
+//  
+//end fillCalcTimeArray;
+//
+//
+//protected function fillCalcTimeArrayTail 
+//  input list<StrongConnectedComponent> iComps;
+//  input array<Integer> calcTimes; //The calculation time of each component
+//  
+//algorithm
+//  _ := match(iComps,calcTimes)
+//    local
+//      Integer calcTime, compIdx;
+//      list<StrongConnectedComponent> rest;
+//      String description;
+//    case(STRONGCONNECTEDCOMPONENT(calcTime=calcTime,compIdx=compIdx,description=description)::rest,_)
+//      equation
+//        //print("fillCalcTimeArrayTail -- Idx:" +& compIdx +& " calcTime:" +& calcTime +& " desc:" +& description +& "\n");
+//        _ = arrayUpdate(calcTimes, compIdx, calcTime);
+//        fillCalcTimeArrayTail(rest,calcTimes);
+//      then ();
+//    else
+//      then ();
+//  end match;  
+//end fillCalcTimeArrayTail;
 
 protected function getEquationStrings " gets the equation and the variable its solved for for every StrongComponent
 author:Waurich TUD 2013-06"
@@ -438,23 +594,49 @@ protected function fillSccList "function fillSccList
   This function appends the scc, which solves the given variable, to the requiredsccs-list."
   input tuple<Integer,Integer> variable;
   input array<Integer> varSccMapping;
-  input List<Integer> iRequiredSccs;
-  output List<Integer> oRequiredSccs;
+  input array<Integer> iRequiredSccs;
+  output array<Integer> oRequiredSccs;
 
 algorithm
   oRequiredSccs := matchcontinue(variable,varSccMapping,iRequiredSccs)
     local
-      Integer varIdx,varState, sccIdx;
-      List<Integer> tmpRequiredSccs;
+      Integer varIdx,varState, sccIdx, oldCount;
+      array<Integer> tmpRequiredSccs;
     case ((varIdx,varState),_,_)
       equation
         true = intEq(varState,1);
+        tmpRequiredSccs = iRequiredSccs;
         sccIdx = varSccMapping[varIdx];
-        //print("index of var "+&intString(varIdx)+&"mapped to the component "+&intString(sccIdx)+&"\n");
-      then sccIdx::iRequiredSccs;
+        oldCount = iRequiredSccs[sccIdx];
+        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,oldCount+1);
+        //print("index der var "+&intString(varIdx)+&"mapped to the component "+&intString(sccIdx)+&"\n");
+      then tmpRequiredSccs;
    else then iRequiredSccs;
   end matchcontinue;
 end fillSccList;
+
+
+protected function convertRefArrayToList
+  input Integer refCountValue;
+  input tuple<Integer,list<tuple<Integer,Integer>>> iList; //the current index and the current ref-list
+  output tuple<Integer,list<tuple<Integer,Integer>>> oList;
+
+protected
+  Integer curIdx;
+  tuple<Integer,Integer> tmpTuple;
+  list<tuple<Integer,Integer>> curList;
+
+algorithm
+  oList := match(refCountValue,iList)
+    case(0,(curIdx,curList)) 
+      then ((curIdx+1,curList));
+    case(_,(curIdx,curList))
+      equation
+        tmpTuple = (curIdx,refCountValue);
+        curList = tmpTuple::curList;
+      then ((curIdx+1,curList));
+   end match;
+end convertRefArrayToList;
 
 //TODO: Remove prints if not required
 protected function getUnsolvedVarsBySCC "function getUnsolvedVarsBySCC
@@ -916,37 +1098,6 @@ algorithm
 end updateMapping;
 
 
-protected function getAdjacencyListFromGraph" computes an adjacency list from a directed Graph
-author:Waurich TUD 2013-06"
-  input Graph graph;
-  output array<list<Integer>> adjacencyLst;
-  output list<Integer> rootLstOut;
-algorithm
-  (adjacencyLst,rootLstOut) := matchcontinue(graph)
-    local
-      list<StrongConnectedComponent> comps;
-      list<Variable> vars;
-      String name;
-      Integer size;
-      list<Integer> rootLst;
-    case(GRAPH(name=name,components=comps,variables=vars))
-      equation
-        size = listLength(comps);
-        adjacencyLst = arrayCreate(size,{});
-        ((adjacencyLst,rootLst)) = List.fold(comps,AdjacencyListFill,(adjacencyLst,{}));
-      then
-        (adjacencyLst,rootLst);
-    case(GRAPH(name=name,components=comps,variables=vars))
-      equation
-        true = List.isEmpty(comps);
-        print(name+&" is an empty graph\n");
-        adjacencyLst = arrayCreate(0,{});
-      then 
-        (adjacencyLst,{});
-  end matchcontinue;
-end getAdjacencyListFromGraph;  
-
-
 protected function AdjacencyListFill "fills the adjacencylist.
 author:Waurich TUD 2013-06"
   input StrongConnectedComponent comp; 
@@ -956,7 +1107,7 @@ algorithm
   outValue := matchcontinue(comp,inValue)
     local
       Integer Id;
-      list<Integer> depSCCs;      
+      list<tuple<Integer,Integer>> depSCCs;      
       list<Integer> row;
       list<Integer> roots1In;
       list<Integer> roots1Out;
@@ -981,13 +1132,15 @@ end AdjacencyListFill;
     
 protected function AdjacencyListEntry "helper function for AdjacencyListFill
 author:Waurich TUD 2013-06"
-  input Integer parent;
+  input tuple<Integer,Integer> iParent; //sccIdx and sccRefCount
   input Integer child;
   input array<list<Integer>> adjacencyLstIn;
   output array<list<Integer>> adjacencyLstOut;
 protected
   list<Integer> row;
+  Integer parent;
 algorithm
+      (parent,_) := iParent;
       //print("put the childnode "+& intString(child)+&"in the parent node "+&intString(parent)+&"\n");
       row := arrayGet(adjacencyLstIn,parent);
       row := child::row;
@@ -1149,13 +1302,15 @@ public function dumpAsGraphML_SccLevel "function dumpAsGraphML_SccLevel
 protected
   GraphML.Graph graph;
   List<StrongConnectedComponent> components;
+  Integer calcTimeIdx;
 
 algorithm
   _ := match(iGraph, fileName)
-    case(GRAPH(components = components), _)
+    case(GRAPH(components = components),_)
       equation 
         graph = GraphML.getGraph("TaskGraph", true);
-        graph = List.fold(components, addSccToGraphML, graph);
+        (calcTimeIdx,graph) = GraphML.addAttribute("0", "CalcTime", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
+        graph = List.fold1(components, addSccToGraphML, calcTimeIdx, graph);
         GraphML.dumpGraph(graph, fileName);
       then ();
   end match;
@@ -1166,6 +1321,7 @@ protected function addSccToGraphML "function addSccToGraphML
   author: marcusw
   Adds the given component to the given graph as a new node."
   input StrongConnectedComponent component;
+  input Integer calcTimeIdx; //index of the calcTime-attribute
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 
@@ -1173,15 +1329,19 @@ protected
   String compText;
   Integer compIdx;
   String nodeDesc;
-  List<Integer> dependencySCCs;
+  List<tuple<Integer,Integer>> dependencySCCs;
   String description;
 algorithm
-  oGraph := match(component,iGraph)
+  oGraph := match(component,calcTimeIdx,iGraph)
     local
       GraphML.Graph tmpGraph;
-    case(STRONGCONNECTEDCOMPONENT(text=compText,compIdx=compIdx, dependencySCCs=dependencySCCs, description=nodeDesc),_)
+      Integer calcTime;
+      String calcTimeString;
+    case(STRONGCONNECTEDCOMPONENT(text=compText,compIdx=compIdx, dependencySCCs=dependencySCCs, description=nodeDesc, calcTime=calcTime),_,_)
       equation
-        tmpGraph = GraphML.addNode("Component" +& intString(compIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), iGraph);
+//        calcTime = calcTimes[compIdx-1]; //because compIdx starts with 1
+        calcTimeString = intString(calcTime);
+        tmpGraph = GraphML.addNode("Component" +& intString(compIdx), compText, GraphML.COLOR_BLUE, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeIdx,calcTimeString))}, iGraph);
         tmpGraph = List.fold1(dependencySCCs, addSccDepToGraph, compIdx, tmpGraph);
       then tmpGraph;
    end match;
@@ -1191,13 +1351,18 @@ end addSccToGraphML;
 protected function addSccDepToGraph "function addSccDepToGraph
   author: marcusw
   Adds a new edge between the component-nodes with index comp1Idx and comp2Idx to the graph."
-  input Integer comp1Idx;
+  input tuple<Integer,Integer> comp1Idx;
   input Integer comp2Idx;
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
- 
+
+protected
+  Integer refSccIdx, refSccCount;
+  String refSccCountStr;
 algorithm
-  oGraph := GraphML.addEgde("Edge" +& intString(comp2Idx) +& intString(comp1Idx), "Component" +& intString(comp1Idx), "Component" +& intString(comp2Idx), GraphML.COLOR_GREEN, GraphML.LINE(), NONE(), (SOME(GraphML.ARROWSTANDART()),NONE()), iGraph);
+  (refSccIdx,refSccCount) := comp1Idx;
+  refSccCountStr := intString(refSccCount);
+  oGraph := GraphML.addEgde("Edge" +& intString(comp2Idx) +& intString(refSccIdx), "Component" +& intString(refSccIdx), "Component" +& intString(comp2Idx), GraphML.COLOR_BLACK, GraphML.LINE(), SOME(GraphML.EDGELABEL(refSccCountStr,GraphML.COLOR_BLACK)), (SOME(GraphML.ARROWSTANDART()),NONE()), iGraph);
 end addSccDepToGraph;
 
 end HpcOmTaskGraph;

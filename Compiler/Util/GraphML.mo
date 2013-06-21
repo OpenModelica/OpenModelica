@@ -88,6 +88,7 @@ public uniontype Node
     String color;
     ShapeType shapeType;
     Option<String> optDesc;
+    List<tuple<Integer,String>> attValues; //values of the custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
   end NODE;
 end Node;
 
@@ -110,12 +111,36 @@ public uniontype Edge
   end EDGE;
 end Edge;
 
+public uniontype Attribute
+  record ATTRIBUTE
+    Integer attIdx;
+    String defaultValue;
+    String name;
+    AttributeType attType;
+    AttributeTarget attTarget;
+  end ATTRIBUTE;
+end Attribute;
+
+public uniontype AttributeType
+  record TYPE_STRING end TYPE_STRING;
+  record TYPE_BOOLEAN end TYPE_BOOLEAN;
+  record TYPE_INTEGER end TYPE_INTEGER;
+  record TYPE_DOUBLE end TYPE_DOUBLE;
+end AttributeType;
+
+public uniontype AttributeTarget
+  record TARGET_NODE end TARGET_NODE;
+  record TARGET_EDGE end TARGET_EDGE;
+  record TARGET_GRAPH end TARGET_GRAPH;
+end AttributeTarget;
+
 public uniontype Graph
   record GRAPH
     String id;
     Boolean directed;
     list<Node> nodes;
     list<Edge> edges;
+    list<Attribute> attributes;
   end GRAPH;
 end Graph;
 
@@ -131,7 +156,7 @@ public function getGraph
   input Boolean directed;
   output Graph g;
 algorithm
-  g := GRAPH(id,directed,{},{});
+  g := GRAPH(id,directed,{},{},{});
 end getGraph;
 
 public function addNode
@@ -143,6 +168,7 @@ public function addNode
   input String color;
   input ShapeType shapeType;
   input Option<String> optDesc;
+  input List<tuple<Integer,String>> attValues;
   input Graph inG;
   output Graph outG;
 protected
@@ -150,9 +176,10 @@ protected
   Boolean d;
   list<Node> n;
   list<Edge> e;
+  list<Attribute> a;
 algorithm
-  GRAPH(gid,d,n,e) := inG;
-  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc)::n,e);
+  GRAPH(gid,d,n,e,a) := inG;
+  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc,attValues)::n,e,a);
 end addNode;
 
 public function addEgde
@@ -173,10 +200,35 @@ protected
   Boolean d;
   list<Node> n;
   list<Edge> e;
+  list<Attribute> a;
 algorithm
-  GRAPH(gid,d,n,e) := inG;
-  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows)::e);
+  GRAPH(gid,d,n,e,a) := inG;
+  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows)::e,a);
 end addEgde;
+
+public function addAttribute
+  input String defaultValue;
+  input String name;
+  input AttributeType attType;
+  input AttributeTarget attTarget;
+  input Graph inG;
+  output Integer oAttIdx;
+  output Graph outG;
+
+protected
+  String gid;
+  Boolean d;
+  list<Node> n;
+  list<Edge> e;
+  list<Attribute> a;
+  Integer attIdx;
+algorithm
+  GRAPH(gid,d,n,e,a) := inG;
+  attIdx := listLength(a)+1;
+  oAttIdx := attIdx;
+  outG := GRAPH(gid,d,n,e,ATTRIBUTE(attIdx,defaultValue,name,attType,attTarget)::a);
+
+end addAttribute;
 
 public function dumpGraph
 "function dumpGraph
@@ -269,12 +321,14 @@ algorithm
       Boolean directed;
       list<Node> nodes;
       list<Edge> edges;
+      list<Attribute> attributes;
       IOStream.IOStream is;
       
-     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges),_,is)
+     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges,attributes=attributes),_,is)
        equation
          sd = Util.if_(directed,"directed","undirected");
          t = appendString(inStringDelemiter);
+         ((_,is)) = List.fold(attributes, dumpAttributeDefinition, (15,is));
          is = IOStream.appendList(is, {inStringDelemiter, "<graph edgedefault=\"", sd, "\" id=\"", id, "\">\n"});
          is = List.fold1(nodes, dumpNode, t, is);
          is = List.fold1(edges, dumpEdge, t, is);
@@ -286,6 +340,58 @@ algorithm
    end match;
 end dumpGraph_Internal;
 
+protected function dumpAttributeDefinition
+  input Attribute inAttribute;
+  input tuple<Integer,IOStream.IOStream> iIos;
+  output tuple<Integer,IOStream.IOStream> oIos;  
+  
+algorithm
+  oIos := match(inAttribute,iIos)
+    local 
+      Integer attIdx;
+      String name, defaultValue, typeString, targetString, idxString;
+      AttributeType attType;
+      AttributeTarget attTarget;
+      IOStream.IOStream tmpStream;
+    case(ATTRIBUTE(name=name,defaultValue=defaultValue,attType=attType,attTarget=attTarget), (attIdx,tmpStream))
+      equation
+        typeString = dumpAttributeType(attType);
+        targetString = dumpAttributeTarget(attTarget);
+        idxString = intString(attIdx);
+        tmpStream = IOStream.appendList(tmpStream, {"<key attr.name=\"", name, "\" attr.type=\"", 
+        typeString, "\" for=\"", targetString, "\" id=\"d", idxString, "\">\n",
+        "<default>", defaultValue, "</default>\n", "</key>\n"});
+    then ((attIdx+1,tmpStream));
+  end match;
+end dumpAttributeDefinition;
+
+protected function dumpAttributeType
+  input AttributeType attType;
+  output String oString;
+  
+algorithm
+  oString := match(attType)
+    case(TYPE_STRING()) then "string";
+    case(TYPE_BOOLEAN()) then "boolean";
+    case(TYPE_INTEGER()) then "int";
+    case(TYPE_DOUBLE()) then "double";
+    else then fail();
+  end match;
+end dumpAttributeType;
+
+protected function dumpAttributeTarget
+  input AttributeTarget attTarget;
+  output String oString;
+  
+algorithm
+  oString := match(attTarget)
+    case(TARGET_EDGE()) then "edge";
+    case(TARGET_NODE()) then "node";
+    case(TARGET_GRAPH()) then "graph";
+    else then fail();
+  end match;
+end dumpAttributeTarget;
+
 protected function dumpNode
   input Node inNode;
   input String inString;
@@ -295,16 +401,20 @@ algorithm
   oAcc := match (inNode,inString,iAcc)
     local
       String id,t,text,st_str,color,s,desc;
+      List<String> attributeStrings;
+      List<tuple<Integer,String>> nodeAttributes;
       ShapeType st;
       IOStream.IOStream is;
      
-    case(NODE(id=id,text=text,color=color,shapeType=st), _, _)
+    case(NODE(id=id,text=text,color=color,shapeType=st,attValues=nodeAttributes), _, _)
       equation
         t = appendString(inString);
+        attributeStrings = List.map1(nodeAttributes, createAttributeString, 14);
         st_str = getShapeTypeString(st);
         desc = getNodeDesc(inNode);
-        is = IOStream.appendList(iAcc, {
-          inString, "<node id=\"", id, "\">\n",
+        is = IOStream.appendList(iAcc, {inString, "<node id=\"", id, "\">\n"});
+        is = IOStream.appendList(is, attributeStrings);
+        is = IOStream.appendList(is, {
           t, "<data key=\"d5\">", desc, "</data>\n",
           t, "<data key=\"d6\">\n",
           "        <y:ShapeNode>\n",
@@ -320,6 +430,21 @@ algorithm
         is;
   end match;
 end dumpNode;
+
+protected function createAttributeString
+  input tuple<Integer,String> iAttValue;
+  input Integer idOffset;
+  output String oString;
+  
+protected
+  Integer attIdx;
+  String attValue;
+  
+algorithm
+  (attIdx,attValue) := iAttValue;
+  attIdx := attIdx + idOffset;
+  oString := "<data key=\"d" +& intString(attIdx) +& "\">" +& attValue +& "</data>\n";
+end createAttributeString;
 
 protected function getNodeDesc
 "Returns the description of the node. The string is empty if no value was assigned."

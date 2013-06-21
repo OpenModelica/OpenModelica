@@ -110,6 +110,7 @@ protected import SCode;
 protected import SCodeUtil;
 protected import Settings;
 protected import SimulationResults;
+protected import TaskGraphResults;
 protected import Tpl;
 protected import CodegenFMU;
 protected import Types;
@@ -2363,6 +2364,20 @@ algorithm
     case (cache,env,"compareSimulationResults",_,st,_)
       then (cache,Values.STRING("Error in compareSimulationResults"),st);
 
+    case (cache,env,"compareTaskGraphResults",{Values.STRING(filename),Values.STRING(filename_1)},st,_)
+      equation
+        pwd = System.pwd();
+        pd = System.pathDelimiter();
+        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
+        strings = TaskGraphResults.cmpTaskGraphs(filename, filename_1);
+        cvars = List.map(strings,ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(cvars);
+      then (cache,v,st);
+    
+    case (cache,env,"compareTaskGraphResults",_,st,_)
+      then (cache,Values.STRING("Error in compareTaskGraphResults"),st);
+        
     case (cache,env,"getPlotSilent",{},st,_)
       equation
         b = Config.getPlotSilent();

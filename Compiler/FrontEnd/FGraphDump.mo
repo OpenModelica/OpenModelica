@@ -142,7 +142,7 @@ algorithm
     case (g, FNode.N(id, pid, n, kids, nd), _)
       equation
         (color, shape, nds) = graphml(node);
-        g = GraphML.addNode("n" +& FGraph.keyToStr(id), nds +& ": " +& n, color,shape,NONE(), g);
+        g = GraphML.addNode("n" +& FGraph.keyToStr(id), nds +& ": " +& n, color,shape,NONE(), {},g);
         g = GraphML.addEgde("e" +& FGraph.keyToStr(id), "n" +& FGraph.keyToStr(id), "n" +& FGraph.keyToStr(pid), GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),(NONE(),NONE()),g);
       then
         g;

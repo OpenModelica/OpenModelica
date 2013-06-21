@@ -7436,12 +7436,12 @@ algorithm
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),g);
         desc = ComponentReference.printComponentRefStr(cr);
-        g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),SOME(desc),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),SOME(desc),{},g);
       then ((v,(true,id+1,g)));
     case ((v as BackendDAE.VAR(varName=cr),(false,id,g)))
       equation
         true = BackendVariable.isStateVar(v);
-        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),NONE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +& ComponentReference.printComponentRefStr(cr),GraphML.COLOR_BLUE,GraphML.ELLIPSE(),NONE(),{},g);
       then ((v,(false,id+1,g)));
     case ((v as BackendDAE.VAR(varName=cr),(true,id,g)))
       equation
@@ -7450,13 +7450,13 @@ algorithm
         desc = ComponentReference.printComponentRefStr(cr);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
-        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),SOME(desc),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),SOME(desc),{},g);
       then ((v,(true,id+1,g)));
     case ((v as BackendDAE.VAR(varName=cr),(false,id,g)))
       equation
         b = BackendVariable.isVarDiscrete(v);
         color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
-        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +&ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),NONE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +&ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),NONE(),{},g);
       then ((v,(false,id+1,g)));
     case _ then inTpl;
   end matchcontinue;
@@ -7482,27 +7482,27 @@ algorithm
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
-        g = GraphML.addNode("v" +& intString(id),intString(id) +& ":" +& ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),NONE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ":" +& ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),NONE(),{},g);
       then ((v,(false,id+1,vec1,g)));
     case ((v as BackendDAE.VAR(varName=cr),(true,id,vec1,g)))
       equation
         true = BackendVariable.isStateVar(v);
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_BLUE,GraphML.COLOR_YELLOW);
         desc = ComponentReference.printComponentRefStr(cr);
-        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),SOME(desc),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),SOME(desc),{},g);
       then ((v,(true,id+1,vec1,g)));
     case ((v as BackendDAE.VAR(varName=cr),(false,id,vec1,g)))
       equation
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
-        g = GraphML.addNode("v" +& intString(id),intString(id) +& ":" +& ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),NONE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ":" +& ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),NONE(),{},g);
       then ((v,(false,id+1,vec1,g)));
     case ((v as BackendDAE.VAR(varName=cr),(true,id,vec1,g)))
       equation
         color = Util.if_(intGt(vec1[id],0),GraphML.COLOR_RED,GraphML.COLOR_YELLOW);
         desc = ComponentReference.printComponentRefStr(cr);
-        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),SOME(desc),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),SOME(desc),{},g);
       then ((v,(true,id+1,vec1,g)));
     case _ then inTpl;
   end matchcontinue;
@@ -7527,7 +7527,7 @@ algorithm
         //str := intString(inNode);
         str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
         str = Util.xmlEscape(str);
-      then GraphML.addNode("n" +& intString(inNode),str,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),NONE(),inGraph);
+      then GraphML.addNode("n" +& intString(inNode),str,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),NONE(),{},inGraph);
     case(_,_,_,true,_)
       equation
         eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
@@ -7535,7 +7535,7 @@ algorithm
         //str := intString(inNode);
         //str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
         str = Util.xmlEscape(str);
-      then GraphML.addNode("n" +& intString(inNode),intString(inNode),GraphML.COLOR_GREEN,GraphML.RECTANGLE(),SOME(str),inGraph);
+      then GraphML.addNode("n" +& intString(inNode),intString(inNode),GraphML.COLOR_GREEN,GraphML.RECTANGLE(),SOME(str),{},inGraph);
   end match;
 end addEqnGraph;
 
@@ -7584,7 +7584,7 @@ algorithm
        str = Util.xmlEscape(str);
        color = Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
      then
-        GraphML.addNode("n" +& intString(e),str,color,GraphML.RECTANGLE(),NONE(),inGraph);
+        GraphML.addNode("n" +& intString(e),str,color,GraphML.RECTANGLE(),NONE(),{},inGraph);
     case(_,_,(vec2,mapIncRowEqn,eqnsflag),true,_)
       equation
         e = mapIncRowEqn[inNode];
@@ -7596,7 +7596,7 @@ algorithm
        str = Util.xmlEscape(str);
        color = Util.if_(intGt(vec2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_PURPLE);
      then
-        GraphML.addNode("n" +& intString(e),intString(e),color,GraphML.RECTANGLE(),SOME(str),inGraph);
+        GraphML.addNode("n" +& intString(e),intString(e),color,GraphML.RECTANGLE(),SOME(str),{},inGraph);
     case(_,_,(vec2,mapIncRowEqn,eqnsflag),_,_)
       equation
         e = mapIncRowEqn[inNode];
@@ -7770,7 +7770,7 @@ protected
   String color;
 algorithm
   color := Util.if_(intGt(ass2[inNode],0),GraphML.COLOR_GREEN,GraphML.COLOR_BLUE);
-  outGraph := GraphML.addNode("n" +& intString(inNode),intString(inNode),color,GraphML.RECTANGLE(),NONE(),inGraph);
+  outGraph := GraphML.addNode("n" +& intString(inNode),intString(inNode),color,GraphML.RECTANGLE(),NONE(),{},inGraph);
 end addEqnNodes;
 
 protected function addVarNodes
@@ -7789,7 +7789,7 @@ algorithm
   var := BackendVariable.getVarAt(vars,inNode);
   cr := BackendVariable.varCref(var);
   c := Util.if_(intGt(ass1[inNode],0),color1,color);
-  outGraph := GraphML.addNode(prefix +& intString(inNode),ComponentReference.printComponentRefStr(cr),c,GraphML.ELLIPSE(),NONE(),inGraph);
+  outGraph := GraphML.addNode(prefix +& intString(inNode),ComponentReference.printComponentRefStr(cr),c,GraphML.ELLIPSE(),NONE(),{},inGraph);
 end addVarNodes;
 
 protected function statesandVarsInEqns
@@ -7922,7 +7922,7 @@ algorithm
         varcomp1 = List.fold1r(vlst,arrayUpdate,iN,varcomp);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
         text = intString(iN) +& ":" +& stringDelimitList(List.map(List.map(varlst,BackendVariable.varCref),ComponentReference.printComponentRefStr),"\n");
-        graph = GraphML.addNode("n" +& intString(iN),text,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),NONE(),iGraph);
+        graph = GraphML.addNode("n" +& intString(iN),text,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),NONE(),{},iGraph);
       then
         addCompsGraph(rest,vars,varcomp1,iN+1,graph);
   end match;

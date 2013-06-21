@@ -5784,7 +5784,7 @@ algorithm
   end matchcontinue;
 end countOperations1;
 
-protected function countOperationstraverseComps "function countOperationstraverseComps
+public function countOperationstraverseComps "function countOperationstraverseComps
   author: Frenkel TUD 2012-05"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EqSystem isyst;

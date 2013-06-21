@@ -2265,6 +2265,14 @@ external "builtin";
 annotation(preferredView="text");
 end compareSimulationResults;
 
+public function compareTaskGraphResults "compares two task graphs."
+  input String filename;
+  input String reffilename;
+  output String[:] result;
+external "builtin";
+annotation(preferredView="text");
+end compareTaskGraphResults;
+
 function val "Return the value of a variable at a given time in the simulation results"
   input VariableName var;
   input Real time;
