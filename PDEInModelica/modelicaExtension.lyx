@@ -28,7 +28,7 @@
 \spacing single
 \use_hyperref false
 \papersize default
-\use_geometry false
+\use_geometry true
 \use_amsmath 1
 \use_esint 1
 \use_mhchem 0
@@ -43,6 +43,8 @@
 \shortcut idx
 \color #008000
 \end_index
+\leftmargin 2cm
+\rightmargin 2cm
 \secnumdepth 3
 \tocdepth 3
 \paragraph_separation indent
@@ -121,7 +123,33 @@ Names of independent (coordinate) variables (
 \begin_inset Formula $\theta$
 \end_inset
 
-...)
+...) 
+\end_layout
+
+\begin_layout Standard
+Perhaps all these should be specified within the domain deffinition.
+ 
+\begin_inset Newline newline
+\end_inset
+
+Dimension can be infered from number of return values of shape-function
+ or different properities of the domain in other cases.
+\begin_inset Newline newline
+\end_inset
+
+The base coordinates would be cartesian and they would be always implicitly
+ defined in any domain.
+ Besides that other coordinate systems could be defined also.
+ 
+\begin_inset Newline newline
+\end_inset
+
+Names of independent variables in cartesian coordinates should be fixed
+ 
+\emph on
+x, (x,y), (x,y,z) 
+\emph default
+in 1D, 2D and 3D domains respectively.
 \end_layout
 
 \begin_layout Section*
@@ -446,7 +474,7 @@ record DomainCircular2D "Domain being a circular region"
 
 \begin_layout Plain Layout
 
-end DomainCircular2DGrid; 
+end DomainCircular2D; 
 \end_layout
 
 \begin_layout Plain Layout
@@ -535,8 +563,8 @@ Domain3d
 \begin_layout Standard
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "/home/janek/Dokumenty/PDEInModelica/languageExtension/boundaryRepresentation.mo"
-lstparams "breaklines=true,caption={Description by boundary -- example},captionpos=b,frame=tb"
+filename "boundaryRepresentation.mo"
+lstparams "breaklines=true,captionpos=b"
 
 \end_inset
 
@@ -580,7 +608,7 @@ status open
 \begin_layout Plain Layout
 \align center
 \begin_inset Graphics
-	filename /home/janek/Dokumenty/PDEInModelica/languageExtension/img/Csg_tree.png
+	filename Csg_tree.png
 	lyxscale 30
 	width 40text%
 
@@ -604,6 +632,10 @@ constructive solid geometry
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+How to describe boundaries?
 \end_layout
 
 \begin_layout Description
@@ -656,11 +688,19 @@ Partial derivative
 directional derivative ...
  
 \family typewriter
-pder(u,n)
+pder(u,omega.boundary.n)
 \end_layout
 
 \begin_layout Section*
 Equations & boundary conditions
+\end_layout
+
+\begin_layout Standard
+Use the 
+\emph on
+in
+\emph default
+ operator to express where equations hold.
 \end_layout
 
 \end_body
