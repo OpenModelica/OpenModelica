@@ -4,8 +4,8 @@
  */
 int HpcOmBenchmarkExtImpl__requiredTimeForMult()
 {
-	//void *ret = mk_cons(mk_icon(0.5),mk_nil());
-	return 1;
+  //void *ret = mk_cons(mk_icon(0.5),mk_nil());
+  return 1;
 }
 
 /**
@@ -13,11 +13,11 @@ int HpcOmBenchmarkExtImpl__requiredTimeForMult()
  */
 int HpcOmBenchmarkExtImpl__requiredTimeForAdd()
 {
-	//void *ret = mk_cons(mk_icon(0.5),mk_nil());
-	return 1;
+  //void *ret = mk_cons(mk_icon(0.5),mk_nil());
+  return 1;
 }
 
 int HpcOmBenchmarkExtImpl__requiredTimeForCom()
 {
-	return 50;
+  return 50;
 }
