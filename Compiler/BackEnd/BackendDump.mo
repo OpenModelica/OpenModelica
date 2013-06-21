@@ -2672,7 +2672,7 @@ algorithm
     case(SOME(DAE.AVOID())) then  "stateSelect=StateSelect.avoid ";
     case(SOME(DAE.DEFAULT())) then "";
     case(SOME(DAE.PREFER())) then  "stateSelect=StateSelect.prefer ";
-    case(SOME(DAE.ALWAYS())) then  "stateSelect=StateSelect.alwas ";
+    case(SOME(DAE.ALWAYS())) then  "stateSelect=StateSelect.always ";
     else "";
   end match;
 end optStateSelectionString;
