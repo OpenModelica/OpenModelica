@@ -619,6 +619,17 @@ algorithm
       then
         (cache,e_1,prop,st_2);
 
+    // adrpo: deal with EnumToInteger(E) -> transform to Integer(E)
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
+      equation
+        s = Absyn.pathLastIdent(Absyn.crefToPathIgnoreSubs(fn));
+        true = stringEq(s, "EnumToInteger");        
+        (cache,e_1,prop,st_1) = elabCall(cache, env, Absyn.CREF_IDENT("Integer", {}), args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
+        c = Types.propAllConst(prop);
+        (e_1,_) = ExpressionSimplify.simplify1(e_1);
+      then
+        (cache,e_1,prop,st_1);
+
     // adrpo: deal with DynamicSelect(literalExp, dynamicExp) by returning literalExp only!
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("DynamicSelect",_),functionArgs = Absyn.FUNCTIONARGS(args = (e1 :: _),argNames = _)),impl,st,doVect,pre,_,_)
       equation
@@ -4770,11 +4781,6 @@ algorithm
     case (cache,env,{s1},_,impl,pre,_)
       equation
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"Integer",pre,info);
-      then
-        (cache,s1_1,prop);
-    case (cache,env,{s1},_,impl,pre,_)
-      equation
-        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"EnumToInteger",pre,info);
       then
         (cache,s1_1,prop);
   end matchcontinue;
