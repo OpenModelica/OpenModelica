@@ -194,8 +194,7 @@ algorithm
   end matchcontinue;
 end varFixed;
 
-public function setVarStartValue
-"function: setVarStartValue
+public function setVarStartValue "function setVarStartValue
   author: Frenkel TUD
   Sets the start value attribute of a variable."
   input BackendDAE.Var inVar;
@@ -314,8 +313,7 @@ algorithm
   end match;
 end setVarStartValueOption;
 
-public function setVarStartOrigin
-"function: setVarStartOrigin
+public function setVarStartOrigin "function setVarStartOrigin
   author: Frenkel TUD
   Sets the startOrigin attribute of a variable."
   input BackendDAE.Var inVar;
@@ -374,10 +372,9 @@ algorithm
   end match;
 end setVarStartOrigin;
 
-public function setVarAttributes
-"sets the variable attributes of a variable.
-author: Peter Aronsson (paronsson@wolfram.com)
-"
+public function setVarAttributes "function setVarAttributes
+  sets the variable attributes of a variable.
+  author: Peter Aronsson (paronsson@wolfram.com)"
   input BackendDAE.Var v;
   input Option<DAE.VariableAttributes> attr;
   output BackendDAE.Var outV;
@@ -542,8 +539,7 @@ algorithm
   end matchcontinue;
 end varStateSelect;
 
-public function setVarStateSelect
-"function setVarStateSelect
+public function setVarStateSelect "function setVarStateSelect
   author: Frenkel TUD
   sets the state select attribute of a variable."
   input BackendDAE.Var inVar;
@@ -627,8 +623,7 @@ algorithm
 end match;
 end varHasStateDerivative;
 
-public function setStateDerivative
-"function setStateDerivative
+public function setStateDerivative "function setStateDerivative
   author: Frenkel TUD
   sets the state derivative."
   input BackendDAE.Var inVar;
@@ -686,8 +681,7 @@ algorithm
   end match;
 end getVariableAttributefromType;
 
-public function setVarFinal
-"function: setVarFinal
+public function setVarFinal "function setVarFinal
   author: Frenkel TUD
   Sets the final attribute of a variable."
   input BackendDAE.Var inVar;
@@ -745,8 +739,7 @@ algorithm
   end match;
 end setVarFinal;
 
-public function setVarMinMax
-"function: setVarMinMax
+public function setVarMinMax "function setVarMinMax
   author: Frenkel TUD
   Sets the minmax attribute of a variable."
   input BackendDAE.Var inVar;
@@ -817,8 +810,7 @@ algorithm
   end match;
 end varNominalValue;
 
-public function setVarNominalValue
-"function: setVarNominalValue
+public function setVarNominalValue "function setVarNominalValue
   author: Frenkel TUD
   Sets the nominal value attribute of a variable."
   input BackendDAE.Var inVar;
@@ -891,11 +883,9 @@ algorithm
   end match;
 end varType;
 
-public function varKind "function: varKind
+public function varKind "function varKind
   author: PA
-
-  extracts the kind of a variable.
-"
+  extracts the kind of a variable."
   input BackendDAE.Var inVar;
   output BackendDAE.VarKind outVarKind;
 algorithm
@@ -1693,42 +1683,37 @@ algorithm
                             NONE(),DAE.NON_CONNECTOR());
 end createDummyVar;
 
-public function copyVarNewName
-"function copyVarNewName
+public function copyVarNewName "function copyVarNewName
   author: Frenkel TUD 2012-5
   Create variable with new name as cref from other var."
   input DAE.ComponentRef cr;
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
+protected
+  BackendDAE.VarKind kind;
+  DAE.VarDirection dir;
+  DAE.VarParallelism prl;
+  BackendDAE.Type tp;
+  Option<DAE.Exp> bind;
+  Option<Values.Value> v;
+  list<DAE.Subscript> dim;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> attr;
+  Option<SCode.Comment> comment;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (cr,inVar)
-    local
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<DAE.Exp> bind;
-      Option<Values.Value> v;
-      list<DAE.Subscript> dim;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-
-    case (_,BackendDAE.VAR(varKind = kind,
-              varDirection = dir,
-              varParallelism = prl,
-              varType = tp,
-              bindExp = bind,
-              bindValue = v,
-              arryDim = dim,
-              source = source,
-              values = attr,
-              comment = comment,
-              connectorType = ct))
-    then
-      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct);
-  end match;
+  BackendDAE.VAR(varKind = kind,
+                 varDirection = dir,
+                 varParallelism = prl,
+                 varType = tp,
+                 bindExp = bind,
+                 bindValue = v,
+                 arryDim = dim,
+                 source = source,
+                 values = attr,
+                 comment = comment,
+                 connectorType = ct) := inVar;
+  outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, comment, ct);
 end copyVarNewName;
 
 public function setVarsKind "function: setVarsKind
@@ -1747,44 +1732,100 @@ public function setVarKind "function setVarKind
   input BackendDAE.Var inVar;
   input BackendDAE.VarKind inVarKind;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef cr;
+  DAE.VarDirection dir;
+  DAE.VarParallelism prl;
+  BackendDAE.Type tp;
+  Option<DAE.Exp> bind;
+  Option<Values.Value> v;
+  list<DAE.Subscript> dim;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> attr;
+  Option<SCode.Comment> comment;
+  DAE.ConnectorType ct;
+  BackendDAE.Var oVar;
 algorithm
-  outVar := match (inVar,inVarKind)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.VarKind kind,new_kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<DAE.Exp> bind;
-      Option<Values.Value> v;
-      list<DAE.Subscript> dim;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-      BackendDAE.Var oVar;
-
-    case (BackendDAE.VAR(varName = cr,
-              varKind = kind,
-              varDirection = dir,
-              varParallelism = prl,
-              varType = tp,
-              bindExp = bind,
-              bindValue = v,
-              arryDim = dim,
-              source = source,
-              values = attr,
-              comment = comment,
-              connectorType = ct),new_kind)
-    equation
-      oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 2, new_kind);
-    then
-      oVar;
-  end match;
+  BackendDAE.VAR(varName = cr,
+                 varDirection = dir,
+                 varParallelism = prl,
+                 varType = tp,
+                 bindExp = bind,
+                 bindValue = v,
+                 arryDim = dim,
+                 source = source,
+                 values = attr,
+                 comment = comment,
+                 connectorType = ct) := inVar;
+  outVar := BackendDAE.VAR(cr, inVarKind, dir, prl, tp, bind, v, dim, source, attr, comment, ct);
+  // referenceUpdate(inVar, 2, new_kind);
 end setVarKind;
 
-public function setBindExp
-"function setBindExp
+public function removeBindExp "function removeBindExp
+  author: lochel"
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.VarKind varKind;
+  DAE.VarDirection dir;
+  DAE.VarParallelism prl;
+  BackendDAE.Type tp;
+  Option<Values.Value> v;
+  list<DAE.Subscript> dim;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> attr;
+  Option<SCode.Comment> comment;
+  DAE.ConnectorType ct;
+  BackendDAE.Var oVar;
+algorithm
+  BackendDAE.VAR(varName = cr,
+                 varKind = varKind,
+                 varDirection = dir,
+                 varParallelism = prl,
+                 varType = tp,
+                 bindValue = v,
+                 arryDim = dim,
+                 source = source,
+                 values = attr,
+                 comment = comment,
+                 connectorType = ct) := inVar;
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, NONE(), v, dim, source, attr, comment, ct);
+end removeBindExp;
+
+public function removeBindValue "function removeBindValue
+  author: lochel"
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.VarKind varKind;
+  DAE.VarDirection dir;
+  DAE.VarParallelism prl;
+  BackendDAE.Type tp;
+  Option<DAE.Exp> bindExp;
+  list<DAE.Subscript> dim;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> attr;
+  Option<SCode.Comment> comment;
+  DAE.ConnectorType ct;
+  BackendDAE.Var oVar;
+algorithm
+  BackendDAE.VAR(varName = cr,
+                 varKind = varKind,
+                 varDirection = dir,
+                 varParallelism = prl,
+                 varType = tp,
+                 bindExp = bindExp,
+                 arryDim = dim,
+                 source = source,
+                 values = attr,
+                 comment = comment,
+                 connectorType = ct) := inVar;
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, NONE(), dim, source, attr, comment, ct);
+end removeBindValue;
+
+public function setBindExp "function setBindExp
   author: Frenkel TUD 2010-12
   Sets the BackendDAE.Var.bindExp of a variable"
   input BackendDAE.Var inVar;
@@ -2710,9 +2751,7 @@ algorithm
   end matchcontinue;
 end isVariable;
 
-public function isVarKindVariable
-"function: isVarKindVariable
-
+public function isVarKindVariable "function isVarKindVariable
   This function takes a DAE.ComponentRef and two Variables. It searches
   the two sets of variables and succeed if the variable is STATE or
   VARIABLE. Otherwise it fails.
@@ -2734,8 +2773,7 @@ algorithm
   end match;
 end isVarKindVariable;
 
-public function isTopLevelInputOrOutput
-"function isTopLevelInputOrOutput
+public function isTopLevelInputOrOutput "function isTopLevelInputOrOutput
   author: LP
 
   This function checks if the provided cr is from a var that is on top model
@@ -4345,8 +4383,8 @@ algorithm
   end matchcontinue;
 end mergeStartFixed;
 
-protected function startValueType
-"author: Frenkel TUD 2012-10
+protected function startValueType "function startValueType
+  author: Frenkel TUD 2012-10
   return the start value or the default value in case of NONE()"
   input Option<DAE.Exp> iExp;
   input DAE.Type iTy;

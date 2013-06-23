@@ -1295,37 +1295,37 @@ algorithm
       eqns = addStartValueEquations(initVarList, inEqns);
     then (true, eqns);
 
-    // fix all free variables
-    case(_, _, _, _, _) equation
-      nInitVars = BackendVariable.varsSize(inInitVars);
-      nVars = BackendVariable.varsSize(inVars);
-      nEqns = BackendDAEUtil.equationSize(inEqns);
-      true = intEq(nVars, nEqns+nInitVars);
-
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
-      initVarList = BackendVariable.varList(inInitVars);
-      eqns = addStartValueEquations(initVarList, inEqns);
-    then (true, eqns);
-
-    // fix a subset of unfixed variables
-    case(_, _, _, _, _) equation
-      nVars = BackendVariable.varsSize(inVars);
-      nEqns = BackendDAEUtil.equationSize(inEqns);
-      true = intLt(nEqns, nVars);
-
-      initVarList = BackendVariable.varList(inInitVars);
-      (dae, outputs) = BackendDAEOptimize.generateInitialMatricesDAE(inDAE);
-      (sparsityPattern, _) = BackendDAEOptimize.generateSparsePattern(dae, initVarList, outputs);
-
-      (dep, _) = sparsityPattern;
-      selectedVars = collectIndependentVars(dep, {});
-
-      Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpSparsityPattern, sparsityPattern, "Sparsity Pattern");
-      true = intEq(nVars-nEqns, listLength(selectedVars));  // fix only if it is definite
-
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
-      eqns = addStartValueEquations1(selectedVars, inEqns);
-    then (true, eqns);
+//  // fix all free variables
+//  case(_, _, _, _, _) equation
+//    nInitVars = BackendVariable.varsSize(inInitVars);
+//    nVars = BackendVariable.varsSize(inVars);
+//    nEqns = BackendDAEUtil.equationSize(inEqns);
+//    true = intEq(nVars, nEqns+nInitVars);
+//
+//    Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
+//    initVarList = BackendVariable.varList(inInitVars);
+//    eqns = addStartValueEquations(initVarList, inEqns);
+//  then (true, eqns);
+//
+//  // fix a subset of unfixed variables
+//  case(_, _, _, _, _) equation
+//    nVars = BackendVariable.varsSize(inVars);
+//    nEqns = BackendDAEUtil.equationSize(inEqns);
+//    true = intLt(nEqns, nVars);
+//
+//    initVarList = BackendVariable.varList(inInitVars);
+//    (dae, outputs) = BackendDAEOptimize.generateInitialMatricesDAE(inDAE);
+//    (sparsityPattern, _) = BackendDAEOptimize.generateSparsePattern(dae, initVarList, outputs);
+//
+//    (dep, _) = sparsityPattern;
+//    selectedVars = collectIndependentVars(dep, {});
+//
+//    Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpSparsityPattern, sparsityPattern, "Sparsity Pattern");
+//    true = intEq(nVars-nEqns, listLength(selectedVars));  // fix only if it is definite
+//
+//    Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
+//    eqns = addStartValueEquations1(selectedVars, inEqns);
+//  then (true, eqns);
 
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"It is not possible to determine unique which additional initial conditions should be added by auto-fixed variables."});
@@ -1576,39 +1576,39 @@ algorithm
   end match;
 end reasign;
 
-protected function collectIndependentVars "function collectIndependentVars
-  author: lochel"
-  input list<tuple< DAE.ComponentRef, list< DAE.ComponentRef>>> inPattern;
-  input list< DAE.ComponentRef> inVars;
-  output list< DAE.ComponentRef> outVars;
-algorithm
-  outVars := matchcontinue(inPattern, inVars)
-    local
-      tuple< DAE.ComponentRef, list< DAE.ComponentRef>> curr;
-      list<tuple< DAE.ComponentRef, list< DAE.ComponentRef>>> rest;
-      DAE.ComponentRef cr;
-      list< DAE.ComponentRef> crList, vars;
-
-    case ({}, _)
-    then inVars;
-
-    case (curr::rest, _) equation
-      (cr, crList) = curr;
-      true = List.isEmpty(crList);
-
-      vars = collectIndependentVars(rest, inVars);
-      vars = cr::vars;
-    then vars;
-
-    case (curr::rest, _) equation
-      vars = collectIndependentVars(rest, inVars);
-    then vars;
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectIndependentVars failed"});
-    then fail();
-  end matchcontinue;
-end collectIndependentVars;
+//protected function collectIndependentVars "function collectIndependentVars
+//  author: lochel"
+//  input list<tuple< DAE.ComponentRef, list< DAE.ComponentRef>>> inPattern;
+//  input list< DAE.ComponentRef> inVars;
+//  output list< DAE.ComponentRef> outVars;
+//algorithm
+//  outVars := matchcontinue(inPattern, inVars)
+//    local
+//      tuple< DAE.ComponentRef, list< DAE.ComponentRef>> curr;
+//      list<tuple< DAE.ComponentRef, list< DAE.ComponentRef>>> rest;
+//      DAE.ComponentRef cr;
+//      list< DAE.ComponentRef> crList, vars;
+//
+//    case ({}, _)
+//    then inVars;
+//
+//    case (curr::rest, _) equation
+//      (cr, crList) = curr;
+//      true = List.isEmpty(crList);
+//
+//      vars = collectIndependentVars(rest, inVars);
+//      vars = cr::vars;
+//    then vars;
+//
+//    case (curr::rest, _) equation
+//      vars = collectIndependentVars(rest, inVars);
+//    then vars;
+//
+//    else equation
+//      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectIndependentVars failed"});
+//    then fail();
+//  end matchcontinue;
+//end collectIndependentVars;
 
 protected function addStartValueEquations "function addStartValueEquations
   author: lochel"
@@ -1619,7 +1619,7 @@ algorithm
   outEqns := matchcontinue(inVarLst, inEqns)
     local
       BackendDAE.Variables vars;
-      BackendDAE.Var var, preVar;
+      BackendDAE.Var var, preVar, dumpVar;
       list<BackendDAE.Var> varlst;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
@@ -1645,9 +1645,10 @@ algorithm
 
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
 
-      crStr = ComponentReference.crefStr(cref);
-      // crStr = BackendDump.varString(var);
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [discrete] " +& crStr);
+      // crStr = ComponentReference.crefStr(cref);
+      dumpVar = BackendVariable.copyVarNewName(cref, var);
+      crStr = BackendDump.varString(dumpVar);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, inEqns);
     then addStartValueEquations(varlst, eqns);
@@ -1664,9 +1665,9 @@ algorithm
 
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
 
-      crStr = ComponentReference.crefStr(cref);
-      // crStr = BackendDump.varString(var);
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [continuous] " +& crStr);
+      // crStr = ComponentReference.crefStr(cref);
+      crStr = BackendDump.varString(var);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
 
       eqns = BackendEquation.equationAdd(eqn, inEqns);
     then addStartValueEquations(varlst, eqns);
@@ -1677,65 +1678,65 @@ algorithm
   end matchcontinue;
 end addStartValueEquations;
 
-protected function addStartValueEquations1 "function addStartValueEquations1
-  author: lochel
-  Same as addStartValueEquations - just with list<DAE.ComponentRef> instead of list<BackendDAE.Var>"
-  input list<DAE.ComponentRef> inVars;
-  input BackendDAE.EquationArray inEqns;
-  output BackendDAE.EquationArray outEqns;
-algorithm
-  outEqns := matchcontinue(inVars, inEqns)
-    local
-      DAE.ComponentRef var, cref;
-      list<DAE.ComponentRef> vars;
-      BackendDAE.Equation eqn;
-      BackendDAE.EquationArray eqns;
-      DAE.Exp e,  crefExp, startExp;
-      DAE.Type tp;
-      String crStr;
-
-    case ({}, _)
-    then inEqns;
-
-    case (var::vars, eqns) equation
-      true = ComponentReference.isPreCref(var);
-      cref = ComponentReference.popPreCref(var);
-      crefExp = DAE.CREF(var, DAE.T_REAL_DEFAULT);
-
-      e = Expression.crefExp(cref);
-      tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
-
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
-
-      crStr = ComponentReference.crefStr(cref);
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [discrete] " +& crStr);
-
-      eqns = BackendEquation.equationAdd(eqn, eqns);
-      eqns = addStartValueEquations1(vars, eqns);
-    then eqns;
-
-    case (var::vars, eqns) equation
-      crefExp = DAE.CREF(var, DAE.T_REAL_DEFAULT);
-
-      e = Expression.crefExp(var);
-      tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
-
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
-
-      crStr = ComponentReference.crefStr(var);
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [continuous] " +& crStr);
-
-      eqns = BackendEquation.equationAdd(eqn, eqns);
-      eqns = addStartValueEquations1(vars, eqns);
-    then eqns;
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function addStartValueEquations1 failed"});
-    then fail();
-  end matchcontinue;
-end addStartValueEquations1;
+//protected function addStartValueEquations1 "function addStartValueEquations1
+//  author: lochel
+//  Same as addStartValueEquations - just with list<DAE.ComponentRef> instead of list<BackendDAE.Var>"
+//  input list<DAE.ComponentRef> inVars;
+//  input BackendDAE.EquationArray inEqns;
+//  output BackendDAE.EquationArray outEqns;
+//algorithm
+//  outEqns := matchcontinue(inVars, inEqns)
+//    local
+//      DAE.ComponentRef var, cref;
+//      list<DAE.ComponentRef> vars;
+//      BackendDAE.Equation eqn;
+//      BackendDAE.EquationArray eqns;
+//      DAE.Exp e,  crefExp, startExp;
+//      DAE.Type tp;
+//      String crStr;
+//
+//    case ({}, _)
+//    then inEqns;
+//
+//    case (var::vars, eqns) equation
+//      true = ComponentReference.isPreCref(var);
+//      cref = ComponentReference.popPreCref(var);
+//      crefExp = DAE.CREF(var, DAE.T_REAL_DEFAULT);
+//
+//      e = Expression.crefExp(cref);
+//      tp = Expression.typeof(e);
+//      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+//
+//      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
+//
+//      crStr = ComponentReference.crefStr(cref);
+//      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [discrete] " +& crStr);
+//
+//      eqns = BackendEquation.equationAdd(eqn, eqns);
+//      eqns = addStartValueEquations1(vars, eqns);
+//    then eqns;
+//
+//    case (var::vars, eqns) equation
+//      crefExp = DAE.CREF(var, DAE.T_REAL_DEFAULT);
+//
+//      e = Expression.crefExp(var);
+//      tp = Expression.typeof(e);
+//      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+//
+//      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
+//
+//      crStr = ComponentReference.crefStr(var);
+//      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  [continuous] " +& crStr);
+//
+//      eqns = BackendEquation.equationAdd(eqn, eqns);
+//      eqns = addStartValueEquations1(vars, eqns);
+//    then eqns;
+//
+//    else equation
+//      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function addStartValueEquations1 failed"});
+//    then fail();
+//  end matchcontinue;
+//end addStartValueEquations1;
 
 protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
   author: lochel
@@ -1833,11 +1834,23 @@ algorithm
 
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
 
+      // derCR = ComponentReference.crefPrefixDer(cr);  // cr => $DER.cr
+      // derVar = BackendDAE.VAR(derCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       derCR = ComponentReference.crefPrefixDer(cr);  // cr => $DER.cr
-      derVar = BackendDAE.VAR(derCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-
+      derVar = BackendVariable.copyVarNewName(derCR, var);
+      derVar = BackendVariable.setVarDirection(derVar, DAE.BIDIR());
+      derVar = BackendVariable.removeBindExp(derVar);
+      derVar = BackendVariable.removeBindValue(derVar);
+      
+      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      // preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      // preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      // preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.copyVarNewName(preCR, var);
+      preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+      preVar = BackendVariable.removeBindExp(preVar);
+      preVar = BackendVariable.removeBindValue(preVar);
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -1856,8 +1869,16 @@ algorithm
 
       var = BackendVariable.setVarFixed(var, false);
 
+      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      // preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      // preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      // preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.copyVarNewName(preCR, var);
+      // preVar = BackendVariable.setVarKind(preVar, BackendDAE.VARIABLE());
+      preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+      preVar = BackendVariable.removeBindExp(preVar);
+      preVar = BackendVariable.removeBindValue(preVar);
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -1900,8 +1921,16 @@ algorithm
       b = isFixed or isInput;
 
       startValue = BackendVariable.varStartValueOption(var);
+      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      // preVar = BackendDAE.VAR(preCR, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      // preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      // preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.copyVarNewName(preCR, var);
+      // preVar = BackendVariable.setVarKind(preVar, BackendDAE.VARIABLE());
+      preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+      preVar = BackendVariable.removeBindExp(preVar);
+      preVar = BackendVariable.removeBindValue(preVar);
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -1918,8 +1947,16 @@ algorithm
       b = isInput or isFixed;
 
       startValue = BackendVariable.varStartValueOption(var);
+      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      // preVar = BackendDAE.VAR(preCR, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      // preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      // preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.copyVarNewName(preCR, var);
+      // preVar = BackendVariable.setVarKind(preVar, BackendDAE.VARIABLE());
+      preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+      preVar = BackendVariable.removeBindExp(preVar);
+      preVar = BackendVariable.removeBindValue(preVar);
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 

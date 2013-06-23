@@ -5561,8 +5561,7 @@ algorithm
   end match;
 end getMarked;
 
-public function getUnassigned
-"function getUnassigned
+public function getUnassigned "function getUnassigned
   author: Frenkel TUD 2012-05
   return all Indixes with ass[indx]<1, traverses the
   array from the ne element to the first."
