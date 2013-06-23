@@ -190,14 +190,15 @@ algorithm
      (initdae, Util.SUCCESS()) = BackendDAEUtil.pastoptimiseDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
       Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae, "solved initial system");
       
+      // warn about selected default initial conditions
+      b = intGt(listLength(dumpVars), 0);
+      Debug.bcall(b and (not Flags.isSet(Flags.INITIALIZATION)), Error.addCompilerWarning, "The initial conditions are not fully specified. Use +d=initialization for more information.");
+      Debug.bcall(b and Flags.isSet(Flags.INITIALIZATION), Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(listLength(dumpVars)) +& " variables:");
+      Debug.bcall(b and Flags.isSet(Flags.INITIALIZATION), warnAboutVars, dumpVars);
+      
       // warn about iteration variables with default zero start attribute
-      // Debug.fcall(Flags.INITIALIZATION, warnAboutIterationVariablesWithDefaultZeroStartAttribute, initdae);
       b = warnAboutIterationVariablesWithDefaultZeroStartAttribute(initdae);
-      b = b or intGt(listLength(dumpVars), 0);
-      b = b and (not Flags.isSet(Flags.INITIALIZATION));
-      Debug.bcall(b, Error.addCompilerWarning, "There are suppressed warnings from the initialization. Use +d=initialization to display them.");
-      Debug.bcall(intGt(listLength(dumpVars), 0) and Flags.isSet(Flags.INITIALIZATION), Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(listLength(dumpVars)) +& " variables:");
-      Debug.bcall(intGt(listLength(dumpVars), 0) and Flags.isSet(Flags.INITIALIZATION), warnAboutVars, dumpVars);
+      Debug.bcall(b and (not Flags.isSet(Flags.INITIALIZATION)), Error.addCompilerWarning, "There are iteration variables with default zero start attribute. Use +d=initialization for more information.");
       
       b = Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM);
       Debug.bcall2(b, BackendDump.dumpEqnsSolved, initdae, "initial system: eqns in order");
