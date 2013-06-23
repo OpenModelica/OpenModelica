@@ -51,9 +51,7 @@ public import Interactive;
 public type Ident = String;
 
 // protected imports
-protected import Debug;
 protected import Error;
-protected import Flags;
 protected import List;
 protected import Print;
 protected import System;

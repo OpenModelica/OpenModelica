@@ -39,26 +39,14 @@ encapsulated package HpcOmSimCode
 // public imports
 public import Absyn;
 public import BackendDAE;
-public import BackendDAEUtil;
 public import DAE;
 public import HashTableExpToIndex;
 public import SimCode;
-public import SimCodeUtil;
 
 // protected imports
-protected import BackendDAEOptimize;
-protected import BackendEquation;
-protected import Config;
-protected import Debug;
 protected import Error;
-protected import Flags;
-protected import Initialization;
-protected import Inline;
-protected import InlineSolver;
-protected import List;
 protected import HpcOmTaskGraph;
 protected import System;
-protected import Util;
 
 public function createSimCode "function createSimCode
   entry point to create SimCode from BackendDAE."

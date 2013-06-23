@@ -51,7 +51,6 @@ protected import Dump;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
-protected import Global;
 protected import List;
 protected import Print;
 protected import System;

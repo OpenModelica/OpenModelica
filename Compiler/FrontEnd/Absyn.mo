@@ -1124,7 +1124,6 @@ end Ref;
 
 protected import List;
 protected import Util;
-protected import Print;
 protected import Error;
 
 public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
