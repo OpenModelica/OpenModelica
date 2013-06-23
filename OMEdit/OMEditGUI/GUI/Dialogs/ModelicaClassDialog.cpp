@@ -253,7 +253,7 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   : QDialog(pParent, Qt::WindowTitleHint)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::openModelicaFile));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::openConvertModelicaFiles));
   setMinimumWidth(400);
   setModal(true);
   mpMainWindow = pParent;

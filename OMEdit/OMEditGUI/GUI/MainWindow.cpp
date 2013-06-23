@@ -926,19 +926,30 @@ void MainWindow::loadSystemLibrary()
     /* if library is not loaded then load it. */
     else
     {
+      mpProgressBar->setRange(0, 0);
+      showProgressBar();
+      mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(pAction->text()));
       if (mpOMCProxy->loadModel(pAction->text()))
       {
-        // create library tree nodes
-        mpProgressBar->setRange(0, 0);
-        showProgressBar();
-        LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(pAction->text(),
-                                                                                    mpOMCProxy->getClassRestriction(pAction->text()), "");
-        pLibraryTreeNode->setSystemLibrary(true);
-        mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(pAction->text()));
-        mpLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
-        mpStatusBar->clearMessage();
-        hideProgressBar();
+        /* since few libraries load dependent libraries automatically. So if the dependent library is not loaded then load it. */
+        QStringList systemLibs = mpOMCProxy->getClassNames("");
+        foreach (QString systemLib, systemLibs)
+        {
+          LibraryTreeNode* pLoadedLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(systemLib);
+          if (!pLoadedLibraryTreeNode)
+          {
+            LibraryTreeNode *pLibraryTreeNode = mpLibraryTreeWidget->addLibraryTreeNode(systemLib,
+                                                                                        mpOMCProxy->getClassRestriction(pAction->text()), "");
+            pLibraryTreeNode->setSystemLibrary(true);
+            /* since LibraryTreeWidget::addLibraryTreeNode clears the status bar message, so we should set it one more time. */
+            mpStatusBar->showMessage(tr("Parsing").append(": ").append(systemLib));
+            // create library tree nodes
+            mpLibraryTreeWidget->createLibraryTreeNodes(pLibraryTreeNode);
+          }
+        }
       }
+      mpStatusBar->clearMessage();
+      hideProgressBar();
     }
   }
 }
@@ -1442,13 +1453,13 @@ void MainWindow::createActions()
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
   // open Modelica file action
-  mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.png"), Helper::openModelicaFile, this);
+  mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.png"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
   mpOpenModelicaFileAction->setStatusTip(tr("Opens the Modelica file(s)"));
   connect(mpOpenModelicaFileAction, SIGNAL(triggered()), SLOT(openModelicaFile()));
   // open Modelica file action
-  mpOpenModelicaFileWithEncodingAction = new QAction(tr("Open Modelica File(s) with Encoding"), this);
-  mpOpenModelicaFileWithEncodingAction->setStatusTip(tr("Opens the Modelica file(s) with encoding"));
+  mpOpenModelicaFileWithEncodingAction = new QAction(Helper::openConvertModelicaFiles, this);
+  mpOpenModelicaFileWithEncodingAction->setStatusTip(tr("Opens and converts the Modelica file(s) with encoding"));
   connect(mpOpenModelicaFileWithEncodingAction, SIGNAL(triggered()), SLOT(showOpenModelicaFileDialog()));
   // open result file action
   mpOpenResultFileAction = new QAction(tr("Open Result File(s)"), this);

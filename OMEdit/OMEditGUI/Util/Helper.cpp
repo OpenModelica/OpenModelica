@@ -93,7 +93,8 @@ QString Helper::errorComponentAnnotationString = QString("{-100.0,-100.0,100.0,1
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
-QString Helper::openModelicaFile;
+QString Helper::openModelicaFiles;
+QString Helper::openConvertModelicaFiles;
 QString Helper::libraries;
 QString Helper::clearRecentFiles;
 QString Helper::encoding;
@@ -207,7 +208,8 @@ void Helper::initHelperVariables()
   /* Global translated variables */
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
-  Helper::openModelicaFile = tr("Open Modelica File(s)");
+  Helper::openModelicaFiles = tr("Open Modelica File(s)");
+  Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::libraries = tr("Libraries");
   Helper::clearRecentFiles = tr("Clear Recent Files");
   Helper::encoding = tr("Encoding:");

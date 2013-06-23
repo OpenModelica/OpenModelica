@@ -99,7 +99,8 @@ public:
   /* Global translated variables */
   static QString newModelicaClass;
   static QString createNewModelicaClass;
-  static QString openModelicaFile;
+  static QString openModelicaFiles;
+  static QString openConvertModelicaFiles;
   static QString libraries;
   static QString clearRecentFiles;
   static QString encoding;
