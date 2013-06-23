@@ -225,7 +225,7 @@ QStringList FilledShape::getShapeAnnotation()
     annotationString.append(QString("fillPattern=").append(StringHandler::getFillPatternString(mFillPattern)));
   // get the thickness
   if (mLineThickness != 0.25)
-    annotationString.append(QString("thickness=").append(QString::number(mLineThickness)));
+    annotationString.append(QString("lineThickness=").append(QString::number(mLineThickness)));
   return annotationString;
 }
 
@@ -466,8 +466,9 @@ QRectF ShapeAnnotation::getBoundingRect() const
   */
 void ShapeAnnotation::applyLinePattern(QPainter *painter)
 {
-  qreal thickness;
-  thickness = ceil(mLineThickness);
+  qreal thicknessFactor;
+  thicknessFactor = mLineThickness / 0.25;
+  qreal thickness = thicknessFactor > 0 ? thicknessFactor : 1.0;
   QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern));
   pen.setCosmetic(true);
   painter->setPen(pen);
