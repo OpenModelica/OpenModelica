@@ -459,7 +459,7 @@ algorithm
         (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
-        v = BackendVariable.setBindExp(var, e1);
+        v = BackendVariable.setBindExp(var, SOME(e1));
         // update Vararray
         knvars = BackendVariable.setVarAt(inKnVars, index, v);
         // save replacement
@@ -489,7 +489,7 @@ algorithm
         (cache, value,_) = Ceval.ceval(iCache, env, e1, false, NONE(), Ceval.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
-        v = BackendVariable.setBindExp(var, e1);
+        v = BackendVariable.setBindExp(var, SOME(e1));
         v = BackendVariable.setVarFinal(v, true);
         // update Vararray
         knvars = BackendVariable.setVarAt(inKnVars, index, v);
@@ -859,7 +859,7 @@ algorithm
         // apply replacements
         (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
         (e,_) = ExpressionSimplify.simplify(e);
-        v = BackendVariable.setBindExp(var,e);
+        v = BackendVariable.setBindExp(var, SOME(e));
         (repl,repleval) = addConstExpReplacement(e,cr,iRepl,iReplEvaluate);
         (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(repleval,false));
         v = BackendVariable.setVarAttributes(v,attr);
@@ -868,7 +868,7 @@ algorithm
         //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Ceval.NO_MSG());
         //e1 = ValuesUtil.valueExp(value);
         // set bind value
-        //v = BackendVariable.setBindExp(var,e1);
+        //v = BackendVariable.setBindExp(var, SOME(e1));
         v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
         knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
@@ -889,7 +889,7 @@ algorithm
         //(cache, value,_) = Ceval.ceval(iCache, env, e, false,NONE(),Ceval.NO_MSG());
         //e1 = ValuesUtil.valueExp(value);
         // set bind value
-        //v = BackendVariable.setBindExp(var,e1);
+        //v = BackendVariable.setBindExp(var, SOME(e1));
         v = Debug.bcallret2(Expression.isConst(e),BackendVariable.setVarFinal,v, true, v);
         knVars = BackendVariable.setVarAt(inKnVars,index,v);
       then
@@ -900,7 +900,7 @@ algorithm
         // apply replacements
         (e,true) = BackendVarTransform.replaceExp(e, iReplEvaluate, NONE());
         (e,_) = ExpressionSimplify.simplify(e);
-        v = BackendVariable.setBindExp(var,e);
+        v = BackendVariable.setBindExp(var, SOME(e));
         (attr,(repleval,_)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(iReplEvaluate,false));
         v = BackendVariable.setVarAttributes(v,attr);
         knVars = BackendVariable.setVarAt(inKnVars,index,v);
@@ -1005,7 +1005,7 @@ algorithm
         // apply replacements
         (e1,true) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
         (e1,_) = ExpressionSimplify.simplify(e1);
-        v = BackendVariable.setBindExp(v,e1);
+        v = BackendVariable.setBindExp(v, SOME(e1));
         (attr,(replEvaluate,b)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,(replEvaluate,false));
         v = Debug.bcallret2(b,BackendVariable.setVarAttributes,v,attr,v);
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,false,knVars,m,ieqns,cache,env,mark,markarr,repl);

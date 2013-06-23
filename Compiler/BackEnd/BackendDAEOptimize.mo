@@ -1099,7 +1099,7 @@ algorithm
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
         (e1,_) = ExpressionSimplify.simplify(e1);
-        v1 = BackendVariable.setBindExp(v,e1);
+        v1 = BackendVariable.setBindExp(v, SOME(e1));
         repl_1 = addConstExpReplacement(e1,cr,repl);
         (attr,repl_1) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl_1);
         v1 = BackendVariable.setVarAttributes(v1,attr);
@@ -2148,7 +2148,7 @@ algorithm
       then (vars2,eqns,shared);
     case (v::varlst,r::rlst,s::slst,indx::vindxs,vars,eqns,_)
       equation
-        v1 = BackendVariable.setBindExp(v,DAE.RCONST(r));
+        v1 = BackendVariable.setBindExp(v, SOME(DAE.RCONST(r)));
         v1 = BackendVariable.setVarStartValue(v1,DAE.RCONST(r));
         // ToDo: merge source of var and equation
         (vars1,_) = BackendVariable.removeVar(indx, vars);

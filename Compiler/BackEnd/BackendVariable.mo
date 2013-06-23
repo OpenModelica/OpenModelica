@@ -1761,9 +1761,10 @@ algorithm
   // referenceUpdate(inVar, 2, new_kind);
 end setVarKind;
 
-public function removeBindExp "function removeBindExp
+public function setBindExp "function setBindExp
   author: lochel"
   input BackendDAE.Var inVar;
+  input Option<DAE.Exp> inBindExp;
   output BackendDAE.Var outVar;
 protected
   DAE.ComponentRef cr;
@@ -1790,12 +1791,13 @@ algorithm
                  values = attr,
                  comment = comment,
                  connectorType = ct) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, NONE(), v, dim, source, attr, comment, ct);
-end removeBindExp;
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, comment, ct);
+end setBindExp;
 
-public function removeBindValue "function removeBindValue
+public function setBindValue "function setBindValue
   author: lochel"
   input BackendDAE.Var inVar;
+  input Option<Values.Value> inBindValue;
   output BackendDAE.Var outVar;
 protected
   DAE.ComponentRef cr;
@@ -1809,7 +1811,6 @@ protected
   Option<DAE.VariableAttributes> attr;
   Option<SCode.Comment> comment;
   DAE.ConnectorType ct;
-  BackendDAE.Var oVar;
 algorithm
   BackendDAE.VAR(varName = cr,
                  varKind = varKind,
@@ -1822,90 +1823,7 @@ algorithm
                  values = attr,
                  comment = comment,
                  connectorType = ct) := inVar;
-  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, NONE(), dim, source, attr, comment, ct);
-end removeBindValue;
-
-public function setBindExp "function setBindExp
-  author: Frenkel TUD 2010-12
-  Sets the BackendDAE.Var.bindExp of a variable"
-  input BackendDAE.Var inVar;
-  input DAE.Exp inBindExp;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar := match (inVar,inBindExp)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<Values.Value> v;
-      list<DAE.Subscript> dim;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-      BackendDAE.Var oVar;
-
-    case (BackendDAE.VAR(varName = cr,
-              varKind = kind,
-              varDirection = dir,
-              varParallelism = prl,
-              varType = tp,
-              bindValue = v,
-              arryDim = dim,
-              source = source,
-              values = attr,
-              comment = comment,
-              connectorType = ct),
-          _)
-    equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 5, SOME(inBindExp));
-    then
-      oVar;
-  end match;
-end setBindExp;
-
-public function setBindValue
-"function setBindExp
-  author: Frenkel TUD 2010-12
-  Sets the BackendDAE.Var.bindExp of a variable"
-  input BackendDAE.Var inVar;
-  input Values.Value inBindValue;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar := match (inVar,inBindValue)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<DAE.Exp> bind;
-      list<DAE.Subscript> dim;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-      BackendDAE.Var oVar;
-
-    case (BackendDAE.VAR(varName = cr,
-              varKind = kind,
-              varDirection = dir,
-              varParallelism = prl,
-              varType = tp,
-              bindExp = bind,
-              bindValue = NONE(),
-              arryDim = dim,
-              source = source,
-              values = attr,
-              comment = comment,
-              connectorType = ct),_)
-    equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,source,attr,comment,ct); // referenceUpdate(inVar, 6, SOME(inBindValue));
-    then
-      oVar;
-  end match;
+  outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, comment, ct);
 end setBindValue;
 
 public function setVarDirectionTpl "function setVarDirectionTpl

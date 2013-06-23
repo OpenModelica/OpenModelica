@@ -2306,7 +2306,7 @@ protected
 algorithm
   BackendDAE.VAR(varName=cr) := v;
   // add bindExp
-  v1 := BackendVariable.setBindExp(v,exp);
+  v1 := BackendVariable.setBindExp(v, SOME(exp));
   ops := DAEUtil.getSymbolicTransformations(source);
   v1 := BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr,exp)::ops);
   // State?
@@ -3251,7 +3251,7 @@ algorithm
   cr := BackendVariable.varCref(iAVar);
   e := BackendVariable.varBindExp(iAVar);
   e := fixAliasConstBindings1(cr,e,iAVars);
-  avar := BackendVariable.setBindExp(iAVar, e);
+  avar := BackendVariable.setBindExp(iAVar, SOME(e));
   oAVars := BackendVariable.addVar(avar, iAVars);
 end fixAliasConstBindings;
 
@@ -3296,7 +3296,7 @@ algorithm
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
         b = Expression.isConst(e1);
-        v1 = Debug.bcallret2(not b,BackendVariable.setBindExp,v,e1,v);
+        v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
         varlst = List.consOnTrue(b, v1, varlst);
       then ((v1,(repl,varlst)));
     case _ then inTpl;
@@ -3317,7 +3317,7 @@ algorithm
     case ((v as BackendDAE.VAR(bindExp=SOME(e)),repl))
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
-        v1 = BackendVariable.setBindExp(v,e1);
+        v1 = BackendVariable.setBindExp(v, SOME(e1));
       then ((v1,repl));
     case _ then inTpl;
   end matchcontinue;

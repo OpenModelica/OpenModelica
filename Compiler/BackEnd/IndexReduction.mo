@@ -6489,7 +6489,7 @@ algorithm
     case ((v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht))
       equation
         ((e1, _)) = Expression.traverseExp(e, replaceDummyDerivatives, ht);
-        v1 = BackendVariable.setBindExp(v,e1);
+        v1 = BackendVariable.setBindExp(v, SOME(e1));
         (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,replaceDummyDerivatives,ht);
         v1 = BackendVariable.setVarAttributes(v1,attr);
       then ((v1,ht));

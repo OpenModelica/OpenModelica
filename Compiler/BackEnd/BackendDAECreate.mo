@@ -2443,7 +2443,7 @@ algorithm
       equation
         (e1, true) = BackendVarTransform.replaceExp(e, repl, NONE());
         b = Expression.isConst(e1);
-        v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, e1, v);
+        v1 = Debug.bcallret2(not b, BackendVariable.setBindExp, v, SOME(e1), v);
       then ((v1, repl));
     else then inTpl;
   end matchcontinue;
@@ -2701,7 +2701,7 @@ algorithm
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
-        avar = BackendVariable.setBindExp(avar, e1);
+        avar = BackendVariable.setBindExp(avar, SOME(e1));
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index2, iVars);
         // add to alias
@@ -2725,7 +2725,7 @@ algorithm
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
-        avar = BackendVariable.setBindExp(avar, e2);
+        avar = BackendVariable.setBindExp(avar, SOME(e2));
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index1, iVars);
         // add to alias
@@ -2758,7 +2758,7 @@ algorithm
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(avar, DAE.SOLVED(acr, e)::ops);
-        avar = BackendVariable.setBindExp(avar, e);
+        avar = BackendVariable.setBindExp(avar, SOME(e));
         avar = Debug.bcallret2(b1, BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
         // remove from vars
         (vars, _) = BackendVariable.removeVar(aindx, iVars);
@@ -2782,7 +2782,7 @@ algorithm
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
-        avar = BackendVariable.setBindExp(avar, e2);
+        avar = BackendVariable.setBindExp(avar, SOME(e2));
         avar = Debug.bcallret2(BackendVariable.isStateVar(v1), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index1, iVars);
@@ -2806,7 +2806,7 @@ algorithm
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
-        avar = BackendVariable.setBindExp(avar, e1);
+        avar = BackendVariable.setBindExp(avar, SOME(e1));
         avar = Debug.bcallret2(BackendVariable.isStateVar(v2), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index2, iVars);
@@ -2830,7 +2830,7 @@ algorithm
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1, DAE.SOLVED(cr1, e2)::ops);
-        avar = BackendVariable.setBindExp(avar, e2);
+        avar = BackendVariable.setBindExp(avar, SOME(e2));
         avar = Debug.bcallret2(BackendVariable.isStateVar(v1), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index1, iVars);
@@ -2854,7 +2854,7 @@ algorithm
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2, DAE.SOLVED(cr2, e1)::ops);
-        avar = BackendVariable.setBindExp(avar, e1);
+        avar = BackendVariable.setBindExp(avar, SOME(e1));
         avar = Debug.bcallret2(BackendVariable.isStateVar(v2), BackendVariable.setVarKind, avar, BackendDAE.DUMMY_STATE(), avar);
         // remove from vars
         (vars, _) = BackendVariable.removeVar(index2, iVars);

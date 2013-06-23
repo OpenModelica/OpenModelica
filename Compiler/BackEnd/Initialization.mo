@@ -1839,8 +1839,8 @@ algorithm
       derCR = ComponentReference.crefPrefixDer(cr);  // cr => $DER.cr
       derVar = BackendVariable.copyVarNewName(derCR, var);
       derVar = BackendVariable.setVarDirection(derVar, DAE.BIDIR());
-      derVar = BackendVariable.removeBindExp(derVar);
-      derVar = BackendVariable.removeBindValue(derVar);
+      derVar = BackendVariable.setBindExp(derVar, NONE());
+      derVar = BackendVariable.setBindValue(derVar, NONE());
       
       // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       // preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
@@ -1849,8 +1849,8 @@ algorithm
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendVariable.copyVarNewName(preCR, var);
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
-      preVar = BackendVariable.removeBindExp(preVar);
-      preVar = BackendVariable.removeBindValue(preVar);
+      preVar = BackendVariable.setBindExp(preVar, NONE());
+      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -1877,8 +1877,8 @@ algorithm
       preVar = BackendVariable.copyVarNewName(preCR, var);
       // preVar = BackendVariable.setVarKind(preVar, BackendDAE.VARIABLE());
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
-      preVar = BackendVariable.removeBindExp(preVar);
-      preVar = BackendVariable.removeBindValue(preVar);
+      preVar = BackendVariable.setBindExp(preVar, NONE());
+      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -1891,7 +1891,7 @@ algorithm
     case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, hs))) equation
       true = BackendVariable.varFixed(var);
       startExp = BackendVariable.varStartValueType(var);
-      var = BackendVariable.setBindExp(var, startExp);
+      var = BackendVariable.setBindExp(var, SOME(startExp));
 
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
@@ -1929,8 +1929,8 @@ algorithm
       preVar = BackendVariable.copyVarNewName(preCR, var);
       // preVar = BackendVariable.setVarKind(preVar, BackendDAE.VARIABLE());
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
-      preVar = BackendVariable.removeBindExp(preVar);
-      preVar = BackendVariable.removeBindValue(preVar);
+      preVar = BackendVariable.setBindExp(preVar, NONE());
+      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -1955,8 +1955,8 @@ algorithm
       preVar = BackendVariable.copyVarNewName(preCR, var);
       // preVar = BackendVariable.setVarKind(preVar, BackendDAE.VARIABLE());
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
-      preVar = BackendVariable.removeBindExp(preVar);
-      preVar = BackendVariable.removeBindValue(preVar);
+      preVar = BackendVariable.setBindExp(preVar, NONE());
+      preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
