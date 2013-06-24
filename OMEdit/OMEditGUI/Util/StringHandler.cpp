@@ -1191,6 +1191,11 @@ qreal StringHandler::getNormalizedAngle(qreal angle)
   return normalizedAngle;
 }
 
+/*!
+  Takes a string and splits it on space. The space within quotes are preserved.
+  \param value - the string to split.
+  \return the list of strings.
+  */
 QStringList StringHandler::splitStringWithSpaces(QString value)
 {
   QStringList lst;

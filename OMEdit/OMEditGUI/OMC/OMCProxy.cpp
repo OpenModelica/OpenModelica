@@ -1518,6 +1518,17 @@ QString OMCProxy::getDerivedClassModifierValue(QString className, QString modifi
 }
 
 /*!
+  Gets the DocumentationClass annotation.
+  \param className - the name of the class.
+  \return true/false.
+  */
+bool OMCProxy::getDocumentationClassAnnotation(QString className)
+{
+  sendCommand("getNamedAnnotation(" + className + ", DocumentationClass)");
+  return StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(getResult()));
+}
+
+/*!
   Creates a new class in OMC.
   \param type - the class type.
   \param className - the class name.

@@ -253,6 +253,8 @@ void SearchClassWidget::searchClasses()
     pNewLibraryTreeNode = new LibraryTreeNode(searchedClasses[j], "", searchedClasses[j],
                                               StringHandler::createTooltip(info, StringHandler::getLastWordAfterDot(searchedClasses[j]), searchedClasses[j]),
                                               type, fileName, !mpLibraryTreeWidget->isFileWritAble(fileName), true, false, mpLibraryTreeWidget);
+    bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(searchedClasses[j]);
+    pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
     mpLibraryTreeWidget->loadLibraryComponent(pNewLibraryTreeNode);
     mpLibraryTreeWidget->addTopLevelItem(pNewLibraryTreeNode);
     mpMainWindow->getProgressBar()->setValue(++progressValue);
@@ -422,6 +424,16 @@ LibraryTreeNode::SaveContentsType LibraryTreeNode::getSaveContentsType()
   return mSaveContentsType;
 }
 
+void LibraryTreeNode::setIsDocumentationClass(bool documentationClass)
+{
+  mDocumentationClass = documentationClass;
+}
+
+bool LibraryTreeNode::isDocumentationClass()
+{
+  return mDocumentationClass;
+}
+
 void LibraryTreeNode::setModelWidget(ModelWidget *pModelWidget)
 {
   mpModelWidget = pModelWidget;
@@ -487,6 +499,11 @@ void LibraryTreeWidget::addToExpandedLibraryTreeNodesList(LibraryTreeNode *pLibr
   mExpandedLibraryTreeNodesList.append(pLibraryTreeNode);
 }
 
+void LibraryTreeWidget::removeFromExpandedLibraryTreeNodesList(LibraryTreeNode *pLibraryTreeNode)
+{
+  mExpandedLibraryTreeNodesList.removeOne(pLibraryTreeNode);
+}
+
 void LibraryTreeWidget::createActions()
 {
   // show Model Action
@@ -548,6 +565,8 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(lib, QString(""), lib, StringHandler::createTooltip(info, lib, lib), type,
                                                                fileName, true, true, false, this);
     pNewLibraryTreeNode->setSystemLibrary(true);
+    bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(lib);
+    pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
     // get the Icon for Modelica tree node
     loadLibraryComponent(pNewLibraryTreeNode);
     addTopLevelItem(pNewLibraryTreeNode);
@@ -566,6 +585,8 @@ void LibraryTreeWidget::addModelicaLibraries(QSplashScreen *pSplashScreen)
     QString fileName = info.size() < 3 ? mpMainWindow->getOMCProxy()->getSourceFile(lib) : info.at(2);
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(lib, QString(""), lib, StringHandler::createTooltip(info, lib, lib), type,
                                                                fileName, !isFileWritAble(fileName), true, false, this);
+    bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(lib);
+    pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
     // get the Icon for Modelica tree node
     loadLibraryComponent(pNewLibraryTreeNode);
     addTopLevelItem(pNewLibraryTreeNode);
@@ -593,6 +614,15 @@ void LibraryTreeWidget::createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(name, parentName, lib, StringHandler::createTooltip(info, lib, lib), type,
                                                                fileName, !isFileWritAble(fileName), pLibraryTreeNode->isSaved(), false, this);
     pNewLibraryTreeNode->setSystemLibrary(pLibraryTreeNode->isSystemLibrary());
+    if (pLibraryTreeNode->isDocumentationClass())
+    {
+      pNewLibraryTreeNode->setIsDocumentationClass(true);
+    }
+    else
+    {
+      bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(lib);
+      pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
+    }
     nodes.append(pNewLibraryTreeNode);
     mLibraryTreeNodesList.append(pNewLibraryTreeNode);
   }
@@ -637,22 +667,22 @@ void LibraryTreeWidget::loadLibraryTreeNode(LibraryTreeNode *pParentLibraryTreeN
   loadLibraryComponent(pLibraryTreeNode);
 }
 
-void LibraryTreeWidget::addLibraryTreeNodes(QList<LibraryTreeNode *> nodes)
+void LibraryTreeWidget::addLibraryTreeNodes(QList<LibraryTreeNode *> libraryTreeNodes)
 {
-  foreach (LibraryTreeNode *node, nodes)
+  foreach (LibraryTreeNode *pLibraryTreeNode, libraryTreeNodes)
   {
-    if (node->getParentName().isEmpty())
+    if (pLibraryTreeNode->getParentName().isEmpty())
     {
-      addTopLevelItem(node);
+      addTopLevelItem(pLibraryTreeNode);
     }
     else
     {
-      QString parentName = StringHandler::removeLastWordAfterDot(node->getNameStructure());
+      QString parentName = StringHandler::removeLastWordAfterDot(pLibraryTreeNode->getNameStructure());
       for (int i = 0 ; i < mLibraryTreeNodesList.size() ; i++)
       {
         if (mLibraryTreeNodesList[i]->getNameStructure().compare(parentName) == 0)
         {
-          mLibraryTreeNodesList[i]->addChild(node);
+          mLibraryTreeNodesList[i]->addChild(pLibraryTreeNode);
           break;
         }
       }
@@ -692,6 +722,8 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, StringHandl
       addTopLevelItem(pNewLibraryTreeNode);
     else
       insertTopLevelItem(insertIndex, pNewLibraryTreeNode);
+    bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(className);
+    pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
   }
   else
   {
@@ -700,6 +732,15 @@ LibraryTreeNode* LibraryTreeWidget::addLibraryTreeNode(QString name, StringHandl
       pLibraryTreeNode->addChild(pNewLibraryTreeNode);
     else
       pLibraryTreeNode->insertChild(insertIndex, pNewLibraryTreeNode);
+    if (pLibraryTreeNode->isDocumentationClass())
+    {
+      pNewLibraryTreeNode->setIsDocumentationClass(true);
+    }
+    else
+    {
+      bool isDocumentationClass = mpMainWindow->getOMCProxy()->getDocumentationClassAnnotation(className);
+      pNewLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
+    }
   }
   // load the models icon
   loadLibraryComponent(pNewLibraryTreeNode);
@@ -1559,7 +1600,7 @@ void LibraryTreeWidget::loadLibraryComponent(LibraryTreeNode *pLibraryTreeNode)
   if (pixmap.isNull())
   {
     pOMCProxy->sendCommand("getNamedAnnotation(" + pLibraryTreeNode->getNameStructure() + ", __Dymola_DocumentationClass)");
-    if (StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(pOMCProxy->getResult())))
+    if (StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(pOMCProxy->getResult())) || pLibraryTreeNode->isDocumentationClass())
     {
       result = pOMCProxy->getIconAnnotation("ModelicaReference.Icons.Information");
       libComponent = new LibraryComponent(result, pLibraryTreeNode->getNameStructure(), pOMCProxy);

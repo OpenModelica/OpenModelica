@@ -197,6 +197,7 @@ public:
   QString getModelicaPath();
   QStringList getAvailableLibraries();
   QString getDerivedClassModifierValue(QString className, QString modifierName);
+  bool getDocumentationClassAnnotation(QString className);
 signals:
   void commandFinished();
 public slots:

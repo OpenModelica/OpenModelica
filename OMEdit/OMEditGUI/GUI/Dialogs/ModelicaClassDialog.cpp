@@ -604,7 +604,7 @@ void SaveAsClassDialog::saveAsModelicaClass()
   //open the new tab in central widget and add the model to library tree.
   LibraryTreeNode *pLibraryTreeNode;
   pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(), mpModelWidget->getLibraryTreeNode()->getType(),
-                                                      mpParentClassComboBox->currentText(), false);
+                                                            mpParentClassComboBox->currentText(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
   pLibraryTreeWidget->showModelWidget(pLibraryTreeNode);

@@ -2448,6 +2448,8 @@ void ModelWidget::refresh()
   mpLibraryTreeNode->setType(type);
   mpLibraryTreeNode->setToolTip(0, StringHandler::createTooltip(info, mpLibraryTreeNode->getName(), mpLibraryTreeNode->getNameStructure()));
   /* set the LibraryTreeNode icon */
+  bool isDocumentationClass = mpModelWidgetContainer->getMainWindow()->getOMCProxy()->getDocumentationClassAnnotation(mpLibraryTreeNode->getNameStructure());
+  mpLibraryTreeNode->setIsDocumentationClass(isDocumentationClass);
   mpModelWidgetContainer->getMainWindow()->getLibraryTreeWidget()->loadLibraryComponent(mpLibraryTreeNode);
   /* remove everything from the icon view */
   mpIconGraphicsView->removeAllComponents();
@@ -2599,6 +2601,8 @@ bool ModelWidget::modelicaEditorTextChanged()
     pLibraryTreeWidget->unloadClassHelper(mpLibraryTreeNode);
     qDeleteAll(mpLibraryTreeNode->takeChildren());
     classNames.removeOne(mpLibraryTreeNode->getNameStructure());
+    pLibraryTreeWidget->removeFromExpandedLibraryTreeNodesList(mpLibraryTreeNode);
+    mpLibraryTreeNode->setExpanded(false);
     refresh();
     /* if class has children then create them. */
     pLibraryTreeWidget->createLibraryTreeNodes(mpLibraryTreeNode);
@@ -2732,6 +2736,10 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
+  }
+  else if (pModelWidget->getLibraryTreeNode()->isDocumentationClass())
+  {
+    pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
   }
   else
   {

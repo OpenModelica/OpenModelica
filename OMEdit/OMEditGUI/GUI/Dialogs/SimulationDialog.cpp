@@ -743,7 +743,6 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     mIsSimulationProcessFinished = false;
     if (mpMainWindow->getDebugApplication()) qDebug() << "starting the simulation process";
     mpSimulationProcess->start(file, args);
-    qDebug() << args;
     if (mpMainWindow->getDebugApplication()) qDebug() << "started the simulation process";
     while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
     {

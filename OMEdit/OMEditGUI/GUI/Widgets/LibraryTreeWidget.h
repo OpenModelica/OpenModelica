@@ -119,6 +119,8 @@ public:
   bool isProtected();
   void setSaveContentsType(LibraryTreeNode::SaveContentsType saveContentsType);
   SaveContentsType getSaveContentsType();
+  void setIsDocumentationClass(bool documentationClass);
+  bool isDocumentationClass();
   void setModelWidget(ModelWidget *pModelWidget);
   ModelWidget* getModelWidget();
 private:
@@ -133,6 +135,7 @@ private:
   bool mIsSaved;
   bool mIsProtected;
   SaveContentsType mSaveContentsType;
+  bool mDocumentationClass;
   ModelWidget *mpModelWidget;
 };
 
@@ -146,12 +149,13 @@ public:
   void setIsSearchedTree(bool isSearchTree);
   bool isSearchedTree();
   void addToExpandedLibraryTreeNodesList(LibraryTreeNode *pLibraryTreeNode);
+  void removeFromExpandedLibraryTreeNodesList(LibraryTreeNode *pLibraryTreeNode);
   void createActions();
   void addModelicaLibraries(QSplashScreen *pSplashScreen);
   void createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode);
   void expandLibraryTreeNode(LibraryTreeNode *pLibraryTreeNode);
   void loadLibraryTreeNode(LibraryTreeNode *pParentLibraryTreeNode, LibraryTreeNode *pLibraryTreeNode);
-  void addLibraryTreeNodes(QList<LibraryTreeNode*> nodes);
+  void addLibraryTreeNodes(QList<LibraryTreeNode*> libraryTreeNodes);
   bool isLibraryTreeNodeExpanded(QTreeWidgetItem *item);
   static bool sortNodesAscending(const LibraryTreeNode *node1, const LibraryTreeNode *node2);
   LibraryTreeNode* addLibraryTreeNode(QString name, StringHandler::ModelicaClasses type, QString parentName=QString(),
