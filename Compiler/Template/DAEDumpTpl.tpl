@@ -541,7 +541,7 @@ match lst
     let else_str = if equations3 then
       <<
       else
-       <%equations3 |> e => dumpEquation(e) ;separator="\n"%>
+        <%equations3 |> e => dumpEquation(e) ;separator="\n"%>
       >>
     <<
     if <%if_cond_str%> then
@@ -641,13 +641,13 @@ match lst
     if not elsewhen_str then
     <<
     when <%when_cond_str%> then
-    <%body_str%>
+      <%body_str%>
     end when;
     >>
     else
     <<
     when <%when_cond_str%> then
-    <%body_str%>
+      <%body_str%>
     else<%elsewhen_str%>
     >>
 end dumpWhenEquation;
@@ -663,11 +663,11 @@ match lst
     let else_str = if equations3 then
       <<
       else
-       <%equations3 |> e => dumpEquation(e) ;separator="\n"%>
+        <%equations3 |> e => dumpEquation(e) ;separator="\n"%>
       >>
     <<
     if <%if_cond_str%> then
-    <%if_branch_str%>
+      <%if_branch_str%>
     <%elseif_str%>
     <%else_str%>
     end if;
@@ -686,7 +686,7 @@ match condition1
         let rest_str = dumpElseIfEquation(rest_conds, rest_branches)
         <<
         elseif <%cond_str%> then
-        <%branch_str%>
+          <%branch_str%>
         <%rest_str%>
         >>
 end dumpElseIfEquation;
@@ -824,7 +824,7 @@ match else_
     let else_body_str = (statementLst |> e => dumpStatement(e) ;separator="\n")
     <<
     else
-     <%else_body_str%>
+      <%else_body_str%>
     >>
 end dumpElseIfStatements;
 
@@ -864,13 +864,13 @@ match stmt
     if not elsewhen_str then
     <<
     when <%when_cond_str%> then
-     <%body_str%>
+      <%body_str%>
     end when;
     >>
     else
     <<
     when <%when_cond_str%> then
-     <%body_str%>
+      <%body_str%>
     else<%elsewhen_str%>
     >>
 end dumpWhenStatement;

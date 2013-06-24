@@ -186,7 +186,6 @@ protected
   Graph tmpGraph;
   StrongConnectedComponent graphComponent;
   Integer componentIndex, calculationTime, numberOfComps;
-  List<tuple<Integer,Integer>> unsolvedVars;
   BackendDAE.IncidenceMatrix incidenceMatrix;
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
@@ -236,7 +235,7 @@ author: waurich TUD 2013-06"
   output array<list<Integer>> adjLstOut;
   output list<Integer> rootNodesOut;
 algorithm
-  adjLstOut := matchcontinue(adjLstIn,rootNodesIn,childNode,parentLst,Idx)
+  (adjLstOut, rootNodesOut) := matchcontinue(adjLstIn,rootNodesIn,childNode,parentLst,Idx)
     local
       Integer parentNode;
       list<Integer> parentRow;
@@ -587,7 +586,6 @@ author:Waurich TUD 2013-06"
   output list<Integer> eqsOut;
   output list<Integer> varsOut;
 protected
-  array<Integer> ass2;
   list<Integer> eqLst;
 algorithm
   eqLst := getEventNodeEqs(inComps,{});
@@ -641,7 +639,7 @@ author: Waurich TUD 2013-06"
   input list<Integer> eventEqsIn;
   output list<Integer> eventEqsOut;
 algorithm
-  eventVars := matchcontinue(inComps,eventEqsIn)
+  eventEqsOut := matchcontinue(inComps,eventEqsIn)
     local
       Integer eqn;
       list<Integer> eventEqs;
