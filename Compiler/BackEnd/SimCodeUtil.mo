@@ -2064,7 +2064,7 @@ end countandIndexAlgebraicLoopsSymJacColumn;
 // 
 // =============================================================================
 
-protected function createEquationsForSystems "function createEquationsForSystems
+public function createEquationsForSystems "function createEquationsForSystems
   Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.Shared shared;
@@ -2759,7 +2759,7 @@ end solveAlgorithmInverse;
 // 
 // =============================================================================
 
-protected function createSimWhenClauses
+public function createSimWhenClauses
   input BackendDAE.BackendDAE inBackendDAE;
   output list<SimCode.SimWhenClause> outSimWhenClause;
 algorithm
@@ -4178,7 +4178,7 @@ end createTornSystemOtherEqns1;
 // 
 // =============================================================================
 
-protected function createStateSets 
+public function createStateSets 
 "function createStateSets
   author: Frenkel TUD 2012
   This function handle states sets for code generation."
@@ -5213,7 +5213,7 @@ algorithm
   end matchcontinue;
 end createInitSymbolicJacobianssSimCode;
 
-protected function createInitialMatrices "function: createInitialMatrices
+public function createInitialMatrices "function: createInitialMatrices
   author: lochel
   This function generates matrices for initialization."
   input BackendDAE.BackendDAE inDAE;
@@ -5541,7 +5541,7 @@ algorithm
   end match;
 end elaborateRecordDeclarationsForMetarecords;
 
-protected function createExtObjInfo
+public function createExtObjInfo
   input BackendDAE.Shared shared;
   output SimCode.ExtObjInfo extObjInfo;
 algorithm
@@ -6438,7 +6438,7 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode2;
 
-protected function createInlineSolverEqns "function createInlineSolverEqns
+public function createInlineSolverEqns "function createInlineSolverEqns
   author: lochel
   This function generates equations needed for inline integration."
   input Option<BackendDAE.BackendDAE> inInlineDAE;
@@ -6485,7 +6485,7 @@ algorithm
   end matchcontinue;
 end createInlineSolverEqns;
 
-protected function createInitialResiduals "function createInitialResiduals
+public function createInitialResiduals "function createInitialResiduals
   author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;

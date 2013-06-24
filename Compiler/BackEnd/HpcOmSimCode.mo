@@ -44,8 +44,15 @@ public import HashTableExpToIndex;
 public import SimCode;
 
 // protected imports
+protected import BackendDAEOptimize;
+protected import BackendDAEUtil;
+protected import Config;
 protected import Error;
 protected import HpcOmTaskGraph;
+protected import Initialization;
+protected import InlineSolver;
+protected import List;
+protected import SimCodeUtil;
 protected import System;
 
 public function createSimCode "function createSimCode
@@ -66,124 +73,121 @@ public function createSimCode "function createSimCode
 algorithm
   simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
-      String fileDir;//, cname;
-//      Integer  maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
-//      Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys;
-      BackendDAE.BackendDAE dlow;//, dlow2;
-//      Option<BackendDAE.BackendDAE> initDAE;
-//      DAE.FunctionTree functionTree;
-//      BackendDAE.SymbolicJacobians symJacs;
+      String fileDir, cname;
+      Integer  maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
+      Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys;
+      BackendDAE.BackendDAE dlow, dlow2;
+      Option<BackendDAE.BackendDAE> initDAE;
+      DAE.FunctionTree functionTree;
+      BackendDAE.SymbolicJacobians symJacs;
       Absyn.Path class_;
-//      // new variables
-//      SimCode.ModelInfo modelInfo;
-//      list<SimCode.SimEqSystem> allEquations;
-//      list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
-//      list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
-//      list<SimCode.SimEqSystem> residuals;                  // --> initial_residual
-//      Boolean useSymbolicInitialization;                    // true if a system to solve the initial problem symbolically is generated, otherwise false
-//      list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
-//      list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
-//      list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
-//      list<SimCode.SimEqSystem> inlineEquations;            // --> inline solver
-//      list<SimCode.SimEqSystem> removedEquations;
-//      list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
-//      //list<DAE.Statement> algorithmAndEquationAsserts;
-//      list<DAE.Constraint> constraints;
-//      list<DAE.ClassAttributes> classAttributes;
-//      list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
-//      list<SimCode.SimWhenClause> whenClauses;
-//      list<DAE.ComponentRef> discreteModelVars;
-//      SimCode.ExtObjInfo extObjInfo;
-//      SimCode.MakefileParams makefileParams;
-//      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
-//      BackendDAE.Variables knownVars;
-//      list<BackendDAE.Var> varlst;
-//
-//      list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect;
-//      SimCode.HashTableCrefToSimVar crefToSimVarHT;
-//      Boolean ifcpp;
-//      BackendDAE.EqSystems systs;
-//      BackendDAE.Shared shared;
-//      BackendDAE.EquationArray removedEqs;
-//      array<DAE.Constraint> constrsarr;
-//      array<DAE.ClassAttributes> clsattrsarra;
-//
-//      list<DAE.Exp> lits;
-//      list<SimCode.SimVar> tempvars;
-//
-//      SimCode.JacobianMatrix jacG;
-//      Option<BackendDAE.BackendDAE> inlineDAE;
-//      list<SimCode.StateSet> stateSets;
-//      array<Integer> systemIndexMap;
-//
-//      BackendDAE.SampleLookup sampleLookup;
+      // new variables
+      SimCode.ModelInfo modelInfo;
+      list<SimCode.SimEqSystem> allEquations;
+      list<list<SimCode.SimEqSystem>> odeEquations;         // --> functionODE
+      list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
+      list<SimCode.SimEqSystem> residuals;                  // --> initial_residual
+      Boolean useSymbolicInitialization;                    // true if a system to solve the initial problem symbolically is generated, otherwise false
+      list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
+      list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
+      list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
+      list<SimCode.SimEqSystem> inlineEquations;            // --> inline solver
+      list<SimCode.SimEqSystem> removedEquations;
+      list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
+      //list<DAE.Statement> algorithmAndEquationAsserts;
+      list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
+      list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+      BackendDAE.Variables knownVars;
+      list<BackendDAE.Var> varlst;
+
+      list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect;
+      SimCode.HashTableCrefToSimVar crefToSimVarHT;
+      Boolean ifcpp;
+      BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
+      BackendDAE.EquationArray removedEqs;
+      array<DAE.Constraint> constrsarr;
+      array<DAE.ClassAttributes> clsattrsarra;
+
+      list<DAE.Exp> lits;
+      list<SimCode.SimVar> tempvars;
+      
+      SimCode.JacobianMatrix jacG;
+      Option<BackendDAE.BackendDAE> inlineDAE;
+      list<SimCode.StateSet> stateSets;
+      array<Integer> systemIndexMap;
+
+      BackendDAE.SampleLookup sampleLookup;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
       
       //Create TaskGraph
       HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
+
+      uniqueEqIndex = 1;
+      ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
+      // Debug.fcall(Flags.FAILTRACE, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+      cname = Absyn.pathStringNoQual(class_);
       
-//      uniqueEqIndex = 1;
-//      ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
-//      //Debug.fcall(Flags.CPP_VAR, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
-//      cname = Absyn.pathStringNoQual(class_);
-//
-//      // generate initalsystem before replacing pre(alias)!
-//      (initDAE, varlst) = Initialization.solveInitialSystem(dlow, {});
-//      BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars=knownVars)) = dlow;
-//      tempvars = List.map2(varlst, SimCodeUtil.dlowvarToSimvar, NONE(), knownVars);
-//
-//      // replace pre(alias) in time-equations
-//      dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
-//
-//      // generate system for inline solver
-//      (inlineDAE, _) = InlineSolver.generateDAE(dlow); //raus
-//
-//      // check if the Sytems has states
-//      dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
-//
-//      dlow2 = dlow;
-//      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs,
-//                                                        constraints=constrsarr,
-//                                                        classAttrs=clsattrsarra,
-//                                                        functionTree=functionTree,
-//                                                        symjacs=symJacs,
-//                                                        eventInfo=BackendDAE.EVENT_INFO(sampleLookup=sampleLookup))) = dlow2;
-//
-//      extObjInfo = SimCodeUtil.createExtObjInfo(shared);
-//
-//      whenClauses = SimCodeUtil.createSimWhenClauses(dlow2);
-//      zeroCrossings = Util.if_(ifcpp, SimCodeUtil.getRelations(dlow2), SimCodeUtil.getZeroCrossings(dlow2));
-//      relations = SimCodeUtil.getRelations(dlow2);
-//      sampleZC = SimCodeUtil.getSamples(dlow2);
-//      zeroCrossings = Util.if_(ifcpp, listAppend(zeroCrossings, sampleZC), zeroCrossings);
-//
-//      // state set stuff
-//      (dlow2, stateSets, uniqueEqIndex, tempvars, numStateSets) = SimCodeUtil.createStateSets(dlow2, {}, uniqueEqIndex, tempvars);
-//
-//      // inline solver stuff
-//      (inlineEquations, uniqueEqIndex, tempvars) = SimCodeUtil.createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars); //raus
-//
-//      // initialization stuff
-//      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = SimCodeUtil.createInitialResiduals(dlow2, initDAE, uniqueEqIndex, tempvars);
-//      (jacG, uniqueEqIndex) = SimCodeUtil.createInitialMatrices(dlow2, uniqueEqIndex);
-//
-//      // expandAlgorithmsbyInitStmts
-//      dlow2 = BackendDAEUtil.expandAlgorithmsbyInitStmts(dlow2);
-//      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs,
-//                                                        constraints=constrsarr,
-//                                                        classAttrs=clsattrsarra,
-//                                                        functionTree=functionTree,
-//                                                        symjacs=symJacs)) = dlow2;
-//
-//      //Ab hier selber schreiben
-//
-//      // Add model info
-//      modelInfo = SimCodeUtil.createModelInfo(class_, dlow2, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
-//
-//      // equation generation for euler, dassl2, rungekutta -> Gleichungen werden zu Zuweisungen
-//      (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
+      // generate initDAE before replacing pre(alias)!
+      initDAE = Initialization.solveInitialSystem(dlow);
+
+      // replace pre(alias) in time-equations
+      dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
+
+      // generate system for inline solver
+      (inlineDAE, _) = InlineSolver.generateDAE(dlow);
+
+      // check if the Sytems has states
+      dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
+
+      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
+                                                        constraints=constrsarr, 
+                                                        classAttrs=clsattrsarra, 
+                                                        functionTree=functionTree, 
+                                                        symjacs=symJacs,
+                                                        eventInfo=BackendDAE.EVENT_INFO(sampleLookup=sampleLookup))) = dlow;
+      
+      extObjInfo = SimCodeUtil.createExtObjInfo(shared);
+
+      //whenClauses = SimCodeUtil.createSimWhenClauses(dlow);
+      //zeroCrossings = Util.if_(ifcpp, getRelations(dlow), getZeroCrossings(dlow));
+      //relations = SimCodeUtil.getRelations(dlow);
+      //sampleZC = SimCodeUtil.getSamples(dlow);
+      //zeroCrossings = Util.if_(ifcpp, listAppend(zeroCrossings, sampleZC), zeroCrossings);
+
+      // state set stuff
+      tempvars = {};
+      (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = SimCodeUtil.createStateSets(dlow, {}, uniqueEqIndex, tempvars);
+
+      // inline solver stuff
+      (inlineEquations, uniqueEqIndex, tempvars) = SimCodeUtil.createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars);
+
+      // initialization stuff
+      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = SimCodeUtil.createInitialResiduals(dlow, initDAE, uniqueEqIndex, tempvars);
+      (jacG, uniqueEqIndex) = SimCodeUtil.createInitialMatrices(dlow, uniqueEqIndex);
+
+      // expandAlgorithmsbyInitStmts
+      dlow = BackendDAEUtil.expandAlgorithmsbyInitStmts(dlow);
+      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
+                                                        constraints=constrsarr, 
+                                                        classAttrs=clsattrsarra, 
+                                                        functionTree=functionTree, 
+                                                        symjacs=symJacs)) = dlow;
+
+      // Add model info
+      //modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
+
+      // equation generation for euler, dassl2, rungekutta
+      (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
+      print("from "+&intString(listLength(allEquations))+&" we have "+&intString(listLength(List.flatten(odeEquations)))+& " ode eqs and "+&intString(listLength(List.flatten(algebraicEquations)))+&" algebraic eqs\n");
 //      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
 //
 //      // Assertions and crap
