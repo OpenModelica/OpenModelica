@@ -2271,7 +2271,7 @@ public function escapeModelicaStringToXmlString
 algorithm
   // C cannot handle newline in string constants
   xmlString := System.stringReplace(modelicaString, "&", "&amp;");
-  xmlString := System.stringReplace(xmlString, "\\\"", "&quot;");
+  xmlString := System.stringReplace(xmlString, "\"", "&quot;");
   xmlString := System.stringReplace(xmlString, "<", "&lt;");
   xmlString := System.stringReplace(xmlString, ">", "&gt;");
   // TODO! FIXME!, we have issues with accented chars in comments

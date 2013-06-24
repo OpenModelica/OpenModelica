@@ -3162,8 +3162,8 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
   <fmiModelDescription
     fmiVersion                          = "1.0"
 
-    modelName                           = "<%dotPath(modelInfo.name)%>"
-    modelIdentifier                     = "<%underscorePath(modelInfo.name)%>"
+    modelName                           = "<%Util.escapeModelicaStringToXmlString(dotPath(modelInfo.name))%>"
+    modelIdentifier                     = "<%Util.escapeModelicaStringToXmlString(underscorePath(modelInfo.name))%>"
 
     OPENMODELICAHOME                    = "<%makefileParams.omhome%>"
 
@@ -9261,7 +9261,7 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
       let alias = getAliasVar(aliasvar)
       let caus = getCausality(causality)
       <<
-      name = "<%crefStr(name)%>"
+      name = "<%Util.escapeModelicaStringToXmlString(crefStr(name))%>"
       valueReference = "<%valueReference%>"
       <%description%>
       variability = "<%variability%>" isDiscrete = "<%isDiscrete%>"

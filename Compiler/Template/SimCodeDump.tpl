@@ -7,7 +7,7 @@ template dumpSimCode(SimCode code, Boolean withOperations)
 ::=
   match code
   case sc as SIMCODE(modelInfo=mi as MODELINFO(vars=vars as SIMVARS(__))) then
-  let name = dotPath(mi.name)
+  let name = Util.escapeModelicaStringToXmlString(dotPath(mi.name))
   let res = <<
   <?xml version="1.0" encoding="UTF-8"?>
   <?xml-stylesheet type="application/xml" href="simcodedump.xsl"?>
@@ -53,7 +53,7 @@ template dumpSimCode(SimCode code, Boolean withOperations)
       case KERNEL_FUNCTION(__)
       case PARALLEL_FUNCTION(__)
       case RECORD_CONSTRUCTOR(__) then
-      '<function name="<%dotPath(name)%>"><%dumpInfo(info)%></function>' ; separator="\n"
+      '<function name="<%Util.escapeModelicaStringToXmlString(dotPath(name))%>"><%dumpInfo(info)%></function>' ; separator="\n"
     %>
   </functions>
   </simcodedump><%\n%>
@@ -66,7 +66,7 @@ template dumpVarsShort(list<SimVar> vars)
 ::=
   let varsString = (vars |> v as SIMVAR(__) hasindex index0 =>
   <<
-  <%index0%>: <%crefStr(v.name)%>
+  <%index0%>: <%Util.escapeModelicaStringToXmlString(crefStr(v.name))%>
   >>
   ;separator="\n";empty)
   <<
@@ -80,7 +80,7 @@ template dumpVars(list<SimVar> vars, Boolean withOperations)
 ::=
   vars |> v as SIMVAR(__) =>
   <<
-  <variable name="<%crefStr(v.name)%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>">
+  <variable name="<%Util.escapeModelicaStringToXmlString(crefStr(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>">
     <%dumpAlias(v.aliasvar)%>
     <%dumpElementSource(v.source,withOperations)%>
   </variable><%\n%>
@@ -90,8 +90,8 @@ end dumpVars;
 template dumpAlias(AliasVariable alias)
 ::=
   match alias
-  case ALIAS(__) then '<alias><%crefStr(varName)%></alias>'
-  case NEGATEDALIAS(__) then ' <alias negated="true"><%crefStr(varName)%></alias>'
+  case ALIAS(__) then '<alias><%Util.escapeModelicaStringToXmlString(crefStr(varName))%></alias>'
+  case NEGATEDALIAS(__) then ' <alias negated="true"><%Util.escapeModelicaStringToXmlString(crefStr(varName))%></alias>'
 end dumpAlias;
 
 template eqIndex(SimEqSystem eq)
