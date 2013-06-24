@@ -586,7 +586,9 @@ void SimulationDialog::simulate()
       simulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
     }
     if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty())
-      simulationFlags.append(mpAdditionalSimulationFlagsTextBox->text());
+    {
+      simulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
+    }
     // before simulating save the simulation options.
     saveSimulationOptions();
     // show the progress bar
@@ -735,12 +737,13 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     const int SOCKMAXLEN = 4096;
     char buf[SOCKMAXLEN];
     server.listen(QHostAddress(QHostAddress::LocalHost));
-    simulationFlags.prepend(QString("-port=").append(QString::number(server.serverPort())));
+    QStringList args(QString("-port=").append(QString::number(server.serverPort())));
+    args << simulationFlags;
     // start the executable
     mIsSimulationProcessFinished = false;
     if (mpMainWindow->getDebugApplication()) qDebug() << "starting the simulation process";
-    mpSimulationProcess->setNativeArguments(simulationFlags.join(" "));
-    mpSimulationProcess->start(file);
+    mpSimulationProcess->start(file, args);
+    qDebug() << args;
     if (mpMainWindow->getDebugApplication()) qDebug() << "started the simulation process";
     while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
     {

@@ -1190,3 +1190,34 @@ qreal StringHandler::getNormalizedAngle(qreal angle)
   }
   return normalizedAngle;
 }
+
+QStringList StringHandler::splitStringWithSpaces(QString value)
+{
+  QStringList lst;
+  QString res;
+  bool quotesOpen = false;
+  value = value.trimmed();
+  for (int i = 0 ; i < value.size() ; i++)
+  {
+    if (value.at(i) == ' ' && !quotesOpen)
+    {
+      lst.append(res);
+      res.clear();
+    }
+    else if (value.at(i) == '"' && quotesOpen)
+    {
+      quotesOpen = false;
+    }
+    else if (value.at(i) == '"' && !quotesOpen)
+    {
+      quotesOpen = true;
+    }
+    else
+    {
+      res.append(value.at(i));
+    }
+  }
+  if (!res.isEmpty())
+    lst.append(res);
+  return lst;
+}

@@ -123,6 +123,7 @@ public:
   static QString getLastOpenDirectory();
   static QStringList getDialogAnnotation(QString componentAnnotation);
   static qreal getNormalizedAngle(qreal angle);
+  static QStringList splitStringWithSpaces(QString value);
 protected:
   static QString mLastOpenDir;
 };
