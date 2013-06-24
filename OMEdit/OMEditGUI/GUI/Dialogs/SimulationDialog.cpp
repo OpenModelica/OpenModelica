@@ -268,6 +268,9 @@ void SimulationDialog::setUpForm()
   pLoggingGroupLayout->addWidget(mpLogZeroCrossingsCheckBox, 8, 1);
   mpLoggingGroupBox = new QGroupBox(tr("Logging (Optional)"));
   mpLoggingGroupBox->setLayout(pLoggingGroupLayout);
+  mpAdditionalSimulationFlagsLabel = new Label(tr("Additional Simulation Flags (Optional):"));
+  mpAdditionalSimulationFlagsLabel->setToolTip(tr("Space separated list of simulation flags"));
+  mpAdditionalSimulationFlagsTextBox = new QLineEdit;
   // set Output Tab Layout
   QGridLayout *pSimulationFlagsTabLayout = new QGridLayout;
   pSimulationFlagsTabLayout->setAlignment(Qt::AlignTop);
@@ -297,6 +300,8 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 11, 0);
   pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 12, 0);
   pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 13, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 14, 0);
+  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsTextBox, 14, 1, 1, 2);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
@@ -580,6 +585,8 @@ void SimulationDialog::simulate()
 
       simulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
     }
+    if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty())
+      simulationFlags.append(mpAdditionalSimulationFlagsTextBox->text());
     // before simulating save the simulation options.
     saveSimulationOptions();
     // show the progress bar
@@ -665,7 +672,7 @@ bool SimulationDialog::validate()
   Sends the buildModel command to OMC.\n
   Starts the simulation executable with -port argument.\n
   Creates a TCP server and starts listening for the simulation runtime progress messages.
-  \param simulationParameters - a comma seperated list of simulation parameters.
+  \param simulationParameters - a comma separated list of simulation parameters.
   \param simulationFlags - a list of simulation flags for the simulation executable.
   */
 void SimulationDialog::buildModel(QString simulationParameters, QStringList simulationFlags)
@@ -728,12 +735,12 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     const int SOCKMAXLEN = 4096;
     char buf[SOCKMAXLEN];
     server.listen(QHostAddress(QHostAddress::LocalHost));
-    QStringList args(QString("-port=").append(QString::number(server.serverPort())));
-    args << simulationFlags;
+    simulationFlags.prepend(QString("-port=").append(QString::number(server.serverPort())));
     // start the executable
     mIsSimulationProcessFinished = false;
     if (mpMainWindow->getDebugApplication()) qDebug() << "starting the simulation process";
-    mpSimulationProcess->start(file,args);
+    mpSimulationProcess->setNativeArguments(simulationFlags.join(" "));
+    mpSimulationProcess->start(file);
     if (mpMainWindow->getDebugApplication()) qDebug() << "started the simulation process";
     while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
     {

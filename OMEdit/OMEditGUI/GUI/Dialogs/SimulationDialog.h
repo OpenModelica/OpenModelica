@@ -132,6 +132,8 @@ private:
   QCheckBox *mpLogStatsCheckBox;
   QCheckBox *mpLogUtilCheckBox;
   QCheckBox *mpLogZeroCrossingsCheckBox;
+  Label *mpAdditionalSimulationFlagsLabel;
+  QLineEdit *mpAdditionalSimulationFlagsTextBox;
   // buttons
   QPushButton *mpCancelButton;
   QPushButton *mpSimulateButton;
