@@ -907,9 +907,9 @@ protected function printReplacementTupleStr "help function to dumpReplacements"
   output String str;
 algorithm
   // optional exteded type debugging
-  str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
+  //str := ComponentReference.debugPrintComponentRefTypeStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.debugPrintComponentRefExp(Util.tuple22(tpl));
   // Normal debugging, without type&dimension information on crefs.
-  //str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.printExpStr(Util.tuple22(tpl));
+  str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) +& " -> " +& ExpressionDump.printExpStr(Util.tuple22(tpl));
 end printReplacementTupleStr;
 
 public function replacementSources "Returns all sources of the replacement rules"
@@ -1567,8 +1567,9 @@ algorithm
       equation
         true = replaceExpCond(cond, e);
         (e1_1,true) = replaceExp(e1, repl, cond);
+        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
-        (Expression.makeASUB(e1_1,expl),true);
+        (Expression.makeASUB(e1_1,expl_1),true);
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
       equation
         true = replaceExpCond(cond, e);
