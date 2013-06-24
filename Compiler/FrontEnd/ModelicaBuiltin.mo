@@ -2149,6 +2149,8 @@ function plot "Launches a plot window using OMPlot."
   input String yLabel := "" "This text will be used as the vertical label in the diagram.";
   input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real curveWidth := 1.0 "Sets the width of the curve.";
+  input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<PlotVariables>\"}";
 external "builtin";
@@ -2183,6 +2185,8 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input String yLabel := "" "This text will be used as the vertical label in the diagram.";
   input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real curveWidth := 1.0 "Sets the width of the curve.";
+  input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<PlotVariables>\"}";
 external "builtin";
@@ -2224,6 +2228,8 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input String yLabel := "" "This text will be used as the vertical label in the diagram.";
   input Real xRange[2] := {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
+  input Real curveWidth := 1.0 "Sets the width of the curve.";
+  input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<PlotVariables>\"}";
 external "builtin";
