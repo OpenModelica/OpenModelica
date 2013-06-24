@@ -58,6 +58,7 @@ OptionsDialog::OptionsDialog(MainWindow *pParent)
   mpNotificationsPage = new NotificationsPage(this);
   mpLineStylePage = new LineStylePage(this);
   mpFillStylePage = new FillStylePage(this);
+  mpCurveStylePage = new CurveStylePage(this);
   // get the settings
   readSettings();
   // set up the Options Dialog
@@ -83,6 +84,7 @@ void OptionsDialog::readSettings()
   readNotificationsSettings();
   readLineStyleSettings();
   readFillStyleSettings();
+  readCurveStyleSettings();
 }
 
 //! Reads the General section settings from omedit.ini
@@ -311,6 +313,15 @@ void OptionsDialog::readFillStyleSettings()
     mpFillStylePage->setFillPattern(mSettings.value("fillstyle/pattern").toString());
 }
 
+//! Reads the CurveStyle section settings from omedit.ini
+void OptionsDialog::readCurveStyleSettings()
+{
+  if (mSettings.contains("curvestyle/pattern"))
+    mpCurveStylePage->setCurvePattern(mSettings.value("curvestyle/pattern").toInt());
+  if (mSettings.contains("curvestyle/thickness"))
+    mpCurveStylePage->setCurveThickness(mSettings.value("curvestyle/thickness").toFloat());
+}
+
 //! Saves the General section settings to omedit.ini
 void OptionsDialog::saveGeneralSettings()
 {
@@ -470,6 +481,13 @@ void OptionsDialog::saveFillStyleSettings()
   mSettings.setValue("fillstyle/pattern", mpFillStylePage->getFillPattern());
 }
 
+//! Saves the CurveStyle section settings to omedit.ini
+void OptionsDialog::saveCurveStyleSettings()
+{
+  mSettings.setValue("curvestyle/pattern", mpCurveStylePage->getCurvePattern());
+  mSettings.setValue("curvestyle/thickness", mpCurveStylePage->getCurveThickness());
+}
+
 //! Sets up the Options Widget dialog
 void OptionsDialog::setUpDialog()
 {
@@ -546,6 +564,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pFillStyleItem = new QListWidgetItem(mpOptionsList);
   pFillStyleItem->setIcon(QIcon(":/Resources/icons/fillstyle.png"));
   pFillStyleItem->setText(Helper::fillStyle);
+  // Curve Style Item
+  QListWidgetItem *pCurveStyleItem = new QListWidgetItem(mpOptionsList);
+  pCurveStyleItem->setIcon(QIcon(":/Resources/icons/omplot.png"));
+  pCurveStyleItem->setText(Helper::curveStyle);
 }
 
 //! Creates pages for the Options Widget. The pages are created as stacked widget and are mapped with mpOptionsList.
@@ -560,6 +582,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpNotificationsPage);
   mpPagesWidget->addWidget(mpLineStylePage);
   mpPagesWidget->addWidget(mpFillStylePage);
+  mpPagesWidget->addWidget(mpCurveStylePage);
 }
 
 MainWindow* OptionsDialog::getMainWindow()
@@ -607,6 +630,11 @@ FillStylePage* OptionsDialog::getFillStylePage()
   return mpFillStylePage;
 }
 
+CurveStylePage* OptionsDialog::getCurveStylePage()
+{
+  return mpCurveStylePage;
+}
+
 //! Change the page in Options Widget when the mpOptionsList currentItemChanged Signal is raised.
 void OptionsDialog::changePage(QListWidgetItem *current, QListWidgetItem *previous)
 {
@@ -628,6 +656,7 @@ void OptionsDialog::reject()
 void OptionsDialog::saveSettings()
 {
   saveGeneralSettings();
+  saveLibrariesSettings();
   saveModelicaTextSettings();
   // emit the signal so that all syntax highlighters are updated
   emit modelicaTextSettingsChanged();
@@ -638,7 +667,7 @@ void OptionsDialog::saveSettings()
   saveNotificationsSettings();
   saveLineStyleSettings();
   saveFillStyleSettings();
-  saveLibrariesSettings();
+  saveCurveStyleSettings();
   mSettings.sync();
   accept();
 }
@@ -2376,4 +2405,75 @@ void FillStylePage::fillPickColor()
     return;
   setFillColor(color);
   setFillPickColorButtonIcon();
+}
+
+
+//! @class CurveStylePage
+//! @brief Creates an interface for curve style settings.
+
+//! Constructor
+//! @param pParent is the pointer to OptionsDialog
+CurveStylePage::CurveStylePage(OptionsDialog *pParent)
+  : QWidget(pParent)
+{
+  mpOptionsDialog = pParent;
+  mpCurveStyleGroupBox = new QGroupBox(Helper::curveStyle);
+  // Curve Pattern
+  mpCurvePatternLabel = new Label(Helper::pattern);
+  mpCurvePatternComboBox = new QComboBox;
+  mpCurvePatternComboBox->addItem("SolidLine", 1);
+  mpCurvePatternComboBox->addItem("DashLine", 2);
+  mpCurvePatternComboBox->addItem("DotLine", 3);
+  mpCurvePatternComboBox->addItem("DashDotLine", 4);
+  mpCurvePatternComboBox->addItem("DashDotDotLine", 5);
+  mpCurvePatternComboBox->addItem("Sticks", 6);
+  mpCurvePatternComboBox->addItem("Steps", 7);
+  // Curve Thickness
+  mpCurveThicknessLabel = new Label(Helper::thickness);
+  mpCurveThicknessTextBox = new QLineEdit("1.0");
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  pDoubleValidator->setBottom(0);
+  mpCurveThicknessTextBox->setValidator(pDoubleValidator);
+  // set the layout
+  QGridLayout *pCurveStyleLayout = new QGridLayout;
+  pCurveStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pCurveStyleLayout->addWidget(mpCurvePatternLabel, 0, 0);
+  pCurveStyleLayout->addWidget(mpCurvePatternComboBox, 0, 1);
+  pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 2, 0);
+  pCurveStyleLayout->addWidget(mpCurveThicknessTextBox, 2, 1);
+  mpCurveStyleGroupBox->setLayout(pCurveStyleLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpCurveStyleGroupBox);
+  setLayout(pMainLayout);
+}
+
+//! Sets the pen pattern
+//! @param pattern to set.
+void CurveStylePage::setCurvePattern(int pattern)
+{
+  int index = mpCurvePatternComboBox->findData(pattern);
+  if (index != -1)
+    mpCurvePatternComboBox->setCurrentIndex(index);
+}
+
+int CurveStylePage::getCurvePattern()
+{
+  return mpCurvePatternComboBox->itemData(mpCurvePatternComboBox->currentIndex()).toInt();
+}
+
+//! Sets the pen thickness
+//! @param thickness to set.
+void CurveStylePage::setCurveThickness(qreal thickness)
+{
+  if (thickness <= 0)
+    thickness = 1.0;
+  mpCurveThicknessTextBox->setText(QString::number(thickness));
+}
+
+//! Returns the pen thickness
+qreal CurveStylePage::getCurveThickness()
+{
+  return mpCurveThicknessTextBox->text().toFloat();
 }

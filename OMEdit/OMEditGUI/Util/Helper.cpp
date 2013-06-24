@@ -180,6 +180,7 @@ QString Helper::extent2Y;
 QString Helper::radius;
 QString Helper::startAngle;
 QString Helper::endAngle;
+QString Helper::curveStyle;
 QString Helper::remove;
 QString Helper::fileLocation;
 QString Helper::errorLocation;
@@ -296,6 +297,7 @@ void Helper::initHelperVariables()
   Helper::radius = tr("Radius:");
   Helper::startAngle = tr("Start Angle:");
   Helper::endAngle = tr("End Angle:");
+  Helper::curveStyle = tr("Curve Style");
   Helper::remove = tr("Remove");
   Helper::fileLocation = tr("Location", "For files");
   Helper::errorLocation = tr("Location", "For errors");

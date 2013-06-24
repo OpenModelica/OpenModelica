@@ -353,6 +353,8 @@ void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindo
       if (pItem->checkState(column) == Qt::Checked)
       {
         pPlotWindow->initializeFile(QString(pItem->getFilePath()).append(pItem->getFileName()));
+        pPlotWindow->setCurveWidth(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurveThickness());
+        pPlotWindow->setCurveStyle(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurvePattern());
         pPlotWindow->setVariablesList(QStringList(pItem->getPlotVariable()));
         pPlotWindow->plot();
         pPlotWindow->fitInView();
@@ -403,6 +405,8 @@ void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindo
             }
             mPlotParametricVariables.last().append(QStringList(pItem->getPlotVariable()));
             pPlotWindow->initializeFile(QString(pItem->getFilePath()).append(pItem->getFileName()));
+            pPlotWindow->setCurveWidth(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurveThickness());
+            pPlotWindow->setCurveStyle(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurvePattern());
             pPlotWindow->setVariablesList(mPlotParametricVariables.last());
             pPlotWindow->plotParametric();
             if (mPlotParametricVariables.size() > 1)

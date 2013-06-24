@@ -186,6 +186,7 @@ public:
   static QString radius;
   static QString startAngle;
   static QString endAngle;
+  static QString curveStyle;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;

@@ -52,6 +52,7 @@ class SimulationPage;
 class NotificationsPage;
 class LineStylePage;
 class FillStylePage;
+class CurveStylePage;
 
 class OptionsDialog : public QDialog
 {
@@ -68,6 +69,7 @@ public:
   void readNotificationsSettings();
   void readLineStyleSettings();
   void readFillStyleSettings();
+  void readCurveStyleSettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
   void saveModelicaTextSettings();
@@ -76,6 +78,7 @@ public:
   void saveNotificationsSettings();
   void saveLineStyleSettings();
   void saveFillStyleSettings();
+  void saveCurveStyleSettings();
   void setUpDialog();
   void addListItems();
   void createPages();
@@ -88,6 +91,7 @@ public:
   NotificationsPage* getNotificationsPage();
   LineStylePage* getLineStylePage();
   FillStylePage* getFillStylePage();
+  CurveStylePage* getCurveStylePage();
 signals:
   void modelicaTextSettingsChanged();
   void updateLineWrapping();
@@ -106,6 +110,7 @@ private:
   NotificationsPage *mpNotificationsPage;
   LineStylePage *mpLineStylePage;
   FillStylePage *mpFillStylePage;
+  CurveStylePage *mpCurveStylePage;
   QSettings mSettings;
   QListWidget *mpOptionsList;
   QStackedWidget *mpPagesWidget;
@@ -485,6 +490,24 @@ private:
   QComboBox *mpFillPatternComboBox;
 public slots:
   void fillPickColor();
+};
+
+class CurveStylePage : public QWidget
+{
+  Q_OBJECT
+public:
+  CurveStylePage(OptionsDialog *pParent);
+  void setCurvePattern(int pattern);
+  int getCurvePattern();
+  void setCurveThickness(qreal thickness);
+  qreal getCurveThickness();
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpCurveStyleGroupBox;
+  Label *mpCurvePatternLabel;
+  QComboBox *mpCurvePatternComboBox;
+  Label *mpCurveThicknessLabel;
+  QLineEdit *mpCurveThicknessTextBox;
 };
 
 #endif // OPTIONSDIALOG_H
