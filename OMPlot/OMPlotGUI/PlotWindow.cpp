@@ -115,8 +115,10 @@ void PlotWindow::initializePlot(QStringList arguments)
     setYLabel(QString(arguments[9]));
     setXRange(QString(arguments[10]).toDouble(), QString(arguments[11]).toDouble());
     setYRange(QString(arguments[12]).toDouble(), QString(arguments[13]).toDouble());
+    setCurveWidth(QString(arguments[14]).toDouble());
+    setCurveStyle(QString(arguments[15]).toInt());
     QStringList variablesToRead;
-    for(int i = 14; i < arguments.length(); i++)
+    for(int i = 16; i < arguments.length(); i++)
         variablesToRead.append(QString(arguments[i]));
 
     setVariablesList(variablesToRead);
@@ -713,6 +715,26 @@ QString PlotWindow::getYRangeMin()
 QString PlotWindow::getYRangeMax()
 {
   return mYRangeMax;
+}
+
+void PlotWindow::setCurveWidth(double width)
+{
+  mCurveWidth = width;
+}
+
+double PlotWindow::getCurveWidth()
+{
+  return mCurveWidth;
+}
+
+void PlotWindow::setCurveStyle(int style)
+{
+  mCurveStyle = style;
+}
+
+int PlotWindow::getCurveStyle()
+{
+  return mCurveStyle;
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)

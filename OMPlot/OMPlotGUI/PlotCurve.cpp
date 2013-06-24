@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -40,9 +40,16 @@
 using namespace OMPlot;
 
 PlotCurve::PlotCurve(Plot *pParent)
-    : mCustomColor(false)
+  : mCustomColor(false)
 {   
-    mpParentPlot = pParent;
+  mpParentPlot = pParent;
+  /* set curve width and style */
+  QPen customPen = pen();
+  customPen.setWidthF(mpParentPlot->getParentPlotWindow()->getCurveWidth());
+  customPen.setStyle(getPenStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle()));
+  setPen(customPen);
+  if (mpParentPlot->getParentPlotWindow()->getCurveStyle() > 5)
+    setStyle(getCurveStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle()));
 }
 
 PlotCurve::~PlotCurve()
@@ -50,19 +57,49 @@ PlotCurve::~PlotCurve()
 
 }
 
+Qt::PenStyle PlotCurve::getPenStyle(int style)
+{
+  switch (style)
+  {
+    case 2:
+      return Qt::DashLine;
+    case 3:
+      return Qt::DotLine;
+    case 4:
+      return Qt::DashDotLine;
+    case 5:
+      return Qt::DashDotDotLine;
+    default:
+      return Qt::SolidLine;
+  }
+}
+
+QwtPlotCurve::CurveStyle PlotCurve::getCurveStyle(int style)
+{
+  switch (style)
+  {
+    case 6:
+      return QwtPlotCurve::Sticks;
+    case 7:
+      return QwtPlotCurve::Steps;
+    default:
+      return QwtPlotCurve::Lines;
+  }
+}
+
 void PlotCurve::setXAxisVector(QVector<double> vector)
 {
-    mXAxisVector = vector;
+  mXAxisVector = vector;
 }
 
 void PlotCurve::addXAxisValue(double value)
 {
-    mXAxisVector.push_back(value);
+  mXAxisVector.push_back(value);
 }
 
 const double* PlotCurve::getXAxisVector() const
 {
-    return mXAxisVector.data();
+  return mXAxisVector.data();
 }
 
 QVector<double> PlotCurve::getXAxisData()
@@ -72,7 +109,7 @@ QVector<double> PlotCurve::getXAxisData()
 
 void PlotCurve::setYAxisVector(QVector<double> vector)
 {
-    mYAxisVector = vector;
+  mYAxisVector = vector;
 }
 
 QVector<double> PlotCurve::getYAxisData()
@@ -82,57 +119,57 @@ QVector<double> PlotCurve::getYAxisData()
 
 void PlotCurve::addYAxisValue(double value)
 {
-    mYAxisVector.push_back(value);
+  mYAxisVector.push_back(value);
 }
 
 const double* PlotCurve::getYAxisVector() const
 {
-    return mYAxisVector.data();
+  return mYAxisVector.data();
 }
 
 int PlotCurve::getSize()
 {
-    return mXAxisVector.size();
+  return mXAxisVector.size();
 }
 
 void PlotCurve::setFileName(QString fileName)
 {
-    mFileName = fileName;
+  mFileName = fileName;
 }
 
 QString PlotCurve::getFileName()
 {
-    return mFileName;
+  return mFileName;
 }
 
 void PlotCurve::setXVariable(QString xVariable)
 {
-    mXVariable = xVariable;
+  mXVariable = xVariable;
 }
 
 QString PlotCurve::getXVariable()
 {
-    return mXVariable;
+  return mXVariable;
 }
 
 void PlotCurve::setYVariable(QString yVariable)
 {
-    mYVariable = yVariable;
+  mYVariable = yVariable;
 }
 
 QString PlotCurve::getYVariable()
 {
-    return mYVariable;
+  return mYVariable;
 }
 
 void PlotCurve::setCustomColor(bool value)
 {
-    mCustomColor = value;
+  mCustomColor = value;
 }
 
 bool PlotCurve::hasCustomColor()
 {
-    return mCustomColor;
+  return mCustomColor;
 }
 
 void PlotCurve::setData(const double* xData, const double* yData, int size)
@@ -147,13 +184,13 @@ void PlotCurve::setData(const double* xData, const double* yData, int size)
 #if QWT_VERSION < 0x060000
 void PlotCurve::updateLegend(QwtLegend *legend) const
 {
-    QwtPlotCurve::updateLegend(legend);
-    QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(legend->find(this));
-    if (lgdItem)
-    {
-        lgdItem->setIdentifierMode(QwtLegendItem::ShowSymbol | QwtLegendItem::ShowText);
-        lgdItem->setSymbol(QwtSymbol(QwtSymbol::Rect, QBrush(pen().color()), QPen(Qt::black),QSize(20,20)));
-    }
-    QwtPlotItem::updateLegend(legend);
+  QwtPlotCurve::updateLegend(legend);
+  QwtLegendItem *lgdItem = dynamic_cast<QwtLegendItem*>(legend->find(this));
+  if (lgdItem)
+  {
+    lgdItem->setIdentifierMode(QwtLegendItem::ShowSymbol | QwtLegendItem::ShowText);
+    lgdItem->setSymbol(QwtSymbol(QwtSymbol::Rect, QBrush(pen().color()), QPen(Qt::black),QSize(20,20)));
+  }
+  QwtPlotItem::updateLegend(legend);
 }
 #endif

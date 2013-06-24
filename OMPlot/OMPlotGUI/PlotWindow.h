@@ -68,6 +68,8 @@ private:
     QString mXRangeMax;
     QString mYRangeMin;
     QString mYRangeMax;
+    double mCurveWidth;
+    int mCurveStyle;
 public:
     PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
     ~PlotWindow();
@@ -93,6 +95,10 @@ public:
     void setYRange(double min, double max);
     QString getYRangeMin();
     QString getYRangeMax();
+    void setCurveWidth(double width);
+    double getCurveWidth();
+    void setCurveStyle(int style);
+    int getCurveStyle();
     void checkForErrors(QStringList variables, QStringList variablesPlotted);
     Plot* getPlot();
     QToolButton* getPanButton();

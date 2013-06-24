@@ -52,33 +52,33 @@ class PlotCurve;
 
 class Plot : public QwtPlot
 {
-    Q_OBJECT
+  Q_OBJECT
 private:
-    PlotWindow *mpParentPlotWindow;
-    Legend *mpLegend;
-    QwtPlotPicker *mpPlotPicker;
-    PlotGrid *mpPlotGrid;
-    PlotZoomer *mpPlotZoomer;
-    PlotPanner *mpPlotPanner;
-    QList<PlotCurve*> mPlotCurvesList;
-    QList<QColor> mColorsList;
+  PlotWindow *mpParentPlotWindow;
+  Legend *mpLegend;
+  QwtPlotPicker *mpPlotPicker;
+  PlotGrid *mpPlotGrid;
+  PlotZoomer *mpPlotZoomer;
+  PlotPanner *mpPlotPanner;
+  QList<PlotCurve*> mPlotCurvesList;
+  QList<QColor> mColorsList;
 public:
-    Plot(PlotWindow *pParent);
-    ~Plot();
+  Plot(PlotWindow *pParent);
+  ~Plot();
 
-    void fillColorsList();
-    PlotWindow* getParentPlotWindow();
-    Legend* getLegend();
-    QwtPlotPicker* getPlotPicker();
-    PlotGrid* getPlotGrid();
-    PlotZoomer* getPlotZoomer();
-    PlotPanner* getPlotPanner();
-    QList<PlotCurve*> getPlotCurvesList();
-    void addPlotCurve(PlotCurve *pCurve);
-    void removeCurve(PlotCurve *pCurve);
-    QColor getUniqueColor(int index, int total);
+  void fillColorsList();
+  PlotWindow* getParentPlotWindow();
+  Legend* getLegend();
+  QwtPlotPicker* getPlotPicker();
+  PlotGrid* getPlotGrid();
+  PlotZoomer* getPlotZoomer();
+  PlotPanner* getPlotPanner();
+  QList<PlotCurve*> getPlotCurvesList();
+  void addPlotCurve(PlotCurve *pCurve);
+  void removeCurve(PlotCurve *pCurve);
+  QColor getUniqueColor(int index, int total);
 public slots:
-    virtual void replot();
+  virtual void replot();
 };
 }
 
