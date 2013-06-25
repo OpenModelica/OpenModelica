@@ -416,6 +416,14 @@ algorithm
       then
         DAE.BINARY(call1,DAE.ADD_ARR(tp),call2);
 
+    case (DAE.CALL(path = fname as Absyn.IDENT("smooth"),expLst = {DAE.ICONST(i),e2},attr=attr),_)
+      equation
+        true = intGe(i,1);
+        e1_1 = Expression.expSub(DAE.ICONST(i), DAE.ICONST(1));
+        e2_1 = differentiateExpTime(e2, inVariables);
+      then
+        DAE.CALL(Absyn.IDENT("smooth"), {e1_1,e2_1}, attr);
+
     case (DAE.CALL(path = fname as Absyn.IDENT("smooth"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         e2_1 = differentiateExpTime(e2, inVariables);
