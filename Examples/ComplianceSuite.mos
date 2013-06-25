@@ -19,8 +19,8 @@ commands:={"ulimit -t 120 && omc +d=nogen " + OpenModelica.Scripting.typeNameStr
 echo(true);
 String(size(allClasses,1)) + " number of classes";
 
-min(writeFile(typeNameString(cl)+".mos","
-writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+last(OpenModelica.Scripting.typeNameStrings(cl))+"\\\"><error type=\\\"killed\\\"/></testcase>\");
+min(OpenModelica.Scripting.writeFile(typeNameString(cl)+".mos","
+OpenModelica.Scripting.writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+OpenModelica.Scripting.escapeXML(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\"><error type=\\\"killed\\\"/></testcase>\");
 loadModel(ModelicaCompliance);getErrorString();
 deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps);getErrorString();
 deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed);getErrorString();
@@ -28,9 +28,9 @@ deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName);
 rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");getErrorString();
 resultFile := rec.resultFile;
 messages := rec.messages;
-messages := escapeXML(messages);
+messages := OpenModelica.Scripting.escapeXML(messages);
 success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then"<>"else"==")+" \"\";
-writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+last(OpenModelica.Scripting.typeNameStrings(cl))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\");
+writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+OpenModelica.Scripting.escapeXML(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\");
 ") for cl in allClasses);
 getErrorString();
 system_parallel(commands);getErrorString();
