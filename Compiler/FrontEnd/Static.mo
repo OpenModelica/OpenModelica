@@ -5223,74 +5223,106 @@ protected function elabBuiltinChange "function: elabBuiltinChange
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
-      DAE.Exp exp_1;
+      DAE.Exp exp;
       DAE.ComponentRef cr_1;
       DAE.Const c;
       DAE.Type tp1;
       list<Env.Frame> env;
-      Absyn.Exp exp;
       Absyn.ComponentRef cr;
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
       String sp;
+      DAE.Properties prop;
+      Absyn.Exp aexp;
 
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_) /* simple type, constant variability */
+    case (cache,env,{aexp as Absyn.CREF(componentRef = cr)},{},impl,pre,_) /* simple type, constant variability */
       equation
-        (cache,exp_1,DAE.PROP(tp1,c),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        _ = Expression.getCrefFromCrefOrAsub(exp_1);
+        (cache,exp,prop,_) = elabExp(cache,env,aexp,impl,NONE(),true,pre,info);
+        (cache,exp,prop) = elabBuiltinChange2(cache,env,cr,exp,prop,pre,info);
+      then (cache, exp, prop);
+
+    else
+      equation
+        sp = PrefixUtil.printPrefixStr3(inPrefix);
+        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE, {"First","change", sp}, info);
+      then fail();
+  end match;
+end elabBuiltinChange;
+
+protected function elabBuiltinChange2 "function: elabBuiltinChange
+  author: PA
+
+  This function handles the built in change operator.
+"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef cr;
+  input DAE.Exp inExp;
+  input DAE.Properties prop;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,cr,inExp,prop,inPrefix,info)
+    local
+      DAE.Exp exp_1;
+      DAE.ComponentRef cr_1;
+      DAE.Const c;
+      DAE.Type tp1,tp2;
+      list<Env.Frame> env;
+      Absyn.Exp exp;
+      Boolean impl;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      String sp;
+      DAE.Dimensions dims;
+
+    case (cache,env,_,exp_1,DAE.PROP(tp1,c),pre,_)
+      equation
+        Types.simpleType(tp1);
         true = Types.isParameterOrConstant(c);
       then (cache, DAE.BCONST(false), DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
 
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_) /* simple type, \'discrete\' variable */
+    case (cache,env,_,exp_1,DAE.PROP(tp1,c),pre,_)
       equation
-        (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        Types.simpleType(tp1);
-        cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
-        (cache,DAE.ATTR(variability = SCode.DISCRETE()),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
-        exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
-      then
-        (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
-
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_) /* simple type, boolean or integer => discrete variable */
-      equation
-        (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
-        _ = Expression.getCrefFromCrefOrAsub(exp_1);
         Types.simpleType(tp1);
         Types.discreteType(tp1);
         exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
       then
         (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
 
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_)
+    case (cache,env,_,exp_1,DAE.PROP(tp1,c),pre,_) /* workaround for discrete Reals; does not handle Reals that become discrete due to when-section */
       equation
-        (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
+        Types.simpleType(tp1);
+        failure(Types.discreteType(tp1));
+        cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
+        (cache,DAE.ATTR(variability = SCode.DISCRETE()),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
+        exp_1 = Expression.makeBuiltinCall("change", {exp_1}, DAE.T_BOOL_DEFAULT);
+      then
+        (cache, exp_1, DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()));
+
+    case (cache,env,_,exp_1,DAE.PROP(tp1,c),pre,_)
+      equation
         cr_1 = Expression.getCrefFromCrefOrAsub(exp_1);
         Types.simpleType(tp1);
         (cache,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         sp = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.ARGUMENT_MUST_BE_DISCRETE_VAR, {"First","change",sp}, info);
-      then
-        fail();
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl,pre,_)
+      then fail();
+
+    case (cache,env,_,exp_1,DAE.PROP(tp1,c),pre,_)
       equation
-        (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl,NONE(),true,pre,info);
         failure(Types.simpleType(tp1));
         sp = PrefixUtil.printPrefixStr3(pre);
         Error.addSourceMessage(Error.TYPE_MUST_BE_SIMPLE, {"operand to change", sp}, info);
-      then
-        fail();
-    case (cache,env,{exp},_,impl,pre,_)
-      equation
-        sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE, {"First","change", sp}, info);
-      then
-        fail();
+      then fail();
   end matchcontinue;
-end elabBuiltinChange;
+end elabBuiltinChange2;
 
 protected function elabBuiltinCat "function: elabBuiltinCat
   author: PA
