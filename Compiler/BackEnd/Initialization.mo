@@ -1764,8 +1764,8 @@ algorithm
       vars = BackendVariable.addVar(derVar, vars);
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
-      vars = Debug.bcallret2((not isFixed) and preUsed, BackendVariable.addVar, preVar, vars, vars);
-      fixvars = Debug.bcallret2(isFixed and preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
+      vars = Debug.bcallret2(/* (not isFixed) and */ preUsed, BackendVariable.addVar, preVar, vars, vars);
+      // fixvars = Debug.bcallret2(isFixed and preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars, hs)));
 
     // discrete
