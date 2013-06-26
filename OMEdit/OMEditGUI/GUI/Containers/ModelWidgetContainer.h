@@ -343,14 +343,18 @@ public:
   ModelWidget* getCurrentModelWidget();
   QMdiSubWindow* getCurrentMdiSubWindow();
   QMdiSubWindow* getMdiSubWindow(ModelWidget *pModelWidget);
+  void setPreviousViewType(StringHandler::ViewType viewType);
+  StringHandler::ViewType getPreviousViewType();
   void setShowGridLines(bool On);
   bool isShowGridLines();
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
 private:
+  StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;
   QDialog *mpModelSwitcherDialog;
   QListWidget *mpRecentModelsList;
+  void loadPreviousViewType(ModelWidget *pModelWidget);
 public slots:
   void openRecentModelWidget(QListWidgetItem *pItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);

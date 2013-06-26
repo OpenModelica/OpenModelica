@@ -2507,6 +2507,7 @@ void ModelWidget::showIconView(bool checked)
   mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(false);
   mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(false);
   mpIconGraphicsView->show();
+  mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
 }
 
 void ModelWidget::showDiagramView(bool checked)
@@ -2532,6 +2533,7 @@ void ModelWidget::showDiagramView(bool checked)
   mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(false);
   mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(false);
   mpDiagramGraphicsView->show();
+  mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
 }
 
 void ModelWidget::showModelicaTextView(bool checked)
@@ -2553,6 +2555,7 @@ void ModelWidget::showModelicaTextView(bool checked)
   mpModelWidgetContainer->getMainWindow()->getFindReplaceAction()->setEnabled(true);
   mpModelWidgetContainer->getMainWindow()->getGotoLineNumberAction()->setEnabled(true);
   mpModelicaTextWidget->getModelicaTextEdit()->setFocus();
+  mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
 }
 
 void ModelWidget::showDocumentationView()
@@ -2652,7 +2655,7 @@ void ModelWidget::closeEvent(QCloseEvent *event)
 }
 
 ModelWidgetContainer::ModelWidgetContainer(MainWindow *pParent)
-  : MdiArea(pParent), mShowGridLines(false)
+  : MdiArea(pParent), mShowGridLines(false), mPreviousViewType(StringHandler::NoView)
 {
   if (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getModelingViewMode().compare(Helper::subWindow) == 0)
     setViewMode(QMdiArea::SubWindowView);
@@ -2726,7 +2729,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     if (preferredView.compare("info") == 0)
     {
       pModelWidget->showDocumentationView();
-      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+      loadPreviousViewType(pModelWidget);
     }
     else if (preferredView.compare("text") == 0)
     {
@@ -2740,7 +2743,11 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   else if (pModelWidget->getLibraryTreeNode()->isDocumentationClass())
   {
     pModelWidget->showDocumentationView();
-    pModelWidget->getDiagramViewToolButton()->setChecked(true);
+    loadPreviousViewType(pModelWidget);
+  }
+  else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView)
+  {
+    loadPreviousViewType(pModelWidget);
   }
   else
   {
@@ -2756,7 +2763,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     else if (defaultView.compare(Helper::documentationView) == 0)
     {
       pModelWidget->showDocumentationView();
-      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+      loadPreviousViewType(pModelWidget);
     }
     else
     {
@@ -2792,6 +2799,16 @@ QMdiSubWindow* ModelWidgetContainer::getMdiSubWindow(ModelWidget *pModelWidget)
       return pMdiSubWindow;
   }
   return 0;
+}
+
+void ModelWidgetContainer::setPreviousViewType(StringHandler::ViewType viewType)
+{
+  mPreviousViewType = viewType;
+}
+
+StringHandler::ViewType ModelWidgetContainer::getPreviousViewType()
+{
+  return mPreviousViewType;
 }
 
 void ModelWidgetContainer::setShowGridLines(bool On)
@@ -2894,6 +2911,25 @@ void ModelWidgetContainer::changeRecentModelsListSelection(bool moveDown)
       mpRecentModelsList->setCurrentRow(count - 1);
     else
       mpRecentModelsList->setCurrentRow(currentRow - 1);
+  }
+}
+
+void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
+{
+  switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType())
+  {
+    case StringHandler::Diagram:
+      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+      break;
+    case StringHandler::Icon:
+      pModelWidget->getIconViewToolButton()->setChecked(true);
+      break;
+    case StringHandler::ModelicaText:
+      pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
+      break;
+    default:
+      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+      break;
   }
 }
 
