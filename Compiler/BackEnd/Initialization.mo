@@ -1589,20 +1589,17 @@ protected function addStartValueEquations "function addStartValueEquations
 algorithm
   (outEqns, outDumpVars) := matchcontinue(inVarLst, inEqns, inDumpVars)
     local
-      BackendDAE.Variables vars;
-      BackendDAE.Var var, preVar, dumpVar;
-      list<BackendDAE.Var> varlst, dumpVars;
+      BackendDAE.Var var, dumpVar;
+      list<BackendDAE.Var> vars, dumpVars;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
-      DAE.Exp e,  crefExp, startExp;
+      DAE.Exp e, crefExp, startExp;
       DAE.ComponentRef cref, preCref;
       DAE.Type tp;
-      String crStr;
-      DAE.InstDims arryDim;
 
     case ({}, _, _) then (inEqns, inDumpVars);
 
-    case (var::varlst, _, _) equation
+    case (var::vars, _, _) equation
       preCref = BackendVariable.varCref(var);
       true = ComponentReference.isPreCref(preCref);
       cref = ComponentReference.popPreCref(preCref);
@@ -1617,15 +1614,14 @@ algorithm
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
       eqns = BackendEquation.equationAdd(eqn, inEqns);
 
-      // crStr = ComponentReference.crefStr(cref);
       dumpVar = BackendVariable.copyVarNewName(cref, var);
       // crStr = BackendDump.varString(dumpVar);
       // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
 
-      (eqns, dumpVars) = addStartValueEquations(varlst, eqns, inDumpVars);
+      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
     then (eqns, dumpVar::dumpVars);
 
-    case (var::varlst, _, _) equation
+    case (var::vars, _, _) equation
       cref = BackendVariable.varCref(var);
       tp = BackendVariable.varType(var);
 
@@ -1638,11 +1634,10 @@ algorithm
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
       eqns = BackendEquation.equationAdd(eqn, inEqns);
 
-      // crStr = ComponentReference.crefStr(cref);
       // crStr = BackendDump.varString(var);
       // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
 
-      (eqns, dumpVars) = addStartValueEquations(varlst, eqns, inDumpVars);
+      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
     then (eqns, var::dumpVars);
 
     else equation
@@ -1764,8 +1759,7 @@ algorithm
       vars = BackendVariable.addVar(derVar, vars);
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
-      vars = Debug.bcallret2(/* (not isFixed) and */ preUsed, BackendVariable.addVar, preVar, vars, vars);
-      // fixvars = Debug.bcallret2(isFixed and preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
+      vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
     then ((var, (vars, fixvars, hs)));
 
     // discrete
@@ -1786,7 +1780,6 @@ algorithm
 
       vars = BackendVariable.addVar(var, vars);
       vars = Debug.bcallret2((not isFixed) and preUsed, BackendVariable.addVar, preVar, vars, vars);
-      fixvars = Debug.bcallret2(isFixed and preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars, hs)));
 
     // parameter without binding
@@ -1834,7 +1827,6 @@ algorithm
       vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
-      // fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars, hs)));
 
     case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp)), (vars, fixvars, hs))) equation
