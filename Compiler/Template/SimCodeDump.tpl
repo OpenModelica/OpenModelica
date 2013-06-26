@@ -7,8 +7,27 @@ template dumpSimCode(SimCode code, Boolean withOperations)
 ::=
   match code
   case sc as SIMCODE(modelInfo=mi as MODELINFO(vars=vars as SIMVARS(__))) then
+  let res = dumpSimCodeBase(code,withOperations)
+  let() = textFile(res,'<%fileNamePrefix%>_info.xml')
+  '<%fileNamePrefix%>_info'
+end dumpSimCode;
+
+template dumpSimCodeToC(SimCode code, Boolean withOperations)
+::=
+  match code
+  case sc as SIMCODE(modelInfo=mi as MODELINFO(vars=vars as SIMVARS(__))) then
+  let res =
+  'data->modelData.modelDataXml.infoXMLData = "<%Util.escapeModelicaStringToCString(dumpSimCodeBase(code,withOperations))%>";'
+  let() = textFile(res,'<%fileNamePrefix%>_info.c')
+  '<%fileNamePrefix%>_info'
+end dumpSimCodeToC;
+
+template dumpSimCodeBase(SimCode code, Boolean withOperations)
+::=
+  match code
+  case sc as SIMCODE(modelInfo=mi as MODELINFO(vars=vars as SIMVARS(__))) then
   let name = Util.escapeModelicaStringToXmlString(dotPath(mi.name))
-  let res = <<
+  <<
   <?xml version="1.0" encoding="UTF-8"?>
   <?xml-stylesheet type="application/xml" href="simcodedump.xsl"?>
   <simcodedump model="<%name%>">
@@ -58,9 +77,7 @@ template dumpSimCode(SimCode code, Boolean withOperations)
   </functions>
   </simcodedump><%\n%>
   >>
-  let() = textFile(res,'<%fileNamePrefix%>_info.xml')
-  '<%fileNamePrefix%>_info'
-end dumpSimCode;
+end dumpSimCodeBase;
 
 template dumpVarsShort(list<SimVar> vars)
 ::=

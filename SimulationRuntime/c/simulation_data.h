@@ -338,6 +338,7 @@ typedef struct STATE_SET_DATA
 typedef struct MODEL_DATA_XML
 {
   const char *fileName;
+  const char *infoXMLData;
   long nFunctions;
   long nEquations;
   long nProfileBlocks;
@@ -368,6 +369,7 @@ typedef struct MODEL_DATA
   modelica_string_t modelFilePrefix;
   modelica_string_t modelDir;
   modelica_string_t modelGUID;
+  modelica_string_t initXMLData;
 
   long nSamples;                       /* number of different sample-calls */
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */

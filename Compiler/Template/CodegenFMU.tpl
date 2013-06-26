@@ -63,7 +63,7 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
   let()= textFile(simulationHeaderFile(simCode,guid), '<%fileNamePrefix%>_model.h')
   let()= textFile(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
-  let()= textFile(simulationInitFile(simCode,guid), '<%fileNamePrefix%>_init.xml')
+  let()= textFile(simulationInitFileCString(simulationInitFile(simCode,guid)), '<%fileNamePrefix%>_init.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
   let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode), '<%fileNamePrefix%>.def')
@@ -71,6 +71,12 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   "" // Return empty result since result written to files directly
 end translateModel;
 
+template simulationInitFileCString(Text text)
+::=
+  <<
+  data->modelData.initXMLData = "<%Util.escapeModelicaStringToCString(text)%>";
+  >>
+end simulationInitFileCString;
 
 template fmuModelDescriptionFile(SimCode simCode, String guid)
  "Generates code for ModelDescription file for FMU target."
@@ -981,60 +987,61 @@ end SwitchAliasVarsSet;
 template getPlatformString2(String platform, String fileNamePrefix, String dirExtra, String libsPos1, String libsPos2, String omhome)
  "returns compilation commands for the platform. "
 ::=
+let fmudirname = '<%fileNamePrefix%>.fmutmp'
 match platform
   case "win32" then
   <<
   <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def <%fileNamePrefix%>.dll
   <%\t%> dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
 
-  <%\t%> cp <%fileNamePrefix%>.dll <%fileNamePrefix%>/binaries/<%platform%>/
-  <%\t%> cp <%fileNamePrefix%>.lib <%fileNamePrefix%>/binaries/<%platform%>/
-  <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
-  <%\t%> cp <%fileNamePrefix%>_model.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_model.h
-  <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
-  <%\t%> cp <%fileNamePrefix%>_info.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_info.xml
-  <%\t%> cp <%fileNamePrefix%>_init.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_init.xml
-  <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
-  <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
-  <%\t%> cp <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
-  <%\t%> cp modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
-  <%\t%> cp <%omhome%>/lib/omc/libexec/gnuplot/binary/libexpat-1.dll <%fileNamePrefix%>/binaries/<%platform%>/
-  <%\t%> cd <%fileNamePrefix%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
-  <%\t%> rm -rf <%fileNamePrefix%>
+  <%\t%> cp <%fileNamePrefix%>.dll <%fmudirname%>/binaries/<%platform%>/
+  <%\t%> cp <%fileNamePrefix%>.lib <%fmudirname%>/binaries/<%platform%>/
+  <%\t%> cp <%fileNamePrefix%>.c <%fmudirname%>/sources/<%fileNamePrefix%>.c
+  <%\t%> cp <%fileNamePrefix%>_model.h <%fmudirname%>/sources/<%fileNamePrefix%>_model.h
+  <%\t%> cp <%fileNamePrefix%>_FMU.c <%fmudirname%>/sources/<%fileNamePrefix%>_FMU.c
+  <%\t%> cp <%fileNamePrefix%>_info.c <%fmudirname%>/sources/<%fileNamePrefix%>_info.c
+  <%\t%> cp <%fileNamePrefix%>_init.c <%fmudirname%>/sources/<%fileNamePrefix%>_init.c
+  <%\t%> cp <%fileNamePrefix%>_functions.c <%fmudirname%>/sources/<%fileNamePrefix%>_functions.c
+  <%\t%> cp <%fileNamePrefix%>_functions.h <%fmudirname%>/sources/<%fileNamePrefix%>_functions.h
+  <%\t%> cp <%fileNamePrefix%>_records.c <%fmudirname%>/sources/<%fileNamePrefix%>_records.c
+  <%\t%> cp modelDescription.xml <%fmudirname%>/modelDescription.xml
+  <%\t%> cp <%omhome%>/lib/omc/libexec/gnuplot/binary/libexpat-1.dll <%fmudirname%>/binaries/<%platform%>/
+  <%\t%> cd <%fmudirname%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
+  <%\t%> rm -rf <%fmudirname%>
   <%\t%> rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
 
   <%fileNamePrefix%>.dll: clean <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
   <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%> -Wl,--kill-at
 
-  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>
-  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/binaries
-  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/binaries/<%platform%>
-  <%\t%> "mkdir.exe" -p <%fileNamePrefix%>/sources
+  <%\t%> "mkdir.exe" -p <%fmudirname%>
+  <%\t%> "mkdir.exe" -p <%fmudirname%>/binaries
+  <%\t%> "mkdir.exe" -p <%fmudirname%>/binaries/<%platform%>
+  <%\t%> "mkdir.exe" -p <%fmudirname%>/sources
   >>
   else
   <<
   <%fileNamePrefix%>_FMU: <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
   <%\t%> $(CXX) -shared -I. -o <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
 
-  <%\t%> mkdir -p <%fileNamePrefix%>
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries
+  <%\t%> mkdir -p <%fmudirname%>
+  <%\t%> mkdir -p <%fmudirname%>/binaries
 
-  <%\t%> mkdir -p <%fileNamePrefix%>/binaries/$(PLATFORM)
-  <%\t%> mkdir -p <%fileNamePrefix%>/sources
+  <%\t%> mkdir -p <%fmudirname%>/binaries/$(PLATFORM)
+  <%\t%> mkdir -p <%fmudirname%>/sources
 
-  <%\t%> cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>/binaries/$(PLATFORM)/
-  <%\t%> cp <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>/binaries/$(PLATFORM)/
-  <%\t%> cp <%fileNamePrefix%>.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>.c
-  <%\t%> cp <%fileNamePrefix%>_model.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_model.h
-  <%\t%> cp <%fileNamePrefix%>_info.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_info.xml
-  <%\t%> cp <%fileNamePrefix%>_init.xml <%fileNamePrefix%>/sources/<%fileNamePrefix%>_init.xml
-  <%\t%> cp <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_FMU.c
-  <%\t%> cp <%fileNamePrefix%>_functions.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.c
-  <%\t%> cp <%fileNamePrefix%>_functions.h <%fileNamePrefix%>/sources/<%fileNamePrefix%>_functions.h
-  <%\t%> cp <%fileNamePrefix%>_records.c <%fileNamePrefix%>/sources/<%fileNamePrefix%>_records.c
-  <%\t%> cp modelDescription.xml <%fileNamePrefix%>/modelDescription.xml
-  <%\t%> cd <%fileNamePrefix%>; rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
-  <%\t%> rm -rf <%fileNamePrefix%>
+  <%\t%> cp <%fileNamePrefix%>$(DLLEXT) <%fmudirname%>/binaries/$(PLATFORM)/
+  <%\t%> cp <%fileNamePrefix%>_FMU.libs <%fmudirname%>/binaries/$(PLATFORM)/
+  <%\t%> cp <%fileNamePrefix%>.c <%fmudirname%>/sources/<%fileNamePrefix%>.c
+  <%\t%> cp <%fileNamePrefix%>_model.h <%fmudirname%>/sources/<%fileNamePrefix%>_model.h
+  <%\t%> cp <%fileNamePrefix%>_info.c <%fmudirname%>/sources/<%fileNamePrefix%>_info.c
+  <%\t%> cp <%fileNamePrefix%>_init.c <%fmudirname%>/sources/<%fileNamePrefix%>_init.c
+  <%\t%> cp <%fileNamePrefix%>_FMU.c <%fmudirname%>/sources/<%fileNamePrefix%>_FMU.c
+  <%\t%> cp <%fileNamePrefix%>_functions.c <%fmudirname%>/sources/<%fileNamePrefix%>_functions.c
+  <%\t%> cp <%fileNamePrefix%>_functions.h <%fmudirname%>/sources/<%fileNamePrefix%>_functions.h
+  <%\t%> cp <%fileNamePrefix%>_records.c <%fmudirname%>/sources/<%fileNamePrefix%>_records.c
+  <%\t%> cp modelDescription.xml <%fmudirname%>/modelDescription.xml
+  <%\t%> cd <%fmudirname%>; rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
+  <%\t%> rm -rf <%fmudirname%>
   <%\t%> rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
 
   >>
@@ -1051,6 +1058,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
+  let fmudirname = '<%fileNamePrefix%>.fmutmp'
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
        case "inline-euler" then "-D_OMC_INLINE_EULER"
@@ -1096,26 +1104,26 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
 
   $(FILEPREFIX)$(FMUEXT): $(FILEPREFIX)$(DLLEXT) modelDescription.xml
-      if not exist <%fileNamePrefix%>\binaries\$(PLATWIN32) mkdir <%fileNamePrefix%>\binaries\$(PLATWIN32)
-      if not exist <%fileNamePrefix%>\sources mkdir <%fileNamePrefix%>\sources
+      if not exist <%fmudirname%>\binaries\$(PLATWIN32) mkdir <%fmudirname%>\binaries\$(PLATWIN32)
+      if not exist <%fmudirname%>\sources mkdir <%fmudirname%>\sources
 
-      copy <%fileNamePrefix%>.dll <%fileNamePrefix%>\binaries\$(PLATWIN32)
-      copy <%fileNamePrefix%>.lib <%fileNamePrefix%>\binaries\$(PLATWIN32)
-      copy <%fileNamePrefix%>.pdb <%fileNamePrefix%>\binaries\$(PLATWIN32)
-      copy <%fileNamePrefix%>.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>.c
-      copy <%fileNamePrefix%>_model.h <%fileNamePrefix%>\sources\<%fileNamePrefix%>_model.h
-      copy <%fileNamePrefix%>_FMU.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_FMU.c
-      copy <%fileNamePrefix%>_info.xml <%fileNamePrefix%>\sources\<%fileNamePrefix%>_info.xml
-      copy <%fileNamePrefix%>_init.xml <%fileNamePrefix%>\sources\<%fileNamePrefix%>_init.xml
-      copy <%fileNamePrefix%>_functions.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_functions.c
-      copy <%fileNamePrefix%>_functions.h <%fileNamePrefix%>\sources\<%fileNamePrefix%>_functions.h
-      copy <%fileNamePrefix%>_records.c <%fileNamePrefix%>\sources\<%fileNamePrefix%>_records.c
-      copy modelDescription.xml <%fileNamePrefix%>\modelDescription.xml
-      copy <%stringReplace(makefileParams.omhome,"/","\\")%>\lib\omc\libexec\gnuplot\binary\libexpat-1.dll <%fileNamePrefix%>\binaries\$(PLATWIN32)
-      cd <%fileNamePrefix%>
+      copy <%fileNamePrefix%>.dll <%fmudirname%>\binaries\$(PLATWIN32)
+      copy <%fileNamePrefix%>.lib <%fmudirname%>\binaries\$(PLATWIN32)
+      copy <%fileNamePrefix%>.pdb <%fmudirname%>\binaries\$(PLATWIN32)
+      copy <%fileNamePrefix%>.c <%fmudirname%>\sources\<%fileNamePrefix%>.c
+      copy <%fileNamePrefix%>_model.h <%fmudirname%>\sources\<%fileNamePrefix%>_model.h
+      copy <%fileNamePrefix%>_FMU.c <%fmudirname%>\sources\<%fileNamePrefix%>_FMU.c
+      copy <%fileNamePrefix%>_info.c <%fmudirname%>\sources\<%fileNamePrefix%>_info.c
+      copy <%fileNamePrefix%>_init.c <%fmudirname%>\sources\<%fileNamePrefix%>_init.c
+      copy <%fileNamePrefix%>_functions.c <%fmudirname%>\sources\<%fileNamePrefix%>_functions.c
+      copy <%fileNamePrefix%>_functions.h <%fmudirname%>\sources\<%fileNamePrefix%>_functions.h
+      copy <%fileNamePrefix%>_records.c <%fmudirname%>\sources\<%fileNamePrefix%>_records.c
+      copy modelDescription.xml <%fmudirname%>\modelDescription.xml
+      copy <%stringReplace(makefileParams.omhome,"/","\\")%>\lib\omc\libexec\gnuplot\binary\libexpat-1.dll <%fmudirname%>\binaries\$(PLATWIN32)
+      cd <%fmudirname%>
       "$(MINGW)\bin\zip.exe" -r ../<%fileNamePrefix%>.fmu *
       cd ..
-      rmdir /S /Q <%fileNamePrefix%>
+      rmdir /S /Q <%fmudirname%>
 
   $(FILEPREFIX)$(DLLEXT): $(MAINOBJ) $(FILEPREFIX)_records.c $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
       $(CXX) /Fe$(FILEPREFIX)$(DLLEXT) $(MAINFILE) $(FILEPREFIX)_FMU.c $(FILEPREFIX)_records.c $(CFLAGS) $(LDFLAGS)
@@ -1150,7 +1158,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   PLAT34 = <%makefileParams.platform%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
   MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o

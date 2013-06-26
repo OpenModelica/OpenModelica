@@ -9,28 +9,45 @@ function last
   input String str[:];
   output String ostr := str[end];
 end last;
+function fixName
+  input String str;
+  output String out;
+algorithm
+  out := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\"'\",\"\"),\"\\\"\",\"\"),\"\\\\\",\"\");
+end fixName;
 ");getErrorString();
 
 system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 echo(false);
 allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
-commands:={"ulimit -t 120 && omc +d=nogen " + OpenModelica.Scripting.typeNameString(cl) + ".mos > /dev/null 2>&1" for cl in allClasses};
+commands:={"ulimit -t 120 && omc +d=nogen \"" + fixName(OpenModelica.Scripting.typeNameString(cl)) + ".mos\" > /dev/null 2>&1" for cl in allClasses};
 echo(true);
 String(size(allClasses,1)) + " number of classes";
 
-min(OpenModelica.Scripting.writeFile(typeNameString(cl)+".mos","
-OpenModelica.Scripting.writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+OpenModelica.Scripting.escapeXML(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\"><error type=\\\"killed\\\"/></testcase>\");
+min(OpenModelica.Scripting.writeFile(fixName(typeNameString(cl))+".mos","
+OpenModelica.Scripting.writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+OpenModelica.Scripting.escapeXML(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\"><error type=\\\"killed\\\"/></testcase>\");
 loadModel(ModelicaCompliance);getErrorString();
 deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps);getErrorString();
 deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed);getErrorString();
 deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName);getErrorString();
 rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");getErrorString();
+loadString(\"
+function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
+function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
+function firstPart input String str; output String out; algorithm out := if length(str) < 4096 then str else substring(str,1,4096); end firstPart;
+function fixName
+  input String str;
+  output String out;
+algorithm
+  out := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\\\"'\\\",\\\"\\\"),\\\"\\\\\\\"\\\",\\\"\\\"),\\\"\\\\\\\\\\\",\\\"\\\");
+end fixName;
+\");
 resultFile := rec.resultFile;
 messages := rec.messages;
-messages := OpenModelica.Scripting.escapeXML(messages);
+messages := OpenModelica.Scripting.escapeXML(firstPart(messages));
 success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then"<>"else"==")+" \"\";
-writeFile(\""+typeNameString(cl)+".res\",\"<testcase name=\\\""+OpenModelica.Scripting.escapeXML(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\");
+writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+OpenModelica.Scripting.escapeXML(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\");
 ") for cl in allClasses);
 getErrorString();
 system_parallel(commands);getErrorString();

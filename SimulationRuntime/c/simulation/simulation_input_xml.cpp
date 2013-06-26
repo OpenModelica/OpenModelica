@@ -219,19 +219,21 @@ void read_input_xml(MODEL_DATA* modelData,
   std::map<std::string, long> mapAlias, mapAliasParam;
   std::map<std::string, long>::iterator it, itParam;
 
-  /* read the filename from the command line (if any) */
-  if(omc_flag[FLAG_F]) {
-    filename = omc_flagValue[FLAG_F];
-  } else {
-    /* no file given on the command line? use the default */
-    filename = string(modelData->modelFilePrefix)+"_init.xml";  /* model_name defined in generated code for model.*/
-  }
+  if (modelData->initXMLData==NULL) {
+    /* read the filename from the command line (if any) */
+    if(omc_flag[FLAG_F]) {
+      filename = omc_flagValue[FLAG_F];
+    } else {
+      /* no file given on the command line? use the default */
+      filename = string(modelData->modelFilePrefix)+"_init.xml";  /* model_name defined in generated code for model.*/
+    }
 
-  /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
-  file = fopen(filename.c_str(), "r");
-  if(!file)
-  {
-    THROW1("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
+    /* open the file and fail on error. we open it read-write to be sure other processes can overwrite it */
+    file = fopen(filename.c_str(), "r");
+    if(!file)
+    {
+      THROW1("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
+    }
   }
   /* create the XML parser */
   parser = XML_ParserCreate(NULL);
@@ -244,21 +246,32 @@ void read_input_xml(MODEL_DATA* modelData,
   XML_SetUserData(parser, &mi);
   /* set the handlers for start/end of element. */
   XML_SetElementHandler(parser, startElement, endElement);
-  do
-  {
-    size_t len = fread(buf, 1, sizeof(buf), file);
-    done = len < sizeof(buf);
-    if(XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR)
+  if (modelData->initXMLData==NULL) {
+    do
     {
-      fclose(file);
-      WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
-          filename.c_str(),
-          XML_ErrorString(XML_GetErrorCode(parser)),
-          XML_GetCurrentLineNumber(parser));
-      XML_ParserFree(parser);
-      THROW("see last warning");
-    }
-  }while(!done);
+      size_t len = fread(buf, 1, sizeof(buf), file);
+      done = len < sizeof(buf);
+      if(XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR)
+      {
+        fclose(file);
+        WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
+            filename.c_str(),
+            XML_ErrorString(XML_GetErrorCode(parser)),
+            XML_GetCurrentLineNumber(parser));
+        XML_ParserFree(parser);
+        THROW("see last warning");
+      }
+    } while(!done);
+    fclose(file);
+  } else if (XML_Parse(parser, modelData->initXMLData, strlen(modelData->initXMLData), 1) == XML_STATUS_ERROR) { /* Got the full string already */
+    fprintf(stderr, "%s, %s %lu\n", modelData->initXMLData, XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
+    WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML data %s: %s at line %lu\n",
+             modelData->initXMLData,
+             XML_ErrorString(XML_GetErrorCode(parser)),
+             XML_GetCurrentLineNumber(parser));
+    XML_ParserFree(parser);
+    THROW("see last warning");
+  }
 
   /* now we should have all the data inside omc_ModelInput mi. */
 
@@ -273,7 +286,6 @@ void read_input_xml(MODEL_DATA* modelData,
   } else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
   {
     XML_ParserFree(parser);
-    fclose(file);
     WARNING3(LOG_STDOUT, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
         mi.md["guid"].c_str(),
         filename.c_str(),
@@ -356,7 +368,6 @@ void read_input_xml(MODEL_DATA* modelData,
     WARNING2(LOG_SIMULATION, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
     RELEASE(LOG_SIMULATION);
     XML_ParserFree(parser);
-    fclose(file);
     EXIT(-1);
   }
 
@@ -1114,8 +1125,6 @@ void read_input_xml(MODEL_DATA* modelData,
   RELEASE(LOG_DEBUG);
 
   XML_ParserFree(parser);
-
-  fclose(file);
 }
 
 /* reads std::string value from a string */

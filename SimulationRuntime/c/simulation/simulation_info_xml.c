@@ -189,12 +189,15 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
 {
   int done=0;
   char buf[BUFSIZ] = {0};
-  FILE* file = fopen(strdup(xml->fileName),"r");
+  FILE* file;
   XML_Parser parser = NULL;
   void* userData[4] = {xml,(void*)1,(void*)0,(void*)0};
-  if (!file) {
-    const char *str = strerror(errno);
-    THROW2("Failed to open file %s: %s\n", xml->fileName, str);
+  if (!xml->infoXMLData) {
+    file = fopen(xml->fileName,"r");
+    if (!file) {
+      const char *str = strerror(errno);
+      THROW2("Failed to open file %s: %s\n", xml->fileName, str);
+    }
   }
   parser = XML_ParserCreate(NULL);
   if (!parser) {
@@ -209,21 +212,30 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   xml->equationInfo[0].vars = NULL;
   XML_SetUserData(parser, userData);
   XML_SetElementHandler(parser, startElement, endElement);
-  do {
-    size_t len = fread(buf, 1, sizeof(buf), file);
-    done = len < sizeof(buf);
-    if(XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR) {
+  if (!xml->infoXMLData) {
+    do {
+      size_t len = fread(buf, 1, sizeof(buf), file);
+      done = len < sizeof(buf);
+      if(XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR) {
+        const char *err = XML_ErrorString(XML_GetErrorCode(parser));
+        unsigned long line = XML_GetCurrentLineNumber(parser);
+        fclose(file);
+        XML_ParserFree(parser);
+        THROW4("%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
+      }
+    } while(!done);
+    fclose(file);
+  } else {
+    if (XML_Parse(parser, xml->infoXMLData, strlen(xml->infoXMLData), 1) == XML_STATUS_ERROR) {
       const char *err = XML_ErrorString(XML_GetErrorCode(parser));
       unsigned long line = XML_GetCurrentLineNumber(parser);
-      fclose(file);
       XML_ParserFree(parser);
-      THROW4("%s: Error: failed to read the XML file %s: %s at line %lu", __FILE__, xml->fileName, err, line);
+      THROW4("%s: Error: failed to read the XML data %s: %s at line %lu", __FILE__, xml->infoXMLData, err, line);
     }
-  } while(!done);
+  }
   assert(xml->nEquations == (long) userData[1]);
   xml->nProfileBlocks = (long) userData[2];
   assert(xml->nFunctions == (long) userData[3]);
-  fclose(file);
 }
 
 EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix) {
