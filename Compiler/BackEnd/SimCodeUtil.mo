@@ -1595,7 +1595,7 @@ algorithm
       SymbolicJacs = listAppend(SymbolicJacsStateSelect, SymbolicJacs);
 
       // generate jacobian or linear model matrices
-      LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
+      (LinearMatrices,uniqueEqIndex) = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
       LinearMatrices = jacG::LinearMatrices;
 
       (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, LinearMatrices) = countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, LinearMatrices);
@@ -4895,10 +4895,11 @@ end createSymbolicSimulationJacobian;
 protected function createJacobianLinearCode
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
-  input Integer uniqueEqIndex;
+  input Integer iuniqueEqIndex;
   output list<SimCode.JacobianMatrix> res;
+  output Integer ouniqueEqIndex;
 algorithm
-  res := matchcontinue (inSymjacs, inModelInfo, uniqueEqIndex)
+  (res,ouniqueEqIndex) := matchcontinue (inSymjacs, inModelInfo, iuniqueEqIndex)
     local 
     case (_, _, _)
       equation
@@ -4906,17 +4907,17 @@ algorithm
         // b = Flags.disableDebug(Flags.EXEC_STAT);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
-        (res, _) = createSymbolicJacobianssSimCode(inSymjacs, inModelInfo, uniqueEqIndex, {"A", "B", "C", "D"});
+        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, inModelInfo, iuniqueEqIndex, {"A", "B", "C", "D"});
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
         // _ = Flags.set(Flags.EXEC_STAT, b);
         Debug.execStat("generated analytical Jacobians SimCode. : ", CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
         _ = System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
-      then res;
+      then (res,ouniqueEqIndex);
     else
       equation
         res = {({}, {}, "A", ({}, ({}, {})), {}, 0), ({}, {}, "B", ({}, ({}, {})), {}, 0), ({}, {}, "C", ({}, ({}, {})), {}, 0), ({}, {}, "D", ({}, ({}, {})), {}, 0)};
-      then res;
+      then (res,iuniqueEqIndex);
   end matchcontinue;
 end createJacobianLinearCode;
 

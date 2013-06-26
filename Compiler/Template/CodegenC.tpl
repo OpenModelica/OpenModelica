@@ -2002,7 +2002,7 @@ template functionlinearmodel(ModelInfo modelInfo) "template functionlinearmodel
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
     <<
     const char *linear_model_frame =
-      "model linear_<%dotPath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n"
+      "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
       <%matrixA%>
@@ -2013,7 +2013,7 @@ template functionlinearmodel(ModelInfo modelInfo) "template functionlinearmodel
       <%vectorU%>
       <%vectorY%>
       "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
-      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%dotPath(name)%>;\n"
+      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%underscorePath(name)%>;\n"
     ;
     >>
   end match
