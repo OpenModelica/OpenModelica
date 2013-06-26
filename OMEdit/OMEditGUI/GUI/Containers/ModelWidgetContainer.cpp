@@ -2739,7 +2739,8 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   }
   else if (pModelWidget->getLibraryTreeNode()->isDocumentationClass())
   {
-    pModelWidget->getModelicaTextViewToolButton()->setChecked(true);
+    pModelWidget->showDocumentationView();
+    pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   else
   {
