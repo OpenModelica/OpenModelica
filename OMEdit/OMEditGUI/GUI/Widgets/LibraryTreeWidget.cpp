@@ -617,7 +617,8 @@ void LibraryTreeWidget::createLibraryTreeNodes(LibraryTreeNode *pLibraryTreeNode
     LibraryTreeNode *pNewLibraryTreeNode = new LibraryTreeNode(name, parentName, lib, StringHandler::createTooltip(info, lib, lib), type,
                                                                fileName, !isFileWritAble(fileName), pLibraryTreeNode->isSaved(), false, this);
     pNewLibraryTreeNode->setSystemLibrary(pLibraryTreeNode->isSystemLibrary());
-    if (pLibraryTreeNode->isDocumentationClass())
+    LibraryTreeNode *pParentLibraryTreeNode = getLibraryTreeNode(parentName);
+    if (pParentLibraryTreeNode->isDocumentationClass())
     {
       pNewLibraryTreeNode->setIsDocumentationClass(true);
     }
