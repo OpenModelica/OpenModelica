@@ -189,8 +189,9 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omedit.png"), tr("Welcome"));
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/modeling.png"), tr("Modeling"));
   mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/omplot.png"), tr("Plotting"));
-  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"));
-  mpPerspectiveTabbar->setTabEnabled(3, false);
+  /* Remove the interactive simulation tab until we make it run again. */
+//  mpPerspectiveTabbar->addTab(QIcon(":/Resources/icons/interactive-simulation.png"), tr("Interactive Simulation"));
+//  mpPerspectiveTabbar->setTabEnabled(3, false);
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
   mpStatusBar->addPermanentWidget(mpPerspectiveTabbar);
   // set status bar for MainWindow
