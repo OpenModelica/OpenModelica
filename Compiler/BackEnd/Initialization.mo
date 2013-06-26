@@ -97,7 +97,6 @@ algorithm
       list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
       tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
       tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
-      Boolean execstat;
       list<BackendDAE.Var> dumpVars, dumpVars2;
 
     case(_) equation
@@ -177,14 +176,8 @@ algorithm
       matchingAlgorithm = BackendDAEUtil.getMatchingAlgorithm(NONE());
       daeHandler = BackendDAEUtil.getIndexReductionMethod(NONE());
 
-      // suppress execstat
-      execstat = Flags.disableDebug(Flags.EXEC_STAT);
-
       // solve system
       initdae = BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-
-      // reset execstat again
-      _ = Flags.set(Flags.EXEC_STAT, execstat);
 
       // simplify system
      (initdae, Util.SUCCESS()) = BackendDAEUtil.pastoptimiseDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
