@@ -109,7 +109,10 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   // draw the item
   drawBackground(painter, opt, index);
   // hover
-  drawHover(painter, opt, index);
+  /*
+    Ticket #2245. Do not draw hover effect for items. Doesn't seem to work on few versions of Linux.
+  */
+  /*drawHover(painter, opt, index);*/
   drawCheck(painter, opt, checkRect, checkState);
   if (mDrawRichText)
   {
