@@ -244,6 +244,8 @@ void OptionsDialog::readSimulationSettings()
     if (currentIndex > -1)
       mpSimulationPage->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
   }
+  if (mSettings.contains("simulation/OMCFlags"))
+    mpSimulationPage->getOMCFlagsTextBox()->setText(mSettings.value("simulation/OMCFlags").toString());
 }
 
 //! Reads the Notifications section settings from omedit.ini
@@ -450,6 +452,8 @@ void OptionsDialog::saveSimulationSettings()
   mpMainWindow->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
   mSettings.setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   mpMainWindow->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
+  if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
+    mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
 }
 
 //! Saves the Notifications section settings to omedit.ini
@@ -2070,6 +2074,10 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
     i++;
   }
   mpIndexReductionMethodComboBox->setCurrentIndex(mpIndexReductionMethodComboBox->findText(mpOptionsDialog->getMainWindow()->getOMCProxy()->getIndexReductionMethod()));
+  // OMC Flags
+  mpOMCFlagsLabel = new Label(tr("OMC Flags"));
+  mpOMCFlagsLabel->setToolTip(tr("Space separated list of flags e.g. +d=initialization +cheapmatchingAlgorithm=3"));
+  mpOMCFlagsTextBox = new QLineEdit;
   // set the layout of simulation group
   QGridLayout *pSimulationLayout = new QGridLayout;
   pSimulationLayout->setAlignment(Qt::AlignTop);
@@ -2077,6 +2085,8 @@ SimulationPage::SimulationPage(OptionsDialog *pParent)
   pSimulationLayout->addWidget(mpMatchingAlgorithmComboBox, 0, 1);
   pSimulationLayout->addWidget(mpIndexReductionMethodLabel, 1, 0);
   pSimulationLayout->addWidget(mpIndexReductionMethodComboBox, 1, 1);
+  pSimulationLayout->addWidget(mpOMCFlagsLabel, 2, 0);
+  pSimulationLayout->addWidget(mpOMCFlagsTextBox, 2, 1);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
@@ -2094,6 +2104,11 @@ QComboBox* SimulationPage::getMatchingAlgorithmComboBox()
 QComboBox* SimulationPage::getIndexReductionMethodComboBox()
 {
   return mpIndexReductionMethodComboBox;
+}
+
+QLineEdit* SimulationPage::getOMCFlagsTextBox()
+{
+  return mpOMCFlagsTextBox;
 }
 
 //! @class NotificationsPage

@@ -2161,6 +2161,23 @@ bool OMCProxy::setIndexReductionMethod(QString method)
 }
 
 /*!
+  Sets the OMC flags.
+  \param options - a space separated list fo OMC command line options e.g. +d=initialization +cheapmatchingAlgorithm=3
+  \return true on success
+  */
+bool OMCProxy::setCommandLineOptions(QString options)
+{
+  sendCommand("setCommandLineOptions(\"" + options + "\")");
+  if (StringHandler::unparseBool(getResult()))
+    return true;
+  else
+  {
+    printMessagesStringInternal();
+    return false;
+  }
+}
+
+/*!
   Helper function for getDocumentationAnnotation. Takes the documentation html and replaces the modelica links with absolute pahts.\n
   This function also makes the html valid. e.g html like,\n
     <p>Test</p><html><body>This is body</body></html>\n

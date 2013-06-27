@@ -192,6 +192,7 @@ public:
   QString getIndexReductionMethod();
   void getAvailableIndexReductionMethods(QStringList *choices, QStringList *comments);
   bool setIndexReductionMethod(QString method);
+  bool setCommandLineOptions(QString options);
   QString makeDocumentationImagesUriToFileName(QString documentation);
   QString uriToFilename(QString uri);
   QString getModelicaPath();

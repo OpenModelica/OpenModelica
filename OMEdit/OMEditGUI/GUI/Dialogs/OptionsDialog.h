@@ -399,6 +399,7 @@ public:
   SimulationPage(OptionsDialog *pParent);
   QComboBox* getMatchingAlgorithmComboBox();
   QComboBox* getIndexReductionMethodComboBox();
+  QLineEdit* getOMCFlagsTextBox();
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpSimulationGroupBox;
@@ -406,6 +407,8 @@ private:
   QComboBox *mpMatchingAlgorithmComboBox;
   Label *mpIndexReductionMethodLabel;
   QComboBox *mpIndexReductionMethodComboBox;
+  Label *mpOMCFlagsLabel;
+  QLineEdit *mpOMCFlagsTextBox;
 };
 
 class NotificationsPage : public QWidget

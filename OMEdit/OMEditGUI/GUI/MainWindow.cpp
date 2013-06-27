@@ -197,9 +197,12 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   // set status bar for MainWindow
   setStatusBar(mpStatusBar);
   QMetaObject::connectSlotsByName(this);
-  // set the matching algorithm and index reduction methods.
+  // set the matching algorithm.
   mpOMCProxy->setMatchingAlgorithm(mpOptionsDialog->getSimulationPage()->getMatchingAlgorithmComboBox()->currentText());
+  // set the index reduction methods.
   mpOMCProxy->setIndexReductionMethod(mpOptionsDialog->getSimulationPage()->getIndexReductionMethodComboBox()->currentText());
+  // set the OMC Flags.
+  mpOMCProxy->setCommandLineOptions(mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text());
   // restore OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())
