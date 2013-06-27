@@ -8048,7 +8048,7 @@ algorithm
   end matchcontinue;
 end isExpCrefOrIfExp;
 
-protected function operatorEqual
+public function operatorEqual
 "function: operatorEqual
   Helper function to expEqual."
   input Operator inOperator1;

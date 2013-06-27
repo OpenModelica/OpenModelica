@@ -3776,7 +3776,7 @@ algorithm
   outExp := matchcontinue (inOperator2,inExp3,inExp4)
     local
       DAE.Exp e1_1,e3,e,e1,e2,e4,res,one;
-      Operator oper, op1 ,op2;
+      Operator oper, op1 ,op2, op3;
       Type ty,ty2,tp,tp2,ty1;
       list<DAE.Exp> exp_lst,exp_lst_1;
       DAE.ComponentRef cr1,cr2;
@@ -3859,6 +3859,25 @@ algorithm
         r = realNeg(r);
         res = DAE.BINARY(e1,DAE.MUL(ty2),DAE.BINARY(e2,DAE.POW(ty2),DAE.RCONST(r)));
       then res;
+
+    // (e1 op2 e2) op1 (e3 op3 e4) => (e1 op1 e3) op2 e2 
+    // e2 = e4; op2=op3 \in {*, /, +, -}; op1 \in {+, -} 
+    case (op1,DAE.BINARY(e1,op2,e2),DAE.BINARY(e3,op3,e4))
+      equation
+	false = Expression.isConst(e2);
+        true = Expression.expEqual(e2,e4);	
+	true = Expression.operatorEqual(op2,op3);
+	ty = Expression.typeof(e1);
+
+	true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+               Expression.operatorEqual(op1,DAE.ADD(ty)); 
+
+	true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+	       Expression.operatorEqual(op2,DAE.MUL(ty)) or 
+	       Expression.operatorEqual(op2,DAE.SUB(ty)) or 
+	       Expression.operatorEqual(op2,DAE.ADD(ty)); 
+      then
+        DAE.BINARY(DAE.BINARY(e1,op1,e3),op2,e4);
 
     // (a+b)/c1 => a/c1+b/c1, for constant c1
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
