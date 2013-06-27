@@ -3864,18 +3864,18 @@ algorithm
     // e2 = e4; op2=op3 \in {*, /, +, -}; op1 \in {+, -} 
     case (op1,DAE.BINARY(e1,op2,e2),DAE.BINARY(e3,op3,e4))
       equation
-	false = Expression.isConst(e2);
-        true = Expression.expEqual(e2,e4);	
-	true = Expression.operatorEqual(op2,op3);
-	ty = Expression.typeof(e1);
+  false = Expression.isConst(e2);
+        true = Expression.expEqual(e2,e4);  
+  true = Expression.operatorEqual(op2,op3);
+  ty = Expression.typeof(e1);
 
-	true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+  true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
                Expression.operatorEqual(op1,DAE.ADD(ty)); 
 
-	true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-	       Expression.operatorEqual(op2,DAE.MUL(ty)) or 
-	       Expression.operatorEqual(op2,DAE.SUB(ty)) or 
-	       Expression.operatorEqual(op2,DAE.ADD(ty)); 
+  true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+         Expression.operatorEqual(op2,DAE.MUL(ty)) or 
+         Expression.operatorEqual(op2,DAE.SUB(ty)) or 
+         Expression.operatorEqual(op2,DAE.ADD(ty)); 
       then
         DAE.BINARY(DAE.BINARY(e1,op1,e3),op2,e4);
 
