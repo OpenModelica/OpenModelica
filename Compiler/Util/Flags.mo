@@ -48,9 +48,8 @@ encapsulated package Flags
 
   Debug flags are boolean flags specified with +d, which can be used together
   with the Debug package. They are typically used to enable printing of extra
-  information that helps debugging, such as the failtrace flag. All debug flags
-  are initialized to disabled, unlike configuration flags which have a specified
-  default value.
+  information that helps debugging, such as the failtrace flag. Unlike
+  configuration flags they are only on or off, i.e. true or false.
 
   To add a new flag, simply add a new constant of either DebugFlag or ConfigFlag
   type below, and then add it to either the allDebugFlags or allConfigFlags list
@@ -797,6 +796,22 @@ algorithm
   setGlobalRoot(Global.flagsIndex, inFlags);
 end saveFlags;
 
+protected function createConfigFlags
+  output array<FlagData> outConfigFlags;
+protected
+  Integer count;
+algorithm
+  count := listLength(allConfigFlags);
+  outConfigFlags := arrayCreate(count, EMPTY_FLAG());
+  _ := List.fold1(allConfigFlags, setDefaultConfig, outConfigFlags, 1);
+end createConfigFlags;
+
+protected function createDebugFlags
+  output array<Boolean> outDebugFlags;
+algorithm
+  outDebugFlags := listArray(List.map(allDebugFlags, defaultDebugFlag));
+end createDebugFlags;
+  
 protected function loadFlags
   "Loads the flags with getGlobalRoot. Creates a new flags structure if it
    hasn't been created yet."
@@ -818,10 +833,8 @@ algorithm
     else
       equation
         _ = List.fold(allDebugFlags, checkDebugFlag, 1);
-        config_count = listLength(allConfigFlags);
-        debug_flags = listArray(List.map(allDebugFlags,defaultDebugFlag));
-        config_flags = arrayCreate(config_count, EMPTY_FLAG());
-        _ = List.fold1(allConfigFlags, setDefaultConfig, config_flags, 1);
+        debug_flags = createDebugFlags();
+        config_flags = createConfigFlags();
         flags = FLAGS(debug_flags, config_flags);
         saveFlags(flags);
       then
@@ -829,18 +842,28 @@ algorithm
 
   end matchcontinue;
 end loadFlags;
-
-public function clearDebugFlags
-  "Sets all the debug flags to false."
+  
+public function resetDebugFlags
+  "Resets all debug flags to their default values."
 protected
   array<Boolean> debug_flags;
   array<FlagData> config_flags;
-  Flags flags;
 algorithm
-  debug_flags := listArray(List.map(allDebugFlags,defaultDebugFlag));
-  FLAGS(configFlags = config_flags) := loadFlags();
+  FLAGS(_, config_flags) := loadFlags();
+  debug_flags := createDebugFlags();
   saveFlags(FLAGS(debug_flags, config_flags));
-end clearDebugFlags;
+end resetDebugFlags;
+
+public function resetConfigFlags
+  "Resets all configuration flags to their default values."
+protected
+  array<Boolean> debug_flags;
+  array<FlagData> config_flags;
+algorithm
+  FLAGS(debug_flags, _) := loadFlags();
+  config_flags := createConfigFlags();
+  saveFlags(FLAGS(debug_flags, config_flags));
+end resetConfigFlags;
 
 protected function checkDebugFlag
   "Used when creating a new flags structure (in loadFlags) to check that a debug

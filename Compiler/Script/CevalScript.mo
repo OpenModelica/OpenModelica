@@ -1696,6 +1696,16 @@ algorithm
     case (cache,env,"setCommandLineOptions",_,st,_)
       then (cache,Values.BOOL(false),st);
 
+    case (cache,env,"clearCommandLineOptions",{},st,_)
+      equation
+        Flags.resetDebugFlags();
+        Flags.resetConfigFlags();
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,"clearCommandLineOptions",_,st,_)
+      then (cache,Values.BOOL(false),st);
+
     case (cache,env,"cd",{Values.STRING("")},st,_)
       equation
         str_1 = System.pwd();

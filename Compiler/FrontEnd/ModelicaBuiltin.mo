@@ -1294,6 +1294,12 @@ external "builtin";
 annotation(preferredView="text");
 end setCommandLineOptions;
 
+function clearCommandLineOptions
+  "Resets all commdand-line flags to their default values."
+external "builtin";
+annotation(preferredView="text");
+end clearCommandLineOptions;
+
 function getVersion "Returns the version of the Modelica compiler."
   input TypeName cl := $TypeName(OpenModelica);
   output String version;
