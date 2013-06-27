@@ -46,6 +46,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import Debug;
+protected import ExpressionDump;
 protected import GraphML;
 protected import HpcOmBenchmark;
 protected import List;
@@ -129,6 +130,7 @@ algorithm
       list<Integer> eventEqLst;
       list<Integer> eventVarLst;
       list<Integer> rootLst;
+      list<Integer> rootVars;
       array<list<Integer>> adjLst;
       array<list<Integer>> adjLstOde;
       array<Integer> ass1;
@@ -140,27 +142,22 @@ algorithm
       equation
         varSccMapping = createVarSccMapping(comps, numberOfVars); 
         //BackendDump.dumpEqSystem(isyst, "TaskGraph Input");
+        
         //Create a new task graph
         graph = GRAPH("TaskGraph",{},{});
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         //BackendDump.dumpIncidenceMatrix(incidenceMatrix);
         eqDescs = getEquationStrings(comps,isyst);
-        (eventEqLst,eventVarLst) = getEventNodes(comps,ass2);  // WhenEquations should have no successors in the taskGraph.but the conditions to check the zerocrossing functions nedd to be solved in the ode-system
+        (eventEqLst,eventVarLst) = getEventNodes(comps,ass1);  // WhenEquations should have no successors in the taskGraph.but the conditions to check the zerocrossing functions need to be solved in the ode-system.
         adjLst = arrayCreate(listLength(comps),{});
-        ((graph,adjLst,rootLst,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,eqDescs,eventVarLst),(graph,adjLst,{},1));
-        
-        //print("TASKGRAPH1 represented as an adjacencyList\n");
-        //BackendDump.dumpIncidenceMatrix(adjLst);
-        //print("and the rootnodes: "+&stringDelimitList(List.map(rootLst,intString),",")+&"\n");       
-        
+        //((graph,adjLst,rootLst,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,eqDescs,eventVarLst),(graph,adjLst,{},1));   // no connection from When-equations to other Nodes
+        ((graph,adjLst,rootLst,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,eqDescs,{}),(graph,adjLst,{},1));        // connection between When-equations and other Nodes
+                
         // create a task graph only for the ODE-system
-        condVarLst = getConditionVars(eventEqLst,eventVarLst,incidenceMatrix,{},1); 
-        (graphOde,adjLstOde) = getOdeSystem(graph,adjLst,isyst,condVarLst,varSccMapping);
-
-
+        (graphOde,adjLstOde) = getOdeSystem(graph,adjLst,isyst,eventVarLst,varSccMapping);
         
         fileName = ("taskGraph"+&fileNamePrefix+&intString(sysIdxIn)+&".graphml");        
-        fileNameOde = ("taskGraphODE"+&fileNamePrefix+&intString(sysIdxIn)+&".graphml");     
+        fileNameOde = ("taskGraphODE"+&fileNamePrefix+&intString(sysIdxIn)+&".graphml");   
         dumpAsGraphML_SccLevel(graph, fileName);
         dumpAsGraphML_SccLevel(graphOde, fileNameOde);
       then
@@ -172,7 +169,7 @@ algorithm
         fail();
   end match;
 end createTaskGraph0;
-    
+
 
 protected function createTaskGraph1 "function createTaskGraph1
   author: marcusw,waurich
@@ -579,10 +576,10 @@ algorithm
 end shortenVarString;
 
 
-protected function getEventNodes " gets the vars that are solved in the When-nodes
+protected function getEventNodes " gets the vars that are solved in the When-nodes. the assignment ass2 would not work if complex equations are part of the dae(one eq solves multiple vars)
 author:Waurich TUD 2013-06"
   input BackendDAE.StrongComponents inComps;
-  input array<Integer> ass2;
+  input array<Integer> ass1;
   output list<Integer> eqsOut;
   output list<Integer> varsOut;
 protected
@@ -590,13 +587,36 @@ protected
 algorithm
   eqLst := getEventNodeEqs(inComps,{});
   eqsOut := eqLst;
-  //print("the When equations"+&stringDelimitList(List.map(eqLst,intString),",")+&"\n");
-  varsOut := matchWithAssignments(eqLst,ass2);
-  //print("the When vars"+&stringDelimitList(List.map(varsOut,intString),",")+&"\n");  
+  //varsOut := matchWithAssignments(eqLst,ass2); 
+  varsOut := List.map1(eqLst,getMatchedVars,ass1);
 end getEventNodes;
   
+//TODO: remove the matchcontinue if sure that the complex equations make no problems any more or if ass2 is fixed.
+protected function getMatchedVars "matches the equation to the solved var by using ass1
+author:Waurich TUD 2013-06"
+  input Integer eq;
+  input array<Integer> ass1;
+  output Integer varOut;
+algorithm
+  varOut := matchcontinue(eq,ass1)
+    local
+      Integer var;
+    case(_,_)
+      equation
+      true = intEq(listLength(List.select1(arrayList(ass1),intEq,eq)),1);
+      var = List.position(eq,arrayList(ass1))+1;
+      then
+        var;
+    else
+      equation
+      print("getMatchedVars failed because the equation solves multiple vars (probably complex equation)\n");
+      then
+        fail();
+  end matchcontinue;
+end getMatchedVars;
   
-protected function matchWithAssignments " matches entries of list1 with the assigned values of ass to obtain the values for )
+  
+protected function matchWithAssignments " matches entries of list1 with the assigned values of ass to obtain the values 
 author:Waurich TUD 2013-06" 
   input list<Integer> list1;
   input array<Integer> assign;
@@ -703,7 +723,6 @@ algorithm
         sccIdx = varSccMapping[varIdx];
         oldCount = iRequiredSccs[sccIdx];
         tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,oldCount+1);
-        //print("index der var "+&intString(varIdx)+&"mapped to the component "+&intString(sccIdx)+&"\n");
       then tmpRequiredSccs;
    else then iRequiredSccs;
   end matchcontinue;
@@ -838,7 +857,6 @@ algorithm
         varTpl = listGet(varLstIn,varIdx);
         (var,_) = varTpl;
         true = List.isMemberOnTrue(var,eventVarLst,intEq);
-        //print("check var that is an EventVar "+&intString(var)+&"\n");
         varLst = listDelete(varLstIn,varIdx-1);
         varLst = removeEventVars(eventVarLst,varLst,varIdx);
       then
@@ -849,7 +867,6 @@ algorithm
         varTpl = listGet(varLstIn,varIdx);
         (var,_) = varTpl;
         false = List.isMemberOnTrue(var,eventVarLst,intEq);
-        //print("check var that is not an EventVar"+&intString(var)+&"\n");
         varLst = removeEventVars(eventVarLst,varLstIn,varIdx+1);
       then
         varLst;
@@ -916,21 +933,21 @@ algorithm
     local
       Integer eqnIdx; //For SINGLEEQUATION
       List<Integer> eqns; //For EQUATIONSYSTEM
+      List<Integer> resEqns;
       List<tuple<Integer,Integer>> eqnVars;
       List<tuple<Integer,Integer>> eqnVarsCond;
+      list<tuple<Integer,list<Integer>>> otherEqVars;
       String dumpStr;
       BackendDAE.StrongComponent condSys;
     case (BackendDAE.SINGLEEQUATION(eqn=eqnIdx),_)
       equation
         eqnVars = getVarsByEqn(eqnIdx,incidenceMatrix);
         dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
-        //print("Eqn " +& intString(eqnIdx) +& " vars: " +& dumpStr +& "\n");
       then 
         eqnVars;
     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns),_)
       equation
         eqnVars = List.flatten(List.map1(eqns, getVarsByEqn, incidenceMatrix));
-        //print("Error in createTaskGraph1! Unsupported component-type Equationsystem with jacType varying.\n");
       then 
         eqnVars;
     case (BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=eqns, condSystem = condSys),_)
@@ -972,9 +989,10 @@ algorithm
         dumpStr = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
       then 
         eqnVars;
-    case (BackendDAE.TORNSYSTEM(residualequations=eqns),_)
+    case (BackendDAE.TORNSYSTEM(residualequations=resEqns,otherEqnVarTpl = otherEqVars),_)
       equation
-        eqnVars = List.flatten(List.map1(eqns, getVarsByEqn, incidenceMatrix));
+        eqns = List.map(otherEqVars,getTupleFirst);
+        eqnVars = List.flatten(List.map1(listAppend(resEqns,eqns), getVarsByEqn, incidenceMatrix));
       then 
         eqnVars;
     else
@@ -985,6 +1003,15 @@ algorithm
 end getVarsBySCC;
 
 
+protected function getTupleFirst "gets the first entry in tuple.
+author: Waurich TUD 2013-06"
+  input tuple<Integer,list<Integer>> tupleIn;
+  output Integer tupOne;
+algorithm
+  (tupOne,_) := tupleIn;
+end getTupleFirst;
+  
+  
 protected function tupleToString "function tupleToString
   author: marcusw
   Returns the given tuple as string." 
@@ -1180,6 +1207,7 @@ algorithm
     case(BackendDAE.SINGLECOMPLEXEQUATION(vars = compVarIdc),_,_)
       equation
         tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
+        //print("complex component "+&intString(iSccIdx)+&"solves the vars "+&stringDelimitList(List.map(compVarIdc,intString),",")+&"\n");
         then 
           iSccIdx+1;
     case(BackendDAE.TORNSYSTEM(tearingvars = compVarIdc,residualequations = residuals, otherEqnVarTpl = tearEqVarTpl),_,_)
@@ -1204,6 +1232,7 @@ end createVarSccMapping0;
 
 
 protected function othersInTearComp " gets the remaining algebraic vars and equations from the torn block.
+this function is just for checking if there exists an equation with more than one var(because i dont know why theres a list of vars)
 author:Waurich TUD 2013-06"
   input tuple<Integer,list<Integer>> otherEqnVarTpl;
   input tuple<list<Integer>,list<Integer>> othersIn;
@@ -1256,7 +1285,7 @@ author: Waurich TUD 2013-06"
   input Graph graphIn;
   input array<list<Integer>> adjLstIn;
   input BackendDAE.EqSystem systIn;
-  input list<Integer> condVars;
+  input list<Integer> whenVars;
   input array<Integer> varSccMapping;
   output Graph graphOdeOut;
   output array<list<Integer>> adjLstOdeOut;
@@ -1264,71 +1293,209 @@ protected
   list<BackendDAE.Var> varLst;
   list<Integer> finalNodes;
   list<Integer> finalVars;
+  list<Integer> statevarindx_lst;
   list<Integer> stateVars;
   list<Integer> stateNodes;
+  list<Integer> whenNodes;
   BackendDAE.Variables orderedVars;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars) := systIn;
   varLst := BackendVariable.varList(orderedVars);
   stateVars := getStates(varLst,{},1);
-  //print("stateVars"+&stringDelimitList(List.map(stateVars,intString),",")+&"\n"); 
-  finalVars := listAppend(condVars,stateVars);
-  finalNodes := matchWithAssignments(finalVars,varSccMapping);
-  //print("stateComps"+&stringDelimitList(List.map(finalNodes,intString),",")+&"\n");
-  (adjLstOdeOut,graphOdeOut) := cutTaskGraph(adjLstIn,graphIn,finalNodes,{});
-  end getOdeSystem;
+  stateNodes := matchWithAssignments(stateVars,varSccMapping);
+  whenNodes := matchWithAssignments(whenVars,varSccMapping);
+  (adjLstOdeOut,graphOdeOut) := cutTaskGraph(adjLstIn,graphIn,stateNodes,whenNodes,{});
+end getOdeSystem;
 
 
 protected function cutTaskGraph "cuts every branch of the taskgraph that leads not to exceptNode.
 author:Waurich TUD 2013-06"
   input array<list<Integer>> adjacencyLstIn;
   input Graph graphIn;
-  input list<Integer> exceptNodes;
+  input list<Integer> stateNodes;
+  input list<Integer> whenNodes;
   input list<Integer> deleteNodes;
   output array<list<Integer>> adjacencyLstOde;
   output Graph graphOdeOut;
 algorithm
-  (adjacencyLstOde,graphOdeOut) := matchcontinue(adjacencyLstIn,graphIn,exceptNodes,deleteNodes)
+  (adjacencyLstOde,graphOdeOut) := matchcontinue(adjacencyLstIn,graphIn,stateNodes,whenNodes,deleteNodes)
     local
       list<Integer> cutNodes;
       list<Integer> deleteNodesTmp;
       list<Integer> noChildren;
       list<Integer> odeMapping;
+      list<Integer> whenChildren;
       array<list<Integer>> adjacencyLst;
       Graph graphTmp;
       list<StrongConnectedComponent> comps;   
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
+        // remove the algebraic branches
+        
         noChildren = getBranchEnds(adjacencyLstIn,{},1);
         //print("free branches"+&stringDelimitList(List.map(noChildren,intString),",")+&"\n");
-        (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(exceptNodes,deleteNodes),intEq);
+        (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(stateNodes,deleteNodes),intEq);
         deleteNodesTmp = listAppend(cutNodes,deleteNodes);
         //print("cutNodes "+&stringDelimitList(List.map(cutNodes,intString),",")+&"\n");
-        //print("no. of cutNodes "+&intString(listLength(cutNodes))+&"\n");
         false = List.isEmpty(cutNodes);
         graphTmp = updateGraphOde(graphIn,cutNodes,1);
         GRAPH(components=comps) = graphTmp;
-        //print("graph with  "+&intString(listLength(comps))+&" components "+&"\n");
         adjacencyLst = removeEntries(adjacencyLstIn,cutNodes);
-        (adjacencyLst,graphTmp) = cutTaskGraph(adjacencyLst,graphTmp,exceptNodes,deleteNodesTmp);
+        (adjacencyLst,graphTmp) = cutTaskGraph(adjacencyLst,graphTmp,stateNodes,whenNodes,deleteNodesTmp);
          then
            (adjacencyLst,graphTmp);
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
+        //remove the when-nodes
+        
         noChildren = getBranchEnds(adjacencyLstIn,{},1);
-        (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(exceptNodes,deleteNodes),intEq);
+        (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(stateNodes,deleteNodes),intEq);
         deleteNodesTmp = listAppend(cutNodes,deleteNodes);
-        //print("cutNodes "+&intString(listLength(cutNodes))+&"\n");
         true = List.isEmpty(cutNodes);
-        //print("deleteNodes"+&stringDelimitList(List.map(deleteNodes,intString),",")+&"\n");
-        (adjacencyLst,odeMapping) = deleteRowInAdjLst(adjacencyLstIn,deleteNodes);
-        GRAPH(components=comps) = graphIn;
+        whenChildren = getChildNodes(adjacencyLstIn,whenNodes,{},1);
+        //print("the when nodes"+&stringDelimitList(List.map(whenNodes,intString),",")+&"and their children"+&stringDelimitList(List.map(whenChildren,intString),",")+&"\n");
+        graphTmp = deleteDependenciesInGraph(graphIn,whenNodes,whenChildren,1);
+        adjacencyLst = removeEntries(adjacencyLstIn,whenNodes);
+        graphTmp = updateGraphOde(graphTmp,whenNodes,1);
+        (adjacencyLst,odeMapping) = deleteRowInAdjLst(adjacencyLst,List.unique(listAppend(deleteNodes,whenNodes)));
+        GRAPH(components=comps) = graphTmp;
         //print("graph with  "+&intString(listLength(comps))+&" components "+&"\n");
-        print("found the ODE graph\n");
+        //print("found the ODE graph\n");
          then
-           (adjacencyLst,graphIn);
+           (adjacencyLst,graphTmp);
   end matchcontinue;
 end cutTaskGraph;
+
+protected function deleteDependenciesInGraph "deletes dependencies for a all ChildNodes in all given parentNodes.
+author:Waurich TUD 2013-06"
+  input Graph graphIn;
+  input list<Integer> parentLst;
+  input list<Integer> childLst;
+  input Integer childIdx;
+  output Graph graphOut;
+algorithm
+  graphOut := matchcontinue(graphIn,parentLst,childLst,childIdx)
+    local
+      Integer child;
+      Integer childLstIdx;
+      Integer calcTime, compIdx;
+      String description, name, text;
+      list<Integer> equations;
+      list<StrongConnectedComponent> comps;
+      list<Variable> variables;
+      list<tuple<Integer,Integer>> dependencySCCs;
+      Graph graphTmp;
+      StrongConnectedComponent comp;
+    case(_,_,_,_)
+      equation
+        true = listLength(childLst) >= childIdx;
+        GRAPH(name = name, components = comps, variables = variables) = graphIn;
+        child = listGet(childLst,childIdx);
+        //print("check if for comp "+& intString(child)+& "exists a dependency to "+&stringDelimitList(List.map(parentLst,intString),",")+&"\n");
+        (comp,childLstIdx) = getSccByCompIdx(comps,child,1);
+        comps = listDelete(comps,childLstIdx-1);
+        STRONGCONNECTEDCOMPONENT(text = text, compIdx = compIdx, calcTime = calcTime, equations = equations, description = description, dependencySCCs = dependencySCCs) = comp;
+        dependencySCCs = List.fold1(dependencySCCs, deleteDependency, parentLst, {});
+        dependencySCCs = listReverse(dependencySCCs);
+        comp = STRONGCONNECTEDCOMPONENT(text,compIdx,calcTime,equations,dependencySCCs,description);
+        comps = List.insert(comps,child,comp);
+        graphTmp = GRAPH(name,comps,variables);
+        graphTmp = deleteDependenciesInGraph(graphTmp,parentLst,childLst,childIdx+1);
+      then
+        graphTmp;
+   else
+     equation
+     then
+       graphIn;
+  end matchcontinue;
+end deleteDependenciesInGraph;
+
+
+protected function getSccByCompIdx "gets the SCC and the list index by the component index.
+author:Waurich TUD 2013-06"
+  input list<StrongConnectedComponent> inComps;
+  input Integer Idx;
+  input Integer lstIdxIn;
+  output StrongConnectedComponent compOut;
+  output Integer lstIdxOut;
+algorithm
+  (compOut,lstIdxOut) := matchcontinue(inComps,Idx,lstIdxIn)
+    local
+      Integer compIdx;
+      Integer lstIdxTmp;
+      StrongConnectedComponent compTmp;
+      StrongConnectedComponent head;
+      list<StrongConnectedComponent> rest;
+    case((head::rest),_,_)
+      equation
+        STRONGCONNECTEDCOMPONENT(compIdx=compIdx) = head;
+        false = intEq(compIdx,Idx);
+        (compTmp,lstIdxTmp) = getSccByCompIdx(rest,Idx,lstIdxIn+1);
+        then
+          (compTmp,lstIdxTmp);
+    case((head::rest),_,_)
+      equation
+        STRONGCONNECTEDCOMPONENT(compIdx=compIdx) = head;
+        true = intEq(compIdx,Idx);
+      then
+        (head,lstIdxIn);
+  end matchcontinue;
+end getSccByCompIdx;      
+        
+
+protected function deleteDependency "fold function to build a new dependency list without the dependency to the parent node. 
+author:Waurich TUD 2013-06"
+  input tuple<Integer,Integer> dependencySCCs;
+  input list<Integer> parentNodes;
+  input list<tuple<Integer,Integer>> dependencySCCsIn;
+  output list<tuple<Integer,Integer>> dependencySCCsOut;
+algorithm
+  dependencySCCsOut := matchcontinue(dependencySCCs,parentNodes,dependencySCCsIn)
+    local
+      Integer Node;
+    case((Node,_),_,_)
+      equation
+        false = List.isMemberOnTrue(Node,parentNodes,intEq);
+        //print("dependentNodes "+&intString(Node)+&" is not member of the Nodes "+& stringDelimitList(List.map(parentNodes,intString),",")+&"\n");
+        then
+          dependencySCCs::dependencySCCsIn;
+    case((Node,_),_,_)
+      equation
+        //print("IS MEMBER\n");
+        true = List.isMemberOnTrue(Node,parentNodes,intEq);
+        then
+          dependencySCCsIn;
+  end matchcontinue;
+end deleteDependency;
+  
+
+protected function getChildNodes "gets the successor nodes for a list of parent nodes.
+author: waurich TUD 2013-06"
+  input array<list<Integer>> adjacencyLstIn;
+  input list<Integer> parents;
+  input list<Integer> childLstTmp;
+  input Integer Idx;
+  output list<Integer> childLsts;
+algorithm
+  childLsts := matchcontinue(adjacencyLstIn,parents,childLstTmp,Idx)
+    local
+      Integer parent;
+      list<Integer> row;
+      list<Integer> childLst;
+    case(_,_,_,_)
+      equation
+        true = listLength(parents) >= Idx;
+        parent = listGet(parents,Idx);
+        row = arrayGet(adjacencyLstIn,parent);
+        childLst = listAppend(childLstTmp,row);
+        childLst = getChildNodes(adjacencyLstIn,parents,childLst,Idx+1);
+      then 
+        childLst;
+    else
+      then
+        childLstTmp;
+  end matchcontinue;
+end getChildNodes;
 
 
 protected function updateGraphOde "deletes those Sccs that are cutNodes.
@@ -1352,7 +1519,6 @@ algorithm
        comp = listGet(comps,Idx);
        STRONGCONNECTEDCOMPONENT(compIdx=compIdx) = comp;
        true = List.isMemberOnTrue(compIdx,cutNodes,intEq);
-       //print("graphcomp "+&intString(compIdx)+&" belongs to cutNodes "+&stringDelimitList(List.map(cutNodes,intString),",")+&"\n");
        comps = listDelete(comps,Idx-1);
        graphTmp = GRAPH(name,comps,variables);
        graphTmp = updateGraphOde(graphTmp,cutNodes,Idx);
@@ -1364,7 +1530,6 @@ algorithm
        comp = listGet(comps,Idx);
        STRONGCONNECTEDCOMPONENT(compIdx=compIdx) = comp;
        false = List.isMemberOnTrue(compIdx,cutNodes,intEq);
-       //print("graphcomp "+&intString(compIdx)+&" belongs NOT to cutNodes "+&stringDelimitList(List.map(cutNodes,intString),",")+&"\n");
        graphTmp = updateGraphOde(graphIn,cutNodes,Idx+1);
      then
        graphTmp;
@@ -1377,37 +1542,36 @@ algorithm
 end updateGraphOde;       
 
   
-protected function getConditionVars "gets the vars that are necessary to compute the when-conditions
-author: Waurich TUD 2013-06"
-  input list<Integer> eventEqs;
-  input list<Integer> eventVars;
-  input BackendDAE.IncidenceMatrix mIn;
-  input list<Integer> condVarsIn;
-  input Integer Idx;
-  output list<Integer> condVarsOut;
-algorithm
-  condVarsOut := matchcontinue(eventEqs,eventVars,mIn,condVarsIn,Idx)
-    local
-      Integer var;
-      list<Integer> condVars;
-      list<Integer> row;
-    case(_,_,_,_,_)
-      equation
-        true = listLength(eventEqs) >= Idx;
-        row = arrayGet(mIn,listGet(eventEqs,Idx));
-        row = deleteMembersList(row,eventVars);
-        condVars = listAppend(row,condVarsIn);
-        condVars = getConditionVars(eventEqs,eventVars,mIn,condVars,Idx+1);
-        //print("condVars "+&stringDelimitList(List.map(condVars,intString),",")+&"\n");
-      then
-        condVars;
-    else
-      equation
-        condVars = List.unique(condVarsIn);
-      then
-        condVars;     
-    end matchcontinue;
-end getConditionVars;        
+//protected function getConditionVars "gets the vars that are necessary to compute the when-conditions
+//author: Waurich TUD 2013-06"
+//  input list<Integer> eventEqs;
+//  input list<Integer> eventVars;
+//  input BackendDAE.IncidenceMatrix mIn;
+//  input list<Integer> condVarsIn;
+//  input Integer Idx;
+//  output list<Integer> condVarsOut;
+//algorithm
+//  condVarsOut := matchcontinue(eventEqs,eventVars,mIn,condVarsIn,Idx)
+//    local
+//      Integer var;
+//      list<Integer> condVars;
+//      list<Integer> row;
+//    case(_,_,_,_,_)
+//      equation
+//        true = listLength(eventEqs) >= Idx;
+//        row = arrayGet(mIn,listGet(eventEqs,Idx));
+//        row = deleteMembersList(row,eventVars);
+//        condVars = listAppend(row,condVarsIn);
+//        condVars = getConditionVars(eventEqs,eventVars,mIn,condVars,Idx+1);
+//      then
+//        condVars;
+//    else
+//      equation
+//        condVars = List.unique(condVarsIn);
+//      then
+//        condVars;     
+//    end matchcontinue;
+//end getConditionVars;        
 
 protected function deleteMembersList "deletes all members in list1 given by list2
 author:waurich TUD 2013-06"
@@ -1505,10 +1669,7 @@ algorithm
   adjLst := arrayCreate(size,{});
   copiedRows := List.intRange(arrayLength(adjacencyLstIn));
   rowsDel1 := List.map1(rowsDel,intSub,1);
-  //print("copiedRows "+&stringDelimitList(List.map(copiedRows,intString),",")+&"\n");
-  //print("rowsDel "+&stringDelimitList(List.map(rowsDel,intString),",")+&"\n");
   copiedRows := List.deletePositions(copiedRows,rowsDel1);
-  //print("copiedRows "+&stringDelimitList(List.map(copiedRows,intString),",")+&"\n");
   adjacencyLstOut := arrayCopyRows(adjacencyLstIn,adjLst,copiedRows,1);
   odeMapping := copiedRows;
 end deleteRowInAdjLst;
@@ -1572,6 +1733,17 @@ algorithm
         noChildren = getBranchEnds(adjacencyLstIn,rowIdx::noChildrenIn,rowIdx+1);
         then
           noChildren;
+    case(_,_,_)
+      equation
+        // check for tornsystems (self-loops)
+        
+        true = arrayLength(adjacencyLstIn) >= rowIdx;
+        row = arrayGet(adjacencyLstIn,rowIdx);
+        true = listLength(row) == 1;  
+        true = listGet(row,1) == rowIdx;
+        noChildren = getBranchEnds(adjacencyLstIn,rowIdx::noChildrenIn,rowIdx+1);
+        then
+          noChildren;    
     case(_,_,_)
       equation
         true = arrayLength(adjacencyLstIn) >= rowIdx;
@@ -1726,159 +1898,160 @@ algorithm
 //Create TaskGraph for the ODE-system only (not used)
 //------------------------------------------
 //------------------------------------------
-//
-//public function createTaskGraphODE" creates the task Graph only for the ODE equations.
-//author: waurich TUD 2013-06"
-//  input list<list<SimCode.SimEqSystem>> odeEquationsIn;
-//  input BackendDAE.BackendDAE dlowIn;
-//  input String fileNamePrefix;
-//algorithm
-//  _ := matchcontinue(odeEquationsIn, dlowIn, fileNamePrefix)
-//    local
-//      BackendDAE.EqSystems eqSysts;
-//      BackendDAE.EqSystem eqSys;
-//      BackendDAE.StrongComponents comps;
-//      BackendDAE.Shared shared;
-//      BackendDAE.Variables orderedVars;
-//      Integer numberOfVars;
-//      Integer sizeODE;
-//      array<Integer> varSCCMapping;
-//      list<DAE.ComponentRef> cRefsODE;
-//      array<Integer> odeScc;
-//      list<SimCode.SimEqSystem> odeEqLst;
-//      list<Integer> odeSCCMapping;
-//      list<Integer> odeVarMatching;
-//      list<DAE.ComponentRef> varCRefMapping;
-//      list<BackendDAE.Var> varLst;      
-//    case(_,BackendDAE.DAE(eqs=eqSysts, shared=shared),_)
-//      equation
-//        true = intEq(listLength(odeEquationsIn), 1);
-//        odeEqLst = listGet(odeEquationsIn,1);
-//        print(intString(listLength(odeEqLst))+&"ODEs\n");
-//        sizeODE =  listLength(odeEqLst);
-//        cRefsODE = List.map(odeEqLst,getODEcRef);
-//        print("all the ODEs "+&stringDelimitList(List.map(cRefsODE,ComponentReference.crefStr),",")+&"\n");
-//        //eqSys = listGet(eqSysts,1);
-//        //BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps=comps),orderedVars=orderedVars) = eqSys;
-//        //BackendDAE.VARIABLES(numberOfVars=numberOfVars) = orderedVars;
-//        //// map the SCCs to the vars
-//        //varSCCMapping = createVarSccMapping(comps, numberOfVars);
-//        //// map vars to cRefs of vars        
-//        //varLst = BackendVariable.varList(orderedVars);
-//        //varCRefMapping = List.map(varLst,BackendVariable.varCref);
-//        //print("map vars to cRefs of vars "+&stringDelimitList(List.map(varCRefMapping,ComponentReference.crefStr),",")+&"\n");
-//        //// map SCC to cRefs
-//        //odeScc = arrayCreate(listLength(cRefsODE),-1);
-//        //_ = List.fold3(cRefsODE, getSccForCRef, odeScc, varSCCMapping, varCRefMapping, 1);
-//        ////print("ode-SCC-mapping "+&stringDelimitList(List.map(arrayList(odeScc),intString),",")+&"\n");
-//      then
-//        ();
-//    else
-//      equation
-//      print("createTaskGraphODE failed! - check the ODE Equation\n");  
-//      then
-//        fail();
-//  end matchcontinue;
-//end createTaskGraphODE;
-//
-//
-//protected function getSccForCRef " mappes the Scc to a componentRef. the array cRefsODE is updated (this occurs during List.fold of arrays)
-//author:Waurich TUD 2013-06."
-//  input DAE.ComponentRef cRefIn;
-//  input array<Integer> odeScc;
-//  input array<Integer> varSCCMapping;
-//  input list<DAE.ComponentRef> varCRefMapping;
-//  input Integer odeIdxIn;
-//  output Integer odeIdxOut;
-//protected
-//  Integer var;
-//  Integer SCCIdx;
-//  array<Integer> odeSccTmp;
-//algorithm
-//  var := varPosition(cRefIn,varCRefMapping); 
-//  SCCIdx := arrayGet(varSCCMapping,var);
-//  //print("for the ODE "+& intString(odeIdxIn)+&"i.e. "+&ComponentReference.crefStr(cRefIn)+&"assign var "+&intString(var)+&" i.e. componenten no. "+& intString(SCCIdx)+&"\n");
-//  odeSccTmp := arrayUpdate(odeScc,odeIdxIn,SCCIdx);
-//  odeIdxOut :=odeIdxIn+1;
-//end getSccForCRef;
-//
-//protected function varPosition " gets the var in the varcRefMapping.
-//author:Waurich TUD 2013-06"
-//  input DAE.ComponentRef inElement;
-//  input list<DAE.ComponentRef> inList;
-//  output Integer outPosition;
-//algorithm
-//  outPosition := varPosition_impl(inElement, inList, 1);
-//end varPosition;
-//
-//protected function varPosition_impl 
-//"Implementation of varPosition."
-//  input DAE.ComponentRef inElement;
-//  input list<DAE.ComponentRef> inList;
-//  input Integer inPosition;
-//  output Integer outPosition;
-//algorithm
-//  outPosition := matchcontinue(inElement, inList, inPosition)
-//    local
-//      DAE.ComponentRef head;
-//      list<DAE.ComponentRef> rest;
-//      String Str1;
-//      String Str2;
-//    case (_, head :: _, _)
-//      equation
-//        Str1 = ComponentReference.crefStr(head);
-//        Str2 = ComponentReference.crefStr(inElement);
-//        true = stringEq(Str1,Str2); //!!!!BEACHTE DER(STATES)!!!!
-//      then
-//        inPosition;
-//    case (_, _ :: rest, _)
-//      then varPosition_impl(inElement, rest, inPosition + 1);
-//  end matchcontinue;
-//end varPosition_impl;
-//
-//
-//protected function getODEcRef "gets the cRef for a SimEqSystem.
-//  author: Waurich TUD 2013-06"
-//  input SimCode.SimEqSystem odeEqIn;
-//  output DAE.ComponentRef cRefOut;
-//algorithm
-//  EqIdxOut := matchcontinue(odeEqIn)
-//  local
-//    Integer eqIdx;
-//    DAE.ComponentRef compRef;
-//    list<DAE.ComponentRef> conditions;
-//    DAE.Exp exp;
-//    DAE.ElementSource source;
-//    list<DAE.Statement> statements;
-//    String compRefStr;
-//  case(SimCode.SES_RESIDUAL(index=eqIdx, exp=exp, source=source))
-//    equation
-//    //print("equation "+&intString(eqIdx)+&"is a Residual"+&"\n");
-//    then
-//      fail();
-//  case(SimCode.SES_SIMPLE_ASSIGN(index=eqIdx, cref=compRef, exp=exp, source=source))
-//    equation
-//    compRefStr = ComponentReference.crefStr(compRef);    
-//    //print("equation "+&intString(eqIdx)+&"is a SimpleAssignment from component"+&compRefStr+&"\n");
-//    then
-//      compRef;
-//  case(SimCode.SES_ALGORITHM(index=eqIdx, statements=statements))
-//    equation
-//    //print("equation "+&intString(eqIdx)+&"is a ALGORITHM from component"+&"\n");
-//    then
-//      fail();
-//  case(SimCode.SES_WHEN(index=eqIdx, left=compRef, right=exp, source=source))
-//    equation
-//    //print("equation "+&intString(eqIdx)+&"is a When from component"+&"\n");
-//    then
-//      compRef;
-//  else
-//    equation
-//    //print("createTaskGraphODE0 failed! - Unsupported SimEqSystem-type! ");
-//    then
-//      fail();    
-//  end matchcontinue;      
-//end getODEcRef;
+
+public function createTaskGraphODE" creates the task Graph only for the ODE equations.
+author: waurich TUD 2013-06"
+  input list<list<SimCode.SimEqSystem>> odeEquationsIn;
+  input BackendDAE.BackendDAE dlowIn;
+  input String fileNamePrefix;
+algorithm
+  _ := matchcontinue(odeEquationsIn, dlowIn, fileNamePrefix)
+    local
+      BackendDAE.EqSystems eqSysts;
+      BackendDAE.EqSystem eqSys;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.Shared shared;
+      BackendDAE.Variables orderedVars;
+      Integer numberOfVars;
+      Integer sizeODE;
+      array<Integer> varSCCMapping;
+      list<DAE.ComponentRef> cRefsODE;
+      array<Integer> odeScc;
+      list<SimCode.SimEqSystem> odeEqLst;
+      list<Integer> odeSCCMapping;
+      list<Integer> odeVarMatching;
+      list<DAE.ComponentRef> varCRefMapping;
+      list<BackendDAE.Var> varLst;      
+    case(_,BackendDAE.DAE(eqs=eqSysts, shared=shared),_)
+      equation
+        //true = intEq(listLength(odeEquationsIn), 1);
+        odeEqLst = listGet(odeEquationsIn,1);
+        print(intString(listLength(odeEqLst))+&"ODEs\n");
+        sizeODE =  listLength(odeEqLst);
+        cRefsODE = List.map(odeEqLst,getODEcRef);
+        print("all the ODEs "+&stringDelimitList(List.map(cRefsODE,ComponentReference.crefStr),",")+&"\n");
+        //eqSys = listGet(eqSysts,1);
+        //BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps=comps),orderedVars=orderedVars) = eqSys;
+        //BackendDAE.VARIABLES(numberOfVars=numberOfVars) = orderedVars;
+        //// map the SCCs to the vars
+        //varSCCMapping = createVarSccMapping(comps, numberOfVars);
+        //// map vars to cRefs of vars        
+        //varLst = BackendVariable.varList(orderedVars);
+        //varCRefMapping = List.map(varLst,BackendVariable.varCref);
+        //print("map vars to cRefs of vars "+&stringDelimitList(List.map(varCRefMapping,ComponentReference.crefStr),",")+&"\n");
+        //// map SCC to cRefs
+        //odeScc = arrayCreate(listLength(cRefsODE),-1);
+        //_ = List.fold3(cRefsODE, getSccForCRef, odeScc, varSCCMapping, varCRefMapping, 1);
+        ////print("ode-SCC-mapping "+&stringDelimitList(List.map(arrayList(odeScc),intString),",")+&"\n");
+      then
+        ();
+    else
+      equation
+      print("createTaskGraphODE failed! - check the ODEs \n");  
+      then
+        ();
+  end matchcontinue;
+end createTaskGraphODE;
+
+
+protected function getSccForCRef " mappes the Scc to a componentRef. the array cRefsODE is updated (this occurs during List.fold of arrays)
+author:Waurich TUD 2013-06."
+  input DAE.ComponentRef cRefIn;
+  input array<Integer> odeScc;
+  input array<Integer> varSCCMapping;
+  input list<DAE.ComponentRef> varCRefMapping;
+  input Integer odeIdxIn;
+  output Integer odeIdxOut;
+protected
+  Integer var;
+  Integer SCCIdx;
+  array<Integer> odeSccTmp;
+algorithm
+  var := varPosition(cRefIn,varCRefMapping); 
+  SCCIdx := arrayGet(varSCCMapping,var);
+  //print("for the ODE "+& intString(odeIdxIn)+&"i.e. "+&ComponentReference.crefStr(cRefIn)+&"assign var "+&intString(var)+&" i.e. componenten no. "+& intString(SCCIdx)+&"\n");
+  odeSccTmp := arrayUpdate(odeScc,odeIdxIn,SCCIdx);
+  odeIdxOut :=odeIdxIn+1;
+end getSccForCRef;
+
+protected function varPosition " gets the var in the varcRefMapping.
+author:Waurich TUD 2013-06"
+  input DAE.ComponentRef inElement;
+  input list<DAE.ComponentRef> inList;
+  output Integer outPosition;
+algorithm
+  outPosition := varPosition_impl(inElement, inList, 1);
+end varPosition;
+
+protected function varPosition_impl 
+"Implementation of varPosition."
+  input DAE.ComponentRef inElement;
+  input list<DAE.ComponentRef> inList;
+  input Integer inPosition;
+  output Integer outPosition;
+algorithm
+  outPosition := matchcontinue(inElement, inList, inPosition)
+    local
+      DAE.ComponentRef head;
+      list<DAE.ComponentRef> rest;
+      String Str1;
+      String Str2;
+    case (_, head :: _, _)
+      equation
+        Str1 = ComponentReference.crefStr(head);
+        Str2 = ComponentReference.crefStr(inElement);
+        true = stringEq(Str1,Str2); //!!!!BEACHTE DER(STATES)!!!!
+      then
+        inPosition;
+    case (_, _ :: rest, _)
+      then varPosition_impl(inElement, rest, inPosition + 1);
+  end matchcontinue;
+end varPosition_impl;
+
+
+protected function getODEcRef "gets the cRef for a SimEqSystem.
+  author: Waurich TUD 2013-06"
+  input SimCode.SimEqSystem odeEqIn;
+  output DAE.ComponentRef cRefOut;
+algorithm
+  cRefOut := matchcontinue(odeEqIn)
+  local
+    Integer eqIdx;
+    DAE.ComponentRef compRef;
+    list<DAE.ComponentRef> conditions;
+    DAE.Exp exp;
+    list<DAE.Exp> exps;
+    DAE.ElementSource source;
+    list<DAE.Statement> statements;
+    String compRefStr;
+  case(SimCode.SES_RESIDUAL(index=eqIdx, exp=exp, source=source))
+    equation  
+    //print("equation "+&intString(eqIdx)+&"is a Residual"+&"\n");
+    then
+      fail();
+  case(SimCode.SES_SIMPLE_ASSIGN(index=eqIdx, cref=compRef, exp=exp, source=source))
+    equation
+    compRefStr = ComponentReference.crefStr(compRef);    
+    //print("equation "+&intString(eqIdx)+&"is a SimpleAssignment from component"+&compRefStr+&"\n");
+    then
+      compRef; 
+  case(SimCode.SES_ALGORITHM(index=eqIdx, statements=statements))
+    equation
+    //print("equation "+&intString(eqIdx)+&"is a ALGORITHM from component"+&"\n");
+    then
+      fail();
+  case(SimCode.SES_WHEN(index=eqIdx, left=compRef, right=exp, source=source))
+    equation
+    //print("equation "+&intString(eqIdx)+&"is a When from component"+&"\n");
+    then
+      compRef;
+  else
+    equation
+    //print("createTaskGraphODE0 failed! - Unsupported SimEqSystem-type! ");
+    then
+      fail();    
+  end matchcontinue;      
+end getODEcRef;
 
 
 //Methods to write blt-structure as xml-file

@@ -130,7 +130,7 @@ algorithm
       
       //Create TaskGraph
       HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
-
+      
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
       // Debug.fcall(Flags.FAILTRACE, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
@@ -138,7 +138,6 @@ algorithm
       
       // generate initDAE before replacing pre(alias)!
       initDAE = Initialization.solveInitialSystem(dlow);
-
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
@@ -147,7 +146,6 @@ algorithm
 
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
-
       BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
                                                         constraints=constrsarr, 
                                                         classAttrs=clsattrsarra, 
@@ -187,7 +185,8 @@ algorithm
 
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
-      print("from "+&intString(listLength(allEquations))+&" we have "+&intString(listLength(List.flatten(odeEquations)))+& " ode eqs and "+&intString(listLength(List.flatten(algebraicEquations)))+&" algebraic eqs\n");
+      //print("from "+&intString(listLength(allEquations))+&" we have "+&intString(listLength(List.flatten(odeEquations)))+& " ode eqs and "+&intString(listLength(List.flatten(algebraicEquations)))+&" algebraic eqs\n");
+      //HpcOmTaskGraph.createTaskGraphODE(odeEquations,dlow,filenamePrefix);
 //      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
 //
 //      // Assertions and crap
