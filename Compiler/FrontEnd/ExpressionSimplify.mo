@@ -3873,7 +3873,7 @@ algorithm
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
 
        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-	      Expression.operatorEqual(op2,DAE.MUL(ty));
+        Expression.operatorEqual(op2,DAE.MUL(ty));
       then
         DAE.BINARY(DAE.BINARY(e1,op1,e3),op2,e4);
 
