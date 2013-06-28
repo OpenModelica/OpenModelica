@@ -3918,7 +3918,7 @@ algorithm
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
 
        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-	      Expression.operatorEqual(op2,DAE.MUL(ty));
+        Expression.operatorEqual(op2,DAE.MUL(ty));
        e1_1 = DAE.BINARY(e1, DAE.MUL(ty),e2);
        e = DAE.BINARY(e4, DAE.MUL(ty),e5);
        res = DAE.BINARY(e1_1,op1,e);
@@ -3931,8 +3931,8 @@ algorithm
         true = Expression.expEqual(e2,e4);
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
-	e = Expression.expDiv(e3,e4);
-	res = DAE.BINARY(e1,op1,e);
+  e = Expression.expDiv(e3,e4);
+  res = DAE.BINARY(e1,op1,e);
       then
         res;
 
@@ -3942,8 +3942,8 @@ algorithm
         true = Expression.expEqual(e2,e4);
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
-	e = Expression.expDiv(e3,e4);
-	res = DAE.BINARY(e,op1,e1);
+  e = Expression.expDiv(e3,e4);
+  res = DAE.BINARY(e,op1,e1);
       then
         res;
 
@@ -3954,10 +3954,10 @@ algorithm
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-	      Expression.operatorEqual(op2,DAE.MUL(ty));
-	e = Expression.expDiv(e4,e3);
-	e1_1 = DAE.BINARY(e1,op2,e2); 
-	res = DAE.BINARY(e1_1,op1,e);
+        Expression.operatorEqual(op2,DAE.MUL(ty));
+  e = Expression.expDiv(e4,e3);
+  e1_1 = DAE.BINARY(e1,op2,e2); 
+  res = DAE.BINARY(e1_1,op1,e);
       then
         res;
 
