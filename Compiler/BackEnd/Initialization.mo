@@ -186,9 +186,8 @@ algorithm
       // warn about selected default initial conditions
       b = intGt(listLength(dumpVars), 0);
       Debug.bcall(b and (not Flags.isSet(Flags.INITIALIZATION)), Error.addCompilerWarning, "The initial conditions are not fully specified. Use +d=initialization for more information.");
-      Debug.bcall(b and Flags.isSet(Flags.INITIALIZATION), Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(listLength(dumpVars)) +& " variables:");
-      Debug.bcall(b and Flags.isSet(Flags.INITIALIZATION), warnAboutVars, dumpVars);
-      
+      Debug.bcall(b and Flags.isSet(Flags.INITIALIZATION), Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(listLength(dumpVars)) +& " variables:\n" +& warnAboutVars2(dumpVars));
+
       // warn about iteration variables with default zero start attribute
       b = warnAboutIterationVariablesWithDefaultZeroStartAttribute(initdae);
       Debug.bcall(b and (not Flags.isSet(Flags.INITIALIZATION)), Error.addCompilerWarning, "There are iteration variables with default zero start attribute. Use +d=initialization for more information.");
@@ -720,8 +719,7 @@ algorithm
       varlst = filterVarsWithoutStartValue(varlst);
       false = List.isEmpty(varlst);
             
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in mixed equation system:");
-      warnAboutVars(varlst);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in mixed equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
     
@@ -730,8 +728,7 @@ algorithm
       varlst = filterVarsWithoutStartValue(varlst);
       false = List.isEmpty(varlst);
       
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system:");
-      warnAboutVars(varlst);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
         
@@ -741,8 +738,7 @@ algorithm
       false = List.isEmpty(varlst);
       
       str = Util.if_(linear, "linear", "nonlinear");
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn " +& str +& "equation system:");
-      warnAboutVars(varlst);
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in torn " +& str +& "equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
       
@@ -777,26 +773,31 @@ algorithm
   end matchcontinue;
 end filterVarsWithoutStartValue;
 
-function warnAboutVars "function warnAboutVars
-  author: lochel"
+function warnAboutVars2 "function warnAboutVars2
+  author: lochel
+  TODO: Replace this with an general BackendDump implementation."
   input list<BackendDAE.Var> inVars;
+  output String outString;
 algorithm
-  _ := match(inVars)
+  outString := match(inVars)
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> vars;
       String crStr;
+      String str;
 
-    case ({}) then ();
+    case ({}) then "";
+    
+    case (v::{}) equation
+      crStr = "         " +& BackendDump.varString(v);  
+    then crStr;
     
     case (v::vars) equation
-      crStr = BackendDump.varString(v);
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
-      
-      warnAboutVars(vars);
-    then ();
+      crStr = BackendDump.varString(v);      
+      str = "         " +& crStr +& "\n" +& warnAboutVars2(vars);
+    then str;
   end match;
-end warnAboutVars;
+end warnAboutVars2;
 
 // =============================================================================
 // section for selecting initialization variables
