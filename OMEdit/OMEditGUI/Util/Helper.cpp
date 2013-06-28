@@ -337,7 +337,7 @@ QString GUIMessages::getMessage(int type)
     case NO_SIMULATION_STARTTIME:
       return tr("Simulation Start Time is not defined. Default value (0.0) will be used.");
     case NO_SIMULATION_STOPTIME:
-      return tr("Simulation Stop Time is not defined.");
+      return tr("Simulation Stop Time is not defined. Default value (1.0) will be used.");
     case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
       return tr("Simulation Start Time should be less than or equal to Stop Time.");
     case ENTER_NAME:

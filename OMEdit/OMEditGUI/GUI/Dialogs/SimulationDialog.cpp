@@ -307,7 +307,6 @@ void SimulationDialog::setUpForm()
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
-  pDoubleValidator->setBottom(0);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
   mpStopTimeTextBox->setValidator(pDoubleValidator);
   mpToleranceTextBox->setValidator(pDoubleValidator);
@@ -646,24 +645,21 @@ void SimulationDialog::cancelSimulation()
 bool SimulationDialog::validate()
 {
   if (mpStartTimeTextBox->text().isEmpty())
-    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                          GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STARTTIME),
-                                                                          Helper::simulationKind, Helper::warningLevel, 0,
-                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+  {
+    QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STARTTIME), Helper::ok);
+    mpStartTimeTextBox->setText("0.0");
+  }
   if (mpStopTimeTextBox->text().isEmpty())
   {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                          GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STOPTIME),
-                                                                          Helper::simulationKind, Helper::warningLevel, 0,
-                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
-    return false;
+    QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STOPTIME), Helper::ok);
+    mpStopTimeTextBox->setText("1.0");
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble())
   {
-    mpMainWindow->getMessagesWidget()->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME),
-                                                                          Helper::simulationKind, Helper::warningLevel, 0,
-                                                                          mpMainWindow->getMessagesWidget()->getMessagesTreeWidget()));
+    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
     return false;
   }
   return true;
