@@ -36,6 +36,7 @@
  */
 
 #include "OptionsDialog.h"
+#include <limits>
 
 //! @class OptionsDialog
 //! @brief Creates an interface with options like Modelica Text, Pen Styles, Libraries etc.
@@ -2201,18 +2202,20 @@ LineStylePage::LineStylePage(OptionsDialog *pParent)
   setLinePattern(StringHandler::getLinePatternString(StringHandler::LineSolid));
   // Line Thickness
   mpLineThicknessLabel = new Label(Helper::thickness);
-  mpLineThicknessTextBox = new QLineEdit("0.25");
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
-  pDoubleValidator->setBottom(0);
-  mpLineThicknessTextBox->setValidator(pDoubleValidator);
+  mpLineThicknessSpinBox = new QDoubleSpinBox;
+  mpLineThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpLineThicknessSpinBox->setValue(0.25);
+  mpLineThicknessSpinBox->setSingleStep(0.25);
   // Line Arrow
   mpLineStartArrowLabel = new Label(Helper::startArrow);
   mpLineStartArrowComboBox = StringHandler::getStartArrowComboBox();
   mpLineEndArrowLabel = new Label(Helper::endArrow);
   mpLineEndArrowComboBox = StringHandler::getEndArrowComboBox();
   mpLineArrowSizeLabel = new Label(Helper::arrowSize);
-  mpLineArrowSizeTextBox = new QLineEdit("3");
-  mpLineArrowSizeTextBox->setValidator(pDoubleValidator);
+  mpLineArrowSizeSpinBox = new QDoubleSpinBox;
+  mpLineArrowSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpLineArrowSizeSpinBox->setValue(3);
+  mpLineArrowSizeSpinBox->setSingleStep(3);
   // Line smooth
   mpLineSmoothLabel = new Label(Helper::smooth);
   mpLineSmoothCheckBox = new QCheckBox(Helper::bezier);
@@ -2224,13 +2227,13 @@ LineStylePage::LineStylePage(OptionsDialog *pParent)
   pLineStyleLayout->addWidget(mpLinePatternLabel, 2, 0);
   pLineStyleLayout->addWidget(mpLinePatternComboBox, 2, 1);
   pLineStyleLayout->addWidget(mpLineThicknessLabel, 3, 0);
-  pLineStyleLayout->addWidget(mpLineThicknessTextBox, 3, 1);
+  pLineStyleLayout->addWidget(mpLineThicknessSpinBox, 3, 1);
   pLineStyleLayout->addWidget(mpLineStartArrowLabel, 4, 0);
   pLineStyleLayout->addWidget(mpLineStartArrowComboBox, 4, 1);
   pLineStyleLayout->addWidget(mpLineEndArrowLabel, 5, 0);
   pLineStyleLayout->addWidget(mpLineEndArrowComboBox, 5, 1);
   pLineStyleLayout->addWidget(mpLineArrowSizeLabel, 6, 0);
-  pLineStyleLayout->addWidget(mpLineArrowSizeTextBox, 6, 1);
+  pLineStyleLayout->addWidget(mpLineArrowSizeSpinBox, 6, 1);
   pLineStyleLayout->addWidget(mpLineSmoothLabel, 7, 0);
   pLineStyleLayout->addWidget(mpLineSmoothCheckBox, 7, 1);
   mpLineStyleGroupBox->setLayout(pLineStyleLayout);
@@ -2281,13 +2284,13 @@ void LineStylePage::setLineThickness(qreal thickness)
 {
   if (thickness <= 0)
     thickness = 0.25;
-  mpLineThicknessTextBox->setText(QString::number(thickness));
+  mpLineThicknessSpinBox->setValue(thickness);
 }
 
 //! Returns the pen thickness
 qreal LineStylePage::getLineThickness()
 {
-  return mpLineThicknessTextBox->text().toFloat();
+  return mpLineThicknessSpinBox->value();
 }
 
 void LineStylePage::setLineStartArrow(QString startArrow)
@@ -2318,12 +2321,12 @@ void LineStylePage::setLineArrowSize(qreal size)
 {
   if (size <= 0)
     size = 3;
-  mpLineArrowSizeTextBox->setText(QString::number(size));
+  mpLineArrowSizeSpinBox->setValue(size);
 }
 
 qreal LineStylePage::getLineArrowSize()
 {
-  return mpLineArrowSizeTextBox->text().toFloat();
+  return mpLineArrowSizeSpinBox->value();
 }
 
 //! Sets whether the pen used will be smooth (for splines) or not.
@@ -2446,17 +2449,17 @@ CurveStylePage::CurveStylePage(OptionsDialog *pParent)
   mpCurvePatternComboBox->addItem("Steps", 7);
   // Curve Thickness
   mpCurveThicknessLabel = new Label(Helper::thickness);
-  mpCurveThicknessTextBox = new QLineEdit("1.0");
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
-  pDoubleValidator->setBottom(0);
-  mpCurveThicknessTextBox->setValidator(pDoubleValidator);
+  mpCurveThicknessSpinBox = new QDoubleSpinBox;
+  mpCurveThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpCurveThicknessSpinBox->setValue(1);
+  mpCurveThicknessSpinBox->setSingleStep(1);
   // set the layout
   QGridLayout *pCurveStyleLayout = new QGridLayout;
   pCurveStyleLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pCurveStyleLayout->addWidget(mpCurvePatternLabel, 0, 0);
   pCurveStyleLayout->addWidget(mpCurvePatternComboBox, 0, 1);
   pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 2, 0);
-  pCurveStyleLayout->addWidget(mpCurveThicknessTextBox, 2, 1);
+  pCurveStyleLayout->addWidget(mpCurveThicknessSpinBox, 2, 1);
   mpCurveStyleGroupBox->setLayout(pCurveStyleLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
@@ -2485,11 +2488,11 @@ void CurveStylePage::setCurveThickness(qreal thickness)
 {
   if (thickness <= 0)
     thickness = 1.0;
-  mpCurveThicknessTextBox->setText(QString::number(thickness));
+  mpCurveThicknessSpinBox->setValue(thickness);
 }
 
 //! Returns the pen thickness
 qreal CurveStylePage::getCurveThickness()
 {
-  return mpCurveThicknessTextBox->text().toFloat();
+  return mpCurveThicknessSpinBox->value();
 }

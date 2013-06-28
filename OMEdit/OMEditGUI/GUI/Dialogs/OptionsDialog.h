@@ -460,13 +460,13 @@ private:
   Label *mpLinePatternLabel;
   QComboBox *mpLinePatternComboBox;
   Label *mpLineThicknessLabel;
-  QLineEdit *mpLineThicknessTextBox;
+  QDoubleSpinBox *mpLineThicknessSpinBox;
   Label *mpLineStartArrowLabel;
   QComboBox *mpLineStartArrowComboBox;
   Label *mpLineEndArrowLabel;
   QComboBox *mpLineEndArrowComboBox;
   Label *mpLineArrowSizeLabel;
-  QLineEdit *mpLineArrowSizeTextBox;
+  QDoubleSpinBox *mpLineArrowSizeSpinBox;
   Label *mpLineSmoothLabel;
   QCheckBox *mpLineSmoothCheckBox;
 public slots:
@@ -510,7 +510,7 @@ private:
   Label *mpCurvePatternLabel;
   QComboBox *mpCurvePatternComboBox;
   Label *mpCurveThicknessLabel;
-  QLineEdit *mpCurveThicknessTextBox;
+  QDoubleSpinBox *mpCurveThicknessSpinBox;
 };
 
 #endif // OPTIONSDIALOG_H
