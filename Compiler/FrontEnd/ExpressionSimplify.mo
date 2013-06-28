@@ -3775,7 +3775,7 @@ protected function simplifyBinary
 algorithm
   outExp := matchcontinue (inOperator2,inExp3,inExp4)
     local
-      DAE.Exp e1_1,e3,e,e1,e2,e4,res,one;
+      DAE.Exp e1_1,e3,e,e1,e2,e4,e5,e6,res,one;
       Operator oper, op1 ,op2, op3;
       Type ty,ty2,tp,tp2,ty1;
       list<DAE.Exp> exp_lst,exp_lst_1;
@@ -3877,6 +3877,90 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e1,op1,e3),op2,e4);
 
+    // (e1 * e2) op1 (e3 / e4) => (e1 * e2) op1 (e1 * (1/ e4) ) => e1*(e2 op1 (1/ e4))
+    // e1 = e3; op1 \in {+, -} 
+    case (op1,DAE.BINARY(e1,DAE.MUL(ty),e2),DAE.BINARY(e3,DAE.DIV(ty2),e4))
+      equation
+       false = Expression.isConst(e1);
+       true = Expression.expEqual(e1,e3);  
+
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+       one = Expression.makeConstOne(ty);
+       e = Expression.expDiv(one,e4); 
+      then
+        DAE.BINARY(DAE.BINARY(e2,op1,e),DAE.MUL(ty),e1);
+
+    // (e1 / e2) op1 (e3 * e4) => (e1 * (1/e2)) op1 (e1 * e4 ) => e1*(1/e2 op1 e4)
+    // e1 = e3; op1 \in {+, -} 
+    case (op1,DAE.BINARY(e1,DAE.MUL(ty),e2),DAE.BINARY(e3,DAE.DIV(ty2),e4))
+      equation
+       false = Expression.isConst(e1);
+       true = Expression.expEqual(e1,e3);  
+
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+       one = Expression.makeConstOne(ty);
+       e = Expression.expDiv(one,e2); 
+      then
+        DAE.BINARY(DAE.BINARY(e,op1,e4),DAE.MUL(ty),e1);
+
+    // [(e1*e2) op2 e] op1 [(e4*e5) op2 e] => (e1*e2 op1 e4*e5) op2 e 
+    // op2 \in {*, /}; op1 \in {+, -} 
+    case (op1,DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e2),op2,e3),DAE.BINARY(DAE.BINARY(e4,DAE.MUL(_),e5),op3,e6))
+      equation
+       false = Expression.isConst(e3);
+       true = Expression.expEqual(e3,e6);  
+       true = Expression.operatorEqual(op2,op3);
+       ty = Expression.typeof(e1);
+
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+
+       true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+	      Expression.operatorEqual(op2,DAE.MUL(ty));
+       e1_1 = DAE.BINARY(e1, DAE.MUL(ty),e2);
+       e = DAE.BINARY(e4, DAE.MUL(ty),e5);
+       res = DAE.BINARY(e1_1,op1,e);
+      then
+        DAE.BINARY(res, op2,e3);
+
+    // (a*b op1 c)/b => a op1 c/b
+    case (DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4)
+      equation
+        true = Expression.expEqual(e2,e4);
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+	e = Expression.expDiv(e3,e4);
+	res = DAE.BINARY(e1,op1,e);
+      then
+        res;
+
+    // (c op1 a*b)/b =>  c/b  op1 a
+    case (DAE.DIV(ty),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4)
+      equation
+        true = Expression.expEqual(e2,e4);
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+	e = Expression.expDiv(e3,e4);
+	res = DAE.BINARY(e,op1,e1);
+      then
+        res;
+
+    // (e1 op2 e2*e3 op1 e4)/e3 => e1 op2 e2 op1 e4/e3
+    case (DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2, DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5)
+      equation
+        true = Expression.expEqual(e3,e5);
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+	      Expression.operatorEqual(op2,DAE.MUL(ty));
+	e = Expression.expDiv(e4,e3);
+	e1_1 = DAE.BINARY(e1,op2,e2); 
+	res = DAE.BINARY(e1_1,op1,e);
+      then
+        res;
+
     // (a+b)/c1 => a/c1+b/c1, for constant c1
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
       equation
@@ -3893,7 +3977,7 @@ algorithm
       then
         res;
 
-    // a/(b/c) => (ac)/b)
+    // a/(b/c) => (ac)/b
     case (DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3))
       equation
         e = DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2);
