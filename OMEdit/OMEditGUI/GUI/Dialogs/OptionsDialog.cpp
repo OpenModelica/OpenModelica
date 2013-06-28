@@ -2215,7 +2215,7 @@ LineStylePage::LineStylePage(OptionsDialog *pParent)
   mpLineArrowSizeSpinBox = new QDoubleSpinBox;
   mpLineArrowSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpLineArrowSizeSpinBox->setValue(3);
-  mpLineArrowSizeSpinBox->setSingleStep(3);
+  mpLineArrowSizeSpinBox->setSingleStep(1);
   // Line smooth
   mpLineSmoothLabel = new Label(Helper::smooth);
   mpLineSmoothCheckBox = new QCheckBox(Helper::bezier);
