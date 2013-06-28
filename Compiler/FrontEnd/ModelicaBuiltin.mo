@@ -1296,6 +1296,7 @@ end setCommandLineOptions;
 
 function clearCommandLineOptions
   "Resets all commdand-line flags to their default values."
+  output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end clearCommandLineOptions;
