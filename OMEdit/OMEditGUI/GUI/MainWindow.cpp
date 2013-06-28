@@ -202,7 +202,8 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   // set the index reduction methods.
   mpOMCProxy->setIndexReductionMethod(mpOptionsDialog->getSimulationPage()->getIndexReductionMethodComboBox()->currentText());
   // set the OMC Flags.
-  mpOMCProxy->setCommandLineOptions(mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text());
+  if (!mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty())
+    mpOMCProxy->setCommandLineOptions(mpOptionsDialog->getSimulationPage()->getOMCFlagsTextBox()->text());
   // restore OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   if (mpOptionsDialog->getGeneralSettingsPage()->getPreserveUserCustomizations())

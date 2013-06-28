@@ -452,8 +452,20 @@ void OptionsDialog::saveSimulationSettings()
   mpMainWindow->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
   mSettings.setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   mpMainWindow->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
-  if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
-    mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+  if (mpSimulationPage->getOMCFlagsTextBox()->text().isEmpty())
+  {
+    if (mpMainWindow->getOMCProxy()->clearCommandLineOptions())
+    {
+      mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+    }
+  }
+  else
+  {
+    if (mpMainWindow->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text()))
+    {
+      mSettings.setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+    }
+  }
 }
 
 //! Saves the Notifications section settings to omedit.ini
