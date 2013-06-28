@@ -998,7 +998,7 @@ annotation(preferredView="text");
 end generateHeader;
 
 function generateSeparateCode
-  input TypeName className := $TypeName(AllLoadedClasses);
+  input TypeName className[:] := fill($TypeName(AllLoadedClasses),0);
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>

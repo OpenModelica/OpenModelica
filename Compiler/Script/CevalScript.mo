@@ -911,6 +911,8 @@ algorithm
       list<tuple<Absyn.Path,list<String>>> uses;
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
+      list<SCode.Element> cls;
+      list<String> names;
 
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
@@ -1907,7 +1909,7 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateSeparateCode",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={})},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
@@ -1915,13 +1917,13 @@ algorithm
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
-    case (cache,env,"generateSeparateCode",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str)))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst=vals)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
-        false = stringEqual(str,"AllLoadedClasses");
         sp = SCodeUtil.translateAbsyn2SCode(p);
-        cl = List.getMemberOnTrue(str, sp, SCode.isClassNamed);
+        names = List.map(vals,getTypeNameIdent);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
-        deps = generateFunctions(cache,env,p,{cl},{});
+        cls = List.map2(names,List.getMemberOnTrue, sp, SCode.isClassNamed);
+        deps = generateFunctions(cache,env,p,cls,{});
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
@@ -6900,5 +6902,12 @@ algorithm
       then fail();
   end match;
 end makeUsesArray;
+
+protected function getTypeNameIdent
+  input Values.Value val;
+  output String str;
+algorithm
+  Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str))) := val;
+end getTypeNameIdent;
 
 end CevalScript;
