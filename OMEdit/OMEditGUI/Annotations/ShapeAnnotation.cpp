@@ -468,7 +468,7 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
 {
   qreal thicknessFactor = mLineThickness / 0.5;
   qreal thickness = thicknessFactor < 1 ? 1.0 : thicknessFactor;
-  QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern));
+  QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
   /*
     Ticket #2272, Ticket #2268.
     if thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
