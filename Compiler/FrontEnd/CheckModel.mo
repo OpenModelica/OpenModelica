@@ -496,7 +496,7 @@ algorithm
     case(_, _)
       equation
         str = DAEDump.ppStatementStr(inStatement);
-        Debug.fprintln(Flags.FAILTRACE, "- BackendDAECreate.statementOutputs failed for " +& str +& "\n");
+        Debug.fprintln(Flags.FAILTRACE, "- CheckModel.statementOutputs failed for " +& str +& "\n");
       then
         fail();
   end matchcontinue;
