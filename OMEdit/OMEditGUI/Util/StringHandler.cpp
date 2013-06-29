@@ -1125,7 +1125,7 @@ QString StringHandler::createTooltip(QStringList info, QString name, QString pat
     if (QString(info[2]).compare("<interactive>") == 0)
       tooltip.append(Helper::errorLocation).append(": ").append("<br />");
     else
-      tooltip.append(Helper::errorLocation).append(": ").append(info[2]).append("<br />");
+      tooltip.append(Helper::errorLocation).append(": ").append(QString(info[2]).replace("\\", "/")).append("<br />");
     tooltip.append(tr("Path")).append(": ").append(path);
     return tooltip;
   }

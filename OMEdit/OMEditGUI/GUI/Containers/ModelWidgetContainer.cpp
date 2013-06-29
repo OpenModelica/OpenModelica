@@ -1057,6 +1057,12 @@ void GraphicsView::addClassAnnotation()
     annotationString.append(", graphics={");
     foreach (ShapeAnnotation *pShapeAnnotation, mShapesList)
     {
+      /* Don't add the inherited shape to the addClassAnnotation. */
+      if (pShapeAnnotation->isInheritedShape())
+      {
+        counter++;
+        continue;
+      }
       annotationString.append(pShapeAnnotation->getShapeAnnotation());
       if (counter < mShapesList.size() - 1)
         annotationString.append(",");

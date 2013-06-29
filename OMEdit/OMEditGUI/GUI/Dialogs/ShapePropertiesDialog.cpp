@@ -390,7 +390,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpApplyButton = new QPushButton(tr("Apply"));
   mpApplyButton->setAutoDefault(false);
   connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applyShapeProperties()));
-  if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || mpShapeAnnotation->isInheritedShape())
   {
     mpOkButton->setDisabled(true);
     mpApplyButton->setDisabled(true);
