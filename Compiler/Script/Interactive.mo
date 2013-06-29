@@ -8570,18 +8570,28 @@ public function getClassRestriction
 "function: getClassRestriction
   author: PA
   Returns the class restriction of a class as a string."
-  input Absyn.ComponentRef cr;
-  input Absyn.Program p;
-  output String res_1;
-protected
-  Absyn.Path path;
-  Absyn.Restriction restr;
-  String res;
+  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Program inProgram;
+  output String outRestriction;
 algorithm
-  path := Absyn.crefToPath(cr);
-  Absyn.CLASS(_,_,_,_,restr,_,_) := getPathedClassInProgram(path, p);
-  res := Dump.unparseRestrictionStr(restr);
-  res_1 := stringAppendList({"\"",res,"\""});
+  outRestriction:=
+  matchcontinue (inComponentRef,inProgram)
+    local
+      Absyn.Path path;
+      Absyn.ComponentRef cr;
+      Absyn.Program p;
+      Absyn.Restriction restr;
+      String res, res_1;
+    case (cr,p)
+      equation
+        path = Absyn.crefToPath(cr);
+        Absyn.CLASS(_,_,_,_,restr,_,_) = getPathedClassInProgram(path, p);
+        res = Dump.unparseRestrictionStr(restr);
+        res_1 = stringAppendList({"\"",res,"\""});
+      then
+        res_1;
+    case (cr,p) then "";
+  end matchcontinue;
 end getClassRestriction;
 
 public function isType
