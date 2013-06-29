@@ -39,6 +39,7 @@
 #include <QTcpServer>
 
 #include "SimulationDialog.h"
+#include <limits>
 
 /*!
   \class SimulationDialog
@@ -75,32 +76,44 @@ void SimulationDialog::setUpForm()
   // General Tab
   mpGeneralTab = new QWidget;
   // Simulation Interval
-  QGridLayout *gridSimulationIntervalLayout = new QGridLayout;
   mpSimulationIntervalGroupBox = new QGroupBox(tr("Simulation Interval"));
   mpStartTimeLabel = new Label(tr("Start Time:"));
-  mpStartTimeTextBox = new QLineEdit("0");
+  mpStartTimeSpinBox = new QDoubleSpinBox;
+  mpStartTimeSpinBox->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+  mpStartTimeSpinBox->setValue(0);
+  mpStartTimeSpinBox->setSingleStep(0.1);
   mpStopTimeLabel = new Label(tr("Stop Time:"));
-  mpStopTimeTextBox = new QLineEdit("1");
+  mpStopTimeSpinBox = new QDoubleSpinBox;
+  mpStopTimeSpinBox->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+  mpStopTimeSpinBox->setValue(1);
+  mpStopTimeSpinBox->setSingleStep(0.1);
   // set the layout for simulation interval groupbox
-  gridSimulationIntervalLayout->addWidget(mpStartTimeLabel, 0, 0);
-  gridSimulationIntervalLayout->addWidget(mpStartTimeTextBox, 0, 1);
-  gridSimulationIntervalLayout->addWidget(mpStopTimeLabel, 1, 0);
-  gridSimulationIntervalLayout->addWidget(mpStopTimeTextBox, 1, 1);
-  mpSimulationIntervalGroupBox->setLayout(gridSimulationIntervalLayout);
+  QGridLayout *pSimulationIntervalGridLayout = new QGridLayout;
+  pSimulationIntervalGridLayout->setColumnStretch(1, 1);
+  pSimulationIntervalGridLayout->addWidget(mpStartTimeLabel, 0, 0);
+  pSimulationIntervalGridLayout->addWidget(mpStartTimeSpinBox, 0, 1);
+  pSimulationIntervalGridLayout->addWidget(mpStopTimeLabel, 1, 0);
+  pSimulationIntervalGridLayout->addWidget(mpStopTimeSpinBox, 1, 1);
+  mpSimulationIntervalGroupBox->setLayout(pSimulationIntervalGridLayout);
   // Integration
-  QGridLayout *gridIntegrationLayout = new QGridLayout;
   mpIntegrationGroupBox = new QGroupBox(tr("Integration"));
   mpMethodLabel = new Label(tr("Method:"));
   mpMethodComboBox = new QComboBox;
   mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.split(","));
   mpToleranceLabel = new Label(tr("Tolerance:"));
-  mpToleranceTextBox = new QLineEdit("0.0001");
+  mpToleranceSpinBox = new QDoubleSpinBox;
+  mpToleranceSpinBox->setDecimals(4);
+  mpToleranceSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpToleranceSpinBox->setValue(0.0001);
+  mpToleranceSpinBox->setSingleStep(0.0001);
   // set the layout for integration groupbox
-  gridIntegrationLayout->addWidget(mpMethodLabel, 0, 0);
-  gridIntegrationLayout->addWidget(mpMethodComboBox, 0, 1);
-  gridIntegrationLayout->addWidget(mpToleranceLabel, 1, 0);
-  gridIntegrationLayout->addWidget(mpToleranceTextBox, 1, 1);
-  mpIntegrationGroupBox->setLayout(gridIntegrationLayout);
+  QGridLayout *pIntegrationGridLayout = new QGridLayout;
+  pIntegrationGridLayout->setColumnStretch(1, 1);
+  pIntegrationGridLayout->addWidget(mpMethodLabel, 0, 0);
+  pIntegrationGridLayout->addWidget(mpMethodComboBox, 0, 1);
+  pIntegrationGridLayout->addWidget(mpToleranceLabel, 1, 0);
+  pIntegrationGridLayout->addWidget(mpToleranceSpinBox, 1, 1);
+  mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
   mpCflagsLabel = new Label(tr("Compiler Flags (Optional):"));
   mpCflagsTextBox = new QLineEdit;
@@ -118,7 +131,10 @@ void SimulationDialog::setUpForm()
   mpOutputTab = new QWidget;
   // Output Interval
   mpNumberofIntervalLabel = new Label(tr("Number of Intervals:"));
-  mpNumberofIntervalsTextBox = new QLineEdit("500");
+  mpNumberofIntervalsSpinBox = new QDoubleSpinBox;
+  mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpNumberofIntervalsSpinBox->setValue(500);
+  mpNumberofIntervalsSpinBox->setSingleStep(100);
   // Output Format
   mpOutputFormatLabel = new Label(tr("Output Format:"));
   mpOutputFormatComboBox = new QComboBox;
@@ -135,7 +151,7 @@ void SimulationDialog::setUpForm()
   QGridLayout *pOutputTabLayout = new QGridLayout;
   pOutputTabLayout->setAlignment(Qt::AlignTop);
   pOutputTabLayout->addWidget(mpNumberofIntervalLabel, 0, 0);
-  pOutputTabLayout->addWidget(mpNumberofIntervalsTextBox, 0, 1);
+  pOutputTabLayout->addWidget(mpNumberofIntervalsSpinBox, 0, 1);
   pOutputTabLayout->addWidget(mpOutputFormatLabel, 1, 0);
   pOutputTabLayout->addWidget(mpOutputFormatComboBox, 1, 1);
   pOutputTabLayout->addWidget(mpFileNameLabel, 2, 0);
@@ -305,14 +321,6 @@ void SimulationDialog::setUpForm()
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
-  // Add the validators
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
-  mpStartTimeTextBox->setValidator(pDoubleValidator);
-  mpStopTimeTextBox->setValidator(pDoubleValidator);
-  mpToleranceTextBox->setValidator(pDoubleValidator);
-  QIntValidator *pIntValidator = new QIntValidator(this);
-  pIntValidator->setBottom(1);
-  mpNumberofIntervalsTextBox->setValidator(pIntValidator);
   // Create the buttons
   mpSimulateButton = new QPushButton(Helper::simulate);
   mpSimulateButton->setAutoDefault(true);
@@ -375,9 +383,9 @@ void SimulationDialog::initializeFields()
     result = StringHandler::removeFirstLastCurlBrackets(StringHandler::removeComment(result));
     QStringList simulationOptionsList = StringHandler::getStrings(result);
     // since we always get simulationOptions so just get the values from array
-    mpStartTimeTextBox->setText(simulationOptionsList.at(0));
-    mpStopTimeTextBox->setText(simulationOptionsList.at(1));
-    mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat()));
+    mpStartTimeSpinBox->setValue(simulationOptionsList.at(0).toFloat());
+    mpStopTimeSpinBox->setValue(simulationOptionsList.at(1).toFloat());
+    mpToleranceSpinBox->setValue(simulationOptionsList.at(3).toFloat());
   }
 }
 
@@ -437,22 +445,15 @@ void SimulationDialog::simulate()
     // if user is performing a simple simulation then take start and stop times
     if (!mIsInteractive)
     {
-      if (mpStartTimeTextBox->text().isEmpty())
-        simulationParameters.append("startTime=0.0");
-      else
-        simulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
-      simulationParameters.append(", stopTime=").append(mpStopTimeTextBox->text()).append(",");
+      simulationParameters.append("startTime=").append(QString::number(mpStartTimeSpinBox->value()));
+      simulationParameters.append(", stopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
     }
-    if (mpNumberofIntervalsTextBox->text().isEmpty())
-      simulationParameters.append(" numberOfIntervals=500");
-    else
-      simulationParameters.append(" numberOfIntervals=").append(mpNumberofIntervalsTextBox->text());
+    simulationParameters.append(" numberOfIntervals=").append(QString::number(mpNumberofIntervalsSpinBox->value()));
     if (mpMethodComboBox->currentText().isEmpty())
       simulationParameters.append(", method=\"dassl\"");
     else
       simulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
-    if (!mpToleranceTextBox->text().isEmpty())
-      simulationParameters.append(", tolerance=").append(mpToleranceTextBox->text());
+    simulationParameters.append(", tolerance=").append(QString::number(mpToleranceSpinBox->value()));
     simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
     if (!mpFileNameTextBox->text().isEmpty())
       simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
@@ -644,19 +645,7 @@ void SimulationDialog::cancelSimulation()
   */
 bool SimulationDialog::validate()
 {
-  if (mpStartTimeTextBox->text().isEmpty())
-  {
-    QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STARTTIME), Helper::ok);
-    mpStartTimeTextBox->setText("0.0");
-  }
-  if (mpStopTimeTextBox->text().isEmpty())
-  {
-    QMessageBox::information(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                             GUIMessages::getMessage(GUIMessages::NO_SIMULATION_STOPTIME), Helper::ok);
-    mpStopTimeTextBox->setText("1.0");
-  }
-  if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble())
+  if (mpStartTimeSpinBox->value() > mpStopTimeSpinBox->value())
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
@@ -822,16 +811,19 @@ void SimulationDialog::saveSimulationOptions()
   QString annotationString;
   // create simulations options annotation
   annotationString.append("annotate=experiment(");
-  annotationString.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
-  annotationString.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
-  annotationString.append("Tolerance=").append(mpToleranceTextBox->text());
+  annotationString.append("StartTime=").append(QString::number(mpStartTimeSpinBox->value())).append(",");
+  annotationString.append("StopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
+  annotationString.append("Tolerance=").append(QString::number(mpToleranceSpinBox->value()));
   annotationString.append(")");
   // send the simulations options annotation to OMC
   mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
   // make the model modified
-  mpLibraryTreeNode->getModelWidget()->setModelModified();
-  if (mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
-    mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
+  if (mpLibraryTreeNode->getModelWidget())
+  {
+    mpLibraryTreeNode->getModelWidget()->setModelModified();
+    if (mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
+      mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
+  }
 }
 
 /*!

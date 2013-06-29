@@ -334,10 +334,6 @@ QString GUIMessages::getMessage(int type)
       return tr("You cannot connect a component to itself.");
     case NO_MODELICA_CLASS_OPEN:
       return tr("There is no Modelica Class opened for %1.");
-    case NO_SIMULATION_STARTTIME:
-      return tr("Simulation Start Time is not defined. Default value (0.0) will be used.");
-    case NO_SIMULATION_STOPTIME:
-      return tr("Simulation Stop Time is not defined. Default value (1.0) will be used.");
     case SIMULATION_STARTTIME_LESSTHAN_STOPTIME:
       return tr("Simulation Start Time should be less than or equal to Stop Time.");
     case ENTER_NAME:
