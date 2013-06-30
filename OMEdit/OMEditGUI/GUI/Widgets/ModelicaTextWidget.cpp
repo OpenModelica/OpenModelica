@@ -271,6 +271,11 @@ void ModelicaTextEdit::keyPressEvent(QKeyEvent *pEvent)
     toggleCommentSelection();
     return;
   }
+  /* Ticket #2273. Change shift+enter to enter. */
+  else if (pEvent->modifiers().testFlag(Qt::ShiftModifier) && (pEvent->key() == Qt::Key_Enter || pEvent->key() == Qt::Key_Return))
+  {
+    pEvent->setModifiers(Qt::NoModifier);
+  }
   QPlainTextEdit::keyPressEvent(pEvent);
 }
 
