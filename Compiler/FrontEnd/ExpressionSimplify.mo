@@ -3745,11 +3745,11 @@ algorithm
 
     // |e1| /e1 => sign(e1)
     case(DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),e2)
-	equation
-	 true = Expression.expEqual(e1,e2);
+  equation
+   true = Expression.expEqual(e1,e2);
          res = Expression.makeBuiltinCall("sign",{e1},ty); 
-	then
-	 res;
+  then
+   res;
 
     // SUB is not commutative
     // (e*e1) - (e*e2) => e*(e1-e2)
@@ -3940,8 +3940,8 @@ algorithm
         true = Expression.expEqual(e2,e4);
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
-  	e = Expression.expDiv(e3,e4);
-  	res = DAE.BINARY(e1,op1,e);
+    e = Expression.expDiv(e3,e4);
+    res = DAE.BINARY(e1,op1,e);
       then
         res;
 
@@ -3951,8 +3951,8 @@ algorithm
         true = Expression.expEqual(e2,e4);
         true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
-  	e = Expression.expDiv(e3,e4);
-  	res = DAE.BINARY(e,op1,e1);
+    e = Expression.expDiv(e3,e4);
+    res = DAE.BINARY(e,op1,e1);
       then
         res;
 
@@ -3964,9 +3964,9 @@ algorithm
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
         true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
         Expression.operatorEqual(op2,DAE.MUL(ty));
- 	 e = Expression.expDiv(e4,e3);
-  	e1_1 = DAE.BINARY(e1,op2,e2); 
-  	res = DAE.BINARY(e1_1,op1,e);
+    e = Expression.expDiv(e4,e3);
+    e1_1 = DAE.BINARY(e1,op2,e2); 
+    res = DAE.BINARY(e1_1,op1,e);
       then
         res;
 
@@ -4053,19 +4053,19 @@ algorithm
 
     // |e1| * |e2| => |e1*e2|
     case(DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e2}))
-	equation
+  equation
          res = DAE.BINARY(e1, DAE.MUL(ty),e2);
-	then
-	 Expression.makeBuiltinCall("abs",{res},ty);
+  then
+   Expression.makeBuiltinCall("abs",{res},ty);
 
     // exp(e1) * exp(e2) => exp(e1 + e2)
     case(DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}))
-	equation
-	 false = Expression.isConst(e1) or Expression.isConst(e2);
+  equation
+   false = Expression.isConst(e1) or Expression.isConst(e2);
          e = DAE.BINARY(e1, DAE.ADD(ty),e1);
-	 res = Expression.makeBuiltinCall("exp",{e},ty);
-	then
-	 res;
+   res = Expression.makeBuiltinCall("exp",{e},ty);
+  then
+   res;
 
     // (a+b)/c1 => a/c1+b/c1, for constant c1
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
