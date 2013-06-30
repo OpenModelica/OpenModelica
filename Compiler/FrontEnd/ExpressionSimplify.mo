@@ -1042,15 +1042,15 @@ algorithm
    // exp(e)^r = exp(e*r)
    case (DAE.BINARY(DAE.CALL(path=Absyn.IDENT("exp"),expLst={e}),DAE.POW(ty = DAE.T_REAL(source = _)),e2))
      equation
-      e = Expression.expMul(e,e2);
-   then Expression.makeBuiltinCall("exp",{e},DAE.T_REAL_DEFAULT);
+      e3 = Expression.expMul(e,e2);
+   then Expression.makeBuiltinCall("exp",{e3},DAE.T_REAL_DEFAULT);
 
    // log(x^n) = n*log(x)
    case (DAE.CALL(path=Absyn.IDENT("log"),expLst={DAE.BINARY(e1,DAE.POW(ty = DAE.T_REAL(source = _)), DAE.RCONST(r1))}))
      equation
-       true = realEq(realMod(r1,2.0),1.0);
-       e1 = Expression.makeBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
-     then  Expression.expMul(DAE.RCONST(r1), e1);
+       1.0 = realMod(r1,2.0);
+       e3 = Expression.makeBuiltinCall("log",{e1},DAE.T_REAL_DEFAULT);
+     then  Expression.expMul(DAE.RCONST(r1), e3);
 
    // smooth of constant expression
    case DAE.CALL(path=Absyn.IDENT("smooth"),expLst={_,e1})
@@ -1934,6 +1934,7 @@ algorithm
         true = Expression.isZero(e2);
       then
         e1;
+
   end matchcontinue;
 end simplifyVectorBinary0;
 
@@ -2124,6 +2125,26 @@ algorithm
         1=i;
       then
         m;
+
+    // A^2 = A * A
+    case (m as DAE.MATRIX(ty = tp1, integer = size1, matrix = expl1),tp, DAE.ICONST(integer = i))
+       equation
+        2 = i;
+        res = simplifyMatrixProduct(m,m);
+       then
+        res;
+
+    // A^n = A^m*A^m where n = 2*m
+    case(m as DAE.MATRIX(ty = tp1, integer = size1, matrix = expl1),tp,DAE.ICONST(integer = i))
+       equation
+        true = i > 3;
+        0 = intMod(i,2);
+        i_1 = intDiv(i,2);
+        e = simplifyMatrixPow(m,tp1,DAE.ICONST(i_1));
+        res = simplifyMatrixProduct(e,e);
+       then
+        res;
+
     /* A^i */
     case (m as DAE.MATRIX(ty = tp1,integer = size1,matrix = expl1),tp,
           DAE.ICONST(integer = i))
@@ -3722,6 +3743,14 @@ algorithm
       then
         DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e3));
 
+    // |e1| /e1 => sign(e1)
+    case(DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),e2)
+	equation
+	 true = Expression.expEqual(e1,e2);
+         res = Expression.makeBuiltinCall("sign",{e1},ty); 
+	then
+	 res;
+
     // SUB is not commutative
     // (e*e1) - (e*e2) => e*(e1-e2)
     //case (op1 as DAE.SUB(ty = _),DAE.BINARY(e1,op2 as DAE.MUL(ty=_),e2),DAE.BINARY(e3,DAE.MUL(ty=_),e4))
@@ -3905,6 +3934,42 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e,op1,e4),DAE.MUL(ty),e1);
 
+    // (a*b op1 c)/b => a op1 c/b
+    case (DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4)
+      equation
+        true = Expression.expEqual(e2,e4);
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+  	e = Expression.expDiv(e3,e4);
+  	res = DAE.BINARY(e1,op1,e);
+      then
+        res;
+
+    // (c op1 a*b)/b =>  c/b  op1 a
+    case (DAE.DIV(ty),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4)
+      equation
+        true = Expression.expEqual(e2,e4);
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+  	e = Expression.expDiv(e3,e4);
+  	res = DAE.BINARY(e,op1,e1);
+      then
+        res;
+
+    // (e1 op2 e2*e3 op1 e4)/e3 => e1 op2 e2 op1 e4/e3
+    case (DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2, DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5)
+      equation
+        true = Expression.expEqual(e3,e5);
+        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+        Expression.operatorEqual(op2,DAE.MUL(ty));
+ 	 e = Expression.expDiv(e4,e3);
+  	e1_1 = DAE.BINARY(e1,op2,e2); 
+  	res = DAE.BINARY(e1_1,op1,e);
+      then
+        res;
+
     // [(e1*e2) op2 e] op1 [(e4*e5) op2 e] => (e1*e2 op1 e4*e5) op2 e 
     // op2 \in {*, /}; op1 \in {+, -} 
     case (op1,DAE.BINARY(DAE.BINARY(e1,DAE.MUL(ty),e2),op2,e3),DAE.BINARY(DAE.BINARY(e4,DAE.MUL(_),e5),op3,e6))
@@ -3925,41 +3990,82 @@ algorithm
       then
         DAE.BINARY(res, op2,e3);
 
-    // (a*b op1 c)/b => a op1 c/b
-    case (DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, DAE.MUL(_), e2), op1,e3),e4)
+    // [(e1 op2 e) * e3] op1 [(e4*e5) op2 e] => (e1*e3 op1 e4*e5) op2 e 
+    // op2 \in {*, /}; op1 \in {+, -} 
+    case (op1,DAE.BINARY(DAE.BINARY(e1,op2,e2),DAE.MUL(ty),e3),DAE.BINARY(DAE.BINARY(e4,DAE.MUL(_),e5),op3,e6))
       equation
-        true = Expression.expEqual(e2,e4);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
-  e = Expression.expDiv(e3,e4);
-  res = DAE.BINARY(e1,op1,e);
-      then
-        res;
+       false = Expression.isConst(e2);
+       true = Expression.expEqual(e2,e6);  
+       true = Expression.operatorEqual(op2,op3);
+       ty = Expression.typeof(e1);
 
-    // (c op1 a*b)/b =>  c/b  op1 a
-    case (DAE.DIV(ty),DAE.BINARY(e3, op1,DAE.BINARY(e1, DAE.MUL(_), e2)),e4)
-      equation
-        true = Expression.expEqual(e2,e4);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
               Expression.operatorEqual(op1,DAE.ADD(ty)); 
-  e = Expression.expDiv(e3,e4);
-  res = DAE.BINARY(e,op1,e1);
-      then
-        res;
 
-    // (e1 op2 e2*e3 op1 e4)/e3 => e1 op2 e2 op1 e4/e3
-    case (DAE.DIV(ty),DAE.BINARY(DAE.BINARY(e1, op2, DAE.BINARY(e2, DAE.MUL(_), e3)), op1,e4),e5)
-      equation
-        true = Expression.expEqual(e3,e5);
-        true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
-              Expression.operatorEqual(op1,DAE.ADD(ty)); 
-        true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
-        Expression.operatorEqual(op2,DAE.MUL(ty));
-  e = Expression.expDiv(e4,e3);
-  e1_1 = DAE.BINARY(e1,op2,e2); 
-  res = DAE.BINARY(e1_1,op1,e);
+       true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+              Expression.operatorEqual(op2,DAE.MUL(ty));
+       e1_1 = DAE.BINARY(e1, DAE.MUL(ty),e3);
+       e = DAE.BINARY(e4, DAE.MUL(ty),e5);
+       res = DAE.BINARY(e1_1,op1,e);
       then
-        res;
+        DAE.BINARY(res, op2,e2);
+
+
+    // [(e1 op2 e) * e3] op1 [(e4 op2 e) * e6] => (e1*e3 op1 e4*e6) op2 e 
+    // op2 \in {*, /}; op1 \in {+, -} 
+    case (op1,DAE.BINARY(DAE.BINARY(e1,op2,e2),DAE.MUL(ty),e3),DAE.BINARY(DAE.BINARY(e4,op3,e5),DAE.MUL(_),e6))
+      equation
+       false = Expression.isConst(e2);
+       true = Expression.expEqual(e2,e5);  
+       true = Expression.operatorEqual(op2,op3);
+       ty = Expression.typeof(e1);
+
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+
+       true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+              Expression.operatorEqual(op2,DAE.MUL(ty));
+       e1_1 = DAE.BINARY(e1, DAE.MUL(ty),e3);
+       e = DAE.BINARY(e4, DAE.MUL(ty),e6);
+       res = DAE.BINARY(e1_1,op1,e);
+      then
+        DAE.BINARY(res, op2,e2);
+
+    // [(e1 * e2) op2 e] op1 [(e4 op2 e) * e6] => (e1*e2 op1 e4*e6) op2 e 
+    // op2 \in {*, /}; op1 \in {+, -} 
+    case (op1,DAE.BINARY(DAE.BINARY(e1,op2,e2),DAE.MUL(ty),e3),DAE.BINARY(DAE.BINARY(e4,op3,e5),DAE.MUL(_),e6))
+      equation
+       false = Expression.isConst(e3);
+       true = Expression.expEqual(e3,e5);  
+       true = Expression.operatorEqual(op2,op3);
+       ty = Expression.typeof(e1);
+
+       true = Expression.operatorEqual(op1,DAE.SUB(ty)) or 
+              Expression.operatorEqual(op1,DAE.ADD(ty)); 
+
+       true = Expression.operatorEqual(op2,DAE.DIV(ty)) or
+              Expression.operatorEqual(op2,DAE.MUL(ty));
+       e1_1 = DAE.BINARY(e1, DAE.MUL(ty),e2);
+       e = DAE.BINARY(e4, DAE.MUL(ty),e6);
+       res = DAE.BINARY(e1_1,op1,e);
+      then
+        DAE.BINARY(res, op2,e2);
+
+    // |e1| * |e2| => |e1*e2|
+    case(DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e2}))
+	equation
+         res = DAE.BINARY(e1, DAE.MUL(ty),e2);
+	then
+	 Expression.makeBuiltinCall("abs",{res},ty);
+
+    // exp(e1) * exp(e2) => exp(e1 + e2)
+    case(DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}))
+	equation
+	 false = Expression.isConst(e1) or Expression.isConst(e2);
+         e = DAE.BINARY(e1, DAE.ADD(ty),e1);
+	 res = Expression.makeBuiltinCall("exp",{e},ty);
+	then
+	 res;
 
     // (a+b)/c1 => a/c1+b/c1, for constant c1
     case (DAE.DIV(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)

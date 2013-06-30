@@ -656,7 +656,7 @@ int kinsolOde(void* ode)
     if(i == 0)
     {
      KINDense(kinOde->kData->kmem, kinOde->N*kinOde->nlp->nStates);
-     INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINLapackDense.");
+     INFO(LOG_SOLVER,"Restart Kinsol: change linear solver to KINDense.");
     }
     else if(i == 1)
     { 
