@@ -626,12 +626,14 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   QString indexString = tr("<b>[index]</b>");
   QString startComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName())
       .append(".").append(pConnectionLineAnnotation->getStartComponent()->getName()).append("</b>");
-  if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
-    startComponentDescription.append(indexString);
+  if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo())
+    if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
+      startComponentDescription.append(indexString);
   QString endComponentDescription = QString("<b>").append(pConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName())
       .append(".").append(pConnectionLineAnnotation->getEndComponent()->getName()).append("</b>");
-  if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
-    endComponentDescription.append(indexString);
+  if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo())
+    if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
+      endComponentDescription.append(indexString);
   mpDescriptionLabel = new Label(tr("Connect ").append(startComponentDescription).append(tr(" with ")).append(endComponentDescription));
   // start component
   QIntValidator *pIntValidator = new QIntValidator(this);
@@ -642,7 +644,7 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   mpStartComponentTextBox->setValidator(pIntValidator);
   // start component
   mpEndComponentLabel = new Label(tr("Enter <b>index</b> value for <b>").append(pConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName())
-                                  .append(".").append(pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->getName()).append("</b>"));
+                                  .append(".").append(pConnectionLineAnnotation->getEndComponent()->getName()).append("</b>"));
   mpEndComponentTextBox = new QLineEdit;
   mpEndComponentTextBox->setValidator(pIntValidator);
   // Create the buttons
@@ -662,17 +664,23 @@ ConnectionArray::ConnectionArray(GraphicsView *pGraphicsView, LineAnnotation *pC
   mainLayout->addWidget(mpHorizontalLine, 1, 0);
   mainLayout->addWidget(mpDescriptionLabel, 2, 0);
   int i = 3;
-  if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
+  if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo())
   {
-    mainLayout->addWidget(mpStartComponentLabel, i, 0);
-    mainLayout->addWidget(mpStartComponentTextBox, i+1, 0);
-    i = i + 2;
+    if (pConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
+    {
+      mainLayout->addWidget(mpStartComponentLabel, i, 0);
+      mainLayout->addWidget(mpStartComponentTextBox, i+1, 0);
+      i = i + 2;
+    }
   }
-  if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
+  if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo())
   {
-    mainLayout->addWidget(mpEndComponentLabel, i, 0);
-    mainLayout->addWidget(mpEndComponentTextBox, i+1, 0);
-    i = i + 2;
+    if (pConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
+    {
+      mainLayout->addWidget(mpEndComponentLabel, i, 0);
+      mainLayout->addWidget(mpEndComponentTextBox, i+1, 0);
+      i = i + 2;
+    }
   }
   mainLayout->addWidget(mpButtonBox, i, 0);
   setLayout(mainLayout);
@@ -682,42 +690,48 @@ void ConnectionArray::saveArrayIndex()
 {
   QString startComponentName, endComponentName;
   // set start component name
-  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
+  if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo())
   {
-    startComponentName = QString(mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName()).append(".")
-        .append(mpConnectionLineAnnotation->getStartComponent()->getName());
-    if (mpStartComponentTextBox->text().isEmpty())
+    if (mpConnectionLineAnnotation->getStartComponent()->getComponentInfo()->isArray())
     {
-      QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(startComponentName), Helper::ok);
-      return;
+      startComponentName = QString(mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName()).append(".")
+          .append(mpConnectionLineAnnotation->getStartComponent()->getName());
+      if (mpStartComponentTextBox->text().isEmpty())
+      {
+        QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
+                              QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(startComponentName), Helper::ok);
+        return;
+      }
+      startComponentName = QString(startComponentName).append("[").append(mpStartComponentTextBox->text()).append("]");
     }
-    startComponentName = QString(startComponentName).append("[").append(mpStartComponentTextBox->text()).append("]");
-  }
-  else
-  {
-    startComponentName = QString(mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName()).append(".")
-        .append(mpConnectionLineAnnotation->getStartComponent()->getName());
+    else
+    {
+      startComponentName = QString(mpConnectionLineAnnotation->getStartComponent()->getParentComponent()->getName()).append(".")
+          .append(mpConnectionLineAnnotation->getStartComponent()->getName());
+    }
   }
   // set end component name
-  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
+  if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo())
   {
-    endComponentName = QString(mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName()).append(".")
-        .append(mpConnectionLineAnnotation->getEndComponent()->getName());
-    if (mpEndComponentTextBox->text().isEmpty())
+    if (mpConnectionLineAnnotation->getEndComponent()->getComponentInfo()->isArray())
     {
-      QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
-                            QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(endComponentName), Helper::ok);
-      return;
+      endComponentName = QString(mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName()).append(".")
+          .append(mpConnectionLineAnnotation->getEndComponent()->getName());
+      if (mpEndComponentTextBox->text().isEmpty())
+      {
+        QMessageBox::critical(mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow(),
+                              QString(Helper::applicationName).append(" - ").append(Helper::error),
+                              GUIMessages::getMessage(GUIMessages::ENTER_VALID_INTEGER).arg(endComponentName), Helper::ok);
+        return;
+      }
+      endComponentName = QString(endComponentName).append("[").append(mpEndComponentTextBox->text()).append("]");
     }
-    endComponentName = QString(endComponentName).append("[").append(mpEndComponentTextBox->text()).append("]");
-  }
-  else
-  {
-    endComponentName = QString(mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName()).append(".")
-        .append(mpConnectionLineAnnotation->getEndComponent()->getName());
+    else
+    {
+      endComponentName = QString(mpConnectionLineAnnotation->getEndComponent()->getParentComponent()->getName()).append(".")
+          .append(mpConnectionLineAnnotation->getEndComponent()->getName());
+    }
   }
   mpGraphicsView->createConnection(startComponentName, endComponentName);
   accept();

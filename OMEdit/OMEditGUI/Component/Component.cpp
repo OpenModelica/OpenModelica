@@ -39,7 +39,8 @@
 #include "ComponentProperties.h"
 
 Component::Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-                     QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent)
+                     QPointF position, bool inheritedComponent, bool extendsClass, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView,
+                     Component *pParent)
   : QGraphicsItem(pParent), mName(name), mClassName(className), mType(type), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
     mpParentComponent(pParent)
 {
@@ -78,7 +79,7 @@ Component::Component(QString annotation, QString name, QString className, String
   connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
   // if type is connector and component is not a library component and not a system library class.
   bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
-  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
+  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary && !extendsClass)
     connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
@@ -97,9 +98,9 @@ Component::Component(QString annotation, QString className, StringHandler::Model
   getClassInheritedComponents();
   parseAnnotationString(annotation);
   // if type is connector and component is not a library component and not a system library class.
-  bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
-  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
-    connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
+//  bool isSystemLibrary = mpGraphicsView ? mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() : false;
+//  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
+//    connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
 /* Called for component annotation instance */
@@ -115,7 +116,7 @@ Component::Component(QString annotation, QString transformationString, Component
   mpGraphicsView = isLibraryComponent() ? 0 : pParent->getGraphicsView();
   initialize();
   setAcceptHoverEvents(true);
-  getClassInheritedComponents();
+  getClassInheritedComponents(false, true);
   parseAnnotationString(annotation);
   mpTransformation = new Transformation(StringHandler::Icon);
   mpTransformation->parseTransformationString(transformationString, boundingRect().width(), boundingRect().height());
@@ -195,7 +196,7 @@ bool Component::isInheritedComponent()
   return mIsInheritedComponent;
 }
 
-void Component::getClassInheritedComponents(bool isRootComponent)
+void Component::getClassInheritedComponents(bool isRootComponent, bool isPortComponent)
 {
   // read the component inheritance
   int inheritanceCount = mpOMCProxy->getInheritanceCount(mClassName);
@@ -220,6 +221,9 @@ void Component::getClassInheritedComponents(bool isRootComponent)
       annotationString = mpOMCProxy->getIconAnnotation(inheritedClass);
     Component *pInheritedComponent;
     pInheritedComponent  = new Component(annotationString, inheritedClass, type, this);
+    /* if component is the port component and it has inherited components then stack its inherited components behind it. */
+    if (isPortComponent)
+      pInheritedComponent->setFlag(QGraphicsItem::ItemStacksBehindParent);
     mpInheritanceList.append(pInheritedComponent);
   }
 }

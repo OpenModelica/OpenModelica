@@ -442,7 +442,8 @@ bool GraphicsView::addComponent(QString className, QPointF position)
 }
 
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
-                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass, bool inheritedClass)
+                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass, bool inheritedClass,
+                                      bool extendsClass)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotation;
@@ -451,7 +452,7 @@ void GraphicsView::addComponentToView(QString name, QString className, QString t
     annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
   else
     annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-  Component *pComponent = new Component(annotation, name, className, type, transformationString, point, inheritedClass,
+  Component *pComponent = new Component(annotation, name, className, type, transformationString, point, inheritedClass, extendsClass,
                                         pMainWindow->getOMCProxy(), this);
   if (!openingClass)
   {
@@ -906,11 +907,13 @@ void GraphicsView::addConnection(Component *pComponent)
     {
       bool showConnectionArrayDialog = false;
       if (pStartComponent->getParentComponent())
-        if (pStartComponent->getComponentInfo()->isArray())
-          showConnectionArrayDialog = true;
+        if (pStartComponent->getComponentInfo())
+          if (pStartComponent->getComponentInfo()->isArray())
+            showConnectionArrayDialog = true;
       if (pComponent->getParentComponent())
-        if (pComponent->getComponentInfo()->isArray())
-          showConnectionArrayDialog = true;
+        if (pComponent->getComponentInfo())
+          if (pComponent->getComponentInfo()->isArray())
+            showConnectionArrayDialog = true;
       if (showConnectionArrayDialog)
       {
         ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
@@ -921,11 +924,11 @@ void GraphicsView::addConnection(Component *pComponent)
       {
         QString startComponentName, endComponentName;
         if (pStartComponent->getParentComponent())
-          startComponentName = QString(pStartComponent->getParentComponent()->getName()).append(".").append(pStartComponent->getComponentInfo()->getName());
+          startComponentName = QString(pStartComponent->getRootParentComponent()->getName()).append(".").append(pStartComponent->getComponentInfo()->getName());
         else
           startComponentName = pStartComponent->getName();
         if (pComponent->getParentComponent())
-          endComponentName = QString(pComponent->getParentComponent()->getName()).append(".").append(pComponent->getComponentInfo()->getName());
+          endComponentName = QString(pComponent->getRootParentComponent()->getName()).append(".").append(pComponent->getComponentInfo()->getName());
         else
           endComponentName = pComponent->getName();
         createConnection(startComponentName, endComponentName);
@@ -2104,12 +2107,23 @@ void ModelWidget::updateParentModelsText(QString className)
   */
 void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
 {
+  StringHandler::ModelicaClasses type;
   MainWindow *pMainWindow = mpModelWidgetContainer->getMainWindow();
   // get the inherited components of the class
   int inheritanceCount = pMainWindow->getOMCProxy()->getInheritanceCount(className);
   for(int i = 1 ; i <= inheritanceCount ; i++)
   {
     QString inheritedClass = pMainWindow->getOMCProxy()->getNthInheritedClass(className, i);
+    if (!pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass))
+    {
+      type = pMainWindow->getOMCProxy()->getClassRestriction(inheritedClass);
+      mpDiagramGraphicsView->addComponentToView("", inheritedClass, "", QPointF(0.0, 0.0), type, false, true, true, true);
+      if (type == StringHandler::Connector)
+      {
+        // add the component to the icon view.
+        mpIconGraphicsView->addComponentToView("", inheritedClass, "", QPointF(0.0, 0.0), type, false, true, true, true);
+      }
+    }
     /*
       If the inherited class is one of the builtin type such as Real we can
       stop here, because the class can not contain any components, etc.
@@ -2138,7 +2152,7 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
       i++;
       continue;
     }
-    StringHandler::ModelicaClasses type = pMainWindow->getOMCProxy()->getClassRestriction(pComponentInfo->getClassName());
+    type = pMainWindow->getOMCProxy()->getClassRestriction(pComponentInfo->getClassName());
     /* Only model, class, connector, record or block is allowed on the diagram layer. */
     if (!(type == StringHandler::Model ||
           type == StringHandler::Class ||

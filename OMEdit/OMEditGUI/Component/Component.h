@@ -68,7 +68,8 @@ class Component : public QObject, public QGraphicsItem
   Q_INTERFACES(QGraphicsItem)
 public:
   Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-            QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent = 0);
+            QPointF position, bool inheritedComponent, bool extendsClass, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView,
+            Component *pParent = 0);
   Component(QString annotation, QString className, StringHandler::ModelicaClasses type, Component *pParent);
   Component(QString annotation, QString transformationString, ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type,
             Component *pParent);
@@ -78,7 +79,7 @@ public:
   void initialize();
   bool isLibraryComponent();
   bool isInheritedComponent();
-  void getClassInheritedComponents(bool isRootComponent = false);
+  void getClassInheritedComponents(bool isRootComponent = false, bool isPortComponent = false);
   void parseAnnotationString(QString annotation);
   void getClassComponents();
   bool canUseDefaultAnnotation(Component *pComponent);
