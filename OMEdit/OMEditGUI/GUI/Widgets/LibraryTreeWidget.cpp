@@ -1552,7 +1552,6 @@ void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
 void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool newClass)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(1);
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
   if (pLibraryTreeNode == 0)
   {
@@ -1563,6 +1562,7 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
     }
     pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   }
+  mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(1);
   /* Search Tree Items never have model widget so find the equivalent Library Tree Node */
   if (isSearchedTree())
   {
