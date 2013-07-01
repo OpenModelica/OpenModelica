@@ -228,7 +228,7 @@ public:
   QLineEdit *mpPathTextBox;
   QPushButton *mpPathBrowseButton;
   Label *mpEncodingLabel;
-  QLineEdit *mpEncodingTextBox;
+  QComboBox *mpEncodingComboBox;
   QPushButton *mpOkButton;
   bool mEditFlag;
 private slots:

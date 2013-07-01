@@ -264,32 +264,9 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   mpFileBrowseButton = new QPushButton(Helper::browse);
   connect(mpFileBrowseButton, SIGNAL(clicked()), SLOT(browseForFile()));
   // create the encoding label, combobox and encoding note.
-  mpEncodingComboBox = new QComboBox;
   mpEncodingLabel = new Label(Helper::encoding);
-  /* get the available MIBS and sort them. */
-  QList<int> mibs = QTextCodec::availableMibs();
-  qSort(mibs);
-  QList<int> sortedMibs;
-  foreach (int mib, mibs)
-    if (mib >= 0)
-      sortedMibs += mib;
-  foreach (int mib, mibs)
-    if (mib < 0)
-      sortedMibs += mib;
-  foreach (int mib, sortedMibs)
-  {
-    /* get the codec from MIB */
-    QTextCodec *pCodec = QTextCodec::codecForMib(mib);
-    QString codecName = QString::fromLatin1(pCodec->name());
-    QString codecNameWithAliases = codecName;
-    /* get all the aliases of the codec */
-    foreach (const QByteArray &alias, pCodec->aliases())
-      codecNameWithAliases += QLatin1String(" / ") + QString::fromLatin1(alias);
-    mpEncodingComboBox->addItem(codecNameWithAliases, codecName);
-  }
-  int currentIndex = mpEncodingComboBox->findData(Helper::utf8);
-  if (currentIndex > -1)
-    mpEncodingComboBox->setCurrentIndex(currentIndex);
+  mpEncodingComboBox = new QComboBox;
+  StringHandler::fillEncodingComboBox(mpEncodingComboBox);
   mpConvertAllFilesCheckBox = new QCheckBox(tr("Convert all files within the selected directory and sub-directories"));
   // Create the buttons
   /* Open with selected encoding button */

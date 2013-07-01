@@ -1083,7 +1083,9 @@ void LibrariesPage::openEditUserLibrary()
     pAddUserLibraryWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Edit User Library")));
     pAddUserLibraryWidget->mEditFlag = true;
     pAddUserLibraryWidget->mpPathTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(0));
-    pAddUserLibraryWidget->mpEncodingTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(1));
+    int currentIndex = pAddUserLibraryWidget->mpEncodingComboBox->findData(mpUserLibrariesTree->selectedItems().at(0)->text(1));
+    if (currentIndex > -1)
+      pAddUserLibraryWidget->mpEncodingComboBox->setCurrentIndex(currentIndex);
     pAddUserLibraryWidget->show();
   }
 }
@@ -1216,7 +1218,8 @@ AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pParent)
   mpPathBrowseButton->setAutoDefault(false);
   connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browseUserLibraryPath()));
   mpEncodingLabel = new Label(Helper::encoding);
-  mpEncodingTextBox = new QLineEdit(Helper::utf8);
+  mpEncodingComboBox = new QComboBox;
+  StringHandler::fillEncodingComboBox(mpEncodingComboBox);
   mpOkButton = new QPushButton(Helper::ok);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addUserLibrary()));
   QGridLayout *mainLayout = new QGridLayout;
@@ -1225,7 +1228,7 @@ AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pParent)
   mainLayout->addWidget(mpPathTextBox, 0, 1);
   mainLayout->addWidget(mpPathBrowseButton, 0, 2);
   mainLayout->addWidget(mpEncodingLabel, 1, 0);
-  mainLayout->addWidget(mpEncodingTextBox, 1, 1, 1, 2);
+  mainLayout->addWidget(mpEncodingComboBox, 1, 1, 1, 2);
   mainLayout->addWidget(mpOkButton, 2, 0, 1, 3, Qt::AlignRight);
   setLayout(mainLayout);
 }
@@ -1280,13 +1283,6 @@ void AddUserLibraryDialog::addUserLibrary()
                           tr("Please enter the file path."), Helper::ok);
     return;
   }
-  // if encoding text box is empty show error and return
-  if (mpEncodingTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Please enter the file encoding."), Helper::ok);
-    return;
-  }
   // if user is adding a new library
   if (!mEditFlag)
   {
@@ -1297,7 +1293,7 @@ void AddUserLibraryDialog::addUserLibrary()
       return;
     }
     QStringList values;
-    values << mpPathTextBox->text() << mpEncodingTextBox->text();
+    values << mpPathTextBox->text() << mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString();
     mpLibrariesPage->getUserLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
   // if user is editing old library
@@ -1311,7 +1307,7 @@ void AddUserLibraryDialog::addUserLibrary()
       return;
     }
     pItem->setText(0, mpPathTextBox->text());
-    pItem->setText(1, mpEncodingTextBox->text());
+    pItem->setText(1, mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString());
   }
   accept();
 }

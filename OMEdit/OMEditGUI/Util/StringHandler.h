@@ -124,6 +124,7 @@ public:
   static QStringList getDialogAnnotation(QString componentAnnotation);
   static qreal getNormalizedAngle(qreal angle);
   static QStringList splitStringWithSpaces(QString value);
+  static void fillEncodingComboBox(QComboBox *pEncodingComboBox);
 protected:
   static QString mLastOpenDir;
 };

@@ -1226,3 +1226,31 @@ QStringList StringHandler::splitStringWithSpaces(QString value)
     lst.append(res);
   return lst;
 }
+
+void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
+{
+  /* get the available MIBS and sort them. */
+  QList<int> mibs = QTextCodec::availableMibs();
+  qSort(mibs);
+  QList<int> sortedMibs;
+  foreach (int mib, mibs)
+    if (mib >= 0)
+      sortedMibs += mib;
+  foreach (int mib, mibs)
+    if (mib < 0)
+      sortedMibs += mib;
+  foreach (int mib, sortedMibs)
+  {
+    /* get the codec from MIB */
+    QTextCodec *pCodec = QTextCodec::codecForMib(mib);
+    QString codecName = QString::fromLatin1(pCodec->name());
+    QString codecNameWithAliases = codecName;
+    /* get all the aliases of the codec */
+    foreach (const QByteArray &alias, pCodec->aliases())
+      codecNameWithAliases += QLatin1String(" / ") + QString::fromLatin1(alias);
+    pEncodingComboBox->addItem(codecNameWithAliases, codecName);
+  }
+  int currentIndex = pEncodingComboBox->findData(Helper::utf8);
+  if (currentIndex > -1)
+    pEncodingComboBox->setCurrentIndex(currentIndex);
+}
