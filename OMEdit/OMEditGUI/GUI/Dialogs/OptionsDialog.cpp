@@ -176,7 +176,7 @@ void OptionsDialog::readModelicaTextSettings()
   if (mSettings.contains("textEditor/fontFamily"))
     mpModelicaTextSettings->setFontFamily(mSettings.value("textEditor/fontFamily").toString());
   if (mSettings.contains("textEditor/fontSize"))
-    mpModelicaTextSettings->setFontSize(mSettings.value("textEditor/fontSize").toInt());
+    mpModelicaTextSettings->setFontSize(mSettings.value("textEditor/fontSize").toDouble());
   if (mSettings.contains("textEditor/textRuleColor"))
     mpModelicaTextSettings->setTextRuleColor(QColor(mSettings.value("textEditor/textRuleColor").toUInt()));
   if (mSettings.contains("textEditor/keywordRuleColor"))
@@ -197,35 +197,35 @@ void OptionsDialog::readModelicaTextSettings()
 void OptionsDialog::readGraphicalViewsSettings()
 {
   if (mSettings.contains("iconView/extentLeft"))
-    mpGraphicalViewsPage->setIconViewExtentLeft(mSettings.value("iconView/extentLeft").toString());
+    mpGraphicalViewsPage->setIconViewExtentLeft(mSettings.value("iconView/extentLeft").toDouble());
   if (mSettings.contains("iconView/extentBottom"))
-    mpGraphicalViewsPage->setIconViewExtentBottom(mSettings.value("iconView/extentBottom").toString());
+    mpGraphicalViewsPage->setIconViewExtentBottom(mSettings.value("iconView/extentBottom").toDouble());
   if (mSettings.contains("iconView/extentRight"))
-    mpGraphicalViewsPage->setIconViewExtentRight(mSettings.value("iconView/extentRight").toString());
+    mpGraphicalViewsPage->setIconViewExtentRight(mSettings.value("iconView/extentRight").toDouble());
   if (mSettings.contains("iconView/extentTop"))
-    mpGraphicalViewsPage->setIconViewExtentTop(mSettings.value("iconView/extentTop").toString());
+    mpGraphicalViewsPage->setIconViewExtentTop(mSettings.value("iconView/extentTop").toDouble());
   if (mSettings.contains("iconView/gridHorizontal"))
-    mpGraphicalViewsPage->setIconViewGridHorizontal(mSettings.value("iconView/gridHorizontal").toString());
+    mpGraphicalViewsPage->setIconViewGridHorizontal(mSettings.value("iconView/gridHorizontal").toDouble());
   if (mSettings.contains("iconView/gridVertical"))
-    mpGraphicalViewsPage->setIconViewGridVertical(mSettings.value("iconView/gridVertical").toString());
+    mpGraphicalViewsPage->setIconViewGridVertical(mSettings.value("iconView/gridVertical").toDouble());
   if (mSettings.contains("iconView/scaleFactor"))
-    mpGraphicalViewsPage->setIconViewScaleFactor(mSettings.value("iconView/scaleFactor").toString());
+    mpGraphicalViewsPage->setIconViewScaleFactor(mSettings.value("iconView/scaleFactor").toDouble());
   if (mSettings.contains("iconView/preserveAspectRatio"))
     mpGraphicalViewsPage->setIconViewPreserveAspectRation(mSettings.value("iconView/preserveAspectRatio").toBool());
   if (mSettings.contains("DiagramView/extentLeft"))
-    mpGraphicalViewsPage->setDiagramViewExtentLeft(mSettings.value("DiagramView/extentLeft").toString());
+    mpGraphicalViewsPage->setDiagramViewExtentLeft(mSettings.value("DiagramView/extentLeft").toDouble());
   if (mSettings.contains("DiagramView/extentBottom"))
-    mpGraphicalViewsPage->setDiagramViewExtentBottom(mSettings.value("DiagramView/extentBottom").toString());
+    mpGraphicalViewsPage->setDiagramViewExtentBottom(mSettings.value("DiagramView/extentBottom").toDouble());
   if (mSettings.contains("DiagramView/extentRight"))
-    mpGraphicalViewsPage->setDiagramViewExtentRight(mSettings.value("DiagramView/extentRight").toString());
+    mpGraphicalViewsPage->setDiagramViewExtentRight(mSettings.value("DiagramView/extentRight").toDouble());
   if (mSettings.contains("DiagramView/extentTop"))
-    mpGraphicalViewsPage->setDiagramViewExtentTop(mSettings.value("DiagramView/extentTop").toString());
+    mpGraphicalViewsPage->setDiagramViewExtentTop(mSettings.value("DiagramView/extentTop").toDouble());
   if (mSettings.contains("DiagramView/gridHorizontal"))
-    mpGraphicalViewsPage->setDiagramViewGridHorizontal(mSettings.value("DiagramView/gridHorizontal").toString());
+    mpGraphicalViewsPage->setDiagramViewGridHorizontal(mSettings.value("DiagramView/gridHorizontal").toDouble());
   if (mSettings.contains("DiagramView/gridVertical"))
-    mpGraphicalViewsPage->setDiagramViewGridVertical(mSettings.value("DiagramView/gridVertical").toString());
+    mpGraphicalViewsPage->setDiagramViewGridVertical(mSettings.value("DiagramView/gridVertical").toDouble());
   if (mSettings.contains("DiagramView/scaleFactor"))
-    mpGraphicalViewsPage->setDiagramViewScaleFactor(mSettings.value("DiagramView/scaleFactor").toString());
+    mpGraphicalViewsPage->setDiagramViewScaleFactor(mSettings.value("DiagramView/scaleFactor").toDouble());
   if (mSettings.contains("DiagramView/preserveAspectRatio"))
     mpGraphicalViewsPage->setDiagramViewPreserveAspectRation(mSettings.value("DiagramView/preserveAspectRatio").toBool());
 }
@@ -1324,7 +1324,7 @@ ModelicaTextSettings::ModelicaTextSettings()
 {
   // set default values, will be handy if we are unable to create the xml file
   setFontFamily(Helper::monospacedFontInfo.family());
-  setFontSize(Helper::monospacedFontInfo.pointSize());
+  setFontSize(Helper::monospacedFontInfo.pointSizeF());
   setTextRuleColor(QColor(0, 0, 0));                // black
   setKeywordRuleColor(QColor(139, 0, 0));           // dark red
   setTypeRuleColor(QColor(255, 10, 10));            // red
@@ -1350,14 +1350,14 @@ QString ModelicaTextSettings::getFontFamily()
 
 //! Sets the font size for the Modelica Text.
 //! @param fontSize is the font size to set.
-void ModelicaTextSettings::setFontSize(int fontSize)
+void ModelicaTextSettings::setFontSize(double fontSize)
 {
   mFontSize = fontSize;
 }
 
 //! Returns the Modelica Text font size.
 //! @return mFontSize the font size.
-int ModelicaTextSettings::getFontSize()
+double ModelicaTextSettings::getFontSize()
 {
   return mFontSize;
 }
@@ -1489,11 +1489,11 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
   connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontFamilyChanged(QFont)));
   // font size combobox
   mpFontSizeLabel = new Label(tr("Font Size:"));
-  mpFontSizeComboBox = new QComboBox;
-  createFontSizeComboBox();
-  currentIndex = mpFontSizeComboBox->findText(QString::number(mpOptionsDialog->getModelicaTextSettings()->getFontSize()),Qt::MatchExactly);
-  mpFontSizeComboBox->setCurrentIndex(currentIndex);
-  connect(mpFontSizeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(fontSizeChanged(int)));
+  mpFontSizeSpinBox = new QDoubleSpinBox;
+  mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
+  mpFontSizeSpinBox->setValue(mpOptionsDialog->getModelicaTextSettings()->getFontSize());
+  mpFontSizeSpinBox->setSingleStep(1);
+  connect(mpFontSizeSpinBox, SIGNAL(valueChanged(double)), SLOT(fontSizeChanged(double)));
   // Item color label and pick color button
   mpItemColorLabel = new Label(tr("Item Color:"));
   mpItemColorPickButton = new QPushButton(tr("Pick Color"));
@@ -1530,7 +1530,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
   pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyLabel, 0, 0);
   pFontsColorsGroupBoxLayout->addWidget(mpFontSizeLabel, 0, 1);
   pFontsColorsGroupBoxLayout->addWidget(mpFontFamilyComboBox, 1, 0);
-  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeComboBox, 1, 1);
+  pFontsColorsGroupBoxLayout->addWidget(mpFontSizeSpinBox, 1, 1);
   pFontsColorsGroupBoxLayout->addWidget(mpItemsLabel, 2, 0);
   pFontsColorsGroupBoxLayout->addWidget(mpItemColorLabel, 2, 1);
   pFontsColorsGroupBoxLayout->addWidget(mpItemsList, 3, 0);
@@ -1603,12 +1603,6 @@ QString ModelicaTextEditorPage::getPreviewText()
   return previewText;
 }
 
-//! Creates the font size combo box.
-void ModelicaTextEditorPage::createFontSizeComboBox()
-{
-  mpFontSizeComboBox->addItems(Helper::fontSizes.split(","));
-}
-
 //! Initialize all fields with default values.
 void ModelicaTextEditorPage::initializeFields()
 {
@@ -1617,8 +1611,7 @@ void ModelicaTextEditorPage::initializeFields()
   currentIndex = mpFontFamilyComboBox->findText(mpOptionsDialog->getModelicaTextSettings()->getFontFamily(), Qt::MatchExactly);
   mpFontFamilyComboBox->setCurrentIndex(currentIndex);
   // select font size item
-  currentIndex = mpFontSizeComboBox->findText(QString::number(mpOptionsDialog->getModelicaTextSettings()->getFontSize()), Qt::MatchExactly);
-  mpFontSizeComboBox->setCurrentIndex(currentIndex);
+  mpFontSizeSpinBox->setValue(mpOptionsDialog->getModelicaTextSettings()->getFontSize());
   // make first item in the list selected
   mpItemsList->setCurrentRow(0, QItemSelectionModel::Select);
   // refresh the preview textbox
@@ -1651,9 +1644,9 @@ void ModelicaTextEditorPage::fontFamilyChanged(QFont font)
 }
 
 //! Changes the font size when mpFontSizeComboBox currentIndexChanged signal is raised.
-void ModelicaTextEditorPage::fontSizeChanged(int index)
+void ModelicaTextEditorPage::fontSizeChanged(double newValue)
 {
-  mpOptionsDialog->getModelicaTextSettings()->setFontSize(mpFontSizeComboBox->itemText(index).toInt());
+  mpOptionsDialog->getModelicaTextSettings()->setFontSize(newValue);
   emit updatePreview();
 }
 
@@ -1739,61 +1732,76 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   mpIconViewWidget = new QWidget;
   // create Icon View extent points group box
   mpIconViewExtentGroupBox = new QGroupBox(Helper::extent);
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpIconViewLeftLabel = new Label(QString(Helper::left).append(":"));
-  mpIconViewLeftTextBox = new QLineEdit("-100");
-  mpIconViewLeftTextBox->setValidator(pDoubleValidator);
+  mpIconViewLeftSpinBox = new QDoubleSpinBox;
+  mpIconViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewLeftSpinBox->setValue(-100);
+  mpIconViewLeftSpinBox->setSingleStep(10);
   mpIconViewBottomLabel = new Label(Helper::bottom);
-  mpIconViewBottomTextBox = new QLineEdit("-100");
-  mpIconViewBottomTextBox->setValidator(pDoubleValidator);
+  mpIconViewBottomSpinBox = new QDoubleSpinBox;
+  mpIconViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewBottomSpinBox->setValue(-100);
+  mpIconViewBottomSpinBox->setSingleStep(10);
   mpIconViewRightLabel = new Label(QString(Helper::right).append(":"));
-  mpIconViewRightTextBox = new QLineEdit("100");
-  mpIconViewRightTextBox->setValidator(pDoubleValidator);
+  mpIconViewRightSpinBox = new QDoubleSpinBox;
+  mpIconViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewRightSpinBox->setValue(100);
+  mpIconViewRightSpinBox->setSingleStep(10);
   mpIconViewTopLabel = new Label(Helper::top);
-  mpIconViewTopTextBox = new QLineEdit("100");
-  mpIconViewTopTextBox->setValidator(pDoubleValidator);
+  mpIconViewTopSpinBox = new QDoubleSpinBox;
+  mpIconViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpIconViewTopSpinBox->setValue(100);
+  mpIconViewTopSpinBox->setSingleStep(10);
   // set the Icon View extent group box layout
   QGridLayout *pIconViewExtentLayout = new QGridLayout;
   pIconViewExtentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pIconViewExtentLayout->setColumnStretch(1, 1);
+  pIconViewExtentLayout->setColumnStretch(3, 1);
   pIconViewExtentLayout->addWidget(mpIconViewLeftLabel, 0, 0);
-  pIconViewExtentLayout->addWidget(mpIconViewLeftTextBox, 0, 1);
+  pIconViewExtentLayout->addWidget(mpIconViewLeftSpinBox, 0, 1);
   pIconViewExtentLayout->addWidget(mpIconViewBottomLabel, 0, 2);
-  pIconViewExtentLayout->addWidget(mpIconViewBottomTextBox, 0, 3);
+  pIconViewExtentLayout->addWidget(mpIconViewBottomSpinBox, 0, 3);
   pIconViewExtentLayout->addWidget(mpIconViewRightLabel, 1, 0);
-  pIconViewExtentLayout->addWidget(mpIconViewRightTextBox, 1, 1);
+  pIconViewExtentLayout->addWidget(mpIconViewRightSpinBox, 1, 1);
   pIconViewExtentLayout->addWidget(mpIconViewTopLabel, 1, 2);
-  pIconViewExtentLayout->addWidget(mpIconViewTopTextBox, 1, 3);
+  pIconViewExtentLayout->addWidget(mpIconViewTopSpinBox, 1, 3);
   mpIconViewExtentGroupBox->setLayout(pIconViewExtentLayout);
   // create the Icon View grid group box
   mpIconViewGridGroupBox = new QGroupBox(Helper::grid);
-  QIntValidator *pIntValidator = new QIntValidator(this);
-  pIntValidator->setBottom(1);
   mpIconViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
-  mpIconViewGridHorizontalTextBox = new QLineEdit("2");
-  mpIconViewGridHorizontalTextBox->setValidator(pIntValidator);
+  mpIconViewGridHorizontalSpinBox = new QDoubleSpinBox;
+  mpIconViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpIconViewGridHorizontalSpinBox->setValue(2);
+  mpIconViewGridHorizontalSpinBox->setSingleStep(1);
   mpIconViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
-  mpIconViewGridVerticalTextBox = new QLineEdit("2");
-  mpIconViewGridVerticalTextBox->setValidator(pIntValidator);
+  mpIconViewGridVerticalSpinBox = new QDoubleSpinBox;
+  mpIconViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpIconViewGridVerticalSpinBox->setValue(2);
+  mpIconViewGridVerticalSpinBox->setSingleStep(1);
   // set the Icon View grid group box layout
   QGridLayout *pIconViewGridLayout = new QGridLayout;
   pIconViewGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pIconViewGridLayout->setColumnStretch(1, 1);
   pIconViewGridLayout->addWidget(mpIconViewGridHorizontalLabel, 0, 0);
-  pIconViewGridLayout->addWidget(mpIconViewGridHorizontalTextBox, 0, 1);
+  pIconViewGridLayout->addWidget(mpIconViewGridHorizontalSpinBox, 0, 1);
   pIconViewGridLayout->addWidget(mpIconViewGridVerticalLabel, 1, 0);
-  pIconViewGridLayout->addWidget(mpIconViewGridVerticalTextBox, 1, 1);
+  pIconViewGridLayout->addWidget(mpIconViewGridVerticalSpinBox, 1, 1);
   mpIconViewGridGroupBox->setLayout(pIconViewGridLayout);
   // create the Icon View Component group box
   mpIconViewComponentGroupBox = new QGroupBox(Helper::component);
   mpIconViewScaleFactorLabel = new Label(Helper::scaleFactor);
-  mpIconViewScaleFactorTextBox = new QLineEdit("0.1");
-  mpIconViewScaleFactorTextBox->setValidator(pDoubleValidator);
+  mpIconViewScaleFactorSpinBox = new QDoubleSpinBox;
+  mpIconViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpIconViewScaleFactorSpinBox->setValue(0.1);
+  mpIconViewScaleFactorSpinBox->setSingleStep(0.1);
   mpIconViewPreserveAspectRatioCheckBox = new QCheckBox(Helper::preserveAspectRatio);
   mpIconViewPreserveAspectRatioCheckBox->setChecked(true);
   // set the Icon View component group box layout
   QGridLayout *pIconViewComponentLayout = new QGridLayout;
   pIconViewComponentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pIconViewComponentLayout->setColumnStretch(1, 1);
   pIconViewComponentLayout->addWidget(mpIconViewScaleFactorLabel, 0, 0);
-  pIconViewComponentLayout->addWidget(mpIconViewScaleFactorTextBox, 0, 1);
+  pIconViewComponentLayout->addWidget(mpIconViewScaleFactorSpinBox, 0, 1);
   pIconViewComponentLayout->addWidget(mpIconViewPreserveAspectRatioCheckBox, 1, 0, 1, 2);
   mpIconViewComponentGroupBox->setLayout(pIconViewComponentLayout);
   // Icon View Widget Layout
@@ -1810,58 +1818,75 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   // create Diagram View extent points group box
   mpDiagramViewExtentGroupBox = new QGroupBox(Helper::extent);
   mpDiagramViewLeftLabel = new Label(QString(Helper::left).append(":"));
-  mpDiagramViewLeftTextBox = new QLineEdit("-100");
-  mpDiagramViewLeftTextBox->setValidator(pDoubleValidator);
+  mpDiagramViewLeftSpinBox = new QDoubleSpinBox;
+  mpDiagramViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewLeftSpinBox->setValue(-100);
+  mpDiagramViewLeftSpinBox->setSingleStep(10);
   mpDiagramViewBottomLabel = new Label(Helper::bottom);
-  mpDiagramViewBottomTextBox = new QLineEdit("-100");
-  mpDiagramViewBottomTextBox->setValidator(pDoubleValidator);
+  mpDiagramViewBottomSpinBox = new QDoubleSpinBox;
+  mpDiagramViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewBottomSpinBox->setValue(-100);
+  mpDiagramViewBottomSpinBox->setSingleStep(10);
   mpDiagramViewRightLabel = new Label(QString(Helper::right).append(":"));
-  mpDiagramViewRightTextBox = new QLineEdit("100");
-  mpDiagramViewRightTextBox->setValidator(pDoubleValidator);
+  mpDiagramViewRightSpinBox = new QDoubleSpinBox;
+  mpDiagramViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewRightSpinBox->setValue(100);
+  mpDiagramViewRightSpinBox->setSingleStep(10);
   mpDiagramViewTopLabel = new Label(Helper::top);
-  mpDiagramViewTopTextBox = new QLineEdit("100");
-  mpDiagramViewTopTextBox->setValidator(pDoubleValidator);
+  mpDiagramViewTopSpinBox = new QDoubleSpinBox;
+  mpDiagramViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpDiagramViewTopSpinBox->setValue(100);
+  mpDiagramViewTopSpinBox->setSingleStep(10);
   // set the Diagram View extent group box layout
   QGridLayout *pDiagramViewExtentLayout = new QGridLayout;
   pDiagramViewExtentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDiagramViewExtentLayout->setColumnStretch(1, 1);
+  pDiagramViewExtentLayout->setColumnStretch(3, 1);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewLeftLabel, 0, 0);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewLeftTextBox, 0, 1);
+  pDiagramViewExtentLayout->addWidget(mpDiagramViewLeftSpinBox, 0, 1);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewBottomLabel, 0, 2);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewBottomTextBox, 0, 3);
+  pDiagramViewExtentLayout->addWidget(mpDiagramViewBottomSpinBox, 0, 3);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewRightLabel, 1, 0);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewRightTextBox, 1, 1);
+  pDiagramViewExtentLayout->addWidget(mpDiagramViewRightSpinBox, 1, 1);
   pDiagramViewExtentLayout->addWidget(mpDiagramViewTopLabel, 1, 2);
-  pDiagramViewExtentLayout->addWidget(mpDiagramViewTopTextBox, 1, 3);
+  pDiagramViewExtentLayout->addWidget(mpDiagramViewTopSpinBox, 1, 3);
   mpDiagramViewExtentGroupBox->setLayout(pDiagramViewExtentLayout);
   // create the Diagram View grid group box
   mpDiagramViewGridGroupBox = new QGroupBox(Helper::grid);
-  pIntValidator->setBottom(1);
   mpDiagramViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
-  mpDiagramViewGridHorizontalTextBox = new QLineEdit("2");
-  mpDiagramViewGridHorizontalTextBox->setValidator(pIntValidator);
+  mpDiagramViewGridHorizontalSpinBox = new QDoubleSpinBox;
+  mpDiagramViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewGridHorizontalSpinBox->setValue(2);
+  mpDiagramViewGridHorizontalSpinBox->setSingleStep(1);
   mpDiagramViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
-  mpDiagramViewGridVerticalTextBox = new QLineEdit("2");
-  mpDiagramViewGridVerticalTextBox->setValidator(pIntValidator);
+  mpDiagramViewGridVerticalSpinBox = new QDoubleSpinBox;
+  mpDiagramViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewGridVerticalSpinBox->setValue(2);
+  mpDiagramViewGridVerticalSpinBox->setSingleStep(1);
   // set the Diagram View grid group box layout
   QGridLayout *pDiagramViewGridLayout = new QGridLayout;
   pDiagramViewGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDiagramViewGridLayout->setColumnStretch(1, 1);
   pDiagramViewGridLayout->addWidget(mpDiagramViewGridHorizontalLabel, 0, 0);
-  pDiagramViewGridLayout->addWidget(mpDiagramViewGridHorizontalTextBox, 0, 1);
+  pDiagramViewGridLayout->addWidget(mpDiagramViewGridHorizontalSpinBox, 0, 1);
   pDiagramViewGridLayout->addWidget(mpDiagramViewGridVerticalLabel, 1, 0);
-  pDiagramViewGridLayout->addWidget(mpDiagramViewGridVerticalTextBox, 1, 1);
+  pDiagramViewGridLayout->addWidget(mpDiagramViewGridVerticalSpinBox, 1, 1);
   mpDiagramViewGridGroupBox->setLayout(pDiagramViewGridLayout);
   // create the Diagram View Component group box
   mpDiagramViewComponentGroupBox = new QGroupBox(Helper::component);
   mpDiagramViewScaleFactorLabel = new Label(Helper::scaleFactor);
-  mpDiagramViewScaleFactorTextBox = new QLineEdit("0.1");
-  mpDiagramViewScaleFactorTextBox->setValidator(pDoubleValidator);
+  mpDiagramViewScaleFactorSpinBox = new QDoubleSpinBox;
+  mpDiagramViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpDiagramViewScaleFactorSpinBox->setValue(0.1);
+  mpDiagramViewScaleFactorSpinBox->setSingleStep(0.1);
   mpDiagramViewPreserveAspectRatioCheckBox = new QCheckBox(Helper::preserveAspectRatio);
   mpDiagramViewPreserveAspectRatioCheckBox->setChecked(true);
   // set the Diagram View component group box layout
   QGridLayout *pDiagramViewComponentLayout = new QGridLayout;
   pDiagramViewComponentLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pDiagramViewComponentLayout->setColumnStretch(1, 1);
   pDiagramViewComponentLayout->addWidget(mpDiagramViewScaleFactorLabel, 0, 0);
-  pDiagramViewComponentLayout->addWidget(mpDiagramViewScaleFactorTextBox, 0, 1);
+  pDiagramViewComponentLayout->addWidget(mpDiagramViewScaleFactorSpinBox, 0, 1);
   pDiagramViewComponentLayout->addWidget(mpDiagramViewPreserveAspectRatioCheckBox, 1, 0, 1, 2);
   mpDiagramViewComponentGroupBox->setLayout(pDiagramViewComponentLayout);
   // Diagram View Widget Layout
@@ -1880,74 +1905,74 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   setLayout(pHBoxLayout);
 }
 
-void GraphicalViewsPage::setIconViewExtentLeft(QString extentLeft)
+void GraphicalViewsPage::setIconViewExtentLeft(double extentLeft)
 {
-  mpIconViewLeftTextBox->setText(extentLeft);
+  mpIconViewLeftSpinBox->setValue(extentLeft);
 }
 
-QString GraphicalViewsPage::getIconViewExtentLeft()
+double GraphicalViewsPage::getIconViewExtentLeft()
 {
-  return mpIconViewLeftTextBox->text();
+  return mpIconViewLeftSpinBox->value();
 }
 
-void GraphicalViewsPage::setIconViewExtentBottom(QString extentBottom)
+void GraphicalViewsPage::setIconViewExtentBottom(double extentBottom)
 {
-  mpIconViewBottomTextBox->setText(extentBottom);
+  mpIconViewBottomSpinBox->setValue(extentBottom);
 }
 
-QString GraphicalViewsPage::getIconViewExtentBottom()
+double GraphicalViewsPage::getIconViewExtentBottom()
 {
-  return mpIconViewBottomTextBox->text();
+  return mpIconViewBottomSpinBox->value();
 }
 
-void GraphicalViewsPage::setIconViewExtentRight(QString extentRight)
+void GraphicalViewsPage::setIconViewExtentRight(double extentRight)
 {
-  mpIconViewRightTextBox->setText(extentRight);
+  mpIconViewRightSpinBox->setValue(extentRight);
 }
 
-QString GraphicalViewsPage::getIconViewExtentRight()
+double GraphicalViewsPage::getIconViewExtentRight()
 {
-  return mpIconViewRightTextBox->text();
+  return mpIconViewRightSpinBox->value();
 }
 
-void GraphicalViewsPage::setIconViewExtentTop(QString extentTop)
+void GraphicalViewsPage::setIconViewExtentTop(double extentTop)
 {
-  mpIconViewTopTextBox->setText(extentTop);
+  mpIconViewTopSpinBox->setValue(extentTop);
 }
 
-QString GraphicalViewsPage::getIconViewExtentTop()
+double GraphicalViewsPage::getIconViewExtentTop()
 {
-  return mpIconViewTopTextBox->text();
+  return mpIconViewTopSpinBox->value();
 }
 
-void GraphicalViewsPage::setIconViewGridHorizontal(QString gridHorizontal)
+void GraphicalViewsPage::setIconViewGridHorizontal(double gridHorizontal)
 {
-  mpIconViewGridHorizontalTextBox->setText(gridHorizontal);
+  mpIconViewGridHorizontalSpinBox->setValue(gridHorizontal);
 }
 
-QString GraphicalViewsPage::getIconViewGridHorizontal()
+double GraphicalViewsPage::getIconViewGridHorizontal()
 {
-  return mpIconViewGridHorizontalTextBox->text();
+  return mpIconViewGridHorizontalSpinBox->value();
 }
 
-void GraphicalViewsPage::setIconViewGridVertical(QString gridVertical)
+void GraphicalViewsPage::setIconViewGridVertical(double gridVertical)
 {
-  mpIconViewGridVerticalTextBox->setText(gridVertical);
+  mpIconViewGridVerticalSpinBox->setValue(gridVertical);
 }
 
-QString GraphicalViewsPage::getIconViewGridVertical()
+double GraphicalViewsPage::getIconViewGridVertical()
 {
-  return mpIconViewGridVerticalTextBox->text();
+  return mpIconViewGridVerticalSpinBox->value();
 }
 
-void GraphicalViewsPage::setIconViewScaleFactor(QString scaleFactor)
+void GraphicalViewsPage::setIconViewScaleFactor(double scaleFactor)
 {
-  mpIconViewScaleFactorTextBox->setText(scaleFactor);
+  mpIconViewScaleFactorSpinBox->setValue(scaleFactor);
 }
 
-QString GraphicalViewsPage::getIconViewScaleFactor()
+double GraphicalViewsPage::getIconViewScaleFactor()
 {
-  return mpIconViewScaleFactorTextBox->text();
+  return mpIconViewScaleFactorSpinBox->value();
 }
 
 void GraphicalViewsPage::setIconViewPreserveAspectRation(bool preserveAspectRation)
@@ -1960,74 +1985,74 @@ bool GraphicalViewsPage::getIconViewPreserveAspectRation()
   return mpIconViewPreserveAspectRatioCheckBox->isChecked();
 }
 
-void GraphicalViewsPage::setDiagramViewExtentLeft(QString extentLeft)
+void GraphicalViewsPage::setDiagramViewExtentLeft(double extentLeft)
 {
-  mpDiagramViewLeftTextBox->setText(extentLeft);
+  mpDiagramViewLeftSpinBox->setValue(extentLeft);
 }
 
-QString GraphicalViewsPage::getDiagramViewExtentLeft()
+double GraphicalViewsPage::getDiagramViewExtentLeft()
 {
-  return mpDiagramViewLeftTextBox->text();
+  return mpDiagramViewLeftSpinBox->value();
 }
 
-void GraphicalViewsPage::setDiagramViewExtentBottom(QString extentBottom)
+void GraphicalViewsPage::setDiagramViewExtentBottom(double extentBottom)
 {
-  mpDiagramViewBottomTextBox->setText(extentBottom);
+  mpDiagramViewBottomSpinBox->setValue(extentBottom);
 }
 
-QString GraphicalViewsPage::getDiagramViewExtentBottom()
+double GraphicalViewsPage::getDiagramViewExtentBottom()
 {
-  return mpDiagramViewBottomTextBox->text();
+  return mpDiagramViewBottomSpinBox->value();
 }
 
-void GraphicalViewsPage::setDiagramViewExtentRight(QString extentRight)
+void GraphicalViewsPage::setDiagramViewExtentRight(double extentRight)
 {
-  mpDiagramViewRightTextBox->setText(extentRight);
+  mpDiagramViewRightSpinBox->setValue(extentRight);
 }
 
-QString GraphicalViewsPage::getDiagramViewExtentRight()
+double GraphicalViewsPage::getDiagramViewExtentRight()
 {
-  return mpDiagramViewRightTextBox->text();
+  return mpDiagramViewRightSpinBox->value();
 }
 
-void GraphicalViewsPage::setDiagramViewExtentTop(QString extentTop)
+void GraphicalViewsPage::setDiagramViewExtentTop(double extentTop)
 {
-  mpDiagramViewTopTextBox->setText(extentTop);
+  mpDiagramViewTopSpinBox->setValue(extentTop);
 }
 
-QString GraphicalViewsPage::getDiagramViewExtentTop()
+double GraphicalViewsPage::getDiagramViewExtentTop()
 {
-  return mpDiagramViewTopTextBox->text();
+  return mpDiagramViewTopSpinBox->value();
 }
 
-void GraphicalViewsPage::setDiagramViewGridHorizontal(QString gridHorizontal)
+void GraphicalViewsPage::setDiagramViewGridHorizontal(double gridHorizontal)
 {
-  mpDiagramViewGridHorizontalTextBox->setText(gridHorizontal);
+  mpDiagramViewGridHorizontalSpinBox->setValue(gridHorizontal);
 }
 
-QString GraphicalViewsPage::getDiagramViewGridHorizontal()
+double GraphicalViewsPage::getDiagramViewGridHorizontal()
 {
-  return mpDiagramViewGridHorizontalTextBox->text();
+  return mpDiagramViewGridHorizontalSpinBox->value();
 }
 
-void GraphicalViewsPage::setDiagramViewGridVertical(QString gridVertical)
+void GraphicalViewsPage::setDiagramViewGridVertical(double gridVertical)
 {
-  mpDiagramViewGridVerticalTextBox->setText(gridVertical);
+  mpDiagramViewGridVerticalSpinBox->setValue(gridVertical);
 }
 
-QString GraphicalViewsPage::getDiagramViewGridVertical()
+double GraphicalViewsPage::getDiagramViewGridVertical()
 {
-  return mpDiagramViewGridVerticalTextBox->text();
+  return mpDiagramViewGridVerticalSpinBox->value();
 }
 
-void GraphicalViewsPage::setDiagramViewScaleFactor(QString scaleFactor)
+void GraphicalViewsPage::setDiagramViewScaleFactor(double scaleFactor)
 {
-  mpDiagramViewScaleFactorTextBox->setText(scaleFactor);
+  mpDiagramViewScaleFactorSpinBox->setValue(scaleFactor);
 }
 
-QString GraphicalViewsPage::getDiagramViewScaleFactor()
+double GraphicalViewsPage::getDiagramViewScaleFactor()
 {
-  return mpDiagramViewScaleFactorTextBox->text();
+  return mpDiagramViewScaleFactorSpinBox->value();
 }
 
 void GraphicalViewsPage::setDiagramViewPreserveAspectRation(bool preserveAspectRation)

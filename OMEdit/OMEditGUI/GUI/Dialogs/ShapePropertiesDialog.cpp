@@ -36,6 +36,7 @@
  */
 
 #include "ShapePropertiesDialog.h"
+#include <limits>
 
 ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, MainWindow *pMainWindow)
   : QDialog(pMainWindow, Qt::WindowTitleHint)
@@ -62,51 +63,69 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mHorizontalLine->setFrameShadow(QFrame::Sunken);
   // Transformations Group Box
   mpTransformationGroupBox = new QGroupBox(tr("Transformation"));
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpOriginXLabel = new Label(Helper::originX);
-  mpOriginXTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getOrigin().x()));
-  mpOriginXTextBox->setValidator(pDoubleValidator);
+  mpOriginXSpinBox = new QDoubleSpinBox;
+  mpOriginXSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpOriginXSpinBox->setValue(mpShapeAnnotation->getOrigin().x());
+  mpOriginXSpinBox->setSingleStep(1);
   mpOriginYLabel = new Label(Helper::originY);
-  mpOriginYTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getOrigin().y()));
-  mpOriginYTextBox->setValidator(pDoubleValidator);
+  mpOriginYSpinBox = new QDoubleSpinBox;
+  mpOriginYSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpOriginYSpinBox->setValue(mpShapeAnnotation->getOrigin().y());
+  mpOriginYSpinBox->setSingleStep(1);
   mpRotationLabel = new Label(Helper::rotation);
-  mpRotationTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getRotation()));
-  mpRotationTextBox->setValidator(pDoubleValidator);
+  mpRotationSpinBox = new QDoubleSpinBox;
+  mpRotationSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpRotationSpinBox->setValue(mpShapeAnnotation->getRotation());
+  mpRotationSpinBox->setSingleStep(90);
   // set the Transformations Group Box layout
-  QHBoxLayout *pTransformationGroupBoxLayout = new QHBoxLayout;
-  pTransformationGroupBoxLayout->addWidget(mpOriginXLabel);
-  pTransformationGroupBoxLayout->addWidget(mpOriginXTextBox);
-  pTransformationGroupBoxLayout->addWidget(mpOriginYLabel);
-  pTransformationGroupBoxLayout->addWidget(mpOriginYTextBox);
-  pTransformationGroupBoxLayout->addWidget(mpRotationLabel);
-  pTransformationGroupBoxLayout->addWidget(mpRotationTextBox);
-  mpTransformationGroupBox->setLayout(pTransformationGroupBoxLayout);
+  QGridLayout *pTransformationGridLayout = new QGridLayout;
+  pTransformationGridLayout->setColumnStretch(1, 1);
+  pTransformationGridLayout->setColumnStretch(3, 1);
+  pTransformationGridLayout->setColumnStretch(5, 1);
+  pTransformationGridLayout->addWidget(mpOriginXLabel, 0, 0);
+  pTransformationGridLayout->addWidget(mpOriginXSpinBox, 0, 1);
+  pTransformationGridLayout->addWidget(mpOriginYLabel, 0, 2);
+  pTransformationGridLayout->addWidget(mpOriginYSpinBox, 0, 3);
+  pTransformationGridLayout->addWidget(mpRotationLabel, 0, 4);
+  pTransformationGridLayout->addWidget(mpRotationSpinBox, 0, 5);
+  mpTransformationGroupBox->setLayout(pTransformationGridLayout);
   // Extent Group Box
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   // Extent1X
   QList<QPointF> extents = mpShapeAnnotation->getExtents();
   mpExtent1XLabel = new Label(Helper::extent1X);
-  mpExtent1XTextBox = new QLineEdit(extents.size() > 0 ? QString::number(extents.at(0).x()) : "");
-  mpExtent1XTextBox->setValidator(pDoubleValidator);
+  mpExtent1XSpinBox = new QDoubleSpinBox;
+  mpExtent1XSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpExtent1XSpinBox->setValue(extents.size() > 0 ? extents.at(0).x() : 0);
+  mpExtent1XSpinBox->setSingleStep(10);
   mpExtent1YLabel = new Label(Helper::extent1Y);
-  mpExtent1YTextBox = new QLineEdit(extents.size() > 0 ? QString::number(extents.at(0).y()) : "");
-  mpExtent1YTextBox->setValidator(pDoubleValidator);
+  mpExtent1YSpinBox = new QDoubleSpinBox;
+  mpExtent1YSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpExtent1YSpinBox->setValue(extents.size() > 0 ? extents.at(0).y() : 0);
+  mpExtent1YSpinBox->setSingleStep(10);
   mpExtent2XLabel = new Label(Helper::extent2X);
-  mpExtent2XTextBox = new QLineEdit(extents.size() > 1 ? QString::number(extents.at(1).x()) : "");
-  mpExtent2XTextBox->setValidator(pDoubleValidator);
+  mpExtent2XSpinBox = new QDoubleSpinBox;
+  mpExtent2XSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpExtent2XSpinBox->setValue(extents.size() > 0 ? extents.at(1).x() : 0);
+  mpExtent2XSpinBox->setSingleStep(10);
   mpExtent2YLabel = new Label(Helper::extent2Y);
-  mpExtent2YTextBox = new QLineEdit(extents.size() > 1 ? QString::number(extents.at(1).y()) : "");
-  mpExtent2YTextBox->setValidator(pDoubleValidator);
+  mpExtent2YSpinBox = new QDoubleSpinBox;
+  mpExtent2YSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpExtent2YSpinBox->setValue(extents.size() > 0 ? extents.at(1).y() : 0);
+  mpExtent2YSpinBox->setSingleStep(10);
   // set the extents Group Box layout
   QGridLayout *pExtentGroupBoxLayout = new QGridLayout;
+  pExtentGroupBoxLayout->setColumnStretch(1, 1);
+  pExtentGroupBoxLayout->setColumnStretch(3, 1);
   pExtentGroupBoxLayout->addWidget(mpExtent1XLabel, 0, 0);
-  pExtentGroupBoxLayout->addWidget(mpExtent1XTextBox, 0, 1);
+  pExtentGroupBoxLayout->addWidget(mpExtent1XSpinBox, 0, 1);
   pExtentGroupBoxLayout->addWidget(mpExtent1YLabel, 0, 2);
-  pExtentGroupBoxLayout->addWidget(mpExtent1YTextBox, 0, 3);
+  pExtentGroupBoxLayout->addWidget(mpExtent1YSpinBox, 0, 3);
   pExtentGroupBoxLayout->addWidget(mpExtent2XLabel, 1, 0);
-  pExtentGroupBoxLayout->addWidget(mpExtent2XTextBox, 1, 1);
+  pExtentGroupBoxLayout->addWidget(mpExtent2XSpinBox, 1, 1);
   pExtentGroupBoxLayout->addWidget(mpExtent2YLabel, 1, 2);
-  pExtentGroupBoxLayout->addWidget(mpExtent2YTextBox, 1, 3);
+  pExtentGroupBoxLayout->addWidget(mpExtent2YSpinBox, 1, 3);
   mpExtentGroupBox->setLayout(pExtentGroupBoxLayout);
   // Border style Group Box
   mpBorderStyleGroupBox = new QGroupBox(tr("Border Style"));
@@ -122,34 +141,42 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
     mpBorderPatternComboBox->setCurrentIndex(currentIndex);
   // radius
   mpRadiusLabel = new Label(Helper::radius);
-  mpRadiusTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getRadius()));
-  QDoubleValidator *pDoublePositiveValidator = new QDoubleValidator(this);
-  pDoublePositiveValidator->setBottom(0);
-  mpRadiusTextBox->setValidator(pDoublePositiveValidator);
+  mpRadiusSpinBox = new QDoubleSpinBox;
+  mpRadiusSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpRadiusSpinBox->setValue(mpShapeAnnotation->getRadius());
+  mpRadiusSpinBox->setSingleStep(1);
   // set the border style Group Box layout
-  QHBoxLayout *pBorderStyleGroupBoxLayout = new QHBoxLayout;
-  pBorderStyleGroupBoxLayout->addWidget(mpBorderPatternLabel);
-  pBorderStyleGroupBoxLayout->addWidget(mpBorderPatternComboBox);
-  pBorderStyleGroupBoxLayout->addWidget(mpRadiusLabel);
-  pBorderStyleGroupBoxLayout->addWidget(mpRadiusTextBox);
-  mpBorderStyleGroupBox->setLayout(pBorderStyleGroupBoxLayout);
+  QGridLayout *pBorderStyleGridLayout = new QGridLayout;
+  pBorderStyleGridLayout->setColumnStretch(1, 1);
+  pBorderStyleGridLayout->setColumnStretch(3, 1);
+  pBorderStyleGridLayout->addWidget(mpBorderPatternLabel, 0, 0);
+  pBorderStyleGridLayout->addWidget(mpBorderPatternComboBox, 0, 1);
+  pBorderStyleGridLayout->addWidget(mpRadiusLabel, 0, 2);
+  pBorderStyleGridLayout->addWidget(mpRadiusSpinBox, 0, 3);
+  mpBorderStyleGroupBox->setLayout(pBorderStyleGridLayout);
   // Angle Group Box
   mpAngleGroupBox = new QGroupBox(tr("Angle"));
   // start angle
   mpStartAngleLabel = new Label(Helper::startAngle);
-  mpStartAngleTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getStartAngle()));
-  mpStartAngleTextBox->setValidator(pDoubleValidator);
+  mpStartAngleSpinBox = new QDoubleSpinBox;
+  mpStartAngleSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpStartAngleSpinBox->setValue(mpShapeAnnotation->getStartAngle());
+  mpStartAngleSpinBox->setSingleStep(90);
   // end angle
   mpEndAngleLabel = new Label(Helper::endAngle);
-  mpEndAngleTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getEndAngle()));
-  mpEndAngleTextBox->setValidator(pDoubleValidator);
+  mpEndAngleSpinBox = new QDoubleSpinBox;
+  mpEndAngleSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpEndAngleSpinBox->setValue(mpShapeAnnotation->getEndAngle());
+  mpEndAngleSpinBox->setSingleStep(90);
   // set the border style Group Box layout
-  QHBoxLayout *pAngleGroupBoxLayout = new QHBoxLayout;
-  pAngleGroupBoxLayout->addWidget(mpStartAngleLabel);
-  pAngleGroupBoxLayout->addWidget(mpStartAngleTextBox);
-  pAngleGroupBoxLayout->addWidget(mpEndAngleLabel);
-  pAngleGroupBoxLayout->addWidget(mpEndAngleTextBox);
-  mpAngleGroupBox->setLayout(pAngleGroupBoxLayout);
+  QGridLayout *pAngleGridLayout = new QGridLayout;
+  pAngleGridLayout->setColumnStretch(1, 1);
+  pAngleGridLayout->setColumnStretch(3, 1);
+  pAngleGridLayout->addWidget(mpStartAngleLabel, 0, 0);
+  pAngleGridLayout->addWidget(mpStartAngleSpinBox, 0, 1);
+  pAngleGridLayout->addWidget(mpEndAngleLabel, 0, 2);
+  pAngleGridLayout->addWidget(mpEndAngleSpinBox, 0, 3);
+  mpAngleGroupBox->setLayout(pAngleGridLayout);
   // Text Group Box
   mpTextGroupBox = new QGroupBox(tr("Text"));
   mpTextTextBox = new QLineEdit(mpShapeAnnotation->getTextString());
@@ -158,7 +185,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   pTextGroupBoxLayout->addWidget(mpTextTextBox);
   mpTextGroupBox->setLayout(pTextGroupBoxLayout);
   // Font Style Group Box
-  mpFontAndTextStyleGroupBox = new QGroupBox(tr("Font & Text Style"));
+  mpFontAndTextStyleGroupBox = new QGroupBox(tr("Font && Text Style"));
   mpFontNameLabel = new Label(Helper::name);
   mpFontNameComboBox = new QFontComboBox;
   mpFontNameComboBox->insertItem(0, "Default");
@@ -168,8 +195,10 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   else
     mpFontNameComboBox->setCurrentIndex(0);
   mpFontSizeLabel = new Label(Helper::size);
-  mpFontSizeTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getFontSize()));
-  mpFontSizeTextBox->setValidator(pDoublePositiveValidator);
+  mpFontSizeSpinBox = new QDoubleSpinBox;
+  mpFontSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpFontSizeSpinBox->setValue(mpShapeAnnotation->getFontSize());
+  mpFontSizeSpinBox->setSingleStep(1);
   mpFontStyleLabel = new Label(tr("Style:"));
   mpTextBoldCheckBox = new QCheckBox(tr("Bold"));
   mpTextBoldCheckBox->setChecked(StringHandler::getFontWeight(mpShapeAnnotation->getTextStyles()) == QFont::Bold ? true : false);
@@ -187,10 +216,11 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
     mpTextHorizontalAlignmentComboBox->setCurrentIndex(currentIndex);
   // set the Font Style Group Box layout
   QGridLayout *pFontAndTextStyleGroupBox = new QGridLayout;
+  pFontAndTextStyleGroupBox->setColumnStretch(5, 1);
   pFontAndTextStyleGroupBox->addWidget(mpFontNameLabel, 0, 0);
   pFontAndTextStyleGroupBox->addWidget(mpFontNameComboBox, 0, 1, 1, 3);
   pFontAndTextStyleGroupBox->addWidget(mpFontSizeLabel, 0, 4);
-  pFontAndTextStyleGroupBox->addWidget(mpFontSizeTextBox, 0, 5);
+  pFontAndTextStyleGroupBox->addWidget(mpFontSizeSpinBox, 0, 5);
   pFontAndTextStyleGroupBox->addWidget(mpFontStyleLabel, 1, 0);
   pFontAndTextStyleGroupBox->addWidget(mpTextBoldCheckBox, 1, 1);
   pFontAndTextStyleGroupBox->addWidget(mpTextItalicCheckBox, 1, 2);
@@ -215,8 +245,10 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
     mpLinePatternComboBox->setCurrentIndex(currentIndex);
   // Line Thickness
   mpLineThicknessLabel = new Label(Helper::thickness);
-  mpLineThicknessTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getLineThickness()));
-  mpLineThicknessTextBox->setValidator(pDoublePositiveValidator);
+  mpLineThicknessSpinBox = new QDoubleSpinBox;
+  mpLineThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpLineThicknessSpinBox->setValue(mpShapeAnnotation->getLineThickness());
+  mpLineThicknessSpinBox->setSingleStep(0.25);
   // Line smooth
   mpLineSmoothLabel = new Label(Helper::smooth);
   mpLineSmoothCheckBox = new QCheckBox(Helper::bezier);
@@ -225,12 +257,13 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // set the Line style Group Box layout
   QGridLayout *pLineStyleGroupBoxLayout = new QGridLayout;
   pLineStyleGroupBoxLayout->setAlignment(Qt::AlignTop);
+  pLineStyleGroupBoxLayout->setColumnStretch(1, 1);
   pLineStyleGroupBoxLayout->addWidget(mpLineColorLabel, 0, 0);
   pLineStyleGroupBoxLayout->addWidget(mpLinePickColorButton, 0, 1);
   pLineStyleGroupBoxLayout->addWidget(mpLinePatternLabel, 1, 0);
   pLineStyleGroupBoxLayout->addWidget(mpLinePatternComboBox, 1, 1);
   pLineStyleGroupBoxLayout->addWidget(mpLineThicknessLabel, 2, 0);
-  pLineStyleGroupBoxLayout->addWidget(mpLineThicknessTextBox, 2, 1);
+  pLineStyleGroupBoxLayout->addWidget(mpLineThicknessSpinBox, 2, 1);
   if (mpLineAnnotation || mpPolygonAnnotation)
   {
     pLineStyleGroupBoxLayout->addWidget(mpLineSmoothLabel, 3, 0);
@@ -251,17 +284,20 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   if (currentIndex > -1)
     mpLineEndArrowComboBox->setCurrentIndex(currentIndex);
   mpLineArrowSizeLabel = new Label(Helper::arrowSize);
-  mpLineArrowSizeTextBox = new QLineEdit(QString::number(mpShapeAnnotation->getArrowSize()));
-  mpLineArrowSizeTextBox->setValidator(pDoublePositiveValidator);
+  mpLineArrowSizeSpinBox = new QDoubleSpinBox;
+  mpLineArrowSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpLineArrowSizeSpinBox->setValue(mpShapeAnnotation->getArrowSize());
+  mpLineArrowSizeSpinBox->setSingleStep(1);
   // set the Arrow style Group Box layout
   QGridLayout *pArrowStyleGroupBoxLayout = new QGridLayout;
   pArrowStyleGroupBoxLayout->setAlignment(Qt::AlignTop);
+  pArrowStyleGroupBoxLayout->setColumnStretch(1, 1);
   pArrowStyleGroupBoxLayout->addWidget(mpLineStartArrowLabel, 0, 0);
   pArrowStyleGroupBoxLayout->addWidget(mpLineStartArrowComboBox, 0, 1);
   pArrowStyleGroupBoxLayout->addWidget(mpLineEndArrowLabel, 1, 0);
   pArrowStyleGroupBoxLayout->addWidget(mpLineEndArrowComboBox, 1, 1);
   pArrowStyleGroupBoxLayout->addWidget(mpLineArrowSizeLabel, 2, 0);
-  pArrowStyleGroupBoxLayout->addWidget(mpLineArrowSizeTextBox, 2, 1);
+  pArrowStyleGroupBoxLayout->addWidget(mpLineArrowSizeSpinBox, 2, 1);
   mpArrowStyleGroupBox->setLayout(pArrowStyleGroupBoxLayout);
   // Fill style Group Box
   mpFillStyleGroupBox = new QGroupBox(Helper::fillStyle);
@@ -281,6 +317,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // set the Fill style Group Box layout
   QGridLayout *pFillStyleGroupBoxLayout = new QGridLayout;
   pFillStyleGroupBoxLayout->setAlignment(Qt::AlignTop);
+  pFillStyleGroupBoxLayout->setColumnStretch(1, 1);
   pFillStyleGroupBoxLayout->addWidget(mpFillColorLabel, 0, 0);
   pFillStyleGroupBoxLayout->addWidget(mpFillPickColorButton, 0, 1);
   pFillStyleGroupBoxLayout->addWidget(mpFillPatternLabel, 1, 0);
@@ -377,6 +414,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // set the Points Group Box layout
   QGridLayout *pPointsGroupBoxLayout = new QGridLayout;
   pPointsGroupBoxLayout->setAlignment(Qt::AlignTop);
+  pPointsGroupBoxLayout->setColumnStretch(0, 1);
   pPointsGroupBoxLayout->addWidget(mpPointsTableWidget, 0, 0);
   pPointsGroupBoxLayout->addWidget(mpPointsButtonBox, 0, 1);
   mpPointsGroupBox->setLayout(pPointsGroupBoxLayout);
@@ -637,42 +675,6 @@ void ShapePropertiesDialog::saveShapeProperties()
 
 bool ShapePropertiesDialog::applyShapeProperties()
 {
-  /* perform validation first */
-  if (mpOriginXTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::originX), Helper::ok);
-    mpOriginXTextBox->setFocus();
-    return false;
-  }
-  else if (mpOriginYTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::originY), Helper::ok);
-    mpOriginYTextBox->setFocus();
-    return false;
-  }
-  else if (mpRotationTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::rotation), Helper::ok);
-    mpRotationTextBox->setFocus();
-    return false;
-  }
-  else if (mpLineThicknessTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::thickness), Helper::ok);
-    mpLineThicknessTextBox->setFocus();
-    return false;
-  }
-  else if (mpLineArrowSizeTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::arrowSize), Helper::ok);
-    mpLineArrowSizeTextBox->setFocus();
-    return false;
-  }
   /* validate points */
   for (int i = 0 ; i < mpPointsTableWidget->rowCount() ; i++)
   {
@@ -695,78 +697,6 @@ bool ShapePropertiesDialog::applyShapeProperties()
                             GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER)
                             .arg("points table ["+  QString::number(i+1) +",1]"), Helper::ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
-      return false;
-    }
-  }
-  /* validate extent points */
-  if (!mpLineAnnotation && !mpPolygonAnnotation)
-  {
-    if (mpExtent1XTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent1X), Helper::ok);
-      mpExtent1XTextBox->setFocus();
-      return false;
-    }
-    else if (mpExtent1YTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent1Y), Helper::ok);
-      mpExtent1YTextBox->setFocus();
-      return false;
-    }
-    else if (mpExtent2XTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent2X), Helper::ok);
-      mpExtent2XTextBox->setFocus();
-      return false;
-    }
-    else if (mpExtent2YTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::extent2Y), Helper::ok);
-      mpExtent2YTextBox->setFocus();
-      return false;
-    }
-  }
-  /* validate corner radius */
-  if (mpRectangleAnnotation)
-  {
-    if (mpRadiusTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::radius), Helper::ok);
-      mpRadiusTextBox->setFocus();
-      return false;
-    }
-  }
-  /* validate start and end angles */
-  if (mpEllipseAnnotation)
-  {
-    if (mpStartAngleTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::startAngle), Helper::ok);
-      mpStartAngleTextBox->setFocus();
-      return false;
-    }
-    else if (mpEndAngleTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::endAngle), Helper::ok);
-      mpEndAngleTextBox->setFocus();
-      return false;
-    }
-  }
-  /* validate font size */
-  if (mpTextAnnotation)
-  {
-    if (mpFontSizeTextBox->text().isEmpty())
-    {
-      QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg(Helper::size), Helper::ok);
-      mpFontSizeTextBox->setFocus();
       return false;
     }
   }
@@ -795,32 +725,32 @@ bool ShapePropertiesDialog::applyShapeProperties()
     }
   }
   /* apply properties */
-  mpShapeAnnotation->setOrigin(QPointF(mpOriginXTextBox->text().toFloat(), mpOriginYTextBox->text().toFloat()));
-  mpShapeAnnotation->setRotationAngle(mpRotationTextBox->text().toFloat());
+  mpShapeAnnotation->setOrigin(QPointF(mpOriginXSpinBox->value(), mpOriginYSpinBox->value()));
+  mpShapeAnnotation->setRotationAngle(mpRotationSpinBox->value());
   if (!mpLineAnnotation && !mpPolygonAnnotation)
   {
     QList<QPointF> extents;
-    QPointF p1(mpExtent1XTextBox->text().toFloat(), mpExtent1YTextBox->text().toFloat());
-    QPointF p2(mpExtent2XTextBox->text().toFloat(), mpExtent2YTextBox->text().toFloat());
+    QPointF p1(mpExtent1XSpinBox->value(), mpExtent1YSpinBox->value());
+    QPointF p2(mpExtent2XSpinBox->value(), mpExtent2YSpinBox->value());
     extents << p1 << p2;
     mpShapeAnnotation->setExtents(extents);
   }
   if (mpRectangleAnnotation)
   {
     mpShapeAnnotation->setBorderPattern(StringHandler::getBorderPatternType(mpBorderPatternComboBox->currentText()));
-    mpShapeAnnotation->setRadius(mpRadiusTextBox->text().toFloat());
+    mpShapeAnnotation->setRadius(mpRadiusSpinBox->value());
   }
   if (mpEllipseAnnotation)
   {
-    mpShapeAnnotation->setStartAngle(mpStartAngleTextBox->text().toFloat());
-    mpShapeAnnotation->setEndAngle(mpEndAngleTextBox->text().toFloat());
+    mpShapeAnnotation->setStartAngle(mpStartAngleSpinBox->value());
+    mpShapeAnnotation->setEndAngle(mpEndAngleSpinBox->value());
   }
   if (mpTextAnnotation)
   {
     mpShapeAnnotation->setTextString(mpTextTextBox->text().trimmed());
     if (mpFontNameComboBox->currentText().compare("Default") != 0)
       mpShapeAnnotation->setFontName(mpFontNameComboBox->currentText());
-    mpShapeAnnotation->setFontSize(mpFontSizeTextBox->text().toFloat());
+    mpShapeAnnotation->setFontSize(mpFontSizeSpinBox->value());
     QList<StringHandler::TextStyle> textStyles;
     if (mpTextBoldCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleBold);
     if (mpTextItalicCheckBox->isChecked()) textStyles.append(StringHandler::TextStyleItalic);
@@ -830,13 +760,13 @@ bool ShapePropertiesDialog::applyShapeProperties()
   }
   mpShapeAnnotation->setLineColor(getLineColor());
   mpShapeAnnotation->setLinePattern(StringHandler::getLinePatternType(mpLinePatternComboBox->currentText()));
-  mpShapeAnnotation->setLineThickness(mpLineThicknessTextBox->text().toFloat());
+  mpShapeAnnotation->setLineThickness(mpLineThicknessSpinBox->value());
   mpShapeAnnotation->setSmooth(mpLineSmoothCheckBox->isChecked() ? StringHandler::SmoothBezier : StringHandler::SmoothNone);
   if (mpLineAnnotation)
   {
     mpShapeAnnotation->setStartArrow(StringHandler::getArrowType(mpLineStartArrowComboBox->currentText()));
     mpShapeAnnotation->setEndArrow(StringHandler::getArrowType(mpLineEndArrowComboBox->currentText()));
-    mpShapeAnnotation->setArrowSize(mpLineArrowSizeTextBox->text().toFloat());
+    mpShapeAnnotation->setArrowSize(mpLineArrowSizeSpinBox->value());
   }
   else
   {

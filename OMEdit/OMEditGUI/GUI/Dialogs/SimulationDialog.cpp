@@ -79,12 +79,12 @@ void SimulationDialog::setUpForm()
   mpSimulationIntervalGroupBox = new QGroupBox(tr("Simulation Interval"));
   mpStartTimeLabel = new Label(tr("Start Time:"));
   mpStartTimeSpinBox = new QDoubleSpinBox;
-  mpStartTimeSpinBox->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+  mpStartTimeSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpStartTimeSpinBox->setValue(0);
   mpStartTimeSpinBox->setSingleStep(0.1);
   mpStopTimeLabel = new Label(tr("Stop Time:"));
   mpStopTimeSpinBox = new QDoubleSpinBox;
-  mpStopTimeSpinBox->setRange(std::numeric_limits<double>::min(), std::numeric_limits<double>::max());
+  mpStopTimeSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpStopTimeSpinBox->setValue(1);
   mpStopTimeSpinBox->setSingleStep(0.1);
   // set the layout for simulation interval groupbox

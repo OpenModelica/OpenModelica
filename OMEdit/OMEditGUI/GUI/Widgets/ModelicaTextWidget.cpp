@@ -633,7 +633,10 @@ ModelicaTextHighlighter::ModelicaTextHighlighter(ModelicaTextSettings *pSettings
 void ModelicaTextHighlighter::initializeSettings()
 {
   QTextDocument *pTextDocument = qobject_cast<QTextDocument*>(parent());
-  pTextDocument->setDefaultFont(QFont(mpModelicaTextSettings->getFontFamily(), mpModelicaTextSettings->getFontSize()));
+  QFont font;
+  font.setFamily(mpModelicaTextSettings->getFontFamily());
+  font.setPointSizeF(mpModelicaTextSettings->getFontSize());
+  pTextDocument->setDefaultFont(font);
   // set color highlighting
   mHighlightingRules.clear();
   HighlightingRule rule;

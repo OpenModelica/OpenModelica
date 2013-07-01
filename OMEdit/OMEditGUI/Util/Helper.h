@@ -79,7 +79,6 @@ public:
   static QString clockOptions;
   static QString linearSolvers;
   static QString nonLinearSolvers;
-  static QString fontSizes;
   static QString notificationLevel;
   static QString warningLevel;
   static QString errorLevel;

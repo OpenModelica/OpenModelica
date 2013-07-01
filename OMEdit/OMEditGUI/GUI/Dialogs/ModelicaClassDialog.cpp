@@ -36,6 +36,7 @@
  */
 
 #include <QX11Info>
+#include <limits>
 
 #include "ModelicaClassDialog.h"
 #include "StringHandler.h"
@@ -755,58 +756,73 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   mpGraphicsView = pGraphicsView;
   // create extent points group box
   mpExtentGroupBox = new QGroupBox(Helper::extent);
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpLeftLabel = new Label(QString(Helper::left).append(":"));
-  mpLeftTextBox = new QLineEdit(QString::number(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).x()));
-  mpLeftTextBox->setValidator(pDoubleValidator);
+  mpLeftSpinBox = new QDoubleSpinBox;
+  mpLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpLeftSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).x());
+  mpLeftSpinBox->setSingleStep(10);
   mpBottomLabel = new Label(Helper::bottom);
-  mpBottomTextBox = new QLineEdit(QString::number(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).y()));
-  mpBottomTextBox->setValidator(pDoubleValidator);
+  mpBottomSpinBox = new QDoubleSpinBox;
+  mpBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpBottomSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).y());
+  mpBottomSpinBox->setSingleStep(10);
   mpRightLabel = new Label(QString(Helper::right).append(":"));
-  mpRightTextBox = new QLineEdit(QString::number(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).x()));
-  mpRightTextBox->setValidator(pDoubleValidator);
+  mpRightSpinBox = new QDoubleSpinBox;
+  mpRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpRightSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).x());
+  mpRightSpinBox->setSingleStep(10);
   mpTopLabel = new Label(Helper::top);
-  mpTopTextBox = new QLineEdit(QString::number(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).y()));
-  mpTopTextBox->setValidator(pDoubleValidator);
+  mpTopSpinBox = new QDoubleSpinBox;
+  mpTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpTopSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).y());
+  mpTopSpinBox->setSingleStep(10);
   // set the extent group box layout
   QGridLayout *pExtentLayout = new QGridLayout;
+  pExtentLayout->setColumnStretch(1, 1);
+  pExtentLayout->setColumnStretch(3, 1);
   pExtentLayout->addWidget(mpLeftLabel, 0, 0);
-  pExtentLayout->addWidget(mpLeftTextBox, 0, 1);
+  pExtentLayout->addWidget(mpLeftSpinBox, 0, 1);
   pExtentLayout->addWidget(mpBottomLabel, 0, 2);
-  pExtentLayout->addWidget(mpBottomTextBox, 0, 3);
+  pExtentLayout->addWidget(mpBottomSpinBox, 0, 3);
   pExtentLayout->addWidget(mpRightLabel, 1, 0);
-  pExtentLayout->addWidget(mpRightTextBox, 1, 1);
+  pExtentLayout->addWidget(mpRightSpinBox, 1, 1);
   pExtentLayout->addWidget(mpTopLabel, 1, 2);
-  pExtentLayout->addWidget(mpTopTextBox, 1, 3);
+  pExtentLayout->addWidget(mpTopSpinBox, 1, 3);
   mpExtentGroupBox->setLayout(pExtentLayout);
   // create the grid group box
   mpGridGroupBox = new QGroupBox(Helper::grid);
-  QIntValidator *pIntValidator = new QIntValidator(this);
-  pIntValidator->setBottom(1);
   mpHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
-  mpHorizontalTextBox = new QLineEdit(QString::number(mpGraphicsView->getCoOrdinateSystem()->getGrid().x()));
-  mpHorizontalTextBox->setValidator(pIntValidator);
+  mpHorizontalSpinBox = new QDoubleSpinBox;
+  mpHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpHorizontalSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getGrid().x());
+  mpHorizontalSpinBox->setSingleStep(1);
   mpVerticalLabel = new Label(QString(Helper::vertical).append(":"));
-  mpVerticalTextBox = new QLineEdit(QString::number(mpGraphicsView->getCoOrdinateSystem()->getGrid().y()));
-  mpVerticalTextBox->setValidator(pIntValidator);
+  mpVerticalSpinBox = new QDoubleSpinBox;
+  mpVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpVerticalSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getGrid().y());
+  mpVerticalSpinBox->setSingleStep(1);
   // set the grid group box layout
   QGridLayout *pGridLayout = new QGridLayout;
+  pGridLayout->setColumnStretch(1, 1);
   pGridLayout->addWidget(mpHorizontalLabel, 0, 0);
-  pGridLayout->addWidget(mpHorizontalTextBox, 0, 1);
+  pGridLayout->addWidget(mpHorizontalSpinBox, 0, 1);
   pGridLayout->addWidget(mpVerticalLabel, 1, 0);
-  pGridLayout->addWidget(mpVerticalTextBox, 1, 1);
+  pGridLayout->addWidget(mpVerticalSpinBox, 1, 1);
   mpGridGroupBox->setLayout(pGridLayout);
   // create the Component group box
   mpComponentGroupBox = new QGroupBox(Helper::component);
   mpScaleFactorLabel = new Label(Helper::scaleFactor);
-  mpScaleFactorTextBox = new QLineEdit(QString::number(mpGraphicsView->getCoOrdinateSystem()->getInitialScale()));
-  mpScaleFactorTextBox->setValidator(pDoubleValidator);
+  mpScaleFactorSpinBox = new QDoubleSpinBox;
+  mpScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
+  mpScaleFactorSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getInitialScale());
+  mpScaleFactorSpinBox->setSingleStep(0.1);
   mpPreserveAspectRatioCheckBox = new QCheckBox(Helper::preserveAspectRatio);
   mpPreserveAspectRatioCheckBox->setChecked(mpGraphicsView->getCoOrdinateSystem()->getPreserveAspectRatio());
   // set the grid group box layout
   QGridLayout *pComponentLayout = new QGridLayout;
+  pComponentLayout->setColumnStretch(1, 1);
   pComponentLayout->addWidget(mpScaleFactorLabel, 0, 0);
-  pComponentLayout->addWidget(mpScaleFactorTextBox, 0, 1);
+  pComponentLayout->addWidget(mpScaleFactorSpinBox, 0, 1);
   pComponentLayout->addWidget(mpPreserveAspectRatioCheckBox, 1, 0, 1, 2);
   mpComponentGroupBox->setLayout(pComponentLayout);
   // copy properties check box
@@ -844,17 +860,17 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   */
 void GraphicsViewProperties::saveGraphicsViewProperties()
 {
-  qreal left = qMin(mpLeftTextBox->text().toFloat(), mpRightTextBox->text().toFloat());
-  qreal bottom = qMin(mpBottomTextBox->text().toFloat(), mpTopTextBox->text().toFloat());
-  qreal right = qMax(mpLeftTextBox->text().toFloat(), mpRightTextBox->text().toFloat());
-  qreal top = qMax(mpBottomTextBox->text().toFloat(), mpTopTextBox->text().toFloat());
+  qreal left = qMin(mpLeftSpinBox->value(), mpRightSpinBox->value());
+  qreal bottom = qMin(mpBottomSpinBox->value(), mpTopSpinBox->value());
+  qreal right = qMax(mpLeftSpinBox->value(), mpRightSpinBox->value());
+  qreal top = qMax(mpBottomSpinBox->value(), mpTopSpinBox->value());
   QList<QPointF> extent;
   extent << QPointF(left, bottom) << QPointF(right, top);
   mpGraphicsView->getCoOrdinateSystem()->setExtent(extent);
   mpGraphicsView->getCoOrdinateSystem()->setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
-  mpGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorTextBox->text().toFloat());
-  qreal horizontal = mpHorizontalTextBox->text().toFloat();
-  qreal vertical = mpVerticalTextBox->text().toFloat();
+  mpGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorSpinBox->value());
+  qreal horizontal = mpHorizontalSpinBox->value();
+  qreal vertical = mpVerticalSpinBox->value();
   mpGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
   mpGraphicsView->setSceneRect(left, bottom, fabs(left - right), fabs(bottom - top));
   mpGraphicsView->fitInView(mpGraphicsView->sceneRect(), Qt::KeepAspectRatio);
@@ -872,7 +888,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
 
     pGraphicsView->getCoOrdinateSystem()->setExtent(extent);
     pGraphicsView->getCoOrdinateSystem()->setPreserveAspectRatio(mpPreserveAspectRatioCheckBox->isChecked());
-    pGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorTextBox->text().toFloat());
+    pGraphicsView->getCoOrdinateSystem()->setInitialScale(mpScaleFactorSpinBox->value());
     pGraphicsView->getCoOrdinateSystem()->setGrid(QPointF(horizontal, vertical));
     pGraphicsView->setSceneRect(left, bottom, fabs(left - right), fabs(bottom - top));
     pGraphicsView->fitInView(pGraphicsView->sceneRect(), Qt::KeepAspectRatio);

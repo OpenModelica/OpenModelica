@@ -68,7 +68,6 @@ QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv,empty";
 QString Helper::clockOptions = ",RT,CPU";
 QString Helper::linearSolvers = ",lapack";
 QString Helper::nonLinearSolvers = ",hybrid,kinsol,newton";
-QString Helper::fontSizes = "6,7,8,9,10,11,12,14,16,18,20,22,24,26,28,36,48,72";
 QString Helper::notificationLevel = ".OpenModelica.Scripting.ErrorLevel.notification";
 QString Helper::warningLevel = ".OpenModelica.Scripting.ErrorLevel.warning";
 QString Helper::errorLevel = ".OpenModelica.Scripting.ErrorLevel.error";
