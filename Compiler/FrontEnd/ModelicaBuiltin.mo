@@ -1005,6 +1005,13 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 </html>"),preferredView="text");
 end generateSeparateCode;
 
+function generateSeparateCodeDependencies
+  output String [:,:] dependencies;
+external "builtin";
+annotation(Documentation(info="<html><p>Under construction.</p>
+</html>"),preferredView="text");
+end generateSeparateCodeDependencies;
+
 function getLinker
   output String linker;
 external "builtin";

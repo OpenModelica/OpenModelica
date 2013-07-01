@@ -232,10 +232,7 @@ algorithm
     case (SOME(stmts), NONE(), _, _)
       equation
         (result, st) = Interactive.evaluate(stmts, inSymbolTable, false);
-        Debug.fprint(Flags.DUMP, "\n--------------- Parsed expression ---------------\n");
-        Debug.fcall(Flags.DUMP, Dump.dumpIstmt, stmts);
-      then
-        (result, st);
+      then (result, st);
 
     // Add a class or function to the interactive symbol table.
     case (NONE(), SOME(prog), _, Interactive.SYMBOLTABLE(ast = ast, lstVarVal = vars))
@@ -247,8 +244,7 @@ algorithm
         Debug.fcall(Flags.DUMP, Dump.dump, prog);
         result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
         st = Interactive.setSymbolTableAST(inSymbolTable, prog);
-      then
-        (result, st);
+      then (result, st);
 
     // A parser error occured in parseCommand, display the error message. This
     // is handled here instead of in parseCommand, since parseCommand does not
@@ -259,24 +255,21 @@ algorithm
         result = Print.getString();
         result = stringAppend(result, "Syntax Error\n");
         result = stringAppend(result, Error.printMessagesStr());
-      then
-        (result, inSymbolTable);
+      then (result, inSymbolTable);
 
     // A non-parser error occured, display the error message.
     case (_, _, _, _)
       equation
         true = Util.isSome(inStatements) or Util.isSome(inProgram);
         result = Error.printMessagesStr();
-      then
-        (result, inSymbolTable);
+      then (result, inSymbolTable);
 
     else
       equation
         true = Util.isSome(inStatements) or Util.isSome(inProgram);
         _ = setStackOverflowSignal(false);
         Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
-      then
-        ("", inSymbolTable);
+      then ("", inSymbolTable);
 
   end matchcontinue;
 end handleCommand2;

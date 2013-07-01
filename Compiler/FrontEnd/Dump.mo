@@ -46,8 +46,6 @@ encapsulated package Dump
 
 // public imports
 public import Absyn;
-public import Interactive;
-
 public type Ident = String;
 
 // protected imports
@@ -608,97 +606,6 @@ algorithm
     else "*unknown*";
   end match;
 end unparseRestrictionStr;
-
-public function printIstmtStr
-"function: printIstmtStr
-  Prints an interactive statement to a string."
-  input Interactive.Statements inStatements;
-  output String strIstmt;
-algorithm
-  strIstmt := matchcontinue (inStatements)
-    local
-      Absyn.AlgorithmItem alg;
-      Absyn.Exp expr;
-      list<Interactive.Statement> l;
-      Boolean sc;
-      String str;
-
-    case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IALG(algItem = alg)}))
-      equation
-        str = unparseAlgorithmStr(0, alg);
-      then
-        str;
-
-    case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IEXP(exp = expr)}))
-      equation
-        str = printExpStr(expr);
-      then
-        str;
-
-    case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IALG(algItem = alg) :: l),semicolon = sc))
-      equation
-        str = unparseAlgorithmStr(0, alg);
-        str = str +& "; " +& printIstmtStr(Interactive.ISTMTS(l,sc));
-      then
-        str;
-
-    case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IEXP(exp = expr) :: l),semicolon = sc))
-      equation
-        str = printExpStr(expr);
-        str = str +& "; " +& printIstmtStr(Interactive.ISTMTS(l,sc));
-      then
-        str;
-    case (_) then "unknown";
-  end matchcontinue;
-end printIstmtStr;
-
-public function dumpIstmt
-"function: dumpIstmt
-  Dumps an interactive statement to the Print buffer."
-  input Interactive.Statements inStatements;
-algorithm
-  _ := matchcontinue (inStatements)
-    local
-      Absyn.AlgorithmItem alg;
-      Absyn.Exp expr;
-      list<Interactive.Statement> l;
-      Boolean sc;
-
-    case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IALG(algItem = alg)}))
-      equation
-        Print.printBuf("IALG(");
-        printAlgorithmitem(alg);
-        Print.printBuf(")\n");
-      then
-        ();
-
-    case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IEXP(exp = expr)}))
-      equation
-        Print.printBuf("IEXP(");
-        printExp(expr);
-        Print.printBuf(")\n");
-      then
-        ();
-
-    case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IALG(algItem = alg) :: l),semicolon = sc))
-      equation
-        Print.printBuf("IALG(");
-        printAlgorithmitem(alg);
-        Print.printBuf(",");
-        dumpIstmt(Interactive.ISTMTS(l,sc));
-      then
-        ();
-    case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IEXP(exp = expr) :: l),semicolon = sc))
-      equation
-        Print.printBuf("IEXP(");
-        printExp(expr);
-        Print.printBuf(",");
-        dumpIstmt(Interactive.ISTMTS(l,sc));
-      then
-        ();
-    case (_) then ();
-  end matchcontinue;
-end dumpIstmt;
 
 public function printInfo
 "function: printInfo

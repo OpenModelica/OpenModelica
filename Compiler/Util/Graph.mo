@@ -67,6 +67,21 @@ algorithm
     List.map1(inNodes, inEdgeFunc, inEdgeArg));
 end buildGraph;
 
+public function emptyGraph
+  "This function will build an empty graph given a list of nodes."
+  input list<NodeType> inNodes;
+  output list<tuple<NodeType, list<NodeType>>> outGraph;
+algorithm
+  outGraph := List.map(inNodes, emptyGraphHelper);
+end emptyGraph;
+
+protected function emptyGraphHelper
+  input NodeType nt;
+  output tuple<NodeType,list<NodeType>> out;
+algorithm
+  out := (nt,{});
+end emptyGraphHelper;
+
 public function topologicalSort
   "This function will sort a graph topologically. It takes a graph represented
   by an adjacency list and a node equality function, and returns a list of the
@@ -460,6 +475,7 @@ end removeNodesFromGraph;
 
 public function transposeGraph
 "This function transposes a graph by given a graph and vertex list.
+To call this, use transposeGraph(emptyGraphOnlyNodes,graph,eqFunction).
 "
   input list<tuple<NodeType, list<NodeType>>> intmpGraph;
   input list<tuple<NodeType, list<NodeType>>> inGraph;
@@ -534,7 +550,7 @@ end insertNodetoGraph;
 
 public function allReachableNodes
 "This function searches for a starting node in M
- all reachabel nodes. Call with start node in M."
+ all reachable nodes. Call with start node in M: allReachableNodes((start,{}),graph,eqFn)."
   input tuple<list<NodeType>,list<NodeType>>  intmpstorage;//(M,L)
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input EqualFunc inEqualFunc;
@@ -554,26 +570,32 @@ algorithm
       NodeType node;
       list<NodeType> edges,M,L;
       list<tuple<NodeType, list<NodeType>>> restGraph;
-    case (({},L),_,_) then L;
+    case (({},L),_,_) then listReverse(L);
     case ((node::M,L),_,_)
       equation
-        L = listAppend(L,{node});
+        _ = List.getMemberOnTrue(node,L,inEqualFunc);
+      then allReachableNodes((M,L),inGraph,inEqualFunc);
+
+    case ((node::M,L),_,_)
+      equation
+        L = node::L;
         //print(" List size 1 " +& intString(listLength(L)) +& "\n");
         ((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc);
         //print(" List size 2 " +& intString(listLength(edges)) +& "\n");
-        edges = List.select1(edges, List.notMember, L);
         //print(" List size 3 " +& intString(listLength(edges)) +& "\n");
-        M = listAppend(M,edges);
+        M = listAppend(edges,M);
         //print("Start new round! \n");
         reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
       then reachableNodes;
+    /* The node does not exist: So was it a graph to begin with?
     case ((node::M,L),_,_)
       equation
-        L = listAppend(L,{node});
+        L = node::L;
         failure(((_,edges)) = findNodeInGraph(node,inGraph,inEqualFunc));
         reachableNodes = allReachableNodes((M,L),inGraph,inEqualFunc);
       then reachableNodes;
-        else
+    */
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.allReachableNode failed."});
       then fail();

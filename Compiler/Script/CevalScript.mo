@@ -86,6 +86,7 @@ protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Flags;
 protected import Global;
+protected import Graph;
 protected import Inst;
 protected import InnerOuter;
 protected import List;
@@ -897,7 +898,7 @@ algorithm
       Absyn.ComponentRef  crefCName;
       list<tuple<String,Values.Value>> resultValues;
       list<Real> realVals;
-      list<tuple<String,list<String>>> deps;
+      list<tuple<String,list<String>>> deps,depstransitive,depstransposed;
       Absyn.CodeNode codeNode;
       list<Values.Value> cvars,vals2;
       list<Absyn.Path> paths;
@@ -1908,6 +1909,26 @@ algorithm
     case (cache,env,"generateCode",_,st,_)
       then
         (cache,Values.BOOL(false),st);
+
+    case (cache,env,"generateSeparateCodeDependencies",{},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+      equation
+        sp = SCodeUtil.translateAbsyn2SCode2(p,false);
+        names = List.map(sp,SCode.getElementName);
+        deps = Graph.buildGraph(names,buildDependencyGraph,sp);
+        depstransitive = Graph.buildGraph(names,buildTransitiveDependencyGraph,deps);
+        depstransitive = List.sort(depstransitive, compareNumberOfDependencies);
+        print("Total number of modules: " +& intString(listLength(depstransitive)) +& "\n");
+        str = stringDelimitList(List.map(depstransitive, transitiveDependencyString), "\n");
+        print(str +& "\n");
+        depstransposed = Graph.transposeGraph(Graph.emptyGraph(names),deps,stringEq);
+        depstransposed = Graph.buildGraph(names,buildTransitiveDependencyGraph,depstransposed);
+        depstransposed = List.sort(depstransposed, compareNumberOfDependencies);
+        // str = stringDelimitList(List.map(depstransposed, dependencyString), "\n");
+        print("(Transposed) Total number of modules: " +& intString(listLength(depstransposed)) +& "\n");
+        str = stringDelimitList(List.map(depstransposed, transitiveDependencyString), "\n");
+        print(str +& "\n");
+        // v = ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+      then (cache,Values.META_FAIL(),st);
 
     case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={})},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -6909,5 +6930,91 @@ protected function getTypeNameIdent
 algorithm
   Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str))) := val;
 end getTypeNameIdent;
+
+protected function buildDependencyGraph
+  input String name;
+  input SCode.Program sp;
+  output list<String> edges;
+algorithm
+  edges := match (name,sp)
+    local
+      list<SCode.Element> elts;
+    case (_,_)
+      equation
+        SCode.CLASS(classDef=SCode.PARTS(elementLst=elts)) = List.getMemberOnTrue(name, sp, SCode.isClassNamed);
+        (_,_,_,elts,_) = SCode.partitionElements(elts);
+      then List.map(elts, importDepenency);
+  end match;
+end buildDependencyGraph;
+
+protected function buildTransitiveDependencyGraph
+  input String name;
+  input list<tuple<String,list<String>>> oldgraph;
+  output list<String> edges;
+algorithm
+  edges := matchcontinue (name,oldgraph)
+    local
+      String str;
+    case (_,_) then Graph.allReachableNodes(({name},{}),oldgraph,stringEq);
+    else
+      equation
+        str = "CevalScript.buildTransitiveDependencyGraph failed: " +& name;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end matchcontinue;
+end buildTransitiveDependencyGraph;
+
+protected function importDepenency
+  input SCode.Element simp;
+  output String name;
+algorithm
+  name := match simp
+    local
+      Absyn.Import imp;
+      Absyn.Info info;
+      String str;
+    case SCode.IMPORT(imp=Absyn.NAMED_IMPORT(path=Absyn.IDENT(name))) then name;
+    case SCode.IMPORT(imp=Absyn.QUAL_IMPORT(path=Absyn.IDENT(name))) then name;
+    case SCode.IMPORT(imp=Absyn.UNQUAL_IMPORT(path=Absyn.IDENT(name))) then name;
+    case SCode.IMPORT(imp=Absyn.GROUP_IMPORT(prefix=Absyn.IDENT(name))) then name;
+    case SCode.IMPORT(imp=imp,info=info)
+      equation
+        str = "CevalScript.importDepenency could not handle:" +& Dump.unparseImportStr(imp);
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},info);
+      then fail();
+  end match;
+end importDepenency;
+
+protected function compareNumberOfDependencies
+  input tuple<String,list<String>> node1;
+  input tuple<String,list<String>> node2;
+  output Boolean cmp;
+protected
+  list<String> deps1,deps2;
+algorithm
+  (_,deps1) := node1;
+  (_,deps2) := node2;
+  cmp := listLength(deps1) >= listLength(deps2);
+end compareNumberOfDependencies;
+
+protected function dependencyString
+  input tuple<String,list<String>> deps;
+  output String str;
+protected
+  list<String> strs;
+algorithm
+  (str,strs) := deps;
+  str := str +& " (" +& intString(listLength(strs)) +& "): " +& stringDelimitList(strs, ",");
+end dependencyString;
+
+protected function transitiveDependencyString
+  input tuple<String,list<String>> deps;
+  output String str;
+protected
+  list<String> strs;
+algorithm
+  (_,strs) := deps;
+  str := intString(listLength(strs)) +& ": " +& stringDelimitList(strs, ",");
+end transitiveDependencyString;
 
 end CevalScript;

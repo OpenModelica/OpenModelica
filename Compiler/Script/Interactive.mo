@@ -343,7 +343,7 @@ algorithm
     case (_, _)
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
-        print("Evaluating: " +& Dump.printIstmtStr(ISTMTS({s}, semicolon)) +& "\n");
+        print("Evaluating: " +& printIstmtStr(ISTMTS({s}, semicolon)) +& "\n");
       then
         ();
 
@@ -19371,5 +19371,46 @@ algorithm
     case (Absyn.EXTENDS(path = path)) then path;
   end match;
 end getBaseClassNameFromExtends;
+
+protected function printIstmtStr "Prints an interactive statement to a string."
+  input Statements inStatements;
+  output String strIstmt;
+algorithm
+  strIstmt := matchcontinue (inStatements)
+    local
+      Absyn.AlgorithmItem alg;
+      Absyn.Exp expr;
+      list<Statement> l;
+      Boolean sc;
+      String str;
+
+    case (ISTMTS(interactiveStmtLst = {IALG(algItem = alg)}))
+      equation
+        str = Dump.unparseAlgorithmStr(0, alg);
+      then
+        str;
+
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = expr)}))
+      equation
+        str = Dump.printExpStr(expr);
+      then
+        str;
+
+    case (ISTMTS(interactiveStmtLst = (IALG(algItem = alg) :: l),semicolon = sc))
+      equation
+        str = Dump.unparseAlgorithmStr(0, alg);
+        str = str +& "; " +& printIstmtStr(ISTMTS(l,sc));
+      then
+        str;
+
+    case (ISTMTS(interactiveStmtLst = (IEXP(exp = expr) :: l),semicolon = sc))
+      equation
+        str = Dump.printExpStr(expr);
+        str = str +& "; " +& printIstmtStr(ISTMTS(l,sc));
+      then
+        str;
+    else "unknown";
+  end matchcontinue;
+end printIstmtStr;
 
 end Interactive;
