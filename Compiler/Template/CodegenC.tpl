@@ -3365,10 +3365,24 @@ end functionsMakefile;
 template contextCref(ComponentRef cr, Context context)
   "Generates code for a component reference depending on which context we're in."
 ::=
-  match context
-  case FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(crefStr(cr))
-  case PARALLEL_FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(crefStr(cr))
-  else cref(cr)
+  match cr
+  case CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
+    let &preExp = buffer "" /*BUFD*/
+    let &varDecls = buffer ""
+    let rec_name = underscorePath(ClassInf.getStateName(record_state))
+    let recPtr = tempDecl(rec_name + "*", &varDecls)
+    let dimsLenStr = listLength(crefSubs(cr))
+    let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+                  daeExp(exp, context, &preExp, &varDecls)
+                  ;separator=", ")
+    <<
+    ((<%rec_name%>*)(generic_array_element_addr(&_<%ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(componentRef, context)%>
+    >>
+  else
+    match context
+    case FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(crefStr(cr))
+    case PARALLEL_FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(crefStr(cr))
+    else cref(cr)
 end contextCref;
 
 template contextIteratorName(Ident name, Context context)
@@ -3491,7 +3505,7 @@ template arrayCrefStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%>'
-  case CREF_QUAL(__) then '<%ident%>.<%arrayCrefStr(componentRef)%>'
+  case CREF_QUAL(__) then '<%ident%>._<%arrayCrefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
@@ -3660,7 +3674,7 @@ template recordDeclaration(RecordDeclaration recDecl)
     <<
     <%recordDefinition(dotPath(defPath),
                       underscorePath(defPath),
-                      (variables |> VARIABLE(__) => '"<%crefStr(name)%>"' ;separator=","),
+                      (variables |> VARIABLE(__) => '"_<%crefStr(name)%>"' ;separator=","),
                       listLength(variables))%>
     >>
   case RECORD_DECL_DEF(__) then
@@ -3679,64 +3693,9 @@ template recordDeclarationHeader(RecordDeclaration recDecl)
   case RECORD_DECL_FULL(__) then
     <<
     typedef struct <%name%>_s {
-      <%variables |> var as VARIABLE(__) => '<%varType(var)%> <%crefStr(var.name)%>;' ;separator="\n"%>
+      <%variables |> var as VARIABLE(__) => '<%varType(var)%> _<%crefStr(var.name)%>;' ;separator="\n"%>
     } <%name%>;
-    
-    /* functions for array operations on record <%name%> */
     typedef base_array_t <%name%>_array;
-    static <%name%>* <%name%>_alloc(int n)
-    {
-      return alloc_elements(n,sizeof(<%name%>));
-    }
-    static <%name%> <%name%>_get(const <%name%>_array *a, size_t i) {
-      return ((<%name%> *) a->data)[i];
-    }
-    static <%name%> *<%name%>_ptrget(const <%name%>_array *a, size_t i) {
-      return ((<%name%> *) a->data) + i;
-    }
-    static void <%name%>_set(<%name%>_array *a, size_t i, <%name%> r) {
-      ((<%name%> *) a->data)[i] = r;
-    }    
-    static void alloc_<%name%>_array(<%name%>_array *dest, int ndims, ...) {
-      size_t elements = 0;
-      va_list ap;
-      va_start(ap, ndims);
-      elements = alloc_base_array(dest, ndims, ap);
-      va_end(ap);
-      dest->data = <%name%>_alloc(elements);
-    }
-    static void array_alloc_scalar_<%name%>_array(<%name%>_array* dest, int n, <%name%> first,...)
-    {
-      int i;
-      va_list ap;
-      simple_alloc_1d_base_array(dest, n, <%name%>_alloc(n));
-      va_start(ap,first);
-      <%name%>_set(dest, 0, first);
-      for(i = 1; i < n; ++i) {
-        <%name%>_set(dest, i, va_arg(ap,<%name%>));
-      }
-      va_end(ap);
-    }
-    static <%name%>* <%name%>_array_element_addr(const <%name%>_array * source,int ndims,...) {
-      va_list ap;
-      <%name%>* tmp;
-      va_start(ap,ndims);
-      tmp = <%name%>_ptrget(source, calc_base_index_va(source, ndims, ap));
-      va_end(ap);
-      return tmp;
-    }
-    static void copy_<%name%>_array_data(const <%name%>_array *source, <%name%>_array *dest)
-    {
-      size_t i, nr_of_elements;
-      assert(base_array_ok(source));
-      assert(base_array_ok(dest));
-      assert(base_array_shape_eq(source, dest));
-      nr_of_elements = base_array_nr_of_elements(source);
-      for(i = 0; i < nr_of_elements; ++i) {
-        <%name%>_set(dest, i, <%name%>_get(source, i));
-      }
-    }
-
 
     <%recordDefinitionHeader(dotPath(defPath),
                       underscorePath(defPath),
@@ -4649,7 +4608,7 @@ case RECORD_CONSTRUCTOR(__) then
   {
     <%varDecls%>
     <%varInits%>
-    <%funArgs |> VARIABLE(__) => '<%structVar%>.<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
+    <%funArgs |> VARIABLE(__) => '<%structVar%>._<%crefStr(name)%> = <%crefStr(name)%>;' ;separator="\n"%>
     <%retVar%>.c1 = <%structVar%>;
     return <%retVar%>;
   }
@@ -4668,7 +4627,7 @@ template varInitRecord(Variable var, Integer i, String prefix, Text &varDecls /*
 ::=
 match var
 case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
-  let varName = '<%prefix%>.<%crefToCStr(var.name)%>'
+  let varName = '<%prefix%>._<%crefToCStr(var.name)%>'
   let &varInits += initRecordMembers(var)
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
@@ -4814,7 +4773,7 @@ case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
     <<
     <%untagTmp%> = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%recordVar%>), <%offset%>)));
     <%unboxBuf%>
-    <%tmpVar%>.<%compname%> = <%unboxStr%>;
+    <%tmpVar%>._<%compname%> = <%unboxStr%>;
     >>
     ;separator="\n")
   tmpVar
@@ -4856,7 +4815,7 @@ template mmcConstructor(Type type, String varName, Text &preExp, Text &varDecls)
   case T_COMPLEX(complexClassType = RECORD(path = path), varLst = vars) then
     let varCount = incrementInt(listLength(vars), 1)
     let varsStr = (vars |> var as TYPES_VAR(__) =>
-      let varname = '<%varName%>.<%name%>'
+      let varname = '<%varName%>._<%name%>'
       funArgBox(varname, ty, &preExp, &varDecls) ;separator=", ")
     'mmc_mk_box<%varCount%>(3, &<%underscorePath(path)%>__desc, <%varsStr%>)'
   case T_COMPLEX(__) then 'mmc_mk_box(<%varName%>)'
@@ -4888,10 +4847,10 @@ match type
 case T_COMPLEX(varLst=vl) then
   (vl |> subvar as TYPES_VAR(__) =>
     match ty case T_COMPLEX(__) then
-      let newPrefix = '<%prefix%>.<%subvar.name%>'
+      let newPrefix = '<%prefix%>._<%subvar.name%>'
       readInVarRecordMembers(ty, newPrefix)
     else
-      '&(<%prefix%>.<%subvar.name%>)'
+      '&(<%prefix%>._<%subvar.name%>)'
   ;separator=", ")
 end readInVarRecordMembers;
 
@@ -4921,10 +4880,10 @@ case T_COMPLEX(varLst=vl, complexClassType=n) then
   let basename = underscorePath(ClassInf.getStateName(n))
   let args = (vl |> subvar as TYPES_VAR(__) =>
       match ty case T_COMPLEX(__) then
-        let newPrefix = '<%prefix%>.<%subvar.name%>'
+        let newPrefix = '<%prefix%>._<%subvar.name%>'
         '<%expTypeRW(ty)%>, <%writeOutVarRecordMembers(ty, index, newPrefix)%>'
       else
-        '<%expTypeRW(ty)%>, &(out.c<%index%><%prefix%>.<%subvar.name%>)'
+        '<%expTypeRW(ty)%>, &(out.c<%index%><%prefix%>._<%subvar.name%>)'
     ;separator=", ")
   <<
   &<%basename%>__desc<%if args then ', <%args%>'%>, TYPE_DESC_NONE
@@ -4948,22 +4907,34 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
   if instDims then
-    (match var.value
-    case SOME(exp) then
-      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-      let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
-      let &varInits += defaultValue
-      let var_name = if outStruct then
-        '<%extVarName(var.name)%>' else
-        '<%contextCref(var.name, contextFunction)%>'
-      let defaultValue1 = '<%varName%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
-      let &varInits += defaultValue1
-      " "
+    (match var.ty
+    case T_COMPLEX(__) then
+      let &varInits += 'alloc_generic_array(&<%varName%>, sizeof(<%expTypeShort(var.ty)%>), <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+      (match var.value
+      case SOME(exp) then
+        let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+        let &varInits += defaultValue
+        ""
+      else
+        "")
     else
-      let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-      let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
-      let &varInits += defaultValue
-      "")
+      (match var.value
+      case SOME(exp) then
+        let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+        let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+        let &varInits += defaultValue
+        let var_name = if outStruct then
+          '<%extVarName(var.name)%>' else
+          '<%contextCref(var.name, contextFunction)%>'
+        let defaultValue1 = '<%varName%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+        let &varInits += defaultValue1
+        " "
+      else
+        let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+        let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+        let &varInits += defaultValue
+        "")
+        )
   else
     (match var.value
     case SOME(exp) then
@@ -5068,6 +5039,18 @@ case var as VARIABLE(__) then
   match value
   case SOME(CREF(componentRef = cr)) then
     'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(cr,contextFunction)%>, &<%outStruct%>.c<%i%>);<%\n%>'
+  case SOME(arr as ARRAY(ty = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))) then
+    let varName = '<%contextCref(var.name,contextFunction)%>'
+    let rec_name = underscorePath(ClassInf.getStateName(record_state))
+    let &preExp = buffer ""
+    let params = (arr.array |> e hasindex i1 fromindex 1 =>
+      let prefix = if arr.scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
+      '(*((<%rec_name%>*)generic_array_element_addr(&<%varName%>, sizeof(<%rec_name%>), 1, <%i1%>))) = <%prefix%><%daeExp(e, contextFunction, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>;'
+    ;separator="\n")
+    <<
+    <%preExp%>
+    <%params%>
+    >>
   case SOME(arr as ARRAY(__)) then
     let arrayExp = '<%daeExp(arr, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)%>'
     <<
@@ -5333,7 +5316,7 @@ match v
 case TYPES_VAR(ty = T_ARRAY(__)) then
   let arrayType = expType(ty, true)
   let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
-  'alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(ty.dims)%>, <%dims%>);'
+  'alloc_<%arrayType%>(&<%varName%>._<%name%>, <%listLength(ty.dims)%>, <%dims%>);'
 end recordMemberInit;
 
 template extVarName(ComponentRef cr)
@@ -5719,10 +5702,10 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <% varLst |> var as TYPES_VAR(__) =>
       match var.ty
       case T_ARRAY(__) then
-        copyArrayData(var.ty, '<%rec%>.<%var.name%>', appendStringCref(var.name,cr), context)
+        copyArrayData(var.ty, '<%rec%>._<%var.name%>', appendStringCref(var.name,cr), context)
       else
         let varPart = contextCref(appendStringCref(var.name,cr),context)
-        '<%varPart%> = <%rec%>.<%var.name%>;'
+        '<%varPart%> = <%rec%>._<%var.name%>;'
     ; separator="\n"
     %>
     >>
@@ -5733,7 +5716,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
       let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls)
-      '<%re%> = <%rec%>.<%var.name%>;'
+      '<%re%> = <%rec%>._<%var.name%>;'
     ; separator="\n"
     %>
     >>
@@ -5962,7 +5945,7 @@ case CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
   <<
   <%preExp%>
   <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "." else "$P"%><%var.name%> = <%rhsStr%>.<%var.name%>;'
+    '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "." else "$P"%><%var.name%> = <%rhsStr%>._<%var.name%>;'
   ; separator="\n"
   %>
   >>
@@ -5971,7 +5954,7 @@ case UNARY(exp = e as CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=R
   <<
   <%preExp%>
   <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%>$P<%var.name%> = -<%rhsStr%>.<%var.name%>;'
+    '<%lhsStr%>$P<%var.name%> = -<%rhsStr%>._<%var.name%>;'
   ; separator="\n"
   %>
   >>
@@ -5980,7 +5963,7 @@ case LUNARY(operator=NOT(__),exp = e as CREF(ty= DAE.T_COMPLEX(varLst = varLst, 
   <<
   <%preExp%>
   <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%>$P<%var.name%> = !<%rhsStr%>.<%var.name%>;'
+    '<%lhsStr%>$P<%var.name%> = !<%rhsStr%>._<%var.name%>;'
   ; separator="\n"
   %>
   >>
@@ -5990,7 +5973,7 @@ case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty= T_COMPLEX(varLst = varLst, 
   <%preExp%>
   <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
     let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls)
-    '<%re%> = <%rhsStr%>.<%var.name%>;'
+    '<%re%> = <%rhsStr%>._<%var.name%>;'
   ; separator="\n"
   %>
   >>
@@ -6621,6 +6604,18 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
  expression."
 ::=
   match exp
+  case CREF(componentRef = cr as CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))) then
+    let &preExp = buffer "" /*BUFD*/
+    let &varDecls = buffer ""
+    let rec_name = underscorePath(ClassInf.getStateName(record_state))
+    let recPtr = tempDecl(rec_name + "*", &varDecls)
+    let dimsLenStr = listLength(crefSubs(cr))
+    let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+                  daeExp(exp, context, &preExp, &varDecls)
+                  ;separator=", ")
+    <<
+    ((<%rec_name%>*)(generic_array_element_addr(&_<%cr.ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(cr.componentRef, context)%>
+    >>
   // A record cref without subscripts (i.e. a record instance) is handled
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
   case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
@@ -9268,7 +9263,7 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
       let alias = getAliasVar(aliasvar)
       let caus = getCausality(causality)
       <<
-      name = "<%Util.escapeModelicaStringToXmlString(crefStr(name))%>"
+      name = "<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(name))%>"
       valueReference = "<%valueReference%>"
       <%description%>
       variability = "<%variability%>" isDiscrete = "<%isDiscrete%>"
@@ -9310,8 +9305,8 @@ template getAliasVar(AliasVariable aliasvar)
 ::=
   match aliasvar
     case NOALIAS(__) then '"noAlias"'
-    case ALIAS(__) then '"alias" aliasVariable="<%crefStr(varName)%>"'
-    case NEGATEDALIAS(__) then '"negatedAlias" aliasVariable="<%crefStr(varName)%>"'
+    case ALIAS(__) then '"alias" aliasVariable="<%crefStrNoUnderscore(varName)%>"'
+    case NEGATEDALIAS(__) then '"negatedAlias" aliasVariable="<%crefStrNoUnderscore(varName)%>"'
     else '"noAlias"'
 end getAliasVar;
 

@@ -48,15 +48,27 @@ package CodegenUtil
 import interface SimCodeTV;
 
 template crefStr(ComponentRef cr)
- "Generates the name of a variable for variable name array."
+ "Generates the name of a variable for variable name array. Uses undersocres for qualified names.
+ a._b not a.b"
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
   // Are these even needed? Function context should only have CREF_IDENT :)
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef)%>)'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStr(componentRef)%>'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>._<%crefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
+
+template crefStrNoUnderscore(ComponentRef cr)
+ "Generates the name of a variable for variable name array. However does not use undersocres on qualified names.
+ a.b not a._b. Used for generating variable names that are exported e.g. xml files"
+::=
+  match cr
+  case CREF_IDENT(__) then '<%ident%><%subscriptsStr(subscriptLst)%>'
+  case CREF_QUAL(ident = "$DER") then 'der(<%crefStrNoUnderscore(componentRef)%>)'
+  case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst)%>.<%crefStrNoUnderscore(componentRef)%>'
+  else "CREF_NOT_IDENT_OR_QUAL"
+end crefStrNoUnderscore;
 
 template subscriptsStr(list<Subscript> subscripts)
  "Generares subscript part of the name."

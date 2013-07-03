@@ -171,3 +171,9 @@ char* char_alloc(int n)
 {
   return alloc_elements(n,sizeof(char));
 }
+
+/* allocates n elements of size sze */
+void* generic_alloc(int n, size_t sze)
+{
+  return alloc_elements(n,sze);
+}

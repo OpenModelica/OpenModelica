@@ -45,6 +45,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./util/base_array.h \
 ./util/boolean_array.h \
 ./util/division.h \
+./util/generic_array.h \
 ./util/index_spec.h \
 ./util/integer_array.h \
 ./util/java_interface.h \

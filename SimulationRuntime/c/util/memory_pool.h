@@ -58,4 +58,6 @@ extern char* char_alloc(int n);
 extern void* push_memory_states(int maxThreads);
 extern void pop_memory_states(void* new_states);
 
+void* generic_alloc(int n, size_t sze);
+
 #endif

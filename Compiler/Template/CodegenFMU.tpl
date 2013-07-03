@@ -293,7 +293,7 @@ match simVar
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
   <<
-  name="<%System.stringReplace(crefStr(name),"$", "_D_")%>"
+  name="<%System.stringReplace(crefStrNoUnderscore(name),"$", "_D_")%>"
   valueReference="<%valueReference%>"
   <%description%>
   variability="<%variability%>"
