@@ -2764,7 +2764,7 @@ algorithm
   print("\n");
 end dumpIncidenceMatrixT;
 
-protected function dumpIncidenceMatrix2
+public function dumpIncidenceMatrix2
 "function: dumpIncidenceMatrix2
   author: PA
   Helper function to dumpIncidenceMatrix (+T)."
