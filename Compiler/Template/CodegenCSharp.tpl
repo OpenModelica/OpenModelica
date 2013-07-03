@@ -586,8 +586,8 @@ template aliasVarInfos(String regionName, list<SimVar> varsLst, /*Integer varsCn
       let aliasLookup =
         match aliasvar
         case NOALIAS(__)  then
-          error(sourceInfo(), "Unexpected non-alias variable amongst aliases.")
-        case ALIAS(__) then
+      	  error(sourceInfo(), "Unexpected non-alias variable amongst aliases.")
+      	case ALIAS(__) then
           'fvd["<%crefStrWithDerOnLast(varName, simCode)%>"]'           
         case NEGATEDALIAS(__)   then 
           '-fvd["<%crefStrWithDerOnLast(varName, simCode)%>"]'          
@@ -1506,28 +1506,107 @@ end equationElseWhen;
 
 // SECTION: GENERAL TEMPLATES, COMPONENT REFERENCES
 
-template cref(ComponentRef cr, SimCode simCode) ::=
+template crefRepresentationArrayAndIndex(ComponentRef cr, Text &indexTxt, SimCode simCode) ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then crefStr(cr, simCode) //TODO: ??xloc
-  case CREF_IDENT(ident = "time") then "Time"
-  case CREF_IDENT(ident = "$_lambda") then "_lambda"
-  case CREF_QUAL(ident = "$PRE") then preCref(componentRef, simCode)
-  else '/*<% crefStr(cr, simCode) %>*/<% representationCref(cr, simCode) %>'
-  // not needed ... //the space at the start is important to avoid ambiguity with "/" operator to become "//" line comment
+  //deprecated: case CREF_IDENT(ident = "xloc") then crefStr(cr, simCode) //TODO: ??xloc
+  case CREF_IDENT(ident = "time") then "Time" //no index
+  case CREF_IDENT(ident = "$_lambda") then "_lambda" //no index
+  //??is this a HACK (on the SimCode level) ??
+  case CREF_QUAL(ident = "$PRE") then 
+    'pre<%crefRepresentationArrayAndIndex(componentRef, &indexTxt, simCode)%>'
+  else
+    (cref2simvar(cr, simCode) |> SIMVAR(__) =>
+      let &indexTxt += index
+      representationArrayName(varKind, type_))
+end crefRepresentationArrayAndIndex;
+
+template representationArrayName(VarKind varKind, Type type_) ::=
+  match varKind 
+  case VARIABLE(__)    then "Y" + representationArrayNameTypePostfix(type_)
+  case STATE(__)       then "X"
+  case STATE_DER(__)   then "Xd"
+  case DUMMY_DER(__)   then "Y" // => algebraics
+  case DUMMY_STATE(__) then "Y" // => algebraics
+  case DISCRETE(__)    then 'Y<%representationArrayNameTypePostfix(type_)%>/*d*/'
+  case PARAM(__)       then "P" + representationArrayNameTypePostfix(type_)
+  case EXTOBJ(__)      then "EO"
+  case CONST(__)       then "CONST_VAR_KIND"
+  else "BAD_VARKIND"
+end representationArrayName;
+
+template representationArrayNameTypePostfix(Type type_) ::=
+  match type_ 
+  case T_INTEGER(__)
+  case T_ENUMERATION(__)  then "I"
+  case T_BOOL(__) then "B"
+  case T_REAL(__) then ""
+  case T_STRING(__) then "S"  
+  else "BAD_ARRAY_NAME_POSTFIX"
+end representationArrayNameTypePostfix;
+
+
+template representationCref(ComponentRef inCref, SimCode simCode) ::=
+  let &indexTxt = buffer ""
+  let arrAndIdx = crefRepresentationArrayAndIndex(inCref, &indexTxt, simCode)
+  if indexTxt then
+    '<%arrAndIdx%>[<% indexTxt %>]'
+  else
+    arrAndIdx
+  //cref2simvar(inCref, simCode) |> SIMVAR(__) =>
+  //  '<%representationArrayName(inCref, varKind, type_)%>[<% index %>]'
+end representationCref;
+
+template cref(ComponentRef cr, SimCode simCode) ::=
+  '/*<% crefStr(cr, simCode) %>*/<% representationCref(cr, simCode) %>'
+  
 /*
   match cr
-  //TODO: ?? case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(__) then replaceDollarWorkaround(ident)
-  case _ then "CREF_NOT_IDENT"
+  //deprecated: case CREF_IDENT(ident = "xloc") then crefStr(cr, simCode) //TODO: ??xloc
+  case CREF_IDENT(ident = "time") then "Time"
+  case CREF_IDENT(ident = "$_lambda") then "_lambda"
+  //$PRE is handled by representationCref ...
+  // case CREF_QUAL(ident = "$PRE") then preCref(componentRef, simCode)
+  else '/*<% crefStr(cr, simCode) %>*/<% representationCref(cr, simCode) %>'
+  // not needed ... //the space at the start is important to avoid ambiguity with "/" operator to become "//" line comment
 */
 end cref;
 
-template representationCref(ComponentRef inCref, SimCode simCode) ::=
-  cref2simvar(inCref, simCode) |> SIMVAR(__) =>
-    '<%representationArrayName(varKind, type_)%>[<% index %>]'
-end representationCref;
+template preCref(ComponentRef cr, SimCode simCode) ::=
+'/*pre(<%crefStr(cr, simCode)%>)*/pre<%representationCref(cr, simCode)%>'
+end preCref;
 
-//TODO: a HACK ?
+template derCref(ComponentRef cr, SimCode simCode) ::=
+'/*derCall!!(<% crefStr(cr, simCode) %>)*/<%representationCref(derComponentRef(cr), simCode)%>'
+end derCref;
+
+/*** not used
+template oldCref(ComponentRef cr, SimCode simCode) ::=
+'/*old(<%crefStr(cr, simCode)%>)*/old<%representationCref(cr, simCode)%>'
+end oldCref;
+
+template old2Cref(ComponentRef cr, SimCode simCode) ::=
+'/*old2(<%crefStr(cr, simCode)%>)*/old2<%representationCref(cr, simCode)%>'
+end old2Cref;
+***/
+
+//this one should be used only in InitialResidual( ..., double[][] startValues) 
+template startCref(ComponentRef cr, SimCode simCode) ::=
+//'/*start(<%crefStr(cr, simCode)%>)*/start<%representationCref(cr, simCode)%>'
+  
+    match cref2simvar(cr, simCode) 
+    case sv as SIMVAR(__) then
+      let fviIndex =
+        match varKind
+        case STATE(__)     then "State"
+        case STATE_DER(__) then "StateDer"
+        case VARIABLE(__)  then "Algebraic"
+        case PARAM(__)     then "Parameter"
+        else /*error(sourceInfo(),*/ "UNEXPECTED_variable_varKind_in_startCref_template" //)
+      'startValues[(int)SimVarType.<%fviIndex%>][<%sv.index%>]' 
+end startCref;
+
+
+//TODO: a HACK ? ... used in mixed system only
 template crefToReal(ComponentRef cr, SimCode simCode) ::=
 <</*(double)<% crefStr(cr, simCode) 
             %>*/<% cref2simvar(cr, simCode) |> SIMVAR(__) => //representationCref(cr, simCode)
@@ -1556,60 +1635,6 @@ template convertRealExpForCref(Text realExp, ComponentRef cr, SimCode simCode) :
 
 end convertRealExpForCref;
 
-template representationArrayName(VarKind varKind, Type type_) ::=
-  match varKind 
-  case VARIABLE(__)    then "Y" + representationArrayNameTypePostfix(type_)
-  case STATE(__)       then "X"
-  case STATE_DER(__)   then "Xd"
-  case DUMMY_DER(__)   then "Y" // => algebraics
-  case DUMMY_STATE(__) then "Y" // => algebraics
-  case DISCRETE(__)    then 'Y<%representationArrayNameTypePostfix(type_)%>/*d*/'
-  case PARAM(__)       then "P" + representationArrayNameTypePostfix(type_)
-  case EXTOBJ(__)      then "EO"
-  case CONST(__)       then "CONST_VAR_KIND"
-  else "BAD_VARKIND"
-end representationArrayName;
-
-template representationArrayNameTypePostfix(Type type_) ::=
-  match type_ 
-  case T_INTEGER(__)
-  case T_ENUMERATION(__)  then "I"
-  case T_BOOL(__) then "B"
-  case T_REAL(__) then ""
-  case T_STRING(__) then "S"  
-  else "BAD_ARRAY_NAME_POSTFIX"
-end representationArrayNameTypePostfix;
-
-template preCref(ComponentRef cr, SimCode simCode) ::=
-'/*pre(<%crefStr(cr, simCode)%>)*/pre<%representationCref(cr, simCode)%>'
-end preCref;
-
-template derCref(ComponentRef cr, SimCode simCode) ::=
-'/*derCall!!(<% crefStr(cr, simCode) %>)*/<%representationCref(derComponentRef(cr), simCode)%>'
-end derCref;
-
-template oldCref(ComponentRef cr, SimCode simCode) ::=
-'/*old(<%crefStr(cr, simCode)%>)*/old<%representationCref(cr, simCode)%>'
-end oldCref;
-
-template old2Cref(ComponentRef cr, SimCode simCode) ::=
-'/*old2(<%crefStr(cr, simCode)%>)*/old2<%representationCref(cr, simCode)%>'
-end old2Cref;
-
-template startCref(ComponentRef cr, SimCode simCode) ::=
-//'/*start(<%crefStr(cr, simCode)%>)*/start<%representationCref(cr, simCode)%>'
-  
-    match cref2simvar(cr, simCode) 
-    case sv as SIMVAR(__) then
-      let fviIndex =
-        match varKind
-        case STATE(__)     then "State" //sv.index
-        case STATE_DER(__) then "StateDer" //'NX+<%sv.index%>'
-        case VARIABLE(__)  then "Algebraic" // '(2*NX)+<%sv.index%>'
-        case PARAM(__)     then "Parameter" //'(2*NX+NY)+<%sv.index%>'
-        else /*error(sourceInfo(),*/ "UNEXPECTED_variable_varKind_in_startCref_template" //)
-      'startValues[(int)SimVarType.<%fviIndex%>][<%sv.index%>]' 
-end startCref;
 
 template contextCref(ComponentRef cr, Context context, SimCode simCode)
   "Generates code for a component reference depending on which context we're in."
@@ -1625,7 +1650,8 @@ template crefStr(ComponentRef cr, SimCode simCode)
 ::=
   match cr
   case CREF_IDENT(__) then csharpIdent(ident) + subscriptsStr(subscriptLst, simCode)
-  case CREF_QUAL(ident = "$DER") then 'der(<%crefStr(componentRef, simCode)%>)'
+  case CREF_QUAL(ident = "$DER") then '$der(<%crefStr(componentRef, simCode)%>)'
+  case CREF_QUAL(ident = "$PRE") then '$pre(<%crefStr(componentRef, simCode)%>)'
   case CREF_QUAL(__) then '<%ident%><%subscriptsStr(subscriptLst, simCode)%>.<%crefStr(componentRef, simCode)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStr;
@@ -1676,25 +1702,6 @@ template subscriptsStr(list<Subscript> subscripts, SimCode simCode)
       ;separator="," %>]'
 end subscriptsStr;
 
-
-/*
-template crefSubscript(ComponentRef it, SimCode simCode) ::=
-  match it
-  case CREF_IDENT(__) then replaceDollarWorkaround(ident) + subscripts(subscriptLst)
-  case _ then "CREF_NOT_IDENT"
-end crefSubscript;
-
-template subscripts(list<Subscript> subscriptsLst) ::=
-  if subscriptsLst then '[<%subscriptsLst |> it => subscript(it) ;separator=","%>]'
-end subscripts;
-
-template subscript(Subscript it) ::=
-  match it
-  case INDEX(exp = ICONST(__)) then exp.integer
-  case _ then "SUBSCRIPT_NOT_CONSTANT"
-end subscript;
-
-*/
 
 
 // SECTION: GENERAL TEMPLATES, PATHS
@@ -2086,8 +2093,11 @@ case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
     let &tmpArr = buffer ""
     let arrType = expTypeArray(aty, listLength(dims))
     let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
-    let &preExp += match cref2simvar(ecr.componentRef, simCode) case SIMVAR(__) then  
-         '<%tempDecl("var", &tmpArr)%> = new <%arrType%>(<%dimsValuesStr%>, <%index%>-1, /*<%crefStr(ecr.componentRef, simCode)%>*/<%representationArrayName(varKind,type_)%>);<%\n%>'
+    let &indexTxt = buffer ""
+    let reprArray = crefRepresentationArrayAndIndex(ecr.componentRef, &indexTxt, simCode)
+    let &preExp += 
+        //match cref2simvar(ecr.componentRef, simCode) case SIMVAR(__) then  
+         '<%tempDecl("var", &tmpArr)%> = new <%arrType%>(<%dimsValuesStr%>, <%indexTxt%>-1, /*<%crefStr(ecr.componentRef, simCode)%>*/<%reprArray%>);<%\n%>'
     tmpArr
 end daeExpCrefRhsArrayBox;
 
@@ -2140,6 +2150,11 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
     else //SIMULATION or OTHER contexts
       match ecr.ty
       case T_ARRAY(ty = T_REAL(__), dims = dims) then //daeExpCrefRhsArrayBox
+        let &constSum = buffer ""
+        let arrayRepr = crefRepresentationArrayAndIndex(cr, &constSum, simCode)
+        let baseSub = asubSubsripts(dims, subs, &constSum, context, &preExp, simCode)
+        '/*<%crefStr(cr, simCode)%>[]*/<%arrayRepr%>[<%constSum%><%baseSub%>]'                     
+      /*  
         <<
         /*<% crefStr(cr, simCode) 
            %>[!]*/<% cref2simvar(cr, simCode) |> SIMVAR(__) =>
@@ -2149,7 +2164,8 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
                      <%representationArrayName(varKind,type_)%>[<%constSum%><%baseSub%>]
                      >>                          
                   %>
-        >> 
+        >>
+      */ 
       else "ASUB_SIMULATION_OTHER_ERROR"
         
       
