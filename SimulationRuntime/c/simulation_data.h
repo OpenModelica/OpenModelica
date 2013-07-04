@@ -422,6 +422,7 @@ typedef struct SIMULATION_INFO
   int mixedMethod;                     /* mixed solver */
   int nlsMethod;                       /* nonlinear solver */
 
+  double lambda;                       /* homotopy parameter E [0, 1.0] */
 
   /* indicators for simulations state */
   modelica_boolean initial;            /* =1 during initialization, 0 otherwise. */

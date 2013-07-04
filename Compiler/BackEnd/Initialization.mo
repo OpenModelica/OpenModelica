@@ -75,8 +75,9 @@ public function solveInitialSystem "function solveInitialSystem
   This function generates a algebraic system of equations for the initialization and solves it."
   input BackendDAE.BackendDAE inDAE;
   output Option<BackendDAE.BackendDAE> outInitDAE;
+  output Boolean outUseHomotopy;
 algorithm
-  outInitDAE := matchcontinue(inDAE)
+  (outInitDAE, outUseHomotopy) := matchcontinue(inDAE)
     local
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables initVars;
@@ -97,6 +98,7 @@ algorithm
       list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
       tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
       tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
+      Boolean useHomotopy;
       list<BackendDAE.Var> dumpVars, dumpVars2;
 
     case(_) equation
@@ -106,7 +108,6 @@ algorithm
       
       initVars = selectInitializationVariablesDAE(dae);
       // Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
-
       hs = collectPreVariables(dae);
       BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars,
                                                         aliasVars=avars,
@@ -132,8 +133,8 @@ algorithm
       ((vars, fixvars, eqns, reeqns, _)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs)));
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
 
-      // replace initial(), sample(...) and delay(...)
-      _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
+      // replace initial(), sample(...), delay(...) and homotopy(...)
+      useHomotopy = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
 
       evars = BackendVariable.emptyVars();
       eavars = BackendVariable.emptyVars();
@@ -194,9 +195,9 @@ algorithm
       
       b = Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM);
       Debug.bcall2(b, BackendDump.dumpEqnsSolved, initdae, "initial system: eqns in order");
-    then SOME(initdae);
+    then (SOME(initdae), useHomotopy);
 
-    else then NONE();
+    else then (NONE(), false);
   end matchcontinue;
 end solveInitialSystem;
 
@@ -1091,7 +1092,7 @@ algorithm
   (outVars, outEqs, oB, outDumpVars) := matchcontinue(n, mt, inVars, inEqs, iB, inDumpVars)
     local
       list<Integer> row;
-      Boolean b;
+      Boolean b, useHomotopy;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqs;
       list<BackendDAE.Var> rvarlst;
@@ -1109,7 +1110,7 @@ algorithm
     case(_, _, _, _, _, _) equation
       row = mt[n];
       true = List.isEmpty(row);
-      
+
       var = BackendVariable.getVarAt(inVars, n);
       cref = BackendVariable.varCref(var);
       true = ComponentReference.isPreCref(cref);
@@ -1149,28 +1150,36 @@ end preBalanceInitialSystem1;
 protected function simplifyInitialFunctions "function simplifyInitialFunctions
   author: Frenkel TUD 2012-12
   simplify initial() with true and sample with false"
-  input tuple<DAE.Exp, Boolean> inTpl;
-  output tuple<DAE.Exp, Boolean> outTpl;
+  input tuple<DAE.Exp, Boolean /* homotopy used? */> inTpl;
+  output tuple<DAE.Exp, Boolean /* homotopy used? */> outTpl;
 protected
   DAE.Exp exp;
-  Boolean b;
+  Boolean useHomotopy;
 algorithm
-  (exp, b) := inTpl;
-  outTpl := Expression.traverseExp(exp, simplifyInitialFunctionsExp, b);
+  (exp, useHomotopy) := inTpl;
+  outTpl := Expression.traverseExp(exp, simplifyInitialFunctionsExp, useHomotopy);
 end simplifyInitialFunctions;
 
 protected function simplifyInitialFunctionsExp "function simplifyInitialFunctionsExp
   author: Frenkel TUD 2012-12
   helper for simplifyInitialFunctions"
-  input tuple<DAE.Exp, Boolean> inExp;
-  output tuple<DAE.Exp, Boolean> outExp;
+  input tuple<DAE.Exp, Boolean /* homotopy used? */> inExp;
+  output tuple<DAE.Exp, Boolean /* homotopy used? */> outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
-      DAE.Exp e1;
-    case ((DAE.CALL(path = Absyn.IDENT(name="initial")), _)) then ((DAE.BCONST(true), true));
-    case ((DAE.CALL(path = Absyn.IDENT(name="sample")), _)) then ((DAE.BCONST(false), true));
-    case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ),_)) then ((e1, true));
+      DAE.Exp e1, e2, e3, actual, simplified;
+      Boolean useHomotopy;
+    case ((DAE.CALL(path = Absyn.IDENT(name="initial")), useHomotopy)) then ((DAE.BCONST(true), useHomotopy));
+    case ((DAE.CALL(path = Absyn.IDENT(name="sample")), useHomotopy)) then ((DAE.BCONST(false), useHomotopy));
+    case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ), useHomotopy)) then ((e1, useHomotopy));
+    case ((DAE.CALL(path = Absyn.IDENT(name="homotopy"), expLst = actual::simplified::_ ), _)) equation
+      e1 = Expression.makeBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
+      e2 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), actual);
+      e3 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), e1);
+      e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
+      e3 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL_DEFAULT), e1);
+    then ((e3, true));
     else then inExp;
   end matchcontinue;
 end simplifyInitialFunctionsExp;

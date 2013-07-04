@@ -265,6 +265,9 @@ struct type_desc_s {
 #define initial() data->simulationInfo.initial
 #define terminal() data->simulationInfo.terminal
 
+#define homotopy(actual, simplified) (actual)
+#define homotopyParameter() data->simulationInfo.lambda
+
 #if defined(__cplusplus)
 }
 #endif

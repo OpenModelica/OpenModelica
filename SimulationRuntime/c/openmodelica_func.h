@@ -156,6 +156,12 @@ extern int initial_residual(DATA *data, double* initialResiduals);
  */
 extern const int useSymbolicInitialization;
 
+/*! \var useHomotopy
+ *
+ * is 1 if homotopy(...) is used during initialization, otherwise 0
+ */
+extern const int useHomotopy;
+
 /*! \fn functionInitialEquations
  *
  * function for calculate initial values from the initial equations and initial algorithms

@@ -999,7 +999,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> algebraicEquations,odeEquations;
       list<SimCode.SimEqSystem> allEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts;
       list<SimCode.StateSet> stateSets;
-      Boolean useSymbolicInitialization;
+      Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
@@ -1016,7 +1016,7 @@ algorithm
       list<SimCode.SimEqSystem> eqs;
       BackendDAE.SampleLookup sampleLookup;
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
-          algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations,
+          algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,
           sampleLookup,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
@@ -1024,7 +1024,7 @@ algorithm
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
     then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
-                         allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization,
+                         allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy,
                          initialEquations, startValueEquations, parameterEquations, inlineEquations,
                          removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes,
                          zeroCrossings, relations, sampleLookup,

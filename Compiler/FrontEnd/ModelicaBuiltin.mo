@@ -289,10 +289,9 @@ function homotopy
   input Real actual;
   input Real simplified;
   output Real outValue;
-algorithm
-  outValue := actual;
-annotation(__OpenModelica_EarlyInline=true,version="Modelica 3.2",Documentation(info="<html>
-Full implementation not available in OpenModelica (trivial solution: simplified expression ignored).
+external "builtin"
+annotation(version="Modelica 3.2",Documentation(info="<html>
+  See <a href=\"modelica://ModelicaReference.Operators.'homotopy()'\">homotopy()</a> (experimental implementation)
 </html>"));
 end homotopy;
 

@@ -1467,6 +1467,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
       list<SimCode.SimEqSystem> residuals;                  // --> initial_residual
       Boolean useSymbolicInitialization;                    // true if a system to solve the initial problem symbolically is generated, otherwise false
+      Boolean useHomotopy;                                  // true if homotopy(...) is used during initialization
       list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
       list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
       list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
@@ -1510,7 +1511,7 @@ algorithm
       cname = Absyn.pathStringNoQual(class_);
       
       // generate initDAE before replacing pre(alias)!
-      initDAE = Initialization.solveInitialSystem(dlow);
+      (initDAE, useHomotopy) = Initialization.solveInitialSystem(dlow);
 
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
@@ -1642,6 +1643,7 @@ algorithm
                                 algebraicEquations, 
                                 residuals, 
                                 useSymbolicInitialization, 
+                                useHomotopy,
                                 initialEquations, 
                                 startValueEquations, 
                                 parameterEquations,
@@ -11676,7 +11678,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
       list<SimCode.SimEqSystem> allEquations, residualEquations, startValueEquations, parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts;
       list<SimCode.StateSet> stateSets;
-      Boolean useSymbolicInitialization;
+      Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
@@ -11704,7 +11706,7 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
       then inSimCode;
     
-    case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, initialEquations, startValueEquations, 
+    case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT)
       equation
@@ -11721,7 +11723,7 @@ algorithm
         files = List.sort(files, greaterFileInfo);
         modelInfo = SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
       then
-        SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, initialEquations, startValueEquations, 
+        SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                   parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                   discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
                   
@@ -11981,7 +11983,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<list<SimCode.SimEqSystem>> algebraicEquations;
       list<SimCode.SimEqSystem> residualEquations;
-      Boolean useSymbolicInitialization;
+      Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
       list<SimCode.SimEqSystem> startValueEquations;
       list<SimCode.SimEqSystem> parameterEquations;
@@ -12007,7 +12009,7 @@ algorithm
 
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
-                          useSymbolicInitialization, initialEquations, startValueEquations, 
+                          useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                           constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                           whenClauses, discreteModelVars, extObjInfo, makefileParams, 
@@ -12032,7 +12034,7 @@ algorithm
         /* TODO:jacobianMatrixes */
       then (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                             allEquations, odeEquations, algebraicEquations, residualEquations, 
-                            useSymbolicInitialization, initialEquations, startValueEquations, 
+                            useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                             parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                             constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                             whenClauses, discreteModelVars, extObjInfo, makefileParams, 
@@ -12183,7 +12185,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<list<SimCode.SimEqSystem>> algebraicEquations;
       list<SimCode.SimEqSystem> residualEquations;
-      Boolean useSymbolicInitialization;
+      Boolean useSymbolicInitialization, useHomotopy;
       list<SimCode.SimEqSystem> initialEquations;
       list<SimCode.SimEqSystem> startValueEquations;
       list<SimCode.SimEqSystem> parameterEquations;
@@ -12208,14 +12210,14 @@ algorithm
 
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes, 
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
-                          useSymbolicInitialization, initialEquations, startValueEquations, 
+                          useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                           constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                           whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                            allEquations, odeEquations, algebraicEquations, residualEquations, 
-                           useSymbolicInitialization, initialEquations, startValueEquations, 
+                           useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                            parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                            constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                            whenClauses, discreteModelVars, extObjInfo, makefileParams, 

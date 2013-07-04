@@ -190,7 +190,7 @@ template simulationFile(SimCode simCode, String guid)
     <%functionUpdateBoundStartValues(startValueEquations)%>
 
     <%functionInitialResidual(residualEquations)%>
-    <%functionInitialEquations(useSymbolicInitialization, initialEquations)%>
+    <%functionInitialEquations(useSymbolicInitialization, useHomotopy, initialEquations)%>
 
     <%functionInlineEquations(inlineEquations)%>
 
@@ -1311,7 +1311,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   >>
 end functionInitialResidual;
 
-template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations)
+template functionInitialEquations(Boolean useSymbolicInitialization, Boolean useHomotopy, list<SimEqSystem> initalEquations)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -1323,11 +1323,15 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
       restore_memory_state(mem_state);
       >>
     ;separator="\n")
+
   let useSymbolicInitializationToInt = if useSymbolicInitialization then '1' else '0'
+  let useHomotopyToInt = if useHomotopy then '1' else '0'
   let errorMsg = if not useSymbolicInitialization then 'ERROR0(LOG_INIT, "The symbolic initialization was not generated.");'
+
   <<
   <%&tmp%>
   const int useSymbolicInitialization = <%useSymbolicInitializationToInt%>; /* <%useSymbolicInitialization%> */
+  const int useHomotopy = <%useHomotopyToInt%>; /* <%useHomotopy%> */
   int functionInitialEquations(DATA *data)
   {
     state mem_state;

@@ -661,8 +661,10 @@ static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
  *
  *  \author lochel
  */
-static int symbolic_initialization(DATA *data)
+static int symbolic_initialization(DATA *data, long numLambdaSteps)
 {
+  long step;
+
   /* initial sample and delay before initial the system */
   initDelay(data, data->simulationInfo.startTime);
 
@@ -672,7 +674,93 @@ static int symbolic_initialization(DATA *data)
 
   /* do pivoting for dynamic state selection */
   stateSelection(data, 0, 1);
-  functionInitialEquations(data);
+
+  if(useHomotopy && numLambdaSteps > 1)
+  {
+    long i;
+    char buffer[4096];
+    FILE *pFile = NULL;
+    
+    modelica_real* realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
+    modelica_integer* integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
+    modelica_boolean* booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
+    modelica_string* stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+    MODEL_DATA *mData = &(data->modelData);
+    
+    ASSERT(realVars, "out of memory");
+    ASSERT(integerVars, "out of memory");
+    ASSERT(booleanVars, "out of memory");
+    ASSERT(stringVars, "out of memory");
+
+    for(i=0; i<mData->nVariablesReal; ++i)
+      realVars[i] = mData->realVarsData[i].attribute.start;
+    for(i=0; i<mData->nVariablesInteger; ++i)
+      integerVars[i] = mData->integerVarsData[i].attribute.start;
+    for(i=0; i<mData->nVariablesBoolean; ++i)
+      booleanVars[i] = mData->booleanVarsData[i].attribute.start;
+    for(i=0; i<mData->nVariablesString; ++i)
+      stringVars[i] = mData->stringVarsData[i].attribute.start;
+    
+    if(ACTIVE_STREAM(LOG_INIT))
+    {
+      sprintf(buffer, "%s_homotopy.csv", mData->modelFilePrefix);
+      pFile = fopen(buffer, "wt");
+      fprintf(pFile, "%s,", "lambda");
+      for(i=0; i<mData->nVariablesReal; ++i)
+        fprintf(pFile, "%s,", mData->realVarsData[i].info.name);
+      fprintf(pFile, "\n");
+    }
+    
+    for(step=0; step<numLambdaSteps; ++step)
+    {
+      data->simulationInfo.lambda = ((double)step)/(numLambdaSteps-1);
+
+      if(data->simulationInfo.lambda > 1.0)
+        data->simulationInfo.lambda = 1.0;
+
+      functionInitialEquations(data);
+
+      INFO1(LOG_INIT, "lambda: %g", data->simulationInfo.lambda);
+      printAllVars(data, 0, LOG_INIT);
+      
+      if(ACTIVE_STREAM(LOG_INIT))
+      {
+        fprintf(pFile, "%.16g,", data->simulationInfo.lambda);
+        for(i=0; i<mData->nVariablesReal; ++i)
+          fprintf(pFile, "%.16g,", data->localData[0]->realVars[i]);
+        fprintf(pFile, "\n");
+      }
+      
+      if(check_nonlinear_solutions(data, 0) || 
+         check_linear_solutions(data, 0) || 
+         check_mixed_solutions(data, 0))
+        break;
+
+      setAllStartToVars(data);
+    }
+    
+    if(ACTIVE_STREAM(LOG_INIT))
+      fclose(pFile);
+    
+    for(i=0; i<mData->nVariablesReal; ++i)
+      mData->realVarsData[i].attribute.start = realVars[i];
+    for(i=0; i<mData->nVariablesInteger; ++i)
+      mData->integerVarsData[i].attribute.start = integerVars[i];
+    for(i=0; i<mData->nVariablesBoolean; ++i)
+      mData->booleanVarsData[i].attribute.start = booleanVars[i];
+    for(i=0; i<mData->nVariablesString; ++i)
+      mData->stringVarsData[i].attribute.start = stringVars[i];
+      
+    free(realVars);
+    free(integerVars);
+    free(booleanVars);
+    free(stringVars);
+  }
+  else
+  {
+    data->simulationInfo.lambda = 1.0;
+    functionInitialEquations(data);
+  }
 
   /* update saved value for
      hysteresis relations */
@@ -979,7 +1067,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   else if(initMethod == IIM_NUMERIC)
     retVal = numeric_initialization(data, optiMethod, lambda_steps);
   else if(initMethod == IIM_SYMBOLIC)
-    retVal = symbolic_initialization(data);
+    retVal = symbolic_initialization(data, lambda_steps);
   else
     THROW("unsupported option -iim");
     

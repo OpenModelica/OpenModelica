@@ -81,6 +81,7 @@ algorithm
       DAE.FunctionTree functionTree;
       BackendDAE.SymbolicJacobians symJacs;
       Absyn.Path class_;
+      
       // new variables
       SimCode.ModelInfo modelInfo;
       list<SimCode.SimEqSystem> allEquations;
@@ -88,6 +89,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> algebraicEquations;   // --> functionAlgebraics
       list<SimCode.SimEqSystem> residuals;                  // --> initial_residual
       Boolean useSymbolicInitialization;                    // true if a system to solve the initial problem symbolically is generated, otherwise false
+      Boolean useHomotopy;                                  // true if homotopy(...) is used during initialization
       list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
       list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
       list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
@@ -149,7 +151,7 @@ algorithm
       cname = Absyn.pathStringNoQual(class_);
       
       // generate initDAE before replacing pre(alias)!
-      initDAE = Initialization.solveInitialSystem(dlow);
+      (initDAE, useHomotopy) = Initialization.solveInitialSystem(dlow);
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 

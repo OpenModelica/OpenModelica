@@ -110,6 +110,7 @@ void overwriteOldSimulationData(DATA *data);
 void restoreExtrapolationDataOld(DATA *data);
 
 void setAllVarsToStart(DATA* data);
+void setAllStartToVars(DATA* data);
 void setAllParamsToStart(DATA *data);
 
 void storePreValues(DATA *data);

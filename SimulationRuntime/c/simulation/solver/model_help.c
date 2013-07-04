@@ -446,6 +446,45 @@ void setAllVarsToStart(DATA *data)
   }
 }
 
+/*! \fn setAllStartToVars
+ *
+ *  This function sets the start-attribute of all variables to their current values.
+ *
+ *  \param [ref] [data]
+ *
+ *  \author lochel
+ */
+void setAllStartToVars(DATA *data)
+{
+  SIMULATION_DATA *sData = data->localData[0];
+  MODEL_DATA      *mData = &(data->modelData);
+  long i;
+
+  DEBUG(LOG_DEBUG, "the start-attribute of all variables to their current values:");
+  INDENT(LOG_DEBUG);
+  for(i=0; i<mData->nVariablesReal; ++i)
+  {
+    mData->realVarsData[i].attribute.start = sData->realVars[i];
+    DEBUG2(LOG_DEBUG, "Real var %s(start=%g)", mData->realVarsData[i].info.name, sData->realVars[i]);
+  }
+  for(i=0; i<mData->nVariablesInteger; ++i)
+  {
+    mData->integerVarsData[i].attribute.start = sData->integerVars[i];
+    DEBUG2(LOG_DEBUG, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+  }
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+  {
+    mData->booleanVarsData[i].attribute.start = sData->booleanVars[i];
+    DEBUG2(LOG_DEBUG, "Boolean var %s(start=%s)", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+  }
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
+    mData->stringVarsData[i].attribute.start = sData->stringVars[i];
+    DEBUG2(LOG_DEBUG, "String var %s(start=%s)", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+  }
+  RELEASE(LOG_DEBUG);
+}
+
 /*! \fn setAllParamsToStart
  *
  *  This function sets all parameters and their initial values to their start-attribute.
@@ -788,6 +827,8 @@ void initializeDataStruc(DATA *data)
 
   ASSERT(data->simulationInfo.extObjs, "error allocating external objects");
 
+  data->simulationInfo.lambda = 1.0;
+  
   /* initial build calls terminal, initial */
   data->simulationInfo.terminal = 0;
   data->simulationInfo.initial = 0;
