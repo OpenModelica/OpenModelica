@@ -2803,6 +2803,7 @@ algorithm
       equation
         SOME(path) = Env.getEnvPath(env);
         path = Absyn.joinPaths(path, Absyn.IDENT("equalityConstraint"));
+        path = Absyn.makeFullyQualified(path);
         /*(cache, env,_) = implicitFunctionTypeInstantiation(cache, env, classDef);
         (cache, types,_) = Lookup.lookupFunctionsInEnv(cache, env, path, info);
         length = listLength(types);
