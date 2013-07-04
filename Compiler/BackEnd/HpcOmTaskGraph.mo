@@ -306,7 +306,7 @@ algorithm
 end taskGraphAppend;
 
 
-protected function updateTaskGraphSystem "map function to add the indices in the taskGraph system the number of vars of the previous system.
+protected function updateTaskGraphSystem "map function to add the indices in the taskGraph system to the number of nodes of the previous system.
 author:Waurich TUD 2013-07"
   input list<Integer> graphRowIn;
   input Integer idxOffset;
@@ -2767,5 +2767,46 @@ algorithm
   end matchcontinue;      
 end getODEcRef;
 
+
+// testfunctions
+//------------------------------------------
+//------------------------------------------
+
+public function checkOdeSystemSize " compares the size of the ode-taskgraph with the number of ode-equations in the simCode.
+author:Waurich TUD 2013-07"
+  input TaskGraph taskGraphOdeIn;
+  input list<list<SimCode.SimEqSystem>> odeEqsIn;
+algorithm
+  _ := matchcontinue(taskGraphOdeIn,odeEqsIn)
+    local
+      Integer actualSize;
+      Integer targetSize;
+    case(_,_)
+      equation
+        targetSize = listLength(List.flatten(odeEqsIn));
+        actualSize = arrayLength(taskGraphOdeIn);
+        true = intEq(targetSize,actualSize);
+        print("the ODE-system size is correct\n");
+        then
+          ();
+    case(_,_)
+      equation
+        targetSize = listLength(List.flatten(odeEqsIn));
+        actualSize = arrayLength(taskGraphOdeIn);
+        true = intEq(targetSize,1) and intEq(actualSize,0);
+        // there is a dummyDER in the simcode
+        print("the ODE-system size is correct\n");
+        then
+          ();
+    else
+      equation
+        targetSize = listLength(List.flatten(odeEqsIn));
+        actualSize = arrayLength(taskGraphOdeIn);
+        print("the size should be "+&intString(targetSize)+&" but it is "+&intString(actualSize)+&" !\n");
+        print("the ODE-system is NOT correct\n");
+      then
+        ();
+  end matchcontinue;    
+end checkOdeSystemSize;
 
 end HpcOmTaskGraph;

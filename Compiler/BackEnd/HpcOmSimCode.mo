@@ -197,9 +197,7 @@ algorithm
 
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
-      //print("from "+&intString(listLength(allEquations))+&" we have "+&intString(listLength(List.flatten(odeEquations)))+& " ode eqs and "+&intString(listLength(List.flatten(algebraicEquations)))+&" algebraic eqs\n");
-        //print("correct odeNum: "+&intString(listLength(List.flatten(odeEquations)))+&"\n");
-        //print("my odeNumn: "+&intString(arrayLength(taskGraphOde))+&"\n");
+      HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
 //      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
 //
 //      // Assertions and crap
