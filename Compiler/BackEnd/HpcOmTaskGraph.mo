@@ -224,9 +224,9 @@ algorithm
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps));
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = graphDataTmp;
-        (varSccMapping,eqSccMapping) = createVarSccMapping(comps, numberOfVars, numberOfEqs); 
+        (varSccMapping,eqSccMapping) = createSccMapping(comps, numberOfVars, numberOfEqs); 
         nodeDescs = getEquationStrings(comps,isyst);  //gets the description i.e. the whole equation, for every component
-        ((graphTmp,inComps,exeCosts,nodeNames,rootNodes,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,{}),(graphTmp,inComps,exeCosts,nodeNames,rootNodes,1));
+        ((graphTmp,inComps,exeCosts,nodeNames,rootNodes,nodeMark,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,eqSccMapping,{}),(graphTmp,inComps,exeCosts,nodeNames,rootNodes,nodeMark,1));
         // gather the metadata
         graphDataTmp = TASKGRAPHMETA(inComps, varSccMapping, eqSccMapping, rootNodes, nodeNames, nodeDescs, exeCosts, commCosts, nodeMark);
         tplOut = ((graphTmp,graphDataTmp));
@@ -240,9 +240,9 @@ algorithm
         (_,incidenceMatrix,_) = BackendDAEUtil.getIncidenceMatrix(isyst, BackendDAE.NORMAL(), SOME(sharedFuncs));
         (graphTmp,graphDataTmp) = getEmptyTaskGraph(listLength(comps));
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeNames =nodeNames, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = graphDataTmp;
-        (varSccMapping,eqSccMapping) = createVarSccMapping(comps, numberOfVars, numberOfEqs); 
+        (varSccMapping,eqSccMapping) = createSccMapping(comps, numberOfVars, numberOfEqs); 
         nodeDescs = getEquationStrings(comps,isyst);  //gets the description i.e. the whole equation, for every component
-        ((graphTmp,inComps,exeCosts,nodeNames,rootNodes,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,{}),(graphTmp,inComps,exeCosts,nodeNames,rootNodes,1));
+        ((graphTmp,inComps,exeCosts,nodeNames,rootNodes,nodeMark,_)) = List.fold2(comps,createTaskGraph1,(incidenceMatrix,isyst,shared,listLength(comps)),(varSccMapping,eqSccMapping,{}),(graphTmp,inComps,exeCosts,nodeNames,rootNodes,nodeMark,1));
         // gather the metadata
         graphDataTmp = TASKGRAPHMETA(inComps, varSccMapping, eqSccMapping, rootNodes, nodeNames, nodeDescs, exeCosts, commCosts, nodeMark);
         (graphTmp,graphDataTmp) = taskGraphAppend(graphIn,graphDataIn,graphTmp,graphDataTmp); 
@@ -321,9 +321,9 @@ protected function createTaskGraph1 "function createTaskGraph10
   Appends the task-graph information for the given StrongComponent to the given graph."
   input BackendDAE.StrongComponent component;
   input tuple<BackendDAE.IncidenceMatrix,BackendDAE.EqSystem,BackendDAE.Shared,Integer> isystInfo; //<incidenceMatrix,isyst,ishared,numberOfComponents> in very compact form
-  input tuple<array<Integer>,list<Integer>> varInfo;
-  input tuple<TaskGraph,array<list<Integer>>,array<Integer>,array<String>,list<Integer>,Integer> graphInfoIn;
-  output tuple<TaskGraph,array<list<Integer>>,array<Integer>,array<String>,list<Integer>,Integer> graphInfoOut;
+  input tuple<array<Integer>,array<Integer>,list<Integer>> varInfo;
+  input tuple<TaskGraph,array<list<Integer>>,array<Integer>,array<String>,list<Integer>,array<Integer>,Integer> graphInfoIn;
+  output tuple<TaskGraph,array<list<Integer>>,array<Integer>,array<String>,list<Integer>,array<Integer>,Integer> graphInfoOut;
 protected
   BackendDAE.IncidenceMatrix incidenceMatrix;
   BackendDAE.EqSystem isyst;
@@ -347,20 +347,21 @@ protected
   String nodeName;
 algorithm
   (incidenceMatrix,isyst,ishared,numberOfComps) := isystInfo;
-  (varSccMapping,eventVarLst) := varInfo;
-  (graphIn,inComps,exeCosts,nodeNames,rootNodes,componentIndex) := graphInfoIn;
+  (varSccMapping,eqSccMapping,eventVarLst) := varInfo;
+  (graphIn,inComps,exeCosts,nodeNames,rootNodes,nodeMark,componentIndex) := graphInfoIn;
   inComps := arrayUpdate(inComps,componentIndex,{componentIndex});
   nodeName := BackendDump.strongComponentString(component);
   nodeNames := arrayUpdate(nodeNames,componentIndex,nodeName);
   calculationTime := HpcOmBenchmark.timeForCalculation(component, isyst, ishared);
   exeCosts := arrayUpdate(exeCosts,componentIndex,calculationTime);
+  nodeMark := arrayUpdate(nodeMark,componentIndex,getNodeMark(componentIndex,incidenceMatrix,varSccMapping,eqSccMapping));
   unsolvedVars := getUnsolvedVarsBySCC(component,incidenceMatrix,eventVarLst);
   requiredSccs := arrayCreate(numberOfComps,0); //create a ref-counter for each component
   requiredSccs := List.fold1(unsolvedVars,fillSccList,varSccMapping,requiredSccs); 
   ((_,requiredSccs_RefCount)) := Util.arrayFold(requiredSccs, convertRefArrayToList, (1,{}));
   (graphTmp,rootNodes) := fillAdjacencyList(graphIn,rootNodes,componentIndex,requiredSccs_RefCount,1);
   graphTmp := Util.arrayMap1(graphTmp,List.sort,intGt);
-  graphInfoOut := (graphTmp,inComps,exeCosts,nodeNames,rootNodes,componentIndex+1);
+  graphInfoOut := (graphTmp,inComps,exeCosts,nodeNames,rootNodes,nodeMark,componentIndex+1);
 end createTaskGraph1;   
 
 
@@ -425,6 +426,76 @@ algorithm
     else then ();
   end matchcontinue;
 end printReqScc;
+
+
+protected function getNodeMark "sets the nodeMark for an component given by compIdxIn.
+author: Waurich TUD 2013-07"
+  input Integer compIdxIn;
+  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  input array<Integer> varSccMapping;
+  input array<Integer> eqSccMapping;
+  output Integer numberOut;
+protected 
+  list<list<Integer>> allVars;
+  list<Integer> allEqs;
+  list<Integer> allMatchedVars;
+  list<Integer> assignedVars;
+  list<Integer> neededVars;
+algorithm
+  allEqs := getMappingForComp(compIdxIn,eqSccMapping,1,{});
+  allVars := List.map1(allEqs,getVarsForEqs,incidenceMatrix);
+  allMatchedVars := getMappingForComp(compIdxIn,varSccMapping,1,{});
+  (_,neededVars,_) := List.intersection1OnTrue(List.unique(List.flatten(allVars)),allMatchedVars,intEq);
+  numberOut := listLength(neededVars);
+end getNodeMark;
+
+
+protected function getVarsForEqs " gets all variables of an equation
+author:Waurich TUD 2013-07"
+  input Integer eqIn;
+  input BackendDAE.IncidenceMatrix incidenceMatrix;
+  output list<Integer> varLst;
+algorithm
+  varLst := arrayGet(incidenceMatrix,eqIn);
+end getVarsForEqs;
+
+
+protected function getMappingForComp " gets the mapping info for a comp i.e. either alle eqs in a component for eqSccMapping or all solved vars in a component for varSccMapping.
+author:Waurich TUD 201307"
+  input Integer compIdxIn;
+  input array<Integer> SccMapping;
+  input Integer mapIdx;
+  input list<Integer> LstIn;
+  output list<Integer> LstOut;
+algorithm
+  LstOut := matchcontinue(compIdxIn,SccMapping,mapIdx,LstIn)
+    local
+      Integer entry;
+      list<Integer> lstTmp;
+    case(_,_,_,_)
+      equation
+        true = arrayLength(SccMapping) >= mapIdx;
+        entry = arrayGet(SccMapping,mapIdx);
+        true = intEq(entry,compIdxIn);
+        lstTmp = mapIdx::LstIn;
+        lstTmp = getMappingForComp(compIdxIn,SccMapping,mapIdx+1,lstTmp);
+      then
+        lstTmp;
+    case(_,_,_,_)
+      equation
+        true = arrayLength(SccMapping) >= mapIdx;
+        entry = arrayGet(SccMapping,mapIdx);
+        false = intEq(entry,compIdxIn);
+        lstTmp = getMappingForComp(compIdxIn,SccMapping,mapIdx+1,LstIn);
+      then
+        lstTmp;
+    case(_,_,_,_)
+      equation
+        false = arrayLength(SccMapping) >= mapIdx;
+      then
+        LstIn;
+  end matchcontinue;
+end getMappingForComp;
 
 
 //protected function fillCalcTimeArray "function fillCalcTimeArray
@@ -1303,7 +1374,7 @@ algorithm
 end getSCCByVar;
 
 
-protected function createVarSccMapping "function createVarSccMapping
+protected function createSccMapping "function createSccMapping
   author: marcusw
   Create a mapping between variables and strong-components. The returned array (one element for each variable) contains the 
   scc-index which solves the variable."
@@ -1320,14 +1391,14 @@ protected
 algorithm
   varSccMapping := arrayCreate(varCount,-1);
   eqSccMapping := arrayCreate(eqCount,-1);
-  _ := List.fold2(components, createVarSccMapping0, varSccMapping, eqSccMapping, 1);
+  _ := List.fold2(components, createSccMapping0, varSccMapping, eqSccMapping, 1);
   oVarSccMapping := varSccMapping;
   oEqSccMapping := eqSccMapping;
   
-end createVarSccMapping;
+end createSccMapping;
 
 
-protected function createVarSccMapping0 "function createVarSccMapping
+protected function createSccMapping0 "function createSccMapping
   author: marcusw,waurich
   Updates all array elements which are solved in the given component. The array-elements will be set to iSccIdx."
   input BackendDAE.StrongComponent component;
@@ -1366,7 +1437,7 @@ algorithm
         tmpVarSccMapping = List.fold1(compVarIdc,updateMapping,iSccIdx,varSccMapping);
         tmpEqSccMapping = List.fold1(eqns,updateMapping,iSccIdx,eqSccMapping);
         //gets the whole equationsystem (necessary for the adjacencyList)
-        _ = List.fold2({condSys}, createVarSccMapping0, tmpVarSccMapping,tmpEqSccMapping, iSccIdx);
+        _ = List.fold2({condSys}, createSccMapping0, tmpVarSccMapping,tmpEqSccMapping, iSccIdx);
       then 
         iSccIdx+1;
     case(BackendDAE.SINGLEWHENEQUATION(vars = compVarIdc,eqn = eq),_,_,_)
@@ -1410,10 +1481,10 @@ algorithm
           iSccIdx+1;
     else
       equation
-        print("createVarSccMapping0 - Unsupported component-type.");
+        print("createSccMapping0 - Unsupported component-type.");
       then fail();
   end matchcontinue;
-end createVarSccMapping0;
+end createSccMapping0;
 
 
 protected function othersInTearComp " gets the remaining algebraic vars and equations from the torn block.
@@ -2221,8 +2292,9 @@ protected
   array<list<tuple<Integer,Integer>>> commCosts;  
   Integer commCost;
   String refSccCountStr;
+  array<Integer> nodeMark;
 algorithm
-  TASKGRAPHMETA(commCosts=commCosts) := tGraphDataIn;
+  TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark) := tGraphDataIn;
   //commCost := getCommunicationCost(parentIdx,childIdx,commCosts);
   oGraph := GraphML.addEgde("Edge" +& intString(childIdx) +& intString(parentIdx), "Component" +& intString(parentIdx), "Component" +& intString(childIdx), GraphML.COLOR_BLACK, GraphML.LINE(), SOME(GraphML.EDGELABEL("1",GraphML.COLOR_BLACK)), (SOME(GraphML.ARROWSTANDART()),NONE()), iGraph);
 end addDepToGraph;
@@ -2632,7 +2704,7 @@ algorithm
         //BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(comps=comps),orderedVars=orderedVars) = eqSys;
         //BackendDAE.VARIABLES(numberOfVars=numberOfVars) = orderedVars;
         //// map the SCCs to the vars
-        //varSCCMapping = createVarSccMapping(comps, numberOfVars);
+        //varSCCMapping = createSccMapping(comps, numberOfVars);
         //// map vars to cRefs of vars        
         //varLst = BackendVariable.varList(orderedVars);
         //varCRefMapping = List.map(varLst,BackendVariable.varCref);
