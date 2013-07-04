@@ -38,7 +38,7 @@
 #include "systemimpl.h"
 
 /* Size of the buffer for warnings and other messages */
-#define WARNINGBUFFSIZE 250
+#define WARNINGBUFFSIZE 2000
 
 typedef struct {
   double *data;
