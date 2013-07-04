@@ -119,6 +119,7 @@ public function createTaskGraph "function createTaskGraph
   author: marcusw,waurich
   Creates a task graph on blt-level and stores it as a graphml-file."
   input BackendDAE.BackendDAE inDAE;
+  input String filenamePrefix;
   output TaskGraph graphOut;
   output TaskGraphMeta graphDataOut;
 protected
@@ -126,11 +127,14 @@ protected
   BackendDAE.Shared shared;
   TaskGraph graph;
   TaskGraphMeta graphData;
+  String fileName;
 algorithm
   //Iterate over each system
   BackendDAE.DAE(systs,shared) := inDAE;
   (graph,graphData) := getEmptyTaskGraph(1);
   ((graph,graphData)) := List.fold1(systs,createTaskGraph0,shared,(graph,graphData));  
+  fileName := ("taskGraph"+&filenamePrefix+&".graphml"); 
+  //dumpAsGraphMLSccLevel(graph,graphData,fileName);
   graphOut := graph;
   graphDataOut := graphData; 
 end createTaskGraph;
@@ -2103,155 +2107,6 @@ algorithm
 
 
 
-//Methods to write blt-structure as xml-file
-//------------------------------------------
-//------------------------------------------
-
-
-protected function dumpAsGraphML_SccLevel "function dumpAsGraphML_SccLevel
-  author: marcusw, waurich
-  Write out the given graph as a graphml file."
-  input TaskGraph iGraph;
-  input TaskGraphMeta iGraphData;
-  input String fileName;
-protected
-  GraphML.Graph graph;
-  Integer calcTimeIdx;
-  list<Integer> compIdc;
-algorithm
-  _ := match(iGraph, iGraphData, fileName)
-    case(_,_,_)
-      equation 
-        graph = GraphML.getGraph("TaskGraph", true);
-        (calcTimeIdx,graph) = GraphML.addAttribute("0", "CalcTime", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
-        compIdc = List.intRange(arrayLength(iGraph));
-        graph = List.fold2(compIdc, addSccToGraphML, iGraph, iGraphData, graph);
-        GraphML.dumpGraph(graph, fileName);
-      then ();
-  end match;
-end dumpAsGraphML_SccLevel;
-
-
-protected function addSccToGraphML "function addSccToGraphML
-  author: marcusw, waurich
-  Adds the given component to the given graph as a new node."
-  input Integer compIdx;
-  input TaskGraph tGraphIn;
-  input TaskGraphMeta tGraphDataIn;
-  input GraphML.Graph iGraph;
-  output GraphML.Graph oGraph;
-protected
-  String compText;
-  String description;
-  String nodeDesc;
-  Integer compIdx;
-  List<tuple<Integer,Integer>> dependencySCCs;
-algorithm
-  oGraph := matchcontinue(compIdx,tGraphIn,tGraphDataIn,iGraph)
-    local
-      GraphML.Graph tmpGraph;
-      Integer calcTime;
-      String calcTimeString;
-      array<list<Integer>> inComps; 
-      array<Integer> varSccMapping;  
-      array<Integer> eqSccMapping;  
-      list<Integer> rootNodes;  
-      array<String> nodeNames; 
-      array<String> nodeDescs;  
-      array<Integer> exeCosts;  
-      array<list<tuple<Integer,Integer>>> commCosts;  
-      array<Integer> nodeMark; 
-      list<Integer> childNodes;
-    case(_,_,_,_)
-      equation
-        false = compIdx == 0 or compIdx == -1;
-        TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
-        compText = arrayGet(nodeNames,compIdx);        
-        nodeDesc = arrayGet(nodeDescs,compIdx);
-        calcTime = arrayGet(exeCosts,compIdx);
-        calcTimeString = intString(calcTime);
-        childNodes = arrayGet(tGraphIn,compIdx);
-        tmpGraph = GraphML.addNode("Component" +& intString(compIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((compIdx,calcTimeString))}, iGraph);
-        tmpGraph = List.fold2(childNodes, addDepToGraph, compIdx, tGraphDataIn, tmpGraph);
-      then 
-        tmpGraph;
-    case(_,_,_,_)
-      equation
-        true = compIdx == 0 or compIdx == -1;
-        print("addSccToGraphML failed \n");
-      then 
-          fail();
-   end matchcontinue;
-end addSccToGraphML;
-
-
-protected function addDepToGraph "function addSccDepToGraph
-  author: marcusw
-  Adds a new edge between the component-nodes with index comp1Idx and comp2Idx to the graph."
-  input Integer childIdx;
-  input Integer parentIdx;
-  input TaskGraphMeta tGraphDataIn;
-  input GraphML.Graph iGraph;
-  output GraphML.Graph oGraph;
-protected
-  array<list<tuple<Integer,Integer>>> commCosts;  
-  Integer commCost;
-  String refSccCountStr;
-algorithm
-  TASKGRAPHMETA(commCosts=commCosts) := tGraphDataIn;
-  //commCost := getCommunicationCost(parentIdx,childIdx,commCosts);
-  oGraph := GraphML.addEgde("Edge" +& intString(childIdx) +& intString(parentIdx), "Component" +& intString(parentIdx), "Component" +& intString(childIdx), GraphML.COLOR_BLACK, GraphML.LINE(), SOME(GraphML.EDGELABEL("1",GraphML.COLOR_BLACK)), (SOME(GraphML.ARROWSTANDART()),NONE()), iGraph);
-end addDepToGraph;
-
-protected function getCommunicationCost " gets the communication cost for an edge from parent node to child node.
-  author: waurich TUD 2013-06."
-  input Integer parentIdx;
-  input Integer childIdx;
-  input array<list<tuple<Integer,Integer>>> commCosts; 
-  output Integer costOut;
-protected
-  list<tuple<Integer,Integer>> commRow;
-  tuple<Integer,Integer> commEntry;
-algorithm
-  commRow := arrayGet(commCosts,parentIdx);
-  commEntry := getTupleByFirstEntry(commRow,childIdx);
-  (_,costOut) := commEntry;  
-end getCommunicationCost;
-
-
-protected function getTupleByFirstEntry " gets the tuple of a list<tuple> whose first entry correpsonds to valueIn.
-author:Waurich TUD 2013-06"
-  input list<tuple<Integer,Integer>> tplLstIn;
-  input Integer valueIn;
-  output tuple<Integer,Integer> tpleOut;
-algorithm
-  tpleOut := matchcontinue(tplLstIn,valueIn)
-    local
-      Integer tplValue;
-      tuple<Integer,Integer> tplTmp;
-      tuple<Integer,Integer> head;
-      list<tuple<Integer,Integer>> rest;
-    case(head::rest,_)
-      equation
-        (tplValue,_) = head;
-        false = intEq(tplValue,valueIn);
-        tplTmp = getTupleByFirstEntry(rest,valueIn);
-      then
-        tplTmp;
-    case(head::rest,_)
-      equation
-        (tplValue,_) = head;
-        true = intEq(tplValue,valueIn);
-      then
-        head;
-    case({},_)
-      equation
-        print("the value "+&intString(valueIn)+&" can not be found in the tuple list \n");
-      then
-        fail(); 
-  end matchcontinue;
-end getTupleByFirstEntry;
-
 
 // print and dump functions
 //------------------------------------------
@@ -2268,9 +2123,57 @@ algorithm
   print("TASKGRAPH\n");
   print("--------------------------------\n");
   graphLst := arrayList(graphIn);
-  BackendDump.dumpIncidenceMatrix2(graphLst,1);
+  dumpAdjacencyLst(graphLst,1);
   print("\n");
 end printTaskGraph;
+
+
+public function dumpAdjacencyLst " prints the adjacencyLst.
+author:Waurich TUD 2013-07"
+  input list<list<Integer>> inIntegerLstLst;
+  input Integer rowIndex;
+algorithm
+  _ := match (inIntegerLstLst,rowIndex)
+    local
+      list<Integer> row;
+      list<list<Integer>> rows;
+    case ({},_) then ();
+    case ((row :: rows),_)
+      equation
+        print(intString(rowIndex));print(":");
+        dumpAdjacencyRow(row);
+        dumpAdjacencyLst(rows,rowIndex+1);
+      then
+        ();
+  end match;
+end dumpAdjacencyLst;
+
+public function dumpAdjacencyRow
+"function: dumpIncidenceRow
+  author: PA
+  Helper function to dumpIncidenceMatrix2."
+  input list<Integer> inIntegerLst;
+algorithm
+  _ := match (inIntegerLst)
+    local
+      String s;
+      Integer x;
+      list<Integer> xs;
+    case ({})
+      equation
+        print("\n");
+      then
+        ();
+    case ((x :: xs))
+      equation
+        s = intString(x);
+        print(s);
+        print(" ");
+        dumpAdjacencyRow(xs);
+      then
+        ();
+  end match;
+end dumpAdjacencyRow;
 
 
 public function printTaskGraphMeta " prints all data from TaskGraphMeta.

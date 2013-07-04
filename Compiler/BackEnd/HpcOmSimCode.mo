@@ -129,24 +129,19 @@ algorithm
       HpcOmTaskGraph.TaskGraph taskGraphOde;
       HpcOmTaskGraph.TaskGraphMeta taskGraphData;
       HpcOmTaskGraph.TaskGraphMeta taskGraphDataOde;
-      String fileName;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
       
       //Create TaskGraph
-      (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE);
+      (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
-      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData); 
-      fileName = ("taskGraph"+&filenamePrefix+&".graphml");     
-      //HpcOmTaskGraph.dumpAsGraphML_SccLevel(taskGraph, taskGraphData, fileName);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);   
       
       // get the task graph for the ODEsystem
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraph,taskGraphData,inBackendDAE);
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
-      fileName = ("taskGraphODE"+&filenamePrefix+&".graphml");     
-      //HpcOmTaskGraph.dumpAsGraphML_SccLevel(taskGraphOde, taskGraphDataOde, fileName);
       
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
@@ -203,8 +198,8 @@ algorithm
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
       //print("from "+&intString(listLength(allEquations))+&" we have "+&intString(listLength(List.flatten(odeEquations)))+& " ode eqs and "+&intString(listLength(List.flatten(algebraicEquations)))+&" algebraic eqs\n");
-        print("correct odeNum: "+&intString(listLength(List.flatten(odeEquations)))+&"\n");
-        print("my odeNumn: "+&intString(arrayLength(taskGraphOde))+&"\n");
+        //print("correct odeNum: "+&intString(listLength(List.flatten(odeEquations)))+&"\n");
+        //print("my odeNumn: "+&intString(arrayLength(taskGraphOde))+&"\n");
 //      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
 //
 //      // Assertions and crap
