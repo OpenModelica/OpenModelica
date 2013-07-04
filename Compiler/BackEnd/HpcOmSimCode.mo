@@ -139,7 +139,7 @@ algorithm
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);   
       
       // get the task graph for the ODEsystem
-      (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraph,taskGraphData,inBackendDAE);
+      (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraph,taskGraphData,inBackendDAE,filenamePrefix);
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
       
