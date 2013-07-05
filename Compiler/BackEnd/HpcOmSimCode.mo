@@ -141,9 +141,14 @@ algorithm
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);   
       
       // get the task graph for the ODEsystem
-      (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraph,taskGraphData,inBackendDAE,filenamePrefix);
+      //(taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraph,taskGraphData,inBackendDAE,filenamePrefix);
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
+      
+      // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
+      //HpcOmTaskGraph.printTaskGraph(taskGraph);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);   
+      (taskGraph,taskGraphData) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph,taskGraphData,inBackendDAE,filenamePrefix);
       
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
@@ -199,7 +204,7 @@ algorithm
 
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
-      HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
+      //HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
 //      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
 //
 //      // Assertions and crap
