@@ -6523,7 +6523,7 @@ template rhsCref(ComponentRef cr, Type ty)
 ::=
   match cr
   case CREF_IDENT(__) then '<%rhsCrefType(ty)%><%ident%>'
-  case CREF_QUAL(__)  then '<%rhsCrefType(ty)%><%ident%>.<%rhsCref(componentRef,ty)%>'
+  case CREF_QUAL(__)  then '<%rhsCrefType(ty)%><%ident%>._<%rhsCref(componentRef,ty)%>'
   else error(sourceInfo(), 'rhsCref:ERROR')
 end rhsCref;
 
@@ -8908,7 +8908,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     then
       <<<%patterns |> (p,n,t) =>
         let tvar = tempDecl(expTypeModelica(t), &varDecls)
-        <<<%tvar%> = <%rhs%>.<%n%>;
+        <<<%tvar%> = <%rhs%>._<%n%>;
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
         >>%>
       >>
