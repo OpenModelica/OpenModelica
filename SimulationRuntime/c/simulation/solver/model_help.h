@@ -113,6 +113,8 @@ void setAllVarsToStart(DATA* data);
 void setAllStartToVars(DATA* data);
 void setAllParamsToStart(DATA *data);
 
+void restoreOldValues(DATA *data);
+
 void storePreValues(DATA *data);
 
 void storeRelations(DATA *data);
