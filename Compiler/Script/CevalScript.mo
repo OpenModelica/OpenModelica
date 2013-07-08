@@ -2918,7 +2918,7 @@ algorithm
         y2Str = realString(y2);
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
-        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,str,str3,curveWidthStr,curveStyleStr};
+        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,str,str3};
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then
