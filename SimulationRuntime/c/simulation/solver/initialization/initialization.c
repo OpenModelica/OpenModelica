@@ -711,6 +711,8 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
       fprintf(pFile, "\n");
     }
     
+    INFO(LOG_INIT, "homotopy process");
+    INDENT(LOG_INIT);
     for(step=0; step<numLambdaSteps; ++step)
     {
       data->simulationInfo.lambda = ((double)step)/(numLambdaSteps-1);
@@ -720,8 +722,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
 
       functionInitialEquations(data);
 
-      INFO1(LOG_INIT, "lambda: %g", data->simulationInfo.lambda);
-      printAllVars(data, 0, LOG_INIT);
+      INFO1(LOG_INIT, "lambda = %g done", data->simulationInfo.lambda);
       
       if(ACTIVE_STREAM(LOG_INIT))
       {
@@ -738,6 +739,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
 
       setAllStartToVars(data);
     }
+    RELEASE(LOG_INIT);
     
     if(ACTIVE_STREAM(LOG_INIT))
       fclose(pFile);
