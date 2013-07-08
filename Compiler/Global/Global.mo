@@ -34,7 +34,7 @@ encapsulated package Global
   package:     Global
   description: Global contains structures that are available globally.
 
-  RCS: $Id: Global.mo 8980 2011-05-13 09:12:21Z adrpo $
+  RCS: $Id$
 
   The Global package contains structures that are available globally."
 
@@ -50,5 +50,10 @@ constant Integer profilerTime2Index = 6;
 constant Integer flagsIndex = 7;
 constant Integer builtinGraphEnvIndex = 8;
 constant Integer instOnlyForcedFunctions = 9;
+
+public function initialize "Called to initialize global roots (when needed)"
+algorithm
+  setGlobalRoot(instOnlyForcedFunctions,  NONE());
+end initialize;
 
 end Global;
