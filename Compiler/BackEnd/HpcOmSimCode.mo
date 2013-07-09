@@ -129,8 +129,10 @@ algorithm
       
       HpcOmTaskGraph.TaskGraph taskGraph;  
       HpcOmTaskGraph.TaskGraph taskGraphOde;
+      HpcOmTaskGraph.TaskGraph taskGraph1;  
       HpcOmTaskGraph.TaskGraphMeta taskGraphData;
       HpcOmTaskGraph.TaskGraphMeta taskGraphDataOde;
+      HpcOmTaskGraph.TaskGraphMeta taskGraphData1;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -141,14 +143,20 @@ algorithm
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);   
       
       // get the task graph for the ODEsystem
-      //(taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraph,taskGraphData,inBackendDAE,filenamePrefix);
+      taskGraphOde = arrayCopy(taskGraph);
+      taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
+      (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE,filenamePrefix);
+      //print("ODE-TASKGRAPH\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
       
       // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
+      taskGraph1 = arrayCopy(taskGraphOde);
+      taskGraphData1 = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphDataOde);
+      (taskGraph,taskGraphData) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphData1,inBackendDAE,filenamePrefix);
+      //print("MERGED GRAPH\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
-      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);   
-      (taskGraph,taskGraphData) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph,taskGraphData,inBackendDAE,filenamePrefix);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
       
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
@@ -204,7 +212,7 @@ algorithm
 
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
-      //HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
+      HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
 //      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
 //
 //      // Assertions and crap
