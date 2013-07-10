@@ -37,30 +37,32 @@ encapsulated package HpcOmBenchmark
   RCS: $Id: HpcOmBenchmark.mo 15486 2013-06-10 11:12:35Z marcusw $
 "
 
-public import BackendDAE;
-
-protected import BackendDAEOptimize;
 protected import HpcOmBenchmarkExt;
 
-public function timeForCalculation
-" author: marcusw
-  date: 2013-06-10
-  Estimates the time (in ms) which is needed to calculate the given component.
-"
-  input BackendDAE.StrongComponent icomponent;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  output Integer processingTime;
+public function benchSystem
+  output tuple<tuple<Integer,Integer>,tuple<Integer,Integer>> oTime; //required time for <op,com>
   
 protected
-  Integer op1,op2;
-  Integer mulCost, addCost;
-  
+  Integer comCostM,comCostN,opCostM,opCostN;
+  list<Integer> opCosts, comCosts;
+  String s1,s2;
 algorithm
-    ((op1,op2,_)) := BackendDAEOptimize.countOperationstraverseComps({icomponent},isyst,ishared,(0,0,0));
-    mulCost := HpcOmBenchmarkExt.requiredTimeForMult();
-    addCost := HpcOmBenchmarkExt.requiredTimeForAdd();
-    processingTime := addCost * op1 + mulCost * op2;
-end timeForCalculation;
+    opCosts := HpcOmBenchmarkExt.requiredTimeForOp();
+    true := listLength(opCosts) == 2;
+    opCostM := listGet(opCosts,1); //m
+    opCostN := listGet(opCosts,2); //n
+    s1 := intString(opCostM);
+    s2 := intString(opCostN);
+    //print("Test op y= " +& s1 +& " * x + " +& s2 +& "\n");
+    
+    comCosts := HpcOmBenchmarkExt.requiredTimeForComm();
+    comCostM := listGet(comCosts,1); //m
+    comCostN := listGet(comCosts,2); //n
+    s1 := intString(comCostM);
+    s2 := intString(comCostN);
+    //print("Test comm y= " +& s1 +& " * x + " +& s2 +& "\n");
+    
+    oTime := ((opCostM,opCostN),(comCostM,comCostN));
+end benchSystem;
 
 end HpcOmBenchmark;

@@ -5,19 +5,13 @@
 #include "HpcOmBenchmarkExt.cpp"
 
 extern "C" {
-extern int HpcOmBenchmarkExt_requiredTimeForMult()
+extern void* HpcOmBenchmarkExt_requiredTimeForOp()
 {
-  return HpcOmBenchmarkExtImpl__requiredTimeForMult();
+  return HpcOmBenchmarkExtImpl__requiredTimeForOp();
 }
 
-extern int HpcOmBenchmarkExt_requiredTimeForAdd()
+extern void* HpcOmBenchmarkExt_requiredTimeForComm()
 {
-  return HpcOmBenchmarkExtImpl__requiredTimeForAdd();
+  return HpcOmBenchmarkExtImpl__requiredTimeForComm();
 }
-
-extern int HpcOmBenchmarkExt_requiredTimeForCom()
-{
-  return HpcOmBenchmarkExtImpl__requiredTimeForCom();
-}
-
 }

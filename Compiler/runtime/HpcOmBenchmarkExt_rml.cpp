@@ -40,23 +40,16 @@ void HpcOmBenchmarkExt_5finit(void)
 {
 }
 
-RML_BEGIN_LABEL(HpcOmBenchmarkExt__requiredTimeForMult)
+RML_BEGIN_LABEL(HpcOmBenchmarkExt__requiredTimeForOp)
 {
-  rmlA0 = mk_bcon(HpcOmBenchmarkExtImpl__requiredTimeForMult());
+  rmlA0 = HpcOmBenchmarkExtImpl__requiredTimeForOp();
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(HpcOmBenchmarkExt__requiredTimeForAdd)
+RML_BEGIN_LABEL(HpcOmBenchmarkExt__requiredTimeForComm)
 {
-  rmlA0 = mk_bcon(HpcOmBenchmarkExtImpl__requiredTimeForAdd());
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(HpcOmBenchmarkExt__requiredTimeForCom)
-{
-  rmlA0 = mk_bcon(HpcOmBenchmarkExtImpl__requiredTimeForCom());
+  rmlA0 = HpcOmBenchmarkExtImpl__requiredTimeForComm();
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

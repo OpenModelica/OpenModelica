@@ -4909,6 +4909,47 @@ algorithm
   end match;
 end fold3;
 
+public function fold4
+  "Takes a list and a function operating on list elements having an extra
+   argument that is 'updated', thus returned from the function, and four constant
+   arguments that are not updated. fold will call the function for each element in
+   a sequence, updating the start value."
+  input list<ElementType> inList;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inExtraArg1;
+  input ArgType2 inExtraArg2;
+  input ArgType3 inExtraArg3;
+  input ArgType4 inExtraArg4;
+  input FoldType inStartValue;
+  output FoldType outResult;
+
+  partial function FoldFunc
+    input ElementType inElement;
+    input ArgType1 inConstantArg1;
+    input ArgType2 inConstantArg2;
+    input ArgType3 inConstantArg3;
+    input ArgType4 inConstantArg4;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outResult := match(inList, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      FoldType arg;
+
+    case ({}, _, _, _, _, _, _) then inStartValue;
+
+    case (e :: rest, _, _, _, _, _, _)
+      equation
+        arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue);
+      then
+        fold4(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg3, arg);
+
+  end match;
+end fold4;
+
 public function fold43
   "Takes a list and a function operating on list elements having an extra
    argument that is 'updated', thus returned from the function, and three constant

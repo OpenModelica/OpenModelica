@@ -37,17 +37,16 @@ encapsulated package HpcOmBenchmarkExt
   RCS: $Id: HpcOmBenchmarkExt.mo 15486 2013-05-24 11:12:35Z marcusw $
 "
 
-function requiredTimeForMult
-  output Integer requiredTime;
+function requiredTimeForComm
+  output list<Integer> requiredTime;
 
-  external "C" requiredTime=HpcOmBenchmarkExt_requiredTimeForMult() annotation(Library = "omcruntime");
+  external "C" requiredTime=HpcOmBenchmarkExt_requiredTimeForComm() annotation(Library = "omcruntime");
+end requiredTimeForComm;
 
-end requiredTimeForMult;
+function requiredTimeForOp
+  output list<Integer> requiredTime;
 
-function requiredTimeForAdd
-  output Integer requiredTime;
-
-  external "C" requiredTime=HpcOmBenchmarkExt_requiredTimeForAdd() annotation(Library = "omcruntime");
-end requiredTimeForAdd;
+  external "C" requiredTime=HpcOmBenchmarkExt_requiredTimeForOp() annotation(Library = "omcruntime");
+end requiredTimeForOp;
 
 end HpcOmBenchmarkExt;

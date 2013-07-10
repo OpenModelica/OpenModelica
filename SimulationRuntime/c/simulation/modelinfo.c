@@ -325,6 +325,10 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   indent(fout, 2); fprintf(fout, "<maxTime>%.9f</maxTime>\n", rt_max_accumulated(SIM_TIMER_STEP));
   fprintf(fout, "</modelinfo>\n");
 
+  fprintf(fout, "<modelinfo_ext>\n");
+  indent(fout, 2); fprintf(fout, "<odeTime>%f</odeTime>\n", rt_accumulated(SIM_TIMER_FUNCTION_ODE));
+  fprintf(fout, "</modelinfo_ext>\n");
+
   fprintf(fout, "<profilingdataheader>\n");
   printProfilingDataHeader(fout, data);
   fprintf(fout, "</profilingdataheader>\n");

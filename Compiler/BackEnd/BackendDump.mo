@@ -999,144 +999,94 @@ end dumpComponents;
 
 public function dumpComponent
   input BackendDAE.StrongComponent inComp;
+
 algorithm
-  _:=
-  match (inComp)
+  print(printComponent(inComp));
+
+end dumpComponent;
+
+public function printComponent
+  input BackendDAE.StrongComponent inComp;
+  output String oString;
+  
+protected
+  String tmpStr;
+  
+algorithm
+  oString := match (inComp)
     local
       Integer i,v;
       list<Integer> ilst,vlst;
       list<String> ls;
-      String s;
+      String s,s2,s3,s4;
       BackendDAE.JacobianType jacType;
       BackendDAE.StrongComponent comp;
       list<tuple<Integer,list<Integer>>> eqnvartpllst;
       Boolean b;
     case BackendDAE.SINGLEEQUATION(eqn=i,var=v)
       equation
-        print("{");
-        print(intString(i));
-        print(":");
-        print(intString(v));
-        print("}\n");
-      then ();
+        tmpStr = "{" +& intString(i) +& ":" +& intString(v) +& "}\n";
+      then tmpStr;
     case BackendDAE.EQUATIONSYSTEM(eqns=ilst,vars=vlst,jacType=jacType)
       equation
-        print("{");
         ls = List.map(ilst, intString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print(":");
         ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        print(s);
-        print("} Size: ");
-        print(intString(listLength(vlst)));
-        print(" ");
-        print(jacobianTypeStr(jacType));
-        print("\n");
-      then
-        ();
+        s2 = stringDelimitList(ls, ", ");
+                
+        tmpStr = "{" +& s +& ":" +& s2 +& "} Size: " +& intString(listLength(vlst)) +& " " +& jacobianTypeStr(jacType) +& "\n";
+      then tmpStr;
     case BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=ilst,disc_vars=vlst)
       equation
-        print("{{");
         ls = List.map(ilst, intString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print(":");
         ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        print(s);
-        print("},\n");
-        dumpComponent(comp);
-        print("} Size: ");
-        print(intString(listLength(vlst)));
-        print("\n");
-      then
-        ();
+        s2 = stringDelimitList(ls, ", ");
+        tmpStr = "{{" +& s +& ":" +& s2 +& "},\n" +& printComponent(comp) +& "} Size: " +& intString(listLength(vlst)) +& "\n";
+      then tmpStr;
     case BackendDAE.SINGLEARRAY(eqn=i,vars=vlst)
       equation
-        print("Array ");
-        print(" {{");
-        print(intString(i));
-        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print("}}\n");
-      then
-        ();
+        tmpStr = "Array " +& " {{" +& intString(i) +& ":" +& s +& "}}\n";
+      then tmpStr;
     case BackendDAE.SINGLEIFEQUATION(eqn=i,vars=vlst)
       equation
-        print("IfEquation ");
-        print(" {{");
-        print(intString(i));
-        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print("}}\n");
-      then
-        ();
+        tmpStr = "IfEquation " +& " {{" +& intString(i) +& ":" +& s +& "}}\n";
+      then tmpStr;
     case BackendDAE.SINGLEALGORITHM(eqn=i,vars=vlst)
       equation
-        print("Algorithm ");
-        print(" {{");
-        print(intString(i));
-        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print("}}\n");
-      then
-        ();
+        tmpStr = "Algorithm " +& " {{" +& intString(i) +& ":" +& s +& "}}\n";
+      then tmpStr;
     case BackendDAE.SINGLECOMPLEXEQUATION(eqn=i,vars=vlst)
       equation
-        print("ComplexEquation ");
-        print(" {");
-        print(intString(i));
-        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print("}\n");
-      then
-        ();
+        tmpStr = "ComplexEquation " +& " {" +& intString(i) +& ":" +& s +& "}\n";
+      then tmpStr;
     case BackendDAE.SINGLEWHENEQUATION(eqn=i,vars=vlst)
       equation
-        print("WhenEquation ");
-        print(" {");
-        print(intString(i));
-        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print("}\n");
-      then
-        ();
+        tmpStr = "WhenEquation " +& " {" +& intString(i) +& ":" +& s +& "}\n";
+      then tmpStr;
     case BackendDAE.TORNSYSTEM(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst,linear=b)
       equation
-        print("{{");
         ls = List.map(eqnvartpllst, tupleString);
         s = stringDelimitList(ls, ", ");
-        print(s);
-        print("}\n,{");
         ls = List.map(ilst, intString);
-        s = stringDelimitList(ls, ", ");
-        print(s);
-        print(":");
+        s2 = stringDelimitList(ls, ", ");
         ls = List.map(vlst, intString);
-        s = stringDelimitList(ls, ", ");
-        print(s);
-        print("} Size: ");
-        print(intString(listLength(vlst)));
-        print(" ");
-        s = Util.if_(b,"linear","nonlinear");
-        print(s);
-        print("\n");
-      then
-        ();
+        s3 = stringDelimitList(ls, ", ");
+        s4 = Util.if_(b,"linear","nonlinear");
+        tmpStr = "{{" +& s +& "}\n,{" +& s2 +& ":" +& s3 +& "} Size: " +& intString(listLength(vlst)) +& " " +& s4 +& "\n";
+      then tmpStr;
   end match;
-end dumpComponent;
+end printComponent;
 
 // =============================================================================
 // section for all *String functions

@@ -2860,21 +2860,21 @@ end whenClauseToSimWhenClause;
 // 
 // =============================================================================
 
-protected function getZeroCrossings
+public function getZeroCrossings
   input BackendDAE.BackendDAE inBackendDAE;
   output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
 algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=outZeroCrossingList))) := inBackendDAE;
 end getZeroCrossings;
 
-protected function getRelations
+public function getRelations
   input BackendDAE.BackendDAE inBackendDAE;
   output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
 algorithm
   BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(relationsLst=outZeroCrossingList))) := inBackendDAE;
 end getRelations;
 
-protected function getSamples
+public function getSamples
   input BackendDAE.BackendDAE inBackendDAE;
   output list<BackendDAE.ZeroCrossing> outZeroCrossingList;
 algorithm
@@ -6986,7 +6986,7 @@ algorithm
   end matchcontinue;
 end createVarMinMaxAssert;
 
-protected function createModelInfo
+public function createModelInfo
   input Absyn.Path class_;
   input BackendDAE.BackendDAE dlow;
   input list<SimCode.Function> functions;

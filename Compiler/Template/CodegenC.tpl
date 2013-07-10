@@ -1602,6 +1602,10 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
 
   int functionODE(DATA *data)
   {
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_FN(SIM_TIMER_FUNCTION_ODE);
+  #endif
+    
     <%varDecls%>
     state mem_state; /* We need to have separate memory pools for separate systems... */
     mem_state = get_memory_state();
@@ -1609,7 +1613,10 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
     data->simulationInfo.discreteCall = 0;
     <%loop%>
     restore_memory_state(mem_state);
-
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_FN(SIM_TIMER_FUNCTION_ODE);
+  #endif
+    
     return 0;
   }
 

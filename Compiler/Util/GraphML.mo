@@ -328,7 +328,7 @@ algorithm
        equation
          sd = Util.if_(directed,"directed","undirected");
          t = appendString(inStringDelemiter);
-         ((_,is)) = List.fold(attributes, dumpAttributeDefinition, (15,is));
+         is = List.fold(attributes, dumpAttributeDefinition, is);
          is = IOStream.appendList(is, {inStringDelemiter, "<graph edgedefault=\"", sd, "\" id=\"", id, "\">\n"});
          is = List.fold1(nodes, dumpNode, t, is);
          is = List.fold1(edges, dumpEdge, t, is);
@@ -342,8 +342,8 @@ end dumpGraph_Internal;
 
 protected function dumpAttributeDefinition
   input Attribute inAttribute;
-  input tuple<Integer,IOStream.IOStream> iIos;
-  output tuple<Integer,IOStream.IOStream> oIos;  
+  input IOStream.IOStream iIos;
+  output IOStream.IOStream oIos;  
   
 algorithm
   oIos := match(inAttribute,iIos)
@@ -353,15 +353,15 @@ algorithm
       AttributeType attType;
       AttributeTarget attTarget;
       IOStream.IOStream tmpStream;
-    case(ATTRIBUTE(name=name,defaultValue=defaultValue,attType=attType,attTarget=attTarget), (attIdx,tmpStream))
+    case(ATTRIBUTE(attIdx=attIdx,name=name,defaultValue=defaultValue,attType=attType,attTarget=attTarget), tmpStream)
       equation
         typeString = dumpAttributeType(attType);
         targetString = dumpAttributeTarget(attTarget);
-        idxString = intString(attIdx);
+        idxString = intString(attIdx + 15);
         tmpStream = IOStream.appendList(tmpStream, {"<key attr.name=\"", name, "\" attr.type=\"", 
         typeString, "\" for=\"", targetString, "\" id=\"d", idxString, "\">\n",
         "<default>", defaultValue, "</default>\n", "</key>\n"});
-    then ((attIdx+1,tmpStream));
+    then tmpStream;
   end match;
 end dumpAttributeDefinition;
 
@@ -409,7 +409,7 @@ algorithm
     case(NODE(id=id,text=text,color=color,shapeType=st,attValues=nodeAttributes), _, _)
       equation
         t = appendString(inString);
-        attributeStrings = List.map1(nodeAttributes, createAttributeString, 14);
+        attributeStrings = List.map1(nodeAttributes, createAttributeString, 15);
         st_str = getShapeTypeString(st);
         desc = getNodeDesc(inNode);
         is = IOStream.appendList(iAcc, {inString, "<node id=\"", id, "\">\n"});
