@@ -776,7 +776,8 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer x;
     input Integer y;
     output Integer z;
-  external "builtin" z=rem(x,y);
+  algorithm
+    z := x - (div(x, y) * y);
   annotation(preferredView="text");
   end intRem;
 
@@ -784,7 +785,8 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Real x;
     input Real y;
     output Real z;
-  external "builtin" z=rem(x,y);
+  algorithm
+    z := x - (div(x, y) * y);
   annotation(preferredView="text");
   end realRem;
 

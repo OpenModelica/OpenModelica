@@ -7527,12 +7527,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'modelica_mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'
 
-  case CALL(path=IDENT(name="rem"), expLst={e1, e2}) then
-    let var1 = daeExp(e1, context, &preExp, &varDecls)
-    let var2 = daeExp(e2, context, &preExp, &varDecls)
-    let typeStr = expTypeFromExpShort(e1)
-    'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
-
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let arr_tp_str = '<%expTypeArray(ty)%>'

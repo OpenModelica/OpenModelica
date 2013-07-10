@@ -89,17 +89,6 @@ static inline modelica_integer modelica_mod_integer(modelica_integer x, modelica
 }
 
 
-static inline modelica_real modelica_rem_real(modelica_real x, modelica_real y)
-{
-  return x - (y * (modelica_div(x,y)));
-}
-
-static inline modelica_integer modelica_rem_integer(modelica_integer x, modelica_integer y)
-{
-  return x - (y * ((x / y)));
-}
-
-
 static inline modelica_integer modelica_integer_min(modelica_integer x,modelica_integer y)
 {
   return (x < y) ? x : y;
