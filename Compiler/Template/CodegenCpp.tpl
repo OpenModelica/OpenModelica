@@ -5580,7 +5580,7 @@ match simCode
 case SIMCODE(__) then
   let size = listLength(zeroCrossings)
   <<
-     <%size%>
+  <%size%>
   >>
 end zerocrosslength;
 
@@ -5590,10 +5590,10 @@ template DimZeroFunc(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   int <%lastIdentOfPath(modelInfo.name)%>::getDimZeroFunc()
-    {
-      return _dimZeroFunc;
-    }
+  int <%lastIdentOfPath(modelInfo.name)%>::getDimZeroFunc()
+  {
+    return _dimZeroFunc;
+  }
   >>
 end DimZeroFunc;
 

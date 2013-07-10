@@ -64,13 +64,73 @@ case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'Functions.cpp')
   let()= textFile(fmuModelWrapperFile(simCode,guid,name), '<%name%>FMU.cpp')
-  let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
+  let()= textFile(fmuModelDescriptionFileCpp(simCode,guid), 'modelDescription.xml')
   let()= textFile(fmudeffile(simCode), '<%name%>.def')
   let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
-  algloopfiles(allEquations,simCode)
+  algloopfiles(listAppend(allEquations,initialEquations),simCode)
    // Return empty result since result written to files directly
 end translateModel;
 
+template fmuModelDescriptionFileCpp(SimCode simCode, String guid)
+ "Generates code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(__) then
+  <<
+  <?xml version="1.0" encoding="UTF-8"?>
+  <%fmiModelDescriptionCpp(simCode,guid)%>
+
+  >>
+end fmuModelDescriptionFileCpp;
+
+template fmiModelDescriptionCpp(SimCode simCode, String guid)
+ "Generates code for ModelDescription file for FMU target."
+::=
+//  <%UnitDefinitions(simCode)%>
+//  <%TypeDefinitions(simCode)%>
+//  <%VendorAnnotations(simCode)%>
+match simCode
+case SIMCODE(__) then
+  <<
+  <fmiModelDescription
+    <%fmiModelDescriptionAttributesCpp(simCode,guid)%>>
+    <%CodegenFMU.DefaultExperiment(simulationSettingsOpt)%>
+    <%CodegenFMU.ModelVariables(modelInfo)%>
+  </fmiModelDescription>
+  >>
+end fmiModelDescriptionCpp;
+
+template fmiModelDescriptionAttributesCpp(SimCode simCode, String guid)
+ "Generates code for ModelDescription file for FMU target."
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(stateVars = listStates))) then
+  let fmiVersion = '1.0'
+  let modelName = dotPath(modelInfo.name)
+  let modelIdentifier = System.stringReplace(fileNamePrefix,".", "_")
+  let description = ''
+  let author = ''
+  let version= ''
+  let generationTool= 'OpenModelica Compiler <%getVersionNr()%>'
+  let generationDateAndTime = xsdateTime(getCurrentDateTime())
+  let variableNamingConvention = 'structured'
+  let numberOfContinuousStates = vi.numStateVars
+  let numberOfEventIndicators = zerocrosslength(simCode)
+//  description="<%description%>"
+//    author="<%author%>"
+//    version="<%version%>"
+  <<
+  fmiVersion="<%fmiVersion%>"
+  modelName="<%modelName%>"
+  modelIdentifier="<%modelIdentifier%>"
+  guid="{<%guid%>}"
+  generationTool="<%generationTool%>"
+  generationDateAndTime="<%generationDateAndTime%>"
+  variableNamingConvention="<%variableNamingConvention%>"
+  numberOfContinuousStates="<%numberOfContinuousStates%>"
+  numberOfEventIndicators="<%numberOfEventIndicators%>"
+  >>
+end fmiModelDescriptionAttributesCpp;
 
 template fmuModelWrapperFile(SimCode simCode, String guid, String name)
  "Generates code for ModelDescription file for FMU target."
@@ -87,6 +147,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   #include "<%modelName%>.h"
   
   <%ModelDefineData(modelInfo)%>
+  #define NUMBER_OF_EVENT_INDICATORS <%zerocrosslength(simCode)%>
+
   #include "FMU/FMUWrapper.cpp"
   
   #define OBJECTCONSTRUCTOR (new FMUWrapper(instanceName, GUID, functions, loggingOn))
@@ -106,47 +168,11 @@ template ModelDefineData(ModelInfo modelInfo)
 ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(stateVars = listStates)) then
-  let numberOfReals = intAdd(intMul(varInfo.numStateVars,2),intAdd(varInfo.numAlgVars,intAdd(varInfo.numParams,varInfo.numAlgAliasVars)))
-  let numberOfIntegers = intAdd(varInfo.numIntAlgVars,intAdd(varInfo.numIntParams,varInfo.numIntAliasVars))
-  let numberOfStrings = intAdd(varInfo.numStringAlgVars,intAdd(varInfo.numStringParamVars,varInfo.numStringAliasVars))
-  let numberOfBooleans = intAdd(varInfo.numBoolAlgVars,intAdd(varInfo.numBoolParams,varInfo.numBoolAliasVars))
   <<
-  // define model size
-  #define NUMBER_OF_STATES <%if intEq(varInfo.numStateVars,1) then statesnumwithDummy(listStates) else  varInfo.numStateVars%>
-  #define NUMBER_OF_EVENT_INDICATORS <%varInfo.numZeroCrossings%>
-  #define NUMBER_OF_REALS <%numberOfReals%>
-  #define NUMBER_OF_INTEGERS <%numberOfIntegers%>
-  #define NUMBER_OF_STRINGS <%numberOfStrings%>
-  #define NUMBER_OF_BOOLEANS <%numberOfBooleans%>
-  #define NUMBER_OF_EXTERNALFUNCTIONS <%countDynamicExternalFunctions(functions)%>
-
-  // define variable data for model
-  <%System.tmpTickReset(0)%>
-  <%vars.stateVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.derivativeVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.algVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.paramVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.aliasVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%System.tmpTickReset(0)%>
-  <%vars.intAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.intParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.intAliasVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%System.tmpTickReset(0)%>
-  <%vars.boolAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.boolParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.boolAliasVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%System.tmpTickReset(0)%>
-  <%vars.stringAlgVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.stringParamVars |> var => DefineVariables(var) ;separator="\n"%>
-  <%vars.stringAliasVars |> var => DefineVariables(var) ;separator="\n"%>
-
-
-  // define initial state vector as vector of value references
-  #define STATES { <%vars.stateVars |> SIMVAR(__) => if stringEq(crefStr(name),"$dummy") then '' else '<%cref(name)%>_'  ;separator=", "%> }
-  #define STATESDERIVATIVES { <%vars.derivativeVars |> SIMVAR(__) => if stringEq(crefStr(name),"der($dummy)") then '' else '<%cref(name)%>_'  ;separator=", "%> }
-
+  /* TODO: implement external functions in FMU wrapper for c++ target
   <%System.tmpTickReset(0)%>
   <%(functions |> fn => defineExternalFunction(fn) ; separator="\n")%>
+  */
   >>
 end ModelDefineData;
 
@@ -469,15 +495,15 @@ let modelName = '<%lastIdentOfPath(modelInfo.name)%>'
   OBJS+= <%modelName%>FMU.o
   OBJS+= Functions.o
   
-  LIBS= -ldl
-  LIBS+= -lOMCppSystem_static
+  LIBS= -lOMCppSystem_static
   LIBS+= -lboost_system -lboost_filesystem -lboost_serialization
+  LIBS+= -ldl
   
   %.o: %.cpp
   <%\t%>$(CXX) $(CFLAGS) -I. -c -o $@ $<
   
   <%modelName%>.fmu: $(OBJS)
-  <%\t%>$(CXX) -shared -I. -o <%modelName%>.so $(OBJS) <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS) $(LIBS)
+  <%\t%>$(CXX) -shared -I. -o <%modelName%>.so $(OBJS) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(CFLAGS) $(LDFLAGS) $(LIBS)
   <%\t%>-rm -rf fmu
   <%\t%>-rm <%modelName%>.fmu
   <%\t%>mkdir fmu

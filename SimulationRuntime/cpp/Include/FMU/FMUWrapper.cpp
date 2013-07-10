@@ -91,6 +91,7 @@ fmiStatus FMUWrapper::setString(const fmiValueReference vr[], size_t nvr,
 /*  of the model equations */
 fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo)
 {
+  // TODO: here is some code duplication to SimulationRuntime/cpp/Core/Solver/Initailization.cpp
   _model->init();
   _model->setInitial(true);
 

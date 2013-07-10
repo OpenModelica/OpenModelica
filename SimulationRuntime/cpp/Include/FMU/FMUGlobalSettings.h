@@ -28,11 +28,11 @@ public:
     virtual void setOutputPath(string) {}
     virtual string    getSelectedSolver() { return "Euler"; }
     virtual void setSelectedSolver(string) {}
-    virtual string    getSelectedNonLinSolver() { return ""; }
+    virtual string    getSelectedNonLinSolver() { return "Newton"; }
     virtual void setSelectedNonLinSSolver(string) {}
     virtual void load(std::string xml_file) {};
     virtual void setResultsFileName(string) {}
-    virtual string getResultsFileName() { return "fmuresults.cvs"; }
+    virtual string getResultsFileName() { return "fmuresults.csv"; }
     virtual void setRuntimeLibrarypath(string) {}
     virtual string getRuntimeLibrarypath() { return "";}
 private:
