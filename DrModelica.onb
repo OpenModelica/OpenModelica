@@ -265,9 +265,11 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="QuickTour/Exercise1classes.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise2-classes.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />&lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise1classes.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise2-classes.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise1classes.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise3-classes.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />&lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise1classes.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise3-classes.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
               <Rule name="FontWeight">Bold</Rule>
@@ -317,7 +319,8 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="QuickTour/Exercise1inheritance.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise2inheritance.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />&lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise1inheritance.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise2inheritance.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
               <Rule name="FontWeight">Bold</Rule>
@@ -590,9 +593,10 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;a href="Hybrid/Exercise2.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise1hybrid.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise1hybrid.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;/span>&lt;/a>&lt;a href="Hybrid/Exercise2.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise2hybrid.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />&lt;/span>&lt;/a>&lt;a href="Hybrid/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="QuickTour/Exercise2hybrid.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
               <Rule name="FontWeight">Bold</Rule>
@@ -708,7 +712,8 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="Classes/Exercise1.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">&lt;br />    &lt;/span>&lt;a href="Classes/Exercise2.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;br />    &lt;/span>&lt;/a>&lt;a href="Classes/Exercise3.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;br />&lt;/span>&lt;/a>&lt;a href="Classes/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Classes/Exercise3.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">&lt;br />    &lt;/span>&lt;a href="Classes/Exercise4.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 4&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
@@ -762,7 +767,8 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="Variables/Exercise1.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />    &lt;/span>&lt;/a>&lt;a href="Variables/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />&lt;/span>&lt;/a>&lt;a href="Variables/Exercise1.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Variables/Exercise2.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
               <Rule name="FontWeight">Bold</Rule>
@@ -929,9 +935,12 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;a href="Inheritance/Exercise1.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">    Exercise 1&lt;br />    &lt;/span>&lt;/a>&lt;a href="Inheritance/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Inheritance/Exercise1.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />&lt;/span>&lt;/a>&lt;a href="Inheritance/Exercise1.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Inheritance/Exercise2.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;a href="InherMod/Exercise1.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />    &lt;/span>&lt;/a>&lt;a href="Inheritance/Exercise3.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />&lt;/span>&lt;/a>&lt;a href="InherMod/Exercise1.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Inheritance/Exercise3.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
               <Rule name="FontWeight">Bold</Rule>
@@ -984,9 +993,11 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="InherMod/Exercise1.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />    &lt;/span>&lt;/a>&lt;a href="InherMod/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />&lt;/span>&lt;/a>&lt;a href="InherMod/Exercise1.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="InherMod/Exercise2.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;a href="InherMod/Exercise1.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />    &lt;/span>&lt;/a>&lt;a href="InherMod/Exercise3.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />&lt;/span>&lt;/a>&lt;a href="InherMod/Exercise1.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="InherMod/Exercise3.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
               <Rule name="FontWeight">Bold</Rule>
@@ -1043,7 +1054,8 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="Redeclaration/Exercise1.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">&lt;br />    &lt;/span>&lt;a href="Redeclaration/Exercise2.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;br />    &lt;/span>&lt;/a>&lt;a href="Redeclaration/Exercise3.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;br />&lt;/span>&lt;/a>&lt;a href="Redeclaration/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Redeclaration/Exercise3.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">&lt;br />    &lt;/span>&lt;a href="Redeclaration/Exercise4.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 4&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
@@ -1315,7 +1327,8 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="LitOpExp/Exercise1.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />    &lt;/span>&lt;/a>&lt;a href="LitOpExp/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;br />&lt;/span>&lt;/a>&lt;a href="LitOpExp/Exercise1.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="LitOpExp/Exercise2.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
             <Rule name="FontSize">14</Rule>
             <Rule name="FontWeight">Bold</Rule>
@@ -1864,10 +1877,13 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">    &lt;/span>&lt;a href="Algorithms/Exercise1.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">&lt;br />    &lt;/span>&lt;a href="Algorithms/Exercise2.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;br />    &lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise3.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3&lt;br />    &lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise4.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;br />&lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise2.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise3.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 3&lt;br />&lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise3.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise4.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 4&lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise3.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />    &lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise5.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">&lt;br />&lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise3.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Algorithms/Exercise5.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 5&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
               <Rule name="FontWeight">Bold</Rule>
@@ -2122,7 +2138,7 @@ p, li { white-space: pre-wrap; }
 &lt;tr>
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;a href="Packages/Exercise2.onb
-">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Packages/Exercise1VarOp.onb
+">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#0000ff;">    &lt;/span>&lt;/a>&lt;a href="Packages/Exercise1VarOp.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 1&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; color:#000000;">&lt;br />    &lt;/span>&lt;a href="Packages/Exercise2VarOp.onb
 ">&lt;span style=" font-family:'Times New Roman'; font-size:14pt; font-weight:600; text-decoration: underline; color:#0000ff;">Exercise 2&lt;/span>&lt;/a>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
               <Rule name="FontSize">14</Rule>
