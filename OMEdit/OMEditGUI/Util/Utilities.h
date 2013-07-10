@@ -38,12 +38,10 @@
 #include <QMdiArea>
 #include <QThread>
 #include <QLabel>
-#include <QPlainTextEdit>
-#include <QMessageBox>
-#include <QCheckBox>
+#include <QVariant>
 
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef UTILITIES_H
+#define UTILITIES_H
 
 class MainWindow;
 class MdiArea : public QMdiArea
@@ -136,4 +134,4 @@ inline QDataStream& operator>>(QDataStream& in, FindText& findText)
   return in;
 }
 
-#endif // UTIL_H
+#endif // UTILITIES_H

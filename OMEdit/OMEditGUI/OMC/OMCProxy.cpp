@@ -1945,6 +1945,7 @@ QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
   sendCommand("readSimulationResultVars(\"" + fileName + "\")");
   QList<QString> variablesList = StringHandler::getSimulationResultVars(getResult());
   qSort(variablesList.begin(), variablesList.end());
+  printMessagesStringInternal();
   return variablesList;
 }
 
@@ -2065,8 +2066,7 @@ QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLev
   else
     sendCommand("importFMU(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\", loglevel=" + QString::number(logLevel) + ", fullPath=true, debugLogging=" + debugLoggingString + ", generateInputConnectors=" + generateInputConnectorsString + ", generateOutputConnectors=" + generateOutputConnectorsString + ")");
   QString fmuFileName = StringHandler::unparse(getResult());
-  if (fmuFileName.isEmpty())
-    printMessagesStringInternal();
+  printMessagesStringInternal();
   return fmuFileName;
 }
 

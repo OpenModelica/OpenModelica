@@ -102,10 +102,10 @@ void SimulationDialog::setUpForm()
   mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.split(","));
   mpToleranceLabel = new Label(tr("Tolerance:"));
   mpToleranceSpinBox = new QDoubleSpinBox;
-  mpToleranceSpinBox->setDecimals(4);
+  mpToleranceSpinBox->setDecimals(6);
   mpToleranceSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpToleranceSpinBox->setValue(0.0001);
-  mpToleranceSpinBox->setSingleStep(0.0001);
+  mpToleranceSpinBox->setValue(0.000001);
+  mpToleranceSpinBox->setSingleStep(0.000001);
   // set the layout for integration groupbox
   QGridLayout *pIntegrationGridLayout = new QGridLayout;
   pIntegrationGridLayout->setColumnStretch(1, 1);
