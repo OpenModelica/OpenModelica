@@ -52,6 +52,7 @@ protected import ExpressionDump;
 protected import ExpressionSolve;
 protected import GraphML;
 protected import HpcOmBenchmark;
+protected import IOStream;
 protected import List;
 protected import System;
 protected import Util;
@@ -487,6 +488,7 @@ algorithm
         ((parentNode,_)) = listGet(parentLst,Idx);
         parentRow = arrayGet(adjLstIn,parentNode);
         parentRow = childNode::parentRow;
+        parentRow = List.removeOnTrue(parentNode,intEq,parentRow);  // deletes the self-loops
         adjLst = arrayUpdate(adjLstIn,parentNode,parentRow);
         (adjLst,rootNodes) = fillAdjacencyList(adjLst,rootNodesIn,childNode,parentLst,Idx+1);
       then
@@ -1352,7 +1354,7 @@ author: Waurich TUD 2013-06"
 algorithm
   (tupOne,_) := tupleIn;
 end getTupleFirst;
-  
+
   
 protected function tupleToString "function tupleToString
   author: marcusw
@@ -1838,7 +1840,7 @@ algorithm
   inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
   varSccMapping := removeContinuousEntries(varSccMapping,cutNodes);
   eqSccMapping := removeContinuousEntries(eqSccMapping,cutNodes);
-  (_,rootNodes,_) := List.intersection1OnTrue(rootNodes,cutNodes,intEq); //TODO:  by cutting out when-equations can arise new roots
+  (_,rootNodes,_) := List.intersection1OnTrue(rootNodes,cutNodes,intEq); //TODO:  this has to be updated
   rangeLst := List.intRange(arrayLength(nodeMark));
   nodeMark := List.fold1(rangeLst, markRemovedNodes,cutNodes,nodeMark);
   graphDataOut :=TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
@@ -2365,7 +2367,7 @@ public function dumpAsGraphMLSccLevel "function dumpAsGraphMLSccLevel
   input String fileName;
 protected
   GraphML.Graph graph;
-  Integer calcTimeAttIdx, opCountAttIdx;
+  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx;
   list<Integer> compIdc;
 algorithm
   _ := match(iGraph, iGraphData, fileName)
@@ -2374,8 +2376,9 @@ algorithm
         graph = GraphML.getGraph("TaskGraph", true);
         (opCountAttIdx,graph) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
         (calcTimeAttIdx,graph) = GraphML.addAttribute("-1", "CalcTime", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
+        (yCoordAttIdx,graph) = GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
         compIdc = List.intRange(arrayLength(iGraph));
-        graph = List.fold3(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx), graph);
+        graph = List.fold3(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx,yCoordAttIdx), graph);
         GraphML.dumpGraph(graph, fileName);
       then ();
   end match;
@@ -2388,14 +2391,14 @@ protected function addNodeToGraphML "function addNodeToGraphML
   input Integer nodeIdx;
   input TaskGraph tGraphIn;
   input TaskGraphMeta tGraphDataIn;
-  input tuple<Integer,Integer> attIdc; //Attribute index for <opCountAttIdx, calcTimeAttIdx>
+  input tuple<Integer,Integer,Integer> attIdc; //Attribute index for <opCountAttIdx, calcTimeAttIdx, yCoordAttIdx>
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 algorithm
   oGraph := matchcontinue(nodeIdx,tGraphIn,tGraphDataIn,attIdc,iGraph)
     local
       GraphML.Graph tmpGraph;
-      Integer calcTime, opCount, calcTimeAttIdx, opCountAttIdx;
+      Integer calcTime, opCount, yCoord, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx;
       Integer primalComp;
       list<Integer> childNodes;
       list<Integer> components;
@@ -2408,14 +2411,14 @@ algorithm
       array<String> nodeNames; 
       array<String> nodeDescs;  
       array<list<tuple<Integer,Integer,Integer>>> commCosts;  
-      String calcTimeString, opCountString;
+      String calcTimeString, opCountString, yCoordString;
       String compText;
       String description;
       String nodeDesc;
     case(_,_,_,_,_)
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
-        (opCountAttIdx, calcTimeAttIdx) = attIdc;
+        (opCountAttIdx, calcTimeAttIdx, yCoordAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         true = listLength(components)==1; 
@@ -2424,10 +2427,12 @@ algorithm
         nodeDesc = arrayGet(nodeDescs,primalComp);
         ((_,calcTime)) = arrayGet(exeCosts,primalComp);
         ((opCount,calcTime)) = arrayGet(exeCosts,primalComp);
+        yCoord = arrayGet(nodeMark,primalComp);
         calcTimeString = intString(calcTime);
         opCountString = intString(opCount);
+        yCoordString = intString(yCoord);
         childNodes = arrayGet(tGraphIn,nodeIdx);
-        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString))}, iGraph);
+        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((yCoordAttIdx,yCoordString))}, iGraph);
         tmpGraph = List.fold2(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, tmpGraph);
       then 
         tmpGraph;
@@ -2541,9 +2546,9 @@ algorithm
         fail(); 
   end matchcontinue;
 end getTupleByFirstEntry;
+  
 
-
-// print and dump functions
+// print functions
 //------------------------------------------
 //------------------------------------------
 
@@ -3756,5 +3761,280 @@ algorithm
   minLength := intMin(stringLength(comp1Str),stringLength(comp2Str));
   res := intGt(System.strncmp(comp1Str, comp2Str, minLength), 0);
 end compareComponents;
+
+
+//evaluation and analysing functions
+//------------------------------------------
+//------------------------------------------
+
+public function arrangeGraphInLevels "
+author: Waurich TUD 2013-07"
+  input TaskGraph graphIn;
+  input TaskGraphMeta graphDataIn;
+protected
+  list<list<Integer>> parallelSets;
+  array<tuple<Integer,Integer>> nodeCoords;
+  array<list<Integer>> inComps;
+  array<Integer> varSccMapping;
+  array<Integer> eqSccMapping;
+  list<Integer> rootNodes;
+  array<String> nodeNames;
+  array<String> nodeDescs;
+  array<Integer,Integer> exeCosts;
+  array<list<tuple<Integer,Integer,Integer>>> commCosts;
+  array<Integer>nodeMark;
+  TaskGraphMeta graphData;
+algorithm
+  parallelSets := getParallelSets(graphIn,graphDataIn);
+  nodeCoords := getNodeCoords(parallelSets,graphIn);
+  TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
+  nodeMark := List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
+  graphData := TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
+  dumpAsGraphMLSccLevel(graphIn,graphData,"taskGraph.graphml");
+end arrangeGraphInLevels;
+
+
+protected function setLevelInNodeMark " sets the parallelSetIndex as a nodeMark.
+author:wauricht TUD 2013-07"
+  input Integer nodeIdx;
+  input array<list<Integer>> inComps;
+  input array<tuple<Integer,Integer>> nodeCoords;
+  input array<Integer> nodeMarkIn;
+  output array<Integer> nodeMarkOut;
+algorithm
+  nodeMarkOut := matchcontinue(nodeIdx,inComps,nodeCoords,nodeMarkIn)
+    local
+      array<Integer> nodeMarkTmp;
+      list<Integer> components;
+      Integer primalComp;
+      Integer nodeMarkEntry;
+      Integer yCoord;
+    case(_,_,_,_)
+      equation
+        nodeMarkEntry = arrayGet(nodeMarkIn,nodeIdx);
+        components = arrayGet(inComps,nodeIdx);
+        primalComp = List.last(components);
+        nodeMarkEntry = arrayGet(nodeMarkIn,primalComp);
+        true = intEq(-1,nodeMarkEntry);
+      then
+        nodeMarkIn;
+    case(_,_,_,_)
+      equation
+        nodeMarkEntry = arrayGet(nodeMarkIn,nodeIdx);
+        components = arrayGet(inComps,nodeIdx);
+        primalComp = List.last(components);
+        nodeMarkEntry = arrayGet(nodeMarkIn,primalComp);
+        false = intEq(-1,nodeMarkEntry);
+        ((_,yCoord)) = arrayGet(nodeCoords,nodeIdx);
+        nodeMarkTmp = arrayUpdate(nodeMarkIn,primalComp,yCoord);
+      then
+        nodeMarkTmp;
+  end matchcontinue;
+end setLevelInNodeMark;
+
+
+protected function getParallelSets  " scatters the nodes of the taskGraph into sets of nodes that can be computed in parallel.
+author:Waurich TUD 2013-07"
+  input TaskGraph graphIn;
+  input TaskGraphMeta graphDataIn;
+  output list<list<Integer>> parallelSetsOut;
+protected 
+  list<Integer> rootNodes;
+  list<Integer> allChildren;
+algorithm
+  TASKGRAPHMETA(rootNodes = rootNodes) := graphDataIn;
+  allChildren := List.flatten(arrayList(graphIn));
+  //print("allChildren "+&stringDelimitList(List.map(List.sort(allChildren,intGt),intString),",")+&"\n");
+  rootNodes := List.fold1(List.intRange(arrayLength(graphIn)),getRootNodes,allChildren,{});
+  //print("rootNodes "+&stringDelimitList(List.map(rootNodes,intString),",")+&"\n");
+  parallelSetsOut := getParallelSets1(graphIn,rootNodes,{rootNodes});
+  print("the number of parallel sets "+&intString(listLength(parallelSetsOut))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
+end getParallelSets;
+
+
+protected function getParallelSets1  " implementation of getParallelSets
+author:Waurich TUD 2013-07"
+  input TaskGraph graphIn;
+  input list<Integer> rootNodes;
+  input list<list<Integer>> parallelSetsIn;
+  output list<list<Integer>> parallelSetsOut;
+algorithm
+  parallelSetsOut := matchcontinue(graphIn,rootNodes,parallelSetsIn)
+    local
+      list<list<Integer>> parallelSetsTmp;
+      list<list<Integer>> rootChildren;
+      list<Integer> parallelSet;
+    case(_,_,_)
+      equation
+        true = listLength(List.flatten(parallelSetsIn)) < arrayLength(graphIn);
+        rootChildren = List.map1(rootNodes, Util.arrayGetIndexFirst, graphIn);
+        //print("the rootchilds: "+&stringDelimitList(List.map(List.flatten(rootChildren),intString),",")+&"\n");
+        rootChildren = List.map2(rootChildren,getAllChildNodes,List.flatten(parallelSetsIn),graphIn);
+        parallelSet = List.flatten(rootChildren);
+        parallelSet = List.unique(parallelSet);
+        //print("the next parallel set: "+&stringDelimitList(List.map(parallelSet,intString),",")+&"\n");
+        //true = listLength(parallelSet) == listLength(rootChildren);
+        parallelSetsTmp = cons(parallelSet,parallelSetsIn);
+        //print("the current parallel set: "+&stringDelimitList(List.map(List.flatten(parallelSetsTmp),intString),",")+&"\n");
+        parallelSetsTmp = getParallelSets1(graphIn,parallelSet,parallelSetsTmp);
+      then
+        parallelSetsTmp;
+    case(_,_,_)
+      equation
+         true = listLength(List.flatten(parallelSetsIn)) >= arrayLength(graphIn);
+         then
+           parallelSetsIn;
+    else
+      equation
+        print("getParallelSets1 failed \n");
+      then
+        fail();
+  end matchcontinue;        
+end getParallelSets1;
+
+
+protected function getAllChildNodes " map function to remove all nodes from a list that have predecessors.
+author: Waurich TUD 2013-07"
+  input list<Integer> childNodesIn;
+  input list<Integer> collectedNodes;
+  input TaskGraph graphIn;
+  output list<Integer> childNodesOut;
+protected
+  list<Integer> childNodesTmp;
+algorithm
+  //print("check childNodesIn "+&stringDelimitList(List.map(childNodesIn,intString),",")+&"\n");
+  childNodesTmp := List.map2(childNodesIn,isOrphan,collectedNodes,graphIn);
+  //print("check childNodesTmp1 "+&stringDelimitList(List.map(childNodesTmp,intString),",")+&"\n");
+  childNodesTmp := List.removeOnTrue(-1,intEq,childNodesTmp);
+  //print("check childNodesTmp2 "+&stringDelimitList(List.map(childNodesIn,intString),",")+&"\n");
+  childNodesOut := childNodesTmp;
+end getAllChildNodes;
+
+
+protected function isOrphan "checks if the childNode has no parentNodes. if not -1 is output otherwise the node is output.
+author: Waurich TUD 2013-07"
+  input Integer childNodeIn;
+  input list<Integer> collectedNodes;
+  input TaskGraph graphIn;
+  output Integer childNodeOut;
+algorithm
+  childNodeOut := matchcontinue(childNodeIn,collectedNodes,graphIn)
+    local
+      list<Integer> parents;
+  case(_,_,_)
+    equation
+      parents = getParentNodes(childNodeIn,graphIn);
+      //print("for "+&intString(childNodeIn)+&" the parents "+&stringDelimitList(List.map(parents,intString),",")+&"\n");
+      //print("collected Nodes "+&stringDelimitList(List.map(collectedNodes,intString),",")+&"\n");
+      (_,parents,_) = List.intersection1OnTrue(parents,childNodeIn::collectedNodes,intEq);
+      true = listLength(parents) == 0;
+    then
+      childNodeIn;
+  else
+    then
+      -1;
+  end matchcontinue;
+end isOrphan;      
+
+protected function getRootNodes "fold function to compute the rootNodes of a taskGraph. //TODO: revise this brute function
+  author:Waurich TUD 2013-07."
+  input Integer nodeIdx;
+  input list<Integer> allChildren;
+  input list<Integer> rootsIn;
+  output list<Integer> rootsOut;
+algorithm
+  rootsOut := matchcontinue(nodeIdx,allChildren,rootsIn)
+    local
+      list<Integer> rootsTmp;
+    case(_,_,_)
+      equation
+        true = List.isMemberOnTrue(nodeIdx,allChildren,intEq);
+      then
+        rootsIn; 
+    else
+      equation
+        rootsTmp = nodeIdx::rootsIn;
+      then
+        rootsTmp;
+  end matchcontinue;
+end getRootNodes;
+
+
+protected function getParallelSetForComp " find the parallelSet the inComp belongs to.
+author: Waurich TUD 2013-07"
+  input Integer compIn;
+  input Integer setIdx;
+  input list<list<Integer>> parallelSets;
+  output Integer parallelSetOut;
+algorithm
+  parallelSetOut := matchcontinue(compIn,setIdx,parallelSets)
+    local
+      list<Integer> parallelSet;
+      Integer parallelSetTmp;
+    case(_,_,_)
+      equation
+        true = setIdx <= listLength(parallelSets);
+        parallelSet = listGet(parallelSets,setIdx);
+        //print("is "+&intString(compIn)+&" member of set "+&intString(setIdx)+&" with the nodes "+&stringDelimitList(List.map(parallelSet,intString),",")+&"\n");
+        true = List.isMemberOnTrue(compIn,parallelSet,intEq);
+        //print("true \n");
+      then
+        setIdx;
+    case(_,_,_)
+      equation
+        true = setIdx <= listLength(parallelSets);
+        parallelSet = listGet(parallelSets,setIdx);
+        //print("is "+&intString(compIn)+&" member of set "+&intString(setIdx)+&" with the nodes "+&stringDelimitList(List.map(parallelSet,intString),",")+&"\n");
+        false = List.isMemberOnTrue(compIn,parallelSet,intEq);
+        //print("false \n");
+        parallelSetTmp = getParallelSetForComp(compIn,setIdx+1,parallelSets);
+      then
+        parallelSetTmp;
+    else
+      equation
+        print("getParallelSetForComp failed!\n");
+      then
+        fail();
+  end matchcontinue;
+end getParallelSetForComp;
+
+
+protected function getNodeCoords " computes the location of the nodes in the .graphml  with regard to the parallel sets
+author:Waurich TUD 2013-07"
+  input list<list<Integer>> parallelSets;
+  input TaskGraph graphIn;
+  output array<tuple<Integer,Integer>> nodeCoordsOut;
+protected
+  array<tuple<Integer,Integer>> nodeCoords;
+  Integer size;
+algorithm
+  size := arrayLength(graphIn);
+  nodeCoords := arrayCreate(size,((0,0)));
+  nodeCoords := List.fold1(List.intRange(size),getYCoordForNode,parallelSets,nodeCoords);
+  nodeCoordsOut := nodeCoords;
+  //print("nodeCoords"+&stringDelimitList(List.map(arrayList(nodeCoords),tupleToString),",")+&"\n");
+end getNodeCoords;
+
+
+protected function getYCoordForNode "fold function to compute the y-coordinate fpr the .graphml.
+author: Waurich TUD 2013-07"
+  input Integer compIdx;
+  input list<list<Integer>> parallelSets;
+  input array<tuple<Integer,Integer>> nodeCoordsIn;
+  output array<tuple<Integer,Integer>> nodeCoordsOut;
+protected
+  Integer parallelSetIdx;
+  Integer xCoord;
+  Integer yCoord;
+  Integer levelInterval;
+  tuple<Integer,Integer> coords;
+algorithm
+  levelInterval := 80;
+  parallelSetIdx := getParallelSetForComp(compIdx,1,parallelSets);
+  ((xCoord,yCoord)) := arrayGet(nodeCoordsIn,compIdx);
+  coords := ((xCoord,parallelSetIdx*levelInterval));
+  nodeCoordsOut := arrayUpdate(nodeCoordsIn,compIdx,coords);
+end getYCoordForNode;
+
 
 end HpcOmTaskGraph;

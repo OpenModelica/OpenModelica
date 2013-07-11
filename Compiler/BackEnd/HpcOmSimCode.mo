@@ -134,6 +134,7 @@ algorithm
       HpcOmTaskGraph.TaskGraphMeta taskGraphDataOde;
       String fileName;
       HpcOmTaskGraph.TaskGraphMeta taskGraphData1;
+      list<list<Integer>> parallelSets;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
@@ -143,12 +144,11 @@ algorithm
       
       //Append the costs to the taskGraphMeta
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, taskGraphData);
-      
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
-      
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");    
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName);
+     
       
       // get the task graph for the ODEsystem
       taskGraphOde = arrayCopy(taskGraph);
@@ -158,6 +158,10 @@ algorithm
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
       
+      //assign levels(as an node property in the .graphml) to the nodes in the taskGraph. all nodes in one level can be computed in parallel
+      //HpcOmTaskGraph.arrangeGraphInLevels(taskGraphOde,taskGraphDataOde);
+            
+      
       // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
       taskGraph1 = arrayCopy(taskGraphOde);
       taskGraphData1 = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphDataOde);
@@ -165,10 +169,8 @@ algorithm
       //print("MERGED GRAPH\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
-      
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);  
-      
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);
       
