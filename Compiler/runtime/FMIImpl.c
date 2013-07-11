@@ -42,9 +42,6 @@ extern "C" {
 #define FMILIB_BUILDING_LIBRARY
 #include "fmilib.h"
 
-#define BUFFER 1000
-#define FMI_DEBUG
-
 static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
   const char* tokens[3] = {module,jm_log_level_to_string(log_level),message};
@@ -70,13 +67,10 @@ static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t l
 /* Logger function used by the FMU internally */
 static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
-#ifdef FMI_DEBUG
-  char msg[BUFFER];
   va_list argp;
   va_start(argp, message);
-  vsprintf(msg, message, argp);
-  printf("fmiStatus = %d;  %s (%s): %s\n", status, instanceName, category, msg);
-#endif
+  fmi1_log_forwarding_v(c, instanceName, status, category, message, argp);
+  va_end(argp);
 }
 
 /*
@@ -341,7 +335,8 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
   const char* guid = fmi1_import_get_GUID(fmi);
   /* Read the FMI description from FMU's modelDescription.xml file. */
   const char* description = fmi1_import_get_description(fmi);
-  description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : "";
+  description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
+  description = (description != NULL) ? description : "";
   /* Read the FMI generation tool from FMU's modelDescription.xml file. */
   const char* generationTool = fmi1_import_get_generation_tool(fmi);
   /* Read the FMI generation date and time from FMU's modelDescription.xml file. */
@@ -393,7 +388,8 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
     void* variable_name = mk_scon(name);
     free(name);
     const char* description = fmi1_import_get_variable_description(model_variable);
-    description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : "";
+    description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
+    description = (description != NULL) ? description : "";
     void* variable_description = mk_scon(description);
     const char* base_type = getFMI1ModelVariableBaseType(model_variable);
     void* variable_base_type = mk_scon(base_type);
@@ -475,7 +471,8 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
   const char* guid = fmi2_import_get_GUID(fmi);
   /* Read the FMI description from FMU's modelDescription.xml file. */
   const char* description = fmi2_import_get_description(fmi);
-  description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : "";
+  description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
+  description = (description != NULL) ? description : "";
   /* Read the FMI generation tool from FMU's modelDescription.xml file. */
   const char* generationTool = fmi2_import_get_generation_tool(fmi);
   /* Read the FMI generation date and time from FMU's modelDescription.xml file. */
@@ -531,7 +528,8 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     void* variable_name = mk_scon(name);
     free(name);
     const char* description = fmi2_import_get_variable_description(model_variable);
-    description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : "";
+    description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : description;
+    description = (description != NULL) ? description : "";
     void* variable_description = mk_scon(description);
     const char* base_type = getFMI2ModelVariableBaseType(model_variable);
     void* variable_base_type = mk_scon(base_type);

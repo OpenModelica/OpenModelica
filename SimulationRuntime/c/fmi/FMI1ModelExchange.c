@@ -32,50 +32,73 @@
 extern "C" {
 #endif
 
-#include <stdlib.h>
+#include "FMI1Common.c"
 
-#include "fmilib.h"
-
-/*
- * Wrapper for the FMI function fmiInstantiateModel.
- */
-double fmi1InstantiateModel_OMC(void* fmi, char* instanceName, int debugLogging)
+void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_directory, char* instanceName, int debugLogging)
 {
-  static int init = 0;
-  if (!init) {
-    init = 1;
-    fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
-    fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
+  FMI1ModelExchange* FMI1ME = malloc(sizeof(FMI1ModelExchange));
+  FMI1ME->FMILogLevel = fmi_log_level;
+  /* JM callbacks */
+  FMI1ME->JMCallbacks.malloc = malloc;
+  FMI1ME->JMCallbacks.calloc = calloc;
+  FMI1ME->JMCallbacks.realloc = realloc;
+  FMI1ME->JMCallbacks.free = free;
+  FMI1ME->JMCallbacks.logger = importlogger;
+  FMI1ME->JMCallbacks.log_level = FMI1ME->FMILogLevel;
+  FMI1ME->JMCallbacks.context = 0;
+  FMI1ME->FMIImportContext = fmi_import_allocate_context(&FMI1ME->JMCallbacks);
+  /* FMI callback functions */
+  FMI1ME->FMICallbackFunctions.logger = fmi1logger;
+  FMI1ME->FMICallbackFunctions.allocateMemory = calloc;
+  FMI1ME->FMICallbackFunctions.freeMemory = free;
+  /* parse the xml file */
+  FMI1ME->FMIWorkingDirectory = (char*) malloc(strlen(working_directory));
+  strcpy(FMI1ME->FMIWorkingDirectory, working_directory);
+  FMI1ME->FMIImportInstance = fmi1_import_parse_xml(FMI1ME->FMIImportContext, FMI1ME->FMIWorkingDirectory);
+  if(!FMI1ME->FMIImportInstance) {
+    fprintf(stderr, "Error parsing the XML file contained in %s\n", FMI1ME->FMIWorkingDirectory);
+    return 0;
   }
-  return 1;
+  /* Load the binary (dll/so) */
+  jm_status_enu_t status;
+  status = fmi1_import_create_dllfmu(FMI1ME->FMIImportInstance, FMI1ME->FMICallbackFunctions, 0);
+  if (status == jm_status_error) {
+    fprintf(stderr, "Could not create the DLL loading mechanism(C-API).\n");
+    return 0;
+  }
+  FMI1ME->FMIInstanceName = (char*) malloc(strlen(instanceName));
+  strcpy(FMI1ME->FMIInstanceName, instanceName);
+  FMI1ME->FMIDebugLogging = debugLogging;
+  fmi1_import_instantiate_model(FMI1ME->FMIImportInstance, FMI1ME->FMIInstanceName);
+  fmi1_import_set_debug_logging(FMI1ME->FMIImportInstance, FMI1ME->FMIDebugLogging);
+  FMI1ME->FMIToleranceControlled = fmi1_true;
+  FMI1ME->FMIRelativeTolerance = 0.001;
+  FMI1ME->FMIEventInfo = malloc(sizeof(fmi1_event_info_t));
+  fmi1_import_initialize(FMI1ME->FMIImportInstance, FMI1ME->FMIToleranceControlled, FMI1ME->FMIRelativeTolerance, FMI1ME->FMIEventInfo);
+  return FMI1ME;
+}
+
+void FMI1ModelExchangeDestructor_OMC(void* in_fmi1me)
+{
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_import_terminate(FMI1ME->FMIImportInstance);
+  fmi1_import_destroy_dllfmu(FMI1ME->FMIImportInstance);
+  fmi1_import_free(FMI1ME->FMIImportInstance);
+  fmi_import_free_context(FMI1ME->FMIImportContext);
+  free(FMI1ME->FMIWorkingDirectory);
+  free(FMI1ME->FMIInstanceName);
+  free(FMI1ME->FMIEventInfo);
 }
 
 /*
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
-double fmi1SetTime_OMC(void* fmi, double time)
+double fmi1SetTime_OMC(void* in_fmi1me, double time)
 {
-  fmi1_import_set_time((fmi1_import_t*)fmi, time);
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_import_set_time(FMI1ME->FMIImportInstance, time);
   return time;
-}
-
-/*
- * Wrapper for the FMI function fmiInitialize.
- * Returns FMI Event Info i.e fmi1_event_info_t.
- */
-void* fmi1Initialize_OMC(void* fmi, void* inEventInfo)
-{
-  static int init = 0;
-  if (!init) {
-    init = 1;
-    fmi1_boolean_t toleranceControlled = fmi1_true;
-    fmi1_real_t relativeTolerance = 0.001;
-    fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
-    fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
-    return eventInfo;
-  }
-  return inEventInfo;
 }
 
 /*
@@ -83,9 +106,10 @@ void* fmi1Initialize_OMC(void* fmi, void* inEventInfo)
  * parameter flowParams is dummy and is only used to run the equations in sequence.
  * Returns states.
  */
-void fmi1GetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowParams, double* states)
+void fmi1GetContinuousStates_OMC(void* in_fmi1me, int numberOfContinuousStates, double flowParams, double* states)
 {
-  fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_import_get_continuous_states(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
 /*
@@ -93,9 +117,10 @@ void fmi1GetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double
  * parameter flowParams is dummy and is only used to run the equations in sequence.
  * Returns status.
  */
-double fmi1SetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowParams, double* states)
+double fmi1SetContinuousStates_OMC(void* in_fmi1me, int numberOfContinuousStates, double flowParams, double* states)
 {
-  fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_import_set_continuous_states(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
   return flowParams;
 }
 
@@ -104,9 +129,10 @@ double fmi1SetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, doub
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns events.
  */
-void fmi1GetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double flowStates, double* events)
+void fmi1GetEventIndicators_OMC(void* in_fmi1me, int numberOfEventIndicators, double flowStates, double* events)
 {
-  fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_import_get_event_indicators(FMI1ME->FMIImportInstance, (fmi1_real_t*)events, numberOfEventIndicators);
 }
 
 /*
@@ -114,9 +140,10 @@ void fmi1GetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double f
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns states.
  */
-void fmi1GetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double flowStates, double* states)
+void fmi1GetDerivatives_OMC(void* in_fmi1me, int numberOfContinuousStates, double flowStates, double* states)
 {
-  fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_import_get_derivatives(FMI1ME->FMIImportInstance, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
 /*
@@ -124,11 +151,11 @@ void fmi1GetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double flow
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns FMI Event Info i.e fmi1_event_info_t
  */
-int fmi1EventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo, double flowStates)
+int fmi1EventUpdate_OMC(void* in_fmi1me, int intermediateResults, double flowStates)
 {
-  fmi1_event_info_t* e = (fmi1_event_info_t*)eventInfo;
-  fmi1_import_eventUpdate((fmi1_import_t*)fmi, intermediateResults, e);
-  return e->stateValuesChanged;
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  fmi1_import_eventUpdate(FMI1ME->FMIImportInstance, intermediateResults, FMI1ME->FMIEventInfo);
+  return FMI1ME->FMIEventInfo->stateValuesChanged;
 }
 
 /*
@@ -136,30 +163,21 @@ int fmi1EventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo, dou
  * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns FMI EventInfo nextEventTime
  */
-double fmi1nextEventTime_OMC(void* fmi, void* eventInfo, double flowStates)
+double fmi1nextEventTime_OMC(void* in_fmi1me, double flowStates)
 {
-  fmi1_event_info_t* e = (fmi1_event_info_t*)eventInfo;
-  return e->nextEventTime;
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
+  return FMI1ME->FMIEventInfo->nextEventTime;
 }
 
 /*
  * Wrapper for the FMI function fmiCompletedIntegratorStep.
  */
-int fmi1CompletedIntegratorStep_OMC(void* fmi, double flowStates)
+int fmi1CompletedIntegratorStep_OMC(void* in_fmi1me, double flowStates)
 {
+  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
   fmi1_boolean_t callEventUpdate = fmi1_false;
-  fmi1_import_completed_integrator_step((fmi1_import_t*)fmi, &callEventUpdate);
+  fmi1_import_completed_integrator_step(FMI1ME->FMIImportInstance, &callEventUpdate);
   return callEventUpdate;
-}
-
-/*
- * Wrapper for the FMI function fmiTerminate.
- */
-int fmi1Terminate_OMC(void* fmi)
-{
-/*  fmi1_status_t fmistatus = fmi1_import_terminate((fmi1_import_t*)fmi); */
-/*  return fmistatus; */
-  return 0;
 }
 
 #ifdef __cplusplus

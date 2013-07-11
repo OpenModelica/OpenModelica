@@ -90,9 +90,6 @@ ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
 FMI_rml.o : FMI_rml.c FMIImpl.c
 FMI_omc.o : FMIImpl.c ../OpenModelicaBootstrappingHeader.h
-FMI1Common.o : FMI1Common.c
-FMI1ModelExchange.o : FMI1Common.c FMI1ModelExchange.c
-FM1CoSimulation.o : FMI1Common.c FM1CoSimulation.c
 ModelicaExternalC_rml.o : $(SimRuntimeCDir)/../meta/meta_modelica.h
 
 clean:
