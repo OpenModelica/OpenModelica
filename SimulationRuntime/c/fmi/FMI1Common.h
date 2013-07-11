@@ -54,8 +54,8 @@ typedef struct {
   fmi1_event_info_t* FMIEventInfo;
 } FMI1ModelExchange;
 
-static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message);
-static void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...);
+void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message);
+void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...);
 fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences, double* valuesReferences);
 void fmi1GetReal_OMC(void* in_fmi1me, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues);
 double fmi1SetReal_OMC(void* in_fmi1me, int numberOfValueReferences, double* realValuesReferences, double* realValues);
