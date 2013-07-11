@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-#include "FMI1Common.c"
+#include "FMI1Common.h"
 
 void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_directory, char* instanceName, int debugLogging)
 {

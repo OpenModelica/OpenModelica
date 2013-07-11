@@ -32,33 +32,12 @@
 extern "C" {
 #endif
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "fmilib.h"
-
-/*
- * Structure used as External Object in the generated Modelica code of the imported FMU.
- * Used for FMI 1.0 Model Exchange.
- */
-typedef struct {
-  int FMILogLevel;
-  jm_callbacks JMCallbacks;
-  fmi_import_context_t* FMIImportContext;
-  fmi1_callback_functions_t FMICallbackFunctions;
-  char* FMIWorkingDirectory;
-  fmi1_import_t* FMIImportInstance;
-  char* FMIInstanceName;
-  int FMIDebugLogging;
-  int FMIToleranceControlled;
-  double FMIRelativeTolerance;
-  fmi1_event_info_t* FMIEventInfo;
-} FMI1ModelExchange;
+#include "FMI1Common.h"
 
 /*
  * Used for logging import messages.
  */
-static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
+void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
   printf("module = %s, log level = %s: %s\n", module, jm_log_level_to_string(log_level), message);
 }
@@ -67,7 +46,7 @@ static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t l
  * Used for logging FMU messages.
  * Logger function used by the FMU internally.
  */
-static void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
+void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
   va_list argp;
   va_start(argp, message);
