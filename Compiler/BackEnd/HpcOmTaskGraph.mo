@@ -3780,7 +3780,7 @@ protected
   list<Integer> rootNodes;
   array<String> nodeNames;
   array<String> nodeDescs;
-  array<Integer,Integer> exeCosts;
+  array<tuple<Integer,Integer>> exeCosts;
   array<list<tuple<Integer,Integer,Integer>>> commCosts;
   array<Integer>nodeMark;
   TaskGraphMeta graphData;
