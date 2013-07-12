@@ -565,6 +565,19 @@ algorithm
   // BackendDump.debuglst((crefs,ComponentReference.printComponentRefStr,"\n","\n"));
 end collectPreVariables;
 
+protected function collectPreVariablesEquation "function collectPreVariablesEquation
+  author: lochel"
+  input tuple<DAE.Exp, HashSet.HashSet> inTpl;
+  output tuple<DAE.Exp, HashSet.HashSet> outTpl;
+protected
+  DAE.Exp e;
+  HashSet.HashSet hs;
+algorithm
+  (e, hs) := inTpl;
+  ((_, hs)) := Expression.traverseExp(e, collectPreVariablesTrverseExp, hs);
+  outTpl := (e, hs);
+end collectPreVariablesEquation;
+
 protected function collectPreVariablesEqSystem "function collectPreVariablesEqSystem
   author: lochel"
   input BackendDAE.EqSystem inEqSystem;
@@ -637,19 +650,6 @@ algorithm
     else then inTpl;
   end match;
 end collectPreVariablesTrverseExp2;
-
-protected function collectPreVariablesEquation "function collectPreVariablesEquation
-  author: lochel"
-  input tuple<DAE.Exp, HashSet.HashSet> inTpl;
-  output tuple<DAE.Exp, HashSet.HashSet> outTpl;
-protected
-  DAE.Exp e;
-  HashSet.HashSet hs;
-algorithm
-  (e, hs) := inTpl;
-  ((_, hs)) := Expression.traverseExp(e, collectPreVariablesTrverseExp, hs);
-  outTpl := (e, hs);
-end collectPreVariablesEquation;
 
 // =============================================================================
 // warn about iteration variables with default zero start attribute
@@ -847,28 +847,6 @@ algorithm
   // outVars := List.fold(stateSets, selectInitialStateSetVars, outVars);
 end selectInitializationVariables1;
 
-// protected function selectInitialStateSetVars
-//   input BackendDAE.StateSet inSet;
-//   input BackendDAE.Variables inVars;
-//   output BackendDAE.Variables outVars;
-// protected
-//   list< BackendDAE.Var> statescandidates;
-// algorithm
-//   BackendDAE.STATESET(statescandidates=statescandidates) := inSet;
-//   outVars := List.fold(statescandidates, selectInitialStateSetVar, inVars);
-// end selectInitialStateSetVars;
-//
-// protected function selectInitialStateSetVar
-//   input BackendDAE.Var inVar;
-//   input BackendDAE.Variables inVars;
-//   output BackendDAE.Variables outVars;
-// protected
-//   Boolean b;
-// algorithm
-//   b := BackendVariable.varFixed(inVar);
-//   outVars := Debug.bcallret2(not b, BackendVariable.addVar, inVar, inVars, inVars);
-// end selectInitialStateSetVar;
-
 protected function selectInitializationVariables2 "function selectInitializationVariables2
   author: lochel"
   input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
@@ -908,147 +886,6 @@ algorithm
     then inTpl;
   end matchcontinue;
 end selectInitializationVariables2;
-
-// protected function isStateSetVar
-//   input DAE.ComponentRef cr;
-//   output Boolean isStateSet;
-// algorithm
-//   isStateSet := match(cr)
-//     local
-//       DAE.Ident ident;
-//       Integer i;
-//
-//     case DAE.CREF_QUAL(ident=ident) equation
-//       i = System.strncmp("$STATESET", ident, 9);
-//     then intEq(i, 0);
-//
-//     else then false;
-//   end match;
-// end isStateSetVar;
-
-// =============================================================================
-// section for collecting discrete states
-//
-// collect all pre(var) in time equations to get the discrete states
-// =============================================================================
-
-// protected function discreteStates "function discreteStates
-//   author: Frenkel TUD 2012-12
-//   This function collect the discrete states and all initialized
-//   pre(var)s for the initialization."
-//   input BackendDAE.BackendDAE inDAE;
-//   output HashSet.HashSet hs;
-// protected
-//   BackendDAE.EqSystems systs;
-//   BackendDAE.EquationArray initialEqs;
-// algorithm
-//   BackendDAE.DAE(systs, BackendDAE.SHARED(initialEqs=initialEqs)) := inDAE;
-//   hs := HashSet.emptyHashSet();
-//   hs := List.fold(systs, discreteStatesSystems, hs);
-//   Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, dumpDiscreteStates, hs);
-//
-//   // and check the initial equations to get all initialized pre variables
-//   hs := BackendDAEUtil.traverseBackendDAEExpsEqns(initialEqs, discreteStatesIEquations, hs);
-// end discreteStates;
-//
-// protected function discreteStatesSystems "function discreteStatesSystems
-//   author: Frenkel TUD
-//   This is a helper function for discreteStates.
-//   The function collects all discrete states in the time equations."
-//   input BackendDAE.EqSystem inEqSystem;
-//   input HashSet.HashSet inHs;
-//   output HashSet.HashSet outHs;
-// protected
-//   BackendDAE.EquationArray orderedEqs;
-//   BackendDAE.EquationArray eqns;
-// algorithm
-//   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := inEqSystem;
-//   outHs := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, discreteStatesEquations, inHs);
-// end discreteStatesSystems;
-//
-// protected function discreteStatesEquations
-//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
-//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
-// protected
-//   DAE.Exp exp;
-//   HashSet.HashSet hs;
-// algorithm
-//   (exp, hs) := inTpl;
-//   ((_, hs)) := Expression.traverseExp(exp, discreteStatesExp, hs);
-//   outTpl := (exp, hs);
-// end discreteStatesEquations;
-//
-// protected function discreteStatesExp "function discreteStatesExp
-//   author: Frenkel TUD 2012"
-//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
-//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
-// algorithm
-//   outTpl := match(inTpl)
-//     local
-//       DAE.Exp exp;
-//       list<DAE.Exp> explst;
-//       HashSet.HashSet hs;
-//
-//     case ((exp as DAE.CALL(path=Absyn.IDENT(name="pre")), hs)) equation
-//       ((_, hs)) = Expression.traverseExp(exp, discreteStatesCref, hs);
-//     then ((exp, hs));
-//
-//     case ((exp as DAE.CALL(path=Absyn.IDENT(name="change")), hs)) equation
-//       ((_, hs)) = Expression.traverseExp(exp, discreteStatesCref, hs);
-//     then ((exp, hs));
-//
-//     case ((exp as DAE.CALL(path=Absyn.IDENT(name="edge")), hs)) equation
-//       ((_, hs)) = Expression.traverseExp(exp, discreteStatesCref, hs);
-//     then ((exp, hs));
-//
-//     else then inTpl;
-//   end match;
-// end discreteStatesExp;
-//
-// protected function discreteStatesIEquations
-//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
-//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
-// protected
-//   DAE.Exp exp;
-//   HashSet.HashSet hs;
-// algorithm
-//   (exp, hs) := inTpl;
-//   ((_, hs)) := Expression.traverseExp(exp, discreteStatesCref, hs);
-//   outTpl := (exp, hs);
-// end discreteStatesIEquations;
-//
-// protected function discreteStatesCref "function discreteStatesCref
-//   author: Frenkel TUD 2012-12
-//   helper for discreteStatesExp"
-//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
-//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
-// algorithm
-//   outTpl := match(inTpl)
-//     local
-//       list<DAE.ComponentRef> crefs;
-//       DAE.ComponentRef cr;
-//       HashSet.HashSet hs;
-//       DAE.Exp e;
-//
-//     case((e as DAE.CREF(componentRef=cr), hs)) equation
-//       crefs = ComponentReference.expandCref(cr, true);
-//       hs = List.fold(crefs, BaseHashSet.add, hs);
-//     then ((e, hs));
-//
-//     else then inTpl;
-//   end match;
-// end discreteStatesCref;
-//
-// protected function dumpDiscreteStates "function discreteStates
-//   author: Frenkel TUD 2012-12"
-//   input HashSet.HashSet hs;
-// protected
-//   list<DAE.ComponentRef> crefs;
-// algorithm
-//   crefs := BaseHashSet.hashSetList(hs);
-//   print("Discrete States for Initialization:\n========================================\n");
-//   BackendDump.debuglst((crefs, ComponentReference.printComponentRefStr, "\n", "\n"));
-// end dumpDiscreteStates;
 
 // =============================================================================
 // section for pre-balancing the initial system
@@ -1671,52 +1508,6 @@ algorithm
   oTpl := (vars, fixvars, eqns, reqns, hs);
 end collectInitialVarsEqnsSystem;
 
-// protected function collectInitialStateSetVars "function collectInitialStateSetVars
-//    author: Frenkel TUD
-//    add the vars for state set to the initial system
-//    Because the statevars are calculated by
-//    set.x = set.A*dummystates we add set.A to the
-//    initial system with set.A = {{1, 0, 0}, {0, 1, 0}}"
-//    input BackendDAE.StateSet inSet;
-//    input tuple<BackendDAE.Variables, BackendDAE.EquationArray> iTpl;
-//    output tuple<BackendDAE.Variables, BackendDAE.EquationArray> oTpl;
-// protected
-//   BackendDAE.Variables vars;
-//   BackendDAE.EquationArray eqns;
-//   DAE.ComponentRef crA;
-//   list<BackendDAE.Var> varA, statevars;
-//   Integer setsize, rang;
-// algorithm
-//   (vars, eqns) := iTpl;
-//   BackendDAE.STATESET(rang=rang, crA=crA, statescandidates=statevars, varA=varA) := inSet;
-//   vars := BackendVariable.addVars(varA, vars);
-// //  setsize := listLength(statevars) - rang;
-// //  eqns := addInitalSetEqns(setsize, intGt(rang, 1), crA, eqns);
-//   oTpl := (vars, eqns);
-// end collectInitialStateSetVars;
-
-// protected function addInitalSetEqns
-//   input Integer n;
-//   input Boolean twoDims;
-//   input DAE.ComponentRef crA;
-//   input BackendDAE.EquationArray iEqns;
-//   output BackendDAE.EquationArray oEqns;
-// algorithm
-//   oEqns := match(n, twoDims, crA, iEqns)
-//     local
-//       DAE.ComponentRef crA1;
-//       DAE.Exp expcrA;
-//       BackendDAE.EquationArray eqns;
-//     case(0, _, _, _) then iEqns;
-//     case(_, _, _, _) equation
-//       crA1 = ComponentReference.subscriptCrefWithInt(crA, n);
-//       crA1 = Debug.bcallret2(twoDims, ComponentReference.subscriptCrefWithInt, crA1, n, crA1);
-//       expcrA = Expression.crefExp(crA1);
-//       eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(expcrA, DAE.ICONST(1), DAE.emptyElementSource, false), iEqns);
-//     then addInitalSetEqns(n-1, twoDims, crA, eqns);
-//   end match;
-// end addInitalSetEqns;
-
 protected function collectInitialVars "function collectInitialVars
   author: lochel
   This function collects all the vars for the initial system."
@@ -2007,5 +1798,214 @@ algorithm
     then inExp;
   end matchcontinue;
 end replaceDerPreCrefExp;
+
+// protected function collectInitialStateSetVars "function collectInitialStateSetVars
+//    author: Frenkel TUD
+//    add the vars for state set to the initial system
+//    Because the statevars are calculated by
+//    set.x = set.A*dummystates we add set.A to the
+//    initial system with set.A = {{1, 0, 0}, {0, 1, 0}}"
+//    input BackendDAE.StateSet inSet;
+//    input tuple<BackendDAE.Variables, BackendDAE.EquationArray> iTpl;
+//    output tuple<BackendDAE.Variables, BackendDAE.EquationArray> oTpl;
+// protected
+//   BackendDAE.Variables vars;
+//   BackendDAE.EquationArray eqns;
+//   DAE.ComponentRef crA;
+//   list<BackendDAE.Var> varA, statevars;
+//   Integer setsize, rang;
+// algorithm
+//   (vars, eqns) := iTpl;
+//   BackendDAE.STATESET(rang=rang, crA=crA, statescandidates=statevars, varA=varA) := inSet;
+//   vars := BackendVariable.addVars(varA, vars);
+// //  setsize := listLength(statevars) - rang;
+// //  eqns := addInitalSetEqns(setsize, intGt(rang, 1), crA, eqns);
+//   oTpl := (vars, eqns);
+// end collectInitialStateSetVars;
+
+// protected function addInitalSetEqns
+//   input Integer n;
+//   input Boolean twoDims;
+//   input DAE.ComponentRef crA;
+//   input BackendDAE.EquationArray iEqns;
+//   output BackendDAE.EquationArray oEqns;
+// algorithm
+//   oEqns := match(n, twoDims, crA, iEqns)
+//     local
+//       DAE.ComponentRef crA1;
+//       DAE.Exp expcrA;
+//       BackendDAE.EquationArray eqns;
+//     case(0, _, _, _) then iEqns;
+//     case(_, _, _, _) equation
+//       crA1 = ComponentReference.subscriptCrefWithInt(crA, n);
+//       crA1 = Debug.bcallret2(twoDims, ComponentReference.subscriptCrefWithInt, crA1, n, crA1);
+//       expcrA = Expression.crefExp(crA1);
+//       eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(expcrA, DAE.ICONST(1), DAE.emptyElementSource, false), iEqns);
+//     then addInitalSetEqns(n-1, twoDims, crA, eqns);
+//   end match;
+// end addInitalSetEqns;
+
+// protected function selectInitialStateSetVars
+//   input BackendDAE.StateSet inSet;
+//   input BackendDAE.Variables inVars;
+//   output BackendDAE.Variables outVars;
+// protected
+//   list< BackendDAE.Var> statescandidates;
+// algorithm
+//   BackendDAE.STATESET(statescandidates=statescandidates) := inSet;
+//   outVars := List.fold(statescandidates, selectInitialStateSetVar, inVars);
+// end selectInitialStateSetVars;
+//
+// protected function selectInitialStateSetVar
+//   input BackendDAE.Var inVar;
+//   input BackendDAE.Variables inVars;
+//   output BackendDAE.Variables outVars;
+// protected
+//   Boolean b;
+// algorithm
+//   b := BackendVariable.varFixed(inVar);
+//   outVars := Debug.bcallret2(not b, BackendVariable.addVar, inVar, inVars, inVars);
+// end selectInitialStateSetVar;
+
+// protected function isStateSetVar
+//   input DAE.ComponentRef cr;
+//   output Boolean isStateSet;
+// algorithm
+//   isStateSet := match(cr)
+//     local
+//       DAE.Ident ident;
+//       Integer i;
+//
+//     case DAE.CREF_QUAL(ident=ident) equation
+//       i = System.strncmp("$STATESET", ident, 9);
+//     then intEq(i, 0);
+//
+//     else then false;
+//   end match;
+// end isStateSetVar;
+
+// =============================================================================
+// section for collecting discrete states
+//
+// collect all pre(var) in time equations to get the discrete states
+// =============================================================================
+
+// protected function discreteStates "function discreteStates
+//   author: Frenkel TUD 2012-12
+//   This function collect the discrete states and all initialized
+//   pre(var)s for the initialization."
+//   input BackendDAE.BackendDAE inDAE;
+//   output HashSet.HashSet hs;
+// protected
+//   BackendDAE.EqSystems systs;
+//   BackendDAE.EquationArray initialEqs;
+// algorithm
+//   BackendDAE.DAE(systs, BackendDAE.SHARED(initialEqs=initialEqs)) := inDAE;
+//   hs := HashSet.emptyHashSet();
+//   hs := List.fold(systs, discreteStatesSystems, hs);
+//   Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, dumpDiscreteStates, hs);
+//
+//   // and check the initial equations to get all initialized pre variables
+//   hs := BackendDAEUtil.traverseBackendDAEExpsEqns(initialEqs, discreteStatesIEquations, hs);
+// end discreteStates;
+//
+// protected function discreteStatesSystems "function discreteStatesSystems
+//   author: Frenkel TUD
+//   This is a helper function for discreteStates.
+//   The function collects all discrete states in the time equations."
+//   input BackendDAE.EqSystem inEqSystem;
+//   input HashSet.HashSet inHs;
+//   output HashSet.HashSet outHs;
+// protected
+//   BackendDAE.EquationArray orderedEqs;
+//   BackendDAE.EquationArray eqns;
+// algorithm
+//   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := inEqSystem;
+//   outHs := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, discreteStatesEquations, inHs);
+// end discreteStatesSystems;
+//
+// protected function discreteStatesEquations
+//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
+//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
+// protected
+//   DAE.Exp exp;
+//   HashSet.HashSet hs;
+// algorithm
+//   (exp, hs) := inTpl;
+//   ((_, hs)) := Expression.traverseExp(exp, discreteStatesExp, hs);
+//   outTpl := (exp, hs);
+// end discreteStatesEquations;
+//
+// protected function discreteStatesExp "function discreteStatesExp
+//   author: Frenkel TUD 2012"
+//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
+//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
+// algorithm
+//   outTpl := match(inTpl)
+//     local
+//       DAE.Exp exp;
+//       list<DAE.Exp> explst;
+//       HashSet.HashSet hs;
+//
+//     case ((exp as DAE.CALL(path=Absyn.IDENT(name="pre")), hs)) equation
+//       ((_, hs)) = Expression.traverseExp(exp, discreteStatesCref, hs);
+//     then ((exp, hs));
+//
+//     case ((exp as DAE.CALL(path=Absyn.IDENT(name="change")), hs)) equation
+//       ((_, hs)) = Expression.traverseExp(exp, discreteStatesCref, hs);
+//     then ((exp, hs));
+//
+//     case ((exp as DAE.CALL(path=Absyn.IDENT(name="edge")), hs)) equation
+//       ((_, hs)) = Expression.traverseExp(exp, discreteStatesCref, hs);
+//     then ((exp, hs));
+//
+//     else then inTpl;
+//   end match;
+// end discreteStatesExp;
+//
+// protected function discreteStatesIEquations
+//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
+//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
+// protected
+//   DAE.Exp exp;
+//   HashSet.HashSet hs;
+// algorithm
+//   (exp, hs) := inTpl;
+//   ((_, hs)) := Expression.traverseExp(exp, discreteStatesCref, hs);
+//   outTpl := (exp, hs);
+// end discreteStatesIEquations;
+//
+// protected function discreteStatesCref "function discreteStatesCref
+//   author: Frenkel TUD 2012-12
+//   helper for discreteStatesExp"
+//   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
+//   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
+// algorithm
+//   outTpl := match(inTpl)
+//     local
+//       list<DAE.ComponentRef> crefs;
+//       DAE.ComponentRef cr;
+//       HashSet.HashSet hs;
+//       DAE.Exp e;
+//
+//     case((e as DAE.CREF(componentRef=cr), hs)) equation
+//       crefs = ComponentReference.expandCref(cr, true);
+//       hs = List.fold(crefs, BaseHashSet.add, hs);
+//     then ((e, hs));
+//
+//     else then inTpl;
+//   end match;
+// end discreteStatesCref;
+//
+// protected function dumpDiscreteStates "function discreteStates
+//   author: Frenkel TUD 2012-12"
+//   input HashSet.HashSet hs;
+// protected
+//   list<DAE.ComponentRef> crefs;
+// algorithm
+//   crefs := BaseHashSet.hashSetList(hs);
+//   print("Discrete States for Initialization:\n========================================\n");
+//   BackendDump.debuglst((crefs, ComponentReference.printComponentRefStr, "\n", "\n"));
+// end dumpDiscreteStates;
 
 end Initialization;
