@@ -420,7 +420,7 @@ void FMIImpl__initializeFMI1Import(fmi1_import_t* fmi, void** fmiInfo, fmi_versi
       yOutputPlacement -= 25;
     }
     //fprintf(stderr, "%s Variable name = %s, valueReference = %d\n", getFMI1ModelVariableBaseType(model_variable), getFMI1ModelVariableName(model_variable), model_variables_value_reference_list[i]);fflush(NULL);
-    void* variable;
+    void* variable = NULL;
     fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(model_variable);
     switch (type) {
       case fmi1_base_type_real:
@@ -456,7 +456,7 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
   /* Read the FMI type */
   fmi2_fmu_kind_enu_t fmiType = fmi2_import_get_fmu_kind(fmi);
   /* Read the model identifier from FMU's modelDescription.xml file. */
-  const char* modelIdentifier;
+  const char* modelIdentifier = NULL;
   switch (fmiType) {
     case fmi2_fmu_kind_me:
     case fmi2_fmu_kind_me_and_cs:
@@ -560,7 +560,7 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
       yOutputPlacement -= 25;
     }
     //fprintf(stderr, "%s Variable name = %s, valueReference = %d\n", getFMI2ModelVariableBaseType(model_variable), getFMI2ModelVariableName(model_variable), model_variables_value_reference_list[i]);fflush(NULL);
-    void* variable;
+    void* variable = NULL;
     fmi2_base_type_enu_t type = fmi2_import_get_variable_base_type(model_variable);
     switch (type) {
       case fmi2_base_type_real:
