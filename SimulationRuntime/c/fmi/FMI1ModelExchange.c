@@ -82,6 +82,7 @@ void FMI1ModelExchangeDestructor_OMC(void* in_fmi1me)
 {
   FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
   fmi1_import_terminate(FMI1ME->FMIImportInstance);
+  fmi1_import_free_model_instance(FMI1ME->FMIImportInstance);
   fmi1_import_destroy_dllfmu(FMI1ME->FMIImportInstance);
   fmi1_import_free(FMI1ME->FMIImportInstance);
   fmi_import_free_context(FMI1ME->FMIImportContext);
