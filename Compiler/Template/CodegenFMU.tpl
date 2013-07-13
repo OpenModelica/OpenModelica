@@ -338,12 +338,12 @@ template ScalarVariableType(DAE.Type type_, String unit, String displayUnit, Opt
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
 match type_
-  case T_INTEGER(__) then '<Integer/>'
+  case T_INTEGER(__) then '<Integer<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
   /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
-  case T_REAL(__) then '<Real <%/*ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
-  case T_BOOL(__) then '<Boolean/>'
-  case T_STRING(__) then '<String/>'
-  case T_ENUMERATION(__) then '<Integer/>'
+  case T_REAL(__) then '<Real<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)/*%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
+  case T_BOOL(__) then '<Boolean<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
+  case T_STRING(__) then '<String<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
+  case T_ENUMERATION(__) then '<Integer<%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%>/>'
   else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
@@ -351,7 +351,7 @@ template ScalarVariableTypeCommonAttribute(Option<DAE.Exp> initialValue, Boolean
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
 match initialValue
-  case SOME(exp) then 'start="<%initVal(exp)%>" fixed="<%isFixed%>"'
+  case SOME(exp) then ' start="<%initVal(exp)%>" fixed="<%isFixed%>"'
 end ScalarVariableTypeCommonAttribute;
 
 template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
