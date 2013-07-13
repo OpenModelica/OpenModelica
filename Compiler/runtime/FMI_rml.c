@@ -61,8 +61,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(FMIExt__releaseFMIImport)
 {
-  const char* fmiVersion = RML_STRINGDATA(rmlA3);
-  FMIImpl__releaseFMIImport(rmlA0, rmlA1, rmlA2, fmiVersion);
+  FMIImpl__releaseFMIImport(rmlA0, rmlA1, rmlA2, RML_STRINGDATA(rmlA3));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
