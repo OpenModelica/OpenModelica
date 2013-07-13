@@ -56,14 +56,5 @@ typedef struct {
 
 void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message);
 void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...);
-fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences, double* valuesReferences);
-void fmi1GetReal_OMC(void* in_fmi1me, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues);
-double fmi1SetReal_OMC(void* in_fmi1me, int numberOfValueReferences, double* realValuesReferences, double* realValues);
-void fmi1GetInteger_OMC(void* in_fmi1me, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues);
-double fmi1SetInteger_OMC(void* in_fmi1me, int numberOfValueReferences, double* integerValuesReferences, int* integerValues);
-void fmi1GetBoolean_OMC(void* in_fmi1me, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues);
-double fmi1SetBoolean_OMC(void* in_fmi1me, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues);
-void fmi1GetString_OMC(void* in_fmi1me, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues);
-double fmi1SetString_OMC(void* in_fmi1me, int numberOfValueReferences, double* stringValuesReferences, char** stringValues);
 
 #endif
