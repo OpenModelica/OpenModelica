@@ -686,6 +686,7 @@ void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3, const char* f
   intptr_t fmiModeVariablesInstance = (intptr_t)RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr1),1));
   intptr_t fmiInstance = (intptr_t)RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr2),1));
   intptr_t fmiContext = (intptr_t)RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr3),1));
+  fprintf(stderr, "fmiVersion = %s\n", fmiVersion);fflush(NULL);
   if (strcmp(fmiVersion, "1.0") == 0) {
     free((fmi1_import_variable_list_t*)fmiModeVariablesInstance);
     fmi1_import_t* fmi = (fmi1_import_t*)fmiInstance;
@@ -697,6 +698,7 @@ void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3, const char* f
     fmi2_import_destroy_dllfmu(fmi);
     fmi2_import_free(fmi);
   }
+  fprintf(stderr, "fmiVersion 1 = %s\n", fmiVersion);fflush(NULL);
   fmi_import_free_context((fmi_import_context_t*)fmiContext);
 }
 
