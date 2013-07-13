@@ -50,38 +50,44 @@
   \param pMainWindow - pointer to MainWindow
   */
 OMCProxy::OMCProxy(MainWindow *pMainWindow)
-  : QObject(pMainWindow), mOMC(0), mHasInitialized(false), mName(Helper::omcServerName) ,mResult("")
+  : QObject(pMainWindow), mOMC(0), mHasInitialized(false) ,mResult("")
 {
   mpMainWindow = pMainWindow;
   mCurrentCommandIndex = -1;
-  mpOMCLogger = new QDialog(pMainWindow, Qt::WindowTitleHint);
-  mpOMCLogger->resize(640, 480);
-  mpOMCLogger->setWindowIcon(QIcon(":/Resources/icons/console.png"));
-  mpOMCLogger->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("OMC Messages Log")));
-  // Set the QTextEdit Box
-  mpPlainTextEdit = new QPlainTextEdit();
-  mpPlainTextEdit->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-  mpPlainTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-  mpPlainTextEdit->setReadOnly(true);
-  mpPlainTextEdit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
-  // Set the Layout
-  QHBoxLayout *horizontallayout = new QHBoxLayout;
-  horizontallayout->setContentsMargins(0, 0, 0, 0);
+  // OMC Commands Logger Widget
+  mpOMCLoggerWidget = new QWidget;
+  mpOMCLoggerWidget->resize(640, 480);
+  mpOMCLoggerWidget->setWindowIcon(QIcon(":/Resources/icons/console.png"));
+  mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("OMC Messages Log")));
+  // OMC Logger textbox
+  mpOMCLoggerTextBox = new QPlainTextEdit();
+  mpOMCLoggerTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+  mpOMCLoggerTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+  mpOMCLoggerTextBox->setReadOnly(true);
+  mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpExpressionTextBox = new CustomExpressionBox(this);
-  mpSendButton = new QPushButton(tr("Send"));
-  connect(mpSendButton, SIGNAL(clicked()), SLOT(sendCustomExpression()));
-  horizontallayout->addWidget(mpExpressionTextBox);
-  horizontallayout->addWidget(mpSendButton);
-  QVBoxLayout *verticalallayout = new QVBoxLayout;
-  verticalallayout->addWidget(mpPlainTextEdit);
-  verticalallayout->addLayout(horizontallayout);
-  mpOMCLogger->setLayout(verticalallayout);
+  mpOMCLoggerSendButton = new QPushButton(tr("Send"));
+  connect(mpOMCLoggerSendButton, SIGNAL(clicked()), SLOT(sendCustomExpression()));
+  // Set the OMC Logger widget Layout
+  QHBoxLayout *pHorizontalLayout = new QHBoxLayout;
+  pHorizontalLayout->setContentsMargins(0, 0, 0, 0);
+  pHorizontalLayout->addWidget(mpExpressionTextBox);
+  pHorizontalLayout->addWidget(mpOMCLoggerSendButton);
+  QVBoxLayout *pVerticalalLayout = new QVBoxLayout;
+  pVerticalalLayout->addWidget(mpOMCLoggerTextBox);
+  pVerticalalLayout->addLayout(pHorizontalLayout);
+  mpOMCLoggerWidget->setLayout(pVerticalalLayout);
   //start the server
   if(!startServer())      // if we are unable to start OMC. Exit the application.
   {
     mpMainWindow->setExitApplicationStatus(true);
     return;
   }
+}
+
+OMCProxy::~OMCProxy()
+{
+  delete mpOMCLoggerWidget;
 }
 
 /*!
@@ -93,7 +99,7 @@ void OMCProxy::enableCustomExpression(bool enable)
   if (!enable)
   {
     mpExpressionTextBox->hide();
-    mpSendButton->hide();
+    mpOMCLoggerSendButton->hide();
   }
 }
 
@@ -284,11 +290,11 @@ bool OMCProxy::startServer()
     QString fileIdentifier;
     fileIdentifier = qApp->sessionId().append(QTime::currentTime().toString("hh:mm:ss:zzz").remove(":"));
 #ifdef WIN32 // Win32
-    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(mName).append(fileIdentifier));
+    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(Helper::omcServerName).append(fileIdentifier));
 #else // UNIX environment
     char *user = getenv("USER");
     if (!user) { user = "nobody"; }
-    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".objid.").append(mName).append(fileIdentifier));
+    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".objid.").append(Helper::omcServerName).append(fileIdentifier));
 #endif
     if (objectRefFile.exists())
       objectRefFile.remove();
@@ -299,14 +305,14 @@ bool OMCProxy::startServer()
     settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
     // Start the omc.exe
     QStringList parameters;
-    parameters << QString("+c=").append(mName).append(fileIdentifier) << QString("+d=interactiveCorba") << QString("+locale=").append(settingsLocale.name());
+    parameters << QString("+c=").append(Helper::omcServerName).append(fileIdentifier) << QString("+d=interactiveCorba") << QString("+locale=").append(settingsLocale.name());
     QProcess *omcProcess = new QProcess;
     connect(omcProcess, SIGNAL(finished(int)), omcProcess, SLOT(deleteLater()));
     QFile omcOutputFile;
 #ifdef WIN32 // Win32
-    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.omc.output.").append(mName));
+    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.omc.output.").append(Helper::omcServerName));
 #else // UNIX environment
-    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".omc.output.").append(mName));
+    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::omcServerName));
 #endif
     omcProcess->setProcessChannelMode(QProcess::MergedChannels);
     omcProcess->setStandardOutputFile(omcOutputFile.fileName());
@@ -495,39 +501,40 @@ QString OMCProxy::getResult()
 void OMCProxy::logOMCMessages(QString expression)
 {
   // move the cursor down before adding to the logger.
-  QTextCursor textCursor = mpPlainTextEdit->textCursor();
+  QTextCursor textCursor = mpOMCLoggerTextBox->textCursor();
   textCursor.movePosition(QTextCursor::End);
-  mpPlainTextEdit->setTextCursor(textCursor);
+  mpOMCLoggerTextBox->setTextCursor(textCursor);
   // add the expression to commands list
   mCommandsList.append(expression);
   // log expression
   QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
-  QTextCharFormat charFormat = mpPlainTextEdit->currentCharFormat();
+  QTextCharFormat charFormat = mpOMCLoggerTextBox->currentCharFormat();
   charFormat.setFont(font);
-  mpPlainTextEdit->setCurrentCharFormat(charFormat);
-  mpPlainTextEdit->insertPlainText(expression + "\n");
+  mpOMCLoggerTextBox->setCurrentCharFormat(charFormat);
+  mpOMCLoggerTextBox->insertPlainText(expression + "\n");
   // log result
   font = QFont(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
   charFormat.setFont(font);
-  mpPlainTextEdit->setCurrentCharFormat(charFormat);
-  mpPlainTextEdit->insertPlainText(getResult() + "\n\n");
+  mpOMCLoggerTextBox->setCurrentCharFormat(charFormat);
+  mpOMCLoggerTextBox->insertPlainText(getResult() + "\n\n");
   // move the cursor
   textCursor.movePosition(QTextCursor::End);
-  mpPlainTextEdit->setTextCursor(textCursor);
+  mpOMCLoggerTextBox->setTextCursor(textCursor);
   // set the current command index.
   mCurrentCommandIndex = mCommandsList.count();
   mpExpressionTextBox->setText("");
 }
 
 /*!
-  Opens the OMC Logger dialog.
+  Opens the OMC Logger widget.
   */
-void OMCProxy::openOMCLogger()
+void OMCProxy::openOMCLoggerWidget()
 {
   mpExpressionTextBox->setFocus(Qt::ActiveWindowFocusReason);
-  mpOMCLogger->show();
-  mpOMCLogger->raise();
-  mpOMCLogger->activateWindow();
+  mpOMCLoggerWidget->show();
+  mpOMCLoggerWidget->raise();
+  mpOMCLoggerWidget->activateWindow();
+  mpOMCLoggerWidget->setWindowState(mpOMCLoggerWidget->windowState() & ~Qt::WindowMinimized | Qt::WindowActive);
 }
 
 /*!

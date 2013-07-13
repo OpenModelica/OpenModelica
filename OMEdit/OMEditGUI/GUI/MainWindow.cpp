@@ -545,6 +545,7 @@ int MainWindow::askForExit()
 void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->stopServer();
+  delete mpOMCProxy;
   // save OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   settings.setValue("application/geometry", saveGeometry());
@@ -1590,10 +1591,10 @@ void MainWindow::createActions()
   mpExportXMLAction->setEnabled(false);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
   // Tools Menu
-  // show omc logger action
-  mpOmcLoggerAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
-  mpOmcLoggerAction->setStatusTip(tr("Shows OMC Logger Window"));
-  connect(mpOmcLoggerAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLogger()));
+  // show OMC Logger widget action
+  mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.png"), tr("OMC Logger"), this);
+  mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OMC Logger Window"));
+  connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
   // export to OMNotebook action
   mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.png"), Helper::exportToOMNotebook, this);
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
@@ -1815,7 +1816,7 @@ void MainWindow::createMenus()
   QMenu *pToolsMenu = new QMenu(menuBar());
   pToolsMenu->setTitle(tr("&Tools"));
   // add actions to Tools menu
-  pToolsMenu->addAction(mpOmcLoggerAction);
+  pToolsMenu->addAction(mpShowOMCLoggerWidgetAction);
   pToolsMenu->addSeparator();
   pToolsMenu->addAction(mpExportToOMNotebookAction);
   pToolsMenu->addAction(mpImportFromOMNotebookAction);

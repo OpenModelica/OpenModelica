@@ -209,7 +209,7 @@ private:
   // XML Menu
   QAction *mpExportXMLAction;
   // Tools Menu
-  QAction *mpOmcLoggerAction;
+  QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpExportToOMNotebookAction;
   QAction *mpImportFromOMNotebookAction;
   QAction *mpOptionsAction;

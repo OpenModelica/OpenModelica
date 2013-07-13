@@ -60,13 +60,12 @@ class OMCProxy : public QObject
 private:
   OmcCommunication_var mOMC;
   bool mHasInitialized;
-  QString mName;
   QString mResult;
   QString mExpression;
-  QDialog *mpOMCLogger;
+  QWidget *mpOMCLoggerWidget;
   CustomExpressionBox *mpExpressionTextBox;
-  QPushButton *mpSendButton;
-  QPlainTextEdit *mpPlainTextEdit;
+  QPushButton *mpOMCLoggerSendButton;
+  QPlainTextEdit *mpOMCLoggerTextBox;
   QString mObjectRefFile;
   QList<QString> mCommandsList;
   int mCurrentCommandIndex;
@@ -77,6 +76,7 @@ private:
   QMap<QString, QList<cachedOMCCommand> > mCachedOMCCommandsMap;
 public:
   OMCProxy(MainWindow *pMainWindow);
+  ~OMCProxy();
   void enableCustomExpression(bool enable);
   void getPreviousCommand();
   void getNextCommand();
@@ -204,7 +204,7 @@ signals:
   void commandFinished();
 public slots:
   void sendCommand();
-  void openOMCLogger();
+  void openOMCLoggerWidget();
   void sendCustomExpression();
 };
 
