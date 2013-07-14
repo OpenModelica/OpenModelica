@@ -546,6 +546,7 @@ void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->stopServer();
   delete mpOMCProxy;
+  delete mpSimulationDialog;
   // save OMEdit widgets state
   QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
   settings.setValue("application/geometry", saveGeometry());

@@ -59,6 +59,12 @@ SimulationDialog::SimulationDialog(MainWindow *pParent)
   mpProgressDialog = new ProgressDialog(this);
 }
 
+SimulationDialog::~SimulationDialog()
+{
+  qDeleteAll(mSimulationOutputWidgetsList.begin(), mSimulationOutputWidgetsList.end());
+  mSimulationOutputWidgetsList.clear();
+}
+
 /*!
   Creates all the controls and set their layout.
   */
@@ -613,7 +619,6 @@ void SimulationDialog::simulate()
       else
         QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpFileNameTextBox->text() + "_prof.html"));
     }
-    accept();
   }
 }
 
@@ -704,11 +709,12 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
 #endif
     mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
     mpSimulationProcess->setProcessChannelMode(QProcess::MergedChannels);
-    SimulationOutputDialog *pSimulationOutputDialog;
-    pSimulationOutputDialog = new SimulationOutputDialog(mpLibraryTreeNode->getNameStructure(), output_file,
+    SimulationOutputWidget *pSimulationOutputWidget;
+    pSimulationOutputWidget = new SimulationOutputWidget(mpLibraryTreeNode->getNameStructure(), output_file,
                                                          mpShowGeneratedFilesCheckBox->isChecked(), mpSimulationProcess, mpMainWindow);
-    connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputDialog, SLOT(writeSimulationOutput()));
-    connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputDialog, SLOT(showSimulationOutputDialog()));
+    mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
+    connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputWidget, SLOT(writeSimulationOutput()));
+    connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputWidget, SLOT(showSimulationOutputDialog()));
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
     mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
     mpProgressDialog->setText(tr("Running Simulation.\nPlease wait for a while."));
@@ -763,17 +769,19 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     if (mpMainWindow->getDebugApplication()) qDebug() << "simulation process finished";
     if (sock) delete sock;
     server.close();
+    /* accept the SimulationDialog here so that the SimulationOutputWidget doesn't stack behind it. */
+    accept();
     // show simulation process error if any
     if (mpSimulationProcess->error() != QProcess::UnknownError)
     {
-      pSimulationOutputDialog->getSimulationOutputTextBox()->insertPlainText("\n\n" + mpSimulationProcess->errorString());
-      if (pSimulationOutputDialog->isHidden())
-        pSimulationOutputDialog->showSimulationOutputDialog();
+      pSimulationOutputWidget->getSimulationOutputTextBox()->insertPlainText("\n\n" + mpSimulationProcess->errorString());
+      if (pSimulationOutputWidget->isHidden())
+        pSimulationOutputWidget->showSimulationOutputDialog();
     }
     else if (mpShowGeneratedFilesCheckBox->isChecked())
     {
-      if (pSimulationOutputDialog->isHidden())
-        pSimulationOutputDialog->showSimulationOutputDialog();
+      if (pSimulationOutputWidget->isHidden())
+        pSimulationOutputWidget->showSimulationOutputDialog();
     }
     // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
     if (mpProgressDialog->isHidden())
@@ -840,8 +848,8 @@ ProgressDialog::ProgressDialog(SimulationDialog *pParent)
   setWindowModality(Qt::WindowModal);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulation));
   // create heading label
-  mpText = new Label;
-  mpText->setAlignment((Qt::AlignHCenter));
+  mpProgressLabel = new Label;
+  mpProgressLabel->setAlignment((Qt::AlignHCenter));
   mpCancelSimulationButton = new QPushButton(tr("Cancel Simulation"));
   connect(mpCancelSimulationButton, SIGNAL(clicked()), pParent, SLOT(cancelSimulation()));
   mpProgressBar = new QProgressBar;
@@ -850,7 +858,7 @@ ProgressDialog::ProgressDialog(SimulationDialog *pParent)
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   // layout the items
   QVBoxLayout *mainLayout = new QVBoxLayout;
-  mainLayout->addWidget(mpText);
+  mainLayout->addWidget(mpProgressLabel);
   mainLayout->addWidget(mpProgressBar);
   mainLayout->addWidget(mpCancelSimulationButton, 0, Qt::AlignRight);
   setLayout(mainLayout);
@@ -878,7 +886,7 @@ QPushButton* ProgressDialog::getCancelSimulationButton()
   */
 void ProgressDialog::setText(QString text)
 {
-  mpText->setText(text);
+  mpProgressLabel->setText(text);
   update();
 }
 
@@ -892,13 +900,10 @@ void ProgressDialog::setText(QString text)
   \param pSimulationProcess - the simulation process.
   \param pParent - pointer to MainWindow.
   */
-SimulationOutputDialog::SimulationOutputDialog(QString className, QString outputFile, bool showGeneratedFiles,
+SimulationOutputWidget::SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles,
                                                QProcess *pSimulationProcess, MainWindow *pParent)
-  : QDialog(pParent, Qt::WindowTitleHint)
 {
-  setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(className).append(" ").append(tr("Simulation Output")));
-  setMinimumSize(550, 300);
   mpSimulationProcess = pSimulationProcess;
   mpMainWindow = pParent;
   // Generated Files tab widget
@@ -925,14 +930,10 @@ SimulationOutputDialog::SimulationOutputDialog(QString className, QString output
     /* className_records.c tab */
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_records.c"));
   }
-  // Close Button
-  mpCloseButton = new QPushButton(Helper::close);
-  connect(mpCloseButton, SIGNAL(clicked()), SLOT(close()));
   // layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
   pMainLayout->addWidget(mpGeneratedFilesTabWidget);
-  pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -940,12 +941,12 @@ SimulationOutputDialog::SimulationOutputDialog(QString className, QString output
   Returns the pointer to mpSimulationOutputTextBox.
   \return the Simulation Output text box.
   */
-QPlainTextEdit* SimulationOutputDialog::getSimulationOutputTextBox()
+QPlainTextEdit* SimulationOutputWidget::getSimulationOutputTextBox()
 {
   return mpSimulationOutputTextBox;
 }
 
-void SimulationOutputDialog::addGeneratedFileTab(QString fileName)
+void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 {
   QFile file(fileName);
   QFileInfo fileInfo(fileName);
@@ -963,7 +964,7 @@ void SimulationOutputDialog::addGeneratedFileTab(QString fileName)
   Slot activated when mpSimulationProcess readyRead signal is raised.\n
   Writes the available output bytes to the simulation output text box.
   */
-void SimulationOutputDialog::writeSimulationOutput()
+void SimulationOutputWidget::writeSimulationOutput()
 {
   mpSimulationOutputTextBox->appendPlainText(mpSimulationProcess->read(mpSimulationProcess->bytesAvailable()));
 }
@@ -974,7 +975,7 @@ void SimulationOutputDialog::writeSimulationOutput()
   Since readyRead signal can be emitted many times depending on the simulation process output and we only want this slot to be
   activated only once. So we have to disconnect it from the readyRead signal only if the sender is the simulation process.
   */
-void SimulationOutputDialog::showSimulationOutputDialog()
+void SimulationOutputWidget::showSimulationOutputDialog()
 {
   if (sender())
   {
@@ -983,6 +984,6 @@ void SimulationOutputDialog::showSimulationOutputDialog()
   }
   int xPos = mpMainWindow->width() < 550 ? x() : mpMainWindow->width() - 550;
   int yPos = mpMainWindow->height() < 300 ? y() : mpMainWindow->height() - 300;
-  setGeometry(xPos, yPos, width(), height());
+  setGeometry(xPos, yPos, 550, 300);
   show();
 }

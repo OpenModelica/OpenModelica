@@ -48,6 +48,7 @@ class SimulationDialog : public QDialog
   Q_OBJECT
 public:
   SimulationDialog(MainWindow *pParent = 0);
+  ~SimulationDialog();
   void setUpForm();
   void show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive);
   bool validate();
@@ -140,6 +141,7 @@ private:
   QDialogButtonBox *mpButtonBox;
   ProgressDialog *mpProgressDialog;
   QProcess *mpSimulationProcess;
+  QList<QWidget*> mSimulationOutputWidgetsList;
   bool mIsSimulationProcessFinished;
   bool mIsInteractive;
   LibraryTreeNode *mpLibraryTreeNode;
@@ -161,15 +163,15 @@ public:
   void setText(QString text);
 private:
   QProgressBar *mpProgressBar;
-  Label *mpText;
+  Label *mpProgressLabel;
   QPushButton *mpCancelSimulationButton;
 };
 
-class SimulationOutputDialog : public QDialog
+class SimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  SimulationOutputDialog(QString className, QString outputFile, bool showGeneratedFiles, QProcess *pSimulationProcess,
+  SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles, QProcess *pSimulationProcess,
                          MainWindow *pParent);
   QPlainTextEdit* getSimulationOutputTextBox();
   void addGeneratedFileTab(QString fileName);
@@ -178,7 +180,6 @@ private:
   MainWindow *mpMainWindow;
   QTabWidget *mpGeneratedFilesTabWidget;
   QPlainTextEdit *mpSimulationOutputTextBox;
-  QPushButton *mpCloseButton;
 public slots:
   void writeSimulationOutput();
   void showSimulationOutputDialog();
