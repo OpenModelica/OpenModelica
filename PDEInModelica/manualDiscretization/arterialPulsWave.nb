@@ -1,0 +1,329 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[     12595,        320]
+NotebookOptionsPosition[     11658,        283]
+NotebookOutlinePosition[     12024,        299]
+CellTagsIndexPosition[     11981,        296]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"Needs", "[", "\"\<WSMLink`\>\"", "]"}], ";"}], 
+  "\[IndentingNewLine]"}]], "Input",
+ CellChangeTimes->{{3.579438429070594*^9, 3.5794384544894505`*^9}, {
+  3.579946508066293*^9, 3.579946509394369*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"mName", "=", "\"\<arterialPulsWave\>\""}]], "Input",
+ CellChangeTimes->{{3.5794384703346987`*^9, 3.5794385043232603`*^9}}],
+
+Cell[BoxData["\<\"arterialPulsWave\"\>"], "Output",
+ CellChangeTimes->{3.579438505751545*^9, 3.579439617639649*^9, 
+  3.5795018085213647`*^9, 3.5795118570095053`*^9, 3.5795122377102795`*^9, 
+  3.5795135140742836`*^9, 3.5795136646968985`*^9, 3.5795156646762915`*^9, 
+  3.579597620108037*^9, 3.5795980514107056`*^9, 3.5796000563183804`*^9, 
+  3.5799459063539476`*^9, 3.5799461993129473`*^9, 3.579947206537243*^9, 
+  3.5799473257320604`*^9, 3.580012596112099*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"T", "=", "1"}]], "Input",
+ CellChangeTimes->{{3.5795127615142393`*^9, 3.5795127633083425`*^9}, {
+  3.579513852828659*^9, 3.579513853610704*^9}}],
+
+Cell[BoxData["1"], "Output",
+ CellChangeTimes->{3.5795127640173826`*^9, 3.5795135140892844`*^9, 
+  3.5795136659269695`*^9, 3.57951385581083*^9, 3.579515665484337*^9, 
+  3.5795976229341984`*^9, 3.5795980529057913`*^9, 3.5796000577504616`*^9, 
+  3.579945934683597*^9, 3.5799462009509497`*^9, 3.579947208458353*^9, 
+  3.579947329168257*^9, 3.5800125983602276`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"m", "=", 
+  RowBox[{"WSMSimulate", "[", 
+   RowBox[{"mName", ",", 
+    RowBox[{"{", 
+     RowBox[{"0", ",", "T"}], "}"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.579438515308138*^9, 3.57943854335736*^9}, {
+  3.579512766565529*^9, 3.579512766821543*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  TooltipBox[
+   RowBox[{"WSMSimulationData", "[", 
+    TagBox[
+     RowBox[{"{", 
+      RowBox[{"0.`", ",", "1.`"}], "}"}],
+     Editable -> False], ",", "\[LeftSkeleton]", 
+    TagBox["719",
+     Editable -> False], "\[RightSkeleton]", "]"}],
+   StyleBox[
+    TagBox[
+     GridBox[{{
+        StyleBox["\"arterialPulsWave\"", Bold, StripOnInput -> False]}, {
+        TagBox[
+         GridBox[{{"\"Property\"", "\"Length\""}, {
+           "\"SystemEquations\"", "560"}, {"\"InitialEquations\"", "158"}, {
+           "\"StateVariables\"", "158"}, {"\"AlgebraicVariables\"", "402"}, {
+           "\"InputVariables\"", "0"}, {"\"OutputVariables\"", "0"}, {
+           "\"ParameterValues\"", "18"}}, 
+          GridBoxAlignment -> {
+           "Columns" -> {{Left}}, "Rows" -> {{Automatic}}}, AutoDelete -> 
+          False, GridBoxDividers -> {
+           "ColumnsIndexed" -> {2 -> GrayLevel[0.7]}, 
+            "RowsIndexed" -> {2 -> GrayLevel[0.7]}}, 
+          GridBoxItemSize -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}, 
+          GridBoxSpacings -> {
+           "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], "Grid"]}}, 
+      GridBoxAlignment -> {"Columns" -> {{Left}}}, AutoDelete -> False, 
+      GridBoxItemSize -> {
+       "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}], "Grid"], 
+    "DialogStyle", StripOnInput -> False]],
+  InterpretTemplate[
+  WSMLink`WSMSimulationData[
+   "#MmcaResultReference#SimData9#", "arterialPulsWave", 719, {0., 1.}, 3, {
+    "NN", "rho", "f", "alpha", "h0", "E", "nu", "beta", "Pext", "A0", "HR", 
+     "Tc", "MAP", "CO", "SV", "Qmax", "Rout", "AInit"}]& ],
+  Editable->False,
+  SelectWithContents->True,
+  Selectable->True]], "Output",
+ CellChangeTimes->{
+  3.5795122489399223`*^9, 3.579512979400702*^9, 3.579513088146922*^9, 
+   3.5795135183005257`*^9, 3.579513636450283*^9, {3.579513696654727*^9, 
+   3.5795136995598927`*^9}, 3.579513731137699*^9, 3.5795137971164727`*^9, 
+   3.579513862369205*^9, 3.5795156182566357`*^9, 3.5795156686265173`*^9, 
+   3.5795976256573544`*^9, 3.57959805690202*^9, 3.579598157663783*^9, 
+   3.579600074040394*^9, 3.5799459240755787`*^9, 3.5799459646105347`*^9, 
+   3.5799462297482004`*^9, 3.5799472187159395`*^9, 3.5799473360786524`*^9, 
+   3.5799477298781767`*^9, 3.5799503549083195`*^9, 3.57995048202059*^9, 
+   3.580012604994607*^9, 3.5800129106750913`*^9, 3.5800129952719297`*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"n", "=", 
+  RowBox[{
+   RowBox[{"m", "[", 
+    RowBox[{"{", "\"\<NN\>\"", "}"}], "]"}], "[", 
+   RowBox[{"[", "1", "]"}], "]"}]}]], "Input",
+ CellChangeTimes->{3.579947194263541*^9}],
+
+Cell[BoxData["80.`"], "Output",
+ CellChangeTimes->{3.5799462326342053`*^9, 3.5799472389420967`*^9, 
+  3.579947342926044*^9, 3.579947731456267*^9, 3.5799503585455275`*^9, 
+  3.579950482355609*^9, 3.580012605114614*^9}]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"GenerateVarNames", "[", 
+   RowBox[{"vn_", ",", "n_", ",", "t_"}], "]"}], ":=", 
+  RowBox[{"Table", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{"m", "[", 
+       RowBox[{"{", 
+        RowBox[{"vn", "<>", "\"\<[\>\"", "<>", 
+         RowBox[{"ToString", "[", "i", "]"}], "<>", "\"\<]\>\""}], "}"}], 
+       "]"}], "[", 
+      RowBox[{"[", "1", "]"}], "]"}], "[", "t", "]"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"i", ",", "1", ",", "n"}], "}"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.579503230263978*^9, 3.579503231043993*^9}, {
+  3.5795032968460584`*^9, 3.579503371977103*^9}, {3.5795034151587334`*^9, 
+  3.579503415361538*^9}, {3.579503464302346*^9, 3.579503527582673*^9}, {
+  3.579504157084617*^9, 3.579504189543863*^9}, {3.579511201205995*^9, 
+  3.579511201710024*^9}, {3.5795112359499826`*^9, 3.5795112374860706`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ImSize", "=", "500"}]], "Input",
+ CellChangeTimes->{{3.5795156256500587`*^9, 3.579515630476335*^9}, {
+  3.579515768981257*^9, 3.579515769525288*^9}}],
+
+Cell[BoxData["500"], "Output",
+ CellChangeTimes->{
+  3.579515770033317*^9, 3.5795980685686874`*^9, 3.579598167158326*^9, 
+   3.579600370341341*^9, 3.579947298083479*^9, {3.5799475352210426`*^9, 
+   3.5799475352830462`*^9}}]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"ListPlot", "[", 
+      RowBox[{
+       RowBox[{"GenerateVarNames", "[", 
+        RowBox[{"\"\<Q\>\"", ",", "n", ",", "t"}], "]"}], ",", 
+       RowBox[{"PlotRange", "\[Rule]", 
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"{", 
+           RowBox[{"0", ",", "n"}], "}"}], ",", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"-", "0.0001"}], ",", "0.0005"}], "}"}]}], "}"}]}], ",", 
+       RowBox[{"ImageSize", "\[Rule]", "ImSize"}], ",", 
+       RowBox[{"PlotLegends", "\[Rule]", " ", "\"\<Q\>\""}]}], "]"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"ListPlot", "[", 
+      RowBox[{
+       RowBox[{"GenerateVarNames", "[", 
+        RowBox[{"\"\<P\>\"", ",", "n", ",", "t"}], "]"}], ",", 
+       RowBox[{"PlotRange", "\[Rule]", "All"}], ",", 
+       RowBox[{"ImageSize", "\[Rule]", "ImSize"}], ",", 
+       RowBox[{"PlotLegends", "\[Rule]", " ", "\"\<P\>\""}]}], "]"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"ListPlot", "[", 
+      RowBox[{
+       RowBox[{"GenerateVarNames", "[", 
+        RowBox[{"\"\<A\>\"", ",", "n", ",", "t"}], "]"}], ",", 
+       RowBox[{"PlotRange", "\[Rule]", "All"}], ",", 
+       RowBox[{"ImageSize", "\[Rule]", "ImSize"}], ",", 
+       RowBox[{"PlotLegends", "\[Rule]", " ", "\"\<A\>\""}]}], "]"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"ListPlot", "[", 
+      RowBox[{
+       RowBox[{"GenerateVarNames", "[", 
+        RowBox[{"\"\<u\>\"", ",", "n", ",", "t"}], "]"}], ",", 
+       RowBox[{"PlotRange", "\[Rule]", "All"}], ",", 
+       RowBox[{"ImageSize", "\[Rule]", "ImSize"}], ",", 
+       RowBox[{"PlotLegends", "\[Rule]", " ", "\"\<u\>\""}]}], "]"}]}], "}"}],
+    ",", "\[IndentingNewLine]", 
+   RowBox[{"{", 
+    RowBox[{"t", ",", "0", ",", "T"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.57951126511065*^9, 3.579511332910528*^9}, 
+   3.579511376495021*^9, {3.579511458670721*^9, 3.5795114980629745`*^9}, {
+   3.5795115449276547`*^9, 3.579511555767275*^9}, {3.579511721791771*^9, 
+   3.5795117228478317`*^9}, {3.579512069851679*^9, 3.579512070849736*^9}, {
+   3.5795124456681747`*^9, 3.579512553029315*^9}, {3.579512596453799*^9, 
+   3.5795126014610853`*^9}, {3.5795126354500294`*^9, 
+   3.5795126643416815`*^9}, {3.5795127709587803`*^9, 3.579512771190793*^9}, {
+   3.5795139516623125`*^9, 3.5795139555655355`*^9}, {3.579513985949273*^9, 
+   3.5795140013271527`*^9}, {3.579514045790696*^9, 3.579514047330784*^9}, {
+   3.579514134878792*^9, 3.57951418905089*^9}, {3.579514472243088*^9, 
+   3.579514498547592*^9}, {3.579514591460907*^9, 3.5795146100429697`*^9}, {
+   3.579515633946533*^9, 3.579515645625201*^9}, {3.579516013965269*^9, 
+   3.5795160438849807`*^9}, {3.5796038797396727`*^9, 3.579603887867273*^9}, {
+   3.579604097955073*^9, 3.579604116831073*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`t$$ = 1., Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`t$$], 0, 1}}, Typeset`size$$ = {1611., {487., 154.}}, 
+    Typeset`update$$ = 0, Typeset`initDone$$, Typeset`skipInitDone$$ = 
+    True, $CellContext`t$15867$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`t$$ = 0}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`t$$, $CellContext`t$15867$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> {
+        ListPlot[
+         $CellContext`GenerateVarNames["Q", $CellContext`n, $CellContext`t$$],
+          PlotRange -> {{0, $CellContext`n}, {-0.0001, 0.0005}}, 
+         ImageSize -> $CellContext`ImSize, PlotLegends -> "Q"], 
+        ListPlot[
+         $CellContext`GenerateVarNames["P", $CellContext`n, $CellContext`t$$],
+          PlotRange -> All, ImageSize -> $CellContext`ImSize, PlotLegends -> 
+         "P"], 
+        ListPlot[
+         $CellContext`GenerateVarNames["A", $CellContext`n, $CellContext`t$$],
+          PlotRange -> All, ImageSize -> $CellContext`ImSize, PlotLegends -> 
+         "A"], 
+        ListPlot[
+         $CellContext`GenerateVarNames["u", $CellContext`n, $CellContext`t$$],
+          PlotRange -> All, ImageSize -> $CellContext`ImSize, PlotLegends -> 
+         "u"]}, "Specifications" :> {{$CellContext`t$$, 0, 1}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{1662., {378., 383.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Input",
+ CellChangeTimes->{3.579947602648899*^9}]
+},
+WindowSize->{1904, 1105},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+ShowSelection->True,
+FrontEndVersion->"9.0 for Microsoft Windows (64-bit) (November 20, 2012)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[557, 20, 248, 6, 52, "Input"],
+Cell[CellGroupData[{
+Cell[830, 30, 146, 2, 31, "Input"],
+Cell[979, 34, 460, 6, 31, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1476, 45, 168, 3, 31, "Input"],
+Cell[1647, 50, 361, 5, 31, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2045, 60, 280, 7, 31, "Input"],
+Cell[2328, 69, 2419, 50, 31, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4784, 124, 206, 6, 31, "Input"],
+Cell[4993, 132, 217, 3, 31, "Output"]
+}, Open  ]],
+Cell[5225, 138, 877, 20, 31, "Input"],
+Cell[CellGroupData[{
+Cell[6127, 162, 173, 3, 31, "Input"],
+Cell[6303, 167, 223, 4, 31, "Output"]
+}, Open  ]],
+Cell[6541, 174, 2855, 59, 112, "Input"],
+Cell[9399, 235, 2255, 46, 778, InheritFromParent]
+}
+]
+*)
+
+(* End of internal cache information *)

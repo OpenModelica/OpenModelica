@@ -1,0 +1,1206 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass report
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 3.5cm
+\rightmargin 3.5cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language swedish
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Example models
+\end_layout
+
+\begin_layout Section
+Package PDEDomains
+\end_layout
+
+\begin_layout Standard
+Modelica code of domain definitions:
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../languageExtension/PDEDomains.mo"
+lstparams "breaklines=true,caption={Standard domains deffinitions: 1D -- Line segment, 2D -- Rectangle, Circle, 3D -- Block},captionpos=b,frame=tb,label={PDEDomains.mo}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Simple models
+\end_layout
+
+\begin_layout Subsection
+Advection equation (1D)
+\begin_inset CommandInset citation
+LatexCommand cite
+key "advection"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $L$
+\end_inset
+
+ ..
+ length
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $c$
+\end_inset
+
+ ..
+ constant, assume 
+\begin_inset Formula $c>0$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $u\in\langle0,L\rangle\times\langle0,T\rangle\rightarrow\mathbb{R}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+equation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial u}{\partial t}+c\frac{\partial u}{\partial x}=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+initial conditions
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+u(x,0)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+boundary conditions
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+u(0,t)=\sin\left(2\pi t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Modelica code
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../languageExtension/advection.mo"
+lstparams "breaklines=true,caption={Advection equation in Modelica},captionpos=b,frame=tb,label={advection.mo}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Flat model
+\end_layout
+
+\begin_layout Paragraph
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "C:/Users/janeks/Documents/PDEInModelica/languageExtension/advection_flat.mo"
+lstparams "breaklines=true,caption={Advection equation -- flat model},captionpos=b,frame=tb,label={advection_flat.mo}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Generated C code
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../PDESolver/models/advection.c"
+lstparams "breaklines=true,caption={Advection equation -- \"generated\" C code},captionpos=b,frame=tb,label={advection.c},language=C"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+String equation (1D)
+\begin_inset CommandInset citation
+LatexCommand cite
+key "string"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $L$
+\end_inset
+
+ ..
+ length
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $u\in\langle0,L\rangle\times\langle0,T\rangle\rightarrow\mathbb{R}$
+\end_inset
+
+ (string position)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $c$
+\end_inset
+
+ ..
+ constant
+\end_layout
+
+\begin_layout Standard
+equation:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\partial^{2}u}{\partial t^{2}}-c\frac{\partial^{2}u}{\partial x^{2}}=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+initial conditions
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+u(x,0)=\sin\left(\frac{4\pi}{L}x\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+boundary conditions
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+u(0,t)=0,\quad u(L,t)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Modelica code
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../languageExtension/string.mo"
+lstparams "breaklines=true,caption={String model in Modelica},captionpos=b,frame=tb,label={string.mo}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Generated C code
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../PDESolver/models/string.c"
+lstparams "breaklines=true,caption={String equation -- \"generated\" C code},captionpos=b,frame=tb,label={string.c},language=C"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+přidat
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Heat equation in square with sources (2D)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/heat.png
+	lyxscale 40
+	width 60text%
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Heat eq.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $a$
+\end_inset
+
+ ..
+ domain square side hlaf length
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $c$
+\end_inset
+
+ ..
+ conductivity quocient
+\begin_inset Newline newline
+\end_inset
+
+
+\begin_inset Formula $T$
+\end_inset
+
+ ..
+ temperature
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+W(x,y) & = & \begin{cases}
+1 & \text{if}\,|x|<a/10\text{ and }y<a/10\\
+0 & \text{else}
+\end{cases}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+equation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial T}{\partial t}+c\left(\frac{\partial^{2}T}{\partial x^{2}}+\frac{\partial^{2}T}{\partial y^{2}}\right) & = & W
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+initial conditions
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+T(x,y,0)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+boundary conditions
+\end_layout
+
+\begin_layout Standard
+insulated walls (top, left, bottom)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial T}{\partial\bar{n}}(x,a,t) & = & 0\\
+\frac{\partial T}{\partial\bar{n}}(-a,y,t) & = & 0\\
+\frac{\partial T}{\partial\bar{n}}(x,-a,t) & = & 0
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+fixed temperature (right)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+T(a,y,t)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+More complex realistic models
+\end_layout
+
+\begin_layout Subsection
+Henleho klička - protiproudová výměna
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $c_{in}(x,t)$
+\end_inset
+
+ ..
+ koncentrace Na v sestupné části tubulu
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\bar{c}_{in}(x,t)$
+\end_inset
+
+ ..
+ koncentrace Na ve vzestupné části tubulu
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $c_{out}(x,t)$
+\end_inset
+
+ ..
+ koncentraca Na v dření
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $Q(x,t)$
+\end_inset
+
+ ..
+ tok vody v sestupné části tubulu
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $f_{H_{2}O}(x,t)$
+\end_inset
+
+ ..
+ tok vody na milimetr délky z sestupné části tubulu do dřeně
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $f_{Na}^{*}$
+\end_inset
+
+ ..
+ tok sodíku ze vzestupné části tubulu do dřeně na milimetr délky -- aktivní
+ transport -- parametr
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $L$
+\end_inset
+
+ ..
+ délka tubulu
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $P_{H_{2}0}$
+\end_inset
+
+ ..
+ prostupnost cévy pro vodu (permeabilita)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+\frac{\partial Q}{\partial x}(x,t)+f_{H_{2}0}(x,t) & =0\\
+(c_{out}(x,t)-c_{in}(x,t))\cdot P_{H_{2}O} & =f_{H_{2}0}(x,t)\\
+f_{H_{2}0}(x,t) & =\frac{dV}{dt}(t)\\
+Q(L,t)\cdot c_{in}(L,t) & =f_{Na}^{*}\cdot L+Q(L,t)\cdot c^{*}(t)\\
+\frac{\partial}{\partial x}\left(\bar{c}_{in}(x,t)\cdot Q(x,t)\right) & =f_{Na}^{*}\\
+f_{Na}^{*}\cdot L & =\frac{dm_{Na}}{dt}
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Oxygen diffusion in tissue around vessel
+\end_layout
+
+\begin_layout Standard
+polar coordinates 
+\begin_inset Formula $(r,\varphi)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial\varrho}{\partial t}+q\left(\frac{1}{r}\frac{\partial\varrho}{\partial r}+\frac{\partial^{2}\varrho}{\partial r^{2}}+\frac{1}{r^{2}}\frac{\partial^{2}\varrho}{\partial\varphi^{2}}\right)+w & = & 0\\
+\varrho(r_{0},\varphi) & = & \varrho_{0}\\
+\varrho(r,0) & = & \varrho(r,2\pi)\\
+\varrho_{nnn}(R,\varphi) & \text{=} & 0\;(=\varrho_{tn}(R,\varphi))
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\varrho$
+\end_inset
+
+ ..
+ oxygen concentration
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\varrho_{0}$
+\end_inset
+
+ ..
+ concentration in the vessel
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $q$
+\end_inset
+
+ ..
+ diffusion coefficient
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $w$
+\end_inset
+
+ ..
+ local oxygen consumption
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $R$
+\end_inset
+
+ ..
+ 
+\begin_inset Formula $\Omega$
+\end_inset
+
+ diameter
+\end_layout
+
+\begin_layout Standard
+The last equation should simulate infinite continuation of the domain.
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Is it OK?
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Heat diffusion
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/diffusion.pdf
+	width 50text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Scheme of heat diffusion in body
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+domain border
+\begin_inset Formula 
+\begin{eqnarray*}
+\partial\Omega & = & (a_{b}\cos(v),\, b_{b}\sin(v)\text{)},\; v\in\langle0,2\pi)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+equation 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "HeatEq"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial T}{\partial t}+\frac{\lambda}{c\varrho}\left(\frac{\partial^{2}T}{\partial x^{2}}+\frac{\partial^{2}T}{\partial y^{2}}\right) & = & W
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\lambda$
+\end_inset
+
+ ..
+ thermal conductivity
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $W(x,y)$
+\end_inset
+
+ ..
+ heat power density of tissue (input)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+W(x,y)=\begin{cases}
+W_{0} & \text{if}\, x^{2}+y^{2}\leq r^{2}\\
+0 & \text{else}
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+boundary condition 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\lambda\frac{\partial T}{\partial n}=-\alpha(T-T_{out}),\;(x,y)\in\partial\Omega
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\alpha$
+\end_inset
+
+ ..
+ tissue-air thermal transfer coefficient 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "prestupTepla"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+initial condition
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+T(x,y,0)=T_{0}(x,y)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Pulse waves in arteries caused by heart beats 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "alastrueyarterial,sherwin2003one"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/arteria.png
+	width 90text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Arteria scheme
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $A(x,t)$
+\end_inset
+
+ ..
+ crossection of vessel
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $U(x,t)$
+\end_inset
+
+ ..
+ average velocity of blood
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $Q(x,t)$
+\end_inset
+
+ ..
+ flux 
+\begin_inset Formula 
+\[
+Q=AU
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $P(x,t)$
+\end_inset
+
+ ..
+ pressure
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $P_{ext}$
+\end_inset
+
+ ..
+ external pressure
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $A_{0}$
+\end_inset
+
+ ..
+ vessel crossection at (
+\begin_inset Formula $P=P_{ext})$
+\end_inset
+
+ (24mm)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\beta=\frac{\sqrt{\pi}h_{0}E}{(1-\nu^{2})A_{0}}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $h_{0}$
+\end_inset
+
+ ..
+ vessel wall thicknes (2mm)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $E$
+\end_inset
+
+ ..
+ Young's modulus (0.24 - 6.55MPa)
+\begin_inset CommandInset citation
+LatexCommand cite
+key "PeripheralArterial,gosling2003terminology,gao2006stress"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\nu$
+\end_inset
+
+ ..
+ Poisson ratin (
+\begin_inset Formula $1/2$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\varrho=1050\,\mathrm{kg\, m^{-3}}$
+\end_inset
+
+ ..
+ blood density
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mu=4.0\,\mathrm{mPa\, s}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\alpha$
+\end_inset
+
+ ..
+ other ugly coefficient, let us say its 
+\begin_inset Formula $1$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $f$
+\end_inset
+
+ ..
+ frictional forces per unit length, let us assume inviscide flow 
+\begin_inset Formula $f=0$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial A}{\partial t}+\frac{\partial Q}{\partial x} & = & 0\\
+\frac{\partial Q}{\partial t}+\frac{\partial}{\partial x}\left(\alpha\frac{Q^{2}}{A}\right)+\frac{A}{\varrho}\frac{\partial P}{\partial x} & = & \,\\
+=\frac{\partial Q}{\partial t}+\alpha\left(2\frac{Q}{A}\frac{\partial Q}{\partial x}-\frac{Q^{2}}{A^{2}}\frac{\partial A}{\partial x}\right)+\frac{A}{\varrho}\frac{\partial P}{\partial x} & = & \frac{f}{\varrho}\\
+P_{ext}+\beta\left(\sqrt{A}-\sqrt{A_{0}}\right) & = & P
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Three segment geometry -- splitting arteria
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/arteria_splitting.png
+	width 60text%
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Arteria splitting
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We model arteria being splited into two minor arteries.
+ Three same equation systems (super-indexes 
+\begin_inset Formula $A$
+\end_inset
+
+, 
+\begin_inset Formula $B$
+\end_inset
+
+, 
+\begin_inset Formula $C$
+\end_inset
+
+) are solved on three different domains.
+ Systems are connected via BC.
+\end_layout
+
+\begin_layout Paragraph
+Border conditions
+\end_layout
+
+\begin_layout Subparagraph
+input
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+P^{A}(0,t)=P_{S} & \quad t\in\langle0,\frac{1}{3}T_{c})\\
+Q^{A}(0,t)=0 & \quad t\in\langle\frac{1}{3}T_{c},T_{c})
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $T_{c}$
+\end_inset
+
+ ..
+ cardiac cycle period
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\[
+Q^{A}(0,t)=\begin{cases}
+Q_{max}-\frac{3Q_{max}}{T_{c}}t,\, & t\in\langle0,\frac{1}{3}T_{c})\\
+0 & t\in\langle\frac{1}{3}T_{c},T_{c})
+\end{cases}\;\text{periodically}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+maximal flux 
+\begin_inset Formula $Q_{max}=6V_{s}/T_{c}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Formula $V_{s}$
+\end_inset
+
+..
+ stroke volume, 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+junction
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+Q^{A}(L^{A},t) & = & Q^{B}(0,t)+Q^{C}(0,t)\\
+P^{A}(L^{A},t) & = & P^{B}(0,t)\\
+P^{A}(L^{A},t) & = & P^{C}(0,t)
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subparagraph
+terminal
+\end_layout
+
+\begin_layout Standard
+we simulate the continuation of segments 
+\begin_inset Formula $B$
+\end_inset
+
+ and 
+\begin_inset Formula $C$
+\end_inset
+
+ with just a resitance
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+Q(L,t)=\frac{P(L,t)}{R_{out}},\text{ for }B\text{ and }C
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For check: the result should be in agreement with Moens–Korteweg equation.
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_body
+\end_document
