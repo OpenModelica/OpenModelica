@@ -2004,7 +2004,7 @@ function simulate "simulates a modelica model by generating c code, build it and
   simulate(A);
 "
   input TypeName className "the class that should simulated";
-  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real startTime := 0.0 "the start time of the simulation. <default> = 0.0";
   input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
   input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
   input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
@@ -2035,7 +2035,7 @@ end moveClass;
 
 function linearize "creates a model with symbolic linearization matrixes"
   input TypeName className "the class that should simulated";
-  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real startTime := 0.0 "the start time of the simulation. <default> = 0.0";
   input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
   input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
   input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
