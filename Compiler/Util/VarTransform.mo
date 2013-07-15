@@ -1566,8 +1566,9 @@ algorithm
     case ((e as DAE.ASUB(exp = e1,sub = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
-        (e1_1,true) = replaceExp(e1, repl, cond);
-        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
+        (e1_1,c1) = replaceExp(e1, repl, cond);
+        (expl_1,c2) = replaceExpList(expl, repl, cond, {}, false);
+        true = c1 or c2;
       then
         (Expression.makeASUB(e1_1,expl_1),true);
     case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
