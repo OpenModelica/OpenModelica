@@ -3201,13 +3201,11 @@ algorithm
        str = IOStream.append(str, Util.if_(List.isEmpty(ie), "", "initial equation\n"));
        str = dumpInitialEquationsStream(ie, str);
 
-       str = IOStream.append(str, Util.if_(List.isEmpty(ia), "", "initial algorithm\n"));
        str = dumpInitialAlgorithmsStream(ia, str);
 
        str = IOStream.append(str, Util.if_(List.isEmpty(e), "", "equation\n"));
        str = dumpEquationsStream(e, str);
 
-       str = IOStream.append(str, Util.if_(List.isEmpty(a), "", "algorithm\n"));
        str = dumpAlgorithmsStream(a, str);
 
        str = IOStream.append(str, Util.if_(List.isEmpty(co), "", "constraint\n"));
@@ -3233,6 +3231,7 @@ algorithm
 
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) :: xs, str)
       equation
+        str = IOStream.append(str, "algorithm\n");
         str = IOStream.appendList(str, List.map(stmts, ppStatementStr));
         str = dumpAlgorithmsStream(xs, str);
       then
@@ -3262,6 +3261,7 @@ algorithm
 
     case (DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) :: xs, str)
       equation
+        str = IOStream.append(str, "initial algorithm\n");
         str = IOStream.appendList(str, List.map(stmts, ppStatementStr));
         str = dumpInitialAlgorithmsStream(xs, str);
       then
