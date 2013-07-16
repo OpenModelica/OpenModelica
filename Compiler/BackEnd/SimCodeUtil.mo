@@ -2633,7 +2633,7 @@ algorithm
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
         message = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
-        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in ", algStr, ". This has not been implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then fail();
 
@@ -2673,7 +2673,7 @@ algorithm
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
         message = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
-        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in ", algStr, ". This has not been implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then fail();
   end matchcontinue;
@@ -6343,7 +6343,7 @@ algorithm
         failure(List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare));
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
         message = ComponentReference.printComponentRefListStr(solvedVars);
-        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in ", algStr, ". This has not been implemented yet.\n"});
+        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then
          fail();      
