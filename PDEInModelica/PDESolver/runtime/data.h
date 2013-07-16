@@ -9,7 +9,7 @@ struct DoublePair {
 #ifndef _DATA
 #define _DATA
 struct DATA {
-    int M;				//number of grid points
+    int M;        //number of grid points
     int nStateFields;
     int nAlgebraicFields;
     int nParameterFields;
@@ -22,7 +22,7 @@ struct DATA {
     double* algebraicFields;//[iAlgebraic*M + iNode];
     double* parameterFields;//[iParameter*M + iNode];
     double* spaceField;//[iNode];  space independent variable (x)
-    int* 	isBc;//[iState*2 + (0 = left) or (1 = right)]; Is there a BC?
+    int*   isBc;//[iState*2 + (0 = left) or (1 = right)]; Is there a BC?
     double* parameters;
     double time;
     double endTime;

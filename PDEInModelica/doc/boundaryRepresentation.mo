@@ -54,9 +54,9 @@ package BoundaryRepresentation
     //assert(Curve[i].curveFun(Curve[i].uEnd) = Curve[i+1].curveFun(Curve[i+1].uStart), String(i)+"th curve and "+String(i+1)+"th curve are not connected.",level = AssertionLevel.error);
     //    end for;
     //    assert(curves[NCurves].curveFun(curves[NCurves].uEnd) =
-    //							curves[1].curveFun(curves[1].uStart),
-    //							String(NCurves)+"th curve and first curve are not connected.",
-    //							level = AssertionLevel.error);
+    //              curves[1].curveFun(curves[1].uStart),
+    //              String(NCurves)+"th curve and first curve are not connected.",
+    //              level = AssertionLevel.error);
   end Boundary;
   record DomainHalfCircle
     constant Real pi = Modelica.Constants.pi;
