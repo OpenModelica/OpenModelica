@@ -11,14 +11,15 @@ package PDEDomains
     Domain1DBoundary left(shape = shapeFunc, range = {0,0});
     Domain1DBoundary right(shape = shapeFunc, range = {1,1});
   end DomainLineSegment1D;
+
   record DomainRectangle2D
     parameter Real Lx = 1;
     parameter Real Ly = 1;
-    parameter Real cx = 0;
-    parameter Real cy = 0;
+    parameter Real ax = 0;
+    parameter Real ay = 0;
     function shapeFunc
-      input Real v1,v2;
-      output Real x = v1 / 2 * Lx + cx,y = v2 / 2 * Ly + cy;
+      input Real v1, v2;
+      output Real x = ax + Lx * v1, y = ay + Ly * v2;
     end shapeFunc;
     Domain2DInterior interior(shape = shapeFunc, range = {{-1,1},{-1,1}});
     Domain2DBoundary right(shape = shapeFunc, range = {{1,1},{-1,1}});
@@ -26,6 +27,7 @@ package PDEDomains
     Domain2DBoundary left(shape = shapeFunc, range = {{-1,-1},{-1,1}});
     Domain2DBoundary top(shape = shapeFunc, range = {{-1,1},{1,1}});
   end DomainRectangle2D;
+
   record DomainCircular2D
     parameter Real radius = 1;
     parameter Real cx = 0;
@@ -40,12 +42,13 @@ package PDEDomains
     Domain2DInterior interior(shape = shapeFunc, range = {{O,1},{O,1}});
     Domain2DBoundary boundary(shape = shapeFunc, range = {{1,1},{0,1}});
   end DomainCircular2D;
+
   record DomainBlock3D
-    parameter Real Lx = 1,Ly = 1,Lz = 1;
-    parameter Real cx = 0,cy = 0,cz = 0;
+    parameter Real Lx = 1, Ly = 1, Lz = 1;
+    parameter Real ax = 0, ay = 0, az = 0;
     function shapeFunc
-      input Real vx,vy,vz;
-      output Real x = vx / 2 * Lx + cx,y = vy / 2 * Ly + cy,z = vz / 2 * Lz + cz;
+      input Real vx, vy, vz;
+      output Real x = ax + Lx * vx, y = ay + Ly * vy, z = az + Lz * vz;
     end shapeFunc;
     Domain3DInterior interior(shape = shapeFunc, range = {{-1,1},{-1,1},{-1,1}});
     Domain3DBoundary right(shape = shapeFunc, range = {{1,1},{-1,1},{-1,1}});

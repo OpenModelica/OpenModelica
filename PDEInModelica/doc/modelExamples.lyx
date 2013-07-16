@@ -149,7 +149,7 @@ initial conditions
 \begin_layout Standard
 \begin_inset Formula 
 \[
-u(x,0)=0
+u(x,0)=1
 \]
 
 \end_inset
@@ -164,7 +164,7 @@ boundary conditions
 \begin_layout Standard
 \begin_inset Formula 
 \[
-u(0,t)=\sin\left(2\pi t\right)
+u(0,t)=\cos\left(2\pi t\right)
 \]
 
 \end_inset
@@ -704,7 +704,7 @@ Scheme of heat diffusion in body
 \end_layout
 
 \begin_layout Standard
-domain border
+domain boundary 
 \begin_inset Formula 
 \begin{eqnarray*}
 \partial\Omega & = & (a_{b}\cos(v),\, b_{b}\sin(v)\text{)},\; v\in\langle0,2\pi)
@@ -1082,7 +1082,7 @@ We model arteria being splited into two minor arteries.
 \end_layout
 
 \begin_layout Paragraph
-Border conditions
+Boundary conditions
 \end_layout
 
 \begin_layout Subparagraph
@@ -1196,10 +1196,6 @@ Q(L,t)=\frac{P(L,t)}{R_{out}},\text{ for }B\text{ and }C
 
 \begin_layout Standard
 For check: the result should be in agreement with Moens–Korteweg equation.
-\end_layout
-
-\begin_layout Standard
-
 \end_layout
 
 \end_body
