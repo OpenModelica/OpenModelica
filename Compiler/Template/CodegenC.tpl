@@ -1201,8 +1201,10 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
     INFO(LOG_INIT, "updating start-values");
     INDENT(LOG_INIT);
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
-    'INFO2(LOG_INIT, "%s(start=%g)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
-    $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;'
+      <<
+      INFO2(LOG_INIT, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
+        $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;
+      >>
     ;separator="\n"%>
     RELEASE(LOG_INIT);
 
