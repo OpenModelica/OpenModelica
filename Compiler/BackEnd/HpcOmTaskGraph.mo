@@ -727,9 +727,10 @@ algorithm
       eqString =stringCharListString(eqDescLst);
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);   
-      var = listGet(varLst,arrayGet(ass2,i));
-      varString = getVarString(var);
-      desc = ("ARRAY:"+&eqString +& " FOR " +& varString);
+      //var = listGet(varLst,arrayGet(ass2,i));
+      //varString = getVarString(var);
+      //desc = ("ARRAY:"+&eqString +& " FOR " +& varString);
+      desc = ("ARRAY:"+&eqString +& " FOR THE VARS: " +& stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
       descLst = desc::iEqDesc;
     then 
       descLst;
@@ -1840,7 +1841,7 @@ algorithm
   inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
   varSccMapping := removeContinuousEntries(varSccMapping,cutNodes);
   eqSccMapping := removeContinuousEntries(eqSccMapping,cutNodes);
-  (_,rootNodes,_) := List.intersection1OnTrue(rootNodes,cutNodes,intEq); //TODO:  this has to be updated
+  (_,rootNodes,_) := List.intersection1OnTrue(rootNodes,cutNodes,intEq); //TODO:  this has to be updated(When cutting out When-nodes new roots arise)
   rangeLst := List.intRange(arrayLength(nodeMark));
   nodeMark := List.fold1(rangeLst, markRemovedNodes,cutNodes,nodeMark);
   graphDataOut :=TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
@@ -2502,46 +2503,46 @@ protected function getCommunicationCost " gets the communication cost for an edg
   author: waurich TUD 2013-06."
   input Integer parentIdx;
   input Integer childIdx;
-  input array<list<tuple<Integer,Integer>>> commCosts; 
+  input array<list<tuple<Integer,Integer,Integer>>> commCosts; 
   output Integer costOut;
 protected
-  list<tuple<Integer,Integer>> commRow;
-  tuple<Integer,Integer> commEntry;
+  list<tuple<Integer,Integer,Integer>> commRow;
+  tuple<Integer,Integer,Integer> commEntry;
 algorithm
   commRow := arrayGet(commCosts,parentIdx);
   commEntry := getTupleByFirstEntry(commRow,childIdx);
-  (_,costOut) := commEntry;  
+  (_,costOut,_) := commEntry;  
 end getCommunicationCost;
 
 
-protected function getTupleByFirstEntry " gets the tuple of a list<tuple> whose first entry correpsonds to valueIn.
+protected function getTupleByFirstEntry " gets the tuple of a list<tuple> whose first entry corresponds to valueIn.
 author:Waurich TUD 2013-06"
-  input list<tuple<Integer,Integer>> tplLstIn;
+  input list<tuple<Integer,Integer,Integer>> tplLstIn;
   input Integer valueIn;
-  output tuple<Integer,Integer> tpleOut;
+  output tuple<Integer,Integer,Integer> tpleOut;
 algorithm
   tpleOut := matchcontinue(tplLstIn,valueIn)
     local
       Integer tplValue;
-      tuple<Integer,Integer> tplTmp;
-      tuple<Integer,Integer> head;
-      list<tuple<Integer,Integer>> rest;
+      tuple<Integer,Integer,Integer> tplTmp;
+      tuple<Integer,Integer,Integer> head;
+      list<tuple<Integer,Integer,Integer>> rest;
     case(head::rest,_)
       equation
-        (tplValue,_) = head;
+        (tplValue,_,_) = head;
         false = intEq(tplValue,valueIn);
         tplTmp = getTupleByFirstEntry(rest,valueIn);
       then
         tplTmp;
     case(head::rest,_)
       equation
-        (tplValue,_) = head;
+        (tplValue,_,_) = head;
         true = intEq(tplValue,valueIn);
       then
         head;
     case({},_)
       equation
-        print("the value "+&intString(valueIn)+&" can not be found in the tuple list \n");
+        print("getCommunicationCosts failed! - the value "+&intString(valueIn)+&" can not be found in the list of edges\n");
       then
         fail(); 
   end matchcontinue;
@@ -4035,6 +4036,6 @@ algorithm
   coords := ((xCoord,parallelSetIdx*levelInterval));
   nodeCoordsOut := arrayUpdate(nodeCoordsIn,compIdx,coords);
 end getYCoordForNode;
-
+  
 
 end HpcOmTaskGraph;
