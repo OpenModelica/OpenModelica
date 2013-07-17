@@ -948,8 +948,7 @@ algorithm
         // Look in the local scope.
         (SOME(item), SOME(new_path), SOME(env)) =
           lookupInLocalScope(name, inEnv, {});
-        // Look for the rest of the reference in the found item.
-        // not fully qualified
+        // Look for the rest of the reference in the found item, fully qualified
         (item, cref_rest as Absyn.CREF_FULLYQUALIFIED(_)) = lookupCrefInItem(cref_rest, item, env);
         cref = cref_rest;
       then
