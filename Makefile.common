@@ -114,8 +114,12 @@ omc-diff: mkbuilddirs
 	$(MAKE) -C testsuite/ -f Makefile omc-diff
 
 testlibrariemsl31cpp:
-	(cd testsuite/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
+	(cd testsuite/openmodelica/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
 	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl31/testsuite-msl31-cpp-trace.txt" 
+
+testlibrariemsl32cpp:
+	(cd testsuite/openmodelica/cppruntime/libraries/msl32 && time $(MAKE) -f Makefile > testsuite-msl32-cpp-trace.txt 2>&1)
+	echo "log is in testsuite/openmodelica/cppruntime/libraries/msl32/testsuite-msl32-cpp-trace.txt" 
 	
 runtimeCPPclean: 
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean
