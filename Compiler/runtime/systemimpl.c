@@ -1905,6 +1905,11 @@ void SystemImpl__gettextInit(const char *locale)
   }
   free(old_ctype);
 #endif /* __MINGW32__ */
+  if(omhome == NULL)
+  {
+	fprintf(stderr, "Warning: environment variable OPENMODELICAHOME is not set. Cannot load locale.\n");
+	return;
+  }
   omlen = strlen(omhome);
   localedir = (char*) malloc(omlen + 25);
   sprintf(localedir, "%s/share/locale", omhome);
