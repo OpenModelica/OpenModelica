@@ -908,7 +908,7 @@ public function lookupCrefInPackage
   output Item outItem;
   output Absyn.ComponentRef outCref;
 algorithm
-  (outItem, outCref) := match(inCref, inEnv)
+  (outItem, outCref) := matchcontinue(inCref, inEnv)
     local
       Absyn.Ident name;
       Absyn.Path new_path;
@@ -925,7 +925,7 @@ algorithm
       then
         (item, cref);
 
-    // Qualified identifier.
+    // Qualified identifier, what we get back is not fully qualified
     case (Absyn.CREF_QUAL(name = name, subscripts = subs,
         componentRef = cref_rest), _)
       equation
@@ -934,12 +934,28 @@ algorithm
           lookupInLocalScope(name, inEnv, {});
         // Look for the rest of the reference in the found item.
         (item, cref_rest) = lookupCrefInItem(cref_rest, item, env);
+        // not fully qualified
+        failure(Absyn.CREF_FULLYQUALIFIED(_) = cref_rest);
         cref = Absyn.pathToCrefWithSubs(new_path, subs);
         cref = Absyn.joinCrefs(cref, cref_rest);
       then
         (item, cref);
 
-  end match;
+    // Qualified identifier, what we get back is fully qualified, i.e. from import!
+    case (Absyn.CREF_QUAL(name = name, subscripts = subs,
+        componentRef = cref_rest), _)
+      equation
+        // Look in the local scope.
+        (SOME(item), SOME(new_path), SOME(env)) =
+          lookupInLocalScope(name, inEnv, {});
+        // Look for the rest of the reference in the found item.
+        // not fully qualified
+        (item, cref_rest as Absyn.CREF_FULLYQUALIFIED(_)) = lookupCrefInItem(cref_rest, item, env);
+        cref = cref_rest;
+      then
+        (item, cref);
+  
+  end matchcontinue;
 end lookupCrefInPackage;
 
 public function lookupNameInItem
