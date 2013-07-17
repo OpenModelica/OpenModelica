@@ -59,7 +59,7 @@ static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t l
       c_add_message(-1, ErrorType_scripting, ErrorLevel_notification, gettext("module = %s, log level = %s: %s"), tokens, 3);
       break;
     default:
-      printf("module = %s, log level = %d: %s\n", module, log_level, message);
+      printf("module = %s, log level = %d: %s\n", module, log_level, message);fflush(NULL);
       break;
   }
 }
@@ -71,6 +71,7 @@ static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_statu
   va_start(argp, message);
   fmi1_log_forwarding_v(c, instanceName, status, category, message, argp);
   va_end(argp);
+  fflush(NULL);
 }
 
 /*

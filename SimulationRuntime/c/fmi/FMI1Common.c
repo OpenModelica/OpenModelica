@@ -39,7 +39,7 @@ extern "C" {
  */
 void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
-  printf("module = %s, log level = %s: %s\n", module, jm_log_level_to_string(log_level), message);
+  printf("module = %s, log level = %s: %s\n", module, jm_log_level_to_string(log_level), message);fflush(NULL);
 }
 
 /*
@@ -52,6 +52,7 @@ void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t st
   va_start(argp, message);
   fmi1_log_forwarding_v(c, instanceName, status, category, message, argp);
   va_end(argp);
+  fflush(NULL);
 }
 
 /*
