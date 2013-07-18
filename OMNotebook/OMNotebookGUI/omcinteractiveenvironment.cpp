@@ -222,7 +222,7 @@ namespace IAEX
 #endif
 
       QStringList parameters;
-      parameters << "+d=interactiveCorba";
+      parameters << "+d=interactiveCorba" << QString("+corbaObjectReferenceFilePath=").append(QDir::tempPath());
 
       // 2006-03-14 AF, create qt process
       QProcess *omcProcess = new QProcess();
