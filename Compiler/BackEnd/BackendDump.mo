@@ -49,13 +49,15 @@ encapsulated package BackendDump
 
 public import BackendDAE;
 public import DAE;
+public import HashSet;
 
 protected import Absyn;
 protected import Algorithm;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
-protected import BackendVariable;
 protected import BackendEquation;
+protected import BackendVariable;
+protected import BaseHashSet;
 protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;
@@ -398,6 +400,7 @@ end printSparsityPattern;
 //   - dumpEquation
 //   - dumpEquationArray
 //   - dumpEquationList
+//   - dumpHashSet
 //   - dumpSparsityPattern
 //   - dumpTearing
 //   - dumpVariables
@@ -507,6 +510,16 @@ algorithm
   dumpConstraints(arrayList(inConstraintArray), 0);
   print("\n");
 end dumpConstraintArray;
+
+public function dumpHashSet "function dumpHashSet
+  author lochel"
+  input HashSet.HashSet hashSet;
+  input String heading;
+algorithm
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  BaseHashSet.printHashSet(hashSet);
+  print("\n");
+end dumpHashSet;
 
 public function dumpSparsityPattern "function dumpSparsityPattern
   author lochel"

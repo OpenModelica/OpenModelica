@@ -1140,8 +1140,7 @@ algorithm
   end matchcontinue;
 end isRecord;
 
-public function isArrayElement "
-function isArrayElement
+public function isArrayElement "function isArrayElement
   returns true if cref is elemnt of an array"
   input ComponentRef cr;
   output Boolean b;
@@ -1500,24 +1499,22 @@ algorithm
   end match;
 end crefSubs;
 
-public function crefLastSubs "
-function: crefLastSubs
+public function crefLastSubs "function: crefLastSubs
   Return the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
-  outSubscriptLst:=
-  match (inComponentRef)
+  outSubscriptLst := match (inComponentRef)
     local
       DAE.Ident id;
-      list<DAE.Subscript> subs,res;
+      list<DAE.Subscript> subs;
       ComponentRef cr;
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) then subs;
-    case (DAE.CREF_QUAL(componentRef = cr))
-      equation
-        res = crefLastSubs(cr);
-      then
-        res;
+      
+    case (DAE.CREF_IDENT(ident=id, subscriptLst=subs))
+    then subs;
+    
+    case (DAE.CREF_QUAL(componentRef=cr)) equation
+    then crefLastSubs(cr);
   end match;
 end crefLastSubs;
 
@@ -1832,28 +1829,25 @@ algorithm
   end match;
 end subscriptCrefWithInt;
 
-public function crefSetLastSubs "
-function: crefSetLastSubs
+public function crefSetLastSubs "function crefSetLastSubs
   sets the subs of the last componenentref ident"
   input ComponentRef inComponentRef;
-  input list<DAE.Subscript> insubs;
+  input list<DAE.Subscript> inSubs;
   output ComponentRef outComponentRef;
 algorithm 
-  outComponentRef := match (inComponentRef,insubs)
+  outComponentRef := match (inComponentRef, inSubs)
     local
       DAE.Ident id;
-      list<DAE.Subscript> subs,s;
-      ComponentRef cr_1,cr;
-      DAE.Type t2;
+      DAE.Type tp;
+      list<DAE.Subscript> subs;
+      ComponentRef cr;
     
-    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = subs),_) 
-      then makeCrefIdent(id,t2,insubs);
+    case (DAE.CREF_IDENT(ident=id, identType=tp, subscriptLst=subs), _) 
+    then makeCrefIdent(id, tp, inSubs);
     
-    case (DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr),_)
-      equation
-        cr_1 = crefSetLastSubs(cr,insubs);
-      then
-        makeCrefQual(id,t2,s,cr_1);
+    case (DAE.CREF_QUAL(ident=id, identType=tp, subscriptLst=subs, componentRef=cr) ,_) equation
+      cr = crefSetLastSubs(cr, inSubs);
+    then makeCrefQual(id, tp, subs, cr);
   end match;
 end crefSetLastSubs;
 

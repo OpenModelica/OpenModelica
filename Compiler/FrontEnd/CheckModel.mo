@@ -413,25 +413,33 @@ algorithm
       DAE.Type tp;
       DAE.Ident iteratorName;
       String str;
+      DAE.Ident ident;
 
-      // a := expr;
-    case (DAE.STMT_ASSIGN(exp1 = exp1), _)
-      equation
-        ((_, ht)) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, iht);
-      then
-        ht;
-      // (a, b, c) := foo(...)
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl), _)
-      equation
-        ((_, ht)) = Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, iht);
-      then
-        ht;
-    // v := expr   where v is array.
-    case (DAE.STMT_ASSIGN_ARR(componentRef = cr), _)
-      equation
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, iht);
-      then ht;
+    // a := expr;
+    case (DAE.STMT_ASSIGN(exp1 = exp1), _) equation
+      ((_, ht)) = Expression.traverseExpTopDown(exp1, statementOutputsCrefFinder, iht);
+    then ht;
+        
+    // (a, b, ...) := expr;
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl), _) equation
+      ((_, ht)) = Expression.traverseExpListTopDown(expl, statementOutputsCrefFinder, iht);
+    then ht;
+        
+    // a := expr;  // where a is array with an empty list as subscript
+    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _) equation
+      {} = ComponentReference.crefLastSubs(cr);
+      crlst = ComponentReference.expandCref(cr, true);
+      ht = List.fold(crlst, BaseHashSet.add, iht);
+    then ht;
+    
+    // a := expr;  // where a is array
+    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _) equation
+      failure({} = ComponentReference.crefLastSubs(cr));
+      cr = ComponentReference.crefSetLastSubs(cr, {DAE.WHOLEDIM()});
+      crlst = ComponentReference.expandCref(cr, true);
+      ht = List.fold(crlst, BaseHashSet.add, iht);
+    then ht;
+    
     case(DAE.STMT_IF(statementLst = stmts, else_ = elsebranch), _)
       equation
         ht = List.fold(stmts, statementOutputs, iht);
@@ -491,12 +499,11 @@ algorithm
         ht = List.fold(stmts, statementOutputs, iht);
       then ht;
     case(DAE.STMT_THROW(source=_), _) then iht;
-    else
-      equation
-        str = DAEDump.ppStatementStr(inStatement);
-        Debug.fprintln(Flags.FAILTRACE, "- CheckModel.statementOutputs failed for " +& str +& "\n");
-      then
-        fail();
+    
+    else equation
+      str = DAEDump.ppStatementStr(inStatement);
+      Debug.fprintln(Flags.FAILTRACE, "- CheckModel.statementOutputs failed for " +& str +& "\n");
+    then fail();
   end matchcontinue;
 end statementOutputs;
 
@@ -550,12 +557,20 @@ algorithm
     case((e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), ht))
       then
         ((e, false, ht));
-    case((e as DAE.CREF(componentRef=cr), ht))
-      equation
-        crlst = ComponentReference.expandCref(cr, true);
-        ht = List.fold(crlst, BaseHashSet.add, ht);
-      then
-        ((e, false, ht));
+        
+    case((e as DAE.CREF(componentRef=cr), ht)) equation
+      {} = ComponentReference.crefLastSubs(cr);
+      crlst = ComponentReference.expandCref(cr, true);
+      ht = List.fold(crlst, BaseHashSet.add, ht);
+    then ((e, false, ht));
+    
+    case((e as DAE.CREF(componentRef=cr), ht)) equation
+      failure({} = ComponentReference.crefLastSubs(cr));
+      cr = ComponentReference.crefSetLastSubs(cr, {DAE.WHOLEDIM()});
+      crlst = ComponentReference.expandCref(cr, true);
+      ht = List.fold(crlst, BaseHashSet.add, ht);
+    then ((e, false, ht));
+      
     case((e as DAE.ASUB(exp=exp), ht))
       equation
         ((_, ht)) = Expression.traverseExpTopDown(exp, statementOutputsCrefFinder, ht);

@@ -361,14 +361,20 @@ algorithm
   end matchcontinue;
 end get2;
 
-public function dumpHashSet ""
-  input HashSet t;
+public function printHashSet ""
+  input HashSet hashSet;
 protected
   FuncKeyString printKey;
 algorithm
-  (_,_,_,_,(_,_,printKey)) := t;
+  (_, _, _, _, (_, _, printKey)) := hashSet;
+  print(stringDelimitList(List.map(hashSetList(hashSet), printKey), "\n"));
+end printHashSet;
+
+public function dumpHashSet ""
+  input HashSet hashSet;
+algorithm
   print("HashSet:\n");
-  print(stringDelimitList(List.map(hashSetList(t),printKey),"\n"));
+  printHashSet(hashSet);
   print("\n");
 end dumpHashSet;
 

@@ -2298,32 +2298,29 @@ end replaceSTMT_IF;
 /* dump replacements  */
 /*********************************************************/
 
-public function dumpReplacements
-"function: dumpReplacements
+public function dumpReplacements "function dumpReplacements
   Prints the variable replacements on form var1 -> var2"
   input VariableReplacements inVariableReplacements;
 algorithm
-  _:=
-  match (inVariableReplacements)
+  _ := match (inVariableReplacements)
     local
-      String str,len_str;
+      String str, len_str;
       Integer len;
       HashTable2.HashTable ht;
       list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
-    case (REPLACEMENTS(hashTable= ht))
-      equation
-        (tplLst) = BaseHashTable.hashTableList(ht);
-        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        print("Replacements: (");
-        len = listLength(tplLst);
-        len_str = intString(len);
-        print(len_str);
-        print(")\n");
-        print("=============\n");
-        print(str);
-        print("\n");
-      then
-        ();
+
+    case (REPLACEMENTS(hashTable= ht)) equation
+      (tplLst) = BaseHashTable.hashTableList(ht);
+      str = stringDelimitList(List.map(tplLst,printReplacementTupleStr), "\n");
+      print("Replacements: (");
+      len = listLength(tplLst);
+      len_str = intString(len);
+      print(len_str);
+      print(")\n");
+      print("========================================\n");
+      print(str);
+      print("\n");
+    then ();
   end match;
 end dumpReplacements;
 
@@ -2348,7 +2345,7 @@ algorithm
         len_str = intString(len);
         print(len_str);
         print(")\n");
-        print("=============\n");
+        print("========================================\n");
         print(str);
         print("\n");
       then
@@ -2377,7 +2374,7 @@ algorithm
         len_str = intString(len);
         print(len_str);
         print(")\n");
-        print("=============\n");
+        print("========================================\n");
         print(str);
         print("\n");
       then

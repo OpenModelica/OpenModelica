@@ -52,14 +52,14 @@ public import BackendDAE;
 public import DAE;
 public import Env;
 
-protected import BackendDAEUtil;
 protected import BackendDAETransform;
+protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
-protected import BackendVarTransform;
 protected import BackendVariable;
-protected import BaseHashTable;
+protected import BackendVarTransform;
 protected import BaseHashSet;
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -72,8 +72,8 @@ protected import Flags;
 protected import HashSet;
 protected import Inline;
 protected import List;
-protected import Util;
 protected import Types;
+protected import Util;
 
 protected type EquationAttributes = tuple<DAE.ElementSource,Boolean> "eqnAttributes";
 
@@ -148,8 +148,7 @@ algorithm
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(dae,traverserUnreplacable,unreplacable);
   unreplacable := addUnreplacableFromWhens(dae,unreplacable);
-  Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
-  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
+  Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unreplacable, "Unreplacable Crefs:");
   // traverse all systems and remove simple equations
   (odae,(repl,b,_,_)) := BackendDAEUtil.mapEqSystemAndFold(dae,fastAcausal1,(repl,false,unreplacable,Flags.getConfigInt(Flags.MAXTRAVERSALS)));
   // traverse the shared parts
@@ -292,8 +291,7 @@ algorithm
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(inDAE,traverserUnreplacable,unreplacable);
   unreplacable := addUnreplacableFromWhens(inDAE,unreplacable);
-  Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
-  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
+  Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unreplacable, "Unreplacable Crefs:");
   (outDAE,(repl,_,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,allAcausal1,(repl,unreplacable,false));
   outDAE := removeSimpleEquationsShared(b,outDAE,repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -360,8 +358,7 @@ algorithm
   unreplacable := addUnreplacableFromWhens(inDAE,unreplacable);
   // do not replace state sets
   unreplacable := addUnreplacableFromStateSets(inDAE,unreplacable);
-  Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
-  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
+  Debug.fcall2(Flags.DUMP_REPL, BackendDump.dumpHashSet, unreplacable, "Unreplacable Crefs:");
   (outDAE,(repl,_,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,causal1,(repl,unreplacable,false));
   outDAE := removeSimpleEquationsShared(b,outDAE,repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -3696,70 +3693,78 @@ end addUnreplacableFromWhenEqn;
 
 protected function addUnreplacableFromWhenStmt "function addUnreplacableFromWhenStmt
   author: Frenkel TUD 2012-12"
-  input DAE.Statement inWhen;
-  input HashSet.HashSet iHs;
-  output HashSet.HashSet oHs;
+  input DAE.Statement inStmt;
+  input HashSet.HashSet inHS;
+  output HashSet.HashSet outHS;
 algorithm
-  oHs := match(inWhen,iHs)
+  outHS := matchcontinue(inStmt, inHS)
     local
       DAE.Statement stmt;
-      list< DAE.Statement> stmts;
+      list<DAE.Statement> stmts;
       HashSet.HashSet hs;
       DAE.ComponentRef cr;
-    case (DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()),_)
-      equation
-        hs = List.fold(stmts,addUnreplacableFromStmt,iHs);
-      then
-        hs;
-    case (DAE.STMT_WHEN(statementLst=stmts, elseWhen=SOME(stmt)),_)
-      equation
-        hs = List.fold(stmts,addUnreplacableFromStmt,iHs);
-        hs = addUnreplacableFromWhenStmt(stmt,hs);
-      then
-        hs;
+    
+    case (DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()), _) equation
+      hs = List.fold(stmts, addUnreplacableFromStmt, inHS);
+    then hs;
+    
+    case (DAE.STMT_WHEN(statementLst=stmts, elseWhen=SOME(stmt)), _) equation
+      hs = List.fold(stmts, addUnreplacableFromStmt, inHS);
+      hs = addUnreplacableFromWhenStmt(stmt, hs);
+    then hs;
+    
     // add also lhs of array assign stmts because these are not replacable with array(...)
-    case (DAE.STMT_ASSIGN_ARR(componentRef=cr),_)
-      equation
-        cr = ComponentReference.crefStripLastSubs(cr);
-        hs = BaseHashSet.add(cr, iHs);
-      then
-        hs;
-    else then iHs;
-  end match;
+    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _) equation
+      cr = ComponentReference.crefStripLastSubs(cr);
+      hs = BaseHashSet.add(cr, inHS);
+    then hs;
+    
+    // lochel: do not replace arrays that appear on lhs [#2271]
+    // TODO: improve this case, it blocks too much simplifications
+    case (DAE.STMT_ASSIGN(exp1=DAE.CREF(componentRef=cr)), _) equation
+      // DAE.T_ARRAY(ty=_) = ComponentReference.crefLastType(cr);
+      // failure({} = ComponentReference.crefLastSubs(cr));
+      // true = ComponentReference.isArrayElement(cr);
+      cr = ComponentReference.crefStripLastSubs(cr);
+      hs = BaseHashSet.add(cr, inHS);
+    then hs;
+    
+    else
+    then inHS;
+  end matchcontinue;
 end addUnreplacableFromWhenStmt;
 
 protected function addUnreplacableFromStmt "function addUnreplacableFromStmt
   author: Frenkel TUD 2012-12"
   input DAE.Statement inStmt;
-  input HashSet.HashSet iHs;
-  output HashSet.HashSet oHs;
+  input HashSet.HashSet inHS;
+  output HashSet.HashSet outHS;
 algorithm
-  oHs := match(inStmt,iHs)
+  outHS := match(inStmt, inHS)
     local
       DAE.ComponentRef cr;
       HashSet.HashSet hs;
       list<DAE.Exp> expExpLst;
       list<DAE.ComponentRef> crlst;
-    case (DAE.STMT_ASSIGN(exp1=DAE.CREF(componentRef=cr)),_)
-      equation
-        cr = ComponentReference.crefStripLastSubs(cr);
-        hs = BaseHashSet.add(cr,iHs);
-      then
-        hs;
-    case (DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst),_)
-      equation
-        crlst = List.flatten(List.map(expExpLst,Expression.extractCrefsFromExp));
-        crlst = List.map(crlst,ComponentReference.crefStripLastSubs);
-        hs = List.fold(crlst,BaseHashSet.add,iHs);
-      then
-        hs;
-    case (DAE.STMT_ASSIGN_ARR(componentRef=cr),_)
-      equation
-        cr = ComponentReference.crefStripLastSubs(cr);
-        hs = BaseHashSet.add(cr,iHs);
-      then
-        hs;
-    else then iHs;
+      
+    case (DAE.STMT_ASSIGN(exp1=DAE.CREF(componentRef=cr)), _) equation
+      cr = ComponentReference.crefStripLastSubs(cr);
+      hs = BaseHashSet.add(cr, inHS);
+    then hs;
+      
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst), _) equation
+      crlst = List.flatten(List.map(expExpLst, Expression.extractCrefsFromExp));
+      crlst = List.map(crlst, ComponentReference.crefStripLastSubs);
+      hs = List.fold(crlst, BaseHashSet.add, inHS);
+    then hs;
+    
+    case (DAE.STMT_ASSIGN_ARR(componentRef=cr), _) equation
+      cr = ComponentReference.crefStripLastSubs(cr);
+      hs = BaseHashSet.add(cr, inHS);
+    then hs;
+    
+    else
+    then inHS;
   end match;
 end addUnreplacableFromStmt;
 
