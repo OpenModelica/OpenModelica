@@ -227,8 +227,7 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   mgr = poa->the_POAManager();
 
   /* get the temporary directory */
-  char tempPath[1024];
-  GetTempPath(1000,tempPath);
+  const char* tempPath = SettingsImpl__getTempDirectoryPath();
   /* start omc differently if we have a corba session name */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
   {
