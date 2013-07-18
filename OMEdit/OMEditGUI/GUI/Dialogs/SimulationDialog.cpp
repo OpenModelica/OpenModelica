@@ -619,6 +619,7 @@ void SimulationDialog::simulate()
       else
         QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpFileNameTextBox->text() + "_prof.html"));
     }
+    accept();
   }
 }
 
