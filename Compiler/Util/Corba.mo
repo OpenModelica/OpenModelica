@@ -56,6 +56,11 @@ public function haveCorba
   external "C" b=Corba_haveCorba() annotation(Library = {"omcruntime", "OpenModelicaCorba"});
 end haveCorba;
 
+public function setObjectReferenceFilePath
+  input String inObjectReferenceFilePath;
+  external "C" Corba_setObjectReferenceFilePath(inObjectReferenceFilePath) annotation(Library = {"omcruntime", "OpenModelicaCorba"});
+end setObjectReferenceFilePath;
+
 public function setSessionName
   input String inSessionName;
 

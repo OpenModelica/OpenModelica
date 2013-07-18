@@ -724,6 +724,9 @@ constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(48, "correctCrefTypes",
 constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(49, "scalarizeBindings",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Always scalarizes bindings if set."));
+constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObjectReferenceFilePath",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Util.gettext("Sets the path for corba object reference file if +d=interactiveCorba is used."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -777,7 +780,8 @@ constant list<ConfigFlag> allConfigFlags = {
   SCALARIZE_MINMAX,
   RUNNING_WSM_TESTSUITE,
   CORRECT_CREF_TYPES,
-  SCALARIZE_BINDINGS
+  SCALARIZE_BINDINGS,
+  CORBA_OBJECT_REFERENCE_FILE_PATH
 };
 
 public function new
@@ -1379,7 +1383,7 @@ algorithm
   _ := matchcontinue(inFlag, inValue)
     local
       Boolean value;
-      String corba_name;
+      String corba_name, corba_objid_path;
 
     // +showErrorMessages needs to be sent to the C runtime.
     case (_, _)
@@ -1389,7 +1393,16 @@ algorithm
         ErrorExt.setShowErrorMessages(value);
       then
         ();
-
+    
+    // The corba object reference file path needs to be sent to the C runtime.
+    case (_, _)
+      equation
+        true = configFlagsIsEqualIndex(inFlag, CORBA_OBJECT_REFERENCE_FILE_PATH);
+        STRING_FLAG(data = corba_objid_path) = inValue;
+        Corba.setObjectReferenceFilePath(corba_objid_path);
+      then
+        ();
+        
     // The corba session name needs to be sent to the C runtime, and if the name
     // is mdt it also enables the MetaModelica grammar.
     case (_, _)

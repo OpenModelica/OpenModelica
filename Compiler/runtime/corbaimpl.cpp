@@ -43,7 +43,9 @@
 extern "C" {
 #include <stdio.h>
 #include "settingsimpl.h"
+#include "systemimpl.h"
 
+char* corbaObjectReferenceFilePath = 0;
 char* corbaSessionName = 0;
 const char* omc_cmd_message="";
 const char* omc_reply_message="";
@@ -67,6 +69,18 @@ OmcCommunication_impl* server;
 
 /* the file in which we have to dump the Corba IOR ID */
 std::ostringstream objref_file;
+
+void CorbaImpl__setObjectReferenceFilePath(const char *path)
+{
+  if (strlen(path) == 0) return;
+  if (corbaObjectReferenceFilePath) free(corbaObjectReferenceFilePath);
+
+  if (*path) {
+    corbaObjectReferenceFilePath = strdup(path);
+  } else {
+    corbaObjectReferenceFilePath = NULL;
+  }
+}
 
 void CorbaImpl__setSessionName(const char *name)
 {
@@ -227,7 +241,12 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   mgr = poa->the_POAManager();
 
   /* get the temporary directory */
-  const char* tempPath = SettingsImpl__getTempDirectoryPath();
+  /* if corbaObjectReferenceFilePath value is set and is a valid directory then use it for dumping the object reference file. */
+  const char* tempPath = NULL;
+  if (SystemImpl__directoryExists(corbaObjectReferenceFilePath))
+    tempPath = corbaObjectReferenceFilePath;
+  else
+    tempPath = SettingsImpl__getTempDirectoryPath();
   /* start omc differently if we have a corba session name */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
   {
@@ -247,14 +266,14 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
      * build the reference to store in the file
      */
     ref = omcpoa->id_to_reference (oid->in());
-    objref_file << tempPath << "openmodelica.objid." << corbaSessionName;
+    objref_file << tempPath << "/openmodelica.objid." << corbaSessionName;
   }
   else /* we don't have a session name, start OMC normaly */
   {
       server = new OmcCommunication_impl();
       oid = new PortableServer::ObjectId_var(poa->activate_object(server));
       ref = poa->id_to_reference (oid->in());
-      objref_file << tempPath << "openmodelica.objid";
+      objref_file << tempPath << "/openmodelica.objid";
   }
 
   str = (const char*)orb->object_to_string (ref.in());
@@ -373,7 +392,12 @@ int CorbaImpl__initialize()
   mgr = poa->the_POAManager();
 
   /* get temp dir */
-  const char* tmpDir = SettingsImpl__getTempDirectoryPath();
+  /* if corbaObjectReferenceFilePath value is set and is a valid directory then use it for dumping the object reference file. */
+  const char* tmpDir = NULL;
+  if (SystemImpl__directoryExists(corbaObjectReferenceFilePath))
+    tmpDir = corbaObjectReferenceFilePath;
+  else
+    tmpDir = SettingsImpl__getTempDirectoryPath();
   /* get the user name */
   char *tmp_user = getenv("USER");
   string user = tmp_user ? tmp_user : "nobody";

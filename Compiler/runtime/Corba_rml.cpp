@@ -48,12 +48,21 @@ RML_BEGIN_LABEL(Corba__haveCorba)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(Corba__setObjectReferenceFilePath)
+{
+  const char *path = RML_STRINGDATA(rmlA0);
+  CorbaImpl__setObjectReferenceFilePath(path);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(Corba__setSessionName)
 {
   const char *name = RML_STRINGDATA(rmlA0);
   CorbaImpl__setSessionName(name);
   RML_TAILCALLK(rmlSC);
 }
+RML_END_LABEL
 
 RML_BEGIN_LABEL(Corba__initialize)
 {

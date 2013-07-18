@@ -56,7 +56,6 @@ static char* tempDirectoryPath = 0;
 static int   echo = 1; //true
 
 extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
-extern int SystemImpl__directoryExists(const char*);
 
 static char* winPath = NULL;
 
