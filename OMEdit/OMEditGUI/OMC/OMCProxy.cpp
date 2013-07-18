@@ -269,6 +269,7 @@ void OMCProxy::removeCachedOMCCommand(QString className)
   On Windows look for OPENMODELICAHOME environment variable. On Linux read the installation directory from config.h file.\n
   Runs the omc with +c and +d=interactiveCorba flags.\n
   +c flag creates a CORBA IOR file with name e.g openmodelica.objid.OMEdit{1ABB3DAA-C925-47E8-85F9-3DE6F3F7E79C}154302842\n
+  +corbaObjectReferenceFilePath sets the path for CORBA object reference file.\n
   For each instance of OMEdit a new omc is run.
   */
 bool OMCProxy::startServer()
@@ -305,7 +306,10 @@ bool OMCProxy::startServer()
     settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
     // Start the omc.exe
     QStringList parameters;
-    parameters << QString("+c=").append(Helper::omcServerName).append(fileIdentifier) << QString("+d=interactiveCorba") << QString("+locale=").append(settingsLocale.name());
+    parameters << QString("+c=").append(Helper::omcServerName).append(fileIdentifier)
+               << QString("+d=interactiveCorba")
+               << QString("+corbaObjectReferenceFilePath=").append(QDir::tempPath())
+               << QString("+locale=").append(settingsLocale.name());
     QProcess *omcProcess = new QProcess;
     connect(omcProcess, SIGNAL(finished(int)), omcProcess, SLOT(deleteLater()));
     QFile omcOutputFile;
