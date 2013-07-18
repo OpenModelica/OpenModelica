@@ -40,6 +40,11 @@ extern int Corba_haveCorba()
   return 1;
 }
 
+extern void Corba_setObjectReferenceFilePath(const char* path)
+{
+   CorbaImpl__setObjectReferenceFilePath(path);
+}
+
 extern void Corba_setSessionName(const char* _inSessionName)
 {
   CorbaImpl__setSessionName(_inSessionName);
