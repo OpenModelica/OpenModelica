@@ -2312,7 +2312,7 @@ algorithm
     case (REPLACEMENTS(hashTable= ht)) equation
       (tplLst) = BaseHashTable.hashTableList(ht);
       str = stringDelimitList(List.map(tplLst,printReplacementTupleStr), "\n");
-      print("Replacements: (");
+      print("\nReplacements: (");
       len = listLength(tplLst);
       len_str = intString(len);
       print(len_str);
@@ -2340,7 +2340,7 @@ algorithm
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
         str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        print("ExtendReplacements: (");
+        print("\nExtendReplacements: (");
         len = listLength(tplLst);
         len_str = intString(len);
         print(len_str);
@@ -2369,7 +2369,7 @@ algorithm
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
         str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
-        print("DerConstReplacements: (");
+        print("\nDerConstReplacements: (");
         len = listLength(tplLst);
         len_str = intString(len);
         print(len_str);

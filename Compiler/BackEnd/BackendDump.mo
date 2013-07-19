@@ -515,8 +515,11 @@ public function dumpHashSet "function dumpHashSet
   author lochel"
   input HashSet.HashSet hashSet;
   input String heading;
+protected
+  Integer size;
 algorithm
-  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
+  size := BaseHashSet.hashSetCurrentSize(hashSet);
+  print("\n" +& heading +& " (" +& intString(size) +& ")\n" +& UNDERLINE +& "\n");
   BaseHashSet.printHashSet(hashSet);
   print("\n");
 end dumpHashSet;
