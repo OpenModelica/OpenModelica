@@ -425,114 +425,6 @@ algorithm
   end matchcontinue;
 end checkAssertCondition;
 
-
-public function expandAlgorithmsbyInitStmts
-"function: expandAlgorithmsbyInitStmts
-  This function expands algorithm sections by initial statements.
-  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute).
-  - A discrete variable v is initialized with pre(v)."
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  outDAE := mapEqSystem(inDAE,expandAlgorithmsbyInitStmts1);
-end expandAlgorithmsbyInitStmts;
-
-protected function expandAlgorithmsbyInitStmts1
-"function: expandAlgorithmsbyInitStmt1
-  This function expands algorithm sections by initial statements.
-  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute).
-  - A discrete variable v is initialized with pre(v).
-  Helper function to expandAlgorithmsbyInitStmts.
-"
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-algorithm
-  (osyst,oshared) := match (syst,shared)
- local
-  BackendDAE.Variables ordvars;
-  EquationArray ordeqns;
-  BackendDAE.EqSystem eqs;
-   case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=ordeqns),_)
-   equation
-     (ordeqns,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ordeqns,expandAlgorithmsbyInitStmtsHelper,ordvars);
-   then(eqs,shared);
-   end match;
-end expandAlgorithmsbyInitStmts1;
-
-protected function expandAlgorithmsbyInitStmtsHelper
-"function: expandAlgorithmsbyInitStmt
-  This function expands algorithm sections by initial statements.
-  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute).
-  - A discrete variable v is initialized with pre(v).
-  Helper function to expandAlgorithmsbyInitStmts1.
-"
-  input tuple<BackendDAE.Equation,BackendDAE.Variables> inTpl;
-  output tuple<BackendDAE.Equation,BackendDAE.Variables> outTpl;
-algorithm
-  outTpl := matchcontinue(inTpl)
-    local
-      DAE.Algorithm alg;
-      list<DAE.Statement> statements;
-      BackendDAE.Equation eqn;
-      BackendDAE.Variables vars;
-      Integer size;
-      list<DAE.Exp> outputs;
-      DAE.ElementSource source;
-      list<DAE.ComponentRef> crlst;
-    case((eqn as BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statements),source=source),vars))
-      equation
-        crlst = CheckModel.algorithmOutputs(alg);
-        outputs = List.map(crlst,Expression.crefExp);
-        statements = expandAlgorithmStmts(statements,outputs,vars);
-      then
-        ((BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statements),source), vars));
-    else
-      then inTpl;
-  end matchcontinue;
-end expandAlgorithmsbyInitStmtsHelper;
-
-
-protected function expandAlgorithmStmts
-"function: expandAlgorithmStmts
-  This function expands algorithm sections by initial statements.
-  - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute).
-  - A discrete variable v is initialized with pre(v).
-  Helper function to expandAlgorithmsbyInitStmts1."
-  input list<DAE.Statement> inAlg;
-  input list<DAE.Exp> inOutputs;
-  input BackendDAE.Variables inVars;
-  output list<DAE.Statement> outAlg;
-algorithm
-   outAlg := match(inAlg, inOutputs, inVars)
- local
-   DAE.Exp out,initExp;
-   list<DAE.Exp> rest;
-   DAE.ComponentRef cref;
-   Var var;
-   DAE.Statement stmt;
-   DAE.Type type_;
-   list<DAE.Statement> statements;
-   Boolean b;
-   case(statements,{},_) then statements;
-   case(statements,out::rest,_)
-     equation
-       cref = Expression.expCref(out);
-       type_ = Expression.typeof(out);
-       type_ = Expression.arrayEltType(type_);
-       (var::_,_) = BackendVariable.getVar(cref, inVars);
-       b = BackendVariable.isVarDiscrete(var);
-       initExp = Expression.makeBuiltinCall(Util.if_(b,"pre","$_start"), {out}, type_);
-       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR()), initExp, DAE.PROP(type_,DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
-     then
-       expandAlgorithmStmts(stmt::statements,rest,inVars);
-   end match;
-end expandAlgorithmStmts;
-
-
-
-
 /************************************************************
   Util function at Backend using for lowering and other stuff
  ************************************************************/
@@ -8687,7 +8579,8 @@ algorithm
                         (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
                         (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
                         (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
-                        (Tearing.tearingSystem, "tearingSystem", false)};
+                        (Tearing.tearingSystem, "tearingSystem", false),
+                        (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false)};
 
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);

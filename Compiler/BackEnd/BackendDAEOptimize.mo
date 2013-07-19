@@ -48,6 +48,7 @@ public import DAE;
 public import Env;
 public import HashTable2;
 
+protected import Algorithm;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -74,6 +75,7 @@ protected import Graph;
 protected import HashTableExpToIndex;
 protected import Inline;
 protected import List;
+protected import SCode;
 protected import System;
 protected import Types;
 protected import Util;
@@ -7720,6 +7722,108 @@ algorithm
 end optimizeInitialAliasesFinder;
 
 // =============================================================================
+// section for postOptModule >>addInitialStmtsToAlgorithms<<
+//
+//   Real a[3];
+// algorithm       -->  algorithm
+//   a[1] := 1.0;         a[1] := $_start(a[1]);
+//                        a[2] := $_start(a[2]);
+//                        a[3] := $_start(a[3]);
+//                        a[1] := 1.0;
+// =============================================================================
+
+public function addInitialStmtsToAlgorithms "function addInitialStmtsToAlgorithms
+  An algorithm section is conceptually a code fragment that remains together and the statements of an algorithm
+  section are executed in the order of appearance. Whenever an algorithm section is invoked, all variables appearing
+  on the left hand side of the assignment operator := are initialized (at least conceptually):
+    - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute).
+    - A discrete variable v is initialized with pre(v)."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := BackendDAEUtil.mapEqSystem(inDAE, addInitialStmtsToAlgorithms1);
+end addInitialStmtsToAlgorithms;
+
+protected function addInitialStmtsToAlgorithms1 "function addInitialStmtsToAlgorithms1
+  Helper function to addInitialStmtsToAlgorithms."
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst, oshared) := match (syst, shared)
+ local
+  BackendDAE.Variables ordvars;
+  BackendDAE.EquationArray ordeqns;
+  BackendDAE.EqSystem eqs;
+   case(eqs as BackendDAE.EQSYSTEM(orderedVars=ordvars, orderedEqs=ordeqns), _)
+   equation
+     (ordeqns, _) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ordeqns, eaddInitialStmtsToAlgorithms1Helper, ordvars);
+   then(eqs, shared);
+   end match;
+end addInitialStmtsToAlgorithms1;
+
+protected function eaddInitialStmtsToAlgorithms1Helper "function: eaddInitialStmtsToAlgorithms1Helper
+  Helper function to addInitialStmtsToAlgorithms1."
+  input tuple<BackendDAE.Equation, BackendDAE.Variables> inTpl;
+  output tuple<BackendDAE.Equation, BackendDAE.Variables> outTpl;
+algorithm
+  outTpl := match(inTpl)
+    local
+      DAE.Algorithm alg;
+      list<DAE.Statement> statements;
+      BackendDAE.Equation eqn;
+      BackendDAE.Variables vars;
+      Integer size;
+      list<DAE.Exp> outputs;
+      DAE.ElementSource source;
+      list<DAE.ComponentRef> crlst;
+    
+    case((eqn as BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source), vars)) equation
+      crlst = CheckModel.algorithmOutputs(alg);
+      outputs = List.map(crlst, Expression.crefExp);
+      statements = expandAlgorithmStmts(statements, outputs, vars);
+    then ((BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statements), source), vars));
+    
+    else
+    then inTpl;
+  end match;
+end eaddInitialStmtsToAlgorithms1Helper;
+
+protected function expandAlgorithmStmts "function expandAlgorithmStmts
+  Helper function to eaddInitialStmtsToAlgorithms1Helper."
+  input list<DAE.Statement> inAlg;
+  input list<DAE.Exp> inOutputs;
+  input BackendDAE.Variables inVars;
+  output list<DAE.Statement> outAlg;
+algorithm
+  outAlg := match(inAlg, inOutputs, inVars)
+    local
+      DAE.Exp out, initExp;
+      list<DAE.Exp> rest;
+      DAE.ComponentRef cref;
+      BackendDAE.Var var;
+      DAE.Statement stmt;
+      DAE.Type type_;
+      list<DAE.Statement> statements;
+      Boolean b;
+      
+    case(statements, {}, _)
+    then statements;
+    
+    case(statements, out::rest, _) equation
+      cref = Expression.expCref(out);
+      type_ = Expression.typeof(out);
+      type_ = Expression.arrayEltType(type_);
+      (var::_, _) = BackendVariable.getVar(cref, inVars);
+      b = BackendVariable.isVarDiscrete(var);
+      initExp = Expression.makeBuiltinCall(Util.if_(b, "pre", "$_start"), {out}, type_);
+      stmt = Algorithm.makeAssignment(DAE.CREF(cref, type_), DAE.PROP(type_, DAE.C_VAR()), initExp, DAE.PROP(type_, DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
+    then expandAlgorithmStmts(stmt::statements, rest, inVars);
+  end match;
+end expandAlgorithmStmts;
+
+// =============================================================================
 // section for preOptModule >>encapsulateWhenConditions<<
 //
 // This module encapsulates each when-condition in a boolean-variable
@@ -8404,7 +8508,5 @@ algorithm
    then fail();
   end matchcontinue;
 end getConditionList1;
-
-
 
 end BackendDAEOptimize;

@@ -1548,8 +1548,9 @@ algorithm
       (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow, initDAE, uniqueEqIndex, tempvars);
       (jacG, uniqueEqIndex) = createInitialMatrices(dlow, uniqueEqIndex);
 
-      // expandAlgorithmsbyInitStmts
-      dlow = BackendDAEUtil.expandAlgorithmsbyInitStmts(dlow);
+      // addInitialStmtsToAlgorithms
+      dlow = BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
+      
       BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
                                                         constraints=constrsarr, 
                                                         classAttrs=clsattrsarra, 
@@ -5103,7 +5104,7 @@ algorithm
  
     else
      equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodeUtil.creatallDiffedVars failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function creatallDiffedVars failed"});
     then fail();
   end matchcontinue;
 end creatallDiffedVars;
@@ -5613,7 +5614,7 @@ algorithm
       then ((uniqueEqIndex, result));
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createAlgorithmAndEquationAsserts failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createAlgorithmAndEquationAsserts failed"});
       then fail();
   end matchcontinue;
 end createAlgorithmAndEquationAsserts;
@@ -5674,7 +5675,7 @@ algorithm
       then removedEquations;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createRemovedEquations failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createRemovedEquations failed"});
       then fail();
   end matchcontinue;
 end createRemovedEquations;
@@ -5844,7 +5845,7 @@ algorithm
     // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"when equations currently only supported on form v = ..."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleWhenEqnCode failed. When equations currently only supported on form v = ..."});
       then fail();
   end matchcontinue;
 end createSingleWhenEqnCode;

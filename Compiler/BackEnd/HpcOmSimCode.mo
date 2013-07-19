@@ -213,8 +213,9 @@ algorithm
       (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = SimCodeUtil.createInitialResiduals(dlow, initDAE, uniqueEqIndex, tempvars);
       (jacG, uniqueEqIndex) = SimCodeUtil.createInitialMatrices(dlow, uniqueEqIndex);
 
-      // expandAlgorithmsbyInitStmts
-      dlow = BackendDAEUtil.expandAlgorithmsbyInitStmts(dlow);
+      // addInitialStmtsToAlgorithms
+      dlow = BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
+      
       BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
                                                         constraints=constrsarr, 
                                                         classAttrs=clsattrsarra, 
