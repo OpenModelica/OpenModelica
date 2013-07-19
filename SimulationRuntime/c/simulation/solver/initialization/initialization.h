@@ -60,7 +60,7 @@ extern "C"
   };
   static const char *INIT_METHOD_DESC[IIM_MAX] = {
     "unknown",
-    "no initialization method",
+    "set all variables to their start values and skips the initialization process",
     "solves the initialization problem numerically",
     "solves the initialization problem symbolically - default"
   };
