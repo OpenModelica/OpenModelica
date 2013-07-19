@@ -43,6 +43,58 @@
 extern "C"
 {
 #endif
+  enum INIT_INIT_METHOD
+  {
+    IIM_UNKNOWN = 0,
+    IIM_NONE,
+    IIM_NUMERIC,
+    IIM_SYMBOLIC,
+    IIM_MAX
+  };
+
+  static const char *initMethodStr[IIM_MAX] = {
+    "unknown",
+    "none",
+    "numeric",
+    "symbolic"
+  };
+  static const char *initMethodDescStr[IIM_MAX] = {
+    "unknown",
+    "no initialization method",
+    "solves the initialization problem numerically",
+    "solves the initialization problem symbolically - default"
+  };
+
+  enum INIT_OPTI_METHOD
+  {
+    IOM_UNKNOWN = 0,
+    IOM_SIMPLEX,
+    IOM_NEWUOA,
+    IOM_NELDER_MEAD_EX,
+    IOM_KINSOL,
+    IOM_KINSOL_SCALED,
+    IOM_IPOPT,
+    IOM_MAX
+  };
+
+  static const char *optiMethodStr[IOM_MAX] = {
+    "unknown",
+    "simplex",
+    "newuoa",
+    "nelder_mead_ex",
+    "kinsol",
+    "kinsol_scaled",
+    "ipopt"
+  };
+  static const char *optiMethodDescStr[IOM_MAX] = {
+    "unknown",
+    "Nelder-Mead method",
+    "Brent's method",
+    "Nelder-Mead method with global homotopy (see -ils for global homotopy) - default",
+    "sundials/kinsol",
+    "sundials/kinsol with scaling",
+    "Interior Point OPTimizer"
+  };
 
   extern void dumpInitialization(INIT_DATA *initData);
   extern int reportResidualValue(INIT_DATA *initData);

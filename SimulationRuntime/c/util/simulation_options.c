@@ -98,11 +98,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_F */                     "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                  "get detailed information that specifies the command-line flag\n  e.g. -help=f prints detailed information for command-line flag f",
   /* FLAG_IIF */                   "value specifies an external file for the initialization of the model",
-  /* FLAG_IIM */                   "value specifies the initialization method\n  none\n  numeric\n  symbolic",
+  /* FLAG_IIM */                   "value specifies the initialization method",
   /* FLAG_IIT */                   "value specifies a time for the initialization of the model",
   /* FLAG_ILS */                   "value specifies the number of steps for homotopy method (required: -iim=symbolic) or\n'start value homotopy' method (required: -iim=numeric -iom=nelder_mead_ex)",
   /* FLAG_INTERACTIVE */           "specify interactive simulation",
-  /* FLAG_IOM */                   "value specifies the initialization optimization method\n  nelder_mead_ex\n  simplex\n  newuoa",
+  /* FLAG_IOM */                   "value specifies the initialization optimization method",
   /* FLAG_L */                     "value specifies a time where the linearization of the model should be performed",
   /* FLAG_LS */                    "value specifies the linear solver method\n  lapack",
   /* FLAG_LV */                    "value specifies the logging level",
@@ -114,7 +114,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_OVERRIDE_FILE */         "will override the variables or the simulation settings in the XML setup file with the values from the file\n  note that: -overrideFile CANNOT be used with -override\n  use when variables for -override are too many and do not fit in command line size\n  overrideFileName contains lines of the form: var1=start1",
   /* FLAG_PORT */                  "value specifies interactive simulation port",
   /* FLAG_R */                     "value specifies a new result file than the default Model_res.mat",
-  /* FLAG_S */                     "value specifies the solver\n  dassl\n  euler\n  rungekutta\n  inline-euler\n  inline-rungekutta\n  dasslwort\n  dasslSymJac\n  dasslNumJac\n  dasslColorSymJac\n  dasslInternalNumJac\n  qss",
+  /* FLAG_S */                     "value specifies the solver",
   /* FLAG_W */                     "shows all warnings even if a related log-stream is inactive",
 
   "FLAG_MAX"

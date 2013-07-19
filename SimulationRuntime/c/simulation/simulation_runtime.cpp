@@ -72,6 +72,7 @@
 #include "nonlinearSystem.h"
 #include "rtclock.h"
 #include "../../../Compiler/runtime/config.h"
+#include "initialization.h"
 
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"
@@ -772,10 +773,24 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 
         /* detailed information for some flags */
         INDENT(LOG_STDOUT);
-        if(i == FLAG_LV)
+        if(FLAG_LV == i)
         {
           for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
-            INFO2(LOG_STDOUT, "  %-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+            INFO2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+        }
+        else if(FLAG_IIM == i)
+        {
+          for(j=1; j<IIM_MAX; ++j)
+            INFO2(LOG_STDOUT, "%-18s [%s]", initMethodStr[j], initMethodDescStr[j]);
+        }
+        else if(FLAG_IOM == i)
+        {
+          for(j=1; j<IOM_MAX; ++j)
+            INFO2(LOG_STDOUT, "%-18s [%s]", optiMethodStr[j], optiMethodDescStr[j]);
+        }
+        else if(FLAG_S == i)
+        {
+          /* TODO */
         }
         RELEASE(LOG_STDOUT);
 
