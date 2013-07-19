@@ -518,7 +518,7 @@ public function dumpHashSet "function dumpHashSet
 protected
   Integer size;
 algorithm
-  size := BaseHashSet.hashSetCurrentSize(hashSet);
+  size := BaseHashSet.currentSize(hashSet);
   print("\n" +& heading +& " (" +& intString(size) +& ")\n" +& UNDERLINE +& "\n");
   BaseHashSet.printHashSet(hashSet);
   print("\n");

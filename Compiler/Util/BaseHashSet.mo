@@ -444,7 +444,7 @@ algorithm
   end match;
 end valueArrayList2;
 
-public function hashSetCurrentSize
+public function currentSize
   "Returns the number of elements inserted into the table"
   input HashSet hashSet;
   output Integer sz;
@@ -453,7 +453,7 @@ protected
 algorithm
   (_,va,_,_,_) := hashSet;
   sz := valueArrayLength(va);
-end hashSetCurrentSize;
+end currentSize;
 
 public function valueArrayLength
 "Returns the number of elements in the ValueArray"
