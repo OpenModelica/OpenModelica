@@ -514,8 +514,22 @@ int solver_main(DATA* data, const char* init_initMethod,
     solverInfo.solverMethod = S_DASSL;
     break;
     
+#ifndef WITH_SUNDIALS
+  case S_RADAU1:
+  case S_RADAU3:
+  case S_RADAU5:
+  case S_LOBATTO2:
+  case S_LOBATTO4:
+  case S_LOBATTO6:
+    WARNING(LOG_STDOUT, "Sundial/kinsol is needed but not available. Please choose other solver.");
+    return 1;
+#endif
+    
   case S_OPTIMIZATION:
-    WARNING(LOG_STDOUT, "not supported yet");
+#ifndef WITH_IPOPT
+    WARNING(LOG_STDOUT, "Ipopt is needed but not available.");
+#endif
+    WARNING(LOG_STDOUT, "optimization is not supported yet");
     return 1;
     
   case S_INLINE_EULER:
