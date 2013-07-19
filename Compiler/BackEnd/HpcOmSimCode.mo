@@ -51,9 +51,7 @@ protected import Error;
 protected import HpcOmTaskGraph;
 protected import Initialization;
 protected import InlineSolver;
-protected import List;
 protected import SimCodeUtil;
-protected import System;
 
 public function createSimCode "function createSimCode
   entry point to create SimCode from BackendDAE."
