@@ -52,13 +52,13 @@ extern "C"
     IIM_MAX
   };
 
-  static const char *initMethodStr[IIM_MAX] = {
+  static const char *INIT_METHOD_NAME[IIM_MAX] = {
     "unknown",
     "none",
     "numeric",
     "symbolic"
   };
-  static const char *initMethodDescStr[IIM_MAX] = {
+  static const char *INIT_METHOD_DESC[IIM_MAX] = {
     "unknown",
     "no initialization method",
     "solves the initialization problem numerically",
@@ -77,7 +77,7 @@ extern "C"
     IOM_MAX
   };
 
-  static const char *optiMethodStr[IOM_MAX] = {
+  static const char *OPTI_METHOD_NAME[IOM_MAX] = {
     "unknown",
     "simplex",
     "newuoa",
@@ -86,7 +86,7 @@ extern "C"
     "kinsol_scaled",
     "ipopt"
   };
-  static const char *optiMethodDescStr[IOM_MAX] = {
+  static const char *OPTI_METHOD_DESC[IOM_MAX] = {
     "unknown",
     "Nelder-Mead method",
     "Brent's method",

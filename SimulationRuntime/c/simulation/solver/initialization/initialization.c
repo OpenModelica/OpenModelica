@@ -500,7 +500,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
      * {
      *   optiMethod = IOM_NELDER_MEAD_EX;
      *   INFO("kinsol-method is unable to solve over-determined problems.");
-     *   INFO2("| using %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
+     *   INFO2("| using %-15s [%s]", OPTI_METHOD_NAME[optiMethod], OPTI_METHOD_DESC[optiMethod]);
      * }
     */
   }
@@ -958,7 +958,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
     for(i=1; i<IIM_MAX; ++i)
     {
-      if(!strcmp(pInitMethod, initMethodStr[i]))
+      if(!strcmp(pInitMethod, INIT_METHOD_NAME[i]))
         initMethod = i;
     }
 
@@ -967,7 +967,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
       WARNING1(LOG_STDOUT, "unrecognized option -iim %s", pInitMethod);
       WARNING(LOG_STDOUT, "current options are:");
       for(i=1; i<IIM_MAX; ++i)
-        WARNING2(LOG_STDOUT, "| %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
+        WARNING2(LOG_STDOUT, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
       THROW("see last warning");
     }
   }
@@ -978,7 +978,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
     for(i=1; i<IOM_MAX; ++i)
     {
-      if(!strcmp(pOptiMethod, optiMethodStr[i]))
+      if(!strcmp(pOptiMethod, OPTI_METHOD_NAME[i]))
         optiMethod = i;
     }
 
@@ -987,14 +987,14 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
       WARNING1(LOG_STDOUT, "unrecognized option -iom %s", pOptiMethod);
       WARNING(LOG_STDOUT, "current options are:");
       for(i=1; i<IOM_MAX; ++i)
-        WARNING2(LOG_STDOUT, "| %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
+        WARNING2(LOG_STDOUT, "| %-15s [%s]", OPTI_METHOD_NAME[i], OPTI_METHOD_DESC[i]);
       THROW("see last warning");
     }
   }
 
-  INFO2(LOG_INIT, "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
+  INFO2(LOG_INIT, "initialization method: %-15s [%s]", INIT_METHOD_NAME[initMethod], INIT_METHOD_DESC[initMethod]);
   if(initMethod == IIM_NUMERIC)
-    INFO2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
+    INFO2(LOG_INIT, "optimization method:   %-15s [%s]", OPTI_METHOD_NAME[optiMethod], OPTI_METHOD_DESC[optiMethod]);
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */

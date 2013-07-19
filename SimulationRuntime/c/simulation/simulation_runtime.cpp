@@ -782,12 +782,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
           
         case FLAG_IIM:
           for(j=1; j<IIM_MAX; ++j)
-            INFO2(LOG_STDOUT, "%-18s [%s]", initMethodStr[j], initMethodDescStr[j]);
+            INFO2(LOG_STDOUT, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
           break;
           
         case FLAG_IOM:
           for(j=1; j<IOM_MAX; ++j)
-            INFO2(LOG_STDOUT, "%-18s [%s]", optiMethodStr[j], optiMethodDescStr[j]);
+            INFO2(LOG_STDOUT, "%-18s [%s]", OPTI_METHOD_NAME[j], OPTI_METHOD_DESC[j]);
           break;
           
         case FLAG_S:
