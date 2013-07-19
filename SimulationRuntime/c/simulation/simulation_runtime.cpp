@@ -773,24 +773,26 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 
         /* detailed information for some flags */
         INDENT(LOG_STDOUT);
-        if(FLAG_LV == i)
+        switch(i)
         {
+        case FLAG_LV:
           for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
             INFO2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
-        }
-        else if(FLAG_IIM == i)
-        {
+          break;
+          
+        case FLAG_IIM:
           for(j=1; j<IIM_MAX; ++j)
             INFO2(LOG_STDOUT, "%-18s [%s]", initMethodStr[j], initMethodDescStr[j]);
-        }
-        else if(FLAG_IOM == i)
-        {
+          break;
+          
+        case FLAG_IOM:
           for(j=1; j<IOM_MAX; ++j)
             INFO2(LOG_STDOUT, "%-18s [%s]", optiMethodStr[j], optiMethodDescStr[j]);
-        }
-        else if(FLAG_S == i)
-        {
+          break;
+          
+        case FLAG_S:
           /* TODO */
+          break;
         }
         RELEASE(LOG_STDOUT);
 
