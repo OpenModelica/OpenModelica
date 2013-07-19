@@ -46,6 +46,7 @@
 #include "Config.h"
 #include "systemimpl.c"
 #include <float.h>
+#include <ctype.h>
 #include <limits.h>
 #include <stdlib.h>
 #include "omc_msvc.h"

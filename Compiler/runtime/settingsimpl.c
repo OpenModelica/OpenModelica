@@ -74,7 +74,7 @@ static void stripbinpath(char *omhome)
 #include <sys/stat.h>
 #include <linux/limits.h>
 #include <unistd.h>
-const char* SettingsImpl__getInstallationDirectoryPath() {
+const char* SettingsImpl__getInstallationDirectoryPath(void) {
   struct stat sb;
   static char omhome[PATH_MAX];
   static int init = 0;
@@ -103,9 +103,9 @@ const char* SettingsImpl__getInstallationDirectoryPath() {
 #include <errno.h>
 #include <libproc.h>
 
-const char* SettingsImpl__getInstallationDirectoryPath() {
+const char* SettingsImpl__getInstallationDirectoryPath(void) {
   int ret;
-  pid_t pid; 
+  pid_t pid;
   static char omhome[PROC_PIDPATHINFO_MAXSIZE];
   static int init = 0;
   if (init) {
@@ -124,7 +124,7 @@ const char* SettingsImpl__getInstallationDirectoryPath() {
 }
 
 #else
-const char* SettingsImpl__getInstallationDirectoryPath() {
+const char* SettingsImpl__getInstallationDirectoryPath(void) {
   const char *path = getenv("OPENMODELICAHOME");
   int i = 0;
   if (path == NULL)
@@ -206,7 +206,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   return strdup(path);
 }
 
-static const char* SettingsImpl__getCompileCommand()
+static const char* SettingsImpl__getCompileCommand(void)
 {
   if (compileCommand == NULL) {
     // Get a default command
@@ -225,7 +225,7 @@ extern void SettingsImpl__setCompileCommand(const char *command)
   compileCommand = strdup(command);
 }
 
-static const char* SettingsImpl__getCompilePath()
+static const char* SettingsImpl__getCompilePath(void)
 {
   if (compilePath == NULL) {
     // Get a default command
@@ -277,7 +277,7 @@ extern void SettingsImpl__setTempDirectoryPath(const char *path)
   tempDirectoryPath = strdup(path);
 }
 
-extern const char* SettingsImpl__getTempDirectoryPath()
+extern const char* SettingsImpl__getTempDirectoryPath(void)
 {
   if (tempDirectoryPath == NULL) {
   // On windows, set Temp directory path to Temp directory as returned by GetTempPath,

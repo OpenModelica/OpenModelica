@@ -139,11 +139,17 @@ static inline void free_ptr(modelica_integer index);
 static void free_library(modelica_ptr_t lib, modelica_integer printDebug);
 static void free_function(modelica_ptr_t func);
 
-static char *cc     = (char*) DEFAULT_CC;
-static char *cxx    = (char*) DEFAULT_CXX;
-static char *linker = (char*) DEFAULT_LINKER;
-static char *cflags = (char*) DEFAULT_CFLAGS;
-static char *ldflags= (char*) DEFAULT_LDFLAGS;
+static const char def_cc[]     = DEFAULT_CC;
+static const char def_cxx[]    = DEFAULT_CXX;
+static const char def_linker[] = DEFAULT_LINKER;
+static const char def_cflags[] = DEFAULT_CFLAGS;
+static const char def_ldflags[]= DEFAULT_LDFLAGS;
+
+static char *cc     = (char *)def_cc;
+static char *cxx    = (char *)def_cxx;
+static char *linker = (char *)def_linker;
+static char *cflags = (char *)def_cflags;
+static char *ldflags= (char *)def_ldflags;
 
 static int hasExpandableConnectors = 0;
 static int hasInnerOuterDefinitions = 0;
@@ -157,14 +163,15 @@ static const char *select_from_dir = NULL;
  * Common implementations
  */
 
-static int stringContains(char *str,char c)
+static int str_contain_char(const char* chars, const char chr)
 {
-  unsigned int i;
-  for(i=0;i<strlen(str);++i)
-    if(str[i]==c){
-      //printf(" (#%d / %d)contained '%c' ('%c', __%s__)\t",i,strlen(str),str[i],c,str);
+  int i = 0;
+  while(chars[i] != '\0') {
+    if(chr == chars[i]) {
       return 1;
     }
+    i++;
+  }
   return 0;
 }
 
@@ -178,9 +185,9 @@ static int filterString(char* buf,char* bufRes)
   preChar = '\0';
   for(i=0;i<slen;++i) {
     cc = buf[i];
-    if((stringContains(filterChars,buf[i]))) {
+    if((str_contain_char(filterChars,buf[i]))) {
       if(buf[i]=='.') {
-        if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ) {
+        if(str_contain_char(numeric,preChar) || (( i < slen+1) && str_contain_char(numeric,buf[i+1])) ) {
           if(isNumeric == 0) {isNumeric=1; numericEncounter++;}
           //printf("skipping_1: '%c'\n",buf[i]);
         } else {
@@ -205,7 +212,7 @@ static int filterString(char* buf,char* bufRes)
 extern int SystemImpl__setCCompiler(const char *str)
 {
   size_t len = strlen(str);
-  if (cc != NULL && cc != DEFAULT_CC) {
+  if ((cc != NULL) && (cc != def_cc)) {
     free(cc);
   }
   cc = (char*)malloc(len+1);
@@ -217,7 +224,7 @@ extern int SystemImpl__setCCompiler(const char *str)
 extern int SystemImpl__setCXXCompiler(const char *str)
 {
   size_t len = strlen(str);
-  if (cxx != NULL && cxx != DEFAULT_CXX) {
+  if ((cxx != NULL) && (cxx != def_cxx)) {
     free(cxx);
   }
   cxx = (char*)malloc(len+1);
@@ -229,7 +236,7 @@ extern int SystemImpl__setCXXCompiler(const char *str)
 extern int SystemImpl__setLinker(const char *str)
 {
   size_t len = strlen(str);
-  if (linker != NULL && linker != DEFAULT_LINKER) {
+  if ((linker != NULL) && (linker != def_linker)) {
     free(linker);
   }
   linker = (char*)malloc(len+1);
@@ -241,7 +248,7 @@ extern int SystemImpl__setLinker(const char *str)
 extern int SystemImpl__setCFlags(const char *str)
 {
   size_t len = strlen(str);
-  if (cflags != NULL && cflags != DEFAULT_CFLAGS) {
+  if ((cflags != NULL) && (cflags != def_cflags)) {
     free(cflags);
   }
   cflags = (char*)malloc(len+1);
@@ -253,7 +260,7 @@ extern int SystemImpl__setCFlags(const char *str)
 extern int SystemImpl__setLDFlags(const char *str)
 {
   size_t len = strlen(str);
-  if (ldflags != NULL && ldflags != DEFAULT_LDFLAGS) {
+  if ((ldflags != NULL) && (ldflags != def_ldflags)) {
     free(ldflags);
   }
   ldflags = (char*)malloc(len+1);
@@ -461,18 +468,6 @@ int SystemImpl__appendFile(const char* filename, const char *data)
   return 0;
 }
 
-static int str_contain_char( const char* chars, const char chr)
-{
-  int length_of_chars = strlen(chars);
-  int i;
-  for(i = 0; i < length_of_chars; i++)
-    {
-      if(chr == chars[i])
-        return 1;
-    }
-  return 0;
-}
-
 // Trim left (step -1) or right (step +1)
 static const char* trimStep(const char* str, const char* chars_to_be_removed, int step)
 {
@@ -506,24 +501,20 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
 
 void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
 {
-  int length=strlen(str);
   int start_pos = 0;
-  int end_pos = length - 1;
   char* res;
-  if (length == 0) {
-    return mk_scon("");
+
+  while(str[start_pos] == char_to_be_trimmed) {
+    start_pos++;
   }
-  while(start_pos < end_pos){
-    if(str[start_pos] == char_to_be_trimmed)
-      start_pos++;
-    if(str[end_pos] == char_to_be_trimmed)
-      end_pos--;
-    if(str[start_pos] != char_to_be_trimmed && str[end_pos] != char_to_be_trimmed)
-      break;
-  }
-  if(end_pos >= start_pos) {
+  if(str[start_pos] != '\0') {
     void *rmlRes;
-    res= (char*)malloc(end_pos - start_pos +2);
+    int end_pos = strlen(str) - 1;
+
+    while(str[end_pos] == char_to_be_trimmed) {
+      end_pos--;
+    }
+    res = (char*)malloc(end_pos - start_pos +2);
     strncpy(res,&str[start_pos],end_pos - start_pos+1);
     res[end_pos - start_pos+1] = '\0';
     rmlRes = (void*) mk_scon(res);
@@ -1178,8 +1169,10 @@ char* SystemImpl__unquoteIdentifier(const char* str)
   cur += sprintf(cur,"%s",_omcQuot);
   for (i=0; i<len; i++) {
     unsigned char c = str[i+1];
-    cur += sprintf(cur,"%c",lookupTbl[c/16]);
-    cur += sprintf(cur,"%c",lookupTbl[c%16]);
+    *cur = lookupTbl[c/16];
+    cur++;
+    *cur = lookupTbl[c%16];
+    cur++;
   }
   *cur = '\0';
   return res;
@@ -1803,7 +1796,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
 
 #include <tinymt64.h>
 
-static tinymt64_t system_random_seed = {0};
+static tinymt64_t system_random_seed = {{0,0},0,0,0};
 
 /* NOTES: Randomness provided by random() is guaranteed to be uniform
  * (high and low bits are the same).
@@ -1941,7 +1934,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
     const char* fmt = "System.realpath failed on %s with errno: %d";
     char* msg = (char*)malloc(strlen(path) + strlen(fmt) + 10);
     sprintf(msg, fmt, path, errno);
-    c_add_message(6000, 
+    c_add_message(6000,
       ErrorType_scripting,
       ErrorLevel_warning,
       msg,
@@ -1952,7 +1945,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
   return resolved_path;
 }
 
-#else 
+#else
 
 /*
 realpath() Win32 implementation, supports non standard glibc extension
@@ -2092,7 +2085,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
     const char* fmt = "System.realpath failed on %s with errno: %d";
     char* msg = (char*)malloc(strlen(path) + strlen(fmt) + 10);
     sprintf(msg, fmt, path, errno);
-    c_add_message(6000, 
+    c_add_message(6000,
       ErrorType_scripting,
       ErrorLevel_warning,
       msg,
