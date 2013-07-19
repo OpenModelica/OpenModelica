@@ -178,9 +178,12 @@ public function getFMIType
   output String fmiType;
 algorithm
   fmiType := match(inFMIInfo)
-    case (INFO(fmiType = 0)) then "me";
-    case (INFO(fmiType = 1)) then "cs_st";
-    case (INFO(fmiType = 2)) then "cs_tool";
+    case (INFO(fmiVersion = "1.0", fmiType = 0)) then "me";
+    case (INFO(fmiVersion = "1.0", fmiType = 1)) then "cs_st";
+    case (INFO(fmiVersion = "1.0", fmiType = 2)) then "cs_tool";
+    case (INFO(fmiVersion = "2.0", fmiType = 1)) then "me";
+    case (INFO(fmiVersion = "2.0", fmiType = 2)) then "cs";
+    case (INFO(fmiVersion = "2.0", fmiType = 3)) then "me_cs";
   end match;
 end getFMIType;
 

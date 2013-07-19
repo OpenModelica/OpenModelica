@@ -64,12 +64,22 @@ static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t l
   }
 }
 
-/* Logger function used by the FMU internally */
-static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
+/* Logger function used by the FMU 1.0 internally */
+static void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
   va_list argp;
   va_start(argp, message);
   fmi1_log_forwarding_v(c, instanceName, status, category, message, argp);
+  va_end(argp);
+  fflush(NULL);
+}
+
+/* Logger function used by the FMU 2.0 internally */
+static void fmi2logger(fmi2_component_t c, fmi2_string_t instanceName, fmi2_status_t status, fmi2_string_t category, fmi2_string_t message, ...)
+{
+  va_list argp;
+  va_start(argp, message);
+  fmi2_log_forwarding_v(c, instanceName, status, category, message, argp);
   va_end(argp);
   fflush(NULL);
 }
@@ -604,13 +614,11 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   *experimentAnnotation = NULL;
   *modelVariablesInstance = mk_some(0);
   *modelVariablesList = NULL;
-  static int init = 0;
   // JM callbacks
   static jm_callbacks callbacks;
-  // FMI callback functions
-  static fmi1_callback_functions_t callback_functions;
-  if (!init) {
-    init = 1;
+  static int init_jm_callbacks = 0;
+  if (!init_jm_callbacks) {
+    init_jm_callbacks = 1;
     callbacks.malloc = malloc;
     callbacks.calloc = calloc;
     callbacks.realloc = realloc;
@@ -618,9 +626,6 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     callbacks.logger = importlogger;
     callbacks.log_level = fmi_log_level;
     callbacks.context = 0;
-    callback_functions.logger = fmilogger;
-    callback_functions.allocateMemory = calloc;
-    callback_functions.freeMemory = free;
   }
   fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
   *fmiContext = mk_some(context);
@@ -634,6 +639,15 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     return 0;
   }
   if (version == 1) {
+    static int init_fmi1_callback_functions = 0;
+    // FMI callback functions
+    static fmi1_callback_functions_t fmi1_callback_functions;
+    if (!init_fmi1_callback_functions) {
+      init_fmi1_callback_functions = 1;
+      fmi1_callback_functions.logger = fmi1logger;
+      fmi1_callback_functions.allocateMemory = calloc;
+      fmi1_callback_functions.freeMemory = free;
+    }
     // parse the xml file
     fmi1_import_t* fmi;
     fmi = fmi1_import_parse_xml(context, working_directory);
@@ -645,7 +659,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     *fmiInstance = mk_some(fmi);
     // Load the binary (dll/so)
     jm_status_enu_t status;
-    status = fmi1_import_create_dllfmu(fmi, callback_functions, 0);
+    status = fmi1_import_create_dllfmu(fmi, fmi1_callback_functions, 0);
     if (status == jm_status_error) {
       fmi1_import_free(fmi);
       fmi_import_free_context(context);
@@ -654,6 +668,15 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     }
     FMIImpl__initializeFMI1Import(fmi, fmiInfo, version, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
   } else if (version == 2) {
+    static int init_fmi2_callback_functions = 0;
+    // FMI callback functions
+    static fmi2_callback_functions_t fmi2_callback_functions;
+    if (!init_fmi2_callback_functions) {
+      init_fmi2_callback_functions = 1;
+      fmi2_callback_functions.logger = fmi2logger;
+      fmi2_callback_functions.allocateMemory = calloc;
+      fmi2_callback_functions.freeMemory = free;
+    }
     // parse the xml file
     fmi2_import_t* fmi;
     fmi = fmi2_import_parse_xml(context, working_directory, NULL);
@@ -665,7 +688,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     *fmiInstance = mk_some(fmi);
     // Load the binary (dll/so)
     jm_status_enu_t status;
-    status = fmi2_import_create_dllfmu(fmi, fmi2_import_get_fmu_kind(fmi), NULL);
+    status = fmi2_import_create_dllfmu(fmi, fmi2_import_get_fmu_kind(fmi), &fmi2_callback_functions);
     if (status == jm_status_error) {
       fmi2_import_free(fmi);
       fmi_import_free_context(context);

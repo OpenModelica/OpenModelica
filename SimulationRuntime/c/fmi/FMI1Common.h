@@ -31,13 +31,10 @@
 #ifndef FMI1COMMON__H_
 #define FMI1COMMON__H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "fmilib.h"
+#include "FMICommon.h"
 
 /*
- * Structure used as External Object in the generated Modelica code of the imported FMU.
+ * Structure used as an External Object in the generated Modelica code of the imported FMU.
  * Used for FMI 1.0 Model Exchange.
  */
 typedef struct {
