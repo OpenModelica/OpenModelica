@@ -77,7 +77,7 @@ uniontype BackendDAEType
 end BackendDAEType;
 
 public
-uniontype VarKind "- Variabile kind"
+uniontype VarKind "variable kind"
   record VARIABLE end VARIABLE;
   record STATE
     Integer index "how often this states was differentiated";
@@ -94,7 +94,7 @@ uniontype VarKind "- Variabile kind"
   record JAC_DIFF_VAR end JAC_DIFF_VAR;
 end VarKind;
 
-uniontype Var "- Variables"
+uniontype Var "variables"
   record VAR
     .DAE.ComponentRef varName "varName ; variable name" ;
     VarKind varKind "varKind ; Kind of variable" ;

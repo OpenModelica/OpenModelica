@@ -644,83 +644,45 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     string init_optiMethod, string init_file, double init_time, int lambda_steps, string outputVariablesAtEnd, int cpuTime)
 {
   int retVal = -1;
+  long i;
+  long solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
 
   if (initializeResultData(simData, result_file_cstr, cpuTime))
     return -1;
 
-  if(simData->simulationInfo.solverMethod == std::string("")) {
-    INFO(LOG_SOLVER, " | No solver is set, using dassl.");
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 3, outVars);
-  } else if(simData->simulationInfo.solverMethod == std::string("euler")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 1, outVars);
-  /*} else if(simData->simulationInfo.solverMethod == std::string("optimization")){
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 5, outVars); */
-  } else if(simData->simulationInfo.solverMethod == std::string("rungekutta")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 2, outVars);
-#ifdef WITH_SUNDIALS
-  } else if(simData->simulationInfo.solverMethod == std::string("radau5")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 6, outVars);
-  } else if(simData->simulationInfo.solverMethod == std::string("radau3")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 7, outVars);
-  } else if(simData->simulationInfo.solverMethod == std::string("radau1")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 8, outVars);
-  } else if(simData->simulationInfo.solverMethod == std::string("lobatto2")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 9, outVars);
-  } else if(simData->simulationInfo.solverMethod == std::string("lobatto4")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 10, outVars);
-  } else if(simData->simulationInfo.solverMethod == std::string("lobatto6")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 11, outVars);
-#endif
-  } else if(simData->simulationInfo.solverMethod == std::string("dassl") ||
-              simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
-              simData->simulationInfo.solverMethod == std::string("dassltest")  ||
-              simData->simulationInfo.solverMethod == std::string("dasslSymJac") ||
-              simData->simulationInfo.solverMethod == std::string("dasslNumJac") ||
-              simData->simulationInfo.solverMethod == std::string("dasslColorSymJac") ||
-              simData->simulationInfo.solverMethod == std::string("dasslInternalNumJac")) {
-
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 3, outVars);
-  } else if(simData->simulationInfo.solverMethod == std::string("inline-euler")) {
-    if(!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
-      INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.", simData->simulationInfo.solverMethod);
-      retVal = 1;
-    } else {
-      INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-      retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 4, outVars);
-    }
-  } else if(simData->simulationInfo.solverMethod == std::string("inline-rungekutta")) {
-    if(!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
-      INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.", simData->simulationInfo.solverMethod);
-      retVal = 1;
-    } else {
-      INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-      retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, 4, outVars);
-    }
-#ifdef _OMC_QSS_LIB
-  } else if(simData->simulationInfo.solverMethod == std::string("qss")) {
-    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
-    retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
-                      simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
-                      simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
-#endif
-  } else {
-    INFO1(LOG_STDOUT, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
-    INFO(LOG_STDOUT, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslInternalNumJac, qss, radau1, radau3, radau5, lobatto2, lobatto4 or lobatto6");
-#ifndef WITH_SUNDIALS
-    INFO(LOG_STDOUT, " |note: radau1, radau3, radau5, lobatto2, lobatto4 and lobatto6 use (KINSOL/SUNDIALS)!!!");
-#endif
+  if(std::string("") == simData->simulationInfo.solverMethod)
+    solverID = S_DASSL;
+  else
+  {
+    for(i=1; i<S_MAX; ++i)
+      if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo.solverMethod)
+        solverID = i;
+  }
+  
+  if(S_UNKNOWN == solverID)
+  {
+    WARNING1(LOG_STDOUT, "unrecognized option -s %s", simData->simulationInfo.solverMethod);
+    WARNING(LOG_STDOUT, "current options are:");
+    for(i=1; i<S_MAX; ++i)
+      WARNING2(LOG_STDOUT, "| %-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
+    THROW("see last warning");
     retVal = 1;
+  }
+  else
+  {
+    INFO1(LOG_SOLVER, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
+    /* special solvers */
+#ifdef _OMC_QSS_LIB
+    if(S_QSS == solverID)
+    {
+      retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
+                        simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
+                        simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
+    }
+    else /* standard solver interface */
+#endif
+      retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, lambda_steps, solverID, outVars);
   }
 
   sim_result.free(&sim_result, simData);
@@ -791,7 +753,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
           break;
           
         case FLAG_S:
-          /* TODO */
+          for(j=1; j<S_MAX; ++j)
+            INFO2(LOG_STDOUT, "| %-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);
           break;
         }
         RELEASE(LOG_STDOUT);

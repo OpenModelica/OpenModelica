@@ -522,7 +522,8 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "replaceEdgeChange",
     "inlineArrayEqn",
     "removeSimpleEquations"
-}),
+    // "addInitialStmtsToAlgorithms"
+    }),
   SOME(STRING_DESC_OPTION({
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeAllSimpleEquations", removeSimpleEquationDesc),
@@ -542,7 +543,9 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("expandDerOperator", Util.notrans("DESCRIBE ME")),
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("replaceEdgeChange", Util.gettext("Replace edge(b) = b and not pre(b) and change(b) = v <> pre(v).")),
-    ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x."))})),
+    ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x.")),
+    ("addInitialStmtsToAlgorithms", Util.gettext("Expands all algorithms with initial statements for outputs."))
+    })),
   Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 
 constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",
@@ -596,11 +599,11 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeUnusedFunctions",
     "inputDerivativesUsed",
     "detectJacobianSparsePattern",
-//    "generateSymbolicJacobian",
+    // "generateSymbolicJacobian",
     "removeConstants"
-//    "partitionIndependentBlocks",
-//    "addInitialStmtsToAlgorithms"
-  }),
+    // "partitionIndependentBlocks",
+    // "addInitialStmtsToAlgorithms"
+    }),
   SOME(STRING_DESC_OPTION({
     ("encapsulateWhenConditions", Util.gettext("Replace each when-condition with an discrete variable.")),
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),

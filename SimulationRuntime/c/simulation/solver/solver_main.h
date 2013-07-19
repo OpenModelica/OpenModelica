@@ -68,9 +68,81 @@ typedef struct SOLVER_INFO
   extern "C" {
 #endif
 
+  enum SOLVER_METHOD
+  {
+    S_UNKNOWN = 0,
+    
+    S_EULER,         /*  1 */
+    S_RUNGEKUTTA,    /*  2 */
+    S_DASSL,         /*  3 */
+    S_INLINE_EULER,  /*  4 */
+    S_OPTIMIZATION,  /*  5 */
+    S_RADAU5,        /*  6 */
+    S_RADAU3,        /*  7 */
+    S_RADAU1,        /*  8 */
+    S_LOBATTO2,      /*  9 */
+    S_LOBATTO4,      /* 10 */
+    S_LOBATTO6,      /* 11 */
+    S_DASSLWORT,
+    S_DASSLTEST,
+    S_DASSLSYMJAC,
+    S_DASSLNUMJAC,
+    S_DASSLCOLORSYMJAC,
+    S_DASSLINTERNALNUMJAC,
+    S_INLINE_RUNGEKUTTA,
+    S_QSS,
+    
+    S_MAX
+  };
+
+  static const char *SOLVER_METHOD_NAME[S_MAX] = {
+    "unknown",
+    "euler",
+    "rungekutta",
+    "dassl",
+    "inline-euler",
+    "optimization",
+    "radau5",
+    "radau3",
+    "radau1",
+    "lobatto2",
+    "lobatto4",
+    "lobatto6",
+    "dasslwort",
+    "dassltest",
+    "dasslSymJac",
+    "dasslNumJac",
+    "dasslColorSymJac",
+    "dasslInternalNumJac",
+    "inline-rungekutta",
+    "qss"
+  };
+  static const char *SOLVER_METHOD_DESC[S_MAX] = {
+    "unknown",
+    "euler",
+    "rungekutta",
+    "dassl with colored numerical jacobian, with interval root finding - default",
+    "inline-euler",
+    "optimization",
+    "radau5 [sundial/kinsol needed]",
+    "radau3 [sundial/kinsol needed]",
+    "radau1 [sundial/kinsol needed]",
+    "lobatto2 [sundial/kinsol needed]",
+    "lobatto4 [sundial/kinsol needed]",
+    "lobatto6 [sundial/kinsol needed]",
+    "dassl without internal root finding",
+    "dassl for debug propose",
+    "dassl with symbolic jacobian",
+    "dassl with numerical jacobian",
+    "dassl with colored symbolic jacobian",
+    "dassl with internal numerical jacobian",
+    "inline-rungekutta",
+    "qss"
+  };
+
 extern int solver_main(DATA* data, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
-    int lambda_steps, int flag, const char* outputVariablesAtEnd);
+    int lambda_steps, int solverID, const char* outputVariablesAtEnd);
 
 /* Provide solver interface to interactive stuff */
 extern int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo);

@@ -486,23 +486,55 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
  *  \param [in]  [pInitFile] extra argument for initialization-method "file"
  *  \param [in]  [initTime] extra argument for initialization-method "file"
  *  \param [in]  [lambda_steps] ???
- *  \param [in]  [flag] selects the ode solver
+ *  \param [in]  [solverID] selects the ode solver
  *  \param [in]  [outputVariablesAtEnd] ???
  *
- *  This is the main function of the solver it perform
- *  the simulation.
- *
+ *  This is the main function of the solver it perform the simulation.
  */
 int solver_main(DATA* data, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
-    int lambda_steps, int flag, const char* outputVariablesAtEnd)
+    int lambda_steps, int solverID, const char* outputVariablesAtEnd)
 {
   int i, retVal = 0;
   unsigned int ui;
   SOLVER_INFO solverInfo;
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
-  solverInfo.solverMethod = flag;
+  solverInfo.solverMethod = solverID;
+  
+  /* do some solver specific checks */
+  switch(solverInfo.solverMethod)
+  {
+  case S_DASSLWORT:
+  case S_DASSLTEST:
+  case S_DASSLSYMJAC:
+  case S_DASSLNUMJAC:
+  case S_DASSLCOLORSYMJAC:
+  case S_DASSLINTERNALNUMJAC:
+    solverInfo.solverMethod = S_DASSL;
+    break;
+    
+  case S_OPTIMIZATION:
+    WARNING(LOG_STDOUT, "not supported yet");
+    return 1;
+    
+  case S_INLINE_EULER:
+    if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-euler"))
+    {
+      INFO(LOG_SOLVER, "Recognized solver: inline-euler, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.");
+      return 1;
+    }
+    break;
+    
+  case S_INLINE_RUNGEKUTTA:
+    if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-rungekutta"))
+    {
+      INFO(LOG_SOLVER, "Recognized solver: inline-rungekutta, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.");
+      return 1;
+    }
+    solverInfo.solverMethod = S_INLINE_EULER;
+    break;
+  }
 
   /* allocate SolverInfo memory */
   retVal = initializeSolverData(data, &solverInfo);
