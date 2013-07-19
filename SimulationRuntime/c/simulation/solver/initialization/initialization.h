@@ -60,7 +60,7 @@ extern "C"
   };
   static const char *INIT_METHOD_DESC[IIM_MAX] = {
     "unknown",
-    "set all variables to their start values and skips the initialization process",
+    "sets all variables to their start values and skips the initialization process",
     "solves the initialization problem numerically",
     "solves the initialization problem symbolically - default"
   };
@@ -90,7 +90,7 @@ extern "C"
     "unknown",
     "Nelder-Mead method",
     "Brent's method",
-    "Nelder-Mead method with global homotopy (see -ils for global homotopy) - default",
+    "Extended Nelder-Mead method (see -ils for global homotopy) - default",
     "sundials/kinsol",
     "sundials/kinsol with scaling",
     "Interior Point OPTimizer"
