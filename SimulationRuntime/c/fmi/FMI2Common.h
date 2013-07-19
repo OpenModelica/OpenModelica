@@ -51,7 +51,6 @@ typedef struct {
   fmi2_event_info_t* FMIEventInfo;
 } FMI2ModelExchange;
 
-void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message);
 void fmi2logger(fmi2_component_t c, fmi2_string_t instanceName, fmi2_status_t status, fmi2_string_t category, fmi2_string_t message, ...);
 
 #endif
