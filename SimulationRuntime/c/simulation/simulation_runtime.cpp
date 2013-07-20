@@ -90,6 +90,18 @@ using namespace std;
 
 int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
 
+double stepSize = 0.0; /* This variable is used to get the step size value during the simulation. */
+
+double getSimulationStepSize()
+{
+  return stepSize;
+}
+
+void printSimulationStepSize(double in_stepSize)
+{
+  fprintf(stderr, "in_stepSize=%f\n", in_stepSize);
+}
+
 /* const char* version = "20110520_1120"; */
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
@@ -781,6 +793,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   function_initMemoryState();
   read_input_xml(&(data->modelData), &(data->simulationInfo));
   initializeOutputFilter(&(data->modelData), data->simulationInfo.variableFilter);
+  /* set the global stepsize variable */
+  stepSize = data->simulationInfo.stepSize;
 
   /* allocate memory for mixed system solvers */
   allocatemixedSystem(data);

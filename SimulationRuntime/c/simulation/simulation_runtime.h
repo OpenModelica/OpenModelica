@@ -95,6 +95,9 @@ int functionODE_residual(double *t, double *x, double *xprime, double *delta, fo
 int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
         fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
 
+double getSimulationStepSize();
+void printSimulationStepSize(double in_stepSize);
+
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
