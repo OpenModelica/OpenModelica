@@ -656,7 +656,7 @@ end collectPreVariablesTrverseExp2;
 //
 // =============================================================================
 
-public function warnAboutIterationVariablesWithDefaultZeroStartAttribute "function warnAboutIterationVariablesWithDefaultZeroStartAttribute
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute "function warnAboutIterationVariablesWithDefaultZeroStartAttribute
   author: lochel
   This function ... read the function name."
   input BackendDAE.BackendDAE inBackendDAE;
@@ -668,7 +668,7 @@ algorithm
   outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(eqs);
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute;
 
-public function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "function warnAboutIterationVariablesWithDefaultZeroStartAttribute0
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "function warnAboutIterationVariablesWithDefaultZeroStartAttribute0
   author: lochel"
   input list<BackendDAE.EqSystem> inEqs;
   output Boolean outWarning;
