@@ -1759,44 +1759,44 @@ algorithm
   end matchcontinue;
 end printCallFunction2StrDIVISION;
 
-protected function printVarsStatistics "function: printVarsStatistics
-  author: PA
-
-  Prints statistics on variables, etc.
-"
-  input BackendDAE.Variables inVariables1;
-  input BackendDAE.Variables inVariables2;
-algorithm
-  _:=
-  matchcontinue (inVariables1,inVariables2)
-    local
-      String lenstr,bstr;
-      BackendDAE.VariableArray v1,v2;
-      Integer bsize1,n1,bsize2,n2;
-    case (BackendDAE.VARIABLES(varArr = v1,bucketSize = bsize1,numberOfVars = n1),BackendDAE.VARIABLES(varArr = v2,bucketSize = bsize2,numberOfVars = n2))
-      equation
-        print("Variable Statistics\n");
-        print("===================\n");
-        print("Number of variables: ");
-        lenstr = intString(n1);
-        print(lenstr);
-        print("\n");
-        print("Bucket size for variables: ");
-        bstr = intString(bsize1);
-        print(bstr);
-        print("\n");
-        print("Number of known variables: ");
-        lenstr = intString(n2);
-        print(lenstr);
-        print("\n");
-        print("Bucket size for known variables: ");
-        bstr = intString(bsize1);
-        print(bstr);
-        print("\n");
-      then
-        ();
-  end matchcontinue;
-end printVarsStatistics;
+// protected function printVarsStatistics "function: printVarsStatistics
+//   author: PA
+// 
+//   Prints statistics on variables, etc.
+// "
+//   input BackendDAE.Variables inVariables1;
+//   input BackendDAE.Variables inVariables2;
+// algorithm
+//   _:=
+//   matchcontinue (inVariables1,inVariables2)
+//     local
+//       String lenstr,bstr;
+//       BackendDAE.VariableArray v1,v2;
+//       Integer bsize1,n1,bsize2,n2;
+//     case (BackendDAE.VARIABLES(varArr = v1,bucketSize = bsize1,numberOfVars = n1),BackendDAE.VARIABLES(varArr = v2,bucketSize = bsize2,numberOfVars = n2))
+//       equation
+//         print("Variable Statistics\n");
+//         print("===================\n");
+//         print("Number of variables: ");
+//         lenstr = intString(n1);
+//         print(lenstr);
+//         print("\n");
+//         print("Bucket size for variables: ");
+//         bstr = intString(bsize1);
+//         print(bstr);
+//         print("\n");
+//         print("Number of known variables: ");
+//         lenstr = intString(n2);
+//         print(lenstr);
+//         print("\n");
+//         print("Bucket size for known variables: ");
+//         bstr = intString(bsize1);
+//         print(bstr);
+//         print("\n");
+//       then
+//         ();
+//   end matchcontinue;
+// end printVarsStatistics;
 
 public function dumpTypeStr
 "Dump BackendDAE.Type to a string."
@@ -3137,31 +3137,31 @@ algorithm
   res := stringAppendList({"{",res,"}"});
 end intListStr;
 
-protected function dumpAliasVariable
-"author: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var,list<Integer>> inTpl;
- output tuple<BackendDAE.Var,list<Integer>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Var v;
-      DAE.ComponentRef cr;
-      DAE.Exp e;
-      String s,scr,se;
-    case ((v,_))
-      equation
-        cr = BackendVariable.varCref(v);
-        e = BackendVariable.varBindExp(v);
-        //print("### dump var : " +&  ComponentReference.printComponentRefStr(cr) +& "\n");
-        scr = ComponentReference.printComponentRefStr(cr);
-        se = ExpressionDump.printExpStr(e);
-        s = stringAppendList({scr," = ",se,"\n"});
-        print(s);
-      then ((v,{}));
-    else inTpl;
-  end matchcontinue;
-end dumpAliasVariable;
+// protected function dumpAliasVariable
+// "author: Frenkel TUD 2010-11"
+//  input tuple<BackendDAE.Var,list<Integer>> inTpl;
+//  output tuple<BackendDAE.Var,list<Integer>> outTpl;
+// algorithm
+//   outTpl:=
+//   matchcontinue (inTpl)
+//     local
+//       BackendDAE.Var v;
+//       DAE.ComponentRef cr;
+//       DAE.Exp e;
+//       String s,scr,se;
+//     case ((v,_))
+//       equation
+//         cr = BackendVariable.varCref(v);
+//         e = BackendVariable.varBindExp(v);
+//         //print("### dump var : " +&  ComponentReference.printComponentRefStr(cr) +& "\n");
+//         scr = ComponentReference.printComponentRefStr(cr);
+//         se = ExpressionDump.printExpStr(e);
+//         s = stringAppendList({scr," = ",se,"\n"});
+//         print(s);
+//       then ((v,{}));
+//     else inTpl;
+//   end matchcontinue;
+// end dumpAliasVariable;
 
 public function dumpStateVariables "function: dumpStateVariables
   author: Frenkel TUD 2010-12
