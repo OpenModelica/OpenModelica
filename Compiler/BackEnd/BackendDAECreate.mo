@@ -849,23 +849,23 @@ algorithm
   end matchcontinue;
 end setMinMaxFromEnumeration1;
 
-protected function fixParameterStartBinding
-  input Option<DAE.Exp> bind;
-  input DAE.Type ty;
-  input Option<DAE.VariableAttributes> attr;
-  input BackendDAE.VarKind kind;
-  output Option<DAE.Exp> outBind;
-algorithm
-  outBind := matchcontinue (bind, ty, attr, kind)
-    local
-      DAE.Exp exp;
-    case (NONE(), DAE.T_REAL(source=_), _, BackendDAE.PARAM())
-      equation
-        exp = DAEUtil.getStartAttr(attr);
-      then SOME(exp);
-    else bind;
-  end matchcontinue;
-end fixParameterStartBinding;
+// protected function fixParameterStartBinding
+//   input Option<DAE.Exp> bind;
+//   input DAE.Type ty;
+//   input Option<DAE.VariableAttributes> attr;
+//   input BackendDAE.VarKind kind;
+//   output Option<DAE.Exp> outBind;
+// algorithm
+//   outBind := matchcontinue (bind, ty, attr, kind)
+//     local
+//       DAE.Exp exp;
+//     case (NONE(), DAE.T_REAL(source=_), _, BackendDAE.PARAM())
+//       equation
+//         exp = DAEUtil.getStartAttr(attr);
+//       then SOME(exp);
+//     else bind;
+//   end matchcontinue;
+// end fixParameterStartBinding;
 
 protected function lowerVarkind
 "function: lowerVarkind

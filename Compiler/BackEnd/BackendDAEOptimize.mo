@@ -326,55 +326,55 @@ end lateInlineFunction;
 // remove simply equations stuff
 //
 // =============================================================================
-protected function updateEquationSystemMatching
-" function: updateEquationSystemMatching
-  author: Frenkel TUD 2012-09"
-  input BackendDAE.Variables ordvars;
-  input BackendDAE.EquationArray eqns;
-  input array<Integer> ass1 "ass[varindx]=eqnindx";
-  input array<Integer> ass2 "ass[eqnindx]=varindx";
-  input BackendDAE.StrongComponents comps;
-  input BackendDAE.StateSets stateSets;
-  output BackendDAE.EqSystem osyst;
-algorithm
-  osyst := matchcontinue(ordvars,eqns,ass1,ass2,comps,stateSets)
-    local
-      array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-      Integer bucketSize,numberOfVars,size,neqns,nvars,arrSizeEqns,arrSizeVars,neqns1,nvars1;
-      array<Option<BackendDAE.Var>> varOptArr;
-      array<Option<BackendDAE.Equation>> equOptArr;
-      array<Integer> eqnindxs,varindxs;
-      BackendDAE.StrongComponents comps_1;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns1;
-      BackendDAE.VariableArray varArr;
-    case(BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(nvars,arrSizeVars,varOptArr),bucketSize=bucketSize),
-         BackendDAE.EQUATION_ARRAY(size, neqns, arrSizeEqns, equOptArr),
-         _,_,_,_)
-      equation
-        // update equationsarray
-        eqnindxs = arrayCreate(neqns,-1);
-        neqns1 = updateEquationArray(1,neqns,1,equOptArr,ass1,ass2,eqnindxs);
-        // update variablearray
-        varindxs = arrayCreate(nvars,-1);
-        crefIdxLstArr = arrayCreate(bucketSize, {});
-        nvars1 = updateVarArray(1,nvars,1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,varindxs);
-        // update strongComponents
-        comps_1 = List.fold2(comps,updateStrongComponent,varindxs,eqnindxs,{});
-        comps_1 = listReverse(comps_1);
-        // generate updated data structs
-        varArr = BackendDAE.VARIABLE_ARRAY(nvars1,arrSizeVars,varOptArr);
-        vars = BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, nvars1);
-        eqns1 = BackendDAE.EQUATION_ARRAY(size, neqns1, arrSizeEqns, equOptArr);
-      then
-        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps_1),stateSets);
-    else
-      equation
-        print("BackendDAEOptimize.updateEquationSystemMatching failed\n");
-      then
-        fail();
-  end matchcontinue;
-end updateEquationSystemMatching;
+// protected function updateEquationSystemMatching
+// " function: updateEquationSystemMatching
+//   author: Frenkel TUD 2012-09"
+//   input BackendDAE.Variables ordvars;
+//   input BackendDAE.EquationArray eqns;
+//   input array<Integer> ass1 "ass[varindx]=eqnindx";
+//   input array<Integer> ass2 "ass[eqnindx]=varindx";
+//   input BackendDAE.StrongComponents comps;
+//   input BackendDAE.StateSets stateSets;
+//   output BackendDAE.EqSystem osyst;
+// algorithm
+//   osyst := matchcontinue(ordvars,eqns,ass1,ass2,comps,stateSets)
+//     local
+//       array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+//       Integer bucketSize,numberOfVars,size,neqns,nvars,arrSizeEqns,arrSizeVars,neqns1,nvars1;
+//       array<Option<BackendDAE.Var>> varOptArr;
+//       array<Option<BackendDAE.Equation>> equOptArr;
+//       array<Integer> eqnindxs,varindxs;
+//       BackendDAE.StrongComponents comps_1;
+//       BackendDAE.Variables vars;
+//       BackendDAE.EquationArray eqns1;
+//       BackendDAE.VariableArray varArr;
+//     case(BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(nvars,arrSizeVars,varOptArr),bucketSize=bucketSize),
+//          BackendDAE.EQUATION_ARRAY(size, neqns, arrSizeEqns, equOptArr),
+//          _,_,_,_)
+//       equation
+//         // update equationsarray
+//         eqnindxs = arrayCreate(neqns,-1);
+//         neqns1 = updateEquationArray(1,neqns,1,equOptArr,ass1,ass2,eqnindxs);
+//         // update variablearray
+//         varindxs = arrayCreate(nvars,-1);
+//         crefIdxLstArr = arrayCreate(bucketSize, {});
+//         nvars1 = updateVarArray(1,nvars,1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,varindxs);
+//         // update strongComponents
+//         comps_1 = List.fold2(comps,updateStrongComponent,varindxs,eqnindxs,{});
+//         comps_1 = listReverse(comps_1);
+//         // generate updated data structs
+//         varArr = BackendDAE.VARIABLE_ARRAY(nvars1,arrSizeVars,varOptArr);
+//         vars = BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, nvars1);
+//         eqns1 = BackendDAE.EQUATION_ARRAY(size, neqns1, arrSizeEqns, equOptArr);
+//       then
+//         BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps_1),stateSets);
+//     else
+//       equation
+//         print("BackendDAEOptimize.updateEquationSystemMatching failed\n");
+//       then
+//         fail();
+//   end matchcontinue;
+// end updateEquationSystemMatching;
 
 protected function updateStrongComponent
 " function: updateStrongComponent
@@ -485,29 +485,29 @@ algorithm
   end matchcontinue;
 end updateStrongComponent;
 
-protected function updateEquationSystemComp
-  input list<Integer> eqns;
-  input list<Integer> vars;
-  input BackendDAE.JacobianType jacType;
-  input BackendDAE.StrongComponents iAcc;
-  output BackendDAE.StrongComponents oComps;
-algorithm
-  oComps := match(eqns,vars,jacType,iAcc)
-    local
-      Integer e,v;
-    case ({},{},_,_) then iAcc;
-    case ({},v::_,_,_)
-      //equation
-      then
-        fail();
-    case (e::{},v::_,_,_)
-      then
-        BackendDAE.SINGLEEQUATION(e,v)::iAcc;
-    case (_,_,_,_)
-      then
-        BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType)::iAcc;
-  end match;
-end updateEquationSystemComp;
+// protected function updateEquationSystemComp
+//   input list<Integer> eqns;
+//   input list<Integer> vars;
+//   input BackendDAE.JacobianType jacType;
+//   input BackendDAE.StrongComponents iAcc;
+//   output BackendDAE.StrongComponents oComps;
+// algorithm
+//   oComps := match(eqns,vars,jacType,iAcc)
+//     local
+//       Integer e,v;
+//     case ({},{},_,_) then iAcc;
+//     case ({},v::_,_,_)
+//       //equation
+//       then
+//         fail();
+//     case (e::{},v::_,_,_)
+//       then
+//         BackendDAE.SINGLEEQUATION(e,v)::iAcc;
+//     case (_,_,_,_)
+//       then
+//         BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType)::iAcc;
+//   end match;
+// end updateEquationSystemComp;
 
 protected function updateTornSystemComp
   input list<tuple<Integer,list<Integer>>> inEqnVarTplLst;
@@ -4431,16 +4431,16 @@ algorithm
   end matchcontinue;
 end differentiateAlgorithmStatements;
 
-protected function createDiffStatements
-  input DAE.Exp inLHS;
-  input DAE.Exp inRHS;
-  input DAE.Type inType;
-  input DAE.Statement inStmt;
-  input DAE.ElementSource Source;
-  output list<DAE.Statement> outEqn;
-algorithm
-  outEqn := {DAE.STMT_ASSIGN(inType, inLHS, inRHS, Source), inStmt};
-end createDiffStatements;
+// protected function createDiffStatements
+//   input DAE.Exp inLHS;
+//   input DAE.Exp inRHS;
+//   input DAE.Type inType;
+//   input DAE.Statement inStmt;
+//   input DAE.ElementSource Source;
+//   output list<DAE.Statement> outEqn;
+// algorithm
+//   outEqn := {DAE.STMT_ASSIGN(inType, inLHS, inRHS, Source), inStmt};
+// end createDiffStatements;
 
 protected function differentiateWithRespectToXVec "function differentiateWithRespectToXVec
   author: wbraun"
@@ -5033,17 +5033,17 @@ algorithm
  end match;
 end mergeCast;
 
-protected function mergeRelation
-  input DAE.Exp inExp0;
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input DAE.Operator inOp;
-  input Integer inIndex;
-  input Option<tuple<DAE.Exp,Integer,Integer>> inOptionExpisASUB;
-  output DAE.Exp outExp;
-algorithm
-  outExp := DAE.RELATION(inExp1,inOp,inExp2,inIndex,inOptionExpisASUB);
-end mergeRelation;
+// protected function mergeRelation
+//   input DAE.Exp inExp0;
+//   input DAE.Exp inExp1;
+//   input DAE.Exp inExp2;
+//   input DAE.Operator inOp;
+//   input Integer inIndex;
+//   input Option<tuple<DAE.Exp,Integer,Integer>> inOptionExpisASUB;
+//   output DAE.Exp outExp;
+// algorithm
+//   outExp := DAE.RELATION(inExp1,inOp,inExp2,inIndex,inOptionExpisASUB);
+// end mergeRelation;
 
 protected function mergeArray
   input list<DAE.Exp> inExplst;
@@ -5371,30 +5371,30 @@ algorithm
   end match;
 end partitionIndependentBlocks2;
 
-protected function arrayUpdateForPartition
-  input Integer ix;
-  input array<Integer> ixs;
-  input Integer val;
-  output array<Integer> oixs;
-algorithm
-  // print("arrayUpdate("+&intString(ix+1)+&","+&intString(val)+&")\n");
-  oixs := arrayUpdate(ixs,ix+1,val);
-end arrayUpdateForPartition;
+// protected function arrayUpdateForPartition
+//   input Integer ix;
+//   input array<Integer> ixs;
+//   input Integer val;
+//   output array<Integer> oixs;
+// algorithm
+//   // print("arrayUpdate("+&intString(ix+1)+&","+&intString(val)+&")\n");
+//   oixs := arrayUpdate(ixs,ix+1,val);
+// end arrayUpdateForPartition;
 
-protected function printPartition
-  input Boolean b;
-  input array<Integer> ixs;
-algorithm
-  _ := match (b,ixs)
-    case (true,_)
-      equation
-        print("Got partition!\n");
-        print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
-        print("\n");
-      then ();
-    else ();
-  end match;
-end printPartition;
+// protected function printPartition
+//   input Boolean b;
+//   input array<Integer> ixs;
+// algorithm
+//   _ := match (b,ixs)
+//     case (true,_)
+//       equation
+//         print("Got partition!\n");
+//         print(stringDelimitList(List.map(arrayList(ixs), intString), ","));
+//         print("\n");
+//       then ();
+//     else ();
+//   end match;
+// end printPartition;
 
 public function residualForm
   "Puts equations like x=y in the form of 0=x-y"
