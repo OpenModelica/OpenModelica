@@ -368,10 +368,33 @@ algorithm
   nodeNames2 := Util.arrayAppend(nodeNames1,nodeNames2); 
   nodeDescs2 := Util.arrayAppend(nodeDescs1,nodeDescs2);
   exeCosts2 := Util.arrayAppend(exeCosts1,exeCosts2);
-  commCosts2 := Util.arrayAppend(commCosts1,commCosts2);  //TODO: update commCosts2 for the new variable indices
+  commCosts2 := Util.arrayMap1(commCosts2,updateCommCosts,idxOffset);
+  commCosts2 := Util.arrayAppend(commCosts1,commCosts2);
   nodeMark2 := Util.arrayAppend(nodeMark1,nodeMark2);
   graphDataOut := TASKGRAPHMETA(inComps2,varSccMapping2,eqSccMapping2,rootNodes2,nodeNames2,nodeDescs2,exeCosts2,commCosts2,nodeMark2);  
 end taskGraphAppend;
+
+
+protected function updateCommCosts " updates the CommCosts to the enumerated indeces.
+author: Waurich TUD 2013-07"
+  input list<tuple<Integer,Integer,Integer>> commCostsIn;
+  input Integer idxOffset;
+  output list<tuple<Integer,Integer,Integer>> commCostsOut;
+algorithm
+  commCostsOut := List.map1(commCostsIn,updateCommCosts1,idxOffset);
+end updateCommCosts;
+
+
+protected function updateCommCosts1
+  input tuple<Integer,Integer,Integer> commCostsIn;
+  input Integer idxOffset;
+  output tuple<Integer,Integer,Integer> commCostsOut;
+protected
+  Integer childNode,numberOfVars,reqCycles;
+algorithm
+  (childNode,numberOfVars,reqCycles) := commCostsIn;
+  commCostsOut := (childNode+idxOffset,numberOfVars,reqCycles);
+end updateCommCosts1;
 
 
 protected function updateTaskGraphSystem "map function to add the indices in the taskGraph system to the number of nodes of the previous system.
@@ -744,9 +767,10 @@ algorithm
       descLst = eqString::iEqDesc;
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);   
-      var = listGet(varLst,arrayGet(ass2,i));
-      varString = getVarString(var);
-      desc = ("ALGO:"+&eqString +& " FOR " +& varString);
+      //var = listGet(varLst,arrayGet(ass2,i));
+      //varString = getVarString(var);
+      //desc = ("ALGO:"+&eqString +& " FOR " +& varString);
+      desc = ("ALGO: "+&eqString +& " FOR THE VARS: " +& stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
       descLst = desc::iEqDesc;
     then 
       descLst;
@@ -762,9 +786,10 @@ algorithm
       descLst = eqString::iEqDesc;
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);   
-      var = listGet(varLst,arrayGet(ass2,i));
-      varString = getVarString(var);
-      desc = ("COMPLEX:"+&eqString +& " FOR " +& varString);
+      //var = listGet(varLst,arrayGet(ass2,i));
+      //varString = getVarString(var);
+      //desc = ("COMPLEX:"+&eqString +& " FOR " +& varString);
+      desc = ("COMPLEX: "+&eqString +& " FOR THE VARS: " +& stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
       descLst = desc::iEqDesc;
     then 
       descLst;
@@ -779,9 +804,10 @@ algorithm
       eqString =stringCharListString(eqDescLst);
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);   
-      var = listGet(varLst,arrayGet(ass2,i));
-      varString = getVarString(var);
-      desc = ("WHEN:"+&eqString +& " FOR " +& varString);
+      //var = listGet(varLst,arrayGet(ass2,i));
+      //varString = getVarString(var);
+      //desc = ("WHEN:"+&eqString +& " FOR " +& varString);
+      desc = ("WHEN:"+&eqString +& " FOR THE VARS: " +& stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
       descLst = desc::iEqDesc;
     then 
       descLst;
@@ -797,9 +823,10 @@ algorithm
       descLst = eqString::iEqDesc;
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);   
-      var = listGet(varLst,arrayGet(ass2,i));
-      varString = getVarString(var);
-      desc = ("IFEQ:"+&eqString +& " FOR " +& varString);
+      //var = listGet(varLst,arrayGet(ass2,i));
+      //varString = getVarString(var);
+      //desc = ("IFEQ:"+&eqString +& " FOR " +& varString);
+      desc = ("IFEQ:"+&eqString +& " FOR THE VARS: " +& stringDelimitList(List.map1(vs,List.getIndexFirst,List.map(varLst,getVarString))," AND "));
       descLst = desc::iEqDesc;
     then 
       descLst;
@@ -2507,8 +2534,8 @@ protected
   list<tuple<Integer,Integer,Integer>> commRow;
   tuple<Integer,Integer,Integer> commEntry;
 algorithm
-  commRow := arrayGet(commCosts,parentIdx);
-  commEntry := getTupleByFirstEntry(commRow,childIdx);
+  commRow := arrayGet(commCosts,childIdx);
+  commEntry := getTupleByFirstEntry(commRow,parentIdx);
   (_,costOut,_) := commEntry;  
 end getCommunicationCost;
 
@@ -2862,6 +2889,16 @@ algorithm
         ();
   end matchcontinue;
 end printNodeMark;
+
+
+
+protected function printIntLst "function to print a list<Integer>
+author:Waurich TUD 2013-07"
+  input list<Integer> lstIn;
+  output String strOut;
+algorithm
+  strOut := stringDelimitList(List.map(lstIn,intString),",");  
+end printIntLst;
 
 
 //some unused functions (with old type definition)
@@ -4034,6 +4071,7 @@ algorithm
   coords := ((xCoord,parallelSetIdx*levelInterval));
   nodeCoordsOut := arrayUpdate(nodeCoordsIn,compIdx,coords);
 end getYCoordForNode;
+  
   
 
 end HpcOmTaskGraph;
