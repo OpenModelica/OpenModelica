@@ -1970,7 +1970,7 @@ template expCref(DAE.Exp ecr)
   match ecr
   case CREF(__) then cref(componentRef)
   case CALL(path = IDENT(name = "der"), expLst = {arg as CREF(__)}) then
-    '$P$DER<%cref(arg.componentRef)%>'
+    '_DER<%cref(arg.componentRef)%>'
   else "ERROR_NOT_A_CREF"
 end expCref;
 
@@ -4301,7 +4301,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%var%>'
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
-    '$P$DER<%cref(arg.componentRef)%>'
+    '_DER<%cref(arg.componentRef)%>'
   case CALL(path=IDENT(name="der"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support der(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="pre"), expLst={arg}) then
