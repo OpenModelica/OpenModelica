@@ -1605,7 +1605,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   int functionODE(DATA *data)
   {
   #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_TICK_FN(SIM_TIMER_FUNCTION_ODE);
+    rt_tick(SIM_TIMER_FUNCTION_ODE);
   #endif
     
     <%varDecls%>
@@ -1616,7 +1616,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
     <%loop%>
     restore_memory_state(mem_state);
   #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_ACC_FN(SIM_TIMER_FUNCTION_ODE);
+    rt_accumulate(SIM_TIMER_FUNCTION_ODE);
   #endif
     
     return 0;
@@ -2299,7 +2299,6 @@ template dumpEqs(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN
-      
       <%crefStr(e.cref)%> = <%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__) then
@@ -2441,8 +2440,15 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
    */
   static void eqFunction_<%ix%>(DATA *data)
   {
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_EQEXT(<%ix%>);
+    //printf("offset %i \n", data->modelData.modelDataXml.nEquations + data->modelData.modelDataXml.nProfileBlocks);
+  #endif
     <%&varD%>
     <%x%>
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
   }
 
   >>

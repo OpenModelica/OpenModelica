@@ -38,6 +38,7 @@ encapsulated package HpcOmBenchmark
 "
 
 protected import HpcOmBenchmarkExt;
+protected import List;
 
 public function benchSystem
   output tuple<tuple<Integer,Integer>,tuple<Integer,Integer>> oTime; //required time for <op,com>
@@ -47,6 +48,7 @@ protected
   list<Integer> opCosts, comCosts;
   String s1,s2;
 algorithm
+    //Don't use the opCost-calculation, the values are bad for equation systems
     opCosts := HpcOmBenchmarkExt.requiredTimeForOp();
     true := listLength(opCosts) == 2;
     opCostM := listGet(opCosts,1); //m
@@ -64,5 +66,45 @@ algorithm
     
     oTime := ((opCostM,opCostN),(comCostM,comCostN));
 end benchSystem;
+
+public function readCalcTimesFromXml
+  input String fileName;
+  output List<tuple<Integer,Integer,Real>> calcTimes; //<simEqIdx,numberOfCalcs,calcTimeSum>
+  
+protected
+  list<Real> tmpResult;
+  
+algorithm
+  tmpResult := HpcOmBenchmarkExt.readCalcTimesFromXml(fileName);
+  calcTimes := readCalcTimesFromXml1(tmpResult,{});
+end readCalcTimesFromXml;
+
+protected function readCalcTimesFromXml1
+  input list<Real> iList;
+  input list<tuple<Integer,Integer,Real>> iTuples; //<eqIdx,numOfCalcs,calcTimeSum> attention: eqIdx starts with zero
+  output list<tuple<Integer,Integer,Real>> oTuples;
+  
+protected
+  Real eqIdx, numOfCalcs, calcTimeSum;
+  Integer intNumOfCalcs,intEqIdx;
+  list<Real> rest;
+  list<tuple<Integer,Integer,Real>> tmpTuples;
+algorithm
+  oTuples := matchcontinue(iList, iTuples)
+  case(numOfCalcs::calcTimeSum::eqIdx::rest,_)
+    equation
+      print("readCalcTimesFromXml1 eqIdx: " +& intString(realInt(eqIdx)) +& " numOfCalcs: " +& intString(realInt(numOfCalcs)) +& " calcTime: " +& realString(calcTimeSum) +& " \n");
+      intNumOfCalcs = realInt(numOfCalcs);
+      intEqIdx = realInt(eqIdx);
+      tmpTuples = readCalcTimesFromXml1(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
+    then tmpTuples;
+  case ({},_)
+    then iTuples;
+  else
+    equation
+      print("readCalcTimesFromXml1: Invalid number of arguments\n");
+    then fail();
+  end matchcontinue;
+end readCalcTimesFromXml1;
 
 end HpcOmBenchmark;

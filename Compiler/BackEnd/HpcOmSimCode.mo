@@ -51,7 +51,9 @@ protected import Error;
 protected import HpcOmTaskGraph;
 protected import Initialization;
 protected import InlineSolver;
+protected import List;
 protected import SimCodeUtil;
+protected import Util;
 
 public function createSimCode "function createSimCode
   entry point to create SimCode from BackendDAE."
@@ -72,7 +74,7 @@ algorithm
   simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
       String fileDir, cname;
-      Integer  maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
+      Integer lastEqMappingIdx, maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
       Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys;
       BackendDAE.BackendDAE dlow, dlow2;
       Option<BackendDAE.BackendDAE> initDAE;
@@ -122,8 +124,11 @@ algorithm
       Option<BackendDAE.BackendDAE> inlineDAE;
       list<SimCode.StateSet> stateSets;
       array<Integer> systemIndexMap;
-
+      list<tuple<Integer,Integer>> equationSccMapping; //Maps each simEq to the scc
+      array<list<Integer>> sccSimEqMapping; //Maps each scc to a list of simEqs
+      array<Integer> simEqSccMapping; //Maps each simEq to the scc
       BackendDAE.SampleLookup sampleLookup;
+      BackendDAE.StrongComponents allComps;
       
       HpcOmTaskGraph.TaskGraph taskGraph;  
       HpcOmTaskGraph.TaskGraph taskGraphOde;
@@ -136,14 +141,22 @@ algorithm
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
+
+      //Create mapping to SimEq
+      (equationSccMapping,lastEqMappingIdx) = createSimEqToSccMapping(inBackendDAE);
+      (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
+      print("createSimCode with " +& intString(listLength(allComps)) +& " Components\n");
+      sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
+      simEqSccMapping = convertToSimEqSccMapping(equationSccMapping, lastEqMappingIdx);
+
+      dumpSccSimEqMapping(sccSimEqMapping);
       
       //Create TaskGraph
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
-      
       //Append the costs to the taskGraphMeta
-      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, taskGraphData);
-      //HpcOmTaskGraph.printTaskGraph(taskGraph);
-      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
+      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_prof.xml" , simEqSccMapping, taskGraphData);
+      HpcOmTaskGraph.printTaskGraph(taskGraph);
+      HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");    
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName);
      
@@ -226,7 +239,8 @@ algorithm
       //modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
 
       // equation generation for euler, dassl2, rungekutta
-      (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars);
+      (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, _) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});
+      
       HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
 //      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
 //
@@ -346,5 +360,207 @@ algorithm
     then fail();
   end matchcontinue;
 end createSimCode;
+
+
+protected function createSimEqToSccMapping
+  input BackendDAE.BackendDAE inBackendDAE;
+  output list<tuple<Integer,Integer>> oMapping;
+  output Integer lastIndex;
+algorithm
+  (oMapping,lastIndex) := matchcontinue (inBackendDAE)
+    local
+      Integer  maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
+
+      DAE.FunctionTree functionTree;
+      BackendDAE.SymbolicJacobians symJacs;
+      
+      // new variables
+      list<SimCode.SimEqSystem> initialEquations;           // --> initial_equations
+      list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
+      list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
+      list<SimCode.SimEqSystem> inlineEquations;            // --> inline solver
+      list<SimCode.SimEqSystem> removedEquations;
+      list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
+      //list<DAE.Statement> algorithmAndEquationAsserts;
+      list<DAE.ClassAttributes> classAttributes;
+      list<SimCode.SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      SimCode.ExtObjInfo extObjInfo;
+      SimCode.MakefileParams makefileParams;
+      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+      BackendDAE.Variables knownVars;
+      list<BackendDAE.Var> varlst;
+
+      BackendDAE.BackendDAE dlow;
+      Option<BackendDAE.BackendDAE> initDAE;
+      Option<BackendDAE.BackendDAE> inlineDAE;
+      BackendDAE.EquationArray removedEqs;    
+      list<DAE.Constraint> constraints;
+      list<SimCode.SimVar> tempvars;
+      BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
+      list<tuple<Integer,Integer>> equationSccMapping;
+      array<DAE.Constraint> constrsarr;
+      array<DAE.ClassAttributes> clsattrsarra;
+      SimCode.JacobianMatrix jacG;
+      
+    case (dlow) equation
+      uniqueEqIndex = 1;
+      
+      // generate initDAE before replacing pre(alias)!
+      (initDAE, _) = Initialization.solveInitialSystem(dlow);
+
+      // replace pre(alias) in time-equations
+      dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
+
+      // generate system for inline solver
+      (inlineDAE, _) = InlineSolver.generateDAE(dlow);
+
+      // check if the Sytems has states
+      dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
+
+      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
+                                                        constraints=constrsarr, 
+                                                        classAttrs=clsattrsarra, 
+                                                        functionTree=functionTree, 
+                                                        symjacs=symJacs)) = dlow;
+      
+      //extObjInfo = createExtObjInfo(shared);
+
+      //whenClauses = createSimWhenClauses(dlow);
+      //zeroCrossings = Util.if_(ifcpp, getRelations(dlow), getZeroCrossings(dlow));
+      //relations = getRelations(dlow);
+      //sampleZC = getSamples(dlow);
+      //zeroCrossings = Util.if_(ifcpp, listAppend(zeroCrossings, sampleZC), zeroCrossings);
+
+      // state set stuff
+      tempvars = {};
+      (dlow, _, uniqueEqIndex, tempvars, numStateSets) = SimCodeUtil.createStateSets(dlow, {}, uniqueEqIndex, tempvars);
+
+      // inline solver stuff
+      (inlineEquations, uniqueEqIndex, tempvars) = SimCodeUtil.createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars);
+
+      // initialization stuff
+      (_, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, _) = SimCodeUtil.createInitialResiduals(dlow, initDAE, uniqueEqIndex, tempvars);
+      (jacG, uniqueEqIndex) = SimCodeUtil.createInitialMatrices(dlow, uniqueEqIndex);
+
+      // addInitialStmtsToAlgorithms
+      dlow = BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
+      
+      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
+                                                        constraints=constrsarr, 
+                                                        classAttrs=clsattrsarra, 
+                                                        functionTree=functionTree, 
+                                                        symjacs=symJacs)) = inBackendDAE; //dlow
+
+      // equation generation for euler, dassl2, rungekutta
+      print("createSimCode_0\n");
+      (uniqueEqIndex, _, _, _, tempvars, equationSccMapping) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});    
+      print("createSimCode_1\n");
+      then (equationSccMapping,uniqueEqIndex);
+    else then fail();
+  end matchcontinue;
+
+end createSimEqToSccMapping;
+
+protected function convertToSccSimEqMapping
+  input list<tuple<Integer,Integer>> iMapping;
+  input Integer numOfSccs;
+  output array<list<Integer>> oMapping;
+  
+protected
+  array<list<Integer>> tmpMapping;
+
+algorithm
+  tmpMapping := arrayCreate(numOfSccs,{});
+  print("convertToSccSimEqMapping with " +& intString(numOfSccs) +& " sccs.\n");
+  _ := List.fold(iMapping, convertToSccSimEqMapping1, tmpMapping);
+  oMapping := tmpMapping;
+  
+end convertToSccSimEqMapping;
+
+protected function convertToSccSimEqMapping1
+  input tuple<Integer,Integer> iMapping;
+  input array<list<Integer>> iSccMapping;
+  output array<list<Integer>> oSccMapping;
+  
+protected
+  Integer i1,i2;
+  List<Integer> tmpList;
+  
+algorithm
+  (i1,i2) := iMapping;
+  print("convertToSccSimEqMapping1 accessing index " +& intString(i2) +& ".\n");
+  tmpList := arrayGet(iSccMapping,i2);
+  tmpList := i1 :: tmpList;
+  oSccMapping := arrayUpdate(iSccMapping,i2,tmpList);
+  
+end convertToSccSimEqMapping1;
+
+protected function convertToSimEqSccMapping
+  input list<tuple<Integer,Integer>> iMapping; //<simEqIdx,sccIdx>
+  input Integer numOfSimEqs;
+  output array<Integer> oMapping; //maps each simEq to the scc
+  
+protected
+  array<Integer> tmpMapping;
+  
+algorithm
+  //tmpMapping := arrayCreate(listLength(iMapping), -1);
+  tmpMapping := arrayCreate(numOfSimEqs, -1);
+  oMapping := List.fold(iMapping, convertToSimEqSccMapping1, tmpMapping);
+end convertToSimEqSccMapping;
+
+protected function convertToSimEqSccMapping1
+  input tuple<Integer,Integer> iSimEqTuple;
+  input array<Integer> iMapping;
+  output array<Integer> oMapping;
+ 
+protected
+  Integer simEqIdx,sccIdx;
+  
+algorithm
+  (simEqIdx,sccIdx) := iSimEqTuple;
+  print("convertToSimEqSccMapping1 " +& intString(simEqIdx) +& " .. " +& intString(sccIdx) +& " iMapping_len: " +& intString(arrayLength(iMapping)) +& "\n");
+  oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
+end convertToSimEqSccMapping1;
+
+protected function dumpSccSimEqMapping
+  input array<list<Integer>> iSccMapping;
+ 
+protected
+  String text;
+  
+algorithm
+  text := "SccToSimEqMapping";
+  ((_,text)) := Util.arrayFold(iSccMapping, dumpSccSimEqMapping1, (1,text));
+  print(text +& "\n");
+end dumpSccSimEqMapping;
+
+protected function dumpSccSimEqMapping1
+  input list<Integer> iMapping;
+  input tuple<Integer,String> iIndexText;
+  output tuple<Integer,String> oIndexText;
+
+protected
+  Integer iIndex;
+  String text, iText;
+  
+algorithm
+  (iIndex,iText) := iIndexText;
+  text := List.fold(iMapping, dumpSccSimEqMapping2, " ");
+  text := iText +& "\nSCC " +& intString(iIndex) +& ": {" +& text +& "}";
+  oIndexText := (iIndex+1,text);
+end dumpSccSimEqMapping1;
+
+protected function dumpSccSimEqMapping2
+  input Integer iIndex;
+  input String iText;
+  output String oText;
+  
+algorithm
+  oText := iText +& intString(iIndex) +& " ";
+   
+end dumpSccSimEqMapping2;
 
 end HpcOmSimCode;

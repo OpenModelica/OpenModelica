@@ -220,6 +220,7 @@ static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml) {
       indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", 0 /* modelInfoXmlGetEquation(xml,i).vars[j]->id */);
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
+    indent(fout,4);fprintf(fout, "<calcinfo time=\"%f\" count=\"%lu\"/>\n", rt_accumulated(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id), rt_ncall(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoXmlGetEquation(xml,i).id));
     indent(fout,2);fprintf(fout, "</equation>\n");
   }
 }
@@ -327,6 +328,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 
   fprintf(fout, "<modelinfo_ext>\n");
   indent(fout, 2); fprintf(fout, "<odeTime>%f</odeTime>\n", rt_accumulated(SIM_TIMER_FUNCTION_ODE));
+  indent(fout, 2); fprintf(fout, "<odeTimeTicks>%lu</odeTimeTicks>\n", rt_ncall(SIM_TIMER_FUNCTION_ODE));
   fprintf(fout, "</modelinfo_ext>\n");
 
   fprintf(fout, "<profilingdataheader>\n");

@@ -53,4 +53,11 @@ RML_BEGIN_LABEL(HpcOmBenchmarkExt__requiredTimeForComm)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(HpcOmBenchmarkExt__readCalcTimesFromXml)
+{
+  rmlA0 = HpcOmBenchmarkExtImpl__readCalcTimesFromXml(RML_STRINGDATA(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 }

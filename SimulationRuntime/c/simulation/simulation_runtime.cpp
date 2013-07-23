@@ -499,7 +499,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   if(measure_time_flag)
   {
     modelInfoXmlInit(&data->modelData.modelDataXml);
-    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks + 4 /* sentinel */);
+    //std::cerr << "ModelData with " << data->modelData.modelDataXml.nFunctions << " functions and " << data->modelData.modelDataXml.nEquations << " equations and " << data->modelData.modelDataXml.nProfileBlocks << " profileBlocks\n" << std::endl;
+    rt_init(SIM_TIMER_FIRST_FUNCTION + data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nEquations + data->modelData.modelDataXml.nProfileBlocks + 4 /* sentinel */);
     rt_tick(SIM_TIMER_TOTAL);
     rt_tick(SIM_TIMER_PREINIT);
     rt_clear(SIM_TIMER_OUTPUT);

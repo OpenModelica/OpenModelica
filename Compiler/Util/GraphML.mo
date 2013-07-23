@@ -358,9 +358,9 @@ algorithm
         typeString = dumpAttributeType(attType);
         targetString = dumpAttributeTarget(attTarget);
         idxString = intString(attIdx + 15);
-        tmpStream = IOStream.appendList(tmpStream, {"<key attr.name=\"", name, "\" attr.type=\"", 
+        tmpStream = IOStream.appendList(tmpStream, {"  <key attr.name=\"", name, "\" attr.type=\"", 
         typeString, "\" for=\"", targetString, "\" id=\"d", idxString, "\">\n",
-        "<default>", defaultValue, "</default>\n", "</key>\n"});
+        "    <default>", defaultValue, "</default>\n", "  </key>\n"});
     then tmpStream;
   end match;
 end dumpAttributeDefinition;
@@ -443,7 +443,7 @@ protected
 algorithm
   (attIdx,attValue) := iAttValue;
   attIdx := attIdx + idOffset;
-  oString := "<data key=\"d" +& intString(attIdx) +& "\">" +& attValue +& "</data>\n";
+  oString := "      <data key=\"d" +& intString(attIdx) +& "\">" +& attValue +& "</data>\n";
 end createAttributeString;
 
 protected function getNodeDesc

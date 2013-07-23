@@ -14,4 +14,9 @@ extern void* HpcOmBenchmarkExt_requiredTimeForComm()
 {
   return HpcOmBenchmarkExtImpl__requiredTimeForComm();
 }
+
+extern void* HpcOmBenchmarkExt_readCalcTimesFromXml(const char *filename)
+{
+  return HpcOmBenchmarkExtImpl__readCalcTimesFromXml(filename);
+}
 }
