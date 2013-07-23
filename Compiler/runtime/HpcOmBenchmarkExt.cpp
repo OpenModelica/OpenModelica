@@ -28,13 +28,13 @@
 #include <fstream>
 
 struct Equation {
-	int id;
-	unsigned long calcTimeCount;
-	double calcTime;
+  int id;
+  unsigned long calcTimeCount;
+  double calcTime;
 
-	Equation() :
-			id(-1), calcTimeCount(-1), calcTime(-1.0) {
-	}
+  Equation() :
+      id(-1), calcTimeCount(-1), calcTime(-1.0) {
+  }
 };
 
 /**
@@ -80,13 +80,13 @@ void* HpcOmBenchmarkExtImpl__requiredTimeForOp() {
 //    sumCalc += calcTimesMul[i];
 //  }
 //
-//	int m = 1;
-//	res = mk_cons(mk_icon((sumCalc/(REPLICATIONS*2))),res); //push n
-//	res = mk_cons(mk_icon(m),res); //push m
-	void *res = mk_nil();
-	res = mk_cons(mk_icon(24), res); //push n
-	res = mk_cons(mk_icon(1), res); //push m
-	return res;
+//  int m = 1;
+//  res = mk_cons(mk_icon((sumCalc/(REPLICATIONS*2))),res); //push n
+//  res = mk_cons(mk_icon(m),res); //push m
+  void *res = mk_nil();
+  res = mk_cons(mk_icon(24), res); //push n
+  res = mk_cons(mk_icon(1), res); //push m
+  return res;
 }
 
 //void sendMessage (int warmUp, int replications, int packageSize)
@@ -206,161 +206,161 @@ void* HpcOmBenchmarkExtImpl__requiredTimeForComm() {
 //  for (int i = 0; i < REPLICATIONS; i++)
 //    sumComBig += comTimes[i];
 //
-//	res = mk_cons(mk_icon(sumComSmall/(REPLICATIONS*2)),res); //push n
-//	res = mk_cons(mk_icon((sumComBig-sumComSmall)/((PACKAGE_SIZE_BIG-PACKAGE_SIZE_SMALL)*(REPLICATIONS*2))),res); //push m
-	void *res = mk_nil();
-	res = mk_cons(mk_icon(70), res); //push n
-	res = mk_cons(mk_icon(4), res); //push m
-	return res;
+//  res = mk_cons(mk_icon(sumComSmall/(REPLICATIONS*2)),res); //push n
+//  res = mk_cons(mk_icon((sumComBig-sumComSmall)/((PACKAGE_SIZE_BIG-PACKAGE_SIZE_SMALL)*(REPLICATIONS*2))),res); //push m
+  void *res = mk_nil();
+  res = mk_cons(mk_icon(70), res); //push n
+  res = mk_cons(mk_icon(4), res); //push m
+  return res;
 }
 
 class XmlBenchReader {
 private:
-	struct ParserUserData {
-		std::string *errorMsg;
-		int level;
-		Equation *currentEquation;
-		std::list<Equation*> *equations;
+  struct ParserUserData {
+    std::string *errorMsg;
+    int level;
+    Equation *currentEquation;
+    std::list<Equation*> *equations;
 
-		ParserUserData(std::string *_errorMsg, int _level,
-				Equation *_currentEquation, std::list<Equation*> *_equations) {
-			errorMsg = _errorMsg;
-			level = _level;
-			currentEquation = _currentEquation;
-			equations = _equations;
-		}
-	};
+    ParserUserData(std::string *_errorMsg, int _level,
+        Equation *_currentEquation, std::list<Equation*> *_equations) {
+      errorMsg = _errorMsg;
+      level = _level;
+      currentEquation = _currentEquation;
+      equations = _equations;
+    }
+  };
 
 protected:
-	static void StartElement(void *data, const XML_Char *name,
-			const XML_Char **attribute) {
-		ParserUserData *userData = (ParserUserData*) data;
-		userData->level++;
+  static void StartElement(void *data, const XML_Char *name,
+      const XML_Char **attribute) {
+    ParserUserData *userData = (ParserUserData*) data;
+    userData->level++;
 
-		if ((userData->level == 3) && (strcmp("equation", name) == 0)) {
-			userData->currentEquation = new Equation();
-			for (int i = 0; attribute[i]; i += 2) {
-				if (strcmp("id", attribute[i]) == 0) {
-					userData->currentEquation->id = strtol(attribute[i + 1] + 2,
-							0, 10);
-				}
-			}
-		}
+    if ((userData->level == 3) && (strcmp("equation", name) == 0)) {
+      userData->currentEquation = new Equation();
+      for (int i = 0; attribute[i]; i += 2) {
+        if (strcmp("id", attribute[i]) == 0) {
+          userData->currentEquation->id = strtol(attribute[i + 1] + 2,
+              0, 10);
+        }
+      }
+    }
 
-		if ((userData->level == 4) && (strcmp("calcinfo", name) == 0)
-				&& (userData->currentEquation != 0)) {
-			//find attributes
-			for (int i = 0; attribute[i]; i += 2) {
-				if (strcmp("time", attribute[i]) == 0)
-					userData->currentEquation->calcTime = atof(
-							attribute[i + 1]);
+    if ((userData->level == 4) && (strcmp("calcinfo", name) == 0)
+        && (userData->currentEquation != 0)) {
+      //find attributes
+      for (int i = 0; attribute[i]; i += 2) {
+        if (strcmp("time", attribute[i]) == 0)
+          userData->currentEquation->calcTime = atof(
+              attribute[i + 1]);
 
-				if (strcmp("count", attribute[i]) == 0)
-					userData->currentEquation->calcTimeCount = strtoul(
-							attribute[i + 1], 0, 10);
-			}
-			userData->equations->push_back(userData->currentEquation);
-			userData->currentEquation = 0;
-		}
-	}
+        if (strcmp("count", attribute[i]) == 0)
+          userData->currentEquation->calcTimeCount = strtoul(
+              attribute[i + 1], 0, 10);
+      }
+      userData->equations->push_back(userData->currentEquation);
+      userData->currentEquation = 0;
+    }
+  }
 
-	static void EndElement(void *data, const XML_Char *el) {
-		ParserUserData *userData = (ParserUserData*) data;
-		userData->level--;
-	}
+  static void EndElement(void *data, const XML_Char *el) {
+    ParserUserData *userData = (ParserUserData*) data;
+    userData->level--;
+  }
 
-	static bool deleteAll(Equation *theElement) {
-		delete theElement;
-		return true;
-	}
+  static bool deleteAll(Equation *theElement) {
+    delete theElement;
+    return true;
+  }
 
 public:
-	XmlBenchReader(void) {
-	}
+  XmlBenchReader(void) {
+  }
 
-	~XmlBenchReader(void) {
-	}
+  ~XmlBenchReader(void) {
+  }
 
-	static std::list<std::list<double> > ReadBenchFileEquations(
-			std::string filePath) {
-		FILE *xmlFile;
-		const int bufferSize = 10000;
-		char buffer[bufferSize];
-		XML_Parser parser;
-		int len; /* len is the number of bytes in the current buffer of data */
-		int done = 0;
-		std::string errMsg = "";
-		std::list<Equation*> eqList = std::list<Equation*>();
-		std::list<std::list<double> > resultList =
-				std::list<std::list<double> >();
-		ParserUserData userData = ParserUserData(&errMsg, 0, 0, &eqList);
+  static std::list<std::list<double> > ReadBenchFileEquations(
+      std::string filePath) {
+    FILE *xmlFile;
+    const int bufferSize = 10000;
+    char buffer[bufferSize];
+    XML_Parser parser;
+    int len; /* len is the number of bytes in the current buffer of data */
+    int done = 0;
+    std::string errMsg = "";
+    std::list<Equation*> eqList = std::list<Equation*>();
+    std::list<std::list<double> > resultList =
+        std::list<std::list<double> >();
+    ParserUserData userData = ParserUserData(&errMsg, 0, 0, &eqList);
 
-		xmlFile = fopen(filePath.c_str(), "r");
-		parser = XML_ParserCreate(NULL);
-		XML_SetUserData(parser, &userData);
-		XML_SetElementHandler(parser, StartElement, EndElement);
-		do {
-			//Read the graphml-file piece by piece
-			len = fread(buffer, sizeof(char), bufferSize, xmlFile);
+    xmlFile = fopen(filePath.c_str(), "r");
+    parser = XML_ParserCreate(NULL);
+    XML_SetUserData(parser, &userData);
+    XML_SetElementHandler(parser, StartElement, EndElement);
+    do {
+      //Read the graphml-file piece by piece
+      len = fread(buffer, sizeof(char), bufferSize, xmlFile);
 
-			if (len < bufferSize)
-				done = true;
+      if (len < bufferSize)
+        done = true;
 
-			if (XML_Parse(parser, buffer, len, done) == XML_STATUS_ERROR) {
-				//std::cout << "Error during xml-parsing" << std::endl;
-				break;
-			}
+      if (XML_Parse(parser, buffer, len, done) == XML_STATUS_ERROR) {
+        //std::cout << "Error during xml-parsing" << std::endl;
+        break;
+      }
 
-		} while (!done);
-		XML_ParserFree(parser);
+    } while (!done);
+    XML_ParserFree(parser);
 
-		//Copy equation list to result list
-		for (std::list<Equation*>::iterator it = eqList.begin();
-				it != eqList.end(); it++) {
-			//std::cout << "Equation " << (*it)->id << " calcTime: " << (*it)->calcTime << "  calcCount: " << (*it)->calcTimeCount << std::endl;
-			std::list<double> tmpLst = std::list<double>();
-			tmpLst.push_back((*it)->id);
-			tmpLst.push_back((*it)->calcTime);
-			tmpLst.push_back((*it)->calcTimeCount);
-			resultList.push_back(tmpLst);
-		}
+    //Copy equation list to result list
+    for (std::list<Equation*>::iterator it = eqList.begin();
+        it != eqList.end(); it++) {
+      //std::cout << "Equation " << (*it)->id << " calcTime: " << (*it)->calcTime << "  calcCount: " << (*it)->calcTimeCount << std::endl;
+      std::list<double> tmpLst = std::list<double>();
+      tmpLst.push_back((*it)->id);
+      tmpLst.push_back((*it)->calcTime);
+      tmpLst.push_back((*it)->calcTimeCount);
+      resultList.push_back(tmpLst);
+    }
 
-		//Clean equation list
-		eqList.remove_if(deleteAll);
+    //Clean equation list
+    eqList.remove_if(deleteAll);
 
-		return resultList;
-	}
+    return resultList;
+  }
 };
 
 void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
 {
-	void *res = mk_nil();
-	//std::cerr << "Blaaaa" << std::endl;
-	std::string errorMsg = std::string("");
-	std::ifstream ifile(filename);
-	if (!ifile)
-	{
-		errorMsg = "File '";
-		errorMsg += std::string(filename);
-		errorMsg += "' does not exist";
-		res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
-		return res;
-	}
+  void *res = mk_nil();
+  //std::cerr << "Blaaaa" << std::endl;
+  std::string errorMsg = std::string("");
+  std::ifstream ifile(filename);
+  if (!ifile)
+  {
+    errorMsg = "File '";
+    errorMsg += std::string(filename);
+    errorMsg += "' does not exist";
+    res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    return res;
+  }
 
-	std::list<std::list<double> > retLst =
-			XmlBenchReader::ReadBenchFileEquations(filename);
+  std::list<std::list<double> > retLst =
+      XmlBenchReader::ReadBenchFileEquations(filename);
 
-	for (std::list<std::list<double> >::iterator it = retLst.begin();
-			it != retLst.end(); it++) {
-		int i = 0;
-		for (std::list<double>::iterator iter = (*it).begin();
-				iter != (*it).end(); iter++) {
-			if (i >= 3)
-				break;
-			res = mk_cons(mk_rcon(*iter), res);
-			//std::cerr << "value " << *iter << std::endl;
-		}
-	}
-	//std::cerr << "Blaaaa2" << std::endl;
-	return res;
+  for (std::list<std::list<double> >::iterator it = retLst.begin();
+      it != retLst.end(); it++) {
+    int i = 0;
+    for (std::list<double>::iterator iter = (*it).begin();
+        iter != (*it).end(); iter++) {
+      if (i >= 3)
+        break;
+      res = mk_cons(mk_rcon(*iter), res);
+      //std::cerr << "value " << *iter << std::endl;
+    }
+  }
+  //std::cerr << "Blaaaa2" << std::endl;
+  return res;
 }
