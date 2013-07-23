@@ -1570,7 +1570,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         Text(
           extent={{-100,-50},{100,-90}},
           lineColor={0,0,0},
-          textString="V1.0")}));
+          textString="V2.0")}));
   protected
     class FMI2ModelExchange
       extends ExternalObject;
