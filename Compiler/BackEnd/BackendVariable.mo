@@ -4692,32 +4692,32 @@ algorithm
   end match;
 end mergeMinMax1;
 
-protected function mergeDirection
-  input BackendDAE.Var inAVar;
-  input BackendDAE.Var inVar;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar :=
-  matchcontinue (inAVar,inVar)
-    local
-      BackendDAE.Var v,var,var1;
-      Option<DAE.VariableAttributes> attr,attr1;
-      DAE.Exp e,e1;
-    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
-      equation
-        var1 = setVarDirection(var,DAE.INPUT());
-      then var1;
-    case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-      equation
-        var1 = setVarDirection(var,DAE.INPUT());
-      then var1;
-    case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
-      equation
-        var1 = setVarDirection(var,DAE.OUTPUT());
-      then var1;
-    case(_,_) then inVar;
-  end matchcontinue;
-end mergeDirection;
+// protected function mergeDirection
+//   input BackendDAE.Var inAVar;
+//   input BackendDAE.Var inVar;
+//   output BackendDAE.Var outVar;
+// algorithm
+//   outVar :=
+//   matchcontinue (inAVar,inVar)
+//     local
+//       BackendDAE.Var v,var,var1;
+//       Option<DAE.VariableAttributes> attr,attr1;
+//       DAE.Exp e,e1;
+//     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.OUTPUT()))
+//       equation
+//         var1 = setVarDirection(var,DAE.INPUT());
+//       then var1;
+//     case (v as BackendDAE.VAR(varDirection = DAE.INPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
+//       equation
+//         var1 = setVarDirection(var,DAE.INPUT());
+//       then var1;
+//     case (v as BackendDAE.VAR(varDirection = DAE.OUTPUT()),var as BackendDAE.VAR(varDirection = DAE.BIDIR()))
+//       equation
+//         var1 = setVarDirection(var,DAE.OUTPUT());
+//       then var1;
+//     case(_,_) then inVar;
+//   end matchcontinue;
+// end mergeDirection;
 
 public function calcAliasKey "function calcAliasKey
   author Frenkel TUD 2011-04

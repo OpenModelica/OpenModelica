@@ -4711,58 +4711,58 @@ algorithm
    end matchcontinue;
 end transformJacToMatrix;
 
-protected function removeZeroDetStates
-  input list<tuple<DAE.Exp,list<Integer>>> iDeterminants;
-  input list<tuple<DAE.ComponentRef, Integer>> iStates;
-  input list<tuple<DAE.ComponentRef, Integer>> iDStates;
-  input list<tuple<DAE.Exp,list<Integer>>> iDetAcc;
-  output list<tuple<DAE.Exp,list<Integer>>> oDeterminants;
-  output list<tuple<DAE.ComponentRef, Integer>> oStates;
-  output list<tuple<DAE.ComponentRef, Integer>> oDStates;
-algorithm
-  (oDeterminants,oStates,oDStates) := matchcontinue(iDeterminants,iStates,iDStates,iDetAcc)
-    local
-      DAE.Exp det;
-      list<Integer> ilst;
-      list<tuple<DAE.ComponentRef, Integer>> states,dstates;
-      list<tuple<DAE.Exp,list<Integer>>> determinants;
-      Integer s;
-    case ({},_,_,_) then (listReverse(iDetAcc),iStates,iDStates);
-    case ((det,ilst)::determinants,_,_,_)
-      equation
-        true = Expression.isZero(det);
-        ((states,dstates)) = List.fold(ilst,removeZeroDetState,(iStates,iDStates));
-        (determinants,states,dstates) = removeZeroDetStates(determinants,states,dstates,iDetAcc);
-      then
-        (determinants,states,dstates);
-    case ((det,ilst)::determinants,_,_,_)
-      equation
-        (determinants,states,dstates) = removeZeroDetStates(determinants,iStates,iDStates,(det,ilst)::iDetAcc);
-      then
-        (determinants,states,dstates);
-  end matchcontinue;
-end removeZeroDetStates;
+// protected function removeZeroDetStates
+//   input list<tuple<DAE.Exp,list<Integer>>> iDeterminants;
+//   input list<tuple<DAE.ComponentRef, Integer>> iStates;
+//   input list<tuple<DAE.ComponentRef, Integer>> iDStates;
+//   input list<tuple<DAE.Exp,list<Integer>>> iDetAcc;
+//   output list<tuple<DAE.Exp,list<Integer>>> oDeterminants;
+//   output list<tuple<DAE.ComponentRef, Integer>> oStates;
+//   output list<tuple<DAE.ComponentRef, Integer>> oDStates;
+// algorithm
+//   (oDeterminants,oStates,oDStates) := matchcontinue(iDeterminants,iStates,iDStates,iDetAcc)
+//     local
+//       DAE.Exp det;
+//       list<Integer> ilst;
+//       list<tuple<DAE.ComponentRef, Integer>> states,dstates;
+//       list<tuple<DAE.Exp,list<Integer>>> determinants;
+//       Integer s;
+//     case ({},_,_,_) then (listReverse(iDetAcc),iStates,iDStates);
+//     case ((det,ilst)::determinants,_,_,_)
+//       equation
+//         true = Expression.isZero(det);
+//         ((states,dstates)) = List.fold(ilst,removeZeroDetState,(iStates,iDStates));
+//         (determinants,states,dstates) = removeZeroDetStates(determinants,states,dstates,iDetAcc);
+//       then
+//         (determinants,states,dstates);
+//     case ((det,ilst)::determinants,_,_,_)
+//       equation
+//         (determinants,states,dstates) = removeZeroDetStates(determinants,iStates,iDStates,(det,ilst)::iDetAcc);
+//       then
+//         (determinants,states,dstates);
+//   end matchcontinue;
+// end removeZeroDetStates;
 
-protected function removeZeroDetState
-  input Integer index;
-  input tuple<list<tuple<DAE.ComponentRef, Integer>>,list<tuple<DAE.ComponentRef, Integer>>> iTpl;
-  output tuple<list<tuple<DAE.ComponentRef, Integer>>,list<tuple<DAE.ComponentRef, Integer>>> oTpl;
-protected
-  list<tuple<DAE.ComponentRef, Integer>> states,dstates,dstates1;
-algorithm
-  (states,dstates) := iTpl;
-  (dstates1,states) := List.split1OnTrue(states,isStateIndex,index);
-  dstates := listAppend(dstates,dstates1);
-  oTpl := (states,dstates);
-end removeZeroDetState;
+// protected function removeZeroDetState
+//   input Integer index;
+//   input tuple<list<tuple<DAE.ComponentRef, Integer>>,list<tuple<DAE.ComponentRef, Integer>>> iTpl;
+//   output tuple<list<tuple<DAE.ComponentRef, Integer>>,list<tuple<DAE.ComponentRef, Integer>>> oTpl;
+// protected
+//   list<tuple<DAE.ComponentRef, Integer>> states,dstates,dstates1;
+// algorithm
+//   (states,dstates) := iTpl;
+//   (dstates1,states) := List.split1OnTrue(states,isStateIndex,index);
+//   dstates := listAppend(dstates,dstates1);
+//   oTpl := (states,dstates);
+// end removeZeroDetState;
 
-protected function isStateIndex
-  input tuple<DAE.ComponentRef, Integer> iTpl;
-  input Integer index;
-  output Boolean equal;
-algorithm
-  equal := intEq(index,Util.tuple22(iTpl));
-end isStateIndex;
+// protected function isStateIndex
+//   input tuple<DAE.ComponentRef, Integer> iTpl;
+//   input Integer index;
+//   output Boolean equal;
+// algorithm
+//   equal := intEq(index,Util.tuple22(iTpl));
+// end isStateIndex;
 
 protected function solveOtherEquations "function solveOtherEquations
   author: Frenkel TUD 2012-10
@@ -5296,42 +5296,42 @@ algorithm
   end match;
 end generateSelectEquations;
 
-protected function generateCondition
-"function: generateCondition
-  author: Frenkel TUD 2012-08"
-  input Integer indx;
-  input Integer size;
-  input array<DAE.Exp> inExps;
-  output DAE.Exp outCont;
-algorithm
-  outCont:= matchcontinue(indx,size,inExps)
-    local
-      Integer p;
-      DAE.Exp expCond,expThen,expElse,e1,e2;
-    case(_,_,_)
-      equation
-        p = indx + 1;
-        true = intLt(p,size);
-        e1 = inExps[1];
-        e2 = inExps[p];
-        expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
-        //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
-        expThen = generateCondition1(p,p+1,size,inExps);
-        expElse = generateCondition(p,size,inExps);
-      then
-        DAE.IFEXP(expCond, expThen, expElse);
-   else
-     equation
-       p = indx + 1;
-       e1 = inExps[1];
-       e2 = inExps[p];
-       expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
-       //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
-     then
-       DAE.IFEXP(expCond, DAE.ICONST(p), DAE.ICONST(1));
-
-  end matchcontinue;
-end generateCondition;
+// protected function generateCondition
+// "function: generateCondition
+//   author: Frenkel TUD 2012-08"
+//   input Integer indx;
+//   input Integer size;
+//   input array<DAE.Exp> inExps;
+//   output DAE.Exp outCont;
+// algorithm
+//   outCont:= matchcontinue(indx,size,inExps)
+//     local
+//       Integer p;
+//       DAE.Exp expCond,expThen,expElse,e1,e2;
+//     case(_,_,_)
+//       equation
+//         p = indx + 1;
+//         true = intLt(p,size);
+//         e1 = inExps[1];
+//         e2 = inExps[p];
+//         expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+//         //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
+//         expThen = generateCondition1(p,p+1,size,inExps);
+//         expElse = generateCondition(p,size,inExps);
+//       then
+//         DAE.IFEXP(expCond, expThen, expElse);
+//    else
+//      equation
+//        p = indx + 1;
+//        e1 = inExps[1];
+//        e2 = inExps[p];
+//        expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+//        //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
+//      then
+//        DAE.IFEXP(expCond, DAE.ICONST(p), DAE.ICONST(1));
+// 
+//   end matchcontinue;
+// end generateCondition;
 
 protected function generateCondition1
 "function: generateCondition1
@@ -5737,24 +5737,24 @@ algorithm
   end match;
 end incidenceMatrixElementElementfromEnhanced2;
 
-protected function incidenceMatrixElementElementfromEnhanced2_1
-  input Integer i;
-  input BackendDAE.Variables vars;
-  input list<Integer> iRow;
-  output list<Integer> oRow;
-protected
-  BackendDAE.Var v;
-  DAE.StateSelect s;
-  Integer si;
-  Boolean b;
-algorithm
-  v := BackendVariable.getVarAt(vars,intAbs(i));
-  s := BackendVariable.varStateSelect(v);
-  si := BackendVariable.stateSelectToInteger(s);
-//  oRow := List.consOnTrue(intLt(si,0),i,iRow);
-  b := BackendVariable.isStateVar(v);
-  oRow := List.consOnTrue(intLt(si,0) or not b,i,iRow);
-end incidenceMatrixElementElementfromEnhanced2_1;
+// protected function incidenceMatrixElementElementfromEnhanced2_1
+//   input Integer i;
+//   input BackendDAE.Variables vars;
+//   input list<Integer> iRow;
+//   output list<Integer> oRow;
+// protected
+//   BackendDAE.Var v;
+//   DAE.StateSelect s;
+//   Integer si;
+//   Boolean b;
+// algorithm
+//   v := BackendVariable.getVarAt(vars,intAbs(i));
+//   s := BackendVariable.varStateSelect(v);
+//   si := BackendVariable.stateSelectToInteger(s);
+// //  oRow := List.consOnTrue(intLt(si,0),i,iRow);
+//   b := BackendVariable.isStateVar(v);
+//   oRow := List.consOnTrue(intLt(si,0) or not b,i,iRow);
+// end incidenceMatrixElementElementfromEnhanced2_1;
 
 protected function checkAssignment
 "function: checkAssignment
@@ -6502,21 +6502,21 @@ algorithm
   end matchcontinue;
 end replaceDummyDerivativesVar;
 
-protected function consArrayUpdate
-  input Boolean cond;
-  input array<Type_a> arr;
-  input Integer index;
-  input Type_a newValue;
-  output array<Type_a> oarr;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  oarr := match(cond,arr,index,newValue)
-    case(true,_,_,_)
-      then
-        arrayUpdate(arr,index,newValue);
-    case(false,_,_,_) then arr;
-  end match;
-end consArrayUpdate;
+// protected function consArrayUpdate
+//   input Boolean cond;
+//   input array<Type_a> arr;
+//   input Integer index;
+//   input Type_a newValue;
+//   output array<Type_a> oarr;
+//   replaceable type Type_a subtypeof Any;
+// algorithm
+//   oarr := match(cond,arr,index,newValue)
+//     case(true,_,_,_)
+//       then
+//         arrayUpdate(arr,index,newValue);
+//     case(false,_,_,_) then arr;
+//   end match;
+// end consArrayUpdate;
 
 
 
@@ -6839,12 +6839,12 @@ algorithm
 end determinantEdges;
 
 
-protected function dumpZycle
-  input tuple<Integer,DAE.Exp> inTpl;
-  output String s;
-algorithm
-  s := intString(Util.tuple21(inTpl)) +& ":" +& ExpressionDump.printExpStr(Util.tuple22(inTpl));
-end dumpZycle;
+// protected function dumpZycle
+//   input tuple<Integer,DAE.Exp> inTpl;
+//   output String s;
+// algorithm
+//   s := intString(Util.tuple21(inTpl)) +& ":" +& ExpressionDump.printExpStr(Util.tuple22(inTpl));
+// end dumpZycle;
 
 protected function getDeterminantDigraph
 "function determinant
@@ -8193,122 +8193,122 @@ algorithm
   end matchcontinue;
 end addStateOrder;
 
-protected function addAliasStateOrder
-"function: addAliasStateOrder
-  author: Frenkel TUD 2012-06
-  add state and replace alias state in the
-  stateorder."
-  input DAE.ComponentRef cr;
-  input DAE.ComponentRef acr;
-  input BackendDAE.StateOrder inStateOrder;
-  output BackendDAE.StateOrder outStateOrder;
-algorithm
- outStateOrder :=
-  matchcontinue (cr,acr,inStateOrder)
-    local
-        HashTableCG.HashTable ht,ht1;
-        HashTable3.HashTable dht,dht1;
-        DAE.ComponentRef dcr,cr1;
-        list<DAE.ComponentRef> crlst;
-        Boolean b;
-    case (_,_,BackendDAE.STATEORDER(ht,dht))
-      equation
-        dcr = BaseHashTable.get(acr,ht);
-        failure(_ = BaseHashTable.get(cr,ht));
-        ht1 = BaseHashTable.add((cr, dcr),ht);
-        {cr1} = BaseHashTable.get(dcr,dht);
-        ht1 = BaseHashTable.delete(acr,ht1);
-        b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
-        crlst = Util.if_(b,{cr},{cr,cr1});
-        dht1 = BaseHashTable.add((dcr, crlst),dht);
-      then
-        BackendDAE.STATEORDER(ht1,dht1);
-        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
-    case (_,_,BackendDAE.STATEORDER(ht,dht))
-      equation
-        dcr = BaseHashTable.get(acr,ht);
-        failure(_ = BaseHashTable.get(cr,ht));
-        ht1 = BaseHashTable.add((cr, dcr),ht);
-        ht1 = BaseHashTable.delete(acr,ht1);
-        crlst = BaseHashTable.get(dcr,dht);
-        crlst = List.removeOnTrue(acr,ComponentReference.crefEqualNoStringCompare,crlst);
-        dht1 = BaseHashTable.add((dcr, cr::crlst),dht);
-      then
-        BackendDAE.STATEORDER(ht1,dht1);
-        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
-    case (_,_,BackendDAE.STATEORDER(ht,dht))
-      equation
-        dcr = BaseHashTable.get(acr,ht);
-        _ = BaseHashTable.get(cr,ht);
-        {cr1} = BaseHashTable.get(dcr,dht);
-        ht1 = BaseHashTable.delete(acr,ht);
-        b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
-        crlst = Util.if_(b,{cr},{cr,cr1});
-        dht1 = BaseHashTable.add((dcr, crlst),dht);
-      then
-        BackendDAE.STATEORDER(ht1,dht1);
-        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
-    case (_,_,BackendDAE.STATEORDER(ht,dht))
-      equation
-        dcr = BaseHashTable.get(acr,ht);
-        _ = BaseHashTable.get(cr,ht);
-        ht1 = BaseHashTable.delete(acr,ht);
-        crlst = BaseHashTable.get(dcr,dht);
-        crlst = List.removeOnTrue(acr,ComponentReference.crefEqualNoStringCompare,crlst);
-        dht1 = BaseHashTable.add((dcr, cr::crlst),dht);
-      then
-        BackendDAE.STATEORDER(ht1,dht1);
-        //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
-    case (_,_,BackendDAE.STATEORDER(hashTable=ht))
-      equation
-        failure(_ = BaseHashTable.get(acr,ht));
-      then
-        inStateOrder;
-        //replaceDerStateOrder(cr,acr,inStateOrder);
-  end matchcontinue;
-end addAliasStateOrder;
+// protected function addAliasStateOrder
+// "function: addAliasStateOrder
+//   author: Frenkel TUD 2012-06
+//   add state and replace alias state in the
+//   stateorder."
+//   input DAE.ComponentRef cr;
+//   input DAE.ComponentRef acr;
+//   input BackendDAE.StateOrder inStateOrder;
+//   output BackendDAE.StateOrder outStateOrder;
+// algorithm
+//  outStateOrder :=
+//   matchcontinue (cr,acr,inStateOrder)
+//     local
+//         HashTableCG.HashTable ht,ht1;
+//         HashTable3.HashTable dht,dht1;
+//         DAE.ComponentRef dcr,cr1;
+//         list<DAE.ComponentRef> crlst;
+//         Boolean b;
+//     case (_,_,BackendDAE.STATEORDER(ht,dht))
+//       equation
+//         dcr = BaseHashTable.get(acr,ht);
+//         failure(_ = BaseHashTable.get(cr,ht));
+//         ht1 = BaseHashTable.add((cr, dcr),ht);
+//         {cr1} = BaseHashTable.get(dcr,dht);
+//         ht1 = BaseHashTable.delete(acr,ht1);
+//         b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
+//         crlst = Util.if_(b,{cr},{cr,cr1});
+//         dht1 = BaseHashTable.add((dcr, crlst),dht);
+//       then
+//         BackendDAE.STATEORDER(ht1,dht1);
+//         //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
+//     case (_,_,BackendDAE.STATEORDER(ht,dht))
+//       equation
+//         dcr = BaseHashTable.get(acr,ht);
+//         failure(_ = BaseHashTable.get(cr,ht));
+//         ht1 = BaseHashTable.add((cr, dcr),ht);
+//         ht1 = BaseHashTable.delete(acr,ht1);
+//         crlst = BaseHashTable.get(dcr,dht);
+//         crlst = List.removeOnTrue(acr,ComponentReference.crefEqualNoStringCompare,crlst);
+//         dht1 = BaseHashTable.add((dcr, cr::crlst),dht);
+//       then
+//         BackendDAE.STATEORDER(ht1,dht1);
+//         //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
+//     case (_,_,BackendDAE.STATEORDER(ht,dht))
+//       equation
+//         dcr = BaseHashTable.get(acr,ht);
+//         _ = BaseHashTable.get(cr,ht);
+//         {cr1} = BaseHashTable.get(dcr,dht);
+//         ht1 = BaseHashTable.delete(acr,ht);
+//         b = ComponentReference.crefEqualNoStringCompare(cr1, acr);
+//         crlst = Util.if_(b,{cr},{cr,cr1});
+//         dht1 = BaseHashTable.add((dcr, crlst),dht);
+//       then
+//         BackendDAE.STATEORDER(ht1,dht1);
+//         //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
+//     case (_,_,BackendDAE.STATEORDER(ht,dht))
+//       equation
+//         dcr = BaseHashTable.get(acr,ht);
+//         _ = BaseHashTable.get(cr,ht);
+//         ht1 = BaseHashTable.delete(acr,ht);
+//         crlst = BaseHashTable.get(dcr,dht);
+//         crlst = List.removeOnTrue(acr,ComponentReference.crefEqualNoStringCompare,crlst);
+//         dht1 = BaseHashTable.add((dcr, cr::crlst),dht);
+//       then
+//         BackendDAE.STATEORDER(ht1,dht1);
+//         //replaceDerStateOrder(cr,acr,BackendDAE.STATEORDER(ht1,dht1));
+//     case (_,_,BackendDAE.STATEORDER(hashTable=ht))
+//       equation
+//         failure(_ = BaseHashTable.get(acr,ht));
+//       then
+//         inStateOrder;
+//         //replaceDerStateOrder(cr,acr,inStateOrder);
+//   end matchcontinue;
+// end addAliasStateOrder;
 
-protected function replaceDerStateOrder
-"function: replaceDerStateOrder
-  author: Frenkel TUD 2012-06
-  replace a state  in the
-  stateorder."
-  input DAE.ComponentRef cr;
-  input DAE.ComponentRef acr;
-  input BackendDAE.StateOrder inStateOrder;
-  output BackendDAE.StateOrder outStateOrder;
-algorithm
- outStateOrder :=
-  matchcontinue (cr,acr,inStateOrder)
-    local
-        HashTableCG.HashTable ht,ht1;
-        HashTable3.HashTable dht,dht1;
-        DAE.ComponentRef cr1;
-        list<DAE.ComponentRef> crlst;
-        list<tuple<DAE.ComponentRef,DAE.ComponentRef>> crcrlst;
-        Boolean b;
-    case (_,_,BackendDAE.STATEORDER(ht,dht))
-      equation
-        {cr1} = BaseHashTable.get(acr,dht);
-        ht1 = BaseHashTable.add((cr1, cr),ht);
-        BackendDump.debugStrCrefStrCrefStr(("replac der Alias State ",cr1," -> ",cr,"\n"));
-      then
-       BackendDAE.STATEORDER(ht1,dht);
-    case (_,_,BackendDAE.STATEORDER(ht,dht))
-      equation
-        crlst = BaseHashTable.get(acr,dht);
-        crcrlst = List.map1(crlst,Util.makeTuple,cr);
-        ht1 = List.fold(crcrlst,BaseHashTable.add,ht);
-        BackendDump.debugStrCrefStrCrefStr(("replac der Alias State ",acr," -> ",cr,"\n"));
-      then
-       BackendDAE.STATEORDER(ht1,dht);
-    case (_,_,BackendDAE.STATEORDER(invHashTable=dht))
-      equation
-        failure(_ = BaseHashTable.get(acr,dht));
-      then
-       inStateOrder;
-  end matchcontinue;
-end replaceDerStateOrder;
+// protected function replaceDerStateOrder
+// "function: replaceDerStateOrder
+//   author: Frenkel TUD 2012-06
+//   replace a state  in the
+//   stateorder."
+//   input DAE.ComponentRef cr;
+//   input DAE.ComponentRef acr;
+//   input BackendDAE.StateOrder inStateOrder;
+//   output BackendDAE.StateOrder outStateOrder;
+// algorithm
+//  outStateOrder :=
+//   matchcontinue (cr,acr,inStateOrder)
+//     local
+//         HashTableCG.HashTable ht,ht1;
+//         HashTable3.HashTable dht,dht1;
+//         DAE.ComponentRef cr1;
+//         list<DAE.ComponentRef> crlst;
+//         list<tuple<DAE.ComponentRef,DAE.ComponentRef>> crcrlst;
+//         Boolean b;
+//     case (_,_,BackendDAE.STATEORDER(ht,dht))
+//       equation
+//         {cr1} = BaseHashTable.get(acr,dht);
+//         ht1 = BaseHashTable.add((cr1, cr),ht);
+//         BackendDump.debugStrCrefStrCrefStr(("replac der Alias State ",cr1," -> ",cr,"\n"));
+//       then
+//        BackendDAE.STATEORDER(ht1,dht);
+//     case (_,_,BackendDAE.STATEORDER(ht,dht))
+//       equation
+//         crlst = BaseHashTable.get(acr,dht);
+//         crcrlst = List.map1(crlst,Util.makeTuple,cr);
+//         ht1 = List.fold(crcrlst,BaseHashTable.add,ht);
+//         BackendDump.debugStrCrefStrCrefStr(("replac der Alias State ",acr," -> ",cr,"\n"));
+//       then
+//        BackendDAE.STATEORDER(ht1,dht);
+//     case (_,_,BackendDAE.STATEORDER(invHashTable=dht))
+//       equation
+//         failure(_ = BaseHashTable.get(acr,dht));
+//       then
+//        inStateOrder;
+//   end matchcontinue;
+// end replaceDerStateOrder;
 
 protected function getStateOrder
 "function: getStateOrder

@@ -397,41 +397,41 @@ end replaceVars;
 
 
 
-function computeStateRef
-  input list<DAE.ComponentRef> stateVarsList;
-  input list<SimCode.SimEqSystem> eqs;
-  input list<list<Integer>> acc;
-  output list<list<Integer>> indexs;
-algorithm
-indexs:=
-  matchcontinue (stateVarsList,eqs,acc)
-    local
-      DAE.ComponentRef cref;
-      list<SimCode.SimEqSystem> tail;
-      Integer p;
-      list<list<Integer>> acc_1;
-
-    case (_,{},_) then acc;
-    case (_,((SimCode.SES_SIMPLE_ASSIGN(cref=cref))::tail),_)
-    equation
-      /*
-      print(ComponentReference.crefStr(cref));
-      print("\n");
-      print(ComponentReference.crefStr(listNth(stateVarsList,0)));
-      print("\n");
-      print(ComponentReference.crefStr(listNth(stateVarsList,1)));
-      print("\n");
-      print(ComponentReference.crefStr(listNth(stateVarsList,2)));
-      print("\n");
-      print(ComponentReference.crefStr(listNth(stateVarsList,3)));
-      print("\n");
-      */
-      p = List.position(cref,stateVarsList)+1;
-      acc_1 = listAppend(acc,{{p}});
-    then computeStateRef(stateVarsList,tail,acc_1);
-    case (_,(_::tail),_) then computeStateRef(stateVarsList,tail,acc);
-  end matchcontinue;
-end computeStateRef;
+// function computeStateRef
+//   input list<DAE.ComponentRef> stateVarsList;
+//   input list<SimCode.SimEqSystem> eqs;
+//   input list<list<Integer>> acc;
+//   output list<list<Integer>> indexs;
+// algorithm
+// indexs:=
+//   matchcontinue (stateVarsList,eqs,acc)
+//     local
+//       DAE.ComponentRef cref;
+//       list<SimCode.SimEqSystem> tail;
+//       Integer p;
+//       list<list<Integer>> acc_1;
+// 
+//     case (_,{},_) then acc;
+//     case (_,((SimCode.SES_SIMPLE_ASSIGN(cref=cref))::tail),_)
+//     equation
+//       /*
+//       print(ComponentReference.crefStr(cref));
+//       print("\n");
+//       print(ComponentReference.crefStr(listNth(stateVarsList,0)));
+//       print("\n");
+//       print(ComponentReference.crefStr(listNth(stateVarsList,1)));
+//       print("\n");
+//       print(ComponentReference.crefStr(listNth(stateVarsList,2)));
+//       print("\n");
+//       print(ComponentReference.crefStr(listNth(stateVarsList,3)));
+//       print("\n");
+//       */
+//       p = List.position(cref,stateVarsList)+1;
+//       acc_1 = listAppend(acc,{{p}});
+//     then computeStateRef(stateVarsList,tail,acc_1);
+//     case (_,(_::tail),_) then computeStateRef(stateVarsList,tail,acc);
+//   end matchcontinue;
+// end computeStateRef;
 
 function isDiscreteVar
   input BackendDAE.Var var;
@@ -585,47 +585,47 @@ algorithm
     end matchcontinue;
 end generateHandler;
 
-function createDummyVars
-  input  Integer n;
-  output list<DAE.ComponentRef> o;
-algorithm
-  o:=match n
-    case 0 then {};
-    case _ then listAppend({DAE.CREF_IDENT("dummy",DAE.T_REAL_DEFAULT,{})},createDummyVars(n-1));
-  end match;
-end createDummyVars;
+// function createDummyVars
+//   input  Integer n;
+//   output list<DAE.ComponentRef> o;
+// algorithm
+//   o:=match n
+//     case 0 then {};
+//     case _ then listAppend({DAE.CREF_IDENT("dummy",DAE.T_REAL_DEFAULT,{})},createDummyVars(n-1));
+//   end match;
+// end createDummyVars;
 
-function computeAlgs
-  input list<SimCode.SimEqSystem> eqs;
-  input list<DAE.ComponentRef> states;
-  input list<DAE.ComponentRef> i_algs;
-  output list<DAE.ComponentRef> algs;
-algorithm
-  algs:=matchcontinue (eqs,states,i_algs)
-    local
-      list<SimCode.SimEqSystem> tail;
-      list<SimCode.SimVar> vars;
-      DAE.ComponentRef cref;
-      list<DAE.ComponentRef> vars_cref;
-    case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,_)
-    equation
-      true = List.notMember(cref,List.map(states,ComponentReference.crefPrefixDer));
-      true = List.notMember(cref,states);
-      print("Adding algebraic var:");
-      print(ComponentReference.printComponentRefStr(cref));
-      print("\n");
-    then computeAlgs(tail,states,listAppend(i_algs,{cref}));
-    case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,_)
-    equation
-      vars_cref = List.map(vars,SimCodeUtil.varName);
-    then computeAlgs(tail,states,listAppend(i_algs,vars_cref));
-    case ({},_,_)
-    equation
-      then i_algs;
-    case (_ :: tail,_,_)
-    then computeAlgs(tail,states,i_algs);
-  end matchcontinue;
-end computeAlgs;
+// function computeAlgs
+//   input list<SimCode.SimEqSystem> eqs;
+//   input list<DAE.ComponentRef> states;
+//   input list<DAE.ComponentRef> i_algs;
+//   output list<DAE.ComponentRef> algs;
+// algorithm
+//   algs:=matchcontinue (eqs,states,i_algs)
+//     local
+//       list<SimCode.SimEqSystem> tail;
+//       list<SimCode.SimVar> vars;
+//       DAE.ComponentRef cref;
+//       list<DAE.ComponentRef> vars_cref;
+//     case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,_)
+//     equation
+//       true = List.notMember(cref,List.map(states,ComponentReference.crefPrefixDer));
+//       true = List.notMember(cref,states);
+//       print("Adding algebraic var:");
+//       print(ComponentReference.printComponentRefStr(cref));
+//       print("\n");
+//     then computeAlgs(tail,states,listAppend(i_algs,{cref}));
+//     case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,_)
+//     equation
+//       vars_cref = List.map(vars,SimCodeUtil.varName);
+//     then computeAlgs(tail,states,listAppend(i_algs,vars_cref));
+//     case ({},_,_)
+//     equation
+//       then i_algs;
+//     case (_ :: tail,_,_)
+//     then computeAlgs(tail,states,i_algs);
+//   end matchcontinue;
+// end computeAlgs;
 
 function getExpResidual
   input SimCode.SimEqSystem i;

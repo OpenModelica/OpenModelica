@@ -2379,33 +2379,33 @@ algorithm
   end matchcontinue;
 end aliasEquation2;
 
-protected function aliasArray
-"function aliasArray
-  author Frenkel TUD 2011-04
-  helper for aliasEquation"
-  input DAE.ComponentRef cr;
-  input Boolean negate;
-  input list<DAE.Exp> explst;
-  input DAE.Type iTy;
-  input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
-  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
-algorithm
-  outTpls := match (cr,negate,explst,iTy,inTpls)
-    local
-      DAE.ComponentRef cr1,cr2;
-      DAE.Exp e1,e2;
-      DAE.Type ty,ty1;
-      list<DAE.Exp> elst;
-    case (_,_,{},_,_) then inTpls;
-    // a = b
-    case (_,_,(e2 as DAE.CREF(componentRef = cr2))::elst,_,_)
-      equation
-      then
-        aliasArray(cr,negate,elst,iTy,inTpls);
-    // a = -b
-    // a = not b
-  end match;
-end aliasArray;
+// protected function aliasArray
+// "function aliasArray
+//   author Frenkel TUD 2011-04
+//   helper for aliasEquation"
+//   input DAE.ComponentRef cr;
+//   input Boolean negate;
+//   input list<DAE.Exp> explst;
+//   input DAE.Type iTy;
+//   input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+//   output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+// algorithm
+//   outTpls := match (cr,negate,explst,iTy,inTpls)
+//     local
+//       DAE.ComponentRef cr1,cr2;
+//       DAE.Exp e1,e2;
+//       DAE.Type ty,ty1;
+//       list<DAE.Exp> elst;
+//     case (_,_,{},_,_) then inTpls;
+//     // a = b
+//     case (_,_,(e2 as DAE.CREF(componentRef = cr2))::elst,_,_)
+//       equation
+//       then
+//         aliasArray(cr,negate,elst,iTy,inTpls);
+//     // a = -b
+//     // a = not b
+//   end match;
+// end aliasArray;
 
 protected function aliasRecord
 "function aliasRecord

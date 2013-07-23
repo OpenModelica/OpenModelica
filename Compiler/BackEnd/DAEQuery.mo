@@ -545,93 +545,93 @@ algorithm
   end matchcontinue;
 end incidenceRow;
 
-protected function incidenceRowStmts "function: incidenceRowStmts
-  author: PA
-  Helper function to incidenceRow, investigates statements for
-  variables, returning variable indexes."
-  input list<Algorithm.Statement> inAlgorithmStatementLst;
-  input BackendDAE.Variables inVariables;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := matchcontinue (inAlgorithmStatementLst,inVariables)
-    local
-      list<String> lst1,lst2,lst3,res,lst3_1;
-      DAE.Type tp;
-      DAE.ComponentRef cr;
-      DAE.Exp e, e1;
-      list<Algorithm.Statement> rest,stmts;
-      BackendDAE.Variables vars;
-      list<DAE.Exp> expl;
-      Algorithm.Else else_;
-      list<list<String>> lstlst;
-
-    case ({},_) then {};
-
-    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
-      equation
-        lst1 = incidenceRowStmts(rest, vars);
-        lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(e1, vars);
-        res = List.flatten({lst1,lst2,lst3});
-      then
-        res;
-
-    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
-      equation
-        lst1 = incidenceRowStmts(rest, vars);
-        lst2 = incidenceRowExp(e, vars);
-        lstlst = List.map1(expl, incidenceRowExp, vars);
-        lst3_1 = List.flatten(lstlst);
-        res = List.flatten({lst1,lst2,lst3_1});
-      then
-        res;
-
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
-      equation
-        lst1 = incidenceRowStmts(rest, vars);
-        lst2 = incidenceRowExp(e, vars);
-        lst3 = incidenceRowExp(Expression.crefExp(cr), vars);
-        res = List.flatten({lst1,lst2,lst3});
-      then
-        res;
-
-    case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
-      equation
-        print("- DAEQuery.incidenceRowStmts on IF not implemented\n");
-      then
-        {};
-
-    case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
-      equation
-        print("- DAEQuery.incidenceRowStmts on FOR not implemented\n");
-      then
-        {};
-
-    case ((DAE.STMT_PARFOR(type_ = _) :: rest),vars)
-      equation
-        print("- DAEQuery.incidenceRowStmts on PARFOR not implemented\n");
-      then
-        {};
-
-    case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
-      equation
-        print("- DAEQuery.incidenceRowStmts on WHILE not implemented\n");
-      then
-        {};
-
-    case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
-      equation
-        print("- DAEQuery.incidenceRowStmts on WHEN not implemented\n");
-      then
-        {};
-
-    case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
-      equation
-        print("- DAEQuery.incidenceRowStmts on ASSERT not implemented\n");
-      then
-        {};
-  end matchcontinue;
-end incidenceRowStmts;
+// protected function incidenceRowStmts "function: incidenceRowStmts
+//   author: PA
+//   Helper function to incidenceRow, investigates statements for
+//   variables, returning variable indexes."
+//   input list<Algorithm.Statement> inAlgorithmStatementLst;
+//   input BackendDAE.Variables inVariables;
+//   output list<String> outStringLst;
+// algorithm
+//   outStringLst := matchcontinue (inAlgorithmStatementLst,inVariables)
+//     local
+//       list<String> lst1,lst2,lst3,res,lst3_1;
+//       DAE.Type tp;
+//       DAE.ComponentRef cr;
+//       DAE.Exp e, e1;
+//       list<Algorithm.Statement> rest,stmts;
+//       BackendDAE.Variables vars;
+//       list<DAE.Exp> expl;
+//       Algorithm.Else else_;
+//       list<list<String>> lstlst;
+// 
+//     case ({},_) then {};
+// 
+//     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e1,exp = e) :: rest),vars)
+//       equation
+//         lst1 = incidenceRowStmts(rest, vars);
+//         lst2 = incidenceRowExp(e, vars);
+//         lst3 = incidenceRowExp(e1, vars);
+//         res = List.flatten({lst1,lst2,lst3});
+//       then
+//         res;
+// 
+//     case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl,exp = e) :: rest),vars)
+//       equation
+//         lst1 = incidenceRowStmts(rest, vars);
+//         lst2 = incidenceRowExp(e, vars);
+//         lstlst = List.map1(expl, incidenceRowExp, vars);
+//         lst3_1 = List.flatten(lstlst);
+//         res = List.flatten({lst1,lst2,lst3_1});
+//       then
+//         res;
+// 
+//     case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr,exp = e) :: rest),vars)
+//       equation
+//         lst1 = incidenceRowStmts(rest, vars);
+//         lst2 = incidenceRowExp(e, vars);
+//         lst3 = incidenceRowExp(Expression.crefExp(cr), vars);
+//         res = List.flatten({lst1,lst2,lst3});
+//       then
+//         res;
+// 
+//     case ((DAE.STMT_IF(exp = e,statementLst = stmts,else_ = else_) :: rest),vars)
+//       equation
+//         print("- DAEQuery.incidenceRowStmts on IF not implemented\n");
+//       then
+//         {};
+// 
+//     case ((DAE.STMT_FOR(type_ = _) :: rest),vars)
+//       equation
+//         print("- DAEQuery.incidenceRowStmts on FOR not implemented\n");
+//       then
+//         {};
+// 
+//     case ((DAE.STMT_PARFOR(type_ = _) :: rest),vars)
+//       equation
+//         print("- DAEQuery.incidenceRowStmts on PARFOR not implemented\n");
+//       then
+//         {};
+// 
+//     case ((DAE.STMT_WHILE(exp = _) :: rest),vars)
+//       equation
+//         print("- DAEQuery.incidenceRowStmts on WHILE not implemented\n");
+//       then
+//         {};
+// 
+//     case ((DAE.STMT_WHEN(exp = e) :: rest),vars)
+//       equation
+//         print("- DAEQuery.incidenceRowStmts on WHEN not implemented\n");
+//       then
+//         {};
+// 
+//     case ((DAE.STMT_ASSERT(cond = _) :: rest),vars)
+//       equation
+//         print("- DAEQuery.incidenceRowStmts on ASSERT not implemented\n");
+//       then
+//         {};
+//   end matchcontinue;
+// end incidenceRowStmts;
 
 protected function incidenceRowExp "function: incidenceRowExp
   author: PA

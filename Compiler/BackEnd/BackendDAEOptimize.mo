@@ -376,114 +376,114 @@ end lateInlineFunction;
 //   end matchcontinue;
 // end updateEquationSystemMatching;
 
-protected function updateStrongComponent
-" function: updateStrongComponent
-  author: Frenkel TUD 2012-09"
-  input BackendDAE.StrongComponent iComp;
-  input array<Integer> varindxs;
-  input array<Integer> eqnindxs;
-  input BackendDAE.StrongComponents iAcc;
-  output BackendDAE.StrongComponents oComps;
-algorithm
-  oComps := matchcontinue(iComp,varindxs,eqnindxs,iAcc)
-    local
-      BackendDAE.StrongComponents comps;
-      BackendDAE.StrongComponent comp;
-      Integer v,e;
-      list<Integer> vars,eqns;
-      BackendDAE.JacobianType jacType;
-      Boolean b;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
-    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),_,_,_)
-      equation
-        e = eqnindxs[e];
-        v = varindxs[v];
-        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEEQUATION(e,v), iAcc);
-      then
-        comps;
-    case (BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars,jacType=jacType),_,_,_)
-      equation
-        eqns = List.map1r(eqns,arrayGet,eqnindxs);
-        eqns = List.select1(eqns,intGt,0);
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        e::_ = eqns;
-        v::_ = vars;
-        comp = Util.if_(intEq(listLength(eqns),1),BackendDAE.SINGLEEQUATION(e,v),BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType));
-        comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
-      then
-        comps;
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=eqns,disc_vars=vars),_,_,_)
-      equation
-        comp::_ =updateStrongComponent(comp,varindxs,eqnindxs,{});
-        eqns = List.map1r(eqns,arrayGet,eqnindxs);
-        eqns = List.select1(eqns,intGt,0);
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        comp = Util.if_(intEq(listLength(eqns),0),comp,BackendDAE.MIXEDEQUATIONSYSTEM(comp,eqns,vars));
-        comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
-      then
-        comps;
-    case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vars),_,_,_)
-      equation
-        e = eqnindxs[e];
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEIFEQUATION(e,vars), iAcc);
-      then
-        comps;
-    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vars),_,_,_)
-      equation
-        e = eqnindxs[e];
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEARRAY(e,vars), iAcc);
-      then
-        comps;
-    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vars),_,_,_)
-      equation
-        e = eqnindxs[e];
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEALGORITHM(e,vars), iAcc);
-      then
-        comps;
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vars),_,_,_)
-      equation
-        e = eqnindxs[e];
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLECOMPLEXEQUATION(e,vars), iAcc);
-      then
-        comps;
-    case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vars),_,_,_)
-      equation
-        e = eqnindxs[e];
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEWHENEQUATION(e,vars), iAcc);
-      then
-        comps;
-    case (BackendDAE.TORNSYSTEM(tearingvars=vars,residualequations=eqns,otherEqnVarTpl=eqnvartpllst,linear=b),_,_,_)
-      equation
-        eqns = List.map1r(eqns,arrayGet,eqnindxs);
-        eqns = List.select1(eqns,intGt,0);
-        vars = List.map1r(vars,arrayGet,varindxs);
-        vars = List.select1(vars,intGt,0);
-        eqnvartpllst = updateTornSystemComp(eqnvartpllst,varindxs,eqnindxs,{});
-        comp = BackendDAE.TORNSYSTEM(vars,eqns,eqnvartpllst,b);
-      then
-        comp::iAcc;
-    case (_,_,_,_)
-      equation
-        print("BackendDAEOptimize.updateStrongComponent failed for Comp:\n");
-        BackendDump.dumpComponent(iComp);
-        print("Size EqnsIndx: " +& intString(arrayLength(eqnindxs)) +& "\n");
-        print("Size VarsIndx: " +& intString(arrayLength(varindxs)) +& "\n");
-      then
-        fail();
-  end matchcontinue;
-end updateStrongComponent;
+// protected function updateStrongComponent
+// " function: updateStrongComponent
+//   author: Frenkel TUD 2012-09"
+//   input BackendDAE.StrongComponent iComp;
+//   input array<Integer> varindxs;
+//   input array<Integer> eqnindxs;
+//   input BackendDAE.StrongComponents iAcc;
+//   output BackendDAE.StrongComponents oComps;
+// algorithm
+//   oComps := matchcontinue(iComp,varindxs,eqnindxs,iAcc)
+//     local
+//       BackendDAE.StrongComponents comps;
+//       BackendDAE.StrongComponent comp;
+//       Integer v,e;
+//       list<Integer> vars,eqns;
+//       BackendDAE.JacobianType jacType;
+//       Boolean b;
+//       list<tuple<Integer,list<Integer>>> eqnvartpllst;
+//     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),_,_,_)
+//       equation
+//         e = eqnindxs[e];
+//         v = varindxs[v];
+//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEEQUATION(e,v), iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars,jacType=jacType),_,_,_)
+//       equation
+//         eqns = List.map1r(eqns,arrayGet,eqnindxs);
+//         eqns = List.select1(eqns,intGt,0);
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         e::_ = eqns;
+//         v::_ = vars;
+//         comp = Util.if_(intEq(listLength(eqns),1),BackendDAE.SINGLEEQUATION(e,v),BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType));
+//         comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=eqns,disc_vars=vars),_,_,_)
+//       equation
+//         comp::_ =updateStrongComponent(comp,varindxs,eqnindxs,{});
+//         eqns = List.map1r(eqns,arrayGet,eqnindxs);
+//         eqns = List.select1(eqns,intGt,0);
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         comp = Util.if_(intEq(listLength(eqns),0),comp,BackendDAE.MIXEDEQUATIONSYSTEM(comp,eqns,vars));
+//         comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vars),_,_,_)
+//       equation
+//         e = eqnindxs[e];
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEIFEQUATION(e,vars), iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vars),_,_,_)
+//       equation
+//         e = eqnindxs[e];
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEARRAY(e,vars), iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vars),_,_,_)
+//       equation
+//         e = eqnindxs[e];
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEALGORITHM(e,vars), iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vars),_,_,_)
+//       equation
+//         e = eqnindxs[e];
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLECOMPLEXEQUATION(e,vars), iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vars),_,_,_)
+//       equation
+//         e = eqnindxs[e];
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEWHENEQUATION(e,vars), iAcc);
+//       then
+//         comps;
+//     case (BackendDAE.TORNSYSTEM(tearingvars=vars,residualequations=eqns,otherEqnVarTpl=eqnvartpllst,linear=b),_,_,_)
+//       equation
+//         eqns = List.map1r(eqns,arrayGet,eqnindxs);
+//         eqns = List.select1(eqns,intGt,0);
+//         vars = List.map1r(vars,arrayGet,varindxs);
+//         vars = List.select1(vars,intGt,0);
+//         eqnvartpllst = updateTornSystemComp(eqnvartpllst,varindxs,eqnindxs,{});
+//         comp = BackendDAE.TORNSYSTEM(vars,eqns,eqnvartpllst,b);
+//       then
+//         comp::iAcc;
+//     case (_,_,_,_)
+//       equation
+//         print("BackendDAEOptimize.updateStrongComponent failed for Comp:\n");
+//         BackendDump.dumpComponent(iComp);
+//         print("Size EqnsIndx: " +& intString(arrayLength(eqnindxs)) +& "\n");
+//         print("Size VarsIndx: " +& intString(arrayLength(varindxs)) +& "\n");
+//       then
+//         fail();
+//   end matchcontinue;
+// end updateStrongComponent;
 
 // protected function updateEquationSystemComp
 //   input list<Integer> eqns;
@@ -532,118 +532,118 @@ algorithm
   end match;
 end updateTornSystemComp;
 
-protected function updateVarArray
-" function: updateVarArray
-  author: Frenkel TUD 2012-09"
-  input Integer index;
-  input Integer numberOfElement;
-  input Integer insertindex;
-  input array<Option<BackendDAE.Var>> varOptArr;
-  input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-  input Integer bucketSize;
-  input array<Integer> ass1 "ass[varindx]=eqnindx";
-  input array<Integer> ass2 "ass[eqnindx]=varindx";
-  input array<Integer> newindexarr;
-  output Integer newnumberOfElement;
-algorithm
-  newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr)
-    local
-      BackendDAE.Var var;
-      DAE.ComponentRef cr;
-      Integer e,indx,i;
-      list<BackendDAE.CrefIndex> indexes;
-    // found element
-    case(_,_,_,_,_,_,_,_,_)
-      equation
-        true = intLe(index,numberOfElement);
-        SOME(var as BackendDAE.VAR(varName=cr)) = varOptArr[index];
-        // insert on new pos
-        _ = arrayUpdate(varOptArr,insertindex,SOME(var));
-        // store new pos
-        _ = arrayUpdate(newindexarr,index,insertindex);
-        // add to hash vec
-        indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
-        indexes = crefIdxLstArr[indx + 1];
-        i = insertindex-1;
-        _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));
-        // update assignments
-        e = ass1[index];
-        _ = arrayUpdate(ass1,insertindex,e);
-        _ = arrayUpdate(ass2,e,insertindex);
-      then
-        updateVarArray(index+1,numberOfElement,insertindex+1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
-    // found non element
-    case(_,_,_,_,_,_,_,_,_)
-      equation
-        true = intLe(index,numberOfElement);
-        NONE() = varOptArr[index];
-      then
-        updateVarArray(index+1,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
-    // at the end
-    case(_,_,_,_,_,_,_,_,_)
-      equation
-        false = intLe(index,numberOfElement);
-      then
-        insertindex-1;
-    else
-      equation
-        print("BackendDAEOptimize.updateVarArray failed\n");
-      then
-        fail();
-  end matchcontinue;
-end updateVarArray;
+// protected function updateVarArray
+// " function: updateVarArray
+//   author: Frenkel TUD 2012-09"
+//   input Integer index;
+//   input Integer numberOfElement;
+//   input Integer insertindex;
+//   input array<Option<BackendDAE.Var>> varOptArr;
+//   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+//   input Integer bucketSize;
+//   input array<Integer> ass1 "ass[varindx]=eqnindx";
+//   input array<Integer> ass2 "ass[eqnindx]=varindx";
+//   input array<Integer> newindexarr;
+//   output Integer newnumberOfElement;
+// algorithm
+//   newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr)
+//     local
+//       BackendDAE.Var var;
+//       DAE.ComponentRef cr;
+//       Integer e,indx,i;
+//       list<BackendDAE.CrefIndex> indexes;
+//     // found element
+//     case(_,_,_,_,_,_,_,_,_)
+//       equation
+//         true = intLe(index,numberOfElement);
+//         SOME(var as BackendDAE.VAR(varName=cr)) = varOptArr[index];
+//         // insert on new pos
+//         _ = arrayUpdate(varOptArr,insertindex,SOME(var));
+//         // store new pos
+//         _ = arrayUpdate(newindexarr,index,insertindex);
+//         // add to hash vec
+//         indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
+//         indexes = crefIdxLstArr[indx + 1];
+//         i = insertindex-1;
+//         _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));
+//         // update assignments
+//         e = ass1[index];
+//         _ = arrayUpdate(ass1,insertindex,e);
+//         _ = arrayUpdate(ass2,e,insertindex);
+//       then
+//         updateVarArray(index+1,numberOfElement,insertindex+1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
+//     // found non element
+//     case(_,_,_,_,_,_,_,_,_)
+//       equation
+//         true = intLe(index,numberOfElement);
+//         NONE() = varOptArr[index];
+//       then
+//         updateVarArray(index+1,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
+//     // at the end
+//     case(_,_,_,_,_,_,_,_,_)
+//       equation
+//         false = intLe(index,numberOfElement);
+//       then
+//         insertindex-1;
+//     else
+//       equation
+//         print("BackendDAEOptimize.updateVarArray failed\n");
+//       then
+//         fail();
+//   end matchcontinue;
+// end updateVarArray;
 
-protected function updateEquationArray
-" function: updateEquationArray
-  author: Frenkel TUD 2012-09"
-  input Integer index;
-  input Integer numberOfElement;
-  input Integer insertindex;
-  input array<Option<BackendDAE.Equation>> equOptArr;
-  input array<Integer> ass1 "ass[varindx]=eqnindx";
-  input array<Integer> ass2 "ass[eqnindx]=varindx";
-  input array<Integer> newindexarr;
-  output Integer newnumberOfElement;
-algorithm
-  newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr)
-    local
-      BackendDAE.Equation eqn;
-      Integer v;
-    // found element
-    case(_,_,_,_,_,_,_)
-      equation
-        true = intLe(index,numberOfElement);
-        SOME(eqn) = equOptArr[index];
-        // insert on new pos
-        _ = arrayUpdate(equOptArr,insertindex,SOME(eqn));
-        // store new pos
-        _ = arrayUpdate(newindexarr,index,insertindex);
-        // update assignments
-        v = ass2[index];
-        _ = arrayUpdate(ass2,insertindex,v);
-        _ = arrayUpdate(ass1,v,insertindex);
-      then
-        updateEquationArray(index+1,numberOfElement,insertindex+1,equOptArr,ass1,ass2,newindexarr);
-    // found non element
-    case(_,_,_,_,_,_,_)
-      equation
-        true = intLe(index,numberOfElement);
-        NONE() = equOptArr[index];
-      then
-        updateEquationArray(index+1,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr);
-    // at the end
-    case(_,_,_,_,_,_,_)
-      equation
-        false = intLe(index,numberOfElement);
-      then
-        insertindex-1;
-    else
-      equation
-        print("BackendDAEOptimize.updateEquationArray failed\n");
-      then
-        fail();
-  end matchcontinue;
-end updateEquationArray;
+// protected function updateEquationArray
+// " function: updateEquationArray
+//   author: Frenkel TUD 2012-09"
+//   input Integer index;
+//   input Integer numberOfElement;
+//   input Integer insertindex;
+//   input array<Option<BackendDAE.Equation>> equOptArr;
+//   input array<Integer> ass1 "ass[varindx]=eqnindx";
+//   input array<Integer> ass2 "ass[eqnindx]=varindx";
+//   input array<Integer> newindexarr;
+//   output Integer newnumberOfElement;
+// algorithm
+//   newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr)
+//     local
+//       BackendDAE.Equation eqn;
+//       Integer v;
+//     // found element
+//     case(_,_,_,_,_,_,_)
+//       equation
+//         true = intLe(index,numberOfElement);
+//         SOME(eqn) = equOptArr[index];
+//         // insert on new pos
+//         _ = arrayUpdate(equOptArr,insertindex,SOME(eqn));
+//         // store new pos
+//         _ = arrayUpdate(newindexarr,index,insertindex);
+//         // update assignments
+//         v = ass2[index];
+//         _ = arrayUpdate(ass2,insertindex,v);
+//         _ = arrayUpdate(ass1,v,insertindex);
+//       then
+//         updateEquationArray(index+1,numberOfElement,insertindex+1,equOptArr,ass1,ass2,newindexarr);
+//     // found non element
+//     case(_,_,_,_,_,_,_)
+//       equation
+//         true = intLe(index,numberOfElement);
+//         NONE() = equOptArr[index];
+//       then
+//         updateEquationArray(index+1,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr);
+//     // at the end
+//     case(_,_,_,_,_,_,_)
+//       equation
+//         false = intLe(index,numberOfElement);
+//       then
+//         insertindex-1;
+//     else
+//       equation
+//         print("BackendDAEOptimize.updateEquationArray failed\n");
+//       then
+//         fail();
+//   end matchcontinue;
+// end updateEquationArray;
 
 protected function traverseIncidenceMatrix
 " function: traverseIncidenceMatrix

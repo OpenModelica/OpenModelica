@@ -6549,39 +6549,39 @@ algorithm
   end matchcontinue;
 end rhsConstant2;
 
-protected function freeFromAnyVar "function: freeFromAnyVar
-  author: PA
-  Helper function to rhsConstant2
-  returns true if expression does not contain
-  anyof the variables passed as argument."
-  input DAE.Exp inExp;
-  input BackendDAE.Variables inVariables;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inExp,inVariables)
-    local
-      DAE.Exp e;
-      list<DAE.ComponentRef> crefs;
-      list<Boolean> b_lst;
-      Boolean res,res_1;
-      BackendDAE.Variables vars;
-
-    case (e,_)
-      equation
-        {} = Expression.extractCrefsFromExp(e) "Special case for expressions with no variables" ;
-      then
-        true;
-    case (e,vars)
-      equation
-        crefs = Expression.extractCrefsFromExp(e);
-        b_lst = List.map2(crefs, BackendVariable.existsVar, vars, false);
-        res = Util.boolOrList(b_lst);
-        res_1 = boolNot(res);
-      then
-        res_1;
-    case (_,_) then true;
-  end matchcontinue;
-end freeFromAnyVar;
+// protected function freeFromAnyVar "function: freeFromAnyVar
+//   author: PA
+//   Helper function to rhsConstant2
+//   returns true if expression does not contain
+//   anyof the variables passed as argument."
+//   input DAE.Exp inExp;
+//   input BackendDAE.Variables inVariables;
+//   output Boolean outBoolean;
+// algorithm
+//   outBoolean := matchcontinue (inExp,inVariables)
+//     local
+//       DAE.Exp e;
+//       list<DAE.ComponentRef> crefs;
+//       list<Boolean> b_lst;
+//       Boolean res,res_1;
+//       BackendDAE.Variables vars;
+// 
+//     case (e,_)
+//       equation
+//         {} = Expression.extractCrefsFromExp(e) "Special case for expressions with no variables" ;
+//       then
+//         true;
+//     case (e,vars)
+//       equation
+//         crefs = Expression.extractCrefsFromExp(e);
+//         b_lst = List.map2(crefs, BackendVariable.existsVar, vars, false);
+//         res = Util.boolOrList(b_lst);
+//         res_1 = boolNot(res);
+//       then
+//         res_1;
+//     case (_,_) then true;
+//   end matchcontinue;
+// end freeFromAnyVar;
 
 protected function jacobianConstant "function: jacobianConstant
   author: PA
@@ -7489,35 +7489,35 @@ algorithm
  end match;
 end traverseBackendDAEAttrDistribution;
 
-protected function traverseBackendDAEExpsSubscript "function: traverseBackendDAEExpsSubscript
-  author: Frenkel TUD
-  helper for traverseBackendDAEExpsSubscript"
-  replaceable type Type_a subtypeof Any;
-  input DAE.Subscript inSubscript;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;
-algorithm
-  outTypeA:=
-  match (inSubscript,func,inTypeA)
-    local
-      DAE.Exp e;
-      Type_a ext_arg_1;
-    case (DAE.WHOLEDIM(),_,_) then inTypeA;
-    case (DAE.SLICE(exp = e),_,_)
-      equation
-        ((_,ext_arg_1)) = func((e,inTypeA));
-      then ext_arg_1;
-    case (DAE.INDEX(exp = e),_,_)
-      equation
-        ((_,ext_arg_1)) = func((e,inTypeA));
-      then ext_arg_1;
-  end match;
-end traverseBackendDAEExpsSubscript;
+// protected function traverseBackendDAEExpsSubscript "function: traverseBackendDAEExpsSubscript
+//   author: Frenkel TUD
+//   helper for traverseBackendDAEExpsSubscript"
+//   replaceable type Type_a subtypeof Any;
+//   input DAE.Subscript inSubscript;
+//   input FuncExpType func;
+//   input Type_a inTypeA;
+//   output Type_a outTypeA;
+//   partial function FuncExpType
+//     input tuple<DAE.Exp, Type_a> inTpl;
+//     output tuple<DAE.Exp, Type_a> outTpl;
+//   end FuncExpType;
+// algorithm
+//   outTypeA:=
+//   match (inSubscript,func,inTypeA)
+//     local
+//       DAE.Exp e;
+//       Type_a ext_arg_1;
+//     case (DAE.WHOLEDIM(),_,_) then inTypeA;
+//     case (DAE.SLICE(exp = e),_,_)
+//       equation
+//         ((_,ext_arg_1)) = func((e,inTypeA));
+//       then ext_arg_1;
+//     case (DAE.INDEX(exp = e),_,_)
+//       equation
+//         ((_,ext_arg_1)) = func((e,inTypeA));
+//       then ext_arg_1;
+//   end match;
+// end traverseBackendDAEExpsSubscript;
 
 protected function traverseBackendDAEExpsSubscriptWithUpdate "function: traverseBackendDAEExpsSubscript
   author: Frenkel TUD
@@ -8241,81 +8241,81 @@ algorithm
   end matchcontinue;
 end pastoptimiseDAE;
 
-protected function checkCompsMatching
-"Function check if comps are complete, they are not complete
- if the matching is wrong due to dummyDer"
-  input BackendDAE.StrongComponents inComps;
-  input Integer inSysSize;
-  output Boolean outCheck;
-algorithm
-  outCheck := countComponents(inComps,0) == inSysSize;
-end checkCompsMatching;
+// protected function checkCompsMatching
+// "Function check if comps are complete, they are not complete
+//  if the matching is wrong due to dummyDer"
+//   input BackendDAE.StrongComponents inComps;
+//   input Integer inSysSize;
+//   output Boolean outCheck;
+// algorithm
+//   outCheck := countComponents(inComps,0) == inSysSize;
+// end checkCompsMatching;
 
-protected function countComponents
-  input BackendDAE.StrongComponents inComps;
-  input Integer inInt;
-  output Integer outInt;
-algorithm
-  outInt :=
-  match (inComps,inInt)
-    local
-      list<Integer> ilst;
-      list<String> ls;
-      String s;
-      Integer i,i1;
-      BackendDAE.JacobianType jacType;
-      BackendDAE.StrongComponent comp;
-      BackendDAE.StrongComponents comps;
-      list<tuple<Integer,list<Integer>>> eqnvartpllst;
-    case ({},_) then inInt;
-    case (BackendDAE.SINGLEEQUATION(var=_)::comps,_)
-      equation
-        outInt = countComponents(comps,inInt+1);
-      then outInt;
-    case (BackendDAE.EQUATIONSYSTEM(vars=ilst)::comps,_)
-      equation
-        i = listLength(ilst);
-        outInt = countComponents(comps,inInt+i);
-      then outInt;
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_vars=ilst)::comps,_)
-      equation
-        i = listLength(ilst);
-        i = countComponents({comp},inInt+i);
-        outInt = countComponents(comps,inInt+i);
-      then outInt;
-    case (BackendDAE.SINGLEARRAY(vars=ilst)::comps,_)
-      equation
-        i = listLength(ilst);
-        outInt = countComponents(comps,inInt+i);
-      then outInt;
-    case (BackendDAE.SINGLEIFEQUATION(vars=ilst)::comps,_)
-      equation
-        i = listLength(ilst);
-        outInt = countComponents(comps,inInt+i);
-      then outInt;
-    case (BackendDAE.SINGLEALGORITHM(vars=ilst)::comps,_)
-      equation
-        i = listLength(ilst);
-        outInt = countComponents(comps,inInt+i);
-      then outInt;
-    case (BackendDAE.SINGLECOMPLEXEQUATION(vars=ilst)::comps,_)
-      equation
-        i = listLength(ilst);
-        outInt = countComponents(comps,inInt+i);
-      then outInt;
-    case (BackendDAE.SINGLEWHENEQUATION(vars=ilst)::comps,_)
-      equation
-        i = listLength(ilst);
-        outInt = countComponents(comps,inInt+i);
-      then outInt;
-    case (BackendDAE.TORNSYSTEM(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst)::comps,_)
-      equation
-        i = listLength(ilst);
-        i1 = listLength(List.flatten(List.map(eqnvartpllst,Util.tuple22)));
-        outInt = countComponents(comps,inInt+i+i1);
-      then outInt;
-  end match;
-end countComponents;
+// protected function countComponents
+//   input BackendDAE.StrongComponents inComps;
+//   input Integer inInt;
+//   output Integer outInt;
+// algorithm
+//   outInt :=
+//   match (inComps,inInt)
+//     local
+//       list<Integer> ilst;
+//       list<String> ls;
+//       String s;
+//       Integer i,i1;
+//       BackendDAE.JacobianType jacType;
+//       BackendDAE.StrongComponent comp;
+//       BackendDAE.StrongComponents comps;
+//       list<tuple<Integer,list<Integer>>> eqnvartpllst;
+//     case ({},_) then inInt;
+//     case (BackendDAE.SINGLEEQUATION(var=_)::comps,_)
+//       equation
+//         outInt = countComponents(comps,inInt+1);
+//       then outInt;
+//     case (BackendDAE.EQUATIONSYSTEM(vars=ilst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         outInt = countComponents(comps,inInt+i);
+//       then outInt;
+//     case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_vars=ilst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         i = countComponents({comp},inInt+i);
+//         outInt = countComponents(comps,inInt+i);
+//       then outInt;
+//     case (BackendDAE.SINGLEARRAY(vars=ilst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         outInt = countComponents(comps,inInt+i);
+//       then outInt;
+//     case (BackendDAE.SINGLEIFEQUATION(vars=ilst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         outInt = countComponents(comps,inInt+i);
+//       then outInt;
+//     case (BackendDAE.SINGLEALGORITHM(vars=ilst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         outInt = countComponents(comps,inInt+i);
+//       then outInt;
+//     case (BackendDAE.SINGLECOMPLEXEQUATION(vars=ilst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         outInt = countComponents(comps,inInt+i);
+//       then outInt;
+//     case (BackendDAE.SINGLEWHENEQUATION(vars=ilst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         outInt = countComponents(comps,inInt+i);
+//       then outInt;
+//     case (BackendDAE.TORNSYSTEM(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst)::comps,_)
+//       equation
+//         i = listLength(ilst);
+//         i1 = listLength(List.flatten(List.map(eqnvartpllst,Util.tuple22)));
+//         outInt = countComponents(comps,inInt+i+i1);
+//       then outInt;
+//   end match;
+// end countComponents;
 
 public function getSolvedSystemforJacobians
 " function: getSolvedSystemforJacobians

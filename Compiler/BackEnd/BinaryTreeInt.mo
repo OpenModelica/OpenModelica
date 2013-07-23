@@ -242,169 +242,169 @@ algorithm
   end matchcontinue;
 end treeAdd;
 
-protected function treeDelete2 "function: treeDelete
-  author: PA
-  This function deletes an entry from the BinTree."
-  input BinTree inBinTree;
-  input Integer inKey;
-  output BinTree outBinTree;
-algorithm
-  outBinTree := matchcontinue (inBinTree,inKey)
-    local
-      BinTree bt,right,left,t;
-      Key key,rkey;
-      TreeValue rightmost;
-      Option<BinTree> optRight,optLeft,optTree;
-      Value rval;
-      Option<TreeValue> optVal;
-      Integer rhash;
+// protected function treeDelete2 "function: treeDelete
+//   author: PA
+//   This function deletes an entry from the BinTree."
+//   input BinTree inBinTree;
+//   input Integer inKey;
+//   output BinTree outBinTree;
+// algorithm
+//   outBinTree := matchcontinue (inBinTree,inKey)
+//     local
+//       BinTree bt,right,left,t;
+//       Key key,rkey;
+//       TreeValue rightmost;
+//       Option<BinTree> optRight,optLeft,optTree;
+//       Value rval;
+//       Option<TreeValue> optVal;
+//       Integer rhash;
+// 
+//     case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_)
+//       then bt;
+// 
+//     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),_)
+//       equation
+//         0 = keyCmp(rkey, inKey);
+//         (rightmost,right) = treeDeleteRightmostValue(right);
+//         optRight = treePruneEmptyNodes(right);
+//       then
+//         TREENODE(SOME(rightmost),optLeft,optRight);
+// 
+//     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),_)
+//       equation
+//         0 = keyCmp(rkey, inKey);
+//       then
+//         left;
+// 
+//     case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),_)
+//       equation
+//         0 = keyCmp(rkey, inKey);
+//       then
+//         TREENODE(NONE(),NONE(),NONE());
+// 
+//     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),_)
+//       equation
+//         1 = keyCmp(rkey, inKey);
+//         t = treeDelete2(t, inKey);
+//         optTree = treePruneEmptyNodes(t);
+//       then
+//         TREENODE(optVal,optLeft,optTree);
+// 
+//     case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),_)
+//       equation
+//         -1 = keyCmp(rkey, inKey);
+//         t = treeDelete2(t, inKey);
+//         optTree = treePruneEmptyNodes(t);
+//       then
+//         TREENODE(optVal,optTree,optRight);
+// 
+//     else
+//       equation
+//         Error.addMessage(Error.INTERNAL_ERROR,{"-BinaryTree.treeDelete failed\n"});
+//       then
+//         fail();
+//   end matchcontinue;
+// end treeDelete2;
 
-    case ((bt as TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_)
-      then bt;
+// protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
+//   author: PA
+//   This function takes a BinTree and deletes the rightmost value of the tree.
+//   Tt returns this value and the updated BinTree. This function is used in
+//   the binary tree deletion function \'tree_delete\'.
+//   inputs:  (BinTree)
+//   outputs: (TreeValue, /* deleted value */
+//               BinTree    /* updated bintree */)
+// "
+//   input BinTree inBinTree;
+//   output TreeValue outTreeValue;
+//   output BinTree outBinTree;
+// algorithm
+//   (outTreeValue,outBinTree) := matchcontinue (inBinTree)
+//     local
+//       TreeValue treeVal,value;
+//       BinTree left,right,bt;
+//       Option<BinTree> optRight, optLeft;
+//       Option<TreeValue> optTreeVal;
+// 
+//     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE()))
+//       then (treeVal,TREENODE(NONE(),NONE(),NONE()));
+// 
+//     case (TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE()))
+//       then (treeVal,left);
+// 
+//     case (TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
+//       equation
+//         (value,right) = treeDeleteRightmostValue(right);
+//         optRight = treePruneEmptyNodes(right);
+//       then
+//         (value,TREENODE(optTreeVal,optLeft,optRight));
+// 
+//     case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
+//       equation
+//         failure((_,_) = treeDeleteRightmostValue(right));
+//         print("- BinaryTree.treeDeleteRightmostValue: right value was empty, left NONE\n");
+//       then
+//         (treeVal,TREENODE(NONE(),NONE(),NONE()));
+// 
+//     else
+//       equation
+//         Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTree.treeDeleteRightmostValue failed\n"});
+//       then
+//         fail();
+//   end matchcontinue;
+// end treeDeleteRightmostValue;
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),_)
-      equation
-        0 = keyCmp(rkey, inKey);
-        (rightmost,right) = treeDeleteRightmostValue(right);
-        optRight = treePruneEmptyNodes(right);
-      then
-        TREENODE(SOME(rightmost),optLeft,optRight);
+// protected function treePruneEmptyNodes "function: treePruneEmtpyNodes
+//   author: PA
+//   This function is a helper function to tree_delete
+//   It is used to delete empty nodes of the BinTree
+//   representation, that might be introduced when deleting nodes."
+//   input BinTree inBinTree;
+//   output Option<BinTree> outBinTreeOption;
+// algorithm
+//   outBinTreeOption := matchcontinue (inBinTree)
+//     local BinTree bt;
+//     case TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()) then NONE();
+//     case bt then SOME(bt);
+//   end matchcontinue;
+// end treePruneEmptyNodes;
 
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = SOME(left as TREENODE(value=_)),rightSubTree = NONE()),_)
-      equation
-        0 = keyCmp(rkey, inKey);
-      then
-        left;
-
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rval)),leftSubTree = NONE(),rightSubTree = NONE()),_)
-      equation
-        0 = keyCmp(rkey, inKey);
-      then
-        TREENODE(NONE(),NONE(),NONE());
-
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),_)
-      equation
-        1 = keyCmp(rkey, inKey);
-        t = treeDelete2(t, inKey);
-        optTree = treePruneEmptyNodes(t);
-      then
-        TREENODE(optVal,optLeft,optTree);
-
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),_)
-      equation
-        -1 = keyCmp(rkey, inKey);
-        t = treeDelete2(t, inKey);
-        optTree = treePruneEmptyNodes(t);
-      then
-        TREENODE(optVal,optTree,optRight);
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"-BinaryTree.treeDelete failed\n"});
-      then
-        fail();
-  end matchcontinue;
-end treeDelete2;
-
-protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
-  author: PA
-  This function takes a BinTree and deletes the rightmost value of the tree.
-  Tt returns this value and the updated BinTree. This function is used in
-  the binary tree deletion function \'tree_delete\'.
-  inputs:  (BinTree)
-  outputs: (TreeValue, /* deleted value */
-              BinTree    /* updated bintree */)
-"
-  input BinTree inBinTree;
-  output TreeValue outTreeValue;
-  output BinTree outBinTree;
-algorithm
-  (outTreeValue,outBinTree) := matchcontinue (inBinTree)
-    local
-      TreeValue treeVal,value;
-      BinTree left,right,bt;
-      Option<BinTree> optRight, optLeft;
-      Option<TreeValue> optTreeVal;
-
-    case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE()))
-      then (treeVal,TREENODE(NONE(),NONE(),NONE()));
-
-    case (TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE()))
-      then (treeVal,left);
-
-    case (TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
-      equation
-        (value,right) = treeDeleteRightmostValue(right);
-        optRight = treePruneEmptyNodes(right);
-      then
-        (value,TREENODE(optTreeVal,optLeft,optRight));
-
-    case (TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
-      equation
-        failure((_,_) = treeDeleteRightmostValue(right));
-        print("- BinaryTree.treeDeleteRightmostValue: right value was empty, left NONE\n");
-      then
-        (treeVal,TREENODE(NONE(),NONE(),NONE()));
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"- BinaryTree.treeDeleteRightmostValue failed\n"});
-      then
-        fail();
-  end matchcontinue;
-end treeDeleteRightmostValue;
-
-protected function treePruneEmptyNodes "function: treePruneEmtpyNodes
-  author: PA
-  This function is a helper function to tree_delete
-  It is used to delete empty nodes of the BinTree
-  representation, that might be introduced when deleting nodes."
-  input BinTree inBinTree;
-  output Option<BinTree> outBinTreeOption;
-algorithm
-  outBinTreeOption := matchcontinue (inBinTree)
-    local BinTree bt;
-    case TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()) then NONE();
-    case bt then SOME(bt);
-  end matchcontinue;
-end treePruneEmptyNodes;
-
-protected function bintreeDepth "function: bintreeDepth
-  author: PA
-  This function calculates the depth of the Binary Tree given
-  as input. It can be used for debugging purposes to investigate
-  how balanced binary trees are."
-  input BinTree inBinTree;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inBinTree)
-    local
-      Value ld,rd,res;
-      BinTree left,right;
-
-    case (TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
-
-    case (TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
-      equation
-        ld = bintreeDepth(left);
-        rd = bintreeDepth(right);
-        res = intMax(ld, rd);
-      then
-        res + 1;
-
-    case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
-      equation
-        ld = bintreeDepth(left);
-      then
-        ld;
-
-    case (TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
-      equation
-        rd = bintreeDepth(right);
-      then
-        rd;
-  end matchcontinue;
-end bintreeDepth;
+// protected function bintreeDepth "function: bintreeDepth
+//   author: PA
+//   This function calculates the depth of the Binary Tree given
+//   as input. It can be used for debugging purposes to investigate
+//   how balanced binary trees are."
+//   input BinTree inBinTree;
+//   output Integer outInteger;
+// algorithm
+//   outInteger := matchcontinue (inBinTree)
+//     local
+//       Value ld,rd,res;
+//       BinTree left,right;
+// 
+//     case (TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
+// 
+//     case (TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
+//       equation
+//         ld = bintreeDepth(left);
+//         rd = bintreeDepth(right);
+//         res = intMax(ld, rd);
+//       then
+//         res + 1;
+// 
+//     case (TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
+//       equation
+//         ld = bintreeDepth(left);
+//       then
+//         ld;
+// 
+//     case (TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
+//       equation
+//         rd = bintreeDepth(right);
+//       then
+//         rd;
+//   end matchcontinue;
+// end bintreeDepth;
 
 
 public function bintreeToList "function: bintreeToList
