@@ -10,6 +10,22 @@ target_link_libraries (${ModelicaName}  ${SystemName} ${ModelicaExternalCName}  
 GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
 GET_FILENAME_COMPONENT(libModelicaSystemName ${libModelicaSystem} NAME)
 
+if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  include(CheckTypeSize)
+  check_type_size("void*" SIZEOF_VOID_P BUILTIN_TYPES_ONLY)
+  set(LINUX_LIB_DL "-ldl")
+  if(${SIZEOF_VOID_P} MATCHES 64)
+    set(FMI_ARCH_DIR "linux64")
+  else(${SIZEOF_VOID_P} MATCHES 64)
+    set(FMI_ARCH_DIR "linux32")
+  endif(${SIZEOF_VOID_P} MATCHES 64)
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  set(LINUX_LIB_DL "")
+  set(FMI_ARCH_DIR "win32")
+endif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
 
 set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set (BOOST_LIBS ${Boost_LIBRARY_DIRS})

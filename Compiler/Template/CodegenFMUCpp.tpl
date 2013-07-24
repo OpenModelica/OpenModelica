@@ -489,36 +489,30 @@ let modelName = '<%lastIdentOfPath(modelInfo.name)%>'
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)
   
-  OBJS=<%modelName%>.o
-  OBJS+= <%modelName%>FMU.o
-  OBJS+= Functions.o
+  SRC=<%modelName%>.cpp
+  SRC+= <%modelName%>FMU.cpp
+  SRC+= Functions.cpp
+  SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
   
   LIBS= -lOMCppSystem_static
-  LIBS+= -lboost_system -lboost_filesystem -lboost_serialization
-  LIBS+= -ldl
+  LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
+  LIBS+= $(LINUX_LIB_DL)
   
-  %.o: %.cpp
-  <%\t%>$(CXX) $(CFLAGS) -I. -c -o $@ $<
-  
-  <%modelName%>.fmu: $(OBJS)
-  <%\t%>$(CXX) -shared -I. -o <%modelName%>.so $(OBJS) <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%> $(CFLAGS) $(LDFLAGS) $(LIBS)
-  <%\t%>-rm -rf fmu
-  <%\t%>-rm <%modelName%>.fmu
-  <%\t%>mkdir fmu
-  <%\t%>mkdir fmu/binaries
-  <%\t%>mkdir fmu/binaries/linux32
-  <%\t%>mkdir fmu/binaries/linux64
-  <%\t%>cp <%modelName%>.so fmu/binaries/linux32/
-  <%\t%>cp <%modelName%>.so fmu/binaries/linux64/
-  <%\t%>cp modelDescription.xml fmu
-  <%\t%>(cd fmu; zip -r ../<%modelName%>.fmu *)
-  <%\t%>rm -rf fmu
+  <%modelName%>.fmu: $(SRC)
+  <%\t%>$(CXX) -shared -I. -o <%modelName%>$(DLLEXT) $(SRC) $(CFLAGS) $(LDFLAGS) $(LIBS)
+  <%\t%>rm -rf binaries
+  <%\t%>mkdir binaries
+  <%\t%>mkdir "binaries/$(FMI_ARCH_DIR)"
+  <%\t%>cp <%modelName%>$(DLLEXT) "binaries/$(FMI_ARCH_DIR)/"
+  <%\t%>rm -f <%modelName%>.fmu
+  <%\t%>zip -r "<%modelName%>.fmu" modelDescription.xml binaries binaries/$(FMI_ARCH_DIR) binaries/$(FMI_ARCH_DIR)/<%modelName%>$(DLLEXT)
+  <%\t%>rm -rf binaries
   
   .PHONY: clean
   clean:
-  <%\t%>rm $(OBJS) <%modelName%>.so
+  <%\t%>rm $(SRC) <%modelName%>$(DLLEXT)
   
   >>
 end fmuMakefile;
