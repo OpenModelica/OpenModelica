@@ -90,16 +90,34 @@ using namespace std;
 
 int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
 
-double stepSize = 0.0; /* This variable is used to get the step size value during the simulation. */
+/* This variable is used to get the step size value during the simulation. */
+double stepSize = 0.0;
+double currentTime = 0.0;
+int initTime = 0;
 
-double getSimulationStepSize()
+double getSimulationStepSize(double time, int *takeStep)
 {
+  /* if the function is called first time during the simulation. */
+  if (!initTime) {
+    initTime = 1;
+    currentTime = time;
+    *takeStep = 1;
+  }
+  else {
+    if (currentTime != time) {
+      currentTime = time;
+      *takeStep = 1;
+    }
+    else {
+      *takeStep = 0;
+    }
+  }
   return stepSize;
 }
 
-void printSimulationStepSize(double in_stepSize)
+void printSimulationStepSize(double in_stepSize, double time, int takeStep)
 {
-  fprintf(stderr, "in_stepSize=%f\n", in_stepSize);
+  fprintf(stderr, "in_stepSize=%f, time=%f, takeStep=%d\n", in_stepSize, time, takeStep);
 }
 
 /* const char* version = "20110520_1120"; */
@@ -794,8 +812,10 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   function_initMemoryState();
   read_input_xml(&(data->modelData), &(data->simulationInfo));
   initializeOutputFilter(&(data->modelData), data->simulationInfo.variableFilter);
-  /* set the global stepsize variable */
+  /* set the global stepsize, currentTime & initTime variable */
   stepSize = data->simulationInfo.stepSize;
+  currentTime = 0.0;
+  initTime = 0;
 
   /* allocate memory for mixed system solvers */
   allocatemixedSystem(data);
