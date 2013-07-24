@@ -88,7 +88,7 @@ public uniontype Node
     String color;
     ShapeType shapeType;
     Option<String> optDesc;
-    List<tuple<Integer,String>> attValues; //values of the custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
+    List<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
   end NODE;
 end Node;
 
@@ -108,6 +108,7 @@ public uniontype Edge
     LineType lineType;
     Option<EdgeLabel> label;
     tuple<Option<ArrowType>,Option<ArrowType>> arrows;
+    List<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
   end EDGE;
 end Edge;
 
@@ -193,6 +194,7 @@ public function addEgde
   input LineType lineType;
   input Option<EdgeLabel> label;
   input tuple<Option<ArrowType>,Option<ArrowType>> arrows;
+  input List<tuple<Integer,String>> attValues;
   input Graph inG;
   output Graph outG;
 protected
@@ -203,7 +205,7 @@ protected
   list<Attribute> a;
 algorithm
   GRAPH(gid,d,n,e,a) := inG;
-  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows)::e,a);
+  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows,attValues)::e,a);
 end addEgde;
 
 public function addAttribute
@@ -489,20 +491,25 @@ algorithm
   oAcc := match (inEdge,inString,iAcc)
     local
       String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s;
+      List<String> attributeStrings;
       LineType lt;
       Option<ArrowType> sarrow,tarrow;
       Option<EdgeLabel> label;
       IOStream.IOStream is;
+      List<tuple<Integer,String>> edgeAttributes;
     
-    case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,label=label,arrows=(sarrow,tarrow)),_,_)
+    case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,label=label,arrows=(sarrow,tarrow),attValues=edgeAttributes),_,_)
       equation
         t = appendString(inString);
+        attributeStrings = List.map1(edgeAttributes, createAttributeString, 15);
         lt_str = getLineTypeString(lt);
         sl_str = getEdgeLabelString(label);
         sa_str = getArrowTypeString(sarrow);
         ta_str = getArrowTypeString(tarrow);
-        is = IOStream.appendList(iAcc, {
-          inString, "<edge id=\"", id, "\" source=\"", source, "\" target=\"", target, "\">\n",
+        
+        is = IOStream.appendList(iAcc, {inString, "<edge id=\"", id, "\" source=\"", source, "\" target=\"", target, "\">\n"});
+        is = IOStream.appendList(is, attributeStrings);
+        is = IOStream.appendList(is, {
           t, "<data key=\"d8\"/>\n",
           t, "<data key=\"d9\"><![CDATA[UMLuses]]></data>\n",
           t, "<data key=\"d10\">\n",

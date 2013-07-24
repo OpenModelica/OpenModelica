@@ -145,18 +145,18 @@ algorithm
       //Create mapping to SimEq
       (equationSccMapping,lastEqMappingIdx) = createSimEqToSccMapping(inBackendDAE);
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
-      print("createSimCode with " +& intString(listLength(allComps)) +& " Components\n");
+      //print("createSimCode with " +& intString(listLength(allComps)) +& " Components\n");
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simEqSccMapping = convertToSimEqSccMapping(equationSccMapping, lastEqMappingIdx);
 
-      dumpSccSimEqMapping(sccSimEqMapping);
+      //dumpSccSimEqMapping(sccSimEqMapping);
       
       //Create TaskGraph
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
       //Append the costs to the taskGraphMeta
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_prof.xml" , simEqSccMapping, taskGraphData);
-      HpcOmTaskGraph.printTaskGraph(taskGraph);
-      HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
+      //HpcOmTaskGraph.printTaskGraph(taskGraph);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");    
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName);
      
@@ -168,7 +168,10 @@ algorithm
       //print("ODE-TASKGRAPH\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
-      
+
+      //fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
+      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);
+     
       //assign levels(as an node property in the .graphml) to the nodes in the taskGraph. all nodes in one level can be computed in parallel
       //HpcOmTaskGraph.arrangeGraphInLevels(taskGraphOde,taskGraphDataOde);
             
@@ -182,8 +185,8 @@ algorithm
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);  
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);
+      //fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
+      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);
       
       uniqueEqIndex = 1;
       ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
@@ -454,9 +457,7 @@ algorithm
                                                         symjacs=symJacs)) = inBackendDAE; //dlow
 
       // equation generation for euler, dassl2, rungekutta
-      print("createSimCode_0\n");
       (uniqueEqIndex, _, _, _, tempvars, equationSccMapping) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});    
-      print("createSimCode_1\n");
       then (equationSccMapping,uniqueEqIndex);
     else then fail();
   end matchcontinue;
@@ -473,7 +474,7 @@ protected
 
 algorithm
   tmpMapping := arrayCreate(numOfSccs,{});
-  print("convertToSccSimEqMapping with " +& intString(numOfSccs) +& " sccs.\n");
+  //print("convertToSccSimEqMapping with " +& intString(numOfSccs) +& " sccs.\n");
   _ := List.fold(iMapping, convertToSccSimEqMapping1, tmpMapping);
   oMapping := tmpMapping;
   
@@ -490,7 +491,7 @@ protected
   
 algorithm
   (i1,i2) := iMapping;
-  print("convertToSccSimEqMapping1 accessing index " +& intString(i2) +& ".\n");
+  //print("convertToSccSimEqMapping1 accessing index " +& intString(i2) +& ".\n");
   tmpList := arrayGet(iSccMapping,i2);
   tmpList := i1 :: tmpList;
   oSccMapping := arrayUpdate(iSccMapping,i2,tmpList);
@@ -521,7 +522,7 @@ protected
   
 algorithm
   (simEqIdx,sccIdx) := iSimEqTuple;
-  print("convertToSimEqSccMapping1 " +& intString(simEqIdx) +& " .. " +& intString(sccIdx) +& " iMapping_len: " +& intString(arrayLength(iMapping)) +& "\n");
+  //print("convertToSimEqSccMapping1 " +& intString(simEqIdx) +& " .. " +& intString(sccIdx) +& " iMapping_len: " +& intString(arrayLength(iMapping)) +& "\n");
   oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
 end convertToSimEqSccMapping1;
 

@@ -99,8 +99,7 @@ algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   (graph,graphData) := getEmptyTaskGraph(1);
   ((graph,graphData)) := List.fold1(systs,createTaskGraph0,shared,(graph,graphData));  
-  fileName := ("taskGraph"+&filenamePrefix+&".graphml"); 
-  dumpAsGraphMLSccLevel(graph,graphData,fileName);
+
   //printTaskGraph(graph);
   //printTaskGraphMeta(graphData);
   graphOut := graph;
@@ -195,7 +194,7 @@ algorithm
       equation
         tmpSystMapping = List.fold1(comps, getSystemComponents1, isyst, tmpSystMapping);
         tmpComps = listAppend(tmpComps,comps);
-        print("getSystemComponents0 number of components " +& intString(listLength(comps)) +& "\n");
+        //print("getSystemComponents0 number of components " +& intString(listLength(comps)) +& "\n");
       then ((tmpComps, tmpSystMapping));
     else
       equation
@@ -504,7 +503,7 @@ protected
 algorithm
   (sourceSccIdx,edgeNumOfVars,edgeReqCycles) := iEdgeSource;
   oldList := arrayGet(iCommCosts, sourceSccIdx);
-  print("updateCommCostBySccRef1 added edge from " +& intString(sourceSccIdx) +& " to " +& intString(iEdgeTarget) +& "\n");
+  //print("updateCommCostBySccRef1 added edge from " +& intString(sourceSccIdx) +& " to " +& intString(iEdgeTarget) +& "\n");
   oCommCosts := arrayUpdate(iCommCosts, sourceSccIdx, (iEdgeTarget,edgeNumOfVars,edgeReqCycles)::oldList);
   
 end updateCommCostBySccRef1;
@@ -2415,7 +2414,7 @@ public function dumpAsGraphMLSccLevel "function dumpAsGraphMLSccLevel
   input String fileName;
 protected
   GraphML.Graph graph;
-  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx;
+  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx, commCostAttIdx;
   list<Integer> compIdc;
 algorithm
   _ := match(iGraph, iGraphData, fileName)
@@ -2426,8 +2425,9 @@ algorithm
         (calcTimeAttIdx,graph) = GraphML.addAttribute("-1", "CalcTime", GraphML.TYPE_DOUBLE(), GraphML.TARGET_NODE(), graph);
         (compIdcAttIdx,graph) = GraphML.addAttribute("", "Components", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
         (yCoordAttIdx,graph) = GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
+        (commCostAttIdx,graph) = GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graph);
         compIdc = List.intRange(arrayLength(iGraph));
-        graph = List.fold3(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx, compIdcAttIdx,yCoordAttIdx), graph);
+        graph = List.fold3(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx, compIdcAttIdx,yCoordAttIdx,commCostAttIdx), graph);
         GraphML.dumpGraph(graph, fileName);
       then ();
   end match;
@@ -2440,14 +2440,14 @@ protected function addNodeToGraphML "function addNodeToGraphML
   input Integer nodeIdx;
   input TaskGraph tGraphIn;
   input TaskGraphMeta tGraphDataIn;
-  input tuple<Integer,Integer,Integer,Integer> attIdc; //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx>
+  input tuple<Integer,Integer,Integer,Integer,Integer> attIdc; //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx>
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 algorithm
   oGraph := matchcontinue(nodeIdx,tGraphIn,tGraphDataIn,attIdc,iGraph)
     local
       GraphML.Graph tmpGraph;
-      Integer opCount, calcTimeAttIdx, opCountAttIdx, compIdcAttIdx, yCoordAttIdx, yCoord;
+      Integer opCount, calcTimeAttIdx, opCountAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, yCoord;
       Real calcTime;
       Integer primalComp;
       list<Integer> childNodes;
@@ -2469,11 +2469,12 @@ algorithm
     case(_,_,_,_,_)
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
-        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx) = attIdc;
+        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         true = listLength(components)==1; 
         primalComp = listGet(components,1);
+        //print("node in the taskGraph "+&intString(nodeIdx)+&" primalComp "+&intString(primalComp)+&"\n");
         compText = arrayGet(nodeNames,primalComp);        
         nodeDesc = arrayGet(nodeDescs,primalComp);
         ((_,calcTime)) = arrayGet(exeCosts,primalComp);
@@ -2486,14 +2487,14 @@ algorithm
         childNodes = arrayGet(tGraphIn,nodeIdx);
         componentsString = List.fold(components, addNodeToGraphML2, " ");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)),((yCoordAttIdx,yCoordString))}, iGraph);
-        tmpGraph = List.fold2(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, tmpGraph);
+        tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
         tmpGraph;
     case(_,_,_,_,_)
       equation
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
-        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx) = attIdc;
+        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
@@ -2506,7 +2507,7 @@ algorithm
         childNodes = arrayGet(tGraphIn,nodeIdx);
         componentsString = List.fold(components, addNodeToGraphML2, " ");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString))}, iGraph);
-        tmpGraph = List.fold2(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, tmpGraph);
+        tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
         tmpGraph;
     case(_,_,_,_,_)
@@ -2553,16 +2554,26 @@ protected function addDepToGraph "function addSccDepToGraph
   input Integer childIdx;
   input Integer parentIdx;
   input TaskGraphMeta tGraphDataIn;
+  input Integer commCostAttIdx;
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 protected
   array<list<tuple<Integer,Integer,Integer>>> commCosts;  
-  Integer commCost;
-  String refSccCountStr;
+  Integer commCost, numOfCommVars, primalCompParent, primalCompChild;
+  String refSccCountStr, commCostString, numOfCommVarsString;
+  array<list<Integer>> inComps; 
   array<Integer> nodeMark;
+  list<Integer> components;
 algorithm
-  TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark) := tGraphDataIn;
-  oGraph := GraphML.addEgde("Edge" +& intString(childIdx) +& intString(parentIdx), "Node" +& intString(parentIdx), "Node" +& intString(childIdx), GraphML.COLOR_BLACK, GraphML.LINE(), SOME(GraphML.EDGELABEL("NS",GraphML.COLOR_BLACK)), (SOME(GraphML.ARROWSTANDART()),NONE()), iGraph);
+  TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps) := tGraphDataIn;
+  components := arrayGet(inComps,childIdx);
+  primalCompChild := List.last(components);
+  components := arrayGet(inComps,parentIdx);
+  primalCompParent := List.last(components);
+  (numOfCommVars,commCost) := getCommunicationCost(primalCompParent,primalCompChild,commCosts);
+  numOfCommVarsString := intString(numOfCommVars);
+  commCostString := intString(commCost);
+  oGraph := GraphML.addEgde("Edge" +& intString(childIdx) +& intString(parentIdx), "Node" +& intString(parentIdx), "Node" +& intString(childIdx), GraphML.COLOR_BLACK, GraphML.LINE(), SOME(GraphML.EDGELABEL(numOfCommVarsString,GraphML.COLOR_BLACK)), (SOME(GraphML.ARROWSTANDART()),NONE()), {(commCostAttIdx, commCostString)}, iGraph);
 end addDepToGraph;
 
 protected function getCommunicationCost " gets the communication cost for an edge from parent node to child node.
@@ -2570,14 +2581,16 @@ protected function getCommunicationCost " gets the communication cost for an edg
   input Integer parentIdx;
   input Integer childIdx;
   input array<list<tuple<Integer,Integer,Integer>>> commCosts; 
+  output Integer numOfVarsOut;
   output Integer costOut;
 protected
   list<tuple<Integer,Integer,Integer>> commRow;
   tuple<Integer,Integer,Integer> commEntry;
 algorithm
-  commRow := arrayGet(commCosts,childIdx);
-  commEntry := getTupleByFirstEntry(commRow,parentIdx);
-  (_,costOut,_) := commEntry;  
+  //print("Try to get comm cost for edge from " +& intString(parentIdx) +& " to " +& intString(childIdx) +& "\n");
+  commRow := arrayGet(commCosts,parentIdx);
+  commEntry := getTupleByFirstEntry(commRow,childIdx);
+  (_,numOfVarsOut,costOut) := commEntry;  
 end getCommunicationCost;
 
 
@@ -3128,8 +3141,6 @@ algorithm
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
   //oneChildren := List.fold1(List.intRange(listLength(oneChildren)),checkParentNode,graphIn,oneChildren);  // deletes the lists with just one entry that have more than one parent
   (graphOut,graphDataOut) := contractNodesInGraph(oneChildren,graphIn,graphDataIn);
-  fileName := "taskgraph_1_"+&filenamePrefix+&".graphml";
-  dumpAsGraphMLSccLevel(graphOut,graphDataOut,fileName);
 end mergeSimpleNodes;
 
 
@@ -3604,23 +3615,25 @@ protected
   TaskGraphMeta tmpTaskGraphMeta;
   array<Real> reqTimeOp; //Calculation time for each scc
   array<list<Integer>> inComps;
+  array<list<tuple<Integer, Integer, Integer>>> commCosts;
 
 algorithm
   oTaskGraphMeta := matchcontinue(iDae,benchFileName,simEqSccMapping,iTaskGraphMeta)
-    case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps))
+    case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
       equation
-        (comps,compMapping) = getSystemComponents(iDae); 
-        ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
-        reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromXml(benchFileName);
-        reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
-        reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
-        reqTimeOp = arrayCreate(listLength(comps),-1.0);
-        reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simEqSccMapping, reqTimeOp);
-        ((_,tmpTaskGraphMeta)) = Util.arrayFold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
-      then tmpTaskGraphMeta;
+			  (comps,compMapping) = getSystemComponents(iDae); 
+			  ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
+			  reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromXml(benchFileName);
+			  reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
+			  reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
+			  reqTimeOp = arrayCreate(listLength(comps),-1.0);
+			  reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simEqSccMapping, reqTimeOp);
+			  commCosts = createCommCosts(commCosts,1,reqTimeCom);
+			  ((_,tmpTaskGraphMeta)) = Util.arrayFold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
+			then tmpTaskGraphMeta;
     else
       equation
-        print("Warning: Create execution costs failed. Maybe the _prof.xml-file is missing.\n");
+        print("Warning: Create costs failed. Maybe the _prof.xml-file is missing.\n");
       then iTaskGraphMeta;
   end matchcontinue;  
 end createCosts;
@@ -3632,7 +3645,6 @@ protected function convertSimEqToSccCosts
   output array<Real> oReqTimeOp; //calcTime for each scc
   
 algorithm
-  print("convertSimEqToSccCosts\n");
   ((_,oReqTimeOp)) := Util.arrayFold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimEqSccMapping, (0,iReqTimeOp));  
 end convertSimEqToSccCosts;
 
@@ -3669,11 +3681,11 @@ algorithm
   oReqTime := matchcontinue(iReqTime,iSimEqCalcTime, iSimEqIdx, iSimEqSccMapping)
     case(reqTime,_,_,_)
       equation
-        true = intGe(arrayLength(iSimEqSccMapping),iSimEqIdx);
-        sccIdx = arrayGet(iSimEqSccMapping, iSimEqIdx);
-        true = intGt(sccIdx,0);
-        reqTime = arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
-        print("convertSimEqToSccCosts2 sccIdx: " +& intString(sccIdx) +& " reqTime: " +& realString(iSimEqCalcTime) +& "\n");
+	      true = intGe(arrayLength(iSimEqSccMapping),iSimEqIdx);
+	      sccIdx = arrayGet(iSimEqSccMapping, iSimEqIdx);
+	      true = intGt(sccIdx,0);
+	      reqTime = arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
+	      //print("convertSimEqToSccCosts2 sccIdx: " +& intString(sccIdx) +& " reqTime: " +& realString(iSimEqCalcTime) +& "\n");
       then
         reqTime;
     else
@@ -3785,6 +3797,49 @@ algorithm
 end createExecCost0;
 
 
+protected function createCommCosts "function createCommCosts
+  author: marcusw
+  Extend the given commCost values with a concrete cycle-count."
+  input array<list<tuple<Integer, Integer, Integer>>> iCosts;
+  input Integer iCurrentIndex;
+  input tuple<Integer,Integer> iReqTimeCom; //the required cycles to share x-values between two cores. The number of cycles is described as linear function y=m*x+1 (first value is m, second n).
+  output array<list<tuple<Integer, Integer, Integer>>> oCosts;
+  
+protected
+  array<list<tuple<Integer, Integer, Integer>>> tmpCosts;
+  list<tuple<Integer, Integer, Integer>> currentList;
+  
+algorithm
+  oCosts := matchcontinue(iCosts, iCurrentIndex, iReqTimeCom)
+    case(tmpCosts,_,_)
+      equation
+        true = intLe(iCurrentIndex, arrayLength(iCosts));
+        currentList = arrayGet(tmpCosts,iCurrentIndex);
+        currentList = List.map1(currentList,createCommCosts0,iReqTimeCom);
+        tmpCosts = arrayUpdate(tmpCosts,iCurrentIndex,currentList);
+        tmpCosts = createCommCosts(tmpCosts, iCurrentIndex+1,iReqTimeCom);
+      then tmpCosts;
+    else then iCosts;
+  end matchcontinue;
+end createCommCosts;
+
+protected function createCommCosts0 "function createCommCosts0
+  author: marcusw
+  Helper function for createCommCosts to add the concrete cycle-count to the given tuple."
+  input tuple<Integer, Integer, Integer> iCommTuple;
+  input tuple<Integer,Integer> iReqTimeCom;
+  output tuple<Integer, Integer, Integer> oCommTuple;
+  
+protected
+  Integer targetNodeIdx,numOfVars,reqTimeM,reqTimeN;
+  
+algorithm
+  (targetNodeIdx,numOfVars,_) := iCommTuple;
+  (reqTimeM,reqTimeN) := iReqTimeCom;
+  oCommTuple := (targetNodeIdx,numOfVars,reqTimeN + numOfVars*reqTimeM);
+  
+end createCommCosts0;
+
 protected function countOperations "function countOperations
   author: marcusw
   Count the operations of the given component."
@@ -3830,38 +3885,6 @@ algorithm
       then ((op1,op2,op3));
   end matchcontinue;
 end countOperations;
-
-
-protected function createCommCosts "function createCommCosts
-  author: marcusw
-  Calculates the communication costs for the given edge-list."
-  input list<tuple<Integer,Integer,Integer>> iCommCosts; //<child,numOfVars,cost>
-  input tuple<Integer,Integer> reqTimeCom;
-  output list<tuple<Integer,Integer,Integer>> oCommCosts;
-
-algorithm
-  oCommCosts := List.map1(iCommCosts, createCommCosts0, reqTimeCom);
-
-end createCommCosts;
-
-
-protected function createCommCosts0 "function createCommCosts0
-  author: marcusw
-  Helper function to create the communcation costs for an edge-list."
-  input tuple<Integer,Integer,Integer> iCommCost;
-  input tuple<Integer,Integer> reqTimeCom;
-  output tuple<Integer,Integer,Integer> oCommCost;
-  
-protected
-  Integer reqTimeComM, reqTimeComN, sccIdx, sccNumOfVars;
-  
-algorithm
-  (reqTimeComM,reqTimeComN) := reqTimeCom;
-  (sccIdx,sccNumOfVars,_) := iCommCost;
-  oCommCost := ((sccIdx,sccNumOfVars,reqTimeComM*sccNumOfVars + reqTimeComN));
-  
-end createCommCosts0;
-
 
 public function validateTaskGraphMeta "function validateTaskGraphMeta
   author: marcusw
@@ -3963,7 +3986,6 @@ algorithm
   TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   nodeMark := List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
   graphData := TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark);
-  dumpAsGraphMLSccLevel(graphIn,graphData,"taskGraph.graphml");
 end arrangeGraphInLevels;
 
 

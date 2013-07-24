@@ -93,7 +93,7 @@ algorithm
   oTuples := matchcontinue(iList, iTuples)
   case(numOfCalcs::calcTimeSum::eqIdx::rest,_)
     equation
-      print("readCalcTimesFromXml1 eqIdx: " +& intString(realInt(eqIdx)) +& " numOfCalcs: " +& intString(realInt(numOfCalcs)) +& " calcTime: " +& realString(calcTimeSum) +& " \n");
+      //print("readCalcTimesFromXml1 eqIdx: " +& intString(realInt(eqIdx)) +& " numOfCalcs: " +& intString(realInt(numOfCalcs)) +& " calcTime: " +& realString(calcTimeSum) +& " \n");
       intNumOfCalcs = realInt(numOfCalcs);
       intEqIdx = realInt(eqIdx);
       tmpTuples = readCalcTimesFromXml1(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);

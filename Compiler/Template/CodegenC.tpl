@@ -2440,17 +2440,9 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
    */
   static void eqFunction_<%ix%>(DATA *data)
   {
-  #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_TICK_EQEXT(<%ix%>);
-    //printf("offset %i \n", data->modelData.modelDataXml.nEquations + data->modelData.modelDataXml.nProfileBlocks);
-  #endif
     <%&varD%>
     <%x%>
-  #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_ACC_EQEXT(<%ix%>);
-  #endif
   }
-
   >>
   <<
   eqFunction_<%ix%>(data);
@@ -2471,7 +2463,13 @@ case SIMULATION(genDiscrete=true) then
   else
   let ix = equationIndex(eq)
   <<
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
   eqFunction_<%ix%>(data);
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
   >>
 else
  match eq
@@ -2480,7 +2478,13 @@ else
   else
   let ix = equationIndex(eq)
   <<
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
   eqFunction_<%ix%>(data);
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
   >>
 end equationNames_;
 

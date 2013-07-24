@@ -7619,7 +7619,7 @@ algorithm
   (id,graph) := inTpl;
   v := intAbs(V);
   ln := Util.if_(intGt(V,0),GraphML.LINE(),GraphML.DASHED());
-  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,ln,NONE(),(NONE(),NONE()),graph);
+  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,ln,NONE(),(NONE(),NONE()),{},graph);
   outTpl := ((id+1,graph));
 end addEdgeGraph;
 
@@ -7658,7 +7658,7 @@ algorithm
   absv := intAbs(v);
   arrow := Util.if_(intEq(r,absv),(SOME(GraphML.ARROWSTANDART()),NONE()),(NONE(),SOME(GraphML.ARROWSTANDART())));
   lt := Util.if_(intGt(v,0),GraphML.LINE(),GraphML.DASHED());
-  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(absv),GraphML.COLOR_BLACK,lt,NONE(),arrow,graph);
+  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(absv),GraphML.COLOR_BLACK,lt,NONE(),arrow,{},graph);
   outTpl := ((id+1,r,graph));
 end addDirectedEdgeGraph;
 
@@ -7698,7 +7698,7 @@ algorithm
   (id,r,text,graph) := inTpl;
   arrow := Util.if_(intEq(r,v),(SOME(GraphML.ARROWSTANDART()),NONE()),(NONE(),SOME(GraphML.ARROWSTANDART())));
   label := Util.if_(intEq(r,v),SOME(GraphML.EDGELABEL(text,"#0000FF")),NONE());
-  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),label,arrow,graph);
+  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),label,arrow,{},graph);
   outTpl := ((id+1,r,text,graph));
 end addDirectedNumEdgeGraph;
 
@@ -7757,7 +7757,7 @@ algorithm
   (graph,id) := inGraph;
   evar :=ass2[e];
   arrow := Util.if_(intGt(evar,0) and intEq(evar,v) ,SOME(GraphML.ARROWSTANDART()),NONE());
-  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),prefix +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),(NONE(),arrow),graph);
+  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),prefix +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),(NONE(),arrow),{},graph);
   outGraph := (graph,id+1);
 end addEdge;
 
@@ -7888,7 +7888,7 @@ algorithm
         true = intGt(v,0);
         text = intString(solvabilityWights(s));
         label = SOME(GraphML.EDGELABEL(text,"#0000FF"));
-        graph = GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),label,(NONE(),NONE()),graph);
+        graph = GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),label,(NONE(),NONE()),{},graph);
       then
         ((id+1,graph));
     else then inTpl;
@@ -8014,7 +8014,7 @@ algorithm
         c = varcomp[v];
         false = intEq(markarray[c],mark);
         _ = arrayUpdate(markarray,c,mark);
-        graph = GraphML.addEgde("e" +& intString(id),"n" +& intString(c),"n" +& intString(iN),GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),(SOME(GraphML.ARROWSTANDART()),NONE()),iGraph);
+        graph = GraphML.addEgde("e" +& intString(id),"n" +& intString(c),"n" +& intString(iN),GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),(SOME(GraphML.ARROWSTANDART()),NONE()),{},iGraph);
         (n,graph) = addCompEdgesGraph(rest,varcomp,markarray,mark,iN,id+1,graph);
       then
         (n,graph);
