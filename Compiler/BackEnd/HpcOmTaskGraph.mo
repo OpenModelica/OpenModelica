@@ -3621,16 +3621,16 @@ algorithm
   oTaskGraphMeta := matchcontinue(iDae,benchFileName,simEqSccMapping,iTaskGraphMeta)
     case(BackendDAE.DAE(shared=shared),_,_,TASKGRAPHMETA(inComps=inComps, commCosts=commCosts))
       equation
-			  (comps,compMapping) = getSystemComponents(iDae); 
-			  ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
-			  reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromXml(benchFileName);
-			  reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
-			  reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
-			  reqTimeOp = arrayCreate(listLength(comps),-1.0);
-			  reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simEqSccMapping, reqTimeOp);
-			  commCosts = createCommCosts(commCosts,1,reqTimeCom);
-			  ((_,tmpTaskGraphMeta)) = Util.arrayFold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
-			then tmpTaskGraphMeta;
+        (comps,compMapping) = getSystemComponents(iDae); 
+        ((_,reqTimeCom)) = HpcOmBenchmark.benchSystem();
+        reqTimeOpLstSimCode = HpcOmBenchmark.readCalcTimesFromXml(benchFileName);
+        reqTimeOpSimCode = arrayCreate(listLength(reqTimeOpLstSimCode),(-1,-1.0));
+        reqTimeOpSimCode = List.fold(reqTimeOpLstSimCode, createCosts1, reqTimeOpSimCode);
+        reqTimeOp = arrayCreate(listLength(comps),-1.0);
+        reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, simEqSccMapping, reqTimeOp);
+        commCosts = createCommCosts(commCosts,1,reqTimeCom);
+        ((_,tmpTaskGraphMeta)) = Util.arrayFold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
+      then tmpTaskGraphMeta;
     else
       equation
         print("Warning: Create costs failed. Maybe the _prof.xml-file is missing.\n");
@@ -3681,11 +3681,11 @@ algorithm
   oReqTime := matchcontinue(iReqTime,iSimEqCalcTime, iSimEqIdx, iSimEqSccMapping)
     case(reqTime,_,_,_)
       equation
-	      true = intGe(arrayLength(iSimEqSccMapping),iSimEqIdx);
-	      sccIdx = arrayGet(iSimEqSccMapping, iSimEqIdx);
-	      true = intGt(sccIdx,0);
-	      reqTime = arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
-	      //print("convertSimEqToSccCosts2 sccIdx: " +& intString(sccIdx) +& " reqTime: " +& realString(iSimEqCalcTime) +& "\n");
+        true = intGe(arrayLength(iSimEqSccMapping),iSimEqIdx);
+        sccIdx = arrayGet(iSimEqSccMapping, iSimEqIdx);
+        true = intGt(sccIdx,0);
+        reqTime = arrayUpdate(reqTime,sccIdx, iSimEqCalcTime);
+        //print("convertSimEqToSccCosts2 sccIdx: " +& intString(sccIdx) +& " reqTime: " +& realString(iSimEqCalcTime) +& "\n");
       then
         reqTime;
     else
