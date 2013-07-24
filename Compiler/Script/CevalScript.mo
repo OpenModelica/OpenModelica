@@ -1927,7 +1927,6 @@ algorithm
         print("(Transposed) Total number of modules: " +& intString(listLength(depstransposed)) +& "\n");
         str = stringDelimitList(List.map(depstransposed, transitiveDependencyString), "\n");
         print(str +& "\n");
-        // v = ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
       then (cache,Values.META_FAIL(),st);
 
     case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={})},(st as Interactive.SYMBOLTABLE(ast = p)),_)
