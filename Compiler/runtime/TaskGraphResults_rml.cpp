@@ -39,9 +39,9 @@ void TaskGraphResults_5finit(void)
 {
 }
 
-RML_BEGIN_LABEL(TaskGraphResults__cmpTaskGraphs)
+RML_BEGIN_LABEL(TaskGraphResults__checkTaskGraph)
 {
-  rmlA0 = TaskGraphResultsCmp_cmpTaskGraphs(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1));
+  rmlA0 = TaskGraphResultsCmp_checkTaskGraph(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -2286,13 +2286,13 @@ external "builtin";
 annotation(preferredView="text");
 end compareSimulationResults;
 
-public function compareTaskGraphResults "compares two task graphs."
+public function checkTaskGraph "Checks if the given taskgraph has the same structure as the reference taskgraph and if all attributes are set correctly."
   input String filename;
   input String reffilename;
   output String[:] result;
 external "builtin";
 annotation(preferredView="text");
-end compareTaskGraphResults;
+end checkTaskGraph;
 
 function val "Return the value of a variable at a given time in the simulation results"
   input VariableName var;

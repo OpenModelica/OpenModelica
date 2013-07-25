@@ -9,9 +9,9 @@ extern "C" {
 #include "TaskGraphResultsCmp.cpp"
 
 extern "C" {
-void* TaskGraphResults_cmpTaskGraphs(const char *filename,const char *reffilename)
+void* TaskGraphResults_checkTaskGraph(const char *filename,const char *reffilename)
 {
-  return TaskGraphResultsCmp_cmpTaskGraphs(filename,reffilename);
+  return TaskGraphResultsCmp_checkTaskGraph(filename,reffilename);
 }
 
 }

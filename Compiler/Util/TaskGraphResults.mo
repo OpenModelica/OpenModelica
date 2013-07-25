@@ -32,17 +32,17 @@
 encapsulated package TaskGraphResults
 " file:        TaskGraphResults.mo
   package:     TaskGraphResults
-  description: Compares two task-graph files.
+  description: Checks if the given taskGraph has the same structure as the reference graph and correct node and edge values.
 
   RCS: $Id: TaskGraphResults.mo 2013-06-11 marcusw $
 
   "
   
-public function cmpTaskGraphs
+public function checkTaskGraph
   input String filename;
   input String reffilename;
   output list<String> res;
-  external "C" res=TaskGraphResults_cmpTaskGraphs(filename,reffilename) annotation(Library = "omcruntime");
-end cmpTaskGraphs;
+  external "C" res=TaskGraphResults_checkTaskGraph(filename,reffilename) annotation(Library = "omcruntime");
+end checkTaskGraph;
 
 end TaskGraphResults;
