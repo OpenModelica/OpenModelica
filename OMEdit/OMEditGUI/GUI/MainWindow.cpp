@@ -142,13 +142,13 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
    */
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindText>("FindText");
-    // Create an object of WelcomePageWidget
+  // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActions();
   // create the OMEdit About widget
   mpAboutOMEditDialog = new AboutOMEditWidget(this);
   mpAboutOMEditDialog->hide();
-  // craete an instance of InfoBar
+  // create an instance of InfoBar
   mpInfoBar = new InfoBar(this);
   mpInfoBar->hide();
   //Create a centralwidget for the main window

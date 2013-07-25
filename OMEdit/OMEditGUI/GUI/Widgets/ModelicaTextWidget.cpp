@@ -977,6 +977,7 @@ FindReplaceDialog::FindReplaceDialog (QWidget *pParent)
 
 void FindReplaceDialog::show()
 {
+  mpFindComboBox->lineEdit()->selectAll();
   setVisible(true);
 }
 
