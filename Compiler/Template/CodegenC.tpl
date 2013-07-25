@@ -3403,8 +3403,9 @@ template contextCref(ComponentRef cr, Context context)
     >>
   else
     match context
-    case FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(crefStr(cr))
-    case PARALLEL_FUNCTION_CONTEXT(__) then "_" + System.unquoteIdentifier(crefStr(cr))
+    case FUNCTION_CONTEXT(__)
+    case PARALLEL_FUNCTION_CONTEXT(__)
+      then "_" + System.unquoteIdentifier(crefStr(cr))
     else cref(cr)
 end contextCref;
 
@@ -5968,7 +5969,7 @@ case CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
   <<
   <%preExp%>
   <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "." else "$P"%><%var.name%> = <%rhsStr%>._<%var.name%>;'
+    '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "._" else "$P"%><%var.name%> = <%rhsStr%>._<%var.name%>;'
   ; separator="\n"
   %>
   >>
