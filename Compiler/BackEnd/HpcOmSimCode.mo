@@ -138,6 +138,8 @@ algorithm
       String fileName;
       HpcOmTaskGraph.TaskGraphMeta taskGraphData1;
       list<list<Integer>> parallelSets;
+      list<list<Integer>> criticalPaths;
+      Real cpCosts;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
@@ -157,9 +159,9 @@ algorithm
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_prof.xml" , simEqSccMapping, taskGraphData);
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
+                 
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");    
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName);
-     
       
       // get the task graph for the ODEsystem
       taskGraphOde = arrayCopy(taskGraph);
@@ -168,18 +170,17 @@ algorithm
       //print("ODE-TASKGRAPH\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
-
+           
       //fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
-      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);
-     
-      //assign levels(as an node property in the .graphml) to the nodes in the taskGraph. all nodes in one level can be computed in parallel
-      //HpcOmTaskGraph.arrangeGraphInLevels(taskGraphOde,taskGraphDataOde);
+      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);  
+           
+      //compute critical path on cost-level and determine the level of the node
+      (criticalPaths,cpCosts) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
             
-      
       // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
-      taskGraph1 = arrayCopy(taskGraphOde);
-      taskGraphData1 = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphDataOde);
-      (taskGraph,taskGraphData) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphData1,inBackendDAE,filenamePrefix);
+      //taskGraph1 = arrayCopy(taskGraphOde);
+      //taskGraphData1 = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphDataOde);
+      //(taskGraph,taskGraphData) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphData1,inBackendDAE,filenamePrefix);
       //print("MERGED GRAPH\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
