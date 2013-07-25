@@ -1978,8 +1978,8 @@ ModelWidget::ModelWidget(bool newClass, LibraryTreeNode *pLibraryTreeNode, Model
   }
   else
   {
-    getModelComponents(getLibraryTreeNode()->getNameStructure());
     getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
+    getModelComponents(getLibraryTreeNode()->getNameStructure());
     getModelConnections(getLibraryTreeNode()->getNameStructure());
   }
   mpIconGraphicsScene->clearSelection();
@@ -2482,8 +2482,8 @@ void ModelWidget::refresh()
   mpDiagramGraphicsView->removeAllConnections();
   mpDiagramGraphicsView->scene()->clear();
   /* get model components, connection and shapes. */
-  getModelComponents(getLibraryTreeNode()->getNameStructure());
   getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
+  getModelComponents(getLibraryTreeNode()->getNameStructure());
   getModelConnections(getLibraryTreeNode()->getNameStructure());
   QApplication::restoreOverrideCursor();
 }
