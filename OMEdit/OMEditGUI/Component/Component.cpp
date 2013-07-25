@@ -1589,7 +1589,7 @@ void ComponentInfo::parseComponentInfoString(QString value)
   }
   // read the array index value
   mArrayIndex = StringHandler::removeFirstLastCurlBrackets(list.at(11));
-  if ((mArrayIndex.compare("n") == 0) || (mArrayIndex.compare(":") == 0))
+  if (!mArrayIndex.isEmpty())
     mIsArray = true;
 }
 
