@@ -44,6 +44,7 @@ Component::Component(QString annotation, QString name, QString className, String
   : QGraphicsItem(pParent), mName(name), mClassName(className), mType(type), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
     mpParentComponent(pParent)
 {
+  setZValue(2000);
   mIsLibraryComponent = false;
   mIsInheritedComponent = inheritedComponent;
   initialize();
@@ -177,7 +178,7 @@ void Component::initialize()
   mpCoOrdinateSystem->setGrid(QPointF(2, 2));
   //Construct the temporary polygon that is shown when scaling
   mpResizerRectangle = new QGraphicsRectItem;
-  mpResizerRectangle->setZValue(1001);  // set to a very high value
+  mpResizerRectangle->setZValue(3000);  // set to a very high value
   if (mpGraphicsView) mpGraphicsView->scene()->addItem(mpResizerRectangle);
   QPen pen;
   pen.setStyle(Qt::DotLine);

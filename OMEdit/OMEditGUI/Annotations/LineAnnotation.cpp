@@ -77,7 +77,7 @@ LineAnnotation::LineAnnotation(Component *pStartComponent, GraphicsView *pGraphi
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(-1.0);
+  setZValue(1000);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -93,7 +93,7 @@ LineAnnotation::LineAnnotation(QString annotation, bool inheritedShape, Componen
 {
   setFlag(QGraphicsItem::ItemIsSelectable);
   mLineType = LineAnnotation::ConnectionType;
-  setZValue(-1.0);
+  setZValue(1000);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
