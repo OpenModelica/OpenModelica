@@ -46,7 +46,6 @@
 #include <map>
 #include <QtWebKit>
 
-
 #include "Component.h"
 #include "StringHandler.h"
 #include "Helper.h"
@@ -165,7 +164,7 @@ public:
   QAction* getFlipVerticalAction();
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, QString className, QString transformationString, QPointF point, StringHandler::ModelicaClasses type,
-                          bool addObject = true, bool openingClass = false, bool inheritedClass = false, bool extendsClass = false);
+                          bool addObject = true, bool openingClass = false, bool inheritedClass = false);
   void addComponentObject(Component *pComponent);
   void deleteComponentObject(Component *pComponent);
   Component* getComponentObject(QString componentName);

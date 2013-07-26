@@ -39,7 +39,7 @@
 #include "ComponentProperties.h"
 
 Component::Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-                     QPointF position, bool inheritedComponent, bool extendsClass, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView,
+                     QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView,
                      Component *pParent)
   : QGraphicsItem(pParent), mName(name), mClassName(className), mType(type), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
     mpParentComponent(pParent)
@@ -80,7 +80,7 @@ Component::Component(QString annotation, QString name, QString className, String
   connect(this, SIGNAL(componentTransformHasChanged()), SLOT(updatePlacementAnnotation()));
   // if type is connector and component is not a library component and not a system library class.
   bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary();
-  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary && !extendsClass)
+  if (mType == StringHandler::Connector && !isLibraryComponent() && !isSystemLibrary)
     connect(this, SIGNAL(componentClicked(Component*)), mpGraphicsView, SLOT(addConnection(Component*)));
 }
 
