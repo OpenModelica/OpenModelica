@@ -3901,27 +3901,40 @@ author: Waurich TUD 2013-07"
   input TaskGraphMeta graphDataIn;
   output list<list<Integer>> criticalPathOut;
   output Real cpCostsOut;
-protected
-  Integer rootParent;
-  list<Integer> rootNodes;
-  list<list<Integer>> parallelSets;
-  array<Integer> nodeMark;
-  array<list<Integer>> inComps;
-  array<tuple<Integer,Real>> nodeInfo; //array[nodeIdx]--> tuple(levelValue,costValue)
-  array<tuple<Integer,Integer>> nodeCoords;
 algorithm
-  TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeMark=nodeMark) := graphDataIn;
-  nodeInfo := arrayCreate(arrayLength(graphIn),(-1,-1.0));
-  nodeInfo := longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
-  //print("nodeInfo: \n");
-  //print(stringDelimitList(List.map(arrayList(nodeInfo),tupleToStringRealInt),"\n")+&"\n");
-  parallelSets := gatherParallelSets(nodeInfo);
-  //print("parallelSets :"+&stringDelimitList(List.map(parallelSets,printIntLst)," ; ")+&"\n");
-  //print("the number of parallel sets "+&intString(listLength(parallelSets))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
-  nodeCoords := getNodeCoords(parallelSets,graphIn);
-  nodeMark := List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
-  (criticalPathOut,cpCostsOut) := getCriticalPath(graphIn,graphDataIn,nodeInfo);
-  //print("the critical paths: "+&stringDelimitList(List.map(criticalPathOut,printIntLst)," ; ")+&" with the costs "+&realString(cpCostsOut)+&"\n");
+  (criticalPathOut,cpCostsOut) := matchcontinue(graphIn,graphDataIn)
+    local
+      Real cpCostsTmp;
+      Integer rootParent;
+      list<Integer> rootNodes;
+      list<list<Integer>> parallelSets;
+      list<list<Integer>> criticalPathTmp;
+      array<Integer> nodeMark;
+      array<list<Integer>> inComps;
+      array<tuple<Integer,Real>> nodeInfo; //array[nodeIdx]--> tuple(levelValue,costValue)
+      array<tuple<Integer,Integer>> nodeCoords;
+    case(_,_)
+      equation    
+        true = arrayLength(graphIn) <> 0;
+        TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeMark=nodeMark) = graphDataIn;
+        nodeInfo = arrayCreate(arrayLength(graphIn),(-1,-1.0));
+        nodeInfo = longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
+        //print("nodeInfo: \n");
+        //print(stringDelimitList(List.map(arrayList(nodeInfo),tupleToStringRealInt),"\n")+&"\n");
+        parallelSets = gatherParallelSets(nodeInfo);
+        //print("parallelSets :"+&stringDelimitList(List.map(parallelSets,printIntLst)," ; ")+&"\n");
+        //print("the number of parallel sets "+&intString(listLength(parallelSets))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
+        nodeCoords = getNodeCoords(parallelSets,graphIn);
+        nodeMark = List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
+        (criticalPathTmp,cpCostsTmp) = getCriticalPath(graphIn,graphDataIn,nodeInfo);
+        //print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,printIntLst)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
+      then
+        (criticalPathTmp,cpCostsTmp);
+    else
+      equation
+      then
+        ({},0.0);
+  end matchcontinue;
 end longestPathMethod;
 
 

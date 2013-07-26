@@ -170,12 +170,12 @@ algorithm
       //print("ODE-TASKGRAPH\n");
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
-           
-      //fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
-      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);  
-           
+                      
       //compute critical path on cost-level and determine the level of the node
       (criticalPaths,cpCosts) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+      
+      //fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
+      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);  
             
       // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
       //taskGraph1 = arrayCopy(taskGraphOde);
