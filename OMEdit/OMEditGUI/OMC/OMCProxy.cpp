@@ -66,6 +66,7 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpExpressionTextBox = new CustomExpressionBox(this);
+  connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(tr("Send"));
   connect(mpOMCLoggerSendButton, SIGNAL(clicked()), SLOT(sendCustomExpression()));
   // Set the OMC Logger widget Layout
