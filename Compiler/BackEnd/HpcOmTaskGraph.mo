@@ -2032,13 +2032,11 @@ author: Waurich TUD 2013-07"
   output array<Integer> arrayOut;
 protected
   list<Integer> deleteEntries;
-  list<Integer> arrayLst;
   array<Integer> arrayTmp;
 algorithm
   arrayTmp := Util.arrayMap1(arrayIn,invalidateEntry,deleteEntriesIn);
-  arrayLst := arrayList(arrayIn);
   deleteEntries := List.sort(deleteEntriesIn,intLt);
-  arrayOut := Util.arrayMap1(arrayTmp,removeContinuousEntries1,deleteEntriesIn); 
+  arrayOut := Util.arrayMap1(arrayTmp,removeContinuousEntries1,deleteEntries); 
 end removeContinuousEntries;
 
 
@@ -2484,7 +2482,8 @@ algorithm
         opCountString = intString(opCount);
         yCoordString = intString(yCoord);
         childNodes = arrayGet(tGraphIn,nodeIdx);
-        componentsString = List.fold(components, addNodeToGraphML2, " ");
+        //componentsString = List.fold(components, addNodeToGraphML2, " ");
+        componentsString = (" "+&intString(nodeIdx)+&" ");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)),((yCoordAttIdx,yCoordString))}, iGraph);
         tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
@@ -2504,7 +2503,8 @@ algorithm
         calcTimeString = realString(calcTime);
         opCountString = intString(opCount);
         childNodes = arrayGet(tGraphIn,nodeIdx);
-        componentsString = List.fold(components, addNodeToGraphML2, " ");
+        //componentsString = List.fold(components, addNodeToGraphML2, " ");
+        componentsString = (" "+&intString(nodeIdx)+&" ");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString))}, iGraph);
         tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
@@ -3923,11 +3923,11 @@ algorithm
         //print(stringDelimitList(List.map(arrayList(nodeInfo),tupleToStringRealInt),"\n")+&"\n");
         parallelSets = gatherParallelSets(nodeInfo);
         //print("parallelSets :"+&stringDelimitList(List.map(parallelSets,printIntLst)," ; ")+&"\n");
-        //print("the number of parallel sets "+&intString(listLength(parallelSets))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
+        print("the number of parallel sets "+&intString(listLength(parallelSets))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
         nodeCoords = getNodeCoords(parallelSets,graphIn);
         nodeMark = List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
         (criticalPathTmp,cpCostsTmp) = getCriticalPath(graphIn,graphDataIn,nodeInfo);
-        //print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,printIntLst)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
+        print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,printIntLst)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
       then
         (criticalPathTmp,cpCostsTmp);
     else
@@ -4026,10 +4026,8 @@ algorithm
         TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
         costValue2 = getCostsForNode(0,rootNode,inComps,exeCosts,commCosts);
         rootInfo = (1,costValue2);
-        //print("check1 rootNode "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&"\n");
         nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
         childNodes = arrayGet(graphIn,rootNode);
-        //print("new1 rootInfo for "+&intString(rootNode)+&" with level "+&intString(1)+&" and costs "+&realString(costValue2)+&" and childLst: "+&stringDelimitList(List.map(childNodes,intString),",")+&"\n");
         childNodesTmp = childNodes::childNodesIn;    
         foldTmp = (childNodesTmp,nodeInfoTmp);
       then
@@ -4043,7 +4041,6 @@ algorithm
         rootParent = listGet(rootParents,rootIdx);
         rootInfo = arrayGet(nodeInfoIn,rootNode);
         (levelValue1,costValue1) = rootInfo;
-        //print("check2 rootNode "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&" and parent "+&intString(rootParent)+&"\n");
         true = rootParent > 0;
         ((levelValueParent,costValueParent)) = arrayGet(nodeInfoIn,rootParent);
         TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
@@ -4054,7 +4051,6 @@ algorithm
         rootInfo = (levelValue2,costValue2); 
         nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
         childNodes = arrayGet(graphIn,rootNode);  
-        //print("new2 rootInfo for "+&intString(rootNode)+&" with level "+&intString(1)+&" and costs "+&realString(costValue2)+&" and childLst: "+&stringDelimitList(List.map(childNodes,intString),",")+&"\n");
         childNodesTmp = childNodes::childNodesIn;    
         foldTmp = (childNodesTmp,nodeInfoTmp);
       then
