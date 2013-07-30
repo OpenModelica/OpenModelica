@@ -37,6 +37,13 @@
 
 #include "LibraryTreeWidget.h"
 
+ItemDelegate::ItemDelegate(QObject *pParent)
+  : QItemDelegate(pParent)
+{
+  mDrawRichText = false;
+  mpParent = pParent;
+}
+
 ItemDelegate::ItemDelegate(bool drawRichText, QObject *pParent)
   : QItemDelegate(pParent)
 {

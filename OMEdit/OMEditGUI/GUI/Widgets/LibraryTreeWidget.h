@@ -55,7 +55,8 @@ private:
   bool mDrawRichText;
   QObject *mpParent;
 public:
-  ItemDelegate(bool drawRichText = false, QObject *pParent = 0);
+  ItemDelegate(QObject *pParent = 0);
+  ItemDelegate(bool drawRichText, QObject *pParent = 0);
   virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   void drawHover(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;

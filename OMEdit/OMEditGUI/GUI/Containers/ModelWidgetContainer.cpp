@@ -2128,12 +2128,6 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
   int i = 0;
   foreach (ComponentInfo *pComponentInfo, componentsList)
   {
-    /* If we are fetching the components of the inherited class and the component is protected then don't show it. */
-    if (inheritedCycle && pComponentInfo->getProtected())
-    {
-      i++;
-      continue;
-    }
     /* if the component type is one of the builtin type then don't show it */
     if (pMainWindow->getOMCProxy()->isBuiltinType(pComponentInfo->getClassName()))
     {
