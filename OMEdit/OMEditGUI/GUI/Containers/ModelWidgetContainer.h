@@ -280,7 +280,7 @@ class ModelWidget : public QWidget
 {
   Q_OBJECT
 public:
-  ModelWidget(bool newClass, LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pParent);
+  ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode* pLibraryTreeNode, ModelWidgetContainer *pParent);
   LibraryTreeNode* getLibraryTreeNode();
   ModelWidgetContainer* getModelWidgetContainer();
   GraphicsView* getDiagramGraphicsView();

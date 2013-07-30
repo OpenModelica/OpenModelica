@@ -55,8 +55,7 @@ private:
   bool mDrawRichText;
   QObject *mpParent;
 public:
-  ItemDelegate(QObject *pParent = 0);
-  ItemDelegate(bool drawRichText, QObject *pParent = 0);
+  ItemDelegate(bool drawRichText = false, QObject *pParent = 0);
   virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   void drawHover(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
   virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
@@ -162,7 +161,6 @@ public:
                                       bool isSaved = true, int insertIndex = 0);
   LibraryTreeNode* getLibraryTreeNode(QString nameStructure, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive);
   QList<LibraryTreeNode*> getLibraryTreeNodesList();
-  QStringList getNonSystemLibraryTreeNodeList();
   void addLibraryComponentObject(LibraryComponent *libraryComponent);
   Component *getComponentObject(QString className);
   LibraryComponent* getLibraryComponentObject(QString className);
@@ -208,7 +206,7 @@ public slots:
   void exportModelXML();
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false);
   void parseAndLoadModelicaText(QString modelText);
-  void showModelWidget(LibraryTreeNode *pLibraryTreeNode = 0, bool newClass = false);
+  void showModelWidget(LibraryTreeNode *pLibraryTreeNode = 0, bool newClass = false, bool extendsClass = false);
   void openLibraryTreeNode(QString nameStructure);
   void loadLibraryComponent(LibraryTreeNode *pLibraryTreeNode);
 protected:

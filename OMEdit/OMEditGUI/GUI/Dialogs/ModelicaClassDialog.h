@@ -42,20 +42,47 @@
 
 class MainWindow;
 class Label;
+class ModelicaClassDialog;
+
+class LibraryBrowseDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, ModelicaClassDialog *pParent);
+  bool eventFilter(QObject *pObject, QEvent *pEvent);
+  void unHideChildItems(QTreeWidgetItem *pItem);
+private:
+  QLineEdit *mpLineEdit;
+  ModelicaClassDialog *mpModelicaClassDialog;
+  QLineEdit *mpFindClassTextBox;
+  QTreeWidget *mpLibraryBrowseTreeWidget;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void findModelicaClasses();
+  void useModelicaClass();
+};
+
 class ModelicaClassDialog : public QDialog
 {
   Q_OBJECT
 public:
   ModelicaClassDialog(MainWindow *pParent);
-  QComboBox* getParentClassComboBox();
+  MainWindow* getMainWindow();
+  QLineEdit* getParentClassTextBox();
 private:
   MainWindow *mpMainWindow;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpSpecializationLabel;
   QComboBox *mpSpecializationComboBox;
-  Label *mpParentPackageLabel;
-  QComboBox *mpParentClassComboBox;
+  Label *mpExtendsClassLabel;
+  QLineEdit *mpExtendsClassTextBox;
+  QPushButton *mpExtendsClassBrowseButton;
+  Label *mpParentClassLabel;
+  QLineEdit *mpParentClassTextBox;
+  QPushButton *mpParentClassBrowseButton;
   QCheckBox *mpPartialCheckBox;
   QCheckBox *mpEncapsulatedCheckBox;
   QCheckBox *mpSaveContentsInOneFileCheckBox;
@@ -63,8 +90,10 @@ private:
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 private slots:
-  void createModelicaClass();
+  void browseExtendsClass();
+  void browseParentClass();
   void showHideSaveContentsInOneFileCheckBox(QString text);
+  void createModelicaClass();
 };
 
 class OpenModelicaFile : public QDialog

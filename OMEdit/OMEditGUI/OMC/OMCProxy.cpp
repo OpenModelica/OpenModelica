@@ -1546,9 +1546,12 @@ bool OMCProxy::getDocumentationClassAnnotation(QString className)
   \param className - the class name.
   \return true on successs.
   */
-bool OMCProxy::createClass(QString type, QString className)
+bool OMCProxy::createClass(QString type, QString className, QString extendsClass)
 {
-  sendCommand(type + " " + className + " end " + className + ";");
+  if (extendsClass.isEmpty())
+    sendCommand(type + " " + className + " end " + className + ";");
+  else
+    sendCommand(type + " " + className + " extends " + extendsClass + "; end " + className + ";");
   if (getResult().toLower().contains("error"))
     return false;
   else
@@ -1562,9 +1565,12 @@ bool OMCProxy::createClass(QString type, QString className)
   \param parentClassName - the parent class name.
   \return true on successs.
   */
-bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName)
+bool OMCProxy::createSubClass(QString type, QString className, QString parentClassName, QString extendsClass)
 {
-  sendCommand("within " + parentClassName + "; " + type + " " + className + " end " + className + ";");
+  if (extendsClass.isEmpty())
+    sendCommand("within " + parentClassName + "; " + type + " " + className + " end " + className + ";");
+  else
+    sendCommand("within " + parentClassName + "; " + type + " " + className + " extends " + extendsClass + "; end " + className + ";");
   if (getResult().toLower().contains("error"))
     return false;
   else

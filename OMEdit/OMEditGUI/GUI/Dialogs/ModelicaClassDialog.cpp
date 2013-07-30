@@ -42,6 +42,164 @@
 #include "StringHandler.h"
 #include "ModelWidgetContainer.h"
 
+LibraryBrowseDialog::LibraryBrowseDialog(QString title, QLineEdit *pLineEdit, ModelicaClassDialog *pParent)
+  : QDialog(pParent, Qt::WindowTitleHint)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(title));
+  resize(250, 500);
+  mpLineEdit = pLineEdit;
+  mpModelicaClassDialog = pParent;
+  mpFindClassTextBox = new QLineEdit(Helper::findClasses);
+  mpFindClassTextBox->installEventFilter(this);
+  connect(mpFindClassTextBox, SIGNAL(textEdited(QString)), SLOT(findModelicaClasses()));
+  connect(mpFindClassTextBox, SIGNAL(returnPressed()), SLOT(useModelicaClass()));
+  mpLibraryBrowseTreeWidget = new QTreeWidget;
+  /*
+    note: this is needed to hide the icon of the tree item.
+    Since the icons of the tree items are only created when we expand the node. So its better to hide them here.
+    */
+  mpLibraryBrowseTreeWidget->setIconSize(QSize(0,0));
+  mpLibraryBrowseTreeWidget->setItemDelegate(new ItemDelegate(mpLibraryBrowseTreeWidget));
+  mpLibraryBrowseTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpLibraryBrowseTreeWidget->setHeaderLabel(Helper::libraries);
+  mpLibraryBrowseTreeWidget->setIndentation(Helper::treeIndentation);
+  mpLibraryBrowseTreeWidget->setExpandsOnDoubleClick(false);
+  connect(mpLibraryBrowseTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(useModelicaClass()));
+  for (int i = 0; i < mpModelicaClassDialog->getMainWindow()->getLibraryTreeWidget()->topLevelItemCount(); i++)
+  {
+    QTreeWidgetItem *pLibraryTreeItem = mpModelicaClassDialog->getMainWindow()->getLibraryTreeWidget()->topLevelItem(i)->clone();
+    mpLibraryBrowseTreeWidget->addTopLevelItem(pLibraryTreeItem);
+  }
+  // if the text box has some value then expand the tree and select the item accordingly.
+  if (!pLineEdit->text().isEmpty())
+  {
+    QTreeWidgetItemIterator it(mpLibraryBrowseTreeWidget);
+    while (*it)
+    {
+      QTreeWidgetItem *pTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>((*it));
+      if (pTreeWidgetItem->data(0, Qt::UserRole).toString().compare(pLineEdit->text()) == 0)
+      {
+        pTreeWidgetItem->setSelected(true);
+        pTreeWidgetItem->setExpanded(true);
+        // we must expand the parent items of the item we just selected.
+        while (pTreeWidgetItem->parent())
+        {
+          pTreeWidgetItem = pTreeWidgetItem->parent();
+          pTreeWidgetItem->setExpanded(true);
+        }
+        break;
+      }
+      ++it;
+    }
+  }
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(useModelicaClass()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpFindClassTextBox, 0, 0);
+  pMainLayout->addWidget(mpLibraryBrowseTreeWidget, 1, 0);
+  pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 1, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+bool LibraryBrowseDialog::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  if (pObject != mpFindClassTextBox)
+    return false;
+  if (pEvent->type() == QEvent::FocusIn)
+  {
+    if (mpFindClassTextBox->text().compare(Helper::findClasses) == 0)
+      mpFindClassTextBox->setText("");
+  }
+  if (pEvent->type() == QEvent::FocusOut)
+  {
+    if (mpFindClassTextBox->text().isEmpty())
+      mpFindClassTextBox->setText(Helper::findClasses);
+  }
+  return false;
+}
+
+void LibraryBrowseDialog::unHideChildItems(QTreeWidgetItem *pTreeWidgetItem)
+{
+  QTreeWidgetItem *pChildItem;
+  for (int i = 0 ; i < pTreeWidgetItem->childCount() ; i++)
+  {
+    pChildItem = pTreeWidgetItem->child(i);
+    pChildItem->setExpanded(true);
+    pChildItem->setHidden(false);
+    if (pChildItem->childCount() > 0)
+      unHideChildItems(pChildItem);
+  }
+}
+
+void LibraryBrowseDialog::findModelicaClasses()
+{
+  mpLibraryBrowseTreeWidget->clearSelection();
+  mpLibraryBrowseTreeWidget->collapseAll();
+  if (mpFindClassTextBox->text().isEmpty())
+  {
+    QTreeWidgetItemIterator it(mpLibraryBrowseTreeWidget);
+    while (*it)
+    {
+      QTreeWidgetItem *pTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>((*it));
+      pTreeWidgetItem->setHidden(false);
+      ++it;
+    }
+    return;
+  }
+  QList<QTreeWidgetItem*> foundedItemsList;
+  foundedItemsList = mpLibraryBrowseTreeWidget->findItems(mpFindClassTextBox->text(), Qt::MatchContains | Qt::MatchRecursive);
+  // hide all the items first
+  QTreeWidgetItemIterator it(mpLibraryBrowseTreeWidget);
+  while (*it)
+  {
+    QTreeWidgetItem *pTreeWidgetItem = dynamic_cast<QTreeWidgetItem*>((*it));
+    pTreeWidgetItem->setHidden(true);
+    ++it;
+  }
+  // unhide the founded items
+  foreach (QTreeWidgetItem *pTreeWidgetItem, foundedItemsList)
+  {
+    pTreeWidgetItem->setExpanded(true);
+    pTreeWidgetItem->setHidden(false);
+    // if the item has childs then unhide all the child items as well
+    if (pTreeWidgetItem->childCount() > 0)
+      unHideChildItems(pTreeWidgetItem);
+    // we must unhide all the parent items as well
+    while (pTreeWidgetItem->parent())
+    {
+      pTreeWidgetItem = pTreeWidgetItem->parent();
+      pTreeWidgetItem->setExpanded(true);
+      pTreeWidgetItem->setHidden(false);
+    }
+  }
+  // select the first found item.
+  if (!foundedItemsList.isEmpty())
+    foundedItemsList.at(0)->setSelected(true);
+}
+
+void LibraryBrowseDialog::useModelicaClass()
+{
+  QList<QTreeWidgetItem*> selectedTreeWidgetItems = mpLibraryBrowseTreeWidget->selectedItems();
+  if (!selectedTreeWidgetItems.isEmpty())
+  {
+    QTreeWidgetItem *pSelectedTreeWidgetItem = selectedTreeWidgetItems.at(0);
+    mpLineEdit->setText(pSelectedTreeWidgetItem->data(0, Qt::UserRole).toString());
+  }
+  accept();
+}
+
 /*!
   \class ModelicaClassDialog
   \brief Creates a dialog to allow users to create new Modelica class restriction.
@@ -80,17 +238,19 @@ ModelicaClassDialog::ModelicaClassDialog(MainWindow *pParent)
   mpSpecializationComboBox->addItem(StringHandler::getModelicaClassType(StringHandler::OPTIMIZATION));
   */
   connect(mpSpecializationComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
+  // create the extends the label and text box
+  mpExtendsClassLabel = new Label(tr("Extends (optional):"));
+  mpExtendsClassTextBox = new QLineEdit;
+  mpExtendsClassBrowseButton = new QPushButton(Helper::browse);
+  mpExtendsClassBrowseButton->setAutoDefault(false);
+  connect(mpExtendsClassBrowseButton, SIGNAL(clicked()), SLOT(browseExtendsClass()));
   // Create the parent package label, text box, browse button
-  mpParentPackageLabel = new Label(tr("Insert in class (optional):"));
-  mpParentClassComboBox = new QComboBox;
-  mpParentClassComboBox->setEditable(true);
-  /* Since the default QCompleter for QComboBox is case insenstive. */
-  QCompleter *pParentClassComboBoxCompleter = mpParentClassComboBox->completer();
-  pParentClassComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
-  mpParentClassComboBox->setCompleter(pParentClassComboBoxCompleter);
-  mpParentClassComboBox->addItem("");
-  mpParentClassComboBox->addItems(mpMainWindow->getLibraryTreeWidget()->getNonSystemLibraryTreeNodeList());
-  connect(mpParentClassComboBox, SIGNAL(editTextChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
+  mpParentClassLabel = new Label(tr("Insert in class (optional):"));
+  mpParentClassTextBox = new QLineEdit;
+  connect(mpParentClassTextBox, SIGNAL(textChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
+  mpParentClassBrowseButton = new QPushButton(Helper::browse);
+  mpParentClassBrowseButton->setAutoDefault(false);
+  connect(mpParentClassBrowseButton, SIGNAL(clicked()), SLOT(browseParentClass()));
   // create partial checkbox
   mpPartialCheckBox = new QCheckBox(tr("Partial"));
   // create encapsulated checkbox
@@ -114,21 +274,62 @@ ModelicaClassDialog::ModelicaClassDialog(MainWindow *pParent)
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpNameLabel, 0, 0);
-  pMainLayout->addWidget(mpNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1, 1, 2);
   pMainLayout->addWidget(mpSpecializationLabel, 1, 0);
-  pMainLayout->addWidget(mpSpecializationComboBox, 1, 1);
-  pMainLayout->addWidget(mpParentPackageLabel, 2, 0);
-  pMainLayout->addWidget(mpParentClassComboBox, 2, 1);
-  pMainLayout->addWidget(mpPartialCheckBox, 3, 0);
-  pMainLayout->addWidget(mpSaveContentsInOneFileCheckBox, 3, 1);
-  pMainLayout->addWidget(mpEncapsulatedCheckBox, 4, 0, 1, 2);
-  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addWidget(mpSpecializationComboBox, 1, 1, 1, 2);
+  pMainLayout->addWidget(mpExtendsClassLabel, 2, 0);
+  pMainLayout->addWidget(mpExtendsClassTextBox, 2, 1);
+  pMainLayout->addWidget(mpExtendsClassBrowseButton, 2, 2);
+  pMainLayout->addWidget(mpParentClassLabel, 3, 0);
+  pMainLayout->addWidget(mpParentClassTextBox, 3, 1);
+  pMainLayout->addWidget(mpParentClassBrowseButton, 3, 2);
+  pMainLayout->addWidget(mpPartialCheckBox, 4, 0);
+  pMainLayout->addWidget(mpSaveContentsInOneFileCheckBox, 4, 1, 1, 2);
+  pMainLayout->addWidget(mpEncapsulatedCheckBox, 5, 0, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
-QComboBox *ModelicaClassDialog::getParentClassComboBox()
+MainWindow* ModelicaClassDialog::getMainWindow()
 {
-  return mpParentClassComboBox;
+  return mpMainWindow;
+}
+
+QLineEdit* ModelicaClassDialog::getParentClassTextBox()
+{
+  return mpParentClassTextBox;
+}
+
+void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
+{
+  QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
+  QLineEdit *pLineEdit = qobject_cast<QLineEdit*>(sender());
+  if (pComboBox && pComboBox == mpSpecializationComboBox)
+  {
+    if ((text.toLower().compare("package") == 0) && mpParentClassTextBox->text().isEmpty())
+      mpSaveContentsInOneFileCheckBox->setVisible(true);
+    else
+      mpSaveContentsInOneFileCheckBox->setVisible(false);
+  }
+  else if (pLineEdit && pLineEdit == mpParentClassTextBox)
+  {
+    if (text.isEmpty() && (mpSpecializationComboBox->currentText().toLower().compare("package") == 0))
+      mpSaveContentsInOneFileCheckBox->setVisible(true);
+    else
+      mpSaveContentsInOneFileCheckBox->setVisible(false);
+  }
+}
+
+void ModelicaClassDialog::browseExtendsClass()
+{
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Extends Class"), mpExtendsClassTextBox, this);
+  pLibraryBrowseDialog->exec();
+}
+
+void ModelicaClassDialog::browseParentClass()
+{
+  LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Parent Class"), mpParentClassTextBox, this);
+  pLibraryBrowseDialog->exec();
 }
 
 /*!
@@ -143,39 +344,48 @@ void ModelicaClassDialog::createModelicaClass()
                             GUIMessages::ENTER_NAME).arg(mpSpecializationComboBox->currentText()), Helper::ok);
     return;
   }
-  /* if insert in class doesn't exist. */
-  if (!mpParentClassComboBox->currentText().isEmpty())
+  /* if extends class doesn't exist. */
+  if (!mpExtendsClassTextBox->text().isEmpty())
   {
-    if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassComboBox->currentText()))
+    if (!mpMainWindow->getOMCProxy()->existClass(mpExtendsClassTextBox->text()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                              GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpParentClassComboBox->currentText()), Helper::ok);
+                              GUIMessages::EXTENDS_CLASS_NOT_FOUND).arg(mpExtendsClassTextBox->text()), Helper::ok);
+      return;
+    }
+  }
+  /* if insert in class doesn't exist. */
+  if (!mpParentClassTextBox->text().isEmpty())
+  {
+    if (!mpMainWindow->getOMCProxy()->existClass(mpParentClassTextBox->text()))
+    {
+      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
+                              GUIMessages::INSERT_IN_CLASS_NOT_FOUND).arg(mpParentClassTextBox->text()), Helper::ok);
       return;
     }
   }
   /* if insert in class is system library. */
   LibraryTreeWidget *pLibraryTreeWidget = mpMainWindow->getLibraryTreeWidget();
-  LibraryTreeNode *pParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(mpParentClassComboBox->currentText());
+  LibraryTreeNode *pParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(mpParentClassTextBox->text());
   if (pParentLibraryTreeNode)
   {
     if (pParentLibraryTreeNode->isSystemLibrary())
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
-                              GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassComboBox->currentText()), Helper::ok);
+                              GUIMessages::INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED).arg(mpParentClassTextBox->text()), Helper::ok);
       return;
     }
   }
-
   QString model, parentPackage;
-  if (mpParentClassComboBox->currentText().isEmpty())
+  if (mpParentClassTextBox->text().isEmpty())
   {
     model = mpNameTextBox->text();
     parentPackage = "Global Scope";
   }
   else
   {
-    model = QString(mpParentClassComboBox->currentText()).append(".").append(mpNameTextBox->text());
-    parentPackage = QString("in Package '").append(mpParentClassComboBox->currentText()).append("'");
+    model = QString(mpParentClassTextBox->text()).append(".").append(mpNameTextBox->text());
+    parentPackage = QString("in Package '").append(mpParentClassTextBox->text()).append("'");
   }
   // Check whether model exists or not.
   if (mpMainWindow->getOMCProxy()->existClass(model))
@@ -189,9 +399,9 @@ void ModelicaClassDialog::createModelicaClass()
   QString modelicaClass = mpEncapsulatedCheckBox->isChecked() ? "encapsulated " : "";
   modelicaClass.append(mpPartialCheckBox->isChecked() ? "partial " : "");
   modelicaClass.append(mpSpecializationComboBox->currentText().toLower());
-  if (mpParentClassComboBox->currentText().isEmpty())
+  if (mpParentClassTextBox->text().isEmpty())
   {
-    if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text()))
+    if (!mpMainWindow->getOMCProxy()->createClass(modelicaClass, mpNameTextBox->text(), mpExtendsClassTextBox->text()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
@@ -201,7 +411,7 @@ void ModelicaClassDialog::createModelicaClass()
   }
   else
   {
-    if(!mpMainWindow->getOMCProxy()->createSubClass(modelicaClass, mpNameTextBox->text(), mpParentClassComboBox->currentText()))
+    if(!mpMainWindow->getOMCProxy()->createSubClass(modelicaClass, mpNameTextBox->text(), mpParentClassTextBox->text(), mpExtendsClassTextBox->text()))
     {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), GUIMessages::getMessage(
                               GUIMessages::ERROR_OCCURRED).arg(mpMainWindow->getOMCProxy()->getResult()).append("\n\n").
@@ -213,33 +423,11 @@ void ModelicaClassDialog::createModelicaClass()
   LibraryTreeNode *pLibraryTreeNode;
   pLibraryTreeNode = pLibraryTreeWidget->addLibraryTreeNode(mpNameTextBox->text(),
                                                             StringHandler::getModelicaClassType(mpSpecializationComboBox->currentText()),
-                                                            mpParentClassComboBox->currentText(), false);
+                                                            mpParentClassTextBox->text(), false);
   pLibraryTreeNode->setSaveContentsType(mpSaveContentsInOneFileCheckBox->isChecked() ? LibraryTreeNode::SaveInOneFile : LibraryTreeNode::SaveFolderStructure);
   pLibraryTreeWidget->addToExpandedLibraryTreeNodesList(pLibraryTreeNode);
-  pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true);
+  pLibraryTreeWidget->showModelWidget(pLibraryTreeNode, true, !mpExtendsClassTextBox->text().isEmpty());
   accept();
-}
-
-void ModelicaClassDialog::showHideSaveContentsInOneFileCheckBox(QString text)
-{
-  QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
-  if (pComboBox)
-  {
-    if (pComboBox == mpSpecializationComboBox)
-    {
-      if ((text.toLower().compare("package") == 0) && mpParentClassComboBox->currentText().isEmpty())
-        mpSaveContentsInOneFileCheckBox->setVisible(true);
-      else
-        mpSaveContentsInOneFileCheckBox->setVisible(false);
-    }
-    else if (pComboBox == mpParentClassComboBox)
-    {
-      if (text.isEmpty() && (mpSpecializationComboBox->currentText().toLower().compare("package") == 0))
-        mpSaveContentsInOneFileCheckBox->setVisible(true);
-      else
-        mpSaveContentsInOneFileCheckBox->setVisible(false);
-    }
-  }
 }
 
 /*!
@@ -463,7 +651,7 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, MainWindow *pPar
   pParentClassComboBoxCompleter->setCaseSensitivity(Qt::CaseSensitive);
   mpParentClassComboBox->setCompleter(pParentClassComboBoxCompleter);
   mpParentClassComboBox->addItem("");
-  mpParentClassComboBox->addItems(mpMainWindow->getLibraryTreeWidget()->getNonSystemLibraryTreeNodeList());
+//  mpParentClassComboBox->addItems(mpMainWindow->getLibraryTreeWidget()->getNonSystemLibraryTreeNodeStringList());
   int currentIndex = mpParentClassComboBox->findText(pModelWidget->getLibraryTreeNode()->getParentName(), Qt::MatchExactly);
   if (currentIndex > -1)
     mpParentClassComboBox->setCurrentIndex(currentIndex);

@@ -150,8 +150,8 @@ public:
   bool loadString(QString value);
   bool parseFile(QString fileName, QString encoding = Helper::utf8);
   QStringList parseString(QString value);
-  bool createClass(QString type, QString className);
-  bool createSubClass(QString type, QString className, QString parentClassName);
+  bool createClass(QString type, QString className, QString extendsClass);
+  bool createSubClass(QString type, QString className, QString parentClassName, QString extendsClass);
   bool existClass(QString className);
   bool renameClass(QString oldName, QString newName);
   bool deleteClass(QString className);

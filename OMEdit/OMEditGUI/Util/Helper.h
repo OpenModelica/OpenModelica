@@ -98,6 +98,7 @@ public:
   /* Global translated variables */
   static QString newModelicaClass;
   static QString createNewModelicaClass;
+  static QString findClasses;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
   static QString libraries;
@@ -222,6 +223,7 @@ public:
     NO_MODELICA_CLASS_OPEN,
     SIMULATION_STARTTIME_LESSTHAN_STOPTIME,
     ENTER_NAME,
+    EXTENDS_CLASS_NOT_FOUND,
     INSERT_IN_CLASS_NOT_FOUND,
     INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED,
     MODEL_ALREADY_EXISTS,

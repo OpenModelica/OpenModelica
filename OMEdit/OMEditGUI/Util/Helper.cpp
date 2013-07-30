@@ -92,6 +92,7 @@ QString Helper::errorComponentAnnotationString = QString("{-100.0,-100.0,100.0,1
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
+QString Helper::findClasses;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
 QString Helper::libraries;
@@ -208,6 +209,7 @@ void Helper::initHelperVariables()
   /* Global translated variables */
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
+  Helper::findClasses = tr("Find Classes");
   Helper::openModelicaFiles = tr("Open Modelica File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::libraries = tr("Libraries");
@@ -337,6 +339,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Simulation Start Time should be less than or equal to Stop Time.");
     case ENTER_NAME:
       return tr("Please enter <b>%1</b> Name.");
+    case EXTENDS_CLASS_NOT_FOUND:
+      return tr("Extends class <b>%1</b> does not exist.");
     case INSERT_IN_CLASS_NOT_FOUND:
       return tr("Insert in class <b>%1</b> does not exist.");
     case INSERT_IN_SYSTEM_LIBRARY_NOT_ALLOWED:

@@ -37,13 +37,6 @@
 
 #include "LibraryTreeWidget.h"
 
-ItemDelegate::ItemDelegate(QObject *pParent)
-  : QItemDelegate(pParent)
-{
-  mDrawRichText = false;
-  mpParent = pParent;
-}
-
 ItemDelegate::ItemDelegate(bool drawRichText, QObject *pParent)
   : QItemDelegate(pParent)
 {
@@ -276,6 +269,8 @@ LibraryTreeNode::LibraryTreeNode(QString text, QString parentName, QString nameS
   setParentName(parentName);
   setNameStructure(nameStructure);
   setText(0, mName);
+  /* Do not remove the line below. It is required by LibraryBrowseDialog::useModelicaClass */
+  setData(0, Qt::UserRole, nameStructure);
   setToolTip(0, tooltip);
   setIcon(0, getModelicaNodeIcon(mType));
   setFileName(fileName);
@@ -768,19 +763,6 @@ LibraryTreeNode* LibraryTreeWidget::getLibraryTreeNode(QString nameStructure, Qt
 QList<LibraryTreeNode*> LibraryTreeWidget::getLibraryTreeNodesList()
 {
   return mLibraryTreeNodesList;
-}
-
-QStringList LibraryTreeWidget::getNonSystemLibraryTreeNodeList()
-{
-  QStringList libraries;
-  for (int i = 0 ; i < mLibraryTreeNodesList.size() ; i++)
-  {
-    if (!mLibraryTreeNodesList[i]->isSystemLibrary() && mLibraryTreeNodesList[i]->getType() == StringHandler::Package)
-    {
-      libraries.append(mLibraryTreeNodesList[i]->getNameStructure());
-    }
-  }
-  return libraries;
 }
 
 void LibraryTreeWidget::addLibraryComponentObject(LibraryComponent *libraryComponent)
@@ -1312,7 +1294,7 @@ void LibraryTreeWidget::createNewModelicaClass()
   if (pLibraryTreeNode)
   {
     ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(mpMainWindow);
-    pModelicaClassDialog->getParentClassComboBox()->setEditText(pLibraryTreeNode->getNameStructure());
+    pModelicaClassDialog->getParentClassTextBox()->setText(pLibraryTreeNode->getNameStructure());
     pModelicaClassDialog->show();
   }
 }
@@ -1549,7 +1531,7 @@ void LibraryTreeWidget::parseAndLoadModelicaText(QString modelText)
   }
 }
 
-void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool newClass)
+void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool newClass, bool extendsClass)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
   QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
@@ -1567,7 +1549,7 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
   if (isSearchedTree())
   {
     pLibraryTreeNode = mpMainWindow->getLibraryTreeWidget()->getLibraryTreeNode(pLibraryTreeNode->getNameStructure());
-    mpMainWindow->getLibraryTreeWidget()->showModelWidget(pLibraryTreeNode, newClass);
+    mpMainWindow->getLibraryTreeWidget()->showModelWidget(pLibraryTreeNode, newClass, extendsClass);
     QApplication::restoreOverrideCursor();
     return;
   }
@@ -1578,7 +1560,7 @@ void LibraryTreeWidget::showModelWidget(LibraryTreeNode *pLibraryTreeNode, bool 
   }
   else
   {
-    ModelWidget *pModelWidget = new ModelWidget(newClass, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
+    ModelWidget *pModelWidget = new ModelWidget(newClass, extendsClass, pLibraryTreeNode, mpMainWindow->getModelWidgetContainer());
     pLibraryTreeNode->setModelWidget(pModelWidget);
     pLibraryTreeNode->getModelWidget()->setWindowTitle(pLibraryTreeNode->getNameStructure() + (pLibraryTreeNode->isSaved() ? "" : "*"));
     mpMainWindow->getModelWidgetContainer()->addModelWidget(pModelWidget);

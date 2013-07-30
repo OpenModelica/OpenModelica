@@ -1863,7 +1863,7 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
   QDesktopServices::openUrl(url);
 }
 
-ModelWidget::ModelWidget(bool newClass, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
+ModelWidget::ModelWidget(bool newClass, bool extendsClass, LibraryTreeNode *pLibraryTreeNode, ModelWidgetContainer *pParent)
   : QWidget(pParent)
 {
   mpLibraryTreeNode = pLibraryTreeNode;
@@ -1967,7 +1967,7 @@ ModelWidget::ModelWidget(bool newClass, LibraryTreeNode *pLibraryTreeNode, Model
   mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
   mpModelStatusBar->addPermanentWidget(mpCursorPositionLabel, 0);
   mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
-  // only get the model components, connectors and shapes if the class is not a new class.
+  // only get the model components, connectors and shapes if the class is not a new class or class is an extends class.
   if (newClass)
   {
     mpIconGraphicsView->addClassAnnotation();
@@ -1975,7 +1975,7 @@ ModelWidget::ModelWidget(bool newClass, LibraryTreeNode *pLibraryTreeNode, Model
     mpDiagramGraphicsView->addClassAnnotation();
     mpDiagramGraphicsView->setCanAddClassAnnotation(true);
   }
-  else
+  if (!newClass || extendsClass)
   {
     getModelIconDiagramShapes(getLibraryTreeNode()->getNameStructure());
     getModelComponents(getLibraryTreeNode()->getNameStructure());
