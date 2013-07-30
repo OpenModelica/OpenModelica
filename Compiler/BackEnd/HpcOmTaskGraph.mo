@@ -3892,7 +3892,7 @@ end compareComponents;
 //evaluation and analysing functions
 //------------------------------------------
 //------------------------------------------
-
+ 
 
 public function longestPathMethod " function to assign levels to the nodes of a graph and compute the criticalPath.
 for every set of rootNodes set the next minimal levelValue and the costs. Assign to their childNodes the next minimal levelValue and the highest costs and choose them as new rootNodes.
@@ -3911,16 +3911,15 @@ algorithm
       list<list<Integer>> criticalPathTmp;
       array<Integer> nodeMark;
       array<list<Integer>> inComps;
-      array<tuple<Integer,Real>> nodeInfo; //array[nodeIdx]--> tuple(levelValue,costValue)
+      array<tuple<Integer,Real,Integer>> nodeInfo; //array[nodeIdx]--> tuple(levelValue,costValue,parentCount)
       array<tuple<Integer,Integer>> nodeCoords;
     case(_,_)
       equation    
         true = arrayLength(graphIn) <> 0;
         TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeMark=nodeMark) = graphDataIn;
-        nodeInfo = arrayCreate(arrayLength(graphIn),(-1,-1.0));
+        nodeInfo = arrayCreate(arrayLength(graphIn),(-1,-1.0,0));
+        nodeInfo = List.fold1(List.intRange(arrayLength(graphIn)),setParentCount,graphIn,nodeInfo);
         nodeInfo = longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
-        //print("nodeInfo: \n");
-        //print(stringDelimitList(List.map(arrayList(nodeInfo),tupleToStringRealInt),"\n")+&"\n");
         parallelSets = gatherParallelSets(nodeInfo);
         //print("parallelSets :"+&stringDelimitList(List.map(parallelSets,printIntLst)," ; ")+&"\n");
         print("the number of parallel sets "+&intString(listLength(parallelSets))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
@@ -3944,12 +3943,12 @@ author: Waurich TUD 2013-07"
   input TaskGraphMeta graphDataIn;
   input list<Integer> rootNodesIn;
   input list<Integer> rootParentsIn;
-  input array<tuple<Integer,Real>> nodeInfoIn;
-  output array<tuple<Integer,Real>> nodeInfoOut;
+  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
+  output array<tuple<Integer,Real,Integer>> nodeInfoOut;
 algorithm
     nodeInfoOut := matchcontinue(graphIn,graphDataIn,rootNodesIn,rootParentsIn,nodeInfoIn)
       local
-        array<tuple<Integer,Real>> nodeInfo;
+        array<tuple<Integer,Real,Integer>> nodeInfo;
         list<Integer> parentLst;
         list<Integer> rootNodes;
         list<Integer> rootIdcs;
@@ -3983,8 +3982,8 @@ author: Waurich TUD 2013-07"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
   input tuple<list<Integer>,list<Integer>> rootNodeInfo;
-  input tuple<list<list<Integer>>,array<tuple<Integer,Real>>> foldIn;  // the childNodes of all rootNodes
-  output tuple<list<list<Integer>>,array<tuple<Integer,Real>>> foldOut;
+  input tuple<list<list<Integer>>,array<tuple<Integer,Real,Integer>>> foldIn;  // the childNodes of all rootNodes and the array with the nodeInfos
+  output tuple<list<list<Integer>>,array<tuple<Integer,Real,Integer>>> foldOut;
 algorithm
   foldOut := matchcontinue(rootIdx,graphIn,graphDataIn,rootNodeInfo,foldIn)
     local
@@ -3994,6 +3993,8 @@ algorithm
       Integer levelValue1;
       Integer levelValue2;
       Integer levelValueParent;
+      Integer parentCount1;
+      Integer parentCount2;
       Integer parentNode;
       Integer rootNode;
       Integer rootParent;
@@ -4003,67 +4004,137 @@ algorithm
       list<list<Integer>> childNodesIn;
       list<list<Integer>> childNodesTmp;
       list<list<Integer>> childNodesOut;
-      tuple<Integer,Real> rootInfo;
+      tuple<Integer,Real,Integer> rootInfo;
       tuple<Integer,Integer> parentInfo;
       array<list<Integer>> inComps;
       array<tuple<Integer,Real>> exeCosts;
-      array<tuple<Integer,Real>> nodeInfoIn;
-      array<tuple<Integer,Real>> nodeInfoOut;
-      array<tuple<Integer,Real>> nodeInfoTmp;
+      array<tuple<Integer,Real,Integer>> nodeInfoIn;
+      array<tuple<Integer,Real,Integer>> nodeInfoOut;
+      array<tuple<Integer,Real,Integer>> nodeInfoTmp;
       array<list<tuple<Integer,Integer,Integer>>> commCosts;
-      tuple<list<list<Integer>>,array<tuple<Integer,Real>>> foldTmp;
+      tuple<list<list<Integer>>,array<tuple<Integer,Real,Integer>>> foldTmp;
     case(_,_,_,_,_)
       equation
-        // check the first rootnodes
+        // check the first rootnode
         (childNodesIn,nodeInfoIn) = foldIn;
         (rootNodes,rootParents) = rootNodeInfo;
         rootNode = listGet(rootNodes,rootIdx);
         rootParent = listGet(rootParents,rootIdx);
         rootInfo = arrayGet(nodeInfoIn,rootNode);
-        (levelValue1,costValue1) = rootInfo;
+        (levelValue1,costValue1,parentCount1) = rootInfo;
         true = rootParent == 0;
+        true = parentCount1 == 0;
         true = levelValue1 == -1 and costValue1 ==. -1.0;
+        //print("rootNode "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&" and parentCount "+&intString(parentCount1)+&"\n");
         TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
         costValue2 = getCostsForNode(0,rootNode,inComps,exeCosts,commCosts);
-        rootInfo = (1,costValue2);
+        rootInfo = (1,costValue2,parentCount1);
         nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
         childNodes = arrayGet(graphIn,rootNode);
-        childNodesTmp = childNodes::childNodesIn;    
+        childNodesTmp = childNodes::childNodesIn;   
+        //print(" set level "+&intString(1)+&" and costs "+&realString(costValue2)+&" and childLst: "+&stringDelimitList(List.map(childNodes,intString),",")+&"\n"); 
         foldTmp = (childNodesTmp,nodeInfoTmp);
       then
         foldTmp;
     case(_,_,_,_,_)
       equation
-        // the following sets of nodes
+        // check nextlevelNode and do append the childLst
         (childNodesIn,nodeInfoIn) = foldIn;
         (rootNodes,rootParents) = rootNodeInfo;
         rootNode = listGet(rootNodes,rootIdx);
         rootParent = listGet(rootParents,rootIdx);
         rootInfo = arrayGet(nodeInfoIn,rootNode);
-        (levelValue1,costValue1) = rootInfo;
+        (levelValue1,costValue1,parentCount1) = rootInfo;
         true = rootParent > 0;
-        ((levelValueParent,costValueParent)) = arrayGet(nodeInfoIn,rootParent);
+        true = parentCount1 == 1;
+        //print("next node "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&" and parentCount "+&intString(parentCount1)+&"\n");
+        ((levelValueParent,costValueParent,_)) = arrayGet(nodeInfoIn,rootParent);
         TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
         costValue2 = getCostsForNode(rootParent,rootNode,inComps,exeCosts,commCosts);
         costValue2 = costValueParent +. costValue2;
         costValue2 = realMax(costValue1,costValue2);
-        levelValue2 = levelValueParent + 1;
-        rootInfo = (levelValue2,costValue2); 
+        levelValue2 = intMax(levelValueParent+1,levelValue1);
+        parentCount2 = parentCount1-1;
+        rootInfo = (levelValue2,costValue2,parentCount1); 
         nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
         childNodes = arrayGet(graphIn,rootNode);  
+        //print(" set level "+&intString(levelValue2)+&" and costs "+&realString(costValue2)+&" and parentCount "+&intString(parentCount2)+&" and childLst: "+&stringDelimitList(List.map(childNodes,intString),",")+&"\n");
         childNodesTmp = childNodes::childNodesIn;    
         foldTmp = (childNodesTmp,nodeInfoTmp);
       then
         foldTmp;
+    case(_,_,_,_,_)
+      equation
+        // check nextlevelNode and do NOT append the childLst
+        (childNodesIn,nodeInfoIn) = foldIn;
+        (rootNodes,rootParents) = rootNodeInfo;
+        rootNode = listGet(rootNodes,rootIdx);
+        rootParent = listGet(rootParents,rootIdx);
+        rootInfo = arrayGet(nodeInfoIn,rootNode);
+        (levelValue1,costValue1,parentCount1) = rootInfo;
+        true = rootParent > 0;
+        true = parentCount1 > 1;
+        //print("next node "+&intString(rootNode)+&" with level "+&intString(levelValue1)+&" and costs "+&realString(costValue1)+&" and parentCount "+&intString(parentCount1)+&"\n");
+        ((levelValueParent,costValueParent,_)) = arrayGet(nodeInfoIn,rootParent);
+        TASKGRAPHMETA(inComps = inComps, exeCosts = exeCosts, commCosts = commCosts) = graphDataIn;
+        costValue2 = getCostsForNode(rootParent,rootNode,inComps,exeCosts,commCosts);
+        costValue2 = costValueParent +. costValue2;
+        costValue2 = realMax(costValue1,costValue2);
+        levelValue2 = intMax(levelValueParent+1,levelValue1);
+        parentCount2 = parentCount1-1;
+        rootInfo = (levelValue2,costValue2,parentCount1-1); 
+        nodeInfoTmp = arrayUpdate(nodeInfoIn,rootNode,rootInfo);
+        childNodes = arrayGet(graphIn,rootNode);  
+        //print(" set level "+&intString(levelValue2)+&" and costs "+&realString(costValue2)+&" and parentCount "+&intString(parentCount2)+&"\n");
+        childNodesTmp = {}::childNodesIn;    
+        foldTmp = (childNodesTmp,nodeInfoTmp);
+      then
+        foldTmp;
+    else
+      equation
+        print("longestPathMEthod2-failed\n");
+        then
+          fail();
   end matchcontinue;
 end longestPathMethod2;
+
+
+protected function setParentCount "sets the parentCount in the nodeinfo. i.e. the number of parentnodes of each node.
+author: Waurich TUD 2013-07"
+  input Integer parentIdx;
+  input TaskGraph graphIn;
+  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
+  output array<tuple<Integer,Real,Integer>> nodeInfoOut;
+protected
+  list<Integer> childLst;
+  array<tuple<Integer,Real,Integer>> nodeInfoTmp;
+algorithm
+  childLst := arrayGet(graphIn,parentIdx);
+  nodeInfoTmp := List.fold(childLst,setParentCount1,nodeInfoIn);
+  nodeInfoOut := nodeInfoTmp;
+end setParentCount;
+
+
+protected function setParentCount1 " folding function for setParentCount1
+author: Waurich TUD 2013-07"
+  input Integer childNode;
+  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
+  output array<tuple<Integer,Real,Integer>> nodeInfoOut;
+protected
+  Real costValue;
+  Integer levelValue;
+  Integer parentCount;
+algorithm
+  ((levelValue,costValue,parentCount)) := arrayGet(nodeInfoIn,childNode);
+  nodeInfoOut := arrayUpdate(nodeInfoIn,childNode,(levelValue,costValue,parentCount+1));
+end setParentCount1;
 
 
 protected function getCriticalPath " computes the criticalPath
 auhtor: Waurich TUD 2013-07"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
-  input array<tuple<Integer,Real>> nodeInfoIn;
+  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
   output list<list<Integer>> criticalPathsOut;
   output Real cpCosts;
 protected
@@ -4071,17 +4142,17 @@ protected
 algorithm
   endNodes := getBranchEnds(graphIn,{},1);
   endNodes := getCriticalPathEndNodes(endNodes,nodeInfoIn,1,{});
-  ((_,cpCosts)) := arrayGet(nodeInfoIn,listGet(endNodes,1));
+  ((_,cpCosts,_)) := arrayGet(nodeInfoIn,listGet(endNodes,1));
   criticalPathsOut := List.map4(endNodes,getCriticalPath1,graphIn,graphDataIn,nodeInfoIn,{});
 end getCriticalPath;
 
 
-protected function getCriticalPath1 "finds the criticalPath based on the endNodes with highest costs.
+protected function getCriticalPath1 "finds the criticalPath based on the endNodes with highest costs. TODO: avoid getParentLst
 auhtor: Waurich TUD 2013 .07"
   input Integer childNode;
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
-  input array<tuple<Integer,Real>> nodeInfoIn;
+  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
   input list<Integer> criticalPathIn;
   output list<Integer> criticalPathOut;
 algorithm
@@ -4099,7 +4170,7 @@ algorithm
       criticalPathTmp = childNode::criticalPathIn;
       parentNodes = getParentNodes(childNode,graphIn);
       false = List.isEmpty(parentNodes);
-      ((_,childCosts)) = arrayGet(nodeInfoIn,childNode);
+      ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
       TASKGRAPHMETA(inComps = inComps, exeCosts=exeCosts, commCosts=commCosts) = graphDataIn;
       parentNode = getCriticalPath2(parentNodes,childNode,(inComps,exeCosts,commCosts),nodeInfoIn,1);
       criticalPathTmp = getCriticalPath1(parentNode,graphIn,graphDataIn,nodeInfoIn,criticalPathTmp);
@@ -4121,7 +4192,7 @@ author: Waurich TUD 2013-07"
   input list<Integer> parentNodeLst;
   input Integer childNode;
   input tuple<array<list<Integer>>,array<tuple<Integer,Real>>,array<list<tuple<Integer,Integer,Integer>>>> graphInfo;
-  input array<tuple<Integer,Real>> nodeInfoIn;
+  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
   input Integer idx;
   output Integer parentOut;
 algorithm
@@ -4140,11 +4211,11 @@ algorithm
       equation
         true = listLength(parentNodeLst) >= idx;
         parentNode = listGet(parentNodeLst,idx);
-        ((_,parentCostsGot)) = arrayGet(nodeInfoIn,parentNode);
+        ((_,parentCostsGot,_)) = arrayGet(nodeInfoIn,parentNode);
         subCosts = getCostsForNode(parentNode,childNode,inComps,exeCosts,commCosts);
-        ((_,childCosts)) = arrayGet(nodeInfoIn,childNode);
+        ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
         parentCostsExpected = childCosts -. subCosts;
-        difference = parentCostsExpected -. childCosts +. subCosts;
+        difference = parentCostsExpected -. parentCostsGot;
         false = difference <. 0.00000000001 and difference >. -0.00000000001 ;
         parentNode = getCriticalPath2(parentNodeLst,childNode,(inComps,exeCosts,commCosts),nodeInfoIn,idx+1);
       then
@@ -4153,11 +4224,11 @@ algorithm
       equation
         true = listLength(parentNodeLst) >= idx;
         parentNode = listGet(parentNodeLst,idx);
-        ((_,parentCostsGot)) = arrayGet(nodeInfoIn,parentNode);
+        ((_,parentCostsGot,_)) = arrayGet(nodeInfoIn,parentNode);
         subCosts = getCostsForNode(parentNode,childNode,inComps,exeCosts,commCosts);
-        ((_,childCosts)) = arrayGet(nodeInfoIn,childNode);
+        ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
         parentCostsExpected = childCosts -. subCosts;
-        difference = parentCostsExpected -. childCosts +. subCosts;
+        difference = parentCostsExpected -. parentCostsGot;
         true = difference <. 0.00000000001 and difference >. -0.00000000001 ;
       then
         parentNode;
@@ -4179,7 +4250,7 @@ end getCriticalPath2;
 protected function getCriticalPathEndNodes "gets the nodes with the highest costs
 author: Waurich TUD 2013-07"
   input list<Integer> endNodesIn;
-  input array<tuple<Integer,Real>> nodeInfoIn;
+  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
   input Integer idx;
   input list<Integer> maxCostNodes;
   output list<Integer> endNodesOut; 
@@ -4197,9 +4268,9 @@ algorithm
       true = listLength(endNodesIn) >= idx;
       false = List.isEmpty(maxCostNodes);
       maxEndNode = listGet(maxCostNodes,1);
-      ((_,maxCosts)) = arrayGet(nodeInfoIn,maxEndNode);
+      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
       endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts)) = arrayGet(nodeInfoIn, endNode);
+      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
       true = nodeCosts <. maxCosts;
       endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,maxCostNodes);
     then
@@ -4209,9 +4280,9 @@ algorithm
       true = listLength(endNodesIn) >= idx;
       false = List.isEmpty(maxCostNodes);
       maxEndNode = listGet(maxCostNodes,1);
-      ((_,maxCosts)) = arrayGet(nodeInfoIn,maxEndNode);
+      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
       endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts)) = arrayGet(nodeInfoIn, endNode);
+      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
       true = nodeCosts ==. maxCosts;
       endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,endNode::maxCostNodes);
     then
@@ -4221,9 +4292,9 @@ algorithm
       true = listLength(endNodesIn) >= idx;
       false = List.isEmpty(maxCostNodes);
       maxEndNode = listGet(maxCostNodes,1);
-      ((_,maxCosts)) = arrayGet(nodeInfoIn,maxEndNode);
+      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
       endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts)) = arrayGet(nodeInfoIn, endNode);
+      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
       true = nodeCosts >. maxCosts;
       endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,{endNode});
     then
@@ -4238,7 +4309,7 @@ algorithm
       true = listLength(endNodesIn) >= idx;
       true = List.isEmpty(maxCostNodes);
       endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts)) = arrayGet(nodeInfoIn, endNode);
+      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
       endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,{endNode});
     then
       endNodesTmp;
@@ -4248,7 +4319,7 @@ end getCriticalPathEndNodes;
 
 protected function gatherParallelSets " gathers all nodes of the same level in a list
 author: Waurich TUD 2013-07"
-  input array<tuple<Integer,Real>> nodeInfo;
+  input array<tuple<Integer,Real,Integer>> nodeInfo;
   output list<list<Integer>> parallelSetsOut;
 protected
   Integer numLevels;
@@ -4260,13 +4331,13 @@ end gatherParallelSets;
 
 protected function numberOfLevels " gets the number of values
 author: Waurich TUD 2013-07"
-  input tuple<Integer,Real> nodeInfoEntry;
+  input tuple<Integer,Real,Integer> nodeInfoEntry;
   input Integer numLevelsIn;
   output Integer numLevelsOut;
 protected
   Integer levelIn;
 algorithm
-  (levelIn,_) := nodeInfoEntry;
+  (levelIn,_,_) := nodeInfoEntry;
   numLevelsOut := intMax(levelIn,numLevelsIn);
 end numberOfLevels;
 
@@ -4274,14 +4345,14 @@ end numberOfLevels;
 protected function gatherParallelSets1 " folding function for gatherParallelSets
 author: Waurich TUD 2013-07"
   input Integer idx;
-  input array<tuple<Integer,Real>> nodeInfo;
+  input array<tuple<Integer,Real,Integer>> nodeInfo;
   input list<list<Integer>> parallelSetIn;
   output list<list<Integer>> parallelSetOut;
 protected
   Integer level;
   list<Integer> pSet;
 algorithm
-  ((level,_)) := arrayGet(nodeInfo,idx);
+  ((level,_,_)) := arrayGet(nodeInfo,idx);
   pSet := listGet(parallelSetIn,level);
   pSet := idx :: pSet;
   parallelSetOut := List.replaceAt(pSet,level-1,parallelSetIn);
@@ -4302,23 +4373,43 @@ algorithm
       list<Integer> parentLst;
     case(_,_,_,_)
       equation
+        // get the parentList for rootNodes
         true = List.isEmpty(parentLstIn);
         rootNode = listGet(rootsIn,rootIdx);
         childLst = listGet(childLstIn,rootIdx);
+        false = List.isEmpty(childLst);
         parentLst = List.fill(rootNode,listLength(childLst));
-        //print(" parentlist for rootNode "+&intString(rootNode)+&" and the childLst "+&printIntLst(childLst)+&" and the parentLst "+&printIntLst(parentLst)+&"\n");
       then
         parentLst;
     case(_,_,_,_)
       equation
+        // append the parentList for successorNodes
         false = List.isEmpty(parentLstIn);
         rootNode = listGet(rootsIn,rootIdx);
         childLst = listGet(childLstIn,rootIdx);
+        false = List.isEmpty(childLst);
         parentLst = List.fill(rootNode,listLength(childLst));
         parentLst = listAppend(parentLstIn,parentLst);
-        //print(" parentlist for rootNode "+&intString(rootNode)+&" and the childLst "+&printIntLst(childLst)+&" and the parentLst "+&printIntLst(parentLst)+&"\n");
       then
         parentLst;
+    case(_,_,_,_)
+      equation
+        // handle nodes that should not be analysed yet
+        false = List.isEmpty(parentLstIn);
+        rootNode = listGet(rootsIn,rootIdx);
+        childLst = listGet(childLstIn,rootIdx);
+        true = List.isEmpty(childLst);
+      then
+        parentLstIn;
+    case(_,_,_,_)
+      equation
+        // handle nodes that should not be analysed yet
+        true = List.isEmpty(parentLstIn);
+        rootNode = listGet(rootsIn,rootIdx);
+        childLst = listGet(childLstIn,rootIdx);
+        true = List.isEmpty(childLst);
+      then
+        parentLstIn;
       else
         equation
           print("getRootParentLst failed! \n"); 
@@ -4326,6 +4417,7 @@ algorithm
           fail();
   end matchcontinue;
 end getRootParentLst;
+
 
 protected function getRootParentLst2 "removes double pairs of rootNodes and childNodes
 author: Waurich TUD 2013-07" 
@@ -4554,6 +4646,23 @@ algorithm
     then ("(" +& intString(int1) +& "," +& realString(real1) +& ")");
   end match;
 end tupleToStringRealInt;
+
+
+protected function tupleToStringIntRealInt "function tupleToString
+  author: Waurich TUD 2013-07
+  Returns the given tuple as string." 
+  input tuple<Integer,Real,Integer> inTuple;
+  output String result;
+  
+algorithm
+  result := match(inTuple)
+    local
+      Integer int1,int2;
+      Real real1;
+    case((int1,real1,int2))
+    then ("(" +& intString(int1) +& "," +& realString(real1) +&" , "+& intString(int2) +& ")");
+  end match;
+end tupleToStringIntRealInt;
 
 
 // public function arrangeGraphInLevels "
