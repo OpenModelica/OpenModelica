@@ -570,6 +570,7 @@ void VariablesWidget::deleteVariablesTreeItem()
 
 void VariablesWidget::findVariables()
 {
+  mpVariablesTreeWidget->collapseAll();
   if (mpFindVariablesTextBox->text().isEmpty())
   {
     QTreeWidgetItemIterator it(mpVariablesTreeWidget);
@@ -594,6 +595,7 @@ void VariablesWidget::findVariables()
   // unhide the founded items
   foreach (QTreeWidgetItem *pItem, foundedItemsList)
   {
+    pItem->setExpanded(true);
     pItem->setHidden(false);
     // if the item has childs then unhide all the child items as well
     if (pItem->childCount() > 0)
@@ -602,6 +604,7 @@ void VariablesWidget::findVariables()
     while (pItem->parent())
     {
       pItem = pItem->parent();
+      pItem->setExpanded(true);
       pItem->setHidden(false);
     }
   }
