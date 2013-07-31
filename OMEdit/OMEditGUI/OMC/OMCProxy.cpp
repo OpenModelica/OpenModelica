@@ -1179,12 +1179,12 @@ QString OMCProxy::getComponentModifierValue(QString className, QString name)
   \param value - is the value to set.
   \return true on success.
   */
-bool OMCProxy::setComponentModifierValue(QString className, QString name, QString value)
+bool OMCProxy::setComponentModifierValue(QString className, QString modifierName, QString modifierValue)
 {
-  if (value.compare("=") == 0)
-    sendCommand("setComponentModifierValue(" + className + "," + name + ", $Code(()))");
+  if (modifierValue.compare("=") == 0)
+    sendCommand("setComponentModifierValue(" + className + "," + modifierName + ", $Code(()))");
   else
-    sendCommand("setComponentModifierValue(" + className + "," + name + ", $Code(" + value + "))");
+    sendCommand("setComponentModifierValue(" + className + "," + modifierName + ", $Code(" + modifierValue + "))");
   if (getResult().toLower().contains("ok"))
     return true;
   else
@@ -1192,6 +1192,12 @@ bool OMCProxy::setComponentModifierValue(QString className, QString name, QStrin
     printMessagesStringInternal();
     return false;
   }
+}
+
+QStringList OMCProxy::getExtendsModifierNames(QString className, QString extendsClassName)
+{
+  sendCommand("getExtendsModifierNames(" + className + "," + extendsClassName + ", useQuotes = true)", true, className);
+  return StringHandler::unparseStrings(getResult());
 }
 
 /*!
@@ -1205,6 +1211,21 @@ QString OMCProxy::getExtendsModifierValue(QString className, QString extendsClas
 {
   sendCommand("getExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ")", true, className);
   return StringHandler::getModifierValue(getResult()).trimmed();
+}
+
+bool OMCProxy::setExtendsModifierValue(QString className, QString extendsClassName, QString modifierName, QString modifierValue)
+{
+  if (modifierValue.compare("=") == 0)
+    sendCommand("setExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ", $Code(()))");
+  else
+    sendCommand("setExtendsModifierValue(" + className + "," + extendsClassName + "," + modifierName + ", $Code(" + modifierValue + "))");
+  if (getResult().toLower().contains("ok"))
+    return true;
+  else
+  {
+    printMessagesStringInternal();
+    return false;
+  }
 }
 
 /*!

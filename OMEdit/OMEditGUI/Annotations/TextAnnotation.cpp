@@ -296,25 +296,36 @@ void TextAnnotation::updateTextString()
     - %name replaced by the name of the component (i.e. the identifier for it in in the enclosing class).
     - %class replaced by the name of the class.
   */
-  mTextString = mTextString.replace("%name", mpComponent->getRootParentComponent()->getName(), Qt::CaseInsensitive);
-  mTextString = mTextString.replace("%class", mpComponent->getRootParentComponent()->getClassName(), Qt::CaseInsensitive);
-  /* handle variables now */
-  QRegExp variablesRegExp ("%\\w+");
-  QStringList variablesList;
-  int pos = 0;
-  while ((pos = variablesRegExp.indexIn(mTextString, pos)) != -1)
+  if (!mOriginalTextString.contains("%"))
+    return;
+  if (mOriginalTextString.toLower().compare("%name") == 0)
   {
-    variablesList << variablesRegExp.cap(0);
-    pos += variablesRegExp.matchedLength();
+    mTextString = QString(mOriginalTextString).replace("%name", mpComponent->getRootParentComponent()->getName(), Qt::CaseInsensitive);
   }
-  foreach (QString variable, variablesList)
+  else if (mOriginalTextString.toLower().compare("%class") == 0)
   {
-    if (!variable.isEmpty())
+    mTextString = QString(mOriginalTextString).replace("%class", mpComponent->getRootParentComponent()->getClassName(), Qt::CaseInsensitive);
+  }
+  else
+  {
+    /* handle variables now */
+    QRegExp variablesRegExp ("%\\w+");
+    QStringList variablesList;
+    int pos = 0;
+    while ((pos = variablesRegExp.indexIn(mOriginalTextString, pos)) != -1)
     {
-      QString textValue = mpComponent->getParameterDisplayString(variable.remove("%"));
-      if (!textValue.isEmpty())
+      variablesList << variablesRegExp.cap(0);
+      pos += variablesRegExp.matchedLength();
+    }
+    foreach (QString variable, variablesList)
+    {
+      if (!variable.isEmpty())
       {
-        mTextString = mTextString.replace(QString("%").append(variable), textValue);
+        QString textValue = mpComponent->getParameterDisplayString(variable.remove("%"));
+        if (!textValue.isEmpty())
+        {
+          mTextString = QString(mOriginalTextString).replace(QString("%").append(variable), textValue);
+        }
       }
     }
   }

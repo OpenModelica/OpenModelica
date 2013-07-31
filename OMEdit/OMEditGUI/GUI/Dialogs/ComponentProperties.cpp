@@ -50,25 +50,43 @@
   \param componentName - the name of the component.
   */
 Parameter::Parameter(ComponentInfo *pComponentInfo, OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-                     QString componentClassName, QString componentName, bool parametersOnly)
+                     QString componentClassName, QString componentName, bool parametersOnly, bool inheritedComponent,
+                     QString inheritedClassName)
 {
   mpNameLabel = new Label(pComponentInfo->getName());
   mpValueTextBox = new QLineEdit;
   mpValueTextBox->setMinimumWidth(100);  /* Set the minimum width for so atleast it can show the value when scroll bars are on */
   /*
     Get the value
-    1. Check if the value is available in component modifier.
-    2. If we are fetching the modifier value of inherited class then check if the modifier value is present in extends modifier.
-    3. If no value is found then read the default value of the component.
+    1.  If the component is inherited and class has extends modifier then see if the component has modifier value there.
+    1.1 If the component is inherited then the rest of the case use "inheritedClassName" instead of "className". So we can get the
+        default values of the modifiers that are set in the inherited class.
+    2.  Check if the value is available in component modifier.
+    3.  If we are fetching the modifier value of inherited class then check if the modifier value is present in extends modifier.
+    4.  If no value is found then read the default value of the component.
     */
   QString value;
+  QString classNameToUse = className;
   /* case 1 */
-  if (!componentName.isEmpty())
-    value = pOMCProxy->getComponentModifierValue(className, QString(componentName).append(".").append(pComponentInfo->getName()));
+  if (inheritedComponent)
+  {
+    QStringList extendsModifierNames = pOMCProxy->getExtendsModifierNames(className, inheritedClassName);
+    foreach (QString extendsModifierName, extendsModifierNames)
+    {
+      if (extendsModifierName.compare(QString(componentName).append(".").append(pComponentInfo->getName())) == 0)
+      {
+        value = pOMCProxy->getExtendsModifierValue(className, inheritedClassName, extendsModifierName);
+      }
+    }
+    classNameToUse = inheritedClassName;
+  }
   /* case 2 */
+  if (value.isEmpty() && !componentName.isEmpty())
+    value = pOMCProxy->getComponentModifierValue(classNameToUse, QString(componentName).append(".").append(pComponentInfo->getName()));
+  /* case 3 */
   if (value.isEmpty() && !componentBaseClassName.isEmpty())
     value = pOMCProxy->getExtendsModifierValue(componentBaseClassName, componentClassName, pComponentInfo->getName());
-  /* case 3 */
+  /* case 4 */
   if (value.isEmpty())
     value = pOMCProxy->getParameterValue(componentClassName, pComponentInfo->getName());
   mpValueTextBox->setText(value);
@@ -303,7 +321,8 @@ void ComponentParameters::setUpDialog()
   createTabsAndGroupBoxes(mpComponent->getOMCProxy(), mpComponent->getClassName());
   // create the parameters controls
   createParameters(mpComponent->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
-                   "", mpComponent->getClassName(), mpComponent->getName(), 0);
+                   "", mpComponent->getClassName(), mpComponent->getName(), mpComponent->isInheritedComponent(),
+                   mpComponent->getInheritedClassName(), 0);
   /* if component doesn't have any parameters then hide the parameters Group Box */
   if (mParametersList.isEmpty())
   {
@@ -428,7 +447,8 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
   \param layoutIndex - the index value of the layout, tells the layout where to put the parameter GUI controls.
   */
 void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
-                                           QString componentClassName, QString componentName, int layoutIndex)
+                                           QString componentClassName, QString componentName, bool inheritedComponent,
+                                           QString inheritedClassName, int layoutIndex)
 {
   int i = 0;
   QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(componentClassName);
@@ -461,7 +481,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
         if (pGroupBoxLayout)
         {
           Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
-                                                componentName, mParametersOnly);
+                                                componentName, mParametersOnly, inheritedComponent, inheritedClassName);
           pGroupBoxLayout->addWidget(pParameter->getNameLabel(), layoutIndex, 0);
           if (dialogAnnotation.size() > 3)
           {
@@ -482,7 +502,10 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
   {
     QString inheritedClass = pOMCProxy->getNthInheritedClass(componentClassName, i);
     if (!pOMCProxy->isBuiltinType(inheritedClass) && inheritedClass.compare(componentClassName) != 0)
-      createParameters(pOMCProxy, className, componentClassName, inheritedClass, componentName, layoutIndex);
+    {
+      createParameters(pOMCProxy, className, componentClassName, inheritedClass, componentName, inheritedComponent,
+                       inheritedClassName, layoutIndex);
+    }
   }
 }
 
@@ -512,8 +535,17 @@ void ComponentParameters::updateComponentParameters()
       QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
       QString componentModifier = QString(mpComponent->getName()).append(".").append(pParameter->getNameLabel()->text());
       QString componentModifierValue = pValueTextBox->text().trimmed();
-      if (mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("=")))
-        modifierValueChanged = true;
+      /* If the component is inherited then add the modifier value into the extends. */
+      if (mpComponent->isInheritedComponent())
+      {
+        if (mpComponent->getOMCProxy()->setExtendsModifierValue(className, mpComponent->getInheritedClassName(), componentModifier, componentModifierValue.prepend("=")))
+          modifierValueChanged = true;
+      }
+      else
+      {
+        if (mpComponent->getOMCProxy()->setComponentModifierValue(className, componentModifier, componentModifierValue.prepend("=")))
+          modifierValueChanged = true;
+      }
     }
   }
   // add modifiers

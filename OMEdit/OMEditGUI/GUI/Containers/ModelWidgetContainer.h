@@ -164,7 +164,8 @@ public:
   QAction* getFlipVerticalAction();
   bool addComponent(QString className, QPointF position);
   void addComponentToView(QString name, QString className, QString transformationString, QPointF point, StringHandler::ModelicaClasses type,
-                          bool addObject = true, bool openingClass = false, bool inheritedClass = false);
+                          bool addObject = true, bool openingClass = false, bool inheritedClass = false,
+                          QString inheritedClassName = QString());
   void addComponentObject(Component *pComponent);
   void deleteComponentObject(Component *pComponent);
   Component* getComponentObject(QString componentName);

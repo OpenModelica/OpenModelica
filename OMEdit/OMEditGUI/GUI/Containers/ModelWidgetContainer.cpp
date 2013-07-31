@@ -442,7 +442,8 @@ bool GraphicsView::addComponent(QString className, QPointF position)
 }
 
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
-                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass, bool inheritedClass)
+                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass, bool inheritedClass,
+                                      QString inheritedClassName)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotation;
@@ -451,7 +452,7 @@ void GraphicsView::addComponentToView(QString name, QString className, QString t
     annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
   else
     annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-  Component *pComponent = new Component(annotation, name, className, type, transformationString, point, inheritedClass,
+  Component *pComponent = new Component(annotation, name, className, type, transformationString, point, inheritedClass, inheritedClassName,
                                         pMainWindow->getOMCProxy(), this);
   if (!openingClass)
   {
@@ -2152,12 +2153,12 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
     if (!transformation.isEmpty())
     {
       mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                                QPointF(0.0, 0.0), type, false, true, inheritedCycle);
+                                                QPointF(0.0, 0.0), type, false, true, inheritedCycle, className);
       if (type == StringHandler::Connector && !pComponentInfo->getProtected())
       {
         // add the component to the icon view.
         mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                               QPointF(0.0, 0.0), type, false, true, inheritedCycle);
+                                               QPointF(0.0, 0.0), type, false, true, inheritedCycle, className);
       }
     }
     i++;

@@ -39,14 +39,15 @@
 #include "ComponentProperties.h"
 
 Component::Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-                     QPointF position, bool inheritedComponent, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView,
-                     Component *pParent)
+                     QPointF position, bool inheritedComponent, QString inheritedClassName, OMCProxy *pOMCProxy,
+                     GraphicsView *pGraphicsView, Component *pParent)
   : QGraphicsItem(pParent), mName(name), mClassName(className), mType(type), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
     mpParentComponent(pParent)
 {
   setZValue(2000);
   mIsLibraryComponent = false;
   mIsInheritedComponent = inheritedComponent;
+  mInheritedClassName = inheritedClassName;
   initialize();
   mpComponentInfo = 0;
   setComponentFlags();
@@ -135,6 +136,7 @@ Component::Component(QString annotation, QString className, OMCProxy *pOMCProxy,
 {
   mIsLibraryComponent = true;
   mIsInheritedComponent = false;
+  mInheritedClassName = "";
   mpGraphicsView = 0;
   initialize();
   mpParentComponent = pParent;
@@ -195,6 +197,11 @@ bool Component::isLibraryComponent()
 bool Component::isInheritedComponent()
 {
   return mIsInheritedComponent;
+}
+
+QString Component::getInheritedClassName()
+{
+  return mInheritedClassName;
 }
 
 void Component::getClassInheritedComponents(bool isRootComponent, bool isPortComponent)
