@@ -139,7 +139,7 @@ inline volatile long long RDTSC() {
 }
 #else
 inline volatile long long RDTSC() {
-	return __rdtsc();
+  return __rdtsc();
 }
 #endif
 
