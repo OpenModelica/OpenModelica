@@ -2145,9 +2145,10 @@ algorithm
     case (istmts, st as SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getExtendsModifierNames");
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} =
-          getApiFunctionArgs(istmts);
-        resstr = getExtendsModifierNames(class_, cr, p);
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
+        b1 = useQuotes(nargs);
+        resstr = getExtendsModifierNames(class_, cr, b1, p);
       then
         (resstr, st);
 
@@ -6029,29 +6030,31 @@ protected function getExtendsModifierNames
    modification on an extends clause.
    For instance,
      model test extends A(p1=3,p2(z=3));end test;
-     getExtendsModifierNames(test,A) => {p1,p2}
+     getExtendsModifierNames(test,A) => {p1,p2.z}
    inputs:  (Absyn.ComponentRef, /* class */
                Absyn.ComponentRef, /* inherited class */
                Absyn.Program)
    outputs: (string)"
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
+  input Boolean inBoolean;
   input Absyn.Program inProgram3;
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
+  matchcontinue (inComponentRef1,inComponentRef2,inBoolean,inProgram3)
     local
       Absyn.Path p_class,name,extpath;
       Absyn.Class cdef;
       list<Absyn.ElementSpec> exts,exts_1;
       list<Env.Frame> env;
       list<Absyn.ElementArg> extmod;
-      list<String> res;
+      list<String> res,res1;
       String res_1,res_2;
+      Boolean b;
       Absyn.ComponentRef class_,inherit_name;
       Absyn.Program p;
-    case (class_,inherit_name,p)
+    case (class_,inherit_name,b,p)
       equation
         p_class = Absyn.crefToPath(class_);
         name = Absyn.crefToPath(inherit_name);
@@ -6061,11 +6064,12 @@ algorithm
         exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
         {Absyn.EXTENDS(extpath,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
         res = getModificationNames(extmod);
-        res_1 = stringDelimitList(res, ", ");
+        res1 = Util.if_(b,insertQuotesToList(res),res);
+        res_1 = stringDelimitList(res1, ", ");
         res_2 = stringAppendList({"{",res_1,"}"});
       then
         res_2;
-    case (_,_,_) then "Error";
+    case (_,_,_,_) then "Error";
   end matchcontinue;
 end getExtendsModifierNames;
 
@@ -11022,6 +11026,24 @@ algorithm
         res;
   end matchcontinue;
 end useQuotes;
+
+protected function insertQuotesToList
+  input list<String> inStringList;
+  output list<String> outStringList;
+algorithm
+  outStringList := matchcontinue (inStringList)
+    local
+      list<String> res,rest;
+      String str_1,str;
+    case ({}) then {};
+    case ((str :: rest))
+      equation
+        str_1 = stringAppendList({"\"",str,"\""});
+        res = insertQuotesToList(rest);
+      then
+        (str_1 :: res);
+  end matchcontinue;
+end insertQuotesToList;
 
 public function getComponents
 "function: getComponents
