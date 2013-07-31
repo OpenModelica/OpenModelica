@@ -506,7 +506,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
       } else if (0==strcmp(clockName, "RT")) {
         clock = OMC_CLOCK_REALTIME;
       } else if(0==strcmp(clockName, "CYC")) {
-    	clock = OMC_CPU_CYCLES;
+      clock = OMC_CPU_CYCLES;
       } else {
         WARNING1(LOG_STDOUT, "[unknown clock-type] got %s, expected CPU|RT|CYC. Defaulting to RT.", clockName);
       }

@@ -225,11 +225,11 @@ package SimCode
     end ZEROCROSSINGS_CONTEXT;  
   end Context;
   
-	uniontype HpcOmParInformation
-	  record HPCOMPARINFORMATION
-	    list<list<Integer>> eqsOfLevels;
-	  end HPCOMPARINFORMATION;
-	end HpcOmParInformation;
+  uniontype HpcOmParInformation
+    record HPCOMPARINFORMATION
+      list<list<Integer>> eqsOfLevels;
+    end HPCOMPARINFORMATION;
+  end HpcOmParInformation;
   
   uniontype Variable
     record VARIABLE
@@ -2881,10 +2881,10 @@ end FMI;
 
 package HpcOmSimCode
   function getSimCodeEqByIndex
-	  input list<SimCode.SimEqSystem> iEqs;
-	  input Integer iIdx;
-	  output SimCode.SimEqSystem oEq;
-	end getSimCodeEqByIndex;
+    input list<SimCode.SimEqSystem> iEqs;
+    input Integer iIdx;
+    output SimCode.SimEqSystem oEq;
+  end getSimCodeEqByIndex;
 end HpcOmSimCode;
 
 end SimCodeTV;
