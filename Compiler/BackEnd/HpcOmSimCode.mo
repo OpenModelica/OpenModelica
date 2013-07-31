@@ -283,10 +283,13 @@ algorithm
 end createSimCode;
 
 
-protected function createSimEqToSccMapping
+protected function createSimEqToSccMapping "function createSimEqToSccMapping
+  author: marcusw
+  This methods is the same as the first part of the createSimCode-Method. 
+  It returns a mapping between the scc-indices and the created simEq-Indices."
   input BackendDAE.BackendDAE inBackendDAE;
-  output list<tuple<Integer,Integer>> oMapping;
-  output Integer lastIndex;
+  output list<tuple<Integer,Integer>> oMapping; //The mapping simEq-Index -> scc-Index
+  output Integer lastIndex; //The highest simEqIndex in the mapping
 algorithm
   (oMapping,lastIndex) := matchcontinue (inBackendDAE)
     local
@@ -381,10 +384,12 @@ algorithm
 
 end createSimEqToSccMapping;
 
-protected function convertToSccSimEqMapping
-  input list<tuple<Integer,Integer>> iMapping;
-  input Integer numOfSccs;
-  output array<list<Integer>> oMapping;
+protected function convertToSccSimEqMapping "function convertToSccSimEqMapping
+  author: marcusw
+  Converts the given mapping (simEqIndex -> sccIndex) to the inverse mapping (sccIndex->simEqIndex)."
+  input list<tuple<Integer,Integer>> iMapping; //the mapping (simEqIndex -> sccIndex)
+  input Integer numOfSccs; //important for arrayCreate
+  output array<list<Integer>> oMapping; //the created mapping (sccIndex->simEqIndex)
   
 protected
   array<list<Integer>> tmpMapping;
@@ -397,8 +402,10 @@ algorithm
   
 end convertToSccSimEqMapping;
 
-protected function convertToSccSimEqMapping1
-  input tuple<Integer,Integer> iMapping;
+protected function convertToSccSimEqMapping1 "function convertToSccSimEqMapping1
+  author: marcusw
+  Helper function for convertToSccSimEqMapping. It will update the arrayIndex of the given mapping value."
+  input tuple<Integer,Integer> iMapping; //<simEqIdx,sccIdx>
   input array<list<Integer>> iSccMapping;
   output array<list<Integer>> oSccMapping;
   
@@ -415,7 +422,9 @@ algorithm
   
 end convertToSccSimEqMapping1;
 
-protected function convertToSimEqSccMapping
+protected function convertToSimEqSccMapping "function convertToSimEqSccMapping
+  author: marcusw
+  Converts the given mapping (simEqIndex -> sccIndex) bases on tuples to an array mapping."
   input list<tuple<Integer,Integer>> iMapping; //<simEqIdx,sccIdx>
   input Integer numOfSimEqs;
   output array<Integer> oMapping; //maps each simEq to the scc
@@ -424,13 +433,14 @@ protected
   array<Integer> tmpMapping;
   
 algorithm
-  //tmpMapping := arrayCreate(listLength(iMapping), -1);
   tmpMapping := arrayCreate(numOfSimEqs, -1);
   oMapping := List.fold(iMapping, convertToSimEqSccMapping1, tmpMapping);
 end convertToSimEqSccMapping;
 
-protected function convertToSimEqSccMapping1
-  input tuple<Integer,Integer> iSimEqTuple;
+protected function convertToSimEqSccMapping1 "function convertToSimEqSccMapping1
+  author: marcusw
+  Helper function for convertToSimEqSccMapping. It will update the array at the given index."
+  input tuple<Integer,Integer> iSimEqTuple; //<simEqIdx,sccIdx>
   input array<Integer> iMapping;
   output array<Integer> oMapping;
  
@@ -443,7 +453,9 @@ algorithm
   oMapping := arrayUpdate(iMapping,simEqIdx,sccIdx);
 end convertToSimEqSccMapping1;
 
-protected function dumpSccSimEqMapping
+protected function dumpSccSimEqMapping "function dumpSccSimEqMapping
+  author: marcusw
+  Prints the given mapping out to the console."
   input array<list<Integer>> iSccMapping;
  
 protected
@@ -455,7 +467,9 @@ algorithm
   print(text +& "\n");
 end dumpSccSimEqMapping;
 
-protected function dumpSccSimEqMapping1
+protected function dumpSccSimEqMapping1 "function dumpSccSimEqMapping1
+  author: marcusw
+  Helper function of dumpSccSimEqMapping to print one mapping list."
   input list<Integer> iMapping;
   input tuple<Integer,String> iIndexText;
   output tuple<Integer,String> oIndexText;
@@ -471,7 +485,9 @@ algorithm
   oIndexText := (iIndex+1,text);
 end dumpSccSimEqMapping1;
 
-protected function dumpSccSimEqMapping2
+protected function dumpSccSimEqMapping2 "function dumpSccSimEqMapping2
+  author: marcusw
+  Helper function of dumpSccSimEqMapping1 to print one mapping element."
   input Integer iIndex;
   input String iText;
   output String oText;
@@ -481,9 +497,11 @@ algorithm
    
 end dumpSccSimEqMapping2;
 
-public function getSimCodeEqByIndex //called from susan
-  input list<SimCode.SimEqSystem> iEqs;
-  input Integer iIdx;
+public function getSimCodeEqByIndex "function getSimCodeEqByIndex
+  author: marcusw
+  Returns the SimEqSystem which has the given Index. This method is called from susan."
+  input list<SimCode.SimEqSystem> iEqs; //All SimEqSystems
+  input Integer iIdx; //The index of the wanted system
   output SimCode.SimEqSystem oEq;
 
 protected
@@ -506,7 +524,9 @@ algorithm
   end matchcontinue;
 end getSimCodeEqByIndex;
 
-protected function getIndexBySimCodeEq
+protected function getIndexBySimCodeEq "function getIndexBySimCodeEq
+  author: marcusw
+  Just a small helper function to get the index of a SimEqSystem."
   input SimCode.SimEqSystem iEq;
   output Integer oIdx;
 
@@ -528,7 +548,9 @@ algorithm
   end match;
 end getIndexBySimCodeEq;
 
-protected function printParInformation
+protected function printParInformation "function printParInformation
+  author: marcusw
+  Prints the given parallel informations out to the console."
   input SimCode.HpcOmParInformation iParInfo;
 
 protected
@@ -547,7 +569,9 @@ algorithm
   end match;
 end printParInformation;
 
-protected function printParInformationLevel
+protected function printParInformationLevel "function printParInformationLevel
+  author: marcusw
+  Helper function of printParInformation to print one level."
   input list<Integer> iLevelInfo;
   input Integer iLevel;
   output Integer oLevel;
@@ -558,7 +582,9 @@ algorithm
   oLevel := iLevel + 1;
 end printParInformationLevel;
 
-protected function printParInformationLevel1
+protected function printParInformationLevel1 "function printParInformationLevel
+  author: marcusw
+  Helper function of printParInformationLevel1 to print one equation."
   input Integer iEquation;
   input Integer iLevel;
   output Integer oLevel;
@@ -568,7 +594,9 @@ algorithm
   oLevel := iLevel + 1;
 end printParInformationLevel1;
 
-protected function createParInformation
+protected function createParInformation "function createParInformation
+  author: marcusw
+  Creates the hpcomParInformation-structure."
   input HpcOmTaskGraph.TaskGraphMeta iMeta;
   input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
   output SimCode.HpcOmParInformation oParInfo;
@@ -595,7 +623,9 @@ algorithm
   end match;
 end createParInformation;
 
-protected function createParInformation0 "function createParInformation0"
+protected function createParInformation0 "function createParInformation0
+  author: marcusw
+  Helper function of createParInformation. It extends the levelMapping-structure with the informations of the given node (iNodeIdx)."
   input Integer iNodeIdx;
   input array<list<Integer>> iComps;
   input array<list<Integer>> iSccSimEqMapping;
@@ -647,7 +677,9 @@ algorithm
   end matchcontinue;
 end createParInformation0;
 
-protected function createParInformation1
+protected function createParInformation1 "function createParInformation1
+  author: marcusw
+  Helper function of createParInformation. This method will grab the simEqIndex of the given component and extend the iList."
   input Integer iCompIdx;
   input array<list<Integer>> iSccSimEqMapping;
   input list<Integer> iList;
@@ -661,11 +693,13 @@ algorithm
   oList := listAppend(iList,simEqIdc);
 end createParInformation1;
 
-protected function getLevelListByLevel
+protected function getLevelListByLevel "function getLevelListByLevel
+  author: marcusw
+  Returns the level list of the searched index. If no level with the given index was found, a new list is appended to the mapping."
   input Integer iLevel;
   input Integer iCurrentListIndex;
   input list<tuple<Integer,list<Integer>>> restList;
-  input list<tuple<Integer,list<Integer>>> iSimEqLevelMapping;
+  input list<tuple<Integer,list<Integer>>> iSimEqLevelMapping; //list<<levelIndex,levelList>>
   output list<tuple<Integer,list<Integer>>> oSimEqLevelMapping;
   output list<Integer> oEqList;
   output Integer oMapListIndex; 
@@ -696,9 +730,11 @@ algorithm
    end matchcontinue;
 end getLevelListByLevel;
 
-protected function sortParInfo
-  input tuple<Integer,list<Integer>> iTuple1;
-  input tuple<Integer,list<Integer>> iTuple2;
+protected function sortParInfo "function sortParInfo
+  author: marcusw
+  Use this function to sort a level list. The result is true if index1 > index2."
+  input tuple<Integer,list<Integer>> iTuple1; //<index1,_>
+  input tuple<Integer,list<Integer>> iTuple2; //<index2,_>
   output Boolean oResult;
   
 protected

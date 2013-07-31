@@ -3934,12 +3934,13 @@ algorithm
         nodeInfo = List.fold1(List.intRange(arrayLength(graphIn)),setParentCount,graphIn,nodeInfo);
         nodeInfo = longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
         parallelSets = gatherParallelSets(nodeInfo);
+        //TODO: Move print to seperate method and call it from HpcOmSimCode if required.
         //print("parallelSets :"+&stringDelimitList(List.map(parallelSets,printIntLst)," ; ")+&"\n");
         print("the number of parallel sets "+&intString(listLength(parallelSets))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
         nodeCoords = getNodeCoords(parallelSets,graphIn);
         nodeMark = List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
         (criticalPathTmp,cpCostsTmp) = getCriticalPath(graphIn,graphDataIn,nodeInfo);
-        print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,printIntLst)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
+        //print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,printIntLst)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
       then
         (criticalPathTmp,cpCostsTmp);
     else
