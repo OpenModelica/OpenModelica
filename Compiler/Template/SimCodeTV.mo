@@ -149,6 +149,7 @@ package SimCode
       list<JacobianMatrix> jacobianMatrixes;  
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
+      Option<HpcOmParInformation> hpcOmParInformationOpt; 
     end SIMCODE;
 
   end SimCode;
@@ -223,6 +224,12 @@ package SimCode
     record ZEROCROSSINGS_CONTEXT 
     end ZEROCROSSINGS_CONTEXT;  
   end Context;
+  
+	uniontype HpcOmParInformation
+	  record HPCOMPARINFORMATION
+	    list<list<Integer>> eqsOfLevels;
+	  end HPCOMPARINFORMATION;
+	end HpcOmParInformation;
   
   uniontype Variable
     record VARIABLE
@@ -2496,6 +2503,7 @@ package Flags
   uniontype DebugFlag end DebugFlag;
 
   constant DebugFlag OPENMP;
+  constant DebugFlag HPCOM;
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
 
@@ -2870,5 +2878,13 @@ package FMI
     output String fmiType;
   end getFMIType;
 end FMI;
+
+package HpcOmSimCode
+  function getSimCodeEqByIndex
+	  input list<SimCode.SimEqSystem> iEqs;
+	  input Integer iIdx;
+	  output SimCode.SimEqSystem oEq;
+	end getSimCodeEqByIndex;
+end HpcOmSimCode;
 
 end SimCodeTV;

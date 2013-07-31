@@ -70,7 +70,7 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
     array<String> nodeDescs;  // a description of the nodes for the graphml generation
     array<tuple<Integer,Real>> exeCosts;  // the execution cost for the nodes <numberOfOperations, requiredCycles
     array<list<tuple<Integer,Integer,Integer>>> commCosts;  // the communication cost tuple(_,numberOfVars,requiredCycles) for an edge from array[parentNode] to tuple(childNode,_) 
-    array<Integer> nodeMark;  // put some additional stuff in here
+    array<Integer> nodeMark;  // put some additional stuff in here -> this is currently not a nodeMark, its a componentMark
   end TASKGRAPHMETA;
 end TaskGraphMeta;  
   
@@ -2781,7 +2781,7 @@ algorithm
     equation
       true = arrayLength(inComps)>= compIdx;
       compRow = arrayGet(inComps,compIdx);
-      print("component "+&intString(compIdx)+&" includes: "+&stringDelimitList(List.map(compRow,intString),", ")+&"\n");
+      print("node "+&intString(compIdx)+&" includes: "+&stringDelimitList(List.map(compRow,intString),", ")+&"\n");
       printInComps(inComps,compIdx+1);
       then
         ();
@@ -3586,14 +3586,27 @@ protected function convertSimEqToSccCosts1
   
 protected
   Integer simEqCalcCount, simEqIdx;
-  Real simEqCalcTime;
+  Real simEqCalcTime, realSimEqCalcCount;
   array<Real> reqTime;
   
 algorithm
-  (simEqCalcCount, simEqCalcTime) := iReqTimeOpSimCode;
-  (simEqIdx,reqTime) := iReqTimeOp;
-  reqTime := convertSimEqToSccCosts2(reqTime, simEqCalcTime, simEqIdx, iSimEqSccMapping);
-  oReqTimeOp := (simEqIdx+1,reqTime);
+  oReqTimeOp := matchcontinue(iReqTimeOpSimCode,iSimEqSccMapping,iReqTimeOp)
+    case(_,_,_)
+      equation
+        (simEqCalcCount, simEqCalcTime) = iReqTimeOpSimCode;
+        (simEqIdx,reqTime) = iReqTimeOp;
+        realSimEqCalcCount = intReal(simEqCalcCount);
+        true = realNe(realSimEqCalcCount,0.0);
+        reqTime = convertSimEqToSccCosts2(reqTime, realDiv(simEqCalcTime,realSimEqCalcCount), simEqIdx, iSimEqSccMapping);
+      then ((simEqIdx+1,reqTime));
+    else
+      equation
+        (simEqCalcCount, simEqCalcTime) = iReqTimeOpSimCode;
+        (simEqIdx,reqTime) = iReqTimeOp;
+        realSimEqCalcCount = intReal(simEqCalcCount);
+        reqTime = convertSimEqToSccCosts2(reqTime, 0.0, simEqIdx, iSimEqSccMapping); 
+      then ((simEqIdx+1,reqTime));
+  end matchcontinue;  
 end convertSimEqToSccCosts1;
 
 protected function convertSimEqToSccCosts2
@@ -3720,7 +3733,7 @@ algorithm
   
   //print("Component: ");
   //BackendDump.dumpComponent(comp);
-  //print("Operations: ");
+  //print("Cost: " +& realString(iCosts_cyc) +& "\n");
   //print(tuple3ToString((costAdd,costMul,costTrig)));
   //print("\n");
   oCosts := (costAdd+costMul+costTrig + iCosts_op, realAdd(iCosts_cyc,reqTime));

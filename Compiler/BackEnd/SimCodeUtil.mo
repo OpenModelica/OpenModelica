@@ -1665,7 +1665,8 @@ algorithm
                                 SymbolicJacs, 
                                 simSettingsOpt, 
                                 filenamePrefix, 
-                                crefToSimVarHT);
+                                crefToSimVarHT, 
+                                NONE());
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
       // print("*** SimCode -> collect all files started: " +& realString(clock()) +& "\n");
@@ -5375,7 +5376,7 @@ algorithm
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags();
-  cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP), stringAppend, cflags, " -fopenmp", cflags);
+  cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM), stringAppend, cflags, " -fopenmp", cflags);
   ldflags := System.getLDFlags();
   rtlibs := System.getRTLibs();
   platform := System.modelicaPlatform();
@@ -11757,6 +11758,7 @@ algorithm
       SimCode.SimVars vars;
       list<SimCode.Function> functions;
       SimCode.Files files "all the files from Absyn.Info and DAE.ELementSource";      
+      Option<SimCode.HpcOmParInformation> hpcOmParInformationOpt;
       
     case _
       equation
@@ -11765,7 +11767,7 @@ algorithm
     
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT)
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt)
       equation
         SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels) = modelInfo;
         files = {};
@@ -11782,7 +11784,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                   parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt);
                   
     case _
       equation
@@ -12063,6 +12065,7 @@ algorithm
       // *** a protected section *** not exported to SimCodeTV
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       A a;
+      Option<SimCode.HpcOmParInformation> hpcOmParInformationOpt; 
 
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
@@ -12071,7 +12074,7 @@ algorithm
                           constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                           whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                          crefToSimVarHT), _, a)
+                          crefToSimVarHT, hpcOmParInformationOpt), _, a)
       equation
         (literals, a) = List.mapFoldTuple(literals, func, a);
         (allEquations, a) = traverseExpsEqSystems(allEquations, func, a, {});
@@ -12096,7 +12099,7 @@ algorithm
                             constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                             whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
-                            crefToSimVarHT), a);
+                            crefToSimVarHT, hpcOmParInformationOpt), a);
   end match;
 end traverseExpsSimCode;
 
@@ -12264,21 +12267,22 @@ algorithm
       String fileNamePrefix;
       // *** a protected section *** not exported to SimCodeTV
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
-
+      Option<SimCode.HpcOmParInformation> hpcOmParInformationOpt; 
+      
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes, 
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
                           useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                           constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                           whenClauses, discreteModelVars, extObjInfo, makefileParams, 
-                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT), _)
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                            allEquations, odeEquations, algebraicEquations, residualEquations, 
                            useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                            parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                            constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                            whenClauses, discreteModelVars, extObjInfo, makefileParams, 
-                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
+                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt);
   end match;
 end setSimCodeLiterals;
 

@@ -107,9 +107,9 @@ uniontype SimCode
     list<JacobianMatrix> jacobianMatrixes;
     Option<SimulationSettings> simulationSettingsOpt;
     String fileNamePrefix;
-
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
+    Option<HpcOmParInformation> hpcOmParInformationOpt; 
   end SIMCODE;
 end SimCode;
 
@@ -594,4 +594,9 @@ efficient manner"
 end ValueArray;
 
 
+public uniontype HpcOmParInformation "informations for the taskgraph parallelization"
+  record HPCOMPARINFORMATION
+    list<list<Integer>> eqsOfLevels; //The equations of the level <%listindex%>
+  end HPCOMPARINFORMATION;
+end HpcOmParInformation;
 end SimCode;

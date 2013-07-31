@@ -344,6 +344,7 @@ void* HpcOmBenchmarkExtImpl__readCalcTimesFromXml(const char *filename)
     errorMsg += std::string(filename);
     errorMsg += "' does not exist";
     res = mk_cons(mk_scon(errorMsg.c_str()), mk_nil());
+    printf("%s\n",errorMsg.c_str());
     return res;
   }
 

@@ -140,13 +140,26 @@ template simulationFile(SimCode simCode, String guid)
     int measure_time_flag = 0;
     #endif
 
-        
+    <%if Flags.isSet(HPCOM) then "#define HPCOM"%>
+
+    #ifdef HPCOM
+     #include <omp.h>
+    #endif
+
     #ifdef _OPENMP
-    #include <omp.h>
-    #include <omp_perform_simulation.c>
+     #ifndef HPCOM
+      #include <omp.h>
+      #include <omp_perform_simulation.c>
+     #else
+      #include <perform_simulation.c>
+     #endif
     #else
-    #include <perform_simulation.c>
-    #define omp_get_max_threads() 1
+     #ifndef HPCOM
+      #include <perform_simulation.c>
+      #define omp_get_max_threads() 1
+     #else
+      #include <perform_simulation.c>
+     #endif
     #endif
   
 
@@ -198,7 +211,7 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionDAE(allEquations, whenClauses)%>
 
-    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""))%>
+    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""),hpcOmParInformationOpt)%>
 
     <%functionAlgebraic(algebraicEquations)%>
 
@@ -1523,6 +1536,119 @@ end functionWhenReinitStatementThen;
 //  >>
 //end functionWhenReinitStatementElse;
 
+//------------------------------------
+// Begin: Modified functions for HpcOm
+//------------------------------------
+
+template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<HpcOmParInformation> hpcOmParInformationOpt)
+::=
+  match hpcOmParInformationOpt 
+    case SOME(info as HPCOMPARINFORMATION(__)) then
+      let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,info.eqsOfLevels) ; separator="\n")
+      match listLength(eqs)
+          case 0 then //empty case
+            let &loop += 
+                <<
+                /* no <%name%> systems */
+                >> 
+            ""    
+          case 1 then //1 function
+            let &loop += 
+                <<
+                function<%name%>_system0(data);
+                >>
+            funcs //just the one function
+          case nFuncs then //2 and more
+            let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
+            let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
+            let &varDecls += 'int id;<%\n%>'
+          
+            let &loop +=
+              /* Text for the loop body that calls the equations */
+              <<
+              <%head%>
+              for(id=0; id<<%nFuncs%>; id++) {
+                function<%name%>_systems[id](data);
+              }
+              >>
+            /* Text before the function head */
+            <<
+            <%funcs%>
+            static void (*function<%name%>_systems[<%nFuncs%>])(DATA *) = {
+              <%funcNames%>
+            };
+            >>
+     else (error(sourceInfo(), ' MISSING PARALLEL INFORMATIONS FOR HPCOM '))
+end functionXXX_systems_HPCOM;
+
+template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, list<list<Integer>> eqsOfLevel)
+::=
+  let odeEqs = eqsOfLevel |> eqs => functionXXX_system0_HPCOM(derivativEquations,name,eqs); separator="\n"
+  <<
+  static void function<%name%>_system<%n%>(DATA *data)
+  {
+    state mem_state;
+    mem_state = get_memory_state();
+    <%odeEqs%>
+    restore_memory_state(mem_state);
+  }
+  >>
+end functionXXX_system_HPCOM;
+
+template functionXXX_system0_HPCOM(list<SimEqSystem> derivativEquations, String name, list<Integer> eqsOfLevel)
+::=
+  //let odeEqs = "#pragma omp parallel sections\n{"
+  let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete); separator="\n"
+  <<
+  #pragma omp parallel sections
+  {
+     <%odeEqs%>
+  }
+  >>
+end functionXXX_system0_HPCOM;
+
+template equationNamesHPCOM_(Integer idx, list<SimEqSystem> derivativEquations, Context context)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+match context
+case SIMULATION(genDiscrete=true) then
+ match getSimCodeEqByIndex(derivativEquations, idx)
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
+  <<
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
+  eqFunction_<%ix%>(data);
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
+  >>
+else
+ match getSimCodeEqByIndex(derivativEquations, idx)
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
+  <<
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
+  eqFunction_<%ix%>(data);
+  #ifdef _OMC_MEASURE_TIME
+    SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
+  >>
+end equationNamesHPCOM_;
+
+//----------------------------------
+// End: Modified functions for HpcOm
+//----------------------------------
+
 template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n)
 ::=
   let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete); separator="\n"
@@ -1539,7 +1665,7 @@ end functionXXX_system;
 
 template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls)
 ::=
-  let funcs = eqs |> eq hasindex i0 fromindex 0 => functionXXX_system(eq,name,i0) ; separator="\n"    
+  let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system(eq,name,i0) ; separator="\n")
   match listLength(eqs)
   case 0 then //empty case
     let &loop += 
@@ -1575,14 +1701,15 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     >>
 end functionXXX_systems;
 
-template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
+template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmParInformation> hpcOmParInformationOpt)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls2 = buffer "" /*BUFD*/
   let &varDecls = buffer ""
   let &loop = buffer ""
-  let systems = functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls)
+  let systems = if Flags.isSet(Flags.HPCOM) then (functionXXX_systems_HPCOM(derivativEquations, "ODE", &loop, &varDecls, hpcOmParInformationOpt)) else (functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls))
+  /* let systems = functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls) */
   let &tmp = buffer ""
   let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
     equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/, &tmp); separator="\n")

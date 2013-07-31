@@ -66,7 +66,8 @@ extern "C" {
 
 enum omc_rt_clock_t {
   OMC_CLOCK_REALTIME, /* CLOCK_MONOTONIC_RAW if available; else CLOCK_MONOTONIC */
-  OMC_CLOCK_CPUTIME /* Per-process CPU-time */
+  OMC_CLOCK_CPUTIME, /* Per-process CPU-time */
+  OMC_CPU_CYCLES /* Number of CPU-Cycles */
 };
 
 int rt_set_clock(enum omc_rt_clock_t clockType); /* non-zero on failure */

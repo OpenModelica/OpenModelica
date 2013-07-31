@@ -104,7 +104,7 @@ algorithm
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
       SimCode.MakefileParams makefileParams;
-      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+      SimCode.DelayedExpression delayedExps;
       BackendDAE.Variables knownVars;
       list<BackendDAE.Var> varlst;
 
@@ -135,11 +135,20 @@ algorithm
       HpcOmTaskGraph.TaskGraph taskGraph1;  
       HpcOmTaskGraph.TaskGraphMeta taskGraphData;
       HpcOmTaskGraph.TaskGraphMeta taskGraphDataOde;
-      String fileName;
+      String fileName, fileNamePrefix;
       HpcOmTaskGraph.TaskGraphMeta taskGraphData1;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths;
       Real cpCosts;
+      SimCode.HpcOmParInformation hpcOmParInformation; 
+      
+      //Additional informations to append SimCode
+      list<DAE.Exp> simCodeLiterals;
+      list<SimCode.JacobianMatrix> jacobianMatrixes;
+      list<SimCode.SimEqSystem> residualEquations;
+      Option<SimCode.SimulationSettings> simulationSettingsOpt;
+      list<SimCode.RecordDeclaration> simCodeRecordDecls;
+      list<String> simCodeExternalFunctionIncludes;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
@@ -168,14 +177,16 @@ algorithm
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE,filenamePrefix);
       //print("ODE-TASKGRAPH\n");
-      //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
-      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
                       
       //compute critical path on cost-level and determine the level of the node
       (criticalPaths,cpCosts) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+ 
+      //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
+      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
       
-      //fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
-      //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);  
+      //Sort nodes by level
+      fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);  
             
       // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
       //taskGraph1 = arrayCopy(taskGraphOde);
@@ -246,119 +257,25 @@ algorithm
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, _) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});
       
       HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
-//      modelInfo = SimCodeUtil.addTempVars(tempvars, modelInfo);
-//
-//      // Assertions and crap
-//      // create parameter equations
-//      ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}));
-//      ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow2, SimCodeUtil.createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-//      (uniqueEqIndex, parameterEquations) = SimCodeUtil.createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization);
-//      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-//
-//      ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2, SimCodeUtil.createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
-//      discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2, SimCodeUtil.extractDiscreteModelVars, {});
-//      makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
-//      (delayedExps, maxDelayedExpIndex) = SimCodeUtil.extractDelayedExpressions(dlow2);
-//
-//      //append removed equation to all equations, since these are actually
-//      //just the algorithms without outputs
-//      algebraicEquations = listAppend(algebraicEquations, removedEquations::{});
-//      allEquations = listAppend(allEquations, removedEquations);
-//
-//      // update indexNonLinear in SES_NONLINEAR and count
-//      SymbolicJacs = {};
-//      (initialEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsTemp) = SimCodeUtil.countandIndexAlgebraicLoops(initialEquations, 0, 0, 0, {});
-//      SymbolicJacs = listAppend(SymbolicJacsTemp, SymbolicJacs);
-//      (inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsTemp) = SimCodeUtil.countandIndexAlgebraicLoops(inlineEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, {});
-//      SymbolicJacs = listAppend(SymbolicJacsTemp, SymbolicJacs);
-//      (parameterEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsTemp) = SimCodeUtil.countandIndexAlgebraicLoops(parameterEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys,  {});
-//      SymbolicJacs = listAppend(SymbolicJacsTemp, SymbolicJacs);
-//      (allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsTemp) = SimCodeUtil.countandIndexAlgebraicLoops(allEquations, numberofLinearSys, numberofNonLinearSys, numberofMixedSys,  {});
-//      SymbolicJacs = listAppend(SymbolicJacsTemp, SymbolicJacs);
-//
-//      SymbolicJacsStateSelect = SimCodeUtil.indexStateSets(stateSets, {});
-//      (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsStateSelect) = SimCodeUtil.countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, SymbolicJacsStateSelect);
-//      SymbolicJacs = listAppend(SymbolicJacsStateSelect, SymbolicJacs);
-//
-//      // generate jacobian or linear model matrices
-//      LinearMatrices = SimCodeUtil.createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
-//      LinearMatrices = jacG::LinearMatrices;
-//
-//      (_, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, LinearMatrices) = SimCodeUtil.countandIndexAlgebraicLoops({}, numberofLinearSys, numberofNonLinearSys, numberofMixedSys, LinearMatrices);
-//
-//
-//      SymbolicJacs = listAppend(SymbolicJacs, LinearMatrices);
-//
-//       // map index also odeEquations and algebraicEquations
-//      systemIndexMap = List.fold(allEquations, SimCodeUtil.getSystemIndexMap, arrayCreate(uniqueEqIndex, -1));
-//      odeEquations = List.mapList1_1(odeEquations, SimCodeUtil.setSystemIndexMap, systemIndexMap);
-//      algebraicEquations = List.mapList1_1(algebraicEquations, SimCodeUtil.setSystemIndexMap, systemIndexMap);
-//      numberofEqns = uniqueEqIndex; /* This is a *much* better estimate than the guessed number of equations */
-//
-//      modelInfo = SimCodeUtil.addNumEqnsandNumofSystems(modelInfo, numberofEqns, numberofLinearSys, numberofNonLinearSys, numberofMixedSys);
-//
-//      // replace div operator with div operator with check of Division by zero
-//      allEquations = List.map(allEquations, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//      odeEquations = List.mapList(odeEquations, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//      algebraicEquations = List.mapList(algebraicEquations, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//      residuals = List.map(residuals, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//      startValueEquations = List.map(startValueEquations, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//      parameterEquations = List.map(parameterEquations, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//      removedEquations = List.map(removedEquations, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//      initialEquations = List.map(initialEquations, SimCodeUtil.addDivExpErrorMsgtoSimEqSystem);
-//
-//      odeEquations = SimCodeUtil.makeEqualLengthLists(odeEquations, Config.noProc());
-//      algebraicEquations = SimCodeUtil.makeEqualLengthLists(algebraicEquations, Config.noProc());
-//      /* Filter out empty systems to improve code generation */
-//      odeEquations = List.filterOnTrue(odeEquations, List.isNotEmpty);
-//      algebraicEquations = List.filterOnTrue(algebraicEquations, List.isNotEmpty);
-//
-//      Debug.fcall(Flags.EXEC_HASH, print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n");
-//      crefToSimVarHT = SimCodeUtil.createCrefToSimVarHT(modelInfo);
-//      Debug.fcall(Flags.EXEC_HASH, print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n");
-//
-//      constraints = arrayList(constrsarr);
-//      classAttributes = arrayList(clsattrsarra);
-//      simCode = SimCode.SIMCODE(modelInfo,
-//                                {}, // Set by the traversal below...
-//                                recordDecls,
-//                                externalFunctionIncludes,
-//                                allEquations,
-//                                odeEquations,
-//                                algebraicEquations,
-//                                residuals,
-//                                useSymbolicInitialization,
-//                                initialEquations,
-//                                startValueEquations,
-//                                parameterEquations,
-//                                inlineEquations,
-//                                removedEquations,
-//                                algorithmAndEquationAsserts,
-//                                stateSets,
-//                                constraints,
-//                                classAttributes,
-//                                zeroCrossings,
-//                                relations,
-//                                sampleLookup,
-//                                whenClauses,
-//                                discreteModelVars,
-//                                extObjInfo,
-//                                makefileParams,
-//                                SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
-//                                SymbolicJacs,
-//                                simSettingsOpt,
-//                                filenamePrefix,
-//                                crefToSimVarHT);
-//      (simCode, (_, _, lits)) = SimCodeUtil.traverseExpsSimCode(simCode, SimCodeUtil.findLiteralsHelper, literals);
-//      simCode = SimCodeUtil.setSimCodeLiterals(simCode, listReverse(lits));
-//      Debug.fcall(Flags.EXEC_FILES, print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
-//      // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
-//      // simCode = collectAllFiles(simCode);
-//      Debug.fcall(Flags.EXEC_FILES, print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
-//
-//      then simCode;
+
+      simCode = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      
+      hpcOmParInformation = createParInformation(taskGraphDataOde, sccSimEqMapping);
+      
+      //print("Parallel informations:\n");
+      //printParInformation(hpcOmParInformation);
+      
+      SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
+                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, _) = simCode;
+
+      simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
+                 parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, SOME(hpcOmParInformation));
+      
       print("HpcOm is still under construction.\n");
-    then fail();
+      then simCode;
+    //then fail();
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]"});
     then fail();
@@ -391,7 +308,6 @@ algorithm
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
       SimCode.MakefileParams makefileParams;
-      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
       BackendDAE.Variables knownVars;
       list<BackendDAE.Var> varlst;
 
@@ -564,5 +480,234 @@ algorithm
   oText := iText +& intString(iIndex) +& " ";
    
 end dumpSccSimEqMapping2;
+
+public function getSimCodeEqByIndex //called from susan
+  input list<SimCode.SimEqSystem> iEqs;
+  input Integer iIdx;
+  output SimCode.SimEqSystem oEq;
+
+protected
+  list<SimCode.SimEqSystem> rest;
+  SimCode.SimEqSystem head;
+  Integer headIdx;
+
+algorithm
+  oEq := matchcontinue(iEqs,iIdx)
+    case(head::rest,_)
+      equation
+        headIdx = getIndexBySimCodeEq(head);
+        true = intEq(headIdx,iIdx);
+      then head;
+    case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
+    else
+      equation
+        print("getSimCodeEqByIndex failed\n");
+      then fail();
+  end matchcontinue;
+end getSimCodeEqByIndex;
+
+protected function getIndexBySimCodeEq
+  input SimCode.SimEqSystem iEq;
+  output Integer oIdx;
+
+protected
+  Integer index;
+
+algorithm
+  oIdx := match(iEq)
+    case(SimCode.SES_RESIDUAL(index=index)) then index;
+    case(SimCode.SES_SIMPLE_ASSIGN(index=index)) then index;
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=index)) then index;
+    case(SimCode.SES_IFEQUATION(index=index)) then index;
+    case(SimCode.SES_ALGORITHM(index=index)) then index;
+    case(SimCode.SES_LINEAR(index=index)) then index;
+    case(SimCode.SES_NONLINEAR(index=index)) then index;
+    case(SimCode.SES_MIXED(index=index)) then index;
+    case(SimCode.SES_WHEN(index=index)) then index;
+    else then fail();
+  end match;
+end getIndexBySimCodeEq;
+
+protected function printParInformation
+  input SimCode.HpcOmParInformation iParInfo;
+
+protected
+  list<list<Integer>> eqsOfLevels;
+
+algorithm
+  _ := match(iParInfo)
+    case(SimCode.HPCOMPARINFORMATION(eqsOfLevels=eqsOfLevels))
+     equation
+       _ = List.fold(eqsOfLevels,printParInformationLevel,1);
+     then ();
+     else
+      equation
+        print("PrintParInformation failed\n");
+      then fail();
+  end match;
+end printParInformation;
+
+protected function printParInformationLevel
+  input list<Integer> iLevelInfo;
+  input Integer iLevel;
+  output Integer oLevel;
+  
+algorithm
+  print("Level " +& intString(iLevel) +& ":\n");
+  _ := List.fold(iLevelInfo,printParInformationLevel1,1);
+  oLevel := iLevel + 1;
+end printParInformationLevel;
+
+protected function printParInformationLevel1
+  input Integer iEquation;
+  input Integer iLevel;
+  output Integer oLevel;
+  
+algorithm
+  print("\t Equation " +& intString(iEquation) +& "\n");
+  oLevel := iLevel + 1;
+end printParInformationLevel1;
+
+protected function createParInformation
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  output SimCode.HpcOmParInformation oParInfo;
+ 
+protected
+  array<list<Integer>> inComps;
+  array<Integer> nodeMark;
+  list<tuple<Integer,list<Integer>>> tmpSimEqLevelMapping; //maps the level-index to the equations
+  list<list<Integer>> flatSimEqLevelMapping;
+algorithm
+  oParInfo := match(iMeta,iSccSimEqMapping)
+    case(HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
+      equation
+        tmpSimEqLevelMapping = createParInformation0(1,inComps,iSccSimEqMapping,nodeMark,{});
+        //sorting
+        tmpSimEqLevelMapping = List.sort(tmpSimEqLevelMapping, sortParInfo);
+        //flattening
+        flatSimEqLevelMapping = List.map(tmpSimEqLevelMapping, Util.tuple22);
+      then SimCode.HPCOMPARINFORMATION(flatSimEqLevelMapping);
+    else 
+      equation
+        print("CreateParInformation failed.");
+    then fail();
+  end match;
+end createParInformation;
+
+protected function createParInformation0 "function createParInformation0"
+  input Integer iNodeIdx;
+  input array<list<Integer>> iComps;
+  input array<list<Integer>> iSccSimEqMapping;
+  input array<Integer> iNodeMarks;
+  input list<tuple<Integer,list<Integer>>> iSimEqLevelMapping;
+  output list<tuple<Integer,list<Integer>>> oSimEqLevelMapping;
+  
+protected
+  list<Integer> sccSimEqMapping, nodeComps;
+  Integer nodeMark;
+  Integer mapListIndex;
+  Integer firstNodeComp;
+  list<Integer> eqList;
+  list<tuple<Integer,list<Integer>>> tmpSimEqLevelMapping;
+algorithm
+  oSimEqLevelMapping := matchcontinue(iNodeIdx,iComps,iSccSimEqMapping,iNodeMarks,iSimEqLevelMapping)
+    case(_,_,_,_,_)
+      equation
+        true = intGe(arrayLength(iComps),iNodeIdx);
+        nodeComps = arrayGet(iComps,iNodeIdx);
+        true = intEq(listLength(nodeComps), 1);
+        firstNodeComp = List.first(nodeComps);
+        true = intGe(arrayLength(iSccSimEqMapping), firstNodeComp);
+        sccSimEqMapping = arrayGet(iSccSimEqMapping,firstNodeComp);
+        nodeMark = arrayGet(iNodeMarks,firstNodeComp);
+        //print("createParInformation0 with nodeIdx " +& intString(iNodeIdx) +& " representing component " +& intString(firstNodeComp) +& " and nodeMark " +& intString(nodeMark) +& "\n");
+        true = intGe(nodeMark,0);
+        (tmpSimEqLevelMapping,eqList,mapListIndex) = getLevelListByLevel(nodeMark,1,iSimEqLevelMapping,iSimEqLevelMapping);
+        eqList = List.fold1(nodeComps, createParInformation1, iSccSimEqMapping, eqList);
+        tmpSimEqLevelMapping = List.replaceAt((nodeMark, eqList),mapListIndex-1,tmpSimEqLevelMapping);
+      then createParInformation0(iNodeIdx+1,iComps,iSccSimEqMapping,iNodeMarks,tmpSimEqLevelMapping);
+    case(_,_,_,_,_)
+      equation
+        true = intGe(arrayLength(iComps),iNodeIdx);
+        nodeComps = arrayGet(iComps,iNodeIdx);
+        true = intEq(listLength(nodeComps), 1);
+        true = intGe(arrayLength(iSccSimEqMapping), iNodeIdx); 
+      then createParInformation0(iNodeIdx+1,iComps,iSccSimEqMapping,iNodeMarks,iSimEqLevelMapping);
+    case(_,_,_,_,_)
+      equation
+        true = intGe(arrayLength(iComps),iNodeIdx);
+        nodeComps = arrayGet(iComps,iNodeIdx);
+        false = intEq(listLength(nodeComps), 1);
+        true = intGe(arrayLength(iSccSimEqMapping), iNodeIdx); 
+        print("CreateParInformation0: contracted nodes are currently not supported\n");
+      then fail();
+    else 
+      then iSimEqLevelMapping;
+  end matchcontinue;
+end createParInformation0;
+
+protected function createParInformation1
+  input Integer iCompIdx;
+  input array<list<Integer>> iSccSimEqMapping;
+  input list<Integer> iList;
+  output list<Integer> oList;
+  
+protected 
+  list<Integer> simEqIdc;
+  
+algorithm
+  simEqIdc := arrayGet(iSccSimEqMapping,iCompIdx);
+  oList := listAppend(iList,simEqIdc);
+end createParInformation1;
+
+protected function getLevelListByLevel
+  input Integer iLevel;
+  input Integer iCurrentListIndex;
+  input list<tuple<Integer,list<Integer>>> restList;
+  input list<tuple<Integer,list<Integer>>> iSimEqLevelMapping;
+  output list<tuple<Integer,list<Integer>>> oSimEqLevelMapping;
+  output list<Integer> oEqList;
+  output Integer oMapListIndex; 
+  
+protected
+  Integer curLevel, headIdx;
+  list<Integer> curLevelEqs, headList;
+  list<tuple<Integer,list<Integer>>> rest;
+  tuple<Integer,list<Integer>> newElem;
+  
+  list<tuple<Integer,list<Integer>>> tmpSimEqLevelMapping;
+  list<Integer> tmpEqList;
+  Integer tmpMapListIndex;
+algorithm
+  (oSimEqLevelMapping,oEqList,oMapListIndex) := matchcontinue(iLevel,iCurrentListIndex,restList,iSimEqLevelMapping)
+    case(_,_,(headIdx,headList)::rest,_)
+      equation
+        true = intEq(headIdx,iLevel);
+      then (iSimEqLevelMapping,headList,iCurrentListIndex);
+    case(_,_,(headIdx,headList)::rest,_)
+      equation 
+         (tmpSimEqLevelMapping,tmpEqList,tmpMapListIndex) = getLevelListByLevel(iLevel,iCurrentListIndex+1,rest,iSimEqLevelMapping);
+      then (tmpSimEqLevelMapping,tmpEqList,tmpMapListIndex);
+    else
+      equation
+        newElem = (iLevel,{});
+      then (newElem::iSimEqLevelMapping,{},1);
+   end matchcontinue;
+end getLevelListByLevel;
+
+protected function sortParInfo
+  input tuple<Integer,list<Integer>> iTuple1;
+  input tuple<Integer,list<Integer>> iTuple2;
+  output Boolean oResult;
+  
+protected
+  Integer index1,index2;
+  
+algorithm
+  (index1,_) := iTuple1;
+  (index2,_) := iTuple2;
+  oResult := intGt(index1,index2);
+end sortParInfo;
 
 end HpcOmSimCode;
