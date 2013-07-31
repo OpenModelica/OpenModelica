@@ -179,7 +179,9 @@ algorithm
       //print("ODE-TASKGRAPH\n");
                       
       //compute critical path on cost-level and determine the level of the node
-      (criticalPaths,cpCosts) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+      (criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+      //HpcOmTaskGraph.printLevelInfo(parallelSets);
+      HpcOmTaskGraph.printCriticalPathInfo(criticalPaths,cpCosts);
  
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 

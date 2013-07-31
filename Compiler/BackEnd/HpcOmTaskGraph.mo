@@ -2981,13 +2981,79 @@ end printNodeMark;
 
 
 
-protected function printIntLst "function to print a list<Integer>
+protected function intLstString "function to print a list<Integer>
 author:Waurich TUD 2013-07"
   input list<Integer> lstIn;
   output String strOut;
 algorithm
   strOut := stringDelimitList(List.map(lstIn,intString),",");  
-end printIntLst;
+end intLstString;
+
+
+public function printLevelInfo " prints the information about the level of the nodes.
+author: Waurich TUD 2013-07"
+  input list<list<Integer>> parallelSetsIn;
+protected Integer foldValue;
+algorithm
+  print("\n");
+  print("--------------------------------\n");
+  print("LEVEL INFO\n");
+  print("--------------------------------\n");
+  print(intString(listLength(parallelSetsIn))+&" levels in the graph with "+&intString(listLength(List.flatten(parallelSetsIn)))+&" components all in all\n");
+  print("\n");
+  print("node-level:\n");
+  _ := List.fold1(List.intRange(listLength(parallelSetsIn)),printLevelInfo1,parallelSetsIn,0);
+  print("\n");
+end printLevelInfo;
+
+
+protected function printLevelInfo1 " folding function to print the information of one level
+author: Waurich TUD 2013-07"
+  input Integer levelIdx; 
+  input list<list<Integer>> parallelSetsIn;
+  input Integer foldValueIn;
+  output Integer foldValueOut;
+protected
+  list<Integer> levelNodes;
+algorithm
+  levelNodes := listGet(parallelSetsIn,levelIdx);
+  print("level "+&intString(levelIdx)+&" includes nodes: ");
+  print(intLstString(levelNodes)); 
+  print("\n"); 
+  foldValueOut := foldValueIn;
+end printLevelInfo1;
+
+
+public function printCriticalPathInfo "prints the criticalPath and the costs.
+author:Waurich TUD 2013-07"
+  input list<list<Integer>> criticalPathsIn;
+  input Real cpCosts;
+algorithm
+  _ := matchcontinue(criticalPathsIn,cpCosts)
+  case({},_)
+    equation
+    then
+      ();
+  else
+    equation
+    print("--------------------------------\n");
+    print(" CRITICAL PATH INFO\n");
+    print("--------------------------------\n");
+    print("found "+&intString(listLength(criticalPathsIn))+&" critical paths with costs of "+&realString(cpCosts)+&" sec\n");
+    printCriticalPathInfo1(criticalPathsIn,1);
+  then
+    ();
+  end matchcontinue;
+end printCriticalPathInfo;
+
+
+protected function printCriticalPathInfo1"prints one criticalPath.
+author: Waurich TUD 2013-07"
+  input list<list<Integer>> criticalPathsIn;
+  input Integer cpIdx;
+algorithm
+  print(intString(cpIdx)+&". path: "+&intLstString(listGet(criticalPathsIn,cpIdx))+&"\n");
+end printCriticalPathInfo1;
 
 
 // testfunctions
@@ -3914,8 +3980,9 @@ author: Waurich TUD 2013-07"
   input TaskGraphMeta graphDataIn;
   output list<list<Integer>> criticalPathOut;
   output Real cpCostsOut;
+  output list<list<Integer>> parallelSetsOut;
 algorithm
-  (criticalPathOut,cpCostsOut) := matchcontinue(graphIn,graphDataIn)
+  (criticalPathOut,cpCostsOut,parallelSetsOut) := matchcontinue(graphIn,graphDataIn)
     local
       Real cpCostsTmp;
       Integer rootParent;
@@ -3934,19 +4001,22 @@ algorithm
         nodeInfo = List.fold1(List.intRange(arrayLength(graphIn)),setParentCount,graphIn,nodeInfo);
         nodeInfo = longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
         parallelSets = gatherParallelSets(nodeInfo);
-        //TODO: Move print to seperate method and call it from HpcOmSimCode if required.
-        //print("parallelSets :"+&stringDelimitList(List.map(parallelSets,printIntLst)," ; ")+&"\n");
-        print("the number of parallel sets "+&intString(listLength(parallelSets))+&" and the number of components "+&intString(arrayLength(graphIn))+&"\n");
         nodeCoords = getNodeCoords(parallelSets,graphIn);
         nodeMark = List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
         (criticalPathTmp,cpCostsTmp) = getCriticalPath(graphIn,graphDataIn,nodeInfo);
-        //print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,printIntLst)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
+        //print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,intLstString)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
       then
-        (criticalPathTmp,cpCostsTmp);
+        (criticalPathTmp,cpCostsTmp,parallelSets);
+    case(_,_)
+      equation
+        true = arrayLength(graphIn) == 0;
+      then
+        ({},0.0,{});
     else
       equation
+        print("longestPathMethod failed!\n");
       then
-        ({},0.0);
+        ({},0.0,{});
   end matchcontinue;
 end longestPathMethod;
 
@@ -4698,7 +4768,7 @@ end tupleToStringIntRealInt;
 //   TaskGraphMeta graphData;
 // algorithm
 //   parallelSets := getParallelSets(graphIn,graphDataIn);
-//   print("parallelSets "+&stringDelimitList(List.map(parallelSets,printIntLst)," ; ")+&"\n");
+//   print("parallelSets "+&stringDelimitList(List.map(parallelSets,intLstString)," ; ")+&"\n");
 //   nodeCoords := getNodeCoords(parallelSets,graphIn);
 //   TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames, nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
 //   nodeMark := List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
