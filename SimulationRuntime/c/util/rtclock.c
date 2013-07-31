@@ -36,6 +36,9 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <windows.h>
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
 typedef LARGE_INTEGER rtclock_t;
 #elif defined(__APPLE_CC__)
 #include <mach/mach_time.h>
@@ -128,11 +131,17 @@ double rt_total(int ix) {
 
 static enum omc_rt_clock_t selectedClock = OMC_CLOCK_REALTIME;
 
+#if defined(__MINGW32__)
 inline volatile long long RDTSC() {
    register long long TSC asm("eax");
    asm volatile (".byte 15, 49" : : : "eax", "edx");
    return TSC;
 }
+#else
+inline volatile long long RDTSC() {
+	return __rdtsc();
+}
+#endif
 
 int rt_set_clock(enum omc_rt_clock_t newClock) {
   if (newClock != OMC_CLOCK_REALTIME && newClock != OMC_CPU_CYCLES)
