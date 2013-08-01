@@ -131,6 +131,48 @@ void copy_boolean_array_data(const boolean_array_t *source, boolean_array_t *des
     }
 }
 
+void and_boolean_array(const boolean_array_t *source1, const boolean_array_t *source2, boolean_array_t *dest)
+{
+    size_t i, nr_of_elements;
+    
+    assert(base_array_ok(source1));
+    assert(base_array_ok(source2));
+    assert(base_array_shape_eq(source1, source2));
+
+    clone_base_array_spec(source1, dest);
+    // assert(base_array_ok(dest));
+    // assert(base_array_shape_eq(source1, dest));
+    alloc_boolean_array_data(dest);
+
+    
+    nr_of_elements = base_array_nr_of_elements(source1);
+
+    for(i = 0; i < nr_of_elements; ++i) {
+        boolean_set(dest, i, boolean_get(source1, i) && boolean_get(source2, i));
+    }
+}
+
+void or_boolean_array(const boolean_array_t *source1, const boolean_array_t *source2, boolean_array_t *dest)
+{
+    size_t i, nr_of_elements;
+    
+    assert(base_array_ok(source1));
+    assert(base_array_ok(source2));
+    assert(base_array_shape_eq(source1, source2));
+
+    clone_base_array_spec(source1, dest);
+    // assert(base_array_ok(dest));
+    // assert(base_array_shape_eq(source1, dest));
+    alloc_boolean_array_data(dest);
+
+    
+    nr_of_elements = base_array_nr_of_elements(source1);
+
+    for(i = 0; i < nr_of_elements; ++i) {
+        boolean_set(dest, i, boolean_get(source1, i) || boolean_get(source2, i));
+    }
+}
+
 void copy_boolean_array_data_mem(const boolean_array_t *source, modelica_boolean *dest)
 {
     size_t i, nr_of_elements;
