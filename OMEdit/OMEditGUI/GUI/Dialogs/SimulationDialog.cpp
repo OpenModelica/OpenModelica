@@ -605,10 +605,12 @@ void SimulationDialog::simulate()
     mpProgressDialog->show();
     mpMainWindow->getStatusBar()->showMessage(tr("Compiling Model"));
     // interactive or non interactive
+    bool result;
+    int numberOfSimulationOutputWidgets = mSimulationOutputWidgetsList.size();
     if (mIsInteractive)
-      buildModel(simulationParameters, simulationFlags);
+      result = buildModel(simulationParameters, simulationFlags);
     else
-      buildModel(simulationParameters, simulationFlags);
+      result = buildModel(simulationParameters, simulationFlags);
     // hide the progress bar
     mpMainWindow->getStatusBar()->clearMessage();
     mpProgressDialog->hide();
@@ -620,6 +622,16 @@ void SimulationDialog::simulate()
         QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpFileNameTextBox->text() + "_prof.html"));
     }
     accept();
+    /* if the buildModel returns true and we have a SimulationOutputWidget then make it the active window. */
+    if (result && mSimulationOutputWidgetsList.size() > numberOfSimulationOutputWidgets)
+    {
+      QWidget *pSimulationOutputWidget = mSimulationOutputWidgetsList.last();
+      if (pSimulationOutputWidget->isVisible())
+      {
+        pSimulationOutputWidget->raise();
+        pSimulationOutputWidget->activateWindow();
+      }
+    }
   }
 }
 
@@ -632,7 +644,6 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
 {
   Q_UNUSED(exitCode);
   Q_UNUSED(exitStatus);
-  if (mpMainWindow->getDebugApplication()) qDebug() << "simulationProcessFinished slot is called";
   mIsSimulationProcessFinished = true;
 }
 
@@ -668,7 +679,7 @@ bool SimulationDialog::validate()
   \param simulationParameters - a comma separated list of simulation parameters.
   \param simulationFlags - a list of simulation flags for the simulation executable.
   */
-void SimulationDialog::buildModel(QString simulationParameters, QStringList simulationFlags)
+bool SimulationDialog::buildModel(QString simulationParameters, QStringList simulationFlags)
 {
   QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
   QDateTime lastModifiedDateTime = QDateTime::currentDateTime();
@@ -733,12 +744,9 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     args << simulationFlags;
     // start the executable
     mIsSimulationProcessFinished = false;
-    if (mpMainWindow->getDebugApplication()) qDebug() << "starting the simulation process";
     mpSimulationProcess->start(file, args);
-    if (mpMainWindow->getDebugApplication()) qDebug() << "started the simulation process";
     while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
     {
-      if (mpMainWindow->getDebugApplication()) qDebug() << "running the simulation process";
       if (mIsSimulationProcessFinished)
         break;
       if (!sock && server.hasPendingConnections()) {
@@ -767,13 +775,10 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
       }
       qApp->processEvents();
     }
-    if (mpMainWindow->getDebugApplication()) qDebug() << "simulation process finished";
     if (sock) delete sock;
     server.close();
-    /* accept the SimulationDialog here so that the SimulationOutputWidget doesn't stack behind it. */
-    accept();
     // show simulation process error if any
-    if (mpSimulationProcess->error() != QProcess::UnknownError)
+    if (mpSimulationProcess->error() != QProcess::UnknownError && !mpProgressDialog->isHidden())
     {
       pSimulationOutputWidget->getSimulationOutputTextBox()->insertPlainText("\n\n" + mpSimulationProcess->errorString());
       if (pSimulationOutputWidget->isHidden())
@@ -784,9 +789,9 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
       if (pSimulationOutputWidget->isHidden())
         pSimulationOutputWidget->showSimulationOutputDialog();
     }
-    // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
+    // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return true.
     if (mpProgressDialog->isHidden())
-      return;
+      return true;
     // read the output file
     if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1 && fileInfo.exists() && lastModifiedDateTime < fileInfo.lastModified())
     {
@@ -794,19 +799,16 @@ void SimulationDialog::buildModel(QString simulationParameters, QStringList simu
       OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
       QList<QString> list;
       QString resultFileName = QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText());
-      if (mpMainWindow->getDebugApplication()) qDebug() << "readSimulationResultVars";
       list = pOMCProxy->readSimulationResultVars(resultFileName);
       // close the simulation result file.
-      if (mpMainWindow->getDebugApplication()) qDebug() << "closeSimulationResultFile";
       pOMCProxy->closeSimulationResultFile();
-      if (mpMainWindow->getDebugApplication()) qDebug() << "switchToPlottingView";
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
-      if (mpMainWindow->getDebugApplication()) qDebug() << "addPlotVariablestoTree";
       pVariablesWidget->addPlotVariablestoTree(resultFileName, pOMCProxy->changeDirectory(), list);
-      if (mpMainWindow->getDebugApplication()) qDebug() << "show variables widget";
       mpMainWindow->getVariablesDockWidget()->show();
     }
+    return true;
   }
+  return false;
 }
 
 /*!

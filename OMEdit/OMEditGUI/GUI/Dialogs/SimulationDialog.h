@@ -53,7 +53,7 @@ public:
   void show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive);
   bool validate();
   void initializeFields();
-  void buildModel(QString simulationParameters, QStringList simulationFlags);
+  bool buildModel(QString simulationParameters, QStringList simulationFlags);
   void saveSimulationOptions();
 private:
   MainWindow *mpMainWindow;
