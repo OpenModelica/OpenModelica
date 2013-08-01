@@ -7239,14 +7239,22 @@ case LBINARY(__) then
   let e1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let e2 = daeExp(exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
-  case AND(__) then 
-    let var = tempDecl("boolean_array", &varDecls)
-    let &preExp += 'and_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
-    '<%var%>'
+  case AND(__) then
+    match exp1
+    case CREF(ty = T_ARRAY(__)) then    
+      let var = tempDecl("boolean_array", &varDecls)
+      let &preExp += 'and_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
+      '<%var%>'
+    else
+      '(<%e1%> && <%e2%>)'
   case OR(__)  then
-    let var = tempDecl("boolean_array", &varDecls)
-    let &preExp += 'or_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
-    '<%var%>'
+    match exp1
+    case CREF(ty = T_ARRAY(__)) then    
+      let var = tempDecl("boolean_array", &varDecls)
+      let &preExp += 'or_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
+      '<%var%>'
+    else
+      '(<%e1%> || <%e2%>)'
   else error(sourceInfo(),"daeExpLbinary:ERR")
 end daeExpLbinary;
 
