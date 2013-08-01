@@ -53,7 +53,7 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI1ME->FMICallbackFunctions.allocateMemory = calloc;
   FMI1ME->FMICallbackFunctions.freeMemory = free;
   /* parse the xml file */
-  FMI1ME->FMIWorkingDirectory = (char*) malloc(strlen(working_directory));
+  FMI1ME->FMIWorkingDirectory = (char*) malloc(strlen(working_directory)+1);
   strcpy(FMI1ME->FMIWorkingDirectory, working_directory);
   FMI1ME->FMIImportInstance = fmi1_import_parse_xml(FMI1ME->FMIImportContext, FMI1ME->FMIWorkingDirectory);
   if(!FMI1ME->FMIImportInstance) {
@@ -67,7 +67,7 @@ void* FMI1ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
     fprintf(stderr, "Could not create the DLL loading mechanism(C-API).\n");
     return 0;
   }
-  FMI1ME->FMIInstanceName = (char*) malloc(strlen(instanceName));
+  FMI1ME->FMIInstanceName = (char*) malloc(strlen(instanceName)+1);
   strcpy(FMI1ME->FMIInstanceName, instanceName);
   FMI1ME->FMIDebugLogging = debugLogging;
   fmi1_import_instantiate_model(FMI1ME->FMIImportInstance, FMI1ME->FMIInstanceName);
