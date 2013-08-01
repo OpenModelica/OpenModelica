@@ -689,7 +689,7 @@ void ComponentAttributes::setUpDialog()
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
-  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary())
+  if (mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() || mpComponent->isInheritedComponent())
     mpOkButton->setDisabled(true);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
@@ -711,8 +711,14 @@ void ComponentAttributes::setUpDialog()
   */
 void ComponentAttributes::initializeDialog()
 {
-  QList<ComponentInfo*> componentInfoList = mpComponent->getOMCProxy()->getComponents(
-        mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure());
+  QString className;
+  if (mpComponent->isInheritedComponent())
+    className = mpComponent->getInheritedClassName();
+  else
+    className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure();
+  /* get the components of the class */
+  QList<ComponentInfo*> componentInfoList = mpComponent->getOMCProxy()->getComponents(className);
+  /* read the components */
   foreach (ComponentInfo *pComponentInfo, componentInfoList)
   {
     if (pComponentInfo->getName() == mpComponent->getName())
