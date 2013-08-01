@@ -348,7 +348,7 @@ typedef struct MODEL_DATA_XML
 
 typedef struct MODEL_DATA
 {
-  STATIC_REAL_DATA* realVarsData;     /* states + derived states + algs + discrete */
+  STATIC_REAL_DATA* realVarsData;
   STATIC_INTEGER_DATA* integerVarsData;
   STATIC_BOOLEAN_DATA* booleanVarsData;
   STATIC_STRING_DATA* stringVarsData;
@@ -375,8 +375,7 @@ typedef struct MODEL_DATA
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */
 
   fortran_integer nStates;
-  long nVariablesReal;                 /* all Real Variables of the model (states, statesderivatives, algebraics, real discretes) */
-  long nDiscreteReal;                  /* only all _discrete_ reals */
+  long nVariablesReal;                 /* all Real Variables of the model (states, statesderivatives, algebraics) */
   long nVariablesInteger;
   long nVariablesBoolean;
   long nVariablesString;

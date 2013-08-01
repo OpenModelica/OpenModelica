@@ -372,7 +372,6 @@ package SimCode
       Integer numStateVars;
       Integer numInlineVars;
       Integer numAlgVars;
-      Integer numDiscreteReal;
       Integer numIntAlgVars;
       Integer numBoolAlgVars;
       Integer numAlgAliasVars;

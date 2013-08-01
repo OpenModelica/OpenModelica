@@ -1075,69 +1075,6 @@ algorithm
   outNumZeroCrossings := listLength(zeroCrossingLst);
 end numberOfZeroCrossings;
 
-public function numberOfDiscreteVars "function numberOfDiscreteVars
-  author: lochel"
-  input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outNumDiscreteReal;
-algorithm
-  outNumDiscreteReal := countDiscreteVars(inBackendDAE);
-end numberOfDiscreteVars;
-
-protected function countDiscreteVars "function countDiscreteVars
-  author: lochel"
-  input BackendDAE.BackendDAE inDAE;
-  output Integer outNumDiscreteVars;
-protected
-  BackendDAE.EqSystems systs;
-  BackendDAE.Variables knownVars, alias;
-algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars, aliasVars=alias)) := inDAE;
-  outNumDiscreteVars := countDiscreteVars1(systs);
-  outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(knownVars, countDiscreteVars3, outNumDiscreteVars);
-  outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(alias, countDiscreteVars3, outNumDiscreteVars);
-end countDiscreteVars;
-
-protected function countDiscreteVars1 "function countDiscreteVars1
-  author: lochel"
-  input BackendDAE.EqSystems inEqSystems;
-  output Integer outNumDiscreteVars;
-algorithm
-  outNumDiscreteVars := 0;
-  outNumDiscreteVars := List.fold(inEqSystems, countDiscreteVars2, outNumDiscreteVars);
-end countDiscreteVars1;
-
-protected function countDiscreteVars2 "function countDiscreteVars2
-  author: lochel"
-  input BackendDAE.EqSystem inEqSystem;
-  input Integer inNumDiscreteVars;
-  output Integer outNumDiscreteVars;
-protected
-  BackendDAE.Variables vars;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars) := inEqSystem;
-  outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(vars, countDiscreteVars3, inNumDiscreteVars);
-end countDiscreteVars2;
-
-protected function countDiscreteVars3 "function countDiscreteVars3
-  author: lochel"
-  input tuple<BackendDAE.Var, Integer> inTpl;
-  output tuple<BackendDAE.Var, Integer> outTpl;
-algorithm
-  outTpl := matchcontinue(inTpl)
-    local
-      BackendDAE.Var var;
-      Integer nDiscreteVars;
-      DAE.InstDims arryDim;
-
-    // discrete
-    case((var as BackendDAE.VAR(varKind=BackendDAE.DISCRETE(), varType=DAE.T_REAL(source = _), arryDim=arryDim), nDiscreteVars)) equation
-    then ((var, nDiscreteVars+1));
-
-    else
-    then inTpl;
-  end matchcontinue;
-end countDiscreteVars3;
-
 protected function calculateValues "function: calculateValues
   author: PA
   This function calculates the values from the parameter binding expressions.

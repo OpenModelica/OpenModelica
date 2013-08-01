@@ -181,7 +181,7 @@ algorithm
         (daevars,_,allEquations,allInitEquations) = generateEquationscollectVars(elementLst,{},1,{},{});
         // generate variable definitions
         simvars = SimCode.SIMVARS({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});
-        varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,NONE(),NONE());
+        varinfo = SimCode.VARINFO(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,NONE(),NONE());
 
         modelInfo = SimCode.MODELINFO(inClassName,fileDir,varinfo,simvars,functions,{});
         extObjInfo = SimCode.EXTOBJINFO({},{});
