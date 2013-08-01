@@ -72,7 +72,7 @@ void updateDiscreteSystem(DATA *data)
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data);
-  while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
+  while(!initial() && (discreteChanged || data->simulationInfo.needToIterate || relationChanged))
   {
     if(data->simulationInfo.needToIterate)
       DEBUG(LOG_EVENTS_V, "reinit() call. Iteration needed!");

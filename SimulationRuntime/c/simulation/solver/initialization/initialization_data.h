@@ -41,9 +41,10 @@
 typedef struct INIT_DATA
 {
   /* counts */
-  long nVars;                                     /* nStates + nParameters */
+  long nVars;                                     /* nStates + nParameters + nDiscrete */
   long nStates;
   long nParameters;
+  long nDiscreteReal;                             /* only of typ Real */
   long nInitResiduals;
   long nStartValueResiduals;
 
