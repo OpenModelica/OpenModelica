@@ -57,6 +57,7 @@ INIT_DATA *initializeInitData(DATA *simData)
   initData->nVars = 0;
   initData->nStates = 0;
   initData->nParameters = 0;
+  initData->nDiscreteReal = 0;
   initData->nInitResiduals = 0;
   initData->nStartValueResiduals = 0;
 
@@ -76,14 +77,19 @@ INIT_DATA *initializeInitData(DATA *simData)
   /* count unfixed states */
   for(i=0; i<simData->modelData.nStates; ++i)
     if(simData->modelData.realVarsData[i].attribute.fixed == 0)
-      ++initData->nVars;
-  initData->nStates = initData->nVars;
+      ++initData->nStates;
 
   /* plus unfixed real-parameters */
   for(i=0; i<simData->modelData.nParametersReal; ++i)
     if(simData->modelData.realParameterData[i].attribute.fixed == 0)
-      ++initData->nVars;
-  initData->nParameters = initData->nVars - initData->nStates;
+      ++initData->nParameters;
+
+  /* plus unfixed real-Discrete */
+  for(i=simData->modelData.nVariablesReal-simData->modelData.nDiscreteReal; i<simData->modelData.nVariablesReal; ++i)
+    if(simData->modelData.realVarsData[i].attribute.fixed == 0)
+      ++initData->nDiscreteReal;
+
+  initData->nVars = initData->nStates + initData->nParameters + initData->nDiscreteReal;
 
   if(initData->nVars == 0)
   {
@@ -110,7 +116,7 @@ INIT_DATA *initializeInitData(DATA *simData)
 
   /* setup initData */
   INFO(LOG_INIT, "initial problem:");
-  INFO3(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters)", initData->nVars, initData->nStates, initData->nParameters);
+  INFO4(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters + %ld discrete reals)", initData->nVars, initData->nStates, initData->nParameters, initData->nDiscreteReal);
 
   /* i: all states; j: all unfixed vars */
   for(i=0, j=0; i<simData->modelData.nStates; ++i)
@@ -172,6 +178,36 @@ INIT_DATA *initializeInitData(DATA *simData)
     }
   }
 
+/* i: all DiscreteReal; j: all unfixed vars */
+  for(i=simData->modelData.nVariablesReal-simData->modelData.nDiscreteReal; i<simData->modelData.nVariablesReal; ++i)
+  {
+    if(simData->modelData.realVarsData[i].attribute.fixed == 0)
+    {
+      initData->name[j] = (char*)simData->modelData.realVarsData[i].info.name;
+      initData->nominal[j] = simData->modelData.realVarsData[i].attribute.useNominal ? fabs(simData->modelData.realVarsData[i].attribute.nominal) : 1.0;
+      if(initData->nominal[j] == 0.0)
+      {
+        /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
+         *                  because this breaks the FMI tests with these kind of messages:
+         *                  warning | (null)(nominal=0)
+         *                          | nominal value is set to 1.0
+         * put it back when everything works fine.
+         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+         * WARNING_AL("nominal value is set to 1.0");
+         */
+        initData->nominal[j] = 1.0;
+      }
+
+      initData->vars[j] = simData->modelData.realVarsData[i].attribute.start;
+      initData->start[j] = simData->modelData.realVarsData[i].attribute.start;
+      initData->min[j] = simData->modelData.realVarsData[i].attribute.min;
+      initData->max[j] = simData->modelData.realVarsData[i].attribute.max;
+
+      INFO5(LOG_INIT, "| | [%ld] discrete Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      j++;
+    }
+  }
+
   /* equations */
   initData->nInitResiduals = simData->modelData.nInitResiduals;
   initData->nStartValueResiduals = 0;
@@ -183,6 +219,10 @@ INIT_DATA *initializeInitData(DATA *simData)
   /* for real parameters */
   for(i=0; i<simData->modelData.nParametersReal; ++i)
     if(simData->modelData.realParameterData[i].attribute.useStart && !simData->modelData.realParameterData[i].attribute.fixed)
+      initData->nStartValueResiduals++;
+  /* for real discrete */
+  for(i=simData->modelData.nVariablesReal-simData->modelData.nDiscreteReal; i<simData->modelData.nVariablesReal; ++i)
+    if(simData->modelData.realVarsData[i].attribute.useStart && !simData->modelData.realVarsData[i].attribute.fixed)
       initData->nStartValueResiduals++;
 
   INFO3(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
@@ -201,19 +241,6 @@ INIT_DATA *initializeInitData(DATA *simData)
     initData->residualScalingCoefficients[i] = 1.0;
   for(i=0; i<initData->nStartValueResiduals; ++i)
     initData->startValueResidualScalingCoefficients[i] = 1.0;
-
-  /* TODO invent new log-system
-   * * for real variables *
-   * j=0;
-   * for(i=0; i<data->modelData.nVariablesReal; ++i)
-   *   if(data->modelData.realVarsData[i].attribute.useStart)
-   *     INFO3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
-   *
-   * * for real parameters *
-   * for(i=0; i<data->modelData.nParametersReal; ++i)
-   *   if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
-   *     INFO3(LOG_INIT, "| | [%ld] parameter Real %s(start=%g)", ++j, data->modelData.realParameterData[i].info.name, data->modelData.realParameterData[i].attribute.start);
-   */
 
   return initData;
 }
@@ -294,8 +321,12 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
   for(i=0; i<data->modelData.nParametersReal; ++i)
     if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
       tmpStartResidual1[ix++] = data->modelData.realParameterData[i].attribute.start - data->localData[0]->realVars[i];
-
-  for(i=0; i<initData->nVars; ++i)
+  /* for real discrete */
+  for(i=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; i<data->modelData.nDiscreteReal; ++i)
+    if(data->modelData.realVarsData[j].attribute.useStart && !data->modelData.realVarsData[j].attribute.fixed)
+      tmpStartResidual1[ix++] = data->modelData.realVarsData[i].attribute.start - data->localData[0]->realVars[i];
+  
+    for(i=0; i<initData->nVars; ++i)
   {
     initData->vars[i] += h;
 
@@ -304,6 +335,8 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
       tmpResidual2[j] = initData->initialResiduals[j];
 
     ix = 0;
+    
+    /* TODO: is data->localData[0]->realVars[j] correct??? */
     /* for real variables */
     for(j=0; j<data->modelData.nVariablesReal; ++j)
       if(data->modelData.realVarsData[j].attribute.useStart)
@@ -312,6 +345,10 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     for(j=0; j<data->modelData.nParametersReal; ++j)
       if(data->modelData.realParameterData[j].attribute.useStart && !data->modelData.realParameterData[j].attribute.fixed)
         tmpStartResidual2[ix++] = data->modelData.realParameterData[j].attribute.start - data->localData[0]->realVars[j];
+    /* for real discrete */
+    for(j=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; j<data->modelData.nDiscreteReal; ++j)
+      if(data->modelData.realVarsData[j].attribute.useStart && !data->modelData.realVarsData[j].attribute.fixed)
+        tmpStartResidual2[ix++] = data->modelData.realVarsData[j].attribute.start - data->localData[0]->realVars[j];
 
     for(j=0; j<initData->nInitResiduals; ++j)
     {
@@ -427,4 +464,12 @@ void updateSimData(INIT_DATA *initData)
   for(i=0; i<initData->simData->modelData.nParametersReal; ++i)
     if(initData->simData->modelData.realParameterData[i].attribute.fixed == 0)
       initData->simData->simulationInfo.realParameter[i] = initData->vars[j++];
+    
+  /* for real discrete */
+  for(i=initData->simData->modelData.nVariablesReal-initData->simData->modelData.nDiscreteReal; i<initData->simData->modelData.nVariablesReal; ++i)
+    if(initData->simData->modelData.realVarsData[i].attribute.fixed == 0)
+      /* initData->simData->localData[0]->realVars[i] = initData->vars[j++]; */
+      initData->simData->simulationInfo.realVarsPre[i] = initData->vars[j++];
 }
+
+

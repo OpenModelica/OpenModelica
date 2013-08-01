@@ -100,7 +100,8 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
   updateSimData(initData);
 
   updateBoundParameters(data);
-  functionODE(data);
+  /*functionODE(data);*/
+  functionDAE(data);
   functionAlgebraics(data);
   initial_residual(data, initData->initialResiduals);
 
@@ -142,6 +143,18 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
 
           funcValue += (1.0-lambda)*((data->modelData.realParameterData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient)*((data->modelData.realParameterData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient);
         }
+      
+      /* for real discrete */
+      for(i=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; i<data->modelData.nDiscreteReal; ++i)
+          if(data->modelData.realVarsData[i].attribute.useStart && !data->modelData.realVarsData[i].attribute.fixed)
+          {
+              if(initData->startValueResidualScalingCoefficients)
+                  scalingCoefficient = initData->startValueResidualScalingCoefficients[ix++]; /* use scaling coefficients */
+              else
+                  scalingCoefficient = 1.0; /* no scaling coefficients given */
+              
+              funcValue += (1.0-lambda)*((data->modelData.realVarsData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient)*((data->modelData.realVarsData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient);
+          }
   }
 
   return funcValue;
@@ -177,11 +190,17 @@ void dumpInitialization(INIT_DATA *initData)
     else
       INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->vars[i], initData->name[i]);
 
-  for(; i<initData->nVars; ++i)
+  for(; i<initData->nStates+initData->nParameters; ++i)
     if(initData->nominal)
       INFO4(LOG_INIT, "[%ld] [%15g] := %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
       INFO3(LOG_INIT, "[%ld] [%15g] := %s (parameter)", i+1, initData->vars[i], initData->name[i]);
+  
+  for(; i<initData->nVars; ++i)
+    if(initData->nominal)
+      INFO4(LOG_INIT, "[%ld] [%15g] := %s (discrete) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+    else
+      INFO3(LOG_INIT, "[%ld] [%15g] := %s (discrete)", i+1, initData->vars[i], initData->name[i]);
   RELEASE(LOG_INIT);
 
   INFO(LOG_INIT, "initial residuals");
@@ -340,13 +359,13 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
     else
       THROW("unsupported option -iom");
 
-    storePreValues(data);                       /* save pre-values */
+    /*storePreValues(data);                       /* save pre-values */
     overwriteOldSimulationData(data);           /* if there are non-linear equations */
     updateDiscreteSystem(data);                 /* evaluate discrete variables */
 
     /* valid system for the first time! */
     saveZeroCrossings(data);
-    storePreValues(data);
+    /*storePreValues(data);                       /* save pre-values */
     overwriteOldSimulationData(data);
 
     funcValue = leastSquareWithLambda(initData, 1.0);
@@ -474,6 +493,19 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
         }
         k++;
       }
+    for(i=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; i<data->modelData.nDiscreteReal; ++i)
+    {
+      if(data->modelData.realParameterData[i].attribute.fixed == 0)
+      {
+        if(z_f[k] >= 0.0)
+        {
+          data->modelData.realParameterData[i].attribute.fixed = 1;
+          INFO2(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+        }
+        k++;
+      }
+    }
+
     }
     RELEASE(LOG_INIT); RELEASE(LOG_INIT);
 
@@ -590,13 +622,13 @@ static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
 
   retVal = initialize(data, optiMethod, lambda_steps);
 
-  storePreValues(data);                 /* save pre-values */
+  /*storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
   saveZeroCrossings(data);
-  storePreValues(data);                 /* save pre-values */
+  /*storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
 
   return retVal;
@@ -866,6 +898,28 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
       else
         WARNING1(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
     }
+      
+    INFO(LOG_INIT, "import real discrete");
+    for(i=mData->nVariablesReal-mData->nDiscreteReal; i<mData->nDiscreteReal; ++i)
+    {
+      pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
+          
+      if(!pVar)
+      {
+        newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
+        pVar = omc_matlab4_find_var(&reader, newVarname);
+        free(newVarname);
+      }
+          
+      if(pVar)
+      {
+        omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
+        INFO2(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+      }
+      else
+        WARNING1(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
+      }
+
 
     INFO(LOG_INIT, "import integer parameters");
     for(i=0; i<mData->nParametersInteger; ++i)
