@@ -88,7 +88,7 @@ public uniontype Node
     String color;
     ShapeType shapeType;
     Option<String> optDesc;
-    List<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
+    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
   end NODE;
 end Node;
 
@@ -108,7 +108,7 @@ public uniontype Edge
     LineType lineType;
     Option<EdgeLabel> label;
     tuple<Option<ArrowType>,Option<ArrowType>> arrows;
-    List<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
+    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
   end EDGE;
 end Edge;
 
@@ -142,6 +142,7 @@ public uniontype Graph
     list<Node> nodes;
     list<Edge> edges;
     list<Attribute> attributes;
+    list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
   end GRAPH;
 end Graph;
 
@@ -157,8 +158,24 @@ public function getGraph
   input Boolean directed;
   output Graph g;
 algorithm
-  g := GRAPH(id,directed,{},{},{});
+  g := GRAPH(id,directed,{},{},{},{});
 end getGraph;
+
+public function addGraphAttributeValue
+  input tuple<Integer,String> iValue;
+  input Graph inG;
+  output Graph outG;
+protected
+  String gid;
+  Boolean d;
+  list<Node> n;
+  list<Edge> e;
+  list<Attribute> a;
+  list<tuple<Integer,String>> av;
+algorithm
+  GRAPH(gid,d,n,e,a,av) := inG;
+  outG := GRAPH(gid,d,n,e,a,iValue::av);
+end addGraphAttributeValue; 
 
 public function addNode
 "function addNode
@@ -178,9 +195,10 @@ protected
   list<Node> n;
   list<Edge> e;
   list<Attribute> a;
+  list<tuple<Integer,String>> av;
 algorithm
-  GRAPH(gid,d,n,e,a) := inG;
-  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc,attValues)::n,e,a);
+  GRAPH(gid,d,n,e,a,av) := inG;
+  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc,attValues)::n,e,a,av);
 end addNode;
 
 public function addEgde
@@ -203,9 +221,10 @@ protected
   list<Node> n;
   list<Edge> e;
   list<Attribute> a;
+  list<tuple<Integer,String>> av;
 algorithm
-  GRAPH(gid,d,n,e,a) := inG;
-  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows,attValues)::e,a);
+  GRAPH(gid,d,n,e,a,av) := inG;
+  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows,attValues)::e,a,av);
 end addEgde;
 
 public function addAttribute
@@ -223,12 +242,13 @@ protected
   list<Node> n;
   list<Edge> e;
   list<Attribute> a;
+  list<tuple<Integer,String>> av;
   Integer attIdx;
 algorithm
-  GRAPH(gid,d,n,e,a) := inG;
+  GRAPH(gid,d,n,e,a,av) := inG;
   attIdx := listLength(a)+1;
   oAttIdx := attIdx;
-  outG := GRAPH(gid,d,n,e,ATTRIBUTE(attIdx,defaultValue,name,attType,attTarget)::a);
+  outG := GRAPH(gid,d,n,e,ATTRIBUTE(attIdx,defaultValue,name,attType,attTarget)::a,av);
 
 end addAttribute;
 
@@ -320,18 +340,22 @@ algorithm
   outIOs := match (inGraph,inStringDelemiter,inIOs)
     local
       String id,sd,t,s;
+      list<String> attributeStrings;
+      List<tuple<Integer,String>> graphAttributes;
       Boolean directed;
       list<Node> nodes;
       list<Edge> edges;
       list<Attribute> attributes;
       IOStream.IOStream is;
       
-     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges,attributes=attributes),_,is)
+     case(GRAPH(id=id,directed=directed,nodes=nodes,edges=edges,attributes=attributes,attValues=graphAttributes),_,is)
        equation
          sd = Util.if_(directed,"directed","undirected");
          t = appendString(inStringDelemiter);
+         attributeStrings = List.map1(graphAttributes, createAttributeString, 15);
          is = List.fold(attributes, dumpAttributeDefinition, is);
          is = IOStream.appendList(is, {inStringDelemiter, "<graph edgedefault=\"", sd, "\" id=\"", id, "\">\n"});
+         is = IOStream.appendList(is, attributeStrings);
          is = List.fold1(nodes, dumpNode, t, is);
          is = List.fold1(edges, dumpEdge, t, is);
          is = IOStream.appendList(is, {t, "<data key=\"d7\"/>\n"});

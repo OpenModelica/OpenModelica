@@ -129,54 +129,6 @@ algorithm
       then fail();
   end match;
 end getSystemComponents;
-
-
-protected function getGraphComponents
-  input TaskGraphMeta iTaskGraphMeta;
-  input array<BackendDAE.StrongComponent> systComps;
-  output BackendDAE.StrongComponents oComps;
-  
-protected
-  BackendDAE.StrongComponents tmpComps;
-  array<list<Integer>> inComps;
-  
-algorithm
-  tmpComps := {};
-  TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
-  oComps := Util.arrayFold1(inComps,getGraphComponents0,systComps,{});
-end getGraphComponents;
-
-
-protected function getGraphComponents0
-  input list<Integer> inComp;
-  input array<BackendDAE.StrongComponent> systComps;
-  input BackendDAE.StrongComponents iNodeComps;
-  output BackendDAE.StrongComponents oNodeComps;
-  
-protected
-  BackendDAE.StrongComponents tmpNodeComps;
-  
-algorithm
-  tmpNodeComps := List.fold1(inComp, getGraphComponents1, systComps, {});
-  oNodeComps := listAppend(iNodeComps,tmpNodeComps);
-end getGraphComponents0;
-
-
-protected function getGraphComponents1
-  input Integer compIdx;
-  input array<BackendDAE.StrongComponent> systComps;
-  input BackendDAE.StrongComponents iComps;
-  output BackendDAE.StrongComponents oComps;
-  
-protected
-  BackendDAE.StrongComponent comp;
-  
-algorithm
-  comp := arrayGet(systComps,compIdx);
-  oComps := comp::iComps;
-  
-end getGraphComponents1;
-
   
 protected function getSystemComponents0
   input BackendDAE.EqSystem isyst;
@@ -2409,13 +2361,14 @@ public function dumpAsGraphMLSccLevel "function dumpAsGraphMLSccLevel
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
   input String fileName;
+  input String criticalPathInfo;
 protected
   GraphML.Graph graph;
-  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx, commCostAttIdx;
+  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx, commCostAttIdx, critPathAttIdx;
   list<Integer> compIdc;
 algorithm
-  _ := match(iGraph, iGraphData, fileName)
-    case(_,_,_)
+  _ := match(iGraph, iGraphData, fileName, criticalPathInfo)
+    case(_,_,_,_)
       equation 
         graph = GraphML.getGraph("TaskGraph", true);
         (opCountAttIdx,graph) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
@@ -2423,8 +2376,10 @@ algorithm
         (compIdcAttIdx,graph) = GraphML.addAttribute("", "Components", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
         (yCoordAttIdx,graph) = GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
         (commCostAttIdx,graph) = GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graph);
+        (critPathAttIdx,graph) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graph);
+        graph = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), graph);
         compIdc = List.intRange(arrayLength(iGraph));
-        graph = List.fold3(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx, compIdcAttIdx,yCoordAttIdx,commCostAttIdx), graph);
+        graph = List.fold3(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx,compIdcAttIdx,yCoordAttIdx,commCostAttIdx), graph);
         GraphML.dumpGraph(graph, fileName);
       then ();
   end match;
@@ -2437,7 +2392,8 @@ protected function addNodeToGraphML "function addNodeToGraphML
   input Integer nodeIdx;
   input TaskGraph tGraphIn;
   input TaskGraphMeta tGraphDataIn;
-  input tuple<Integer,Integer,Integer,Integer,Integer> attIdc; //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx>
+  input tuple<Integer,Integer,Integer,Integer,Integer> attIdc; 
+  //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx>
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 algorithm
@@ -3023,6 +2979,38 @@ algorithm
   foldValueOut := foldValueIn;
 end printLevelInfo1;
 
+public function dumpCriticalPathInfo "function dumpCriticalPathInfo
+  author:marcusw
+  dump the criticalPath and the costs to a string."
+  input list<list<Integer>> criticalPathsIn;
+  input Real cpCosts;
+  output String oString;
+protected
+  String tmpString;
+algorithm
+  oString := matchcontinue(criticalPathsIn,cpCosts)
+  case({},_)
+    equation
+    then
+      "";
+  else
+    equation
+      tmpString = "critical path with costs of "+&realString(cpCosts)+&" cycles -- ";
+      tmpString = tmpString +& dumpCriticalPathInfo1(criticalPathsIn,1);
+  then
+    tmpString;
+  end matchcontinue;
+end dumpCriticalPathInfo;
+
+protected function dumpCriticalPathInfo1 "function dumpCriticalPathInfo1
+  author:marcusw
+  Helper function of dumpCriticalPathInfo. Dump one critical path."
+  input list<list<Integer>> criticalPathsIn;
+  input Integer cpIdx;
+  output String oString;
+algorithm
+  oString := intLstString(listGet(criticalPathsIn,cpIdx))+&"";
+end dumpCriticalPathInfo1;
 
 public function printCriticalPathInfo "prints the criticalPath and the costs.
 author:Waurich TUD 2013-07"
@@ -3913,10 +3901,10 @@ algorithm
         (systComps,_) = getSystemComponents(iDae);
         systCompsArray = listArray(systComps);
         graphComps = getGraphComponents(iTaskGraph,systCompsArray);
+        //print("Graph components: " +& stringDelimitList(List.map(graphComps,BackendDump.printComponent), ";") +& "\n");
         true = validateComponents(graphComps,systComps);
         //Check if no component was connected twice
-        //Check if all Nodes with mark 0 are in the root-node-list
-        //Check if all marks correct
+        true = checkForDuplicates(graphComps);
         //Check if nodeNames,nodeDescs and exeCosts-array have the right size
       then true;
     else then false;
@@ -3926,7 +3914,7 @@ end validateTaskGraphMeta;
 
 protected function validateComponents "function validateComponents
   author: marcusw
-  Checks if the given component-lists are eual."
+  Checks if the given component-lists are equal."
   input BackendDAE.StrongComponents graphComps;
   input BackendDAE.StrongComponents systComps;
   output Boolean res;
@@ -3949,9 +3937,120 @@ algorithm
   end matchcontinue;
 end validateComponents;
 
+protected function checkForDuplicates "function checkForDuplicates
+  author: marcusw
+  Returns true if every component is unique in the list."
+  input BackendDAE.StrongComponents iComps;
+  output Boolean res;
+protected
+  BackendDAE.StrongComponents sortedComps;
+algorithm
+  sortedComps := List.sort(iComps,compareComponents);
+  //print("Components: " +& stringDelimitList(List.map(sortedComps,BackendDump.printComponent), ";") +& "\n");
+  ((res,_)) := List.fold(sortedComps,checkForDuplicates0,(true,NONE()));
+end checkForDuplicates;
+
+protected function checkForDuplicates0
+  input BackendDAE.StrongComponent currentComp;
+  input tuple<Boolean,Option<BackendDAE.StrongComponent>> iLastComp; //<result,lastComp>
+  output tuple<Boolean,Option<BackendDAE.StrongComponent>> oLastComp; //<result,lastComp>
+protected
+  BackendDAE.StrongComponent lastComp;  
+algorithm
+  oLastComp := matchcontinue(currentComp,iLastComp)
+    case(_,(false,_)) then ((false,SOME(currentComp)));
+    case(_,(_,NONE())) then ((true,SOME(currentComp)));
+    case(_,(_,SOME(lastComp)))
+      equation
+        false = compareComponents(currentComp,lastComp);
+        print("The component " +& BackendDump.printComponent(currentComp) +& " was twice in the structure.\n");
+      then ((false,SOME(currentComp)));
+    else then ((true, SOME(currentComp)));
+  end matchcontinue;
+end checkForDuplicates0;
+
+protected function getGraphComponents "function getGraphComponents
+  author: marcusw
+  Returns all StrongComponents of the TaskGraphMeta-structure."
+  input TaskGraphMeta iTaskGraphMeta;
+  input array<BackendDAE.StrongComponent> systComps;
+  output BackendDAE.StrongComponents oComps;
+  
+protected
+  BackendDAE.StrongComponents tmpComps;
+  array<list<Integer>> inComps;
+  array<Integer> nodeMarks;
+  
+algorithm
+  tmpComps := {};
+  TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
+  tmpComps := Util.arrayFold1(inComps,getGraphComponents0,systComps,tmpComps);
+  ((_,tmpComps)) := Util.arrayFold1(nodeMarks,getGraphComponents2, systComps,(1,tmpComps));
+  oComps := tmpComps;
+end getGraphComponents;
+
+
+protected function getGraphComponents0 "function getGraphComponents0
+  author: marcusw
+  Helper function of getGraphComponents. Returns all components which are not marked with -1."
+  input list<Integer> inComp;
+  input array<BackendDAE.StrongComponent> systComps;
+  input BackendDAE.StrongComponents iNodeComps;
+  output BackendDAE.StrongComponents oNodeComps;
+  
+protected
+  BackendDAE.StrongComponents tmpNodeComps;
+  
+algorithm
+  tmpNodeComps := List.fold1(inComp, getGraphComponents1, systComps, {});
+  oNodeComps := listAppend(iNodeComps,tmpNodeComps);
+end getGraphComponents0;
+
+protected function getGraphComponents1
+  input Integer compIdx;
+  input array<BackendDAE.StrongComponent> systComps;
+  input BackendDAE.StrongComponents iComps;
+  output BackendDAE.StrongComponents oComps;
+  
+protected
+  BackendDAE.StrongComponent comp;
+  
+algorithm
+  comp := arrayGet(systComps,compIdx);
+  oComps := comp::iComps;
+  
+end getGraphComponents1;
+
+protected function getGraphComponents2 "function getGraphComponents2
+  author: marcusw
+  Append all components with mark -1 to the componentlist."
+  input Integer nodeMark;
+  input array<BackendDAE.StrongComponent> systComps;
+  input tuple<Integer,BackendDAE.StrongComponents> iComps; //<nodeIdx, components>
+  output tuple<Integer,BackendDAE.StrongComponents> oComps;
+  
+protected
+  Integer nodeIdx;
+  BackendDAE.StrongComponent comp;
+  BackendDAE.StrongComponents comps;
+  
+algorithm
+  oComps := matchcontinue(nodeMark, systComps, iComps)
+    case(_,_,(nodeIdx,comps))
+      equation
+        true = intGe(nodeMark,0);
+      then ((nodeIdx+1,comps));
+    case(_,_,(nodeIdx,comps))
+      equation
+        comp = arrayGet(systComps,nodeIdx);
+        comps = comp :: comps;
+      then ((nodeIdx+1,comps));
+  end matchcontinue;
+end getGraphComponents2;
+
 protected function compareComponents "function compareComponents
   author: marcusw
-  Compares the given components and returns true if they are equal."
+  Compares the given components and returns false if they are equal."
   input BackendDAE.StrongComponent comp1;
   input BackendDAE.StrongComponent comp2;
   output Boolean res;

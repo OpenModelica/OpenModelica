@@ -150,6 +150,9 @@ algorithm
       list<SimCode.RecordDeclaration> simCodeRecordDecls;
       list<String> simCodeExternalFunctionIncludes;
       
+      Boolean taskGraphMetaValid;
+      String taskGraphMetaMessage, criticalPathInfo;
+      
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
 
@@ -169,26 +172,31 @@ algorithm
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
                  
+      //compute critical path on cost-level and determine the level of the node
+      (criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph,taskGraphData);
+      criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
+                 
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");    
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, criticalPathInfo);
       
       // get the task graph for the ODEsystem
       taskGraphOde = arrayCopy(taskGraph);
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE,filenamePrefix);
+      
+      taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
+      taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
+      print(taskGraphMetaMessage);
       //print("ODE-TASKGRAPH\n");
-                      
-      //compute critical path on cost-level and determine the level of the node
-      (criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
-      //HpcOmTaskGraph.printLevelInfo(parallelSets);
-      HpcOmTaskGraph.printCriticalPathInfo(criticalPaths,cpCosts);
  
       //HpcOmTaskGraph.printTaskGraph(taskGraphOde);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde); 
       
-      //Sort nodes by level
+      (criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+      criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
+      
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);  
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo);  
             
       // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
       //taskGraph1 = arrayCopy(taskGraphOde);
