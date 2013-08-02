@@ -797,9 +797,8 @@ bool SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     {
       VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
       OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
-      QList<QString> list;
       QString resultFileName = QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText());
-      list = pOMCProxy->readSimulationResultVars(resultFileName);
+      QStringList list = pOMCProxy->readSimulationResultVars(resultFileName);
       // close the simulation result file.
       pOMCProxy->closeSimulationResultFile();
       mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);

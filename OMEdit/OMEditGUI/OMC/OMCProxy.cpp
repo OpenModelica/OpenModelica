@@ -1979,10 +1979,10 @@ bool OMCProxy::buildModel(QString className, QString simualtionParameters)
   \param fileName - the result file name
   \return the list of variables.
   */
-QList<QString> OMCProxy::readSimulationResultVars(QString fileName)
+QStringList OMCProxy::readSimulationResultVars(QString fileName)
 {
   sendCommand("readSimulationResultVars(\"" + fileName + "\")");
-  QList<QString> variablesList = StringHandler::getSimulationResultVars(getResult());
+  QStringList variablesList = StringHandler::unparseStrings(getResult());
   qSort(variablesList.begin(), variablesList.end());
   printMessagesStringInternal();
   return variablesList;

@@ -599,7 +599,7 @@ void MainWindow::openResultFiles(QStringList fileNames)
   {
     QFileInfo fileInfo(fileName);
     mpOMCProxy->changeDirectory(fileInfo.absoluteDir().absolutePath());
-    QList<QString> list = mpOMCProxy->readSimulationResultVars(fileInfo.fileName());
+    QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.fileName());
     // close the simulation result file.
     mpOMCProxy->closeSimulationResultFile();
     mpPerspectiveTabbar->setCurrentIndex(2);

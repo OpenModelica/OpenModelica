@@ -180,7 +180,7 @@ public:
   bool instantiateModelSucceeds(QString className);
   bool simulate(QString className, QString simualtionParameters);
   bool buildModel(QString className, QString simualtionParameters);
-  QList<QString> readSimulationResultVars(QString fileName);
+  QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
   bool isExperiment(QString className);

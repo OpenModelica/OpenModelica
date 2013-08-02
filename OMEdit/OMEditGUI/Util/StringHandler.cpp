@@ -789,41 +789,6 @@ QString StringHandler::removeComment(QString value)
   return value.remove(startPos, (endPos - startPos) + 2);
 }
 
-QList<QString> StringHandler::getSimulationResultVars(QString value)
-{
-  QList<QString> list;
-  QString str;
-  bool startReading = false;
-
-  for (int i=0; i < value.length(); i++)
-  {
-    if(startReading)
-      str.append(value.at(i));
-
-    if (value.at(i) == '"')
-    {
-      if (startReading)
-      {
-        if (value.at(i+1) == ',')
-        {
-          startReading = false;
-          list.append(str.remove((str.length() - 1), 1));
-          str.clear();
-        }
-        else if (value.at(i+1) == '}')
-        {
-          startReading = false;
-          list.append(str.remove((str.length() - 1), 1));
-          str.clear();
-        }
-      }
-      else
-        startReading = true;
-    }
-  }
-  return list;
-}
-
 QString StringHandler::getModifierValue(QString value)
 {
   int element = 0;

@@ -175,7 +175,7 @@ void VariablesWidget::createActions()
   connect(mpDeleteResultAction, SIGNAL(triggered()), SLOT(deleteVariablesTreeItem()));
 }
 
-void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath, QList<QString> plotVariablesList)
+void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath, QStringList plotVariablesList)
 {
   mpVariablesTreeWidget->blockSignals(true);
   // Remove the simulation result if we already had it in tree

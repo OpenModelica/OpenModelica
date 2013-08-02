@@ -86,7 +86,7 @@ class VariablesWidget : public QWidget
 public:
   VariablesWidget(MainWindow *pParent);
   void createActions();
-  void addPlotVariablestoTree(QString fileName, QString filePath, QList<QString> plotVariablesList);
+  void addPlotVariablestoTree(QString fileName, QString filePath, QStringList plotVariablesList);
   void addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName,
                              QString fullStructure = QString(), bool derivative = false);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
