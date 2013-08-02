@@ -298,7 +298,6 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
 
     data->modelData.nStates = <%varInfo.numStateVars%>;
     data->modelData.nVariablesReal = 2*<%varInfo.numStateVars%>+<%varInfo.numAlgVars%>;
-    data->modelData.nDiscreteReal = <%varInfo.numDiscreteReal%>;
     data->modelData.nVariablesInteger = <%varInfo.numIntAlgVars%>;
     data->modelData.nVariablesBoolean = <%varInfo.numBoolAlgVars%>;
     data->modelData.nVariablesString = <%varInfo.numStringAlgVars%>;
