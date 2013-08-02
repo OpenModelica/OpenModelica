@@ -7276,7 +7276,18 @@ match exp
 case LUNARY(__) then
   let e = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
-  case NOT(__) then '(!<%e%>)'
+  case NOT(__) then
+    match exp
+    case CREF(ty = T_ARRAY(__)) then    
+      let var = tempDecl("boolean_array", &varDecls)
+      let &preExp += 'not_boolean_array(&<%e%>,&<%var%>);<%\n%>'
+      '<%var%>'
+    case ARRAY(ty = T_ARRAY(__)) then    
+      let var = tempDecl("boolean_array", &varDecls)
+      let &preExp += 'not_boolean_array(&<%e%>,&<%var%>);<%\n%>'
+      '<%var%>'
+    else
+       '(!<%e%>)'
 end daeExpLunary;
 
 

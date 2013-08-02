@@ -83,6 +83,9 @@ void and_boolean_array(const boolean_array_t *source1, const boolean_array_t *so
 /* 'or' two boolean arrays*/
 void or_boolean_array(const boolean_array_t *source1, const boolean_array_t *source2, boolean_array_t *dest);
 
+/* 'not' a boolean array*/
+void not_boolean_array(const boolean_array_t *source, boolean_array_t *dest);
+
 extern modelica_boolean* calc_boolean_index(int ndims, const _index_t* idx_vec, const boolean_array_t* arr);
 extern modelica_boolean* calc_boolean_index_va(const boolean_array_t* source,int ndims,va_list ap);
 
