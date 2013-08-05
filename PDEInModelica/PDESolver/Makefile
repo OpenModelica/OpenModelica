@@ -1,6 +1,6 @@
 cmakeVS:
 	mkdir -p ./_VS
-	cd _VS && cmake ../ -G "Visual Studio 
+	cd _VS && cmake ../ -G "Visual Studio 11"
 
 cmakeVS10:
 	mkdir -p ./_VS10

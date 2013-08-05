@@ -1,15 +1,18 @@
-#ifndef _DOUBLE_PAIR
-#define _DOUBLE_PAIR
+#ifndef _DATA_INCL
+#define _DATA_INCL
+
+//#include <iostream>
+//#include <fstream>
+//using namespace std;
+
 struct DoublePair {
     double v0;
     double v1;
 };
-#endif
 
-#ifndef _DATA
-#define _DATA
-struct DATA {
-    int M;        //number of grid points
+
+struct MODEL_DATA {
+    int M;                      //number of grid points
     int nStateFields;
     int nAlgebraicFields;
     int nParameterFields;
@@ -22,14 +25,13 @@ struct DATA {
     double* algebraicFields;//[iAlgebraic*M + iNode];
     double* parameterFields;//[iParameter*M + iNode];
     double* spaceField;//[iNode];  space independent variable (x)
-    int*   isBc;//[iState*2 + (0 = left) or (1 = right)]; Is there a BC?
+    int*    isBc;//[iState*2 + (0 = left) or (1 = right)]; Is there a BC?
     double* parameters;
     double time;
-    double endTime;
-    double dt; //time step
-    double cfl; // Courant–Friedrichs–Lewy number (lambda*dt/dx < cfl)
 };
 
+
+int initializeData(struct MODEL_DATA *d);
+int freeData(struct MODEL_DATA *d);
+
 #endif
-int initializeData(struct DATA *d);
-int freeData(struct DATA *d);

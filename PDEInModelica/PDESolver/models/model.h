@@ -1,11 +1,12 @@
 #ifdef __cplusplus
 extern "C" {
-    extern int setupArrayDimensions(DATA* data);
-    extern int setupModel(struct DATA* data);
-    extern double shapeFunction(struct DATA *data, double v);
-    extern int functionPDE(struct DATA *data);
-    extern int functionBC(struct DATA *data);
-    extern double eqSystemMaxEigenVal(DATA* data);
+    extern int setupArrayDimensions(MODEL_DATA* mData);
+    extern int setupModelParameters(struct MODEL_DATA* mData);
+    extern int setupInitialState(struct MODEL_DATA* mData);
+    extern double shapeFunction(struct MODEL_DATA *mData, double v);
+    extern int functionPDE(struct MODEL_DATA *mData);
+    extern int functionBC(struct MODEL_DATA *mData);
+    extern double eqSystemMaxEigenVal(MODEL_DATA* mData);
 }
 #endif
 
