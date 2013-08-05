@@ -287,10 +287,10 @@ algorithm
         ((e,(b or b2,options)));
 
     // normal (pure) call
-    case ((e as DAE.CALL(expLst=expl, attr=DAE.CALL_ATTR(isImpure=false)),(_,options)))
+    case ((e as DAE.CALL(path=Absyn.IDENT(idn),expLst=expl, attr=DAE.CALL_ATTR(isImpure=false)),(_,options)))
       equation
         true = Expression.isConstWorkList(expl, true);
-        e2 = simplifyBuiltinConstantCalls(e);
+        e2 = simplifyBuiltinConstantCalls(idn,e);
       then
         ((e2,(true,options)));
 
@@ -1373,80 +1373,81 @@ algorithm
 end simplifyStringAppendList;
 
 protected function simplifyBuiltinConstantCalls "simplifies some builtin calls if constant arguments"
+  input String name;
   input DAE.Exp exp "assumes already simplified call arguments";
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue exp
+  outExp := matchcontinue (name,exp)
     local
       Real r,v1,v2;
       Integer i, j;
       DAE.Exp e,e1,e2;
 
     // der(constant) ==> 0
-    case (DAE.CALL(path=Absyn.IDENT("der"),expLst ={e}))
+    case ("der",DAE.CALL(expLst ={e}))
       equation
         e1 = simplifyBuiltinConstantDer(e);
       then e1;
 
     // pre(constant) ==> constant
-    case (DAE.CALL(path=Absyn.IDENT("pre"),expLst ={e}))
+    case ("pre",DAE.CALL(expLst ={e}))
       then e;
 
     // edge(constant) ==> false
-    case (DAE.CALL(path=Absyn.IDENT("edge"),expLst ={e}))
+    case ("edge",DAE.CALL(expLst ={e}))
       then DAE.BCONST(false);
 
     // change(constant) ==> false
-    case (DAE.CALL(path=Absyn.IDENT("change"),expLst ={e}))
+    case ("change",DAE.CALL(expLst ={e}))
       then DAE.BCONST(false);
 
     // sqrt function
-    case(DAE.CALL(path=Absyn.IDENT("sqrt"),expLst={e}))
+    case("sqrt",DAE.CALL(expLst={e}))
       equation
         r = realSqrt(Expression.getRealConst(e));
       then
         DAE.RCONST(r);
 
     // abs on real
-    case(DAE.CALL(path=Absyn.IDENT("abs"),expLst={DAE.RCONST(r)}))
+    case("abs",DAE.CALL(expLst={DAE.RCONST(r)}))
       equation
         r = realAbs(r);
       then
         DAE.RCONST(r);
 
     // abs on integer
-    case(DAE.CALL(path=Absyn.IDENT("abs"),expLst={DAE.ICONST(i)}))
+    case("abs",DAE.CALL(expLst={DAE.ICONST(i)}))
       equation
         i = intAbs(i);
       then
         DAE.ICONST(i);
 
     // sin function
-    case(DAE.CALL(path=Absyn.IDENT("sin"),expLst={e}))
+    case("sin",DAE.CALL(expLst={e}))
       equation
         r = realSin(Expression.getRealConst(e));
       then DAE.RCONST(r);
 
     // cos function
-    case(DAE.CALL(path=Absyn.IDENT("cos"),expLst={e}))
+    case("cos",DAE.CALL(expLst={e}))
       equation
         r = realCos(Expression.getRealConst(e));
       then DAE.RCONST(r);
 
     // sin function
-    case(DAE.CALL(path=Absyn.IDENT("asin"),expLst={e}))
+    case("asin",DAE.CALL(expLst={e}))
       equation
         r = realAsin(Expression.getRealConst(e));
       then DAE.RCONST(r);
 
     // cos function
-    case(DAE.CALL(path=Absyn.IDENT("acos"),expLst={e}))
+    case("acos",DAE.CALL(expLst={e}))
       equation
         r = realAcos(Expression.getRealConst(e));
       then DAE.RCONST(r);
 
     // tangent function
-    case(DAE.CALL(path=Absyn.IDENT("tan"),expLst={e}))
+    case("tan",DAE.CALL(expLst={e}))
       equation
         v1 = realSin(Expression.getRealConst(e));
         v2 = realCos(Expression.getRealConst(e));
@@ -1454,33 +1455,33 @@ algorithm
       then DAE.RCONST(r);
 
     // DAE.Exp function
-    case(DAE.CALL(path=Absyn.IDENT("exp"),expLst={e}))
+    case("exp",DAE.CALL(expLst={e}))
       equation
         r = realExp(Expression.getRealConst(e));
       then DAE.RCONST(r);
 
     // log function
-    case(DAE.CALL(path=Absyn.IDENT("log"),expLst={e}))
+    case("log",DAE.CALL(expLst={e}))
       equation
         r = realLn(Expression.getRealConst(e));
       then
         DAE.RCONST(r);
 
     // log10 function
-    case(DAE.CALL(path=Absyn.IDENT("log10"),expLst={e}))
+    case("log10",DAE.CALL(expLst={e}))
       equation
         r = realLog10(Expression.getRealConst(e));
       then
         DAE.RCONST(r);
 
     // min function on integers
-    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ICONST(i), DAE.ICONST(j)}))
+    case("min",DAE.CALL(expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
         i = intMin(i, j);
       then DAE.ICONST(i);
 
     // min function on reals
-    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL(source=_))))
+    case("min",DAE.CALL(expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL(source=_))))
       equation
         v1 = Expression.getRealConst(e);
         v2 = Expression.getRealConst(e1);
@@ -1488,19 +1489,19 @@ algorithm
       then DAE.RCONST(r);
 
     // min function on enumerations
-    case(DAE.CALL(path=Absyn.IDENT("min"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
+    case("min",DAE.CALL(expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
       equation
         e2 = Util.if_(intLt(i,j),e,e1);
       then e2;
 
     // max function on integers
-    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ICONST(i), DAE.ICONST(j)}))
+    case("max",DAE.CALL(expLst={DAE.ICONST(i), DAE.ICONST(j)}))
       equation
         i = intMax(i, j);
       then DAE.ICONST(i);
 
     // max function on reals
-    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL(source=_))))
+    case("max",DAE.CALL(expLst={e, e1},attr=DAE.CALL_ATTR(ty=DAE.T_REAL(source=_))))
       equation
         v1 = Expression.getRealConst(e);
         v2 = Expression.getRealConst(e1);
@@ -1508,10 +1509,15 @@ algorithm
       then DAE.RCONST(r);
 
     // max function on enumerations
-    case(DAE.CALL(path=Absyn.IDENT("max"),expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
+    case("max",DAE.CALL(expLst={e as DAE.ENUM_LITERAL(index=i), e1 as DAE.ENUM_LITERAL(index=j)}))
       equation
         e2 = Util.if_(intGt(i,j),e,e1);
       then e2;
+
+    case("sign",DAE.CALL(expLst={DAE.RCONST(r)}))
+      equation
+        i = Util.if_(realEq(r,0.0), 0, Util.if_(realGt(r,0.0), 1, -1));
+      then DAE.ICONST(i);
 
   end matchcontinue;
 end simplifyBuiltinConstantCalls;
