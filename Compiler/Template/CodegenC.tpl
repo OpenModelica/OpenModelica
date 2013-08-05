@@ -3515,25 +3515,23 @@ end functionsMakefile;
 template contextCref(ComponentRef cr, Context context)
   "Generates code for a component reference depending on which context we're in."
 ::=
-  match cr
-  case CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
-    let &preExp = buffer "" /*BUFD*/
-    let &varDecls = buffer ""
-    let rec_name = underscorePath(ClassInf.getStateName(record_state))
-    let recPtr = tempDecl(rec_name + "*", &varDecls)
-    let dimsLenStr = listLength(crefSubs(cr))
-    let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-                  daeExp(exp, context, &preExp, &varDecls)
-                  ;separator=", ")
-    <<
-    ((<%rec_name%>*)(generic_array_element_addr(&_<%ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(componentRef, context)%>
-    >>
-  else
-    match context
-    case FUNCTION_CONTEXT(__)
-    case PARALLEL_FUNCTION_CONTEXT(__)
-      then "_" + System.unquoteIdentifier(crefStr(cr))
-    else cref(cr)
+  match context
+  case FUNCTION_CONTEXT(__)
+  case PARALLEL_FUNCTION_CONTEXT(__) then
+    (match cr
+    case CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
+      let &preExp = buffer "" /*BUFD*/
+      let &varDecls = buffer ""
+      let rec_name = underscorePath(ClassInf.getStateName(record_state))
+      let recPtr = tempDecl(rec_name + "*", &varDecls)
+      let dimsLenStr = listLength(crefSubs(cr))   
+      let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeExp(exp, context, &preExp, &varDecls) ; separator=", ")
+      <<
+      ((<%rec_name%>*)(generic_array_element_addr(&_<%ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(componentRef, context)%>
+      >>
+    else "_" + System.unquoteIdentifier(crefStr(cr))
+    )
+  else cref(cr)
 end contextCref;
 
 template contextIteratorName(Ident name, Context context)
@@ -6755,28 +6753,31 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
  expression."
 ::=
   match exp
-  case CREF(componentRef = cr as CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))) then
-    let &preExp = buffer "" /*BUFD*/
-    let &varDecls = buffer ""
-    let rec_name = underscorePath(ClassInf.getStateName(record_state))
-    let recPtr = tempDecl(rec_name + "*", &varDecls)
-    let dimsLenStr = listLength(crefSubs(cr))
-    let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-                  daeExp(exp, context, &preExp, &varDecls)
-                  ;separator=", ")
-    <<
-    ((<%rec_name%>*)(generic_array_element_addr(&_<%cr.ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(cr.componentRef, context)%>
-    >>
   // A record cref without subscripts (i.e. a record instance) is handled
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
   case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
-    match context
-    case FUNCTION_CONTEXT(__) then
-        daeExpCrefRhs2(exp, context, &preExp, &varDecls)
+    (match context
+    case FUNCTION_CONTEXT(__)
     case PARALLEL_FUNCTION_CONTEXT(__) then
-        daeExpCrefRhs2(exp, context, &preExp, &varDecls)
-      else
-        daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      (match cr
+      case cr as CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
+        let &preExp = buffer "" /*BUFD*/
+        let &varDecls = buffer ""
+        let rec_name = underscorePath(ClassInf.getStateName(record_state))
+        let recPtr = tempDecl(rec_name + "*", &varDecls)
+        let dimsLenStr = listLength(crefSubs(cr))
+        let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
+                      daeExp(exp, context, &preExp, &varDecls)
+                      ;separator=", ")
+          <<
+          ((<%rec_name%>*)(generic_array_element_addr(&_<%cr.ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(cr.componentRef, context)%>
+          >>
+        else
+          daeExpCrefRhs2(exp, context, &preExp, &varDecls)
+      )
+    else
+      daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    )
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_FUNC(__)) then
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
