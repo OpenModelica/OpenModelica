@@ -57,7 +57,7 @@ public:
     virtual void setVars(const double* z) = 0;
 
     /// Update transfer behavior of the system of equations according to command given by solver
-    virtual void update(const UPDATE command = UNDEF_UPDATE) = 0;
+    virtual bool update(const UPDATE command = UNDEF_UPDATE) = 0;
 
     /// Provide the right hand side (according to the index)
     virtual void giveRHS(double* f) = 0;

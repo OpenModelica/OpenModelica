@@ -137,27 +137,23 @@ double EventHandling::sample(double start,double interval)
 /**
 Handles  all events occured a the same time. These are stored  the eventqueue
 */
-bool EventHandling::IterateEventQueue(bool* conditions)
+bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 {
     IContinuous*  countinous_system = dynamic_cast<IContinuous*>(_system);
     IEvent* event_system= dynamic_cast<IEvent*>(_system);
     IMixedSystem* mixed_system= dynamic_cast<IMixedSystem*>(_system);
 
-    bool drestart=false;
-    bool crestart=true;        
-    
-  
     //save discrete varibales
     event_system->saveDiscreteVars(); // store values of discrete vars vor next check
 
     //Handle all events
-    countinous_system->update();    
+    state_vars_reinitialized = countinous_system->update();    
   
     //check if discrete variables changed
-    drestart= event_system->checkForDiscreteEvents();
+    bool drestart= event_system->checkForDiscreteEvents();
 
     //update all conditions    
-    crestart=event_system->checkConditions(0,true);
+    bool crestart=event_system->checkConditions(0,true);
    
   
     return((drestart||crestart)); //returns true if new events occured

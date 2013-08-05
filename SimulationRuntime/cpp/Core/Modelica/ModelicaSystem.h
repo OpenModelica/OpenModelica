@@ -53,7 +53,7 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
    virtual void setVars(const double* z);
 
   // Update transfer behavior of the system of equations according to command given by solver
-   virtual void update(const UPDATE command =IContinuous::UNDEF_UPDATE);
+   virtual  bool update(const UPDATE command =IContinuous::UNDEF_UPDATE);
 
   // Provide the right hand side (according to the index)
    virtual void giveRHS(double* f);
@@ -86,7 +86,7 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
    virtual void giveZeroFunc(double* f);
 
    //Called to handle all  events occured at same time
-   virtual void handleSystemEvents( bool* events);
+   virtual bool handleSystemEvents( bool* events);
    virtual bool checkConditions(const bool* events, bool all);
   //Called to handle an event
    virtual void handleEvent(const bool* events);

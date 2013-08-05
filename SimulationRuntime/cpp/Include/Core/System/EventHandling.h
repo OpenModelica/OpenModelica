@@ -44,10 +44,10 @@ public:
     //removes an event from the eventqueue
     void removeEvent(long index);
     //Handles  all events occured a the same time. Returns true if a second event iteration is needed
-    bool IterateEventQueue(bool* events);
+    bool IterateEventQueue(bool& state_vars_reinitialized);
 
-    void saveDiscreteVar(double var,string key); // I guess, this was used in a wrong way. it might be obsolete.
-    bool changeDiscreteVar(double var,string key); // I guess, this was used in a wrong way. it might be obsolete.
+    void saveDiscreteVar(double var,string key);
+    bool changeDiscreteVar(double var,string key);
     void addTimeEvent(long index,double time);
     void addTimeEvents( event_times_type times);
      event_times_type makePeriodeEvents(double ts,double te,double ti,long index);

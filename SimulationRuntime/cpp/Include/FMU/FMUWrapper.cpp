@@ -171,11 +171,11 @@ fmiStatus FMUWrapper::eventUpdate(fmiBoolean intermediateResults,
   for(int i=0; i<NUMBER_OF_EVENT_INDICATORS; i++)
     events[i] = f[i] >= 0;
   // Handle Zero Crossings if nessesary
-  _model->handleSystemEvents(events);
+  bool state_vars_reinitialized = _model->handleSystemEvents(events);
   // everything is done
   eventInfo.iterationConverged = fmiTrue;
   eventInfo.stateValueReferencesChanged = fmiFalse; // will never change for open Modelica Models
-  eventInfo.stateValuesChanged = fmiFalse; // TODO
+  eventInfo.stateValuesChanged = state_vars_reinitialized; // TODO
   eventInfo.terminateSimulation = fmiFalse;
   eventInfo.upcomingTimeEvent = fmiFalse;
   //eventInfo.nextEventTime = _time;

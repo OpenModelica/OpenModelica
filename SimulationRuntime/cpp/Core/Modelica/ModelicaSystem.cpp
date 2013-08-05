@@ -39,9 +39,9 @@ void Modelica::resetTimeEvents()
 {
 }
 
-void Modelica::update(const UPDATE command)
+bool Modelica::update(const UPDATE command)
 {
-
+  return false;
 }
 
 void Modelica::writeOutput(const OUTPUT command)
@@ -112,7 +112,7 @@ void Modelica::handleEvent(const bool* events)
 
 }
 
- void Modelica::handleSystemEvents( bool* events)
+bool Modelica::handleSystemEvents( bool* events)
 {
 
 }

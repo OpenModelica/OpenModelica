@@ -1944,7 +1944,7 @@ template Update(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   <<
-    <%update(allEquations,whenClauses,simCode,contextOther)%>
+  <%update(allEquations,whenClauses,simCode,contextOther)%>
   >>
 end Update;
 /*<%update(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)%>*/
@@ -2433,7 +2433,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Set variables with given index to the system
     virtual void setVars(const double* z);
     //Update transfer behavior of the system of equations according to command given by solver
-    virtual void update(const UPDATE command =IContinuous::UNDEF_UPDATE);
+    virtual bool update(const UPDATE command =IContinuous::UNDEF_UPDATE);
     //Provide the right hand side (according to the index)
     virtual void giveRHS(double* f);
     //Output routine (to be called by the solver after every successful integration step)
@@ -2459,7 +2459,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Called to check conditions for event-handling
     virtual bool checkConditions(const bool* events, bool all);
      //Called to handle all  events occured at same time
-    virtual void handleSystemEvents( bool* events);
+    virtual bool handleSystemEvents( bool* events);
     //Called to handle an event
     virtual void handleEvent(const bool* events);
     //Checks if a discrete variable has changed and triggers an event
@@ -6359,26 +6359,28 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-   void <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
-   {
+  bool <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
+  {
     bool restart=true;
+    bool state_vars_reinitialized = false;
     int iter=0;
-
+    
     checkConditions(events,false);
-
+    
     while(restart && !(iter++ > 2*_dimZeroFunc))
     {
-
+            bool st_vars_reinit = false; 
             //iterate and handle all events inside the eventqueue
-            saveAll();
-            restart=_event_handling.IterateEventQueue(_conditions);
+            restart=_event_handling.IterateEventQueue(st_vars_reinit);
+            state_vars_reinitialized = state_vars_reinitialized || st_vars_reinit; 
 
-     }
-     saveAll();
-     resetTimeEvents();
-    if(iter>2*_dimZeroFunc && restart ){
-     throw std::runtime_error("Number of event iteration steps exceeded. " );}
-   }
+            saveAll();
+    }
+    resetTimeEvents();
+    if(iter>2*_dimZeroFunc && restart )
+      throw std::runtime_error("Number of event iteration steps exceeded. " );
+    return state_vars_reinitialized;
+  }
   >>
 end handleSystemEvents;
 
@@ -6718,13 +6720,15 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  void <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
+  bool <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
   {
+    bool state_var_reinitialized = false;
     <%varDecls%>
 
     if(command & IContinuous::RANKING) checkConditions(0,true);
       <%all_equations%>
     <%reinit%>
+    return state_var_reinitialized;
   }
   >>
 end update;
@@ -6762,6 +6766,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
         let &preExp = buffer "" /*BUFD*/
         let val = daeExp(value, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
         <<
+        state_var_reinitialized = true;
         <%preExp%>
         <%cref1(stateVar,simCode,contextOther)%> = <%val%>;
         >>
@@ -6776,7 +6781,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
         assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info,simCode)
     ;separator="\n")
   <<
-   <%body%>
+  <%body%>
   >>
 end functionWhenReinitStatementThen;
 

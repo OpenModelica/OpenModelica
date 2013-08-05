@@ -49,7 +49,7 @@ public:
     virtual void giveConstraint(SparseMatrix matrix) = 0;
     virtual IHistory* getHistory()=0;
     /// Called to handle all  events occured at same time
-    virtual void handleSystemEvents(bool* events) = 0;
+    virtual bool handleSystemEvents(bool* events) = 0;
      //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll() = 0;
 
