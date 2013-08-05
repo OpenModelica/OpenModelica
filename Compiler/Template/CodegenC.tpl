@@ -1623,6 +1623,7 @@ case SIMULATION(genDiscrete=true) then
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif
+  #pragma omp section
   eqFunction_<%ix%>(data);
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_ACC_EQEXT(<%ix%>);
@@ -1635,6 +1636,7 @@ else
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
+  #pragma omp section
   #ifdef _OMC_MEASURE_TIME
     SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif

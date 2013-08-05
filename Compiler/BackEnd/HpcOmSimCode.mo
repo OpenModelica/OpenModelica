@@ -529,7 +529,7 @@ algorithm
     case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
     else
       equation
-        print("getSimCodeEqByIndex failed\n");
+        print("getSimCodeEqByIndex failed. Looking for Index " +& intString(iIdx) +& "\n");
       then fail();
   end matchcontinue;
 end getSimCodeEqByIndex;
@@ -659,7 +659,7 @@ algorithm
         true = intEq(listLength(nodeComps), 1);
         firstNodeComp = List.first(nodeComps);
         true = intGe(arrayLength(iSccSimEqMapping), firstNodeComp);
-        sccSimEqMapping = arrayGet(iSccSimEqMapping,firstNodeComp);
+        //sccSimEqMapping = arrayGet(iSccSimEqMapping,firstNodeComp);
         nodeMark = arrayGet(iNodeMarks,firstNodeComp);
         //print("createParInformation0 with nodeIdx " +& intString(iNodeIdx) +& " representing component " +& intString(firstNodeComp) +& " and nodeMark " +& intString(nodeMark) +& "\n");
         true = intGe(nodeMark,0);
@@ -697,10 +697,13 @@ protected function createParInformation1 "function createParInformation1
   
 protected 
   list<Integer> simEqIdc;
+  Integer lastSimEqIdx;
   
 algorithm
   simEqIdc := arrayGet(iSccSimEqMapping,iCompIdx);
-  oList := listAppend(iList,simEqIdc);
+  lastSimEqIdx := List.last(simEqIdc);
+  oList := lastSimEqIdx::iList;
+  //oList := listAppend(iList,simEqIdc);
 end createParInformation1;
 
 protected function getLevelListByLevel "function getLevelListByLevel

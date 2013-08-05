@@ -5889,7 +5889,7 @@ algorithm
         (i1,i2,i3,i4) = inTpl;
         tpl = (i1_1+i1,i2_1+i2,i3_1+i3,i4_1+i4);
         tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.listEquation(eqnlst),countOperationsExp,tpl);
-        print("countOperationstraverseComps: Nonlinear systems are in beta state!\n");
+        //print("countOperationstraverseComps: Nonlinear systems are in beta state!\n");
       then
           countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (_::rest,_,_,_)
