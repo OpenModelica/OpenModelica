@@ -115,7 +115,7 @@ ifeq (@MODELICA3D@,)
 	@echo Skipping Modelica3D
 else
 	cd 3rdParty/modelica3d && mkdir -p build
-	cd 3rdParty/modelica3d/build && $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=:Bool=OFF ..
+	cd 3rdParty/modelica3d/build && $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 -DUSE_OMC=0 ..
 	$(MAKE) -C 3rdParty/modelica3d/build
 	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk.so 3rdParty/modelica3d/build/lib/proc3d/libproc3d.so build/lib/
 	cp -p 3rdParty/modelica3d/lib/modcount/src/c/modcount.h 3rdParty/modelica3d/lib/modbus/src/c/modbus.h build/include/omc/
