@@ -11,6 +11,13 @@ static void errmsg() {
   fprintf(stderr, "CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }
 
+RML_BEGIN_LABEL(Corba__setObjectReferenceFilePath)
+{
+  errmsg();
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(Corba__haveCorba)
 {
   rmlA0 = mk_icon(0);

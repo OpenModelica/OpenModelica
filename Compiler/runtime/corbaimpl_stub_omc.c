@@ -40,6 +40,12 @@ extern int Corba_haveCorba()
   return 0;
 }
 
+extern void Corba_setObjectReferenceFilePath(const char* path)
+{
+  errmsg();
+  MMC_THROW();
+}
+
 extern void Corba_setSessionName(const char* _inSessionName)
 {
   errmsg();
