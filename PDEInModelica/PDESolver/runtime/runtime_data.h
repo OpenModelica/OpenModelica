@@ -8,7 +8,7 @@ using namespace std;
 
 
 struct RUNTIME_DATA {
-	MODEL_DATA* modelData;
+  MODEL_DATA* modelData;
     double endTime;
     double dt; //time step
     double cfl; // Courant–Friedrichs–Lewy number (lambda*dt/dx < cfl)
