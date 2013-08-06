@@ -43,7 +43,6 @@ encapsulated package Inline
   "
 
 public import Absyn;
-public import Algorithm;
 public import BackendDAE;
 public import BaseHashTable;
 public import DAE;

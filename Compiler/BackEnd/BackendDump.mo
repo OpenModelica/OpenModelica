@@ -52,7 +52,6 @@ public import DAE;
 public import HashSet;
 
 protected import Absyn;
-protected import Algorithm;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendEquation;

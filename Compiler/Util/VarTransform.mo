@@ -107,7 +107,6 @@ public
 type Value2 = list<DAE.ComponentRef>;
 
 protected import Absyn;
-protected import Algorithm;
 protected import BaseHashTable;
 protected import ComponentReference;
 //protected import Debug;

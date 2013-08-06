@@ -60,7 +60,6 @@ protected import ValuesUtil;
 protected import Values;
 protected import Types;
 protected import ClassInf;
-protected import Algorithm;
 protected import SCodeDump;
 protected import List;
 protected import Flags;

@@ -38,7 +38,6 @@ encapsulated package HpcOmBenchmark
 "
 
 protected import HpcOmBenchmarkExt;
-protected import List;
 
 public function benchSystem
   output tuple<tuple<Integer,Integer>,tuple<Integer,Integer>> oTime; //required time for <op,com>

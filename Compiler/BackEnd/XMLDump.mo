@@ -91,7 +91,6 @@ protected import BackendEquation;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
-protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;

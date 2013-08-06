@@ -53,7 +53,6 @@ encapsulated package SimCode
 
 // public imports
 public import Absyn;
-public import Algorithm;
 public import BackendDAE;
 public import DAE;
 

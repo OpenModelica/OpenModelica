@@ -41,7 +41,6 @@ encapsulated package SimCodeUtil
 
 // public imports
 public import Absyn;
-public import Algorithm;
 public import BackendDAE;
 public import BackendDAEUtil;
 public import Ceval;

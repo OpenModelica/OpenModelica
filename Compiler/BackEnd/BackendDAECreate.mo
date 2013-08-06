@@ -39,7 +39,6 @@ encapsulated package BackendDAECreate
 "
 
 public import Absyn;
-public import Algorithm;
 public import BackendDAE;
 public import DAE;
 public import Env;
