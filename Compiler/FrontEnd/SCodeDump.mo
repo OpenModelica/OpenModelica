@@ -245,7 +245,7 @@ algorithm
   end matchcontinue;
 end printElementStr;
 
-public constant String noEachStr = "";
+protected constant String noEachStr = "";
 
 public function unparseElementStr
 "function: unparseElementStr

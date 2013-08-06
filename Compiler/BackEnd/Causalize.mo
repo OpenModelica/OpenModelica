@@ -97,7 +97,7 @@ public partial function stateDeselectionFunc
   output BackendDAE.BackendDAE outDAE;
 end stateDeselectionFunc;
 
-public type DAEHandler = tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String>;
+protected type DAEHandler = tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String>;
 
 /*
  * public part

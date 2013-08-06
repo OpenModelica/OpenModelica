@@ -80,8 +80,7 @@ protected import Util;
 protected import ValuesUtil;
 
 // [TYPE]  Types
-public type SymbolTable = Option<Interactive.SymbolTable>;
-
+protected type SymbolTable = Option<Interactive.SymbolTable>;
 protected type FunctionVar = tuple<DAE.Element, Option<Values.Value>>;
 
 // LoopControl is used to control the functions behaviour in different
@@ -102,10 +101,10 @@ public function evaluate
   input Env.Env inEnv;
   input DAE.Function inFunction;
   input list<Values.Value> inFunctionArguments;
-  input SymbolTable inST;
+  input Option<Interactive.SymbolTable> inST;
   output Env.Cache outCache;
   output Values.Value outResult;
-  output SymbolTable outST;
+  output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache, outResult, outST) :=
   matchcontinue(inCache, inEnv, inFunction, inFunctionArguments, inST)
@@ -2120,10 +2119,10 @@ public function assignVector
   input list<DAE.Subscript> inSubscripts;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input SymbolTable inST;
+  input Option<Interactive.SymbolTable> inST;
   output Env.Cache outCache;
   output Values.Value outResult;
-  output SymbolTable outST;
+  output Option<Interactive.SymbolTable> outST;
 algorithm
   (outCache, outResult, outST) :=
   matchcontinue(inNewValue, inOldValue, inSubscripts, inCache, inEnv, inST)

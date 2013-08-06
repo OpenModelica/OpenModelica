@@ -3717,7 +3717,7 @@ function: unparseCommentOptionNoAnnotation
 algorithm
   outString:=
   matchcontinue (inAbsynCommentOption)
-    local Dump.Ident str,cmt;
+    local String str,cmt;
     case (SOME(SCode.COMMENT(_,SOME(cmt))))
       equation
         //str = stringAppendList({" \"",cmt,"\""});

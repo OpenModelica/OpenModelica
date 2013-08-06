@@ -43,9 +43,6 @@ public import Absyn;
 public import DAE;
 public import Values;
 
-public type Value = Values.Value;
-public type IntRealOp = Values.IntRealOp;
-
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -63,12 +60,12 @@ public function typeConvert "function: typeConvert
   Apply type conversion on a list of Values"
   input DAE.Type inType1;
   input DAE.Type inType2;
-  input list<Value> inValueLst3;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst3;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst := match (inType1,inType2,inValueLst3)
     local
-      list<Value> vallst,vrest,vallst2,vals;
+      list<Values.Value> vallst,vrest,vallst2,vals;
       Real rval,r;
       DAE.Type from,to;
       Integer i,ival;
@@ -100,7 +97,7 @@ algorithm
 end typeConvert;
 
 public function valueExpType "creates a DAE.Type from a Value"
-  input Value inValue;
+  input Values.Value inValue;
   output DAE.Type tp;
 algorithm
   tp := matchcontinue(inValue)
@@ -150,7 +147,7 @@ algorithm
 end valueExpTypeExpVar;
 
 public function isZero "Returns true if value is zero"
-  input Value inValue;
+  input Values.Value inValue;
   output Boolean isZero;
 algorithm
   isZero := matchcontinue(inValue)
@@ -168,7 +165,7 @@ end isZero;
 
 public function isArray "function: isArray
   Return true if Value is an array."
-  input Value inValue;
+  input Values.Value inValue;
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inValue)
@@ -187,7 +184,7 @@ end isArray;
 
 public function isRecord "function: isArray
   Return true if Value is an array."
-  input Value inValue;
+  input Values.Value inValue;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inValue)
@@ -207,15 +204,15 @@ end isRecord;
 public function nthArrayelt "function: nthArrayelt
   author: PA
   Return the nth value of an array, indexed from 1..n"
-  input Value inValue;
+  input Values.Value inValue;
   input Integer inInteger;
-  output Value outValue;
+  output Values.Value outValue;
 algorithm
   outValue := match (inValue,inInteger)
     local
       Integer n_1,n;
-      Value res;
-      list<Value> vlst;
+      Values.Value res;
+      list<Values.Value> vlst;
 
     case (Values.ARRAY(valueLst = vlst),n)
       equation
@@ -229,14 +226,14 @@ end nthArrayelt;
 
 public function unparseValues "function: unparseValues
   Prints a list of Value to a string."
-  input list<Value> inValueLst;
+  input list<Values.Value> inValueLst;
   output String outString;
 algorithm
   outString := match (inValueLst)
     local
       String s1,s2,s3,str;
-      Value v;
-      list<Value> vallst;
+      Values.Value v;
+      list<Values.Value> vallst;
     case ((v :: vallst))
       equation
         s1 = unparseDescription({v});
@@ -252,13 +249,13 @@ end unparseValues;
 protected function unparseValueNumbers "function: unparseValueNumbers
   Helper function to unparse_values.
   Prints all the numbers of the values."
-  input list<Value> inValueLst;
+  input list<Values.Value> inValueLst;
   output String outString;
 algorithm
   outString := match (inValueLst)
     local
       String s1,s2,res,istr,sval;
-      list<Value> lst,xs;
+      list<Values.Value> lst,xs;
       Integer i;
       Real r;
     case ((Values.TUPLE(valueLst = lst) :: xs))
@@ -319,10 +316,10 @@ public function safeIntRealOp
    In the future, we should introduce BIG-INTS, or maybe throw exceptions
    (when exceptions are available in the language).
   "
-  input Value val1;
-  input Value val2;
-  input IntRealOp op;
-  output Value outv;
+  input Values.Value val1;
+  input Values.Value val2;
+  input Values.IntRealOp op;
+  output Values.Value outv;
 algorithm
   outv := matchcontinue(val1, val2, op)
     local
@@ -470,8 +467,8 @@ end safeIntRealOp;
 public function safeLessEq
   "Checks if val1 is less or equal to val2. Val1 or val2 can be integers (or
   something that can be converted to integer) or reals."
-  input Value val1;
-  input Value val2;
+  input Values.Value val1;
+  input Values.Value val2;
   output Boolean outv;
 algorithm
   outv := match(val1, val2)
@@ -506,14 +503,14 @@ protected function unparseDescription "function: unparseDescription
   Helper function to unparse_values. Creates a description string
   for the type of the value.
 "
-  input list<Value> inValueLst;
+  input list<Values.Value> inValueLst;
   output String outString;
 algorithm
   outString:=
   match (inValueLst)
     local
       String s1,str,slenstr,sval,s2,s4;
-      list<Value> xs,vallst;
+      list<Values.Value> xs,vallst;
       Integer slen;
     case ((Values.INTEGER(integer = _) :: xs))
       equation
@@ -551,7 +548,7 @@ protected function unparseArrayDescription "function: unparseArrayDescription
 
   Helper function to unparse_description.
 "
-  input list<Value> lst;
+  input list<Values.Value> lst;
   output String str;
 protected
   String pt,s1,s2,s3,s4,s5,s6;
@@ -572,14 +569,14 @@ protected function unparsePrimType "function: unparsePrimType
 
   Helper function to unparse_array_description.
 "
-  input list<Value> inValueLst;
+  input list<Values.Value> inValueLst;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inValueLst)
     local
       String res;
-      list<Value> elts;
+      list<Values.Value> elts;
     case ((Values.ARRAY(valueLst = elts) :: _))
       equation
         res = unparsePrimType(elts);
@@ -598,14 +595,14 @@ protected function unparseNumDims "function: unparseNumDims
 
   Helper function to unparse_array_description.
 "
-  input list<Value> inValueLst;
+  input list<Values.Value> inValueLst;
   output Integer outInteger;
 algorithm
   outInteger:=
   matchcontinue (inValueLst)
     local
       Integer i1;
-      list<Value> vals;
+      list<Values.Value> vals;
     case ((Values.ARRAY(valueLst = vals) :: _))
       equation
         i1 = unparseNumDims(vals);
@@ -619,7 +616,7 @@ protected function unparseDimSizes "function: unparseDimSizes
 
   Helper function to unparse_array_description.
 "
-  input list<Value> inValueLst;
+  input list<Values.Value> inValueLst;
   output String outString;
 algorithm
   outString:=
@@ -627,7 +624,7 @@ algorithm
     local
       Integer i1,len;
       String s1,s2,s3,res;
-      list<Value> lst,vals;
+      list<Values.Value> lst,vals;
     case ((lst as (Values.ARRAY(valueLst = vals) :: _)))
       equation
         i1 = listLength(lst);
@@ -652,7 +649,7 @@ public function writeToFileAsArgs "function: writeToFileAsArgs
   writing the formal input arguments of a function call to a file before
   executing the function.
 "
-  input list<Value> vallst;
+  input list<Values.Value> vallst;
   input String filename;
 protected
   String str;
@@ -665,14 +662,14 @@ public function addElementwiseArrayelt "function: addElementwiseArrayelt
 
   Perform elementwise addition of two arrays.
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValueLst1,inValueLst2)
     local
-      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      list<Values.Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
       Real r1,r2,rres;
       String s1,s2,sres;
@@ -709,14 +706,14 @@ public function subElementwiseArrayelt "function: subElementwiseArrayelt
 
   Perform element subtraction of two arrays of values
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValueLst1,inValueLst2)
     local
-      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      list<Values.Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
       list<Integer> dims;
       Real r1,r2,rres;
@@ -746,14 +743,14 @@ public function mulElementwiseArrayelt "function: mulElementwiseArrayelt
 
   Perform elementwise multiplication of two arrays of values
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValueLst1,inValueLst2)
     local
-      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      list<Values.Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
       list<Integer> dims;
       Real rres,r1,r2;
@@ -783,14 +780,14 @@ public function divElementwiseArrayelt "function: divElementwiseArrayelt
 
   Perform elementwise division of two arrays of values
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValueLst1,inValueLst2)
     local
-      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      list<Values.Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Real res,r1,r2;
       Integer i1,i2;
       list<Integer> dims;
@@ -822,14 +819,14 @@ public function powElementwiseArrayelt "function: powElementwiseArrayelt
 
   Computes elementwise powers of two arrays of values
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValueLst1,inValueLst2)
     local
-      list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
+      list<Values.Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer i1,i2;
       Real res,r1,r2;
       list<Integer> dims;
@@ -860,7 +857,7 @@ end powElementwiseArrayelt;
 public function expValue "function: expValue
   Returns the value of constant expressions in DAE.Exp"
   input DAE.Exp inExp;
-  output Value outValue;
+  output Values.Value outValue;
 algorithm
   outValue := match (inExp)
     local
@@ -903,7 +900,7 @@ algorithm
       Integer ix;
       Absyn.Path path;
       Absyn.CodeNode code;
-      Value valType;
+      Values.Value valType;
       DAE.Type ety;
 
     case (Values.INTEGER(integer = i)) then DAE.ICONST(i);
@@ -1043,7 +1040,7 @@ public function valueReal "function: valueReal
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
-  input Value inValue;
+  input Values.Value inValue;
   output Real outReal;
 algorithm
   outReal:=
@@ -1061,7 +1058,7 @@ algorithm
 end valueReal;
 
 public function valueIntegerMinusOne "To be able to use listNth"
-  input Value inValue;
+  input Values.Value inValue;
   output Integer outInt;
 algorithm
   outInt := match (inValue)
@@ -1076,7 +1073,7 @@ public function valueBool "function: valueReal
 Author: BZ, 2008-09
   Return the bool value of a Value.
 "
-  input Value inValue;
+  input Values.Value inValue;
   output Boolean outBool;
 algorithm
   outBool:= match (inValue)
@@ -1089,14 +1086,14 @@ public function valueReals "function: valueReals
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
-  input list<Value> inValue;
+  input list<Values.Value> inValue;
   output list<Real> outReal;
 algorithm
   outReal:=
   matchcontinue (inValue)
     local
       Real r;
-      list<Value> rest;
+      list<Values.Value> rest;
       list<Real> res;
       Integer i;
     case ({}) then {};
@@ -1121,7 +1118,7 @@ end valueReals;
 
 public function arrayValueInts
   "Returns the integer values of a Values array."
-  input Value inValue;
+  input Values.Value inValue;
   output list<Integer> outReal;
 protected
   list<Values.Value> vals;
@@ -1135,7 +1132,7 @@ public function arrayValueReals "function: valueReals
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
-  input Value inValue;
+  input Values.Value inValue;
   output list<Real> outReal;
 protected
   list<Values.Value> vals;
@@ -1146,7 +1143,7 @@ end arrayValueReals;
 
 public function matrixValueReals
   "Returns the real values of a Values matrix."
-  input Value inValue;
+  input Values.Value inValue;
   output list<list<Real>> outReals;
 algorithm
   outReals := matchcontinue(inValue)
@@ -1173,15 +1170,15 @@ public function valueNeg "function: valueNeg
 
   Negates a Value
 "
-  input Value inValue;
-  output Value outValue;
+  input Values.Value inValue;
+  output Values.Value outValue;
 algorithm
   outValue:=
   match (inValue)
     local
       Real r_1,r;
       Integer i_1,i;
-      list<Value> vlst_1,vlst;
+      list<Values.Value> vlst_1,vlst;
       list<Integer> dims;
     case (Values.REAL(real = r))
       equation
@@ -1205,16 +1202,16 @@ public function sumArrayelt "function: sumArrayelt
 
   Calculate the sum of a list of Values.
 "
-  input list<Value> inValueLst;
-  output Value outValue;
+  input list<Values.Value> inValueLst;
+  output Values.Value outValue;
 algorithm
   outValue:=
   matchcontinue (inValueLst)
     local
       Integer i1,i2,i3;
       Real r1,r2,r3;
-      list<Value> v1,v2,v3;
-      list<Value> xs,arr;
+      list<Values.Value> v1,v2,v3;
+      list<Values.Value> xs,arr;
       list<Integer> dims;
     case ({Values.INTEGER(integer = i1)}) then Values.INTEGER(i1);
     case ({Values.REAL(real = r1)}) then Values.REAL(r1);
@@ -1244,15 +1241,15 @@ public function multScalarArrayelt "function: multScalarArrayelt
 
   Multiply a scalar with an list of Values, i.e. array.
 "
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValue,inValueLst)
     local
-      list<Value> v1,v2,vals,rest;
-      Value sval;
+      list<Values.Value> v1,v2,vals,rest;
+      Values.Value sval;
       Integer i1,i2;
       Real r1,r2;
       list<Integer> dims;
@@ -1296,15 +1293,15 @@ public function addScalarArrayelt "function: addScalarArrayelt
 
   Adds a scalar to an list of Values, i.e. array.
 "
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValue,inValueLst)
     local
-      list<Value> v1,v2,vals,rest;
-      Value sval;
+      list<Values.Value> v1,v2,vals,rest;
+      Values.Value sval;
       Integer i1,i2;
       Real r1,r2;
       String s1,s2;
@@ -1355,15 +1352,15 @@ public function divScalarArrayelt "function: divScalarArrayelt
 
   Divide a scalar with an list of Values, i.e. array.
 "
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   matchcontinue (inValue,inValueLst)
     local
-      list<Value> v1,v2,vals,rest;
-      Value sval;
+      list<Values.Value> v1,v2,vals,rest;
+      Values.Value sval;
       Integer i1,i2;
       Real r1,r2;
       String s2;
@@ -1424,15 +1421,15 @@ public function subScalarArrayelt "function: subScalarArrayelt
 
   subtracts a list of Values, i.e. array, from a scalar.
 "
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValue,inValueLst)
     local
-      list<Value> v1,v2,vals,rest;
-      Value sval;
+      list<Values.Value> v1,v2,vals,rest;
+      Values.Value sval;
       Integer i1,i2;
       Real r1,r2;
       list<Integer> dims;
@@ -1476,15 +1473,15 @@ public function powScalarArrayelt "function: powScalarArrayelt
 
   Takes a power of a scalar with an list of Values, i.e. array.
 "
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValue,inValueLst)
     local
-      list<Value> v1,v2,vals,rest;
-      Value sval;
+      list<Values.Value> v1,v2,vals,rest;
+      Values.Value sval;
       Integer i1,i2;
       Real r2,r1;
       list<Integer> dims;
@@ -1530,15 +1527,15 @@ public function subArrayeltScalar "function: subArrayeltScalar
 
   subtracts a scalar from a list of Values, i.e. array.
 "
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValue,inValueLst)
     local
-      list<Value> v1,v2,vals,rest;
-      Value sval;
+      list<Values.Value> v1,v2,vals,rest;
+      Values.Value sval;
       Integer i1,i2;
       Real r1,r2;
       list<Integer> dims;
@@ -1582,15 +1579,15 @@ public function powArrayeltScalar "function: powArrayeltScalar
 
   Takes a power of a list of Values, i.e. array, with a scalar.
 "
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValue,inValueLst)
     local
-      list<Value> v1,v2,vals,rest;
-      Value sval;
+      list<Values.Value> v1,v2,vals,rest;
+      Values.Value sval;
       Integer i1,i2;
       Real r1,r2;
       list<Integer> dims;
@@ -1636,16 +1633,16 @@ public function multScalarProduct "function: multScalarProduct
 
   Calculate the scalar product of two vectors / arrays.
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output Value outValue;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output Values.Value outValue;
 algorithm
   outValue:=
   matchcontinue (inValueLst1,inValueLst2)
     local
       Integer i1,i2,res,v1,v2,dim;
-      list<Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
-      Value sres,v;
+      list<Values.Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
+      Values.Value sres,v;
       list<Integer> dims;
       Real r1,r2,rres;
     case ((Values.INTEGER(integer = i1) :: (v1lst as (_ :: _))),(Values.INTEGER(integer = i2) :: (v2lst as (_ :: _))))
@@ -1727,9 +1724,9 @@ public function crossProduct "
   Calculate the cross product of two vectors.
   x,y => {x[2]*y[3]-x[3]*y[2],x[3]*y[1]-x[1]*y[3],x[1]*y[2]-x[2]*y[1]}
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output Value outValue;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output Values.Value outValue;
 algorithm
   outValue:=
   matchcontinue (inValueLst1,inValueLst2)
@@ -1765,15 +1762,15 @@ public function multMatrix "function: multMatrix
   Calculate a matrix multiplication of two matrices, i.e. two dimensional
   arrays.
 "
-  input list<Value> inValueLst1;
-  input list<Value> inValueLst2;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst1;
+  input list<Values.Value> inValueLst2;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValueLst1,inValueLst2)
     local
-      Value res1;
-      list<Value> res2,m1,v1lst,rest1,m2;
+      Values.Value res1;
+      list<Values.Value> res2,m1,v1lst,rest1,m2;
     case ((m1 as (Values.ARRAY(valueLst = v1lst) :: rest1)),(m2 as (Values.ARRAY(valueLst = _) :: _)))
       equation
         res1 = multScalarProduct(v1lst, m2);
@@ -1787,18 +1784,18 @@ end multMatrix;
 public function divArrayeltScalar
 "function: divArrayeltScalar
   Divide each array element with a scalar."
-  input Value inValue;
-  input list<Value> inValueLst;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   matchcontinue (inValue,inValueLst)
     local
       String s2;
-      Value sval;
+      Values.Value sval;
       Integer i1,i2;
       Real v1,v2_1,v1_1,v2;
-      list<Value> vlst,r1,r2,vals,rest;
+      list<Values.Value> vlst,r1,r2,vals,rest;
       list<Integer> dims;
     case ((sval as Values.REAL(real = v1)),vlst)
       equation
@@ -1854,14 +1851,14 @@ protected function matrixStripFirstColumn "function: matrixStripFirstColumn
   This function takes a Value list representing a matrix and strips the
   first column of the matrix, i.e. for each sub list it removes the first
   element. Returning both the stripped column and the resulting matrix."
-  input list<Value> inValueLst;
-  output Value outValue;
-  output list<Value> outValueLst;
+  input list<Values.Value> inValueLst;
+  output Values.Value outValue;
+  output list<Values.Value> outValueLst;
 algorithm
   (outValue,outValueLst) := match (inValueLst)
     local
-      list<Value> resl,resl2,vrest,rest;
-      Value v1;
+      list<Values.Value> resl,resl2,vrest,rest;
+      Values.Value v1;
       Integer i;
       Integer dim;
     case ((Values.ARRAY(valueLst = (v1 :: vrest), dimLst = {dim}) :: rest))
@@ -1882,12 +1879,12 @@ public function intlistToValue "function: intlistToValue
   array of integers.
 "
   input list<Integer> inIntegerLst;
-  output Value outValue;
+  output Values.Value outValue;
 algorithm
   outValue:=
   match (inIntegerLst)
     local
-      list<Value> res;
+      list<Values.Value> res;
       Integer i,len;
       list<Integer> lst;
     case ({}) then Values.ARRAY({},{0});
@@ -1904,48 +1901,48 @@ public function arrayValues "function: arrayValues
 
   Return the values of an array.
 "
-  input Value inValue;
-  output list<Value> outValueLst;
+  input Values.Value inValue;
+  output list<Values.Value> outValueLst;
 algorithm
   outValueLst:=
   match (inValue)
-    local list<Value> v_lst;
+    local list<Values.Value> v_lst;
     case (Values.ARRAY(valueLst = v_lst)) then v_lst;
   end match;
 end arrayValues;
 
 public function arrayScalar
   "If an array contains only one value, returns that value. Otherwise fails."
-  input Value inValue;
-  output Value outValue;
+  input Values.Value inValue;
+  output Values.Value outValue;
 algorithm
   Values.ARRAY(valueLst = {outValue}) := inValue;
 end arrayScalar;
 
 public function makeBoolean
   input Boolean b;
-  output Value v;
+  output Values.Value v;
 algorithm
   v := Values.BOOL(b);
 end makeBoolean;
 
 public function makeReal "Creates a real value "
   input Real r;
-  output Value v;
+  output Values.Value v;
 algorithm
   v := Values.REAL(r);
 end makeReal;
 
 public function makeInteger "Creates an integer value "
   input Integer i;
-  output Value v;
+  output Values.Value v;
 algorithm
   v := Values.INTEGER(i);
 end makeInteger;
 
 public function makeString "Creates a string value "
   input String s;
-  output Value v;
+  output Values.Value v;
 algorithm
   v := Values.STRING(s);
 end makeString;
@@ -1954,15 +1951,15 @@ public function makeArray "function: makeArray
 
   Construct an array of a list of Values.
 "
-  input list<Value> inValueLst;
-  output Value outValue;
+  input list<Values.Value> inValueLst;
+  output Values.Value outValue;
 algorithm
   outValue:=
   matchcontinue (inValueLst)
     local
       Integer i1;
       list<Integer> il;
-      list<Value> vlst;
+      list<Values.Value> vlst;
     case (vlst as (Values.ARRAY(dimLst = il)::_))
       equation
         i1 = listLength(vlst);
@@ -1977,7 +1974,7 @@ end makeArray;
 public function makeIntArray
   "Creates a Value.ARRAY from a list of integers."
   input list<Integer> inInts;
-  output Value outArray;
+  output Values.Value outArray;
 algorithm
   outArray := makeArray(List.map(inInts, makeInteger));
 end makeIntArray;
@@ -1985,7 +1982,7 @@ end makeIntArray;
 public function makeRealArray
   "Creates a Values.ARRAY from a list of reals."
   input list<Real> inReals;
-  output Value outArray;
+  output Values.Value outArray;
 algorithm
   outArray := makeArray(List.map(inReals, makeReal));
 end makeRealArray;
@@ -1993,14 +1990,14 @@ end makeRealArray;
 public function makeRealMatrix
   "Creates a matrix (ARRAY of ARRAY) from a list of list of reals."
   input list<list<Real>> inReals;
-  output Value outArray;
+  output Values.Value outArray;
 algorithm
   outArray := makeArray(List.map(inReals, makeRealArray));
 end makeRealMatrix;
 
 public function valString "function: valString
   This function returns a textual representation of a value."
-  input Value inValue;
+  input Values.Value inValue;
   output String outString;
 protected
   Integer handle;
@@ -2014,15 +2011,15 @@ end valString;
 public function valString2 "function: valString
   This function returns a textual representation of a value.
   Uses an external buffer to store intermediate results."
-  input Value inValue;
+  input Values.Value inValue;
 algorithm
   _ := matchcontinue (inValue)
     local
       String s, s_1, recordName, tyStr, scope, name;
       Integer n;
       Real x;
-      list<Value> xs,vs;
-      Value r;
+      list<Values.Value> xs,vs;
+      Values.Value r;
       Absyn.CodeNode c;
       Absyn.Path p, recordPath;
       list<String> ids;
@@ -2195,17 +2192,17 @@ end valString2;
 
 protected function filterSimulationResults
   input Boolean filter;
-  input list<Value> inValues;
+  input list<Values.Value> inValues;
   input list<String> inIds;
-  input list<Value> valacc;
+  input list<Values.Value> valacc;
   input list<String> idacc;
-  output list<Value> outValues;
+  output list<Values.Value> outValues;
   output list<String> outIds;
 algorithm
   (outValues,outIds) := match (filter,inValues,inIds,valacc,idacc)
     local
-      Value v;
-      list<Value> vrest;
+      Values.Value v;
+      list<Values.Value> vrest;
       String id,str;
       list<String> idrest;
     case (_,{},{},_,_) then (listReverse(valacc),listReverse(idacc));
@@ -2230,14 +2227,14 @@ protected function valRecordString
 "function: valRecordString
   This function returns a textual representation of a record,
  separating each value with a comma."
-  input list<Value> inValues;
+  input list<Values.Value> inValues;
   input list<String> inIds;
 algorithm
   _ := matchcontinue (inValues,inIds)
     local
       String id;
-      Value x;
-      list<Value> xs;
+      Values.Value x;
+      list<Values.Value> xs;
       list<String> ids;
 
     case ({},{}) then ();
@@ -2278,13 +2275,13 @@ protected function valListString "function: valListString
   This function returns a textual representation of a list of
   values, separating each value with a comman.
 "
-  input list<Value> inValueLst;
+  input list<Values.Value> inValueLst;
 algorithm
   _ :=
   matchcontinue (inValueLst)
     local
-      Value v;
-      list<Value> vs;
+      Values.Value v;
+      list<Values.Value> vs;
     case {} then ();
     case {v}
       equation
@@ -2313,7 +2310,7 @@ public function writePtolemyplotDataset "function: writePtolemyplotDataset
   The message string will be displayed in the plot window of ptplot.
 "
   input String inString1;
-  input Value inValue2;
+  input Values.Value inValue2;
   input list<String> inStringLst3;
   input String inString4;
   output Integer outInteger;
@@ -2322,8 +2319,8 @@ algorithm
   match (inString1,inValue2,inStringLst3,inString4)
     local
       String str,filename,timevar,message,oldBuf;
-      Value time;
-      list<Value> rest;
+      Values.Value time;
+      list<Values.Value> rest;
       list<String> varnames;
     case (filename,Values.ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message) /* filename values Variable names message string */
       equation
@@ -2347,15 +2344,15 @@ end writePtolemyplotDataset;
 
 protected function unparsePtolemyValues "function: unparsePtolemyValues
   Helper function to writePtolemyplotDataset."
-  input Value inValue;
-  input list<Value> inValueLst;
+  input Values.Value inValue;
+  input list<Values.Value> inValueLst;
   input list<String> inStringLst;
 algorithm
   _ := match (inValue,inValueLst,inStringLst)
     local
       String v1;
-      Value time,s1;
-      list<Value> xs;
+      Values.Value time,s1;
+      list<Values.Value> xs;
       list<String> vs;
 
     case (_,{},_) then ();
@@ -2370,8 +2367,8 @@ end unparsePtolemyValues;
 
 protected function unparsePtolemySet "function: unparsePtolemySet
   Helper function to unparsePtolemyValues."
-  input Value v1;
-  input Value v2;
+  input Values.Value v1;
+  input Values.Value v2;
   input String varname;
 algorithm
   Print.printBuf(stringAppendList({"DataSet: ",varname,"\n"}));
@@ -2380,13 +2377,13 @@ end unparsePtolemySet;
 
 protected function unparsePtolemySet2 "function: unparsePtolemySet2
   Helper function to unparsePtolemySet"
-  input Value inValue1;
-  input Value inValue2;
+  input Values.Value inValue1;
+  input Values.Value inValue2;
 algorithm
   _ := matchcontinue (inValue1,inValue2)
     local
-      Value v1,v2;
-      list<Value> v1s,v2s;
+      Values.Value v1,v2;
+      list<Values.Value> v1s,v2s;
 
     case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ();
     // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.
@@ -2413,13 +2410,13 @@ end unparsePtolemySet2;
 public function reverseMatrix "function: reverseMatrix
   Reverses each line and each row of a matrix.
   Implementation reverses all dimensions..."
-  input Value inValue;
-  output Value outValue;
+  input Values.Value inValue;
+  output Values.Value outValue;
 algorithm
   outValue := matchcontinue (inValue)
     local
-      list<Value> lst_1,lst_2,lst;
-      Value value;
+      list<Values.Value> lst_1,lst_2,lst;
+      Values.Value value;
       list<Integer> dims;
     case (Values.ARRAY(valueLst = lst, dimLst = dims))
       equation
@@ -2433,7 +2430,7 @@ end reverseMatrix;
 
 public function printVal "function: printVal
   This function prints a value."
-  input Value v;
+  input Values.Value v;
 protected
   String s;
 algorithm
@@ -2443,7 +2440,7 @@ end printVal;
 
 public function printValStr "
 more correct naming then valString"
-  input Value v;
+  input Values.Value v;
   output String s;
 algorithm
   s := valString(v);
@@ -2454,17 +2451,17 @@ public function nthnthArrayelt "function: nthArrayelt
 
   Return the nth nth....nth value of an array, indexed from 1..n
 "
-  input list<Value> inLst;
-  input Value inValue;
-  input Value lastValue;
-  output Value outValue;
+  input list<Values.Value> inLst;
+  input Values.Value inValue;
+  input Values.Value lastValue;
+  output Values.Value outValue;
 algorithm
   outValue:=
   match (inLst, inValue,lastValue)
     local
       Integer n_1,n;
-      Value res,preRes;
-      list<Value> vlst,vlst2;
+      Values.Value res,preRes;
+      list<Values.Value> vlst,vlst2;
       case({},_, preRes) then preRes;
 
     case (((res as Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),preRes)

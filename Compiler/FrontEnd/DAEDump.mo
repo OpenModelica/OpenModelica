@@ -2903,14 +2903,14 @@ algorithm
 end buildGrElement;
 
 protected function unparseType "wrapper function for Types.unparseType, so records and enumerations can be output properly"
-  input Types.Type tp;
+  input DAE.Type tp;
   output String str;
 algorithm
   str := matchcontinue(tp)
     local
       String name, dim_str;
       Absyn.Path path;
-      Types.Type bc_tp, ty;
+      DAE.Type bc_tp, ty;
       list<DAE.Dimension> dims;
 
     case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = {path})

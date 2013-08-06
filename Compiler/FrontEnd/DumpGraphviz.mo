@@ -40,13 +40,6 @@ encapsulated package DumpGraphviz
 
 public import Absyn;
 public import Graphviz;
-
-public
-type Ident = String " An identifier is just a string " ;
-
-public
-type Node = Graphviz.Node;
-
 protected import Dump;
 
 public function dump "function: dump
@@ -62,11 +55,11 @@ end dump;
 protected function buildGraphviz "function: buildGraphviz
   Build the graphviz graph for a Program."
   input Absyn.Program inProgram;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := match (inProgram)
     local
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       list<Absyn.Class> cs;
 
     case (Absyn.PROGRAM(classes = cs))
@@ -80,12 +73,12 @@ end buildGraphviz;
 protected function printClasses "function: printClasses
   Creates Nodes from a Class list."
   input list<Absyn.Class> inAbsynClassLst;
-  output list<Node> outNodeLst;
+  output list<Graphviz.Node> outNodeLst;
 algorithm
   outNodeLst := match (inAbsynClassLst)
     local
       Graphviz.Node node;
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       Absyn.Class c;
       list<Absyn.Class> cs;
 
@@ -103,12 +96,12 @@ end printClasses;
 protected function printClass "function: printClass
   Creates a Node for a Class."
   input Absyn.Class inClass;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := match (inClass)
     local
-      Ident rs,n;
-      list<Node> nl;
+      String rs,n;
+      list<Graphviz.Node> nl;
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
@@ -125,12 +118,12 @@ end printClass;
 protected function printParts "function: printParts
   Creates a Node list from a ClassPart list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Node> outNodeLst;
+  output list<Graphviz.Node> outNodeLst;
 algorithm
   outNodeLst := match (inAbsynClassPartLst)
     local
       Graphviz.Node node;
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       Absyn.ClassPart c;
       list<Absyn.ClassPart> cs;
 
@@ -148,11 +141,11 @@ end printParts;
 protected function printClassPart "function: printClassPart
   Creates a Node from A ClassPart."
   input Absyn.ClassPart inClassPart;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := matchcontinue (inClassPart)
     local
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       list<Absyn.ElementItem> el;
       list<Absyn.EquationItem> eqs;
       list<Absyn.AlgorithmItem> als;
@@ -188,11 +181,11 @@ end printClassPart;
 protected function printElementitems "function: printElementitems
   Creates a Node list from ElementItem list."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output list<Node> outNodeLst;
+  output list<Graphviz.Node> outNodeLst;
 algorithm
   outNodeLst := match (inAbsynElementItemLst)
     local
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       list<Absyn.ElementItem> el;
       Graphviz.Node node;
       Absyn.Element e;
@@ -214,7 +207,7 @@ protected function makeBoolAttr "function: makeBoolAttr
   input Boolean flag;
   output Graphviz.Attribute outAttribute;
 protected
-  Ident s;
+  String s;
 algorithm
   s := Dump.selectString(flag, "true", "false");
   outAttribute := Graphviz.ATTR(str,s);
@@ -224,7 +217,7 @@ protected function makeLeaf "function: makeLeaf
   Create a leaf Node from a string an a list of attributes."
   input String str;
   input list<Graphviz.Attribute> al;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := Graphviz.NODE(str,al,{});
 end makeLeaf;
@@ -232,7 +225,7 @@ end makeLeaf;
 protected function printElement "function: printElement
   Create a Node from an Element."
   input Absyn.Element inElement;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := match (inElement)
     local
@@ -253,9 +246,9 @@ end printElement;
 protected function printPath "function printPath
   Create a Node from a Path."
   input Absyn.Path p;
-  output Node pn;
+  output Graphviz.Node pn;
 protected
-  Ident s;
+  String s;
 algorithm
   s := Absyn.pathString(p);
   pn := makeLeaf(s, {});
@@ -264,7 +257,7 @@ end printPath;
 protected function printElementspec "function: printElementspec
   Create a Node from an ElementSpec"
   input Absyn.ElementSpec inElementSpec;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := matchcontinue (inElementSpec)
     local
@@ -274,7 +267,7 @@ algorithm
       Absyn.Class cl;
       Absyn.Path p;
       list<Absyn.ElementArg> l;
-      list<Node> cns;
+      list<Graphviz.Node> cns;
       Absyn.ElementAttributes attr;
       Absyn.TypeSpec tspec;
       list<Absyn.ComponentItem> cs;
@@ -310,12 +303,12 @@ end printElementspec;
 protected function printComponents "function: printComponents
   Create a Node list from a ComponentItem list."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  output list<Node> outNodeLst;
+  output list<Graphviz.Node> outNodeLst;
 algorithm
   outNodeLst := match (inAbsynComponentItemLst)
     local
       Graphviz.Node n;
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       Absyn.ComponentItem c;
       list<Absyn.ComponentItem> cs;
 
@@ -333,12 +326,12 @@ end printComponents;
 protected function printComponentitem "function: printComponentitem
   Create a Node from a ComponentItem."
   input Absyn.ComponentItem inComponentItem;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := match (inComponentItem)
     local
       Graphviz.Node nn;
-      Ident n;
+      String n;
       list<Absyn.Subscript> a;
       Option<Absyn.Modification> m;
 
@@ -353,12 +346,12 @@ end printComponentitem;
 protected function printEquations "function: printEquations
   Create a Node list from an EquationItem list."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
-  output list<Node> outNodeLst;
+  output list<Graphviz.Node> outNodeLst;
 algorithm
   outNodeLst := match (inAbsynEquationItemLst)
     local
       Graphviz.Node node;
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       Absyn.Equation eq;
       Option<Absyn.Comment> ann;
       list<Absyn.EquationItem> el;
@@ -378,14 +371,14 @@ protected function printEquation
 "function: printEquation
  Create a Node from an Equation."
   input Absyn.Equation inEquation;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := matchcontinue (inEquation)
     local
-      Ident s1,s2,s,s_1,s_2,es;
+      String s1,s2,s,s_1,s_2,es;
       Absyn.Exp e1,e2;
       Absyn.ComponentRef c1,c2;
-      list<Node> eqn;
+      list<Graphviz.Node> eqn;
       list<Absyn.EquationItem> eqs;
       Absyn.ForIterators iterators;
 
@@ -423,12 +416,12 @@ end printEquation;
 protected function printAlgorithms "function: printAlgorithms
   Create a Node list from an AlgorithmItem list."
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  output list<Node> outNodeLst;
+  output list<Graphviz.Node> outNodeLst;
 algorithm
   outNodeLst := match (inAbsynAlgorithmItemLst)
     local
       Graphviz.Node node;
-      list<Node> nl;
+      list<Graphviz.Node> nl;
       Absyn.AlgorithmItem e;
       list<Absyn.AlgorithmItem> el;
 
@@ -446,7 +439,7 @@ end printAlgorithms;
 protected function printAlgorithmitem "function: printAlgorithmitem
   Create a Node from an AlgorithmItem."
   input Absyn.AlgorithmItem inAlgorithmItem;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := matchcontinue (inAlgorithmItem)
     local
@@ -465,7 +458,7 @@ end printAlgorithmitem;
 protected function printAlgorithm "function: printAlgorithm
   Create a Node from an Algorithm."
   input Absyn.Algorithm inAlgorithm;
-  output Node outNode;
+  output Graphviz.Node outNode;
 algorithm
   outNode := matchcontinue (inAlgorithm)
     local

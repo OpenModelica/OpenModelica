@@ -18,7 +18,7 @@ protected import System;
 //protected import Print;
 
 
-public constant Integer TabSpaces = 4;
+protected constant Integer TabSpaces = 4;
 
 public
 uniontype ParseInfo

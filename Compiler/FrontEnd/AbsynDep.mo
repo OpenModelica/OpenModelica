@@ -275,7 +275,7 @@ algorithm
   end match;
 end getUsesTransitive2Lst;
 
-public function getUsedBy "returns the classes that uses the class 'cl' e.g. as a component"
+protected function getUsedBy "returns the classes that uses the class 'cl' e.g. as a component"
   input Depends depends;
   input Absyn.Path cl;
   output AvlTree usedBy;
@@ -291,7 +291,7 @@ algorithm
   end matchcontinue;
 end getUsedBy;
 
-public function getUsedBySub "
+protected function getUsedBySub "
 Author BZ, 2009-10
 If inpu cl is 'A.B' it returns classes using A.B, but also classes that uses A.B.C.D and A.B.R, it returns all classes that equals or are a subpath of provided path.
 "

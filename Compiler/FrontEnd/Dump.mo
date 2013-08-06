@@ -46,7 +46,6 @@ encapsulated package Dump
 
 // public imports
 public import Absyn;
-public type Ident = String;
 
 // protected imports
 protected import Error;
@@ -111,7 +110,7 @@ public function unparseStr
 algorithm
   outString := matchcontinue (inProgram,markup)
     local
-      Ident s1,s2,str;
+      String s1,s2,str;
       list<Absyn.Class> cs;
       Absyn.Within w;
     case (Absyn.PROGRAM(classes = {}),_) then "";
@@ -135,7 +134,7 @@ public function unparseClassList
 algorithm
   outString := match (inInteger,inAbsynClassLst)
     local
-      Ident s1,s2,res;
+      String s1,s2,res;
       Integer i;
       Absyn.Class c;
       list<Absyn.Class> cs;
@@ -159,7 +158,7 @@ public function unparseWithin
 algorithm
   outString := match (inInteger,inWithin)
     local
-      Ident s1,s2,str;
+      String s1,s2,str;
       Integer i;
       Absyn.Path p;
     case (_,Absyn.TOP()) then "";
@@ -210,12 +209,12 @@ public function unparseClassStr
 algorithm
   outString := match (indent,ourClass,inFinalStr,redeclareKeywords,innerouterStr)
     local
-      Ident is,s4,s5,str,n,fi,io,s6,s8,s9,baseClassName;
+      String is,s4,s5,str,n,fi,io,s6,s8,s9,baseClassName;
       Integer i_1,i;
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
-      Option<Ident> optcmt;
+      Option<String> optcmt;
       Absyn.TypeSpec tspec;
       Absyn.ElementAttributes attr;
       list<Absyn.ElementArg> m,cmod;
@@ -223,7 +222,7 @@ algorithm
       list<Absyn.EnumLiteral> l;
       Absyn.EnumDef ENUM_COLON;
       Absyn.Path fname;
-      list<Ident> vars,typeVars;
+      list<String> vars,typeVars;
       tuple<String,String> re;
       list<Absyn.Path> paths;
       String   partialStr, encapsulatedStr, restrictionStr, prefixKeywords, tvs, finalStr, annStr;
@@ -365,7 +364,7 @@ public function unparseClassAttributesStr
 algorithm
   outString := match (inClass)
     local
-      Ident s1,s2,s2_1,s3,str,n;
+      String s1,s2,s2_1,s3,str,n;
       Boolean p,f,e;
       Absyn.Restriction r;
 
@@ -389,7 +388,7 @@ public function unparseCommentOption
 algorithm
   outString := match (inAbsynCommentOption)
     local
-      Ident s1,str,cmt;
+      String s1,str,cmt;
       Option<Absyn.Annotation> annopt;
 
     case (NONE()) then "";
@@ -416,8 +415,8 @@ public function unparseCommentOptionNoAnnotation
   output String outString;
 algorithm
   outString := matchcontinue (inAbsynCommentOption)
-    local Ident str,cmt;
-
+    local
+      String str,cmt;
     case (SOME(Absyn.COMMENT(_,SOME(cmt))))
       equation
         str = stringAppendList({" \"",cmt,"\""});
@@ -435,7 +434,7 @@ protected function dumpCommentOption
 algorithm
   _ := match (inAbsynCommentOption)
     local
-      Ident str,cmt;
+      String str,cmt;
       Option<Absyn.Annotation> annopt;
 
     case (NONE())
@@ -495,7 +494,7 @@ protected function unparseEnumliterals
 algorithm
   outString := match (inAbsynEnumLiteralLst)
     local
-      Ident s1,s2,res,str;
+      String s1,s2,res,str;
       Option<Absyn.Comment> optcmt;
       Absyn.EnumLiteral a;
       list<Absyn.EnumLiteral> b;
@@ -539,7 +538,7 @@ protected function printEnumliterals2
 algorithm
   _ := matchcontinue (inAbsynEnumLiteralLst)
     local
-      Ident str,str2;
+      String str,str2;
       Option<Absyn.Comment> optcmt,optcmt2;
       Absyn.EnumLiteral a;
       list<Absyn.EnumLiteral> b;
@@ -615,7 +614,7 @@ public function printInfo
 algorithm
   _ := match (inInfo)
     local
-      Ident s1,s2,s3,s4,filename;
+      String s1,s2,s3,s4,filename;
       Boolean isReadOnly;
       Integer sline,scol,eline,ecol;
     case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,
@@ -654,7 +653,7 @@ algorithm
   outString:=
   match (inInfo)
     local
-      Ident s1,s2,s3,s4,s5,str,filename;
+      String s1,s2,s3,s4,s5,str,filename;
       Boolean isReadOnly;
       Integer sline,scol,eline,ecol;
     case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,
@@ -680,7 +679,7 @@ protected function printClass
 algorithm
   _ := match (inClass)
     local
-      Ident n;
+      String n;
       Boolean p,f,e;
       Absyn.Restriction r;
       Absyn.ClassDef cdef;
@@ -708,9 +707,9 @@ algorithm
   _ := match (inClassDef)
     local
       list<Absyn.ClassPart> parts;
-      Option<Ident> commentStr;
+      Option<String> commentStr;
       Option<Absyn.Comment> comment;
-      Ident s,baseClassName;
+      String s,baseClassName;
       Absyn.TypeSpec tspec;
       Absyn.ElementAttributes attr;
       list<Absyn.ElementArg> earg,modifications;
@@ -842,7 +841,7 @@ protected function unparseClassModificationStr
 algorithm
   outString := matchcontinue (inModification)
     local
-      Ident s1,s2,str;
+      String s1,s2,str;
       list<Absyn.ElementArg> l;
       Absyn.Exp e;
     case (Absyn.CLASSMOD(elementArgLst = {})) then "";
@@ -876,7 +875,7 @@ algorithm
       Boolean f;
       Absyn.Each each_;
       Option<Absyn.Modification> optm;
-      Option<Ident> optcmt;
+      Option<String> optcmt;
       Absyn.RedeclareKeywords keywords;
       Absyn.ElementSpec spec;
       Absyn.Path p;
@@ -914,11 +913,11 @@ public function unparseElementArgStr
 algorithm
   outString := match (inElementArg)
     local
-      Ident s1,s2,s3,s4,s5,str;
+      String s1,s2,s3,s4,s5,str;
       Boolean f;
       Absyn.Each each_;
       Option<Absyn.Modification> optm;
-      Option<Ident> optstr;
+      Option<String> optstr;
       Absyn.RedeclareKeywords keywords;
       Absyn.ElementSpec spec;
       Option<Absyn.ConstrainClass> constr;
@@ -1070,8 +1069,8 @@ protected function printExternalDecl
 algorithm
   _ := match (inExternalDecl)
     local
-      Ident idstr,crefstr,expstr,str,lang;
-      Option<Ident> id;
+      String idstr,crefstr,expstr,str,lang;
+      Option<String> id;
       Option<Absyn.ComponentRef> cref;
       list<Absyn.Exp> exps;
     case Absyn.EXTERNALDECL(funcName = id,lang = NONE(),output_ = cref,args = exps)
@@ -1105,7 +1104,7 @@ public function unparseClassPartStrLst
 algorithm
   outString := match (inInteger,inAbsynClassPartLst,inBoolean)
     local
-      Ident s1,s2,res;
+      String s1,s2,res;
       Integer i;
       Absyn.ClassPart x;
       list<Absyn.ClassPart> xs;
@@ -1132,10 +1131,10 @@ algorithm
   outString := match (inInteger,inClassPart,inBoolean)
     local
       Integer i,i_1;
-      Ident s1,is,str,langstr,outputstr,expstr,annstr,annstr2,ident,res;
+      String s1,is,str,langstr,outputstr,expstr,annstr,annstr2,ident,res;
       list<Absyn.ElementItem> el;
       list<Absyn.EquationItem> eqs;
-      Option<Ident> lang;
+      Option<String> lang;
       Absyn.ComponentRef output_;
       list<Absyn.Exp> expl;
       Option<Absyn.Annotation> ann,ann2;
@@ -1280,7 +1279,8 @@ protected function getExtlangStr
   output String outString;
 algorithm
   outString := match (inStringOption)
-    local Ident res,str;
+    local
+      String res,str;
     case (NONE()) then "";
     case (SOME(str)) equation res = stringAppendList({"\"",str,"\""}); then res;
   end match;
@@ -1356,7 +1356,7 @@ public function unparseElementitemStrLst
 algorithm
   outString := match (inInteger,inAbsynElementItemLst)
     local
-      Ident s1,s2,res;
+      String s1,s2,res;
       Integer i;
       Absyn.ElementItem x;
       list<Absyn.ElementItem> xs;
@@ -1380,7 +1380,7 @@ public function unparseElementitemStr
 algorithm
   outString := match (inInteger,inElementItem)
     local
-      Ident str,s1;
+      String str,s1;
       Integer i;
       Absyn.Element e;
       Absyn.Annotation a;
@@ -1406,7 +1406,7 @@ protected function unparseAnnotationOptionSemi
 algorithm
   outString := matchcontinue (inInteger,inAbsynAnnotationOption)
     local
-      Ident s,res;
+      String s,res;
       Integer i;
       Absyn.Annotation ann;
     case (_,NONE()) then "";
@@ -1428,7 +1428,7 @@ public function unparseAnnotation
 algorithm
   outString := matchcontinue (inAbsynAnnotation,inInteger)
     local
-      Ident s1,s2,str,is;
+      String s1,s2,str,is;
       list<Absyn.ElementArg> mod;
       Integer i;
     case (Absyn.ANNOTATION(mod),0)
@@ -1476,7 +1476,7 @@ algorithm
       Boolean finalPrefix;
       Option<Absyn.RedeclareKeywords> repl;
       Absyn.InnerOuter inout;
-      Ident name,text;
+      String name,text;
       Absyn.ElementSpec spec;
       Absyn.Info info;
     case (Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = repl,innerOuter = inout,
@@ -1547,7 +1547,7 @@ public function unparseElementStr "function: unparseElementStr
 algorithm
   outString := match (inInteger,inElement)
     local
-      Ident s1,s2,s3,s4,s5,str,name,text;
+      String s1,s2,s3,s4,s5,str,name,text;
       Integer i;
       Boolean finalPrefix;
       Absyn.RedeclareKeywords repl;
@@ -1617,7 +1617,7 @@ algorithm
   outString:=
   match (inAbsynConstrainClassOption)
     local
-      Ident res;
+      String res;
       Absyn.ConstrainClass constr;
     case (NONE()) then "";
     case (SOME(constr))
@@ -1638,7 +1638,7 @@ algorithm
   outString:=
   match (inConstrainClass)
     local
-      Ident res;
+      String res;
       Option<Absyn.Comment> cmt;
       Absyn.Path path;
       list<Absyn.ElementArg> el;
@@ -1735,7 +1735,7 @@ algorithm
       Absyn.Class cl;
       Absyn.Path p;
       list<Absyn.ElementArg> l;
-      Ident s;
+      String s;
       Absyn.ElementAttributes attr;
       Absyn.TypeSpec t;
       list<Absyn.ComponentItem> cs;
@@ -1810,7 +1810,7 @@ algorithm
   outString:=
   matchcontinue (indent,elementSpec,finalStr,redeclareKeywords,innerouterKeywords)
     local
-      Ident str,f,io,s1,s2,is,s3,ad,s4;
+      String str,f,io,s1,s2,is,s3,ad,s4;
       tuple<String,String> r;
       Integer i;
       Boolean repl;
@@ -1890,7 +1890,7 @@ public function printImport
 algorithm
   _ := match (inImport)
     local
-      Ident i;
+      String i;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
 
@@ -1951,7 +1951,7 @@ public function unparseImportStr
 algorithm
   outString := match (inImport)
     local
-      Ident s1,s2,str,i;
+      String s1,s2,str,i;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
 
@@ -1994,7 +1994,7 @@ protected function printElementattr "function: printElementattr
 algorithm
   _ := matchcontinue (inElementAttributes)
     local
-      Ident vs,ds;
+      String vs,ds;
       Boolean fl,st;
       Absyn.Variability var;
       Absyn.Direction dir;
@@ -2036,7 +2036,7 @@ algorithm
   outString:=
   matchcontinue (inElementAttributes)
     local
-      Ident fs,ss,vs,ds,str;
+      String fs,ss,vs,ds,str;
       Boolean fl,st;
       Absyn.Variability var;
       Absyn.Direction dir;
@@ -2068,7 +2068,7 @@ algorithm
   outString:=
   matchcontinue (inElementAttributes)
     local
-      Ident str;
+      String str;
       list<Absyn.Subscript> adim;
     case (Absyn.ATTR(arrayDim = adim))
       equation
@@ -2157,7 +2157,7 @@ public function printComponent "function: printComponent
 algorithm
   _ := match (inComponent)
     local
-      Ident n;
+      String n;
       list<Absyn.Subscript> a;
       Option<Absyn.Modification> m;
     case (Absyn.COMPONENT(name = n,arrayDim = a,modification = m))
@@ -2205,7 +2205,7 @@ algorithm
   outString:=
   match (inComponent)
     local
-      Ident s1,s2,s3,str,n;
+      String s1,s2,s3,str,n;
       list<Absyn.Subscript> a;
       Option<Absyn.Modification> m;
     case (Absyn.COMPONENT(name = n,arrayDim = a,modification = m))
@@ -2226,7 +2226,7 @@ public function unparseComponentitemStr "function: unparseComponentitemStr
 algorithm
   outString := match (inComponentItem)
     local
-      Ident s1,s3,s2,str;
+      String s1,s3,s2,str;
       Absyn.Component c;
       Option<Absyn.Exp> optcond;
       Option<Absyn.Comment> cmtopt;
@@ -2248,7 +2248,7 @@ public function unparseComponentCondition "function: unparseComponentCondition
 algorithm
   outString := match (inAbsynComponentConditionOption)
     local
-      Ident s1,res;
+      String s1,res;
       Absyn.Exp cond;
     case (SOME(cond))
       equation
@@ -2337,7 +2337,7 @@ algorithm
   outString:=
   match (inSubscript)
     local
-      Ident s;
+      String s;
       Absyn.Exp e1;
     case (Absyn.NOSUB()) then ":";
     case (Absyn.SUBSCRIPT(subscript = e1))
@@ -2450,7 +2450,7 @@ algorithm
   outString:=
   match (inAbsynModificationOption)
     local
-      Ident str;
+      String str;
       Absyn.Modification opt;
     case (SOME(opt))
       equation
@@ -2471,7 +2471,7 @@ algorithm
   outString:=
   matchcontinue (inModification)
     local
-      Ident s1,s2,str;
+      String s1,s2,str;
       list<Absyn.ElementArg> l;
       Absyn.EqMod eqMod;
     case (Absyn.CLASSMOD(elementArgLst = {},eqMod = Absyn.NOMOD())) then "()";  /* Special case for empty modifications */
@@ -2500,7 +2500,7 @@ algorithm
   outString:=
   matchcontinue (inAbsynElementArgLst)
     local
-      Ident s1,s2,str;
+      String s1,s2,str;
       list<Absyn.ElementArg> l;
     case {} then "";
     case l
@@ -2522,7 +2522,7 @@ protected function unparseMod2Str "function: unparseMod2Str
 algorithm
   outString := match eqMod
     local
-      Ident s1,str;
+      String s1,str;
       Absyn.Exp e;
     case Absyn.NOMOD() then "";
     case Absyn.EQMOD(exp=e)
@@ -2659,7 +2659,7 @@ public function unparseEquationStr
 algorithm
   outString := matchcontinue (inInteger,inEquation)
     local
-      Ident s1,s2,is,str,s3,s4,id;
+      String s1,s2,is,str,s3,s4,id;
       Absyn.ComponentRef cref,cr1,cr2;
       Integer i_1,i;
       Absyn.Exp e,e1,e2,exp;
@@ -2764,7 +2764,7 @@ public function unparseEquationitemStrLst "function:unparseEquationitemStrLst
 algorithm
   outString := match (inInteger,inAbsynEquationItemLst,inString)
     local
-      Ident s1,s2,res,sep;
+      String s1,s2,res,sep;
       Integer i;
       Absyn.EquationItem x;
       list<Absyn.EquationItem> xs;
@@ -2789,7 +2789,7 @@ public function unparseEquationitemStr "function: unparseEquationitemStr
 algorithm
   outString := match (inInteger,inEquationItem)
     local
-      Ident s1,s2,str;
+      String s1,s2,str;
       Integer i;
       Absyn.Equation eq;
       Option<Absyn.Comment> optcmt;
@@ -2838,7 +2838,7 @@ protected function unparseEqElseifStrLst "function: unparseEqElseifStrLst
 algorithm
   outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLstLst,inString)
     local
-      Ident s1,res,sep,s2;
+      String s1,res,sep,s2;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.EquationItem>> x1,x,x2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> xs;
@@ -2877,7 +2877,7 @@ protected function unparseEqElseifStr "function: unparseEqElseifStr
 algorithm
   outString := match (inInteger,inTplAbsynExpAbsynEquationItemLst)
     local
-      Ident s1,s2,is,res;
+      String s1,s2,is,res;
       Integer i_1,i;
       Absyn.Exp e;
       list<Absyn.EquationItem> el;
@@ -3049,7 +3049,7 @@ public function unparseAlgorithmStrLst "function: unparseAlgorithmStrLst
 algorithm
   outString := match (inInteger,inAbsynAlgorithmItemLst,inString)
     local
-      Ident s1,s2,res,sep;
+      String s1,s2,res,sep;
       Integer i;
       Absyn.AlgorithmItem x;
       list<Absyn.AlgorithmItem> xs;
@@ -3076,8 +3076,8 @@ protected function unparseAlgorithmStrLstLst
 algorithm
   outString := matchcontinue (inInteger,inAbsynAlgorithmItemLst,inString)
     local
-      Ident s1,sep;
-      list<Ident> s2;
+      String s1,sep;
+      list<String> s2;
       Integer i;
       list<Absyn.AlgorithmItem> x;
       list<list<Absyn.AlgorithmItem>> xs;
@@ -3101,7 +3101,7 @@ public function unparseAlgorithmStr "function: unparseAlgorithmStr
 algorithm
   outString := matchcontinue (inInteger,inAlgorithmItem)
     local
-      Ident s1,s2,s3,is,str,s4,s5,str_1;
+      String s1,s2,s3,is,str,s4,s5,str_1;
       Integer i,i_1;
       Absyn.ComponentRef cr;
       Absyn.Exp exp,e, assignComp;
@@ -3270,7 +3270,7 @@ protected function unparseAlgElsewhenStrLst "function: unparseAlgElsewhenStrLst
 algorithm
   outString := matchcontinue (inInteger,inTplAbsynExpAbsynAlgorithmItemLstLst)
     local
-      Ident res,s1,s2;
+      String res,s1,s2;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> x,x1,x2;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> xs;
@@ -3309,7 +3309,7 @@ protected function unparseAlgElsewhenStr "function: unparseAlgElsewhenStr
 algorithm
   outString := match (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
     local
-      Ident is,s1,s2,res;
+      String is,s1,s2,res;
       Integer i;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algl;
@@ -3333,7 +3333,7 @@ protected function unparseEqElsewhenStrLst "function: unparseEqElsewhenStrLst
 algorithm
   outString := matchcontinue (inInteger,inTplAbsynExpAbsynEquationItemLstLst)
     local
-      Ident res,s1,s2;
+      String res,s1,s2;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.EquationItem>> x,x1,x2;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> xs;
@@ -3372,7 +3372,7 @@ protected function unparseEqElsewhenStr "function: unparseEqElsewhenStr
 algorithm
   outString := match (inInteger,inTplAbsynExpAbsynEquationItemLst)
     local
-      Ident is,s1,s2,res;
+      String is,s1,s2,res;
       Integer i;
       Absyn.Exp exp;
       list<Absyn.EquationItem> eql;
@@ -3417,7 +3417,7 @@ protected function unparseAlgElseifStrLst "function: unparseAlgElseifStrLst
 algorithm
   outString := match (inInteger,inTplAbsynExpAbsynAlgorithmItemLstLst,inString)
     local
-      Ident s2,s1,res,sep;
+      String s2,s1,res,sep;
       Integer i;
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> x;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> xs;
@@ -3444,7 +3444,7 @@ protected function unparseAlgElseifStr "function: unparseAlgElseifStr
 algorithm
   outString := match (inInteger,inTplAbsynExpAbsynAlgorithmItemLst)
     local
-      Ident s1,s2,is,str;
+      String s1,s2,is,str;
       Integer i;
       Absyn.Exp e;
       list<Absyn.AlgorithmItem> el;
@@ -3467,7 +3467,7 @@ public function printComponentRef "Component references and paths
 algorithm
   _ := match (inComponentRef)
     local
-      Ident s;
+      String s;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
 
@@ -3546,7 +3546,7 @@ public function printComponentRefStr "function: printComponentRefStr
 algorithm
   outString := match (inComponentRef)
     local
-      Ident subsstr,s_1,s,crs,s_2,s_3;
+      String subsstr,s_1,s,crs,s_2,s_3;
       list<Absyn.Subscript> subs;
       Absyn.ComponentRef cr;
 
@@ -3590,7 +3590,7 @@ public function printSubscriptsStr "function: printSubscriptsStr
 algorithm
   outString := matchcontinue (inAbsynSubscriptLst)
     local
-      Ident s,s_1,s_2;
+      String s,s_1,s_2;
       list<Absyn.Subscript> l;
 
     case {} then "";
@@ -3609,7 +3609,7 @@ public function printPath "function: printPath
   Print a Path."
   input Absyn.Path p;
 protected
-  Ident s;
+  String s;
 algorithm
   s := Absyn.pathString(p);
   Print.printBuf(s);
@@ -3621,7 +3621,7 @@ protected function dumpPath "function: dumpPath
 algorithm
   _ := match (inPath)
     local
-      Ident str;
+      String str;
       Absyn.Path path;
 
     case (Absyn.IDENT(name = str))
@@ -3658,7 +3658,7 @@ public function printExp "function: printExp
 algorithm
   _ := matchcontinue (inExp)
     local
-      Ident s,sym;
+      String s,sym;
       Integer i;
       Real r;
       Absyn.ComponentRef c,fcn;
@@ -4045,7 +4045,7 @@ algorithm
   outString:=
   matchcontinue (inFunctionArgs)
     local
-      Ident s1,s2,s3,str,estr,istr;
+      String s1,s2,s3,str,estr,istr;
       list<Absyn.Exp> expargs;
       list<Absyn.NamedArg> nargs;
       Absyn.Exp exp;
@@ -4121,7 +4121,7 @@ algorithm
   _:=
   match (inNamedArg)
     local
-      Ident ident;
+      String ident;
       Absyn.Exp e;
     case Absyn.NAMEDARG(argName = ident,argValue = e)
       equation
@@ -4142,7 +4142,7 @@ algorithm
   outString:=
   match (inNamedArg)
     local
-      Ident s1,s2,str,ident;
+      String s1,s2,str,ident;
       Absyn.Exp e;
     case Absyn.NAMEDARG(argName = ident,argValue = e)
       equation
@@ -4615,7 +4615,7 @@ public function printCodeStr
 algorithm
   outString := match (inCode)
     local
-      Ident s,s1,s2,res;
+      String s,s1,s2,res;
       Absyn.Path p;
       Absyn.ComponentRef cr;
       Boolean b;
@@ -4674,7 +4674,7 @@ protected function printElseifStr
 algorithm
   outString := match (inTplAbsynExpAbsynExpLst)
     local
-      Ident s1,s2,s3,str;
+      String s1,s2,s3,str;
       Absyn.Exp ec,ee;
       list<tuple<Absyn.Exp, Absyn.Exp>> rest;
     case ({}) then "";
@@ -4713,7 +4713,7 @@ protected function printListStr
 algorithm
   outString := matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
     local
-      Ident s,srest,s_1,s_2,sep;
+      String s,srest,s_1,s_2,sep;
       Type_a h;
       FuncTypeType_aToString r;
       list<Type_a> t;
@@ -4866,7 +4866,8 @@ public function selectString
 algorithm
   outString:=
   match (inBoolean1,inString2,inString3)
-    local Ident a,b;
+    local
+      String a,b;
     case (true,a,b) then a;
     case (false,a,b) then b;
   end match;
@@ -4881,7 +4882,7 @@ public function printSelect "function: printSelect
   input String yes;
   input String no;
 protected
-  Ident res;
+  String res;
 algorithm
   res := selectString(f, yes, no);
   Print.printBuf(res);
@@ -4933,7 +4934,7 @@ public function printListDebug "function: printListDebug
 algorithm
   _ := match(inString1,inTypeALst2,inFuncTypeTypeATo3,inString4)
     local
-      Ident caller,s1,sep;
+      String caller,s1,sep;
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> rest;
@@ -4972,7 +4973,7 @@ algorithm
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> t;
-      Ident sep;
+      String sep;
     case ({},_,_) then ();
     case ({h},r,_)
       equation
@@ -5007,7 +5008,7 @@ algorithm
   outString:=
   matchcontinue (inTypeALst,inFuncTypeTypeAToString,inString)
     local
-      Ident s,s_1,srest,s_2,sep;
+      String s,s_1,srest,s_2,sep;
       Type_a h;
       FuncTypeType_aToString r;
       list<Type_a> t;
@@ -5054,7 +5055,7 @@ algorithm
   outString:=
   match (inTypeAOption,inFuncTypeTypeAToString)
     local
-      Ident str;
+      String str;
       Type_a a;
       FuncTypeType_aToString r;
     case (SOME(a),r)
@@ -5084,7 +5085,7 @@ algorithm
   outString:=
   matchcontinue (inTypeAOption,inFuncTypeTypeAToString,inString)
     local
-      Ident str,def;
+      String str,def;
       Type_a a;
       FuncTypeType_aToString r;
     case (SOME(a),r,_)
@@ -5114,7 +5115,7 @@ algorithm
   outString:=
   match (inTypeAOption,inFuncTypeTypeAToString,inString)
     local
-      Ident str,str_1,default_str;
+      String str,str_1,default_str;
       Type_a a;
       FuncTypeType_aToString r;
     case (SOME(a),r,default_str) /* suffix */
@@ -5136,7 +5137,7 @@ protected function unparseStringCommentOption "function: unparseStringCommentOpt
 algorithm
   outString:=
   match (inStringOption)
-    local Ident str,s;
+    local String str,s;
     case (NONE()) then "";
     case (SOME(s))
       equation
@@ -5154,7 +5155,7 @@ protected function printStringCommentOption "function: printStringCommentOption
 algorithm
   _:=
   match (inStringOption)
-    local Ident str,s;
+    local String str,s;
     case (NONE())
       equation
         Print.printBuf("NONE()");
@@ -5191,7 +5192,7 @@ algorithm
   matchcontinue (inInteger)
     local
       Integer i_1,i;
-      Ident s1,res;
+      String s1,res;
     case (0) then "";
     case (i)
       equation
@@ -5212,7 +5213,7 @@ algorithm
   outString:=
   match (inTypeSpec)
     local
-      Ident str,s,str1,str2,str3;
+      String str,s,str1,str2,str3;
       Absyn.Path path;
       Option<list<Absyn.Subscript>> adim;
       list<Absyn.TypeSpec> typeSpecLst;
@@ -5263,7 +5264,7 @@ end unparseTypeSpecLst;
 public function printTypeSpec
   input Absyn.TypeSpec typeSpec;
 protected
-  Ident str;
+  String str;
 algorithm
   str := unparseTypeSpec(typeSpec);
   print(str);
@@ -5275,7 +5276,7 @@ public function stdout "function: stdout
   using MetaModelica Compiler (MMC) standard print). After printing, the print buffer is cleared.
 "
 protected
-  Ident str;
+  String str;
 algorithm
   str := Print.getString();
   print(str);

@@ -44,13 +44,6 @@ public import Absyn;
 public import DAE;
 public import Graphviz;
 
-public type ComponentRef = DAE.ComponentRef;
-public type Ident = String;
-public type Operator = DAE.Operator;
-public type Type = DAE.Type;
-public type Subscript = DAE.Subscript;
-public type Var = DAE.Var;
-
 // protected imports
 protected import ComponentReference;
 protected import Config;
@@ -75,7 +68,7 @@ protected import Types;
 
 public function subscriptString
   "Returns a string representation of a subscript."
-  input Subscript subscript;
+  input DAE.Subscript subscript;
   output String str;
 algorithm
   str := match(subscript)
@@ -99,13 +92,13 @@ end subscriptString;
 public function binopSymbol "
 function: binopSymbol
   Return a string representation of the Operator."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString := matchcontinue (inOperator)
     local
-      Ident s;
-      Operator op;
+      String s;
+      DAE.Operator op;
 
     case op
       equation
@@ -126,7 +119,7 @@ end binopSymbol;
 public function binopSymbol1
 "function: binopSymbol1
   Helper function to binopSymbol"
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString := match (inOperator)
@@ -157,7 +150,7 @@ end binopSymbol1;
 public function debugBinopSymbol
 "function: binopSymbol1
   Helper function to binopSymbol"
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString := match (inOperator)
@@ -188,13 +181,13 @@ end debugBinopSymbol;
 protected function binopSymbol2
 "function: binopSymbol2
   Helper function to binopSymbol."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString := match (inOperator)
     local
-      Ident ts,s;
-      Type t;
+      String ts,s;
+      DAE.Type t;
 
     case (DAE.ADD(ty = t))
       equation
@@ -261,7 +254,7 @@ end binopSymbol2;
 public function unaryopSymbol
 "function: unaryopSymbol
   Return string representation of unary operators."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
@@ -274,7 +267,7 @@ end unaryopSymbol;
 public function lbinopSymbol
 "function: lbinopSymbol
   Return string representation of logical binary operator."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
@@ -287,7 +280,7 @@ end lbinopSymbol;
 public function lunaryopSymbol
 "function: lunaryopSymbol
   Return string representation of logical unary operator."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString := match (inOperator)
@@ -298,7 +291,7 @@ end lunaryopSymbol;
 public function relopSymbol
 "function: relopSymbol
   Return string representation of function operator."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output String outString;
 algorithm
   outString:=
@@ -330,7 +323,7 @@ algorithm
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> t;
-      Ident sep;
+      String sep;
     case ({},_,_) then ();
     case ({h},r,_)
       equation
@@ -374,12 +367,12 @@ end printListStr;
 
 public function debugPrintSubscriptStr "
   Print a Subscript into a String."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output String outString;
 algorithm
   outString := match (inSubscript)
     local
-      Ident s;
+      String s;
       DAE.Exp e1;
     case (DAE.WHOLEDIM()) then ":";
     case (DAE.INDEX(exp = e1))
@@ -405,13 +398,13 @@ end debugPrintSubscriptStr;
 
 public function printSubscriptStr "
   Print a Subscript into a String."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output String outString;
 algorithm
   outString:=
   match (inSubscript)
     local
-      Ident s;
+      String s;
       DAE.Exp e1;
     case (DAE.WHOLEDIM()) then ":";
     case (DAE.INDEX(exp = e1))
@@ -489,7 +482,7 @@ public function printExp2Str
   output String outString;
   replaceable type Type_a subtypeof Any;
   partial function printComponentRefStrFunc
-    input ComponentRef inComponentRef;
+    input DAE.ComponentRef inComponentRef;
     input Type_a Param;
     output String outString;
   end printComponentRefStrFunc;
@@ -499,7 +492,7 @@ public function printExp2Str
     input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that prints component references and an extra parameter passed through to the function";
     output String outString;
     partial function printComponentRefStrFunc
-      input ComponentRef inComponentRef;
+      input DAE.ComponentRef inComponentRef;
       input Type_a Param;
       output String outString;
     end printComponentRefStrFunc;
@@ -510,10 +503,10 @@ algorithm
       String s,s_1,s_2,sym,s1,s2,s3,s4,res,fs,argstr,s_4,str,crstr,dimstr,expstr,iterstr,s1_1,s2_1,cs,ts,cs_1,ts_1,fs_1,s3_1;
       Integer i,pe1,p1,p2,pc,pt,pf,p,pstop,pstart,pstep;
       Real r;
-      ComponentRef c;
-      Type t,tp;
+      DAE.ComponentRef c,name;
+      DAE.Type t,tp;
       DAE.Exp e1,e2,e,start,stop,step,cr,dim,exp,cond,tb,fb;
-      Operator op;
+      DAE.Operator op;
       Absyn.Path fcn,lit;
       list<DAE.Exp> args,es;
       printComponentRefStrFunc pcreffunc;
@@ -528,7 +521,6 @@ algorithm
       DAE.Pattern pat;
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
-      DAE.ComponentRef name;
       String  scope, tyStr;
 
     case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _)
@@ -1044,16 +1036,16 @@ public function dumpExpGraphviz
 algorithm
   outNode := matchcontinue (inExp)
     local
-      Ident s,s_1,s_2,sym,fs,tystr,istr,id;
+      String s,s_1,s_2,sym,fs,tystr,istr,id;
       Integer i;
-      ComponentRef c;
+      DAE.ComponentRef c;
       Graphviz.Node lt,rt,ct,tt,ft,t1,t2,t3,crt,dimt,expt,itert;
       DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond,ae1;
-      Operator op;
+      DAE.Operator op;
       list<Graphviz.Node> argnodes,nodes;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
-      Type ty;
+      DAE.Type ty;
       Real r;
       Boolean b;
       list<list<DAE.Exp>> lstes;
@@ -1235,13 +1227,13 @@ algorithm
     local
       String gen_str,res_str,s,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,tystr,istr,crt,dimt,expt,itert,id,tpStr,str;
       Integer level,x,new_level1,new_level2,new_level3,i;
-      ComponentRef c;
+      DAE.ComponentRef c;
       DAE.Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp,cond,ae1;
-      Operator op;
-      list<Ident> argnodes,nodes;
+      DAE.Operator op;
+      list<String> argnodes,nodes;
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
-      Type tp,ty;
+      DAE.Type tp,ty;
       Real r;
       list<list<DAE.Exp>> lstes;
       Boolean b;
@@ -1522,7 +1514,7 @@ protected function genStringNTime
 algorithm
   outString := matchcontinue (inString,inInteger)
     local
-      Ident str,new_str,res_str;
+      String str,new_str,res_str;
       Integer new_level,level;
 
     case (str,0) then "";  /* n */
@@ -1586,7 +1578,7 @@ public function typeOfString
   input DAE.Exp inExp;
   output String str;
 protected
-  Type ty;
+  DAE.Type ty;
 algorithm
   ty := Expression.typeof(inExp);
   str := Types.unparseType(ty);
@@ -1601,7 +1593,7 @@ NOTE Only used for debugging.
   output String str;
 algorithm str := matchcontinue(inExp)
   local
-    ComponentRef cr;
+    DAE.ComponentRef cr;
     String s1;
     list<DAE.Exp> expl;
   case(DAE.CREF(cr,_)) then ComponentReference.debugPrintComponentRefTypeStr(cr);
@@ -1673,7 +1665,7 @@ end dumpExp;
 public function printSubscript
 "function: printSubscript
   Print a Subscript."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
 algorithm
   _ := match (inSubscript)
     local DAE.Exp e1;
@@ -1721,7 +1713,7 @@ public function parenthesize
 algorithm
   outString := matchcontinue (inString1,inInteger2,inInteger3,rightOpParenthesis)
     local
-      Ident str_1,str;
+      String str_1,str;
       Integer pparent,pexpr;
 
     // expr, prio. parent expr, prio. expr

@@ -9315,7 +9315,7 @@ algorithm
     DAE.Operator op;
     list<DAE.Exp> expl;
     list<list<DAE.Exp>> mexpl;
-    ComponentReference.ComponentRef cr;
+    DAE.ComponentRef cr;
     DAE.ReductionIterators iters;
     DAE.ReductionInfo info;
 

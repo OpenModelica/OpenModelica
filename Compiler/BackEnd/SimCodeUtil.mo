@@ -705,7 +705,7 @@ algorithm
       list<String> includes, libs, fn_libs, fn_includes, fn_includeDirs, rt, rt_1;
       Absyn.Path fpath;
       list<DAE.FuncArg> args;
-      Types.Type restype, tp;
+      DAE.Type restype, tp;
       list<DAE.ExtArg> extargs;
       list<SimCode.SimExtArg> simextargs;
       SimCode.SimExtArg extReturn;
@@ -877,15 +877,15 @@ end elaborateFunction;
 protected function typesSimFunctionArg
 "function: generateFunctionArgs
   Generates code from a function argument."
-  input Types.FuncArg inFuncArg;
+  input DAE.FuncArg inFuncArg;
   output SimCode.Variable outVar;
 algorithm
   outVar := matchcontinue (inFuncArg)
     local
-      Types.Type tty;
+      DAE.Type tty;
       String name;
       DAE.ComponentRef cref_;
-      list<Types.FuncArg> args;
+      list<DAE.FuncArg> args;
       DAE.Type res_ty;
       list<SimCode.Variable> var_args;
       list<DAE.Type> tys;
@@ -5425,7 +5425,7 @@ algorithm
     local
       DAE.Element var;
       list<DAE.Element> rest;
-      Types.Type ft;
+      DAE.Type ft;
       list<String> rt, rt_1, rt_2;
       list<SimCode.RecordDeclaration> accRecDecls;
       DAE.Algorithm algorithm_;
@@ -5461,7 +5461,7 @@ end elaborateRecordDeclarations;
 protected function elaborateRecordDeclarationsForRecord
 "function generateRecordDeclarations
 Helper function to generateStructsForRecords."
-  input Types.Type inRecordType;
+  input DAE.Type inRecordType;
   input list<SimCode.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
   output list<SimCode.RecordDeclaration> outRecordDecls;
@@ -5471,7 +5471,7 @@ algorithm
   matchcontinue (inRecordType, inAccRecordDecls, inReturnTypes)
     local
       Absyn.Path path, name;
-      list<Types.Var> varlst;
+      list<DAE.Var> varlst;
       String    sname;
       list<String> rt, rt_1, rt_2, fieldNames;
       list<SimCode.RecordDeclaration> accRecDecls;
@@ -5529,7 +5529,7 @@ end generateVarName;
 protected function elaborateNestedRecordDeclarations
 "function elaborateNestedRecordDeclarations
 Helper function to elaborateRecordDeclarations."
-  input list<Types.Var> inRecordTypes;
+  input list<DAE.Var> inRecordTypes;
   input list<SimCode.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
   output list<SimCode.RecordDeclaration> outRecordDecls;
@@ -5537,8 +5537,8 @@ Helper function to elaborateRecordDeclarations."
 algorithm
   (outRecordDecls, outReturnTypes) := matchcontinue (inRecordTypes, inAccRecordDecls, inReturnTypes)
     local
-      Types.Type ty;
-      list<Types.Var> rest;
+      DAE.Type ty;
+      list<DAE.Var> rest;
       list<String> rt, rt_1, rt_2;
       list<SimCode.RecordDeclaration> accRecDecls;
     case ({}, accRecDecls, rt)
@@ -8669,13 +8669,13 @@ algorithm
 end scodeParallelismToDAEParallelism;
 
 protected function typesVarNoBinding
-  input Types.Var inTypesVar;
+  input DAE.Var inTypesVar;
   output SimCode.Variable outVar;
 algorithm
   outVar := match (inTypesVar)
     local
       String name;
-      Types.Type ty;
+      DAE.Type ty;
       DAE.ComponentRef cref_;
       DAE.Attributes attr;
       SCode.Parallelism scPrl;
@@ -8692,13 +8692,13 @@ algorithm
 end typesVarNoBinding;
 
 protected function typesVar
-  input Types.Var inTypesVar;
+  input DAE.Var inTypesVar;
   output SimCode.Variable outVar;
 algorithm
   outVar := match (inTypesVar)
     local
       String name;
-      Types.Type ty;
+      DAE.Type ty;
       DAE.ComponentRef cref_;
       DAE.Attributes attr;
       SCode.Parallelism scPrl;

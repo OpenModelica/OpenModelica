@@ -53,7 +53,6 @@ public import InnerOuter;
 public import ComponentReference;
 
 public
-type Ident = String;
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import Ceval;
@@ -502,7 +501,7 @@ algorithm
   match (inSubMod)
     local
       SCode.Mod m_1;
-      Ident i;
+      String i;
       DAE.Mod m;
       list<Absyn.Subscript> ss_1;
       list<Integer> ss;
@@ -659,7 +658,7 @@ algorithm
       DAE.Mod m_1,m;
       list<Env.Frame> env;
       Prefix.Prefix pre;
-      Ident i;
+      String i;
       Boolean impl;
       Env.Cache cache;
       list<Integer> idxmod;
@@ -699,7 +698,7 @@ algorithm
       Prefix.Prefix pre;
       Absyn.Exp e;
       SCode.Element elem;
-      Ident s;
+      String s;
       Absyn.Info info;
     case (SCode.NOMOD(),_,_) then DAE.NOMOD();
     case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),env,pre)
@@ -782,7 +781,7 @@ algorithm
       DAE.Mod m_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
-      Ident i;
+      String i;
       SCode.Mod m;
       Boolean impl;
       list<DAE.Subscript> ss_1;
@@ -842,7 +841,7 @@ algorithm
   match (inSubMod,inEnv,inPrefix)
     local
       DAE.Mod m_1;
-      Ident i;
+      String i;
       SCode.Mod m;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -923,7 +922,7 @@ algorithm
   outMod := matchcontinue (inMod,inPath)
     local
       DAE.Mod mod,m,mod_1;
-      Ident n;
+      String n;
       Absyn.Path p;
     case (m,Absyn.IDENT(name = n))
       equation
@@ -955,7 +954,7 @@ algorithm
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
-      Ident n;
+      String n;
       Option<DAE.EqMod> eqMod;
       SCode.Each e;
       SCode.Final f;
@@ -1069,7 +1068,7 @@ algorithm
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
-      Ident n;
+      String n;
       Option<DAE.EqMod> eqMod;
       SCode.Each e;
       SCode.Final f;
@@ -1119,7 +1118,7 @@ algorithm
     local
       DAE.Mod mod,mod1,mod2,m;
       list<DAE.SubMod> subs;
-      Ident n,i;
+      String n,i;
       Option<DAE.EqMod> eqMod;
       SCode.Each e;
       SCode.Final f;
@@ -1177,7 +1176,7 @@ end lookupComplexCompModification;
 
 protected function lookupComplexCompModification2 "Help function to lookupComplexCompModification"
   input list<Values.Value> inValues;
-  input list<Ident> inNames;
+  input list<String> inNames;
   input list<DAE.Var> inVars;
   input String name;
   input SCode.Final finalPrefix;
@@ -1192,7 +1191,7 @@ algorithm
       String name1,name2;
       DAE.Exp e;
       list<Values.Value> values;
-      list<Ident> names;
+      list<String> names;
       list<DAE.Var> vars;
 
     case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,_,_,_,_)
@@ -1291,7 +1290,7 @@ protected function lookupNamedModifications
 algorithm
   outSubModLst := matchcontinue (inSubModLst,inIdent)
     local
-      Ident id1,id2;
+      String id1,id2;
       DAE.SubMod x;
       list<DAE.SubMod> rest, lst;
 
@@ -1367,7 +1366,7 @@ protected function lookupCompModification2 "function: lookupCompModification2
 algorithm
   outMod := matchcontinue (inSubModLst,inIdent)
     local
-      Ident id;
+      String id;
       DAE.Mod mod;
       list<DAE.SubMod> duplicates, tail;
       DAE.SubMod head;
@@ -1441,7 +1440,7 @@ algorithm
       SCode.Final f;
       SCode.Each each_;
       Integer idx;
-      Ident str,s;
+      String str,s;
 
     case (DAE.NOMOD(),_) then DAE.NOMOD();
     case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD();
@@ -1481,7 +1480,7 @@ algorithm
       Integer x,y,idx;
       DAE.Mod mod,mod_1,nmod_1,nmod;
       list<Integer> xs;
-      Ident name;
+      String name;
       DAE.SubMod sm;
       list<DAE.SubMod> sms;
 
@@ -1725,7 +1724,7 @@ algorithm
       SCode.Replaceable r;
       SCode.Redeclare redecl;
       Absyn.InnerOuter io;
-      Ident id1,id2;
+      String id1,id2;
       SCode.Attributes attr1, attr2, attr;
       Absyn.TypeSpec tp;
       SCode.Mod m1,m2,sm;
@@ -1939,7 +1938,7 @@ algorithm
     local
       DAE.SubMod sm,s,s1,s2;
       DAE.Mod m,m1,m2;
-      Ident n1,n2;
+      String n1,n2;
       list<DAE.SubMod> ss,ss_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -1982,7 +1981,7 @@ algorithm
     local
       DAE.SubMod sm,s,s1,s2;
       DAE.Mod m,m1,m2;
-      Ident n1,n2;
+      String n1,n2;
       list<DAE.SubMod> ss,ss_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -2403,8 +2402,8 @@ algorithm
   outString := matchcontinue (inMod)
     local
       list<SCode.Element> elist_1;
-      Ident prefix,str,res,s1_1,s2;
-      list<Ident> str_lst,s1;
+      String prefix,str,res,s1_1,s2;
+      list<String> str_lst,s1;
       SCode.Final finalPrefix;
       list<tuple<SCode.Element, DAE.Mod>> elist;
       SCode.Each eachPrefix;
@@ -2443,7 +2442,7 @@ public function printMod "function: printMod
   Print a modifier on the Print buffer."
   input DAE.Mod m;
 protected
-  Ident str;
+  String str;
 algorithm
   str := printModStr(m);
   Print.printBuf(str);
@@ -2565,8 +2564,8 @@ algorithm
   outStringLst:=
   match (inTypesSubModLst)
     local
-      Ident s1;
-      list<Ident> res;
+      String s1;
+      list<String> res;
       DAE.SubMod x;
       list<DAE.SubMod> xs;
     case {} then {};
@@ -2586,7 +2585,7 @@ protected function printSubStr "function: printSubStr
 algorithm
   outString := match (inSubMod)
     local
-      Ident mod_str,res,n,str;
+      String mod_str,res,n,str;
       DAE.Mod mod;
       list<Integer> ss;
     case DAE.NAMEMOD(ident = n,mod = mod)
@@ -2605,7 +2604,7 @@ protected function printSubscriptsStr "function: printSubscriptsStr
 algorithm
   outString := match (inIntegerLst)
     local
-      Ident s,str,res;
+      String s,str,res;
       Integer x;
       list<Integer> xs;
     case ({}) then "[]";
@@ -2627,7 +2626,7 @@ protected function printSubscripts2Str "function: printSubscripts2Str
 algorithm
   outString := match (inIntegerLst)
     local
-      Ident s,str,res;
+      String s,str,res;
       Integer x;
       list<Integer> xs;
     case ({}) then "";
@@ -2650,7 +2649,7 @@ protected function printEqmodStr
 algorithm
   outString := matchcontinue (inTypesEqModOption)
     local
-      Ident str,str2,e_val_str,res;
+      String str,str2,e_val_str,res;
       DAE.Exp e;
       Values.Value e_val;
       DAE.Properties prop;
@@ -2726,7 +2725,7 @@ algorithm
       String id;
     case (DAE.NAMEMOD(id,mod),_,_)
       equation
-        true = id ==& oldIdent;
+        true = stringEq(id,oldIdent);
       then DAE.NAMEMOD(newIdent,mod);
     case (_,_,_) then submod;
   end matchcontinue;

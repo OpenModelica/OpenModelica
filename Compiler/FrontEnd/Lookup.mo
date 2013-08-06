@@ -86,7 +86,7 @@ end SearchStrategy;
 public uniontype SplicedExpData
   record SPLICEDEXPDATA "data for 'spliced expression' (typically a component reference) returned in lookupVar"
     Option<DAE.Exp> splicedExp "the spliced expression";
-    Types.Type identType "the type of the variable without subscripts, needed for vectorization";
+    DAE.Type identType "the type of the variable without subscripts, needed for vectorization";
   end SPLICEDEXPDATA;
 end SplicedExpData;
 
@@ -185,7 +185,7 @@ algorithm
       String id;
       Env.Cache cache;
       SCode.Restriction r;
-      list<Types.Var> types;
+      list<DAE.Var> types;
       list<String> names;
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
@@ -1977,7 +1977,7 @@ protected function buildRecordType ""
   input SCode.Element icdef;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output Types.Type ftype;
+  output DAE.Type ftype;
 protected
   String name;
   Env.Env env_1;
@@ -2951,7 +2951,7 @@ protected function buildMetaRecordType "common function when looking up the type
   input SCode.Element cdef;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output Types.Type ftype;
+  output DAE.Type ftype;
 protected
   String id;
   Env.Env env_1,env;

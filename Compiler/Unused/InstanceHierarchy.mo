@@ -69,7 +69,7 @@ public
 uniontype InstanceAttributes "attributes of an instance"
   record ATTRIBUTES "the attributes for an instance"
     SCode.Element element "the actual element, being it a class or a component";
-    Option<Types.Type> ty "the instantiated type";
+    Option<DAE.Type> ty "the instantiated type";
     Option<Face> attrInsideOutside "whether this is an inside or outside component";
   end ATTRIBUTES;
 end InstanceAttributes;
@@ -501,7 +501,7 @@ algorithm
       Option<Absyn.ComponentRef> innerReference "inner reference if existing";
       Option<Absyn.ComponentRef> outerReference "outer reference if existing";
       String indent;
-      Option<Types.Type> ty "the instantiated type";
+      Option<DAE.Type> ty "the instantiated type";
       Option<Face> attrInsideOutside "whether this is an inside or outside component";
       SCode.Element el;
 
@@ -545,11 +545,11 @@ algorithm
 end printPathOpt;
 
 function printTypeOpt
-  input Option<Types.Type> optTy;
+  input Option<DAE.Type> optTy;
 algorithm
   _ := match(optTy)
     local
-      Types.Type ty;
+      DAE.Type ty;
     case (SOME(ty))
       equation
         print (Types.printTypeStr(ty));
