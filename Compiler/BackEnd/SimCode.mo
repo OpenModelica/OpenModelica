@@ -381,10 +381,10 @@ uniontype Variable
   end FUNCTION_PTR;
 end Variable;
 
-// TODO: Replace Statement with just list<Algorithm.Statement>?
+// TODO: Replace Statement with just list<DAE.Statement>?
 uniontype Statement
   record ALGORITHM
-    list<Algorithm.Statement> statementLst; // in functions
+    list<DAE.Statement> statementLst; // in functions
   end ALGORITHM;
 end Statement;
 

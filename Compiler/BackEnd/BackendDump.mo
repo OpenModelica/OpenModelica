@@ -2087,7 +2087,7 @@ public function dumpAlgorithms "Help function to dump, prints algorithms to stdo
 algorithm
   _ := match(ialgs,indx)
     local
-      list<Algorithm.Statement> stmts;
+      list<DAE.Statement> stmts;
       IOStream.IOStream myStream;
       String is;
       list<DAE.Algorithm> algs;

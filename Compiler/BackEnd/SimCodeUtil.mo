@@ -1088,7 +1088,7 @@ algorithm
   (outStatement):=
   matchcontinue (inElement)
     local
-      list<Algorithm.Statement> stmts;
+      list<DAE.Statement> stmts;
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)))
     then
       SimCode.ALGORITHM(stmts);
@@ -5428,7 +5428,7 @@ algorithm
       Types.Type ft;
       list<String> rt, rt_1, rt_2;
       list<SimCode.RecordDeclaration> accRecDecls;
-      Algorithm.Algorithm algorithm_;
+      DAE.Algorithm algorithm_;
       list<DAE.Exp> expl;
       
     case ({}, accRecDecls, rt) then (accRecDecls, rt);
@@ -6337,7 +6337,7 @@ protected function createSingleAlgorithmCode
 algorithm
   (equations_, ouniqueEqIndex) := matchcontinue (eqns, vars, skipDiscinAlgorithm, iuniqueEqIndex)
     local
-      Algorithm.Algorithm alg;
+      DAE.Algorithm alg;
       list<Expression.ComponentRef> solvedVars, algOutVars;
       String message, algStr;
       list<DAE.Statement> algStatements;
@@ -6647,7 +6647,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp exp_;
-      Algorithm.Algorithm alg;
+      DAE.Algorithm alg;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
       

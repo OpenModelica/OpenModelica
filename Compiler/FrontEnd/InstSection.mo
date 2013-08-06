@@ -1979,10 +1979,10 @@ end instForStatement;
 protected function replaceLoopDependentCrefs
   "Replaces all DAE.CREFs that are dependent on a loop variable with a
   DAE.ASUB."
-  input list<Algorithm.Statement> inStatements;
+  input list<DAE.Statement> inStatements;
   input String iterator;
   input Option<Absyn.Exp> range;
-  output list<Algorithm.Statement> outStatements;
+  output list<DAE.Statement> outStatements;
 algorithm
   (outStatements, _) := DAEUtil.traverseDAEEquationsStmts(inStatements,
       replaceLoopDependentCrefInExp, {Absyn.ITERATOR(iterator,NONE(),range)});
@@ -2744,7 +2744,7 @@ protected function makeAssignment
   input DAE.Attributes inAttributes;
   input SCode.Initial inInitial;
   input DAE.ElementSource inSource;
-  output Algorithm.Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement := match (inLhs, inLhsProps, inRhs, inRhsProps, inAttributes, inInitial, inSource)
     local
@@ -4931,7 +4931,7 @@ algorithm
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
       equation
         (cache,SOME((DAE.CREF(ce,t),cprop,attr))) = Static.elabCrefNoEval(cache, env, cr, impl, false, pre, info);
-        Static.checkAssignmentToInput(var, attr, env, Static.bDisallowTopLevelInputs, info);
+        Static.checkAssignmentToInput(var, attr, env, false, info);
         (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
@@ -4958,7 +4958,7 @@ algorithm
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
       equation
         (cache,SOME((cre,cprop,attr))) = Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info);
-        Static.checkAssignmentToInput(var, attr, env, Static.bDisallowTopLevelInputs, info);
+        Static.checkAssignmentToInput(var, attr, env, false, info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);

@@ -2082,7 +2082,7 @@ algorithm
       list<DAE.FunctionDefinition> derFuncs;
       DAE.InlineType inlineType;
       DAE.ElementSource source "the element origin";
-      Algorithm.Algorithm alg;
+      DAE.Algorithm alg;
 
     case ({}) then {};
     case ((DAE.VAR(componentRef = cr,
@@ -3721,7 +3721,7 @@ algorithm
       String id1,str;
       Integer ix;
       DAE.ElementSource source;
-      Algorithm.Else algElse;
+      DAE.Else algElse;
       Type_a extraArg;
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       list<DAE.ComponentRef> conditions;
@@ -3881,10 +3881,10 @@ protected function traverseDAEEquationsStmtsElse "
 Author: BZ, 2008-12
 Helper function for traverseDAEEquationsStmts
 "
-  input Algorithm.Else inElse;
+  input DAE.Else inElse;
   input FuncExpType func;
   input Type_a iextraArg;
-  output Algorithm.Else outElse;
+  output DAE.Else outElse;
   output Type_a oextraArg;
   partial function FuncExpType input tuple<DAE.Exp,Type_a> arg; output tuple<DAE.Exp,Type_a> oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
@@ -3893,7 +3893,7 @@ algorithm
   local
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
-    Algorithm.Else el,el_1;
+    DAE.Else el,el_1;
     Type_a extraArg;
   case (DAE.NOELSE(),_,extraArg) then (DAE.NOELSE(),extraArg);
   case (DAE.ELSEIF(e,st,el),_,extraArg)
@@ -3938,7 +3938,7 @@ algorithm
       String id1,str;
       Integer ix;
       DAE.ElementSource source;
-      Algorithm.Else algElse;
+      DAE.Else algElse;
       Type_a extraArg;
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       list<DAE.ComponentRef> conditions;
@@ -4097,11 +4097,11 @@ protected function traverseDAEStmtsElse "
 Author: BZ, 2008-12
 Helper function for traverseDAEEquationsStmts
 "
-  input Algorithm.Else inElse;
+  input DAE.Else inElse;
   input FuncExpType func;
   input DAE.Statement istmt;
   input Type_a iextraArg;
-  output Algorithm.Else outElse;
+  output DAE.Else outElse;
   output Type_a oextraArg;
   partial function FuncExpType
     input tuple<DAE.Exp, DAE.Statement, Type_a> arg;
@@ -4113,7 +4113,7 @@ algorithm
   local
     DAE.Exp e,e_1;
     list<DAE.Statement> st,st_1;
-    Algorithm.Else el,el_1;
+    DAE.Else el,el_1;
     Type_a extraArg;
   case (DAE.NOELSE(),_,_,extraArg) then (DAE.NOELSE(),extraArg);
   case (DAE.ELSEIF(e,st,el),_,_,extraArg)

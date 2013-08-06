@@ -4345,7 +4345,7 @@ algorithm
       DAE.Statement x,ew;
       Boolean b1;
       String id1,str;
-      Algorithm.Else algElse;
+      DAE.Else algElse;
       Type_a extraArg;
 
     case ({},_,extraArg) then extraArg;
@@ -4489,7 +4489,7 @@ protected function traverseStmtsElse "
 Author: Frenkel TUD 2012-06
 Helper function for traverseStmts
 "
-  input Algorithm.Else inElse;
+  input DAE.Else inElse;
   input FuncExpType func;
   input Type_a iextraArg;
   output Type_a oextraArg;
@@ -4503,7 +4503,7 @@ algorithm
   local
     DAE.Exp e;
     list<DAE.Statement> st;
-    Algorithm.Else el;
+    DAE.Else el;
     Type_a extraArg;
   case (DAE.NOELSE(),_,extraArg) then extraArg;
   case (DAE.ELSEIF(e,st,el),_,extraArg)

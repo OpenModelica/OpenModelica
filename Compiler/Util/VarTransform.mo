@@ -645,13 +645,13 @@ algorithm
       DAE.Type tp,tt;
       DAE.Statement x;
       Boolean b1,b2,b3;
-      Algorithm.Ident id1;
+      String id1;
       DAE.ElementSource source;
       Absyn.Path fnName;
       Option<DAE.Statement> ew,ew_1;
       list<DAE.ComponentRef> conditions;
       Boolean initialCall,iterIsArray;
-      Algorithm.Else el,el_1;
+      DAE.Else el,el_1;
       Integer ix;
 
     case ({},_,_) then ({},false);
@@ -773,11 +773,11 @@ algorithm
 end replaceEquationsStmts;
 
 protected function replaceEquationsElse "
-Helper function for replaceEquationsStmts, replaces Algorithm.Else"
-  input Algorithm.Else inElse;
+Helper function for replaceEquationsStmts, replaces DAE.Else"
+  input DAE.Else inElse;
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
-  output Algorithm.Else outElse;
+  output DAE.Else outElse;
   output Boolean replacementPerformed;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
@@ -788,7 +788,7 @@ algorithm
     local
       DAE.Exp e,e_1;
       list<DAE.Statement> st,st_1;
-      Algorithm.Else el,el_1;
+      DAE.Else el,el_1;
       Boolean b1,b2,b3;
     case(DAE.ELSEIF(e,st,el),_,_)
       equation

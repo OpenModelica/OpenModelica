@@ -52,13 +52,6 @@ public import Absyn;
 public import DAE;
 public import SCode;
 
-public
-type Ident = String;
-
-public type Algorithm = DAE.Algorithm;
-public type Statement = DAE.Statement;
-public type Else = DAE.Else;
-
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -71,7 +64,7 @@ protected import SCodeDump;
 protected import Types;
 
 public function algorithmEmpty "Returns true if algorithm is empty, i.e. no statements"
-  input Algorithm alg;
+  input DAE.Algorithm alg;
   output Boolean empty;
 algorithm
   empty := matchcontinue(alg)
@@ -81,7 +74,7 @@ algorithm
 end algorithmEmpty;
 
 public function isReinitStatement "returns true if statement is a reinit"
-  input Statement stmt;
+  input DAE.Statement stmt;
   output Boolean res;
 algorithm
   res := matchcontinue(stmt)
@@ -91,7 +84,7 @@ algorithm
 end isReinitStatement;
 
 public function isNotAssertStatement "returns true if statement is NOT an assert"
-  input Statement stmt;
+  input DAE.Statement stmt;
   output Boolean res;
 algorithm
   res := matchcontinue(stmt)
@@ -115,11 +108,11 @@ public function makeAssignment
   input DAE.Attributes inAttributes;
   input SCode.Initial initial_;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement := matchcontinue (inExp1, inProperties2, inExp3, inProperties4, inAttributes, initial_, source)
     local
-      Ident lhs_str, rhs_str, lt_str, rt_str;
+      String lhs_str, rhs_str, lt_str, rt_str;
       DAE.Exp lhs, rhs;
       DAE.Properties lprop, rprop, lhprop, rhprop;
       DAE.ComponentRef cr;
@@ -204,7 +197,7 @@ protected function makeAssignment2
   input DAE.Exp rhs;
   input DAE.Properties rhprop;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement := matchcontinue(lhs, lhprop, rhs, rhprop, source)
     local
@@ -256,7 +249,7 @@ public function makeAssignmentsList
   input DAE.Attributes attributes;
   input SCode.Initial initial_;
   input DAE.ElementSource source;
-  output list<Statement> assignments;
+  output list<DAE.Statement> assignments;
 algorithm
   assignments := match(lhsExps, lhsProps, rhsExps, rhsProps, attributes, initial_, source)
     local
@@ -287,13 +280,13 @@ public function makeTupleAssignment "function: makeTupleAssignment
   input DAE.Properties inProperties;
   input SCode.Initial initial_;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement := matchcontinue (inExpExpLst, inTypesPropertiesLst, inExp, inProperties, initial_, source)
     local
       list<DAE.Const> bvals;
-      list<Ident> sl;
-      Ident s, lhs_str, rhs_str, str1, str2, strInitial;
+      list<String> sl;
+      String s, lhs_str, rhs_str, str1, str2, strInitial;
       list<DAE.Exp> lhs, expl;
       list<DAE.Properties> lprop, lhprops;
       DAE.Exp rhs;
@@ -381,20 +374,20 @@ public function makeIf "function: makeIf
   function."
   input DAE.Exp inExp1;
   input DAE.Properties inProperties2;
-  input list<Statement> inStatementLst3;
-  input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTplExpExpTypesPropertiesStatementLstLst4;
-  input list<Statement> inStatementLst5;
+  input list<DAE.Statement> inStatementLst3;
+  input list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> inTplExpExpTypesPropertiesStatementLstLst4;
+  input list<DAE.Statement> inStatementLst5;
   input DAE.ElementSource source;
-  output list<Statement> outStatements;
+  output list<DAE.Statement> outStatements;
 algorithm
   outStatements :=
   matchcontinue (inExp1, inProperties2, inStatementLst3, inTplExpExpTypesPropertiesStatementLstLst4, inStatementLst5, source)
     local
-      Else else_;
+      DAE.Else else_;
       DAE.Exp e;
-      list<Statement> tb, fb;
-      list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> eib;
-      Ident e_str, t_str;
+      list<DAE.Statement> tb, fb;
+      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib;
+      String e_str, t_str;
       DAE.Type t;
       DAE.Properties prop;
     case (DAE.BCONST(true), _, tb, eib, fb, _)
@@ -421,16 +414,16 @@ end makeIf;
 
 public function makeIfFromBranches "
   Create an if-statement from branches, optimizing as needed."
-  input list<tuple<DAE.Exp, list<Statement>>> branches;
+  input list<tuple<DAE.Exp, list<DAE.Statement>>> branches;
   input DAE.ElementSource source;
-  output list<Statement> outStatements;
+  output list<DAE.Statement> outStatements;
 algorithm
   outStatements := match (branches, source)
     local
-      Else else_;
+      DAE.Else else_;
       DAE.Exp e;
-      list<Statement> br;
-      list<tuple<DAE.Exp, list<Statement>>> rest;
+      list<DAE.Statement> br;
+      list<tuple<DAE.Exp, list<DAE.Statement>>> rest;
     case ({}, _) then {};
     case ((e, br)::rest, _)
       equation
@@ -440,15 +433,15 @@ algorithm
 end makeIfFromBranches;
 
 protected function makeElseFromBranches "Creates the ELSE part of the DAE.STMT_IF."
-  input list<tuple<DAE.Exp, list<Statement>>> inTpl;
-  output Else outElse;
+  input list<tuple<DAE.Exp, list<DAE.Statement>>> inTpl;
+  output DAE.Else outElse;
 algorithm
   outElse := match inTpl
     local
-      list<Statement> b;
-      Else else_;
+      list<DAE.Statement> b;
+      DAE.Else else_;
       DAE.Exp e;
-      list<tuple<DAE.Exp, list<Statement>>> xs;
+      list<tuple<DAE.Exp, list<DAE.Statement>>> xs;
     case {} then DAE.NOELSE();
     case {(DAE.BCONST(true), b)} then DAE.ELSE(b);
     case ((e, b)::xs)
@@ -461,14 +454,14 @@ end makeElseFromBranches;
 public function optimizeIf
   "Every time we re-create/walk an if-statement, we optimize a bit :)"
   input DAE.Exp icond;
-  input list<Statement> istmts;
+  input list<DAE.Statement> istmts;
   input DAE.Else iels;
   input DAE.ElementSource isource;
-  output list<Statement> ostmts "can be empty or selected branch";
+  output list<DAE.Statement> ostmts "can be empty or selected branch";
 algorithm
   ostmts := match (icond, istmts, iels, isource)
     local
-      list<Statement> stmts;
+      list<DAE.Statement> stmts;
       DAE.Else els;
       DAE.ElementSource source;
       DAE.Exp cond;
@@ -484,7 +477,7 @@ end optimizeIf;
 public function optimizeElseIf
   "Every time we re-create/walk an if-statement, we optimize a bit :)"
   input DAE.Exp cond;
-  input list<Statement> stmts;
+  input list<DAE.Statement> stmts;
   input DAE.Else els;
   output DAE.Else oelse;
 algorithm
@@ -497,18 +490,18 @@ end optimizeElseIf;
 
 protected function makeElse "function: makeElse
   This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
-  input list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> inTuple;
-  input list<Statement> inStatementLst;
+  input list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> inTuple;
+  input list<DAE.Statement> inStatementLst;
   input DAE.ElementSource inSource;
-  output Else outElse;
+  output DAE.Else outElse;
 algorithm
   outElse := matchcontinue(inTuple, inStatementLst, inSource)
     local
-      list<Statement> fb, b;
-      Else else_;
+      list<DAE.Statement> fb, b;
+      DAE.Else else_;
       DAE.Exp e;
-      list<tuple<DAE.Exp, DAE.Properties, list<Statement>>> xs;
-      Ident e_str, t_str;
+      list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> xs;
+      String e_str, t_str;
       DAE.Type t;
       Absyn.Info info;
 
@@ -536,21 +529,21 @@ end makeElse;
 public function makeFor "function: makeFor
   This function creates a DAE.STMT_FOR construct, checking
   that the types of the parts are correct."
-  input Ident inIdent;
+  input String inIdent;
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
-  input list<Statement> inStatementLst;
+  input list<DAE.Statement> inStatementLst;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst, source)
     local
       Boolean isArray;
       DAE.Type et;
-      Ident i, e_str, t_str;
+      String i, e_str, t_str;
       DAE.Exp e;
       DAE.Type t;
-      list<Statement> stmts;
+      list<DAE.Statement> stmts;
       DAE.Dimensions dims;
 
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _)
@@ -573,22 +566,22 @@ end makeFor;
 public function makeParFor "function: makeParFor
   This function creates a DAE.STMT_PARFOR construct, checking
   that the types of the parts are correct."
-  input Ident inIdent;
+  input String inIdent;
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
-  input list<Statement> inStatementLst;
+  input list<DAE.Statement> inStatementLst;
   input list<tuple<DAE.ComponentRef, Absyn.Info>> inLoopPrlVars;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement := matchcontinue (inIdent, inExp, inProperties, inStatementLst, inLoopPrlVars, source)
     local
       Boolean isArray;
       DAE.Type et;
-      Ident i, e_str, t_str;
+      String i, e_str, t_str;
       DAE.Exp e;
       DAE.Type t;
-      list<Statement> stmts;
+      list<DAE.Statement> stmts;
       DAE.Dimensions dims;
 
     case (i, e, DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)), stmts, _, _)
@@ -613,16 +606,16 @@ public function makeWhile "function: makeWhile
   of the parts are correct."
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
-  input list<Statement> inStatementLst;
+  input list<DAE.Statement> inStatementLst;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement:=
   matchcontinue (inExp, inProperties, inStatementLst, source)
     local
       DAE.Exp e;
-      list<Statement> stmts;
-      Ident e_str, t_str;
+      list<DAE.Statement> stmts;
+      String e_str, t_str;
       DAE.Type t;
     case (e, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), stmts, _) then DAE.STMT_WHILE(e, stmts, source);
     case (e, DAE.PROP(type_ = t), _, _)
@@ -640,18 +633,18 @@ public function makeWhenA "function: makeWhenA
   checking that the types of the parts are correct."
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
-  input list<Statement> inStatementLst;
-  input Option<Statement> elseWhenStmt;
+  input list<DAE.Statement> inStatementLst;
+  input Option<DAE.Statement> elseWhenStmt;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement:=
   matchcontinue (inExp, inProperties, inStatementLst, elseWhenStmt, source)
     local
       DAE.Exp e;
-      list<Statement> stmts;
-      Option<Statement> elsew;
-      Ident e_str, t_str;
+      list<DAE.Statement> stmts;
+      Option<DAE.Statement> elsew;
+      String e_str, t_str;
       DAE.Type t;
     case (e, DAE.PROP(type_ = DAE.T_BOOL(varLst = _)), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
     case (e, DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))), stmts, elsew, _) then DAE.STMT_WHEN(e, {}, false, stmts, elsew, source);
@@ -673,7 +666,7 @@ public function makeReinit "function: makeReinit
   input DAE.Properties inProperties3;
   input DAE.Properties inProperties4;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement:=
   matchcontinue (inExp1, inExp2, inProperties3, inProperties4, source)
@@ -703,7 +696,7 @@ public function makeAssert "function: makeAssert
   input DAE.Properties inProperties4;
   input DAE.Properties inProperties5;
   input DAE.ElementSource source;
-  output list<Statement> outStatement;
+  output list<DAE.Statement> outStatement;
 algorithm
   outStatement := matchcontinue (cond, msg, level, inProperties3, inProperties4, inProperties5, source)
     local
@@ -737,7 +730,7 @@ public function makeTerminate "
   input DAE.Exp msg "message";
   input DAE.Properties props;
   input DAE.ElementSource source;
-  output Statement outStatement;
+  output DAE.Statement outStatement;
 algorithm
   outStatement := match (msg, props, source)
     case (_, DAE.PROP(type_ = DAE.T_STRING(varLst = _)), _) then DAE.STMT_TERMINATE(msg, source);
@@ -745,8 +738,8 @@ algorithm
 end makeTerminate;
 
 public function getCrefFromAlg "Returns all crefs from an algorithm"
-input Algorithm alg;
-output list<DAE.ComponentRef> crs;
+  input DAE.Algorithm alg;
+  output list<DAE.ComponentRef> crs;
 algorithm
   crs := List.unionOnTrueList(List.map(getAllExps(alg), Expression.extractCrefsFromExp), ComponentReference.crefEqual);
 end getCrefFromAlg;
@@ -757,14 +750,14 @@ public function getAllExps "function: getAllExps
   This function goes through the Algorithm structure and finds all the
   expressions and returns them in a list
 "
-  input Algorithm inAlgorithm;
+  input DAE.Algorithm inAlgorithm;
   output list<DAE.Exp> outExpExpLst;
 algorithm
   outExpExpLst:=
   match (inAlgorithm)
     local
       list<DAE.Exp> exps;
-      list<Statement> stmts;
+      list<DAE.Statement> stmts;
     case DAE.ALGORITHM_STMTS(statementLst = stmts)
       equation
         exps = getAllExpsStmts(stmts);
@@ -778,7 +771,7 @@ public function getAllExpsStmts "function: getAllExpsStmts
   This function takes a list of statements and returns all expressions and subexpressions
   in all statements.
 "
-  input list<Statement> stmts;
+  input list<DAE.Statement> stmts;
   output list<DAE.Exp> exps;
 algorithm
   (_, exps) := DAEUtil.traverseDAEEquationsStmts(stmts, getAllExpsStmtsCollector, {});
@@ -797,7 +790,7 @@ algorithm
 end getAllExpsStmtsCollector;
 
 public function getStatementSource
-  input Statement stmt;
+  input DAE.Statement stmt;
   output DAE.ElementSource source;
 algorithm
   source := match stmt
@@ -827,7 +820,7 @@ algorithm
 end getStatementSource;
 
 public function getAssertCond
-  input Statement stmt;
+  input DAE.Statement stmt;
   output DAE.Exp cond;
 algorithm
   DAE.STMT_ASSERT(cond=cond) := stmt;

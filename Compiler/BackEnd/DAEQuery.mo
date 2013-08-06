@@ -549,7 +549,7 @@ end incidenceRow;
 //   author: PA
 //   Helper function to incidenceRow, investigates statements for
 //   variables, returning variable indexes."
-//   input list<Algorithm.Statement> inAlgorithmStatementLst;
+//   input list<DAE.Statement> inAlgorithmStatementLst;
 //   input BackendDAE.Variables inVariables;
 //   output list<String> outStringLst;
 // algorithm
@@ -559,10 +559,10 @@ end incidenceRow;
 //       DAE.Type tp;
 //       DAE.ComponentRef cr;
 //       DAE.Exp e, e1;
-//       list<Algorithm.Statement> rest,stmts;
+//       list<DAE.Statement> rest,stmts;
 //       BackendDAE.Variables vars;
 //       list<DAE.Exp> expl;
-//       Algorithm.Else else_;
+//       DAE.Else else_;
 //       list<list<String>> lstlst;
 // 
 //     case ({},_) then {};

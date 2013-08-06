@@ -1750,7 +1750,7 @@ algorithm
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
       DAE.Type ty;
-      Algorithm.Else else_;
+      DAE.Else else_;
       DAE.ElementSource source;
 
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e,source = source),i)
@@ -2000,7 +2000,7 @@ algorithm
       list<DAE.Exp> expl;
       list<DAE.Statement> then_,stmts;
       DAE.Statement stmt;
-      Algorithm.Else else_;
+      DAE.Else else_;
       DAE.ElementSource source;
 
     case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
@@ -2240,7 +2240,7 @@ protected function ppElse "function: ppElse
 
   Helper function to pp_stmt
 "
-  input Algorithm.Else inElse;
+  input DAE.Else inElse;
   input Integer inInteger;
 algorithm
   _:=
@@ -2249,7 +2249,7 @@ algorithm
       Integer i_1,i;
       DAE.Exp e;
       list<DAE.Statement> then_,stmts;
-      Algorithm.Else else_;
+      DAE.Else else_;
     case (DAE.NOELSE(),_) then ();
     case (DAE.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
       equation
@@ -2277,7 +2277,7 @@ protected function ppElseStr "function: pp_else
 
   Helper function to ppElseStr
 "
-  input Algorithm.Else inElse;
+  input DAE.Else inElse;
   input Integer inInteger;
   output String outString;
 algorithm
@@ -2288,7 +2288,7 @@ algorithm
       Integer i_1,i;
       DAE.Exp e;
       list<DAE.Statement> then_,stmts;
-      Algorithm.Else else_;
+      DAE.Else else_;
     case (DAE.NOELSE(),_) then "";
     case (DAE.ELSEIF(exp = e,statementLst = then_,else_ = else_),i)
       equation

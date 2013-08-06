@@ -73,12 +73,7 @@ public import Values;
 public import Prefix;
 public import Util;
 
-public type Ident = String;
-
-public constant Boolean bAllowTopLevelInputs = true;
-public constant Boolean bDisallowTopLevelInputs = false;
-
-public
+protected
 uniontype Slot
   record SLOT
     DAE.FuncArg an "An argument to a function" ;
@@ -1779,7 +1774,7 @@ algorithm
       Real r;
       DAE.Dimension dim1,dim2;
       Boolean b,impl,a,havereal;
-      Ident s,ps;
+      String s,ps;
       DAE.Exp dexp,e1_1,e2_1,e_1,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
       DAE.Properties prop,prop1,prop2,prop3;
       list<Env.Frame> env;
@@ -2547,8 +2542,8 @@ algorithm
       DAE.Type t1,t2;
       DAE.Const c1,c2,c;
       list<DAE.Exp> es_1;
-      Ident e_str,str,elt_str,t1_str,t2_str,sp;
-      list<Ident> strs;
+      String e_str,str,elt_str,t1_str,t2_str,sp;
+      list<String> strs;
       list<DAE.Properties> props;
 
     case ({}, {}, _, _)
@@ -2935,7 +2930,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       list<DAE.Exp> els;
       list<list<DAE.Exp>> elss;
-      Ident el_str,t1_str,t2_str,dim1_str,dim2_str,el_str1,pre_str;
+      String el_str,t1_str,t2_str,dim1_str,dim2_str,el_str1,pre_str;
       Env.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
@@ -3438,8 +3433,8 @@ algorithm
       Absyn.Exp s;
       list<Absyn.Exp> dims;
       Boolean impl;
-      Ident implstr,expstr,str,sp;
-      list<Ident> expstrs;
+      String implstr,expstr,str,sp;
+      list<String> expstrs;
       Env.Cache cache;
       DAE.Const c1;
       Prefix.Prefix pre;
@@ -3967,7 +3962,7 @@ algorithm
       Absyn.Exp exp;
       DAE.Dimension dim;
       Boolean impl,sc;
-      Ident s,el_str,pre_str;
+      String s,el_str,pre_str;
       list<Absyn.Exp> expl;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -5015,7 +5010,7 @@ algorithm
     local
       Interactive.SymbolTable symbol_table,symbol_table_1,symbol_table_2;
       Absyn.Path path;
-      Ident path_str;
+      String path_str;
       Absyn.ComponentRef cr;
       list<Absyn.ComponentRef> rest;
       DAE.Type tp;
@@ -5146,8 +5141,8 @@ algorithm
       Absyn.Exp exp;
       Boolean impl;
       DAE.Const c;
-      list<Ident> lst;
-      Ident s,sp,es3;
+      list<String> lst;
+      String s,sp,es3;
       list<Absyn.Exp> expl;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -5352,8 +5347,8 @@ algorithm
       list<DAE.Type> tys,tys2;
       Boolean impl;
       DAE.Properties tp;
-      list<Ident> lst;
-      Ident s,str;
+      list<String> lst;
+      String s,str;
       Env.Cache cache;
       DAE.Type etp;
       Prefix.Prefix pre;
@@ -6192,7 +6187,7 @@ public function elabBuiltinHandlerGeneric "function: elabBuiltinHandlerGeneric
   environment since they must be generated on the fly, given a generated
   type.
 "
-  input Ident inIdent;
+  input String inIdent;
   output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
   partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
     input Env.Cache inCache;
@@ -6219,7 +6214,7 @@ public function elabBuiltinHandler "function: elabBuiltinHandler
   returning the appropriate function. When a new builtin operator is
   added, a new rule has to be added to this function.
 "
-  input Ident inIdent;
+  input String inIdent;
   output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
   partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
     input Env.Cache inCache;
@@ -6279,7 +6274,7 @@ public function elabBuiltinHandlerInternal "function: elabBuiltinHandlerInternal
   returning the appropriate function. When a new builtin operator is
   added, a new rule has to be added to this function.
 "
-  input Ident inIdent;
+  input String inIdent;
   output FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties outFuncTypeEnvEnvAbsynExpLstBooleanToExpExpTypesProperties;
   partial function FuncTypeEnv_EnvAbsyn_ExpLstBooleanToExp_ExpTypes_Properties
     input Env.Cache inCache;
@@ -6312,7 +6307,7 @@ protected function isBuiltinFunc "function: isBuiltinFunc
 algorithm
   (isBuiltin,b,outPath) := matchcontinue (inPath,ty)
     local
-      Ident id;
+      String id;
       Absyn.Path path;
 
     case (path,DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=isBuiltin as DAE.FUNCTION_BUILTIN(_))))
@@ -6384,7 +6379,7 @@ algorithm
       DAE.Exp exp;
       DAE.Properties prop;
       list<Env.Frame> env;
-      Ident name;
+      String name;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       Boolean impl;
@@ -6465,8 +6460,8 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Boolean impl;
       Absyn.Path fn_1;
-      Ident fnstr,argstr,prestr,s,name,env_str;
-      list<Ident> argstrs;
+      String fnstr,argstr,prestr,s,name,env_str;
+      list<String> argstrs;
       Env.Cache cache;
       Prefix.Prefix pre;
 
@@ -6606,7 +6601,7 @@ algorithm
 end elabVariablenames;
 
 public function getOptionalNamedArgExpList
-  input Ident name;
+  input String name;
   input list<Absyn.NamedArg> nargs;
   output list<DAE.Exp> out;
 algorithm
@@ -6614,7 +6609,7 @@ algorithm
     local
       list<Absyn.Exp> absynExpList;
       list<DAE.Exp> daeExpList;
-      Ident argName;
+      String argName;
       list<Absyn.NamedArg> rest;
     case (_, {})
       then {};
@@ -6666,7 +6661,7 @@ public function getOptionalNamedArg "function: getOptionalNamedArg
   input Env.Env inEnv;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean inBoolean;
-  input Ident inIdent;
+  input String inIdent;
   input DAE.Type inType;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input DAE.Exp inExp;
@@ -6684,7 +6679,7 @@ algorithm
       list<Env.Frame> env;
       Option<Interactive.SymbolTable> st;
       Boolean impl;
-      Ident id,id2;
+      String id,id2;
       list<Absyn.NamedArg> xs;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -6724,7 +6719,7 @@ algorithm
     local
       list<DAE.Subscript> subs_1;
       list<Env.Frame> env;
-      Ident id;
+      String id;
       list<Absyn.Subscript> subs;
       Boolean impl;
       DAE.ComponentRef cr_1;
@@ -6754,7 +6749,7 @@ algorithm
   outComponentRef:=
   match (inPath)
     local
-      Ident id;
+      String id;
       DAE.ComponentRef cref;
       Absyn.Path path;
     case (Absyn.FULLYQUALIFIED(path)) then pathToComponentRef(path);
@@ -6774,7 +6769,7 @@ public function componentRefToPath "function: componentRefToPath
 algorithm
   outPath := match (inComponentRef)
     local
-      Ident s,id;
+      String s,id;
       Absyn.Path path;
       DAE.ComponentRef cref;
     case (DAE.CREF_IDENT(ident = s,subscriptLst = {})) then Absyn.IDENT(s);
@@ -7144,7 +7139,8 @@ algorithm
   outVarsRepl := matchcontinue(inSlotLst, inVarsRepl)
     local
       VarTransform.VariableReplacements i,o;
-      Ident id; DAE.Exp e;
+      String id;
+      DAE.Exp e;
       list<Slot> rest;
 
     // handle empty
@@ -7788,7 +7784,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       list<DAE.Type> tys;
       DAE.Exp daeExp;
-      Ident fn_str;
+      String fn_str;
       String args_str,str;
       Prefix.Prefix pre;
       Integer index;
@@ -8092,7 +8088,7 @@ algorithm
   end matchcontinue;
 end isExternalObjectFunction;
 
-constant String vectorizeArg = "$vectorizeArg";
+protected constant String vectorizeArg = "$vectorizeArg";
 
 protected function vectorizeCall "function: vectorizeCall
   author: PA
@@ -9002,7 +8998,7 @@ algorithm
       DAE.Type tt,t,ty;
       DAE.TupleConst const;
       DAE.Const b;
-      Ident tystr,conststr;
+      String tystr,conststr;
 
     // At least two elements in the type list, this is a tuple. LS: Tuples are fixed before here
     case (tt as DAE.T_TUPLE(tupleType = _),const) then DAE.PROP_TUPLE(tt,const);
@@ -9205,7 +9201,7 @@ algorithm
     local
       list<DAE.FuncArg> in_,out;
       list<DAE.Var> vs;
-      Ident n;
+      String n;
       DAE.Type t;
       DAE.Var v;
       SCode.Variability var;
@@ -9494,7 +9490,7 @@ algorithm
       DAE.Exp exp_1;
       DAE.Type tp;
       DAE.Const c2;
-      Ident id;
+      String id;
 
     case (SLOT(slotFilled = true,expExpOption = e as SOME(_)),_) then slot;
 
@@ -9542,7 +9538,7 @@ algorithm
       DAE.Type t,tp;
       DAE.Const c1,c2;
       list<DAE.Const> constLst;
-      Ident id;
+      String id;
       Env.Cache cache;
       Prefix.Prefix pre;
       Types.PolymorphicBindings polymorphicBindings;
@@ -9587,8 +9583,8 @@ algorithm
   match (inSlotLst)
     local
       Boolean filled;
-      Ident farg_str,filledStr,str,s,s1,s2,res;
-      list<Ident> str_lst;
+      String farg_str,filledStr,str,s,s1,s2,res;
+      list<String> str_lst;
       DAE.FuncArg farg;
       Option<DAE.Exp> exp;
       DAE.Dimensions ds;
@@ -9690,7 +9686,7 @@ algorithm
       list<DAE.FuncArg> vs;
       DAE.Dimensions ds;
       Env.Cache cache;
-      Ident id;
+      String id;
       DAE.Properties props;
       Prefix.Prefix pre;
       DAE.CodeType ct;
@@ -9816,7 +9812,7 @@ algorithm
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist;
       list<Env.Frame> env;
-      Ident id, pre_str;
+      String id, pre_str;
       Absyn.Exp e;
       list<Absyn.NamedArg> nas,narg;
       list<DAE.FuncArg> farg;
@@ -9896,14 +9892,14 @@ protected function findNamedArgType
   This function takes an Ident and a FuncArg list, and returns the FuncArg
   which has  that identifier.
   Used for instance when looking up named arguments from the function type."
-  input Ident inIdent;
+  input String inIdent;
   input list<DAE.FuncArg> inTypesFuncArgLst;
   output DAE.Type outType;
 algorithm
   outType:=
   matchcontinue (inIdent,inTypesFuncArgLst)
     local
-      Ident id,id2;
+      String id,id2;
       DAE.Type ty;
       list<DAE.FuncArg> ts;
     case (id,(id2,ty,_,_) :: ts)
@@ -9936,7 +9932,7 @@ protected function fillSlot
 algorithm
   outSlotLst := matchcontinue (inFuncArg,inExp,inTypesArrayDimLst,inSlotLst,checkTypes,inPrefix,info)
     local
-      Ident fa1,fa2,fa;
+      String fa1,fa2,fa;
       DAE.Exp exp;
       DAE.Dimensions ds;
       DAE.Type b;
@@ -10510,7 +10506,7 @@ algorithm
       DAE.ComponentRef e,cref_1,cref;
       DAE.Type t;
       list<DAE.Subscript> subs_1,subs;
-      Ident id;
+      String id;
       DAE.Type ty2;
     // no subscripts
     case ((e as DAE.CREF_IDENT(subscriptLst = {})),t) then e;
@@ -11591,7 +11587,7 @@ public function absynCrefToComponentReference "function: absynCrefToComponentRef
 algorithm
   outComponentRef := match (inComponentRef)
     local
-      Ident i;
+      String i;
       Boolean b;
       Absyn.ComponentRef c;
       DAE.ComponentRef cref;
@@ -11640,7 +11636,7 @@ algorithm
       DAE.Dimensions sl;
       DAE.Const const,const1,const2;
       list<Env.Frame> crefEnv;
-      Ident id;
+      String id;
       list<Absyn.Subscript> ss;
       Boolean impl, hasZeroSizeDim;
       DAE.ComponentRef cr;
@@ -12013,7 +12009,7 @@ algorithm
   outSubscript := matchcontinue (inType1,inExp2,inExp3,inPrefix,inEnv)
     local
       DAE.Exp sub;
-      Ident e_str,t_str,p_str;
+      String e_str,t_str,p_str;
       DAE.Type t;
       Absyn.Exp e;
       Prefix.Prefix pre;
@@ -12171,7 +12167,7 @@ algorithm
       DAE.Type t2,t3,t2_1,t3_1,t1,ty;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Ident e_str,t_str,e1_str,t1_str,e2_str,t2_str,pre_str;
+      String e_str,t_str,e1_str,t1_str,e2_str,t2_str,pre_str;
       Env.Cache cache;
       Prefix.Prefix pre;
 
@@ -12337,7 +12333,7 @@ algorithm
     local
       list<DAE.Subscript> ss_1,ss;
       list<Env.Frame> env;
-      Ident n;
+      String n;
       Boolean impl;
       Env.Cache cache;
       DAE.ComponentRef prefixCr,cr;
@@ -12372,7 +12368,7 @@ algorithm
       list<Integer> sl;
       list<DAE.Subscript> ss_1,ss;
       list<Env.Frame> env, componentEnv;
-      Ident n;
+      String n;
       Boolean impl;
       DAE.ComponentRef c_1,c,cr;
       Env.Cache cache;
@@ -12432,7 +12428,7 @@ algorithm
   _:=
   match (inComponentRef1,inComponentRef2)
     local
-      Ident n1,n2;
+      String n1,n2;
       list<DAE.Subscript> s1,s2;
       DAE.ComponentRef c1,c2;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = s1),DAE.CREF_IDENT(ident = n2,subscriptLst = s2))
@@ -12622,7 +12618,7 @@ algorithm
   outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix, inInfo)
     local
       DAE.Type typ1,typ2,rtype,etype,typ;
-      Ident t1_str,t2_str,pre_str;
+      String t1_str,t2_str,pre_str;
       DAE.Dimension n1,n2,m,n,m1,m2,p;
       Prefix.Prefix pre;
 

@@ -1927,6 +1927,7 @@ algorithm
         print("(Transposed) Total number of modules: " +& intString(listLength(depstransposed)) +& "\n");
         str = stringDelimitList(List.map(depstransposed, transitiveDependencyString), "\n");
         print(str +& "\n");
+        List.map_0(sp,printInterfaceString);
       then (cache,Values.META_FAIL(),st);
 
     case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={})},(st as Interactive.SYMBOLTABLE(ast = p)),_)
@@ -7015,5 +7016,53 @@ algorithm
   (_,strs) := deps;
   str := intString(listLength(strs)) +& ": " +& stringDelimitList(strs, ",");
 end transitiveDependencyString;
+
+protected function containsPublicInterface
+  input SCode.Element elt;
+  output Boolean b;
+algorithm
+  b := match elt
+    local
+      list<SCode.Element> elts;
+    case SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts))
+      then List.exist(elts, containsPublicInterface2);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.containsPublicInterface failed"});
+      then fail();
+  end match;
+end containsPublicInterface;
+
+protected function containsPublicInterface2
+  "If the package contains a public type or constant, we depend on this package also through other modules"
+  input SCode.Element elt;
+  output Boolean b;
+algorithm
+  b := match elt
+    local
+      String name;
+    case SCode.IMPORT(info=_) then false;
+    case SCode.EXTENDS(info=_) then false;
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(_)) then false;
+    case SCode.COMPONENT(name=name,prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
+      equation
+        print("public component " +& name +& ": ");
+      then true;
+    case SCode.CLASS(name=name,prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
+      equation
+        print("public class " +& name +& ": ");
+      then true;
+    else false;
+  end match;
+end containsPublicInterface2;
+
+protected function printInterfaceString
+  input SCode.Element elt;
+protected
+  String str;
+algorithm
+  SCode.CLASS(name=str) := elt;
+  print(str +& ": " +& boolString(containsPublicInterface(elt)) +& "\n");
+end printInterfaceString;
 
 end CevalScript;

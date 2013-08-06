@@ -880,7 +880,7 @@ algorithm
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
       DAE.Dimensions dimension;
-      Algorithm.Algorithm alg,alg_1;
+      DAE.Algorithm alg,alg_1;
       Ident i;
       Absyn.Path p;
       list<DAE.Exp> explst,explst_1;
@@ -1042,15 +1042,15 @@ end inlineDAEElement;
 
 public function inlineAlgorithm
 "function: inlineAlgorithm
-  inline calls in an Algorithm.Algorithm"
-  input Algorithm.Algorithm inAlgorithm;
+  inline calls in an DAE.Algorithm"
+  input DAE.Algorithm inAlgorithm;
   input Functiontuple inElementList;
-  output Algorithm.Algorithm outAlgorithm;
+  output DAE.Algorithm outAlgorithm;
   output Boolean inlined;
 algorithm
   (outAlgorithm,inlined) := matchcontinue(inAlgorithm,inElementList)
     local
-      list<Algorithm.Statement> stmts,stmts_1;
+      list<DAE.Statement> stmts,stmts_1;
       Functiontuple fns;
     case(DAE.ALGORITHM_STMTS(stmts),fns)
       equation
@@ -1066,17 +1066,17 @@ algorithm
 end inlineAlgorithm;
 
 protected function inlineStatements
-  input list<Algorithm.Statement> inStatements;
+  input list<DAE.Statement> inStatements;
   input Functiontuple inElementList;
-  input list<Algorithm.Statement> iAcc;
+  input list<DAE.Statement> iAcc;
   input Boolean iInlined;
-  output list<Algorithm.Statement> outStatements;
+  output list<DAE.Statement> outStatements;
   output Boolean OInlined;
 algorithm
   (outStatements,OInlined) := match(inStatements,inElementList,iAcc,iInlined)
     local
-      Algorithm.Statement stmt;
-      list<Algorithm.Statement> rest,acc;
+      DAE.Statement stmt;
+      list<DAE.Statement> rest,acc;
       Boolean inlined;
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (stmt::rest,_,_,_)
@@ -1090,22 +1090,22 @@ end inlineStatements;
 
 protected function inlineStatement
 "function: inlineStatement
-  inlines calls in an Algorithm.Statement"
-  input Algorithm.Statement inStatement;
+  inlines calls in an DAE.Statement"
+  input DAE.Statement inStatement;
   input Functiontuple inElementList;
-  output Algorithm.Statement outStatement;
+  output DAE.Statement outStatement;
   output Boolean inlined;
 algorithm
   (outStatement,inlined) := matchcontinue(inStatement,inElementList)
     local
       Functiontuple fns;
-      Algorithm.Statement stmt,stmt_1;
+      DAE.Statement stmt,stmt_1;
       DAE.Type t;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1,e3,e3_1;
       list<DAE.Exp> explst,explst_1;
       DAE.ComponentRef cref;
-      Algorithm.Else a_else,a_else_1;
-      list<Algorithm.Statement> stmts,stmts_1;
+      DAE.Else a_else,a_else_1;
+      list<DAE.Statement> stmts,stmts_1;
       Boolean b,b1,b2,b3;
       Ident i;
       Integer ix;
@@ -1214,20 +1214,20 @@ end inlineStatement;
 
 protected function inlineElse
 "function: inlineElse
-  inlines calls in an Algorithm.Else"
-  input Algorithm.Else inElse;
+  inlines calls in an DAE.Else"
+  input DAE.Else inElse;
   input Functiontuple inElementList;
   input DAE.ElementSource inSource;
-  output Algorithm.Else outElse;
+  output DAE.Else outElse;
   output DAE.ElementSource outSource;
   output Boolean inlined;
 algorithm
   (outElse,outSource,inlined) := matchcontinue(inElse,inElementList,inSource)
     local
       Functiontuple fns;
-      Algorithm.Else a_else,a_else_1;
+      DAE.Else a_else,a_else_1;
       DAE.Exp e,e_1;
-      list<Algorithm.Statement> stmts,stmts_1;
+      list<DAE.Statement> stmts,stmts_1;
       DAE.ElementSource source;
       Boolean b1,b2,b3;
 
