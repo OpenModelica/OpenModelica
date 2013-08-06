@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR 
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2. 
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE. 
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,7 +28,7 @@
  *
  */
 /*
- * 
+ *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
  * RCS: $Id$
@@ -325,11 +325,15 @@ void MessagesTreeWidget::copyMessages()
   QString textToCopy;
   foreach (QTreeWidgetItem *pItem, selectedItems())
   {
-    textToCopy.append(pItem->text(0)).append("\t");
-    textToCopy.append(pItem->text(1)).append("\t");
-    textToCopy.append(pItem->text(2)).append("\t");
-    textToCopy.append(pItem->text(3)).append("\t");
-    textToCopy.append(pItem->text(4)).append("\n");
+    MessagesTreeItem *pMessagesTreeItem = dynamic_cast<MessagesTreeItem*>(pItem);
+    if (pMessagesTreeItem)
+    {
+      textToCopy.append(pMessagesTreeItem->text(0)).append("\t");
+      textToCopy.append(pMessagesTreeItem->text(1)).append("\t");
+      textToCopy.append(pMessagesTreeItem->text(2)).append("\t");
+      textToCopy.append(pMessagesTreeItem->text(3)).append("\t");
+      textToCopy.append(pMessagesTreeItem->getMessage()).append("\n");
+    }
   }
   QApplication::clipboard()->setText(textToCopy);
 }
@@ -690,6 +694,14 @@ void MessagesTreeItem::setColumnsText()
       + ":" + QString::number(getColumnEnd());
   setText(3, line);
   setToolTip(3, line);
-  setText(4, getMessage());
-  setToolTip(4, getMessage());
+  if (getMessage().length() > 500)
+  {
+    setText(4, getMessage().left(500));
+    setToolTip(4, qApp->tr("The error message is very long. Copy & paste it to some text editor in order to view it."));
+  }
+  else
+  {
+    setText(4, getMessage());
+    setToolTip(4, getMessage());
+  }
 }

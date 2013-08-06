@@ -87,9 +87,8 @@ public slots:
   void searchClasses();
 };
 
-class LibraryTreeNode : public QObject, public QTreeWidgetItem
+class LibraryTreeNode : public QTreeWidgetItem
 {
-  Q_OBJECT
 public:
   enum SaveContentsType {
     SaveInOneFile,

@@ -1489,10 +1489,9 @@ bool OMCProxy::loadFile(QString fileName, QString encoding)
 bool OMCProxy::loadString(QString value)
 {
   sendCommand("loadString(\"" + value.replace("\"", "\\\"") + "\")");
-  if (StringHandler::unparseBool(getResult()))
-    return true;
-  else
-    return false;
+  bool result = StringHandler::unparseBool(getResult());
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!

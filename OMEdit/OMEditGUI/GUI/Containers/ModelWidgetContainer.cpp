@@ -2593,11 +2593,13 @@ bool ModelWidget::modelicaEditorTextChanged()
   QString modelicaText = mpModelicaTextWidget->getModelicaTextEdit()->toPlainText();
   if (mpLibraryTreeNode->getParentName().isEmpty())
   {
-    pOMCProxy->loadString(StringHandler::escapeString(modelicaText));
+    if (!pOMCProxy->loadString(StringHandler::escapeString(modelicaText)))
+      return false;
   }
   else
   {
-    pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(modelicaText));
+    if (!pOMCProxy->loadString("within " + mpLibraryTreeNode->getParentName() + ";" + StringHandler::escapeString(modelicaText)))
+      return false;
   }
   /* first handle the current class */
   /* if user has changed the class then refresh it. */
@@ -2627,6 +2629,46 @@ bool ModelWidget::modelicaEditorTextChanged()
     pOMCProxy->deleteClass(mpLibraryTreeNode->getNameStructure());
     QString className = classNames.first();
     classNames.removeFirst();
+    /*
+      if user has used within keyword in the text to move the class in a package then,
+      - Find the current parent of the class and then remove the class from it and move it to the new parent.
+      - If the class is top level then remove it from the top level and add it to the new parent.
+      */
+    LibraryTreeNode *pCurrentParentLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(mpLibraryTreeNode->parent());
+    LibraryTreeNode *pNewParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(StringHandler::removeLastWordAfterDot(className));
+    /* If really a within is used then the following condition should be true. */
+    if (pNewParentLibraryTreeNode != mpLibraryTreeNode)
+    {
+      /* If the class has parent then use it otherwise use the tree widget to remove the class. */
+      if (pCurrentParentLibraryTreeNode)
+      {
+        pCurrentParentLibraryTreeNode->takeChild(pCurrentParentLibraryTreeNode->indexOfChild(mpLibraryTreeNode));
+        /* Remove the cache of the current parent. */
+        if (pCurrentParentLibraryTreeNode->getModelWidget())
+        {
+          pCurrentParentLibraryTreeNode->getModelWidget()->setModelModified();
+          /* update the text of the class */
+          ModelicaTextWidget *pModelicaTextWidget = pCurrentParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget();
+          if (pModelicaTextWidget->isVisible())
+            pModelicaTextWidget->getModelicaTextEdit()->setPlainText(pOMCProxy->list(pCurrentParentLibraryTreeNode->getNameStructure()));
+        }
+      }
+      else
+      {
+        pLibraryTreeWidget->takeTopLevelItem(pLibraryTreeWidget->indexOfTopLevelItem(mpLibraryTreeNode));
+      }
+      /* Add the class to the new parent. */
+      pNewParentLibraryTreeNode->addChild(mpLibraryTreeNode);
+      /* Remove the cache of the new parent. */
+      if (pNewParentLibraryTreeNode->getModelWidget())
+      {
+        pNewParentLibraryTreeNode->getModelWidget()->setModelModified();
+        /* update the text of the class */
+        ModelicaTextWidget *pModelicaTextWidget = pNewParentLibraryTreeNode->getModelWidget()->getModelicaTextWidget();
+        if (pModelicaTextWidget->isVisible())
+          pModelicaTextWidget->getModelicaTextEdit()->setPlainText(pOMCProxy->list(pNewParentLibraryTreeNode->getNameStructure()));
+      }
+    }
     /* set the LibraryTreeNode name & text */
     mpLibraryTreeNode->setName(StringHandler::getLastWordAfterDot(className));
     mpLibraryTreeNode->setText(0, mpLibraryTreeNode->getName());
