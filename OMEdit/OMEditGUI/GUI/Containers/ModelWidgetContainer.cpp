@@ -2637,7 +2637,7 @@ bool ModelWidget::modelicaEditorTextChanged()
     LibraryTreeNode *pCurrentParentLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(mpLibraryTreeNode->parent());
     LibraryTreeNode *pNewParentLibraryTreeNode = pLibraryTreeWidget->getLibraryTreeNode(StringHandler::removeLastWordAfterDot(className));
     /* If really a within is used then the following condition should be true. */
-    if (pNewParentLibraryTreeNode != mpLibraryTreeNode)
+    if ((pNewParentLibraryTreeNode) && (pNewParentLibraryTreeNode != mpLibraryTreeNode))
     {
       /* If the class has parent then use it otherwise use the tree widget to remove the class. */
       if (pCurrentParentLibraryTreeNode)
