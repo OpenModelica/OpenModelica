@@ -14,7 +14,7 @@ protected import Debug;
 protected import System;
 protected import Util;
 protected import Print;
-protected import CevalScript;
+protected import GlobalScript;
 protected import Error;
 protected import Flags;
 public import Absyn;
@@ -1795,17 +1795,17 @@ algorithm
       Real rtTickTxt, rtTickW;
     case (txt, file)
       equation
-        rtTickTxt = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        rtTickTxt = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
         Print.clearBuf();
         textStringBuf(txt);
-        rtTickW = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        rtTickW = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
         Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
         Print.clearBuf();
         Debug.fprintln(Flags.TPL_PERF_TIMES,
                 "textFile " +& file
            +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
-           +& "\n   write:" +& realString(realSub(System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL), rtTickW))
+           +& "\n   write:" +& realString(realSub(System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL), rtTickW))
            );
       then
         ();

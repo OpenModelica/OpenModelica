@@ -48,6 +48,7 @@ protected import Dump;
 protected import Error;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import ExpressionSimplifyTypes;
 protected import Flags;
 protected import List;
 protected import Print;
@@ -329,7 +330,7 @@ algorithm
       //MUL
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.MULOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.MULOP());
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.MULOP());
         outv = expValue(e);
       then
         outv;
@@ -353,7 +354,7 @@ algorithm
         //DIV
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.DIVOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.DIVOP());
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.DIVOP());
         outv = expValue(e);
       then
         outv;
@@ -385,7 +386,7 @@ algorithm
         Values.REAL(rv3);
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.POWOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP());
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.POWOP());
         outv = expValue(e);
       then
         outv;
@@ -398,7 +399,7 @@ algorithm
     case (Values.INTEGER(iv1), Values.REAL(rv2), Values.POWOP())
       equation
         iv2 = realInt(rv2);
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.POWOP());
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.POWOP());
         outv = expValue(e);
       then
         outv;
@@ -416,7 +417,7 @@ algorithm
         //ADD
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.ADDOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.ADDOP());
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.ADDOP());
         outv = expValue(e);
       then
         outv;
@@ -440,7 +441,7 @@ algorithm
         //SUB
     case (Values.INTEGER(iv1),Values.INTEGER(iv2), Values.SUBOP())
       equation
-        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplify.SUBOP());
+        e = ExpressionSimplify.safeIntOp(iv1,iv2,ExpressionSimplifyTypes.SUBOP());
         outv = expValue(e);
       then
         outv;

@@ -64,7 +64,6 @@ protected import BackendVarTransform;
 protected import BinaryTree;
 protected import Causalize;
 protected import Ceval;
-protected import CevalScript;
 protected import CheckModel;
 protected import ClassInf;
 protected import ComponentReference;
@@ -80,6 +79,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Global;
+protected import GlobalScript;
 protected import IndexReduction;
 protected import Inline;
 protected import List;
@@ -92,7 +92,7 @@ protected import Tearing;
 protected import Types;
 protected import Values;
 
-public
+protected
 type Var = BackendDAE.Var;
 type VarKind = BackendDAE.VarKind;
 type VariableArray = BackendDAE.VariableArray;
@@ -227,8 +227,8 @@ algorithm
     local
       BackendDAE.Variables vars1,vars2,allvars;
       EquationArray eqns,reqns,ieqns;
-      list<WhenClause> whenClauseLst;
-      list<Var> varlst1,varlst2,allvarslst;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      list<BackendDAE.Var> varlst1,varlst2,allvarslst;
       list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expcrefs,expcrefs1,expcrefs2,expcrefs3,expcrefs4,expcrefs5;
       list<BackendDAE.Equation> wrongEqns,wrongEqns1,wrongEqns2;
 
@@ -293,7 +293,7 @@ algorithm
       list<DAE.ComponentRef> crefs,crefs1;
       list<DAE.Exp> expl;
       list<DAE.Var> varLst;
-      list<Var> backendVars;
+      list<BackendDAE.Var> backendVars;
       DAE.ReductionIterators riters;
 
     // special case for time, it is never part of the equation system
@@ -348,7 +348,7 @@ end traversecheckBackendDAEExp;
 
 protected function makeIterVariable
   input DAE.ReductionIterator iter;
-  output Var backendVar;
+  output BackendDAE.Var backendVar;
 protected
   String name;
   DAE.ComponentRef cr;
@@ -432,7 +432,7 @@ end checkAssertCondition;
 public function createEmptyBackendDAE "function createEmptyBackendDAE
   author: wbraun
   Copy the dae to avoid changes in vectors."
-  input BackendDAEType inBDAEType;
+  input BackendDAE.BackendDAEType inBDAEType;
   output BackendDAE.BackendDAE outBDAE;
 protected
   BackendDAE.Variables emptyvars;
@@ -729,7 +729,7 @@ end addBackendDAEFunctionTree;
 
 public function addVarsToEqSystem
   input BackendDAE.EqSystem syst;
-  input list<Var> varlst;
+  input list<BackendDAE.Var> varlst;
   output BackendDAE.EqSystem osyst;
 algorithm
   osyst := match (syst,varlst)
@@ -869,7 +869,7 @@ algorithm
     local
       Integer np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string,np_int,np_bool,ny_int,ny_1_int,ny_bool,ny_1_bool;
       BackendDAE.Variables vars,knvars,extvars;
-      list<WhenClause> wc;
+      list<BackendDAE.WhenClause> wc;
       list<ZeroCrossing> zc;
       Integer numberOfRelations;
 
@@ -1148,7 +1148,7 @@ protected function calculateValues "function: calculateValues
 algorithm
   outBackendDAE := match (inBackendDAE)
     local
-      list<Var> knvarlst,varlst1,varlst2;
+      list<BackendDAE.Var> knvarlst,varlst1,varlst2;
       BackendDAE.Variables knvars,extVars,paramvars,av;
       EquationArray seqns,ie;
       array<DAE.Constraint> constrs;
@@ -1175,11 +1175,11 @@ algorithm
 end calculateValues;
 
 protected function calculateValue
-  input Var inVar;
+  input BackendDAE.Var inVar;
   input Env.Cache cache;
   input Env.Env env;
   input BackendDAE.Variables vars;
-  output Var outVar;
+  output BackendDAE.Var outVar;
 algorithm
   outVar := matchcontinue(inVar, cache, env, vars)
     local
@@ -1251,7 +1251,7 @@ public function addAliasVariables
 "function: addAliasVariables
   author: Frenkel TUD 2010-12
   Add an alias variable to the AliasVariables "
-  input list<Var> inVars;
+  input list<BackendDAE.Var> inVars;
   input BackendDAE.Variables inAliasVariables;
   output BackendDAE.Variables outAliasVariables;
 algorithm
@@ -1262,7 +1262,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp;
       Var v;
-      list<Var> rest;
+      list<BackendDAE.Var> rest;
     case ({},_) then inAliasVariables;
     case (v::rest,_)
       equation
@@ -1507,7 +1507,7 @@ end traversingisDiscreteExpFinder;
 
 
 public function isVarDiscrete "returns true if variable is discrete"
-  input Var var;
+  input BackendDAE.Var var;
   output Boolean res;
 algorithm
   res := match(var)
@@ -1697,7 +1697,7 @@ algorithm
       list<DAE.ComponentRef> varCrefs;
       list<DAE.Exp> varExprs;
       DAE.Exp daeExp;
-      list<Var> bvars;
+      list<BackendDAE.Var> bvars;
 
     case (DAE.CREF(componentRef = _), _, _, _)
       equation
@@ -1775,7 +1775,7 @@ public function equationNth "function: equationNth
   outputs:  Equation
 
 "
-  input EquationArray inEquationArray;
+  input BackendDAE.EquationArray inEquationArray;
   input Integer inInteger;
   output BackendDAE.Equation outEquation;
 algorithm
@@ -1843,7 +1843,7 @@ public function equationSize "function: equationSize
 
   Returns the size of the equations in an EquationArray, which not
   corresponds to the number of equations in a system."
-  input EquationArray inEquationArray;
+  input BackendDAE.EquationArray inEquationArray;
   output Integer outInteger;
 algorithm
   outInteger:=
@@ -1876,7 +1876,7 @@ public function equationArraySize "function: equationArraySize
   Returns the number of equations in an EquationArray, which not
   corresponds to the number of equations in a system but not
   to the size of the system"
-  input EquationArray inEquationArray;
+  input BackendDAE.EquationArray inEquationArray;
   output Integer outInteger;
 algorithm
   outInteger:=
@@ -2356,11 +2356,11 @@ end subscript2dCombinations2;
 public function splitoutEquationAndVars
 " author: wbraun"
   input BackendDAE.StrongComponents inNeededBlocks;
-  input EquationArray inEqns;
+  input BackendDAE.EquationArray inEqns;
   input BackendDAE.Variables inVars;
-  input EquationArray inEqnsNew;
+  input BackendDAE.EquationArray inEqnsNew;
   input BackendDAE.Variables inVarsNew;
-  output EquationArray outEqns;
+  output BackendDAE.EquationArray outEqns;
   output BackendDAE.Variables outVars;
 algorithm
   (outEqns,outVars) := matchcontinue(inNeededBlocks,inEqns,inVars, inEqnsNew, inVarsNew)
@@ -2370,7 +2370,7 @@ algorithm
     BackendDAE.Equation eqn;
     Var var;
     list<BackendDAE.Equation> eqn_lst;
-    list<Var> var_lst;
+    list<BackendDAE.Var> var_lst;
     EquationArray eqnsNew;
     BackendDAE.Variables varsNew;
     case ({},_,_,eqnsNew,varsNew) then (eqnsNew,varsNew);
@@ -2387,7 +2387,7 @@ end splitoutEquationAndVars;
 public function whenClauseAddDAE
 "function: whenClauseAddDAE
   author: Frenkel TUD 2011-05"
-  input list<WhenClause> inWcLst;
+  input list<BackendDAE.WhenClause> inWcLst;
   input BackendDAE.Shared shared;
   output BackendDAE.Shared oshared;
 algorithm
@@ -2400,7 +2400,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
-      list<WhenClause> wclst,wclst1;
+      list<BackendDAE.WhenClause> wclst,wclst1;
       list<ZeroCrossing> zc, rellst, smplLst;
       Integer numberOfRelations, numberOfMathEventFunctions;
       ExternalObjectClasses eoc;
@@ -3101,7 +3101,7 @@ protected function incidenceMatrixDispatch
 "@author: adrpo
   Calculates the incidence matrix as an array of list of integers"
   input BackendDAE.Variables vars;
-  input EquationArray inEqsArr;
+  input BackendDAE.EquationArray inEqsArr;
   input list<BackendDAE.IncidenceMatrixElement> inIncidenceArray;
   input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
   input Integer index;
@@ -3144,7 +3144,7 @@ protected function incidenceMatrixDispatchScalar
 "@author: adrpo
   Calculates the incidence matrix as an array of list of integers"
   input BackendDAE.Variables vars;
-  input EquationArray inEqsArr;
+  input BackendDAE.EquationArray inEqsArr;
   input list<BackendDAE.IncidenceMatrixElement> inIncidenceArray;
   input BackendDAE.IncidenceMatrixT inIncidenceArrayT;
   input Integer index;
@@ -3572,7 +3572,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2,startvalue,stopvalue,stepvalue;
-      list<Var> varslst;
+      list<BackendDAE.Var> varslst;
       Boolean b;
       list<DAE.Exp> explst;
       Option<DAE.Exp> stepvalueopt;
@@ -3674,7 +3674,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2;
-      list<Var> varslst;
+      list<BackendDAE.Var> varslst;
       Boolean b;
 
     case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
@@ -3720,7 +3720,7 @@ algorithm
 end traversingincidenceRowExpFinder;
 
 protected function incidenceRowExp1
-  input list<Var> inVarLst;
+  input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
   input list<Integer> inVarIndxLst;
   input Integer diffindex;
@@ -3728,7 +3728,7 @@ protected function incidenceRowExp1
 algorithm
   outVarIndxLst := match (inVarLst,inIntegerLst,inVarIndxLst,diffindex)
     local
-       list<Var> rest;
+       list<BackendDAE.Var> rest;
        list<Integer> irest,vars;
        Integer i,i1,diffidx;
        Boolean b;
@@ -3768,7 +3768,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e;
-      list<Var> varslst;
+      list<BackendDAE.Var> varslst;
 
     case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
       equation
@@ -3808,7 +3808,7 @@ end traversingincidenceRowExpFinderwithInput;
 
 
 protected function incidenceRowExp1withInput
-  input list<Var> inVarLst;
+  input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
   input list<Integer> vars;
   input Integer diffindex;
@@ -3816,7 +3816,7 @@ protected function incidenceRowExp1withInput
 algorithm
   outIntegerLst := matchcontinue (inVarLst,inIntegerLst,vars,diffindex)
     local
-       list<Var> rest;
+       list<BackendDAE.Var> rest;
        list<Integer> irest;
        Integer i;
     case ({},{},_,_) then vars;
@@ -3978,7 +3978,7 @@ end updateIncidenceMatrix;
 protected function updateIncidenceMatrix1
   "Helper"
   input BackendDAE.Variables vars;
-  input EquationArray daeeqns;
+  input BackendDAE.EquationArray daeeqns;
   input BackendDAE.IndexType inIndxType;
   input Option<DAE.FunctionTree> functionTree;
   input BackendDAE.IncidenceMatrix m;
@@ -4085,7 +4085,7 @@ end updateIncidenceMatrixScalar;
 protected function updateIncidenceMatrixScalar1
   "Helper"
   input BackendDAE.Variables vars;
-  input EquationArray daeeqns;
+  input BackendDAE.EquationArray daeeqns;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   input list<Integer> inIntegerLst;
@@ -4137,7 +4137,7 @@ protected function updateIncidenceMatrixScalar2
   input Integer n;
   input Integer size;
   input BackendDAE.Variables vars;
-  input EquationArray daeeqns;
+  input BackendDAE.EquationArray daeeqns;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
   input array<list<Integer>> iMapEqnIncRow;
@@ -6023,7 +6023,7 @@ public function calculateJacobian "function: calculateJacobian
   This function takes an array of equations and the variables of the equation
   and calculates the jacobian of the equations."
   input BackendDAE.Variables inVariables;
-  input EquationArray inEquationArray;
+  input BackendDAE.EquationArray inEquationArray;
   input BackendDAE.IncidenceMatrix inIncidenceMatrix;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   input BackendDAE.Shared iShared;
@@ -6051,7 +6051,7 @@ public function calculateJacobianEnhanced "function: calculateJacobianEnhanced
   This function takes an array of equations and the variables of the equation
   and calculates the jacobian of the equations."
   input BackendDAE.Variables vars;
-  input EquationArray eqns;
+  input BackendDAE.EquationArray eqns;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   input BackendDAE.Shared iShared;
@@ -6440,7 +6440,7 @@ public function analyzeJacobian "function: analyzeJacobian
   can be solved at compiletime or runtime or if it is a nonlinear system
   of equations."
   input BackendDAE.Variables vars;
-  input EquationArray eqns;
+  input BackendDAE.EquationArray eqns;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
   output BackendDAE.JacobianType outJacobianType;
   output Boolean jacConstant "true if jac is constant, does not check rhs";
@@ -6542,7 +6542,7 @@ protected function rhsConstant "function: rhsConstant
   Determines if the right hand sides of an equation system,
   represented as a BackendDAE, is constant."
   input BackendDAE.Variables vars;
-  input EquationArray eqns;
+  input BackendDAE.EquationArray eqns;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
@@ -7047,7 +7047,7 @@ algorithm
     local
       BackendDAE.Variables vars2;
       EquationArray reqns,ieqns;
-      list<WhenClause> whenClauseLst;
+      list<BackendDAE.WhenClause> whenClauseLst;
       Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns, eventInfo = BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst))),_,_)
@@ -7619,7 +7619,7 @@ public function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsEqns
   Helper for traverseBackendDAEExpsEqns
 "
   replaceable type Type_a subtypeof Any;
-  input EquationArray inEquationArray;
+  input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -7648,7 +7648,7 @@ public function traverseBackendDAEExpsEqnsWithStop "function: traverseBackendDAE
   Helper for traverseBackendDAEExpsEqns
 "
   replaceable type Type_a subtypeof Any;
-  input EquationArray inEquationArray;
+  input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -7677,7 +7677,7 @@ public function traverseBackendDAEExpsEqnsWithUpdate "function: traverseBackendD
   Helper for traverseBackendDAEExpsEqns
 "
   replaceable type Type_a subtypeof Any;
-  input EquationArray inEquationArray;
+  input BackendDAE.EquationArray inEquationArray;
   input FuncExpType func;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -7946,11 +7946,11 @@ algorithm
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
   Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
-  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
   _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  Debug.execStat("preOpt SimplifyAllExp",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("preOpt SimplifyAllExp",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
@@ -7960,13 +7960,13 @@ algorithm
   // past optimisation phase
   (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
-  Debug.execStat("findZeroCrossings",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("findZeroCrossings",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   outSODE := calculateValues(sode1);
   // moved to SimCodeUtil because of initial system
-  //Debug.execStat("calculateValue",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  //Debug.execStat("calculateValue",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   //outSODE := expandAlgorithmsbyInitStmts(sode2);
-  Debug.execStat("expandAlgorithmsbyInitStmts",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("expandAlgorithmsbyInitStmts",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "indxdae: eqns in order");
@@ -8013,14 +8013,14 @@ algorithm
         BackendDAE.DAE(systs,shared) = optModule(inDAE);
         systs = filterEmptySystems(systs);
         dae = BackendDAE.DAE(systs,shared);
-        Debug.execStat("preOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("preOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
         (dae1,status) = preoptimiseDAE(dae,rest);
       then (dae1,status);
     case (_,(optModule,moduleStr,b)::rest)
       equation
-        Debug.execStat("<failed> preOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("<failed> preOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
         (dae,status) = preoptimiseDAE(inDAE,rest);
@@ -8155,10 +8155,10 @@ algorithm
         nvars = BackendVariable.daenumVariables(syst);
         neqns = systemSize(syst);
         syst = Causalize.singularSystemCheck(nvars,neqns,syst,match_opts,matchingAlgorithm,arg,ishared);
-        Debug.execStat("transformDAE -> singularSystemCheck " +& mAmethodstr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("transformDAE -> singularSystemCheck " +& mAmethodstr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // match the system and reduce index if neccessary
         (syst,shared,arg) = matchingAlgorithmfunc(syst, ishared, false, match_opts, sssHandler, arg);
-        Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg),true);
     case (_,_,_,(_,mAmethodstr),(_,str1,_,_),_)
       equation
@@ -8190,7 +8190,7 @@ algorithm
       equation
         // do state selection
         outDAE = sDfunc(BackendDAE.DAE(systs,shared),args);
-        Debug.execStat("transformDAE -> state selection " +& methodstr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("transformDAE -> state selection " +& methodstr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
          outDAE;
     else then inDAE;
@@ -8246,7 +8246,7 @@ algorithm
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);
 //        IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"Comps" +& intString(systemSize(syst)) +& ".graphml",false);
-        Debug.execStat("transformDAE -> sort components",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("transformDAE -> sort components",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);
     else
       equation
@@ -8286,7 +8286,7 @@ algorithm
         BackendDAE.DAE(systs,shared) = optModule(inDAE);
         systs = filterEmptySystems(systs);
         dae = BackendDAE.DAE(systs,shared);
-        Debug.execStat("pastOpt " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("pastOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
         dae1 = causalizeDAE(dae,NONE(),matchingAlgorithm,daeHandler,false);
@@ -8295,7 +8295,7 @@ algorithm
         (dae2,status);
     case (_,(optModule,moduleStr,b)::rest,_,_)
       equation
-        Debug.execStat("pastOpt <failed> " +& moduleStr,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("pastOpt <failed> " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
         Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
         (dae,status) = pastoptimiseDAE(inDAE,rest,matchingAlgorithm,daeHandler);
@@ -8726,14 +8726,14 @@ public function profilerinit
 algorithm
   setGlobalRoot(Global.profilerTime1Index, 0.0);
   setGlobalRoot(Global.profilerTime2Index, 0.0);
-  System.realtimeTick(CevalScript.RT_PROFILER0);
+  System.realtimeTick(GlobalScript.RT_PROFILER0);
 end profilerinit;
 
 public function profilerresults
 protected
    Real tg,t1,t2;
 algorithm
-  tg := System.realtimeTock(CevalScript.RT_PROFILER0);
+  tg := System.realtimeTock(GlobalScript.RT_PROFILER0);
   t1 := getGlobalRoot(Global.profilerTime1Index);
   t2 := getGlobalRoot(Global.profilerTime2Index);
   print("Time all: "); print(realString(tg)); print("\n");
@@ -8756,19 +8756,19 @@ end profilertime2;
 
 public function profilerstart1
 algorithm
-   System.realtimeTick(CevalScript.RT_PROFILER1);
+   System.realtimeTick(GlobalScript.RT_PROFILER1);
 end profilerstart1;
 
 public function profilerstart2
 algorithm
-   System.realtimeTick(CevalScript.RT_PROFILER2);
+   System.realtimeTick(GlobalScript.RT_PROFILER2);
 end profilerstart2;
 
 public function profilerstop1
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(CevalScript.RT_PROFILER1);
+   t := System.realtimeTock(GlobalScript.RT_PROFILER1);
    setGlobalRoot(Global.profilerTime1Index,
      realAdd(getGlobalRoot(Global.profilerTime1Index),t));
 end profilerstop1;
@@ -8777,7 +8777,7 @@ public function profilerstop2
 protected
    Real t;
 algorithm
-   t := System.realtimeTock(CevalScript.RT_PROFILER2);
+   t := System.realtimeTock(GlobalScript.RT_PROFILER2);
    setGlobalRoot(Global.profilerTime2Index,
      realAdd(getGlobalRoot(Global.profilerTime2Index),t));
 end profilerstop2;
@@ -8795,7 +8795,7 @@ end profilerreset2;
 public function profilertock1
   output Real t;
 algorithm
-   t := System.realtimeTock(CevalScript.RT_PROFILER1);
+   t := System.realtimeTock(GlobalScript.RT_PROFILER1);
 end profilertock1;
 
 
@@ -8953,17 +8953,17 @@ end setEqSystemMatching;
 
 public function filterEmptySystems
   "Filter out equation systems leaving at least one behind"
-  input EqSystems systs;
-  output EqSystems osysts;
+  input BackendDAE.EqSystems systs;
+  output BackendDAE.EqSystems osysts;
 algorithm
   osysts := filterEmptySystems2(List.select(systs,nonEmptySystem),systs);
 end filterEmptySystems;
 
 protected function filterEmptySystems2
   "Filter out equation systems leaving at least one behind"
-  input EqSystems systs;
-  input EqSystems full;
-  output EqSystems olst;
+  input BackendDAE.EqSystems systs;
+  input BackendDAE.EqSystems full;
+  output BackendDAE.EqSystems olst;
 algorithm
   olst := match (systs,full)
     local
@@ -8975,7 +8975,7 @@ end filterEmptySystems2;
 
 public function getAllVarLst "retrieve all variables of the dae by collecting them from each equation system and combining with known vars"
   input BackendDAE.BackendDAE dae;
-  output list<Var> varLst;
+  output list<BackendDAE.Var> varLst;
 protected
   EqSystems eqs;
   BackendDAE.Variables knvars;

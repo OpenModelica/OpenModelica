@@ -57,6 +57,7 @@ Env.mo \
 Expression.mo \
 ExpressionDump.mo \
 ExpressionSimplify.mo \
+ExpressionSimplifyTypes.mo \
 FGraph.mo \
 FGraphBuild.mo \
 FGraphEnv.mo \
@@ -229,6 +230,7 @@ VarTransform.mo \
 SCRIPT = \
 CevalScript.mo \
 Interactive.mo \
+GlobalScript.mo \
 Refactor.mo \
 StaticScript.mo
 

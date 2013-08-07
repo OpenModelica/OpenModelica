@@ -46,12 +46,12 @@ protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
-protected import CevalScript;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Flags;
+protected import GlobalScript;
 protected import IndexReduction;
 protected import List;
 protected import Util;
@@ -6016,11 +6016,11 @@ algorithm
   syst := randSortSystem(isyst,ishared);
   testMatchingAlgorithms1(matchingAlgorithms,syst,ishared,inMatchingOptions);
 
-  System.realtimeTick(CevalScript.RT_PROFILER0);
+  System.realtimeTick(GlobalScript.RT_PROFILER0);
   (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
   matchingExternalsetIncidenceMatrix(nv,ne,m);
   cheapID := 3;
-  t := System.realtimeTock(CevalScript.RT_PROFILER0);
+  t := System.realtimeTock(GlobalScript.RT_PROFILER0);
   print("SetMEXT:     " +& realString(t) +& "\n");
   extmatchingAlgorithms := {("DFSEXT:   ",1),
                             ("BFSEXT:   ",2),
@@ -6032,12 +6032,12 @@ algorithm
                             ("ABMPEXT   ",8),
                             ("PREXT:    ",10)};
   testExternMatchingAlgorithms1(extmatchingAlgorithms,cheapID,nv,ne);
-  System.realtimeTick(CevalScript.RT_PROFILER0);
+  System.realtimeTick(GlobalScript.RT_PROFILER0);
   vec1 := arrayCreate(ne,-1);
   vec2 := arrayCreate(nv,-1);
   BackendDAEEXT.getAssignment(vec1,vec2);
   print("GetAssEXT:   " +& realString(t) +& "\n");
-  System.realtimeTick(CevalScript.RT_PROFILER0);
+  System.realtimeTick(GlobalScript.RT_PROFILER0);
   //unassigned := checkAssignment(1,ne,vec1,vec2,{});
   //print("Unnasigned: " +& intString(listLength(unassigned)) +& "\n");
   //print("Unassigned:\n");
@@ -6064,9 +6064,9 @@ algorithm
       then ();
     case ((str,matchingAlgorithm)::rest,_,_,_)
       equation
-        System.realtimeTick(CevalScript.RT_PROFILER0);
+        System.realtimeTick(GlobalScript.RT_PROFILER0);
         testMatchingAlgorithm(10,matchingAlgorithm,isyst,ishared,inMatchingOptions);
-        t = System.realtimeTock(CevalScript.RT_PROFILER0);
+        t = System.realtimeTock(GlobalScript.RT_PROFILER0);
         print(str +& realString(realDiv(t,10.0)) +& "\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
@@ -6124,9 +6124,9 @@ algorithm
       then ();
     case ((str,matchingAlgorithm)::rest,_,_,_)
       equation
-        System.realtimeTick(CevalScript.RT_PROFILER0);
+        System.realtimeTick(GlobalScript.RT_PROFILER0);
         testExternMatchingAlgorithm(10,matchingAlgorithm,cheapId,nv,ne);
-        t = System.realtimeTock(CevalScript.RT_PROFILER0);
+        t = System.realtimeTock(GlobalScript.RT_PROFILER0);
         print(str +& realString(realDiv(t,10.0)) +& "\n");
         testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
       then

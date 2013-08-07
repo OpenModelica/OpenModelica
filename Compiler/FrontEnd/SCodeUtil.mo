@@ -95,7 +95,7 @@ algorithm
 
     case (_,_)
       equation
-        setGlobalRoot(Global.instHashIndex, Inst.emptyInstHashTable());
+        Inst.initInstHashTable();
         setGlobalRoot(Global.typesIndex,  Types.createEmptyTypeMemory());
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());

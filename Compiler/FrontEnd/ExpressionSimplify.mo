@@ -44,13 +44,13 @@ public import Absyn;
 public import ClassInf;
 public import DAE;
 public import Error;
-public import SCode;
+public import ExpressionSimplifyTypes;
 
-public type ComponentRef = DAE.ComponentRef;
-public type Ident = String;
-public type Operator = DAE.Operator;
-public type Type = DAE.Type;
-public type Subscript = DAE.Subscript;
+protected type ComponentRef = DAE.ComponentRef;
+protected type Ident = String;
+protected type Operator = DAE.Operator;
+protected type Type = DAE.Type;
+protected type Subscript = DAE.Subscript;
 
 // protected imports
 protected import ComponentReference;
@@ -70,44 +70,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 
-public uniontype Evaluate "The expression should be evaluated to a literal value; return an error if this fails"
-  record NO_EVAL end NO_EVAL;
-  record DO_EVAL end DO_EVAL;
-end Evaluate;
-
-public replaceable type SymbolTable subtypeof Any;
-public type SymbolTableInterface = tuple<SymbolTableLookupValue,SymbolTableLookupVariability,SymbolTableAddScope,SymbolTableRemoveScope>;
-public partial function SymbolTableLookupValue
-  input SymbolTable st;
-  input DAE.ComponentRef cr;
-  output DAE.Exp exp;
-end SymbolTableLookupValue;
-public partial function SymbolTableLookupVariability
-  input SymbolTable st;
-  input DAE.ComponentRef cr;
-  output SCode.Variability var;
-end SymbolTableLookupVariability;
-public partial function SymbolTableAddScope
-  input SymbolTable st;
-  input DAE.ComponentRef cr;
-  input DAE.Exp exp;
-  output SymbolTable ost;
-end SymbolTableAddScope;
-public partial function SymbolTableRemoveScope
-  input SymbolTable st;
-  output SymbolTable ost;
-end SymbolTableRemoveScope;
-public type Options = tuple<Option<tuple<SymbolTable,SymbolTableInterface>>,Evaluate> "I am a stupid tuple because MM does not like type variables in records";
-
-constant Options optionSimplifyOnly = (NONE(),NO_EVAL());
-
-public uniontype IntOp
-  record MULOP end MULOP;
-  record DIVOP end DIVOP;
-  record ADDOP end ADDOP;
-  record SUBOP end SUBOP;
-  record POWOP end POWOP;
-end IntOp;
+protected constant ExpressionSimplifyTypes.Options optionSimplifyOnly = ExpressionSimplifyTypes.optionSimplifyOnly;
 
 public function simplify "function simplify
   Simplifies expressions"
@@ -137,9 +100,9 @@ algorithm
   end match;
 end condsimplify;
 
-public function simplifyWithOptions "Simplifies expressions"
+protected function simplifyWithOptions "Simplifies expressions"
   input DAE.Exp inExp;
-  input Options options;
+  input ExpressionSimplifyTypes.Options options;
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
@@ -147,7 +110,7 @@ algorithm
     local
       DAE.Exp e, eNew;
       Boolean b;
-    case (e,(_,DO_EVAL()))
+    case (e,(_,ExpressionSimplifyTypes.DO_EVAL()))
       equation
         (eNew,_) = simplify1WithOptions(e,options); // Basic local simplifications
         Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, Absyn.dummyInfo);
@@ -199,8 +162,8 @@ end simplify1time;
 public function simplifyWork
 "This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
-  input tuple<DAE.Exp,tuple<Boolean,Options>> inTpl;
-  output tuple<DAE.Exp,tuple<Boolean,Options>> tpl;
+  input tuple<DAE.Exp,tuple<Boolean,ExpressionSimplifyTypes.Options>> inTpl;
+  output tuple<DAE.Exp,tuple<Boolean,ExpressionSimplifyTypes.Options>> tpl;
 algorithm
   tpl := matchcontinue (inTpl)
     local
@@ -219,7 +182,7 @@ algorithm
       DAE.ReductionIterators riters;
       DAE.Dimensions dims;
       DAE.Dimension dim;
-      Options options;
+      ExpressionSimplifyTypes.Options options;
       DAE.CallAttributes attr;
 
     // noEvent propagated to relations and event triggering functions
@@ -503,7 +466,7 @@ public function simplify1WithOptions
   This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
   input DAE.Exp inExp;
-  input Options options;
+  input ExpressionSimplifyTypes.Options options;
   output DAE.Exp outExp;
   output Boolean hasChanged;
 algorithm
@@ -540,7 +503,7 @@ end checkSimplify;
 protected function simplify1FixP
 "Does fixpoint simplify1 max n times"
   input DAE.Exp inExp;
-  input Options inOptions;
+  input ExpressionSimplifyTypes.Options inOptions;
   input Integer n;
   input Boolean cont;
   output DAE.Exp outExp;
@@ -551,7 +514,7 @@ algorithm
       DAE.Exp exp;
       Boolean b;
       String str1,str2;
-      Options options;
+      ExpressionSimplifyTypes.Options options;
     case (exp,_,_,false)
       equation
         // print("End fixp: " +& ExpressionDump.printExpStr(exp) +& "\n");
@@ -3330,7 +3293,7 @@ algorithm
 
     case (DAE.ADD(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
-        val = safeIntOp(ie1,ie2,ADDOP());
+        val = safeIntOp(ie1,ie2,ExpressionSimplifyTypes.ADDOP());
       then
         val;
 
@@ -3362,7 +3325,7 @@ algorithm
 
     case (DAE.SUB(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
-         val = safeIntOp(ie1,ie2,SUBOP());
+         val = safeIntOp(ie1,ie2,ExpressionSimplifyTypes.SUBOP());
       then
         val;
 
@@ -3388,7 +3351,7 @@ algorithm
 
     case (DAE.MUL(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
-        val = safeIntOp(ie1,ie2,MULOP());
+        val = safeIntOp(ie1,ie2,ExpressionSimplifyTypes.MULOP());
       then
         val;
 
@@ -3414,7 +3377,7 @@ algorithm
 
     case (DAE.DIV(ty = _),DAE.ICONST(integer = ie1),DAE.ICONST(integer = ie2))
       equation
-         val = safeIntOp(ie1,ie2,DIVOP());
+         val = safeIntOp(ie1,ie2,ExpressionSimplifyTypes.DIVOP());
       then
         val;
 
@@ -3570,7 +3533,7 @@ public function safeIntOp
   "
   input Integer val1;
   input Integer val2;
-  input IntOp op;
+  input ExpressionSimplifyTypes.IntOp op;
   output DAE.Exp outv;
 algorithm
   outv := match(val1, val2, op)
@@ -3578,7 +3541,7 @@ algorithm
       Real rv1,rv2,rv3;
       Integer ires;
 
-    case (_,_, MULOP())
+    case (_,_, ExpressionSimplifyTypes.MULOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);
@@ -3587,13 +3550,13 @@ algorithm
       then
         outv;
 
-    case (_,_, DIVOP())
+    case (_,_, ExpressionSimplifyTypes.DIVOP())
       equation
         ires = intDiv(val1,val2);
       then
         DAE.ICONST(ires);
 
-    case (_,_, SUBOP())
+    case (_,_, ExpressionSimplifyTypes.SUBOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);
@@ -3602,7 +3565,7 @@ algorithm
       then
         outv;
 
-    case (_,_, ADDOP())
+    case (_,_, ExpressionSimplifyTypes.ADDOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);
@@ -3611,7 +3574,7 @@ algorithm
       then
         outv;
 
-    case (_,_, POWOP())
+    case (_,_, ExpressionSimplifyTypes.POWOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);

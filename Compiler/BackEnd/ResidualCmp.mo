@@ -63,6 +63,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import GlobalScript;
 protected import List;
 protected import PartFn;
 protected import SCode;
@@ -97,7 +98,7 @@ algorithm
   (libs, includes, includeDirs, recordDecls, functions) := createFunctions(p, dae, functionTree, className);
   residualcmp := createResidualCmp(dae,className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, recordDecls, args);
 
-  Debug.execStat("ResidualCmp",CevalScript.RT_CLOCK_SIMCODE);
+  Debug.execStat("ResidualCmp",GlobalScript.RT_CLOCK_SIMCODE);
 
   //Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
 end generateModelCode;

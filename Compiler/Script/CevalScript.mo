@@ -56,6 +56,7 @@ public import Ceval;
 public import DAE;
 public import Env;
 public import Error;
+public import GlobalScript;
 public import Interactive;
 public import Dependency;
 public import Values;
@@ -128,24 +129,6 @@ protected import ErrorExt;
 protected import FGraphEnv;
 protected import FGraph;
 
-public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
-public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
-public constant Integer RT_CLOCK_BUILD_MODEL = 10;
-public constant Integer RT_CLOCK_EXECSTAT_MAIN = Inst.RT_CLOCK_EXECSTAT_MAIN /* 11 */;
-public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES = 12;
-public constant Integer RT_CLOCK_FRONTEND = 13;
-public constant Integer RT_CLOCK_BACKEND = 14;
-public constant Integer RT_CLOCK_SIMCODE = 15;
-public constant Integer RT_CLOCK_LINEARIZE = 16;
-public constant Integer RT_CLOCK_TEMPLATES = 17;
-public constant Integer RT_CLOCK_UNCERTAINTIES = 18;
-public constant Integer RT_PROFILER0=19;
-public constant Integer RT_PROFILER1=20;
-public constant Integer RT_PROFILER2=21;
-public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=22;
-public constant Integer RT_CLOCK_USER_RESERVED = 23;
-public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
-
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("simulationOptions",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -182,41 +165,22 @@ protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResu
     ("timeFrontend",   Values.REAL(0.0))
   };
 
-public
-uniontype SimulationOptions "these are the simulation/buildModel* options"
-  record SIMULATION_OPTIONS "simulation/buildModel* options"
-    DAE.Exp startTime "start time, default 0.0";
-    DAE.Exp stopTime "stop time, default 1.0";
-    DAE.Exp numberOfIntervals "number of intervals, default 500";
-    DAE.Exp stepSize "stepSize, default (stopTime-startTime)/numberOfIntervals";
-    DAE.Exp tolerance "tolerance, default 1e-6";
-    DAE.Exp method "method, default 'dassl'";
-    DAE.Exp fileNamePrefix "file name prefix, default ''";
-    DAE.Exp options "options, default ''";
-    DAE.Exp outputFormat "output format, default 'plt'";
-    DAE.Exp variableFilter "variable filter, regex does whole string matching, i.e. it becomes ^.*$ in the runtime";
-    DAE.Exp measureTime "Enables time measurements, default false";
-    DAE.Exp cflags "Compiler flags, in addition to MODELICAUSERCFLAGS";
-    DAE.Exp simflags "Flags sent to the simulation executable (doesn't do anything for buildModel)";
-  end SIMULATION_OPTIONS;
-end SimulationOptions;
+protected constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default startTime";
+protected constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
+protected constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
+protected constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
+protected constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
+protected constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
+protected constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
+protected constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default options";
+protected constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
+protected constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
+protected constant DAE.Exp defaultMeasureTime       = DAE.BCONST(false)   "time measurement disabled by default";
+protected constant DAE.Exp defaultCflags            = DAE.SCONST("")      "default compiler flags";
+protected constant DAE.Exp defaultSimflags          = DAE.SCONST("")      "default simulation flags";
 
-public constant DAE.Exp defaultStartTime         = DAE.RCONST(0.0)     "default startTime";
-public constant DAE.Exp defaultStopTime          = DAE.RCONST(1.0)     "default stopTime";
-public constant DAE.Exp defaultNumberOfIntervals = DAE.ICONST(500)     "default numberOfIntervals";
-public constant DAE.Exp defaultStepSize          = DAE.RCONST(0.002)   "default stepSize";
-public constant DAE.Exp defaultTolerance         = DAE.RCONST(1e-6)    "default tolerance";
-public constant DAE.Exp defaultMethod            = DAE.SCONST("dassl") "default method";
-public constant DAE.Exp defaultFileNamePrefix    = DAE.SCONST("")      "default fileNamePrefix";
-public constant DAE.Exp defaultOptions           = DAE.SCONST("")      "default options";
-public constant DAE.Exp defaultOutputFormat      = DAE.SCONST("mat")   "default outputFormat";
-public constant DAE.Exp defaultVariableFilter    = DAE.SCONST(".*")    "default variableFilter; does whole string matching, i.e. it becomes ^.*$ in the runtime";
-public constant DAE.Exp defaultMeasureTime       = DAE.BCONST(false)   "time measurement disabled by default";
-public constant DAE.Exp defaultCflags            = DAE.SCONST("")      "default compiler flags";
-public constant DAE.Exp defaultSimflags          = DAE.SCONST("")      "default simulation flags";
-
-public constant SimulationOptions defaultSimulationOptions =
-  SIMULATION_OPTIONS(
+protected constant GlobalScript.SimulationOptions defaultSimulationOptions =
+  GlobalScript.SIMULATION_OPTIONS(
     defaultStartTime,
     defaultStopTime,
     defaultNumberOfIntervals,
@@ -232,7 +196,7 @@ public constant SimulationOptions defaultSimulationOptions =
     defaultSimflags
     ) "default simulation options";
 
-public constant list<String> simulationOptionsNames =
+protected constant list<String> simulationOptionsNames =
   {
     "startTime",
     "stopTime",
@@ -354,7 +318,7 @@ algorithm
 end cevalCurrentSimulationResultExp;
 
 public function convertSimulationOptionsToSimCode "converts SimulationOptions to SimCode.SimulationSettings"
-  input SimulationOptions opts;
+  input GlobalScript.SimulationOptions opts;
   output SimCode.SimulationSettings settings;
 algorithm
   settings := match(opts)
@@ -364,7 +328,7 @@ algorithm
     String method,format,varFilter,cflags,options;
     Boolean measureTime;
 
-    case(SIMULATION_OPTIONS(
+    case(GlobalScript.SIMULATION_OPTIONS(
       DAE.RCONST(startTime),
       DAE.RCONST(stopTime),
       DAE.ICONST(nIntervals),
@@ -400,10 +364,10 @@ public function buildSimulationOptions
   input DAE.Exp measureTime;
   input DAE.Exp cflags;
   input DAE.Exp simflags;
-  output SimulationOptions outSimulationOptions;
+  output GlobalScript.SimulationOptions outSimulationOptions;
 algorithm
   outSimulationOptions :=
-    SIMULATION_OPTIONS(
+    GlobalScript.SIMULATION_OPTIONS(
     startTime,
     stopTime,
     numberOfIntervals,
@@ -423,27 +387,28 @@ end buildSimulationOptions;
 public function getSimulationOption
 "@author: adrpo
   get the value from simulation option"
-  input SimulationOptions inSimOpt;
+  input GlobalScript.SimulationOptions inSimOpt;
   input String optionName;
   output DAE.Exp outOptionValue;
 algorithm
   outOptionValue := matchcontinue(inSimOpt, optionName)
     local
-      DAE.Exp e; String name, msg;
+      DAE.Exp e;
+      String name, msg;
 
-    case (SIMULATION_OPTIONS(startTime = e),         "startTime")         then e;
-    case (SIMULATION_OPTIONS(stopTime = e),          "stopTime")          then e;
-    case (SIMULATION_OPTIONS(numberOfIntervals = e), "numberOfIntervals") then e;
-    case (SIMULATION_OPTIONS(stepSize = e),          "stepSize")          then e;
-    case (SIMULATION_OPTIONS(tolerance = e),         "tolerance")         then e;
-    case (SIMULATION_OPTIONS(method = e),            "method")            then e;
-    case (SIMULATION_OPTIONS(fileNamePrefix = e),    "fileNamePrefix")    then e;
-    case (SIMULATION_OPTIONS(options = e),           "options")           then e;
-    case (SIMULATION_OPTIONS(outputFormat = e),      "outputFormat")      then e;
-    case (SIMULATION_OPTIONS(variableFilter = e),    "variableFilter")    then e;
-    case (SIMULATION_OPTIONS(measureTime = e),       "measureTime")       then e;
-    case (SIMULATION_OPTIONS(cflags = e),            "cflags")            then e;
-    case (SIMULATION_OPTIONS(simflags = e),          "simflags")          then e;
+    case (GlobalScript.SIMULATION_OPTIONS(startTime = e),         "startTime")         then e;
+    case (GlobalScript.SIMULATION_OPTIONS(stopTime = e),          "stopTime")          then e;
+    case (GlobalScript.SIMULATION_OPTIONS(numberOfIntervals = e), "numberOfIntervals") then e;
+    case (GlobalScript.SIMULATION_OPTIONS(stepSize = e),          "stepSize")          then e;
+    case (GlobalScript.SIMULATION_OPTIONS(tolerance = e),         "tolerance")         then e;
+    case (GlobalScript.SIMULATION_OPTIONS(method = e),            "method")            then e;
+    case (GlobalScript.SIMULATION_OPTIONS(fileNamePrefix = e),    "fileNamePrefix")    then e;
+    case (GlobalScript.SIMULATION_OPTIONS(options = e),           "options")           then e;
+    case (GlobalScript.SIMULATION_OPTIONS(outputFormat = e),      "outputFormat")      then e;
+    case (GlobalScript.SIMULATION_OPTIONS(variableFilter = e),    "variableFilter")    then e;
+    case (GlobalScript.SIMULATION_OPTIONS(measureTime = e),       "measureTime")       then e;
+    case (GlobalScript.SIMULATION_OPTIONS(cflags = e),            "cflags")            then e;
+    case (GlobalScript.SIMULATION_OPTIONS(simflags = e),          "simflags")          then e;
     case (_,                                         name)
       equation
         msg = "Unknown simulation option: " +& name;
@@ -459,11 +424,11 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
   input Interactive.SymbolTable inSymTab;
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
-  output SimulationOptions outSimOpt;
+  output GlobalScript.SimulationOptions outSimOpt;
 algorithm
   outSimOpt := matchcontinue (inSymTab, inModelPath, inFileNamePrefix)
     local
-      SimulationOptions defaults, simOpt;
+      GlobalScript.SimulationOptions defaults, simOpt;
       String experimentAnnotationStr;
       list<Absyn.NamedArg> named;
 
@@ -505,14 +470,14 @@ algorithm
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
 protected function setFileNamePrefixInSimulationOptions
-  input  SimulationOptions inSimOpt;
+  input  GlobalScript.SimulationOptions inSimOpt;
   input  String inFileNamePrefix;
-  output SimulationOptions outSimOpt;
+  output GlobalScript.SimulationOptions outSimOpt;
 protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags;
 algorithm
-  SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, measureTime, cflags, simflags) := inSimOpt;
-  outSimOpt := SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, measureTime, cflags, simflags);
+  GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, measureTime, cflags, simflags) := inSimOpt;
+  outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, measureTime, cflags, simflags);
 end setFileNamePrefixInSimulationOptions;
 
 protected function getConst
@@ -558,15 +523,15 @@ end getConst;
 protected function populateSimulationOptions
 "@auhtor: adrpo
   populate simulation options"
-  input SimulationOptions inSimOpt;
+  input GlobalScript.SimulationOptions inSimOpt;
   input list<Absyn.NamedArg> inExperimentSettings;
-  output SimulationOptions outSimOpt;
+  output GlobalScript.SimulationOptions outSimOpt;
 algorithm
   outSimOpt := matchcontinue(inSimOpt, inExperimentSettings)
     local
       Absyn.Exp exp;
       list<Absyn.NamedArg> rest;
-      SimulationOptions simOpt;
+      GlobalScript.SimulationOptions simOpt;
       DAE.Exp startTime;
       DAE.Exp stopTime;
       DAE.Exp numberOfIntervals;
@@ -583,56 +548,56 @@ algorithm
 
     case (_, {}) then inSimOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix,  options, outputFormat, variableFilter, measureTime, cflags, simflags),
+    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix,  options, outputFormat, variableFilter, measureTime, cflags, simflags),
           Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
       equation
         tolerance = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
+    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
           Absyn.NAMEDARG(argName = "StartTime", argValue = exp)::rest)
       equation
         startTime = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
+    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
           Absyn.NAMEDARG(argName = "StopTime", argValue = exp)::rest)
       equation
         stopTime = getConst(exp, DAE.T_REAL_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
+    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
           Absyn.NAMEDARG(argName = "NumberOfIntervals", argValue = exp)::rest)
       equation
         numberOfIntervals = getConst(exp, DAE.T_INTEGER_DEFAULT);
         simOpt = populateSimulationOptions(
-          SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+          GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                              fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags),
              rest);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
+    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
           Absyn.NAMEDARG(argName = "Interval", argValue = exp)::rest)
       equation
         DAE.RCONST(rStepSize) = getConst(exp, DAE.T_REAL_DEFAULT);
         // a bit different for Interval, handle it LAST!!!!
-        SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+        GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                            fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags) =
           populateSimulationOptions(inSimOpt, rest);
 
@@ -643,12 +608,12 @@ algorithm
        numberOfIntervals = DAE.ICONST(iNumberOfIntervals);
        stepSize = DAE.RCONST(rStepSize);
 
-       simOpt = SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
+       simOpt = GlobalScript.SIMULATION_OPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,
                                    fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags);
       then
         simOpt;
 
-    case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
+    case (GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags),
           Absyn.NAMEDARG(argName = name, argValue = exp)::rest)
       equation
         msg = "Ignoring unknown experiment annotation option: " +& name +& " = " +& Dump.printExpStr(exp);
@@ -1347,8 +1312,8 @@ algorithm
 
     case (cache,env,"buildModel",vals,st,_)
       equation
-        List.map_0(buildModelClocks,System.realtimeClear);
-        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
+        List.map_0(GlobalScript.buildModelClocks,System.realtimeClear);
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,method_str,outputFormat_str,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
       then
@@ -1407,7 +1372,7 @@ algorithm
 
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
       equation
-        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
 
         cit = winCitation();
@@ -1422,11 +1387,11 @@ algorithm
         logFile = stringAppend(executable1,".log");
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > ",logFile," 2>&1"});
-        System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         resI = System.systemCall(sim_call);
-        timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
-        timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
+        timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
@@ -1491,7 +1456,7 @@ algorithm
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
       equation
 
-        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         // ensure that generateSymbolicLinearization has been activated.
         //we need to ensure that linearization is done before
         //we remove all unsued equations.
@@ -1512,13 +1477,13 @@ algorithm
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         strlinearizeTime = realString(linearizeTime);
         sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags," > ",logFile," 2>&1"});
-        System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
         0 = System.systemCall(sim_call);
 
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
-        timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
+        timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         simValue = createSimulationResult(
            result_file,
            simOptionsAsString(vals),
@@ -3668,7 +3633,7 @@ algorithm
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
 
-        System.realtimeTick(RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(GlobalScript.RT_CLOCK_BUILD_MODEL);
         init_filename = filenameprefix +& "_init.xml"; //a hack ? should be at one place somewhere
         //win1 = getWithinStatement(classname);
 
@@ -3677,7 +3642,7 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
         p = setBuildTime(p,classname);
         st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
-        timeCompile = System.realtimeTock(RT_CLOCK_BUILD_MODEL);
+        timeCompile = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
         resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
         (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);

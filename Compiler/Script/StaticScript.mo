@@ -7,7 +7,7 @@ public import Env;
 public import Interactive;
 public import Prefix;
 
-public type Ident = String;
+protected type Ident = String;
 
 protected import Ceval;
 protected import CevalScript;
@@ -16,6 +16,7 @@ protected import Error;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionSimplify;
+protected import GlobalScript;
 protected import Static;
 protected import Types;
 protected import Values;
@@ -32,7 +33,7 @@ protected function calculateSimulationTimes
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  input CevalScript.SimulationOptions inSimOpt;
+  input GlobalScript.SimulationOptions inSimOpt;
   output Env.Cache outCache;
   output DAE.Exp startTime "start time, default 0.0";
   output DAE.Exp stopTime "stop time, default 1.0";
@@ -131,7 +132,7 @@ algorithm
       Absyn.Path className;
       DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
       DAE.Exp fileNamePrefix,options,outputFormat,variableFilter,measureTime;
-      CevalScript.SimulationOptions defaulSimOpt;
+      GlobalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
       Env.Env env;
       Values.Value v;

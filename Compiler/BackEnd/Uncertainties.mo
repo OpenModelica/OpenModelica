@@ -1,50 +1,50 @@
 encapsulated package Uncertainties
 
-  import DAE;
-  import Absyn;
-  import Algorithm;
-  import BackendDAE;
-  import BackendVariable;
-  import List;
-  import Env;
-  import Interactive;
-  import Values;
-  import SCode;
-  import Flags;
-  import Error;
-  import System;
-  import CevalScript;
-  import Dependency;
-  import SCodeUtil;
-  import Inst;
-  import InnerOuter;
-  import DAEUtil;
-  import BackendDAECreate;
-  import BackendDAEUtil;
-  import BackendDAETransform;
-  import BackendEquation;
-  import HashTable;
-  import ComponentReference;
-  import BaseHashTable;
-  import Expression;
-  import ClassInf;
-  import BackendVarTransform;
-  import ExpressionSolve;
-  import ExpressionSimplify;
-  import MathematicaDump;
-  import Matching;
-  import BackendDAEEXT;
-  import Util;
-  import Print;
-  import HashSet;
-  import HashTable2;
-  import BaseHashSet;
+public import Absyn;
+public import BackendDAE;
+public import BackendVarTransform;
+public import DAE;
+public import Env;
+public import HashTable;
+public import Interactive;
+public import Values;
 
-type ExtIncidenceMatrixRow = tuple<Integer,list<Integer>>;
-type ExtIncidenceMatrix = list<ExtIncidenceMatrixRow>;
+protected import Algorithm;
+protected import BackendVariable;
+protected import List;
+protected import SCode;
+protected import Flags;
+protected import Error;
+protected import System;
+protected import GlobalScript;
+protected import Dependency;
+protected import SCodeUtil;
+protected import Inst;
+protected import InnerOuter;
+protected import DAEUtil;
+protected import BackendDAECreate;
+protected import BackendDAEUtil;
+protected import BackendDAETransform;
+protected import BackendEquation;
+protected import ComponentReference;
+protected import BaseHashTable;
+protected import Expression;
+protected import ClassInf;
+protected import ExpressionSolve;
+protected import ExpressionSimplify;
+protected import MathematicaDump;
+protected import Matching;
+protected import BackendDAEEXT;
+protected import Util;
+protected import Print;
+protected import HashSet;
+protected import HashTable2;
+protected import BaseHashSet;
 
+protected type ExtIncidenceMatrixRow = tuple<Integer,list<Integer>>;
+protected type ExtIncidenceMatrix = list<ExtIncidenceMatrixRow>;
 
-uniontype AliasSet
+protected uniontype AliasSet
   record ALIASSET
     HashSet.HashSet symbols;
     HashTable2.HashTable expl;
@@ -622,12 +622,12 @@ algorithm
     Env.Cache cache;
   case(_,_,_)
     equation
-      System.realtimeTick(CevalScript.RT_CLOCK_UNCERTAINTIES);
+      System.realtimeTick(GlobalScript.RT_CLOCK_UNCERTAINTIES);
       ptot = Dependency.getTotalProgram(className,p);
       p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
       (cache,env,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
-      timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_UNCERTAINTIES);
-      System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
+      timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_UNCERTAINTIES);
+      System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
     then (dae,cache,env);
   else

@@ -47,7 +47,6 @@ protected import Absyn;
 protected import BackendDAEUtil;
 protected import BaseHashSet;
 protected import BaseHashTable;
-protected import CevalScript;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -56,6 +55,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import GlobalScript;
 protected import HashSet;
 protected import List;
 protected import SCode;
@@ -2315,7 +2315,7 @@ algorithm
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
         print("- vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
-        Debug.execStat("vararrayAdd",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        Debug.execStat("vararrayAdd",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
         fail();
     case (_,_)

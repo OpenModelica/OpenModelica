@@ -61,6 +61,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import ExpressionSimplifyTypes;
 protected import Flags;
 protected import Inst;
 protected import NFInstUtil;
@@ -79,11 +80,9 @@ protected import ErrorExt;
 protected import SCodeDump;
 //protected import DAEDump;
 
-public
-type Ident = DAE.Ident "an identifier";
-
-public
-type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+protected type Ident = DAE.Ident "an identifier";
+protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+protected constant Boolean alwaysUnroll = true;
 
 public function instEquation
 "function instEquation
@@ -94,7 +93,7 @@ public function instEquation
   to NON_INITIAL."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -105,7 +104,7 @@ public function instEquation
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -150,7 +149,7 @@ protected function instEEquation
   Instantiation of EEquation, used in for loops and if-equations."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -161,7 +160,7 @@ protected function instEEquation
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache cache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -204,7 +203,7 @@ public function instInitialEquation
   set to INITIAL."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -215,7 +214,7 @@ public function instInitialEquation
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -256,7 +255,7 @@ protected function instEInitialEquation
   Instantiates initial EEquation used in for loops and if equations "
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -267,7 +266,7 @@ protected function instEInitialEquation
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -307,7 +306,7 @@ protected function instEquationCommon
   equations and connection sets."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -318,7 +317,7 @@ protected function instEquationCommon
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -338,7 +337,7 @@ protected function instEquationCommon2
   equations and connection sets."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -350,7 +349,7 @@ protected function instEquationCommon2
   input Integer errorCount;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -366,7 +365,7 @@ algorithm
       equation
         state = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph);
-        (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
+        (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplifyTypes.optionSimplifyOnly)));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
 
     case (_,_,_,_,_,_,_,_,_,_,_,_)
@@ -399,7 +398,7 @@ protected function instEquationCommonWork
   equations and connection sets."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -410,7 +409,7 @@ protected function instEquationCommonWork
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -532,7 +531,7 @@ algorithm
         generateNoConstantBindingError(containsEmpty, info);
         blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
@@ -547,7 +546,7 @@ algorithm
         (cache, _,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),DAE.C_PARAM()) = Types.propsAnd(props);
         b = Util.selectList({true}, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
@@ -561,7 +560,7 @@ algorithm
         (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG(),0);
         blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
-        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, alwaysUnroll, graph);
       then
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph);
 
@@ -576,7 +575,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache, env,ih, mod, pre, csets, ci_state, tb, false, impl, graph);
-        (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, Inst.alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
         dae = DAE.DAE({DAE.IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
@@ -592,7 +591,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl, graph);
-        (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialEquation, fb, impl, Inst.alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        (cache,env_2,ih,DAE.DAE(daeElts2),_,ci_state_2,graph) = Inst.instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
         dae = DAE.DAE({DAE.INITIAL_IF_EQUATION(expl1,daeLLst,daeElts2,source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
@@ -609,7 +608,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
         (cache,env_2,ih,DAE.DAE(daeElts3 as (daeElt2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state,
           SCode.EQ_WHEN(ee,eel,eex,SCode.noComment,info), initial_, impl, graph);
@@ -633,7 +632,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
         // TODO: fix error reporting, print(" exps: " +& stringDelimitList(List.map(lhsCrefs,ComponentReference.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
@@ -1127,7 +1126,7 @@ protected function unroll "function: unroll
   for each iteration."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -1179,7 +1178,7 @@ algorithm
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) =
-          Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEEquation, eqs, impl, Inst.alwaysUnroll, graph);
+          Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEEquation, eqs, impl, alwaysUnroll, graph);
         (cache,dae2,csets_2,graph) = unroll(cache, env, ih, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
@@ -1195,7 +1194,7 @@ algorithm
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         // Use instEInitialEquation
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) =
-          Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEInitialEquation, eqs, impl, Inst.alwaysUnroll, graph);
+          Inst.instList(cache, env_2, ih, mods, pre, csets, ci_state, instEInitialEquation, eqs, impl, alwaysUnroll, graph);
         (cache,dae2,csets_2,graph) = unroll(cache, env, ih, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
@@ -1864,7 +1863,7 @@ protected function unrollForLoop
  unroll for loops that contains when statements"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
   input String iterator;
@@ -1929,7 +1928,7 @@ protected function instForStatement
 "Helper function for instStatement"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
   input String iterator;
@@ -2073,7 +2072,7 @@ protected function instForStatement_dispatch
 "function for instantiating a for statement"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
   input String iterator;
@@ -2215,7 +2214,7 @@ public function instAlgorithm
   This function converts an algorithm section."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -2226,7 +2225,7 @@ public function instAlgorithm
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -2259,7 +2258,7 @@ algorithm
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.NON_INITIAL(), impl, unrollForLoops, {});
-        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
+        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplifyTypes.optionSimplifyOnly)));
 
         dae = DAE.DAE({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
@@ -2288,7 +2287,7 @@ public function instInitialAlgorithm
   This function converts an algorithm section."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -2299,7 +2298,7 @@ public function instInitialAlgorithm
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -2327,7 +2326,7 @@ algorithm
         source = DAEUtil.createElementSource(Absyn.dummyInfo, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         (cache,statements_1) = instStatements(cache, env, ih, pre, ci_state, statements, source, SCode.INITIAL(), impl, unrollForLoops, {});
-        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
+        (statements_1,_) = DAEUtil.traverseDAEEquationsStmts(statements_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplifyTypes.optionSimplifyOnly)));
 
         dae = DAE.DAE({DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)});
       then
@@ -2401,7 +2400,7 @@ public function instStatements
   This function converts a list of algorithm statements."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
   input list<SCode.Statement> inAbsynAlgorithmLst;
@@ -2446,7 +2445,7 @@ function: instStatement
   be used in the DAE output."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
   input SCode.Statement inAlgorithm;
@@ -2467,7 +2466,7 @@ function: instStatement
   be used in the DAE output."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
   input SCode.Statement inAlgorithm;
@@ -2849,7 +2848,7 @@ protected function loopOverRange
   the body of the loop once for each iteration."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
   input Ident inIdent;
@@ -2934,7 +2933,7 @@ protected function instIfTrueBranches
  if, elseif-1 ... elseif-n."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -2945,7 +2944,7 @@ protected function instIfTrueBranches
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<list<DAE.Element>> outDaeLst;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -2974,7 +2973,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),false,impl,graph)
       equation
         (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) =
-           Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, e, impl, Inst.alwaysUnroll, graph);
+           Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, e, impl, alwaysUnroll, graph);
         (cache,env_2,ih,llb,csets_2,ci_state_2,graph) =
            instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, false, impl, graph);
       then
@@ -2983,7 +2982,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),true,impl,graph)
       equation
         (cache,env_1,ih,DAE.DAE(elts),csets_1,ci_state_1,graph) =
-           Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEInitialEquation, e, impl, Inst.alwaysUnroll, graph);
+           Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEInitialEquation, e, impl, alwaysUnroll, graph);
         (cache,env_2,ih,llb,csets_2,ci_state_2,graph) =
            instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, true, impl, graph);
       then
@@ -3004,7 +3003,7 @@ protected function instElseIfs
   This function helps instStatement to handle elseif parts."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input ClassInf.State ci_state;
   input list<tuple<Absyn.Exp, list<SCode.Statement>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
@@ -3058,7 +3057,7 @@ protected function instConnect "
   Hence, a DAE.Element list is returned as well."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
@@ -3068,7 +3067,7 @@ protected function instConnect "
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -3281,7 +3280,7 @@ protected function connectExpandableConnectors
   this function handle the connections of expandable connectors"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
@@ -3291,7 +3290,7 @@ protected function connectExpandableConnectors
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -3715,7 +3714,7 @@ protected function connectExpandableVariables
   that contain components"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef inComponentRefLeft;
@@ -3726,7 +3725,7 @@ protected function connectExpandableVariables
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -4097,7 +4096,7 @@ public function connectComponents "
   A DAE.Element list is returned for assert statements."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix3;
   input DAE.ComponentRef cr1;
@@ -4115,7 +4114,7 @@ public function connectComponents "
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -4370,7 +4369,7 @@ end generateConnectAssert;
 protected function connectArrayComponents
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
   input list<DAE.ComponentRef> inLhsCrefs;
@@ -4388,7 +4387,7 @@ protected function connectArrayComponents
   input Absyn.Info inInfo;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -4435,7 +4434,7 @@ protected function connectVars
   using the function connectComponents."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Connect.Sets inSets;
   input Prefix.Prefix inPrefix;
   input DAE.ComponentRef inComponentRef3;
@@ -4453,7 +4452,7 @@ protected function connectVars
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae;
   output ConnectionGraph.ConnectionGraph outGraph;
@@ -4842,7 +4841,7 @@ end checkForNestedWhenInEq;
 protected function instAssignment
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy ih;
+  input InnerOuter.InstHierarchy ih;
   input Prefix.Prefix inPre;
   input SCode.Statement alg;
   input DAE.ElementSource source;
@@ -4886,7 +4885,7 @@ end instAssignment;
 protected function instAssignment2
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input Absyn.Exp var;
   input DAE.Exp value;
@@ -5112,7 +5111,7 @@ protected function instParForStatement
 "Helper function for instStatement"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
   input String iterator;
@@ -5163,7 +5162,7 @@ protected function instParForStatement_dispatch
 "function for instantiating a for statement"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input ClassInf.State ci_state;
   input String iterator;

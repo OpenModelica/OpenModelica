@@ -91,21 +91,17 @@ public import Prefix;
 public import SCode;
 public import UnitAbsyn;
 
-public
+protected
 constant Boolean alwaysUnroll = true;
 constant Boolean neverUnroll = false;
-
-constant Integer RT_CLOCK_EXECSTAT_MAIN = 11;
 
 // **
 // These type aliases are introduced to make the code a little more readable.
 // **
 
-public
-type Ident = DAE.Ident "an identifier";
+protected type Ident = DAE.Ident "an identifier";
 
-public
-type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 public uniontype CallingScope "
 Calling scope is used to determine when unconnected flow variables should be set to zero."
@@ -191,12 +187,12 @@ protected function instantiateClass_dispatch
  instantiate a class.
  if this function fails with stack overflow, it will be caught in the caller"
   input Env.Cache inCache;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
   (outCache,outEnv,outIH,outDAElist) := match (inCache,inIH,inProgram,inPath)
@@ -362,12 +358,12 @@ public function instantiateClass
   modifications, and then the specified class is instantiated in the
   function instClassInProgram"
   input Env.Cache inCache;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
   (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
@@ -535,12 +531,12 @@ public function instantiatePartialClass
  It does so by converting the partial class into a non partial class.
  Currently used by: MathCore.modelEquations, CevalScript.checkModel"
   input Env.Cache inCache;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
   (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
@@ -611,12 +607,12 @@ public function instantiateClassImplicit
   Similar to instantiate_class, i.e. instantation of arbitrary classes
   but this one instantiates the class implicit, which is less costly."
   input Env.Cache inCache;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
   (outCache,outEnv,outIH,outDAElist) := matchcontinue (inCache,inIH,inProgram,inPath)
@@ -668,12 +664,12 @@ public function instantiateFunctionImplicit
   Similar to instantiateClassImplict, i.e. instantation of arbitrary
   classes but this one instantiates the class implicit for functions."
   input Env.Cache inCache;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inIH,inProgram,inPath)
     local
@@ -756,13 +752,13 @@ protected function instClassInProgram
   "Instantiates a specific top level class in a Program."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   input DAE.ElementSource inSource;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
   (outCache, outEnv, outIH, outDae) :=
@@ -811,12 +807,12 @@ protected function instClassInProgramImplicit
   "Implicitly instantitates a specific top level class in a Program."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
   (outCache, outEnv, outIH, outDae) :=
@@ -854,12 +850,12 @@ protected function instFunctionInProgramImplicit
   "Implicitly instantiates a specific top level function in a Program."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
@@ -890,11 +886,11 @@ protected function instClassDecls
   See also partialInstClassIn."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
   (outCache,outEnv,outIH,outDae) := match (inCache,inEnv,inIH,inProgram)
@@ -951,7 +947,7 @@ public function instClass
    o Generate equations from the connection sets built during instantiation"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -963,7 +959,7 @@ public function instClass
   input Connect.Sets inSets;
   output Env.Cache cache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -1331,7 +1327,7 @@ protected function instClassBasictype
   This is new functionality in Modelica v 2.2."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -1342,7 +1338,7 @@ protected function instClassBasictype
   input Connect.Sets inSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -1409,7 +1405,7 @@ public function instClassIn "
   (e.g. if a function uses a constant in its body)"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -1424,7 +1420,7 @@ public function instClassIn "
   input Option<DAE.ComponentRef> instSingleCref;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -1509,7 +1505,7 @@ public function instClassIn2
  (e.g. if a function uses a constant in its body)"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -1524,7 +1520,7 @@ public function instClassIn2
   input Option<DAE.ComponentRef> instSingleCref;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -1776,7 +1772,7 @@ public function instClassIn_dispatch
   (e.g. if a function uses a constant in its body)"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -1791,7 +1787,7 @@ public function instClassIn_dispatch
   input Option<DAE.ComponentRef> instSingleCref;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2403,7 +2399,7 @@ protected function instBuiltinAttribute
   Help function to e.g. instRealClass, etc."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Ident id;
+  input String id;
   input Option<Values.Value> optVal;
   input DAE.Exp bind;
   input DAE.Type inExpectedTp;
@@ -2534,7 +2530,7 @@ public function partialInstClassIn
   inherited classes."
   input Env.Cache inCache;
   input .Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
@@ -2544,7 +2540,7 @@ public function partialInstClassIn
   input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,numIter)
@@ -2676,7 +2672,7 @@ protected function partialInstClassIn_dispatch
   inherited classes."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
@@ -2687,7 +2683,7 @@ protected function partialInstClassIn_dispatch
   input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,partialInst,numIter)
@@ -2896,7 +2892,7 @@ protected function instClassdef "
   implicit instantiation and implicit package/function instantiation."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
@@ -2916,7 +2912,7 @@ protected function instClassdef "
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -2993,7 +2989,7 @@ protected function checkExtendsForTypeRestiction
   This function will check extends for Modelica 3.1 restrictions"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Restriction inRestriction;
   input list<SCode.Element> inSCodeElementLst;
 algorithm
@@ -3040,7 +3036,7 @@ class definition as a it would extend a basic
 type"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
@@ -3058,7 +3054,7 @@ type"
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -3203,7 +3199,7 @@ protected function instClassdef2 "
   implicit instantiation and implicit package/function instantiation."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
@@ -3224,7 +3220,7 @@ protected function instClassdef2 "
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -4149,7 +4145,7 @@ protected function instClassDefHelper
  MetaModelica extension. KS TODO: Document this function!!!!"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input list<Absyn.TypeSpec> inSpecs;
   input Prefix.Prefix inPre;
   input InstDims inDims;
@@ -4158,7 +4154,7 @@ protected function instClassDefHelper
   input Connect.Sets inSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<DAE.Type> outType;
   output Connect.Sets outSets;
   output Option<SCode.Attributes> outAttr;
@@ -4230,12 +4226,12 @@ protected function instantiateExternalObject
  functions and create a DAE element containing these two."
   input Env.Cache inCache;
   input Env.Env env "environment";
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input list<SCode.Element> els "elements";
   input Boolean impl;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist dae "resulting dae";
   output ClassInf.State ciState;
 algorithm
@@ -4289,10 +4285,10 @@ protected function instantiateExternalObjectDestructor
 "instantiates the destructor function of an external object"
   input Env.Cache inCache;
   input Env.Env env;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Element cl;
   output Env.Cache outCache;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outIH) := matchcontinue (inCache,env,inIH,cl)
     local
@@ -4317,10 +4313,10 @@ protected function instantiateExternalObjectConstructor
 "instantiates the constructor function of an external object"
   input Env.Cache inCache;
   input Env.Env env;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Element cl;
   output Env.Cache outCache;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.Type outType;
 algorithm
   (outCache,outIH,outType) := matchcontinue (inCache,env,inIH,cl)
@@ -4477,7 +4473,7 @@ protected function instBasictypeBaseclass
   and can only inherit one basic type."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
@@ -4487,7 +4483,7 @@ protected function instBasictypeBaseclass
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
   output Env.Cache outCache;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae "contain functions";
   output Option<DAE.Type> outTypesTypeOption;
@@ -4573,7 +4569,7 @@ Helper function for instBasictypeBaseClass
 Handles the fail case rollbacks/deleteCheckpoint of errors."
   input Env.Cache inCache;
   input Env.Env inEnv1;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
@@ -4637,10 +4633,10 @@ protected function addConnectionCrefsFromEqs
   input list<SCode.Equation> inEquations;
   input Prefix.Prefix inPrefix;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   output Connect.Sets outSets;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outSets, outEnv, outIH) := matchcontinue(inSets, inEquations, inPrefix, inEnv, inIH)
     local
@@ -4680,9 +4676,9 @@ protected function addConnectionSetToEnv
   input Connect.Sets inSets;
   input Prefix.Prefix prefix;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outEnv,outIH) := matchcontinue (inSets,prefix,inEnv,inIH)
     local
@@ -4826,7 +4822,7 @@ protected function partialInstClassdef
   class definitons and inherited class definitions only."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
@@ -4840,7 +4836,7 @@ protected function partialInstClassdef
   input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output ClassInf.State outState;
 algorithm
   (outCache,outEnv,outIH,outState):=
@@ -5228,14 +5224,14 @@ protected function updateCompeltsMods
  analysis might work fine and still instantiate."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   input ClassInf.State inState;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
 algorithm
   (outCache,outEnv,outIH,outTplSCodeElementModLst) :=
@@ -5265,14 +5261,14 @@ protected function updateCompeltsMods_dispatch
   fully instantiate a component."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   input ClassInf.State inState;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
 algorithm
   (outCache,outEnv,outIH,outTplSCodeElementModLst):=
@@ -5416,7 +5412,7 @@ public function instElementList
   "Instantiates a list of elements."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore store;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -5430,7 +5426,7 @@ public function instElementList
   input Boolean inStopOnError;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -6089,7 +6085,7 @@ protected function instElementList2
       This handles COMPONENT nodes."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -6105,7 +6101,7 @@ protected function instElementList2
   input list<list<DAE.Var>> varAcc;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -6168,7 +6164,7 @@ public function instElement2
       This handles COMPONENT nodes."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -6182,7 +6178,7 @@ public function instElement2
   input Boolean inStopOnError;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output list<DAE.Element> outDae;
   output Connect.Sets outSets;
@@ -6412,13 +6408,13 @@ public function addClassdefsToEnv
   This function adds classdefinitions and
   import statements to the  environment."
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inSCodeElementLst;
   input Boolean inBoolean;
   input Option<DAE.Mod> redeclareMod;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
     local
@@ -6449,13 +6445,13 @@ protected function addClassdefsToEnv2
   author: PA
   Helper relation to addClassdefsToEnv"
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inSCodeElementLst;
   input Boolean inBoolean;
   input Option<DAE.Mod> redeclareMod;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outEnv,outIH) := match (inEnv,inIH,inPrefix,inSCodeElementLst,inBoolean,redeclareMod)
     local
@@ -6479,13 +6475,13 @@ protected function addClassdefToEnv2
   author: PA
   Helper relation to addClassdefsToEnv"
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Element inSCodeElement;
   input Boolean inBoolean;
   input Option<DAE.Mod> redeclareMod;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outEnv,outIH) := matchcontinue (inEnv,inIH,inPrefix,inSCodeElement,inBoolean,redeclareMod)
     local
@@ -6698,7 +6694,7 @@ public function addComponentsToEnv
   parameters."
   input Env.Cache inCache;
   input Env.Env inEnv1;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input ClassInf.State inState5;
@@ -6709,7 +6705,7 @@ public function addComponentsToEnv
   input Boolean inBoolean10;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := match (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementModLst6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
@@ -6749,7 +6745,7 @@ protected function addComponentToEnv
   parameters."
   input Env.Cache inCache;
   input Env.Env inEnv1;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod2;
   input Prefix.Prefix inPrefix3;
   input ClassInf.State inState5;
@@ -6760,7 +6756,7 @@ protected function addComponentToEnv
   input Boolean inBoolean10;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv1,inIH,inMod2,inPrefix3,inState5,inTplSCodeElementMod6,inTplSCodeElementModLst7,inSCodeEquationLst8,inInstDims9,inBoolean10)
     local
@@ -6887,7 +6883,7 @@ protected function addComponentsToEnv2
   Extends the environment with an untyped variable for the component."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
@@ -6896,7 +6892,7 @@ protected function addComponentsToEnv2
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inState,inElement,inInstDims,inBoolean)
     local
@@ -7095,7 +7091,7 @@ protected function addRecordConstructorsToTheCache
  it as the type of an input component to a function"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
@@ -7104,7 +7100,7 @@ protected function addRecordConstructorsToTheCache
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache, outEnv, outIH) := matchcontinue(inCache, inEnv, inIH, inMod, inPrefix, inState, inDirection, inClass, inInstDims)
     local
@@ -7142,7 +7138,7 @@ public function instElement "
   element is either a class definition, a variable, or an import clause."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inUnitStore;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
@@ -7155,7 +7151,7 @@ public function instElement "
   input Connect.Sets inSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outUnitStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -7525,7 +7521,7 @@ protected function removeSelfModReference
  For instance, A a(x = a.y) the modifier references the component itself.
  This is removed to avoid a circular dependency, resulting in A a(x=y);"
   input Env.Cache inCache;
-  input Ident preId;
+  input String preId;
   input SCode.Mod inMod;
   output Env.Cache outCache;
   output SCode.Mod outMod;
@@ -7952,7 +7948,7 @@ protected function redeclareType
   element is returned."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input SCode.Element inElement;
   input Prefix.Prefix inPrefix;
@@ -7961,7 +7957,7 @@ protected function redeclareType
   input DAE.Mod inCmod;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output SCode.Element outElement;
   output DAE.Mod outMod;
 algorithm
@@ -8243,12 +8239,12 @@ protected function instVar
   - report an error if we have modifications on outer"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input Ident inIdent;
+  input String inIdent;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
@@ -8263,7 +8259,7 @@ protected function instVar
   input Env.Env componentDefinitionParentEnv;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -8585,12 +8581,12 @@ protected function instVar_dispatch "function: instVar_dispatch
   handled by instVar2 (using instArray)"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input Ident inIdent;
+  input String inIdent;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
@@ -8604,7 +8600,7 @@ protected function instVar_dispatch "function: instVar_dispatch
   input Connect.Sets inSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -8700,7 +8696,7 @@ end instVar_dispatch;
 protected function addArrayVarEquation
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input ClassInf.State inState;
   input DAE.DAElist inDae;
   input DAE.Type inType;
@@ -8751,12 +8747,12 @@ protected function instVar2
   Helper function to instVar, does the main work."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input Ident inName;
+  input String inName;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
@@ -8770,7 +8766,7 @@ protected function instVar2
   input Connect.Sets inSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -9041,12 +9037,12 @@ public function instScalar
   "Instantiates a scalar variable."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input Ident inName;
+  input String inName;
   input SCode.Element inClass;
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
@@ -9059,7 +9055,7 @@ public function instScalar
   input Connect.Sets inSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -9296,9 +9292,9 @@ end moveBindings;
 protected function checkModificationOnOuter
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
-  input Ident inName;
+  input String inName;
   input DAE.ComponentRef inCref;
   input DAE.Mod inMod;
   input SCode.Variability inVariability;
@@ -9422,7 +9418,7 @@ Unless it is a complex var that not inherites a basic type. In that case DAE.Equ
   input DAE.Mod mod;
   input DAE.Const const;
   input Prefix.Prefix pre;
-  input Ident name;
+  input String name;
   input DAE.ElementSource source;
   output Option<DAE.Exp> eOpt;
 algorithm
@@ -9489,7 +9485,7 @@ Helper to makeVariableBinding. Author -- alleb"
   input DAE.Const compConst;
   input DAE.Const bindConst;
   input Prefix.Prefix pre;
-  input Ident name;
+  input String name;
   input DAE.Exp binding;
   input DAE.ElementSource source;
 algorithm
@@ -9568,7 +9564,7 @@ public function getUsertypeDimensions
   has one dimension of size 3 and the class to instantiate is Real"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input InstDims inInstDims;
@@ -9756,7 +9752,7 @@ protected function updateComponentsInEnv
   components can use it when they are instantiated."
   input Env.Cache cache;
   input Env.Env env;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Mod mod;
   input list<Absyn.ComponentRef> crefs;
@@ -9764,7 +9760,7 @@ protected function updateComponentsInEnv
   input Boolean impl;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 protected
   String myTick, crefsStr;
 algorithm
@@ -9823,7 +9819,7 @@ protected function updateComponentInEnv
   Does the work for one variable."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Mod mod;
   input Absyn.ComponentRef cref;
@@ -9833,7 +9829,7 @@ protected function updateComponentInEnv
   input Option<Absyn.ComponentRef> currentCref "The cref that caused this call to updateComponentInEnv.";
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
@@ -10036,7 +10032,7 @@ protected function updateComponentInEnv2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Env.Env cenv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input Absyn.Path path;
   input String name;
@@ -10055,7 +10051,7 @@ protected function updateComponentInEnv2
   input HashTable5.HashTable inUpdatedComps;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
@@ -10089,7 +10085,7 @@ protected function updateComponentInEnv2_dispatch
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Env.Env cenv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input Absyn.Path path;
   input String name;
@@ -10108,7 +10104,7 @@ protected function updateComponentInEnv2_dispatch
   input HashTable5.HashTable inUpdatedComps;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
@@ -10234,7 +10230,7 @@ end updateComponentInEnv2_dispatch;
 protected function updateComponentInEnv3
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Mod inMod;
   input Boolean inImpl;
   input Absyn.Info inInfo;
@@ -10685,12 +10681,12 @@ protected function instArray
   element separately."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input ClassInf.State inState;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
-  input Ident inIdent;
+  input String inIdent;
   input tuple<SCode.Element, SCode.Attributes> inTplSCodeClassSCodeAttributes;
   input SCode.Prefixes inPrefixes;
   input Integer inInteger;
@@ -10705,7 +10701,7 @@ protected function instArray
   input Connect.Sets inSets;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
@@ -11367,14 +11363,14 @@ public function instClassDecl
   a package does not do anything else."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
   (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
@@ -11415,14 +11411,14 @@ public function implicitInstantiation
   same name as the class name."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
   (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
@@ -11595,14 +11591,14 @@ public function implicitFunctionInstantiation
   ordinary class."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH):= match (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
     local
@@ -11655,7 +11651,7 @@ protected function implicitFunctionInstantiation2
   ordinary class."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
@@ -11663,7 +11659,7 @@ protected function implicitFunctionInstantiation2
   input Boolean instFunctionTypeOnly "if true, do no additional checking of the function";
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<DAE.Function> funcs;
 algorithm
   (outCache,outEnv,outIH,funcs):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims,instFunctionTypeOnly)
@@ -11794,7 +11790,7 @@ protected function instantiateDerivativeFuncs "instantiates all functions found 
 dae and can be generated code for in case they are required"
   input Env.Cache cache;
   input Env.Env env;
-  input InstanceHierarchy ih;
+  input InnerOuter.InstHierarchy ih;
   input list<DAE.FunctionDefinition> funcs;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
   input Absyn.Info info;
@@ -11808,7 +11804,7 @@ end instantiateDerivativeFuncs;
 protected function instantiateDerivativeFuncs2 "help function"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input list<Absyn.Path> inPaths;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
   input Absyn.Info info;
@@ -11929,7 +11925,7 @@ helper function for implicitFunctionInstantiation, returns derivative of functio
   input Absyn.Path baseFunc;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output list<DAE.FunctionDefinition> element;
@@ -11957,7 +11953,7 @@ helper function for getDeriveAnnotation"
   input Absyn.Path baseFunc;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output list<DAE.FunctionDefinition> element;
@@ -11981,7 +11977,7 @@ Author: bjozac
   input Absyn.Path baseFunc;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output list<DAE.FunctionDefinition> element;
@@ -12041,7 +12037,7 @@ Extracts conditions for derivative."
   input list<SCode.Element> elemDecl;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output list<tuple<Integer,DAE.derivativeCond>> outconds;
@@ -12379,11 +12375,11 @@ public function implicitFunctionTypeInstantiation
   Now this function also handles Derived function."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Element inClass;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
 algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inClass)
     local
@@ -12462,11 +12458,11 @@ protected function instOverloadedFunctions
   the overloaded name. It also creates dae elements for the functions."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input list<Absyn.Path> inAbsynPathLst;
   output Env.Cache outCache;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<DAE.Function> outFns;
 algorithm
   (outCache,outIH,outFns) := matchcontinue (inCache,inEnv,inIH,pre,inAbsynPathLst)
@@ -12520,14 +12516,14 @@ protected function instExtDecl
   will be void."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
-  input Ident inIdent;
+  input InnerOuter.InstHierarchy inIH;
+  input String inIdent;
   input SCode.ClassDef inClassDef;
   input Boolean inBoolean;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.ExternalDecl outExternalDecl;
 algorithm
   (outCache,outIH,outExternalDecl) := matchcontinue (inCache,inEnv,inIH,inIdent,inClassDef,inBoolean,inPrefix,info)
@@ -12806,7 +12802,7 @@ protected function instExtMakeExternaldecl
   variables exists, the implicit call is equivalent to:
       external \"C\" func(var1, var2, ...)
   where each var can be input or output."
-  input Ident inIdent;
+  input String inIdent;
   input list<SCode.Element> inSCodeElementLst;
   input SCode.ExternalDecl inExternalDecl;
   output SCode.ExternalDecl outExternalDecl;
@@ -12955,8 +12951,8 @@ protected function instExtGetFname
 "function: instExtGetFname
   Returns the function name of the externally defined function."
   input SCode.ExternalDecl inExternalDecl;
-  input Ident inIdent;
-  output Ident outIdent;
+  input String inIdent;
+  output String outIdent;
 algorithm
   outIdent := match (inExternalDecl,inIdent)
     local String id,fid;
@@ -13987,7 +13983,7 @@ public function instList
   of things, collecting the result in another list."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
@@ -13999,7 +13995,7 @@ public function instList
   input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ClassInf.State outState;
@@ -14007,7 +14003,7 @@ public function instList
   partial function InstFunc
     input Env.Cache inCache;
     input Env.Env inEnv;
-    input InstanceHierarchy inIH;
+    input InnerOuter.InstHierarchy inIH;
     input DAE.Mod inMod;
     input Prefix.Prefix inPrefix;
     input Connect.Sets inSets;
@@ -14018,7 +14014,7 @@ public function instList
     input ConnectionGraph.ConnectionGraph inGraph;
     output Env.Cache outCache;
     output Env.Env outEnv;
-    output InstanceHierarchy outIH;
+    output InnerOuter.InstHierarchy outIH;
     output DAE.DAElist outDAe;
     output Connect.Sets outSets;
     output ClassInf.State outState;
@@ -15123,12 +15119,12 @@ public function instRecordConstructorElt
   E.g if the element is Real x; the resulting Var is \"input Real x;\""
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Element inElement;
   input DAE.Mod outerMod;
   input Boolean inImplicit;
   output Env.Cache outCache;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.Var outVar;
 algorithm
   (outCache,outIH,outVar) :=
@@ -15227,12 +15223,12 @@ Instantiate a class, but _allways_ as inner class. This due to that we do not wa
 Called from Interactive.mo, boschsection.
 "
   input Env.Cache inCache;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDAElist;
 algorithm
   (outCache,outEnv,outIH,outDAElist) :=
@@ -15288,12 +15284,12 @@ protected function instBoschClassInProgram
 "Helper function for instantiateBoschClass"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input SCode.Program inProgram;
   input SCode.Path inPath;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.DAElist outDae;
 algorithm
   (outCache,outEnv,outIH,outDae):=
@@ -15370,7 +15366,7 @@ protected function splitConnectEquationsExpandable
     connect(expandable, expandable);"
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPre;
   input list<SCode.Equation> inEquations;
   input Boolean impl;
@@ -15852,12 +15848,12 @@ end splitClassExtendsElts;
 protected function addClassdefsToEnv3
 "function: addClassdefsToEnv3 "
   input Env.Env env;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input Option<DAE.Mod> inMod;
   input SCode.Element sele;
   output Env.Env oenv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output SCode.Element osele;
 algorithm
   (oenv,outIH,osele) := match(env,inIH,inPrefix,inMod,sele)
@@ -16491,7 +16487,7 @@ protected function removeSelfReferenceAndUpdate
  the size of itself) it will just remove the element."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input UnitAbsyn.InstStore inStore;
   input list<Absyn.ComponentRef> inRefs;
   input Absyn.ComponentRef inRef;
@@ -16507,7 +16503,7 @@ protected function removeSelfReferenceAndUpdate
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output list<Absyn.ComponentRef> o1;
 algorithm
@@ -16775,7 +16771,7 @@ protected function instConditionalDeclaration
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp cond;
-  input Ident compName;
+  input String compName;
   input Prefix.Prefix pre;
   input Absyn.Info info;
   output Boolean isConditional;
@@ -17005,7 +17001,7 @@ protected function updateComponentsInEnv2
   Help function to updateComponentsInEnv."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.Mod mod;
   input list<Absyn.ComponentRef> crefs;
@@ -17015,7 +17011,7 @@ protected function updateComponentsInEnv2
   input Option<Absyn.ComponentRef> currentCref;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output HashTable5.HashTable outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
@@ -17305,22 +17301,22 @@ algorithm
   end matchcontinue;
 end addToInstCache;
 
-public type CachedInstItemInputs = tuple<Env.Cache, Env.Env, InstanceHierarchy,
+protected type CachedInstItemInputs = tuple<Env.Cache, Env.Env, InstanceHierarchy,
     UnitAbsyn.InstStore, DAE.Mod, Prefix.Prefix, Connect.Sets, ClassInf.State,
     SCode.Element, SCode.Visibility, InstDims, Boolean,
     ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>>;
 
-public type CachedInstItemOutputs = tuple<Env.Env, DAE.DAElist, Connect.Sets,
+protected type CachedInstItemOutputs = tuple<Env.Env, DAE.DAElist, Connect.Sets,
     ClassInf.State, list<DAE.Var>, Option<DAE.Type>, Option<SCode.Attributes>,
     DAE.EqualityConstraint, ConnectionGraph.ConnectionGraph>;
 
-public type CachedPartialInstItemInputs = tuple<Env.Cache, Env.Env,
+protected type CachedPartialInstItemInputs = tuple<Env.Cache, Env.Env,
     InstanceHierarchy, DAE.Mod, Prefix.Prefix, ClassInf.State,
     SCode.Element, SCode.Visibility, InstDims>;
 
-public type CachedPartialInstItemOutputs = tuple<Env.Env, ClassInf.State>;
+protected type CachedPartialInstItemOutputs = tuple<Env.Env, ClassInf.State>;
 
-public
+protected
 uniontype CachedInstItem
   // *important* inputs/outputs for instClassIn
   record FUNC_instClassIn
@@ -17336,14 +17332,14 @@ uniontype CachedInstItem
 
 end CachedInstItem;
 
-public type CachedInstItems = list<Option<CachedInstItem>>;
+protected type CachedInstItems = list<Option<CachedInstItem>>;
 
 /* Begin inline HashTable */
-public type Key = Absyn.Path;
-public type Value = CachedInstItems;
+protected type Key = Absyn.Path;
+protected type Value = CachedInstItems;
 
-public type HashTableKeyFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
-public type InstHashTable = tuple<
+protected type HashTableKeyFunctionsType = tuple<FuncHashKey,FuncKeyEqual,FuncKeyStr,FuncValueStr>;
+protected type InstHashTable = tuple<
   array<list<tuple<Key,Integer>>>,
   tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>,
   Integer,
@@ -17351,24 +17347,24 @@ public type InstHashTable = tuple<
   HashTableKeyFunctionsType
 >;
 
-partial function FuncHashKey
+protected partial function FuncHashKey
   input Key cr;
   input Integer mod;
   output Integer res;
 end FuncHashKey;
 
-partial function FuncKeyEqual
+protected partial function FuncKeyEqual
   input Key cr1;
   input Key cr2;
   output Boolean res;
 end FuncKeyEqual;
 
-partial function FuncKeyStr
+protected partial function FuncKeyStr
   input Key cr;
   output String res;
 end FuncKeyStr;
 
-partial function FuncValueStr
+protected partial function FuncValueStr
   input Value exp;
   output String res;
 end FuncValueStr;
@@ -17381,7 +17377,12 @@ algorithm
   str := "OPAQUE_VALUE";
 end opaqVal;
 
-public function emptyInstHashTable
+public function initInstHashTable
+algorithm
+  setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
+end initInstHashTable;
+
+protected function emptyInstHashTable
 "
   Returns an empty HashTable.
   Using the default bucketsize..
@@ -17391,7 +17392,7 @@ algorithm
   hashTable := emptyInstHashTableSized(BaseHashTable.defaultBucketSize);
 end emptyInstHashTable;
 
-public function emptyInstHashTableSized
+protected function emptyInstHashTableSized
 "Returns an empty HashTable.
   Using the bucketsize size"
   input Integer size;

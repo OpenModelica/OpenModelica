@@ -53,7 +53,7 @@ public import Prefix;
 public import InnerOuter;
 public import ClassInf;
 
-type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import ComponentReference;
 protected import Debug;
@@ -330,7 +330,7 @@ public function prefixCref "function: prefixCref
   LS: Changed to call prefixToCref which is more general now"
   input Env.Cache cache;
   input Env.Env env;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix pre;
   input DAE.ComponentRef cref;
   output Env.Cache outCache;
@@ -569,7 +569,7 @@ public function prefixCrefInnerOuter "function: prefixCrefInnerOuter
   If the cref is an inner, prefix it normally."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.ComponentRef inCref;
   input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
@@ -648,7 +648,7 @@ public function prefixExp "function: prefixExp
   Add the supplied prefix to all component references in an expression."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Exp inExp;
   input Prefix.Prefix inPrefix;
   output Env.Cache outCache;
@@ -932,7 +932,7 @@ public function prefixExpList "function: prefixExpList
   This function prefixes a list of expressions using the prefixExp function."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input list<DAE.Exp> inExpExpLst;
   input Prefix.Prefix inPrefix;
   output Env.Cache outCache;

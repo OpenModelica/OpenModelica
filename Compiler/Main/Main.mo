@@ -62,6 +62,7 @@ protected import Error;
 protected import ErrorExt;
 protected import Flags;
 protected import Global;
+protected import GlobalScript;
 protected import Interactive;
 protected import List;
 protected import Parser;
@@ -521,8 +522,8 @@ algorithm
     case (f :: libs)
       equation
         //print("Class to instantiate: " +& Config.classToInstantiate() +& "\n");
-        System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_MAIN);
-        Debug.execStat("Enter Main",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Enter Main",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
         // Check that it's a .mo-file.
         isModelicaFile(f);
         // Parse the first file.
@@ -543,7 +544,7 @@ algorithm
 
         p = transformFlatProgram(p,f);
 
-        Debug.execStat("Parsed file",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Parsed file",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Instantiate the program.
         (cache, env, d, cname) = instantiate(p);
@@ -553,12 +554,12 @@ algorithm
         funcs = Env.getFunctionTree(cache);
 
         Print.clearBuf();
-        Debug.execStat("Transformations before Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Transformations before Dump",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
         s = DAEDump.dumpStr(d, funcs);
-        Debug.execStat("DAEDump done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("DAEDump done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
         Print.printBuf(s);
         Debug.fcall(Flags.DAE_DUMP_GRAPHV, DAEDump.dumpGraphviz, d);
-        Debug.execStat("Misc Dump",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Misc Dump",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
         d = Debug.bcallret3(boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)),DAEUtil.transformationsBeforeBackend,cache,env,d,d);
@@ -567,7 +568,7 @@ algorithm
         silent = Config.silent();
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
-        Debug.execStat("Transformations before backend",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Transformations before backend",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
 
         // Run the backend.
         optimizeDae(cache, env, d, p, cname);
@@ -707,7 +708,7 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
         //modpar(dlow_1);
-        Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Lowering Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
         simcodegen(dlow_1,classname,ap,dae);
       then
         ();
@@ -796,7 +797,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
         (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
 
@@ -812,7 +813,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
         (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
-        Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+        Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
 
@@ -1034,7 +1035,7 @@ algorithm
     case _
       equation
         Global.initialize();
-        System.realtimeTick(CevalScript.RT_CLOCK_SIMULATE_TOTAL);
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
         main2(args_1);

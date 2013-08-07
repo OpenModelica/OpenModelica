@@ -58,7 +58,6 @@ protected import BackendVariable;
 protected import BaseHashTable;
 protected import Builtin;
 protected import Ceval;
-protected import CevalScript;
 protected import CheckModel;
 protected import ClassInf;
 protected import ComponentReference;
@@ -71,6 +70,7 @@ protected import ExpressionSolve;
 protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
+protected import GlobalScript;
 protected import Graph;
 protected import HashTableExpToIndex;
 protected import Inline;
@@ -2362,9 +2362,9 @@ algorithm
         usedvar = arrayCreate(adjSizeT, 0);
         usedvar = Util.arraySet(adjSizeT-(sizeN-1), adjSizeT, usedvar, 1);
 
-        //Debug.execStat("generateSparsePattern -> start ",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> start ",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         eqnSparse = getSparsePattern(comps, eqnSparse, varSparse, mark, usedvar, 1, adjMatrix, adjMatrixT);
-        //Debug.execStat("generateSparsePattern -> end ",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> end ",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // debug dump
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,BackendDump.dumpSparsePatternArray,eqnSparse);
         Debug.fcall(Flags.DUMP_SPARSE_VERBOSE,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
@@ -2374,20 +2374,20 @@ algorithm
         sparsepattern = arrayList(sparseArray);
         sparsepattern = List.map1List(sparsepattern, intSub, adjSizeT-sizeN);
 
-        //Debug.execStat("generateSparsePattern -> postProcess ",CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> postProcess ",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // transpose the column-based pattern to row-based pattern
         sparseArrayT = arrayCreate(sizeN,{});
         sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
         sparsepatternT = arrayList(sparseArrayT);
-        //Debug.execStat("generateSparsePattern -> postProcess2 " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> postProcess2 " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // dump statistics
         nonZeroElements = List.lengthListElements(sparsepattern);
         dumpSparsePatternStatistics(Flags.isSet(Flags.DUMP_SPARSE),nonZeroElements,sparsepatternT);
         Debug.fcall(Flags.DUMP_SPARSE,BackendDump.dumpSparsePattern,sparsepattern);
         Debug.fcall(Flags.DUMP_SPARSE,BackendDump.dumpSparsePattern,sparsepatternT);
-        //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> nonZeroElements: " +& intString(nonZeroElements) +& " " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 
         // translated to DAE.ComRefs
         translated = List.mapList1_1(sparsepatternT, List.getIndexFirst, diffedCompRefs);
@@ -2411,9 +2411,9 @@ algorithm
         forbiddenColor = arrayCreate(sizeN,NONE());
         colored = arrayCreate(sizeN,0);
         arraysparseGraph = listArray(sparseGraph);
-        //Debug.execStat("generateSparsePattern -> coloring start " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> coloring start " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-        //Debug.execStat("generateSparsePattern -> coloring end " ,CevalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+        //Debug.execStat("generateSparsePattern -> coloring end " ,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // get max color used
         maxColor = Util.arrayFold(colored1, intMax, 0);
 
@@ -3206,12 +3206,12 @@ protected
   BackendDAE.SparsePattern sparsePattern;
   BackendDAE.SparseColoring sparseColoring;
 algorithm
-  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+  System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
   (symJacA , sparsePattern, sparseColoring ):= createSymbolicJacobianforStates(inBackendDAE);
   shared := BackendDAEUtil.addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
-  _ := System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+  _ := System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicJacobianPast;
 
 public function generateSymbolicLinearizationPast
@@ -3222,12 +3222,12 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.SymbolicJacobians linearModelMatrixes;
 algorithm
-  System.realtimeTick(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+  System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
   linearModelMatrixes := createLinearModelMatrixes(inBackendDAE);
   shared := BackendDAEUtil.addBackendDAESharedJacobians(linearModelMatrixes, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
-  _ := System.realtimeTock(CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+  _ := System.realtimeTock(GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 end generateSymbolicLinearizationPast;
 
 protected function createSymbolicJacobianforStates
@@ -3422,7 +3422,7 @@ algorithm
         s1 =  intString(listLength(inVars));
 
         Debug.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:"
-                       +& s +& " diffed equations: " +&  s1 +& "\n", CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+                       +& s +& " diffed equations: " +&  s1 +& "\n", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 
         // Differentiate the ODE system w.r.t states for jacobian
         (backendDAE as BackendDAE.DAE(shared=shared)) = generateSymbolicJacobian(inBackendDAE, comref_vars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
@@ -3442,7 +3442,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> sorted know vars(" +& intString(listLength(knvarsTmp)) +& ") for Jacobian DAE time: " +& realString(clock()) +& "\n");
         knvars = BackendVariable.listVar1(knvarsTmp);
         backendDAE = BackendDAEUtil.addBackendDAEKnVars(knvars,backendDAE);
-        Debug.execStat("analytical Jacobians -> generated optimized jacobians", CevalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
+        Debug.execStat("analytical Jacobians -> generated optimized jacobians", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 
         // generate sparse pattern
         (sparsepattern,colsColors) = generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
