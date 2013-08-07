@@ -7243,30 +7243,18 @@ case LBINARY(__) then
   let e1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let e2 = daeExp(exp2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
+  case AND(ty = T_ARRAY(__)) then
+    let var = tempDecl("boolean_array", &varDecls)
+    let &preExp += 'and_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
+    '<%var%>'
   case AND(__) then
-    match exp1
-    case CREF(ty = T_ARRAY(__)) then    
-      let var = tempDecl("boolean_array", &varDecls)
-      let &preExp += 'and_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
-      '<%var%>'
-    case ARRAY(ty = T_ARRAY(__)) then    
-      let var = tempDecl("boolean_array", &varDecls)
-      let &preExp += 'and_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
-      '<%var%>'
-    else
-      '(<%e1%> && <%e2%>)'
-  case OR(__)  then
-    match exp1
-    case CREF(ty = T_ARRAY(__)) then    
-      let var = tempDecl("boolean_array", &varDecls)
-      let &preExp += 'or_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
-      '<%var%>'
-    case ARRAY(ty = T_ARRAY(__)) then    
-      let var = tempDecl("boolean_array", &varDecls)
-      let &preExp += 'or_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
-      '<%var%>'
-    else
-      '(<%e1%> || <%e2%>)'
+    '(<%e1%> && <%e2%>)'
+  case OR(ty = T_ARRAY(__)) then
+    let var = tempDecl("boolean_array", &varDecls)
+    let &preExp += 'or_boolean_array(&<%e1%>,&<%e2%>,&<%var%>);<%\n%>'
+    '<%var%>'
+  case OR(__) then
+    '(<%e1%> || <%e2%>)'
   else error(sourceInfo(),"daeExpLbinary:ERR")
 end daeExpLbinary;
 
@@ -7279,18 +7267,12 @@ match exp
 case LUNARY(__) then
   let e = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
-  case NOT(__) then
-    match exp
-    case CREF(ty = T_ARRAY(__)) then    
-      let var = tempDecl("boolean_array", &varDecls)
-      let &preExp += 'not_boolean_array(&<%e%>,&<%var%>);<%\n%>'
-      '<%var%>'
-    case ARRAY(ty = T_ARRAY(__)) then    
-      let var = tempDecl("boolean_array", &varDecls)
-      let &preExp += 'not_boolean_array(&<%e%>,&<%var%>);<%\n%>'
-      '<%var%>'
-    else
-       '(!<%e%>)'
+  case NOT(ty = T_ARRAY(__)) then   
+    let var = tempDecl("boolean_array", &varDecls)
+    let &preExp += 'not_boolean_array(&<%e%>,&<%var%>);<%\n%>'
+    '<%var%>'
+  else
+    '(!<%e%>)'
 end daeExpLunary;
 
 
