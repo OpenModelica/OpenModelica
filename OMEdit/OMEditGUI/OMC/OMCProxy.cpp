@@ -2255,6 +2255,18 @@ QString OMCProxy::makeDocumentationImagesUriToFileName(QString documentation)
       QString imgFileName = uriToFilename(src);
       imgTag.setAttribute("src", imgFileName);
     }
+    else if (src.startsWith("file://"))
+    {
+      QString imgFileName = uriToFilename(src);
+      /*
+        Windows absolute paths doesn't start with "/".
+        */
+#ifdef WIN32
+      if (imgFileName.startsWith("/"))
+        imgFileName = imgFileName.mid(1);
+#endif
+      imgTag.setAttribute("src", imgFileName);
+    }
     else
     {
       //! @todo The img src value starts with modelica:// for MSL 3.2.1. Handle the other cases in this else block.
