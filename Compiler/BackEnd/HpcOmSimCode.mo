@@ -48,6 +48,7 @@ protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import Config;
 protected import Error;
+//protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;
 protected import Initialization;
 protected import InlineSolver;
@@ -170,6 +171,8 @@ algorithm
       //Append the costs to the taskGraphMeta
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_prof.xml" , simEqSccMapping, taskGraphData);
       //HpcOmTaskGraph.printTaskGraph(taskGraph);
+      //taskGraph1 = HpcOmTaskGraph.transposeTaskGraph(taskGraph);
+      //HpcOmTaskGraph.printTaskGraph(taskGraph1);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData);  
                  
       //compute critical path on cost-level and determine the level of the node

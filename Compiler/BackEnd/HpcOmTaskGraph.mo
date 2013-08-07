@@ -4814,7 +4814,7 @@ algorithm
 end setLevelInNodeMark;  
 
 
-protected function tupleToStringRealInt "function tupleToString
+protected function tupleToStringRealInt "function tupleToStringRealInt
   author: marcusw
   Returns the given tuple as string." 
   input tuple<Integer,Real> inTuple;
@@ -4831,7 +4831,7 @@ algorithm
 end tupleToStringRealInt;
 
 
-protected function tupleToStringIntRealInt "function tupleToString
+protected function tupleToStringIntRealInt "function tupleToStringIntRealInt
   author: Waurich TUD 2013-07
   Returns the given tuple as string." 
   input tuple<Integer,Real,Integer> inTuple;
@@ -4847,7 +4847,50 @@ algorithm
   end match;
 end tupleToStringIntRealInt;
 
+public function transposeTaskGraph "function transposeTaskGraph
+  author: marcusw
+  Returns the given task graph as transposed version." 
+  input TaskGraph iTaskGraph;
+  output TaskGraph oTaskGraphT;
+protected
+  TaskGraph transposedGraph;
+algorithm
+  transposedGraph := arrayCreate(arrayLength(iTaskGraph), {});
+  ((transposedGraph,_)) := Util.arrayFold(iTaskGraph, transposeTaskGraph0, (transposedGraph,1));
+  oTaskGraphT := transposedGraph;
+end transposeTaskGraph;
 
+protected function transposeTaskGraph0 "function transposeTaskGraph0
+  author: marcusw
+  Helper function of transposeTaskGraph. Handles the parentlist of a child node."
+  input list<Integer> iParentNodes;
+  input tuple<TaskGraph,Integer> iGraph; //current graph and childIdx
+  output tuple<TaskGraph,Integer> oGraph;
+protected
+  TaskGraph tmpGraph;
+  Integer index;
+algorithm
+  (tmpGraph,index) := iGraph;
+  tmpGraph := List.fold1(iParentNodes, transposeTaskGraph1, index, tmpGraph);
+  oGraph := (tmpGraph,index+1);
+end transposeTaskGraph0;
+    
+protected function transposeTaskGraph1 "function transposeTaskGraph1
+  author: marcusw
+  Helper function of transposeTaskGraph0. Adds the childIdx to the parent-array-entry."
+  input Integer iParentIdx;
+  input Integer iChildIdx;
+  input TaskGraph iTaskGraph;
+  output TaskGraph oTaskGraph;
+protected
+  TaskGraph tmpGraph;
+  list<Integer> tmpList;  
+algorithm
+  tmpList := arrayGet(iTaskGraph,iParentIdx);
+  tmpList := iChildIdx::tmpList;
+  oTaskGraph := arrayUpdate(iTaskGraph,iParentIdx,tmpList);
+end transposeTaskGraph1;
+    
 // public function arrangeGraphInLevels "
 // author: Waurich TUD 2013-07"
 //   input TaskGraph graphIn;

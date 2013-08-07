@@ -28,7 +28,6 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-
 encapsulated package HpcOmBenchmark
 " file:        HpcOmBenchmark.mo
   package:     HpcOmBenchmark

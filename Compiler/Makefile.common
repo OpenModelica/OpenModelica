@@ -146,6 +146,7 @@ EvaluateParameter.mo \
 ExpressionSolve.mo \
 HashTableCrSimVars.mo \
 HpcOmBenchmark.mo \
+HpcOmScheduler.mo \
 HpcOmSimCode.mo \
 HpcOmTaskGraph.mo \
 IndexReduction.mo \
