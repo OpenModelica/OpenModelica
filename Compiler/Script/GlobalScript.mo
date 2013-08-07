@@ -37,8 +37,6 @@ encapsulated package GlobalScript
   RCS: $Id$
 "
 
-public import Absyn;
-public import ClassInf;
 public import DAE;
 public import Global;
 
