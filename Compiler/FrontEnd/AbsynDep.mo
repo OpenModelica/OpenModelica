@@ -275,7 +275,7 @@ algorithm
   end match;
 end getUsesTransitive2Lst;
 
-protected function getUsedBy "returns the classes that uses the class 'cl' e.g. as a component"
+public function getUsedBy "returns the classes that uses the class 'cl' e.g. as a component"
   input Depends depends;
   input Absyn.Path cl;
   output AvlTree usedBy;
