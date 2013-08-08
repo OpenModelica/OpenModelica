@@ -450,16 +450,14 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
                                            QString componentClassName, QString componentName, bool inheritedComponent,
                                            QString inheritedClassName, int layoutIndex)
 {
-  int i = 0;
+  int i = -1;
   QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(componentClassName);
   QStringList componentAnnotations = pOMCProxy->getComponentAnnotations(componentClassName);
   foreach (ComponentInfo *pComponentInfo, componentInfoList)
   {
+    i++;
     if (pComponentInfo->getProtected())
-    {
-      i++;
       continue;
-    }
     QString tab = QString("General");
     QString groupBox = QString("Parameters");
     QStringList dialogAnnotation = StringHandler::getDialogAnnotation(componentAnnotations[i]);
@@ -472,7 +470,6 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
         // get the group value
         groupBox = StringHandler::removeFirstLastQuotes(dialogAnnotation.at(1));
       }
-      i++;
       ParametersScrollArea *pParametersScrollArea;
       pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(tab)));
       if (pParametersScrollArea)
