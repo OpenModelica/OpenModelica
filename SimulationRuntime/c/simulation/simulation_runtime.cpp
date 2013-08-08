@@ -88,12 +88,12 @@
 
 using namespace std;
 
-int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
+static int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
 
 /* This variable is used to get the step size value during the simulation. */
-double stepSize = 0.0;
-double currentTime = 0.0;
-int initTime = 0;
+static double stepSize = 0.0;
+static double currentTime = 0.0;
+static int initTime = 0;
 
 double getSimulationStepSize(double time, int *takeStep)
 {
@@ -136,10 +136,7 @@ int sim_noemit = 0;           /* Flag for not emitting data */
 
 const std::string *init_method = NULL; /* method for  initialization. */
 
-/* function for start simulation */
-int callSolver(DATA*, string, string, string, string, double, int, string, int cpuTime);
-
-int isInteractiveSimulation();
+int isInteractiveSimulation(void);
 
 /*! \fn void setTermMsg(const char* msg)
  *
@@ -283,7 +280,7 @@ int getNonlinearSolverMethod(int argc, char**argv)
   for(i=1; i<NLS_MAX; ++i)
     WARNING2(LOG_STDOUT, "%-18s [%s]", NLS_NAME[i], NLS_DESC[i]);
   THROW("see last warning");
-  
+
   return NLS_NONE;
 }
 
@@ -310,7 +307,7 @@ int getlinearSolverMethod(int argc, char**argv)
  * Signals the type of the simulation
  * retuns true for interactive and false for non-interactive
  */
-int isInteractiveSimulation()
+int isInteractiveSimulation(void)
 {
   return interactiveSimulation;
 }
@@ -319,8 +316,7 @@ int isInteractiveSimulation()
  * Starts an Interactive simulation session
  * the runtime waits until a user shuts down the simulation
  */
-int
-startInteractiveSimulation(int argc, char**argv, void* data)
+int startInteractiveSimulation(int argc, char**argv, void* data)
 {
   int retVal = -1;
 
@@ -692,7 +688,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
       if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo.solverMethod)
         solverID = i;
   }
-  
+
   if(S_UNKNOWN == solverID)
   {
     WARNING1(LOG_STDOUT, "unrecognized option -s %s", simData->simulationInfo.solverMethod);
@@ -774,17 +770,17 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
           for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
             INFO2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
           break;
-          
+
         case FLAG_IIM:
           for(j=1; j<IIM_MAX; ++j)
             INFO2(LOG_STDOUT, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
           break;
-          
+
         case FLAG_IOM:
           for(j=1; j<IOM_MAX; ++j)
             INFO2(LOG_STDOUT, "%-18s [%s]", OPTI_METHOD_NAME[j], OPTI_METHOD_DESC[j]);
           break;
-          
+
         case FLAG_S:
           for(j=1; j<S_MAX; ++j)
             INFO2(LOG_STDOUT, "| %-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);

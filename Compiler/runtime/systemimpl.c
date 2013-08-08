@@ -1864,9 +1864,9 @@ void SystemImpl__gettextInit(const char *locale)
   int locale_len = strlen(locale);
   char *locale2 = alloc_locale_str(locale, locale_len, ".utf8", 5);
   char *locale3 = alloc_locale_str(locale, locale_len, ".UTF-8", 6);
-  char *old_ctype_default = "UTF-8";
-  if (setlocale(LC_CTYPE, ""))
-    old_ctype_default = setlocale(LC_CTYPE, "");
+  char *old_ctype_default = setlocale(LC_CTYPE, "");
+  if (!old_ctype_default)
+    old_ctype_default = "UTF-8";
   char *old_ctype = strdup(old_ctype_default);
   int old_ctype_is_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
 

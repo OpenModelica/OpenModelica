@@ -143,7 +143,7 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
 
           funcValue += (1.0-lambda)*((data->modelData.realParameterData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient)*((data->modelData.realParameterData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient);
         }
-      
+
       /* for real discrete */
       for(i=data->modelData.nVariablesReal-data->modelData.nDiscreteReal; i<data->modelData.nDiscreteReal; ++i)
           if(data->modelData.realVarsData[i].attribute.useStart && !data->modelData.realVarsData[i].attribute.fixed)
@@ -152,7 +152,7 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
                   scalingCoefficient = initData->startValueResidualScalingCoefficients[ix++]; /* use scaling coefficients */
               else
                   scalingCoefficient = 1.0; /* no scaling coefficients given */
-              
+
               funcValue += (1.0-lambda)*((data->modelData.realVarsData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient)*((data->modelData.realVarsData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient);
           }
   }
@@ -195,7 +195,7 @@ void dumpInitialization(INIT_DATA *initData)
       INFO4(LOG_INIT, "[%ld] [%15g] := %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
       INFO3(LOG_INIT, "[%ld] [%15g] := %s (parameter)", i+1, initData->vars[i], initData->name[i]);
-  
+
   for(; i<initData->nVars; ++i)
     if(initData->nominal)
       INFO4(LOG_INIT, "[%ld] [%15g] := %s (discrete) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
@@ -359,13 +359,13 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
     else
       THROW("unsupported option -iom");
 
-    /*storePreValues(data);                       /* save pre-values */
+    /*storePreValues(data);*/                       /* save pre-values */
     overwriteOldSimulationData(data);           /* if there are non-linear equations */
     updateDiscreteSystem(data);                 /* evaluate discrete variables */
 
     /* valid system for the first time! */
     saveZeroCrossings(data);
-    /*storePreValues(data);                       /* save pre-values */
+    /*storePreValues(data);*/                       /* save pre-values */
     overwriteOldSimulationData(data);
 
     funcValue = leastSquareWithLambda(initData, 1.0);
@@ -622,13 +622,13 @@ static int numeric_initialization(DATA *data, int optiMethod, int lambda_steps)
 
   retVal = initialize(data, optiMethod, lambda_steps);
 
-  /*storePreValues(data);                 /* save pre-values */
+  /*storePreValues(data);*/                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
   saveZeroCrossings(data);
-  /*storePreValues(data);                 /* save pre-values */
+  /*storePreValues(data);*/                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
 
   return retVal;
@@ -659,13 +659,13 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     long i;
     char buffer[4096];
     FILE *pFile = NULL;
-    
+
     modelica_real* realVars = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
     modelica_integer* integerVars = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
     modelica_boolean* booleanVars = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
     modelica_string* stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
     MODEL_DATA *mData = &(data->modelData);
-    
+
     ASSERT(realVars, "out of memory");
     ASSERT(integerVars, "out of memory");
     ASSERT(booleanVars, "out of memory");
@@ -679,7 +679,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
       booleanVars[i] = mData->booleanVarsData[i].attribute.start;
     for(i=0; i<mData->nVariablesString; ++i)
       stringVars[i] = mData->stringVarsData[i].attribute.start;
-    
+
     if(ACTIVE_STREAM(LOG_INIT))
     {
       sprintf(buffer, "%s_homotopy.csv", mData->modelFilePrefix);
@@ -689,7 +689,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
         fprintf(pFile, "%s,", mData->realVarsData[i].info.name);
       fprintf(pFile, "\n");
     }
-    
+
     INFO(LOG_INIT, "homotopy process");
     INDENT(LOG_INIT);
     for(step=0; step<numLambdaSteps; ++step)
@@ -702,7 +702,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
       functionInitialEquations(data);
 
       INFO1(LOG_INIT, "lambda = %g done", data->simulationInfo.lambda);
-      
+
       if(ACTIVE_STREAM(LOG_INIT))
       {
         fprintf(pFile, "%.16g,", data->simulationInfo.lambda);
@@ -710,19 +710,19 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
           fprintf(pFile, "%.16g,", data->localData[0]->realVars[i]);
         fprintf(pFile, "\n");
       }
-      
-      if(check_nonlinear_solutions(data, 0) || 
-         check_linear_solutions(data, 0) || 
+
+      if(check_nonlinear_solutions(data, 0) ||
+         check_linear_solutions(data, 0) ||
          check_mixed_solutions(data, 0))
         break;
 
       setAllStartToVars(data);
     }
     RELEASE(LOG_INIT);
-    
+
     if(ACTIVE_STREAM(LOG_INIT))
       fclose(pFile);
-    
+
     for(i=0; i<mData->nVariablesReal; ++i)
       mData->realVarsData[i].attribute.start = realVars[i];
     for(i=0; i<mData->nVariablesInteger; ++i)
@@ -731,7 +731,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
       mData->booleanVarsData[i].attribute.start = booleanVars[i];
     for(i=0; i<mData->nVariablesString; ++i)
       mData->stringVarsData[i].attribute.start = stringVars[i];
-      
+
     free(realVars);
     free(integerVars);
     free(booleanVars);
@@ -757,7 +757,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     if(stateSelection(data, 1, 1) == 1)
       WARNING(LOG_STDOUT, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
   }
-    
+
   return 0;
 }
 
@@ -898,19 +898,19 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
       else
         WARNING1(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
     }
-      
+
     INFO(LOG_INIT, "import real discrete");
     for(i=mData->nVariablesReal-mData->nDiscreteReal; i<mData->nDiscreteReal; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
-          
+
       if(!pVar)
       {
         newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
-          
+
       if(pVar)
       {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
@@ -1063,7 +1063,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   for(i=0; i<data->modelData.nMixedSystems; ++i)
     data->simulationInfo.mixedSystemData[i].solved = 1;
   /* end workaround */
-  
+
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
     retVal = 0;
@@ -1073,10 +1073,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     retVal = symbolic_initialization(data, lambda_steps);
   else
     THROW("unsupported option -iim");
-    
+
   /* check for unsolved (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
-   */   
+   */
   if(check_nonlinear_solutions(data, 1))
     retVal = -2;
   else if(check_linear_solutions(data, 1))

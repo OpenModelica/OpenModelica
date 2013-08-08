@@ -32,6 +32,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "omc_inline.h"
 #include "ModelicaUtilities.h"

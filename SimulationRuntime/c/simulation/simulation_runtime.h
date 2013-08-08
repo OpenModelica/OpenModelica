@@ -60,10 +60,10 @@ extern Socket sim_communication_port;
 
 extern "C" {
 
-int callSolver(DATA* simData, std::string result_file_cstr, std::string init_initMethod,
+extern int callSolver(DATA* simData, std::string result_file_cstr, std::string init_initMethod,
     std::string init_optiMethod, std::string init_file, double init_time, int lambda_steps, std::string outputVariablesAtEnd, int cpuTime);
 
-int initializeResultData(DATA* simData, std::string result_file_cstr, int cpuTime);
+extern int initializeResultData(DATA* simData, std::string result_file_cstr, int cpuTime);
 
 #endif /* cplusplus */
 
@@ -80,29 +80,29 @@ extern FILE_INFO TermInfo; /* message for termination. */
 extern char* TermMsg; /* message for termination. */
 
 /* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */
-const char* getNameReal(double* ptr);
-const char* getNameInt(modelica_integer* ptr);
-const char* getNameBool(modelica_boolean* ptr);
-const char* getNameString(const char** ptr);
+extern const char* getNameReal(double* ptr);
+extern const char* getNameInt(modelica_integer* ptr);
+extern const char* getNameBool(modelica_boolean* ptr);
+extern const char* getNameString(const char** ptr);
 
 
 /* function for calculating state values on residual form */
 /*used in DDASRT fortran function*/
-int functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
+extern int functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
 /* function for calculating zeroCrossings */
 /*used in DDASRT fortran function*/
-int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
+extern int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
         fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
 
-double getSimulationStepSize(double time, int *takeStep);
-void printSimulationStepSize(double in_stepSize, double time, int takeStep);
+extern double getSimulationStepSize(double time, int *takeStep);
+extern void printSimulationStepSize(double in_stepSize, double time, int takeStep);
 
 /* the main function of the simulation runtime!
  * simulation runtime no longer has main, is defined by the generated model code which calls this function.
  */
 extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
-void communicateStatus(const char *phase, double completionPercent);
+extern void communicateStatus(const char *phase, double completionPercent);
 
 #ifdef __cplusplus
 }

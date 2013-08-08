@@ -103,8 +103,9 @@ void restore_memory_state(state restore_state)
 
 void clear_current_state(void)
 {
-  current_states[get_thread_index()].current_state.buffer = 0;
-  current_states[get_thread_index()].current_state.offset = 0;
+  int ix = get_thread_index();
+  current_states[ix].current_state.buffer = 0;
+  current_states[ix].current_state.offset = 0;
 }
 
 void* alloc_elements(int n, int sz)
