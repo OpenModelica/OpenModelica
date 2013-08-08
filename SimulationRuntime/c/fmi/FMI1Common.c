@@ -66,23 +66,36 @@ fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns realValues.
  */
-void fmi1GetReal_OMC(void* in_fmi1me, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues)
+void fmi1GetReal_OMC(void* in_fmi1, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
-  fmi1_import_get_real(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi1_import_get_real(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi1_import_get_real(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+    free(valuesReferences_int);
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetReal.
  * Returns status.
  */
-void fmi1SetReal_OMC(void* in_fmi1me, int numberOfValueReferences, double* realValuesReferences, double* realValues, double* out_Values)
+void fmi1SetReal_OMC(void* in_fmi1, int numberOfValueReferences, double* realValuesReferences, double* realValues, double* out_Values, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
-  fmi1_import_set_real(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi1_import_set_real(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi1_import_set_real(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+  }
 }
 
 /*
@@ -90,23 +103,36 @@ void fmi1SetReal_OMC(void* in_fmi1me, int numberOfValueReferences, double* realV
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns integerValues.
  */
-void fmi1GetInteger_OMC(void* in_fmi1me, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues)
+void fmi1GetInteger_OMC(void* in_fmi1, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
-  fmi1_import_get_integer(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi1_import_get_integer(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi1_import_get_integer(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+    free(valuesReferences_int);
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-void fmi1SetInteger_OMC(void* in_fmi1me, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double* out_Values)
+void fmi1SetInteger_OMC(void* in_fmi1, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double* out_Values, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
-  fmi1_import_set_integer(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi1_import_set_integer(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi1_import_set_integer(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  }
 }
 
 /*
@@ -114,23 +140,36 @@ void fmi1SetInteger_OMC(void* in_fmi1me, int numberOfValueReferences, double* in
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns booleanValues.
  */
-void fmi1GetBoolean_OMC(void* in_fmi1me, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues)
+void fmi1GetBoolean_OMC(void* in_fmi1, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
-  fmi1_import_get_boolean(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi1_import_get_boolean(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi1_import_get_boolean(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+    free(valuesReferences_int);
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-void fmi1SetBoolean_OMC(void* in_fmi1me, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double* out_Values)
+void fmi1SetBoolean_OMC(void* in_fmi1, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double* out_Values, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
-  fmi1_import_set_boolean(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi1_import_set_boolean(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi1_import_set_boolean(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  }
 }
 
 /*
@@ -138,23 +177,36 @@ void fmi1SetBoolean_OMC(void* in_fmi1me, int numberOfValueReferences, double* bo
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns stringValues.
  */
-void fmi1GetString_OMC(void* in_fmi1me, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues)
+void fmi1GetString_OMC(void* in_fmi1, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
-  fmi1_import_get_string(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi1_import_get_string(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi1_import_get_string(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+    free(valuesReferences_int);
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-void fmi1SetString_OMC(void* in_fmi1me, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double* out_Values)
+void fmi1SetString_OMC(void* in_fmi1, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double* out_Values, int fmiType)
 {
-  FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1me;
-  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
-  fmi1_import_set_string(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  if (fmiType == 1) {
+    FMI1ModelExchange* FMI1ME = (FMI1ModelExchange*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi1_import_set_string(FMI1ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  } else if (fmiType == 2) {
+    FMI1CoSimulation* FMI1CS = (FMI1CoSimulation*)in_fmi1;
+    fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi1_import_set_string(FMI1CS->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  }
 }
 
 #ifdef __cplusplus

@@ -51,6 +51,29 @@ typedef struct {
   fmi1_event_info_t* FMIEventInfo;
 } FMI1ModelExchange;
 
+/*
+ * Structure used as an External Object in the generated Modelica code of the imported FMU.
+ * Used for FMI 1.0 Co-Simulation.
+ */
+typedef struct {
+  int FMILogLevel;
+  jm_callbacks JMCallbacks;
+  fmi_import_context_t* FMIImportContext;
+  fmi1_callback_functions_t FMICallbackFunctions;
+  char* FMIWorkingDirectory;
+  fmi1_import_t* FMIImportInstance;
+  char* FMIInstanceName;
+  int FMIDebugLogging;
+  char* FMIFmuLocation;
+  char* FMIMimeType;
+  double FMITimeOut;
+  int FMIVisible;
+  int FMIInteractive;
+  double FMITStart;
+  int FMIStopTimeDefined;
+  double FMITStop;
+} FMI1CoSimulation;
+
 void fmi1logger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...);
 
 #endif

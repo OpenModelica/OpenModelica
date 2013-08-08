@@ -66,23 +66,31 @@ fmi2_value_reference_t* real_to_fmi2_value_reference(int numberOfValueReferences
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns realValues.
  */
-void fmi2GetReal_OMC(void* in_fmi2me, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues)
+void fmi2GetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
-  fmi2_import_get_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi2_import_get_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetReal.
  * Returns status.
  */
-void fmi2SetReal_OMC(void* in_fmi2me, int numberOfValueReferences, double* realValuesReferences, double* realValues, double* out_Values)
+void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double* realValues, double* out_Values, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
-  fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
+    fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 /*
@@ -90,23 +98,31 @@ void fmi2SetReal_OMC(void* in_fmi2me, int numberOfValueReferences, double* realV
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns integerValues.
  */
-void fmi2GetInteger_OMC(void* in_fmi2me, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues)
+void fmi2GetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
-  fmi2_import_get_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi2_import_get_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-void fmi2SetInteger_OMC(void* in_fmi2me, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double* out_Values)
+void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double* out_Values, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
-  fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
+    fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 /*
@@ -114,23 +130,31 @@ void fmi2SetInteger_OMC(void* in_fmi2me, int numberOfValueReferences, double* in
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns booleanValues.
  */
-void fmi2GetBoolean_OMC(void* in_fmi2me, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues)
+void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
-  fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-void fmi2SetBoolean_OMC(void* in_fmi2me, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double* out_Values)
+void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double* out_Values, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
-  fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
+    fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_boolean_t*)booleanValues);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 /*
@@ -138,23 +162,31 @@ void fmi2SetBoolean_OMC(void* in_fmi2me, int numberOfValueReferences, double* bo
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns stringValues.
  */
-void fmi2GetString_OMC(void* in_fmi2me, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues)
+void fmi2GetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
-  fmi2_import_get_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
-  free(valuesReferences_int);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi2_import_get_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+    free(valuesReferences_int);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 /*
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-void fmi2SetString_OMC(void* in_fmi2me, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double* out_Values)
+void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double* out_Values, int fmiType)
 {
-  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2me;
-  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
-  fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+  if (fmiType == 1) {
+    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+    fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
+    fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+  } else if (fmiType == 2) {
+
+  }
 }
 
 #ifdef __cplusplus
