@@ -632,7 +632,6 @@ public function arrayFold_impl
 
   replaceable type ElementType subtypeof Any;
   replaceable type FoldType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
 
   partial function FoldFunc
     input ElementType inElement;
@@ -698,7 +697,6 @@ public function arrayFold1_impl
   output FoldType outResult;
 
   replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
   replaceable type FoldType subtypeof Any;
   replaceable type ArgType1 subtypeof Any;
   replaceable type ArgType2 subtypeof Any;
@@ -771,7 +769,6 @@ public function arrayFold2_impl
   output FoldType outResult;
 
   replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
   replaceable type FoldType subtypeof Any;
   replaceable type ArgType1 subtypeof Any;
   replaceable type ArgType2 subtypeof Any;
@@ -854,7 +851,6 @@ public function arrayFold4_impl
   output FoldType outResult;
 
   replaceable type ElementType subtypeof Any;
-  replaceable type FoldType subtypeof Any;
   replaceable type FoldType subtypeof Any;
   replaceable type ArgType1 subtypeof Any;
   replaceable type ArgType2 subtypeof Any;
