@@ -4846,7 +4846,7 @@ protected function elabBuiltinDiagonal2 "function: elabBuiltinDiagonal2
   Tries to symbolically simplify diagonal.
   For instance diagonal({a,b}) => {a,0;0,b}"
   input list<DAE.Exp> expl;
-  input Expression.Type inType;
+  input DAE.Type  inType;
   output DAE.Exp res;
 protected
   Integer dim;
@@ -4859,7 +4859,7 @@ protected function elabBuiltinDiagonal3
   input list<DAE.Exp> inExpExpLst1;
   input Integer inInteger2;
   input Integer inInteger3;
-  input Expression.Type inType;
+  input DAE.Type  inType;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inExpExpLst1,inInteger2,inInteger3,inType)

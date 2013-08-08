@@ -927,9 +927,9 @@ algorithm
     local
       String name;
       DAE.Type daeType;
-      Expression.ComponentRef id;
+      DAE.ComponentRef id;
       DAE.VarParallelism prl;
-      list<Expression.Subscript> inst_dims;
+      list<DAE.Subscript> inst_dims;
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
       SimCode.Variable var;
@@ -2498,7 +2498,7 @@ protected function createEquation
 algorithm
   (equation_, ouniqueEqIndex, otempvars) := matchcontinue (eqNum, varNum, syst, shared, linearSystem, skipDiscInAlgorithm, iuniqueEqIndex, itempvars)
     local
-      Expression.ComponentRef cr;
+      DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> values;
       BackendDAE.Var v;
@@ -6338,7 +6338,7 @@ algorithm
   (equations_, ouniqueEqIndex) := matchcontinue (eqns, vars, skipDiscinAlgorithm, iuniqueEqIndex)
     local
       DAE.Algorithm alg;
-      list<Expression.ComponentRef> solvedVars, algOutVars;
+      list<DAE.ComponentRef> solvedVars, algOutVars;
       String message, algStr;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
@@ -8251,7 +8251,7 @@ end isMixedSystem;
 
 protected function solveTrivialArrayEquation "function solveTrivialArrayEquation
   Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
-  input Expression.ComponentRef v;
+  input DAE.ComponentRef v;
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outE1;
@@ -8332,12 +8332,12 @@ protected function getVectorizedCrefFromExp "function getVectorizedCrefFromExp
    {v{1}, v{2}, ...v{n}}  for some n.
   TODO: implement for 2D as well."
   input DAE.Exp inExp;
-  output Expression.ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef := match (inExp)
     local
-      list<Expression.ComponentRef> crefs, crefs_1;
-      Expression.ComponentRef cr;
+      list<DAE.ComponentRef> crefs, crefs_1;
+      DAE.ComponentRef cr;
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> column;
       
@@ -8369,13 +8369,13 @@ protected function transformXToXd "function transformXToXd
 algorithm
   outVar := matchcontinue (inVar)
     local
-      Expression.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
-      list<Expression.Subscript> dim;
+      list<DAE.Subscript> dim;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -8631,7 +8631,7 @@ protected function getCrefFromExp "function getCrefFromExp
 algorithm
   c := match (e)
     local
-      Expression.ComponentRef crefe;
+      DAE.ComponentRef crefe;
       Absyn.ComponentRef crefa;
       
     case(DAE.CREF(componentRef = crefe))
@@ -8728,7 +8728,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       DAE.VarDirection dir;
-      list<Expression.Subscript> inst_dims;
+      list<DAE.Subscript> inst_dims;
       list<String> numArrayElement;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -9361,7 +9361,7 @@ algorithm
   outExp := matchcontinue(inExp)
     local
       DAE.Exp e, e1, e2;
-      Expression.Type ty;
+      DAE.Type ty;
       String se;
       DAE.ElementSource source;
     case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty), exp2 = e2), source))
@@ -10454,7 +10454,7 @@ algorithm outOrder := matchcontinue(inDlow, syst)
     BackendDAE.EquationArray deqns;
     list<BackendDAE.Equation> eqns;
     list<BackendDAE.Var> vars;
-    list<Expression.Exp> derExps;
+    list<DAE.Exp> derExps;
     list<tuple<DAE.ComponentRef, Integer>> variableIndex;
     list<list<DAE.ComponentRef>> firstOrderVars;
     list<DAE.ComponentRef> firstOrderVarsFiltered;
@@ -10549,12 +10549,12 @@ Author bz 2008-06
 For all state-variables, generate an der(var) expression. 
 "
   input list<BackendDAE.Var> inVars;
-  output list<Expression.Exp> outDerExps;
+  output list<DAE.Exp> outDerExps;
 algorithm outDerExps := matchcontinue(inVars)
   local
     BackendDAE.Var v;
     list<BackendDAE.Var> vars;
-    list<Expression.Exp> rec;
+    list<DAE.Exp> rec;
     DAE.ComponentRef cr;
   case({}) then {};
   case((v as BackendDAE.VAR(varKind = BackendDAE.STATE(index=_), varName = cr))::vars)
@@ -10582,14 +10582,14 @@ Author bz 2008-06
 helper function for setVariableDerIndex, locates the equation(/s) containing the current derivate.
 From there search for the variable beeing derived, exclude 'current equation'
 "
-  input Expression.Exp derExp;
+  input DAE.Exp derExp;
   input list<BackendDAE.Equation> inEqns;
   input list<BackendDAE.Equation> inEqnsOrg;
   output tuple<DAE.ComponentRef, Integer> out;
   output list<DAE.ComponentRef> sysOrdOneVars;
 algorithm (out, sysOrdOneVars) := matchcontinue(derExp, inEqns, inEqnsOrg)
   local 
-    Expression.Exp e1, e2, deriveVar;
+    DAE.Exp e1, e2, deriveVar;
     list<BackendDAE.Equation> eqs, eqsOrg;
     BackendDAE.Equation eq;
     list<DAE.ComponentRef> crefs;
@@ -10662,7 +10662,7 @@ end locateDerAndSerachOtherSide;
 protected function locateDerAndSerachOtherSide2 "
 Author bz 2008-06
 helper function for locateDerAndSerachOtherSide"
-  input Expression.Exp inDer;
+  input DAE.Exp inDer;
   input list<BackendDAE.Equation> inEqns;
   output Integer oi;
   output list<DAE.ComponentRef> firstOrderDers;
@@ -10682,13 +10682,13 @@ recursivly search equations for der(..) expressions.
 When found, return 1... this since we are only interested in second order system, at most.
 If we do not find any more derivative, 0 is returned. 
 "
-  input Expression.Exp inDer;
+  input DAE.Exp inDer;
   input list<BackendDAE.Equation> inEqns;
   output Integer oi;
   output list<DAE.ComponentRef> firstOrderDers;
 algorithm (oi, firstOrderDers) := matchcontinue(inDer, inEqns)
   local
-    Expression.Exp e1, e2;
+    DAE.Exp e1, e2;
     DAE.ComponentRef cr;
     list<BackendDAE.Equation> rest;
   case(_, {}) then (0, {});

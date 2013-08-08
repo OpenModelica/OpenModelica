@@ -4637,6 +4637,8 @@ algorithm
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
         acc = generateFunctions(cache,env,p,sp,acc);
       then acc;
+    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=_))::sp,acc)
+      then generateFunctions(cache,env,p,sp,acc);
     case (cache,env,_,SCode.CLASS(name=name,info=info as Absyn.INFO(fileName=file))::sp,acc)
       equation
         (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
@@ -6512,7 +6514,7 @@ algorithm
       Env.Cache cache;
       Option<Interactive.SymbolTable> st;
       Absyn.Path complexName;
-      list<Expression.Var> pubVarLst, proVarLst, varLst;
+      list<DAE.Var> pubVarLst, proVarLst, varLst;
       list<String> pubVarNames, proVarNames, varNames;
       DAE.Type ty;
       Absyn.Info info;

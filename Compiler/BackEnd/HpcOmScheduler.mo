@@ -96,14 +96,14 @@ protected function convertNodeToGraphNode
   input Real iTimeOffset; 
   output GraphNode oNode;
 protected
-  Integer weighting, nodeMark, primalComp;
+  Integer nodeMark, primalComp;
   array<Integer> nodeMarks;
   array<list<Integer>> inComps;
   list<Integer> components;
   array<tuple<Integer,Real>> exeCosts;
   Real exeCost, weighting;
 algorithm
-  iTaskGraphMeta := matchcontinue(iNodeIdx, iTaskGraphMeta,iTimeOffset)
+  oNode := matchcontinue(iNodeIdx, iTaskGraphMeta,iTimeOffset)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps, exeCosts=exeCosts, nodeMark=nodeMarks),_)
       equation
         components = arrayGet(inComps,iNodeIdx);

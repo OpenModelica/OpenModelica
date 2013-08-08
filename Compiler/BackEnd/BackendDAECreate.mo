@@ -72,6 +72,8 @@ protected import SCode;
 protected import System;
 protected import Util;
 
+protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+
 public function lower "function: lower
   This function translates a DAE, which is the result from instantiating a
   class, into a more precise form, called BackendDAE.BackendDAE defined in this module.
@@ -675,7 +677,7 @@ algorithm
       DAE.VarVisibility protection;
       Boolean b;
       String str;
-      Inline.Functiontuple fnstpl;
+      Functiontuple fnstpl;
       HashTableExpToExp.HashTable inlineHT;
     case (DAE.VAR(componentRef = name,
                   kind = kind,
@@ -716,7 +718,7 @@ protected function inlineExpOpt
 "function inlineExpOpt
 author Frenkel TUD 2013-02"
   input Option<DAE.Exp> iOptExp;
-  input Inline.Functiontuple fnstpl;
+  input Functiontuple fnstpl;
   input DAE.ElementSource iSource;
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
   output Option<DAE.Exp> oOptExp;
@@ -740,7 +742,7 @@ protected function inlineExpOpt1
 "function inlineExpOpt
 author Frenkel TUD 2013-02"
   input DAE.Exp iExp;
-  input Inline.Functiontuple fnstpl;
+  input Functiontuple fnstpl;
   input DAE.ElementSource iSource;
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
   output DAE.Exp oExp;
@@ -1544,7 +1546,7 @@ protected function lowerextendedRecordEqn "function lowerextendedRecordEqn
 algorithm
   outEqns := matchcontinue(inExp1, inExp2, source, functionTree, inEqns)
     local
-      Expression.Type tp;
+      DAE.Type tp;
       Integer size;
       DAE.Dimensions dims;
       list<DAE.Exp> explst1, explst2;

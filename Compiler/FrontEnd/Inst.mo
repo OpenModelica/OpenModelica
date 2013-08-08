@@ -109,7 +109,7 @@ Calling scope is used to determine when unconnected flow variables should be set
   record INNER_CALL "this is an inner call" end INNER_CALL;
 end CallingScope;
 
-public type InstDims = list<list<DAE.Subscript>>
+protected type InstDims = list<list<DAE.Subscript>>
 "Changed from list<Subscript> to list<list<Subscript>>. One list for each scope.
  This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
  E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
@@ -952,7 +952,7 @@ public function instClass
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inBoolean;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -1332,7 +1332,7 @@ protected function instClassBasictype
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImplicit;
   input CallingScope inCallingScope;
   input Connect.Sets inSets;
@@ -1412,7 +1412,7 @@ public function instClassIn "
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean implicitInstantiation;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -1512,7 +1512,7 @@ public function instClassIn2
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean implicitInstantiation;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -1779,7 +1779,7 @@ public function instClassIn_dispatch
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean implicitInstantiation;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -2502,7 +2502,7 @@ end instBuiltinAttribute;
 protected function arrayBasictypeBaseclass
 "function: arrayBasictypeBaseclass
   author: PA"
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input DAE.Type inType;
   output Option<DAE.Type> outOptType;
 algorithm
@@ -2536,7 +2536,7 @@ public function partialInstClassIn
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -2678,7 +2678,7 @@ protected function partialInstClassIn_dispatch
   input ClassInf.State inState;
   input SCode.Element inClass;
   input SCode.Visibility inVisibility;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean partialInst;
   input Integer numIter;
   output Env.Cache outCache;
@@ -2903,7 +2903,7 @@ protected function instClassdef "
   input SCode.Visibility inVisibility;
   input SCode.Partial inPartialPrefix;
   input SCode.Encapsulated inEncapsulatedPrefix;
-  input InstDims inInstDims9;
+  input list<list<DAE.Subscript>>inInstDims9;
   input Boolean inBoolean10;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -3045,7 +3045,7 @@ type"
   input SCode.ClassDef inClassDef6;
   input SCode.Restriction inRestriction7;
   input SCode.Visibility inVisibility;
-  input InstDims inInstDims9;
+  input list<list<DAE.Subscript>>inInstDims9;
   input Boolean inBoolean10;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Connect.Sets inSets;
@@ -3210,7 +3210,7 @@ protected function instClassdef2 "
   input SCode.Visibility inVisibility;
   input SCode.Partial inPartialPrefix;
   input SCode.Encapsulated inEncapsulatedPrefix;
-  input InstDims inInstDims9;
+  input list<list<DAE.Subscript>>inInstDims9;
   input Boolean inBoolean10;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -4148,7 +4148,7 @@ protected function instClassDefHelper
   input InnerOuter.InstHierarchy inIH;
   input list<Absyn.TypeSpec> inSpecs;
   input Prefix.Prefix inPre;
-  input InstDims inDims;
+  input list<list<DAE.Subscript>>inDims;
   input Boolean inImpl;
   input list<DAE.Type> accTypes;
   input Connect.Sets inSets;
@@ -4478,7 +4478,7 @@ protected function instBasictypeBaseclass
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
   input DAE.Mod inMod4;
-  input InstDims inInstDims5;
+  input list<list<DAE.Subscript>>inInstDims5;
   input String className;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
@@ -4574,7 +4574,7 @@ Handles the fail case rollbacks/deleteCheckpoint of errors."
   input list<SCode.Element> inSCodeElementLst2;
   input list<SCode.Element> inSCodeElementLst3;
   input DAE.Mod inMod4;
-  input InstDims inInstDims5;
+  input list<list<DAE.Subscript>>inInstDims5;
   input String className;
   input Absyn.Info info;
   input Util.StatefulBoolean stopInst "prevent instantiation of classes adding components to primary types";
@@ -4830,7 +4830,7 @@ protected function partialInstClassdef
   input SCode.Restriction inRestriction;
   input SCode.Partial inPartialPrefix;
   input SCode.Visibility inVisibility;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input String inClassName "the class name that contains the elements we are instanting";
   input Absyn.Info info;
   input Integer numIter;
@@ -5418,7 +5418,7 @@ public function instElementList
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, DAE.Mod>> inElements;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImplInst;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -6091,7 +6091,7 @@ protected function instElementList2
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, DAE.Mod>> inElements;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImplicit;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -6170,7 +6170,7 @@ public function instElement2
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input tuple<SCode.Element, DAE.Mod> inElement;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImplicit;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -6701,7 +6701,7 @@ public function addComponentsToEnv
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst6;
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst7;
   input list<SCode.Equation> inSCodeEquationLst8;
-  input InstDims inInstDims9;
+  input list<list<DAE.Subscript>>inInstDims9;
   input Boolean inBoolean10;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -6752,7 +6752,7 @@ protected function addComponentToEnv
   input tuple<SCode.Element, DAE.Mod> inTplSCodeElementMod6;
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst7;
   input list<SCode.Equation> inSCodeEquationLst8;
-  input InstDims inInstDims9;
+  input list<list<DAE.Subscript>>inInstDims9;
   input Boolean inBoolean10;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -6888,7 +6888,7 @@ protected function addComponentsToEnv2
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input list<tuple<SCode.Element, DAE.Mod>> inElement;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -7097,7 +7097,7 @@ protected function addRecordConstructorsToTheCache
   input ClassInf.State inState;
   input Absyn.Direction inDirection;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -7144,7 +7144,7 @@ public function instElement "
   input Prefix.Prefix inPrefix;
   input ClassInf.State inState;
   input tuple<SCode.Element, DAE.Mod> inElement;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImplicit;
   input CallingScope inCallingScope;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -7622,7 +7622,7 @@ protected function checkMultiplyDeclared
   input Prefix.Prefix prefix;
   input ClassInf.State ciState;
   input tuple<SCode.Element, DAE.Mod> compTuple;
-  input InstDims instDims;
+  input list<list<DAE.Subscript>>instDims;
   input Boolean impl;
   output Boolean alreadyDeclared;
 algorithm
@@ -8250,7 +8250,7 @@ protected function instVar
   input SCode.Prefixes inPrefixes;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImpl;
   input SCode.Comment inComment;
   input Absyn.Info info;
@@ -8592,7 +8592,7 @@ protected function instVar_dispatch "function: instVar_dispatch
   input SCode.Prefixes inPrefixes;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inSCodeComment;
   input Absyn.Info info;
@@ -8758,7 +8758,7 @@ protected function instVar2
   input SCode.Prefixes inPrefixes;
   input DAE.Dimensions inDimensions;
   input list<DAE.Subscript> inSubscripts;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImpl;
   input SCode.Comment inComment;
   input Absyn.Info inInfo;
@@ -9047,7 +9047,7 @@ public function instScalar
   input SCode.Attributes inAttributes;
   input SCode.Prefixes inPrefixes;
   input list<DAE.Subscript> inSubscripts;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inImpl;
   input Option<SCode.Comment> inComment;
   input Absyn.Info inInfo;
@@ -9567,7 +9567,7 @@ public function getUsertypeDimensions
   input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output DAE.Dimensions outDimensionLst;
@@ -10693,7 +10693,7 @@ protected function instArray
   input DAE.Dimension inDimension;
   input DAE.Dimensions inDimensionLst;
   input list<DAE.Subscript> inIntegerLst;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean inBoolean;
   input SCode.Comment inComment;
   input Absyn.Info info;
@@ -11027,7 +11027,7 @@ protected function elabArraydimOpt
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output Env.Cache outCache;
   output DAE.Dimensions outDimensionLst;
 algorithm
@@ -11079,7 +11079,7 @@ protected function elabArraydim
   input Boolean isFunctionInput;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output Env.Cache outCache;
   output DAE.Dimensions outDimensionLst;
 algorithm
@@ -11229,7 +11229,7 @@ protected function elabArraydimType
   input Prefix.Prefix inPrefix;
   input Absyn.ComponentRef componentRef;
   input Absyn.Info info;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output DAE.Dimensions outDimensionLst;
 algorithm
   outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef,info,inInstDims)
@@ -11367,7 +11367,7 @@ public function instClassDecl
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -11415,7 +11415,7 @@ public function implicitInstantiation
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -11595,7 +11595,7 @@ public function implicitFunctionInstantiation
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
@@ -11655,7 +11655,7 @@ protected function implicitFunctionInstantiation2
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input Boolean instFunctionTypeOnly "if true, do no additional checking of the function";
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -13359,7 +13359,7 @@ public function daeDeclare
   input SCode.Attributes inAttributes;
   input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
@@ -13420,7 +13420,7 @@ protected function daeDeclare2
   input DAE.VarParallelism inParallelism;
   input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
@@ -13485,7 +13485,7 @@ protected function daeDeclare3
   input DAE.VarParallelism inParallelism;
   input SCode.Visibility visibility;
   input Option<DAE.Exp> inExpExpOption;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
@@ -13559,7 +13559,7 @@ protected function daeDeclare4
   input DAE.VarParallelism inParallelism;
   input DAE.VarVisibility protection;
   input Option<DAE.Exp> inExpExpOption;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input DAE.StartValue inStartValue;
   input Option<DAE.VariableAttributes> inDAEVariableAttributesOption;
   input Option<SCode.Comment> inAbsynCommentOption;
@@ -16050,7 +16050,7 @@ protected function traverseModAddDims
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   input list<Absyn.Subscript> inDecDims;
   output SCode.Mod outMod;
 algorithm
@@ -16496,7 +16496,7 @@ protected function removeSelfReferenceAndUpdate
   input SCode.Attributes iattr;
   input SCode.Prefixes inPrefixes;
   input Boolean impl;
-  input InstDims inst_dims;
+  input list<list<DAE.Subscript>>inst_dims;
   input Prefix.Prefix pre;
   input DAE.Mod mods;
   input SCode.Mod scodeMod;
@@ -16931,7 +16931,7 @@ end propagateAbSCDirection2;
 
 protected function makeCrefBaseType
   input DAE.Type inBaseType;
-  input InstDims inDimensions;
+  input list<list<DAE.Subscript>>inDimensions;
   output DAE.Type outType;
 algorithm
   outType := Types.simplifyType(makeCrefBaseType2(inBaseType, inDimensions));
@@ -16939,7 +16939,7 @@ end makeCrefBaseType;
 
 protected function makeCrefBaseType2
   input DAE.Type inBaseType;
-  input InstDims inDimensions;
+  input list<list<DAE.Subscript>>inDimensions;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue(inBaseType, inDimensions)
@@ -18596,7 +18596,7 @@ algorithm
 end checkParallelismWRTEnv;
 
 protected function instDimsHasZeroDims
-  input InstDims inInstDims;
+  input list<list<DAE.Subscript>>inInstDims;
   output Boolean outHasZeroDims;
 algorithm
   outHasZeroDims := matchcontinue(inInstDims)

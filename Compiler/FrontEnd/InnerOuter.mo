@@ -424,12 +424,12 @@ protected function removeInnerPrefixFromCref
 "@author: adrpo
  This function will strip the given prefix from the component references."
  input Prefix.Prefix inPrefix;
- input Expression.ComponentRef inCref;
- output Expression.ComponentRef outCref;
+ input DAE.ComponentRef inCref;
+ output DAE.ComponentRef outCref;
 algorithm
   outCref := matchcontinue(inPrefix, inCref)
     local
-      Expression.ComponentRef crefPrefix, crOuter;
+      DAE.ComponentRef crefPrefix, crOuter;
 
     // no prefix to strip, return the cref!
     case (Prefix.NOPRE(),_) then inCref;

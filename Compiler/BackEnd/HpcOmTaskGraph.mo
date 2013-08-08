@@ -3847,7 +3847,7 @@ protected function countOperations "function countOperations
   output tuple<Integer,Integer,Integer> operations; //<add,mul,trig>
   
 protected
-  Expression.ComponentRef cr;
+  DAE.ComponentRef  cr;
   Integer eqnIdx,varIdx;
   Integer op1,op2,op3;
   BackendDAE.Variables vars;

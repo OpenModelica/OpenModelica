@@ -257,7 +257,7 @@ protected function generateScalarArrayEqns2 "function generateScalarArrayEqns2
 algorithm
   oEqns := matchcontinue(inExp1,inExp2,inSource,diffed,eqExp,iEqns)
     local
-      Expression.Type tp;
+      DAE.Type tp;
       Integer size,i;
       DAE.Dimensions dims;
       list<Integer> ds;

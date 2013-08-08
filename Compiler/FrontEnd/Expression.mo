@@ -51,13 +51,13 @@ encapsulated package Expression
 public import Absyn;
 public import DAE;
 
-public type ComponentRef = DAE.ComponentRef;
-public type Exp = DAE.Exp;
-public type Ident = String;
-public type Operator = DAE.Operator;
-public type Type = DAE.Type;
-public type Subscript = DAE.Subscript;
-public type Var = DAE.Var;
+protected
+type ComponentRef = DAE.ComponentRef;
+type Exp = DAE.Exp;
+type Operator = DAE.Operator;
+type Type = DAE.Type;
+type Subscript = DAE.Subscript;
+type Var = DAE.Var;
 
 // protected imports
 protected import ClassInf;
@@ -84,7 +84,7 @@ protected import Util;
 public function intSubscript
   "Converts an integer into an index subscript."
   input Integer inInteger;
-  output Subscript outSubscript;
+  output DAE.Subscript outSubscript;
 algorithm
   outSubscript := DAE.INDEX(DAE.ICONST(inInteger));
 end intSubscript;
@@ -92,14 +92,14 @@ end intSubscript;
 public function intSubscripts
   "Converts a list of integers into index subscripts."
   input list<Integer> inIntegers;
-  output list<Subscript> outSubscripts;
+  output list<DAE.Subscript> outSubscripts;
 algorithm
   outSubscripts := List.map(inIntegers, intSubscript);
 end intSubscripts;
 
 public function subscriptInt
   "Tries to convert a subscript to an integer index."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output Integer outInteger;
 algorithm
   outInteger := match(inSubscript)
@@ -114,14 +114,14 @@ end subscriptInt;
 
 public function subscriptsInt
   "Tries to convert a list of subscripts to integer indices."
-  input list<Subscript> inSubscripts;
+  input list<DAE.Subscript> inSubscripts;
   output list<Integer> outIntegers;
 algorithm
   outIntegers := List.map(inSubscripts, subscriptInt);
 end subscriptsInt;
 
 public function subscriptIsZero
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output Boolean outIsZero;
 algorithm
   outIsZero := matchcontinue(inSubscript)
@@ -147,7 +147,7 @@ algorithm
     local
       Integer i;
       Real r;
-      Ident s;
+      String s;
       Boolean b;
       Absyn.ComponentRef cr_1;
       ComponentRef cr;
@@ -312,7 +312,7 @@ algorithm
 end unelabReductionIterator;
 
 protected function unelabOperator "help function to unelabExpression."
-input Operator op;
+input DAE.Operator op;
 output Absyn.Operator aop;
 algorithm
   aop := match(op)
@@ -444,9 +444,9 @@ end realToIntIfPossible;
 public function liftArrayR "
   function liftArrayR
   Converts a type into an array type with dimension n as first dim"
-  input Type tp;
+  input DAE.Type tp;
   input DAE.Dimension n;
-  output Type outTp;
+  output DAE.Type outTp;
 algorithm
   outTp := matchcontinue(tp,n)
     local
@@ -809,13 +809,13 @@ public function prependSubscriptExp
 "Prepends a subscript to a CREF expression
  For instance a.b[1,2] with subscript 'i' becomes a.b[i,1,2]."
   input DAE.Exp exp;
-  input Subscript subscr;
+  input DAE.Subscript subscr;
   output DAE.Exp outExp;
 algorithm
   outExp := match(exp,subscr)
     local
       Type t; ComponentRef cr,cr1,cr2;
-      list<Subscript> subs;
+      list<DAE.Subscript> subs;
       DAE.Exp e;
 
     case (DAE.CREF(cr,t),_)
@@ -935,8 +935,8 @@ public function unliftArray
   Converts an array type into its element type
   See also Types.unliftArray.
   ."
-  input Type inType;
-  output Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue (inType)
     local
@@ -955,8 +955,8 @@ end unliftArray;
 
 public function unliftArrayIgnoreFirst
   input A a;
-  input Type inType;
-  output Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
   replaceable type A subtypeof Any;
 algorithm
   outType := unliftArray(inType);
@@ -1004,9 +1004,9 @@ public function liftArrayRight "
 This function adds an array dimension to a type on the right side, i.e.
 liftArrayRigth(Real[2,3],SOME(4)) => Real[2,3,4].
 This function has the same functionality as Types.liftArrayType but for DAE.Type.'"
-  input Type inType;
+  input DAE.Type inType;
   input DAE.Dimension inDimension;
-  output Type outType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue (inType,inDimension)
     local
@@ -1030,9 +1030,9 @@ public function liftArrayLeft "
 author: PA
 This function adds an array dimension to a type on the left side, i.e.
 liftArrayRigth(Real[2,3],SOME(4)) => Real[4,2,3]"
-  input Type inType;
+  input DAE.Type inType;
   input DAE.Dimension inDimension;
-  output Type outType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue (inType,inDimension)
     local
@@ -1049,9 +1049,9 @@ algorithm
 end liftArrayLeft;
 
 public function liftArrayLeftList
-  input Type inType;
+  input DAE.Type inType;
   input list<DAE.Dimension> inDimensions;
-  output Type outType;
+  output DAE.Type outType;
 algorithm
   outType := match(inType, inDimensions)
     local
@@ -1074,9 +1074,9 @@ end liftArrayLeftList;
 
 public function setOpType
   "Sets the type of an operator."
-  input Operator inOp;
-  input Type inType;
-  output Operator outOp;
+  input DAE.Operator inOp;
+  input DAE.Type inType;
+  output DAE.Operator outOp;
 algorithm
   outOp := matchcontinue(inOp, inType)
     case (DAE.ADD(ty = _), _) then DAE.ADD(inType);
@@ -1123,8 +1123,8 @@ public function unliftOperator
   "Unlifts the type of an operator by removing one dimension from the operator
    type. The operator is changed to the scalar version if the type becomes a
    scalar type."
-  input Operator inOperator;
-  output Operator outOperator;
+  input DAE.Operator inOperator;
+  output DAE.Operator outOperator;
 protected
   Type ty;
 algorithm
@@ -1137,9 +1137,9 @@ public function unliftOperatorX
   "Unlifts the type of an operator by removing X dimensions from the operator
    type. The operator is changed to the scalar version if the type becomes a
    scalar type."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   input Integer inX;
-  output Operator outOperator;
+  output DAE.Operator outOperator;
 protected
   Type ty;
 algorithm
@@ -1151,9 +1151,9 @@ end unliftOperatorX;
 protected function unliftOperator2
   "Helper function to unliftOperator. Sets the type of the given operator, and
    changes the operator to the scalar version if the type is scalar."
-  input Operator inOperator;
-  input Type inType;
-  output Operator outOperator;
+  input DAE.Operator inOperator;
+  input DAE.Type inType;
+  output DAE.Operator outOperator;
 algorithm
   outOperator := match(inOperator, inType)
     case (_, DAE.T_ARRAY(ty = _)) then setOpType(inOperator, inType);
@@ -1164,9 +1164,9 @@ end unliftOperator2;
 protected function makeScalarOpFromArrayOp
   "Helper function to makeScalarOpFromArrayOp. Returns the scalar version of a
    given array operator."
-  input Operator inOperator;
-  input Type inType;
-  output Operator outOperator;
+  input DAE.Operator inOperator;
+  input DAE.Type inType;
+  output DAE.Operator outOperator;
 algorithm
   outOperator := match(inOperator, inType)
     case (DAE.MUL_ARRAY_SCALAR(ty = _), _) then DAE.MUL(inType);
@@ -1182,7 +1182,7 @@ end makeScalarOpFromArrayOp;
 
 public function isScalarArrayOp
   "Returns true if the operator takes a scalar and an array as arguments."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output Boolean outIsScalarArrayOp;
 algorithm
   outIsScalarArrayOp := match(inOperator)
@@ -1194,7 +1194,7 @@ end isScalarArrayOp;
 
 public function isArrayScalarOp
   "Returns true if the operator takes an array and a scalar as arguments."
-  input Operator inOperator;
+  input DAE.Operator inOperator;
   output Boolean outIsArrayScalarOp;
 algorithm
   outIsArrayScalarOp := match(inOperator)
@@ -1212,15 +1212,15 @@ public function subscriptsAppend
   But there are a few special cases.  When the last existing
   subscript is a slice, it is replaced by the slice indexed by
   the new subscript."
-  input list<Subscript> inSubscriptLst;
+  input list<DAE.Subscript> inSubscriptLst;
   input DAE.Exp inSubscript;
-  output list<Subscript> outSubscriptLst;
+  output list<DAE.Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst := matchcontinue (inSubscriptLst,inSubscript)
     local
       DAE.Exp e_1,e;
       Subscript s;
-      list<Subscript> ss_1,ss;
+      list<DAE.Subscript> ss_1,ss;
 
     case ({},_) then {DAE.INDEX(inSubscript)};
     case (DAE.WHOLEDIM() :: ss,_) then DAE.INDEX(inSubscript) :: ss;
@@ -1243,13 +1243,13 @@ end subscriptsAppend;
 
 public function unliftArrayTypeWithSubs "
 helper function for renameVarsToUnderlineVar2 unlifts array type as much as we have subscripts"
-  input list<Subscript> subs;
-  input Type ity;
-  output Type oty;
+  input list<DAE.Subscript> subs;
+  input DAE.Type ity;
+  output DAE.Type oty;
 algorithm
   oty := match(subs,ity)
     local
-      list<Subscript> rest;
+      list<DAE.Subscript> rest;
       Type ty;
 
     case({},ty) then ty;
@@ -1265,9 +1265,9 @@ end unliftArrayTypeWithSubs;
 
 public function unliftArrayX "Function: unliftArrayX
 Unlifts a type with X dimensions..."
-  input Type inType;
+  input DAE.Type inType;
   input Integer x;
-  output Type outType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue(inType,x)
     local Type ty;
@@ -1376,7 +1376,7 @@ algorithm
 end expInt;
 
 public function varName "Returns the name of a Var"
-  input Var v;
+  input DAE.Var v;
   output String name;
 algorithm
   name := match(v)
@@ -1385,8 +1385,8 @@ algorithm
 end varName;
 
 public function varType "Returns the type of a Var"
-  input Var v;
-  output Type tp;
+  input DAE.Var v;
+  output DAE.Type tp;
 algorithm
   tp := match(v)
     case(DAE.TYPES_VAR(ty = tp)) then tp;
@@ -1397,7 +1397,7 @@ public function expCref
 "function: expCref
   Returns the componentref if DAE.Exp is a CREF,"
   input DAE.Exp inExp;
-  output ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
   match (inExp)
@@ -1410,7 +1410,7 @@ public function expCrefNegCref
 "function: expCrefNegCref
   Returns the componentref if DAE.Exp is a CREF or -CREF"
   input DAE.Exp inExp;
-  output ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
   match (inExp)
@@ -1425,7 +1425,7 @@ public function expCrefTuple
 "function: expCrefTuple
   Returns the componentref if the expression in inTuple is a CREF."
   input tuple<DAE.Exp, Boolean> inTuple;
-  output ComponentRef outComponentRef;
+  output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
   match (inTuple)
@@ -1440,13 +1440,13 @@ public function expCrefInclIfExpFactors
   This is used in e.g. the tearing algorithm to detect potential division by zero in
   expressions like 1/(if b then 1.0 else x) which could lead to division by zero if b is false and x is 0; "
   input DAE.Exp inExp;
-  output list<ComponentRef> outComponentRefs;
+  output list<DAE.ComponentRef> outComponentRefs;
 algorithm
   outComponentRefs:=
   matchcontinue (inExp)
     local ComponentRef cr; DAE.Exp c,tb,fb;
       list<DAE.Exp> f;
-      list<ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs;
     case (DAE.CREF(componentRef = cr)) then {cr};
     case(DAE.IFEXP(c,tb,fb)) equation
       f = List.select(listAppend(factors(tb),factors(fb)),isCref);
@@ -1529,8 +1529,8 @@ public function unboxExpType
 "function: unboxExpType
   takes a type, and if it is boxed, unbox it
   otherwise return the given type"
-  input Type inType;
-  output Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue(inType)
     local
@@ -1567,7 +1567,7 @@ end boxExp;
 public function subscriptIndexExp
   "Returns the expression in a subscript index.
   If the subscript is not an index the function fails."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output DAE.Exp outExp;
 algorithm
   DAE.INDEX(exp = outExp) := inSubscript;
@@ -1575,7 +1575,7 @@ end subscriptIndexExp;
 
 public function getSubscriptExp
   "Returns the subscript expression, or fails on DAE.WHOLEDIM."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output DAE.Exp outExp;
 algorithm
   outExp := match(inSubscript)
@@ -1591,7 +1591,7 @@ public function subscriptNonExpandedExp
 "function: subscriptNonExpandedExp
   Returns the expression in a subscript representing non-expanded array.
   If the subscript is not WHOLE_NONEXP the function fails."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output DAE.Exp outExp;
 algorithm
   outExp:=
@@ -1604,7 +1604,7 @@ end subscriptNonExpandedExp;
 public function subscriptIsFirst
   "Returns true if the given subscript is the first index for a dimension, i.e.
    1, false or the first enumeration literal in an enumeration."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output Boolean outIsFirst;
 algorithm
   outIsFirst := match(inSubscript)
@@ -1642,13 +1642,13 @@ public function expLastSubs
 "function: expLastSubs
   Return the last subscripts of a Exp"
   input DAE.Exp inExp;
-  output list<Subscript> outSubscriptLst;
+  output list<DAE.Subscript> outSubscriptLst;
 algorithm
   outSubscriptLst:=
   match (inExp)
     local
       ComponentRef cr;
-      list<Subscript> subs;
+      list<DAE.Subscript> subs;
       DAE.Exp e;
 
     case (DAE.CREF(componentRef=cr))
@@ -1665,7 +1665,7 @@ end expLastSubs;
 
 public function expDimensions
   "Tries to return the dimensions from an expression, typically an array."
-  input Exp inExp;
+  input DAE.Exp inExp;
   output DAE.Dimensions outDims;
 algorithm
   outDims := match(inExp)
@@ -1683,7 +1683,7 @@ public function arrayDimension "
 Author BZ
 Get dimension of array.
 "
-  input Type tp;
+  input DAE.Type tp;
   output DAE.Dimensions dims;
 algorithm
   dims := matchcontinue(tp)
@@ -1694,7 +1694,7 @@ end arrayDimension;
 
 public function arrayTypeDimensions
 "Return the array dimensions of a type."
-  input Type tp;
+  input DAE.Type tp;
   output DAE.Dimensions dims;
 algorithm
   dims := match(tp)
@@ -1704,7 +1704,7 @@ end arrayTypeDimensions;
 
 public function subscriptDimensions
   "Converts a list of subscript to a list of dimensions."
-  input list<Subscript> inSubscripts;
+  input list<DAE.Subscript> inSubscripts;
   output DAE.Dimensions outDimensions;
 algorithm
   outDimensions := List.map(inSubscripts, subscriptDimension);
@@ -1713,7 +1713,7 @@ end subscriptDimensions;
 public function subscriptDimension
   "Converts a subscript to a dimension by interpreting the subscript as a
    dimension."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   output DAE.Dimension outDimension;
 algorithm
   outDimension := matchcontinue(inSubscript)
@@ -1753,8 +1753,8 @@ end subscriptDimension;
 public function arrayEltType
 "function: arrayEltType
    Returns the element type of an array expression."
-  input Type inType;
-  output Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue (inType)
     local Type t;
@@ -1886,7 +1886,7 @@ end dimensionsSizes;
 public function typeof "function typeof
   Retrieves the Type of the Expression"
   input DAE.Exp inExp;
-  output Type outType;
+  output DAE.Type outType;
 algorithm
   outType := matchcontinue (inExp)
     local
@@ -1982,8 +1982,8 @@ protected function typeofRelation
 "function typeofRelation
   returns the type of a relation which could only be
   Boolean or array of boolean"
-  input Type inType;
-  output Type outType;
+  input DAE.Type inType;
+  output DAE.Type outType;
 algorithm
   outType := match(inType)
     local
@@ -2002,8 +2002,8 @@ end typeofRelation;
 public function typeofOp
 "function: typeofOp
   Helper function to typeof"
-  input Operator inOperator;
-  output Type outType;
+  input DAE.Operator inOperator;
+  output DAE.Type outType;
 algorithm
   outType := match (inOperator)
     local Type t;
@@ -2664,8 +2664,8 @@ end makeNestedIf;
 public function makeCrefExp
 "function makeCrefExp
   Makes an expression of a component reference, given also a type"
-  input ComponentRef inCref;
-  input Type inExpType;
+  input DAE.ComponentRef inCref;
+  input DAE.Type inExpType;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inCref, inExpType)
@@ -2711,12 +2711,12 @@ end makeCrefExp;
 public function crefExp "
 Author: BZ, 2008-08
 generate an DAE.CREF(ComponentRef, Type) from a ComponenRef, make array type correct from subs"
-  input ComponentRef cr;
+  input DAE.ComponentRef cr;
   output DAE.Exp cref;
 algorithm cref := matchcontinue(cr)
   local
     Type ty1,ty2;
-    list<Subscript> subs;
+    list<DAE.Subscript> subs;
   case _
     equation
       (ty1 as DAE.T_ARRAY(ty = _)) = ComponentReference.crefLastType(cr);
@@ -2808,7 +2808,7 @@ end generateCrefsExpFromExpVar;
 
 public function makeArray
   input list<DAE.Exp> inElements;
-  input Type inType;
+  input DAE.Type inType;
   input Boolean inScalar;
   output DAE.Exp outArray;
 algorithm
@@ -3062,8 +3062,8 @@ algorithm
       Boolean b1;
       Type tp;
       list<DAE.Exp> rest,lst;
-      list<Ident> explst;
-      Ident str;
+      list<String> explst;
+      String str;
       Operator op;
       Boolean b;
     case ({}) then DAE.RCONST(0.0);
@@ -3333,8 +3333,8 @@ algorithm
       DAE.Exp e1,res,e,e2,p1;
       list<DAE.Exp> es,rest,lst;
       Type tp;
-      list<Ident> explst;
-      Ident str;
+      list<String> explst;
+      String str;
       Boolean b_isZero,b1,b2;
     case ({}) then DAE.RCONST(1.0);
     case ({e1}) then e1;
@@ -3412,8 +3412,8 @@ protected function checkIfOther
 "Checks if a type is OTHER and in that case returns REAL instead.
  This is used to make proper transformations in case OTHER is
  retrieved from subexpression where it should instead be REAL or INT"
-input Type inTp;
-output Type outTp;
+input DAE.Type inTp;
+output DAE.Type outTp;
 algorithm
   outTp := matchcontinue(inTp)
     case (DAE.T_UNKNOWN(_)) then DAE.T_REAL_DEFAULT;
@@ -3513,7 +3513,7 @@ public function makeConstOne
 "function makeConstOne
   author: PA
   Create the constant value one, given a type that is INT or REAL"
-  input Type inType;
+  input DAE.Type inType;
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (inType)
@@ -3525,7 +3525,7 @@ end makeConstOne;
 
 public function makeConstZero
 "Generates a zero constant"
-  input Type inType;
+  input DAE.Type inType;
   output DAE.Exp const;
 algorithm
   const := matchcontinue(inType)
@@ -3764,7 +3764,7 @@ public function makeIndexSubscript
 "function makeIndexSubscript
   Creates a Subscript INDEX from an Expression."
   input DAE.Exp exp;
-  output Subscript subscript;
+  output DAE.Subscript subscript;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   subscript := DAE.INDEX(exp);
@@ -3772,8 +3772,8 @@ end makeIndexSubscript;
 
 public function makeVar "Creates a Var given a name and Type"
   input String name;
-  input Type tp;
-  output Var v;
+  input DAE.Type tp;
+  output DAE.Var v;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   v := DAE.TYPES_VAR(name, DAE.dummyAttrVar, tp, DAE.UNBOUND(), NONE());
@@ -3968,7 +3968,7 @@ algorithm
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
-      Ident str;
+      String str;
       list<DAE.Element> localDecls;
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
@@ -4406,7 +4406,7 @@ algorithm
       Integer i;
       list<list<DAE.Exp>> lstexpl_1,lstexpl;
       Integer dim;
-      Ident str;
+      String str;
       list<DAE.Element> localDecls;
       tuple<DAE.Exp,Type_a> res;
       list<String> fieldNames;
@@ -5151,11 +5151,11 @@ end traverseExpOptTopDown;
 public function extractCrefsFromExp "
 Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
   input DAE.Exp inExp;
-  output list<ComponentRef> ocrefs;
+  output list<DAE.ComponentRef> ocrefs;
 algorithm
   ocrefs := match(inExp)
     local
-      list<ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs;
 
     case _
       equation
@@ -5209,12 +5209,12 @@ public function traversingComponentRefFinder "
 Author: BZ 2008-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
 Returns a list containing, unique, all componentRef in an Expression."
-  input tuple<DAE.Exp, list<ComponentRef>> inExp;
-  output tuple<DAE.Exp, list<ComponentRef>> outExp;
+  input tuple<DAE.Exp, list<DAE.ComponentRef>> inExp;
+  output tuple<DAE.Exp, list<DAE.ComponentRef>> outExp;
 algorithm
   outExp := match(inExp)
     local
-      list<ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs;
       ComponentRef cr;
       DAE.Exp e;
     case((e as DAE.CREF(componentRef=cr), crefs))
@@ -5230,12 +5230,12 @@ public function traversingComponentRefFinderNoPreDer "
 Author: BZ 2008-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
 Returns a list containing, unique, all componentRef in an Expression."
-  input tuple<DAE.Exp, list<ComponentRef>> inExp;
-  output tuple<DAE.Exp, Boolean, list<ComponentRef>> outExp;
+  input tuple<DAE.Exp, list<DAE.ComponentRef>> inExp;
+  output tuple<DAE.Exp, Boolean, list<DAE.ComponentRef>> outExp;
 algorithm
   outExp := match(inExp)
     local
-      list<ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs;
       ComponentRef cr;
       DAE.Exp e;
     case((e as DAE.CREF(componentRef=cr), crefs))
@@ -5254,12 +5254,12 @@ Author: Frenkel TUD 2012-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
 Returns a list containing, unique, all componentRef in an Expression and a second list
 containing all componentRef from a der function."
-  input tuple<DAE.Exp, tuple<list<ComponentRef>,list<ComponentRef>>> inExp;
-  output tuple<DAE.Exp, tuple<list<ComponentRef>,list<ComponentRef>>> outExp;
+  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>>> inExp;
+  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>>> outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
-      list<ComponentRef> crefs,dcrefs;
+      list<DAE.ComponentRef> crefs,dcrefs;
       ComponentRef cr;
       Type ty;
       DAE.Exp e;
@@ -5287,7 +5287,7 @@ public function expHasCref "function expHasCref
   author: Frenkel TUD 2011-04
   returns true if the expression contains the cref"
   input DAE.Exp inExp;
-  input ComponentRef inCr;
+  input DAE.ComponentRef inCr;
   output Boolean hasCref;
 algorithm
   ((_,(_,hasCref))) := traverseExpTopDown(inExp, traversingexpHasCref, (inCr,false));
@@ -5296,8 +5296,8 @@ end expHasCref;
 public function traversingexpHasCref "
 @author: Frenkel TUD 2011-04
 Returns a true if the exp the componentRef"
-  input tuple<DAE.Exp, tuple<ComponentRef,Boolean>> inExp;
-  output tuple<DAE.Exp, Boolean, tuple<ComponentRef,Boolean>> outExp;
+  input tuple<DAE.Exp, tuple<DAE.ComponentRef,Boolean>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<DAE.ComponentRef,Boolean>> outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
@@ -5358,7 +5358,7 @@ public function expHasDerCref "
 @author: Frenkel TUD 2012-06
  returns true if the expression contains the cref in function der"
   input DAE.Exp inExp;
-  input ComponentRef inCr;
+  input DAE.ComponentRef inCr;
   output Boolean hasCref;
 algorithm
   ((_,(_,hasCref))) := traverseExpTopDown(inExp, traversingexpHasDerCref, (inCr,false));
@@ -5367,8 +5367,8 @@ end expHasDerCref;
 public function traversingexpHasDerCref "
 @author: Frenkel TUD 2012-06
 Returns a true if the exp contains the componentRef in der"
-  input tuple<DAE.Exp, tuple<ComponentRef,Boolean>> inExp;
-  output tuple<DAE.Exp, Boolean, tuple<ComponentRef,Boolean>> outExp;
+  input tuple<DAE.Exp, tuple<DAE.ComponentRef,Boolean>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<DAE.ComponentRef,Boolean>> outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
@@ -5443,7 +5443,7 @@ Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."
   input Type_a inArg;
   output Type_a outArg;
   partial function FuncCrefTypeA
-    input ComponentRef inCref;
+    input DAE.ComponentRef inCref;
     input Type_a inArg;
     output Type_a outArg;
   end FuncCrefTypeA;
@@ -5464,7 +5464,7 @@ Author: Frenkel TUD 2011-05"
   input tuple<DAE.Exp, tuple<FuncCrefTypeA,Type_a> > inExp;
   output tuple<DAE.Exp, tuple<FuncCrefTypeA,Type_a> > outExp;
   partial function FuncCrefTypeA
-    input ComponentRef inCref;
+    input DAE.ComponentRef inCref;
     input Type_a inArg;
     output Type_a outArg;
   end FuncCrefTypeA;
@@ -5845,9 +5845,9 @@ end traverseExpBidirSubExps;
 public function traverseExpBidirCref
   "Helper function to traverseExpBidirSubExps. Traverses any expressions in a
   component reference (i.e. in it's subscripts)."
-  input ComponentRef inCref;
+  input DAE.ComponentRef inCref;
   input tuple<FuncType, FuncType, Argument> inTuple;
-  output ComponentRef outCref;
+  output DAE.ComponentRef outCref;
   output tuple<FuncType, FuncType, Argument> outTuple;
 
   partial function FuncType
@@ -5859,7 +5859,7 @@ public function traverseExpBidirCref
 algorithm
   (outCref, outTuple) := match(inCref, inTuple)
     local
-      Ident name;
+      String name;
       ComponentRef cr;
       Type ty;
       list<DAE.Subscript> subs;
@@ -5886,10 +5886,10 @@ end traverseExpBidirCref;
 public function traverseExpCref
   "Helper function to traverseExp. Traverses any expressions in a
   component reference (i.e. in it's subscripts)."
-  input ComponentRef inCref;
+  input DAE.ComponentRef inCref;
   input FuncType rel;
   input Type_a iarg;
-  output ComponentRef outCref;
+  output DAE.ComponentRef outCref;
   output Type_a outArg;
 
   partial function FuncType
@@ -5901,7 +5901,7 @@ public function traverseExpCref
 algorithm
   (outCref, outArg) := match(inCref, rel, iarg)
     local
-      Ident name;
+      String name;
       ComponentRef cr,cr_1;
       Type ty;
       list<DAE.Subscript> subs,subs_1;
@@ -5948,10 +5948,10 @@ algorithm
 end traverseExpCref;
 
 protected function traverseExpSubs
-  input list<Subscript> inSubscript;
+  input list<DAE.Subscript> inSubscript;
   input FuncType rel;
   input Type_a iarg;
-  output list<Subscript> outSubscript;
+  output list<DAE.Subscript> outSubscript;
   output Type_a outArg;
 
   partial function FuncType
@@ -5964,7 +5964,7 @@ algorithm
   (outSubscript, outArg) := match(inSubscript, rel, iarg)
     local
       DAE.Exp sub_exp,sub_exp_1;
-      list<Subscript> rest,res;
+      list<DAE.Subscript> rest,res;
       Type_a arg;
 
     case ({}, _, arg) then (inSubscript,arg);
@@ -6002,10 +6002,10 @@ algorithm
 end traverseExpSubs;
 
 public function traverseExpTopDownCrefHelper
-  input ComponentRef inCref;
+  input DAE.ComponentRef inCref;
   input FuncType rel;
   input Argument iarg;
-  output ComponentRef outCref;
+  output DAE.ComponentRef outCref;
   output Argument outArg;
 
   partial function FuncType
@@ -6017,7 +6017,7 @@ public function traverseExpTopDownCrefHelper
 algorithm
   (outCref, outArg) := match(inCref, rel, iarg)
     local
-      Ident name;
+      String name;
       ComponentRef cr;
       Type ty;
       list<DAE.Subscript> subs;
@@ -6043,9 +6043,9 @@ end traverseExpTopDownCrefHelper;
 protected function traverseExpBidirSubs
   "Helper function to traverseExpBidirCref. Traverses expressions in a
   subscript."
-  input Subscript inSubscript;
+  input DAE.Subscript inSubscript;
   input tuple<FuncType, FuncType, Argument> inTuple;
-  output Subscript outSubscript;
+  output DAE.Subscript outSubscript;
   output tuple<FuncType, FuncType, Argument> outTuple;
 
   partial function FuncType
@@ -6084,10 +6084,10 @@ algorithm
 end traverseExpBidirSubs;
 
 protected function traverseExpTopDownSubs
-  input list<Subscript> inSubscript;
+  input list<DAE.Subscript> inSubscript;
   input FuncType rel;
   input Argument iarg;
-  output list<Subscript> outSubscript;
+  output list<DAE.Subscript> outSubscript;
   output Argument outArg;
 
   partial function FuncType
@@ -6100,7 +6100,7 @@ algorithm
   (outSubscript, outArg) := match(inSubscript, rel, iarg)
     local
       DAE.Exp sub_exp;
-      list<Subscript> rest;
+      list<DAE.Subscript> rest;
       Argument arg;
 
     case ({}, _, arg) then ({},arg);
@@ -6138,7 +6138,7 @@ end traverseExpTopDownSubs;
 /***************************************************/
 
 public function operatorDivOrMul "returns true if operator is division or multiplication"
-  input  Operator op;
+  input DAE.Operator op;
   output Boolean res;
 algorithm
   res := matchcontinue(op)
@@ -6147,17 +6147,6 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end operatorDivOrMul;
-
-public function identEqual
-"function: identEqual
-  author: PA
-  Compares two Ident."
-  input Ident inIdent1;
-  input Ident inIdent2;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := stringEq(inIdent1, inIdent2);
-end identEqual;
 
 public function isRange
 "function: isRange
@@ -6527,14 +6516,14 @@ algorithm
 end isEventTriggeringFunctionExp;
 
 public function isAddOrSub "returns true if operator is ADD or SUB"
-  input Operator op;
+  input DAE.Operator op;
   output Boolean res;
 algorithm
   res := isAdd(op) or isSub(op);
 end isAddOrSub;
 
 public function isAdd "returns true if operator is ADD"
-  input Operator op;
+  input DAE.Operator op;
   output Boolean res;
 algorithm
   res := matchcontinue(op)
@@ -6544,7 +6533,7 @@ algorithm
 end isAdd;
 
 public function isSub "returns true if operator is SUB"
-  input Operator op;
+  input DAE.Operator op;
   output Boolean res;
 algorithm
   res := matchcontinue(op)
@@ -6554,7 +6543,7 @@ algorithm
 end isSub;
 
 public function equalTypes ""
-input Type t1,t2;
+input DAE.Type t1,t2;
 output Boolean b;
 algorithm b := matchcontinue(t1,t2)
   local
@@ -6612,7 +6601,7 @@ end equalTypesComplexVars;
 public function typeBuiltin
 "function: typeBuiltin
   Returns true if type is one of the builtin types."
-  input Type inType;
+  input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inType)
@@ -6635,7 +6624,7 @@ algorithm
 end isWholeDim;
 
 public function isInt ""
-  input Type it;
+  input DAE.Type it;
   output Boolean re;
 algorithm
   re := matchcontinue(it)
@@ -6650,7 +6639,7 @@ algorithm
 end isInt;
 
 public function isReal ""
-  input Type it;
+  input DAE.Type it;
   output Boolean re;
 algorithm
   re := matchcontinue(it)
@@ -7281,7 +7270,7 @@ algorithm
 end isEven;
 
 public function isIntegerOrReal "Returns true if Type is Integer or Real"
-input Type tp;
+input DAE.Type tp;
 output Boolean res;
 algorithm
   res := matchcontinue(tp)
@@ -7884,7 +7873,7 @@ algorithm
     local
       Integer i;
       DAE.Exp cr,c1,c2,e1,e2,e,c,t,f,cref;
-      Ident s,str;
+      String s,str;
       Boolean res,res1,res2,res3;
       list<Boolean> reslist;
       list<DAE.Exp> explist,args;
@@ -8051,8 +8040,8 @@ end isExpCrefOrIfExp;
 public function operatorEqual
 "function: operatorEqual
   Helper function to expEqual."
-  input Operator inOperator1;
-  input Operator inOperator2;
+  input DAE.Operator inOperator1;
+  input DAE.Operator inOperator2;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inOperator1,inOperator2)
@@ -8143,7 +8132,7 @@ end isArrayType;
 
 public function isRecordType
   "Return true if the type is a record type."
-  input Type inType;
+  input DAE.Type inType;
   output Boolean b;
 algorithm
   b := match(inType)
@@ -8299,13 +8288,13 @@ end dimensionUnknownOrExp;
 public function subscriptEqual
 "function: subscriptEqual
   Returns true if two subscript lists are equal."
-  input list<Subscript> inSubscriptLst1;
-  input list<Subscript> inSubscriptLst2;
+  input list<DAE.Subscript> inSubscriptLst1;
+  input list<DAE.Subscript> inSubscriptLst2;
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inSubscriptLst1,inSubscriptLst2)
     local
-      list<Subscript> xs1,xs2;
+      list<DAE.Subscript> xs1,xs2;
       DAE.Exp e1,e2;
 
     // both lists are empty
@@ -8333,11 +8322,11 @@ end subscriptEqual;
 
 public function subscriptConstants "
 returns true if all subscripts are constant values (no slice or wholedim "
-  input list<Subscript> inSubs;
+  input list<DAE.Subscript> inSubs;
   output Boolean areConstant;
 algorithm
   areConstant := matchcontinue(inSubs)
-    local list<Subscript> subs;
+    local list<DAE.Subscript> subs;
     case({}) then true;
     case(DAE.INDEX(exp = DAE.ICONST(integer = _)):: subs)
       equation
@@ -8368,15 +8357,15 @@ end isValidSubscript;
 
 public function subscriptContain "function: subscriptContain
   This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM())"
-  input list<Subscript> issl1;
-  input list<Subscript> issl2;
+  input list<DAE.Subscript> issl1;
+  input list<DAE.Subscript> issl2;
   output Boolean contained;
 algorithm
   contained := matchcontinue(issl1,issl2)
     local
       Boolean b;
       Subscript ss1,ss2;
-      list<Subscript> ssl1,ssl2;
+      list<DAE.Subscript> ssl1,ssl2;
       DAE.Exp e1,e2;
       Integer i;
       list<DAE.Exp> expl;
@@ -9518,4 +9507,3 @@ algorithm
 end arrayElements;
 
 end Expression;
-

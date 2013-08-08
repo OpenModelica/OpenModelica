@@ -556,13 +556,13 @@ protected function transformXToXd "function transformXToXd
 algorithm
   outVar := match (inVar)
     local
-      Expression.ComponentRef cr;
+      DAE.ComponentRef cr;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
       BackendDAE.Type tp;
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
-      list<Expression.Subscript> dim;
+      list<DAE.Subscript> dim;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -1002,7 +1002,8 @@ on the form v = expr for solving variable v"
   output tuple<BackendDAE.Equation,Integer> eqnindx;
 algorithm
   eqnindx := matchcontinue(v,eqnIndxLst)
-    local Expression.ComponentRef cr1,cr;
+    local
+      DAE.ComponentRef cr1,cr;
       DAE.Exp e2;
       Integer i;
       BackendDAE.Equation eqn;

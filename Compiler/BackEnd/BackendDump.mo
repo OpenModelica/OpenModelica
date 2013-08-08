@@ -1725,11 +1725,11 @@ public function printCallFunction2StrDIVISION
 algorithm
   outString := matchcontinue (inExp,stringDelimiter,opcreffunc)
     local
-      Expression.Ident s,s_1,s_2,fs,argstr;
+      String s,s_1,s_2,fs,argstr;
       Absyn.Path fcn;
       list<DAE.Exp> args;
       DAE.Exp e1,e2;
-      Expression.Type ty;
+      DAE.Type  ty;
     case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, attr = DAE.CALL_ATTR(ty = ty)), _, _)
       equation
         s = ExpressionDump.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));

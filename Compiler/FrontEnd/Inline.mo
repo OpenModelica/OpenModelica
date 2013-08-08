@@ -52,9 +52,8 @@ public import SCode;
 public import Util;
 public import Values;
 
-type Ident = String;
-
-public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
+protected type Ident = String;
+protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
 protected import ComponentReference;
 protected import Config;
@@ -2126,11 +2125,11 @@ public function inlineEquationExp "
   input DAE.ElementSource inSource;
   output DAE.EquationExp outExp;
   output DAE.ElementSource source;
-
   partial function Func
     input tuple<DAE.Exp, tuple<Functiontuple,Boolean>> inTuple;
     output tuple<DAE.Exp, tuple<Functiontuple,Boolean>> outTuple;
   end Func;
+  type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 algorithm
   (outExp,source) := match (inExp,fn,infns,inSource)
     local

@@ -585,7 +585,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.VarKind daekind;
       BackendDAE.VarKind kind;
-      list<Expression.Subscript> inst_dims;
+      list<DAE.Subscript> inst_dims;
       list<String> numArrayElement;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;

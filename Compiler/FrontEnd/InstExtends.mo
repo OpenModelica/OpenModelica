@@ -69,7 +69,7 @@ protected import ErrorExt;
 protected import SCodeUtil;
 //protected import System;
 
-public type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected function instExtendsList "
   author: PA
@@ -79,7 +79,7 @@ protected function instExtendsList "
   and algorithms."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inSCodeElementLst;
@@ -90,7 +90,7 @@ protected function instExtendsList "
   input Boolean isPartialInst;
   output Env.Cache outCache;
   output Env.Env outEnv1;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod2;
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst3;
   output list<SCode.Equation> outSCodeEquationLst4;
@@ -303,7 +303,7 @@ public function instExtendsAndClassExtendsList "
   lists of equations and algorithms."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
@@ -315,7 +315,7 @@ public function instExtendsAndClassExtendsList "
   input Boolean isPartialInst;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod;
   output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
   output list<SCode.Equation> outSCodeNormalEquationLst;
@@ -346,7 +346,7 @@ protected function instExtendsAndClassExtendsList2 "
   lists of equations and algorithms."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
@@ -358,7 +358,7 @@ protected function instExtendsAndClassExtendsList2 "
   input Boolean isPartialInst;
   output Env.Cache outCache;
   output Env.Env outEnv;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output DAE.Mod outMod;
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
   output list<SCode.Equation> outSCodeNormalEquationLst;
@@ -549,7 +549,7 @@ public function instDerivedClasses
   derived class parts are fetched."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
@@ -557,7 +557,7 @@ public function instDerivedClasses
   input Absyn.Info inInfo "File information of the extends element";
   output Env.Cache outCache;
   output Env.Env outEnv1;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<SCode.Element> outSCodeElementLst2;
   output list<SCode.Equation> outSCodeEquationLst3;
   output list<SCode.Equation> outSCodeEquationLst4;
@@ -577,7 +577,7 @@ protected function instDerivedClassesWork
   derived class parts are fetched."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
@@ -587,7 +587,7 @@ protected function instDerivedClassesWork
   input Integer numIter;
   output Env.Cache outCache;
   output Env.Env outEnv1;
-  output InstanceHierarchy outIH;
+  output InnerOuter.InstHierarchy outIH;
   output list<SCode.Element> outSCodeElementLst2;
   output list<SCode.Equation> outSCodeEquationLst3;
   output list<SCode.Equation> outSCodeEquationLst4;

@@ -902,7 +902,7 @@ algorithm
   outOrderedConnections := matchcontinue(inConnections, inUserSelectedBreaking)
     local
       String sc1,sc2;
-      Expression.ComponentRef c1, c2;
+      DAE.ComponentRef c1, c2;
       DaeEdge e;
       list<DAE.Element> els;
       DaeEdges rest, ordered;

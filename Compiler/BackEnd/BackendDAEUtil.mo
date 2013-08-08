@@ -6186,7 +6186,7 @@ algorithm
       list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
       DAE.Exp e,e1,e2;
       list<DAE.Exp> expl;
-      Expression.Type t;
+      DAE.Type t;
       list<list<DAE.Subscript>> subslst;
       DAE.ElementSource source;
       DAE.ComponentRef cr;

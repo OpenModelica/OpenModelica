@@ -141,7 +141,7 @@ algorithm
   outString:=
   matchcontinue (inExp,vars,knvars)
     local
-      Expression.Ident s,s_1,s1_1,s_2,s2_1,sym,s2,s3,s3_1,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
+      String s,s_1,s1_1,s_2,s2_1,sym,s2,s3,s3_1,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
       Integer p,p1,p2,ival,i,pstart,pstop,pe1;
       DAE.ComponentRef cr;
       DAE.Type tp;
