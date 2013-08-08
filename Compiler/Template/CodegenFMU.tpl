@@ -1271,8 +1271,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     constant String fmuLocation = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
-    parameter Integer logLevel = <%fmiLogLevel%> annotation (Dialog(tab="FMI", group="Enable logging"));
-    parameter Boolean debugLogging = <%fmiDebugOutput%> annotation (Dialog(tab="FMI", group="Enable logging"));
+    parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
+    parameter Boolean debugLogging = <%fmiDebugOutput%> "enables the FMU simulation logging" annotation (Dialog(tab="FMI", group="Enable logging"));
     FMI1ModelExchange fmi1me = FMI1ModelExchange(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
     <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
     constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
@@ -1549,8 +1549,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     constant String fmuFile = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
-    parameter Integer logLevel = <%fmiLogLevel%> annotation (Dialog(tab="FMI", group="Enable logging"));
-    parameter Boolean debugLogging = <%fmiDebugOutput%> annotation (Dialog(tab="FMI", group="Enable logging"));
+    parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
+    parameter Boolean debugLogging = <%fmiDebugOutput%> "enables the FMU simulation logging" annotation (Dialog(tab="FMI", group="Enable logging"));
     FMI2ModelExchange fmi2me = FMI2ModelExchange(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
     <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
     constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
@@ -1827,15 +1827,15 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
     constant String fmuLocation = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
-    parameter Integer logLevel = <%fmiLogLevel%> annotation (Dialog(tab="FMI", group="Enable logging"));
-    parameter Boolean debugLogging = <%fmiDebugOutput%> annotation (Dialog(tab="FMI", group="Enable logging"));
+    parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
+    parameter Boolean debugLogging = <%fmiDebugOutput%> "enables the FMU simulation logging" annotation (Dialog(tab="FMI", group="Enable logging"));
     constant String mimeType = "";
     constant Real timeout = 0.0;
     constant Boolean visible = false;
     constant Boolean interactive = false;
-    parameter Real StartTime = <%fmiExperimentAnnotation.fmiExperimentStartTime%> annotation (Dialog(tab="FMI", group="Step time"));
-    parameter Real StopTime = <%fmiExperimentAnnotation.fmiExperimentStopTime%> annotation (Dialog(tab="FMI", group="Step time"));
-    parameter Real communicationStepSize = (StopTime-StartTime)/500 annotation (Dialog(tab="FMI", group="Step time"));
+    parameter Real StartTime = <%fmiExperimentAnnotation.fmiExperimentStartTime%> "start time used to initialize the slave" annotation (Dialog(tab="FMI", group="Step time"));
+    parameter Real StopTime = <%fmiExperimentAnnotation.fmiExperimentStopTime%> "stop time used to initialize the slave" annotation (Dialog(tab="FMI", group="Step time"));
+    parameter Real communicationStepSize = (StopTime-StartTime)/500 "step size used by fmiDoStep" annotation (Dialog(tab="FMI", group="Step time"));
     constant Boolean stopTimeDefined = false;
     FMI1CoSimulation fmi1cs = FMI1CoSimulation(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, fmuLocation, mimeType, timeout, visible, interactive, StartTime, stopTimeDefined, StopTime);
     <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
