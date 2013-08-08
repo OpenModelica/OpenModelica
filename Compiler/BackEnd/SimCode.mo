@@ -545,6 +545,8 @@ uniontype Context
   end PARALLEL_FUNCTION_CONTEXT;
   record ZEROCROSSINGS_CONTEXT
   end ZEROCROSSINGS_CONTEXT;
+  record OPTIMIZATION
+  end OPTIMIZATION;
 end Context;
 
 
@@ -557,6 +559,7 @@ public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false);
 public constant Context contextOther                  = OTHER();
 public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
 public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
+public constant Context contextOptimization           = OPTIMIZATION();
 
 
 /****** HashTable ComponentRef -> SimCode.SimVar ******/

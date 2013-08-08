@@ -223,6 +223,8 @@ package SimCode
     end PARALLEL_FUNCTION_CONTEXT;
     record ZEROCROSSINGS_CONTEXT 
     end ZEROCROSSINGS_CONTEXT;  
+    record OPTIMIZATION
+    end OPTIMIZATION;
   end Context;
   
   uniontype HpcOmParInformation
@@ -556,10 +558,10 @@ package SimCode
   constant Context contextFunction;
   constant Context contextOther;
   constant Context contextAlgloop;             
-   constant Context contextAlgloopInitialisation;             
-
+  constant Context contextAlgloopInitialisation;             
   constant Context contextParallelFunction;
   constant Context contextZeroCross;
+  constant Context contextOptimization;
   constant list<DAE.Exp> listExpLength1;
 
 end SimCode;
@@ -2477,6 +2479,10 @@ package Config
   function acceptParModelicaGrammar
     output Boolean outBoolean;
   end acceptParModelicaGrammar;
+  
+  function acceptOptimicaGrammar
+    output Boolean outBoolean;
+  end acceptOptimicaGrammar;
 
   function noProc
     output Integer n;

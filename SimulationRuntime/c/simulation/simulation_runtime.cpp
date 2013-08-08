@@ -83,7 +83,7 @@
  */
 #ifndef NO_INTERACTIVE_DEPENDENCY
   #include "../../interactive/omi_ServiceInterface.h"
- #endif
+#endif
 
 
 using namespace std;
@@ -980,6 +980,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
     longjmp(integratorJmpbuf,1);
     break;
   case ERROR_EVENTSEARCH:
+  case ERROR_OPTIMIZE:
     /* Ignore asserts for event search, since to find events we need to
      * step over in regions, which may trigger asserts.
      */

@@ -73,6 +73,10 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
 
 static int radau_lobatto_step(DATA* data, SOLVER_INFO* solverInfo);
 
+#ifdef WITH_IPOPT
+static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo);
+#endif
+
 static void writeOutputVars(char* names, DATA* data);
 
 int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
@@ -89,7 +93,10 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     functionODE_inline(data, solverInfo->currentStepSize);
     solverInfo->currentTime = data->localData[0]->timeValue;
     return 0;
-
+#ifdef WITH_IPOPT
+  case 5:
+    return ipopt_step(data, solverInfo);
+#endif
 #ifdef WITH_SUNDIALS
   case 6:
     return radau_lobatto_step(data, solverInfo);
@@ -162,13 +169,10 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
     for(i = 0; i < inline_work_states_ndims; i++)
       work_states[i] = (double*) calloc(data->modelData.nVariablesReal, sizeof(double));
   }
-#ifdef PATHCONSTRAINTS
+#ifdef WITH_IPOPT
   else if(solverInfo->solverMethod == 5)
   {
-    int neqns = -1;
-    /* Allocate work array for optimization*/
-    pathConstraints(data, NULL, &neqns);
-    /* allocateDaeIpopt(data,neqns); */
+    solverInfo->solverData = NULL;
   }
 #endif
 #ifdef WITH_SUNDIALS
@@ -253,6 +257,13 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
       free(work_states[i]);
     free(work_states);
   }
+#ifdef WITH_IPOPT
+  else if(solverInfo->solverMethod == 5)
+  {
+    /* free  work arrays */
+    /*destroyIpopt(solverInfo);*/
+  }
+#endif
 #ifdef WITH_SUNDIALS
   else if(solverInfo->solverMethod == 6)
   {
@@ -513,7 +524,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   case S_DASSLINTERNALNUMJAC:
     solverInfo.solverMethod = S_DASSL;
     break;
-    
+
 #ifndef WITH_SUNDIALS
   case S_RADAU1:
   case S_RADAU3:
@@ -524,14 +535,14 @@ int solver_main(DATA* data, const char* init_initMethod,
     WARNING(LOG_STDOUT, "Sundial/kinsol is needed but not available. Please choose other solver.");
     return 1;
 #endif
-    
-  case S_OPTIMIZATION:
+
 #ifndef WITH_IPOPT
-    WARNING(LOG_STDOUT, "Ipopt is needed but not available.");
+	case S_OPTIMIZATION:
+		WARNING(LOG_STDOUT, "Ipopt is needed but not available.");
+		return 1;
 #endif
-    WARNING(LOG_STDOUT, "optimization is not supported yet");
-    return 1;
     
+
   case S_INLINE_EULER:
     if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-euler"))
     {
@@ -636,6 +647,15 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->currentTime += solverInfo->currentStepSize;
   return 0;
 }
+
+/***************************************    Run Ipopt for optimization     ***********************************/
+#ifdef WITH_IPOPT
+static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
+{
+  WARNING(LOG_STDOUT, "optimization is not supported yet");
+  return -1;
+}
+#endif
 
 #ifdef WITH_SUNDIALS
 /***************************************    Radau/Lobatto     ***********************************/
