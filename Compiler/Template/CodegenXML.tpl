@@ -1698,7 +1698,7 @@ case ecr as CREF(componentRef=WILD(__)) then
 case CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCrefXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     <%lhsStr%>
     >>
@@ -1710,7 +1710,7 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCrefXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     <%rhsStr%>
     <%lhsStr%>
@@ -2719,7 +2719,7 @@ template daeExpRelationSimXml(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case rel as RELATION(__) then
   match context
-  case SIMULATION(genDiscrete=false) then
+  case SIMULATION_CONTEXT(genDiscrete=false) then
      match rel.optionExpisASUB
      case NONE() then
         let e1 = daeExpXml(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -2808,7 +2808,7 @@ case rel as RELATION(__) then
         res
         end match
       end match
-   case SIMULATION(genDiscrete=true) then
+   case SIMULATION_CONTEXT(genDiscrete=true) then
      match rel.optionExpisASUB
      case NONE() then
         let e1 = daeExpXml(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -2908,7 +2908,7 @@ template daeExpConstraintXml(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case rel as RELATION(__) then
   match context
-   case SIMULATION(genDiscrete=true) then
+   case SIMULATION_CONTEXT(genDiscrete=true) then
      match rel.optionExpisASUB
      case NONE() then
         let e1 = daeExpXml(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)

@@ -1614,7 +1614,7 @@ template equationNamesHPCOM_(Integer idx, list<SimEqSystem> derivativEquations, 
   Residual equations are handled differently."
 ::=
 match context
-case SIMULATION(genDiscrete=true) then
+case SIMULATION_CONTEXT(genDiscrete=true) then
  match getSimCodeEqByIndex(derivativEquations, idx)
   case e as SES_ALGORITHM(statements={})
   then ""
@@ -2538,7 +2538,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let &varD = buffer ""
   let &tempeqns = buffer ""
   let disc = match context
-  case SIMULATION(genDiscrete=true) then 1
+  case SIMULATION_CONTEXT(genDiscrete=true) then 1
   else 0
   let x = match eq
   case e as SES_SIMPLE_ASSIGN(__)
@@ -2586,7 +2586,7 @@ template equationNames_(SimEqSystem eq, Context context)
   Residual equations are handled differently."
 ::=
 match context
-case SIMULATION(genDiscrete=true) then
+case SIMULATION_CONTEXT(genDiscrete=true) then
  match eq
   case e as SES_ALGORITHM(statements={})
   then ""
@@ -6076,7 +6076,7 @@ case ecr as CREF(componentRef=WILD(__)) then
 case CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
     >>
@@ -6085,7 +6085,7 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
@@ -6537,7 +6537,7 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*
  "Generates a when algorithm statement."
 ::=
   match context
-    case SIMULATION(__) then
+    case SIMULATION_CONTEXT(__) then
       match when
         case STMT_WHEN(__) then
           let helpIf = (conditions |> e => ' || (<%cref(e)%> && !$P$PRE<%cref(e)%> /* edge */)')
@@ -7343,7 +7343,7 @@ template daeExpRelationSim(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case rel as RELATION(__) then
   match context
-  case OPTIMIZATION(__) then
+  case OPTIMIZATION_CONTEXT(__) then
       let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       match rel.operator
@@ -7356,7 +7356,7 @@ case rel as RELATION(__) then
         case GREATEREQ(__) then
           'res[i++] = (<%e2%> - <%e1%>) ;<%\n%>'
      end match
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     match rel.optionExpisASUB
     case NONE() then
       let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)

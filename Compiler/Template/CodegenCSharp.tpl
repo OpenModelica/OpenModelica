@@ -1893,7 +1893,7 @@ template algStmtWhen(DAE.Statement when, Context context, SimCode simCode)
  "Generates a when algorithm statement."
 ::=
 match context
-case SIMULATION(genDiscrete=true) then
+case SIMULATION_CONTEXT(genDiscrete=true) then
   match when
   case STMT_WHEN(__) then
     let statements = statementLst |> stmt => algStatement(stmt, context, simCode) ;separator="\n"
@@ -2086,8 +2086,8 @@ case ecr as CREF(ty=T_ARRAY(ty=aty,dims=dims)) then
   match context 
   case FUNCTION_CONTEXT(__) then ""
   else
-  //case SIMULATION(__) //TODO: ?? is it the same as "else than FUNCTION_CONTEXT" ? 
-  //case OTHER(__)      then
+  //case SIMULATION_CONTEXT(__) //TODO: ?? is it the same as "else than FUNCTION_CONTEXT" ? 
+  //case OTHER_CONTEXT(__)      then
     // For context simulation and other array variables must be boxed into a real_array
     // object since they are represented only in a double array.
     let &tmpArr = buffer ""
@@ -2172,7 +2172,7 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
     //cref(ecr.componentRef, simCode)
     /*
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context, &preExp, simCode)
-    match context case SIMULATION(__) then
+    match context case SIMULATION_CONTEXT(__) then
       arrayScalarRhs(ecr.ty, subs, arrName, context, &preExp, simCode)
     else
       arrName
@@ -2366,7 +2366,7 @@ end relationWithZeroCrossing;
 
 template daeExpSimRelation(Exp inRelationExp, Context context, /*Text e1, Text e2, Text e1e2preExp,*/ Text &preExp, SimCode simCode) ::=
 match context 
-case SIMULATION(__) 
+case SIMULATION_CONTEXT(__) 
 case ALGLOOP_CONTEXT(__)
 case ZEROCROSSINGS_CONTEXT(__)
 then
@@ -2384,7 +2384,7 @@ then
          ""         
        else
        match context
-       case sim as SIMULATION(__) then
+       case sim as SIMULATION_CONTEXT(__) then
          if sim.genDiscrete then
            //ZC with hysteresis
            let e1 = daeExp(rel.exp1, context, &preExp, simCode)
@@ -2431,7 +2431,7 @@ then
          res
     
    /**** old
-       case sim as SIMULATION(__) then
+       case sim as SIMULATION_CONTEXT(__) then
          if sim.genDiscrete then
            if sim.isInitial then
              //no ZC with hysteresis
@@ -2486,7 +2486,7 @@ then
            res
     ****/
 /*   
-case sim as SIMULATION(__) then
+case sim as SIMULATION_CONTEXT(__) then
   match inExp
   case RELATION(__) then
      let op = 
@@ -2720,13 +2720,13 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
     let &preExp += '//event trigger function: <%ExpressionDump.printExpStr(inExp)%><%\n%>'
     let constIndex = daeExp(index, context, &preExp, simCode)
     match context
-    case SIMULATION(genDiscrete=true)
+    case SIMULATION_CONTEXT(genDiscrete=true)
     case ALGLOOP_CONTEXT(genInitialisation=true)
     case ZEROCROSSINGS_CONTEXT(__)
       then
       let val = daeExp(valExp, context, &preExp, simCode)
       '((int) (mathEVPre[<%constIndex%>] = Math.Floor(<%val%>)))'
-    case SIMULATION(genDiscrete=false) then
+    case SIMULATION_CONTEXT(genDiscrete=false) then
       '(int) mathEVPre[<%constIndex%>]'
     case ALGLOOP_CONTEXT(genInitialisation=false) then
       let &res = buffer "" 
@@ -2755,13 +2755,13 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
       else error(sourceInfo(), 'Unexpected return type "<%expTypeShort(attr.ty)%>"  for floor().')
     retType 
     + ( match context
-        case SIMULATION(genDiscrete=true)
+        case SIMULATION_CONTEXT(genDiscrete=true)
         case ALGLOOP_CONTEXT(genInitialisation=true)
         case ZEROCROSSINGS_CONTEXT(__)
           then
           let val = daeExp(valExp, context, &preExp, simCode)
           '(mathEVPre[<%constIndex%>] = Math.Floor(<%val%>))'
-        case SIMULATION(genDiscrete=false) then
+        case SIMULATION_CONTEXT(genDiscrete=false) then
           'mathEVPre[<%constIndex%>]'
         case ALGLOOP_CONTEXT(genInitialisation=false) then
           let &res = buffer "" 
@@ -2791,13 +2791,13 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
       else error(sourceInfo(), 'Unexpected return type "<%expTypeShort(attr.ty)%>" for ceil().')
     retType 
     + ( match context
-        case SIMULATION(genDiscrete=true)
+        case SIMULATION_CONTEXT(genDiscrete=true)
         case ALGLOOP_CONTEXT(genInitialisation=true)
         case ZEROCROSSINGS_CONTEXT(__)
           then
           let val = daeExp(valExp, context, &preExp, simCode)
           '(mathEVPre[<%constIndex%>] = Math.Ceiling(<%val%>))'
-        case SIMULATION(genDiscrete=false) then
+        case SIMULATION_CONTEXT(genDiscrete=false) then
           'mathEVPre[<%constIndex%>]'
         case ALGLOOP_CONTEXT(genInitialisation=false) then
           let &res = buffer "" 
@@ -2822,7 +2822,7 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
     let constIndex = daeExp(index, context, &preExp, simCode)
     let stype = expTypeShort(attr.ty)
     match context
-    case SIMULATION(genDiscrete=true)
+    case SIMULATION_CONTEXT(genDiscrete=true)
     case ALGLOOP_CONTEXT(genInitialisation=true)
     case ZEROCROSSINGS_CONTEXT(__)
       then
@@ -2839,7 +2839,7 @@ template daeExpCall(Exp inExp, Context context, Text &preExp, SimCode simCode) :
         }
         >>
       res
-    case SIMULATION(genDiscrete=false) then
+    case SIMULATION_CONTEXT(genDiscrete=false) then
       '(<%stype%>) mathEVPre[<%constIndex%>]'
     case ALGLOOP_CONTEXT(genInitialisation=false) then
       let &res = buffer "" 

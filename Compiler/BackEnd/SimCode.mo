@@ -71,9 +71,9 @@ type JacobianMatrix = tuple<list<JacobianColumn>,                         // col
 
 public constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 
-// Root data structure containing information required for templates to
-// generate simulation code for a Modelica model.
 uniontype SimCode
+  "Root data structure containing information required for templates to
+  generate simulation code for a Modelica model."
   record SIMCODE
     ModelInfo modelInfo;
     list<DAE.Exp> literals "shared literals";
@@ -83,8 +83,8 @@ uniontype SimCode
     list<list<SimEqSystem>> odeEquations;
     list<list<SimEqSystem>> algebraicEquations;
     list<SimEqSystem> residualEquations;
-    Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
-    Boolean useHomotopy;                       // true if homotopy(...) is used during initialization
+    Boolean useSymbolicInitialization "true if a system to solve the initial problem symbolically is generated, otherwise false";
+    Boolean useHomotopy "true if homotopy(...) is used during initialization";
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> startValueEquations;
     list<SimEqSystem> parameterEquations;
@@ -112,17 +112,17 @@ uniontype SimCode
   end SIMCODE;
 end SimCode;
 
-// Delayed expressions type
 uniontype DelayedExpression
+  "Delayed expressions type"
   record DELAYED_EXPRESSIONS
     list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
     Integer maxDelayedIndex;
   end DELAYED_EXPRESSIONS;
 end DelayedExpression;
 
-// Root data structure containing information required for templates to
-// generate C functions for Modelica/MetaModelica functions.
 uniontype FunctionCode
+  "Root data structure containing information required for templates to
+  generate C functions for Modelica/MetaModelica functions."
   record FUNCTIONCODE
     String name;
     Option<Function> mainFunction "This function is special; the 'in'-function should be generated for it";
@@ -134,8 +134,7 @@ uniontype FunctionCode
   end FUNCTIONCODE;
 end FunctionCode;
 
-// Container for metadata about a Modelica model.
-uniontype ModelInfo
+uniontype ModelInfo "Container for metadata about a Modelica model."
   record MODELINFO
     Absyn.Path name;
     String directory;
@@ -161,8 +160,7 @@ uniontype FileInfo
   end FILEINFO;
 end FileInfo;
 
-// Number of variables of various types in a Modelica model.
-uniontype VarInfo
+uniontype VarInfo "Number of variables of various types in a Modelica model."
   record VARINFO
     Integer numZeroCrossings;
     Integer numTimeEvents;
@@ -184,7 +182,7 @@ uniontype VarInfo
     Integer numInVars;
     Integer numInitialEquations;
     Integer numInitialAlgorithms;
-    Integer numInitialResiduals; // numInitialEquations+numInitialAlgorithms
+    Integer numInitialResiduals "numInitialEquations + numInitialAlgorithms";
     Integer numExternalObjects;
     Integer numStringAlgVars;
     Integer numStringParamVars;
@@ -199,8 +197,7 @@ uniontype VarInfo
   end VARINFO;
 end VarInfo;
 
-// Container for metadata about variables in a Modelica model.
-uniontype SimVars
+uniontype SimVars "Container for metadata about variables in a Modelica model."
   record SIMVARS
     list<SimVar> stateVars;
     list<SimVar> derivativeVars;
@@ -230,8 +227,7 @@ end SimVars;
 public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
-// Information about a variable in a Modelica model.
-uniontype SimVar
+uniontype SimVar "Information about a variable in a Modelica model."
   record SIMVAR
     DAE.ComponentRef name;
     BackendDAE.VarKind varKind;
@@ -274,10 +270,10 @@ uniontype Causality
   record INPUT end INPUT;
 end Causality;
 
-// Represents a Modelica or MetaModelica function.
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.
-uniontype Function
+uniontype Function 
+  "Represents a Modelica or MetaModelica function."
   record FUNCTION
     Absyn.Path name;
     list<Variable> outVars;
@@ -314,7 +310,7 @@ uniontype Function
     list<Variable> inVars;
     list<Variable> outVars;
     list<Variable> biVars;
-    list<String> libs; //need this one for C#
+    list<String> libs "need this one for C#";
     String language "C or Fortran";
     Absyn.Info info;
     Boolean dynamicLoad;
@@ -330,22 +326,22 @@ end Function;
 
 uniontype RecordDeclaration
   record RECORD_DECL_FULL
-    String name; // struct (record) name ? encoded
-    Absyn.Path defPath; //definition path
-    list<Variable> variables; //only name and type
+    String name "struct (record) name ? encoded";
+    Absyn.Path defPath "definition path";
+    list<Variable> variables "only name and type";
   end RECORD_DECL_FULL;
   record RECORD_DECL_DEF
-    Absyn.Path path; //definition path .. encoded ?
+    Absyn.Path path "definition path .. encoded?";
     list<String> fieldNames;
   end RECORD_DECL_DEF;
 end RecordDeclaration;
 
-// Information about an argument to an external function.
 uniontype SimExtArg
+  "Information about an argument to an external function."
   record SIMEXTARG
     DAE.ComponentRef cref;
     Boolean isInput;
-    Integer outputIndex; // > 0 if output
+    Integer outputIndex "> 0 if output";
     Boolean isArray;
     Boolean hasBinding "avoid double allocation";
     DAE.Type type_;
@@ -357,19 +353,19 @@ uniontype SimExtArg
   record SIMEXTARGSIZE
     DAE.ComponentRef cref;
     Boolean isInput;
-    Integer outputIndex; // > 0 if output
+    Integer outputIndex "> 0 if output";
     DAE.Type type_;
     DAE.Exp exp;
   end SIMEXTARGSIZE;
   record SIMNOEXTARG end SIMNOEXTARG;
 end SimExtArg;
 
-/* a variable represents a name, a type and a possible default value */
 uniontype Variable
+  "a variable represents a name, a type and a possible default value"
   record VARIABLE
     DAE.ComponentRef name;
     DAE.Type ty;
-    Option<DAE.Exp> value; // Default value
+    Option<DAE.Exp> value "default value";
     list<DAE.Exp> instDims;
     DAE.VarParallelism parallelism;
   end VARIABLE;
@@ -388,9 +384,8 @@ uniontype Statement
   end ALGORITHM;
 end Statement;
 
-// Represents a single equation or a system of equations that must be solved
-// together.
 uniontype SimEqSystem
+  "Represents a single equation or a system of equations that must be solved together."
   record SES_RESIDUAL
     Integer index;
     DAE.Exp exp;
@@ -451,8 +446,8 @@ uniontype SimEqSystem
 
   record SES_WHEN
     Integer index;
-    list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-    Boolean initialCall;                  // true, if top-level branch with initial()
+    list<DAE.ComponentRef> conditions "list of boolean variables as conditions";
+    Boolean initialCall "true, if top-level branch with initial()";
     DAE.ComponentRef left;
     DAE.Exp right;
     Option<SimEqSystem> elseWhen;
@@ -474,9 +469,9 @@ end StateSet;
 
 uniontype SimWhenClause
   record SIM_WHEN_CLAUSE
-    list<DAE.ComponentRef> conditionVars; // is no longer needed
-    list<DAE.ComponentRef> conditions;    // list of boolean variables as conditions
-    Boolean initialCall;                  // true, if top-level branch with initial()
+    list<DAE.ComponentRef> conditionVars "is no longer needed";
+    list<DAE.ComponentRef> conditions "list of boolean variables as conditions";
+    Boolean initialCall "true, if top-level branch with initial()";
     list<BackendDAE.WhenOperator> reinits;
     Option<BackendDAE.WhenEquation> whenEq;
   end SIM_WHEN_CLAUSE;
@@ -489,8 +484,8 @@ uniontype ExtObjInfo
   end EXTOBJINFO;
 end ExtObjInfo;
 
-// Platform specific parameters used when generating makefiles.
 uniontype MakefileParams
+  "Platform specific parameters used when generating makefiles."
   record MAKEFILE_PARAMS
     String ccompiler;
     String cxxcompiler;
@@ -525,55 +520,54 @@ uniontype SimulationSettings
   end SIMULATION_SETTINGS;
 end SimulationSettings;
 
-// Constants of this type defined below are used by templates to be able to
-// generate different code depending on the context it is generated in.
 uniontype Context
-  record SIMULATION
+  "Constants of this type defined below are used by templates to be able to
+  generate different code depending on the context it is generated in."
+  record SIMULATION_CONTEXT
     Boolean genDiscrete;
-  end SIMULATION;
+  end SIMULATION_CONTEXT;
+  
   record FUNCTION_CONTEXT
   end FUNCTION_CONTEXT;
   
   record ALGLOOP_CONTEXT
      Boolean genInitialisation;
   end ALGLOOP_CONTEXT;
-  record OTHER
-  end OTHER;
+  
+  record OTHER_CONTEXT
+  end OTHER_CONTEXT;
+  
   record INLINE_CONTEXT
   end INLINE_CONTEXT;
+  
   record PARALLEL_FUNCTION_CONTEXT
   end PARALLEL_FUNCTION_CONTEXT;
+  
   record ZEROCROSSINGS_CONTEXT
   end ZEROCROSSINGS_CONTEXT;
-  record OPTIMIZATION
-  end OPTIMIZATION;
+  
+  record OPTIMIZATION_CONTEXT
+  end OPTIMIZATION_CONTEXT;
 end Context;
 
-
-public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
-public constant Context contextSimulationDiscrete     = SIMULATION(true);
+public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
+public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
 public constant Context contextInlineSolver           = INLINE_CONTEXT();
 public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true);
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false);
-public constant Context contextOther                  = OTHER();
+public constant Context contextOther                  = OTHER_CONTEXT();
 public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
 public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
-public constant Context contextOptimization           = OPTIMIZATION();
-
+public constant Context contextOptimization           = OPTIMIZATION_CONTEXT();
 
 /****** HashTable ComponentRef -> SimCode.SimVar ******/
 /* a workaround to enable "cross public import" */
 
-
 /* HashTable instance specific code */
-
 public
 type Key = DAE.ComponentRef;
 type Value = SimVar;
-
-
-
 /* end of HashTable instance specific code */
 
 /* Generic hashtable code below!! */
@@ -599,7 +593,7 @@ end ValueArray;
 
 public uniontype HpcOmParInformation "informations for the taskgraph parallelization"
   record HPCOMPARINFORMATION
-    list<list<Integer>> eqsOfLevels; //The equations of the level <%listindex%>
+    list<list<Integer>> eqsOfLevels "The equations of the level <%listindex%>";
   end HPCOMPARINFORMATION;
 end HpcOmParInformation;
 end SimCode;

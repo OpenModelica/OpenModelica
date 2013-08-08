@@ -207,24 +207,24 @@ package SimCode
   end SimulationSettings;
   
   uniontype Context
-    record SIMULATION
+    record SIMULATION_CONTEXT
       Boolean genDiscrete;
-    end SIMULATION;
+    end SIMULATION_CONTEXT;
     record FUNCTION_CONTEXT
     end FUNCTION_CONTEXT;
     record ALGLOOP_CONTEXT
        Boolean genInitialisation;
     end ALGLOOP_CONTEXT;
-    record OTHER
-    end OTHER;
+    record OTHER_CONTEXT
+    end OTHER_CONTEXT;
     record INLINE_CONTEXT
     end INLINE_CONTEXT;
     record PARALLEL_FUNCTION_CONTEXT
     end PARALLEL_FUNCTION_CONTEXT;
     record ZEROCROSSINGS_CONTEXT 
     end ZEROCROSSINGS_CONTEXT;  
-    record OPTIMIZATION
-    end OPTIMIZATION;
+    record OPTIMIZATION_CONTEXT
+    end OPTIMIZATION_CONTEXT;
   end Context;
   
   uniontype HpcOmParInformation

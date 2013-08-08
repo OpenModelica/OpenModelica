@@ -3369,7 +3369,7 @@ case ecr as CREF(componentRef=WILD(__)) then
 case CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
     >>
@@ -3378,7 +3378,7 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
@@ -3637,7 +3637,7 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*
  "Generates a when algorithm statement."
 ::=
 match context
-case SIMULATION(genDiscrete=true) then
+case SIMULATION_CONTEXT(genDiscrete=true) then
   match when
   case STMT_WHEN(__) then
     let helpIf = (conditions |> e => '(<%cref(e)%> && !_PRE<%cref(e)%> /* edge */)';separator=" || ")
@@ -4153,7 +4153,7 @@ template daeExpRelationSim(Exp exp, Context context, Text &preExp /*BUFP*/,
 match exp
 case rel as RELATION(__) then
   match context
-  case SIMULATION(genDiscrete=false) then
+  case SIMULATION_CONTEXT(genDiscrete=false) then
      match rel.optionExpisASUB
      case NONE() then
         let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -4194,7 +4194,7 @@ case rel as RELATION(__) then
           res
         end match
       end match
-   case SIMULATION(genDiscrete=true) then
+   case SIMULATION_CONTEXT(genDiscrete=true) then
      match rel.optionExpisASUB
      case NONE() then
         let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -4528,14 +4528,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = match attr.ty
       case T_NORETCALL(__) then ""
       else tempDecl(retType, &varDecls)
-    let &preExp += if not attr.builtin then match context case SIMULATION(__) then
+    let &preExp += if not attr.builtin then match context case SIMULATION_CONTEXT(__) then
       <<
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_TICK_FN(<%funName%>_index);
       #endif<%\n%>
       >>
     let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
-    let &preExp += if not attr.builtin then match context case SIMULATION(__) then
+    let &preExp += if not attr.builtin then match context case SIMULATION_CONTEXT(__) then
       <<
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_ACC_FN(<%funName%>_index);

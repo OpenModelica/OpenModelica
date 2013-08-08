@@ -6023,7 +6023,7 @@ case ecr as CREF(componentRef=WILD(__)) then
 case CREF(ty= t as DAE.T_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     assign_array(<%lhsStr%>,<%rhsStr%> );
     >>
@@ -6032,7 +6032,7 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
 case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   match context
-  case SIMULATION(__) then
+  case SIMULATION_CONTEXT(__) then
     <<
     usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
     copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
@@ -7291,7 +7291,7 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*
  "Generates a when algorithm statement."
 ::=
 match context
-case SIMULATION(__) then
+case SIMULATION_CONTEXT(__) then
   match when
   case STMT_WHEN(__) then
     let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref(e)%>"))')
