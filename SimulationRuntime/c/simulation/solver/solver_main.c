@@ -537,9 +537,9 @@ int solver_main(DATA* data, const char* init_initMethod,
 #endif
 
 #ifndef WITH_IPOPT
-	case S_OPTIMIZATION:
-		WARNING(LOG_STDOUT, "Ipopt is needed but not available.");
-		return 1;
+  case S_OPTIMIZATION:
+    WARNING(LOG_STDOUT, "Ipopt is needed but not available.");
+    return 1;
 #endif
     
 

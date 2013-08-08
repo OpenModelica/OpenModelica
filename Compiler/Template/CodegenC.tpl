@@ -9647,26 +9647,26 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               return  -1;
             }
  
-	    /* objectiveIntegrand */
-	    int lagrange(DATA* data, modelica_real* res)
-	    {
-	      <%varDecls1%>
-	      <%preExp1%>
-	      <%objectiveIntegrand%>
-	      return -1;
-	    }
+      /* objectiveIntegrand */
+      int lagrange(DATA* data, modelica_real* res)
+      {
+        <%varDecls1%>
+        <%preExp1%>
+        <%objectiveIntegrand%>
+        return -1;
+      }
 
-	    /* constraints */
-	    int pathConstraints(DATA* data, modelica_real* res, int* N)
-	    {
-	      if(*N < 0)
-	      {
-		  *N = <%listConstraintsLength%>;
-		return 1;
-	      }
-	       <%constraints%>
-	      return 0;
-	    }
+      /* constraints */
+      int pathConstraints(DATA* data, modelica_real* res, int* N)
+      {
+        if(*N < 0)
+        {
+      *N = <%listConstraintsLength%>;
+    return 1;
+        }
+         <%constraints%>
+        return 0;
+      }
         >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end optimizationComponents1;
@@ -9689,13 +9689,13 @@ template pathConstraint(Constraint cons)
          daeExp(constraint, contextOptimization, &preExp /*BUFC*/, &varDecls /*BUFD*/)
           ;separator="\n")
       <<
-	  else
-	  {
-	    int i = 0;
-	    <%varDecls%>
-	    <%preExp%>
-	    <%constrain%>
-	  }
+    else
+    {
+      int i = 0;
+      <%varDecls%>
+      <%preExp%>
+      <%constrain%>
+    }
       >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end pathConstraint;
