@@ -71,7 +71,7 @@ protected function hashFunc
   output Integer res;
 protected
   String crstr;
-  ComponentReference.ComponentRef cr1,cr2;
+  DAE.ComponentRef cr1,cr2;
 algorithm
   (cr1,cr2) := key;
   // Use same factor as Djb2 hash (33)
