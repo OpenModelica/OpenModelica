@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR 
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2. 
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE. 
+ * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -28,7 +28,7 @@
  *
  */
 /*
- * 
+ *
  * @author Adeel Asghar <adeel.asghar@liu.se>
  *
  * RCS: $Id$
@@ -401,19 +401,27 @@ void ShapeAnnotation::setUserDefaults()
   OptionsDialog *pOptionsDialog = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
   /* Set user Line Style settings */
   if (pOptionsDialog->getLineStylePage()->getLineColor().isValid())
+  {
     mLineColor = pOptionsDialog->getLineStylePage()->getLineColor();
+  }
   mLinePattern = StringHandler::getLinePatternType(pOptionsDialog->getLineStylePage()->getLinePattern());
   mLineThickness = pOptionsDialog->getLineStylePage()->getLineThickness();
   mArrow.replace(0, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineStartArrow()));
   mArrow.replace(1, StringHandler::getArrowType(pOptionsDialog->getLineStylePage()->getLineEndArrow()));
   mArrowSize = pOptionsDialog->getLineStylePage()->getLineArrowSize();
   if (pOptionsDialog->getLineStylePage()->getLineSmooth())
+  {
     mSmooth = StringHandler::SmoothBezier;
+  }
   else
+  {
     mSmooth = StringHandler::SmoothNone;
+  }
   /* Set user Fill Style settings */
   if (pOptionsDialog->getFillStylePage()->getFillColor().isValid())
+  {
     mFillColor = pOptionsDialog->getFillStylePage()->getFillColor();
+  }
   mFillPattern = StringHandler::getFillPatternType(pOptionsDialog->getFillStylePage()->getFillPattern());
 }
 
@@ -474,13 +482,17 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
     if thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
     */
   if (thickness <= 2)
+  {
     pen.setCosmetic(true);
+  }
   /* Set cosmetic pen for connection lines and lines drawn by individual shapes. */
   if (dynamic_cast<LineAnnotation*>(this))
   {
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType || pLineAnnotation->getLineType() == LineAnnotation::ShapeType)
+    {
       pen.setCosmetic(true);
+    }
   }
   painter->setPen(pen);
 }
@@ -572,7 +584,9 @@ void ShapeAnnotation::drawCornerItems()
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
     if (pLineAnnotation)
+    {
       lineType = pLineAnnotation->getLineType();
+    }
     // remove the last point since mouse double click event has added an extra point to it.....
     mPoints.removeLast();
     for (int i = 0 ; i < mPoints.size() ; i++)
@@ -581,7 +595,9 @@ void ShapeAnnotation::drawCornerItems()
       CornerItem *pCornerItem = new CornerItem(point.x(), point.y(), i, this);
       /* if line is a connection then make the first and last point non moveable. */
       if ((lineType == LineAnnotation::ConnectionType) && (i == 0 || i == mPoints.size() - 1))
+      {
         pCornerItem->setFlag(QGraphicsItem::ItemIsMovable, false);
+      }
       mCornerItemsList.append(pCornerItem);
     }
   }
@@ -656,7 +672,9 @@ QPointF ShapeAnnotation::getOldPosition()
 void ShapeAnnotation::replaceExtent(int index, QPointF point)
 {
   if (index >= 0 && index <= 1)
+  {
     mExtents.replace(index, point);
+  }
 }
 
 /*!
@@ -666,7 +684,9 @@ void ShapeAnnotation::replaceExtent(int index, QPointF point)
 void ShapeAnnotation::updateEndExtent(QPointF point)
 {
   if (mExtents.size() > 1)
+  {
     mExtents.replace(1, point);
+  }
 }
 
 /*!
@@ -975,9 +995,13 @@ void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
   GraphicsView *pGraphicsView = 0;
   OMCProxy *pOMCProxy = 0;
   if (pComponent)
+  {
     pGraphicsView = pComponent->getGraphicsView();
+  }
   else if (mpGraphicsView)
+  {
     pGraphicsView = mpGraphicsView;
+  }
   pOMCProxy = pGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOMCProxy();
 
   mOriginalFileName = fileName;
@@ -986,13 +1010,21 @@ void ShapeAnnotation::setFileName(QString fileName, Component *pComponent)
   QFileInfo classFileInfo(pGraphicsView->getModelWidget()->getLibraryTreeNode()->getFileName());
   /* if its a modelica:// link then make it absolute path */
   if (fileUrl.scheme().toLower().compare("modelica") == 0)
+  {
     mFileName = pOMCProxy->uriToFilename(mOriginalFileName);
+  }
   else if (fileInfo.isRelative())
+  {
     mFileName = QString(classFileInfo.absoluteDir().absolutePath()).append("/").append(mOriginalFileName);
+  }
   else if (fileInfo.isAbsolute())
+  {
     mFileName = mOriginalFileName;
+  }
   else
+  {
     mFileName = "";
+  }
 }
 
 /*!
@@ -1055,9 +1087,13 @@ void ShapeAnnotation::rotateClockwise()
   qreal rotateIncrement = -90;
   qreal angle = 0;
   if (oldRotation == -270)
+  {
     angle = 0;
+  }
   else
+  {
     angle = oldRotation + rotateIncrement;
+  }
   applyRotation(angle);
 }
 
@@ -1076,9 +1112,13 @@ void ShapeAnnotation::rotateAntiClockwise()
   qreal rotateIncrement = 90;
   qreal angle = 0;
   if (oldRotation == 270)
+  {
     angle = 0;
+  }
   else
+  {
     angle = oldRotation + rotateIncrement;
+  }
   applyRotation(angle);
 }
 
@@ -1379,9 +1419,13 @@ void ShapeAnnotation::cornerItemReleased()
 {
   mIsCornerItemClicked = false;
   if (isSelected())
+  {
     setCornerItemsActive();
+  }
   else
+  {
     setSelected(true);
+  }
 }
 
 /*!
@@ -1440,11 +1484,15 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     return;
   }
   if (!isSelected())
+  {
     setSelected(true);
+  }
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
   if (pLineAnnotation)
+  {
     lineType = pLineAnnotation->getLineType();
+  }
   QMenu menu(mpGraphicsView);
   menu.addAction(mpShapePropertiesAction);
   menu.addSeparator();
@@ -1485,7 +1533,9 @@ QVariant ShapeAnnotation::itemChange(GraphicsItemChange change, const QVariant &
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
     LineAnnotation::LineType lineType = LineAnnotation::ShapeType;
     if (pLineAnnotation)
+    {
       lineType = pLineAnnotation->getLineType();
+    }
     if (isSelected())
     {
       setCornerItemsActive();

@@ -108,31 +108,28 @@ QPainterPath PolygonAnnotation::getShape() const
   {
     if (mSmooth)
     {
-      for (int i = 0 ; i < mPoints.size() ; i++)
+      path.moveTo(mPoints.at(0));
+      if (mPoints.size() == 2)
       {
-        QPointF point3 = mPoints.at(i);
-        if (i == 0)
-          path.moveTo(point3);
-        else
+        path.lineTo(mPoints.at(1));
+      }
+      else
+      {
+        for (int i = 2 ; i < mPoints.size() ; i++)
         {
+          QPointF point3 = mPoints.at(i);
           // if points are only two then spline acts as simple line
-          if (i < 2)
+          // calculate middle points for bezier curves
+          QPointF point2 = mPoints.at(i - 1);
+          QPointF point1 = mPoints.at(i - 2);
+          QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
+          QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
+          path.lineTo(point12);
+          path.cubicTo(point12, point2, point23);
+          // if its the last point
+          if (i == mPoints.size() - 1)
           {
-            if (mPoints.size() < 3)
-              path.lineTo(point3);
-          }
-          else
-          {
-            // calculate middle points for bezier curves
-            QPointF point2 = mPoints.at(i - 1);
-            QPointF point1 = mPoints.at(i - 2);
-            QPointF point12((point1.x() + point2.x())/2, (point1.y() + point2.y())/2);
-            QPointF point23((point2.x() + point3.x())/2, (point2.y() + point3.y())/2);
-            path.lineTo(point12);
-            path.cubicTo(point12, point2, point23);
-            // if its the last point
-            if (i == mPoints.size() - 1)
-              path.lineTo(point3);
+            path.lineTo(point3);
           }
         }
       }
@@ -154,9 +151,13 @@ QPainterPath PolygonAnnotation::shape() const
 {
   QPainterPath path = getShape();
   if (mFillPattern == StringHandler::FillNone)
+  {
     return addPathStroker(path);
+  }
   else
+  {
     return path;
+  }
 }
 
 void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -164,7 +165,9 @@ void PolygonAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible)
+  {
     drawPolygonAnnotaion(painter);
+  }
 }
 
 void PolygonAnnotation::drawPolygonAnnotaion(QPainter *painter)
@@ -182,13 +185,17 @@ QString PolygonAnnotation::getShapeAnnotation()
   // get points
   QString pointsString;
   if (mPoints.size() > 0)
+  {
     pointsString.append("points={");
+  }
   for (int i = 0 ; i < mPoints.size() ; i++)
   {
     pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
     pointsString.append(QString::number(mPoints[i].y())).append("}");
     if (i < mPoints.size() - 1)
+    {
       pointsString.append(",");
+    }
   }
   if (mPoints.size() > 0)
   {
@@ -197,7 +204,9 @@ QString PolygonAnnotation::getShapeAnnotation()
   }
   // get the smooth
   if (mSmooth != StringHandler::SmoothNone)
+  {
     annotationString.append(QString("smooth=").append(StringHandler::getSmoothString(mSmooth)));
+  }
   return QString("Polygon(").append(annotationString.join(",")).append(")");
 }
 

@@ -63,7 +63,9 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, bool inheritedShape, Gr
   parseShapeAnnotation(annotation);
   /* Only set the ItemIsMovable flag on shape if the class is not a system library class OR shape is not an inherited shape. */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeNode()->isSystemLibrary() && !isInheritedShape())
+  {
     setFlag(QGraphicsItem::ItemIsMovable);
+  }
   mpGraphicsView->addShapeObject(this);
   mpGraphicsView->scene()->addItem(this);
   connect(this, SIGNAL(updateClassAnnotation()), mpGraphicsView, SLOT(addClassAnnotation()));
@@ -76,14 +78,18 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   // parse the shape to get the list of attributes of Ellipse.
   QStringList list = StringHandler::getStrings(annotation);
   if (list.size() < 11)
+  {
     return;
+  }
   // 9th item is the extent points
   QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
   for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++)
   {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2)
+    {
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
+    }
   }
   // 10th item of the list contains the start angle.
   mStartAngle = list.at(9).toFloat();
@@ -105,9 +111,13 @@ QPainterPath EllipseAnnotation::shape() const
   {
     path.addEllipse(getBoundingRect());
     if (mFillPattern == StringHandler::FillNone)
+    {
       return addPathStroker(path);
+    }
     else
+    {
       return path;
+    }
   }
   path.addEllipse(getBoundingRect());
   return path;
@@ -118,7 +128,9 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible)
+  {
     drawEllipseAnnotaion(painter);
+  }
 }
 
 void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
@@ -162,10 +174,14 @@ QString EllipseAnnotation::getShapeAnnotation()
   }
   // get the start angle
   if (mStartAngle != 0)
+  {
     annotationString.append(QString("startAngle=").append(QString::number(mStartAngle)));
+  }
   // get the end angle
   if (mEndAngle != 0)
+  {
     annotationString.append(QString("endAngle=").append(QString::number(mEndAngle)));
+  }
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }
 
