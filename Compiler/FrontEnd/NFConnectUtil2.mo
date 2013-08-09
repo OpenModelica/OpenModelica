@@ -52,19 +52,19 @@ protected import NFInstUtil;
 protected import List;
 protected import Util;
 
-public type Connections = NFConnect2.Connections;
-public type Connection = NFConnect2.Connection;
-public type Connector = NFConnect2.Connector;
-public type ConnectorType = NFConnect2.ConnectorType;
-public type ConnectorAttr = NFConnect2.ConnectorAttr;
-public type Face = NFConnect2.Face;
-public type Root = NFConnect2.Root;
+protected type Connections = NFConnect2.Connections;
+protected type Connection = NFConnect2.Connection;
+protected type Connector = NFConnect2.Connector;
+protected type ConnectorType = NFConnect2.ConnectorType;
+protected type ConnectorAttr = NFConnect2.ConnectorAttr;
+protected type Face = NFConnect2.Face;
+protected type Root = NFConnect2.Root;
 
-public type Class = NFInstTypes.Class;
-public type Component = NFInstTypes.Component;
-public type Element = NFInstTypes.Element;
-public type Equation = NFInstTypes.Equation;
-public type DaePrefixes = NFInstTypes.DaePrefixes;
+protected type Class = NFInstTypes.Class;
+protected type Component = NFInstTypes.Component;
+protected type Element = NFInstTypes.Element;
+protected type Equation = NFInstTypes.Equation;
+protected type DaePrefixes = NFInstTypes.DaePrefixes;
 
 protected type DisjointSets = NFConnectionSets.DisjointSets;
 
@@ -72,7 +72,7 @@ public function makeBranch
   input DAE.ComponentRef inNode1;
   input DAE.ComponentRef inNode2;
   input Absyn.Info inInfo;
-  output Connections outConnections;
+  output NFConnect2.Connections outConnections;
 algorithm
   NFConnectCheck.crefIsValidNode(inNode1, "Connections.branch", true, inInfo);
   NFConnectCheck.crefIsValidNode(inNode2, "Connections.branch", false, inInfo);
@@ -82,7 +82,7 @@ end makeBranch;
 public function makeRoot
   input DAE.ComponentRef inNode;
   input Absyn.Info inInfo;
-  output Connections outConnections;
+  output NFConnect2.Connections outConnections;
 algorithm
   NFConnectCheck.crefIsValidNode(inNode, "Connections.root", true, inInfo);
   outConnections := NFConnect2.emptyConnections;
@@ -92,7 +92,7 @@ public function makePotentialRoot
   input DAE.ComponentRef inNode;
   input DAE.Exp inPriority;
   input Absyn.Info inInfo;
-  output Connections outConnections;
+  output NFConnect2.Connections outConnections;
 algorithm
   NFConnectCheck.crefIsValidNode(inNode, "Connections.potentialRoot", true, inInfo);
   outConnections := NFConnect2.emptyConnections;
@@ -100,9 +100,9 @@ end makePotentialRoot;
 
 public function makeConnector
   input DAE.ComponentRef inName;
-  input Face inFace;
-  input Option<Component> inComponent;
-  output Connector outConnector;
+  input NFConnect2.Face inFace;
+  input Option<NFInstTypes.Component> inComponent;
+  output NFConnect2.Connector outConnector;
 protected
   DAE.Type ty;
   ConnectorType cty;
@@ -115,20 +115,20 @@ end makeConnector;
 protected function makeConnector2
   input DAE.ComponentRef inName;
   input DAE.Type inType;
-  input Face inFace;
-  input ConnectorType inConnectorType;
-  input ConnectorAttr inConnectorAttr;
-  output Connector outConnector;
+  input NFConnect2.Face inFace;
+  input NFConnect2.ConnectorType inConnectorType;
+  input NFConnect2.ConnectorAttr inConnectorAttr;
+  output NFConnect2.Connector outConnector;
 algorithm
   outConnector := NFConnect2.CONNECTOR(inName, inType, inFace,
     inConnectorType, inConnectorAttr);
 end makeConnector2;
 
 protected function extractConnectorTypesFromComp
-  input Option<Component> inComponent;
+  input Option<NFInstTypes.Component> inComponent;
   output DAE.Type outType;
-  output ConnectorType outConnectorType;
-  output ConnectorAttr outConnectorAttr;
+  output NFConnect2.ConnectorType outConnectorType;
+  output NFConnect2.ConnectorAttr outConnectorAttr;
 algorithm
   (outType, outConnectorType, outConnectorAttr) := match(inComponent)
     local
@@ -153,8 +153,8 @@ end extractConnectorTypesFromComp;
 
 public function renameConnector
   input DAE.ComponentRef inName;
-  input Connector inConnector;
-  output Connector outConnector;
+  input NFConnect2.Connector inConnector;
+  output NFConnect2.Connector outConnector;
 protected
   DAE.Type ty;
   Face face;
@@ -167,8 +167,8 @@ end renameConnector;
 
 public function updateConnectorType
   input DAE.Type inType;
-  input Connector inConnector;
-  output Connector outConnector;
+  input NFConnect2.Connector inConnector;
+  output NFConnect2.Connector outConnector;
 protected
   DAE.ComponentRef name;
   Face face;
@@ -180,8 +180,8 @@ algorithm
 end updateConnectorType;
 
 public function connectorEqual
-  input Connector inConnector1;
-  input Connector inConnector2;
+  input NFConnect2.Connector inConnector1;
+  input NFConnect2.Connector inConnector2;
   output Boolean outIsEqual;
 algorithm
   outIsEqual := matchcontinue(inConnector1, inConnector2)
@@ -203,8 +203,8 @@ algorithm
 end connectorEqual;
 
 public function faceEqual
-  input Face inFace1;
-  input Face inFace2;
+  input NFConnect2.Face inFace1;
+  input NFConnect2.Face inFace2;
   output Boolean outIsEqual;
 algorithm
   outIsEqual := match(inFace1, inFace2)
@@ -216,8 +216,8 @@ algorithm
 end faceEqual;
 
 public function connectorTypeEqual
-  input ConnectorType inType1;
-  input ConnectorType inType2;
+  input NFConnect2.ConnectorType inType1;
+  input NFConnect2.ConnectorType inType2;
   output Boolean outEqual;
 algorithm
   outEqual := match(inType1, inType2)
@@ -229,7 +229,7 @@ algorithm
 end connectorTypeEqual;
 
 public function isPotential
-  input ConnectorType inType;
+  input NFConnect2.ConnectorType inType;
   output Boolean outIsPotential;
 algorithm
   outIsPotential := match(inType)
@@ -239,7 +239,7 @@ algorithm
 end isPotential;
 
 public function connectorStr
-  input Connector inConnector;
+  input NFConnect2.Connector inConnector;
   output String outString;
 protected
   DAE.ComponentRef name;
@@ -255,7 +255,7 @@ algorithm
 end connectorStr;
 
 public function faceStr
-  input Face inFace;
+  input NFConnect2.Face inFace;
   output String outString;
 algorithm
   outString := match(inFace)
@@ -266,7 +266,7 @@ algorithm
 end faceStr;
 
 public function connectorTypeStr
-  input ConnectorType inConnectorType;
+  input NFConnect2.ConnectorType inConnectorType;
   output String outString;
 algorithm
   outString := match(inConnectorType)
@@ -287,7 +287,7 @@ algorithm
 end connectorTypeStr;
 
 public function unparseConnectorType
-  input ConnectorType inConnectorType;
+  input NFConnect2.ConnectorType inConnectorType;
   output String outString;
 algorithm
   outString := match(inConnectorType)
@@ -298,8 +298,8 @@ algorithm
 end unparseConnectorType;
 
 public function getConnectorPrefixes
-  input DaePrefixes inPrefixes;
-  output ConnectorType outConnectorType;
+  input NFInstTypes.DaePrefixes inPrefixes;
+  output NFConnect2.ConnectorType outConnectorType;
   output DAE.VarKind outVariability;
 algorithm
   (outConnectorType, outVariability) := match(inPrefixes)
@@ -321,7 +321,7 @@ end getConnectorPrefixes;
 
 public function translateDaeConnectorType
   input DAE.ConnectorType inConnectorType;
-  output ConnectorType outConnectorType;
+  output NFConnect2.ConnectorType outConnectorType;
 algorithm
   outConnectorType := match(inConnectorType)
     case DAE.POTENTIAL() then NFConnect2.POTENTIAL();
@@ -333,7 +333,7 @@ end translateDaeConnectorType;
 
 public function translateSCodeConnectorType
   input SCode.ConnectorType inConnectorType;
-  output ConnectorType outConnectorType;
+  output NFConnect2.ConnectorType outConnectorType;
 algorithm
   outConnectorType := match(inConnectorType)
     case SCode.POTENTIAL() then NFConnect2.POTENTIAL();
@@ -343,7 +343,7 @@ algorithm
 end translateSCodeConnectorType;
 
 public function translateConnectorTypeToSCode
-  input ConnectorType inConnectorType;
+  input NFConnect2.ConnectorType inConnectorType;
   output SCode.ConnectorType outConnectorType;
 algorithm
   outConnectorType := match(inConnectorType)
@@ -354,21 +354,21 @@ algorithm
 end translateConnectorTypeToSCode;
 
 public function makeConnection
-  input Connector inLhs;
-  input Connector inRhs;
+  input NFConnect2.Connector inLhs;
+  input NFConnect2.Connector inRhs;
   input Absyn.Info inInfo;
-  output Connection outConnection;
+  output NFConnect2.Connection outConnection;
 algorithm
   outConnection := NFConnect2.CONNECTION(inLhs, inRhs, inInfo);
 end makeConnection;
 
 public function addConnectionCond
   input Boolean inAdd;
-  input Connector inLhsConnector;
-  input Connector inRhsConnector;
+  input NFConnect2.Connector inLhsConnector;
+  input NFConnect2.Connector inRhsConnector;
   input Absyn.Info inInfo;
-  input Connections inConnections;
-  output Connections outConnections;
+  input NFConnect2.Connections inConnections;
+  output NFConnect2.Connections outConnections;
 algorithm
   outConnections :=
   match(inAdd, inLhsConnector, inRhsConnector, inInfo, inConnections)
@@ -380,11 +380,11 @@ algorithm
 end addConnectionCond;
 
 public function addConnection
-  input Connector inLhsConnector;
-  input Connector inRhsConnector;
+  input NFConnect2.Connector inLhsConnector;
+  input NFConnect2.Connector inRhsConnector;
   input Absyn.Info inInfo;
-  input Connections inConnections;
-  output Connections outConnections;
+  input NFConnect2.Connections inConnections;
+  output NFConnect2.Connections outConnections;
 protected
   Connection conn;
 algorithm
@@ -393,9 +393,9 @@ algorithm
 end addConnection;
 
 protected function consConnection
-  input Connection inConnection;
-  input Connections inConnections;
-  output Connections outConnections;
+  input NFConnect2.Connection inConnection;
+  input NFConnect2.Connections inConnections;
+  output NFConnect2.Connections outConnections;
 algorithm
   outConnections := matchcontinue(inConnection, inConnections)
     local
@@ -423,7 +423,7 @@ algorithm
 end consConnection;
 
 public function isEmptyConnections
-  input Connections inConnections;
+  input NFConnect2.Connections inConnections;
   output Boolean outIsEmpty;
 algorithm
   outIsEmpty := match(inConnections)
@@ -433,16 +433,16 @@ algorithm
 end isEmptyConnections;
 
 public function collectFlowConnectors
-  input Class inClass;
-  output list<Connector> outFlows;
+  input NFInstTypes.Class inClass;
+  output list<NFConnect2.Connector> outFlows;
 algorithm
   outFlows := collectFlowConnectors2(inClass, {});
 end collectFlowConnectors;
 
 protected function collectFlowConnectors2
-  input Class inClass;
-  input list<Connector> inAccumFlows;
-  output list<Connector> outFlows;
+  input NFInstTypes.Class inClass;
+  input list<NFConnect2.Connector> inAccumFlows;
+  output list<NFConnect2.Connector> outFlows;
 algorithm
   outFlows := match(inClass, inAccumFlows)
     local
@@ -457,8 +457,8 @@ end collectFlowConnectors2;
 
 protected function collectFlowConnectors3
   input Element inElement;
-  input list<Connector> inAccumFlows;
-  output list<Connector> outFlows;
+  input list<NFConnect2.Connector> inAccumFlows;
+  output list<NFConnect2.Connector> outFlows;
 algorithm
   outFlows := matchcontinue(inElement, inAccumFlows)
     local
@@ -466,7 +466,7 @@ algorithm
       DAE.Type ty;
       Class cls;
       list<Element> sub_comps;
-      list<Connector> flows;
+      list<NFConnect2.Connector> flows;
 
     case (NFInstTypes.ELEMENT(component = comp as NFInstTypes.TYPED_COMPONENT(ty = ty),
         cls = cls as NFInstTypes.COMPLEX_CLASS(components = sub_comps)), flows)
@@ -486,8 +486,8 @@ end collectFlowConnectors3;
 
 protected function collectFlowConnector
   input Element inElement;
-  input list<Connector> inAccumFlows;
-  output list<Connector> outFlows;
+  input list<NFConnect2.Connector> inAccumFlows;
+  output list<NFConnect2.Connector> outFlows;
 algorithm
   outFlows := matchcontinue(inElement, inAccumFlows)
     local
@@ -508,8 +508,8 @@ algorithm
 end collectFlowConnector;
 
 protected function extractConnectorAttrFromPrefs
-  input DaePrefixes inPrefixes;
-  output ConnectorAttr outAttributes;
+  input NFInstTypes.DaePrefixes inPrefixes;
+  output NFConnect2.ConnectorAttr outAttributes;
   output DAE.ConnectorType outConnectorType;
 algorithm
   (outAttributes, outConnectorType) := match(inPrefixes)
@@ -530,7 +530,7 @@ algorithm
 end extractConnectorAttrFromPrefs;
 
 public function connectionCount
-  input Connections inConnections;
+  input NFConnect2.Connections inConnections;
   output Integer outCount;
 protected
   list<Connection> connl;
@@ -540,8 +540,8 @@ algorithm
 end connectionCount;
 
 public function expandConnector
-  input Connector inConnector;
-  output list<Connector> outConnectors;
+  input NFConnect2.Connector inConnector;
+  output list<NFConnect2.Connector> outConnectors;
 algorithm
   outConnectors := match(inConnector)
     local
@@ -550,7 +550,7 @@ algorithm
       ConnectorType cty;
       list<DAE.ComponentRef> prefixes;
       DAE.Type ty;
-      list<Connector> connl;
+      list<NFConnect2.Connector> connl;
       ConnectorAttr attr;
 
     case NFConnect2.CONNECTOR(name as DAE.CREF_IDENT(ident = _), ty, face, cty, attr)
@@ -590,8 +590,8 @@ end expandConnectorPrefix;
 
 public function prefixConnector
   input DAE.ComponentRef inPrefix;
-  input Connector inConnector;
-  output Connector outConnector;
+  input NFConnect2.Connector inConnector;
+  output NFConnect2.Connector outConnector;
 protected
   DAE.ComponentRef name;
   Face face;
@@ -607,8 +607,8 @@ end prefixConnector;
 public function varToConnector
   input DAE.Var inVar;
   input DAE.ComponentRef inPrefixCref;
-  input Face inFace;
-  output Connector outConnector;
+  input NFConnect2.Face inFace;
+  output NFConnect2.Connector outConnector;
 protected
   DAE.Ident name;
   DAE.Type ty;
@@ -638,16 +638,16 @@ end varToConnector;
 protected function expandConnector2
   input DAE.ComponentRef inCref;
   input DAE.Type inType;
-  input Face inFace;
-  input ConnectorType inConnectorType;
-  input ConnectorAttr inConnectorAttr;
-  output list<Connector> outConnectors;
+  input NFConnect2.Face inFace;
+  input NFConnect2.ConnectorType inConnectorType;
+  input NFConnect2.ConnectorAttr inConnectorAttr;
+  output list<NFConnect2.Connector> outConnectors;
 algorithm
   outConnectors := match(inCref, inType, inFace, inConnectorType, inConnectorAttr)
     local
       list<DAE.Var> vars;
       list<DAE.ComponentRef> crefs;
-      list<Connector> connl;
+      list<NFConnect2.Connector> connl;
       Connector conn;
 
     case (_, DAE.T_ARRAY(ty = _), _, _, _)
@@ -678,8 +678,8 @@ public function getConnectorFace
    connector element is outside if the first identifier in the cref is a
    connector, otherwise inside."
   input DAE.ComponentRef inCref;
-  input Component inComponent;
-  output Face outFace;
+  input NFInstTypes.Component inComponent;
+  output NFConnect2.Face outFace;
 algorithm
   outFace := match(inCref, inComponent)
     local
@@ -707,7 +707,7 @@ algorithm
 end getConnectorFace;
 
 public function isConstOrComplexConnector
-  input Connector inConnector;
+  input NFConnect2.Connector inConnector;
   output Boolean outIsConstOrComplex;
 algorithm
   outIsConstOrComplex := match(inConnector)
@@ -723,7 +723,7 @@ end isConstOrComplexConnector;
 
 public function isExpandableConnector
   "Returns true if the connector is an expandable connector."
-  input Connector inConnector;
+  input NFConnect2.Connector inConnector;
   output Boolean outIsExpandable;
 protected
   DAE.Type ty;
@@ -735,7 +735,7 @@ end isExpandableConnector;
 public function isUndeclaredConnector
   "Returns true if the connector is undeclared, i.e. a connector that will be
    added to an expandable connector, otherwise false."
-  input Connector inConnector;
+  input NFConnect2.Connector inConnector;
   output Boolean outIsUndeclared;
 algorithm
   outIsUndeclared := match(inConnector)

@@ -90,8 +90,8 @@ uniontype FullMod "used for error reporting"
   end SUB_MOD;
 end FullMod;
 
-public type SubMod = DAE.SubMod;
-public type EqMod = DAE.EqMod;
+protected type SubMod = DAE.SubMod;
+protected type EqMod = DAE.EqMod;
 
 public function elabMod "
   This function elaborates on the expressions in a modification and

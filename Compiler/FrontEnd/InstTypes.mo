@@ -51,7 +51,7 @@ type PolymorphicBindings = list<tuple<String,list<DAE.Type>>>;
 constant Boolean alwaysUnroll = true;
 constant Boolean neverUnroll = false;
 
-public uniontype SearchStrategy
+uniontype SearchStrategy
   record SEARCH_LOCAL_ONLY
     "this one searches only in the local scope, it won't find *time* variable"
   end SEARCH_LOCAL_ONLY;
@@ -60,11 +60,15 @@ public uniontype SearchStrategy
   end SEARCH_ALSO_BUILTIN;
 end SearchStrategy;
 
-public uniontype SplicedExpData
+uniontype SplicedExpData
   record SPLICEDEXPDATA "data for 'spliced expression' (typically a component reference) returned in lookupVar"
     Option<DAE.Exp> splicedExp "the spliced expression";
     DAE.Type identType "the type of the variable without subscripts, needed for vectorization";
   end SPLICEDEXPDATA;
 end SplicedExpData;
+
+type TypeMemoryEntry = tuple<DAE.Type, DAE.Type>;
+type TypeMemoryEntryList = list<TypeMemoryEntry>;
+type TypeMemoryEntryListArray = array<TypeMemoryEntryList>;
 
 end InstTypes;

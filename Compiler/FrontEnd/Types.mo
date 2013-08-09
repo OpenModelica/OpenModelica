@@ -3741,17 +3741,12 @@ algorithm
   end match;
 end setPropType;
 
-public
- type TypeMemoryEntry = tuple<DAE.Type, DAE.Type>;
- type TypeMemoryEntryList = list<TypeMemoryEntry>;
- type TypeMemoryEntryListArray = array<TypeMemoryEntryList>;
-
 public function createEmptyTypeMemory
 "@author: adrpo
   creates an array, with one element for each record in TType!
   Note: This has to be at least 4 larger than the number of records in DAE.Type,
   due to the way bootstrapping indexes records."
-  output TypeMemoryEntryListArray tyMemory;
+  output InstTypes.TypeMemoryEntryListArray tyMemory;
 algorithm
   tyMemory := arrayCreate(30, {});
 end createEmptyTypeMemory;
