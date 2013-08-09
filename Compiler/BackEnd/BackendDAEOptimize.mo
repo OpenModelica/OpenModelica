@@ -1793,7 +1793,7 @@ protected
   list<DAE.Function> funcelems;
 algorithm
   funcelems := DAEUtil.getFunctionList(inFunctions);
-  outFunctions := List.fold(funcelems,copyRecordConstructorAndExternalObjConstructorDestructorFold,DAEUtil.emptyFuncTree);
+  outFunctions := List.fold(funcelems,copyRecordConstructorAndExternalObjConstructorDestructorFold,DAE.emptyFuncTree);
 end copyRecordConstructorAndExternalObjConstructorDestructor;
 
 protected function copyRecordConstructorAndExternalObjConstructorDestructorFold

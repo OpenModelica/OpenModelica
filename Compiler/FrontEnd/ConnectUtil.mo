@@ -2656,9 +2656,9 @@ algorithm
       String str;
       Boolean order_conn;
 
-    case {} then DAEUtil.emptyDae;
+    case {} then DAE.emptyDae;
 
-    case {_} then DAEUtil.emptyDae;
+    case {_} then DAE.emptyDae;
 
     case ((e1 as Connect.CONNECTOR_ELEMENT(name = x, source = x_src)) ::
           (e2 as Connect.CONNECTOR_ELEMENT(name = y, source = y_src)) :: rest_el)
@@ -2760,12 +2760,12 @@ algorithm
 
     // Unconnected stream connector, do nothing!
     case ({Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())})
-      then DAEUtil.emptyDae;
+      then DAE.emptyDae;
 
     // Both inside, do nothing!
     case ({Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE()),
            Connect.CONNECTOR_ELEMENT(face = Connect.INSIDE())})
-      then DAEUtil.emptyDae;
+      then DAE.emptyDae;
 
     // Both outside:
     // cr1 = inStream(cr2);
@@ -2800,7 +2800,7 @@ algorithm
       equation
         (outside, inside) = List.splitOnTrue(inElements, isOutsideStream);
         dae = List.fold2(outside, streamEquationGeneral,
-          outside, inside, DAEUtil.emptyDae);
+          outside, inside, DAE.emptyDae);
       then
         dae;
 
@@ -3080,7 +3080,7 @@ algorithm
 
     case (true, _, _, _)
       equation
-        (dae, _, _) = DAEUtil.traverseDAE(inDae, DAEUtil.emptyFuncTree,
+        (dae, _, _) = DAEUtil.traverseDAE(inDae, DAE.emptyFuncTree,
           evaluateStreamOperators2, (inSets, inSetArray));
       then
         dae;

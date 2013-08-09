@@ -1684,4 +1684,7 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
 end Subscript;
 /* -- End Expression.mo -- */
 
+public constant AvlTree emptyFuncTree = AVLTREENODE(NONE(),0,NONE(),NONE());
+public constant DAElist emptyDae = DAE({});
+
 end DAE;

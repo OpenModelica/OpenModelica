@@ -71,6 +71,7 @@ InnerOuter.mo \
 Inst.mo \
 InstExtends.mo \
 InstSection.mo \
+InstTypes.mo \
 Lookup.mo \
 MMath.mo \
 MetaUtil.mo \

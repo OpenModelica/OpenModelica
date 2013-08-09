@@ -45,6 +45,7 @@ public import FGraph;
 public import FNode;
 public import DAE;
 
+protected
 type Graph    = FGraph.Graph;
 type Node     = FGraph.Node;
 type NodeId   = FGraph.NodeId;
@@ -58,9 +59,9 @@ protected import SCodeDump;
 public function mkProgramGraph
 "builds nodes out of classes"
   input SCode.Program inProgram;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 algorithm
   System.startTimer();
   outGraph := List.fold1(inProgram, mkClassGraph, inParentId, inGraph);
@@ -71,9 +72,9 @@ end mkProgramGraph;
 protected function mkClassGraph
 "Extends the graph with a class."
   input SCode.Element inClass;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 algorithm
   outGraph := match(inClass, inParentId, inGraph)
     local
@@ -94,9 +95,9 @@ end mkClassGraph;
 
 public function mkClassNode
   input SCode.Element inClass;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 algorithm
   outGraph := matchcontinue(inClass, inParentId, inGraph)
     local
@@ -121,9 +122,9 @@ end mkClassNode;
 protected function mkClassChildren
 "Extends the graph with a class's components."
   input SCode.ClassDef inClassDef;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 algorithm
   outGraph := match(inClassDef, inParentId, inGraph)
     local
@@ -177,9 +178,9 @@ end mkClassChildren;
 
 public function mkEnumNode
   input SCode.Enum inEnum;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 protected
   String name;
   Graph graph;
@@ -193,9 +194,9 @@ end mkEnumNode;
 public function mkElementNode
 "Extends the graph with an element."
   input SCode.Element inElement;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 algorithm
   outGraph := matchcontinue(inElement, inParentId, inGraph)
     local
@@ -256,9 +257,9 @@ end mkElementNode;
 public function mkCompNode
 "Extends the graph with a component"
   input SCode.Element inComp;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 protected
   String name;
   Graph graph;
@@ -270,10 +271,10 @@ algorithm
 end mkCompNode;
 
 public function mkRefNode
-  input NodeData inRef;
-  input NodeId inParentId;
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.NodeData inRef;
+  input FGraph.NodeId inParentId;
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 protected
   String name;
   Graph graph;
@@ -286,10 +287,10 @@ end mkRefNode;
 
 public function mkTypeNode
   input DAE.Type inType "the type to add";
-  input Name inName "name to search for";
-  input NodeId inParentId "where to start the search for the name";
-  input Graph inGraph;
-  output Graph outGraph;
+  input FGraph.Name inName "name to search for";
+  input FGraph.NodeId inParentId "where to start the search for the name";
+  input FGraph.Graph inGraph;
+  output FGraph.Graph outGraph;
 algorithm
   outGraph := matchcontinue(inType, inName, inParentId, inGraph)
     local

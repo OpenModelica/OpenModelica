@@ -83,7 +83,7 @@ algorithm
       equation
         true = NFConnectUtil2.isEmptyConnections(inConnections);
       then
-        DAEUtil.emptyDae;
+        DAE.emptyDae;
 
     case (NFConnect2.CONNECTIONS(connections, expconnl, _, _), _)
       equation
@@ -109,7 +109,7 @@ algorithm
 
         // Extract the sets and generate equations for them.
         sets = NFConnectionSets.extractSets(disjoint_sets);
-        eql = List.fold(sets, generateEquation, DAEUtil.emptyDae);
+        eql = List.fold(sets, generateEquation, DAE.emptyDae);
       then
         eql;
 
@@ -219,7 +219,7 @@ algorithm
       then
         DAE.DAE(DAE.EQUEQUATION(x, y, src) :: eq);
 
-    case {_} then DAEUtil.emptyDae;
+    case {_} then DAE.emptyDae;
 
     else
       equation
@@ -284,12 +284,12 @@ algorithm
 
     // Unconnected stream connector, do nothing!
     case ({NFConnect2.CONNECTOR(face = NFConnect2.INSIDE())})
-      then DAEUtil.emptyDae;
+      then DAE.emptyDae;
 
     // Both inside, do nothing!
     case ({NFConnect2.CONNECTOR(face = NFConnect2.INSIDE()),
            NFConnect2.CONNECTOR(face = NFConnect2.INSIDE())})
-      then DAEUtil.emptyDae;
+      then DAE.emptyDae;
 
     // Both outside:
     // cr1 = inStream(cr2);
@@ -325,7 +325,7 @@ algorithm
       equation
         (outside, inside) = List.splitOnTrue(inElements, isOutsideStream);
         dae = List.fold2(outside, streamEquationGeneral,
-          outside, inside, DAEUtil.emptyDae);
+          outside, inside, DAE.emptyDae);
       then
         dae;
 

@@ -57,6 +57,7 @@ protected import Inst;
 protected import List;
 protected import DAE;
 protected import InnerOuter;
+protected import InstTypes;
 protected import UnitAbsyn;
 protected import Prefix;
 protected import ClassInf;
@@ -1398,7 +1399,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
           UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(),
-          ci_state, cl, SCode.PUBLIC(), {},false, Inst.INNER_CALL(),
+          ci_state, cl, SCode.PUBLIC(), {},false, InstTypes.INNER_CALL(),
           ConnectionGraph.EMPTY, Connect.emptySet, NONE());
     then
       env_2;

@@ -282,7 +282,7 @@ algorithm
   //print("EMPTYCACHE\n");
   arr := arrayCreate(1, ENVCACHE(CACHETREE("$global",emptyEnv,{})));
   envCache := Util.if_(Flags.getConfigBool(Flags.ENV_CACHE),SOME(arr),NONE());
-  instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
+  instFuncs := arrayCreate(1, DAE.emptyFuncTree);
   ht := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
   cache := CACHE(envCache,NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;

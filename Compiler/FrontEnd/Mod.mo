@@ -52,8 +52,7 @@ public import SCode;
 public import InnerOuter;
 public import ComponentReference;
 
-public
-type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import Ceval;
 protected import ClassInf;
@@ -101,7 +100,7 @@ public function elabMod "
   they are provided in, and not the context they are used in."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
@@ -190,7 +189,7 @@ public function elabModForBasicType "
   Same as elabMod, but if a named Mod is not part of a basic type, fail instead."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
@@ -246,7 +245,7 @@ end checkIfSubmodsAreBasicTypeMods;
 protected function elabModRedeclareElement
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Final finalPrefix;
   input SCode.Element inElt;
@@ -373,7 +372,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inProp,impl,inInfo)
     local
       Values.Value v;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       DAE.Const c;
     case (_,_,_,_,_,_)
@@ -382,7 +381,7 @@ algorithm
         // Don't ceval variables.
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
-        msg = Util.if_(Types.constIsConst(c) and not impl, Ceval.MSG(inInfo), Ceval.NO_MSG());
+        msg = Util.if_(Types.constIsConst(c) and not impl, Absyn.MSG(inInfo), Absyn.NO_MSG());
         (cache,v,_) = Ceval.ceval(inCache,inEnv,inExp,false,NONE(),msg,0);
       then
         (inCache /*Yeah; this makes sense :)*/,SOME(v));
@@ -538,7 +537,7 @@ public function updateMod
   up the type of the modifier in the environment and update it."
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input DAE.Mod inMod;
   input Boolean inBoolean;
@@ -611,7 +610,7 @@ end updateMod;
 protected function updateSubmods ""
     input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<DAE.SubMod> inTypesSubModLst;
   input Boolean inBoolean;
@@ -644,7 +643,7 @@ end updateSubmods;
 protected function updateSubmod " "
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input DAE.SubMod inSubMod;
   input Boolean inBoolean;
@@ -730,7 +729,7 @@ protected function elabSubmods
   This function helps elabMod by recusively elaborating on a list of submodifications."
     input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inSCodeSubModLst;
   input Boolean inBoolean;
@@ -767,7 +766,7 @@ protected function elabSubmod
   SCode.SubMod into one or more DAE.SubMod."
     input Env.Cache inCache;
   input Env.Env inEnv;
-  input InstanceHierarchy inIH;
+  input InnerOuter.InstHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.SubMod inSubMod;
   input Boolean inBoolean;

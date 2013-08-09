@@ -78,6 +78,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import InnerOuter;
 protected import Inst;
+protected import InstTypes;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
@@ -476,7 +477,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,econd,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, cond, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,Values.BOOL(true),SOME(st_2)) = CevalScript.ceval(cache,env, econd, true, SOME(st_1), Ceval.MSG(info), 0);
+        (_,Values.BOOL(true),SOME(st_2)) = CevalScript.ceval(cache,env, econd, true, SOME(st_1), Absyn.MSG(info), 0);
       then
         ("",st_2);
 
@@ -486,7 +487,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,msg_1,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, msg, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,Values.STRING(str),SOME(st_2)) = CevalScript.ceval(cache,env, msg_1, true, SOME(st_1), Ceval.MSG(info), 0);
+        (_,Values.STRING(str),SOME(st_2)) = CevalScript.ceval(cache,env, msg_1, true, SOME(st_1), Absyn.MSG(info), 0);
       then
         (str,st_2);
 
@@ -495,7 +496,7 @@ algorithm
         (env,st) = buildEnvFromSymboltable(st);
         exp = Absyn.CALL(cr,fargs);
         (cache,sexp,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,_,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Ceval.MSG(info), 0);
+        (_,_,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info), 0);
       then
         ("",st_2);
 
@@ -521,7 +522,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Ceval.MSG(info),0);
+        (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Absyn.MSG(info),0);
         (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, Prefix.NOPRE(), info);
         
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
@@ -541,7 +542,7 @@ algorithm
         (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
         DAE.T_TUPLE(tupleType = types) = Types.getPropType(rprop);
         crefs = makeTupleCrefs(crefexps, types, env, cache, info);
-        (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Ceval.MSG(info),0);
+        (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Absyn.MSG(info),0);
         newst = addVarsToSymboltable(crefs, values, env, st_2);
       then
         ("",newst);
@@ -874,7 +875,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Ceval.MSG(info),0);
+        (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info),0);
       then
         (value,st_2);
 
@@ -2324,7 +2325,7 @@ algorithm
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         _ = Flags.enableDebug(Flags.WRITE_TO_BUFFER);
         (cache,simOptions) = StaticScript.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);
-        (_,_,_) = CevalScript.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG(),0);
+        (_,_,_) = CevalScript.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Absyn.NO_MSG(),0);
       then
         ("true",st);
 
@@ -2336,7 +2337,7 @@ algorithm
         Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,true);
         Flags.setConfigString(Flags.REDUCTION_METHOD,reductionMethod);
         // (cache,simOptions) = StaticScript.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo);
-        // (_,_,_) = CevalScript.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Ceval.NO_MSG());
+        // (_,_,_) = CevalScript.ceval(cache,{},DAE.CALL(Absyn.IDENT("buildModel"),simOptions,DAE.callAttrBuiltinOther),true,SOME(st),Absyn.NO_MSG());
         modelpath = Absyn.crefToPath(cr);
         filenameprefix = Absyn.pathLastIdent(modelpath);
         (env,st) = buildEnvFromSymboltable(st);
@@ -14206,7 +14207,7 @@ algorithm
         (_,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
             UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), c_1, {}, false,
-            Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
         gexpstr_1 = stringAppendList({annName,"(",gexpstr,")"});
@@ -14566,7 +14567,7 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false, Absyn.dummyInfo); // TODO: FIXME: Someone forgot to add Absyn.Info to this function's input
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, mod_2, Prefix.NOPRE(),
-            placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            placementclass, {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
 
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
@@ -14601,7 +14602,7 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            mod_2, Prefix.NOPRE(), placementclass, {}, false, Inst.TOP_CALL(),
+            mod_2, Prefix.NOPRE(), placementclass, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -14628,7 +14629,7 @@ algorithm
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
             UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), placementclass, {}, false,
-            Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
         // print("Env: " +& Env.printEnvStr(env) +& "\n");
@@ -14661,7 +14662,7 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true, Absyn.dummyInfo);
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-            mod_2, Prefix.NOPRE(), placementclass, {}, false, Inst.TOP_CALL(),
+            mod_2, Prefix.NOPRE(), placementclass, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
@@ -14688,7 +14689,7 @@ algorithm
         (cache,_,_,_,dae,cs,t,state,_,_) =
           Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
             mod_2, Prefix.NOPRE(), placementclass, {},
-            false, Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+            false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
       then

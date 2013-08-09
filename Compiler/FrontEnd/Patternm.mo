@@ -64,6 +64,7 @@ protected import Error;
 protected import Flags;
 protected import Inst;
 protected import InstSection;
+protected import InstTypes;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
@@ -72,8 +73,6 @@ protected import Static;
 protected import System;
 protected import Util;
 protected import SCodeDump;
-
-protected constant Boolean neverUnroll = false;
 
 protected function generatePositionalArgs "function: generatePositionalArgs
   author: KS
@@ -1658,7 +1657,7 @@ algorithm
         (cache,elabPatterns) = elabPatternTuple(cache, env, patterns, tys, patternInfo, pattern);
         (cache,eqAlgs) = Static.fromEquationsToAlgAssignments(eq1,{},cache,env,pre);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
-        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, neverUnroll, {});
+        (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, DAEUtil.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll, {});
         (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
         (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
       then (cache,DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
@@ -1950,7 +1949,7 @@ algorithm
       Boolean b;
       Option<tuple<Env.Env,DAE.DAElist>> res;
 
-    case (cache,env,{},_,_,_) then (cache,SOME((env,DAEUtil.emptyDae)));
+    case (cache,env,{},_,_,_) then (cache,SOME((env,DAE.emptyDae)));
     case (cache,env,ld,_,_,_)
       equation
         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());
@@ -1973,7 +1972,7 @@ algorithm
         (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
-          impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
+          impl, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
         res = Util.if_(b,NONE(),SOME((env2,dae1)));
       then (cache,res);
 

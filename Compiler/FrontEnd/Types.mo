@@ -49,6 +49,7 @@ encapsulated package Types
 public import ClassInf;
 public import Absyn;
 public import DAE;
+public import InstTypes;
 public import Values;
 public import SCode;
 
@@ -56,7 +57,6 @@ protected type Binding = DAE.Binding;
 protected type Const = DAE.Const;
 protected type EqualityConstraint = DAE.EqualityConstraint;
 protected type FuncArg = DAE.FuncArg;
-public type PolymorphicBindings = list<tuple<String,list<DAE.Type>>>;
 protected type Properties = DAE.Properties;
 protected type TupleConst = DAE.TupleConst;
 protected type Type = DAE.Type;
@@ -4172,7 +4172,7 @@ public function vectorizableType "function: vectorizableType
   output DAE.Exp outExp;
   output DAE.Type outType;
   output DAE.Dimensions outArrayDimLst;
-  output PolymorphicBindings outBindings;
+  output InstTypes.PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outArrayDimLst,outBindings) := vectorizableType2(inExp,inExpType,inExpType,{},inExpectedType,fnPath);
 end vectorizableType;
@@ -4187,13 +4187,13 @@ protected function vectorizableType2
   output DAE.Exp outExp;
   output DAE.Type outType;
   output DAE.Dimensions outArrayDimLst;
-  output PolymorphicBindings outBindings;
+  output InstTypes.PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outArrayDimLst,outBindings) := matchcontinue (inExp,inExpType,inCurrentType,inArrayDimLst,inExpectedType,fnPath)
     local
       DAE.Exp e_1,e;
       Type e_type_1,e_type,expected_type,expected_type_vectorized,current_type;
-      PolymorphicBindings polymorphicBindings;
+      InstTypes.PolymorphicBindings polymorphicBindings;
       DAE.Dimension dim;
       DAE.Dimensions dims;
     case (e,e_type,current_type,dims,expected_type,_)
@@ -5681,18 +5681,18 @@ bind polymorphic variabled. Used when elaborating calls."
   input DAE.Type iactual;
   input DAE.Type iexpected;
   input Option<Absyn.Path> envPath "to detect which polymorphic types are recursive";
-  input PolymorphicBindings ipolymorphicBindings;
+  input InstTypes.PolymorphicBindings ipolymorphicBindings;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
   output DAE.Type outType;
-  output PolymorphicBindings outBindings;
+  output InstTypes.PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outBindings):=
   matchcontinue (iexp,iactual,iexpected,envPath,ipolymorphicBindings,printFailtrace)
     local
       DAE.Exp e,e_1,exp;
       Type e_type,expected_type,e_type_1,actual,expected;
-      PolymorphicBindings polymorphicBindings;
+      InstTypes.PolymorphicBindings polymorphicBindings;
 
     case (exp,actual,expected,_,polymorphicBindings,_)
       equation
@@ -5826,7 +5826,7 @@ algorithm
 end polymorphicBindingStr;
 
 public function polymorphicBindingsStr
-  input PolymorphicBindings bindings;
+  input InstTypes.PolymorphicBindings bindings;
   output String str;
 algorithm
   str := stringDelimitList(List.map(bindings, polymorphicBindingStr), "\n");
@@ -5835,7 +5835,7 @@ end polymorphicBindingsStr;
 public function fixPolymorphicRestype
 "Uses the polymorphic bindings to determine the result type of the function."
   input DAE.Type ty;
-  input PolymorphicBindings bindings;
+  input InstTypes.PolymorphicBindings bindings;
   input Absyn.Info info;
   output DAE.Type resType;
 algorithm
@@ -5847,7 +5847,7 @@ end fixPolymorphicRestype;
 protected function fixPolymorphicRestype2
   input DAE.Type ty;
   input String prefix;
-  input PolymorphicBindings bindings;
+  input InstTypes.PolymorphicBindings bindings;
   input Absyn.Info info;
   output DAE.Type resType;
 algorithm
@@ -5928,14 +5928,14 @@ end fixPolymorphicRestype2;
 
 public function polymorphicBindingsLookup
   input String id;
-  input PolymorphicBindings bindings;
+  input InstTypes.PolymorphicBindings bindings;
   output list<DAE.Type> resType;
 algorithm
   resType := matchcontinue (id, bindings)
     local
       String id2;
       list<DAE.Type> tys;
-      PolymorphicBindings rest;
+      InstTypes.PolymorphicBindings rest;
     case (_, (id2,tys)::_)
       equation
         true = id ==& id2;
@@ -6216,14 +6216,14 @@ end polymorphicTypeName;
 protected function addPolymorphicBinding
   input String id;
   input DAE.Type ity;
-  input PolymorphicBindings bindings;
-  output PolymorphicBindings outBindings;
+  input InstTypes.PolymorphicBindings bindings;
+  output InstTypes.PolymorphicBindings outBindings;
 algorithm
   outBindings := matchcontinue (id,ity,bindings)
     local
       String id1,id2;
       list<DAE.Type> tys;
-      PolymorphicBindings rest;
+      InstTypes.PolymorphicBindings rest;
       tuple<String,list<DAE.Type>> first;
       Type ty;
 
@@ -6250,12 +6250,12 @@ public function solvePolymorphicBindings
 such that each name is bound to a non-polymorphic type.
 Solves by doing iterations until a valid state is found (or no change is
 possible)."
-  input PolymorphicBindings bindings;
+  input InstTypes.PolymorphicBindings bindings;
   input Absyn.Info info;
   input list<Absyn.Path> pathLst;
-  output PolymorphicBindings solvedBindings;
+  output InstTypes.PolymorphicBindings solvedBindings;
 protected
-  PolymorphicBindings unsolvedBindings;
+  InstTypes.PolymorphicBindings unsolvedBindings;
 algorithm
   // print("solvePoly " +& Absyn.optPathString(path) +& " " +& polymorphicBindingsStr(bindings) +& "\n");
   (solvedBindings,unsolvedBindings) := solvePolymorphicBindingsLoop(bindings, {}, {});
@@ -6264,9 +6264,9 @@ end solvePolymorphicBindings;
 
 protected function checkValidBindings
 "Emits an error message if we could not solve the polymorphic types to actual types."
-  input PolymorphicBindings bindings;
-  input PolymorphicBindings solvedBindings;
-  input PolymorphicBindings unsolvedBindings;
+  input InstTypes.PolymorphicBindings bindings;
+  input InstTypes.PolymorphicBindings solvedBindings;
+  input InstTypes.PolymorphicBindings unsolvedBindings;
   input Absyn.Info info;
   input list<Absyn.Path> pathLst;
 algorithm
@@ -6288,22 +6288,21 @@ algorithm
 end checkValidBindings;
 
 protected function solvePolymorphicBindingsLoop
-  input PolymorphicBindings ibindings;
-  input PolymorphicBindings isolvedBindings;
-  input PolymorphicBindings iunsolvedBindings;
-  output PolymorphicBindings outSolvedBindings;
-  output PolymorphicBindings outUnsolvedBindings;
+  input InstTypes.PolymorphicBindings ibindings;
+  input InstTypes.PolymorphicBindings isolvedBindings;
+  input InstTypes.PolymorphicBindings iunsolvedBindings;
+  output InstTypes.PolymorphicBindings outSolvedBindings;
+  output InstTypes.PolymorphicBindings outUnsolvedBindings;
 algorithm
   (outSolvedBindings,outUnsolvedBindings) := matchcontinue (ibindings,isolvedBindings,iunsolvedBindings)
     /* Fail by returning crap :) */
     local
       tuple<String, list<DAE.Type>> first;
-      PolymorphicBindings rest;
       Type ty;
       list<DAE.Type> tys;
       String id;
       Integer len1, len2;
-      PolymorphicBindings solvedBindings,unsolvedBindings;
+      InstTypes.PolymorphicBindings rest,solvedBindings,unsolvedBindings;
 
     case ({}, solvedBindings, unsolvedBindings) then (solvedBindings, unsolvedBindings);
 
@@ -6352,9 +6351,9 @@ The good news is we don't have functions with many unknown types in the compiler
 Horribly complicated function to keep track of what happens..."
   input list<DAE.Type> itys1;
   input list<DAE.Type> itys2;
-  input PolymorphicBindings isolvedBindings;
+  input InstTypes.PolymorphicBindings isolvedBindings;
   output list<DAE.Type> outTys;
-  output PolymorphicBindings outSolvedBindings;
+  output InstTypes.PolymorphicBindings outSolvedBindings;
 algorithm
   (outTys,outSolvedBindings) := matchcontinue (itys1,itys2,isolvedBindings)
     local
@@ -6367,7 +6366,7 @@ algorithm
       DAE.TypeSource ts1;
       Boolean fromOtherFunction;
       list<DAE.Const> cs1;
-      PolymorphicBindings solvedBindings;
+      InstTypes.PolymorphicBindings solvedBindings;
 
     case ((ty1 as DAE.T_METAPOLYMORPHIC(name = id1))::tys1,(ty2 as DAE.T_METAPOLYMORPHIC(name = id2))::tys2,solvedBindings)
       equation
@@ -6446,14 +6445,14 @@ Horribly complicated function to keep track of what happens..."
   input list<DAE.Type> itys1;
   input list<DAE.Type> itys2;
   input Boolean changed "if true, something changed and the function will succeed";
-  input PolymorphicBindings isolvedBindings;
+  input InstTypes.PolymorphicBindings isolvedBindings;
   output list<DAE.Type> outTys;
-  output PolymorphicBindings outSolvedBindings;
+  output InstTypes.PolymorphicBindings outSolvedBindings;
 algorithm
   (outTys,outSolvedBindings) := matchcontinue (itys1,itys2,changed,isolvedBindings)
     local
       Type ty1,ty2;
-      PolymorphicBindings solvedBindings;
+      InstTypes.PolymorphicBindings solvedBindings;
       list<DAE.Type> tys1, tys2;
 
     case (ty1::tys1,ty2::tys2,_,solvedBindings)
@@ -6471,7 +6470,7 @@ end solveBindingsThread;
 
 protected function replaceSolvedBindings
   input list<DAE.Type> itys;
-  input PolymorphicBindings isolvedBindings;
+  input InstTypes.PolymorphicBindings isolvedBindings;
   input Boolean changed "if true, something changed and the function will succeed";
   output list<DAE.Type> outTys;
 algorithm
@@ -6479,7 +6478,7 @@ algorithm
     local
       Type ty;
       list<DAE.Type> tys;
-      PolymorphicBindings solvedBindings;
+      InstTypes.PolymorphicBindings solvedBindings;
 
     case ({},_,true) then {};
     case (ty::tys,solvedBindings,_)
@@ -6496,7 +6495,7 @@ end replaceSolvedBindings;
 
 protected function replaceSolvedBinding
   input DAE.Type ity;
-  input PolymorphicBindings isolvedBindings;
+  input InstTypes.PolymorphicBindings isolvedBindings;
   output DAE.Type outTy;
 algorithm
   outTy := match (ity,isolvedBindings)
@@ -6510,7 +6509,7 @@ algorithm
       list<Option<DAE.Exp>> oe;
       DAE.FunctionAttributes functionAttributes;
       DAE.Type ty;
-      PolymorphicBindings solvedBindings;
+      InstTypes.PolymorphicBindings solvedBindings;
 
     case (DAE.T_METALIST(listType = ty),solvedBindings)
       equation
@@ -6563,8 +6562,8 @@ Only works on the MetaModelica datatypes; the input is assumed to be boxed.
   input DAE.Type actual;
   input DAE.Type expected;
   input Option<Absyn.Path> envPath;
-  input PolymorphicBindings ibindings;
-  output PolymorphicBindings outBindings;
+  input InstTypes.PolymorphicBindings ibindings;
+  output InstTypes.PolymorphicBindings outBindings;
 algorithm
   outBindings := matchcontinue (actual,expected,envPath,ibindings)
     local
@@ -6574,7 +6573,7 @@ algorithm
       list<DAE.Type> tList1,tList2,tys;
       Absyn.Path path1,path2;
       list<String> ids;
-      PolymorphicBindings bindings;
+      InstTypes.PolymorphicBindings bindings;
 
     case (_,DAE.T_METAPOLYMORPHIC(name = id),_,bindings)
       then addPolymorphicBinding("$" +& id,actual,bindings);
@@ -6664,14 +6663,14 @@ protected function subtypePolymorphicList
   input list<DAE.Type> actual;
   input list<DAE.Type> expected;
   input Option<Absyn.Path> envPath;
-  input PolymorphicBindings ibindings;
-  output PolymorphicBindings outBindings;
+  input InstTypes.PolymorphicBindings ibindings;
+  output InstTypes.PolymorphicBindings outBindings;
 algorithm
   outBindings := match (actual,expected,envPath,ibindings)
     local
       Type ty1,ty2;
       list<DAE.Type> tList1,tList2;
-      PolymorphicBindings bindings;
+      InstTypes.PolymorphicBindings bindings;
     case ({},{},_,bindings) then bindings;
     case (ty1::tList1,ty2::tList2,_,bindings)
       equation

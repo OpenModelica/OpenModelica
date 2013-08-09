@@ -4192,6 +4192,37 @@ extern struct record_description Absyn_Ref_RIM__desc;
 #endif
 #define Absyn__RIM_3dBOX1 5
 #define Absyn__RIM(im) (mmc_mk_box2(5,&Absyn_Ref_RIM__desc,im))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Msg_MSG__desc_added
+#define Absyn_Msg_MSG__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Msg_MSG__desc__fields[1] = {"info"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Msg_MSG__desc = {
+  "Absyn_Msg_MSG",
+  "Absyn.Msg.MSG",
+  Absyn_Msg_MSG__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Msg_MSG__desc;
+#endif
+#define Absyn__MSG_3dBOX1 3
+#define Absyn__MSG(info) (mmc_mk_box2(3,&Absyn_Msg_MSG__desc,info))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_Msg_NO__MSG__desc_added
+#define Absyn_Msg_NO__MSG__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_Msg_NO__MSG__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_Msg_NO__MSG__desc = {
+  "Absyn_Msg_NO__MSG",
+  "Absyn.Msg.NO_MSG",
+  Absyn_Msg_NO__MSG__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_Msg_NO__MSG__desc;
+#endif
+#define Absyn__NO_5fMSG_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__NO_5fMSG__struct,1,4) {&Absyn_Msg_NO__MSG__desc}};
+static void *Absyn__NO_5fMSG = MMC_REFSTRUCTLIT(Absyn__NO_5fMSG__struct);
 #ifdef __cplusplus
 }
 #endif

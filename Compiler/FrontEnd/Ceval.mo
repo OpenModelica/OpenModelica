@@ -57,17 +57,9 @@ public import Absyn;
 public import DAE;
 public import Env;
 public import Interactive;
+public import InstTypes;
 public import Values;
 public import Lookup;
-
-public
-uniontype Msg
-  record MSG "Give error message" 
-    Absyn.Info info;
-  end MSG;
-
-  record NO_MSG "Do not give error message" end NO_MSG;
-end Msg;
 
 // protected imports
 protected import CevalScript;
@@ -107,7 +99,7 @@ public function ceval "
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter "Maximum recursion depth";
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -122,7 +114,7 @@ protected function cevalWork1
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter "Maximum recursion depth";
   input Boolean iterReached;
   output Env.Cache outCache;
@@ -137,7 +129,7 @@ algorithm
       equation
         (outCache,outValue,outST) = cevalWork2(inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter);
       then (outCache,outValue,outST);
-    case (_,_,_,_,_,MSG(info=info),_,true)
+    case (_,_,_,_,_,Absyn.MSG(info=info),_,true)
       equation
         str1 = ExpressionDump.printExpStr(inExp);
         str2 = Env.printEnvPathStr(inEnv);
@@ -159,7 +151,7 @@ protected function cevalWork2 "
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -181,7 +173,7 @@ algorithm
       Boolean impl,b,b_1,lhvBool,rhvBool,resBool, bstart, bstop;
       Absyn.Exp exp_1,exp;
       list<Env.Frame> env;
-      Msg msg;
+      Absyn.Msg msg;
       Absyn.Element elt_1,elt;
       Absyn.CodeNode c;
       list<Values.Value> es_1,elts,vallst,vlst1,vlst2,reslst,aval,rhvals,lhvals,arr,arr_1,ivals,rvals,vals;
@@ -294,7 +286,7 @@ algorithm
 
     // MetaModelica Partial Function. sjoelund 
     case (cache,env,DAE.CREF(componentRef = cr, 
-        ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)),impl,stOpt,MSG(info = info),_)
+        ty = DAE.T_FUNCTION_REFERENCE_VAR(source = _)),impl,stOpt,Absyn.MSG(info = info),_)
       equation
         str = ComponentReference.crefStr(cr);
         Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
@@ -302,7 +294,7 @@ algorithm
         fail();
 
     case (cache,env,DAE.CREF(componentRef = cr, ty = DAE.T_FUNCTION_REFERENCE_FUNC(builtin = _)),
-        impl, stOpt, MSG(info = info),_)
+        impl, stOpt, Absyn.MSG(info = info),_)
       equation
         str = ComponentReference.crefStr(cr);
         Error.addSourceMessage(Error.META_CEVAL_FUNCTION_REFERENCE, {str}, info);
@@ -583,7 +575,7 @@ algorithm
 
     //DIV (handle div by zero)
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV(ty =_), exp2 = rh),
-        impl, stOpt, msg as MSG(info = info),_)
+        impl, stOpt, msg as Absyn.MSG(info = info),_)
       equation
         (cache,lhvVal,stOpt) = ceval(cache,env, rh, impl, stOpt,msg,numIter);
         true = ValuesUtil.isZero(lhvVal);
@@ -837,7 +829,7 @@ algorithm
       then (cache, value, stOpt);
 
     // ceval can fail and that is ok, caught by other rules... 
-    case (cache,env,e,_,_,_,_) // MSG())
+    case (cache,env,e,_,_,_,_) // Absyn.MSG())
       equation
         true = Flags.isSet(Flags.CEVAL);
         Debug.traceln("- Ceval.ceval failed: " +& ExpressionDump.printExpStr(e));
@@ -887,7 +879,7 @@ algorithm
     
     case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _)
       equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NO_MSG(), 0);
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -895,7 +887,7 @@ algorithm
     case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), NO_MSG(), 0);
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -944,7 +936,7 @@ algorithm
            ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _, _)
        equation
          true = Expression.arrayContainWholeDimension(dims);
-         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), MSG(inInfo), numIter+1);
+         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), Absyn.MSG(inInfo), numIter+1);
          ty = Types.typeOfValue(v);
          cevalType = Types.simplifyType(ty);
        then
@@ -990,7 +982,7 @@ protected function cevalBuiltin
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1001,7 +993,7 @@ protected function cevalBuiltin
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
     input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-    input Msg inMsg;
+    input Absyn.Msg inMsg;
     input Integer numIter;
     output Env.Cache outCache;
     output Values.Value outValue;
@@ -1016,7 +1008,7 @@ algorithm
       list<Env.Frame> env;
       DAE.Exp exp,dim,e;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       HandlerFunc handler;
       String id;
       list<DAE.Exp> args,expl;
@@ -1066,7 +1058,7 @@ protected function cevalBuiltinHandler
     input list<DAE.Exp> inExpExpLst;
     input Boolean inBoolean;
     input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-    input Msg inMsg;
+    input Absyn.Msg inMsg;
     input Integer numIter;
     output Env.Cache outCache;
     output Values.Value outValue;
@@ -1158,7 +1150,7 @@ public function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
   input Env.Env env;
   input Absyn.Path funcpath;
   input list<Values.Value> vals;
-  input Msg msg;
+  input Absyn.Msg msg;
   output Env.Cache outCache;
   output Values.Value res;
 protected
@@ -1220,7 +1212,7 @@ end isKnownExternalFunc;
 protected function cevalKnownExternalFuncs2 "Helper function to cevalKnownExternalFuncs, does the evaluation."
   input String id;
   input list<Values.Value> inValuesValueLst;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   output Values.Value outValue;
 algorithm
   outValue := match (id,inValuesValueLst,inMsg)
@@ -1374,7 +1366,7 @@ protected function cevalMatrixElt "function: cevalMatrixElt
   input Env.Env inEnv;
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst "matrix constr. elts";
   input Boolean inBoolean "impl";
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
@@ -1388,7 +1380,7 @@ algorithm
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> expll;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,(expl :: expll),impl,msg,_)
       equation
@@ -1409,7 +1401,7 @@ protected function cevalBuiltinSize "function: cevalBuiltinSize
   input DAE.Exp inDimExp;
   input Boolean inBoolean4;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption5;
-  input Msg inMsg6;
+  input Absyn.Msg inMsg6;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1427,7 +1419,7 @@ algorithm
       list<Env.Frame> env;
       DAE.ComponentRef cr;
       Boolean impl,bl;
-      Msg msg;
+      Absyn.Msg msg;
       DAE.Dimensions dims;
       Values.Value v2,val;
       DAE.Type crtp,expTp;
@@ -1488,7 +1480,7 @@ algorithm
         (cache,v2,st_1);
     
     case (cache,env,DAE.CREF(componentRef = cr),dimExp,false,st,
-        MSG(info = info),_)
+        Absyn.MSG(info = info),_)
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "If dimensions not known and impl=false, error message";
         false = Types.dimensionsKnown(tp);
@@ -1500,7 +1492,7 @@ algorithm
         fail();
     
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dimExp,
-        (impl as false),st,MSG(info = info),_)
+        (impl as false),st,Absyn.MSG(info = info),_)
       equation
         (cache,attr,tp,DAE.UNBOUND(),_,_,_,_,_) = Lookup.lookupVar(cache, env, cr) "For crefs without value binding" ;
         expstr = ExpressionDump.printExpStr(exp);
@@ -1560,7 +1552,7 @@ algorithm
       then
         (cache,v2,st_1);
     
-    case (cache,env,exp,dimExp,impl,st,MSG(info = _),_)
+    case (cache,env,exp,dimExp,impl,st,Absyn.MSG(info = _),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
@@ -1636,7 +1628,7 @@ protected function cevalBuiltinAbs "function: cevalBuiltinAbs
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1650,7 +1642,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Integer iv;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
@@ -1676,7 +1668,7 @@ protected function cevalBuiltinSign "function: cevalBuiltinSign
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1690,7 +1682,7 @@ algorithm
       list<Env.Frame> env;
       DAE.Exp exp;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Integer iv,iv_1;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
@@ -1722,7 +1714,7 @@ protected function cevalBuiltinExp "function: cevalBuiltinExp
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1736,7 +1728,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -1757,7 +1749,7 @@ protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1771,7 +1763,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -1791,7 +1783,7 @@ protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1900,7 +1892,7 @@ protected function cevalBuiltinCat "function: cevalBuiltinCat
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1917,7 +1909,7 @@ algorithm
       list<DAE.Exp> matrices;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     
     case (cache,env,(dim :: matrices),impl,st,msg,_)
@@ -1938,7 +1930,7 @@ protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1954,7 +1946,7 @@ algorithm
       DAE.Exp dim;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
        Env.Cache cache;
     
     case (cache,env,{dim},impl,st,msg,_)
@@ -1977,7 +1969,7 @@ protected function cevalBuiltinPromote "function: cevalBuiltinPromote
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -1992,7 +1984,7 @@ algorithm
       DAE.Exp arr,dim;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     
     case (cache,env,{arr,dim},impl,st,msg,_)
@@ -2041,7 +2033,7 @@ protected function cevalBuiltinSubstring "
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2054,7 +2046,7 @@ algorithm
       DAE.Exp str_exp, start_exp, stop_exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Integer start, stop;
@@ -2079,7 +2071,7 @@ protected function cevalBuiltinString "
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2092,7 +2084,7 @@ algorithm
       DAE.Exp exp, len_exp, justified_exp, sig_dig;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str,format;
       Integer i,len,sig; Real r; Boolean b, left_just;
@@ -2146,7 +2138,7 @@ protected function cevalBuiltinStringFormat
   input DAE.Exp justifiedExp;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output String outString;
@@ -2177,7 +2169,7 @@ protected function cevalBuiltinPrint
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2190,7 +2182,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
     case (cache,env,{exp},impl,st,msg,_)
@@ -2208,7 +2200,7 @@ protected function cevalIntString
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2221,7 +2213,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Integer i;
@@ -2240,7 +2232,7 @@ protected function cevalRealString
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2253,7 +2245,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Real r;
@@ -2274,7 +2266,7 @@ protected function cevalStringCharInt
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2287,7 +2279,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Integer i;
@@ -2306,7 +2298,7 @@ protected function cevalIntStringChar
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2319,7 +2311,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Integer i;
@@ -2338,7 +2330,7 @@ protected function cevalStringInt
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2351,7 +2343,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Integer i;
@@ -2371,7 +2363,7 @@ protected function cevalStringLength
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2384,7 +2376,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Integer i;
@@ -2403,7 +2395,7 @@ protected function cevalStringListStringChar
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2416,7 +2408,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       list<String> chList;
@@ -2445,7 +2437,7 @@ protected function cevalListStringCharString
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2458,7 +2450,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       list<String> chList;
@@ -2483,7 +2475,7 @@ protected function cevalStringAppendList
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2496,7 +2488,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       list<String> chList;
@@ -2517,7 +2509,7 @@ protected function cevalStringDelimitList
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2530,7 +2522,7 @@ algorithm
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       list<String> chList;
@@ -2552,7 +2544,7 @@ protected function cevalListLength
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2565,7 +2557,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Integer i;
       list<Values.Value> valList;
@@ -2584,7 +2576,7 @@ protected function cevalListAppend
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2597,7 +2589,7 @@ algorithm
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       list<Values.Value> valList,valList1,valList2;
     case (cache,env,{exp1,exp2},impl,st,msg,_)
@@ -2616,7 +2608,7 @@ protected function cevalListReverse
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2629,7 +2621,7 @@ algorithm
       DAE.Exp exp1;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       list<Values.Value> valList,valList1;
     case (cache,env,{exp1},impl,st,msg,_)
@@ -2647,7 +2639,7 @@ protected function cevalListRest
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2660,7 +2652,7 @@ algorithm
       DAE.Exp exp1;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       list<Values.Value> valList1;
     case (cache,env,{exp1},impl,st,msg,_)
@@ -2677,7 +2669,7 @@ protected function cevalAnyString
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2690,7 +2682,7 @@ algorithm
       DAE.Exp exp1;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Values.Value v;
       String s;
@@ -2709,7 +2701,7 @@ protected function cevalNumBits
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2732,7 +2724,7 @@ protected function cevalIntegerMax
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2755,7 +2747,7 @@ protected function cevalGetLoadedLibraries
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2832,7 +2824,7 @@ protected function cevalListFirst
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2845,7 +2837,7 @@ algorithm
       DAE.Exp exp1;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Values.Value v;
     case (cache,env,{exp1},impl,st,msg,_)
@@ -2954,7 +2946,7 @@ protected function cevalBuiltinFloor "function: cevalBuiltinFloor
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2968,7 +2960,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -2987,7 +2979,7 @@ protected function cevalBuiltinCeil "function cevalBuiltinCeil
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3002,7 +2994,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3033,7 +3025,7 @@ protected function cevalBuiltinSqrt "function: cevalBuiltinSqrt
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3047,11 +3039,11 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Absyn.Info info;
 
-    case (cache,env,{exp},impl,st, msg as MSG(info = info),_)
+    case (cache,env,{exp},impl,st, msg as Absyn.MSG(info = info),_)
       equation
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st,msg,numIter+1);
         (rv <. 0.0) = true;
@@ -3075,7 +3067,7 @@ protected function cevalBuiltinSin "function cevalBuiltinSin
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3089,7 +3081,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3108,7 +3100,7 @@ protected function cevalBuiltinSinh "function cevalBuiltinSinh
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3122,7 +3114,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3141,7 +3133,7 @@ protected function cevalBuiltinCos "function cevalBuiltinCos
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3155,7 +3147,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3174,7 +3166,7 @@ protected function cevalBuiltinCosh "function cevalBuiltinCosh
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3188,7 +3180,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3207,7 +3199,7 @@ protected function cevalBuiltinLog "function cevalBuiltinLog
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3221,7 +3213,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3238,7 +3230,7 @@ protected function cevalBuiltinLog10
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3252,7 +3244,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3271,7 +3263,7 @@ protected function cevalBuiltinTan "function cevalBuiltinTan
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3285,7 +3277,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_) /* tan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
@@ -3306,7 +3298,7 @@ protected function cevalBuiltinTanh "function cevalBuiltinTanh
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3320,7 +3312,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_) /* tanh is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
@@ -3339,7 +3331,7 @@ protected function cevalBuiltinAsin "function cevalBuiltinAsin
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3353,7 +3345,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3372,7 +3364,7 @@ protected function cevalBuiltinAcos "function cevalBuiltinAcos
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3386,7 +3378,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -3405,7 +3397,7 @@ protected function cevalBuiltinAtan "function cevalBuiltinAtan
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3419,7 +3411,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_) /* atan is not implemented in MetaModelica Compiler (MMC) for some strange reason. */
       equation
@@ -3436,7 +3428,7 @@ protected function cevalBuiltinAtan2
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3450,7 +3442,7 @@ algorithm
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp1,exp2},impl,st,msg,_)
       equation
@@ -3470,7 +3462,7 @@ protected function cevalBuiltinDiv "function cevalBuiltinDiv
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3485,7 +3477,7 @@ algorithm
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       String exp1_str,exp2_str,lh_str,rh_str;
       Env.Cache cache; Boolean b;
       Absyn.Info info;
@@ -3526,7 +3518,7 @@ algorithm
         ri_1 = intDiv(ri1,ri2);
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (rv2 ==. 0.0) = true;
@@ -3535,13 +3527,13 @@ algorithm
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (rv2 ==. 0.0) = true;
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (ri2 == 0) = true;
@@ -3550,9 +3542,9 @@ algorithm
         Error.addSourceMessage(Error.DIVISION_BY_ZERO, {lh_str,rh_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (ri2 == 0) = true;
       then
         fail();
@@ -3567,7 +3559,7 @@ protected function cevalBuiltinMod "function cevalBuiltinMod
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3581,7 +3573,7 @@ algorithm
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Integer ri,ri1,ri2,ri_1;
       String lhs_str,rhs_str;
       Env.Cache cache;
@@ -3632,7 +3624,7 @@ algorithm
         ri_1 = realInt(rvd);
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (rv2 ==. 0.0) = true;
@@ -3641,13 +3633,13 @@ algorithm
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
+        (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (rv2 ==. 0.0) = true;
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, inMsg,numIter+1);
         (ri2 == 0) = true;
@@ -3656,9 +3648,9 @@ algorithm
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,NO_MSG(),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.NO_MSG(),_)
       equation
-        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NO_MSG(),numIter+1);
+        (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, Absyn.NO_MSG(),numIter+1);
         (ri2 == 0) = true;
       then
         fail();
@@ -3673,7 +3665,7 @@ protected function cevalBuiltinMax "function cevalBuiltinMax
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3687,7 +3679,7 @@ algorithm
       DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{arr},impl,st,msg,_)
       equation
@@ -3784,7 +3776,7 @@ protected function cevalBuiltinMin "function: cevalBuiltinMin
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3798,7 +3790,7 @@ algorithm
       DAE.Exp arr,s1,s2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{arr},impl,st,msg,_)
       equation
@@ -3819,7 +3811,7 @@ end cevalBuiltinMin;
 protected function cevalBuiltinMin2
   input Values.Value v1;
   input Values.Value v2;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   output Values.Value outValue;
 algorithm
   outValue := match (v1, v2, inMsg)
@@ -3842,7 +3834,7 @@ algorithm
       equation
         b = boolAnd(b1, b2);
       then Values.BOOL(b);
-    case (_, _, MSG(info = info))
+    case (_, _, Absyn.MSG(info = info))
       equation
         s1 = ValuesUtil.valString(v1);
         s2 = ValuesUtil.valString(v2);
@@ -3900,7 +3892,7 @@ protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3915,7 +3907,7 @@ algorithm
       DAE.ComponentRef cr;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       DAE.FunctionTree ft;
     case (cache,env,{exp1,DAE.CREF(componentRef = cr)},impl,st,msg,_)
@@ -3946,7 +3938,7 @@ protected function cevalBuiltinSimplify "function cevalBuiltinSimplify
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -3960,7 +3952,7 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Absyn.Info info;
 
@@ -3970,7 +3962,7 @@ algorithm
         ret_val = ExpressionDump.printExpStr(exp1_1) "this should be used instead but unelab_exp must be able to unelaborate a complete exp Expression.unelab_exp(simplifyd_exp\') => absyn_exp" ;
       then
         (cache,Values.STRING(ret_val),st);
-    case (_,_,_,_,st,MSG(info = info),_) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
+    case (_,_,_,_,st,Absyn.MSG(info = info),_) /* =>  (Values.CODE(Absyn.C_EXPRESSION(absyn_exp)),st) */
       equation
         Error.addSourceMessage(Error.COMPILER_ERROR, 
           {"Simplification failed. Ceval.cevalBuiltinSimplify failed."}, info);
@@ -3987,7 +3979,7 @@ protected function cevalBuiltinRem "function cevalBuiltinRem
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4002,7 +3994,7 @@ algorithm
       DAE.Exp exp1,exp2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       String exp1_str,exp2_str;
       Env.Cache cache;
       Absyn.Info info;
@@ -4041,7 +4033,7 @@ algorithm
         ri_1 = ri1 - ri2 * di;
       then
         (cache,Values.INTEGER(ri_1),st);
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.REAL(rv2),_) = ceval(cache,env,exp2,impl,st,inMsg,numIter+1);
         (rv2 ==. 0.0) = true;
@@ -4050,7 +4042,7 @@ algorithm
         Error.addSourceMessage(Error.REM_ARG_ZERO, {exp1_str,exp2_str}, info);
       then
         fail();
-    case (cache,env,{exp1,exp2},impl,st,MSG(info = info),_)
+    case (cache,env,{exp1,exp2},impl,st,Absyn.MSG(info = info),_)
       equation
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st,inMsg,numIter+1);
         (ri2 == 0) = true;
@@ -4070,7 +4062,7 @@ protected function cevalBuiltinInteger "function cevalBuiltinInteger
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4085,7 +4077,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -4104,7 +4096,7 @@ protected function cevalBuiltinBoolean "function cevalBuiltinBoolean
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4120,7 +4112,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     
     // real -> bool
@@ -4157,7 +4149,7 @@ protected function cevalBuiltinRooted
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4170,7 +4162,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -4188,7 +4180,7 @@ protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerE
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4202,7 +4194,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg,_)
       equation
@@ -4221,7 +4213,7 @@ protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4236,7 +4228,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Values.Value res;
       Absyn.Info info;
@@ -4249,7 +4241,7 @@ algorithm
         res = Values.ARRAY(retExp,{dimension,dimension});
       then
         (cache,res,st);
-    case (_,_,_,_,_,MSG(info = info),_)
+    case (_,_,_,_,_,Absyn.MSG(info = info),_)
       equation
         Error.addSourceMessage(Error.COMPILER_ERROR,
           {"Could not evaluate diagonal. Ceval.cevalBuiltinDiagonal failed."}, info);
@@ -4270,7 +4262,7 @@ protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
   input Integer inInteger5 "matrix dimension";
   input Integer inInteger6 "row";
   input list<Values.Value> inValuesValueLst7;
-  input Msg inMsg8;
+  input Absyn.Msg inMsg8;
   input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
@@ -4285,7 +4277,7 @@ algorithm
       DAE.Exp s1,s2;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Values.Value v;
       Absyn.Info info;
@@ -4361,7 +4353,7 @@ algorithm
       then
         (cache,listIN);
     
-    case (_,_,_,_,_,matrixDimension,row,list_,MSG(info = info),_)
+    case (_,_,_,_,_,matrixDimension,row,list_,Absyn.MSG(info = info),_)
       equation
         true = Flags.isSet(Flags.CEVAL);
         str = Error.infoStr(info);
@@ -4378,7 +4370,7 @@ protected function cevalBuiltinCross "
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4393,7 +4385,7 @@ algorithm
       DAE.Exp xe,ye;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String str;
       Absyn.Info info;
@@ -4405,7 +4397,7 @@ algorithm
         res = ValuesUtil.crossProduct(xv,yv);
       then
         (cache,res,st);
-    case (_,_,_,_,_,MSG(info = info),_)
+    case (_,_,_,_,_,Absyn.MSG(info = info),_)
       equation
         str = "cross" +& ExpressionDump.printExpStr(DAE.TUPLE(inExpExpLst));
         Error.addSourceMessage(Error.FAILED_TO_EVALUATE_EXPRESSION, {str}, info);
@@ -4421,7 +4413,7 @@ protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4437,7 +4429,7 @@ algorithm
       DAE.Exp exp;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Absyn.Info info;
 
@@ -4448,7 +4440,7 @@ algorithm
         vlst_1 = cevalBuiltinTranspose2(vlst, 1, i2::i1::il);
       then
         (cache,Values.ARRAY(vlst_1,i2::i1::il),st);
-    case (_,_,_,_,_,MSG(info = info),_)
+    case (_,_,_,_,_,Absyn.MSG(info = info),_)
       equation
         Error.addSourceMessage(Error.COMPILER_ERROR, 
           {"Could not evaluate transpose. Celab.cevalBuildinTranspose failed."}, info);
@@ -4489,7 +4481,7 @@ protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
   input DAE.Exp inExp;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4505,7 +4497,7 @@ algorithm
       DAE.ComponentRef cr;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       DAE.Exp exp;
       DAE.Dimensions dims;
@@ -4544,7 +4536,7 @@ protected function cevalBuiltinFill
   input list<DAE.Exp> inExpl;
   input Boolean inImpl;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4574,7 +4566,7 @@ protected function cevalBuiltinFill2
   input list<DAE.Exp> inDims;
   input Boolean inImpl;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4844,7 +4836,7 @@ public function cevalList "function: cevalList
   input list<DAE.Exp> inExpExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValuesValueLst;
@@ -4854,7 +4846,7 @@ algorithm
   match (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,numIter)
     local
       list<Env.Frame> env;
-      Msg msg;
+      Absyn.Msg msg;
       Values.Value v;
       DAE.Exp exp;
       Boolean impl;
@@ -4879,7 +4871,7 @@ public function cevalCref "function: cevalCref
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
   input Boolean inBoolean "impl";
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4892,13 +4884,13 @@ algorithm
       Env.Env env, classEnv, componentEnv;
       DAE.ComponentRef c;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       String scope_str,str, name;
       Env.Cache cache;
       Option<DAE.Const> const_for_range;
       DAE.Type ty;
       DAE.Attributes attr;
-      Lookup.SplicedExpData splicedExpData;
+      InstTypes.SplicedExpData splicedExpData;
       Absyn.Info info;
 
     // Try to lookup the variables binding and constant evaluate it.
@@ -4911,7 +4903,7 @@ algorithm
         (cache, v);
 
     // failure in lookup and we have the MSG go-ahead to print the error
-    case (cache,env,c,(impl as false),MSG(info = info),_)
+    case (cache,env,c,(impl as false),Absyn.MSG(info = info),_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
         scope_str = Env.printEnvPathStr(env);
@@ -4921,7 +4913,7 @@ algorithm
         fail();
     
     // failure in lookup but NO_MSG, silently fail and move along
-    /*case (cache,env,c,(impl as false),NO_MSG(),_)
+    /*case (cache,env,c,(impl as false),Absyn.NO_MSG(),_)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
@@ -4938,12 +4930,12 @@ public function cevalCref_dispatch
   input DAE.Type inType;   
   input DAE.Binding inBinding;
   input Option<DAE.Const> constForRange;
-  input Lookup.SplicedExpData inSplicedExpData;
+  input InstTypes.SplicedExpData inSplicedExpData;
   input Env.Env inClassEnv;
   input Env.Env inComponentEnv;
   input String  inFQName;
   input Boolean inImpl;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -4961,7 +4953,7 @@ algorithm
     
     // A variable without a binding -> error in a simulation model
     // and we can only check that at the DAE level!
-    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, MSG(info = info), _)
+    case (_, _, _, _, _, DAE.UNBOUND(), NONE(), _, _, _, _, false, Absyn.MSG(info = info), _)
       equation
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = Env.printEnvPathStr(inEnv);
@@ -5004,7 +4996,7 @@ public function cevalCrefBinding "function: cevalCrefBinding
   input DAE.ComponentRef inComponentRef;
   input DAE.Binding inBinding;
   input Boolean inBoolean "impl";
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -5016,7 +5008,7 @@ algorithm
       Values.Value res,v,e_val;
       list<Env.Frame> env;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       String rfn,iter,expstr,s1,s2,str;
       DAE.Exp elexp,iterexp,exp;
       Env.Cache cache;
@@ -5046,7 +5038,7 @@ algorithm
         (cache,res);
 
     // take the bindings form the cref type if is a record that has bindings for everything!
-    case (cache,env,DAE.CREF_IDENT(id, ty, {}),DAE.UNBOUND(),_,MSG(info),_)
+    case (cache,env,DAE.CREF_IDENT(id, ty, {}),DAE.UNBOUND(),_,Absyn.MSG(info),_)
       equation
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
            varLst = vl)) = Types.arrayElementType(ty);
@@ -5056,9 +5048,9 @@ algorithm
       then 
         (cache, res);
 
-    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG(_),_) then fail();
+    case (cache,env,_,DAE.UNBOUND(),(impl as false),Absyn.MSG(_),_) then fail();
 
-    case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG(_),_)
+    case (cache,env,_,DAE.UNBOUND(),(impl as true),Absyn.MSG(_),_)
       equation
         Debug.fprint(Flags.CEVAL, "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
@@ -5113,7 +5105,7 @@ algorithm
         (cache,res);
 
     // if the binding has constant-ness DAE.C_VAR we cannot constant evaluate.
-    case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG(_),_)
+    case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,Absyn.MSG(_),_)
       equation
         true = Flags.isSet(Flags.CEVAL);
         Debug.trace("#- Ceval.cevalCrefBinding failed (nonconstant EQBOUND(");
@@ -5160,7 +5152,7 @@ public function cevalSubscriptValue "function: cevalSubscriptValue
   input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
   input Values.Value inValue;
   input Boolean inBoolean "impl";
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -5175,7 +5167,7 @@ algorithm
       list<Values.Value> lst,sliceLst,subvals;
       list<Integer> slice;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
 
     // we have a subscript which is an index, try to constant evaluate it
@@ -5240,7 +5232,7 @@ protected function cevalSubscriptValueList "Applies subscripts to array values t
   input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
   input list<Values.Value> inValue;
   input Boolean inBoolean "impl";
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outValue;
@@ -5252,7 +5244,7 @@ algorithm
       list<Env.Frame> env;
       list<Values.Value> lst,subvals;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       list<DAE.Subscript> subs;
       Env.Cache cache;
     case (cache,env,subs,{},impl,msg,_) then (cache,{});
@@ -5276,7 +5268,7 @@ public function cevalSubscripts "function: cevalSubscripts
   input list<DAE.Subscript> inExpSubscriptLst;
   input list<Integer> inIntegerLst;
   input Boolean inBoolean "impl";
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output list<DAE.Subscript> outExpSubscriptLst;
@@ -5290,7 +5282,7 @@ algorithm
       Integer dim;
       list<Integer> dims;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
 
     // empty case
@@ -5314,7 +5306,7 @@ public function cevalSubscript "function: cevalSubscript
   input DAE.Subscript inSubscript;
   input Integer inInteger;
   input Boolean inBoolean "impl";
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output DAE.Subscript outSubscript;
@@ -5327,7 +5319,7 @@ algorithm
       DAE.Exp e1_1,e1;
       Integer dim;
       Boolean impl;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Integer indx;
 
@@ -5436,7 +5428,7 @@ protected function cevalReduction
   input list<DAE.Type> iterTypes;
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
-  input Msg msg;
+  input Absyn.Msg msg;
   input Integer numIter;
   output Env.Cache newCache;
   output Option<Values.Value> result;
@@ -5485,7 +5477,7 @@ protected function cevalReductionEvalAndFold "Evaluate the reduction body and fo
   input Option<DAE.Exp> foldExp;
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
-  input Msg msg;
+  input Absyn.Msg msg;
   input Integer numIter;
   output Env.Cache newCache;
   output Option<Values.Value> result;
@@ -5518,7 +5510,7 @@ protected function cevalReductionFold "Fold the reduction body"
   input DAE.Type exprType;
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
-  input Msg msg;
+  input Absyn.Msg msg;
   input Integer numIter;
   output Env.Cache newCache;
   output Option<Values.Value> result;
@@ -5621,7 +5613,7 @@ protected function cevalReductionIterators
   input list<DAE.ReductionIterator> inIterators;
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
-  input Msg msg;
+  input Absyn.Msg msg;
   input Integer numIter;
   output Env.Cache outCache;
   output list<list<Values.Value>> vals;
@@ -5665,7 +5657,7 @@ protected function filterReductionIterator
   input Option<DAE.Exp> guardExp;
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSt;
-  input Msg msg;
+  input Absyn.Msg msg;
   input Integer numIter;
   output Env.Cache outCache;
   output list<Values.Value> outVals;
@@ -5770,7 +5762,7 @@ public function cevalSimple
   input DAE.Exp exp;
   output Values.Value val;
 algorithm
-  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),MSG(Absyn.dummyInfo),0);
+  (_,val,_) := ceval(Env.emptyCache(),{},exp,false,NONE(),Absyn.MSG(Absyn.dummyInfo),0);
 end cevalSimple;
 
 public function cevalAstExp
@@ -5786,7 +5778,7 @@ public function cevalAstExp
   input Absyn.Exp inExp;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.Exp outExp;
@@ -5799,7 +5791,7 @@ algorithm
       Absyn.Operator op;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       list<tuple<Absyn.Exp, Absyn.Exp>> nest_1,nest;
       Absyn.ComponentRef cr;
       Absyn.FunctionArgs fa;
@@ -5913,7 +5905,7 @@ public function cevalAstExpList
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.Exp> outAbsynExpLst;
@@ -5922,7 +5914,7 @@ algorithm
   match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       list<Env.Frame> env;
-      Msg msg;
+      Absyn.Msg msg;
       Absyn.Exp e_1,e;
       list<Absyn.Exp> res,es;
       Boolean impl;
@@ -5946,7 +5938,7 @@ protected function cevalAstExpListList "function: cevalAstExpListList"
   input list<list<Absyn.Exp>> inAbsynExpLstLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<list<Absyn.Exp>> outAbsynExpLstLst;
@@ -5955,7 +5947,7 @@ algorithm
   match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       list<Env.Frame> env;
-      Msg msg;
+      Absyn.Msg msg;
       list<Absyn.Exp> e_1,e;
       list<list<Absyn.Exp>> res,es;
       Boolean impl;
@@ -5982,7 +5974,7 @@ public function cevalAstElt
   input Absyn.Element inElement;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Element outElement;
 algorithm
@@ -6001,7 +5993,7 @@ algorithm
       Integer sline,scolumn,eline,ecolumn;
       Option<Absyn.ConstrainClass> c;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
       equation
@@ -6019,7 +6011,7 @@ protected function cevalAstCitems
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
@@ -6027,7 +6019,7 @@ algorithm
   (outCache,outAbsynComponentItemLst) :=
   matchcontinue (inCache,inEnv,inAbsynComponentItemLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
-      Msg msg;
+      Absyn.Msg msg;
       list<Absyn.ComponentItem> res,xs;
       Option<Absyn.Modification> modopt_1,modopt;
       list<Absyn.Subscript> ad_1,ad;
@@ -6062,7 +6054,7 @@ protected function cevalAstModopt
   input Option<Absyn.Modification> inAbsynModificationOption;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Option<Absyn.Modification> outAbsynModificationOption;
@@ -6074,7 +6066,7 @@ algorithm
       list<Env.Frame> env;
       Boolean st;
       Option<Interactive.SymbolTable> impl;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
     case (cache,env,SOME(mod),st,impl,msg,_)
       equation
@@ -6093,7 +6085,7 @@ protected function cevalAstModification "function: cevalAstModification
   input Absyn.Modification inModification;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.Modification outModification;
@@ -6106,7 +6098,7 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
-      Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Absyn.Info info2;
     case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.EQMOD(e,info2)),impl,st,msg,_)
@@ -6130,7 +6122,7 @@ protected function cevalAstEltargs "function: cevalAstEltargs
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
@@ -6139,7 +6131,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       list<Env.Frame> env;
-      Msg msg;
+      Absyn.Msg msg;
       Absyn.Modification mod_1,mod;
       list<Absyn.ElementArg> res,args;
       Boolean b,impl;
@@ -6174,7 +6166,7 @@ protected function cevalAstArraydim "function: cevalAstArraydim
   input Absyn.ArrayDim inArrayDim;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.ArrayDim outArrayDim;
@@ -6183,7 +6175,7 @@ algorithm
   match (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
       list<Env.Frame> env;
-      Msg msg;
+      Absyn.Msg msg;
       list<Absyn.Subscript> res,xs;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
@@ -6212,7 +6204,7 @@ protected function cevalAstExpexpList
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
   input Boolean inBoolean;
   input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<tuple<Absyn.Exp, Absyn.Exp>> outTplAbsynExpAbsynExpLst;
@@ -6220,7 +6212,7 @@ algorithm
   (outCache,outTplAbsynExpAbsynExpLst) :=
   match (inCache,inEnv,inTplAbsynExpAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
     local
-      Msg msg;
+      Absyn.Msg msg;
       Absyn.Exp e1_1,e2_1,e1,e2;
       list<tuple<Absyn.Exp, Absyn.Exp>> res,xs;
       list<Env.Frame> env;
@@ -6245,7 +6237,7 @@ public function cevalDimension
   input DAE.Dimension inDimension;
   input Boolean inImpl;
   input Option<Interactive.SymbolTable> inST;
-  input Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;

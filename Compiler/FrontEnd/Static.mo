@@ -98,6 +98,7 @@ protected import Flags;
 protected import Global;
 protected import Inline;
 protected import Inst;
+protected import InstTypes;
 protected import InnerOuter;
 protected import List;
 protected import Lookup;
@@ -873,7 +874,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Static.elabExp:IFEXP:HACK") "Extra rollback point so we get the regular error message only once if the hack fails";
         true = Types.isParameterOrConstant(Types.propAllConst(condProp));
-        (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),Ceval.MSG(info),0);
+        (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env,condExp,impl,NONE(),Absyn.MSG(info),0);
         (cache,outExp,prop,st) = elabExp(cache,env,Util.if_(b,trueExp,falseExp),impl,st,vect,pre,info);
         ErrorExt.delCheckpoint("Static.elabExp:IFEXP:HACK");
         ErrorExt.rollBack("Static.elabExp:IFEXP");
@@ -2124,8 +2125,8 @@ algorithm
     // No step value.
     case (_, _, _, NONE(), _, _, _, _, _)
       equation
-        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG(), 0);
-        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Ceval.NO_MSG(), 0);
+        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Absyn.NO_MSG(), 0);
+        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Absyn.NO_MSG(), 0);
         dim = elabRangeSize(start_val, NONE(), stop_val);
       then
         (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource));
@@ -2133,9 +2134,9 @@ algorithm
     // Some step value.
     case (_, _, _, SOME(step_exp), _, _, _, _, _)
       equation
-        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Ceval.NO_MSG(), 0);
-        (cache, step_val, _) = Ceval.ceval(cache, inEnv, step_exp, inImpl, NONE(), Ceval.NO_MSG(), 0);
-        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Ceval.NO_MSG(), 0);
+        (cache, start_val, _) = Ceval.ceval(inCache, inEnv, inStart, inImpl, NONE(), Absyn.NO_MSG(), 0);
+        (cache, step_val, _) = Ceval.ceval(cache, inEnv, step_exp, inImpl, NONE(), Absyn.NO_MSG(), 0);
+        (cache, stop_val, _) = Ceval.ceval(cache, inEnv, inStop, inImpl, NONE(), Absyn.NO_MSG(), 0);
         dim = elabRangeSize(start_val, SOME(step_val), stop_val);
       then
         (cache, DAE.T_ARRAY(inType, {DAE.DIM_INTEGER(dim)}, DAE.emptyTypeSource));
@@ -3450,7 +3451,7 @@ algorithm
         failure(DAE.C_VAR() = c1);
         c1 = Types.constAnd(c1,Types.propAllConst(prop));
         sty = Types.getPropType(prop);
-        (cache,dimvals,_) = Ceval.cevalList(cache, env, dims_1, impl, NONE(), Ceval.NO_MSG(),0);
+        (cache,dimvals,_) = Ceval.cevalList(cache, env, dims_1, impl, NONE(), Absyn.NO_MSG(),0);
         (cache,exp,prop) = elabBuiltinFill2(cache, env, s_1, sty, dimvals, c1, pre, dims, info);
       then
         (cache, exp, prop);
@@ -5361,7 +5362,7 @@ algorithm
       equation
         // Evaluate the dimension expression and elaborate the rest of the arguments.
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info),0);
+        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Absyn.MSG(info),0);
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
 
         // Type check the arguments and check that all dimensions except the one
@@ -5395,7 +5396,7 @@ algorithm
     case (cache,env,(dim_aexp :: matrices),_,impl,pre,_)
       equation
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),const1),_) = elabExp(cache,env, dim_aexp, impl,NONE(),true,pre,info);
-        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Ceval.MSG(info),0);
+        (cache,Values.INTEGER(dim_int),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), Absyn.MSG(info),0);
         (cache,matrices_1,props,_) = elabExpList(cache,env, matrices, impl,NONE(),true,pre,info);
         false = sameDimensionsExceptionDimX(props,dim_int);
         lst = List.map((dim_aexp :: matrices), Dump.printExpStr);
@@ -5475,13 +5476,13 @@ algorithm
       DAE.Type ety;
       Prefix.Prefix pre;
       DAE.Const c;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
 
     case (cache,env,{dim},_,impl,pre,_)
       equation
         (cache,dim_exp,DAE.PROP(DAE.T_INTEGER(varLst = _),c),_) = elabExp(cache,env, dim, impl,NONE(),true,pre,info);
         true = Types.isParameterOrConstant(c);
-        msg = Util.if_(Flags.getConfigBool(Flags.CHECK_MODEL), Ceval.NO_MSG(), Ceval.MSG(info));
+        msg = Util.if_(Flags.getConfigBool(Flags.CHECK_MODEL), Absyn.NO_MSG(), Absyn.MSG(info));
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false,NONE(), msg,0);
         dim_size = DAE.DIM_INTEGER(size);
         ty = Types.liftArrayListDims(DAE.T_INTEGER_DEFAULT, {dim_size, dim_size});
@@ -7120,7 +7121,7 @@ algorithm
       Env.Env env;
     case (DAE.DIM_EXP(exp),(cache,env))
       equation
-        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Ceval.NO_MSG(),0);
+        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Absyn.NO_MSG(),0);
       then (DAE.DIM_INTEGER(i),(cache,env));
     else (inDim,inTpl);
   end matchcontinue;
@@ -8530,7 +8531,7 @@ algorithm
       list<DAE.Type> trest;
       Boolean impl;
       Env.Cache cache;
-      Types.PolymorphicBindings polymorphicBindings;
+      InstTypes.PolymorphicBindings polymorphicBindings;
       Prefix.Prefix pre;
       DAE.FunctionAttributes functionAttributes;
       DAE.TypeSource ts;
@@ -8751,7 +8752,7 @@ algorithm
     case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
       equation
         // Constant evaluate the bound expression.
-        (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Ceval.NO_MSG(), 0);
+        (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
         exp = ValuesUtil.valueExp(val);
         ty = Expression.typeof(exp);
         // Create a binding from the evaluated expression.
@@ -8828,7 +8829,7 @@ algorithm
     // Array type, evaluate the dimension.
     case (DAE.T_ARRAY(ty, {dim}, ts), _, _)
       equation
-        (_, Values.INTEGER(n), _) = Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Ceval.NO_MSG(), 0);
+        (_, Values.INTEGER(n), _) = Ceval.cevalDimension(inCache, inEnv, dim, false, NONE(), Absyn.NO_MSG(), 0);
         ty = evaluateFuncArgTypeDims(ty, inEnv, inCache);
       then
         DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(n)}, ts);
@@ -9265,7 +9266,7 @@ protected function elabInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input IsExternalObject isExternalObject;
-  input Types.PolymorphicBindings inPolymorphicBindings;
+  input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<Interactive.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -9273,7 +9274,7 @@ protected function elabInputArgs
   output list<DAE.Exp> outExpExpLst;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
-  output Types.PolymorphicBindings outPolymorphicBindings;
+  output InstTypes.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outExpExpLst,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
   match (inCache,inEnv,inAbsynExpLst,inAbsynNamedArgLst,inSlotLst,checkTypes,inBoolean,isExternalObject,inPolymorphicBindings,st,inPrefix,info)
@@ -9288,7 +9289,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       Prefix.Prefix pre;
-      Types.PolymorphicBindings polymorphicBindings;
+      InstTypes.PolymorphicBindings polymorphicBindings;
 
     // impl const Fill slots with positional arguments
     case (cache,env,(exp as (_ :: _)),narg,slots,_,impl,_,polymorphicBindings,_,pre,_)
@@ -9515,13 +9516,13 @@ protected function fillGraphicsDefaultSlots
   input SCode.Element inClass;
   input Env.Env inEnv;
   input Boolean inBoolean;
-  input Types.PolymorphicBindings inPolymorphicBindings;
+  input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
-  output Types.PolymorphicBindings outPolymorphicBindings;
+  output InstTypes.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
   matchcontinue (inCache,inSlotLst,inClass,inEnv,inBoolean,inPolymorphicBindings,inPrefix,info)
@@ -9541,7 +9542,7 @@ algorithm
       String id;
       Env.Cache cache;
       Prefix.Prefix pre;
-      Types.PolymorphicBindings polymorphicBindings;
+      InstTypes.PolymorphicBindings polymorphicBindings;
 
     case (cache,(SLOT(an = fa,slotFilled = true,expExpOption = e as SOME(_),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
@@ -9632,7 +9633,7 @@ algorithm
       equation
         true = Types.isParameterOrConstant(const);
         false = Expression.isConst(inExp);
-        (outCache, val, _) = Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Ceval.MSG(info), 0);
+        (outCache, val, _) = Ceval.ceval(inCache, inEnv, inExp, false, NONE(), Absyn.MSG(info), 0);
         outExp = ValuesUtil.valueExp(val);
       then (outCache,outExp);
     case (_,_,_,_,_,_,_)
@@ -9661,14 +9662,14 @@ protected function elabPositionalInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input IsExternalObject isExternalObject;
-  input Types.PolymorphicBindings inPolymorphicBindings;
+  input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<Interactive.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
-  output Types.PolymorphicBindings outPolymorphicBindings;
+  output InstTypes.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings):=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,isExternalObject,inPolymorphicBindings,st,inPrefix,info)
@@ -9690,7 +9691,7 @@ algorithm
       DAE.Properties props;
       Prefix.Prefix pre;
       DAE.CodeType ct;
-      Types.PolymorphicBindings polymorphicBindings;
+      InstTypes.PolymorphicBindings polymorphicBindings;
 
     // the empty case
     case (cache, _, {}, _, slots, _, impl, _, polymorphicBindings,_,pre,_)
@@ -9794,14 +9795,14 @@ protected function elabNamedInputArgs
   input Boolean checkTypes "if true, check types";
   input Boolean inBoolean;
   input IsExternalObject isExternalObject;
-  input Types.PolymorphicBindings inPolymorphicBindings;
+  input InstTypes.PolymorphicBindings inPolymorphicBindings;
   input Option<Interactive.SymbolTable> st;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<Slot> outSlotLst;
   output list<DAE.Const> outTypesConstLst;
-  output Types.PolymorphicBindings outPolymorphicBindings;
+  output InstTypes.PolymorphicBindings outPolymorphicBindings;
 algorithm
   (outCache,outSlotLst,outTypesConstLst,outPolymorphicBindings) :=
   matchcontinue (inCache,inEnv,inAbsynNamedArgLst,inTypesFuncArgLst,inSlotLst,checkTypes,inBoolean,isExternalObject,inPolymorphicBindings,st,inPrefix,info)
@@ -9821,7 +9822,7 @@ algorithm
       Env.Cache cache;
       DAE.Dimensions ds;
       Prefix.Prefix pre;
-      Types.PolymorphicBindings polymorphicBindings;
+      InstTypes.PolymorphicBindings polymorphicBindings;
 
     // the empty case
     case (cache,_,{},_,slots,_,impl,_,polymorphicBindings,_,_,_)
@@ -10054,7 +10055,7 @@ algorithm
       Boolean impl,doVect,isBuiltinFn,isBuiltinFnOrInlineBuiltin,hasZeroSizeDim;
       DAE.Type et;
       String s,scope;
-      Lookup.SplicedExpData splicedExpData;
+      InstTypes.SplicedExpData splicedExpData;
       Absyn.Path path,fpath;
       list<String> enum_lit_strs;
       String typeStr,id;
@@ -10371,7 +10372,7 @@ protected function makeASUBArrayAdressing
   input Env.Env inEnv;
   input Boolean inBoolean "implicit instantiation";
   input DAE.Exp inExp;
-  input Lookup.SplicedExpData splicedExpData;
+  input InstTypes.SplicedExpData splicedExpData;
   input Boolean doVect "if doVect is false, no vectorization and thus no ASUB addressing is performed";
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -10409,7 +10410,7 @@ algorithm
 
     case(_, _, _, _, DAE.CREF(componentRef =
           DAE.CREF_IDENT(ident = id2, subscriptLst = essl), ty = ty),
-        Lookup.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))),
+        InstTypes.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))),
         _, _, _)
       equation
         tty2 = ComponentReference.crefLastType(cr);
@@ -10438,7 +10439,7 @@ protected function getSplicedCrefTypes
   elabSubscripts being called twice. If you understand what this function does,
   please update this comment."
   input DAE.Exp inCref;
-  input Lookup.SplicedExpData inSplicedExpData;
+  input InstTypes.SplicedExpData inSplicedExpData;
   output DAE.Type outType1;
   output DAE.Type outType2;
 algorithm
@@ -10447,7 +10448,7 @@ algorithm
       DAE.Type ty1, ty2;
       DAE.ComponentRef cr;
 
-    case (_, Lookup.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))))
+    case (_, InstTypes.SPLICEDEXPDATA(splicedExp = SOME(DAE.CREF(componentRef = cr))))
       equation
         ty2 = ComponentReference.crefLastType(cr);
       then
@@ -10579,7 +10580,7 @@ protected function elabCref2
   input DAE.Type inType;
   input DAE.Binding inBinding;
   input Boolean performVectorization "true => vectorized expressions";
-  input Lookup.SplicedExpData splicedExpData;
+  input InstTypes.SplicedExpData splicedExpData;
   input Prefix.Prefix inPrefix;
   input Boolean evalCref;
   input Absyn.Info info;
@@ -10642,7 +10643,7 @@ algorithm
         (cache,e_1,const,attr);
 
     // a variable
-    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.VAR()),_,_,tt,_,doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,_,_)
+    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.VAR()),_,_,tt,_,doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
@@ -10652,7 +10653,7 @@ algorithm
         (cache,e,DAE.C_VAR(),attr);
 
     // a discrete variable
-    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.DISCRETE()),_,_,tt,_,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,_,cr,attr as DAE.ATTR(variability = SCode.DISCRETE()),_,_,tt,_,doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -10676,12 +10677,12 @@ algorithm
         (cache, Expression.makeCrefExp(cr,expTy), DAE.C_CONST(), attr);
 
     // a constant with variable subscript
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),DAE.C_VAR(),_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),DAE.C_VAR(),_,tt,binding,doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         cr2 = ComponentReference.crefStripLastSubs(cr);
         subsc = ComponentReference.crefLastSubs(cr);
         // print(ComponentReference.printComponentRefStr(cr) +& " is a constant with variable subscript and binding: " +& DAEUtil.printBindingExpStr(binding) +& "\n");
-        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info),0);
+        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Absyn.MSG(info),0);
         // print("Got value: " +& ValuesUtil.valString(v) +& "\n");
         e = ValuesUtil.valueExp(v);
         e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
@@ -10690,31 +10691,31 @@ algorithm
         (cache,e,DAE.C_VAR(),attr);
 
     /*/ a constant with parameter subscript
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),DAE.C_PARAM(),_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),DAE.C_PARAM(),_,tt,binding,doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         cr2 = ComponentReference.crefStripLastSubs(cr);
         subsc = ComponentReference.crefLastSubs(cr);
-        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info),0);
+        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Absyn.MSG(info),0);
         e = ValuesUtil.valueExp(v);
         e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
       then
         (cache,e,DAE.C_PARAM(),attr);*/
 
     // a constant -> evaluate binding
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = Types.equivtypes(tt,idTp);
-        (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info),0);
+        (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Absyn.MSG(info),0);
         e = ValuesUtil.valueExp(v);
         const = DAE.C_CONST(); //Types.constAnd(DAE.C_CONST(), constSubs);
       then
         (cache,e,const,attr);
 
     // a constant, couldn't evaluate binding, replace with it!
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = Types.equivtypes(tt,idTp);
-        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info),0));
+        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Absyn.MSG(info),0));
         // constant binding
         DAE.EQBOUND(exp = e, constant_ = DAE.C_CONST()) = binding;
         // adrpo: todo -> subscript the binding expression
@@ -10725,10 +10726,10 @@ algorithm
         (cache,e,const,attr);
 
     // a constant, couldn't evaluate binding, replace with it!
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = Types.equivtypes(tt,idTp);
-        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info),0));
+        failure((_,_) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Absyn.MSG(info),0));
         // constant binding
         DAE.VALBOUND(valBound = v) = binding;
         e = ValuesUtil.valueExp(v);
@@ -10749,7 +10750,7 @@ algorithm
 
     // evaluate parameters only if "evalparam" or Config.getEvaluateParametersInAnnotations()is set
     // TODO! also ceval if annotation Evaluate=true.
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.VALBOUND(valBound = v),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = boolOr(Flags.isSet(Flags.EVAL_PARAM), Config.getEvaluateParametersInAnnotations());
         // make it a constant if evalparam is used
@@ -10758,13 +10759,13 @@ algorithm
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info),0);
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Absyn.MSG(info),0);
         e = ValuesUtil.valueExp(v);
       then
         (cache,e,DAE.C_PARAM(),attr);
 
     // a binding equation and evalparam
-    case (cache,env,cr,attr as DAE.ATTR(variability = var),_,_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = var),_,_,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = SCode.isParameterOrConst(var);
         true = boolOr(Flags.isSet(Flags.EVAL_PARAM), Config.getEvaluateParametersInAnnotations());
@@ -10776,13 +10777,13 @@ algorithm
         expIdTy = Types.simplifyType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,Expression.makeCrefExp(cr_1,expTy), tt,NONE(),expIdTy);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info),0);
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Absyn.MSG(info),0);
         e = ValuesUtil.valueExp(v);
       then
         (cache,e,DAE.C_PARAM(),attr);
 
     // vectorization of parameters with valuebound
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.VALBOUND(valBound = v),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt);
         expIdTy = Types.simplifyType(idTp);
@@ -10792,7 +10793,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),attr);
 
     // a constant with a binding
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),doVect,InstTypes.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
@@ -10801,7 +10802,7 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
         e = Expression.makeCrefExp(cr_1,expTy);
         e_1 = crefVectorize(doVect,e, tt,NONE(),expIdTy);
-        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Ceval.MSG(info),0);
+        (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE(),Absyn.MSG(info),0);
         e_1 = ValuesUtil.valueExp(v);
       then
         (cache,e_1,DAE.C_CONST(),attr);
@@ -10810,7 +10811,7 @@ algorithm
     // handles things like fcall(data[i]) in 1:X where data is a package constant of the form:
     // data={Common.SingleGasesData.N2,Common.SingleGasesData.H2,Common.SingleGasesData.CO,Common.SingleGasesData.O2,Common.SingleGasesData.H2O, Common.SingleGasesData.CO2}
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,DAE.EQBOUND(evaluatedExp = SOME(v),constant_ = DAE.C_CONST()),doVect,
-          Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(componentRef = DAE.CREF_IDENT(subscriptLst = {DAE.INDEX(DAE.CREF(componentRef = subCr2)),slice as DAE.SLICE(_)}))),idTp),_,_,_)
+          InstTypes.SPLICEDEXPDATA(SOME(DAE.CREF(componentRef = DAE.CREF_IDENT(subscriptLst = {DAE.INDEX(DAE.CREF(componentRef = subCr2)),slice as DAE.SLICE(_)}))),idTp),_,_,_)
       equation
         {DAE.INDEX(index as DAE.CREF(componentRef = subCr1))} = ComponentReference.crefLastSubs(cr);
         true = ComponentReference.crefEqual(subCr1, subCr2);
@@ -10821,7 +10822,7 @@ algorithm
         (cache,e_1,DAE.C_CONST(),attr);
 
     // vectorization of parameters with binding equations
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt) "parameters with equal binding becomes C_PARAM" ;
         expIdTy = Types.simplifyType(idTp);
@@ -10831,7 +10832,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),attr);
 
     // variables with constant binding
-    case (cache,env,cr,attr,_,_,tt,DAE.EQBOUND(exp = exp),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,_,_)
+    case (cache,env,cr,attr,_,_,tt,DAE.EQBOUND(exp = exp),doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
       equation
         expTy = Types.simplifyType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.simplifyType(idTp);
@@ -10884,7 +10885,7 @@ algorithm
 
     // parameters without value but with fixed=false is ok, these are given value during initialization. (as long as not for iterator)
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,NONE()/* not foriter*/,tt,DAE.UNBOUND(),
-        doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_,_,_)
+        doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),_,_,_)
       equation
         false = Types.getFixedVarAttribute(tt);
         expTy = Types.simplifyType(tt);
@@ -10904,7 +10905,7 @@ algorithm
         (cache,Expression.makeCrefExp(cr_1,expTy),DAE.C_PARAM(),attr);
 
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)
-    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,_,_)
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.UNBOUND(),doVect,InstTypes.SPLICEDEXPDATA(sexp,idTp),pre,_,_)
       equation
         /* Disable warning since this seems to be the wrong place to check it or the message is at least wrong
         genWarning = Types.isFixedWithNoBinding(tt, SCode.PARAM());
@@ -11901,15 +11902,15 @@ algorithm
       equation
         int_dim = Expression.dimensionSize(inDimension);
         true = Types.isParameterOrConstant(inConst);
-        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript, int_dim, inImpl, Ceval.MSG(inInfo), 0);
+        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript, int_dim, inImpl, Absyn.MSG(inInfo), 0);
       then
         (cache, sub);
 
     case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _)
       equation
         true = Types.isParameterOrConstant(inConst);
-        (cache, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Ceval.MSG(inInfo),0);
-        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript, int_dim, inImpl, Ceval.MSG(inInfo), 0);
+        (cache, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Absyn.MSG(inInfo),0);
+        (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript, int_dim, inImpl, Absyn.MSG(inInfo), 0);
       then
         (cache, sub);
 
@@ -12261,7 +12262,7 @@ algorithm
       Boolean impl,cond;
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       DAE.Type ty;
 
     case (cache,env,e1,e2,e3,DAE.C_VAR(),_,_,_,impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
@@ -12269,14 +12270,14 @@ algorithm
       equation
         false = valueEq(Types.getDimensionSizes(trueType),Types.getDimensionSizes(falseType));
         // We have different dimensions in the branches, so we should consider the condition structural in order to handle more models
-        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st, Ceval.NO_MSG(),0);
+        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st, Absyn.NO_MSG(),0);
         res = Util.if_(cond, e2, e3);
         ty = Util.if_(cond, trueType, falseType);
       then (cache,res,ty);
     case (cache,env,e1,e2,e3,DAE.C_PARAM(),_,_,_,impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
     case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,impl,st,_)
       equation
-        msg = Util.if_(Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));
+        msg = Util.if_(Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env), Absyn.NO_MSG(), Absyn.MSG(inInfo));
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg,0);
         res = Util.if_(cond, e2, e3);
         ty = Util.if_(cond, trueType, falseType);
@@ -12345,7 +12346,7 @@ algorithm
         cr = ComponentReference.crefPrependIdent(prefixCr,n,{},ty2);
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.NO_MSG(),0);
+        (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Absyn.NO_MSG(),0);
       then
         (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
   end matchcontinue;
@@ -12386,7 +12387,7 @@ algorithm
       equation
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.T_UNKNOWN_DEFAULT,{}));
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG(),0);
+        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Absyn.NO_MSG(),0);
         ty2 = Types.simplifyType(t);
       then
         (cache,ComponentReference.makeCrefIdent(n,ty2,ss_1));
@@ -12397,7 +12398,7 @@ algorithm
         (cache,_,t,_,_,_,_,componentEnv,_) = Lookup.lookupVar(cache, env, ComponentReference.makeCrefIdent(n,DAE.T_UNKNOWN_DEFAULT,{}));
         ty2 = Types.simplifyType(t);
         sl = Types.getDimensionSizes(t);
-        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.NO_MSG(),0);
+        (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Absyn.NO_MSG(),0);
        //(cache,c_1) = canonCref2(cache, env, c, ComponentReference.makeCrefIdent(n,ty2,ss), impl);
        (cache, c_1) = canonCref(cache, componentEnv, c, impl);
       then
@@ -14521,7 +14522,7 @@ algorithm
     case (_, _, _, _, DAE.PROP(DAE.T_INTEGER(varLst = _), cnst), _, _, _, _, _)
       equation
         true = Types.isParameterOrConstant(cnst);
-        (cache, Values.INTEGER(i), _) = Ceval.ceval(inCache, inEnv, inExp, inImpl, inST, Ceval.NO_MSG(), 0);
+        (cache, Values.INTEGER(i), _) = Ceval.ceval(inCache, inEnv, inExp, inImpl, inST, Absyn.NO_MSG(), 0);
       then
         (cache, SOME(DAE.DIM_INTEGER(i)));
 

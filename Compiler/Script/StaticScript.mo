@@ -142,7 +142,7 @@ algorithm
       equation
         exp = Static.elabCodeExp(crexp,cache,env,DAE.C_TYPENAME(),info);
         // We need to force eval in order to get the correct prefix
-        (cache,v,SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),Ceval.MSG(info),0);
+        (cache,v,SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),Absyn.MSG(info),0);
         Values.CODE(Absyn.C_TYPENAME(className)) = CevalScript.evalCodeTypeName(v,env);
 
         cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";

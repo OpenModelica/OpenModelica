@@ -49,9 +49,6 @@ public import HashTable;
 public import HashTable2;
 
 
-public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
-public constant DAE.DAElist emptyDae = DAE.DAE({});
-
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging."
   input DAE.Const const;
@@ -2007,7 +2004,7 @@ algorithm
       equation
         // Debug.fprintln(Flags.FAILTRACE, "- DAEUtil.daeToRecordValue typeOfRHS: " +& ExpressionDump.typeOfString(rhs));
         info = getElementSourceFileInfo(source);
-        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Ceval.MSG(info),0);
+        (cache, value,_) = Ceval.ceval(cache, env, rhs, impl, NONE(), Absyn.MSG(info),0);
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = ComponentReference.printComponentRefStr(cr);
       then
@@ -2015,7 +2012,7 @@ algorithm
     /*
     case (cache,env,cname,(DAE.EQUATION(exp = DAE.CREF(componentRef = cr),scalar = rhs)::rest),impl)
       equation
-        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl,NONE(), NONE(), Ceval.MSG());
+        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl,NONE(), NONE(), Absyn.MSG());
         (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
         cr_str = ComponentReference.printComponentRefStr(cr);
       then
@@ -2983,7 +2980,7 @@ algorithm
         true = intEq(i,0);
         // evalute expression
         ((e1,(ht,_,_))) = Expression.traverseExp(e,evaluateAnnotationTraverse,(ht,0,0));
-        (cache, value,_) = Ceval.ceval(inCache, env, e1, false,NONE(),Ceval.NO_MSG(),0);
+        (cache, value,_) = Ceval.ceval(inCache, env, e1, false,NONE(),Absyn.NO_MSG(),0);
          e1 = ValuesUtil.valueExp(value);
         // e1 = e;
         ht1 = BaseHashTable.add((cr,e1),ht);
@@ -3050,7 +3047,7 @@ This function traverses the entire dae."
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, emptyFuncTree, renameUniqueVisitor, 0);
+  (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, renameUniqueVisitor, 0);
 end renameUniqueOuterVars;
 
 protected function renameUniqueVisitor "
@@ -3097,7 +3094,7 @@ This function traverses the entire dae."
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
-  (odae,_,_) := traverseDAE(dae, emptyFuncTree, nameUniqueVisitor, 0);
+  (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, nameUniqueVisitor, 0);
 end nameUniqueOuterVars;
 
 protected function nameUniqueVisitor "
@@ -4693,7 +4690,7 @@ public function avlTreeNew "Return an empty tree"
   output DAE.AvlTree tree;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  tree := emptyFuncTree; // DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
+  tree := DAE.emptyFuncTree;
 end avlTreeNew;
 
 public function avlTreeToList "return tree as a flat list of tuples"
@@ -5447,7 +5444,7 @@ algorithm
     case _
       equation
         ht = HashTable.emptyHashTable();
-        (d,_,ht) = traverseDAE(dae,emptyFuncTree,simpleInlineDerEuler,ht);
+        (d,_,ht) = traverseDAE(dae,DAE.emptyFuncTree,simpleInlineDerEuler,ht);
       then d;
   end matchcontinue;
 end transformDerInline;

@@ -303,7 +303,7 @@ protected function cevalCurrentSimulationResultExp
   input Env.Env env;
   input String inputFilename;
   input Interactive.SymbolTable st;
-  input Ceval.Msg msg;
+  input Absyn.Msg msg;
   output Env.Cache outCache;
   output String filename;
 algorithm
@@ -762,7 +762,7 @@ public function cevalInteractiveFunctions
   input Env.Env inEnv;
   input DAE.Exp inExp "expression to evaluate";
   input Interactive.SymbolTable inSymbolTable;
-  input Ceval.Msg msg;
+  input Absyn.Msg msg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -812,7 +812,7 @@ protected function cevalInteractiveFunctions2
   input String inFunctionName;
   input list<Values.Value> inVals;
   input Interactive.SymbolTable inSt;
-  input Ceval.Msg msg;
+  input Absyn.Msg msg;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
@@ -2970,7 +2970,7 @@ public function getIncidenceMatrix "function getIncidenceMatrix
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   input String filenameprefix;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -2991,7 +2991,7 @@ algorithm
       Absyn.Program p;
       list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String flatModelicaStr;
 
@@ -3146,7 +3146,7 @@ algorithm
         //(cache,env,_,dae) = Inst.instantiateClass(cache,env,InnerOuter.emptyInstHierarchy,scodeP,className);
         //ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         ic_1 = ic;
-        dae = DAEUtil.emptyDae;*/
+        dae = DAE.emptyDae;*/
       then (cache,env,dae,Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
 
     case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),_,_)
@@ -3330,7 +3330,7 @@ public function translateGraphics "function: translates the graphical annotation
   input Env.Env inEnv;
   input Absyn.Path className;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
@@ -3344,7 +3344,7 @@ algorithm
       Absyn.Program p;
       list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       Absyn.TimeStamp ts;
@@ -3384,7 +3384,7 @@ protected function calculateSimulationSettings "function calculateSimulationSett
   input Env.Env inEnv;
   input list<Values.Value> vals;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output SimCode.SimulationSettings outSimSettings;
 algorithm
@@ -3397,7 +3397,7 @@ algorithm
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
       list<Env.Frame> env;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Boolean measureTime;
       String cflags,simflags;
@@ -3534,7 +3534,7 @@ protected function buildModel "function buildModel
   input Env.Env inEnv;
   input list<Values.Value> inValues;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Interactive.SymbolTable outInteractiveSymbolTable3;
   output String compileDir;
@@ -3560,7 +3560,7 @@ algorithm
       SimCode.SimulationSettings simSettings;
       Values.Value starttime,stoptime,interval,tolerance,method,options,outputFormat,variableFilter;
       list<Values.Value> vals, values;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Boolean existFile;
       Absyn.TimeStamp ts;
@@ -3709,7 +3709,7 @@ protected function buildOpenTURNSInterface "builds the OpenTURNS interface by ca
   input Env.Env inEnv;
   input list<Values.Value> vals;
   input Interactive.SymbolTable inSt;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output String scriptFile;
   output Interactive.SymbolTable outSt;
@@ -3755,7 +3755,7 @@ protected function runOpenTURNSPythonScript
   input Env.Env inEnv;
   input list<Values.Value> vals;
   input Interactive.SymbolTable inSt;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output String outLogFile;
   output Interactive.SymbolTable outSt;
@@ -3926,7 +3926,7 @@ public function checkModel "function: checkModel
   input Env.Env inEnv;
   input Absyn.Path className;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
@@ -3938,7 +3938,7 @@ algorithm
       list<Env.Frame> env;
       Interactive.SymbolTable st;
       Absyn.Program p;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize;
       String errorMsg,warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
@@ -4113,7 +4113,7 @@ protected function dumpXMLDAE "function dumpXMLDAE
   input Env.Env inEnv;
   input list<Values.Value> vals;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Interactive.SymbolTable outInteractiveSymbolTable3;
   output String xml_filename "initFileName";
@@ -4130,7 +4130,7 @@ algorithm
       Env.Cache cache;
       Boolean addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       Interactive.SymbolTable st;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       DAE.DAElist dae_1,dae;
       list<SCode.Element> p_1;
 
@@ -4309,7 +4309,7 @@ public function checkAllModelsRecursive
   input Absyn.Path className;
   input Boolean inCheckProtected;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
@@ -4320,7 +4320,7 @@ algorithm
       list<Absyn.Path> allClassPaths;
       Interactive.SymbolTable st;
       Absyn.Program p;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String ret;
       list<Env.Frame> env;
@@ -4367,7 +4367,7 @@ function checkAll
   input Env.Env inEnv;
   input list<Absyn.Path> allClasses;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
 algorithm
   _ := matchcontinue (inCache,inEnv,allClasses,inInteractiveSymbolTable,inMsg)
     local
@@ -4375,7 +4375,7 @@ algorithm
       Absyn.Path className;
       Interactive.SymbolTable st;
       Absyn.Program p;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       String  str, s;
       list<Env.Frame> env;
@@ -4427,7 +4427,7 @@ public function buildModelBeast "function buildModelBeast
   input Env.Env inEnv;
   input list<Values.Value> vals;
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output Interactive.SymbolTable outInteractiveSymbolTable;
   output String compileDir;
@@ -4447,7 +4447,7 @@ algorithm
       Absyn.Class cdef;
       list<Env.Frame> env;
       Values.Value starttime,stoptime,interval,method,tolerance,options;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Absyn.Within win1;
       Env.Cache cache;
       SimCode.SimulationSettings simSettings;
@@ -6189,7 +6189,7 @@ public function cevalCallFunctionEvaluateOrGenerate
   input list<Values.Value> inValuesValueLst;
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSymTab;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   input Boolean bIsCompleteFunction;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -6204,7 +6204,7 @@ algorithm
       list<DAE.Exp> expl;
       Boolean  print_debug;
       list<Values.Value> vallst;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       list<Interactive.CompiledCFunction> cflist;
       Option<Interactive.SymbolTable> st;
@@ -6496,7 +6496,7 @@ public function cevalCallFunction "function: cevalCallFunction
   input list<Values.Value> inValuesValueLst;
   input Boolean impl;
   input Option<Interactive.SymbolTable> inSymTab;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -6510,7 +6510,7 @@ algorithm
       Absyn.Path funcpath;
       list<DAE.Exp> expl;
       list<Values.Value> vallst, pubVallst, proVallst;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       Env.Cache cache;
       Option<Interactive.SymbolTable> st;
       Absyn.Path complexName;
@@ -6577,7 +6577,7 @@ algorithm
       then
         fail();
 
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg as Ceval.MSG(info), _)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg as Absyn.MSG(info), _)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         true = isCompleteFunction(cache, env, funcpath);
@@ -6636,18 +6636,18 @@ public function cevalIsExternalObjectConstructor
   input Env.Cache cache;
   input Absyn.Path funcpath;
   input Env.Env env;
-  input Ceval.Msg msg;
+  input Absyn.Msg msg;
 protected
   Absyn.Path funcpath2;
   DAE.Type tp;
   Option<Absyn.Info> info;
 algorithm
   _ := match(cache, funcpath, env, msg)
-    case (_, _, {}, Ceval.NO_MSG()) then fail();
-    case (_, _, _, Ceval.NO_MSG())
+    case (_, _, {}, Absyn.NO_MSG()) then fail();
+    case (_, _, _, Absyn.NO_MSG())
       equation
         (funcpath2, Absyn.IDENT("constructor")) = Absyn.splitQualAndIdentPath(funcpath);
-        info = Util.if_(Util.isEqual(msg, Ceval.NO_MSG()), NONE(), SOME(Absyn.dummyInfo));
+        info = Util.if_(Util.isEqual(msg, Absyn.NO_MSG()), NONE(), SOME(Absyn.dummyInfo));
         (_, tp, _) = Lookup.lookupType(cache, env, funcpath2, info);
         Types.externalObjectConstructorType(tp);
       then
@@ -6667,7 +6667,7 @@ public function ceval "
   input DAE.Exp inExp;
   input Boolean inBoolean "impl";
   input Option<Interactive.SymbolTable> inST;
-  input Ceval.Msg inMsg;
+  input Absyn.Msg inMsg;
   input Integer numIter;
   output Env.Cache outCache;
   output Values.Value outValue;
@@ -6685,7 +6685,7 @@ algorithm
       Option<Interactive.SymbolTable> stOpt;
       Boolean impl;
       list<Env.Frame> env;
-      Ceval.Msg msg;
+      Absyn.Msg msg;
       list<Values.Value> vallst;
       list<DAE.Exp> expl;
       Values.Value newval,value;
@@ -6761,7 +6761,7 @@ algorithm
 
     case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _, _)
       equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Ceval.NO_MSG(), numIter+1);
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), numIter+1);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -6769,7 +6769,7 @@ algorithm
     case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _, _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Ceval.NO_MSG(), numIter+1);
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), numIter+1);
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
@@ -6818,7 +6818,7 @@ algorithm
            ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _, _)
        equation
          true = Expression.arrayContainWholeDimension(dims);
-         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), Ceval.MSG(inInfo), numIter+1);
+         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), Absyn.MSG(inInfo), numIter+1);
          ty = Types.typeOfValue(v);
          cevalType = Types.simplifyType(ty);
        then

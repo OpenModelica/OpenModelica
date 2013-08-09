@@ -64,6 +64,7 @@ protected import ExpressionSimplify;
 protected import ExpressionSimplifyTypes;
 protected import Flags;
 protected import Inst;
+protected import InstTypes;
 protected import NFInstUtil;
 protected import List;
 protected import Lookup;
@@ -365,7 +366,7 @@ algorithm
       equation
         state = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph);
-        (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplifyTypes.optionSimplifyOnly)));
+        (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAE.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplifyTypes.optionSimplifyOnly)));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
 
     case (_,_,_,_,_,_,_,_,_,_,_,_)
@@ -525,7 +526,7 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
         true = Types.isParameterOrConstant(cnst);
-        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG(),0);
+        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Absyn.NO_MSG(),0);
         // check if valList contains Values.EMPTY()
         containsEmpty = ValuesUtil.containsEmpty(valList);
         generateNoConstantBindingError(containsEmpty, info);
@@ -557,7 +558,7 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl,NONE(),true,pre,info);
         DAE.PROP(DAE.T_BOOL(varLst = _),cnst) = Types.propsAnd(props);
         true = Types.isParameterOrConstant(cnst);
-        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Ceval.NO_MSG(),0);
+        (cache,valList,_) = Ceval.cevalList(cache, env, expl1, impl, NONE(), Absyn.NO_MSG(),0);
         blist = List.map(valList,ValuesUtil.valueBool);
         b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, alwaysUnroll, graph);
@@ -660,7 +661,7 @@ algorithm
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst),_) =
           Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Ceval.MSG(info), 0) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Absyn.MSG(info), 0) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -671,7 +672,7 @@ algorithm
       equation
         (cache,e_1,DAE.PROP(type_ = DAE.T_ARRAY(ty = id_t), constFlag = cnst),_) = Static.elabExp(cache,env, e, impl,NONE(),true, pre, info);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Ceval.NO_MSG(), 0) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl,NONE(), Absyn.NO_MSG(), 0) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, ih, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -770,7 +771,7 @@ algorithm
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addDefiniteRoot(graph, cr_);
       then
-        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // Connections.potentialRoot(cr)
     // TODO: Merge all cases for potentialRoot below using standard way of handling named/positional arguments and type conversion Integer->Real
@@ -782,7 +783,7 @@ algorithm
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, 0.0);
       then
-        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // Connections.potentialRoot(cr,priority) - priority as Integer positinal argument
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
@@ -793,7 +794,7 @@ algorithm
         (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(ipriority));
       then
-        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // Connections.potentialRoot(cr,priority =prio ) - priority as named argument
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
@@ -803,7 +804,7 @@ algorithm
         Error.addSourceMessage(Error.ARGUMENT_MUST_BE_INTEGER,
           {"Second", "Connections.potentialRoot", ""}, info);
       then
-        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // Connections.branch(cr1,cr2)
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(info=info,exp=Absyn.CALL(
@@ -816,7 +817,7 @@ algorithm
         (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
         graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
       then
-        (cache,env,ih,DAEUtil.emptyDae,csets,ci_state,graph);
+        (cache,env,ih,DAE.emptyDae,csets,ci_state,graph);
 
     // no return calls
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(exp = e, info = info),initial_,impl,graph)
@@ -960,7 +961,7 @@ algorithm
         dae = DAEUtil.joinDaes(dae1,dae2);
       then dae;
     case(DAE.ARRAY(ty,s,{}),_) equation
-      then DAEUtil.emptyDae;
+      then DAE.emptyDae;
   end match;
 end instEquationNoRetCallVectorization;
 
@@ -1166,7 +1167,7 @@ algorithm
       InstanceHierarchy ih;
 
     case (cache,_,_,_,_,csets,_,_,_,Values.ARRAY(valueLst = {}),_,_,_,graph)
-    then (cache,DAEUtil.emptyDae,csets,graph);  /* impl */
+    then (cache,DAE.emptyDae,csets,graph);  /* impl */
 
     // array equation, use instEEquation
     case (cache,env,ih,mods,pre,csets,ci_state,i,ty,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
@@ -1847,7 +1848,7 @@ algorithm
       DAE.Type t;
       list<DAE.Exp> lhs_idxs, rhs_idxs;
       DAE.DAElist dae1, dae2;
-    case (_, _, _, _, {}, {}, _, _) then DAEUtil.emptyDae;
+    case (_, _, _, _, {}, {}, _, _) then DAE.emptyDae;
     case (lhs, rhs, t, _, lhs_idx :: lhs_idxs, rhs_idx :: rhs_idxs, _, _)
       equation
         dae1 = instEqEquation2(lhs_idx, rhs_idx, t, inConst, inSource, inInitial);
@@ -1905,7 +1906,7 @@ algorithm
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(connectorType = SCode.POTENTIAL(), parallelism = SCode.NON_PARALLEL()),_,DAE.UNBOUND(),_,_,_,_,_)
         = Lookup.lookupVar(cache, env_1, ComponentReference.makeCrefIdent(i,DAE.T_UNKNOWN_DEFAULT,{}));
-        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), Ceval.MSG(info), 0) "FIXME: Check bounds";
+        (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE(), Absyn.MSG(info), 0) "FIXME: Check bounds";
         (cache,stmts) = loopOverRange(cache, env_1, ih, pre, ci_state, i, v, sl, source, initial_, impl, unrollForLoops);
       then
         (cache,stmts);
@@ -2170,7 +2171,7 @@ algorithm
         dae = makeDaeEquation(lhs,rhs,source,initial_);
         // adrpo: TODO! FIXME! shouldn't we return the dae here??!!
       // PA: do not know, but at least return the functions.
-      then DAEUtil.emptyDae;
+      then DAE.emptyDae;
 
     // adrpo 2009-05-15: also T_COMPLEX that is NOT record but TYPE should be allowed
     //                   as is used in Modelica.Mechanics.MultiBody (Orientation type)
@@ -3106,7 +3107,7 @@ algorithm
         s2 = Dump.printComponentRefStr(c1);
         Error.addSourceMessage(Error.SAME_CONNECT_INSTANCE, {s1, s2}, info);
       then
-        (cache, env, ih, sets, DAEUtil.emptyDae, graph);
+        (cache, env, ih, sets, DAE.emptyDae, graph);
 
     // Check if either of the components are conditional components with
     // condition = false, in which case we should not instantiate the connection.
@@ -3116,7 +3117,7 @@ algorithm
         c2_1 = ComponentReference.toExpCref(c2);
         true = ConnectUtil.connectionContainsDeletedComponents(c1_1, c2_1, sets);
       then
-        (cache, env, ih, sets, DAEUtil.emptyDae, graph);
+        (cache, env, ih, sets, DAE.emptyDae, graph);
 
     // adrpo: handle expandable connectors!
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
@@ -3320,7 +3321,7 @@ algorithm
       Absyn.Direction dir1,dir2;
       DAE.Binding binding;
       Option<DAE.Const> cnstForRange;
-      Lookup.SplicedExpData splicedExpData;
+      InstTypes.SplicedExpData splicedExpData;
       ClassInf.State state;
       list<String> variables1, variables2, variablesUnion;
       DAE.ElementSource source;
@@ -3747,7 +3748,7 @@ algorithm
 
     // handle empty case
     case (cache,env,ih,sets,pre,c1,c2,{},impl,graph,_)
-      then (cache,env,ih,sets,DAEUtil.emptyDae,graph);
+      then (cache,env,ih,sets,DAE.emptyDae,graph);
 
     // handle recursive call
     case (cache,env,ih,sets,pre,c1,c2,name::names,impl,graph,_)
@@ -4173,7 +4174,7 @@ algorithm
 
         sets = ConnectUtil.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2,source);
       then
-        (cache,env,ih,sets,DAEUtil.emptyDae,graph);
+        (cache,env,ih,sets,DAE.emptyDae,graph);
 
     // Non-flow and Non-stream type Parameters and constants generate assert statements
     case (cache,env,ih,sets,pre,c1,f1,t1,_,c2,f2,t2,_,SCode.POTENTIAL(),_,_,graph,_)
@@ -4218,7 +4219,7 @@ algorithm
 
         sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
       then
-        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
+        (cache,env,ih,sets_1,DAE.emptyDae,graph);
 
     // Connection of arrays of complex types
     case (cache,env,ih,sets,pre,
@@ -4257,7 +4258,7 @@ algorithm
 
         sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source, ct);
       then
-        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
+        (cache,env,ih,sets_1,DAE.emptyDae,graph);
 
     // Connection of connectors with an equality constraint.
     case (cache,env,ih,sets,pre,c1,f1,t1 as DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,idim1,inlineType1))),_,
@@ -4422,7 +4423,7 @@ algorithm
       then
         (cache, env, ih, sets, dae1, graph);
 
-    else (inCache, inEnv, inIH, inSets, DAEUtil.emptyDae, inGraph);
+    else (inCache, inEnv, inIH, inSets, DAE.emptyDae, inGraph);
 
   end match;
 end connectArrayComponents;
@@ -4477,7 +4478,7 @@ algorithm
       InstanceHierarchy ih;
 
     case (cache,env,ih,sets,_,_,_,{},_,_,_,{},_,_,_,_,graph,_)
-      then (cache,env,ih,sets,DAEUtil.emptyDae,graph);
+      then (cache,env,ih,sets,DAE.emptyDae,graph);
     case (cache,env,ih,sets,_,c1,f1,
         (DAE.TYPES_VAR(name = n,attributes =(attr1 as DAE.ATTR(connectorType = ct,variability = vta)),ty = ty1) :: xs1),_,c2,f2,
         (DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(variability = vtb)),ty = ty2) :: xs2),_,_,_,_,graph,_)

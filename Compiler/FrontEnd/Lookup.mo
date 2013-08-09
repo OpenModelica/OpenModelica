@@ -49,6 +49,7 @@ public import ClassInf;
 public import DAE;
 public import Env;
 public import HashTableStringToPath;
+public import InstTypes;
 public import SCode;
 public import Util;
 public import Types;
@@ -73,22 +74,6 @@ protected import Prefix;
 protected import Static;
 protected import UnitAbsyn;
 protected import SCodeDump;
-
-public uniontype SearchStrategy
-  record SEARCH_LOCAL_ONLY
-    "this one searches only in the local scope, it won't find *time* variable"
-  end SEARCH_LOCAL_ONLY;
-  record SEARCH_ALSO_BUILTIN
-    "this one searches also in the builtin scope, it will find *time* variable"
-  end SEARCH_ALSO_BUILTIN;
-end SearchStrategy;
-
-public uniontype SplicedExpData
-  record SPLICEDEXPDATA "data for 'spliced expression' (typically a component reference) returned in lookupVar"
-    Option<DAE.Exp> splicedExp "the spliced expression";
-    DAE.Type identType "the type of the variable without subscripts, needed for vectorization";
-  end SPLICEDEXPDATA;
-end SplicedExpData;
 
 /*   - Lookup functions
 
@@ -208,7 +193,7 @@ algorithm
         Inst.instClassIn(
           cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(),
-          ci_state, c, SCode.PUBLIC(), {}, false, Inst.INNER_CALL(),
+          ci_state, c, SCode.PUBLIC(), {}, false, InstTypes.INNER_CALL(),
           ConnectionGraph.EMPTY, Connect.emptySet, NONE());
         // build names
         (_,names) = SCode.getClassComponents(c);
@@ -234,7 +219,7 @@ algorithm
         (cache,_::env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), c,
-          {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+          {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
         SCode.CLASS(name=id) = c;
         (cache,t,env_2) = lookupTypeInEnv(cache,env_1,Absyn.IDENT(id));
       then
@@ -670,7 +655,7 @@ protected function lookupUnqualifiedImportedVarInFrame "function: lookupUnqualif
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
   output Boolean outBoolean;
-  output SplicedExpData splicedExpData;
+  output InstTypes.SplicedExpData splicedExpData;
   output Env.Env outComponentEnv;
   output String name;
 algorithm
@@ -1003,7 +988,7 @@ public function lookupVar
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
-  output SplicedExpData outSplicedExpData;
+  output InstTypes.SplicedExpData outSplicedExpData;
   output Env.Env outClassEnv "only used for package constants";
   output Env.Env outComponentEnv "only used for package constants";
   output String name "so the FQ path can be constructed";
@@ -1017,7 +1002,7 @@ algorithm
       list<Env.Frame> env, componentEnv, classEnv;
       DAE.ComponentRef cref;
       Env.Cache cache;
-      SplicedExpData splicedExpData;
+      InstTypes.SplicedExpData splicedExpData;
       Option<DAE.Const> cnstForRange;
 
     /*
@@ -1034,7 +1019,7 @@ algorithm
     // try the old lookupVarInternal
     case (cache,env,cref)
       equation
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarInternal(cache, env, cref, SEARCH_ALSO_BUILTIN());
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarInternal(cache, env, cref, InstTypes.SEARCH_ALSO_BUILTIN());
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);
 
@@ -1086,13 +1071,13 @@ public function lookupVarInternal "function: lookupVarInternal
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
-  input SearchStrategy searchStrategy "if SEARCH_LOCAL_ONLY it won't search in the builtin scope";
+  input InstTypes.SearchStrategy searchStrategy "if SEARCH_LOCAL_ONLY it won't search in the builtin scope";
   output Env.Cache outCache;
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
-  output SplicedExpData splicedExpData;
+  output InstTypes.SplicedExpData splicedExpData;
   output Env.Env outClassEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
   output Env.Env outComponentEnv "the component environment of the variable";
   output String name;
@@ -1128,7 +1113,7 @@ algorithm
         (cache,attr,ty,binding,cnstForRange,splicedExpData,env,componentEnv,name);
 
     // If not in top scope, look in top scope for builtin variables, e.g. time.
-    case (cache, fs as _::_::_, ref, SEARCH_ALSO_BUILTIN())
+    case (cache, fs as _::_::_, ref, InstTypes.SEARCH_ALSO_BUILTIN())
       equation
         true = Builtin.variableIsBuiltin(ref);
         (f as Env.FRAME(clsAndVars = ht)) = Env.topFrame(fs);
@@ -1176,7 +1161,7 @@ public function lookupVarInPackages "function: lookupVarInPackages
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
-  output SplicedExpData splicedExpData "currently not relevant for constants, but might be used in the future";
+  output InstTypes.SplicedExpData splicedExpData "currently not relevant for constants, but might be used in the future";
   output Env.Env outComponentEnv;
   output String name "We only return the environment the component was found in; not its FQ name.";
 algorithm
@@ -1271,7 +1256,7 @@ algorithm
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
         Inst.instClassIn(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {},
-          /*true*/false, Inst.INNER_CALL(), ConnectionGraph.EMPTY,
+          /*true*/false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY,
           Connect.emptySet, NONE());
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
@@ -1363,14 +1348,14 @@ public function lookupVarLocal
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
-  output SplicedExpData splicedExpData;
+  output InstTypes.SplicedExpData splicedExpData;
   output Env.Env outClassEnv;
   output Env.Env outComponentEnv;
   output String name;
 algorithm
   // adrpo: use lookupVarInternal as is the SAME but it doesn't search in the builtin scope!
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outClassEnv,outComponentEnv,name) :=
-    lookupVarInternal(inCache, inEnv, inComponentRef, SEARCH_LOCAL_ONLY());
+    lookupVarInternal(inCache, inEnv, inComponentRef, InstTypes.SEARCH_LOCAL_ONLY());
 end lookupVarLocal;
 
 public function lookupIdentLocal "function: lookupIdentLocal
@@ -1936,7 +1921,7 @@ algorithm
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
         (cache,env_1,_,_,_,_,t,_,_,_) =
           Inst.instClass(cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-            DAE.NOMOD(), Prefix.NOPRE(), cdef, {}, false, Inst.TOP_CALL(),
+            DAE.NOMOD(), Prefix.NOPRE(), cdef, {}, false, InstTypes.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
         (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
         // s = Types.unparseType(t);
@@ -2702,7 +2687,7 @@ protected function lookupVarF
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE() if this is not a for iterator";
-  output SplicedExpData splicedExpData;
+  output InstTypes.SplicedExpData splicedExpData;
   output Env.Env outComponentEnv;
   output String name;
 algorithm
@@ -2744,7 +2729,7 @@ algorithm
         splicedExp = Expression.makeCrefExp(cref_,tty);
         //print("splicedExp ="+&ExpressionDump.dumpExpStr(splicedExp,0)+&"\n");
       then
-        (cache,attr,ty_1,bind,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
+        (cache,attr,ty_1,bind,cnstForRange,InstTypes.SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv,name);
 
     // Qualified variables looked up through component environment with a spliced exp
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
@@ -2754,7 +2739,7 @@ algorithm
         // this doesn't work yet!
         // false = Absyn.isOuter(io);
         //
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);
@@ -2765,17 +2750,17 @@ algorithm
         splicedExp = Expression.makeCrefExp(xCref,eType);
         vt = SCode.variabilityOr(vt,vt2);
       then
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv,name);
 
     // Qualified componentname without spliced Expression.
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       equation
         (cache,DAE.TYPES_VAR(_,DAE.ATTR(variability = vt2),ty2,bind,cnstForRange),_,_,_,componentEnv) = lookupVar2(cache,ht, id);
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(texp,idTp),_,componentEnv,name) = lookupVar(cache, componentEnv, ids);
         {} = elabComponentRecursive((texp));
         vt = SCode.variabilityOr(vt,vt2);
       then
-        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
+        (cache,DAE.ATTR(ct,prl,vt,di,io,vis),ty,binding,cnstForRange,InstTypes.SPLICEDEXPDATA(NONE(),idTp),componentEnv,name);
   end matchcontinue;
 end lookupVarF;
 
@@ -2972,7 +2957,7 @@ algorithm
     cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
     DAE.NOMOD(),Prefix.NOPRE(),
     ClassInf.META_RECORD(Absyn.IDENT("")), List.map1(els,Util.makeTuple,DAE.NOMOD()),
-    {}, false, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
+    {}, false, InstTypes.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
   varlst := Types.boxVarLst(varlst);
   ts := Types.mkTypeSource(SOME(path));
   ftype := DAE.T_METARECORD(utPath,index,varlst,singleton,ts);

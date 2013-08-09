@@ -1119,6 +1119,14 @@ public uniontype Ref
   end RIM;
 end Ref;
 
+public uniontype Msg "Controls output of error-messages"
+  record MSG "Give error message" 
+    Info info;
+  end MSG;
+
+  record NO_MSG "Do not give error message" end NO_MSG;
+end Msg;
+
 /* "From here down, only Absyn helper functions should be present.
  Thus, no actual absyn uniontype definitions." */
 
