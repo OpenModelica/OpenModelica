@@ -488,27 +488,6 @@ algorithm
 end fixElement;
 
 
-function fixElementItem
-  input Absyn.ElementItem elementItemin;
-  input String name;
-  input Integer index;
-  input Boolean singleton;
-  output Absyn.ElementItem elementItemout;
-
-algorithm
-  elementItemout := match(elementItemin,name,index,singleton)
-    local
-      Absyn.Element element;
-    case(Absyn.ELEMENTITEM(element),_,_,_)
-      equation
-        element = fixElement(element,name,index,singleton);
-      then Absyn.ELEMENTITEM(element);
-      // Don't fix comments, annotations
-    case(_,_,_,_)
-      then elementItemin;
-  end match;
-end fixElementItem;
-
 
 function fixElementItems
   input list<Absyn.ElementItem> elementItemsin;
@@ -517,20 +496,19 @@ function fixElementItems
   input Boolean singleton;
   output list<Absyn.ElementItem> elementItemsout;
 algorithm
-  elementItemsout := matchcontinue(elementItemsin,name,index,singleton)
+  elementItemsout := match (elementItemsin,name,index,singleton)
     local
-      Absyn.ElementItem element;
+      Absyn.Element element;
+      Absyn.ElementItem elementitem;
       list<Absyn.ElementItem> rest;
-    case(element::rest,_,_,_)
+    case({},_,_,_) then {};
+    case(Absyn.ELEMENTITEM(element)::rest,_,_,_)
       equation
-        element = fixElementItem(element,name,index,singleton);
+        element = fixElement(element,name,index,singleton);
         rest = fixElementItems(rest,name,index+1,singleton);
-      then (element::rest);
-    case(element::{},_,_,_)
-      equation
-        element = fixElementItem(element,name,index,singleton);
-      then (element::{});
-  end matchcontinue;
+      then (Absyn.ELEMENTITEM(element)::rest);
+    case (elementitem::rest,_,_,_) then fixElementItems(rest,name,index,singleton);
+  end match;
 end fixElementItems;
 
 /* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^END^OF^HELPERFUNCTIONS^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
