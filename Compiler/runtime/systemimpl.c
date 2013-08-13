@@ -2205,7 +2205,7 @@ int System_numProcessors()
     return res;
   }
 #endif
-#if defined(_MSC_VER)
+#if defined(__MINGW32__) || defined(_MSC_VER)
   SYSTEM_INFO sysinfo;
   GetSystemInfo( &sysinfo );
   return sysinfo.dwNumberOfProcessors;
