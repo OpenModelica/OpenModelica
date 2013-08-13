@@ -1117,4 +1117,78 @@ algorithm
   end matchcontinue;
 end filterGraph2;
 
+public function merge "Merges the nodes of two different graphs. Needs an ordering function in order to be efficient."
+  input list<tuple<NodeType, list<NodeType>>> graph1;
+  input list<tuple<NodeType, list<NodeType>>> graph2;
+  input EqualFunc eqFunc;
+  input CompareFunc compareFunc;
+  output list<tuple<NodeType, list<NodeType>>> graph;
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+  partial function CompareFunc
+    "Given two nodes, returns true if the first is ordered before the second."
+    input tuple<NodeType,list<NodeType>> inNode1;
+    input tuple<NodeType,list<NodeType>> inNode2;
+    output Boolean isEqual;
+  end CompareFunc;
+algorithm
+  graph := merge2(List.sort(listAppend(graph1,graph2), compareFunc), eqFunc, {});
+end merge;
+
+protected function merge2
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input EqualFunc eqFunc;
+  input list<tuple<NodeType, list<NodeType>>> inAcc;
+  output list<tuple<NodeType, list<NodeType>>> graph;
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  graph := match (inGraph,eqFunc,inAcc)
+    local
+      list<tuple<NodeType, list<NodeType>>> rest;
+      tuple<NodeType, list<NodeType>> node;
+      NodeType n1,n2;
+      list<NodeType> e1,e2;
+      Boolean b;
+    case ({},_,_) then listReverse(inAcc);
+    case ({node},_,_) then listReverse(node::inAcc);
+    case ((n1,e1)::(n2,e2)::rest,_,_)
+      equation
+        b = eqFunc(n1,n2);
+        (node,rest) = merge3(b,n1,e1,n2,e2,rest,eqFunc);
+      then merge2(rest,eqFunc,node::inAcc);
+  end match;
+end merge2;
+
+protected function merge3
+  input Boolean b;
+  input NodeType n1;
+  input list<NodeType> e1;
+  input NodeType n2;
+  input list<NodeType> e2;
+  input list<tuple<NodeType, list<NodeType>>> rest;
+  input EqualFunc eqFunc;
+  output tuple<NodeType, list<NodeType>> elt;
+  output list<tuple<NodeType, list<NodeType>>> outRest;
+  partial function EqualFunc
+    "Given two nodes, returns true if they are equal, otherwise false."
+    input NodeType inNode1;
+    input NodeType inNode2;
+    output Boolean isEqual;
+  end EqualFunc;
+algorithm
+  (elt,outRest) := match (b,n1,e1,n2,e2,rest,eqFunc)
+    case (true,_,_,_,_,_,_) then ((n1,List.unionOnTrue(e1,e2,eqFunc)),rest);
+    case (false,_,_,_,_,_,_) then ((n1,e1),(n2,e2)::rest);
+  end match;
+end merge3;
+
 end Graph;

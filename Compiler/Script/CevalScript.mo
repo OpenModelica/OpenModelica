@@ -69,6 +69,7 @@ protected import BackendDAECreate;
 protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BaseHashSet;
 protected import Builtin;
 protected import CevalFunction;
 protected import CheckModel;
@@ -88,6 +89,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import Global;
 protected import Graph;
+protected import HashSetString;
 protected import Inst;
 protected import InnerOuter;
 protected import List;
@@ -863,7 +865,7 @@ algorithm
       Absyn.ComponentRef  crefCName;
       list<tuple<String,Values.Value>> resultValues;
       list<Real> realVals;
-      list<tuple<String,list<String>>> deps,depstransitive,depstransposed;
+      list<tuple<String,list<String>>> deps,depstransitive,depstransposed,depstransposedtransitive,depsmerged,depschanged;
       Absyn.CodeNode codeNode;
       list<Values.Value> cvars,vals2;
       list<Absyn.Path> paths;
@@ -878,7 +880,8 @@ algorithm
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
       list<SCode.Element> cls;
-      list<String> names;
+      list<String> names, namesPublic, namesChanged, fileNames;
+      HashSetString.HashSet hashSetString;
 
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
@@ -1878,22 +1881,38 @@ algorithm
     case (cache,env,"generateSeparateCodeDependencies",{},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode2(p,false);
-        names = List.map(sp,SCode.getElementName);
+        names = List.filterMap(sp,SCode.getElementName);
+        
         deps = Graph.buildGraph(names,buildDependencyGraph,sp);
-        depstransitive = Graph.buildGraph(names,buildTransitiveDependencyGraph,deps);
-        depstransitive = List.sort(depstransitive, compareNumberOfDependencies);
-        print("Total number of modules: " +& intString(listLength(depstransitive)) +& "\n");
-        str = stringDelimitList(List.map(depstransitive, transitiveDependencyString), "\n");
-        print(str +& "\n");
+        namesPublic = List.map(List.select(sp, containsPublicInterface), SCode.getElementName);
+        namesChanged = List.filterMap(sp,getChangedClass);
+        hashSetString = HashSetString.emptyHashSet();
+        hashSetString = List.fold(namesChanged,BaseHashSet.add,hashSetString);
+        // print("namesChanged: " +& stringDelimitList(namesChanged, ",") +& "\n");
+
         depstransposed = Graph.transposeGraph(Graph.emptyGraph(names),deps,stringEq);
-        depstransposed = Graph.buildGraph(names,buildTransitiveDependencyGraph,depstransposed);
-        depstransposed = List.sort(depstransposed, compareNumberOfDependencies);
-        // str = stringDelimitList(List.map(depstransposed, dependencyString), "\n");
-        print("(Transposed) Total number of modules: " +& intString(listLength(depstransposed)) +& "\n");
-        str = stringDelimitList(List.map(depstransposed, transitiveDependencyString), "\n");
-        print(str +& "\n");
-        List.map_0(sp,printInterfaceString);
-      then (cache,Values.META_FAIL(),st);
+        depstransposedtransitive = Graph.buildGraph(namesPublic,buildTransitiveDependencyGraph,depstransposed);
+        // depstransposedtransitive = List.sort(depstransposed, compareNumberOfDependencies);
+
+        depstransitive = Graph.transposeGraph(Graph.emptyGraph(names),depstransposedtransitive,stringEq);
+        depstransitive = List.sort(depstransitive, compareNumberOfDependencies);
+
+        depsmerged = Graph.merge(deps,depstransitive,stringEq,compareDependencyNode);
+        // depsmerged = List.sort(depsmerged, compareNumberOfDependencies);
+
+        /*
+         print("Total number of modules: " +& intString(listLength(depsmerged)) +& "\n");
+         str = stringDelimitList(List.map(depsmerged, transitiveDependencyString), "\n");
+         print(str +& "\n");
+        */
+
+        depschanged = List.select1(depsmerged,isChanged,hashSetString);
+        names = List.map(depschanged, Util.tuple21);
+        // print("Files to recompile (" +& intString(listLength(depschanged)) +& "): " +& stringDelimitList(names, ",") +& "\n");
+        fileNames = List.map1(names, stringAppend, ".c");
+        _ = List.map(fileNames, System.removeFile);
+        v = ValuesUtil.makeArray(List.map(names,ValuesUtil.makeString));
+      then (cache,v,st);
 
     case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={})},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -6922,7 +6941,7 @@ algorithm
   edges := matchcontinue (name,oldgraph)
     local
       String str;
-    case (_,_) then Graph.allReachableNodes(({name},{}),oldgraph,stringEq);
+    case (_,_) then List.setDifference(Graph.allReachableNodes(({name},{}),oldgraph,stringEq),{name});
     else
       equation
         str = "CevalScript.buildTransitiveDependencyGraph failed: " +& name;
@@ -6964,6 +6983,18 @@ algorithm
   cmp := listLength(deps1) >= listLength(deps2);
 end compareNumberOfDependencies;
 
+protected function compareDependencyNode
+  input tuple<String,list<String>> node1;
+  input tuple<String,list<String>> node2;
+  output Boolean cmp;
+protected
+  String s1,s2;
+algorithm
+  (s1,_) := node1;
+  (s2,_) := node2;
+  cmp := Util.strcmpBool(s1,s2);
+end compareDependencyNode;
+
 protected function dependencyString
   input tuple<String,list<String>> deps;
   output String str;
@@ -6980,8 +7011,8 @@ protected function transitiveDependencyString
 protected
   list<String> strs;
 algorithm
-  (_,strs) := deps;
-  str := intString(listLength(strs)) +& ": " +& stringDelimitList(strs, ",");
+  (str,strs) := deps;
+  str := intString(listLength(strs)) +& ": ("+&str+&") " +& stringDelimitList(strs, ",");
 end transitiveDependencyString;
 
 protected function containsPublicInterface
@@ -7013,11 +7044,11 @@ algorithm
     case SCode.CLASS(restriction=SCode.R_FUNCTION(_)) then false;
     case SCode.COMPONENT(name=name,prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
       equation
-        print("public component " +& name +& ": ");
+        // print("public component " +& name +& ": ");
       then true;
     case SCode.CLASS(name=name,prefixes=SCode.PREFIXES(visibility=SCode.PUBLIC()))
       equation
-        print("public class " +& name +& ": ");
+        // print("public class " +& name +& ": ");
       then true;
     else false;
   end match;
@@ -7031,5 +7062,36 @@ algorithm
   SCode.CLASS(name=str) := elt;
   print(str +& ": " +& boolString(containsPublicInterface(elt)) +& "\n");
 end printInterfaceString;
+
+protected function getChangedClass
+  input SCode.Element elt;
+  output String name;
+algorithm
+  name := matchcontinue elt
+    local
+      String fileName;
+    case SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName))
+      equation
+        false = System.regularFileExists(name +& ".c");
+      then name;
+    case SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName))
+      equation
+        true = System.fileIsNewerThan(fileName, name +& ".c");
+      then name;
+  end matchcontinue;
+end getChangedClass;
+
+protected function isChanged
+  input tuple<String,list<String>> node;
+  input HashSetString.HashSet hs;
+  output Boolean b;
+protected
+  String str;
+  list<String> strs;
+algorithm
+  (str,strs) := node;
+  b := List.exist1(str::strs,BaseHashSet.has,hs);
+  // print(str +& ": " +&  boolString(b) +& "\n");
+end isChanged;
 
 end CevalScript;

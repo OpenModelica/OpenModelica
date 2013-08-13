@@ -2175,3 +2175,13 @@ RML_BEGIN_LABEL(System__getTerminalWidth)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__fileIsNewerThan)
+{
+  int res = SystemImpl__fileIsNewerThan(RML_STRINGDATA(rmlA0), RML_STRINGDATA(rmlA1));
+  if (res == -1)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = mk_icon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

@@ -1007,7 +1007,7 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 end generateSeparateCode;
 
 function generateSeparateCodeDependencies
-  output String [:,:] dependencies;
+  output String [:] dependencies;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>
 </html>"),preferredView="text");

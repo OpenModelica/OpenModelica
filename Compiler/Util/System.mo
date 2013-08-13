@@ -997,4 +997,11 @@ public function getTerminalWidth
   external "C" width = System_getTerminalWidth() annotation(Library = {"omcruntime"});
 end getTerminalWidth;
 
+public function fileIsNewerThan
+  input String file1;
+  input String file2;
+  output Boolean result;
+  external "C" result = System_fileIsNewerThan(file1,file2) annotation(Library = {"omcruntime"});
+end fileIsNewerThan;
+
 end System;

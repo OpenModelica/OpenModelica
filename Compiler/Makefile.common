@@ -206,6 +206,7 @@ Flags.mo \
 FMI.mo \
 Graph.mo \
 HashSet.mo \
+HashSetString.mo \
 HashTable.mo \
 HashTable2.mo \
 HashTable3.mo \

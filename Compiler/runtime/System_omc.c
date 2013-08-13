@@ -686,6 +686,14 @@ extern const char* System_realpath(const char *path)
   return buf;
 }
 
+extern int System_fileIsNewerThan(const char *file1, const char *file2)
+{
+  int res = SystemImpl__fileIsNewerThan(file1, file2);
+  if (res == -1)
+    MMC_THROW();
+  return res;
+}
+
 #ifdef __cplusplus
 }
 #endif

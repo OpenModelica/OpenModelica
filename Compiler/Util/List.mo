@@ -7077,23 +7077,47 @@ public function exist
     output Boolean out;
   end FindFunc;
 algorithm
-  outList := matchcontinue(inList,inFindFunc)
-  local
-    list<ElementType> t;
-    ElementType h; Boolean ret;
+  outList := match (inList,inFindFunc)
+    local
+      list<ElementType> t;
+      ElementType h;
+      Boolean ret,b;
     case({},_)
       then false;
     case(h::t,_)
       equation
-        true = inFindFunc(h);
-    then
-      true;
-    case(_::t,_)
-       equation
-         ret = exist(t,inFindFunc);
-       then ret;
-  end matchcontinue;
+        b = inFindFunc(h);
+        b = Debug.bcallret2(not b, exist, t, inFindFunc, true);
+      then b;
+  end match;
 end exist;
+
+public function exist1
+  "Returns true if the and element is found on the list using a function and an extra argument."
+  input list<ElementType1> inList;
+  input FindFunc inFindFunc;
+  input ElementType2 inExtraArg;
+  output Boolean outList;
+
+  partial function FindFunc
+    input ElementType1 inElement;
+    input ElementType2 inExtraArg;
+    output Boolean out;
+  end FindFunc;
+algorithm
+  outList := match (inList,inFindFunc,inExtraArg)
+    local
+      list<ElementType1> t;
+      ElementType1 h;
+      Boolean ret,b;
+    case ({},_,_) then false;
+    case (h::t,_,_)
+      equation
+        b = inFindFunc(h,inExtraArg);
+        b = Debug.bcallret3(not b, exist1, t, inFindFunc, inExtraArg, true);
+      then b;
+  end match;
+end exist1;
 
 public function extractOnTrue
   "Takes a list of values and a filter function over the values and returns a

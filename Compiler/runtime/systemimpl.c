@@ -2138,6 +2138,56 @@ char* System_getSimulationHelpText(int detailed)
   return buf;
 }
 
+int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
+{
+#if defined(_MSC_VER)
+  WIN32_FIND_DATA FileData;
+  HANDLE sh1,sh2;
+  FILETIME ftWrite1, ftWrite2;
+
+  sh1 = FindFirstFile(file1, &FileData);
+  if (sh1 == INVALID_HANDLE_VALUE) {
+    return -1;
+  }
+  sh2 = FindFirstFile(file2, &FileData);
+  if (sh2 == INVALID_HANDLE_VALUE) {
+    FindClose(sh1);
+    return -1;
+  }
+  if (!(GetFileTime(sh1, NULL, NULL, &ftWrite1) && GetFileTime(sh2, NULL, NULL, &ftWrite2))) {
+    FindClose(sh1);
+    FindClose(sh2);
+    return -1;
+  }
+  FindClose(sh1);
+  FindClose(sh2);
+  return ((LARGE_INTEGER*)&ftWrite1)->QuadPart - ((LARGE_INTEGER*)&ftWrite2)->QuadPart > 0 ? 1 : 0;
+#else
+  struct stat buf1, buf2;
+  if (stat(file1, &buf1)) {
+    const char *c_tokens[2]={strerror(errno),file1};
+    c_add_message(85,
+        ErrorType_scripting,
+        ErrorLevel_error,
+        gettext("Could not access file %s: %s."),
+        c_tokens,
+        2);
+    return -1;
+  }
+  if (stat(file2, &buf2)) {
+    const char *c_tokens[2]={strerror(errno),file2};
+    c_add_message(85,
+        ErrorType_scripting,
+        ErrorLevel_error,
+        gettext("Could not access file %s: %s."),
+        c_tokens,
+        2);
+    return -1;
+  }
+  return difftime(buf1.st_mtime, buf2.st_mtime) > 0 ? 1 : 0;
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
