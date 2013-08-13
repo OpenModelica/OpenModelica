@@ -2188,7 +2188,32 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
 #endif
 }
 
+#ifdef WITH_HWLOC
+#include <hwloc.h>
+#endif
+
+int System_numProcessors()
+{
+#ifdef WITH_HWLOC
+  hwloc_topology_t topology;
+  hwloc_topology_init(&topology);
+  hwloc_topology_load(topology);
+  int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_CORE);
+  if(depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
+    int res = hwloc_get_nbobjs_by_depth(topology, depth);
+    hwloc_topology_destroy(topology);
+    return res;
+  }
+#endif
+#if defined(_MSC_VER)
+  SYSTEM_INFO sysinfo;
+  GetSystemInfo( &sysinfo );
+  return sysinfo.dwNumberOfProcessors;
+#else
+  return max(sysconf(_SC_NPROCESSORS_ONLN), 1);
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif
-

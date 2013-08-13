@@ -1004,4 +1004,9 @@ public function fileIsNewerThan
   external "C" result = System_fileIsNewerThan(file1,file2) annotation(Library = {"omcruntime"});
 end fileIsNewerThan;
 
+public function numProcessors
+  output Integer result;
+  external "C" result = System_numProcessors() annotation(Library = {"omcruntime"});
+end numProcessors;
+
 end System;

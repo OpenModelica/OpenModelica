@@ -2185,3 +2185,10 @@ RML_BEGIN_LABEL(System__fileIsNewerThan)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__numProcessors)
+{
+  rmlA0 = mk_icon(System_numProcessors());
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

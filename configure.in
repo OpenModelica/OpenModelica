@@ -62,6 +62,7 @@ AC_SUBST(SHREXT)
 AC_SUBST(LINK)
 AC_SUBST(RPATH)
 AC_SUBST(MSL_EXTRA_ARGS)
+AC_SUBST(WITH_HWLOC)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -382,6 +383,14 @@ AC_TRY_LINK([
   ], [AC_MSG_RESULT([in intl]);RT_LDFLAGS="$RT_LDFLAGS $LIBS"],
       [AC_MSG_ERROR([no])])
 ])
+
+LIBS=""
+AC_CHECK_HEADERS(hwloc.h,
+  [AC_CHECK_LIB(hwloc,hwloc_get_nbobjs_by_depth,
+    [WITH_HWLOC="#define WITH_HWLOC 1";RT_LDFLAGS="$RT_LDFLAGS -lhwloc"],
+    [WITH_HWLOC="/* Without hwloc */"])],
+  [WITH_HWLOC="/* Without hwloc */"]
+)
 
 LIBS=""
 

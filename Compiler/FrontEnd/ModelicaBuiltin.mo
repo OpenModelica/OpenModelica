@@ -2786,6 +2786,15 @@ annotation(
   preferredView="text");
 end getDerivedClassModifierValue;
 
+function numProcessors
+  output Integer result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns the number of processors (if compiled against hwloc) or hardware threads (if using sysconf) available to OpenModelica.</p>
+</html>"));
+end numProcessors;
+
 annotation(preferredView="text");
 end Scripting;
 

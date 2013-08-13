@@ -2951,6 +2951,11 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{"Unknown input to solveLinearSystem scripting function"});
       then (cache,Values.TUPLE({v,Values.INTEGER(-1)}),st);
 
+    case (cache,env,"numProcessors",{},st,_)
+      equation
+        i = System.numProcessors();
+      then (cache,Values.INTEGER(i),st);
+
  end matchcontinue;
 end cevalInteractiveFunctions2;
 
