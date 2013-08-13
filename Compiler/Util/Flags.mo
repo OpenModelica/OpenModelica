@@ -463,11 +463,11 @@ constant list<DebugFlag> allDebugFlags = {
 
 // CONFIGURATION FLAGS
 constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",
-  SOME("d"), EXTERNAL(), STRING_FLAG(""), NONE(),
+  SOME("d"), EXTERNAL(), STRING_LIST_FLAG({}), NONE(),
   Util.gettext("Sets debug flags. Use +help=debug to see available flags."));
 
 constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
-  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  SOME("h"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Displays the help text. Use +help=topics for more information."));
 
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
@@ -1144,12 +1144,42 @@ protected
 algorithm
   flag :: values := System.strtok(inFlag, "=");
   values := List.flatten(List.map1(values, System.strtok, ","));
-  parseFlag2(flag, values, inFlags);
+  parseConfigFlag(flag, values, inFlags);
 end parseFlag;
 
-protected function parseFlag2
-  "Helper function to parseFlag, parses a flag."
+protected function parseConfigFlag
+  "Tries to look up the flag with the given name, and set it to the given value."
   input String inFlag;
+  input list<String> inValues;
+  input Flags inFlags;
+protected
+  ConfigFlag config_flag;
+algorithm
+  config_flag := lookupConfigFlag(inFlag);
+  evaluateConfigFlag(config_flag, inValues, inFlags);
+end parseConfigFlag;
+
+protected function lookupConfigFlag
+  "Lookup up the flag with the given name in the list of configuration flags."
+  input String inFlag;
+  output ConfigFlag outFlag;
+algorithm
+  outFlag := matchcontinue(inFlag)
+    case (_)
+      then List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
+
+    else
+      equation
+        Error.addMessage(Error.UNKNOWN_OPTION, {inFlag});
+      then
+        fail();
+
+  end matchcontinue;
+end lookupConfigFlag;
+
+protected function evaluateConfigFlag
+  "Evaluates a given flag and it's arguments."
+  input ConfigFlag inFlag;
   input list<String> inValues;
   input Flags inFlags;
 algorithm
@@ -1159,59 +1189,34 @@ algorithm
       array<FlagData> config_flags;
       list<String> values;
 
-    // Special case for +d, set the given debug flags.
-    case ("d", _, FLAGS(debugFlags = debug_flags))
+    // Special case for +d, +debug, set the given debug flags.
+    case (CONFIG_FLAG(index = 1), _, FLAGS(debugFlags = debug_flags))
       equation
         List.map1_0(inValues, setDebugFlag, debug_flags);
       then
         ();
 
-    // Special case for +help, show help text.
-    case ("help", _, _)
+    // Special case for +h, +help, show help text.
+    case (CONFIG_FLAG(index = 2), _, _)
       equation
         values = List.map(inValues, System.tolower);
-        System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "",getConfigString(LOCALE_FLAG),"C"));
+        System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "",
+          getConfigString(LOCALE_FLAG), "C"));
         print(printHelp(values));
         setConfigString(HELP, "omc");
       then
         ();
 
-    // All other configuration flags.
+    // All other configuration flags, set the flag to the given values.
     case (_, _, FLAGS(configFlags = config_flags))
       equation
-        parseConfigFlag(inFlag, inValues, config_flags);
+        setConfigFlag(inFlag, config_flags, inValues);
       then
         ();
 
   end match;
-end parseFlag2;
-
-protected function parseConfigFlag
-  "Tries to look up the flag with the given name, and set it to the given value."
-  input String inFlag;
-  input list<String> inValues;
-  input array<FlagData> inFlags;
-algorithm
-  _ := matchcontinue(inFlag, inValues, inFlags)
-    local
-      ConfigFlag config_flag;
-
-    case (_, _, _)
-      equation
-        config_flag = List.getMemberOnTrue(inFlag, allConfigFlags, matchConfigFlag);
-        setConfigFlag(config_flag, inFlags, inValues);
-      then
-        ();
-
-    else
-      equation
-        Error.addMessage(Error.UNKNOWN_OPTION, {inFlag});
-      then
-        fail();
-
-  end matchcontinue;
-end parseConfigFlag;
-
+end evaluateConfigFlag;
+        
 protected function setDebugFlag
   "Enables a debug flag given as a string, or disables it if it's prefixed with -."
   input String inFlag;
