@@ -21,12 +21,12 @@ public:
 
   
 
-	/// (Re-) initialize the system of equations and bounded parameters
-	virtual void initialize() = 0;
-	//sets the initial status
-	virtual void setInitial(bool) = 0;
-	//returns the intial status
-	virtual bool initial() = 0;
+  /// (Re-) initialize the system of equations and bounded parameters
+  virtual void initialize() = 0;
+  //sets the initial status
+  virtual void setInitial(bool) = 0;
+  //returns the intial status
+  virtual bool initial() = 0;
 
 
 };

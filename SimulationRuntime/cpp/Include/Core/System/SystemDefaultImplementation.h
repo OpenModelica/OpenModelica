@@ -119,24 +119,24 @@ protected:
         }
     };
     double
-        _simTime;				///< current simulation time (given by the solver) 
+        _simTime;        ///< current simulation time (given by the solver) 
 
     double
         *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
     bool   
-        * _conditions;		///< External conditions changed by the solver
+        * _conditions;    ///< External conditions changed by the solver
     
     int
          _dimContinuousStates,
-         _dimRHS,						///< Dimension der rechten Seite
-         _dimReal,						///< Anzahl der reelwertigen Variablen
-         _dimInteger,						///< Anzahl der integerwertigen Variablen
-         _dimBoolean,						///< Anzahl der boolwertigen Variablen
-         _dimString,					///< Anzahl der stringwertigen Variablen
-         _dimZeroFunc,					///< Dimension (=Anzahl) Nullstellenfunktion
-         _dimTimeEvent,					///< Dimension (=Anzahl) Time event (start zeit und frequenz)
-         _dimAE;				///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+         _dimRHS,            ///< Dimension der rechten Seite
+         _dimReal,            ///< Anzahl der reelwertigen Variablen
+         _dimInteger,            ///< Anzahl der integerwertigen Variablen
+         _dimBoolean,            ///< Anzahl der boolwertigen Variablen
+         _dimString,          ///< Anzahl der stringwertigen Variablen
+         _dimZeroFunc,          ///< Dimension (=Anzahl) Nullstellenfunktion
+         _dimTimeEvent,          ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
+         _dimAE;        ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
     
     ostream
         *_outputStream;        ///< Output stream for results
@@ -144,7 +144,7 @@ protected:
    
       
 
-    bool _initial;		
+    bool _initial;    
     SValuesMap _start_values;
     EventHandling _event_handling;
 };

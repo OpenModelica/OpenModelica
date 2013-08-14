@@ -155,7 +155,7 @@ void Euler::solve(const SOLVERCALL command)
 {
  
     if (_eulerSettings && _system)
-    {	
+    {  
         // Prepare solver and system for integration
         if (command & ISolver::FIRST_CALL)
         {
@@ -755,7 +755,7 @@ void Euler::doMyZeroSearch()
             *vSwap,
             *IllinoisV;
 
-        int	zeroExist,
+        int  zeroExist,
             leftZero,
             *zeroIdx;
         bool notDone = true,
@@ -787,7 +787,7 @@ void Euler::doMyZeroSearch()
 
         // DBG
         //for (long int i=1;i<=_dimSys;i++)
-        //			yL[i-1] = CONTR5(&i,&tR,cont,lrc);
+        //      yL[i-1] = CONTR5(&i,&tR,cont,lrc);
 
         //
 
@@ -916,7 +916,7 @@ void Euler::doMyZeroSearch()
                         break;
 
                 if (zeroExist)
-                {	
+                {  
                     // rechte Intervallgrenze nach links schieben
                     tSwap = tR;
                     tR = tTry;
@@ -974,7 +974,7 @@ void Euler::doMyZeroSearch()
             _tZero = tR;
 
             if (_tInit != tL)
-            {	
+            {  
                 memcpy(_zeroVal,vR,_dimZeroFunc*sizeof(double));
                 break;
             }
@@ -1019,7 +1019,7 @@ void Euler::doMyZeroSearch()
         interp1(_tZero,_z);
         _tLastSuccess = tL;
         _tCurrent = _tZero;
-        setZeroState();	
+        setZeroState();  
 
         _time_system->setTime(_tCurrent);
         _continuous_system->setContinuousStates(_z);

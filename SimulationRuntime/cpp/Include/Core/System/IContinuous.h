@@ -22,17 +22,17 @@ public:
     /// Enumeration to control the evaluation of equations within the system
     enum UPDATETYPE
     {
-        UNDEF_UPDATE	=	0x00000000,
+        UNDEF_UPDATE  =  0x00000000,
 
-        ACROSS			=	0x00000001,
-        THROUGH			=	0x00000002,
-        ALL				=	0x00000003,
-        RANKING			=	0x00000010			///< Ranking Method	
+        ACROSS      =  0x00000001,
+        THROUGH      =  0x00000002,
+        ALL        =  0x00000003,
+        RANKING      =  0x00000010      ///< Ranking Method  
     };
 
 
 
-    virtual ~IContinuous()	{};
+    virtual ~IContinuous()  {};
 
     /// Provide number (dimension) of boolean variables
     virtual int getDimBoolean() const = 0;

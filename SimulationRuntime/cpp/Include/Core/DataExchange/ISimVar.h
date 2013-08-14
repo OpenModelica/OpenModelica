@@ -7,8 +7,8 @@ class ISimVar
 {
 
 public:
-	virtual ~ISimVar()	{};
-	virtual void setName(string name) =0;
-	virtual string getName() = 0;
+  virtual ~ISimVar()  {};
+  virtual void setName(string name) =0;
+  virtual string getName() = 0;
 
 };

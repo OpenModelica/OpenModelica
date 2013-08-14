@@ -8,11 +8,11 @@ SimManager::SimManager(boost::shared_ptr<IMixedSystem> system,Configuration* con
       ,_timeeventcounter(NULL)
       , _events(NULL)
 {
-	
+  
       _solver = _config->createSelectedSolver(system.get());
-	
+  
       _initialization = new Initialization(boost::dynamic_pointer_cast<ISystemInitialization>(_mixed_system));
-	
+  
 }
 SimManager::~SimManager()
 {
@@ -375,14 +375,14 @@ void SimManager::runSingleProcess()
       _solver->setStartTime(_tStart);
       _solver->setEndTime(_tEnd);
      
-	  _solver->solve(_solverTask);
+    _solver->solve(_solverTask);
       _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
       /* Logs temporarily disabled
       BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
       // Zeitinvervall speichern
       //_H =_tEnd - _tStart;
 
-	
+  
 
       if (_dimtimeevent)
       {
@@ -410,7 +410,7 @@ void SimManager::runSingleProcess()
             startTime = _tStart;
             bool user_stop = false;
            
-			while(_continueSimulation)
+      while(_continueSimulation)
             {
                   for(; iter != _tStops[0].end(); ++iter)
                   {

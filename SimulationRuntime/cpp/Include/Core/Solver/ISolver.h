@@ -24,10 +24,10 @@ public:
     {
         UNDEF_CALL        =    0x00000000,
 
-		FIRST_CALL		=	0x00000100,			///< First call to solver
-		RECALL			=	0x00000400,			///< Call to solver after restart (state vector of solver has to be reinitialized
-		RECORDCALL	    =   0x00004000,			///< Erster Aufruf zum recorden von y0
-	};
+    FIRST_CALL    =  0x00000100,      ///< First call to solver
+    RECALL      =  0x00000400,      ///< Call to solver after restart (state vector of solver has to be reinitialized
+    RECORDCALL      =   0x00004000,      ///< Erster Aufruf zum recorden von y0
+  };
 
     /// Enum to define the current status of the solver
     enum SOLVERSTATUS
@@ -48,7 +48,7 @@ public:
         UNCHANGED_SIGN        ///< no zero crossing = continoue time integration
     };
 
-	virtual ~ISolver()	{};
+  virtual ~ISolver()  {};
 
 
     /// Set start time
@@ -60,8 +60,8 @@ public:
     /// Set the initial step size (needed for reinitialization after external zero search)
     virtual void setInitStepSize(const double& stepSize) = 0;
 
-	/// (Re-) initialize the solver
-	virtual void initialize() = 0;
+  /// (Re-) initialize the solver
+  virtual void initialize() = 0;
 
     /// Approximation of the numerical solution in a given time interval
     virtual void solve(const SOLVERCALL command = UNDEF_CALL) = 0;
@@ -72,7 +72,7 @@ public:
     /// Write out statistical information (statistical information of last simulation, e.g. time, number of steps, etc.)
     virtual void writeSimulationInfo() = 0;
 
-	/// Indicates whether a solver error occurred during integration, returns type of error and provides error message
-	/*virtual const int reportErrorMessage(ostream& messageStream) = 0;*/
+  /// Indicates whether a solver error occurred during integration, returns type of error and provides error message
+  /*virtual const int reportErrorMessage(ostream& messageStream) = 0;*/
 
 };

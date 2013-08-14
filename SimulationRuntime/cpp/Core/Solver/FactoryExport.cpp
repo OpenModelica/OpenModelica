@@ -31,7 +31,7 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
 extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_solver(boost::extensions::factory_map & fm)
 {
     fm.get<SolverDefaultImplementation,int,IMixedSystem*, ISolverSettings*>()[1].set<SolverDefaultImplementation>();
-	fm.get<ISolverSettings,int, IGlobalSettings* >()[1].set<SolverSettings>();
+  fm.get<ISolverSettings,int, IGlobalSettings* >()[1].set<SolverSettings>();
 }
   
 #else

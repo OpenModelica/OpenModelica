@@ -38,7 +38,7 @@ typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv
        stringstream res_output_path;
        res_output_path <<   output_path  <<file_name;
       _output_stream.open(res_output_path.str().c_str(), ios::out);
-	
+  
   }
     void read(ublas::matrix<double>& R,ublas::matrix<double>& dR)
     {

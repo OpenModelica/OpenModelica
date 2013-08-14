@@ -4,8 +4,8 @@
 
 #include <algorithm>        ///< use of min, max, etc.
 #include <limits>
-#include <math.h>			///< mathematical expressions
-//vxworks: #include <memory.h>			///< use of memset, etc.
+#include <math.h>      ///< mathematical expressions
+//vxworks: #include <memory.h>      ///< use of memset, etc.
 #undef min
 #undef max
 using std::min;

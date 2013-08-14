@@ -24,6 +24,6 @@ private:
 
 };
 // Factory-Funktion
-//vxworks extern "C" EXPORT	ISimData* createSimData();
+//vxworks extern "C" EXPORT  ISimData* createSimData();
 
 

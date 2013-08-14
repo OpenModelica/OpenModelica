@@ -7,8 +7,8 @@
 //#include <System/IStepEvent.h>
 #include <System/ISystemInitialization.h>
 #include <System/ISystemProperties.h>  
-#include <Solver/ISolver.h>				// Solver interface
-#include <Solver/ISolverSettings.h>			// SolverSettings interface
+#include <Solver/ISolver.h>        // Solver interface
+#include <Solver/ISolverSettings.h>      // SolverSettings interface
 
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
@@ -103,18 +103,18 @@ public:
         _time_events;
 
     double
-        *_zeroVal,						///< Vector (of dimension _dimZeroF) containing values of all zero functions
-        *_zeroValInit,					///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
-        *_zeroValLastSuccess;		///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing) 
+        *_zeroVal,            ///< Vector (of dimension _dimZeroF) containing values of all zero functions
+        *_zeroValInit,          ///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
+        *_zeroValLastSuccess;    ///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing) 
 
-    ISolver::ZEROSTATUS				
-        _zeroStatus;						///< Denotes whether a change in sign in at least one zero function occured
+    ISolver::ZEROSTATUS        
+        _zeroStatus;            ///< Denotes whether a change in sign in at least one zero function occured
 
     ISolver::SOLVERSTATUS
-        _solverStatus;					///< Denotes the current status of the solver
+        _solverStatus;          ///< Denotes the current status of the solver
 
-    IMixedSystem::OUTPUT	
-        _outputCommand;					///< Controls the output
+    IMixedSystem::OUTPUT  
+        _outputCommand;          ///< Controls the output
     
    
 

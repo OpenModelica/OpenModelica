@@ -4,7 +4,7 @@
 
 
 /*Vxworks
- * extern "C"	ISimData* createSimData()
+ * extern "C"  ISimData* createSimData()
 {
     return new SimData();
 }

@@ -12,7 +12,7 @@
         }
         
     protected:
-            boost::shared_ptr<T>	_factory;
+            boost::shared_ptr<T>  _factory;
             PATH _library_path;
             PATH _modelicasystem_path;
             PATH _config_path;
