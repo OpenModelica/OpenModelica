@@ -36,7 +36,8 @@ namespace boost {
 		*/
 		class shared_library {
 		public:
-
+			shared_library()
+			{}
 			/** shared_library constructor
 			* \param location The relative or absolute path of the shared library.
 			* \param auto_close An optional parameter which defaults to false.

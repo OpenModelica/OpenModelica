@@ -1,27 +1,21 @@
 #pragma once
-#include <boost/filesystem/path.hpp>
-#include <SimulationSettings/IGlobalSettings.h>
-#include <Solver/ISolverSettings.h>
-#include <Solver/IDAESolver.h>
-#include <System/IMixedSystem.h>
-#include <SimulationSettings/ISettingsFactory.h>
-#include <SimulationSettings/ISimControllerSettings.h>
-class Configuration
+#include <Policies/FactoryPolicy.h>
+
+class Configuration :  public ConfigurationPolicy
 {
 public:
-    Configuration(fs::path libraries_path, fs::path config_path);
+    Configuration(PATH libraries_path,PATH config_path,PATH modelicasystem_path);
     ~Configuration(void);
-    boost::shared_ptr<IDAESolver> createSolver(IMixedSystem* system);
+    boost::shared_ptr<ISolver> createSelectedSolver(IMixedSystem* system);
     IGlobalSettings* getGlobalSettings();
     ISolverSettings* getSolverSettings();
     ISimControllerSettings* getSimControllerSettings();
 private:
-
+    
      boost::shared_ptr<ISettingsFactory> _settings_factory;
      boost::shared_ptr<ISolverSettings>  _solver_settings;
      boost::shared_ptr<IGlobalSettings>  _global_settings;
      boost::shared_ptr<ISimControllerSettings>  _simcontroller_settings;
-     boost::shared_ptr<IDAESolver> _solver;
-   fs::path _libraries_path;
-   fs::path _config_path;
+     boost::shared_ptr<ISolver> _solver;
+     
 };

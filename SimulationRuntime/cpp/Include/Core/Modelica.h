@@ -27,6 +27,7 @@ using namespace std;
 #include "Utils/extension/shared_library.hpp"
 #include "Utils/extension/extension.hpp"
 #include "Utils/extension/factory.hpp"
+#include "Utils/extension/factory_map.hpp"
 #include "Utils/extension/type_map.hpp"
 #include "Utils/extension/convenience.hpp"
 #include <boost/numeric/ublas/storage.hpp>
@@ -99,3 +100,18 @@ typedef double coshRetType;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
+#include <System/IMixedSystem.h>
+#include <SimulationSettings/IGlobalSettings.h>
+#include <System/IAlgloopSolverFactory.h>
+#include <System/IMixedSystem.h>
+#include <System/ISystemProperties.h>
+#include <System/ISystemInitialization.h>
+#include <System/IContinuous.h>
+#include <System/ITime.h>
+#include <System/IEvent.h>
+#include <System/IAlgLoop.h>
+#include <Solver/INonLinSolverSettings.h>
+#include <Solver/IAlgLoopSolver.h>
+#include <System/IAlgLoopSolverFactory.h>
+#include <SimController/ISimData.h>
+#include <DataExchange/IHistory.h>

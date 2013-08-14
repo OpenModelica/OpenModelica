@@ -1,0 +1,76 @@
+
+/*
+Policy class to create solver settings object
+*/
+template <class CreationPolicy> 
+struct SolverSettingsOMCFactory : public  ObjectFactory<CreationPolicy>
+{
+
+public:
+    SolverSettingsOMCFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
+        :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+    {
+
+        _solver_type_map = new type_map();
+    }
+    
+    void loadGlobalSettings( boost::shared_ptr<IGlobalSettings> global_settings)
+    {
+               
+    }
+    ~SolverSettingsOMCFactory()
+    {
+       delete _solver_type_map;
+        ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+    }    
+    boost::shared_ptr<ISolverSettings> createSolverSettings(string solvername,boost::shared_ptr<IGlobalSettings> globalSettings)
+    {
+
+        string solver_settings_key;
+        if(solvername.compare("Euler")==0)
+        {
+             PATH euler_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH euler_name(EULER_LIB);
+            euler_path/=euler_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(euler_path.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw std::runtime_error("Failed loading Euler solver library!");
+            }
+            solver_settings_key.assign("createEulerSettings");
+        }
+        else if(solvername.compare("Idas")==0)
+        {
+            solver_settings_key.assign("extension_export_idas");
+        }
+        else if(solvername.compare("Ida")==0)
+        {
+            solver_settings_key.assign("extension_export_ida");
+        }
+        else if(solvername.compare("CVode")==0)
+        {
+            solver_settings_key.assign("extension_export_cvode");
+        }
+        else
+            throw std::invalid_argument("Selected Solver is not available");
+
+      
+        string settings = solvername.append("Settings");
+        std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >::iterator iter;
+        std::map<std::string, factory<ISolverSettings, IGlobalSettings* > >& factories(_solver_type_map->get());
+        iter = factories.find(settings);
+        if (iter ==factories.end())
+        {
+            
+            throw std::invalid_argument("No such Solver "+ solvername );
+        }
+        boost::shared_ptr<ISolverSettings> solver_settings  = boost::shared_ptr<ISolverSettings>(iter->second.create(globalSettings.get()));
+    
+     
+        return solver_settings;
+
+    }
+ private:
+    type_map* _solver_type_map;
+    
+};

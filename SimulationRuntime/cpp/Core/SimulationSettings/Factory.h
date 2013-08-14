@@ -1,13 +1,15 @@
 #pragma once
 
+#include <Policies/FactoryPolicy.h>
 
-#include <SimulationSettings/ISettingsFactory.h>
 
 class  SettingsFactory : public ISettingsFactory
+                       , public SolverSettingsPolicy
 {
 public:
-   SettingsFactory();
-    tuple<boost::shared_ptr<IGlobalSettings>,boost::shared_ptr<ISolverSettings> > create(fs::path libraries_path,fs::path config_path);
+   SettingsFactory(PATH libraries_path,PATH config_path,PATH modelicasystem_path);
+   virtual boost::shared_ptr<ISolverSettings>  createSelectedSolverSettings();
+  virtual boost::shared_ptr<IGlobalSettings> createSolverGlobalSettings();
   ~SettingsFactory(void);
 private:
     boost::shared_ptr<IGlobalSettings> _global_settings;

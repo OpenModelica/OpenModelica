@@ -1,36 +1,34 @@
-#include "Modelica.h"
+#include "stdafx.h"
+
 #include "ModelicaSystem.h"
 
 
-using boost::extensions::factory;
-BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings&> > >()
-  ["ModelicaSystem"].set<Modelica>();
-}
 
-Modelica::Modelica(IGlobalSettings& globalSettings)
-:SystemDefaultImplementation(globalSettings)
+Modelica::Modelica(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> ) 
+:SystemDefaultImplementation(*globalSettings)
 
-{
-  _dimVars =0;
-  _dimFunc = 0;
-   //DAE's are not supported yet, Index reduction is enabled
-  _dimAE = 0; // algebraic equations
-  // Initialize the state vector
-  SystemDefaultImplementation::init();
-  //Instantiate auxiliary object for event handling functionality
-  _event_handling.resetHelpVar =  boost::bind(&Modelica::resetHelpVar, this, _1);
-  _historyImpl = new HistoryImplType(globalSettings);
-
-
-}
+{ 
+    _dimBoolean =0;
+    _dimInteger =0;
+    _dimString =0;
+    _dimReal =0;
+    _dimContinuousStates =0;
+    _dimRHS = 0;
+    //DAE's are not supported yet, Index reduction is enabled
+    _dimAE = 0; // algebraic equations
+    // Initialize the state vector
+    SystemDefaultImplementation::initialize();
+    //Instantiate auxiliary object for event handling functionality
+    //vxworkstodo linker fehler: _event_handling.resetHelpVar =  boost::bind(&Modelica::resetHelpVar, this, _1);
+    _historyImpl = new HistoryImplType(*globalSettings);
+} 
 
 Modelica::~Modelica()
 {
 delete _historyImpl;
 }
 
-void Modelica::init(double ts,double te)
+void Modelica::initialize(double ts,double te)
 {
 
 }
@@ -39,7 +37,8 @@ void Modelica::resetTimeEvents()
 {
 }
 
-bool Modelica::update(const UPDATE command)
+
+bool Modelica::evaluate(const UPDATETYPE command)
 {
   return false;
 }
@@ -68,12 +67,32 @@ event_times_type Modelica::getTimeEvents()
   return _event_handling.getTimeEvents();
 }
 
-// Provide number (dimension) of variables according to the index
-int Modelica::getDimVars() const
+
+// Provide number (dimension) of variables
+int Modelica::getDimBoolean() const
 {
-  return(SystemDefaultImplementation::getDimVars());
+  return(SystemDefaultImplementation::getDimBoolean());
 }
-  
+
+int Modelica::getDimInteger() const
+{
+  return(SystemDefaultImplementation::getDimInteger());
+}
+
+int Modelica::getDimString() const
+{
+  return(SystemDefaultImplementation::getDimString());
+}
+
+int Modelica::getDimReal() const
+{
+  return(SystemDefaultImplementation::getDimReal());
+}
+
+int Modelica::getDimContinuousStates() const
+{
+  return(SystemDefaultImplementation::getDimContinuousStates());
+}
 
 // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
 int Modelica::getDimRHS() const
@@ -81,92 +100,118 @@ int Modelica::getDimRHS() const
    return(SystemDefaultImplementation::getDimRHS());
 }
 
-// Provide variables with given index to the system
-void Modelica::giveVars(double* z)
-{
-  SystemDefaultImplementation::giveVars(z);
+// Provide variables to the system
+void Modelica::getBoolean(bool* z)
+{ 
+  SystemDefaultImplementation::getBoolean(z);
 }
 
-// Set variables with given index to the system
-void Modelica::setVars(const double* z)
-{
-  SystemDefaultImplementation::setVars(z);
+void Modelica::getInteger(int* z)
+{ 
+  SystemDefaultImplementation::getInteger(z);
 }
+
+void Modelica::getString(string* z)
+{ 
+  SystemDefaultImplementation::getString(z);
+}
+
+
+void Modelica::getReal(double* z)
+{ 
+  SystemDefaultImplementation::getReal(z);
+}
+
+
+
+void Modelica::getContinuousStates(double* z)
+{ 
+  SystemDefaultImplementation::getContinuousStates(z);
+}
+
+// Provide the right hand side (according to the index)
+void Modelica::getRHS(double* z)
+{ 
+  SystemDefaultImplementation::getRHS(z);
+}
+
+// Set variables to the system
+void Modelica::setBoolean(const bool* z)
+{ 
+  SystemDefaultImplementation::setBoolean(z);
+}
+
+void Modelica::setInteger(const int* z)
+{ 
+  SystemDefaultImplementation::setInteger(z);
+}
+
+void Modelica::setString(const string* z)
+{ 
+  SystemDefaultImplementation::setString(z);
+}
+
+void Modelica::setReal(const double* z)
+{ 
+  SystemDefaultImplementation::setReal(z);
+}
+
+void Modelica::setContinuousStates(const double* z)
+{ 
+  SystemDefaultImplementation::setContinuousStates(z);
+}
+
+void Modelica::setRHS(const double* f)
+{ 
+  SystemDefaultImplementation::setRHS(f);
+}
+
+
+// History
  IHistory*  Modelica::getHistory()
  {
    return _historyImpl;
  }
-// Provide the right hand side (according to the index)
-void Modelica::giveRHS(double* f)
-{
-  SystemDefaultImplementation::giveRHS(f);
-}
 
-void Modelica::giveZeroFunc(double* f)
-{
 
+void Modelica::getZeroFunc(double* f)
+{
+  
 }
 
 void Modelica::handleEvent(const bool* events)
 {
-
+  
 }
 
 bool Modelica::handleSystemEvents( bool* events)
 {
-
+ return false;
+ 
 }
 
 bool Modelica::checkForDiscreteEvents()
 {
     bool restart = false;
-
+  
   return restart;
 }
-
+void Modelica::stepCompleted(double time)
+{
+}
  bool Modelica::checkConditions(const bool* events, bool all)
  {
- return false;
+     throw std::runtime_error("checkConditions is not yet implemented"); 
  }
 
-void Modelica::giveJacobianSparsityPattern(SparcityPattern pattern)
+void Modelica::getJacobianSparsityPattern(SparsityPattern pattern)
 {
-  throw std::runtime_error("giveJacobianSparsityPattern is not yet implemented");
+  throw std::runtime_error("giveJacobianSparsityPattern is not yet implemented"); 
 }
 
-void Modelica::giveJacobian(SparseMatrix& matrix)
+void Modelica::getJacobian(SparseMatrix& matrix)
 {
-  throw std::runtime_error("giveJacobian is not yet implemented");
-}
-
-void Modelica::giveMassSparsityPattern(SparcityPattern pattern)
-{
-  throw std::runtime_error("giveMassSparsityPattern is not yet implemented");
-}
-
-void Modelica::giveMassMatrix(SparseMatrix& matrix)
-{
-  throw std::runtime_error("giveMassMatrix is not yet implemented");
-}
-
-void Modelica::giveConstraintSparsityPattern(SparcityPattern pattern)
-{
-  throw std::runtime_error("giveConstraintSparsityPattern is not yet implemented");
-}
-
-void Modelica::giveConstraint(SparseMatrix matrix)
-{
-  throw std::runtime_error("giveConstraint is not yet implemented");
-}
-
-bool Modelica::isAutonomous()
-{
-  throw std::runtime_error("isAutonomous is not yet implemented");
-}
-
-bool Modelica::isTimeInvariant()
-{
-  throw std::runtime_error("isTimeInvariant is not yet implemented");
+  throw std::runtime_error("giveJacobian is not yet implemented");  
 }
 
 bool Modelica::isODE()
@@ -177,21 +222,6 @@ bool Modelica::isODE()
 bool Modelica::isAlgebraic()
 {
   return false; // Indexreduction is enabled
-}
-
-bool Modelica::isExplicit()
-{
-  return false; // At the moment only explicit form is supported
-}
-
-bool Modelica::hasConstantMass()
-{
-  throw std::runtime_error("hasConstantMass is not yet implemented");
-}
-
-bool Modelica::hasStateDependentMass()
-{
-  throw std::runtime_error("hasStateDependentMass is not yet implemented");
 }
 
 int Modelica::getDimZeroFunc()
@@ -214,5 +244,10 @@ void Modelica::saveDiscreteVars()
    }
 void Modelica::resetHelpVar(const int index)
 {
+}
+
+void Modelica::getConditions(bool* c)
+{
+     memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
 }
 

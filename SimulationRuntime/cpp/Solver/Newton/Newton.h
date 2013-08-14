@@ -49,14 +49,14 @@ public:
     virtual ~Newton();
 
     /// (Re-) initialize the solver
-    virtual void init();
+    virtual void initialize();
 
     /// Solution of a (non-)linear system of equations
-    virtual void solve(const IContinuous::UPDATE command = IContinuous::UNDEF_UPDATE);
+    virtual void solve(const IContinuous::UPDATETYPE command = IContinuous::UNDEF_UPDATE);
 
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus();
-    
+    virtual void stepCompleted(double time);
 
 private:
     /// Encapsulation of determination of residuals to given unknowns

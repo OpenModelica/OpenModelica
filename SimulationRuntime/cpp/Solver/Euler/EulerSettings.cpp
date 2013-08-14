@@ -1,5 +1,5 @@
 #include "stdafx.h"
-//#define BOOST_EXTENSION_EULERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
+
 #include "EulerSettings.h"
 
 EulerSettings::EulerSettings(IGlobalSettings* globalSettings)
@@ -73,7 +73,7 @@ initializes settings object by an xml file
 */
 void EulerSettings::load(std::string xml_file)
 {
-    try
+   /* try
     {
 
         std::ifstream ifs(xml_file.c_str());
@@ -90,7 +90,7 @@ void EulerSettings::load(std::string xml_file)
     {
         std::string error = ex.what();
         cout<< error <<std::endl;
-    }
+    }*/
 
 }
 

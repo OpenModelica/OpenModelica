@@ -3,10 +3,13 @@
 #include <System/IMixedSystem.h>
 #include <System/IContinuous.h>
 #include <System/IEvent.h>
+#include <System/ITime.h>
+//#include <System/IStepEvent.h>
 #include <System/ISystemInitialization.h>
-#include <Solver/IDAESolver.h>                // Solver interface
-#include <Solver/ISolverSettings.h>            // SolverSettings interface
-#include <Solver/Initialization.h>
+#include <System/ISystemProperties.h>  
+#include <Solver/ISolver.h>				// Solver interface
+#include <Solver/ISolverSettings.h>			// SolverSettings interface
+
 /// typedef to hand over (callback) functions to fortran routines
 typedef int (*U_fp)(...);
 
@@ -45,10 +48,10 @@ public:
      void setInitStepSize(const double& h)    ;
 
     /// Assemble system and (re-)initialize solver
-    void init();
+    void initialize();
 
     /// Provides the status of the solver after returning
-    const IDAESolver::SOLVERSTATUS getSolverStatus();
+    const ISolver::SOLVERSTATUS getSolverStatus();
 
     /// Determines current status of a all zero functions (checks for a change in sign in any of all zero functions)
     void setZeroState();
@@ -100,23 +103,20 @@ public:
         _time_events;
 
     double
-        *_zeroVal,                        ///< Vector (of dimension _dimZeroF) containing values of all zero functions
-        *_zeroValInit,                    ///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
-        *_zeroValLastSuccess,        ///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing)
-        *_zeroValLargeStep;
-    bool
-        _zeroSearchActive;                ///< Denotes whether zero search is currently active
+        *_zeroVal,						///< Vector (of dimension _dimZeroF) containing values of all zero functions
+        *_zeroValInit,					///< Vektor (der Dimension _dimZeroF) mit Nullstellenfunktionswerten am Anfang des Integrationsintervalles
+        *_zeroValLastSuccess;		///< Vector (of dimension _dimZeroF) containing values of all zero functions of last sucessfull integration step (before zero crossing) 
 
-    IDAESolver::ZEROSTATUS
-        _zeroStatus;                        ///< Denotes whether a change in sign in at least one zero function occured
+    ISolver::ZEROSTATUS				
+        _zeroStatus;						///< Denotes whether a change in sign in at least one zero function occured
 
-    IDAESolver::SOLVERSTATUS
-        _solverStatus;                    ///< Denotes the current status of the solver
+    ISolver::SOLVERSTATUS
+        _solverStatus;					///< Denotes the current status of the solver
 
-    IMixedSystem::OUTPUT
-        _outputCommand;                    ///< Controls the output
-
-    Initialization* _initialization;
+    IMixedSystem::OUTPUT	
+        _outputCommand;					///< Controls the output
+    
+   
 
 private:
     /// Definition of signum function

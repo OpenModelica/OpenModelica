@@ -2,44 +2,35 @@
 
 #include "Euler.h"
 #include "EulerSettings.h"
-#include <Math/Functions.h>
-#include <Math/Constants.h>
-#include <System/ISystemProperties.h>
+
+
 
 Euler::Euler(IMixedSystem* system, ISolverSettings* settings)
     : SolverDefaultImplementation(system, settings)
-    , _eulerSettings        (dynamic_cast<IEulerSettings*>(_settings))
-    , _z                    (NULL)
-    , _z0                    (NULL)
-    , _z1                    (NULL)
-    , _zInit                (NULL)
-    , _zLastSucess            (NULL)
-    , _zLargeStep            (NULL)
-    , _zWrite                (NULL)
-    , _denseOutPolynominal    (NULL)
-    , _dimSys                (0)
-    , _outputStps            (0)
-    , _polynominalDegree    (0)
-    , _idid                    (0)
-    , _hOut                    (0.0)
-    , _hZero                (0.0)
-    , _hUpLim                (0.0)
-    , _hZeroCrossing        (0.0)
-    , _hUpLimZeroCrossing    (0.0)
-    , _tOut                    (0.0)
-    , _tLastZero            (0.0)
-    , _tRealInitZero        (0.0)
-    , _doubleZeroDistance    (0.0)
-    , _doubleZero            (false)
-    , _h00                    (0.0)
-    , _h01                    (0.0)
-    , _h10                    (0.0)
-    , _h11                    (0.0)
-    , _f0                    (NULL)
-    , _f1                    (NULL)
-    , _zeroSignIter            (NULL)
-    , _Cond                    (NULL)
-    ,_zeroInit                (NULL)
+    , _eulerSettings      (dynamic_cast<IEulerSettings*>(_settings))
+    , _z               (NULL)
+    , _z0               (NULL)
+    , _z1               (NULL)            
+    , _zInit            (NULL)
+    , _zWrite            (NULL)
+    , _dimSys            (0)
+    , _outputStps         (0)
+    , _idid               (0)
+    , _hOut               (0.0)   
+    , _hZero            (0.0)   
+    , _hUpLim            (0.0)
+    , _tLastZero         (0.0)
+    , _tRealInitZero      (0.0)
+    , _doubleZeroDistance   (0.0)
+    , _h00               (0.0)
+    , _h01               (0.0)
+    , _h10               (0.0)
+    , _h11               (0.0)
+    , _f0               (NULL)
+    , _f1               (NULL)
+    ,_zeroTol            (1e-8)
+    ,_outputStp(1)
+    ,_tZero(-1)
 {
 }
 
@@ -53,42 +44,34 @@ Euler::~Euler()
         delete [] _z1;
     if(_zInit)
         delete [] _zInit;
-    if(_zLastSucess)
-        delete [] _zLastSucess;
-    if(_zLargeStep)
-        delete [] _zLargeStep;
-    if(_zWrite)
+    if(_zWrite)            
         delete [] _zWrite;
-    if(_denseOutPolynominal)
-        delete [] _denseOutPolynominal;
-    if(_zeroSignIter)
-        delete [] _zeroSignIter;
     if(_f0)
         delete [] _f0;
     if(_f1)
         delete [] _f1;
-    if(_Cond)
-        delete [] _Cond;
-    if(_zeroInit)
-        delete [] _zeroInit;
-
 }
 
 
-void Euler::init()
+void Euler::initialize()
 {
     // Kennzeichnung, dass assemble() (vor der Integration) aufgerufen wurde
     _idid = 5000;
-    ISystemProperties* properties = dynamic_cast<ISystemProperties*>(_system);
-    IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
+     
+    _properties = dynamic_cast<ISystemProperties*>(_system);
+    _continuous_system = dynamic_cast<IContinuous*>(_system);
+    _event_system =  dynamic_cast<IEvent*>(_system);
+    _mixed_system =  dynamic_cast<IMixedSystem*>(_system);
+    _time_system =  dynamic_cast<ITime*>(_system);
+
     //(Re-) Initialization of solver -> call default implementation service
-    SolverDefaultImplementation::init();
+    SolverDefaultImplementation::initialize();
 
     // Dimension of the system (number of variables)
-    _dimSys    = continous_system->getDimVars();
+    _dimSys   = _continuous_system->getDimContinuousStates();
 
     // Check system dimension
-    if(_dimSys <= 0 || !(properties->isODE()) || (properties->isAlgebraic()) || !(properties->isExplicit()) )
+    if(_dimSys <= 0 || !(_properties->isODE()))
     {
         _idid = -1;
         throw std::invalid_argument("Euler::assemble() error");
@@ -96,32 +79,22 @@ void Euler::init()
     else
     {
         // Allocate state vectors, stages and temporary arrays
-        if(_z)                delete [] _z;
-        if(_zInit)            delete [] _zInit;
-        if(_zLastSucess)    delete [] _zLastSucess;
-        if(_zLargeStep)        delete [] _zLargeStep;
-        if(_Cond)            delete [] _Cond;
-        if(_zWrite)            delete [] _zWrite;
-        if(_zeroInit)        delete [] _zeroInit;
+        if(_z)            delete [] _z;
+        if(_zInit)         delete [] _zInit;
+        if(_zWrite)         delete [] _zWrite;
 
-        _z                = new double[_dimSys];
-        _zInit            = new double[_dimSys];
-        _zLastSucess    = new double[_dimSys];
-        _zLargeStep        = new double[_dimSys];
-        _zWrite            = new double[_dimSys];
-        _f0                = new double[_dimSys];
-        _f1                = new double[_dimSys];
-        _zeroSignIter    = new int[_dimZeroFunc];
-        _Cond            = new bool[_dimZeroFunc];
-        _zeroInit        = new bool[_dimZeroFunc];
+        _z            = new double[_dimSys];
+        _zInit         = new double[_dimSys];
+        _zWrite          = new double[_dimSys];
+        _f0            = new double[_dimSys];
+        _f1            = new double[_dimSys];
+        _zeroSignIter   = new int[_dimZeroFunc];
 
         memset(_z,0,_dimSys*sizeof(double));
         memset(_f0,0,_dimSys*sizeof(double));
         memset(_f1,0,_dimSys*sizeof(double));
         memset(_zInit,0,_dimSys*sizeof(double));
-        memset(_zLastSucess,0,_dimSys*sizeof(double));
-        memset(_zLargeStep,0,_dimSys*sizeof(double));
-
+        
         // Arrays für Zustandswerte an den Berechnungsintervallgrenzen
 
         if(_z0)        delete [] _z0;
@@ -142,6 +115,15 @@ void Euler::init()
             _hOut        =  dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput();
 
         }
+     _h = std::max(std::min(_h, dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit()), dynamic_cast<ISolverSettings*>(_eulerSettings)->getLowerLimit());
+     double hout = dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput();
+    _outputStp = hout/_h ;
+    _tZero=-1;
+    if(_outputStp<1)
+    {
+       _outputStp=1;
+        dynamic_cast<ISolverSettings*>(_eulerSettings)->setUpperLimit(hout);
+    }
     }
 }
 
@@ -165,46 +147,34 @@ void Euler::setInitStepSize(const double& h)
 
 
 /// Provides the status of the solver after returning
-const IDAESolver::SOLVERSTATUS Euler::getSolverStatus()
+const ISolver::SOLVERSTATUS Euler::getSolverStatus()
 {
     return (SolverDefaultImplementation::getSolverStatus());
 };
 void Euler::solve(const SOLVERCALL command)
 {
-
+ 
     if (_eulerSettings && _system)
-    {
-        IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-
+    {	
         // Prepare solver and system for integration
-        if (command & IDAESolver::FIRST_CALL)
+        if (command & ISolver::FIRST_CALL)
         {
-            init();
-            saveInitState();
-            _tLastWrite = 0;
+            initialize();
+           _tLastWrite = 0;
         }
 
-        // Causes the solver to read the states from the system in the very first step
-        if (command & IDAESolver::RECALL)
+        // Causes the solver to read the states from the system in the very first step 
+        if (command & ISolver::RECALL)
             _firstStep = true;
 
-        // Set command for calling writeToFile. Depends wheter solve is called during zero search or ordninary integration
-        if (command & IDAESolver::REPEATED_CALL)
-            _outputCommand = IMixedSystem::OVERWRITE;
-        else if (command & IDAESolver::REGULAR_CALL)
-            _outputCommand = IMixedSystem::WRITE;
-        else
-            _outputCommand = IMixedSystem::UNDEF_OUTPUT;
+    
 
         // Reset status flag
-        _solverStatus = IDAESolver::CONTINUE;
+        _solverStatus = ISolver::CONTINUE;
 
-        while ( _solverStatus & IDAESolver::CONTINUE )
+        while ( _solverStatus & ISolver::CONTINUE )
         {
-            // Limit step size to borders (during zero search, step size may be changed)
-            if(!_zeroSearchActive)
-                _h = std::max(std::min(_h, dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit()), dynamic_cast<ISolverSettings*>(_eulerSettings)->getLowerLimit());
-
+            
             // Zuvor wurde assemble aufgerufen und hat funktioniert => RESET IDID
             if(_idid == 5000)
                 _idid = 0;
@@ -218,37 +188,11 @@ void Euler::solve(const SOLVERCALL command)
                 _accStps = 0;
 
                 // Get initial values from system, write out initial state vector
+               
                 solverOutput(_accStps,_tCurrent,_z,_h);
-
-                //Deaktiviert wird nicht mehr benötigt
-                // Nullstellen identifizieren, bei denen zu Beginn der Simulation der Zustand nicht entschieden werden kann
-                //event_system->giveZeroFunc(_zeroValLastSuccess);
-                //event_system->giveConditions(_Cond);
-                //for(int i=0;i<_dimZeroFunc;i++)
-                //{
-                //    _Cond[i] = !_Cond[i];
-                //}
-                //event_system->setConditions(_Cond);
-                /*event_system->giveZeroFunc(_zeroVal);
-                for(int i=0;i<_dimZeroFunc;i++)
-                {
-                    if(_zeroValLastSuccess[i] == _zeroVal[i])
-                    {
-                        _zeroInit[i] = true;
-                    }else
-                    {
-                        _zeroInit[i] = false;
-                    }
-                }
-                for(int i=0;i<_dimZeroFunc;i++)
-                {
-                    _Cond[i] = !_Cond[i];
-                }
-                event_system->setConditions(_Cond);*/
-
-                //
-
+            
                 // Choose integration method
+               
                 if (_eulerSettings->getEulerMethod()  == EulerSettings::EULERFORWARD)
                     doEulerForward();
                 else if (_eulerSettings->getEulerMethod()  == EulerSettings::EULERBACKWARD)
@@ -257,24 +201,21 @@ void Euler::solve(const SOLVERCALL command)
                     doMidpoint();
             }
 
-
-            // Integration was not sucessfull (=0) or was terminated by the user (=1)
+            
+            // Integration was not sucessfull (=0) or was terminated by the user (=1) 
             if(_idid != 0 && _idid !=1)
             {
-                _solverStatus = IDAESolver::SOLVERERROR;
+                _solverStatus = ISolver::SOLVERERROR;
             }
 
             // Stopping criterion (end time reached)
-            else if    ( (_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_eulerSettings)->getEndTimeTol())
-                _solverStatus = IDAESolver::DONE;
+            else if   ( (_tEnd - _tCurrent) <= dynamic_cast<ISolverSettings*>(_eulerSettings)->getEndTimeTol())   
+                _solverStatus = ISolver::DONE;
         }
 
         _firstCall = false;
 
-        // Termination after last call only (optional)
-        if ( (command & IDAESolver::LAST_CALL) || (_solverStatus & IDAESolver::USER_STOP))
-        {
-        }
+      
     }
     else
     {
@@ -287,12 +228,10 @@ void Euler::solve(const SOLVERCALL command)
 
 void Euler::doEulerForward()
 {
-    IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-    IMixedSystem* mixed_system =  dynamic_cast<IMixedSystem*>(_system);
-    double *k1    = new double[_dimSys];
+    double *k1   = new double[_dimSys];
     double tHelp;
 
-
+    
     //while( (_tEnd - _tCurrent) > dynamic_cast<ISolverSettings*>(_eulerSettings)->getEndTimeTol() && _idid == 0)
     while( _idid == 0 && _solverStatus != USER_STOP)
     {
@@ -321,7 +260,15 @@ void Euler::doEulerForward()
 
         memcpy(_z1,_z,_dimSys*sizeof(double));
 
+        /*ToDo stepevent
+        if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
+        {
+            _zeroStatus = ISolver::EQUAL_ZERO;
+            _tZero = tHelp;
+        }*/
+       
         solverOutput(_accStps,tHelp,_z,_h);
+    
         doMyZeroSearch();
 
         if (((_tEnd - _tCurrent) < dynamic_cast<ISolverSettings*>(_eulerSettings)->getEndTimeTol()))
@@ -331,60 +278,29 @@ void Euler::doEulerForward()
         {
             _firstStep            = true;
             _hUpLim = dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit();
-            _h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit() * dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
-
+            
             //handle all events that occured at this t
             //update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-            mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
-
+            _mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
+            _event_system->getZeroFunc(_zeroVal);
             _zeroStatus = EQUAL_ZERO;
             memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
-
+           
         }
 
 
         if (_tZero > -1)
         {
-
-            solverOutput(_accStps,_tCurrent,_z,_h);
-            saveLastSuccessfullState();
+          
+            solverOutput(_accStps,_tZero,_z,_h);
             _tCurrent = _tZero;
             _tZero=-1;
-        }else
-
+        }
+        else
         {
             //_tCurrent += _h;
             _tCurrent = tHelp;
         }
-        /*Old
-        if (_zeroStatus == EQUAL_ZERO && _tZero > -1)    // Nullstelle gefunden --> voller Schritt bis zum Ende
-        {
-        _hUpLim = dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit();
-        _h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit() * dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
-        std::cout << "start event iteration at " << _tCurrent << "with " << _events[0] << ", " << _events[1] << (event_system != NULL ) << std::endl;
-        //handle all events that occured at this t
-        update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-        event_system->handleSystemEvents(_events,boost::ref(update_event));
-        _firstStep =true;
-        }
-
-
-        if (_tZero > -1)
-        {
-
-        solverOutput(_accStps,_tCurrent,_z,_h);
-        saveLastSuccessfullState();
-        }
-        else
-        {
-        std::cout << "event iteration  finished at " << _tCurrent << "with " << _tZero;
-        }
-
-        _tCurrent += _h;
-        */
-
-
-        doTimeEvents();
     }
 
     delete [] k1;
@@ -398,11 +314,9 @@ void Euler::doEulerForward()
 
 void Euler::doEulerBackward()
 {
-    IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-    IMixedSystem* mixed_system =  dynamic_cast<IMixedSystem*>(_system);
-    int            numberOfIterations = 0;
-    double        tHelp;
-    double        nu,
+    int         numberOfIterations = 0; 
+    double      tHelp;
+    double      nu,
         theta;
     double        nu_old = 1e6;
     long int    dimRHS = 1;                            // Dimension der rechten Seite zur Lösung LGS
@@ -546,7 +460,7 @@ void Euler::doEulerBackward()
 
         ++_totStps;
         ++_accStps;
-
+        
         solverOutput(_accStps,tHelp,_z,_h);
         doMyZeroSearch();
 
@@ -554,7 +468,7 @@ void Euler::doEulerBackward()
             break;
 
 
-        if ((_zeroStatus == IDAESolver::EQUAL_ZERO) && (_tZero > -1))    // Nullstelle gefunden --> voller Schritt bis zum Ende
+        if ((_zeroStatus == ISolver::EQUAL_ZERO) && (_tZero > -1))   // Nullstelle gefunden --> voller Schritt bis zum Ende
         {
 
             //_zeroSearchActive    = false;
@@ -564,21 +478,20 @@ void Euler::doEulerBackward()
             // Startschrittweite mit Verhältnis multiplizieren. Dadurch wird zu großer Startschritt vermieden.
             // Dies kann z.B. bei Diode zu großen rechten Seiten führen.
             _hUpLim = dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit();
-            _h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit() * dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
 
             //handle all events that occured at this t
             //update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-            mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
-            _zeroStatus = IDAESolver::EQUAL_ZERO;
+            _mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
+             _event_system->getZeroFunc(_zeroVal);
+            _zeroStatus = ISolver::EQUAL_ZERO;
 
         }
 
 
         if (_tZero > -1)
         {
-
+           
             solverOutput(_accStps,_tCurrent,_z,_h);
-            saveLastSuccessfullState();
             _tCurrent = _tZero;
             _tZero=-1;
         }else
@@ -586,8 +499,6 @@ void Euler::doEulerBackward()
             //_tCurrent += _h;
             _tCurrent = tHelp;
         }
-
-        doTimeEvents();
 
     }
 
@@ -605,9 +516,8 @@ void Euler::doEulerBackward()
 
 void Euler::doMidpoint()
 {
-    IMixedSystem* mixed_system =  dynamic_cast<IMixedSystem*>(_system);
-    int            numberOfIterations;
-    double        tHelp,
+    int         numberOfIterations; 
+    double      tHelp,
         nu,
         theta,
         nu_old = 1e6,
@@ -625,7 +535,6 @@ void Euler::doMidpoint()
         *pHelp    = new double[_dimSys],
         *fHelp    = new double[_dimSys];                    // Hilfsvariable für rechte Seite
 
-    IEvent* event_system =  dynamic_cast<IEvent*>(_system);
     // Rechte Seite
     double* k1 = new double[_dimSys];
 
@@ -740,9 +649,16 @@ void Euler::doMidpoint()
 
         memcpy(_z1,_z,_dimSys*sizeof(double));
 
+        /*Todo Stepevent
+        if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
+        {
+            _zeroStatus = ISolver::EQUAL_ZERO;
+            _tZero = tHelp;
+        }*/
+        
         solverOutput(_accStps,tHelp,_z,_h);
         doMyZeroSearch();
-
+        
         if (((_tEnd - _tCurrent) < dynamic_cast<ISolverSettings*>(_eulerSettings)->getEndTimeTol()))
             break;
 
@@ -756,26 +672,24 @@ void Euler::doMidpoint()
             // Startschrittweite mit Verhältnis multiplizieren. Dadurch wird zu großer Startschritt vermieden.
             // Dies kann z.B. bei Diode zu großen rechten Seiten führen.
             _hUpLim = dynamic_cast<ISolverSettings*>(_eulerSettings)->getUpperLimit();
-            _h = dynamic_cast<ISolverSettings*>(_eulerSettings)->gethInit()* dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroRatio();
-
+          
+            
             //update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-            mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
-
+            _mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
+             _event_system->getZeroFunc(_zeroVal);
 
         }
 
 
         if (_tZero > -1)
         {
-
+            
             solverOutput(_accStps,_tCurrent,_z,_h);
-            saveLastSuccessfullState();
+           
         }
 
         _tCurrent += _h;
-        doTimeEvents();
-
-
+     
     }
     delete    [] jac;
     delete    [] T;
@@ -789,50 +703,14 @@ void Euler::doMidpoint()
 }
 
 
-/**
-Check for time events
-*/
-void Euler::doTimeEvents()
-{
-
-    IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-    IMixedSystem* mixed_system =  dynamic_cast<IMixedSystem*>(_system);
-    if(_time_events.size()>0)
-    {
-        event_times_type::iterator iter;
-
-        iter = find_if( _time_events.begin(), _time_events.end(), floatCompare<double>(_tCurrent,dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTimeTol()) );
-
-        //Time event is reached
-        if(iter!=_time_events.end())
-        {
-            //Handle time event
-            /*event_system->handleEvent(iter->second);*/
-            //Handle all events that occured at this time
-            //update_events_type update_event = boost::bind(&SolverDefaultImplementation::updateEventState, this);
-            mixed_system->handleSystemEvents(_events/*,boost::ref(update_event)*/);
-
-            //Check if old time events were overrned because step size is not adequate
-            if(distance(_time_events.begin(),iter)>0)
-                throw std::runtime_error("Time event was not reached, please check solver step size");
-            //Erase old time entries
-            _time_events.erase(iter);
-        }
-
-    }
-
-}
-
 void Euler::giveZeroVal(const double &t,const double *y,double *zeroValue)
 {
-    IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
-    IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-    continous_system->setTime(t);
-    continous_system->setVars(y);
+    _time_system->setTime(t);
+    _continuous_system->setContinuousStates(y);
 
     // System aktualisieren
-    continous_system->update(IContinuous::CONTINOUS);
-    event_system->giveZeroFunc(zeroValue);
+    _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
+    _event_system->getZeroFunc(zeroValue);
 }
 
 void Euler::giveZeroIdx(double *vL,double *vR,int *zeroIdx, int &zeroExist)
@@ -857,7 +735,9 @@ void Euler::doMyZeroSearch()
     if (_zeroStatus == ZERO_CROSSING)
     {
 
-        double  tL = _tCurrent,
+        double  
+            count = 0,
+            tL = _tCurrent,
             tR = _tCurrent+_h,
             tDelta,
             tTry,
@@ -875,10 +755,11 @@ void Euler::doMyZeroSearch()
             *vSwap,
             *IllinoisV;
 
-        int    zeroExist,
+        int	zeroExist,
             leftZero,
             *zeroIdx;
-        bool notDone = true;
+        bool notDone = true,
+            zeroBreak = false;
 
         yL = new double[_dimSys];
         yR = new double[_dimSys];
@@ -906,7 +787,7 @@ void Euler::doMyZeroSearch()
 
         // DBG
         //for (long int i=1;i<=_dimSys;i++)
-        //            yL[i-1] = CONTR5(&i,&tR,cont,lrc);
+        //			yL[i-1] = CONTR5(&i,&tR,cont,lrc);
 
         //
 
@@ -916,22 +797,18 @@ void Euler::doMyZeroSearch()
         while(true)
         {
             lastMoved = 0;
-
+            
             // Finde die Nullstelle
             while(true)
             {
-                notDone = false;
+                notDone = true;
                 giveZeroIdx(vL,vR,zeroIdx,zeroExist);
                 if ( zeroExist == 0)
                     return;
                 //Ist das Zeitintervall noch groß genug ?
                 tDelta = tR - tL;
 
-                for (int i=0;i<_dimZeroFunc;i++)
-                    if ((zeroIdx[i] == 1) && ((abs(vR[i]) >dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTol())))
-                        notDone = true;
-
-                if ((tDelta <=dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTimeTol()))
+                if (tDelta <= _zeroTol)
                     notDone = false;
 
                 if (notDone==false)
@@ -943,7 +820,7 @@ void Euler::doMyZeroSearch()
                         leftZero = 1;
 
                 if((tL==_tCurrent) & leftZero)
-                    tTry = tL + 0.5*dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTimeTol();
+                    tTry = tL + 0.5*_zeroTol;
                 else
                 {
                     // Regula Falsi
@@ -994,7 +871,7 @@ void Euler::doMyZeroSearch()
                     } //end for
 
                     change = change*abs(tDelta);
-                    change = std::max(0.5*dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTimeTol(),min(change,abs(tDelta)-0.5*dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTimeTol()));
+                    change = std::max(0.5*_zeroTol,_zeroTol);
 
                     tTry = tL + change;
 
@@ -1006,9 +883,40 @@ void Euler::doMyZeroSearch()
 
                 // Nullstellendurchgänge zwischen tL und tTry
                 giveZeroIdx(vL,vTry,zeroIdx,zeroExist);
+                for(int i=0;i<_dimZeroFunc;i++)
+                    if(abs(vTry[i]) == 0.0 && !zeroExist)
+                    {
+
+                        //_kk << "Bad Loop" << endl <<  vTry[i] << endl << _dimZeroFunc <<endl; 
+                        /*
+                        tR = tTry;
+                        for (long int j=1;j<=_dimSys;j++)
+                        yR[j-1] = CONTR5(&j,&tR,cont,lrc);
+                        giveZeroVal(tR,yR,vR);
+                        zeroBreak = true;
+                        //break;
+                        */
+                        while(true)
+                        {
+                            count++;
+                            tR = tTry + count*10*_zeroTol;
+                             interp1(tR,yR);
+                            giveZeroVal(tR,yR,vR);
+                            if(abs(vR[i]) > 0.0)
+                            {
+                                zeroBreak = true;
+                                break;
+                            }
+                        }
+
+                    }
+
+
+                    if (zeroBreak)
+                        break;
 
                 if (zeroExist)
-                {
+                {	
                     // rechte Intervallgrenze nach links schieben
                     tSwap = tR;
                     tR = tTry;
@@ -1066,7 +974,7 @@ void Euler::doMyZeroSearch()
             _tZero = tR;
 
             if (_tInit != tL)
-            {
+            {	
                 memcpy(_zeroVal,vR,_dimZeroFunc*sizeof(double));
                 break;
             }
@@ -1076,7 +984,7 @@ void Euler::doMyZeroSearch()
                 //tZero = -1;
                 break;
             }
-            if (abs(_tCurrent+_h-tR) < dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTimeTol())
+            if (abs(_tCurrent+_h-tR) < _zeroTol)
             {
                 memcpy(_zeroVal,vR,_dimZeroFunc*sizeof(double));
                 break;
@@ -1086,7 +994,7 @@ void Euler::doMyZeroSearch()
                 tTry = tR;
                 yTry = yR;
                 vTry = vR;
-                tL = tR + 0.5*dynamic_cast<ISolverSettings*>(_eulerSettings)->getZeroTimeTol();
+                tL = tR + 0.5*_zeroTol;
                 interp1(tL,yL);
                 giveZeroVal(tL,yL,vL);
                 tR = _tCurrent+_h;
@@ -1111,12 +1019,11 @@ void Euler::doMyZeroSearch()
         interp1(_tZero,_z);
         _tLastSuccess = tL;
         _tCurrent = _tZero;
-        setZeroState();
+        setZeroState();	
 
-        IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
-        continous_system->setTime(_tCurrent);
-        continous_system->setVars(_z);
-        continous_system->update(IContinuous::CONTINOUS);
+        _time_system->setTime(_tCurrent);
+        _continuous_system->setContinuousStates(_z);
+        _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
 
 
         delete [] yL;
@@ -1141,18 +1048,17 @@ void Euler::doMyZeroSearch()
 
 void Euler::calcFunction(const double& t, const double* z, double* f)
 {
-    IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
-    continous_system->setTime(t);
-    continous_system->setVars(z);
-    continous_system->update(IContinuous::CONTINOUS);
-    continous_system->giveRHS(f);
+  
+    _time_system->setTime(t);
+    _continuous_system->setContinuousStates(z);
+    _continuous_system->evaluate(IContinuous::ALL);    // vxworksupdate
+    _continuous_system->getRHS(f);
 }
 
 void Euler::solverOutput(const int& stp, const double& t, double* z, const double& h)
 {
-    IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
-    IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-    continous_system->setTime(t);
+   
+    _time_system->setTime(t);
 
     // (Re-)start of integration => First step: read state vector from the system
     if (_firstStep)
@@ -1160,17 +1066,17 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
         _firstStep    = false;
 
         // Update the system
-        continous_system->update(IContinuous::CONTINOUS);
+        _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
 
         // read variables from the system
-        continous_system->giveVars(z);
+        _continuous_system->getContinuousStates(z);
 
 
 
         if (_zeroVal)
         {
             // read values of zero functions
-            event_system->giveZeroFunc(_zeroVal);
+            _event_system->getZeroFunc(_zeroVal);
 
             // Determine the sign and hence the status of zero crossings
             SolverDefaultImplementation::setZeroState();
@@ -1186,16 +1092,16 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
     else
     {
         // set variables to the system
-        continous_system->setVars(z);
+        _continuous_system->setContinuousStates(z);
 
         // Update the system
-        continous_system->update(IContinuous::CONTINOUS);
+        _continuous_system->evaluate(IContinuous::ALL);   // vxworksupdate
 
 
         if(_zeroVal && (stp > 0))
         {
             // read values of zero functions
-            event_system->giveZeroFunc(_zeroVal);
+            _event_system->getZeroFunc(_zeroVal);
 
             // Determine the sign and hence the status of zero crossings
             SolverDefaultImplementation::setZeroState();
@@ -1209,11 +1115,14 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
     {
         if (_eulerSettings->getDenseOutput())
         {
-            if (t == 0)
+            if (t == 0) 
+            {
+                
                 SolverDefaultImplementation::writeToFile(stp, t, h);
+            }
             else
             {
-                while (_tLastWrite + dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput() -t -dynamic_cast<ISolverSettings*>(_eulerSettings)->getEndTimeTol() <= 0)
+                while (_tLastWrite + dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput() -t  <= 0)
                 {
                     // Zeitpunkt an dem geschrieben wird
                     _tLastWrite = _tLastWrite +  dynamic_cast<ISolverSettings*>(_eulerSettings)->getGlobalSettings()->gethOutput();
@@ -1222,36 +1131,43 @@ void Euler::solverOutput(const int& stp, const double& t, double* z, const doubl
                     interp1(_tLastWrite,_zWrite);
 
                     // setTime
-                    continous_system->setTime(_tLastWrite);
+                    _time_system->setTime(_tLastWrite);
 
                     // setVars
-                    continous_system->setVars(_zWrite);
+                    _continuous_system->setContinuousStates(_zWrite);
 
                     // System aktualisieren
-                    continous_system->update(IContinuous::CONTINOUS);
-
+                    _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
+                   /*if(stp%_outputStp==0)*/
+                    
                     SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
 
                 }//end while t -_tLastWritten
                 // System in den alten Zustand zurück versetzen
 
                 // setTime
-                continous_system->setTime(t);
+                _time_system->setTime(t);
 
                 // setVars
-                continous_system->setVars(z);
+                _continuous_system->setContinuousStates(z);
 
-                continous_system->update(IContinuous::CONTINOUS);
+                _continuous_system->evaluate(IContinuous::ALL);  // vxworksupdate
 
             }
         }
         else
-            SolverDefaultImplementation::writeToFile(stp, t, h);
+        {
+           /*if(stp%_outputStp==0)*/
+
+                
+                SolverDefaultImplementation::writeToFile(stp, t, h);
+         
+        }
 
         // Zähler für die Anzahl der ausgegebenen Schritte erhöhen
         ++ _outputStps;
 
-        saveLastSuccessfullState();
+       
     }
 
     // Ensures that no user stop occurs in the very first step, when the solver has not done at least one step
@@ -1279,21 +1195,6 @@ void Euler::interp1(double time, double *value)
 
 
 
-
-void Euler::saveInitState()
-{
-    IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
-
-    // Aktuellen Zeitpunkt als initialen Zeitpunkt (Anfangszeit des gesamten Integrationsintervalls) abspeichern
-    _tInit= _tCurrent;
-
-    // ZeroFunction-Vector abspeichern
-    if (_zeroVal)
-        memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));
-
-    // Zustandsvektor abspeichern
-    continous_system->giveVars(_zInit);
-}
 
 void Euler::writeSimulationInfo()
 {
@@ -1363,7 +1264,7 @@ void Euler::writeSimulationInfo()
 }
 const int Euler::reportErrorMessage(ostream& messageStream)
 {
-    if(_solverStatus == IDAESolver::SOLVERERROR)
+    if(_solverStatus == ISolver::SOLVERERROR)
     {
         if(_idid == -1)
             messageStream << "Invalid system dimension." << std::endl;
@@ -1375,53 +1276,14 @@ const int Euler::reportErrorMessage(ostream& messageStream)
             messageStream << "Step size too small." << std::endl;
     }
 
-    else if(_solverStatus == IDAESolver::USER_STOP)
+    else if(_solverStatus == ISolver::USER_STOP)
     {
         messageStream << "Simulation terminated by user at t: " << _tCurrent << std::endl;
     }
 
     return _idid;
 }
-void Euler::restoreInitState()
-{
-    IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
-    // Initialen Zeitpunkt wiederherstellen
-    _tCurrent = _tInit;
 
-    // Einträge im ZeroFunction-Vektor wiederherstellen
-    if (_zeroVal)
-        memcpy(_zeroVal,_zeroValInit,_dimZeroFunc*sizeof(double));
-
-    // Initialen Zustandsvektor wiederherstellen
-    continous_system->setVars(_zInit);
-
-}
-
-void Euler::saveLastSuccessfullState()
-{
-    // Save current time step as "last sucessfull"
-    _tLastSuccess = _tCurrent;
-
-    // Save current zero function values
-    if (_zeroVal)
-        memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
-
-    // Save current state as "last sucessfull" one
-    memcpy(_zLastSucess,_z,_dimSys*sizeof(double));
-}
-
-void Euler::restoreLastSuccessfullState()
-{
-    // Restore last sucessfull time step
-    _tCurrent = _tLastSuccess;
-
-    // Restore zero values of last successfull time step
-    if (_zeroVal)
-        memcpy(_zeroVal,_zeroValLastSuccess,_dimZeroFunc*sizeof(double));
-
-    // Restore state vector of last sucessfull time step
-    memcpy(_z,_zLastSucess,_dimSys*sizeof(double));
-}
 void Euler::calcJac(double* yHelp, double* _fHelp, const double* _f, double* jac, const bool& flag)
 {
     for(int j=0; j<_dimSys; ++j)
@@ -1440,15 +1302,4 @@ void Euler::calcJac(double* yHelp, double* _fHelp, const double* _f, double* jac
             jac[i+j*_dimSys] = (_fHelp[i] - _f[i]) / 1e-8;
         }
     }
-}
-
-using boost::extensions::factory;
-
-BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-    types.get<std::map<std::string, factory<SolverDefaultImplementation,IMixedSystem*, ISolverSettings*> > >()
-        ["DefaultsolverImpl"].set<SolverDefaultImplementation>();
-    types.get<std::map<std::string, factory<IDAESolver,IMixedSystem*, ISolverSettings*> > >()
-        ["EulerSolver"].set<Euler>();
-    types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
-        ["EulerSettings"].set<EulerSettings>();
 }

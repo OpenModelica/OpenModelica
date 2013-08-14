@@ -1,13 +1,11 @@
 #pragma once
 
-#include <System/IAlgLoop.h>                // Interface for algebraic loop
-
-#include <Math/Functions.h>  // Include for use of abs
 
 
 
-#include <ostream>                                    // Use stream for output
-using std::ostream;
+
+
+
 
 /*****************************************************************************/
 /**
@@ -30,29 +28,23 @@ public:
 
 
     /// Provide number (dimension) of variables according to data type
-    int getDimVars() const;
+    int getDimReal() const;
    /// Provide number (dimension) of residuals according to data type
     int getDimRHS() const;
 
     /// (Re-) initialize the system of equations
-    void init()    ;
+    void initialize();
 
     /// Provide variables with given index to the system
-
-    void giveVars(double* lambda) ;
-    void giveVars(int* lambda) ;
-    void giveVars(bool* lambda);
-
+  
+    void getReal(double* lambda) ;
+    
     /// Set variables with given index to the system
-
-    void setVars(const double* lambda);
-    void setVars(const int* lambda );
-    void setVars(const bool* lambd );
-
+    
+    void setReal(const double* lambda);
+    
     /// Provide the right hand side (according to the index)
-    void giveRHS(double* res);
-    void giveRHS(int* res);
-    void giveRHS(bool* res);
+    void getRHS(double* res);
 
 
     /// Output routine (to be called by the solver after every successful integration step)

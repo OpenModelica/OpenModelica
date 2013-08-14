@@ -27,6 +27,7 @@ SET(MODELICA_MODEL "ModelicaSystem")
 SET(LIBPREFIX "OMCpp")
 SET(SolverName ${LIBPREFIX}Solver)
 SET(SystemName ${LIBPREFIX}System)
+SET(OMCFactoryName ${LIBPREFIX}OMCFactory)
 set(MathName ${LIBPREFIX}Math)
 set(ModelicaExternalName ${LIBPREFIX}ModelicaExternalC)
 set(SimulationSettings ${LIBPREFIX}SimulationSettings)
@@ -39,11 +40,13 @@ set(KinsolName ${LIBPREFIX}Kinsol)
 set(ModelicaName ${LIBPREFIX}Modelica)
 set(NewtonName ${LIBPREFIX}Newton)
 set(HybrjName ${LIBPREFIX}Hybrj)
+set(DataExchangeName ${LIBPREFIX}DataExchange)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
-SET(USE_SUNDIALS ON)
-
+SET(USE_SUNDIALS OFF)
+SET(OMC_BUILD ON)
+SET(SIMSTER_BUILD OFF)
 # Boost
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREADED ON)
@@ -64,6 +67,14 @@ elseif(MINGW)
   SET(LAPACK_LIBRARIES  ${LAPACK_MINGW}   ${BLAS_MINGW} )
 
 endif()
+
+if(OMC_BUILD)
+add_definitions(-DOMC_BUILD)
+elseif(SIMSTER_BUILD)
+add_definitions(-DSIMSTER_BUILD)
+endif()
+
+
 message(STATUS "Lapack Libraries")
 message(STATUS ${LAPACK_LIBRARIES})
 # Sundials solvers
@@ -105,6 +116,7 @@ endif()
 
 link_directories ( ${Boost_LIBRARY_DIRS} )
 
+
 include_directories (${Boost_INCLUDE_DIR})
 include_directories ("${PROJECT_SOURCE_DIR}")
 include_directories ("${PROJECT_BINARY_DIR}")
@@ -113,8 +125,10 @@ message(STATUS "Boost dirs "${Boost_LIBRARY_DIRS} " , " ${Boost_INCLUDE_DIR})
 
 #build of simulation.core
 include_directories ("Include/Core")
-
+include_directories ("Include/SimCoreFactory")
 add_subdirectory (Core/Math)
+add_subdirectory (Core/DataExchange)
+add_subdirectory (SimCoreFactory/OMCFactory)
 #add system default implemention project
 add_subdirectory (Core/System)
 #add solver default implemention project
@@ -186,6 +200,13 @@ GET_FILENAME_COMPONENT(libSolverName ${libSolver} NAME)
 GET_TARGET_PROPERTY(libMath ${MathName} LOCATION)
 GET_FILENAME_COMPONENT(libMathName ${libMath} NAME)
 
+GET_TARGET_PROPERTY(libDataExchange ${DataExchangeName} LOCATION)
+GET_FILENAME_COMPONENT(libDataExchangeName ${libDataExchange} NAME)
+
+
+GET_TARGET_PROPERTY(libSimObjFactory ${OMCFactoryName} LOCATION)
+GET_FILENAME_COMPONENT(libSimObjFactoryName ${libSimObjFactory} NAME)
+
 set (EULER_LIB ${libEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
@@ -194,6 +215,9 @@ set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
 set (MATH_LIB ${libMathName})
 set (HYBRJ_LIB ${libHybrjName})
+set (SIMOBJFACTORY_LIB ${libSimObjFactoryName})
+set (DATAEXCHANGE_LIB ${libDataExchangeName})
+
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate
 
@@ -234,8 +258,7 @@ ENDMACRO(INSTALL_HEADERS_WITH_DIRECTORY)
 
 
 install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc/cpp)
-install (FILES "Include/Core/DataExchange/IHistory.h"
-  DESTINATION include/omc/cpp/Core/DataExchange)
+
 
 
  #copy Utils/extension

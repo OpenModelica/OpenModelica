@@ -16,6 +16,7 @@ public:
 
   HistoryImpl(IGlobalSettings& globalSettings)
   :ResultsPolicy<dim_1,dim_2,dim_3>((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
+  ,_globalSettings(globalSettings)
   {
 
     }
@@ -23,8 +24,12 @@ public:
     void setOutputs(map<unsigned int,string> var_outputs)
     {
         _var_outputs=var_outputs;
-
-
+        
+    
+    }
+    void init()
+    {
+        ResultsPolicy<dim_1,dim_2,dim_3>::init(_globalSettings.getOutputPath(),_globalSettings.getResultsFileName());
     }
     virtual void getOutputNames(vector<string>& output_names)
     {
@@ -100,6 +105,6 @@ public:
 private:
     //map of indices of all output variables
     map<unsigned int,string> _var_outputs;
-
+    IGlobalSettings& _globalSettings;
 
 };

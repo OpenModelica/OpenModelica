@@ -2,8 +2,8 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${SystemName})
 # add the system default implementation library
-add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp OMCppSystemTypeMap.cpp)
-target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
+add_library(${SystemName} SHARED AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp FactoryExport.cpp)
+target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} )
 
 # add a static library with the system default implementation for generating c++ fmu targets
 add_library(${SystemName}_static STATIC AlgLoopDefaultImplementation.cpp AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp )
@@ -27,6 +27,7 @@ install (FILES
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IContinuous.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IMixedSystem.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IEvent.h
+		${CMAKE_SOURCE_DIR}/Include/Core/System/ITime.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemProperties.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/ISystemInitialization.h
         ${CMAKE_SOURCE_DIR}/Include/Core/System/IStepEvent.h

@@ -1,12 +1,14 @@
-#define BOOST_EXTENSION_ALGLOOPDEFAULTIMPL_DECL BOOST_EXTENSION_EXPORT_DECL
+
+
 #include "stdafx.h"
+#include "FactoryExport.h"
 #include <System/AlgLoopDefaultImplementation.h>
  
 
 
 AlgLoopDefaultImplementation::AlgLoopDefaultImplementation()
 :_dimAEq         (0)
-,    _constraintType(IAlgLoop::UNDEF)
+,   _constraintType(IAlgLoop::UNDEF)
 {
 
 }
@@ -16,7 +18,7 @@ AlgLoopDefaultImplementation::~AlgLoopDefaultImplementation()
 
 }
 /// Provide number (dimension) of variables according to data type
-int AlgLoopDefaultImplementation::getDimVars() const    
+int AlgLoopDefaultImplementation::getDimReal() const    
 {
 
     return _dimAEq;
@@ -31,7 +33,7 @@ int AlgLoopDefaultImplementation::getDimRHS() const
 
 
 /// (Re-) initialize the system of equations
-void AlgLoopDefaultImplementation::init()
+void AlgLoopDefaultImplementation::initialize()
 {
   // Anfangswerte einlesen: InitialValue = ConstrValue
     // und Dimension der Bindungsgleichungen zur Lösung der Schleife bestimmen
@@ -84,7 +86,7 @@ void AlgLoopDefaultImplementation::init()
     //nach default algloop verschieben
     // Prüfen ob min. eine Bindungsgleichung vorhanden
     if ( _dimAEq == 0 )
-        throw std::invalid_argument("AlgLoop::init(): No constraint defined.");
+        throw std::invalid_argument("AlgLoop::initialize(): No constraint defined.");
 
    
 };
@@ -133,7 +135,7 @@ void AlgLoopDefaultImplementation::setOutput(ostream* outputStream)
 
 
 //in algloop default verschieben
-void AlgLoopDefaultImplementation::setVars(const double* lambda)
+void AlgLoopDefaultImplementation::setReal(const double* lambda)
 {
    
     std::vector<double>::iterator 
@@ -149,6 +151,7 @@ void AlgLoopDefaultImplementation::setVars(const double* lambda)
             *init_iter++ = *constr_iter = *lambda_iter++;
    
 }
+/*
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::setVars(const int* lambda)
 {
@@ -183,8 +186,9 @@ void AlgLoopDefaultImplementation::setVars(const bool* lambda)
             *init_iter++ = *constr_iter = *lambda_iter++;
    
 }
+*/
 //in algloop default verschieben
-void AlgLoopDefaultImplementation::giveVars(double* lambda)
+void AlgLoopDefaultImplementation::getReal(double* lambda)
 {
     
         std::vector<double>::iterator 
@@ -198,6 +202,7 @@ void AlgLoopDefaultImplementation::giveVars(double* lambda)
             *lambda_iter++ = *constr_iter;
     
 }
+/*
 //in algloop default verschieben
 void AlgLoopDefaultImplementation::giveVars(int* lambda)
 {
@@ -226,8 +231,9 @@ void AlgLoopDefaultImplementation::giveVars(bool* lambda)
             *lambda_iter++ = *constr_iter;
    
 }
+*/
 //in algloop default verschieben
-void AlgLoopDefaultImplementation::giveRHS(double* res)
+void AlgLoopDefaultImplementation::getRHS(double* res)
 {
      std::vector<double>::iterator  
             constr_iter = __xd.begin(),
@@ -242,8 +248,9 @@ void AlgLoopDefaultImplementation::giveRHS(double* res)
             *res_iter++ = /**init_iter++ - */*constr_iter;
    
 }
+/*
 //in algloop default verschieben
-void AlgLoopDefaultImplementation::giveRHS(int* res)
+void AlgLoopDefaultImplementation::getRHS(int* res)
 {
     
         std::vector<int>::iterator 
@@ -277,4 +284,4 @@ void AlgLoopDefaultImplementation::giveRHS(bool* res)
             *res_iter++ = !(*init_iter++ ^ *constr_iter);
     
 }
-
+*/

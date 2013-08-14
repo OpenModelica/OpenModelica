@@ -1,6 +1,4 @@
 #pragma once
-#include <System/IMixedSystem.h>                // System interface
-#include <System/IEvent.h>                // System interface
 
 /**
 Auxiliary  class to handle system events
@@ -15,9 +13,9 @@ public:
     EventHandling();
     ~EventHandling(void);
     //Inits the event variables
-    void init(IMixedSystem* system,int dim);
-    //Returns the help vector
-    void giveHelpVars(double* h);
+    void initialize(IMixedSystem* system,int dim);
+    //Returns the help vector 
+    void getHelpVars(double* h);
     //sets the help vector
     void setHelpVars(const double* h);
     //returns the dimension of the help vector

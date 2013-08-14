@@ -8,7 +8,7 @@ struct BufferReaderWriter
 {
     //typedef TextFileWriter<dim_1,dim_2> TextwriterType;
 public:
-    BufferReaderWriter(unsigned long size,string output_folder)
+    BufferReaderWriter(unsigned long size,string output_path,string file_name)
         :_buffer_pos(0)
     {
         try
@@ -23,6 +23,9 @@ public:
             cout<<"allocating   buffers faild" << std::endl;
             throw ex;
         }
+    }
+    void  init(string output_path,string file_name)
+    {
     }
     /**
     Reads all Simulation results (algebraic and state variables in R, derivatives in dR)

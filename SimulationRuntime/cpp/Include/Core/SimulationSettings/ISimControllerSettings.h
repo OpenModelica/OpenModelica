@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include <SimulationSettings/IGlobalSettings.h>
-#include <Math/Constants.h>
+
+
 
 /**
 Klasse zur Kapselung der Parameter (Einstellungen) für den SimManagerSettings.

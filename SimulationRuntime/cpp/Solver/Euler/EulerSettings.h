@@ -1,7 +1,7 @@
 #pragma once
-#define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_IMPORT_DECL
+#include "FactoryExport.h"
 #include <Solver/SolverSettings.h>
-#include <Euler/IEulerSettings.h>
+
 
 /*****************************************************************************/
 /**
@@ -66,7 +66,7 @@ private:
 
     double
         _iterTol;                ///< Tolerance for newton iteration (used when _useNewtonIteration=true) (default: 1e-8)
-
+/*
     //Serialization of settings class
     friend class boost::serialization::access;
     template<class archive>
@@ -94,5 +94,6 @@ private:
 
 
     }
+	*/
 
 };

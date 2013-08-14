@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project(${NewtonName})
 # add the solver default implementation library
-add_library(${NewtonName} SHARED Newton.cpp NewtonSettings.cpp )
+add_library(${NewtonName} SHARED Newton.cpp NewtonSettings.cpp FactoryExport )
 target_link_libraries( ${NewtonName} ${Boost_LIBRARIES})
 target_link_libraries( ${NewtonName} ${LAPACK_LIBRARIES})
 

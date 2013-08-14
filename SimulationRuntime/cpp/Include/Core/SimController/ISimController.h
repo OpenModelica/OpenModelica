@@ -1,5 +1,21 @@
 #pragma once
 #include  "ISimData.h"
+#include <System/IMixedSystem.h>
+
+
+struct SimSettings
+{
+    string solver_name;
+    string nonlinear_solver_name;
+    double start_time;
+    double end_time;
+    double step_size;
+    double lower_limit;
+    double upper_limit;
+    string outputfile_name;
+};
+
+/*SimController to start and stop the simulation*/
 class ISimController
 {
 
@@ -8,14 +24,14 @@ public:
 
     virtual ~ISimController()    {};
 
-
+    virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadSystem(string modelKey)=0;
+    virtual std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > LoadModelicaSystem(PATH modelica_path,string modelKey) =0;
     /*
     Starts the simulation
-    modelica_path: path to Modelica model library
-    library_path: path runtime librires
-    modelKey Modelica model name
+    modelKey: Modelica model name
+    modelica_path: path to Modelica system dll
     */
-    virtual void Start(string modelica_path,string library_path, string modelKey,double startTime,double endTime, double stepSize,ISimData* simData) = 0;
+    virtual void Start(boost::weak_ptr<IMixedSystem> mixedsystem,SimSettings simsettings/*,ISimData* simData*/)=0;
 
     /// Stops the simulation
     virtual void Stop()= 0;

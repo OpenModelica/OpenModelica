@@ -1,16 +1,16 @@
 #include "stdafx.h"
-#define BOOST_EXTENSION_SOLVER_DECL BOOST_EXTENSION_EXPORT_DECL
-#define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
+#include "FactoryExport.h"
+
 
 #include <Solver/SolverDefaultImplementation.h>
 #include <Solver/SolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
-//#include "../Interfaces/API.h"
+
 #include <Math/Constants.h>
 
 SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, ISolverSettings* settings)
-: _system                (system)
-, _settings                ((ISolverSettings*)settings)
+: _system                        (system)
+, _settings                        (settings)
 
 , _tInit                (0.0)
 , _tCurrent                (0.0)
@@ -29,19 +29,17 @@ SolverDefaultImplementation::SolverDefaultImplementation(IMixedSystem* system, I
 , _zeroStps                (0)
 , _zeros                (0)
 
-, _zeroStatus            (IDAESolver::UNCHANGED_SIGN)
-, _zeroValInit            (NULL)
-, _dimZeroFunc            (0)
-, _zeroVal                (NULL)
-, _zeroValLastSuccess    (NULL)
-, _zeroValLargeStep        (NULL)
-, _events                (NULL)
-, _zeroSearchActive        (false)
+, _zeroStatus                  (ISolver::UNCHANGED_SIGN)
+, _zeroValInit                  (NULL)
+, _dimZeroFunc                  (0)
+, _zeroVal                        (NULL)
+, _zeroValLastSuccess      (NULL)
+, _events                        (NULL)
 
-, _outputCommand        (IMixedSystem::WRITE)
+, _outputCommand            (IMixedSystem::WRITEOUT)
 
 {
-    _initialization = new Initialization(dynamic_cast<ISystemInitialization*>(_system));
+   
 }
 SolverDefaultImplementation::~SolverDefaultImplementation()
 {
@@ -53,7 +51,7 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
         delete [] _zeroValLastSuccess;
     if(_events)
         delete [] _events;
-    delete _initialization;
+    
 }
 
         void SolverDefaultImplementation::setStartTime(const double& t)
@@ -73,22 +71,20 @@ SolverDefaultImplementation::~SolverDefaultImplementation()
 
 
 
-    const IDAESolver::SOLVERSTATUS SolverDefaultImplementation::getSolverStatus()
+    const ISolver::SOLVERSTATUS SolverDefaultImplementation::getSolverStatus()
     {
         return _solverStatus;
     };
-void SolverDefaultImplementation::init()
+void SolverDefaultImplementation::initialize()
 {
     IContinuous* continous_system = dynamic_cast<IContinuous*>(_system);
     IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-    ISystemInitialization* init_system = dynamic_cast<ISystemInitialization*>(_system);
+    ITime* timeevent_system = dynamic_cast<ITime*>(_system);
     // Set current start time to the system
-    continous_system->setTime(_tCurrent);
-
-    // Assemble the system
-    //init_system->init(_settings->getGlobalSettings()->getStartTime(),_settings->getGlobalSettings()->getEndTime());
-    _initialization->initializeSystem(_settings->getGlobalSettings()->getStartTime(),_settings->getGlobalSettings()->getEndTime());
-
+    timeevent_system->setTime(_tCurrent);
+    
+   
+    
 
     //// Write out head line
     //if (_outputStream)
@@ -119,22 +115,21 @@ void SolverDefaultImplementation::init()
         if(_events)
             delete [] _events;
 
-        _zeroVal            = new double[_dimZeroFunc];
-        _zeroValLastSuccess    = new double[_dimZeroFunc];
-        _events                = new bool[_dimZeroFunc];
-        _zeroValInit            = new double[_dimZeroFunc];
-        _zeroValLargeStep        = new double[_dimZeroFunc];
-        event_system->giveZeroFunc(_zeroVal);
+        _zeroVal                  = new double[_dimZeroFunc];
+        _zeroValLastSuccess      = new double[_dimZeroFunc];
+        _events                        = new bool[_dimZeroFunc];
+        _zeroValInit                  = new double[_dimZeroFunc];
+       
+        event_system->getZeroFunc(_zeroVal);
         memcpy(_zeroValLastSuccess,_zeroVal,_dimZeroFunc*sizeof(double));
         memcpy(_zeroValInit,_zeroVal,_dimZeroFunc*sizeof(double));
         memset(_events,false,_dimZeroFunc*sizeof(bool));
-        memcpy(_zeroValLargeStep,_zeroVal,_dimZeroFunc*sizeof(double));
     }
 
      // Set flags
-    _firstCall            = true;
-    _firstStep            = true;
-    _zeroSearchActive    = false;
+    _firstCall                  = true; 
+    _firstStep                  = true;
+ 
 
     // Reset counter
     _totStps     = 0;
@@ -151,89 +146,27 @@ void SolverDefaultImplementation::setZeroState()
 {
 
         // Reset Zero-State
-    _zeroStatus = IDAESolver::UNCHANGED_SIGN;;
-
+    _zeroStatus = ISolver::UNCHANGED_SIGN;;
+    
     // Alle Elemente im ZeroFunction-Array durchgehen
     for (int i=0; i<_dimZeroFunc; ++i)
     {
         // Überprüfung auf Vorzeichenwechsel
-        // wenn _zeroVal[i] = _zeroValLastSuccess[i] = 0 ist.
-        //if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && (_zeroVal[i]!= 0.0 || _zeroValLastSuccess[i] != 0.0))
-        if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0 && abs(_zeroVal[i]-_zeroValLastSuccess[i])>UROUND)
+        if ((_zeroVal[i] < 0 && _zeroValLastSuccess[i] > 0) || (_zeroVal[i] > 0 && _zeroValLastSuccess[i] < 0))
         {
-
-            // Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
-            if ( (fabs(_zeroVal[i])) < _settings->getZeroTol() || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) < _settings->getZeroTimeTol()) )
-            {
-
-                //  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
-                _zeroStatus = IDAESolver::EQUAL_ZERO;
-                _events[i] = true;
-                // ZeroVal darf nicht null werden, da sonst im nächsten Schritt
-                // die Richtung des Vorzeichenwechsels nicht erkannt werden kann
-                if ( _zeroVal[i] == 0.0 )
-                    _zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
-            }
-            else
-            {
-
                 // Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
-                _zeroStatus = IDAESolver::ZERO_CROSSING;
+                _zeroStatus = ISolver::EQUAL_ZERO;
 
                 // Rest ZeroSign
-                _events[i] = false;
+                _events[i] = true;
 
                 // Zeitpunkt des letzten verworfenen Schrittes abspeichern
                 _tLastUnsucess = _tCurrent;
                 break;
-            }
         }
         else
             _events[i] = false;
     }
-    // Bei erstem Schritt können gleichzeitig meherere Vorzeichenwechsel auftreten, hier gilt für den Fall :
-    //_zeroVal[i]-_zeroValLastSuccess[i])<UROUND
-    if (_tLastSuccess == 0.0 && _zeroStatus == IDAESolver::EQUAL_ZERO)
-    {
-        for (int i=0; i<_dimZeroFunc; ++i)
-        {
-        // Überprüfung auf Vorzeichenwechsel
-        if (_zeroVal[i] * _zeroValLastSuccess[i] <= 0)
-        {
-            // Überprüfung, ob rechte Seite kleiner als vorgegebene Toleranz ist
-            if ( (fabs(_zeroVal[i])) < _settings->getZeroTol()  || (_tCurrent != 0 && (_tCurrent-_tLastSuccess) <_settings->getZeroTimeTol()) )
-            {
-
-                //  Eintrag im Array liegt innerhalb Toleranzbereich und gilt als =0
-                _zeroStatus = IDAESolver::EQUAL_ZERO;
-                _events[i] = true;
-                // ZeroVal darf nicht null werden, da sonst im nächsten Schritt
-                // die Richtung des Vorzeichenwechsels nicht erkannt werden kann
-                if ( _zeroVal[i] == 0.0 )
-                    _zeroVal[i] = -sgn(_zeroValLastSuccess[i]) * UROUND;
-            }
-            else
-            {
-
-                // Vorzeichenwechsel, aber Eintrag ist größer (oder kleiner) als Toleranzbereich
-                _zeroStatus = IDAESolver::ZERO_CROSSING;
-
-                // Rest ZeroSign
-                _events[i] = false;
-
-                // Zeitpunkt des letzten verworfenen Schrittes abspeichern
-                _tLastUnsucess = _tCurrent;
-                break;
-            }
-        }
-        else
-            _events[i] = false;
-        }
-    }
-    // Sofern Nullstellensuche aktiv, wird überprüft ob über den Punkt wo ZeroCrossing war schon drüber ist.
-    // Wenn ja, gab es wohl doch keine Nullstelle (Berechnungsfehler wg. zu großer Schrittweite)
-    if (_zeroSearchActive && (_tCurrent > _tLastUnsucess))
-        _zeroStatus = IDAESolver::NO_ZERO;
 
 }
 
@@ -265,27 +198,19 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
     //        *_outputStream << std::endl;
     //    }
     //}
-
-    if(_outputCommand & IMixedSystem::WRITE)
+    
+    if(_outputCommand & IMixedSystem::WRITEOUT)
     {
         _system->writeOutput(_outputCommand);
     }
 }
 void SolverDefaultImplementation::updateEventState()
 {
-    dynamic_cast<IEvent*>(_system)->giveZeroFunc(_zeroVal);
+    dynamic_cast<IEvent*>(_system)->getZeroFunc(_zeroVal);
     setZeroState();
-    if (_zeroStatus == IDAESolver::ZERO_CROSSING)     // An event triggered an other event
+    if (_zeroStatus == ISolver::ZERO_CROSSING)       // An event triggered an other event
     {
         _tLastSuccess = _tCurrent;         // Concurrently occured events are in the time tollerance
         setZeroState();                     // Upate status of events vector
     }
-}
-using boost::extensions::factory;
-
-BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<SolverDefaultImplementation,IMixedSystem*, ISolverSettings*> > >()
-    ["DefaultsolverImpl"].set<SolverDefaultImplementation>();
-  types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
-    ["SolverSettings"].set<SolverSettings>();
 }

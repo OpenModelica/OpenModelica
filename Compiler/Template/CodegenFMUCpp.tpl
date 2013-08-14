@@ -488,7 +488,7 @@ let modelName = '<%lastIdentOfPath(modelInfo.name)%>'
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"<%makefileParams.omhome%>/include/omc/cpp/Core" -I"<%makefileParams.omhome%>/include/omc/cpp/SimCoreFactory" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp" -L$(BOOST_LIBS)
   
   SRC=<%modelName%>.cpp
@@ -496,7 +496,7 @@ let modelName = '<%lastIdentOfPath(modelInfo.name)%>'
   SRC+= Functions.cpp
   SRC+= <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>
   
-  LIBS= -lOMCppSystem_static
+  LIBS= -lOMCppSystem_static -lOMCppDataExchange_static -lOMCppOMCFactory
   LIBS+= $(BOOST_SYSTEM_LIB) $(BOOST_FILESYSTEM_LIB) $(BOOST_SERIALIZATION_LIB)
   LIBS+= $(LINUX_LIB_DL)
   

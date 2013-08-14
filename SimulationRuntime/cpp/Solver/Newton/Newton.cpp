@@ -3,7 +3,7 @@
 #include "Newton.h"
  
 #include <Math/ILapack.h>        // needed for solution of linear system with Lapack
-#include <Math/Constants.h>        // definition of constants like uround
+#include <Math/Constants.h>        // definitializeion of constants like uround
 
 
 Newton::Newton(IAlgLoop* algLoop, INonLinSolverSettings* settings)
@@ -29,16 +29,16 @@ Newton::~Newton()
     if(_jac)    delete []    _jac;
 }
 
-void Newton::init()
+void Newton::initialize()
 {
     _firstCall = false;
 
-    //(Re-) Initialization of algebraic loop
-    _algLoop->init();
+    //(Re-) initializeialization of algebraic loop
+    _algLoop->initialize();
 
     // Dimension of the system (number of variables)
     int 
-        dimDouble    = _algLoop->getDimVars(),
+        dimDouble    = _algLoop->getDimReal(),
         dimInt        = 0,
         dimBool        = 0; 
 
@@ -49,7 +49,7 @@ void Newton::init()
 
         if(_dimSys > 0)
         {
-            // Initialization of vector of unknowns
+            // initializeialization of vector of unknowns
             if(_y)         delete []    _y;
             if(_f)        delete []    _f;    
             if(_yHelp)    delete []    _yHelp;
@@ -62,7 +62,7 @@ void Newton::init()
             _fHelp        = new double[_dimSys];
             _jac        = new double[_dimSys*_dimSys];
 
-            _algLoop->giveVars(_y);
+            _algLoop->getReal(_y);
             memset(_f,0,_dimSys*sizeof(double));
             memset(_yHelp,0,_dimSys*sizeof(double));
             memset(_fHelp,0,_dimSys*sizeof(double));
@@ -77,7 +77,7 @@ void Newton::init()
     
 }
 
-void Newton::solve(const IContinuous::UPDATE command)
+void Newton::solve(const IContinuous::UPDATETYPE command)
 {
     long int
         dimRHS    = 1,                    // Dimension of right hand side of linear system (=b)
@@ -86,14 +86,14 @@ void Newton::solve(const IContinuous::UPDATE command)
     int 
         totStps    = 0;                    // Total number of steps
 
-    // If init() was not called yet
+    // If initialize() was not called yet
     if (_firstCall)
-        init();    
+        initialize();    
 
-    // Get initial values from system
-    _algLoop->giveVars(_y);
-    //_algLoop->update(command);
-    _algLoop->giveRHS(_f);
+    // Get initializeial values from system
+    _algLoop->getReal(_y);
+    //_algLoop->evaluate(command);
+    _algLoop->getRHS(_f);
 
 
     // Reset status flag
@@ -129,10 +129,10 @@ void Newton::solve(const IContinuous::UPDATE command)
                 if(_algLoop->isLinear())
                 {
                     //calcFunction(_yHelp,_fHelp);
-                    _algLoop->giveAMatrix(_jac);
+                    _algLoop->getSystemMatrix(_jac);
                     dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
                     memcpy(_y,_f,_dimSys*sizeof(double));
-                    _algLoop->setVars(_y);
+                    _algLoop->setReal(_y);
                     _iterationStatus = DONE;
                     break;
 
@@ -173,9 +173,14 @@ IAlgLoopSolver::ITERATIONSTATUS Newton::getIterationStatus()
 
 void Newton::calcFunction(const double *y, double *residual)
 {
-    _algLoop->setVars(y);
-    _algLoop->update(IContinuous::CONTINOUS);
-    _algLoop->giveRHS(residual);
+    _algLoop->setReal(y);
+    _algLoop->evaluate();
+    _algLoop->getRHS(residual);
+}
+
+void Newton::stepCompleted(double time)
+{
+   
 }
 
 
@@ -187,7 +192,7 @@ void Newton::calcJacobian()
         // Reset variables for every column
         memcpy(_yHelp,_y,_dimSys*sizeof(double));
 
-        // Finite difference
+        // Finitializee difference
         _yHelp[j] += 1e-6;
 
         calcFunction(_yHelp,_fHelp);
@@ -198,11 +203,4 @@ void Newton::calcJacobian()
     }
 }
 
-using boost::extensions::factory;
 
-BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> > >()
-    ["Newton"].set<Newton>();
-  types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
-    ["NewtonSettings"].set<NewtonSettings>();
- }

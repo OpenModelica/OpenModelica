@@ -1,12 +1,6 @@
 #pragma once
-#define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
-#include <System/IMixedSystem.h>                // System interface
-#include <System/IContinuous.h>                // System interface
-#include <System/IEvent.h>                    // System interface
-#include <System/ISystemProperties.h>                // System Properties interface
-#include <System/ISystemInitialization.h>                // System Initialization interface
-#include <SimulationSettings/IGlobalSettings.h>
-#include <Math/Functions.h>        // Include for use of abs
+
+#include <Math/Functions.h>      
 #include <System/EventHandling.h>
 
 
@@ -41,31 +35,74 @@ public:
     SystemDefaultImplementation(IGlobalSettings& globalSettings);
 
     ~SystemDefaultImplementation();
+    
+    
+    
+    /// Provide number (dimension) of boolean variables
+    virtual int getDimBoolean() const;
 
-    /// Provide number (dimension) of variables according to the index
-     int getDimVars() const    ;
+    /// Provide number (dimension) of states
+    virtual int getDimContinuousStates() const;
 
+    /// Provide number (dimension) of integer variables
+    virtual int getDimInteger() const;
+
+    /// Provide number (dimension) of real variables
+    virtual int getDimReal() const;
+
+    /// Provide number (dimension) of string variables
+    virtual int getDimString() const;
 
     /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
-     int getDimRHS() const;
+    virtual int getDimRHS() const;
+
+
+
+
+    /// Provide boolean variables
+    virtual void getBoolean(bool* z);
+
+    /// Provide boolean variables
+    virtual void getContinuousStates(double* z);
+
+    /// Provide integer variables
+    virtual void getInteger(int* z);
+
+    /// Provide real variables
+    virtual void getReal(double* z);
+
+    /// Provide real variables
+    virtual void getString(std::string* z);
+
+    /// Provide the right hand side
+    virtual void getRHS(double* f);
+
+
+    /// Provide boolean variables
+    virtual void setBoolean(const bool* z);
+
+    /// Provide boolean variables
+    virtual void setContinuousStates(const double* z);
+
+    /// Provide integer variables
+    virtual void setInteger(const int* z);
+
+    /// Provide real variables
+    virtual void setReal(const double* z);
+
+    /// Provide real variables
+    virtual void setString(const std::string* z);
+
+    /// Provide the right hand side
+    virtual void setRHS(const double* f);
+    
 
 
     /// (Re-) initialize the system of equations
-     void init();
+     void initialize();
     /// Set current integration time
      void setTime(const double& t);
-
-
-    /// Provide variables with given index to the system
-    void giveVars(double* z);
-
-    /// Set variables with given index to the system
-    void setVars(const double* z);
-
-    /// Provide the right hand side (according to the index)
-    void giveRHS(double* f);
-    // Member variables
-
+  
 protected:
      void Assert(bool cond,string msg);
      void Terminate(string msg);
@@ -82,32 +119,33 @@ protected:
         }
     };
     double
-        time;                ///< current simulation time (given by the solver)
+        _simTime;				///< current simulation time (given by the solver) 
 
     double
         *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
-    bool
-        * _conditions;        ///< External conditions changed by the solver
+    bool   
+        * _conditions;		///< External conditions changed by the solver
+    
     int
-        _dimFunc,                        ///< Dimension der rechten Seite
-        _dimVars,                        ///< Dimesion des Zustandsvektors
-        _dimZeroFunc,                    ///< Dimension (=Anzahl) Nullstellenfunktion
-        _dimTimeEvent,                    ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
-       _dimAE;                ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
-
+         _dimContinuousStates,
+         _dimRHS,						///< Dimension der rechten Seite
+         _dimReal,						///< Anzahl der reelwertigen Variablen
+         _dimInteger,						///< Anzahl der integerwertigen Variablen
+         _dimBoolean,						///< Anzahl der boolwertigen Variablen
+         _dimString,					///< Anzahl der stringwertigen Variablen
+         _dimZeroFunc,					///< Dimension (=Anzahl) Nullstellenfunktion
+         _dimTimeEvent,					///< Dimension (=Anzahl) Time event (start zeit und frequenz)
+         _dimAE;				///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
+    
     ostream
         *_outputStream;        ///< Output stream for results
 
+   
+      
 
-
-
-    bool _initial;
+    bool _initial;		
     SValuesMap _start_values;
     EventHandling _event_handling;
-private:
-    int
-        _dimODE;            ///< Total number (dimension) of all order ordinary differential equations (first and second order)
-
 };
 

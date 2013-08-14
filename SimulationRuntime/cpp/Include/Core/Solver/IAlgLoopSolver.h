@@ -31,12 +31,12 @@ public:
     virtual ~IAlgLoopSolver()    {};
 
     /// (Re-) initialize the solver
-    virtual void init() = 0;
+    virtual void initialize() = 0;
 
     /// Solution of a (non-)linear system of equations
-    virtual void solve(const IContinuous::UPDATE command = IContinuous::UNDEF_UPDATE) = 0;
+    virtual void solve(const IContinuous::UPDATETYPE command = IContinuous::UNDEF_UPDATE) = 0;
 
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus() = 0;
-
+    virtual void stepCompleted(double time) = 0;
 };

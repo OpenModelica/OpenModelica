@@ -1,18 +1,15 @@
 #include "stdafx.h"
-#define BOOST_EXTENSION_SOLVERSETTINGS_DECL BOOST_EXTENSION_EXPORT_DECL
+#include "FactoryExport.h"
 
 #include <Solver/SolverSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
 //#include "../Interfaces/API.h"
 #include <Math/Constants.h>
 SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
-  : _hInit    (globalSettings->gethOutput() )
+  : _hInit    (1e-3 )
   , _hUpperLimit  (1e-3)
   , _hLowerLimit  (10*UROUND)
   , _endTimeTol  (1e-7)
-  , _zeroTol    (1e-7)
-  , _zeroTimeTol  (1e-10)
-  ,_zeroRatio(1.0)
   ,_dRtol(1e-8)
   ,_dAtol(1e-8)
 
@@ -70,22 +67,24 @@ void SolverSettings::setEndTimeTol(double tol)
     _endTimeTol=tol;
 }
 
-double SolverSettings::getZeroTol()
+bool SolverSettings::getDenseOutput()
 {
-    return _zeroTol;
+  return _denseOutput;
 }
-void SolverSettings::setZeroTol(double tol)
+void SolverSettings::setDenseOutput(bool dense)
 {
-    _zeroTol=tol;
+  _denseOutput = dense;
+}  
+
+
+bool SolverSettings::getEventOutput()
+{
+  return _eventOutput;
 }
 
-double SolverSettings::getZeroTimeTol()
+void SolverSettings::setEventOutput(bool eventOutput)
 {
-    return _zeroTimeTol;
-}
-void SolverSettings::setZeroTimeTol(double tol)
-{
-    _zeroTimeTol=tol;
+  _eventOutput = eventOutput;
 }
 
 IGlobalSettings* SolverSettings::getGlobalSettings()
@@ -97,12 +96,5 @@ void SolverSettings::load(string)
 {
 }
 
-double SolverSettings::getZeroRatio()
-{
-    return _zeroRatio ;
-}
 
-void SolverSettings::setZeroRatio(double ratio)
-{
-    _zeroRatio=ratio;
-}
+

@@ -167,8 +167,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib
-
+  LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib
+  #LDFLAGS=/MD   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib    
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
@@ -228,15 +228,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
   using boost::extensions::factory;
    BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-    types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory> > > >()
+    types.get<std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>,boost::shared_ptr<ISimData> > > >()
     ["ModelicaSystem"].set<<%lastIdentOfPath(modelInfo.name)%>>();
     }
 
     
-    <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory) 
+    <%lastIdentOfPath(modelInfo.name)%>::<%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactory,boost::shared_ptr<ISimData> simData) 
    :SystemDefaultImplementation(*globalSettings)
     ,_algLoopSolverFactory(nonlinsolverfactory)
-
+    ,_simData(simData)
     <%simulationInitFile(simCode)%>
     {
     //Number of equations
@@ -252,7 +252,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //DAE's are not supported yet, Index reduction is enabled
     _dimAE = 0; // algebraic equations
     //Initialize the state vector
-    SystemDefaultImplementation::init();
+    SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
     _event_handling.resetHelpVar =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::resetHelpVar, this, _1);
     _historyImpl = new HistoryImplType(*globalSettings);
@@ -268,10 +268,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     delete _historyImpl;
     }
    <%init(simCode)%>
-   void <%lastIdentOfPath(modelInfo.name)%>::resetTimeEvents()
-   {
-    <%resetTimeEvents(whenClauses,simCode)%>
-   }
+  
    <%Update(simCode)%>
    <%writeoutput(simCode)%>
    <%DefaultImplementationCode(simCode)%>
@@ -279,13 +276,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%giveZeroFunc1(zeroCrossings,simCode)%>
    <%setConditions(simCode)%>
    <%giveConditions(simCode)%>
-
+   <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode)%>
+   <%generatehandleTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
+   <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
+   <%generateTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
+   
+   
    <%isODE(simCode)%>
    <%DimZeroFunc(simCode)%>
-   <%DimInitEquations(simCode)%>
-   <%DimUnfixedStates(simCode)%>
-   <%DimUnfixedParameters(simCode)%>
-   <%DimIntialResiduals(simCode)%>
    <%GetIntialStatus(simCode)%>
    <%SetIntialStatus(simCode)%>
    <%checkConditions(zeroCrossings,whenClauses,simCode)%>
@@ -384,16 +382,15 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        ;separator="\n")
 
   <<
-  void <%modelname%>Algloop<%index%>::update(const IContinuous::UPDATE command)
+  void <%modelname%>Algloop<%index%>::evaluate(const IContinuous::UPDATETYPE command)
   {
         <%varDecls%>
-       if(command & IContinuous::CONTINOUS)
-      {
+     
 
            <%algs%>
            <%prebody%>
            <%body%>
-      }
+      
 
   }
   >>
@@ -436,7 +433,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
 
  <<
-   void <%modelname%>Algloop<%index%>::update(const IContinuous::UPDATE command)
+   void <%modelname%>Algloop<%index%>::evaluate(const IContinuous::UPDATETYPE command)
   {
       <%varDecls%>
       <%Amatrix%>
@@ -700,7 +697,7 @@ template extType2(Type type, Boolean isInput, Boolean isArray)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then 'Test struct <%underscorePath(rname)%>'
+                      then 'struct <%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
   else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
@@ -1566,14 +1563,16 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
    let initialequations  = functionInitialEquations(initialEquations,simCode)
 
   <<
-   void <%lastIdentOfPath(modelInfo.name)%>::init()
+   void <%lastIdentOfPath(modelInfo.name)%>::initialize()
    {
+      _simTime = 0.0;
+     _historyImpl->init();
     <%varDecls%>
     <%initVariables%>
    <%initFunctions%>
     checkConditions(NULL,true);
     <%initEventHandling%>
-    _event_handling.init(this,<%helpvarlength(simCode)%>);
+    _event_handling.initialize(this,<%helpvarlength(simCode)%>);
       map<unsigned int,string> var_ouputs_idx;
     <%initOutputIndices%>
    _historyImpl->setOutputs(var_ouputs_idx);
@@ -1621,25 +1620,25 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   match eq
   case SES_NONLINEAR(__) then
   <<
-  void <%modelname%>Algloop<%index%>::init()
+  void <%modelname%>Algloop<%index%>::initialize()
   {
 
          <%initAlgloopEquation(eq,varDecls,simCode)%>
-       AlgLoopDefaultImplementation::init();
+       AlgLoopDefaultImplementation::initialize();
 
     // Update the equations once before start of simulation
-    update(IContinuous::ALL);
+    evaluate(IContinuous::ALL);
    }
   >>
  case SES_LINEAR(__) then
    <<
-     void <%modelname%>Algloop<%index%>::init()
+     void <%modelname%>Algloop<%index%>::initialize()
      {
 
          <%initAlgloopEquation(eq,varDecls,simCode)%>
-          AlgLoopDefaultImplementation::init();
+          AlgLoopDefaultImplementation::initialize();
         // Update the equations once before start of simulation
-        update(IContinuous::ALL);
+        evaluate(IContinuous::ALL);
      }
    >>
 
@@ -1656,14 +1655,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   match eq
   case SES_NONLINEAR(__) then
   <<
-  void <%modelname%>Algloop<%index%>::giveAMatrix(double* A_matrix)
+  void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
   {
 
    }
   >>
  case SES_LINEAR(__) then
    <<
-     void <%modelname%>Algloop<%index%>::giveAMatrix(double* A_matrix)
+     void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
      {
           memcpy(A_matrix,__A.data(),_dim[0]*_dim[0]*sizeof(double));
      }
@@ -1683,9 +1682,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   case SES_NONLINEAR(__)
   case SES_LINEAR(__) then
   <<
-  void <%modelname%>Algloop<%index%>::giveRHS(double* residuals)
+  void <%modelname%>Algloop<%index%>::getRHS(double* residuals)
     {
-     AlgLoopDefaultImplementation::giveRHS(residuals);
+     AlgLoopDefaultImplementation::getRHS(residuals);
     }
   >>
 
@@ -1708,11 +1707,11 @@ match eq
       else if(index == 2) return _dim[2];
     }
 
-    void <%modelname%>Algloop<%index%>::giveRHS(double* vars)
+    void <%modelname%>Algloop<%index%>::getRHS(double* vars)
     {
         ublas::matrix<double> A=toMatrix(_dim[0],_dim[0],__A.data());
         double* doubleUnknowns = new double[_dimAEq];
-        giveVars(doubleUnknowns);
+        getReal(doubleUnknowns);
         ublas::vector<double> x=toVector(_dim[0],doubleUnknowns);
         ublas::vector<double> b=toVector(_dim[0],__b.data());
         b=ublas::prod(ublas::trans(A),x)-b;
@@ -1727,9 +1726,9 @@ match eq
 
     }
 
-    void <%modelname%>Algloop<%index%>::giveRHS(double* vars)
+    void <%modelname%>Algloop<%index%>::getRHS(double* vars)
     {
-          AlgLoopDefaultImplementation:::giveRHS(vars)
+          AlgLoopDefaultImplementation:::getRHS(vars)
     }
    >>
  case SES_MIXED(__) then algloopResiduals(simCode,cont)
@@ -1853,7 +1852,7 @@ template writeAlgloopvars2(SimEqSystem eq, Context context, Text &varDecls, SimC
     let size = listLength(crefs)
   <<
    double algloopvars<%index%>[<%size%>];
-   _algLoop<%index%>->giveVars(algloopvars<%index%>,NULL,NULL);
+   _algLoop<%index%>->getReal(algloopvars<%index%>);
    <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
@@ -1867,7 +1866,7 @@ template writeAlgloopvars2(SimEqSystem eq, Context context, Text &varDecls, SimC
     let algloopid = index
   <<
    double algloopvars<%algloopid%>[<%size%>];
-   _algLoop<%index%>->giveVars(algloopvars<%algloopid%>,NULL,NULL);
+   _algLoop<%index%>->getReal(algloopvars<%algloopid%>,NULL,NULL);
 
     <%vars |> SIMVAR(__) hasindex i0 => '<%cref1(name,simCode,contextAlgloop)%> = algloopvars<%algloopid%>[<%i0%>];' ;separator="\n"%>
 
@@ -1978,11 +1977,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
       for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
-      _historyImpl->write(v,v2,v3,time);
+      _historyImpl->write(v,v2,v3,_simTime);
       >>
     else
       <<
-      _historyImpl->write(v,v2,time);
+      _historyImpl->write(v,v2,_simTime);
       >>
     %>
     }
@@ -2004,7 +2003,7 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode)
     case SIMCODE(modelInfo = MODELINFO(__)) then
     <<
     double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimRHS()];
-    _algLoop<%num%>->giveRHS(doubleResiduals<%num%>);
+    _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
 
     >>
   else
@@ -2060,18 +2059,11 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   #pragma once
   #define BOOST_EXTENSION_SYSTEM_DECL BOOST_EXTENSION_EXPORT_DECL
   #define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
-  #include <boost/shared_ptr.hpp>
-  #include "System/SystemDefaultImplementation.h"
-  #include "Math/ArrayOperations.h"
   #include "System/EventHandling.h"
-  #include "System/IStepEvent.h"
-  #include "SimulationSettings/IGlobalSettings.h"
-  #include "System/IAlgLoopSolverFactory.h"
-  #include "Solver/IAlgLoopSolver.h"
+  #include "System/SystemDefaultImplementation.h"
   #include "Functions.h"
-  <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode)%>
-  #include "DataExchange/IHistory.h"
   #include "HistoryImpl.h"
+  <%algloopfilesInclude(listAppend(allEquations,initialEquations),simCode)%>
   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
@@ -2119,13 +2111,13 @@ template generateClassDeclarationCode(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IMixedSystem, public IContinuous, public IEvent,public IStepEvent, public ISystemProperties, public ISystemInitialization<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public IMixedSystem, public IContinuous, public IEvent,  public ITime, public ISystemProperties, public ISystemInitialization<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   {
 
    <%generatefriendAlgloops(listAppend(allEquations,initialEquations),simCode)%>
 
   public: 
-      <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor); 
+      <%lastIdentOfPath(modelInfo.name)%>(IGlobalSettings* globalSettings,boost::shared_ptr<IAlgLoopSolverFactory> nonlinsolverfactor,boost::shared_ptr<ISimData>); 
 
       ~<%lastIdentOfPath(modelInfo.name)%>();
 
@@ -2155,7 +2147,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      //workaround for jacobian variables
 
       <%variableDefinitionsJacobians(jacobianMatrixes)%>   
-    
+    boost::shared_ptr<ISimData> _simData;
 
    };
   >>
@@ -2230,17 +2222,38 @@ void <%lastIdentOfPath(modelInfo.name)%>::setTime(const double& t)
     SystemDefaultImplementation::setTime(t);
 }
 
-// Returns the vector with all time events
-event_times_type <%lastIdentOfPath(modelInfo.name)%>::getTimeEvents()
+
+
+// Provide number (dimension) of variables according to the index
+int <%lastIdentOfPath(modelInfo.name)%>::getDimContinuousStates() const
 {
-    return _event_handling.getTimeEvents();
+    return(SystemDefaultImplementation::getDimContinuousStates());
+}
+
+
+// Provide number (dimension) of variables according to the index
+int <%lastIdentOfPath(modelInfo.name)%>::getDimBoolean() const
+{
+    return(SystemDefaultImplementation::getDimBoolean());
 }
 
 // Provide number (dimension) of variables according to the index
-int <%lastIdentOfPath(modelInfo.name)%>::getDimVars() const
+int <%lastIdentOfPath(modelInfo.name)%>::getDimInteger() const
 {
-    return(SystemDefaultImplementation::getDimVars());
+    return(SystemDefaultImplementation::getDimInteger());
 }
+// Provide number (dimension) of variables according to the index
+int <%lastIdentOfPath(modelInfo.name)%>::getDimReal() const
+{
+    return(SystemDefaultImplementation::getDimReal());
+}
+
+// Provide number (dimension) of variables according to the index
+int <%lastIdentOfPath(modelInfo.name)%>::getDimString() const
+{
+    return(SystemDefaultImplementation::getDimString());
+}
+
 
 // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
 int <%lastIdentOfPath(modelInfo.name)%>::getDimRHS() const
@@ -2248,20 +2261,63 @@ int <%lastIdentOfPath(modelInfo.name)%>::getDimRHS() const
      return(SystemDefaultImplementation::getDimRHS());
 }
 
-// Provide variables with given index to the system
-void <%lastIdentOfPath(modelInfo.name)%>::giveVars(double* z)
+
+
+void <%lastIdentOfPath(modelInfo.name)%>::getBoolean(bool* z)
 {
-    SystemDefaultImplementation::giveVars(z);
+   
+}
+
+void <%lastIdentOfPath(modelInfo.name)%>::getInteger(int* z)
+{
+   
+}
+
+void <%lastIdentOfPath(modelInfo.name)%>::getContinuousStates(double* z)
+{
+    SystemDefaultImplementation::getContinuousStates(z);
+}
+
+
+void <%lastIdentOfPath(modelInfo.name)%>::getReal(double* z)
+{
+
+}
+
+void <%lastIdentOfPath(modelInfo.name)%>::getString(string* z)
+{
+ 
+}
+
+
+void <%lastIdentOfPath(modelInfo.name)%>::setBoolean(const bool* z)
+{
+ 
+}
+// Provide variables with given index to the system
+void <%lastIdentOfPath(modelInfo.name)%>::setInteger(const int* z)
+{
+    
+}
+// Provide variables with given index to the system
+void <%lastIdentOfPath(modelInfo.name)%>::setReal(const double* z)
+{
+    
+}
+// Provide variables with given index to the system
+void <%lastIdentOfPath(modelInfo.name)%>::setString(const string*  z)
+{
+    
 }
 
 // Set variables with given index to the system
-void <%lastIdentOfPath(modelInfo.name)%>::setVars(const double* z)
+void <%lastIdentOfPath(modelInfo.name)%>::setContinuousStates(const double* z)
 {
-    SystemDefaultImplementation::setVars(z);
+    SystemDefaultImplementation::setContinuousStates(z);
 }
 
 // Provide the right hand side (according to the index)
-void <%lastIdentOfPath(modelInfo.name)%>::giveRHS(double* f)
+void <%lastIdentOfPath(modelInfo.name)%>::getRHS(double* f)
 {
 <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
 <<
@@ -2271,78 +2327,36 @@ if(index == IContinuous::ALL_RESIDUES)
     double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode));separator=","%>};
     for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];
 }
-else SystemDefaultImplementation::giveRHS(f);
+else SystemDefaultImplementation::getRHS(f);
 >>
 else
 <<
-    SystemDefaultImplementation::giveRHS(f);
+    SystemDefaultImplementation::getRHS(f);
 >>%>
 }
 
-void <%lastIdentOfPath(modelInfo.name)%>::giveJacobianSparsityPattern(SparcityPattern pattern)
-{
-  throw std::runtime_error("giveJacobianSparsityPattern is not yet implemented");
-}
 
 
 
-void <%lastIdentOfPath(modelInfo.name)%>::giveMassSparsityPattern(SparcityPattern pattern)
-{
-  throw std::runtime_error("giveMassSparsityPattern is not yet implemented");
-}
-
-void <%lastIdentOfPath(modelInfo.name)%>::giveMassMatrix(SparseMatrix& matrix)
-{
-  throw std::runtime_error("giveMassMatrix is not yet implemented");
-}
-
-void <%lastIdentOfPath(modelInfo.name)%>::giveConstraintSparsityPattern(SparcityPattern pattern)
-{
-  throw std::runtime_error("giveConstraintSparsityPattern is not yet implemented");
-}
-
-void <%lastIdentOfPath(modelInfo.name)%>::giveConstraint(SparseMatrix matrix)
-{
-  throw std::runtime_error("giveConstraint is not yet implemented");
-}
-
-bool <%lastIdentOfPath(modelInfo.name)%>::isAutonomous()
-{
-  throw std::runtime_error("isAutonomous is not yet implemented");
-}
 bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
 {
     throw std::runtime_error("isAutonomous is not yet implemented");    
 }
 
-bool <%lastIdentOfPath(modelInfo.name)%>::isTimeInvariant()
-{
-  throw std::runtime_error("isTimeInvariant is not yet implemented");
-}
+
 
 bool <%lastIdentOfPath(modelInfo.name)%>::isAlgebraic()
 {
   return false; // Indexreduction is enabled
 }
 
-bool <%lastIdentOfPath(modelInfo.name)%>::isExplicit()
-{
-  return true; // At the moment only explicit form is supported
-}
+
 
 IHistory* <%lastIdentOfPath(modelInfo.name)%>::getHistory()
 {
    return _historyImpl;
 }
-bool <%lastIdentOfPath(modelInfo.name)%>::hasConstantMass()
-{
-  throw std::runtime_error("hasConstantMass is not yet implemented");
-}
 
-bool <%lastIdentOfPath(modelInfo.name)%>::hasStateDependentMass()
-{
-  throw std::runtime_error("hasStateDependentMass is not yet implemented");
-}
 
 bool <%lastIdentOfPath(modelInfo.name)%>::provideSymbolicJacobian()
 {
@@ -2369,9 +2383,9 @@ case SES_NONLINEAR(__) then
 <<
 
 /// Provide number (dimension) of variables according to data type
-int  <%modelname%>Algloop<%index%>::getDimVars() const
+int  <%modelname%>Algloop<%index%>::getDimReal() const
 {
-    return(AlgLoopDefaultImplementation::getDimVars());
+    return(AlgLoopDefaultImplementation::getDimReal());
 };
 
 /// Provide number (dimension) of residuals according to data type
@@ -2382,22 +2396,22 @@ int  <%modelname%>Algloop<%index%>::getDimRHS( ) const
 
 
 /// Provide variables with given index to the system
-void  <%modelname%>Algloop<%index%>::giveVars(double* vars)
+void  <%modelname%>Algloop<%index%>::getReal(double* vars)
 {
 
-    AlgLoopDefaultImplementation::giveVars(vars);
+    AlgLoopDefaultImplementation::getReal(vars);
     //workaroud until names of algloop vars are replaced in simcode
     <%giveAlgloopvars(eq,simCode)%>
 };
 
 /// Set variables with given index to the system
-void  <%modelname%>Algloop<%index%>::setVars(const double* vars)
+void  <%modelname%>Algloop<%index%>::setReal(const double* vars)
 {
 
     //workaround until names of algloop vars are replaced in simcode  
 
     <%setAlgloopvars(eq,simCode)%>
-    AlgLoopDefaultImplementation::setVars(vars);
+    AlgLoopDefaultImplementation::setReal(vars);
 };
 
 
@@ -2421,39 +2435,38 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      //Releases the Modelica System
     virtual void destroy();
     //provide number (dimension) of variables according to the index
-    virtual int getDimVars() const;
+    virtual int getDimContinuousStates() const;
+      /// Provide number (dimension) of boolean variables
+    virtual int getDimBoolean() const;
+    /// Provide number (dimension) of integer variables
+    virtual int getDimInteger() const;
+    /// Provide number (dimension) of real variables
+    virtual int getDimReal() const ;
+    /// Provide number (dimension) of string variables
+    virtual int getDimString() const ;
     //Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
     virtual int getDimRHS()const;
       //Resets all time events
-    virtual void resetTimeEvents();
-    //Set current integration time
-    virtual void setTime(const double& t);
+   
+   
     //Provide variables with given index to the system
-    virtual void giveVars(double* z);
+    virtual void getContinuousStates(double* z);
     //Set variables with given index to the system
-    virtual void setVars(const double* z);
+    virtual void setContinuousStates(const double* z);
     //Update transfer behavior of the system of equations according to command given by solver
-    virtual bool update(const UPDATE command =IContinuous::UNDEF_UPDATE);
+    virtual bool evaluate(const UPDATETYPE command =IContinuous::UNDEF_UPDATE);
+
     //Provide the right hand side (according to the index)
-    virtual void giveRHS(double* f);
+    virtual void getRHS(double* f);
     //Output routine (to be called by the solver after every successful integration step)
     virtual void writeOutput(const OUTPUT command = UNDEF_OUTPUT);
-    //Provide pattern for Jacobian
-    virtual void giveJacobianSparsityPattern(SparcityPattern pattern);
+   
     //Provide Jacobian
-    virtual void giveJacobian(SparseMatrix& matrix);
-     //Provide pattern for mass matrix
-    virtual void giveMassSparsityPattern(SparcityPattern pattern);
-    //Provide mass matrix
-    virtual void giveMassMatrix(SparseMatrix& matrix);
-    //Provide pattern for global constraint jacobian
-    virtual void giveConstraintSparsityPattern(SparcityPattern pattern);
-    //Provide global constraint jacobian
-    virtual void giveConstraint(SparseMatrix matrix);
-    //Provide number (dimension) of zero functions
+    virtual void getJacobian(SparseMatrix& matrix);
+     //Provide number (dimension) of zero functions
     virtual int getDimZeroFunc();
     //Provides current values of root/zero functions
-     virtual void giveZeroFunc(double* f);
+     virtual void getZeroFunc(double* f);
       virtual void setConditions(bool* c);
     virtual void giveConditions(bool* c);
     //Called to check conditions for event-handling
@@ -2468,35 +2481,29 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll();
     virtual void saveDiscreteVars();
-    //Returns the vector with all time events
-    virtual event_times_type getTimeEvents();
-    // No input
-    virtual bool isAutonomous();
-    // Time is not present
-    virtual bool isTimeInvariant();
     // M is regular
     virtual bool isODE();
     // M is singular
     virtual bool isAlgebraic();
-    //M = identity
-    virtual bool isExplicit();
-    // M does not depend on t, z
-    virtual bool hasConstantMass();
-    // M depends on z
-    virtual bool hasStateDependentMass();
+    
+    
+    virtual int getDimTimeEvent() const;
+    //gibt die Time events (Startzeit und Frequenz) zurück
+    virtual void getTimeEvent(time_event_type& time_events);
+    //Wird vom Solver zur Behandlung der Time events aufgerufen (wenn zero_sign[i] = 0  kein time event,zero_sign[i] = n  Anzahl von vorgekommen time events )
+    virtual void handleTimeEvent(int* time_events);
+    /// Set current integration time
+    virtual void setTime(const double& time);
+      
     // System is able to provide the Jacobian symbolically
     virtual bool provideSymbolicJacobian();
-    //Systeminitialization methods
-    virtual unsigned int getDimInitEquations() ;
-    virtual unsigned int getDimUnfixedStates() ;
-    virtual unsigned int getDimUnfixedParameters();
-    virtual unsigned int getDimIntialResiduals() ;
     virtual bool initial();
     virtual void setInitial(bool);
     /// (Re-) initialize the system of equations and bounded parameters
-    virtual void init();
+    virtual void initialize();
  // Returns the history object to query simulation results
    virtual IHistory* getHistory();
+   virtual void stepCompleted(double time);
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
 
@@ -2514,6 +2521,25 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     bool setReal(int handle, double& value);
     bool setInteger(int handle, int& value);
     bool setBoolean(int handle, bool& value);
+    
+    
+     /// Provide boolean variables
+    virtual void getBoolean(bool* z);
+    /// Provide integer variables
+    virtual void getInteger(int* z);
+    /// Provide real variables
+    virtual void getReal(double* z);
+    /// Provide real variables
+    virtual void getString(std::string* z);
+    /// Provide boolean variables
+    virtual void setBoolean(const bool* z);
+    /// Provide integer variables
+    virtual void setInteger(const int* z);
+    /// Provide real variables
+    virtual void setReal(const double* z);
+    /// Provide real variables
+    virtual void setString(const std::string* z);
+    
 >>
 end generateMethodDeclarationCode;
 
@@ -2524,19 +2550,19 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
 <<
     /// Provide number (dimension) of variables according to data type
-    virtual int getDimVars() const    ;
+    virtual int getDimReal() const    ;
     /// Provide number (dimension) of residuals according to data type
     virtual int getDimRHS() const    ;
      /// (Re-) initialize the system of equations
-    virtual void init();
+    virtual void initialize();
     /// Provide variables with given index to the system
-    virtual void giveVars(double* vars)    ;
+    virtual void getReal(double* vars)    ;
     /// Set variables with given index to the system
-    virtual void setVars(const double* vars)    ;
+    virtual void setReal(const double* vars)    ;
     /// Update transfer behavior of the system of equations according to command given by solver
-    virtual void update(const  IContinuous::UPDATE command =IContinuous::UNDEF_UPDATE);
+    virtual void evaluate(const  IContinuous::UPDATETYPE command =IContinuous::UNDEF_UPDATE);
     /// Provide the right hand side (according to the index)
-    virtual void giveRHS(double* vars);
+    virtual void getRHS(double* vars);
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
     /// Provide dimensions of residuals for linear equation systems
@@ -2545,7 +2571,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void giveResiduals(double* vars);
     >>%>
     /// Output routine (to be called by the solver after every successful integration step)
-    virtual void giveAMatrix(double* A_matrix);
+    virtual void getSystemMatrix(double* A_matrix);
     virtual bool isLinear();
     /// Set stream for output
     virtual void setOutput(ostream* outputStream)     ;
@@ -3722,9 +3748,12 @@ match simCode
 case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)))
 then
     <<
-    _dimVars = <%vi.numStateVars%>;
-    _dimFunc = <%vi.numStateVars%>;
-
+    _dimContinuousStates = <%vi.numStateVars%>;
+    _dimRHS = <%vi.numStateVars%>;
+    _dimBoolean =<%vi.numBoolAlgVars%> + <%vi.numBoolParams%>;
+    _dimInteger =<%vi.numIntAlgVars%>  + <%vi.numIntParams%>;
+    _dimString =<%vi.numStringAlgVars%> + <%vi.numStringParamVars%>;
+     _dimReal =<%vi.numAlgVars%> + <%vi.numParams%>;
     >>
 end dimension1;
 
@@ -3957,9 +3986,14 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     then
     <<
 
-      
-        _algLoopSolver<%index%>->solve(IContinuous::CONTINOUS); 
-            
+      try
+      {
+        _algLoopSolver<%index%>->solve(); 
+               }
+        catch(std::exception &ex)
+           {
+                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(time) + " with error: " + ex.what()); 
+            } 
     >>
     else
     <<
@@ -3967,11 +4001,17 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
      if(!(command & IContinuous::RANKING))
     {
 
+    try
+      {
         _algLoopSolver<%index%>->solve(command);     
-       
+      }
+      catch(std::exception &ex)
+       {
+             throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(time) + " with error: " + ex.what()); 
+       } 
 
     }
-       else _algLoop<%i%>->init();
+       else _algLoop<%i%>->initialize();
      
       >>
     end match
@@ -3985,6 +4025,12 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   else
     "NOT IMPLEMENTED EQUATION"
 end equation_;
+
+
+
+
+
+
 
 
 template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, SimCode simCode)
@@ -4031,6 +4077,114 @@ case SES_MIXED(__) then
     */ %>
   >>
 end equationMixed;
+
+template generateStepCompleted(list<SimEqSystem> allEquations,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algloopsolver =   generateStepCompleted2(allEquations,simCode)
+  
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+  <<
+  void <%lastIdentOfPath(modelInfo.name)%>::stepCompleted(double time)
+  {
+   <%algloopsolver%>
+   saveAll();
+   }
+  >>
+
+end generateStepCompleted;
+
+
+template generatehandleTimeEvent(list<SimEqSystem> allEquations,SimCode simCode)
+::=
+  
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+  <<
+  void <%lastIdentOfPath(modelInfo.name)%>::handleTimeEvent(int* time_events)
+  {
+  
+   }
+  >>
+
+end generatehandleTimeEvent;
+
+template generateDimTimeEvent(list<SimEqSystem> allEquations,SimCode simCode)
+::=
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+  <<
+  int <%lastIdentOfPath(modelInfo.name)%>::getDimTimeEvent() const
+  {
+    return 0;
+   }
+  >>
+
+end generateDimTimeEvent;
+
+
+template generateTimeEvent(list<SimEqSystem> allEquations,SimCode simCode)
+::=
+  
+  match simCode
+case SIMCODE(modelInfo = MODELINFO(__))
+then
+  <<
+  void <%lastIdentOfPath(modelInfo.name)%>::getTimeEvent(time_event_type& time_events)
+  {
+   
+   }
+  >>
+
+end generateTimeEvent;
+
+
+
+
+template generateStepCompleted2(list<SimEqSystem> allEquations,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let algloopsolver = (allEquations |> eqs => (eqs |> eq =>
+      generateStepCompleted3(eq, contextOther, &varDecls /*BUFC*/,simCode) ;separator="\n")
+    ;separator="\n")
+
+  <<
+   <%algloopsolver%>
+  >>
+
+end generateStepCompleted2;
+
+
+template generateStepCompleted3(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  match eq
+  case SES_LINEAR(__)
+  case e as SES_NONLINEAR(__)
+    then
+  let num = index
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+  <<
+    _algLoopSolver<%num%>->stepCompleted(_simTime);
+   >>
+   end match
+  case e as SES_MIXED(cont = eq_sys)
+  then
+   <<
+   <%generateStepCompleted3(eq_sys,context,varDecls,simCode)%>
+   >>
+  else
+    ""
+ end generateStepCompleted3;
+
+
 
 template generateAlgloopsolvers(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
@@ -4182,7 +4336,7 @@ template initAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls, Si
   <<
       // Initialize the solver
     if(_algLoopSolver<%num%>)
-        _algLoopSolver<%num%>->init();
+        _algLoopSolver<%num%>->initialize();
   >>
    end match
    case e as SES_MIXED(cont = eq_sys)
@@ -4462,6 +4616,7 @@ match eq
 case SES_SIMPLE_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+
   match cref
   case CREF_QUAL(ident = "$PRE")  then 
   << 
@@ -4469,11 +4624,19 @@ case SES_SIMPLE_ASSIGN(__) then
       _event_handling.save(<%expPart%>,"<%cref(componentRef)%>");
   >>
   else
+   match exp
+  case CREF(ty = t as  T_ARRAY(__)) then
+  <<
+  //Array assign
+  <%cref1(cref, simCode,context)%>=<%expPart%>;
+  >>
+  else
   <<
   <%preExp%>
   <%cref1(cref, simCode,context)%>=<%expPart%>;
   >>
-
+ end match
+end match  
 end equationSimpleAssign;
 
 
@@ -5530,7 +5693,7 @@ end daeExpCrefRhsArrayBox;
 template cref1(ComponentRef cr, SimCode simCode, Context context) ::=
   match cr
   case CREF_IDENT(ident = "xloc") then '<%representationCref(cr, simCode,context) %>'
-  case CREF_IDENT(ident = "time") then "time"
+  case CREF_IDENT(ident = "time") then "_simTime"
 
   else '<%representationCref(cr, simCode,context) %>'
 end cref1;
@@ -5600,61 +5763,9 @@ end DimZeroFunc;
 
 
 
-template DimInitEquations(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-match modelInfo
-case MODELINFO(varInfo=VARINFO(__)) then
-  <<
-   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimInitEquations()
-    {
-      return <%varInfo.numInitialEquations%>;
-    }
-  >>
-  end match
-end DimInitEquations;
-
-template DimUnfixedStates(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-  <<
-   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimUnfixedStates()
-    {
-      return 0;
-    }
-  >>
-end DimUnfixedStates;
 
 
-template DimUnfixedParameters( SimCode simCode )
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-match modelInfo
-case MODELINFO(varInfo=VARINFO(__)) then
-  <<
-   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimUnfixedParameters()
-    {
-      return <%varInfo.numInitialResiduals%>;
-    }
-  >>
-  end match
-end DimUnfixedParameters;
 
-
-template DimIntialResiduals(SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-  <<
-   unsigned int <%lastIdentOfPath(modelInfo.name)%>::getDimIntialResiduals()
-    {
-      return 0;
-    }
-  >>
-end DimIntialResiduals;
 
 template SetIntialStatus(SimCode simCode)
 ::=
@@ -6263,38 +6374,6 @@ end timeEventcondition1;
 */
 
 
-template resetTimeEvents(list<SimWhenClause> whenClauses,SimCode simCode)
-::=''
-/*
-  let helpvars =  match helpVarInfo case _::_ then 'double h[<%helpvarlength(simCode)%>];
-                                                    <%helpvarvector(whenClauses,simCode)%>
-                                                    _event_handling.setHelpVars(h);'
-
-  <<
-  <%helpvars%>
-  >>
-*/
-end resetTimeEvents;
-
-/*
-template resetTimeEvent(list<SampleCondition> sampleConditions,SimCode simCode)
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  (sampleConditions |> (relation_,index)  =>
-    resetTimeEvent1(index, relation_, &varDecls /*BUFD*/,simCode)
-  ;separator="\n")
-end resetTimeEvent;
-
-template resetTimeEvent1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
-::=
-  match relation
-  case CALL(path=IDENT(name="sample"), expLst={ICONST(integer=index), start, interval}) then
-    let &preExp = buffer "" /*BUFD*/
-     <<
-     _condition<%intSub(index, 1)%> = false;
-    >>
-end resetTimeEvent1;
-*/
 
 template handleEvent(SimCode simCode)
 ::=
@@ -6375,12 +6454,15 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
             state_vars_reinitialized = state_vars_reinitialized || st_vars_reinit; 
 
             saveAll();
-    }
-    resetTimeEvents();
-    if(iter>2*_dimZeroFunc && restart )
-      throw std::runtime_error("Number of event iteration steps exceeded. " );
+
+           
+            
+     }
+   
+    if(iter>2*_dimZeroFunc && restart ){
+     throw std::runtime_error("Number of event iteration steps exceeded. " );}
     return state_vars_reinitialized;
-  }
+   }
   >>
 end handleSystemEvents;
 
@@ -6404,7 +6486,7 @@ template giveZeroFunc1(list<ZeroCrossing> zeroCrossings,SimCode simCode)
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
 <<
- void <%lastIdentOfPath(modelInfo.name)%>::giveZeroFunc(double* f)
+ void <%lastIdentOfPath(modelInfo.name)%>::getZeroFunc(double* f)
   {
    <%varDecls%>
    <%prexp%>
@@ -6689,7 +6771,7 @@ template update(list<list<SimEqSystem>> continousEquations,list<SimEqSystem> dis
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  void <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
+  void <%lastIdentOfPath(modelInfo.name)%>::evaluate(const UPDATETYPE command)
   {
     <%varDecls%>
 
@@ -6720,7 +6802,9 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  bool <%lastIdentOfPath(modelInfo.name)%>::update(const UPDATE command)
+
+  bool <%lastIdentOfPath(modelInfo.name)%>::evaluate(const UPDATETYPE command)
+
   {
     bool state_var_reinitialized = false;
     <%varDecls%>
@@ -6967,7 +7051,7 @@ case {} then
    void <%classname%>::calcJacobianColumn()
   {
   }
-  void <%classname%>::giveJacobian(SparseMatrix& matrix)
+  void <%classname%>::getJacobian(SparseMatrix& matrix)
   {
 
   }
@@ -6979,7 +7063,7 @@ case _ then
     void <%classname%>::calcJacobianColumn()
   {
   }
-    void <%classname%>::giveJacobian(SparseMatrix& matrix)
+    void <%classname%>::getJacobian(SparseMatrix& matrix)
     {
 
     }
@@ -7008,7 +7092,7 @@ _jac_x.clear();
 
   <<
     <%jacMats%>
-    void <%classname%>::giveJacobian(SparseMatrix& matrix)
+    void <%classname%>::getJacobian(SparseMatrix& matrix)
      {
         <%jacvals%>
         matrix=_jacobian;

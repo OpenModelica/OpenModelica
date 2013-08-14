@@ -1,10 +1,8 @@
 
 #include "stdafx.h"
 #include "Configuration.h"
-#include "System/ISystemProperties.h"
-#include "LibrariesConfig.h"
 #include <boost/program_options.hpp>
-#include "System/IAlgLoopSolverFactory.h"
+#include "SimController.h"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -105,101 +103,16 @@ int main(int argc, const char* argv[])
             return 0;
         }
 
-        //std::cout << libraries_path << "  end" << std::endl;
 
-
-        Configuration config(libraries_path,config_path);
-        IGlobalSettings* global_settings = config.getGlobalSettings();
-        global_settings->setRuntimeLibrarypath(runtime_lib_path);
-        global_settings->setResultsFileName(resultsfilename);
-        //Load Modelica sytem library
-
-
-        fs::path modelica_system_name(MODELICASYSTEM_LIB);
-        fs::path modelica_system_path = modelica_path;
-        modelica_system_path/=modelica_system_name;
-
-        fs::path math_name(MATH_LIB);
-        fs::path math_path = libraries_path;
-        math_path/=math_name;
-
-        fs::path default_system_name(SYSTEM_LIB);
-        fs::path default_system_path = libraries_path;
-        default_system_path/=default_system_name;
-
-
-
-        default_system_path.make_preferred();
-        modelica_system_path.make_preferred();
-        math_path.make_preferred();
-
-        type_map types;
-        if(!load_single_library(types,  default_system_path.string()))
-            throw std::invalid_argument("System default library could not be loaded");
-
-        shared_library math_lib(math_path.string());
-        if(!math_lib.open())
-            throw std::invalid_argument("Math library could not be loaded");
-
-        if(!load_single_library(types,  modelica_system_path.string()))
-            throw std::invalid_argument("ModelicaSystem library could not be loaded");
-
-
-         //Load Algloopsolver library
-      
-
+            
+            //SimController to start simulation
+             SimSettings settings = {"Euler","Newton",0.0,1.0,0.001,0.0001,1,results_file_path.string()};
+            boost::shared_ptr<ISimController> sim_controller =  boost::shared_ptr<ISimController>(new SimController(runtime_lib_path,modelica_path));
+             //create Modelica system
+            std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = sim_controller->LoadSystem("ModelicaSystem");
        
-        fs::path algsolver_name(SYSTEM_LIB);
-        fs::path algsolver_path = libraries_path;
-        algsolver_path/=algsolver_name;
-
-        if(!load_single_library(types, algsolver_path.string()))
-            throw std::invalid_argument("Algsolver library could not be loaded");
-        std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings&> >::iterator iter;
-        std::map<std::string, factory<IAlgLoopSolverFactory,IGlobalSettings&> >& algloopsolver_factory(types.get());
-        iter = algloopsolver_factory.find("AlgLoopSolverFactory");
-        if (iter ==algloopsolver_factory.end()) 
-         {
-            throw std::invalid_argument("No AlgLoopSolverFactory  found");
-        }
-        boost::shared_ptr<IAlgLoopSolverFactory> algLoopSolverFactory = boost::shared_ptr<IAlgLoopSolverFactory>(iter->second.create(*global_settings));
-        std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory> > >::iterator system_iter;
-        std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory> > >& factories(types.get());
-        system_iter = factories.find("ModelicaSystem");
-        if (system_iter ==factories.end()) 
-        {
-            throw std::invalid_argument("No Modelica system found");
-        }
-
-
-        //create Modelica system
-        boost::shared_ptr<IMixedSystem> system(system_iter->second.create(global_settings,algLoopSolverFactory));
-
-        //create selected solver
-        boost::shared_ptr<IDAESolver> solver = config.createSolver(system.get());
-
-        boost::shared_ptr<ISystemProperties> properties = boost::dynamic_pointer_cast<ISystemProperties>(system);
-        if((properties->isODE()) && !(properties->isAlgebraic()) && (properties->isExplicit()))
-        {
-
-            // Command for integration: Since integration is done "at once" the solver is only called once. Hence it is both, first and last
-            // call to the solver at the same time. Furthermore it is supposed to be a regular call (not a recall)
-            IDAESolver::SOLVERCALL command = IDAESolver::SOLVERCALL(IDAESolver::FIRST_CALL|IDAESolver::LAST_CALL|IDAESolver::REGULAR_CALL|IDAESolver::RECORDCALL);
-            // The simulation entity is supposed to set start and end time
-            solver->setStartTime(global_settings->getStartTime());
-            solver->setEndTime(global_settings->getEndTime());
-            solver->setInitStepSize(config.getSolverSettings()->gethInit());
-            // Call the solver
-
-
-            solver->solve(command);
-
-            // Get the status of the solver (is the interation done sucessfully?)
-            IDAESolver::SOLVERSTATUS status = solver->getSolverStatus();
-            //Todo: use flags for simulation outputs
-            //solver->writeSimulationInfo(std::cout);
-            //solver->reportErrorMessage(std::cout);
-        }
+            sim_controller->Start(system.first,settings);
+       
 
     }
     catch(std::exception& ex)

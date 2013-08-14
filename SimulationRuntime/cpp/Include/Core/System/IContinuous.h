@@ -20,48 +20,90 @@ public:
 
 
     /// Enumeration to control the evaluation of equations within the system
-    enum UPDATE
+    enum UPDATETYPE
     {
-        UNDEF_UPDATE    =    0x00000000,
+        UNDEF_UPDATE	=	0x00000000,
 
-        DISCRETE        =    0x00000001,            ///< Sample discrete variables only
-        CONTINOUS        =    0x00000002,            ///< Determine continous variables
-        ACROSS            =    0x00000004,
-        THROUGH            =    0x00000008,
-        ALL                =    0x0000000F,            ///< [DISCRETE|CONTINOUS]
-        RANKING            =    0x00000010            ///< Ranking Method
-
+        ACROSS			=	0x00000001,
+        THROUGH			=	0x00000002,
+        ALL				=	0x00000003,
+        RANKING			=	0x00000010			///< Ranking Method	
     };
 
 
 
-    virtual ~IContinuous()    {};
+    virtual ~IContinuous()	{};
 
+    /// Provide number (dimension) of boolean variables
+    virtual int getDimBoolean() const = 0;
 
+    /// Provide number (dimension) of states
+    virtual int getDimContinuousStates() const = 0;
 
-    /// Provide number (dimension) of variables according to the index
-    virtual int getDimVars() const = 0;
+    /// Provide number (dimension) of integer variables
+    virtual int getDimInteger() const = 0;
+
+    /// Provide number (dimension) of real variables
+    virtual int getDimReal() const = 0;
+
+    /// Provide number (dimension) of string variables
+    virtual int getDimString() const = 0;
 
     /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
     virtual int getDimRHS() const = 0;
 
 
 
-    /// Set current integration time
-    virtual void setTime(const double& time) = 0;
 
-    /// Provide variables with given index to the system
-    virtual void giveVars(double* z) = 0;
+    /// Provide boolean variables
+    virtual void getBoolean(bool* z) = 0;
 
-    /// Set variables with given index to the system
-    virtual void setVars(const double* z) = 0;
+    /// Provide boolean variables
+    virtual void getContinuousStates(double* z) = 0;
+
+    /// Provide integer variables
+    virtual void getInteger(int* z) = 0;
+
+    /// Provide real variables
+    virtual void getReal(double* z) = 0;
+
+    /// Provide real variables
+    virtual void getString(std::string* z) = 0;
+
+    /// Provide the right hand side
+    virtual void getRHS(double* f) = 0;
+
+
+
+
+
+    /// Provide boolean variables
+    virtual void setBoolean(const bool* z) = 0;
+
+    /// Provide boolean variables
+    virtual void setContinuousStates(const double* z) = 0;
+
+    /// Provide integer variables
+    virtual void setInteger(const int* z) = 0;
+
+    /// Provide real variables
+    virtual void setReal(const double* z) = 0;
+
+    /// Provide real variables
+    virtual void setString(const std::string* z) = 0;
+
+  
+    
+
+
 
     /// Update transfer behavior of the system of equations according to command given by solver
-    virtual bool update(const UPDATE command = UNDEF_UPDATE) = 0;
 
-    /// Provide the right hand side (according to the index)
-    virtual void giveRHS(double* f) = 0;
+    virtual bool evaluate(const UPDATETYPE command = UNDEF_UPDATE) = 0;  // vxworks
 
+    
+
+    virtual void stepCompleted(double time) = 0;
 
 };
 

@@ -1,4 +1,13 @@
+
 #include "Modelica.h"
+/*workarround until cmake file is modified*/
+#define OMC_BUILD
+#include <Solver/ISolverSettings.h>
+#include <SimulationSettings/ISettingsFactory.h>
+#include <Solver/ISolver.h>
+#include <DataExchange/SimData.h>
+#include <Policies/FactoryConfig.h>
+/*end workarround*/
 #include "FMU/FMUWrapper.h"
 #include "System/AlgLoopSolverFactory.h"
 
@@ -9,9 +18,9 @@ FMUWrapper::FMUWrapper(fmiString instanceName, fmiString GUID,
   _global_settings()
 {
   boost::shared_ptr<IAlgLoopSolverFactory>
-      solver_factory(new AlgLoopSolverFactory(_global_settings));
+      solver_factory(new AlgLoopSolverFactory(&_global_settings,PATH(""),PATH("")));
   _model = boost::shared_ptr<MODEL_IDENTIFIER>
-      (new MODEL_IDENTIFIER(&_global_settings, solver_factory));
+      (new MODEL_IDENTIFIER(&_global_settings, solver_factory,boost::shared_ptr<ISimData>(new SimData())));
   _model->setInitial(true);
 }
 
@@ -35,21 +44,21 @@ fmiStatus FMUWrapper::setTime(fmiReal time)
 fmiStatus FMUWrapper::setContinuousStates(const fmiReal states[], size_t nx)
 {
   // to set states do the folowing
-  _model->setVars(states);
+  _model->setContinuousStates(states);
   _need_update = true;
   return fmiOK;
 }
 
 fmiStatus FMUWrapper::getContinuousStates(fmiReal states[], size_t nx)
 {
-  _model->giveVars(states);
+  _model->getContinuousStates(states);
   return fmiOK;
 }
 
 fmiStatus FMUWrapper::getDerivatives(fmiReal derivatives[], size_t nx)
 {
   updateModel();
-  _model->giveRHS(derivatives);
+  _model->getRHS(derivatives);
   return fmiOK;
 }
 
@@ -60,7 +69,7 @@ void FMUWrapper::updateModel()
   if(!_need_update)
     return;
 
-  _model->update(); // This will calculate the values for derivate variables, algebraic variables
+  _model->evaluate(); // This will calculate the values for derivate variables, algebraic variables
   _need_update = false;
 }
 
@@ -92,14 +101,14 @@ fmiStatus FMUWrapper::setString(const fmiValueReference vr[], size_t nvr,
 fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativeTolerance, fmiEventInfo& eventInfo)
 {
   // TODO: here is some code duplication to SimulationRuntime/cpp/Core/Solver/Initailization.cpp
-  _model->init();
+  _model->initialize();
   _model->setInitial(true);
 
   bool restart=true;
   int iter=0;
   while(restart && !(iter++ > 10))
   {
-    _model->update(IContinuous::ALL);
+    _model->evaluate(IContinuous::ALL);
     restart = _model->checkForDiscreteEvents();
   }
 
@@ -120,7 +129,7 @@ fmiStatus FMUWrapper::getEventIndicators(fmiReal eventIndicators[], size_t ni)
   updateModel();
   bool conditions[NUMBER_OF_EVENT_INDICATORS];
   _model->giveConditions(conditions);
-  _model->giveZeroFunc(eventIndicators);
+  _model->getZeroFunc(eventIndicators);
   for(int i = 0; i < ni; i++)
     if(!conditions[i]) eventIndicators[i] = -eventIndicators[i];
   return fmiOK;
@@ -167,7 +176,7 @@ fmiStatus FMUWrapper::eventUpdate(fmiBoolean intermediateResults,
   // Check if an Zero Crossings happend
   double f[NUMBER_OF_EVENT_INDICATORS];
   bool events[NUMBER_OF_EVENT_INDICATORS];
-  _model->giveZeroFunc(f);
+  _model->getZeroFunc(f);
   for(int i=0; i<NUMBER_OF_EVENT_INDICATORS; i++)
     events[i] = f[i] >= 0;
   // Handle Zero Crossings if nessesary

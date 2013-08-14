@@ -1,0 +1,82 @@
+#pragma once
+
+/*
+Policy class to create nonlin solver object
+*/
+template <class CreationPolicy> 
+struct NonLinSolverOMCFactory : public  ObjectFactory<CreationPolicy>
+{
+
+public:
+    NonLinSolverOMCFactory(PATH library_path,PATH modelicasystem_path,PATH config_path)
+        :ObjectFactory<CreationPolicy>(library_path,modelicasystem_path,config_path)
+        ,_last_selected_solver("empty")
+    {
+
+
+    }
+    ~NonLinSolverOMCFactory()
+    {
+        ObjectFactory<CreationPolicy>::_factory->UnloadAllLibs();
+    }
+
+   boost::shared_ptr<INonLinSolverSettings> createNonLinSolverSettings(string nonlin_solver)
+   {
+       string nonlin_solver_key;
+      
+        if(nonlin_solver.compare("Newton")==0)
+        {
+            
+             PATH newton_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH newton_name(NEWTON_LIB);
+            newton_path/=newton_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(newton_path.string(),_non_linsolver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+            
+                throw std::runtime_error("Failed loading Newton solver library!");
+            }
+            nonlin_solver_key.assign("extension_export_newton");
+        }
+        else if(nonlin_solver.compare("Kinsol")==0)
+            nonlin_solver_key.assign("extension_export_kinsol");
+        else if(nonlin_solver.compare("Hybrj")==0)
+            nonlin_solver_key.assign("extension_export_hybrj");
+        else
+            throw std::invalid_argument("Selected nonlinear solver is not available");
+        _last_selected_solver =  nonlin_solver;
+        string nonlinsolversettings = nonlin_solver.append("Settings");
+        std::map<std::string, factory<INonLinSolverSettings> >::iterator iter;
+        std::map<std::string, factory<INonLinSolverSettings> >& nonLinSolversettingsfactory(_non_linsolver_type_map.get());
+        iter = nonLinSolversettingsfactory.find(nonlinsolversettings);
+        if (iter ==nonLinSolversettingsfactory.end()) 
+        {
+            throw std::invalid_argument("No such nonlinear solver Settings");
+        }
+        boost::shared_ptr<INonLinSolverSettings> nonlinsolversetting= boost::shared_ptr<INonLinSolverSettings>(iter->second.create());
+        return nonlinsolversetting;
+
+   }
+
+   boost::shared_ptr<IAlgLoopSolver> createNonLinSolver(IAlgLoop* algLoop, string solver_name, boost::shared_ptr<INonLinSolverSettings>  solver_settings)
+   {
+       if(_last_selected_solver.compare(solver_name)==0)
+       {
+            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >::iterator iter;
+            std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> >& nonlinSolverFactory(_non_linsolver_type_map.get());
+            iter = nonlinSolverFactory.find(solver_name);
+            if (iter ==nonlinSolverFactory.end()) 
+            {
+                throw std::invalid_argument("No such non linear Solver");
+            }
+            boost::shared_ptr<IAlgLoopSolver> solver = boost::shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
+            return solver;
+       }
+       else
+           throw std::invalid_argument("Selected nonlinear solver is not available");
+   }
+protected:
+     string _last_selected_solver;
+ private:
+    type_map _non_linsolver_type_map;
+};

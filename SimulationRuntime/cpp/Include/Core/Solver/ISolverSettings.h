@@ -31,19 +31,18 @@ public:
   /// Tolerance to reach _endTime (default: 1e-6)
   virtual double getEndTimeTol() = 0;
   virtual void setEndTimeTol(double) = 0;
+  //DenseOut
+  virtual bool getDenseOutput() = 0;
+   virtual void setDenseOutput(bool) = 0;
+   //Event Output 
+   virtual bool getEventOutput() = 0;
+   virtual void setEventOutput(bool) = 0;
 
    virtual double getATol() = 0;
   virtual void setATol(double) = 0;
    virtual double getRTol() = 0;
   virtual void setRTol(double) = 0;
-  /// Tolerance to find a zero search (abs(f(t))<_zeroTol) (default: 1e-5)
-  virtual double getZeroTol() = 0;
-  virtual void setZeroTol(double) = 0;
-  /// Tolerance to find the time of a zero ((t-t_last)<_zeroTimeTol) (default: 1e-12)
-  virtual double getZeroTimeTol() = 0;
-  virtual void setZeroTimeTol(double) = 0;
-  virtual double getZeroRatio()= 0;
-    virtual void setZeroRatio(double) = 0;
+ 
     ///  Global simulation settings
     virtual IGlobalSettings* getGlobalSettings()=0;
     virtual void load(string)=0;

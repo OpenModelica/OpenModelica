@@ -1,10 +1,8 @@
 #include "stdafx.h"
-#define BOOST_EXTENSION_EVENTHANDLING_DECL BOOST_EXTENSION_EXPORT_DECL
+#include "FactoryExport.h"
 #include <System/EventHandling.h>
-#include <System/IContinuous.h>
-#include <boost/math/tools/real_cast.hpp>
 #include <Math/Functions.h>
-#include <sstream>
+
 
 /**
 Constructor
@@ -23,8 +21,8 @@ EventHandling::~EventHandling(void)
 /**
 Inits the event variables
 */
-void EventHandling::init(IMixedSystem* system,int dim)
-{
+void EventHandling::initialize(IMixedSystem* system,int dim)
+{   
     _dimH=dim;
     _system=system;
     if(_dimH > 0)
@@ -38,8 +36,8 @@ void EventHandling::init(IMixedSystem* system,int dim)
 /**
 Returns the help vector
 */
-void EventHandling::giveHelpVars(double* h)
-{
+void EventHandling::getHelpVars(double* h)
+{      
     for(int i=0; i<_dimH; ++i)
     {
         h[i] = _h[i];
@@ -137,6 +135,7 @@ double EventHandling::sample(double start,double interval)
 /**
 Handles  all events occured a the same time. These are stored  the eventqueue
 */
+
 bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 {
     IContinuous*  countinous_system = dynamic_cast<IContinuous*>(_system);
@@ -147,7 +146,9 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
     event_system->saveDiscreteVars(); // store values of discrete vars vor next check
 
     //Handle all events
-    state_vars_reinitialized = countinous_system->update();    
+
+    state_vars_reinitialized =     countinous_system->evaluate();  
+
   
     //check if discrete variables changed
     bool drestart= event_system->checkForDiscreteEvents();

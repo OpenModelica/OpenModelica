@@ -12,21 +12,34 @@ template <unsigned long dim_1,unsigned long dim_2,unsigned long dim_3>
 struct TextFileWriter
 {
 public:
+typedef ublas::vector<double, ublas::bounded_array<double,dim_1> > value_type_v;
+typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv;
   TextFileWriter(unsigned long size,string output_path,string file_name)
     :_curser_position(0)
     ,_file_name(file_name)
+    ,_output_path(output_path)
   {
-    _output_path=output_path;
-    stringstream res_output_path;
-    res_output_path <<   output_path  <<_file_name;
-    _output_stream.open(res_output_path.str().c_str(), ios::out);
+   
+   
+   
+    
   }
   ~TextFileWriter()
   {
     if(_output_stream.is_open())
      _output_stream.close();
   }
-
+  void  init(string output_path,string file_name)
+  {
+      _file_name = file_name;
+      _output_path = output_path;
+      if(_output_stream.is_open())
+          _output_stream.close();
+       stringstream res_output_path;
+       res_output_path <<   output_path  <<file_name;
+      _output_stream.open(res_output_path.str().c_str(), ios::out);
+	
+  }
     void read(ublas::matrix<double>& R,ublas::matrix<double>& dR)
     {
         //not supported for file output
@@ -69,7 +82,7 @@ public:
     _output_stream<<c;
   }
 
-  void write(const ublas::vector<double>& v_list,const ublas::vector<double>& v2_list,double time)
+  void write(const value_type_v& v_list,const value_type_dv& v2_list,double time)
   {
     _output_stream<<time<<SEPERATOR;
     double v,v2;
@@ -100,8 +113,7 @@ public:
       _curser_position=0;
     _output_stream.seekp(_curser_position);
   };
-typedef ublas::vector<double, ublas::bounded_array<double,dim_1> > value_type_v;
-typedef ublas::vector<double, ublas::bounded_array<double,dim_2> > value_type_dv;
+
 protected:
   std::fstream _output_stream;
   unsigned int    _curser_position;       ///< Controls current Curser-Position
