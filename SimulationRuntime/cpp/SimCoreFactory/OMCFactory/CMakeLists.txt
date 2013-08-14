@@ -3,7 +3,10 @@ cmake_minimum_required (VERSION 2.6)
 project(${OMCFactoryName})
 # add the system default implementation library
 add_library(${OMCFactoryName} STATIC OMCFactory.cpp)
-target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
+target_link_libraries( ${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS})
+if (UNIX)
+set_target_properties(${OMCFactoryName} PROPERTIES COMPILE_FLAGS -fPIC)
+endif(UNIX)
 
 install (TARGETS ${OMCFactoryName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
