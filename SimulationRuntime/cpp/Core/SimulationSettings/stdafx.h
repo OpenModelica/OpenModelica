@@ -68,7 +68,7 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <SimulationSettings/ISettingsFactory.h>
 #include <SimulationSettings/ISimControllerSettings.h>
 #include <SimulationSettings/IGlobalSettings.h>
-#include <System/IAlgloopSolverFactory.h>
+#include <System/IAlgLoopSolverFactory.h>
 #include <System/IMixedSystem.h>
 #include <System/ISystemProperties.h>
 #include <System/ISystemInitialization.h>
