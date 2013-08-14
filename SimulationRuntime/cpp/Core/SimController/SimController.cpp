@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SimController.h"
 #include "LibrariesConfig.h"
 #include "Configuration.h"

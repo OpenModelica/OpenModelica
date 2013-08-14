@@ -1,6 +1,4 @@
-// stdafx.h : Includedatei für Standardsystem-Includedateien,
-// oder projektspezifische Includedateien, die häufig benutzt, aber
-// in unregelmäßigen Abständen geändert werden.
+// stdafx.h :
 //
 
 #pragma once

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include <DataExchange/SimData.h>
 
 
@@ -27,7 +27,7 @@ ISimVar* SimData::Get(string key)
 {
     Objects_type::const_iterator iter =_sim_vars.find(key);
 
-    //Prüfen ob das Simobjekt in Liste ist.
+    //Prï¿½fen ob das Simobjekt in Liste ist.
     if(iter!=_sim_vars.end())
     {
         boost::shared_ptr<ISimVar> obj= iter->second;
@@ -73,7 +73,7 @@ void  SimData::getOutputResults(string name,ublas::vector<double>& v)
 {
     OutputResults_type::const_iterator iter =_result_vars.find(name);
 
-    //Prüfen ob die Ergebnisse  in Liste ist.
+    //Prï¿½fen ob die Ergebnisse  in Liste ist.
     if(iter!=_result_vars.end())
     {
         
