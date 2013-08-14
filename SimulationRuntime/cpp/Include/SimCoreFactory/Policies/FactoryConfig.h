@@ -56,5 +56,5 @@
     #include "LibrariesConfig.h"
     #include <OMCFactory/OMCFactory.h>
 #else
-    /* error "operating system not supported" */
+    #error "operating system not supported"
 #endif

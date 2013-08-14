@@ -32,7 +32,7 @@
     typedef NonLinSolverVxWorksFactory<VxWorksFactory> NonLinSolverPolicy;
     typedef SolverSettingsVxWorksFactory<VxWorksFactory> SolverSettingsPolicy;
 
-#elif defined(_WIN32) && defined(SIMSTER_BUILD)
+#elif defined(SIMSTER_BUILD)
 
       /*Policy include*/
   
@@ -45,7 +45,7 @@
     typedef SolverFactory<GenericFactory> ConfigurationPolicy;
     typedef NonLinSolverFactory<GenericFactory> NonLinSolverPolicy;
     typedef SolverSettingsFactory<GenericFactory> SolverSettingsPolicy;
-#elif defined(_WIN32) && defined(OMC_BUILD)
+#elif defined(OMC_BUILD)
    /*Policy include*/
   
     #include <Policies/SolverOMCFactory.h>
@@ -59,5 +59,5 @@
     typedef SolverSettingsOMCFactory<OMCFactory> SolverSettingsPolicy;
    
 #else
-    error "operating system not supported"
+    #error "operating system not supported"
 #endif
