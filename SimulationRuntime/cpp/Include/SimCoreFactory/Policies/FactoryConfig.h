@@ -6,7 +6,7 @@
     #define PATH string
     #include <VxWorksFactory/VxWorksFactory.h>
     
-#elif defined(_WIN32) && defined(SIMSTER_BUILD)
+#elif defined(SIMSTER_BUILD)
    
 
     /*Factory includes*/
@@ -31,7 +31,7 @@
     #define PATH fs::path
 
      #include <Genericfactory/Factory.h>
-#elif defined(_WIN32) && defined(OMC_BUILD)
+#elif defined(OMC_BUILD)
     /*Factory includes*/
     #include "Utils/extension/extension.hpp"
     #include "Utils/extension/factory.hpp"
@@ -56,5 +56,5 @@
     #include "LibrariesConfig.h"
     #include <OMCFactory/OMCFactory.h>
 #else
-    error "operating system not supported"
+    /* error "operating system not supported" */
 #endif
