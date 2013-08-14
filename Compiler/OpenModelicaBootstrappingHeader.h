@@ -1699,8 +1699,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_NAMED__IMPORT__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Import_NAMED__IMPORT__desc;
 #endif
-#define Absyn__NAMED_5fIMPORT_3dBOX2 5
-#define Absyn__NAMED_5fIMPORT(name,path) (mmc_mk_box3(5,&Absyn_Import_NAMED__IMPORT__desc,name,path))
+#define Absyn__NAMED_5fIMPORT_3dBOX2 3
+#define Absyn__NAMED_5fIMPORT(name,path) (mmc_mk_box3(3,&Absyn_Import_NAMED__IMPORT__desc,name,path))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_QUAL__IMPORT__desc_added
 #define Absyn_Import_QUAL__IMPORT__desc_added
@@ -1714,8 +1714,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_QUAL__IMPORT__d
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Import_QUAL__IMPORT__desc;
 #endif
-#define Absyn__QUAL_5fIMPORT_3dBOX1 6
-#define Absyn__QUAL_5fIMPORT(path) (mmc_mk_box2(6,&Absyn_Import_QUAL__IMPORT__desc,path))
+#define Absyn__QUAL_5fIMPORT_3dBOX1 4
+#define Absyn__QUAL_5fIMPORT(path) (mmc_mk_box2(4,&Absyn_Import_QUAL__IMPORT__desc,path))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_UNQUAL__IMPORT__desc_added
 #define Absyn_Import_UNQUAL__IMPORT__desc_added
@@ -1729,8 +1729,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_UNQUAL__IMPORT_
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Import_UNQUAL__IMPORT__desc;
 #endif
-#define Absyn__UNQUAL_5fIMPORT_3dBOX1 7
-#define Absyn__UNQUAL_5fIMPORT(path) (mmc_mk_box2(7,&Absyn_Import_UNQUAL__IMPORT__desc,path))
+#define Absyn__UNQUAL_5fIMPORT_3dBOX1 5
+#define Absyn__UNQUAL_5fIMPORT(path) (mmc_mk_box2(5,&Absyn_Import_UNQUAL__IMPORT__desc,path))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Import_GROUP__IMPORT__desc_added
 #define Absyn_Import_GROUP__IMPORT__desc_added
@@ -1744,8 +1744,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Import_GROUP__IMPORT__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Import_GROUP__IMPORT__desc;
 #endif
-#define Absyn__GROUP_5fIMPORT_3dBOX2 8
-#define Absyn__GROUP_5fIMPORT(prefix,groups) (mmc_mk_box3(8,&Absyn_Import_GROUP__IMPORT__desc,prefix,groups))
+#define Absyn__GROUP_5fIMPORT_3dBOX2 6
+#define Absyn__GROUP_5fIMPORT(prefix,groups) (mmc_mk_box3(6,&Absyn_Import_GROUP__IMPORT__desc,prefix,groups))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_GroupImport_GROUP__IMPORT__NAME__desc_added
 #define Absyn_GroupImport_GROUP__IMPORT__NAME__desc_added
@@ -2121,8 +2121,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__TRY__de
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__TRY__desc;
 #endif
-#define Absyn__ALG_5fTRY_3dBOX1 13
-#define Absyn__ALG_5fTRY(tryBody) (mmc_mk_box2(13,&Absyn_Algorithm_ALG__TRY__desc,tryBody))
+#define Absyn__ALG_5fTRY_3dBOX1 12
+#define Absyn__ALG_5fTRY(tryBody) (mmc_mk_box2(12,&Absyn_Algorithm_ALG__TRY__desc,tryBody))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__CATCH__desc_added
 #define Absyn_Algorithm_ALG__CATCH__desc_added
@@ -2136,8 +2136,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__CATCH__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__CATCH__desc;
 #endif
-#define Absyn__ALG_5fCATCH_3dBOX1 14
-#define Absyn__ALG_5fCATCH(catchBody) (mmc_mk_box2(14,&Absyn_Algorithm_ALG__CATCH__desc,catchBody))
+#define Absyn__ALG_5fCATCH_3dBOX1 13
+#define Absyn__ALG_5fCATCH(catchBody) (mmc_mk_box2(13,&Absyn_Algorithm_ALG__CATCH__desc,catchBody))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__THROW__desc_added
 #define Absyn_Algorithm_ALG__THROW__desc_added
@@ -2151,8 +2151,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__THROW__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__THROW__desc;
 #endif
-#define Absyn__ALG_5fTHROW_3dBOX0 15
-static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fTHROW__struct,1,15) {&Absyn_Algorithm_ALG__THROW__desc}};
+#define Absyn__ALG_5fTHROW_3dBOX0 14
+static const MMC_DEFSTRUCTLIT(Absyn__ALG_5fTHROW__struct,1,14) {&Absyn_Algorithm_ALG__THROW__desc}};
 static void *Absyn__ALG_5fTHROW = MMC_REFSTRUCTLIT(Absyn__ALG_5fTHROW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Algorithm_ALG__FAILURE__desc_added
@@ -2167,8 +2167,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Algorithm_ALG__FAILURE
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Algorithm_ALG__FAILURE__desc;
 #endif
-#define Absyn__ALG_5fFAILURE_3dBOX1 16
-#define Absyn__ALG_5fFAILURE(equ) (mmc_mk_box2(16,&Absyn_Algorithm_ALG__FAILURE__desc,equ))
+#define Absyn__ALG_5fFAILURE_3dBOX1 15
+#define Absyn__ALG_5fFAILURE(equ) (mmc_mk_box2(15,&Absyn_Algorithm_ALG__FAILURE__desc,equ))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Modification_CLASSMOD__desc_added
 #define Absyn_Modification_CLASSMOD__desc_added
@@ -2741,8 +2741,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_PARTEVALFUNCTION__
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_PARTEVALFUNCTION__desc;
 #endif
-#define Absyn__PARTEVALFUNCTION_3dBOX2 16
-#define Absyn__PARTEVALFUNCTION(function_,functionArgs) (mmc_mk_box3(16,&Absyn_Exp_PARTEVALFUNCTION__desc,function_,functionArgs))
+#define Absyn__PARTEVALFUNCTION_3dBOX2 15
+#define Absyn__PARTEVALFUNCTION(function_,functionArgs) (mmc_mk_box3(15,&Absyn_Exp_PARTEVALFUNCTION__desc,function_,functionArgs))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_ARRAY__desc_added
 #define Absyn_Exp_ARRAY__desc_added
@@ -2756,8 +2756,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_ARRAY__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_ARRAY__desc;
 #endif
-#define Absyn__ARRAY_3dBOX1 17
-#define Absyn__ARRAY(arrayExp) (mmc_mk_box2(17,&Absyn_Exp_ARRAY__desc,arrayExp))
+#define Absyn__ARRAY_3dBOX1 16
+#define Absyn__ARRAY(arrayExp) (mmc_mk_box2(16,&Absyn_Exp_ARRAY__desc,arrayExp))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_MATRIX__desc_added
 #define Absyn_Exp_MATRIX__desc_added
@@ -2771,8 +2771,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_MATRIX__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_MATRIX__desc;
 #endif
-#define Absyn__MATRIX_3dBOX1 18
-#define Absyn__MATRIX(matrix) (mmc_mk_box2(18,&Absyn_Exp_MATRIX__desc,matrix))
+#define Absyn__MATRIX_3dBOX1 17
+#define Absyn__MATRIX(matrix) (mmc_mk_box2(17,&Absyn_Exp_MATRIX__desc,matrix))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_RANGE__desc_added
 #define Absyn_Exp_RANGE__desc_added
@@ -2786,8 +2786,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_RANGE__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_RANGE__desc;
 #endif
-#define Absyn__RANGE_3dBOX3 19
-#define Absyn__RANGE(start,step,stop) (mmc_mk_box4(19,&Absyn_Exp_RANGE__desc,start,step,stop))
+#define Absyn__RANGE_3dBOX3 18
+#define Absyn__RANGE(start,step,stop) (mmc_mk_box4(18,&Absyn_Exp_RANGE__desc,start,step,stop))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_TUPLE__desc_added
 #define Absyn_Exp_TUPLE__desc_added
@@ -2801,8 +2801,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_TUPLE__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_TUPLE__desc;
 #endif
-#define Absyn__TUPLE_3dBOX1 20
-#define Absyn__TUPLE(expressions) (mmc_mk_box2(20,&Absyn_Exp_TUPLE__desc,expressions))
+#define Absyn__TUPLE_3dBOX1 19
+#define Absyn__TUPLE(expressions) (mmc_mk_box2(19,&Absyn_Exp_TUPLE__desc,expressions))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_END__desc_added
 #define Absyn_Exp_END__desc_added
@@ -2816,8 +2816,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_END__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_END__desc;
 #endif
-#define Absyn__END_3dBOX0 21
-static const MMC_DEFSTRUCTLIT(Absyn__END__struct,1,21) {&Absyn_Exp_END__desc}};
+#define Absyn__END_3dBOX0 20
+static const MMC_DEFSTRUCTLIT(Absyn__END__struct,1,20) {&Absyn_Exp_END__desc}};
 static void *Absyn__END = MMC_REFSTRUCTLIT(Absyn__END__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_CODE__desc_added
@@ -2832,8 +2832,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_CODE__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_CODE__desc;
 #endif
-#define Absyn__CODE_3dBOX1 22
-#define Absyn__CODE(code) (mmc_mk_box2(22,&Absyn_Exp_CODE__desc,code))
+#define Absyn__CODE_3dBOX1 21
+#define Absyn__CODE(code) (mmc_mk_box2(21,&Absyn_Exp_CODE__desc,code))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_AS__desc_added
 #define Absyn_Exp_AS__desc_added
@@ -2847,8 +2847,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_AS__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_AS__desc;
 #endif
-#define Absyn__AS_3dBOX2 24
-#define Absyn__AS(id,exp) (mmc_mk_box3(24,&Absyn_Exp_AS__desc,id,exp))
+#define Absyn__AS_3dBOX2 22
+#define Absyn__AS(id,exp) (mmc_mk_box3(22,&Absyn_Exp_AS__desc,id,exp))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_CONS__desc_added
 #define Absyn_Exp_CONS__desc_added
@@ -2862,8 +2862,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_CONS__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_CONS__desc;
 #endif
-#define Absyn__CONS_3dBOX2 25
-#define Absyn__CONS(head,rest) (mmc_mk_box3(25,&Absyn_Exp_CONS__desc,head,rest))
+#define Absyn__CONS_3dBOX2 23
+#define Absyn__CONS(head,rest) (mmc_mk_box3(23,&Absyn_Exp_CONS__desc,head,rest))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_MATCHEXP__desc_added
 #define Absyn_Exp_MATCHEXP__desc_added
@@ -2877,8 +2877,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_MATCHEXP__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_MATCHEXP__desc;
 #endif
-#define Absyn__MATCHEXP_3dBOX5 26
-#define Absyn__MATCHEXP(matchTy,inputExp,localDecls,cases,comment) (mmc_mk_box6(26,&Absyn_Exp_MATCHEXP__desc,matchTy,inputExp,localDecls,cases,comment))
+#define Absyn__MATCHEXP_3dBOX5 24
+#define Absyn__MATCHEXP(matchTy,inputExp,localDecls,cases,comment) (mmc_mk_box6(24,&Absyn_Exp_MATCHEXP__desc,matchTy,inputExp,localDecls,cases,comment))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Exp_LIST__desc_added
 #define Absyn_Exp_LIST__desc_added
@@ -2892,8 +2892,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Exp_LIST__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_LIST__desc;
 #endif
-#define Absyn__LIST_3dBOX1 28
-#define Absyn__LIST(exps) (mmc_mk_box2(28,&Absyn_Exp_LIST__desc,exps))
+#define Absyn__LIST_3dBOX1 25
+#define Absyn__LIST(exps) (mmc_mk_box2(25,&Absyn_Exp_LIST__desc,exps))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Case_CASE__desc_added
 #define Absyn_Case_CASE__desc_added
@@ -3134,8 +3134,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_ADD__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_ADD__desc;
 #endif
-#define Absyn__ADD_3dBOX0 4
-static const MMC_DEFSTRUCTLIT(Absyn__ADD__struct,1,4) {&Absyn_Operator_ADD__desc}};
+#define Absyn__ADD_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Absyn__ADD__struct,1,3) {&Absyn_Operator_ADD__desc}};
 static void *Absyn__ADD = MMC_REFSTRUCTLIT(Absyn__ADD__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_SUB__desc_added
@@ -3150,8 +3150,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_SUB__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_SUB__desc;
 #endif
-#define Absyn__SUB_3dBOX0 5
-static const MMC_DEFSTRUCTLIT(Absyn__SUB__struct,1,5) {&Absyn_Operator_SUB__desc}};
+#define Absyn__SUB_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Absyn__SUB__struct,1,4) {&Absyn_Operator_SUB__desc}};
 static void *Absyn__SUB = MMC_REFSTRUCTLIT(Absyn__SUB__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_MUL__desc_added
@@ -3166,8 +3166,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_MUL__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_MUL__desc;
 #endif
-#define Absyn__MUL_3dBOX0 6
-static const MMC_DEFSTRUCTLIT(Absyn__MUL__struct,1,6) {&Absyn_Operator_MUL__desc}};
+#define Absyn__MUL_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Absyn__MUL__struct,1,5) {&Absyn_Operator_MUL__desc}};
 static void *Absyn__MUL = MMC_REFSTRUCTLIT(Absyn__MUL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_DIV__desc_added
@@ -3182,8 +3182,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_DIV__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_DIV__desc;
 #endif
-#define Absyn__DIV_3dBOX0 7
-static const MMC_DEFSTRUCTLIT(Absyn__DIV__struct,1,7) {&Absyn_Operator_DIV__desc}};
+#define Absyn__DIV_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(Absyn__DIV__struct,1,6) {&Absyn_Operator_DIV__desc}};
 static void *Absyn__DIV = MMC_REFSTRUCTLIT(Absyn__DIV__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_POW__desc_added
@@ -3198,8 +3198,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_POW__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_POW__desc;
 #endif
-#define Absyn__POW_3dBOX0 8
-static const MMC_DEFSTRUCTLIT(Absyn__POW__struct,1,8) {&Absyn_Operator_POW__desc}};
+#define Absyn__POW_3dBOX0 7
+static const MMC_DEFSTRUCTLIT(Absyn__POW__struct,1,7) {&Absyn_Operator_POW__desc}};
 static void *Absyn__POW = MMC_REFSTRUCTLIT(Absyn__POW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UPLUS__desc_added
@@ -3214,8 +3214,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UPLUS__desc =
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_UPLUS__desc;
 #endif
-#define Absyn__UPLUS_3dBOX0 9
-static const MMC_DEFSTRUCTLIT(Absyn__UPLUS__struct,1,9) {&Absyn_Operator_UPLUS__desc}};
+#define Absyn__UPLUS_3dBOX0 8
+static const MMC_DEFSTRUCTLIT(Absyn__UPLUS__struct,1,8) {&Absyn_Operator_UPLUS__desc}};
 static void *Absyn__UPLUS = MMC_REFSTRUCTLIT(Absyn__UPLUS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UMINUS__desc_added
@@ -3230,8 +3230,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UMINUS__desc 
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_UMINUS__desc;
 #endif
-#define Absyn__UMINUS_3dBOX0 10
-static const MMC_DEFSTRUCTLIT(Absyn__UMINUS__struct,1,10) {&Absyn_Operator_UMINUS__desc}};
+#define Absyn__UMINUS_3dBOX0 9
+static const MMC_DEFSTRUCTLIT(Absyn__UMINUS__struct,1,9) {&Absyn_Operator_UMINUS__desc}};
 static void *Absyn__UMINUS = MMC_REFSTRUCTLIT(Absyn__UMINUS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_ADD__EW__desc_added
@@ -3246,8 +3246,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_ADD__EW__desc
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_ADD__EW__desc;
 #endif
-#define Absyn__ADD_5fEW_3dBOX0 12
-static const MMC_DEFSTRUCTLIT(Absyn__ADD_5fEW__struct,1,12) {&Absyn_Operator_ADD__EW__desc}};
+#define Absyn__ADD_5fEW_3dBOX0 10
+static const MMC_DEFSTRUCTLIT(Absyn__ADD_5fEW__struct,1,10) {&Absyn_Operator_ADD__EW__desc}};
 static void *Absyn__ADD_5fEW = MMC_REFSTRUCTLIT(Absyn__ADD_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_SUB__EW__desc_added
@@ -3262,8 +3262,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_SUB__EW__desc
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_SUB__EW__desc;
 #endif
-#define Absyn__SUB_5fEW_3dBOX0 13
-static const MMC_DEFSTRUCTLIT(Absyn__SUB_5fEW__struct,1,13) {&Absyn_Operator_SUB__EW__desc}};
+#define Absyn__SUB_5fEW_3dBOX0 11
+static const MMC_DEFSTRUCTLIT(Absyn__SUB_5fEW__struct,1,11) {&Absyn_Operator_SUB__EW__desc}};
 static void *Absyn__SUB_5fEW = MMC_REFSTRUCTLIT(Absyn__SUB_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_MUL__EW__desc_added
@@ -3278,8 +3278,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_MUL__EW__desc
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_MUL__EW__desc;
 #endif
-#define Absyn__MUL_5fEW_3dBOX0 14
-static const MMC_DEFSTRUCTLIT(Absyn__MUL_5fEW__struct,1,14) {&Absyn_Operator_MUL__EW__desc}};
+#define Absyn__MUL_5fEW_3dBOX0 12
+static const MMC_DEFSTRUCTLIT(Absyn__MUL_5fEW__struct,1,12) {&Absyn_Operator_MUL__EW__desc}};
 static void *Absyn__MUL_5fEW = MMC_REFSTRUCTLIT(Absyn__MUL_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_DIV__EW__desc_added
@@ -3294,8 +3294,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_DIV__EW__desc
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_DIV__EW__desc;
 #endif
-#define Absyn__DIV_5fEW_3dBOX0 15
-static const MMC_DEFSTRUCTLIT(Absyn__DIV_5fEW__struct,1,15) {&Absyn_Operator_DIV__EW__desc}};
+#define Absyn__DIV_5fEW_3dBOX0 13
+static const MMC_DEFSTRUCTLIT(Absyn__DIV_5fEW__struct,1,13) {&Absyn_Operator_DIV__EW__desc}};
 static void *Absyn__DIV_5fEW = MMC_REFSTRUCTLIT(Absyn__DIV_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_POW__EW__desc_added
@@ -3310,8 +3310,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_POW__EW__desc
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_POW__EW__desc;
 #endif
-#define Absyn__POW_5fEW_3dBOX0 16
-static const MMC_DEFSTRUCTLIT(Absyn__POW_5fEW__struct,1,16) {&Absyn_Operator_POW__EW__desc}};
+#define Absyn__POW_5fEW_3dBOX0 14
+static const MMC_DEFSTRUCTLIT(Absyn__POW_5fEW__struct,1,14) {&Absyn_Operator_POW__EW__desc}};
 static void *Absyn__POW_5fEW = MMC_REFSTRUCTLIT(Absyn__POW_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UPLUS__EW__desc_added
@@ -3326,8 +3326,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UPLUS__EW__de
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_UPLUS__EW__desc;
 #endif
-#define Absyn__UPLUS_5fEW_3dBOX0 17
-static const MMC_DEFSTRUCTLIT(Absyn__UPLUS_5fEW__struct,1,17) {&Absyn_Operator_UPLUS__EW__desc}};
+#define Absyn__UPLUS_5fEW_3dBOX0 15
+static const MMC_DEFSTRUCTLIT(Absyn__UPLUS_5fEW__struct,1,15) {&Absyn_Operator_UPLUS__EW__desc}};
 static void *Absyn__UPLUS_5fEW = MMC_REFSTRUCTLIT(Absyn__UPLUS_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_UMINUS__EW__desc_added
@@ -3342,8 +3342,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_UMINUS__EW__d
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_UMINUS__EW__desc;
 #endif
-#define Absyn__UMINUS_5fEW_3dBOX0 18
-static const MMC_DEFSTRUCTLIT(Absyn__UMINUS_5fEW__struct,1,18) {&Absyn_Operator_UMINUS__EW__desc}};
+#define Absyn__UMINUS_5fEW_3dBOX0 16
+static const MMC_DEFSTRUCTLIT(Absyn__UMINUS_5fEW__struct,1,16) {&Absyn_Operator_UMINUS__EW__desc}};
 static void *Absyn__UMINUS_5fEW = MMC_REFSTRUCTLIT(Absyn__UMINUS_5fEW__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_AND__desc_added
@@ -3358,8 +3358,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_AND__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_AND__desc;
 #endif
-#define Absyn__AND_3dBOX0 20
-static const MMC_DEFSTRUCTLIT(Absyn__AND__struct,1,20) {&Absyn_Operator_AND__desc}};
+#define Absyn__AND_3dBOX0 17
+static const MMC_DEFSTRUCTLIT(Absyn__AND__struct,1,17) {&Absyn_Operator_AND__desc}};
 static void *Absyn__AND = MMC_REFSTRUCTLIT(Absyn__AND__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_OR__desc_added
@@ -3374,8 +3374,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_OR__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_OR__desc;
 #endif
-#define Absyn__OR_3dBOX0 21
-static const MMC_DEFSTRUCTLIT(Absyn__OR__struct,1,21) {&Absyn_Operator_OR__desc}};
+#define Absyn__OR_3dBOX0 18
+static const MMC_DEFSTRUCTLIT(Absyn__OR__struct,1,18) {&Absyn_Operator_OR__desc}};
 static void *Absyn__OR = MMC_REFSTRUCTLIT(Absyn__OR__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_NOT__desc_added
@@ -3390,8 +3390,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_NOT__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_NOT__desc;
 #endif
-#define Absyn__NOT_3dBOX0 22
-static const MMC_DEFSTRUCTLIT(Absyn__NOT__struct,1,22) {&Absyn_Operator_NOT__desc}};
+#define Absyn__NOT_3dBOX0 19
+static const MMC_DEFSTRUCTLIT(Absyn__NOT__struct,1,19) {&Absyn_Operator_NOT__desc}};
 static void *Absyn__NOT = MMC_REFSTRUCTLIT(Absyn__NOT__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_LESS__desc_added
@@ -3406,8 +3406,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_LESS__desc = 
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_LESS__desc;
 #endif
-#define Absyn__LESS_3dBOX0 24
-static const MMC_DEFSTRUCTLIT(Absyn__LESS__struct,1,24) {&Absyn_Operator_LESS__desc}};
+#define Absyn__LESS_3dBOX0 20
+static const MMC_DEFSTRUCTLIT(Absyn__LESS__struct,1,20) {&Absyn_Operator_LESS__desc}};
 static void *Absyn__LESS = MMC_REFSTRUCTLIT(Absyn__LESS__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_LESSEQ__desc_added
@@ -3422,8 +3422,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_LESSEQ__desc 
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_LESSEQ__desc;
 #endif
-#define Absyn__LESSEQ_3dBOX0 25
-static const MMC_DEFSTRUCTLIT(Absyn__LESSEQ__struct,1,25) {&Absyn_Operator_LESSEQ__desc}};
+#define Absyn__LESSEQ_3dBOX0 21
+static const MMC_DEFSTRUCTLIT(Absyn__LESSEQ__struct,1,21) {&Absyn_Operator_LESSEQ__desc}};
 static void *Absyn__LESSEQ = MMC_REFSTRUCTLIT(Absyn__LESSEQ__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_GREATER__desc_added
@@ -3438,8 +3438,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_GREATER__desc
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_GREATER__desc;
 #endif
-#define Absyn__GREATER_3dBOX0 26
-static const MMC_DEFSTRUCTLIT(Absyn__GREATER__struct,1,26) {&Absyn_Operator_GREATER__desc}};
+#define Absyn__GREATER_3dBOX0 22
+static const MMC_DEFSTRUCTLIT(Absyn__GREATER__struct,1,22) {&Absyn_Operator_GREATER__desc}};
 static void *Absyn__GREATER = MMC_REFSTRUCTLIT(Absyn__GREATER__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_GREATEREQ__desc_added
@@ -3454,8 +3454,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_GREATEREQ__de
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_GREATEREQ__desc;
 #endif
-#define Absyn__GREATEREQ_3dBOX0 27
-static const MMC_DEFSTRUCTLIT(Absyn__GREATEREQ__struct,1,27) {&Absyn_Operator_GREATEREQ__desc}};
+#define Absyn__GREATEREQ_3dBOX0 23
+static const MMC_DEFSTRUCTLIT(Absyn__GREATEREQ__struct,1,23) {&Absyn_Operator_GREATEREQ__desc}};
 static void *Absyn__GREATEREQ = MMC_REFSTRUCTLIT(Absyn__GREATEREQ__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_EQUAL__desc_added
@@ -3470,8 +3470,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_EQUAL__desc =
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_EQUAL__desc;
 #endif
-#define Absyn__EQUAL_3dBOX0 28
-static const MMC_DEFSTRUCTLIT(Absyn__EQUAL__struct,1,28) {&Absyn_Operator_EQUAL__desc}};
+#define Absyn__EQUAL_3dBOX0 24
+static const MMC_DEFSTRUCTLIT(Absyn__EQUAL__struct,1,24) {&Absyn_Operator_EQUAL__desc}};
 static void *Absyn__EQUAL = MMC_REFSTRUCTLIT(Absyn__EQUAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Operator_NEQUAL__desc_added
@@ -3486,8 +3486,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Operator_NEQUAL__desc 
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Operator_NEQUAL__desc;
 #endif
-#define Absyn__NEQUAL_3dBOX0 29
-static const MMC_DEFSTRUCTLIT(Absyn__NEQUAL__struct,1,29) {&Absyn_Operator_NEQUAL__desc}};
+#define Absyn__NEQUAL_3dBOX0 25
+static const MMC_DEFSTRUCTLIT(Absyn__NEQUAL__struct,1,25) {&Absyn_Operator_NEQUAL__desc}};
 static void *Absyn__NEQUAL = MMC_REFSTRUCTLIT(Absyn__NEQUAL__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Subscript_NOSUB__desc_added
@@ -3957,8 +3957,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__UNIONTY
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__UNIONTYPE__desc;
 #endif
-#define Absyn__R_5fUNIONTYPE_3dBOX0 22
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct,1,22) {&Absyn_Restriction_R__UNIONTYPE__desc}};
+#define Absyn__R_5fUNIONTYPE_3dBOX0 21
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct,1,21) {&Absyn_Restriction_R__UNIONTYPE__desc}};
 static void *Absyn__R_5fUNIONTYPE = MMC_REFSTRUCTLIT(Absyn__R_5fUNIONTYPE__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__METARECORD__desc_added
@@ -3973,8 +3973,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__METAREC
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__METARECORD__desc;
 #endif
-#define Absyn__R_5fMETARECORD_3dBOX3 23
-#define Absyn__R_5fMETARECORD(name,index,singleton) (mmc_mk_box4(23,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton))
+#define Absyn__R_5fMETARECORD_3dBOX3 22
+#define Absyn__R_5fMETARECORD(name,index,singleton) (mmc_mk_box4(22,&Absyn_Restriction_R__METARECORD__desc,name,index,singleton))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Restriction_R__UNKNOWN__desc_added
 #define Absyn_Restriction_R__UNKNOWN__desc_added
@@ -3988,8 +3988,8 @@ ADD_METARECORD_DEFINTIONS struct record_description Absyn_Restriction_R__UNKNOWN
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Restriction_R__UNKNOWN__desc;
 #endif
-#define Absyn__R_5fUNKNOWN_3dBOX0 24
-static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct,1,24) {&Absyn_Restriction_R__UNKNOWN__desc}};
+#define Absyn__R_5fUNKNOWN_3dBOX0 23
+static const MMC_DEFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct,1,23) {&Absyn_Restriction_R__UNKNOWN__desc}};
 static void *Absyn__R_5fUNKNOWN = MMC_REFSTRUCTLIT(Absyn__R_5fUNKNOWN__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_FunctionPurity_PURE__desc_added
