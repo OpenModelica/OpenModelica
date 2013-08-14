@@ -1,5 +1,5 @@
 #pragma once
-#include <SimController/ISimdata.h>
+#include <SimController/ISimData.h>
 class SimData :
     public ISimData
 {

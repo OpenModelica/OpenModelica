@@ -79,7 +79,7 @@ typedef ublas::matrix<double, adaptor_t> shared_matrix_t;
 #include <SimController/ISimData.h>
 #include <Extensions/IModelicaCompiler.h>
 #include <DataExchange/IHistory.h>
-#include <SimController/ISimdata.h>
+#include <SimController/ISimData.h>
 #include "DataExchange/IHistory.h"
 
 
