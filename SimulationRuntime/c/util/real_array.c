@@ -176,19 +176,17 @@ static modelica_real real_ge(modelica_real x, modelica_real y)
 void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step,
                                 modelica_real stop/*, size_t dim*/)
 {
-    size_t elements, offset=0;
-    modelica_real value;
+    size_t elements;
+    size_t i;
+    modelica_real value = start;
     modelica_real (*comp_func)(modelica_real, modelica_real);
     assert(step != 0);
 
     comp_func = (step > 0) ? &real_le : &real_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
-/*
-    for(i = 0; i < dim; i++)
-        offset += dest->dim_size[i];
-*/
-    for(value = start; comp_func(value, stop); value += step, ++offset) {
-        real_set(dest, offset, value);
+
+    for(i = 0; i < elements; value += step, ++i) {
+        real_set(dest, i, value);
     }
 }
 
@@ -1702,7 +1700,7 @@ void create_real_array_from_range(real_array_t *dest, modelica_real start, model
 
     simple_alloc_1d_real_array(dest, elements);
 
-    for(i = 0; comp_func(start, stop); start += step, ++i) {
+    for(i = 0; i < elements; start += step, ++i) {
         real_set(dest, i, start);
     }
 }

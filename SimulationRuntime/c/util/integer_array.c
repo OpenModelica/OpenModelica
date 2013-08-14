@@ -180,7 +180,7 @@ void create_integer_array_from_range(integer_array_t *dest, modelica_integer sta
 
     simple_alloc_1d_integer_array(dest, elements);
 
-    for(i = 0; comp_func(start, stop); start += step, ++i) {
+    for(i = 0; i < elements; start += step, ++i) {
         integer_set(dest, i, start);
     }
 }
@@ -194,20 +194,18 @@ void create_integer_array_from_range(integer_array_t *dest, modelica_integer sta
 void fill_integer_array_from_range(integer_array_t *dest, modelica_integer start, modelica_integer step,
                                    modelica_integer stop/*, size_t dim*/)
 {
-    size_t elements, offset=0;
-    modelica_integer value;
+    size_t elements;
+    size_t i;
+    modelica_integer value = start;
     modelica_integer (*comp_func)(modelica_integer, modelica_integer);
 
     assert(step != 0);
 
     comp_func = (step > 0) ? &integer_le : &integer_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
-/*
-    for(i = 0; i < dim; i++)
-        offset += dest->dim_size[i];
-*/
-    for(value = start; comp_func(value, stop); value += step, ++offset) {
-        integer_set(dest, offset, value);
+
+    for(i = 0; i < elements; value += step, ++i) {
+        integer_set(dest, i, value);
     }
 }
 
