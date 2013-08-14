@@ -46,7 +46,7 @@ public import SimCode;
 // protected imports
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
-protected import Config;
+protected import BackendDump;
 protected import Error;
 //protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;
@@ -122,10 +122,11 @@ algorithm
       list<SimCode.SimVar> tempvars;
       
       SimCode.JacobianMatrix jacG;
+      Integer highestSccIdx, compCountPlusDummy;
       Option<BackendDAE.BackendDAE> inlineDAE;
       list<SimCode.StateSet> stateSets;
       array<Integer> systemIndexMap;
-      list<tuple<Integer,Integer>> equationSccMapping; //Maps each simEq to the scc
+      list<tuple<Integer,Integer>> equationSccMapping, equationSccMapping1; //Maps each simEq to the scc
       array<list<Integer>> sccSimEqMapping; //Maps each scc to a list of simEqs
       array<Integer> simEqSccMapping; //Maps each simEq to the scc
       BackendDAE.SampleLookup sampleLookup;
@@ -154,13 +155,18 @@ algorithm
       Boolean taskGraphMetaValid;
       String taskGraphMetaMessage, criticalPathInfo;
       
-    case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
+    case (_, _, _, _, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
 
-      //Create mapping to SimEq
-      (equationSccMapping,lastEqMappingIdx) = createSimEqToSccMapping(inBackendDAE);
+      (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
       //print("createSimCode with " +& intString(listLength(allComps)) +& " Components\n");
+      highestSccIdx = findHighestSccIdxInMapping(equationSccMapping,-1);
+      compCountPlusDummy = listLength(allComps)+1;
+      equationSccMapping1 = removeDummyStateFromMapping(equationSccMapping);
+      //the mapping can contain a dummy state as first scc
+      equationSccMapping = Util.if_(intEq(highestSccIdx, compCountPlusDummy), equationSccMapping1, equationSccMapping);
+      
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simEqSccMapping = convertToSimEqSccMapping(equationSccMapping, lastEqMappingIdx);
 
@@ -180,7 +186,7 @@ algorithm
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
                  
       fileName = ("taskGraph"+&filenamePrefix+&".graphml");    
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, criticalPathInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, criticalPathInfo, sccSimEqMapping);
       
       // get the task graph for the ODEsystem
       taskGraphOde = arrayCopy(taskGraph);
@@ -199,7 +205,7 @@ algorithm
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
       
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo);  
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, sccSimEqMapping);  
             
       // filter to merge simple nodes (i.e. nodes with only 1 predecessor and 1 successor)
       //taskGraph1 = arrayCopy(taskGraphOde);
@@ -212,68 +218,7 @@ algorithm
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphDataOde);  
       //fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");       
       //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName);
-      
-      uniqueEqIndex = 1;
-      ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
-      // Debug.fcall(Flags.FAILTRACE, print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
-      cname = Absyn.pathStringNoQual(class_);
-      
-      // generate initDAE before replacing pre(alias)!
-      (initDAE, useHomotopy) = Initialization.solveInitialSystem(dlow);
-      
-      // replace pre(alias) in time-equations
-      dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
-      // generate system for inline solver
-      (inlineDAE, _) = InlineSolver.generateDAE(dlow);
-
-      // check if the Sytems has states
-      dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
-      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
-                                                        constraints=constrsarr, 
-                                                        classAttrs=clsattrsarra, 
-                                                        functionTree=functionTree, 
-                                                        symjacs=symJacs,
-                                                        eventInfo=BackendDAE.EVENT_INFO(sampleLookup=sampleLookup))) = dlow;
-      
-      extObjInfo = SimCodeUtil.createExtObjInfo(shared);
-
-      //whenClauses = SimCodeUtil.createSimWhenClauses(dlow);
-      //zeroCrossings = Util.if_(ifcpp, getRelations(dlow), getZeroCrossings(dlow));
-      //relations = SimCodeUtil.getRelations(dlow);
-      //sampleZC = SimCodeUtil.getSamples(dlow);
-      //zeroCrossings = Util.if_(ifcpp, listAppend(zeroCrossings, sampleZC), zeroCrossings);
-
-      // state set stuff
-      tempvars = {};
-      (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = SimCodeUtil.createStateSets(dlow, {}, uniqueEqIndex, tempvars);
-
-      // inline solver stuff
-      (inlineEquations, uniqueEqIndex, tempvars) = SimCodeUtil.createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars);
-
-      // initialization stuff
-      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = SimCodeUtil.createInitialResiduals(dlow, initDAE, uniqueEqIndex, tempvars);
-      (jacG, uniqueEqIndex) = SimCodeUtil.createInitialMatrices(dlow, uniqueEqIndex);
-
-      // addInitialStmtsToAlgorithms
-      dlow = BackendDAEOptimize.addInitialStmtsToAlgorithms(dlow);
-      
-      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
-                                                        constraints=constrsarr, 
-                                                        classAttrs=clsattrsarra, 
-                                                        functionTree=functionTree, 
-                                                        symjacs=symJacs)) = dlow;
-
-      // Add model info
-      //modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
-
-      // equation generation for euler, dassl2, rungekutta
-      (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, _) = SimCodeUtil.createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});
-      
-      HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
-
-      simCode = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
-      
       hpcOmParInformation = createParInformation(taskGraphDataOde, sccSimEqMapping);
       
       //print("Parallel informations:\n");
@@ -283,15 +228,16 @@ algorithm
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, _) = simCode;
 
+      HpcOmTaskGraph.checkOdeSystemSize(taskGraphOde,odeEquations);
+
       simCode = SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, SOME(hpcOmParInformation));
       
       print("HpcOm is still under construction.\n");
       then simCode;
-    //then fail();
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/HpcSimCode.mo: function createSimCode failed."});
     then fail();
   end matchcontinue;
 end createSimCode;
@@ -528,6 +474,7 @@ algorithm
     case(head::rest,_)
       equation
         headIdx = getIndexBySimCodeEq(head);
+        //print("getSimCodeEqByIndex listLength: " +& intString(listLength(iEqs)) +& " head idx: " +& intString(headIdx) +& "\n");
         true = intEq(headIdx,iIdx);
       then head;
     case(head::rest,_) then getSimCodeEqByIndex(rest,iIdx);
@@ -561,6 +508,34 @@ algorithm
     else then fail();
   end match;
 end getIndexBySimCodeEq;
+
+public function analyzeOdeEquations
+  input list<list<SimCode.SimEqSystem>> systems;
+algorithm
+  _ := List.fold(systems, analyzeOdeEquations1, 1);
+end analyzeOdeEquations;
+
+protected function analyzeOdeEquations1
+  input list<SimCode.SimEqSystem> iEqs;
+  input Integer iLevel;
+  output Integer oLevel;
+algorithm
+  print("Equation level " +& intString(iLevel) +& "\n");
+  _ := List.fold(iEqs,analyzeOdeEquations2,1);
+  oLevel := iLevel + 1;
+end analyzeOdeEquations1;
+
+protected function analyzeOdeEquations2
+  input SimCode.SimEqSystem iEq;
+  input Integer iEqIndex;
+  output Integer oEqIndex;
+protected
+  Integer simEqIdx;
+algorithm
+  simEqIdx := getIndexBySimCodeEq(iEq);
+  print("Equation " +& intString(simEqIdx) +& "\n");
+  oEqIndex := iEqIndex + 1;
+end analyzeOdeEquations2;
 
 protected function printParInformation "function printParInformation
   author: marcusw
@@ -762,5 +737,63 @@ algorithm
   (index2,_) := iTuple2;
   oResult := intGt(index1,index2);
 end sortParInfo;
+
+protected function findHighestSccIdxInMapping "function findHighestSccIdxInMapping
+  author: marcusw
+  Find the highest scc-index in the mapping list."
+  input list<tuple<Integer,Integer>> iEquationSccMapping; //<simEqIdx,sccIdx>
+  input Integer iHighestIndex;
+  output Integer oIndex;
+
+protected
+  Integer eqIdx, sccIdx;
+  list<tuple<Integer,Integer>> rest;
+algorithm
+  oIndex := matchcontinue(iEquationSccMapping,iHighestIndex)
+    case((eqIdx,sccIdx)::rest,_)
+      equation
+        true = intGt(sccIdx,iHighestIndex);
+      then findHighestSccIdxInMapping(rest,sccIdx);
+    case((eqIdx,sccIdx)::rest,_)
+      then findHighestSccIdxInMapping(rest,iHighestIndex);
+    else
+      then iHighestIndex;
+  end matchcontinue;
+end findHighestSccIdxInMapping;
+
+protected function removeDummyStateFromMapping "function removeDummyStateFromMapping
+  author: marcusw
+  Removes all mappings with sccIdx=1 from the list and decrements all other scc-indices by 1."
+  input list<tuple<Integer,Integer>> iEquationSccMapping;
+  output list<tuple<Integer,Integer>> oEquationSccMapping;
+algorithm
+  oEquationSccMapping := List.fold(iEquationSccMapping, removeDummyStateFromMapping1, {});
+end removeDummyStateFromMapping;
+
+protected function removeDummyStateFromMapping1 "function removeDummyStateFromMapping1
+  author: marcusw
+  Helper function of removeDummyStateFromMapping. Handles one list-element."
+  input tuple<Integer,Integer> iTuple; //<eqIdx,sccIdx>
+  input list<tuple<Integer,Integer>> iNewList;
+  output list<tuple<Integer,Integer>> oNewList;
+protected
+  Integer eqIdx,sccIdx;
+  tuple<Integer,Integer> newElem;
+algorithm
+  oNewList := matchcontinue(iTuple,iNewList)
+    case((eqIdx,sccIdx),_)
+      equation
+        true = intEq(sccIdx,1);
+      then iNewList;
+    case((eqIdx,sccIdx),_)
+      equation
+        newElem = (eqIdx,sccIdx-1);
+      then newElem::iNewList;
+    else
+      equation
+        print("removeDummyStateFromMapping1 failed\n");
+    then iNewList;
+  end matchcontinue;
+end removeDummyStateFromMapping1;
 
 end HpcOmSimCode;

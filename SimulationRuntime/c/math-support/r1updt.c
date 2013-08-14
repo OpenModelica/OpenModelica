@@ -34,10 +34,10 @@ static integer c__3 = 3;
     double sqrt(doublereal);
 
     /* Local variables */
-    static integer i__, j, l, jj, nm1;
-    static doublereal tan__;
-    static integer nmj;
-    static doublereal cos__, sin__, tau, temp, giant, cotan;
+    integer i__, j, l, jj, nm1;
+    doublereal tan__;
+    integer nmj;
+    doublereal cos__, sin__, tau, temp, giant, cotan;
     extern doublereal dpmpar_(integer *);
 
 /*     ********** */

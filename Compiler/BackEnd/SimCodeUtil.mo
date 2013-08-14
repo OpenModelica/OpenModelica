@@ -1448,8 +1448,9 @@ public function createSimCode "function createSimCode
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
+  output tuple<Integer,list<tuple<Integer,Integer>>> oMapping; //The highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself
 algorithm
-  simCode :=
+  (simCode,oMapping) :=
   matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
       String cname, fileDir;
@@ -1501,6 +1502,8 @@ algorithm
       list<SimCode.StateSet> stateSets;
       array<Integer> systemIndexMap;
       BackendDAE.SampleLookup sampleLookup;
+      list<tuple<Integer,Integer>> equationSccMapping;
+      Integer highestSimEqIndex;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -1560,7 +1563,8 @@ algorithm
       modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
 
       // equation generation for euler, dassl2, rungekutta
-      (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, _) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});
+      (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, equationSccMapping) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});
+      highestSimEqIndex = uniqueEqIndex;
       modelInfo = addTempVars(tempvars, modelInfo);
 
       // Assertions and crap
@@ -1669,11 +1673,12 @@ algorithm
                                 NONE());
       (simCode, (_, _, lits)) = traverseExpsSimCode(simCode, findLiteralsHelper, literals);
       simCode = setSimCodeLiterals(simCode, listReverse(lits));
+      
       // print("*** SimCode -> collect all files started: " +& realString(clock()) +& "\n");
       // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
       // simCode = collectAllFiles(simCode);
       // print("*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n");
-    then simCode;
+    then (simCode, (highestSimEqIndex, equationSccMapping));
       
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]"});

@@ -38,36 +38,36 @@ static logical c_false = FALSE_;
     doublereal d__1, d__2;
 
     /* Local variables */
-    static integer i__, j, l, jm1, iwa[1];
-    static doublereal sum;
-    static logical sing;
-    static integer iter;
-    static doublereal temp;
-    static integer msum, iflag;
-    static doublereal delta;
+    integer i__, j, l, jm1, iwa[1];
+    doublereal sum;
+    logical sing;
+    integer iter;
+    doublereal temp;
+    integer msum, iflag;
+    doublereal delta;
     extern /* Subroutine */ int qrfac_(integer *, integer *, doublereal *,
       integer *, logical *, integer *, integer *, doublereal *,
       doublereal *, doublereal *);
-    static logical jeval;
-    static integer ncsuc;
-    static doublereal ratio;
+    logical jeval;
+    integer ncsuc;
+    doublereal ratio;
     extern doublereal enorm_(integer *, doublereal *);
-    static doublereal fnorm;
+    doublereal fnorm;
     extern /* Subroutine */ int qform_(integer *, integer *, doublereal *,
       integer *, doublereal *), fdjac1_(S_fp, integer *, doublereal *,
       doublereal *, doublereal *, integer *, integer *, integer *,
       integer *, doublereal *, doublereal *, doublereal *, void *);
-    static doublereal pnorm, xnorm, fnorm1;
+    doublereal pnorm, xnorm, fnorm1;
     extern /* Subroutine */ int r1updt_(integer *, integer *, doublereal *,
       integer *, doublereal *, doublereal *, doublereal *, logical *);
-    static integer nslow1, nslow2;
+    integer nslow1, nslow2;
     extern /* Subroutine */ int r1mpyq_(integer *, integer *, doublereal *,
       integer *, doublereal *, doublereal *);
-    static integer ncfail;
+    integer ncfail;
     extern /* Subroutine */ int dogleg_(integer *, doublereal *, integer *,
       doublereal *, doublereal *, doublereal *, doublereal *,
       doublereal *, doublereal *);
-    static doublereal actred, epsmch, prered;
+    doublereal actred, epsmch, prered;
     extern doublereal dpmpar_(integer *);
 
 /*     ********** */

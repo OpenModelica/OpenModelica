@@ -24,9 +24,9 @@
     integer q_dim1, q_offset, i__1, i__2, i__3;
 
     /* Local variables */
-    static integer i__, j, k, l, jm1, np1;
-    static doublereal sum, temp;
-    static integer minmn;
+    integer i__, j, k, l, jm1, np1;
+    doublereal sum, temp;
+    integer minmn;
 
 /*     ********** */
 

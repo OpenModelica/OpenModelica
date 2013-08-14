@@ -22,7 +22,7 @@ static logical c_false = FALSE_;
   maxfev, doublereal *diag, integer *mode, doublereal *factor, integer *
   nprint, integer *info, integer *nfev, integer *njev, doublereal *r__,
   integer *lr, doublereal *qtf, doublereal *wa1, doublereal *wa2,
-  doublereal *wa3, doublereal *wa4, void* userdata)
+  doublereal *wa3, doublereal *wa4, void* userdata, int sysNumber)
 {
     /* Initialized data */
 
@@ -38,34 +38,34 @@ static logical c_false = FALSE_;
     doublereal d__1, d__2;
 
     /* Local variables */
-    static integer i__, j, l, jm1, iwa[1];
-    static doublereal sum;
-    static logical sing;
-    static integer iter;
-    static doublereal temp;
-    static integer iflag;
-    static doublereal delta;
+    integer i__, j, l, jm1, iwa[1];
+    doublereal sum;
+    logical sing;
+    integer iter;
+    doublereal temp;
+    integer iflag;
+    doublereal delta;
     extern /* Subroutine */ int qrfac_(integer *, integer *, doublereal *,
       integer *, logical *, integer *, integer *, doublereal *,
       doublereal *, doublereal *);
-    static logical jeval;
-    static integer ncsuc;
-    static doublereal ratio;
+    logical jeval;
+    integer ncsuc;
+    doublereal ratio;
     extern doublereal enorm_(integer *, doublereal *);
-    static doublereal fnorm;
+    doublereal fnorm;
     extern /* Subroutine */ int qform_(integer *, integer *, doublereal *,
       integer *, doublereal *);
-    static doublereal pnorm, xnorm, fnorm1;
+    doublereal pnorm, xnorm, fnorm1;
     extern /* Subroutine */ int r1updt_(integer *, integer *, doublereal *,
       integer *, doublereal *, doublereal *, doublereal *, logical *);
-    static integer nslow1, nslow2;
+    integer nslow1, nslow2;
     extern /* Subroutine */ int r1mpyq_(integer *, integer *, doublereal *,
       integer *, doublereal *, doublereal *);
-    static integer ncfail;
+    integer ncfail;
     extern /* Subroutine */ int dogleg_(integer *, doublereal *, integer *,
       doublereal *, doublereal *, doublereal *, doublereal *,
       doublereal *, doublereal *);
-    static doublereal actred, epsmch, prered;
+    doublereal actred, epsmch, prered;
     extern doublereal dpmpar_(integer *);
 
 /*     ********** */
@@ -258,7 +258,7 @@ L20:
 /*     and calculate its norm. */
 
     iflag = 1;
-    (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata);
+    (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata, sysNumber);
     *nfev = 1;
     if(iflag < 0) {
   goto L300;
@@ -281,7 +281,7 @@ L30:
 /*        calculate the jacobian matrix. */
 
     iflag = 2;
-    (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata);
+    (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata, sysNumber);
     ++(*njev);
     if(iflag < 0) {
   goto L300;
@@ -408,7 +408,7 @@ L180:
     }
     iflag = 0;
     if((iter - 1) % *nprint == 0) {
-  (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata);
+  (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata, sysNumber);
     }
     if(iflag < 0) {
   goto L300;
@@ -440,7 +440,7 @@ L190:
 /*           evaluate the function at x + p and calculate its norm. */
 
     iflag = 1;
-    (*fcn)(n, &wa2[1], &wa4[1], &fjac[fjac_offset], ldfjac, &iflag, userdata);
+    (*fcn)(n, &wa2[1], &wa4[1], &fjac[fjac_offset], ldfjac, &iflag, userdata, sysNumber);
     ++(*nfev);
     if(iflag < 0) {
   goto L300;
@@ -620,7 +620,7 @@ L300:
     }
     iflag = 0;
     if(*nprint > 0) {
-  (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata);
+  (*fcn)(n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag, userdata, sysNumber);
     }
     return 0;
 

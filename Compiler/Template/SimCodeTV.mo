@@ -2892,6 +2892,10 @@ package HpcOmSimCode
     input Integer iIdx;
     output SimCode.SimEqSystem oEq;
   end getSimCodeEqByIndex;
+  
+  function analyzeOdeEquations
+    input list<list<SimCode.SimEqSystem>> systems;
+  end analyzeOdeEquations;
 end HpcOmSimCode;
 
 end SimCodeTV;

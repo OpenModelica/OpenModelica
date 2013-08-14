@@ -83,7 +83,7 @@ typedef struct DATA_HYBRD
 
 } DATA_HYBRD;
 
-static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data);
+static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data, int sysNumber);
 
 /*! \fn allocate memory for nonlinear system solver hybrd
  *
@@ -227,9 +227,9 @@ static void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals, const do
  *  \author wbraun
  *
  */
-static int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
+static int getNumericalJacobian(DATA* data, double* jac, double* x, double* f, int sysNumber)
 {
-  int currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
+  int currentSys = sysNumber;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
 
@@ -249,7 +249,7 @@ static int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
     xsave = x[i];
     x[i] += delta_hh;
 
-    wrapper_fvec_hybrj(&solverData->n, x, solverData->wa1, solverData->fjacobian, &solverData->ldfjac, &iflag, data);
+    wrapper_fvec_hybrj(&solverData->n, x, solverData->wa1, solverData->fjacobian, &solverData->ldfjac, &iflag, data, sysNumber);
 
     for(j = 0; j < solverData->n; ++j)
     {
@@ -272,9 +272,9 @@ static int getNumericalJacobian(DATA* data, double* jac, double* x, double* f)
  *  \author wbraun
  *
  */
-static int getAnalyticalJacobian(DATA* data, double* jac)
+static int getAnalyticalJacobian(DATA* data, double* jac, int sysNumber)
 {
-  int i, j, k, l, ii, currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
+  int i, j, k, l, ii, currentSys = sysNumber;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   const int index = systemData->jacobianIndex;
@@ -322,9 +322,10 @@ static int getAnalyticalJacobian(DATA* data, double* jac)
  *
  *
  */
-static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data){
+static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data, int sysNumber){
 
-  int i, currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
+  int i, currentSys = sysNumber;
+  char buf[256];
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = ((DATA*)data)->simulationInfo.solveContinuous;
@@ -354,9 +355,9 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
 
       /* call apropreated jacobain function */
       if(systemData->jacobianIndex != -1)
-        getAnalyticalJacobian(data, fjac);
+        getAnalyticalJacobian(data, fjac, sysNumber);
       else
-        getNumericalJacobian(data, fjac, x, f);
+        getNumericalJacobian(data, fjac, x, f, sysNumber);
 
       /* reset residual function again */
       if(continuous)
@@ -366,7 +367,8 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
       break;
 
     default:
-      THROW("Well, this is embarrassing. The non-linear solver should never called this case.");
+      snprintf(buf, sizeof buf, "%s%d", "Well, this is embarrassing. The non-linear solver should never called this case.", *iflag);
+      THROW(buf);
       break;
   }
   return 0;
@@ -447,7 +449,7 @@ int solveHybrd(DATA *data, int sysNumber)
     mem_state = get_memory_state();
     /* try */
     if (!setjmp(nonlinearJmpbuf)) {
-      wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
+      wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
       restore_memory_state(mem_state);
     } else { /* catch */
       restore_memory_state(mem_state);
@@ -502,7 +504,7 @@ int solveHybrd(DATA *data, int sysNumber)
           &solverData->factor, &solverData->nprint, &solverData->info,
           &solverData->nfev, &solverData->njev, solverData->r__,
           &solverData->lr, solverData->qtf, solverData->wa1,
-          solverData->wa2, solverData->wa3, solverData->wa4, data);
+          solverData->wa2, solverData->wa3, solverData->wa4, data, sysNumber);
       restore_memory_state(mem_state);
       if (assertCalled){
         INFO(LOG_NLS, "After asserts was called, values reached which avoided assert call.");
@@ -559,7 +561,7 @@ int solveHybrd(DATA *data, int sysNumber)
         /* try */
         if (!setjmp(nonlinearJmpbuf))
         {
-          wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
+          wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
           restore_memory_state(mem_state);
         } else { /* catch */
           restore_memory_state(mem_state);
@@ -668,7 +670,7 @@ int solveHybrd(DATA *data, int sysNumber)
       /* try */
       if (!setjmp(nonlinearJmpbuf))
       {
-        wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data);
+        wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
         restore_memory_state(mem_state);
       } else { /* catch */
         restore_memory_state(mem_state);

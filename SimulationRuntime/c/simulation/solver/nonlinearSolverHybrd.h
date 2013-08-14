@@ -48,11 +48,11 @@ extern "C" {
 #endif
 
 extern
-int _omc_hybrj_(int(*) (integer*, double*, double*, double *, integer*, integer*, void* data),
+int _omc_hybrj_(int(*) (integer*, double*, double*, double *, integer*, integer*, void* data, int),
       integer *n,double*x,double*fvec,double*fjac,integer *ldfjac,double*xtol,integer* maxfev,
       double* diag,integer *mode,double*factor, integer *nprint,integer* info, integer* nfev, integer* njev,
       double* r, integer *lr,double*qtf,double*wa1,double*wa2,
-      double* wa3,double* wa4, void* userdata);
+      double* wa3,double* wa4, void* userdata, int sysNumber);
 
 extern
 int _omc_hybrd_(int (*) (integer*, double *, double*, integer*, void*),

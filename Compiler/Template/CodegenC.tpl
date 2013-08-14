@@ -1601,7 +1601,7 @@ template functionXXX_system0_HPCOM(list<SimEqSystem> derivativEquations, String 
   //let odeEqs = "#pragma omp parallel sections\n{"
   let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete); separator="\n"
   <<
-  #pragma omp parallel sections
+  #pragma omp parallel sections num_threads(4)
   {
      <%odeEqs%>
   }
@@ -1621,14 +1621,16 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
-  #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_TICK_EQEXT(<%ix%>);
-  #endif
   #pragma omp section
-  eqFunction_<%ix%>(data);
-  #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_ACC_EQEXT(<%ix%>);
-  #endif
+  {
+      #ifdef _OMC_MEASURE_TIME
+        SIM_PROF_TICK_EQEXT(<%ix%>);
+      #endif
+      eqFunction_<%ix%>(data);
+      #ifdef _OMC_MEASURE_TIME
+        SIM_PROF_ACC_EQEXT(<%ix%>);
+      #endif
+  }
   >>
 else
  match getSimCodeEqByIndex(derivativEquations, idx)
@@ -1638,13 +1640,15 @@ else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
   #pragma omp section
-  #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_TICK_EQEXT(<%ix%>);
-  #endif
-  eqFunction_<%ix%>(data);
-  #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_ACC_EQEXT(<%ix%>);
-  #endif
+  {
+      #ifdef _OMC_MEASURE_TIME
+        SIM_PROF_TICK_EQEXT(<%ix%>);
+      #endif
+      eqFunction_<%ix%>(data);
+      #ifdef _OMC_MEASURE_TIME
+        SIM_PROF_ACC_EQEXT(<%ix%>);
+      #endif
+  }
   >>
 end equationNamesHPCOM_;
 

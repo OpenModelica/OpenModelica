@@ -137,7 +137,7 @@ algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE,
+  (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",GlobalScript.RT_CLOCK_SIMCODE);
@@ -180,7 +180,7 @@ algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
   SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE,
+  (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",GlobalScript.RT_CLOCK_SIMCODE);
@@ -398,6 +398,7 @@ algorithm
   simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
       Integer numProc;
+      SimCode.SimCode tmpSimCode;
     case(_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.HPCOM);
@@ -406,7 +407,9 @@ algorithm
     then
       HpcOmSimCode.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     else
-       then SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      equation
+        (tmpSimCode,_) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      then tmpSimCode;
   end matchcontinue;
 end createSimCode;
 

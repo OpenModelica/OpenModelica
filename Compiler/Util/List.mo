@@ -4945,7 +4945,7 @@ algorithm
       equation
         arg = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue);
       then
-        fold4(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg3, arg);
+        fold4(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, arg);
 
   end match;
 end fold4;

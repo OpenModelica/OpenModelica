@@ -16,10 +16,10 @@ doublereal enorm_(integer *n, doublereal *x)
 {
     /* Initialized data */
 
-    static doublereal one = 1.;
-    static doublereal zero = 0.;
-    static doublereal rdwarf = 3.834e-20;
-    static doublereal rgiant = 1.304e19;
+    doublereal one = 1.;
+    doublereal zero = 0.;
+    doublereal rdwarf = 3.834e-20;
+    doublereal rgiant = 1.304e19;
 
     /* System generated locals */
     integer i__1;
@@ -29,8 +29,8 @@ doublereal enorm_(integer *n, doublereal *x)
     double sqrt(doublereal);
 
     /* Local variables */
-    static integer i__;
-    static doublereal s1, s2, s3, xabs, x1max, x3max, agiant, floatn;
+    integer i__;
+    doublereal s1, s2, s3, xabs, x1max, x3max, agiant, floatn;
 
 /*     ********** */
 

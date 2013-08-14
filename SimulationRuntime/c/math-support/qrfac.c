@@ -22,9 +22,9 @@ static integer c__1 = 1;
 {
     /* Initialized data */
 
-    static doublereal one = 1.;
-    static doublereal p05 = .05;
-    static doublereal zero = 0.;
+    doublereal one = 1.;
+    doublereal p05 = .05;
+    doublereal zero = 0.;
 
     /* System generated locals */
     integer a_dim1, a_offset, i__1, i__2, i__3;
@@ -34,15 +34,15 @@ static integer c__1 = 1;
     double sqrt(doublereal);
 
     /* Local variables */
-    static integer i__, j, k, jp1;
-    static doublereal sum;
-    static integer kmax;
-    static doublereal temp;
-    static integer minmn;
+    integer i__, j, k, jp1;
+    doublereal sum;
+    integer kmax;
+    doublereal temp;
+    integer minmn;
     extern doublereal enorm_(integer *, doublereal *);
-    static doublereal epsmch;
+    doublereal epsmch;
     extern doublereal dpmpar_(integer *);
-    static doublereal ajnorm;
+    doublereal ajnorm;
 
 /*     ********** */
 

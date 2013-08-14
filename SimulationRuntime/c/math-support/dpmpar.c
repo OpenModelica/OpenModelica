@@ -16,7 +16,7 @@ doublereal dpmpar_(integer *i__)
 {
     /* Initialized data */
 
-    static struct {
+    struct {
   doublereal e_1[3];
   doublereal fill_2[1];
   } equiv_2 = {{ 2.22044604926e-16, 2.22507385852e-308,

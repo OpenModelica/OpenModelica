@@ -2362,24 +2362,26 @@ public function dumpAsGraphMLSccLevel "function dumpAsGraphMLSccLevel
   input TaskGraphMeta iGraphData;
   input String fileName;
   input String criticalPathInfo;
+  input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
 protected
   GraphML.Graph graph;
-  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx, commCostAttIdx, critPathAttIdx;
+  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx, commCostAttIdx, critPathAttIdx, simCodeEqAttIdx;
   list<Integer> compIdc;
 algorithm
-  _ := match(iGraph, iGraphData, fileName, criticalPathInfo)
-    case(_,_,_,_)
+  _ := match(iGraph, iGraphData, fileName, criticalPathInfo, sccSimEqMapping)
+    case(_,_,_,_,_)
       equation 
         graph = GraphML.getGraph("TaskGraph", true);
         (opCountAttIdx,graph) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
         (calcTimeAttIdx,graph) = GraphML.addAttribute("-1", "CalcTime", GraphML.TYPE_DOUBLE(), GraphML.TARGET_NODE(), graph);
         (compIdcAttIdx,graph) = GraphML.addAttribute("", "Components", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
         (yCoordAttIdx,graph) = GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
+        (simCodeEqAttIdx,graph) = GraphML.addAttribute("", "SimCodeEqs", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
         (commCostAttIdx,graph) = GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graph);
         (critPathAttIdx,graph) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graph);
         graph = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), graph);
         compIdc = List.intRange(arrayLength(iGraph));
-        graph = List.fold3(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx,compIdcAttIdx,yCoordAttIdx,commCostAttIdx), graph);
+        graph = List.fold4(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx,compIdcAttIdx,yCoordAttIdx,commCostAttIdx, simCodeEqAttIdx), sccSimEqMapping, graph);
         GraphML.dumpGraph(graph, fileName);
       then ();
   end match;
@@ -2392,20 +2394,22 @@ protected function addNodeToGraphML "function addNodeToGraphML
   input Integer nodeIdx;
   input TaskGraph tGraphIn;
   input TaskGraphMeta tGraphDataIn;
-  input tuple<Integer,Integer,Integer,Integer,Integer> attIdc; 
-  //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx>
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer> attIdc; 
+  //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx>
+  input array<list<Integer>> sccSimEqMapping;
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 algorithm
-  oGraph := matchcontinue(nodeIdx,tGraphIn,tGraphDataIn,attIdc,iGraph)
+  oGraph := matchcontinue(nodeIdx,tGraphIn,tGraphDataIn,attIdc,sccSimEqMapping,iGraph)
     local
       GraphML.Graph tmpGraph;
-      Integer opCount, calcTimeAttIdx, opCountAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, yCoord;
+      Integer opCount, calcTimeAttIdx, opCountAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, yCoord, simCodeEqAttIdx;
       Real calcTime;
       Integer primalComp;
       list<Integer> childNodes;
       list<Integer> components;
       list<Integer> rootNodes;  
+      list<Integer> simCodeEqs;
       array<Integer> varSccMapping;  
       array<Integer> eqSccMapping;  
       array<tuple<Integer,Real>> exeCosts;  
@@ -2419,10 +2423,11 @@ algorithm
       String description;
       String nodeDesc;
       String componentsString;
-    case(_,_,_,_,_)
+      String simCodeEqString;
+    case(_,_,_,_,_,_)
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
-        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx) = attIdc;
+        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         true = listLength(components)==1; 
@@ -2438,17 +2443,21 @@ algorithm
         opCountString = intString(opCount);
         yCoordString = intString(yCoord);
         childNodes = arrayGet(tGraphIn,nodeIdx);
+        simCodeEqs = arrayGet(sccSimEqMapping,primalComp);
+        //print("Component " +& intString(primalComp) +& " arrayLength " +& intString(arrayLength(sccSimEqMapping)) +& "\n");
+        //print("First simEq: " +& intString(List.first(simCodeEqs)) +& "\n");
+        simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
         //componentsString = List.fold(components, addNodeToGraphML2, " ");
         componentsString = (" "+&intString(nodeIdx)+&" ");
-        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)),((yCoordAttIdx,yCoordString))}, iGraph);
+        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString))}, iGraph);
         tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
         tmpGraph;
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_)
       equation
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
-        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx) = attIdc;
+        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
@@ -2461,11 +2470,13 @@ algorithm
         childNodes = arrayGet(tGraphIn,nodeIdx);
         //componentsString = List.fold(components, addNodeToGraphML2, " ");
         componentsString = (" "+&intString(nodeIdx)+&" ");
-        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString))}, iGraph);
+        simCodeEqs = arrayGet(sccSimEqMapping,primalComp);
+        simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
+        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString))}, iGraph);
         tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
         tmpGraph;
-    case(_,_,_,_,_)
+    case(_,_,_,_,_,_)
       equation
         true = nodeIdx == 0 or nodeIdx == -1;
         print("addSccToGraphML failed \n");
