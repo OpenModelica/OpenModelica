@@ -202,8 +202,7 @@ end getF;
  see: http://bmi.osu.edu/~kamer/index.html
  *****************************************/
 
-public function setIncidenceMatrix "function setIncidenceMatrix
-  author: Frenkel TUD 2012-04"
+public function setIncidenceMatrix "author: Frenkel TUD 2012-04"
   input Integer nv;
   input Integer ne;
   input Integer nz;
@@ -271,8 +270,7 @@ public function matching
   external "C" BackendDAEEXT_matching(nv,ne,matchingID,cheapID,relabel_period,clear_match) annotation(Library = "omcruntime");
 end matching;
 
-public function getAssignment "function getAssignment
-  author: Frenkel TUD 2012-04"
+public function getAssignment "author: Frenkel TUD 2012-04"
   input array<Integer> ass1;
   input array<Integer> ass2;
   external "C" BackendDAEEXT_getAssignment(ass1, ass2) annotation(Library = "omcruntime");

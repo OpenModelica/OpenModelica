@@ -672,8 +672,7 @@ algorithm
   end match;
 end updateSubmod;
 
-public function elabUntypedMod "function elabUntypedMod
-  This function is used to convert SCode.Mod into Mod, without
+public function elabUntypedMod "This function is used to convert SCode.Mod into Mod, without
   adding correct type information. Instead, a undefined type will be
   given to the modification. This is used when modifications of e.g.
   elements in base classes used. For instance,

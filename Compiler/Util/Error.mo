@@ -950,9 +950,7 @@ algorithm
   res := ErrorExt.getMessages();
 end getMessages;
 
-public function getMessagesStrType "function getMessagesStrType
-
-  Return all messages in a matrix format, vector of strings for each
+public function getMessagesStrType "Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
   Filtered by a specific MessageType.
 "
@@ -965,9 +963,7 @@ algorithm
   end matchcontinue;
 end getMessagesStrType;
 
-public function getMessagesStrSeverity "function getMessagesStrSeverity
-
-  Return all messages in a matrix format, vector of strings for each
+public function getMessagesStrSeverity "Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
   Filtered by a specific MessageType.
 "
@@ -1013,8 +1009,7 @@ algorithm
   end match;
 end severityStr;
 
-protected function selectString "function selectString
-  author: adrpo, 2006-02-05
+protected function selectString "author: adrpo, 2006-02-05
   selects first string is bool is true otherwise the second string
 "
   input Boolean inBoolean1;

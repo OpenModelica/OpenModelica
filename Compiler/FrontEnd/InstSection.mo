@@ -86,8 +86,7 @@ protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarc
 protected constant Boolean alwaysUnroll = true;
 
 public function instEquation
-"function instEquation
-  author: LS, ELN
+"author: LS, ELN
 
   Instantiates an equation by calling
   instEquationCommon with Inital set

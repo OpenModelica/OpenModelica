@@ -61,8 +61,7 @@ protected import HashTable;
 protected import List;
 protected import Util;
 
-public function listEquation "function listEquation
-  author: PA
+public function listEquation "author: PA
   Transform the a list of Equations into an expandable BackendDAE.Equation array."
   input list<BackendDAE.Equation> inEquationList;
   output BackendDAE.EquationArray outEquationArray;
@@ -121,8 +120,7 @@ algorithm
   outEquationArray := BackendDAE.EQUATION_ARRAY(0,0,size,optarr);
 end emptyEqnsSized;
 
-public function equationList "function equationList
-  author: PA
+public function equationList "author: PA
   Transform the expandable BackendDAE.Equation array to a list of Equations."
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEquationLst;
@@ -150,8 +148,7 @@ algorithm
   end matchcontinue;
 end equationList;
 
-protected function equationList2 "function equationList2
-  author: PA
+protected function equationList2 "author: PA
   Helper function to equationList
   inputs:  (Equation option array, int /* pos */, int /* lastpos */)
   outputs: BackendDAE.Equation list"
@@ -1473,8 +1470,7 @@ algorithm
   eqns_1 := List.fold(eqnlst, equationAdd, eqns);
 end addEquations;
 
-public function mergeEquationArray "function mergeEquationArray
-  author: vitalij
+public function mergeEquationArray "author: vitalij
   This function returns an EquationArray containing all the equations from both
   inputs."
   input BackendDAE.EquationArray inEqns1;
@@ -2115,8 +2111,7 @@ algorithm
 end equationLstSize_impl;
 
 public function generateEquation
-"function generateEquation
-  author Frenkel TUD 2012-12
+"author Frenkel TUD 2012-12
   helper to generate an equation from lhs and rhs.
   This function is called if an equation is found which is not simple"
   input DAE.Exp lhs;
@@ -2199,8 +2194,7 @@ algorithm
 end daeInitialEqns;
 
 public function aliasEquation
-"function aliasEquation
-  author Frenkel TUD 2011-04
+"author Frenkel TUD 2011-04
   Returns the two sides of an alias equation as expressions and cref.
   If the equation is not simple, this function will fail."
   input BackendDAE.Equation eqn;
@@ -2226,8 +2220,7 @@ algorithm
 end aliasEquation;
 
 protected function aliasEquation1
-"function aliasEquation1
-  author Frenkel TUD 2011-04
+"author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -2333,8 +2326,7 @@ algorithm
 end aliasEquation1;
 
 protected function aliasEquationLst
-"function aliasEquation1
-  author Frenkel TUD 2011-04
+"author Frenkel TUD 2011-04
   helper for aliasEquation"
   input list<DAE.Exp> elst1;
   input list<DAE.Exp> elst2;
@@ -2345,8 +2337,7 @@ algorithm
 end aliasEquationLst;
 
 protected function aliasEquation2
-"function aliasEquation1
-  author Frenkel TUD 2011-04
+"author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -2408,8 +2399,7 @@ end aliasEquation2;
 // end aliasArray;
 
 protected function aliasRecord
-"function aliasRecord
-  author Frenkel TUD 2011-04
+"author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.ComponentRef cr;
   input list<DAE.Var> varLst;
@@ -2458,8 +2448,7 @@ algorithm
 end aliasRecord;
 
 protected function aliasExpression
-"function aliasExpression
-  author Frenkel TUD 2011-11
+"author Frenkel TUD 2011-11
   Returns the two sides of an alias expression as expressions and cref.
   If the expression is not simple, this function will fail."
   input DAE.Exp exp;
@@ -2495,8 +2484,7 @@ algorithm
 end aliasExpression;
 
 public function derivativeEquation
-"function derivativeEquation
-  author Frenkel TUD 2011-04
+"author Frenkel TUD 2011-04
   Returns the two sides of an derivative equation as expressions and cref.
   If the equation is not a derivative equaiton, this function will fail."
   input BackendDAE.Equation eqn;

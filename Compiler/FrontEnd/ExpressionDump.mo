@@ -1573,8 +1573,7 @@ algorithm
 end printArraySizes;
 
 public function typeOfString
-"function typeOfString
-  Retrieves the Type of the Expression as a String"
+"Retrieves the Type of the Expression as a String"
   input DAE.Exp inExp;
   output String str;
 protected

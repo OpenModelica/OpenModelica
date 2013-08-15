@@ -1013,8 +1013,7 @@ algorithm
   res:=stringDelimitList(List.map(dims,ExpressionDump.dimensionString),", ");
 end printDimensionsStr;
 
-public function valuesToVars "function valuesToVars
-  Translates a list of Values.Value to a Var list, using a list
+public function valuesToVars "Translates a list of Values.Value to a Var list, using a list
   of identifiers as component names.
   Used e.g. when retrieving the type of a record value."
   input list<Values.Value> inValuesValueLst;
@@ -2925,8 +2924,7 @@ algorithm
   end matchcontinue;
 end getClassnameOpt;
 
-public function getVars "function getVars
-  author: LS
+public function getVars "author: LS
   Select the variables from the list for which the
   condition function given as second argument succeeds."
   input list<DAE.Var> inVarLst;
@@ -7211,8 +7209,7 @@ algorithm
   end matchcontinue;
 end typeToValue;
 
-public function varsToValues "function varsToValues
-  Translates a list of Var list to Values.Value, the
+public function varsToValues "Translates a list of Var list to Values.Value, the
   names of the variables as component names.
   Used e.g. when retrieving the type of a record value."
   input list<DAE.Var> inVarLst;

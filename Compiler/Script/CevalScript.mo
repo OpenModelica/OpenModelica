@@ -757,9 +757,7 @@ algorithm
 end checkValidVersion;
 
 public function cevalInteractiveFunctions
-"function cevalInteractiveFunctions
-  This function evaluates the functions
-  defined in the interactive environment."
+"defined in the interactive environment."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp "expression to evaluate";
@@ -806,9 +804,7 @@ algorithm
 end cevalInteractiveFunctions;
 
 protected function cevalInteractiveFunctions2
-"function cevalInteractiveFunctions
-  This function evaluates the functions
-  defined in the interactive environment."
+"defined in the interactive environment."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input String inFunctionName;
@@ -3680,8 +3676,7 @@ algorithm
 end buildModel;
 
 protected function createSimulationResultFromcallModelExecutable
-"function createSimulationResultFromcallModelExecutable
-  This function calls the compiled simulation executable."
+"This function calls the compiled simulation executable."
   input Integer callRet;
   input Real timeTotal;
   input Real timeSimulation;

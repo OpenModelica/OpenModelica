@@ -2390,8 +2390,7 @@ algorithm
 end listClass;
 
 protected function extractAllComponentreplacements
-"function extractAllComponentreplacements
-  author: x02lucpo
+"author: x02lucpo
   extracts all the componentreplacementrules from program.
   This is done by extracting all the components and then
   extracting the rules"
@@ -2542,8 +2541,7 @@ algorithm
 end renameComponentOnlyInClass;
 
 protected function extractRenamedClassesAsStringList
-"function extractRenamedClassesAsStringList
-  author: x02lucpo
+"author: x02lucpo
   this iterates through the Componentreplacementrules and
   returns the string list with all the changed classes"
   input ComponentReplacementRules inComponentReplacementRules;
@@ -2579,8 +2577,7 @@ algorithm
 end extractRenamedClassesAsStringList;
 
 protected function renameComponentFromComponentreplacements
-"function renameComponentFromComponentreplacements
-  author: x02lucpo
+"author: x02lucpo
   this iterates through the Componentreplacementrules and
   renames the componentes by traversing all the classes"
   input Absyn.Program inProgram;
@@ -2615,8 +2612,7 @@ algorithm
 end renameComponentFromComponentreplacements;
 
 protected function renameComponentVisitor
-"function renameComponentVisitor
-  author: x02lucpo
+"author: x02lucpo
   this is a visitor for traverse class in rename components"
   input tuple<Absyn.Class, Option<Absyn.Path>, ComponentReplacement> inTplAbsynClassAbsynPathOptionComponentReplacement;
   output tuple<Absyn.Class, Option<Absyn.Path>, ComponentReplacement> outTplAbsynClassAbsynPathOptionComponentReplacement;
@@ -3578,10 +3574,7 @@ algorithm
 end renameComponentInExternalDecl;
 
 protected function replaceStartInComponentRef
-"function replaceStartInComponentRef
-  author x02lucpo
-  this replace the start of a ComponentRef with another
-  ie: (a.b.c.d, a.b, c.f) => c.f.c.d
+"ie: (a.b.c.d, a.b, c.f) => c.f.c.d
      (a.b.c.d, d.c, c.f) => a.b.c.d
      WARNING! WARNING! WARNING! WARNING! WARNING! WARNING!
      WARNING! WARNING! WARNING! WARNING! WARNING! WARNING!
@@ -3605,10 +3598,7 @@ algorithm
 end replaceStartInComponentRef;
 
 protected function replaceStartInComponentRef2
-"function replaceStartInComponentRef2
-  author x02lucpo
-  this replace the start of a ComponentRef with another
-  ie: (a.b.c.d, a.b, c.f) => c.f.c.d
+"ie: (a.b.c.d, a.b, c.f) => c.f.c.d
      (a.b.c.d, d.c, c.f) => a.b.c.d
      WARNING! WARNING! WARNING! WARNING! WARNING! WARNING!
      WARNING! WARNING! WARNING! WARNING! WARNING! WARNING!
@@ -3647,8 +3637,7 @@ algorithm
 end replaceStartInComponentRef2;
 
 protected function getComponentreplacementsrules
-"function getComponentreplacementsrules
-  author: x02lucpo
+"author: x02lucpo
   this extracts all the componentreplacementrules by
   searching for new rules until the list-size does not
   grow any more"
@@ -3685,8 +3674,7 @@ algorithm
 end getComponentreplacementsrules;
 
 protected function getNewComponentreplacementsrulesForEachRule
-"function getNewComponentreplacementsrulesForEachRule
-  author: x02lucpo
+"author: x02lucpo
  extracts the replacement rules from the components:
  {COMP(path_1,path_2,cr1),COMP(path_3,path_2,cr2)},{REP_RULE(path_2,cr_1a,cr_1b)}
            => {REP_RULE(path_1,cr1.cr_1a,cr1.cr_1b),REP_RULE(path_3,cr2.cr_1a,cr2.cr_1b)}"
@@ -3726,8 +3714,7 @@ algorithm
 end getNewComponentreplacementsrulesForEachRule;
 
 protected function makeComponentsReplacementRulesFromComponents
-"function makeComponentsReplacementRulesFromComponents
-  author: x02lucpo
+"author: x02lucpo
 
   this makes the replacementrules from each component in the first parameter:
   {COMP(path_1,path_2,cr1),COMP(path_3,path_2,cr2)},cr_1a,cr_1b
@@ -3779,8 +3766,7 @@ algorithm
 end makeComponentsReplacementRulesFromComponents;
 
 protected function emptyComponentReplacementRules
-"function emptyComponentReplacementRules
-  author: x02lucpo
+"author: x02lucpo
   returns true if the componentReplacementRules are empty"
   input ComponentReplacementRules inComponentReplacementRules;
   output Boolean outBoolean;
@@ -3815,8 +3801,7 @@ algorithm
 end joinComponentReplacementRules;
 
 protected function lengthComponentReplacementRules
-"function lengthComponentReplacementRules
-  author: x02lucpo
+"author: x02lucpo
   return the number of the componentReplacementRules"
   input ComponentReplacementRules inComponentReplacementRules;
   output Integer outInteger;
@@ -4173,8 +4158,7 @@ algorithm
 end extractAllComponents;
 
 protected function extractAllComponentsVisitor
-"function extractAllComponentsVisitor
-  author: x02lucpo
+"author: x02lucpo
   the visitor for traverse-classes that extracts all
   the components and extends from all classes"
   input tuple<Absyn.Class, Option<Absyn.Path>, tuple<Components, Absyn.Program, Env.Env>> inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
@@ -5264,8 +5248,7 @@ algorithm
 end setElementAttributes;
 
 protected function setElementParallelism
-"function setElementParallelism
-  Sets Parallelism according to string value."
+"Sets Parallelism according to string value."
   input String inString;
   output Absyn.Parallelism outParallelism;
 algorithm
@@ -5278,8 +5261,7 @@ algorithm
 end setElementParallelism;
 
 protected function setElementVariability
-"function setElementVariability
-  Sets Variability according to string value."
+"Sets Variability according to string value."
   input String inString;
   output Absyn.Variability outVariability;
 algorithm
@@ -5293,8 +5275,7 @@ algorithm
 end setElementVariability;
 
 protected function setElementCausality
-"function setElementCausality
-  Sets Direction (causality) according to string value."
+"Sets Direction (causality) according to string value."
   input String inString;
   output Absyn.Direction outDirection;
 algorithm
@@ -6075,9 +6056,7 @@ algorithm
 end getExtendsModifierNames;
 
 protected function extendsElementspecNamed
-"function extends_elementspec_name
-  Returns true if elementspec of EXTENDS has
-  the name given as path, false otherwise."
+"the name given as path, false otherwise."
   input Absyn.ElementSpec inElementSpec;
   input Absyn.Path inPath;
   output Boolean outBoolean;
@@ -6096,8 +6075,7 @@ algorithm
 end extendsElementspecNamed;
 
 protected function extendsName
-"function extendsName
-  Return the class name of an EXTENDS element spec."
+"Return the class name of an EXTENDS element spec."
   input Absyn.ElementSpec inElementSpec;
   output Absyn.Path outPath;
 algorithm
@@ -7658,8 +7636,7 @@ algorithm
 end renameClassInImport;
 
 protected function changeLastIdent
-"function changeLastIdent
-  author: x02lucpo
+"author: x02lucpo
   chages the last ident of the first path to the last path ident ie:
   (A.B.CC,C.DD) => (A.B.DD)"
   input Absyn.Path inPath1;
@@ -7988,8 +7965,7 @@ algorithm
 end traverseInnerClassParts;
 
 protected function traverseInnerClassElements
-"function traverseInnerClassElements
-   Helper function to traverseInnerClassParts"
+" Helper function to traverseInnerClassParts"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
@@ -10051,9 +10027,7 @@ algorithm
   end matchcontinue;
 end deleteComponentFromElementitems;
 
-public function addComponent "function addComponent
-
-   This function takes:
+public function addComponent " This function takes:
    arg1 - string giving the instancename,
    arg2 - `ComponentRef\' giving the component type
    arg3 - ComponentRef giving the model to instantiate the component within,
@@ -10157,8 +10131,7 @@ algorithm
 end getDefaultPrefixes;
 
 protected function makeReplaceableIfPartial
-"function makeReplaceableIfPartial
-  This function takes:
+"This function takes:
   arg1 - a Program,
   arg2 - the path of class,
   arg3 - redeclare option.
@@ -13192,8 +13165,7 @@ algorithm
 end getNamedAnnotationInClass;
 
 protected function getDefaultComponentName
-"function getDefaultComponentName
-  Returns the default component name of a class.
+"Returns the default component name of a class.
   This is annotated with the annotation:
   annotation(defaultComponentName=\"name\"); in the class definition"
   input Absyn.Path className;
@@ -13210,8 +13182,7 @@ algorithm
 end getDefaultComponentName;
 
 protected function getDefaultComponentNameModStr
-"function getDefaultComponentNameModStr
-  Extractor function for defaultComponentName modifier"
+"Extractor function for defaultComponentName modifier"
   input Option<Absyn.Modification> mod;
   output String docStr;
 algorithm
@@ -13230,8 +13201,7 @@ algorithm
 end getDefaultComponentNameModStr;
 
 protected function getDefaultComponentPrefixes
-"function getDefaultComponentPrefixes
-  Returns the default component prefixes of a class.
+"Returns the default component prefixes of a class.
   This is annotated with the annotation
     annotation(defaultComponentPrefixes=\"<prefixes>\");
   in the class definition"
@@ -13350,8 +13320,7 @@ algorithm
 end getExperimentAnnotationString;
 
 protected function getExperimentAnnotationString2
-"function getExperimentAnnotationString2
-  Helper function to getExperimentAnnotationString"
+"Helper function to getExperimentAnnotationString"
   input list<Absyn.ElementArg> eltArgs;
   output list<String> strs;
 algorithm
@@ -13400,8 +13369,7 @@ algorithm
 end getDocumentationAnnotationString;
 
 protected function getDocumentationAnnotationInfo
-"function getDocumentationAnnotationInfo
-  Helper function to getDocumentationAnnotationString"
+"Helper function to getDocumentationAnnotationString"
   input list<Absyn.ElementArg> eltArgs;
   output String str;
 algorithm
@@ -13428,8 +13396,7 @@ algorithm
 end getDocumentationAnnotationInfo;
 
 protected function getDocumentationAnnotationRevision
-"function getDocumentationAnnotationRevision
-  Helper function to getDocumentationAnnotationString"
+"Helper function to getDocumentationAnnotationString"
   input list<Absyn.ElementArg> eltArgs;
   output String str;
 algorithm
@@ -14512,9 +14479,7 @@ algorithm
 end buildEnvForGraphicProgram;
 
 protected function getAnnotationString
-"function getAnnotationString
-  This function takes an annotation and returns a comma separates string
-  of values representing the flat record of the specific annotation.
+"of values representing the flat record of the specific annotation.
   The function as two special rules for handling of Icon and Diagram
   annotations since these two contain graphic primitives, which must be
   handled specially because Modelica does not have the possibility to store
@@ -15353,8 +15318,7 @@ algorithm
 end getComponentInfo;
 
 protected function arrayDimensionStr
-"function arrayDimensionStr
-  prints array dimensions to a string"
+"prints array dimensions to a string"
   input Option<Absyn.ArrayDim> ad;
   output String str;
 algorithm
@@ -15598,8 +15562,7 @@ algorithm
 end attrVariabilityStr;
 
 protected function attrDimensionStr
-"function attrDimensionStr
-  Helper function to getComponentInfo,
+"Helper function to getComponentInfo,
   retrieve dimension as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
@@ -15627,9 +15590,7 @@ algorithm
 end attrDirectionStr;
 
 protected function getComponentitemsDimension
-"function getComponentitemsDimension
-  helper function to getComponentInfo
-  Retrieves the dimensions of a list of components as a list of strings."
+"Retrieves the dimensions of a list of components as a list of strings."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output list<String> outStringLst;
 algorithm
@@ -15712,9 +15673,7 @@ algorithm
 end prefixTypename;
 
 public function getComponentitemsName
-"function getComponentitemsName
-   This function takes a ComponentItems list and returns a comma
-   separated list of all component names and comments (if any)."
+" separated list of all component names and comments (if any)."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Boolean inBoolean;
   output list<String> outStringLst;
@@ -17369,8 +17328,7 @@ algorithm
 end getContainedClassAndFile;
 
 protected function removeInnerDiffFiledClasses
-"function removeInnerDiffFiledClasses
-   author: PA
+" author: PA
    Removes all inner classes that have different file name than the class
    itself. The filename of the class is passed as argument.
    inputs: (Absyn.Program /* package as program. */)
@@ -17530,8 +17488,7 @@ algorithm
 end getSurroundingPackage;
 
 public function transformFlatProgram
-"function transformFlatProgram
-  Transforms component references in a Absyn.PROGRAM
+"Transforms component references in a Absyn.PROGRAM
   to same format as the variables of the flat program.
   i.e. a.b[3].c[2] becomes CREF_IDENT(\"a.b[3].c\",[INDEX(ICONST(2))])"
 input Absyn.Program p;
@@ -17545,8 +17502,7 @@ algorithm
 end transformFlatProgram;
 
 protected function transformFlatClass
-"function transformFlatClass
-  This is the visitor function for traversing a class in transformFlatProgram."
+"This is the visitor function for traversing a class in transformFlatProgram."
   input tuple<Absyn.Class, Option<Absyn.Path>,Integer > inTuple;
   output tuple<Absyn.Class, Option<Absyn.Path>, Integer> outTuple;
 algorithm
@@ -17573,8 +17529,7 @@ algorithm
 end transformFlatClass;
 
 protected function transformFlatClassDef
-"function transformFlatClassDef
-  Help function to transformFlatClass."
+"Help function to transformFlatClass."
   input Absyn.ClassDef cdef;
   output Absyn.ClassDef outCdef;
 algorithm
@@ -17616,8 +17571,7 @@ algorithm
 end transformFlatClassDef;
 
 public function transformFlatPart
-"function transformFlatPart
-  Help function to transformFlatClassDef."
+"Help function to transformFlatClassDef."
   input Absyn.ClassPart part;
   output Absyn.ClassPart outPart;
 algorithm
@@ -17658,8 +17612,7 @@ algorithm
 end transformFlatPart;
 
 protected function transformFlatElementItem
-"function transformFlatElementItem
-  Help function to transformFlatParts"
+"Help function to transformFlatParts"
   input Absyn.ElementItem eitem;
   output Absyn.ElementItem outEitem;
 algorithm
@@ -17670,8 +17623,7 @@ algorithm
 end transformFlatElementItem;
 
 protected function transformFlatElement
-"function transformFlatElement
-  Help function to transformFlatElementItem"
+"Help function to transformFlatElementItem"
   input Absyn.Element elt;
   output Absyn.Element outElt;
 algorithm
@@ -17694,8 +17646,7 @@ algorithm
 end transformFlatElement;
 
 protected function transformFlatElementSpec
-"function transformFlatElementSpec
-  Helper to transformFlatElement"
+"Helper to transformFlatElement"
   input Absyn.ElementSpec eltSpec;
   output Absyn.ElementSpec outEltSpec;
 algorithm
@@ -17731,8 +17682,7 @@ algorithm
 end transformFlatElementSpec;
 
 protected function transformFlatComponentItem
-"function transformFlatComponentItem
-  Help function to transformFlatElementSpec"
+"Help function to transformFlatElementSpec"
   input Absyn.ComponentItem compitem;
   output Absyn.ComponentItem outCompitem;
 algorithm
@@ -17750,8 +17700,7 @@ algorithm
 end transformFlatComponentItem;
 
 protected function transformFlatComponent
-"function transformFlatComponent
-  Help function to transformFlatComponentItem"
+"Help function to transformFlatComponentItem"
   input Absyn.Component comp;
   output Absyn.Component outComp;
 algorithm
@@ -17770,8 +17719,7 @@ algorithm
 end transformFlatComponent;
 
 protected function transformFlatArrayDim
-"function transformFlatArrayDim
-  Help function to transformFlatComponent"
+"Help function to transformFlatComponent"
   input Absyn.ArrayDim ad;
   output  Absyn.ArrayDim outAd;
 algorithm
@@ -17785,8 +17733,7 @@ algorithm
 end transformFlatArrayDim;
 
 protected function transformFlatSubscript
-"function transformFlatSubscript
-  Help function to TransformFlatArrayDim"
+"Help function to TransformFlatArrayDim"
   input Absyn.Subscript s;
   output Absyn.Subscript outS;
 algorithm
@@ -17802,8 +17749,7 @@ algorithm
 end transformFlatSubscript;
 
 protected function transformFlatElementArg
-"function transformFlatElementArg
-  Helper function to e.g. transformFlatElementSpec"
+"Helper function to e.g. transformFlatElementSpec"
   input Absyn.ElementArg eltArg;
   output Absyn.ElementArg outEltArg;
 algorithm
@@ -17828,8 +17774,7 @@ algorithm
 end transformFlatElementArg;
 
 protected function transformFlatModificationOption
-"function transformFlatModificationOption
-  Help function to transformFlatElementArg"
+"Help function to transformFlatElementArg"
   input Option<Absyn.Modification> mod;
   output Option<Absyn.Modification> outMod;
 algorithm
@@ -17852,8 +17797,7 @@ algorithm
 end transformFlatModificationOption;
 
 protected function transformFlatComponentRef
-"function transformFlatComponentRef
-  Help function to e.g. transformFlatElementArg and transformFlatExp"
+"Help function to e.g. transformFlatElementArg and transformFlatExp"
   input Absyn.ComponentRef cr;
   output Absyn.ComponentRef outCr;
 algorithm
@@ -17870,8 +17814,7 @@ algorithm
 end transformFlatComponentRef;
 
 protected function transformFlatEquationItem
-"function transformFlatEquationItem
-  Help function to transformFlatParts"
+"Help function to transformFlatParts"
   input Absyn.EquationItem eqnitem;
   output Absyn.EquationItem outEqnitem;
 algorithm
@@ -17888,8 +17831,7 @@ algorithm
 end transformFlatEquationItem;
 
 protected function transformFlatEquation
-"function transformFlatEquation
-  Help function to transformFlatEquationItem"
+"Help function to transformFlatEquationItem"
   input Absyn.Equation eqn;
   output Absyn.Equation outEqn;
 algorithm
@@ -17950,8 +17892,7 @@ algorithm
 end transformFlatEquation;
 
 protected function transformFlatElseIfPart
-"function transformFlatElseIfPart
-  Help function to transformFlatEquation"
+"Help function to transformFlatEquation"
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> elseIfPart;
   output tuple<Absyn.Exp, list<Absyn.EquationItem>> outElseIfPart;
 algorithm
@@ -17969,8 +17910,7 @@ algorithm
 end transformFlatElseIfPart;
 
 protected function transformFlatFunctionArgs
-"function transformFlatFunctionArgs
-  Help function to e.g. transformFlatEquation"
+"Help function to e.g. transformFlatEquation"
   input Absyn.FunctionArgs fargs;
   output Absyn.FunctionArgs outFargs;
 algorithm
@@ -17990,8 +17930,7 @@ algorithm
 end transformFlatFunctionArgs;
 
 protected function transformFlatNamedArg
-"function transformFlatNamedArg
-  Helper functin to e.g. transformFlatFunctionArgs"
+"Helper functin to e.g. transformFlatFunctionArgs"
   input Absyn.NamedArg namedArg;
   output Absyn.NamedArg outNamedArg;
 algorithm
@@ -18005,8 +17944,7 @@ algorithm
 end transformFlatNamedArg;
 
 protected function transformFlatExpTrav
-"function transformFlatExpTrav
-  Transforms a flat expression by calling traverseExp"
+"Transforms a flat expression by calling traverseExp"
   input tuple<Absyn.Exp,Integer> inExp;
   output tuple<Absyn.Exp,Integer> outExp;
 algorithm
@@ -18054,8 +17992,7 @@ algorithm
 end transformFlatAlgorithmItem;
 
 protected function transformFlatAlgorithm
-"function transformFlatAlgorithm
-  Help function to transformFlatAlgorithmItem"
+"Help function to transformFlatAlgorithmItem"
   input Absyn.Algorithm alg;
   output Absyn.Algorithm outAlg;
 algorithm

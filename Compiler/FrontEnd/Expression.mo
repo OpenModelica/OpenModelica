@@ -1883,8 +1883,7 @@ algorithm
   outValues := List.map(inDims, dimensionSizeAll);
 end dimensionsSizes;
 
-public function typeof "function typeof
-  Retrieves the Type of the Expression"
+public function typeof "Retrieves the Type of the Expression"
   input DAE.Exp inExp;
   output DAE.Type outType;
 algorithm
@@ -1979,9 +1978,7 @@ algorithm
 end typeof;
 
 protected function typeofRelation
-"function typeofRelation
-  returns the type of a relation which could only be
-  Boolean or array of boolean"
+"Boolean or array of boolean"
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
@@ -2488,9 +2485,7 @@ algorithm
 end factorsWork;
 
 public function inverseFactors
-"function inverseFactors
-  Takes a list of expressions and returns
-  each expression in the list inversed.
+"each expression in the list inversed.
   For example: inverseFactors {a, 3+b} => {1/a, 1/3+b}"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -2522,8 +2517,7 @@ algorithm
 end inverseFactors;
 
 public function getTermsContainingX
-"function getTermsContainingX
-  Retrieves all terms of an expression containng a variable,
+"Retrieves all terms of an expression containng a variable,
   given as second argument (in the form of an Exp)"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -2662,8 +2656,7 @@ algorithm
 end makeNestedIf;
 
 public function makeCrefExp
-"function makeCrefExp
-  Makes an expression of a component reference, given also a type"
+"Makes an expression of a component reference, given also a type"
   input DAE.ComponentRef inCref;
   input DAE.Type inExpType;
   output DAE.Exp outExp;
@@ -3183,8 +3176,7 @@ algorithm
   end matchcontinue;
 end expMul;
 
-public function expPow "function expPow
-  author: vitalij"
+public function expPow "author: vitalij"
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;
@@ -3510,8 +3502,7 @@ algorithm
 end makeBoolExp;
 
 public function makeConstOne
-"function makeConstOne
-  author: PA
+"author: PA
   Create the constant value one, given a type that is INT or REAL"
   input DAE.Type inType;
   output DAE.Exp outExp;
@@ -3761,8 +3752,7 @@ algorithm
 end arrayFill2;
 
 public function makeIndexSubscript
-"function makeIndexSubscript
-  Creates a Subscript INDEX from an Expression."
+"Creates a Subscript INDEX from an Expression."
   input DAE.Exp exp;
   output DAE.Subscript subscript;
   annotation(__OpenModelica_EarlyInline = true);
@@ -3935,8 +3925,7 @@ end containsInitialCall;
 /***************************************************/
 
 public function traverseExp
-"function traverseExp
-  Traverses all subexpressions of an expression.
+"Traverses all subexpressions of an expression.
   Takes a function and an extra argument passed through the traversal.
   The function can potentially change the expression. In such cases,
   the changes are made bottom-up, i.e. a subexpression is traversed
@@ -4373,8 +4362,7 @@ algorithm
 end traverseExpList;
 
 public function traverseExpWithoutRelations
-"function traverseExpWithOutRelations
-  Traverses all subexpressions of an expression except relations.
+"Traverses all subexpressions of an expression except relations.
   Takes a function and an extra argument passed through the traversal.
   The function can potentially change the expression. In such cases,
   the changes are made bottom-up, i.e. a subexpression is traversed
@@ -4775,8 +4763,7 @@ algorithm
 end traverseExpWithoutRelationsList;
 
 public function traverseExpTopDown
-"function traverseExpTopDown
-  Traverses all subexpressions of an expression.
+"Traverses all subexpressions of an expression.
   Takes a function and an extra argument passed through the traversal.
   The function can potentially change the expression. In such cases,
   the changes are made top-down, i.e. a subexpression is traversed
@@ -4800,8 +4787,7 @@ algorithm
 end traverseExpTopDown;
 
 protected function traverseExpTopDown1
-"function traverseExpTopDown1
-  Helper for traverseExpTopDown."
+"Helper for traverseExpTopDown."
   replaceable type Type_a subtypeof Any;
   input DAE.Exp inExp;
   input FuncExpType func;
@@ -5283,8 +5269,7 @@ algorithm
   end matchcontinue;
 end traversingDerAndComponentRefFinder;
 
-public function expHasCref "function expHasCref
-  author: Frenkel TUD 2011-04
+public function expHasCref "author: Frenkel TUD 2011-04
   returns true if the expression contains the cref"
   input DAE.Exp inExp;
   input DAE.ComponentRef inCr;
@@ -6461,8 +6446,7 @@ algorithm
 end isConstValueWorkList;
 
 public function isNotConst
-"function isNotConst
-  author: PA
+"author: PA
   Check if expression is not constant."
   input DAE.Exp e;
   output Boolean nb;
@@ -8016,8 +8000,7 @@ algorithm
 end expContains;
 
 public function containsExp
-"function containsExp
-  Author BZ 2008-06 same as expContains, but reversed."
+"Author BZ 2008-06 same as expContains, but reversed."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   output Boolean outBoolean;

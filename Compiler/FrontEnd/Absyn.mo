@@ -1700,8 +1700,7 @@ algorithm
 end traverseExpList;
 
 public function traverseExpElseIfBranch
-"function traverseExpElseIfBranch
-  Help function for traverseExp"
+"Help function for traverseExp"
   input list<tuple<Exp,Exp>> inLst;
   input FuncTypeTplExpType_aToTplExpType_a rel;
   input Type_a iext_arg;
@@ -1726,8 +1725,7 @@ algorithm
 end traverseExpElseIfBranch;
 
 public function traverseExpFunctionArgs
-"function traverseExpFunctionArgs
-  Help function for traverseExp"
+"Help function for traverseExp"
   input FunctionArgs inArgs;
   input FuncTypeTplExpType_aToTplExpType_a rel;
   input Type_a iext_arg;
@@ -4292,8 +4290,7 @@ algorithm
   end match;
 end lastClassname;
 
-public function classFilename "function classFilename
-  author: PA
+public function classFilename "author: PA
   Retrieves the filename where the class is stored."
   input Class inClass;
   output String outString;
@@ -4305,8 +4302,7 @@ algorithm
   end match;
 end classFilename;
 
-public function setClassFilename "function setClassFilename
-  author: PA
+public function setClassFilename "author: PA
   Sets the filename where the class is stored."
   input Class inClass;
   input String inString;
@@ -4334,8 +4330,7 @@ algorithm
   info := dummyInfo; //INFO("",false,0,0,0,0,TIMESTAMP(0.0,0.0));
 end emptyClassInfo;
 
-public function setClassName "function setClassFilename
-  author: BZ
+public function setClassName "author: BZ
   Sets the name of the class"
   input Class inClass;
   input String newName;
@@ -4449,8 +4444,7 @@ algorithm
   end matchcontinue;
 end crefEqualNoSubs;
 
-public function isPackageRestriction "function isPackageRestriction
-  checks if the provided parameter is a package or not"
+public function isPackageRestriction "checks if the provided parameter is a package or not"
   input Restriction inRestriction;
   output Boolean outBoolean;
 algorithm
@@ -4460,8 +4454,7 @@ algorithm
   end matchcontinue;
 end isPackageRestriction;
 
-public function isFunctionRestriction "function isFunctionRestriction
-  checks if restriction is a function or not"
+public function isFunctionRestriction "checks if restriction is a function or not"
   input Restriction inRestriction;
   output Boolean outBoolean;
 algorithm
@@ -4547,8 +4540,7 @@ algorithm
   end matchcontinue;
 end functionArgsEqual;
 
-public function getClassName "function getClassName
-  author: adrpo
+public function getClassName "author: adrpo
   gets the name of the class."
   input Class inClass;
   output String outName;

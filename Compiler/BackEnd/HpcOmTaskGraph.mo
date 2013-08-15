@@ -79,8 +79,7 @@ end TaskGraphMeta;
 //------------------------------------------
 //------------------------------------------
   
-public function createTaskGraph "function createTaskGraph
-  author: marcusw,waurich
+public function createTaskGraph "author: marcusw,waurich
   Creates a task graph on scc-level."
   input BackendDAE.BackendDAE inDAE;
   input String filenamePrefix;
@@ -106,8 +105,7 @@ algorithm
 end createTaskGraph;
 
 
-public function getSystemComponents "function getSystemComponents
-  author: marcusw
+public function getSystemComponents "author: marcusw
   Returns all components of the given BackendDAE.
   "
   input BackendDAE.BackendDAE iDae;
@@ -195,8 +193,7 @@ algorithm
 end getEmptyTaskGraph;
 
 
-protected function createTaskGraph0 "function createTaskGraph0
-  author: marcusw,waurich
+protected function createTaskGraph0 "author: marcusw,waurich
   Creates a task graph out of the given system."
   input BackendDAE.EqSystem isyst; //The input system which should be analysed
   input BackendDAE.Shared ishared; //second argument of tuple is an extra argument
@@ -360,8 +357,7 @@ algorithm
 end updateTaskGraphSystem;
   
   
-protected function createTaskGraph1 "function createTaskGraph10
-  author: marcusw,waurich
+protected function createTaskGraph1 "author: marcusw,waurich
   Appends the task-graph information for the given StrongComponent to the given graph."
   input BackendDAE.StrongComponent component;
   input tuple<BackendDAE.IncidenceMatrix,BackendDAE.EqSystem,BackendDAE.Shared,Integer> isystInfo; //<incidenceMatrix,isyst,ishared,numberOfComponents> in very compact form
@@ -409,8 +405,7 @@ algorithm
 end createTaskGraph1;   
 
 
-protected function updateCommCostBySccRef "function updateCommCostBySccRef
-  author: marcusw
+protected function updateCommCostBySccRef "author: marcusw
   Updates the given commCosts-array with the values of the refCount-list."
   input list<tuple<Integer,Integer>> requiredSccs_RefCount; //<sccIdx,refCount>
   input Integer nodeIdx;
@@ -426,8 +421,7 @@ algorithm
   oCommCosts := List.fold1(tmpList,updateCommCostBySccRef1,nodeIdx,iCommCosts);
 end updateCommCostBySccRef;
 
-protected function updateCommCostBySccRef0 "function updateCommCostBySccRef0
-  author: marcusw
+protected function updateCommCostBySccRef0 "author: marcusw
   Helper function which converts a tuple<Integer,Integer> to a tuple<Integer,Integer,-1>."
   input tuple<Integer,Integer> iTuple;
   output tuple<Integer,Integer,Integer> oTuple;
@@ -439,8 +433,7 @@ algorithm
 
 end updateCommCostBySccRef0;
 
-protected function updateCommCostBySccRef1 "function updateCommCostBySccRef1
-  author: marcusw
+protected function updateCommCostBySccRef1 "author: marcusw
   Helper function which appends an edge from source to target with the given parameters."
   input tuple<Integer,Integer,Integer> iEdgeSource; //<sccIdx,numberOfVars,requiredCycles>
   input Integer iEdgeTarget; //sccIdx
@@ -1044,8 +1037,7 @@ algorithm
 end isWhenEquation;
 
 
-protected function fillSccList "function fillSccList
-  author: marcusw
+protected function fillSccList "author: marcusw
   This function appends the scc, which solves the given variable, to the requiredsccs-list."
   input tuple<Integer,Integer> variable;
   input array<Integer> varSccMapping;
@@ -1094,8 +1086,7 @@ end convertRefArrayToList;
 
 
 //TODO: Remove prints if not required
-protected function getUnsolvedVarsBySCC "function getUnsolvedVarsBySCC
-  author: marcusw,waurich
+protected function getUnsolvedVarsBySCC "author: marcusw,waurich
   Returns all required variables which are not solved inside the given component."
   input BackendDAE.StrongComponent component;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
@@ -1219,8 +1210,7 @@ algorithm
 end removeEventVars;
 
 
-protected function isTupleMember "function isTupleMember
-  author: marcusw
+protected function isTupleMember "author: marcusw
   Checks if the given variable (stored as tuple <id,state>) is part of the variable-list. This is only possible if the 
   second tuple-argument is one - this means that the variable is not derived."
   input tuple<Integer,Integer> inTuple;
@@ -1245,8 +1235,7 @@ algorithm
 end isTupleMember;
 
 //TODO: Maybe we can easily replace the tuple-notation with negativ and positiv integers.
-protected function compareTupleByVarIdx "function compareTupleByVarIdx
-  author: marcusw
+protected function compareTupleByVarIdx "author: marcusw
   Checks if the given varIdx is the same as the first tuple-argument." 
   input Integer varIdx;
   input tuple<Integer,Integer> var2Idx;
@@ -1263,8 +1252,7 @@ algorithm
 end compareTupleByVarIdx;
 
 
-protected function getVarsBySCC "function getVarsBySCC
-  author: marcusw,waurich
+protected function getVarsBySCC "author: marcusw,waurich
   Returns all variables of all equations which are part of the component." 
   input BackendDAE.StrongComponent component;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
@@ -1354,8 +1342,7 @@ algorithm
 end getTupleFirst;
 
   
-protected function tupleToString "function tupleToString
-  author: marcusw
+protected function tupleToString "author: marcusw
   Returns the given tuple as string." 
   input tuple<Integer,Integer> inTuple;
   output String result;
@@ -1369,8 +1356,7 @@ algorithm
   end match;
 end tupleToString;
 
-protected function tuple3ToString "function tupleToString
-  author: marcusw
+protected function tuple3ToString "author: marcusw
   Returns the given tuple as string." 
   input tuple<Integer,Integer,Integer> inTuple;
   output String result;
@@ -1384,8 +1370,7 @@ algorithm
   end match;
 end tuple3ToString;
 
-protected function checkIfEquationContainsVar "function checkIfEquationContainsVar
-  author: marcusw
+protected function checkIfEquationContainsVar "author: marcusw
   Returns true if given variable is part of the given equation." 
   input tuple<Integer,Integer> var;
   input Integer eqnIdx;
@@ -1406,8 +1391,7 @@ algorithm
 end checkIfEquationContainsVar;
 
 
-protected function getVarsByEqn "function getVarsByEqn
-  author: marcusw
+protected function getVarsByEqn "author: marcusw
   Returns all variables of the given equation." 
   input Integer eqnIdx;
   input BackendDAE.IncidenceMatrix incidenceMatrix;
@@ -1422,8 +1406,7 @@ algorithm
 end getVarsByEqn;
 
 
-protected function getVarTuple "function getVarTuple
-  author: marcusw
+protected function getVarTuple "author: marcusw
   Converts the given variable to tuple-notation.
   Example:  varIdx = -4 --> (4,0)
             varIdx = 5  --> (5,1)"
@@ -1441,8 +1424,7 @@ algorithm
    end matchcontinue;
 end getVarTuple;
 
-protected function compareVarTuple "function compareVarTuple
-  author: marcusw
+protected function compareVarTuple "author: marcusw
   Compares the two given tuples. The result is true if the first and second elements are equal."
   input tuple<Integer,Integer> tuple1;
   input tuple<Integer,Integer> tuple2;
@@ -1461,8 +1443,7 @@ algorithm
  end matchcontinue;
 end compareVarTuple;
 
-protected function getSCCByVar "function getSCCByVar
-  author: marcusw
+protected function getSCCByVar "author: marcusw
   Gets the scc which solves the given variable."
   input tuple<Integer,Integer> varIdx; //variable index and variable state
   input BackendDAE.StrongComponents components;
@@ -1489,8 +1470,7 @@ algorithm
 end getSCCByVar;
 
 
-protected function createSccMapping "function createSccMapping
-  author: marcusw
+protected function createSccMapping "author: marcusw
   Create a mapping between variables and strong-components. The returned array (one element for each variable) contains the 
   scc-index which solves the variable."
   input BackendDAE.StrongComponents components;
@@ -1513,8 +1493,7 @@ algorithm
 end createSccMapping;
 
 
-protected function createSccMapping0 "function createSccMapping
-  author: marcusw,waurich
+protected function createSccMapping0 "author: marcusw,waurich
   Updates all array elements which are solved in the given component. The array-elements will be set to iSccIdx."
   input BackendDAE.StrongComponent component;
   input array<Integer> varSccMapping;
@@ -2355,8 +2334,7 @@ end getBranchEnds;
 //------------------------------------------
 
 
-public function dumpAsGraphMLSccLevel "function dumpAsGraphMLSccLevel
-  author: marcusw, waurich
+public function dumpAsGraphMLSccLevel "author: marcusw, waurich
   Write out the given graph as a graphml file."
   input TaskGraph iGraph;
   input TaskGraphMeta iGraphData;
@@ -2388,8 +2366,7 @@ algorithm
 end dumpAsGraphMLSccLevel;
 
 
-protected function addNodeToGraphML "function addNodeToGraphML
-  author: marcusw, waurich
+protected function addNodeToGraphML "author: marcusw, waurich
   Adds the given node to the given graph."
   input Integer nodeIdx;
   input TaskGraph tGraphIn;
@@ -2514,8 +2491,7 @@ algorithm
 end addNodeToGraphML2;
 
 
-protected function addDepToGraph "function addSccDepToGraph
-  author: marcusw
+protected function addDepToGraph "author: marcusw
   Adds a new edge between the component-nodes with index comp1Idx and comp2Idx to the graph."
   input Integer childIdx;
   input Integer parentIdx;
@@ -2990,8 +2966,7 @@ algorithm
   foldValueOut := foldValueIn;
 end printLevelInfo1;
 
-public function dumpCriticalPathInfo "function dumpCriticalPathInfo
-  author:marcusw
+public function dumpCriticalPathInfo "author:marcusw
   dump the criticalPath and the costs to a string."
   input list<list<Integer>> criticalPathsIn;
   input Real cpCosts;
@@ -3013,8 +2988,7 @@ algorithm
   end matchcontinue;
 end dumpCriticalPathInfo;
 
-protected function dumpCriticalPathInfo1 "function dumpCriticalPathInfo1
-  author:marcusw
+protected function dumpCriticalPathInfo1 "author:marcusw
   Helper function of dumpCriticalPathInfo. Dump one critical path."
   input list<list<Integer>> criticalPathsIn;
   input Integer cpIdx;
@@ -3590,8 +3564,7 @@ end copyTaskGraphMeta;
 //------------------------------------------
 //  Logic - filter task graph informations
 //------------------------------------------
-public function createCosts "function createCosts
-  author: marcusw
+public function createCosts "author: marcusw
   Updates the given TaskGraphMeta-Structure with the calculated exec und communication costs."
   input BackendDAE.BackendDAE iDae;
   input String benchFileName; //The name of the xml-file
@@ -3701,8 +3674,7 @@ algorithm
   end matchcontinue;
 end convertSimEqToSccCosts2;
 
-protected function createCosts0 "function createCosts0
-  author: marcusw
+protected function createCosts0 "author: marcusw
   Updates the given TaskGraphMeta-Structure with the calculated exec und communication costs."
   input list<Integer> iNode; //Node to sccs mapping
   input tuple<BackendDAE.StrongComponents,BackendDAE.Shared> iComps_shared;
@@ -3747,8 +3719,7 @@ algorithm
   oReqTime := tmpArray;
 end createCosts1;
 
-protected function createExecCost "function createExecCosts
-  author: marcusw
+protected function createExecCost "author: marcusw
   This method fills the iExecCosts array with the execution cost of each scc."
   input list<Integer> iNodeSccs; //Sccs of the current node
   input tuple<BackendDAE.StrongComponents, BackendDAE.Shared> icomps_shared; //input components and shared
@@ -3767,8 +3738,7 @@ algorithm
 end createExecCost;
 
 
-protected function createExecCost0 "function createExecCosts0
-  author: marcusw
+protected function createExecCost0 "author: marcusw
   Helper function for createExecCosts. It calculates the execution costs for the given scc and adds it to the iCosts parameter."
   input Integer sccIndex;
   input tuple<BackendDAE.StrongComponents, BackendDAE.Shared> icomps_shared; //input system and shared
@@ -3805,8 +3775,7 @@ algorithm
 end createExecCost0;
 
 
-protected function createCommCosts "function createCommCosts
-  author: marcusw
+protected function createCommCosts "author: marcusw
   Extend the given commCost values with a concrete cycle-count."
   input array<list<tuple<Integer, Integer, Integer>>> iCosts;
   input Integer iCurrentIndex;
@@ -3831,8 +3800,7 @@ algorithm
   end matchcontinue;
 end createCommCosts;
 
-protected function createCommCosts0 "function createCommCosts0
-  author: marcusw
+protected function createCommCosts0 "author: marcusw
   Helper function for createCommCosts to add the concrete cycle-count to the given tuple."
   input tuple<Integer, Integer, Integer> iCommTuple;
   input tuple<Integer,Integer> iReqTimeCom;
@@ -3848,8 +3816,7 @@ algorithm
   
 end createCommCosts0;
 
-protected function countOperations "function countOperations
-  author: marcusw
+protected function countOperations "author: marcusw
   Count the operations of the given component."
 
   input BackendDAE.StrongComponent icomp;
@@ -3894,8 +3861,7 @@ algorithm
   end matchcontinue;
 end countOperations;
 
-public function validateTaskGraphMeta "function validateTaskGraphMeta
-  author: marcusw
+public function validateTaskGraphMeta "author: marcusw
   Check if the given TaskGraphMeta-object has a valid structure."
   input TaskGraphMeta iTaskGraph;
   input BackendDAE.BackendDAE iDae;
@@ -3923,8 +3889,7 @@ algorithm
   
 end validateTaskGraphMeta;
 
-protected function validateComponents "function validateComponents
-  author: marcusw
+protected function validateComponents "author: marcusw
   Checks if the given component-lists are equal."
   input BackendDAE.StrongComponents graphComps;
   input BackendDAE.StrongComponents systComps;
@@ -3948,8 +3913,7 @@ algorithm
   end matchcontinue;
 end validateComponents;
 
-protected function checkForDuplicates "function checkForDuplicates
-  author: marcusw
+protected function checkForDuplicates "author: marcusw
   Returns true if every component is unique in the list."
   input BackendDAE.StrongComponents iComps;
   output Boolean res;
@@ -3980,8 +3944,7 @@ algorithm
   end matchcontinue;
 end checkForDuplicates0;
 
-protected function getGraphComponents "function getGraphComponents
-  author: marcusw
+protected function getGraphComponents "author: marcusw
   Returns all StrongComponents of the TaskGraphMeta-structure."
   input TaskGraphMeta iTaskGraphMeta;
   input array<BackendDAE.StrongComponent> systComps;
@@ -4001,8 +3964,7 @@ algorithm
 end getGraphComponents;
 
 
-protected function getGraphComponents0 "function getGraphComponents0
-  author: marcusw
+protected function getGraphComponents0 "author: marcusw
   Helper function of getGraphComponents. Returns all components which are not marked with -1."
   input list<Integer> inComp;
   input array<BackendDAE.StrongComponent> systComps;
@@ -4032,8 +3994,7 @@ algorithm
   
 end getGraphComponents1;
 
-protected function getGraphComponents2 "function getGraphComponents2
-  author: marcusw
+protected function getGraphComponents2 "author: marcusw
   Append all components with mark -1 to the componentlist."
   input Integer nodeMark;
   input array<BackendDAE.StrongComponent> systComps;
@@ -4059,8 +4020,7 @@ algorithm
   end matchcontinue;
 end getGraphComponents2;
 
-protected function compareComponents "function compareComponents
-  author: marcusw
+protected function compareComponents "author: marcusw
   Compares the given components and returns false if they are equal."
   input BackendDAE.StrongComponent comp1;
   input BackendDAE.StrongComponent comp2;
@@ -4825,8 +4785,7 @@ algorithm
 end setLevelInNodeMark;  
 
 
-protected function tupleToStringRealInt "function tupleToStringRealInt
-  author: marcusw
+protected function tupleToStringRealInt "author: marcusw
   Returns the given tuple as string." 
   input tuple<Integer,Real> inTuple;
   output String result;
@@ -4842,8 +4801,7 @@ algorithm
 end tupleToStringRealInt;
 
 
-protected function tupleToStringIntRealInt "function tupleToStringIntRealInt
-  author: Waurich TUD 2013-07
+protected function tupleToStringIntRealInt "author: Waurich TUD 2013-07
   Returns the given tuple as string." 
   input tuple<Integer,Real,Integer> inTuple;
   output String result;
@@ -4858,8 +4816,7 @@ algorithm
   end match;
 end tupleToStringIntRealInt;
 
-public function transposeTaskGraph "function transposeTaskGraph
-  author: marcusw
+public function transposeTaskGraph "author: marcusw
   Returns the given task graph as transposed version." 
   input TaskGraph iTaskGraph;
   output TaskGraph oTaskGraphT;
@@ -4871,8 +4828,7 @@ algorithm
   oTaskGraphT := transposedGraph;
 end transposeTaskGraph;
 
-protected function transposeTaskGraph0 "function transposeTaskGraph0
-  author: marcusw
+protected function transposeTaskGraph0 "author: marcusw
   Helper function of transposeTaskGraph. Handles the parentlist of a child node."
   input list<Integer> iParentNodes;
   input tuple<TaskGraph,Integer> iGraph; //current graph and childIdx
@@ -4886,8 +4842,7 @@ algorithm
   oGraph := (tmpGraph,index+1);
 end transposeTaskGraph0;
     
-protected function transposeTaskGraph1 "function transposeTaskGraph1
-  author: marcusw
+protected function transposeTaskGraph1 "author: marcusw
   Helper function of transposeTaskGraph0. Adds the childIdx to the parent-array-entry."
   input Integer iParentIdx;
   input Integer iChildIdx;

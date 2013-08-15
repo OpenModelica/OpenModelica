@@ -1174,9 +1174,7 @@ algorithm
   res := cevalKnownExternalFuncs2(id, vals, msg);
 end cevalKnownExternalFuncs;
 
-public function isKnownExternalFunc "function isKnownExternalFunc
-  Succeds if external function name is
-  \"known\", i.e. no compilation required."
+public function isKnownExternalFunc "\"known\", i.e. no compilation required."
   input String id;
 algorithm
   _:=  match (id)
@@ -2971,8 +2969,7 @@ algorithm
   end match;
 end cevalBuiltinFloor;
 
-protected function cevalBuiltinCeil "function cevalBuiltinCeil
-  author: LP
+protected function cevalBuiltinCeil "author: LP
   evaluates the ceil operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3059,8 +3056,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSqrt;
 
-protected function cevalBuiltinSin "function cevalBuiltinSin
-  author: LP
+protected function cevalBuiltinSin "author: LP
   Evaluates the builtin sin function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3092,8 +3088,7 @@ algorithm
   end match;
 end cevalBuiltinSin;
 
-protected function cevalBuiltinSinh "function cevalBuiltinSinh
-  author: PA
+protected function cevalBuiltinSinh "author: PA
   Evaluates the builtin sinh function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3125,8 +3120,7 @@ algorithm
   end match;
 end cevalBuiltinSinh;
 
-protected function cevalBuiltinCos "function cevalBuiltinCos
-  author: LP
+protected function cevalBuiltinCos "author: LP
   Evaluates the builtin cos function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3158,8 +3152,7 @@ algorithm
   end match;
 end cevalBuiltinCos;
 
-protected function cevalBuiltinCosh "function cevalBuiltinCosh
-  author: PA
+protected function cevalBuiltinCosh "author: PA
   Evaluates the builtin cosh function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3191,8 +3184,7 @@ algorithm
   end match;
 end cevalBuiltinCosh;
 
-protected function cevalBuiltinLog "function cevalBuiltinLog
-  author: LP
+protected function cevalBuiltinLog "author: LP
   Evaluates the builtin Log function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3255,8 +3247,7 @@ algorithm
   end match;
 end cevalBuiltinLog10;
 
-protected function cevalBuiltinTan "function cevalBuiltinTan
-  author: LP
+protected function cevalBuiltinTan "author: LP
   Evaluates the builtin tan function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3290,8 +3281,7 @@ algorithm
   end match;
 end cevalBuiltinTan;
 
-protected function cevalBuiltinTanh "function cevalBuiltinTanh
-  author: PA
+protected function cevalBuiltinTanh "author: PA
   Evaluates the builtin tanh function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3323,8 +3313,7 @@ algorithm
   end match;
 end cevalBuiltinTanh;
 
-protected function cevalBuiltinAsin "function cevalBuiltinAsin
-  author: PA
+protected function cevalBuiltinAsin "author: PA
   Evaluates the builtin asin function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3356,8 +3345,7 @@ algorithm
   end match;
 end cevalBuiltinAsin;
 
-protected function cevalBuiltinAcos "function cevalBuiltinAcos
-  author: PA
+protected function cevalBuiltinAcos "author: PA
   Evaluates the builtin acos function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3389,8 +3377,7 @@ algorithm
   end match;
 end cevalBuiltinAcos;
 
-protected function cevalBuiltinAtan "function cevalBuiltinAtan
-  author: PA
+protected function cevalBuiltinAtan "author: PA
   Evaluates the builtin atan function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3454,8 +3441,7 @@ algorithm
   end match;
 end cevalBuiltinAtan2;
 
-protected function cevalBuiltinDiv "function cevalBuiltinDiv
-  author: LP
+protected function cevalBuiltinDiv "author: LP
   Evaluates the builtin div operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3551,8 +3537,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinDiv;
 
-protected function cevalBuiltinMod "function cevalBuiltinMod
-  author: LP
+protected function cevalBuiltinMod "author: LP
   Evaluates the builtin mod operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3657,8 +3642,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinMod;
 
-protected function cevalBuiltinMax "function cevalBuiltinMax
-  author: LP
+protected function cevalBuiltinMax "author: LP
   Evaluates the builtin max function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3884,8 +3868,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinMinArr;
 
-protected function cevalBuiltinDifferentiate "function cevalBuiltinDifferentiate
-  author: LP
+protected function cevalBuiltinDifferentiate "author: LP
   This function differentiates an equation: x^2 + x => 2x + 1"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3930,8 +3913,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinDifferentiate;
 
-protected function cevalBuiltinSimplify "function cevalBuiltinSimplify
-  author: LP
+protected function cevalBuiltinSimplify "author: LP
   this function simplifies an equation: x^2 + x => 2x + 1"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3971,8 +3953,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSimplify;
 
-protected function cevalBuiltinRem "function cevalBuiltinRem
-  author: LP
+protected function cevalBuiltinRem "author: LP
   Evaluates the builtin rem operator"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4054,8 +4035,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinRem;
 
-protected function cevalBuiltinInteger "function cevalBuiltinInteger
-  author: LP
+protected function cevalBuiltinInteger "author: LP
   Evaluates the builtin integer operator"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4141,8 +4121,7 @@ algorithm
 end cevalBuiltinBoolean;
 
 protected function cevalBuiltinRooted
-"function cevalBuiltinRooted
-  author: adrpo
+"author: adrpo
   Evaluates the builtin rooted operator from MultiBody"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4172,8 +4151,7 @@ algorithm
   end match;
 end cevalBuiltinRooted;
 
-protected function cevalBuiltinIntegerEnumeration "function cevalBuiltinIntegerEnumeration
-  author: LP
+protected function cevalBuiltinIntegerEnumeration "author: LP
   Evaluates the builtin Integer operator"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4204,8 +4182,7 @@ algorithm
   end match;
 end cevalBuiltinIntegerEnumeration;
 
-protected function cevalBuiltinDiagonal "function cevalBuiltinDiagonal
-  This function generates a matrix{n,n} (A) of the vector {a,b,...,n}
+protected function cevalBuiltinDiagonal "This function generates a matrix{n,n} (A) of the vector {a,b,...,n}
   where the diagonal of A is the vector {a,b,...,n}
   ie A{1,1} == a, A{2,2} == b ..."
   input Env.Cache inCache;
@@ -4406,8 +4383,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinCross;
 
-protected function cevalBuiltinTranspose "function cevalBuiltinTranspose
-  This function transposes the two first dimension of an array A."
+protected function cevalBuiltinTranspose "This function transposes the two first dimension of an array A."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;

@@ -586,8 +586,7 @@ algorithm
 end addExtendReplacement;
 
 protected function addIterationVar
-"function addRiterationVar
-  add a var to the iterationVars"
+"add a var to the iterationVars"
   input VariableReplacements repl;
   input DAE.Ident inVar;
   output VariableReplacements outRepl;
@@ -606,8 +605,7 @@ algorithm
 end addIterationVar;
 
 protected function removeIterationVar
-"function removeiterationVar
-  remove the first equal var from the iterationVars"
+"remove the first equal var from the iterationVars"
   input VariableReplacements repl;
   input DAE.Ident inVar;
   output VariableReplacements outRepl;
@@ -628,8 +626,7 @@ algorithm
 end removeIterationVar;
 
 protected function isIterationVar
-"function isIterationVar
-  remove true if it is an iteration var"
+"remove true if it is an iteration var"
   input VariableReplacements repl;
   input DAE.Ident inVar;
   output Boolean is;
@@ -676,8 +673,7 @@ algorithm
 end removeFirstOnTrue;
 
 public function addDerConstRepl
-"function addDerConstRepl
-  add a var to the derConst replacements, replace der(const) with 0.0"
+"add a var to the derConst replacements, replace der(const) with 0.0"
   input DAE.ComponentRef inComponentRef;
   input DAE.Exp inExp;
   input VariableReplacements repl;
@@ -2298,8 +2294,7 @@ end replaceSTMT_IF;
 /* dump replacements  */
 /*********************************************************/
 
-public function dumpReplacements "function dumpReplacements
-  Prints the variable replacements on form var1 -> var2"
+public function dumpReplacements "Prints the variable replacements on form var1 -> var2"
   input VariableReplacements inVariableReplacements;
 algorithm
   _ := match (inVariableReplacements)

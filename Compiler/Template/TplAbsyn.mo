@@ -4021,8 +4021,7 @@ algorithm
 end addRestElabCase;
 
 
-public function isAlwaysMatched "function isAlwaysMatched
-  Takes a MatchingExp and fails when it is not a rest case for sure (statically tested)."
+public function isAlwaysMatched "Takes a MatchingExp and fails when it is not a rest case for sure (statically tested)."
   //TODO: evaluation when there are two cases with  {} and (always :: _) ... or  NONE() and SOME(always)
   input MatchingExp inMatchingExp;
 
@@ -4050,8 +4049,7 @@ algorithm
   end match;
 end isAlwaysMatched;
 
-public function isAlwaysMatchedBool "function isAlwaysMatched
-  Takes a MatchingExp and fails when it is not a rest case for sure (statically tested)."
+public function isAlwaysMatchedBool "Takes a MatchingExp and fails when it is not a rest case for sure (statically tested)."
   //TODO: evaluation when there are two cases with  {} and (always :: _) ... or  NONE() and SOME(always)
   input MatchingExp inMatchingExp;
   output Boolean isAlwaysMatched;

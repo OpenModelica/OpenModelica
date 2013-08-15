@@ -136,8 +136,7 @@ algorithm
 end linuxDotSlash;
 
 
-public function flagValue "function flagValue
-  author: x02lucpo
+public function flagValue "author: x02lucpo
   Extracts the flagvalue from an argument list:
   flagValue('-s',{'-d','hej','-s','file'}) => 'file'"
   input String flag;
@@ -1157,9 +1156,7 @@ algorithm
   end matchcontinue;
 end arrayExpandOnDemand;
 
-public function arrayNCopy "function arrayNCopy
-  Copeis n elements in src array into dest array
-  The function fails if all elements can not be fit into dest array."
+public function arrayNCopy "The function fails if all elements can not be fit into dest array."
   input array<Type_a> src;
   input array<Type_a> dst;
   input Integer n;
@@ -1721,9 +1718,7 @@ algorithm
   end matchcontinue;
 end stringDelimitListAndSeparate2;
 
-public function stringDelimitListNonEmptyElts "function stringDelimitListNonEmptyElts
-  Takes a list of strings and a string delimiter and appends all list elements with
-  the string delimiter inserted between those elements that are not empty.
+public function stringDelimitListNonEmptyElts "the string delimiter inserted between those elements that are not empty.
   Example: stringDelimitListNonEmptyElts({\"x\",\"\",\"z\"}, \", \") => \"x, z\""
   input list<String> lst;
   input String delim;
@@ -1735,8 +1730,7 @@ algorithm
   str := stringDelimitList(lst1, delim);
 end stringDelimitListNonEmptyElts;
 
-public function stringReplaceChar "function stringReplaceChar
-  Takes a string and two chars and replaces the first char with the second char:
+public function stringReplaceChar "Takes a string and two chars and replaces the first char with the second char:
   Example: string_replace_char(\"hej.b.c\",\".\",\"_\") => \"hej_b_c\"
   2007-11-26 BZ: Now it is possible to replace chars with emptychar, and
                  replace a char with a string
@@ -1811,8 +1805,7 @@ algorithm
   end matchcontinue;
 end stringReplaceChar2;
 
-public function stringSplitAtChar "function stringSplitAtChar
-  Takes a string and a char and split the string at the char returning the list of components.
+public function stringSplitAtChar "Takes a string and a char and split the string at the char returning the list of components.
   Example: stringSplitAtChar(\"hej.b.c\",\".\") => {\"hej,\"b\",\"c\"}"
   input String inString1;
   input String inString2;
@@ -1989,9 +1982,7 @@ algorithm
   end match;
 end cStrToModelicaString1;
 
-public function boolOrList "function boolOrList
-  Takes a list of boolean values and applies the boolean OR operator  to the list elements
-  Example:
+public function boolOrList "Example:
     boolOrList({true,false,false})  => true
     boolOrList({false,false,false}) => false"
   input list<Boolean> inBooleanLst;
@@ -2157,8 +2148,7 @@ algorithm
 end applyOptionOrDefault1;
 
 
-public function makeOption "function makeOption
-  Makes a value into value option, using SOME(value)"
+public function makeOption "Makes a value into value option, using SOME(value)"
   input Type_a inTypeA;
   output Option<Type_a> outTypeAOption;
   replaceable type Type_a subtypeof Any;
@@ -2406,8 +2396,7 @@ algorithm
   s := intString(tick());
 end tickStr;
 
-protected function replaceSlashWithPathDelimiter "function replaceSlashWithPathDelimiter
-  author: x02lucpo
+protected function replaceSlashWithPathDelimiter "author: x02lucpo
   replace the / with the system-pathdelimiter.
   On Windows must be \\ so that the function getAbsoluteDirectoryAndFile works"
   input String str;
@@ -2419,8 +2408,7 @@ algorithm
   ret_string := System.stringReplace(str, "/", pd);
 end replaceSlashWithPathDelimiter;
 
-public function getAbsoluteDirectoryAndFile "function getAbsoluteDirectoryAndFile
-  author: x02lucpo
+public function getAbsoluteDirectoryAndFile "author: x02lucpo
   splits the filepath in directory and filename
   (\"c:\\programs\\file.mo\") => (\"c:\\programs\",\"file.mo\")
   (\"..\\work\\file.mo\") => (\"c:\\openmodelica123\\work\", \"file.mo\")"

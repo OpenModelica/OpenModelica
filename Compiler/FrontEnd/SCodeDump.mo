@@ -357,8 +357,7 @@ algorithm
 end printClassStr;
 
 public function printClassdefStr
-"function printClassdefStr
-  prints the class definition to a string"
+"prints the class definition to a string"
   input SCode.ClassDef inClassDef;
   output String outString;
 algorithm

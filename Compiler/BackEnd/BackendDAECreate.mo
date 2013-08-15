@@ -430,8 +430,7 @@ end lower3;
 //       => sample(index, start, interval)
 // =============================================================================
 
-protected function processBuiltinExpressions "function processBuiltinExpressions
-  author: lochel
+protected function processBuiltinExpressions "author: lochel
   Assign some builtin calls with a unique id argument."
   input DAE.DAElist inDAE;
   input DAE.FunctionTree functionTree;
@@ -445,8 +444,7 @@ algorithm
   (outDAE, outTree, (ht, _, outSampleLookup)) := DAEUtil.traverseDAE(inDAE, functionTree, transformBuiltinExpressions, (ht, 0, BackendDAE.SAMPLE_LOOKUP(0, {})));
 end processBuiltinExpressions;
 
-protected function transformBuiltinExpressions "function transformBuiltinExpressions
-  author: lochel
+protected function transformBuiltinExpressions "author: lochel
   Helper for processBuiltinExpressions"
   input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> itpl;
   output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> otpl;
@@ -458,8 +456,7 @@ algorithm
   otpl := Expression.traverseExp(e, transformBuiltinExpression, i);
 end transformBuiltinExpressions;
 
-protected function transformBuiltinExpression "function transformBuiltinExpression
-  author: lochel
+protected function transformBuiltinExpression "author: lochel
   Helper for transformBuiltinExpressions"
   input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> inTuple;
   output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, BackendDAE.SampleLookup>> outTuple;
@@ -1351,8 +1348,7 @@ algorithm
   end matchcontinue;
 end lowerIfEquation1;
 
-protected function lowerEqns "function lowerEqns
-  author: Frenkel TUD 2012-06"
+protected function lowerEqns "author: Frenkel TUD 2012-06"
   input list<DAE.Element> inElements;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> inEquations;
@@ -1377,8 +1373,7 @@ algorithm
   end match;
 end lowerEqns;
 
-protected function lowerEqnsLst "function lowerEqnsLst
-  author: Frenkel TUD 2012-06"
+protected function lowerEqnsLst "author: Frenkel TUD 2012-06"
   input list<list<DAE.Element>> inElements;
   input DAE.FunctionTree functionTree;
   input list<list<BackendDAE.Equation>> inEquations;
@@ -1399,8 +1394,7 @@ algorithm
   end match;
 end lowerEqnsLst;
 
-protected function lowerIfEquationAsserts "function lowerIfEquationAsserts
-  author: Frenkel TUD 2012-10
+protected function lowerIfEquationAsserts "author: Frenkel TUD 2012-10
   lowar all asserts in if equations"
   input list<DAE.Exp> conditions;
   input list<list<DAE.Element>> theneqns;
@@ -1433,8 +1427,7 @@ algorithm
   end match;
 end lowerIfEquationAsserts;
 
-protected function lowerIfEquationAsserts1 "function lowerIfEquationAsserts1
-  author: Frenkel TUD 2012-10
+protected function lowerIfEquationAsserts1 "author: Frenkel TUD 2012-10
   helper for lowerIfEquationAsserts"
   input list<DAE.Element> brancheqns;
   input Option<DAE.Exp> condition;
@@ -1512,8 +1505,7 @@ algorithm
   oExp := DAE.IFEXP(cond, DAE.BCONST(true), else_);
 end makeIfExp;
 
-protected function lowerextendedRecordEqns "function lowerextendedRecordEqns
-  author: Frenkel TUD 2012-06"
+protected function lowerextendedRecordEqns "author: Frenkel TUD 2012-06"
   input list<DAE.Exp> explst1;
   input list<DAE.Exp> explst2;
   input DAE.ElementSource source;
@@ -1535,8 +1527,7 @@ algorithm
   end match;
 end lowerextendedRecordEqns;
 
-protected function lowerextendedRecordEqn "function lowerextendedRecordEqn
-  author: Frenkel TUD 2012-06"
+protected function lowerextendedRecordEqn "author: Frenkel TUD 2012-06"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.ElementSource source;
@@ -1596,8 +1587,7 @@ algorithm
   end matchcontinue;
 end lowerextendedRecordEqn;
 
-protected function lowerArrayEqn "function lowerArrayEqn
-  author: Frenkel TUD 2012-06"
+protected function lowerArrayEqn "author: Frenkel TUD 2012-06"
   input DAE.Dimensions dims;
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -1647,8 +1637,7 @@ end generateEquations;
 
 
 protected function lowerWhenEqn
-"function lowerWhenEqn
-  This function lowers a when clause. The condition expresion is put in the
+"This function lowers a when clause. The condition expresion is put in the
   BackendDAE.WhenClause list and the equations inside are put in the equation list.
   For each equation in the clause a new entry in the BackendDAE.WhenClause list is generated
   and one extra for all the reinit statements.
@@ -1703,8 +1692,7 @@ algorithm
 end lowerWhenEqn;
 
 protected function lowerWhenEqn2
-"function lowerWhenEqn2
-  Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
+"Helper function to lowerWhenEqn. Lowers the equations inside a when clause"
   input list<DAE.Element> inDAEElementLst "The List of equations inside a when clause";
   input DAE.Exp inCond;
   input DAE.FunctionTree functionTree;
@@ -2150,8 +2138,7 @@ algorithm
 end makeWhenClauses;
 
 protected function mergeClauses
-"function mergeClauses
-   merges the true part end the elsewhen part of a set of when equations.
+" merges the true part end the elsewhen part of a set of when equations.
    For each equation in trueEqnList, find an equation in elseEqnList solving
    the same variable and put it in the else elseWhenPart of the first equation."
   input list<BackendDAE.Equation> trueEqnList "List of equations in the true part of the when clause.";
@@ -2356,8 +2343,7 @@ end lowerAlgorithm;
  */
 
 protected function handleAliasEquations
-"function handleAliasEquations
-  author Frenkel TUD 2012-09"
+"author Frenkel TUD 2012-09"
   input list<DAE.Element> iAliasEqns;
   input BackendDAE.Variables iVars;
   input BackendDAE.Variables iKnVars;
@@ -2392,8 +2378,7 @@ algorithm
 end handleAliasEquations;
 
 protected function handleAliasEquations1
-"function handleAliasEquations
-  author Frenkel TUD 2012-09"
+"author Frenkel TUD 2012-09"
   input list<DAE.Element> iAliasEqns;
   input BackendDAE.Variables iVars;
   input BackendDAE.Variables iKnVars;
@@ -2451,8 +2436,7 @@ algorithm
 end replaceAliasVarTraverser;
 
 protected function handleAliasEquations2
-"function handleAliasEquations
-  author Frenkel TUD 2012-09"
+"author Frenkel TUD 2012-09"
   input list<DAE.Element> iAliasEqns;
   input BackendDAE.Variables iVars;
   input BackendDAE.Variables iKnVars;
@@ -2872,8 +2856,7 @@ algorithm
 end selectAliasVar;
 
 protected function replaceableAlias
-"function replaceableAlias
-  author Frenkel TUD 2011-08
+"author Frenkel TUD 2011-08
   check if the variable is a replaceable alias."
   input BackendDAE.Var var;
 algorithm
@@ -3204,8 +3187,7 @@ end expInt;
 
 
 public function expandDerOperator
-"function expandDerOperator
-  expands der(expr) using Derive.differentiteExpTime.
+"expands der(expr) using Derive.differentiteExpTime.
   This can not be done in Static, since we need all time-
   dependent variables, which is only available in BackendDAE."
   input BackendDAE.BackendDAE dae;
@@ -3215,8 +3197,7 @@ algorithm
 end expandDerOperator;
 
 protected function expandDerOperatorWork
-"function expandDerOperator
-  expands der(expr) using Derive.differentiteExpTime.
+"expands der(expr) using Derive.differentiteExpTime.
   This can not be done in Static, since we need all time-
   dependent variables, which is only available in BackendDAE."
   input BackendDAE.EqSystem syst;
@@ -3803,8 +3784,7 @@ algorithm
    := Expression.traverseExpTopDown(e, collectZC, ((inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions), (counteq, countwc, vars, knvars)));
 end findZeroCrossings3;
 
-protected function collectZC "function collectZC
-  author: unknown
+protected function collectZC "author: unknown
   modified: 2011-01 by wbraun
   Collects zero crossings in equations"
   input tuple<DAE.Exp, tuple<tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, Integer, BackendDAE.Variables, BackendDAE.Variables>>> inTplExpExpTplExpExpLstVariables;

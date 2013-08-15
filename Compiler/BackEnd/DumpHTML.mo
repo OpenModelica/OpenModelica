@@ -90,9 +90,7 @@ public constant Document emptyDocument = DOCUMENT("",{},{});
  ************************************************/
 
 public function emtypDocumentWithToggleFunktion
-"function emtypDocumentWithToggleFunktion
-  return a document
-  author Frenkel TUD 2012-11"
+"author Frenkel TUD 2012-11"
   output Document outDoc;
 algorithm
   outDoc := addScript("text/Javascript",
@@ -101,8 +99,7 @@ algorithm
 end emtypDocumentWithToggleFunktion;
 
 public function setDocType
-"function setDocType
-  set the doctype of the document.
+"set the doctype of the document.
   author Frenkel TUD 2012-11"
   input String docType;
   input Document inDoc;
@@ -115,8 +112,7 @@ algorithm
 end setDocType;
 
 public function addScript
-"function addScript
-  add a script to the head of the document.
+"add a script to the head of the document.
   author Frenkel TUD 2012-11"
   input String type_;
   input String script;
@@ -127,8 +123,7 @@ algorithm
 end addScript;
 
 public function addHeading
-"function addHeading
-  add a heading to the body of the document.
+"add a heading to the body of the document.
   author Frenkel TUD 2012-11"
   input Integer stage;
   input String text;
@@ -139,8 +134,7 @@ algorithm
 end addHeading;
 
 public function addHeadingTag
-"function addHeading
-  add a heading to the body of the document.
+"add a heading to the body of the document.
   author Frenkel TUD 2012-11"
   input Integer stage;
   input String text;
@@ -151,8 +145,7 @@ algorithm
 end addHeadingTag;
 
 public function addHyperLink
-"function addLine
-  add a hyperlink to the body of the document.
+"add a hyperlink to the body of the document.
   author Frenkel TUD 2012-11"
   input String href "#anker or javascript:toggle";
   input String title;
@@ -164,8 +157,7 @@ algorithm
 end addHyperLink;
 
 public function addHyperLinkTag
-"function addLine
-  add a hyperlink to the body of the document.
+"add a hyperlink to the body of the document.
   author Frenkel TUD 2012-11"
   input String href "#anker or javascript:toggle";
   input String title;
@@ -177,8 +169,7 @@ algorithm
 end addHyperLinkTag;
 
 public function addAnker
-"function addLine
-  add a anker to the body of the document.
+"add a anker to the body of the document.
   author Frenkel TUD 2012-11"
   input String name;
   input Document inDoc;
@@ -188,8 +179,7 @@ algorithm
 end addAnker;
 
 public function addAnkerTag
-"function addLine
-  add a anker to the body of the document.
+"add a anker to the body of the document.
   author Frenkel TUD 2012-11"
   input String name;
   input Tags inTags;
@@ -199,8 +189,7 @@ algorithm
 end addAnkerTag;
 
 public function addLine
-"function addLine
-  add a line to the body of the document.
+"add a line to the body of the document.
   author Frenkel TUD 2012-11"
   input String text;
   input Document inDoc;
@@ -210,8 +199,7 @@ algorithm
 end addLine;
 
 public function addLineTag
-"function addLine
-  add a line to the body of the document.
+"add a line to the body of the document.
   author Frenkel TUD 2012-11"
   input String text;
   input Tags inTags;
@@ -221,8 +209,7 @@ algorithm
 end addLineTag;
 
 public function addDivision
-"function addDivision
-  add a hyperlink to the body of the document.
+"add a hyperlink to the body of the document.
   author Frenkel TUD 2012-11"
   input String id;
   input Style style;
@@ -237,8 +224,7 @@ algorithm
 end addDivision;
 
 public function addDivisionTag
-"function addDivision
-  add a hyperlink to the body of the document.
+"add a hyperlink to the body of the document.
   author Frenkel TUD 2012-11"
   input String id;
   input Style style;
@@ -253,8 +239,7 @@ algorithm
 end addDivisionTag;
 
 public function addBodyTags
-"function addBodyTag
-  add a body tag in the document.
+"add a body tag in the document.
   author Frenkel TUD 2012-11"
   input Tags tags;
   input Document inDoc;
@@ -294,8 +279,7 @@ end dumpDocument;
  ************************************************/
 
 protected function addHeadTag
-"function addHeadTag
-  add a head tag in the document.
+"add a head tag in the document.
   author Frenkel TUD 2012-11"
   input Tag tag;
   input Document inDoc;
@@ -309,8 +293,7 @@ algorithm
 end addHeadTag;
 
 protected function addBodyTag
-"function addBodyTag
-  add a body tag in the document.
+"add a body tag in the document.
   author Frenkel TUD 2012-11"
   input Tag tag;
   input Document inDoc;
@@ -324,8 +307,7 @@ algorithm
 end addBodyTag;
 
 protected function dumpTag
-"function dumpTag
-  appends a tag to the buffer string.
+"appends a tag to the buffer string.
   author Frenkel TUD 2012-11"
    input Tag tag;
    input String iBuffer;
@@ -373,8 +355,7 @@ algorithm
 end dumpTag;
 
 protected function dumpStyle
-"function dumpStyle
-  appends a style to the buffer string.
+"appends a style to the buffer string.
   author Frenkel TUD 2012-11"
    input tuple<String,String> st;
    output String oBuffer;

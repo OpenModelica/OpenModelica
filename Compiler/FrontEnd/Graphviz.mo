@@ -102,8 +102,7 @@ algorithm
   print("}\n");
 end dump;
 
-protected function dumpNode "function dumpNode
-  Dumps a node to a string."
+protected function dumpNode "Dumps a node to a string."
   input Node inNode;
   output Ident outIdent;
 algorithm

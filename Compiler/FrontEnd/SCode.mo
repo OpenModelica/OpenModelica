@@ -971,9 +971,7 @@ algorithm
 end isFunctionRestriction;
 
 public function isFunctionOrExtFunctionRestriction
-"function isFunctionOrExtFunction
-  This function returns true if the class
-  restriction is function or external function.
+"restriction is function or external function.
   Otherwise false is returned."
   input Restriction r;
   output Boolean res;
@@ -987,9 +985,7 @@ algorithm
 
 
 public function isOperator
-"function isOperator
-  This function returns true if the class
-  restriction is operator or operator function.
+"restriction is operator or operator function.
   Otherwise false is returned."
   input Element el;
   output Boolean res;
@@ -1045,8 +1041,7 @@ algorithm
 end classSetPartial;
 
 public function elementEqual
-"function elementEqual
-  returns true if two elements are equal,
+"returns true if two elements are equal,
   i.e. for a component have the same type,
   name, and attributes, etc."
    input Element element1;
@@ -1207,8 +1202,7 @@ algorithm
 end enumEqual;
 
 protected function classDefEqual
-"function classDefEqual
-  Returns true if Two ClassDef's are equal"
+"Returns true if Two ClassDef's are equal"
  input ClassDef cdef1;
  input ClassDef cdef2;
  output Boolean equal;
@@ -1291,8 +1285,7 @@ protected function classDefEqual
 end classDefEqual;
 
 protected function arraydimOptEqual
-"function arraydimOptEqual
-  Returns true if two Option<ArrayDim> are equal"
+"Returns true if two Option<ArrayDim> are equal"
    input Option<Absyn.ArrayDim> adopt1;
    input Option<Absyn.ArrayDim> adopt2;
    output Boolean equal;
@@ -1313,8 +1306,7 @@ protected function arraydimOptEqual
 end arraydimOptEqual;
 
 protected function subscriptEqual
-"function subscriptEqual
-  Returns true if two Absyn.Subscript are equal"
+"Returns true if two Absyn.Subscript are equal"
 input Absyn.Subscript sub1;
 input Absyn.Subscript sub2;
 output Boolean equal;
@@ -1332,8 +1324,7 @@ algorithm
 end subscriptEqual;
 
 protected function algorithmEqual
-"function algorithmEqual
-  Returns true if two Algorithm's are equal."
+"Returns true if two Algorithm's are equal."
   input AlgorithmSection alg1;
   input AlgorithmSection alg2;
   output Boolean equal;
@@ -1354,8 +1345,7 @@ algorithm
 end algorithmEqual;
 
 protected function algorithmEqual2
-"function algorithmEqual2
-  Returns true if two Absyn.Algorithm are equal."
+"Returns true if two Absyn.Algorithm are equal."
   input Statement ai1;
   input Statement ai2;
   output Boolean equal;
@@ -1401,8 +1391,7 @@ algorithm
  end algorithmEqual2;
 
 public function equationEqual
-"function equationEqual
-  Returns true if two equations are equal."
+"Returns true if two equations are equal."
   input Equation eqn1;
   input Equation eqn2;
   output Boolean equal;
@@ -1417,8 +1406,7 @@ algorithm
 end equationEqual;
 
 protected function equationEqual2
-"function equationEqual2
-  Helper function to equationEqual"
+"Helper function to equationEqual"
   input EEquation eq1;
   input EEquation eq2;
   output Boolean equal;
@@ -1575,8 +1563,7 @@ algorithm
 end modEqual;
 
 protected function subModsEqual
-"function subModsEqual
-  Return true if two subModifier lists are equal"
+"Return true if two subModifier lists are equal"
   input list<SubMod>  inSubModLst1;
   input list<SubMod>  inSubModLst2;
   output Boolean equal;
@@ -1603,8 +1590,7 @@ algorithm
 end subModsEqual;
 
 protected function subscriptsEqual
-"function subscriptsEqual
-  Returns true if two subscript lists are equal"
+"Returns true if two subscript lists are equal"
   input list<Subscript> inSs1;
   input list<Subscript> inSs2;
   output Boolean equal;
@@ -1631,8 +1617,7 @@ algorithm
 end subscriptsEqual;
 
 public function attributesEqual
-"function attributesEqual
-  Returns true if two Atributes are equal"
+"Returns true if two Atributes are equal"
    input Attributes attr1;
    input Attributes attr2;
    output Boolean equal;
@@ -1661,8 +1646,7 @@ algorithm
 end attributesEqual;
 
 public function parallelismEqual
-"function parallelismEqual
-  Returns true if two Parallelism prefixes are equal"
+"Returns true if two Parallelism prefixes are equal"
   input Parallelism prl1;
   input Parallelism prl2;
   output Boolean equal;
@@ -1676,8 +1660,7 @@ algorithm
 end parallelismEqual;
 
 public function variabilityEqual
-"function variabilityEqual
-  Returns true if two Variablity prefixes are equal"
+"Returns true if two Variablity prefixes are equal"
   input Variability var1;
   input Variability var2;
   output Boolean equal;
@@ -1692,8 +1675,7 @@ algorithm
 end variabilityEqual;
 
 protected function directionEqual
-"function directionEqual
-  Returns true if two Direction prefixes are equal"
+"Returns true if two Direction prefixes are equal"
   input Absyn.Direction dir1;
   input Absyn.Direction dir2;
   output Boolean equal;
@@ -1707,8 +1689,7 @@ algorithm
 end directionEqual;
 
 protected function arrayDimEqual
-"function arrayDimEqual
-  Return true if two arraydims are equal"
+"Return true if two arraydims are equal"
  input Absyn.ArrayDim iad1;
  input Absyn.ArrayDim iad2;
  output Boolean equal;
@@ -3698,8 +3679,7 @@ algorithm
 end setAttributesDirection;
 
 public function attrVariability
-"function attrVariability
-  Return the variability attribute from Attributes"
+"Return the variability attribute from Attributes"
   input Attributes attr;
   output Variability var;
 algorithm

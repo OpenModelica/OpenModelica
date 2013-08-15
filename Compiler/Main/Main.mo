@@ -771,8 +771,7 @@ end optimizeDae;
 // end modpar;
 
 protected function simcodegen
-"function simcodegen
-  Genereates simulation code using the SimCode module"
+"Genereates simulation code using the SimCode module"
   input BackendDAE.BackendDAE inBackendDAE5;
   input Absyn.Path inPath;
   input Absyn.Program inProgram3;

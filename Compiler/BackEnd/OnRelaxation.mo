@@ -68,8 +68,7 @@ protected import Util;
  */
 
 public function relaxSystem
-"function relaxSystem
-  author: Frenkel TUD 2011-05"
+"author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -85,8 +84,7 @@ end matchcontinue;
 end relaxSystem;
 
 protected function relaxSystem0
-"function relaxSystem0
-  author: Frenkel TUD 2011-05"
+"author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared,Boolean> sharedChanged;
   output BackendDAE.EqSystem osyst;
@@ -110,8 +108,7 @@ algorithm
 end relaxSystem0;
 
 protected function relaxSystem1
-"function relaxSystem1
-  author: Frenkel TUD 2011-05"
+"author: Frenkel TUD 2011-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponents inComps;
@@ -472,8 +469,7 @@ algorithm
 end transposeMatrix;
 
 protected function replaceFinalParameter
-"function replaceFinalParameter
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input tuple<DAE.Exp,BackendDAE.Variables> itpl;
   output tuple<DAE.Exp,BackendDAE.Variables> outTpl;
 protected
@@ -488,8 +484,7 @@ algorithm
 end replaceFinalParameter;
 
 protected function traverserExpreplaceFinalParameter
-"function traverserExpreplaceFinalParameter
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> tpl;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> outTpl;
 algorithm
@@ -537,8 +532,7 @@ algorithm
 end replaceEquationsAddNew;
 
 protected function dumpVar
-"function dumpVar
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer id;
   input BackendDAE.Variables vars;
 protected
@@ -550,8 +544,7 @@ algorithm
 end dumpVar;
 
 protected function transposeOrphanVec
-"function transposeOrphanVec
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer c;
   input array<list<Integer>> vec3;
   input Integer inId;
@@ -572,8 +565,7 @@ algorithm
 end transposeOrphanVec;
 
 protected function markOrphans
-"function markOrphans
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer o;
   input Integer mark;
   input array<Integer> rowmark;
@@ -583,8 +575,7 @@ algorithm
 end markOrphans;
 
 protected function generateCliquesResidual
-"function generateCliquesResidual
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -642,8 +633,7 @@ end generateCliquesResidual;
 
 
 protected function generateCliquesResidual1
-"function generateCliquesResidual1
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input list<Integer> rows;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -733,8 +723,7 @@ algorithm
 end selectNonFlows;
 
 protected function generateCliquesResidual2
-"function generateCliquesResidual2
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -780,8 +769,7 @@ algorithm
 end generateCliquesResidual2;
 
 protected function getTearingConstraints
-"function getTearingConstraints
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -820,8 +808,7 @@ algorithm
 end getTearingConstraints;
 
 protected function prepairOrphansOrder
-"function prepairOrphansOrder
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -876,8 +863,7 @@ algorithm
 end prepairOrphansOrder;
 
 protected function prepairOrphansOrder1
-"function prepairOrphansOrder1
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -949,8 +935,7 @@ algorithm
 end prepairOrphansOrder1;
 
 protected function prepairOrphansOrder2
-"function prepairOrphansOrder2
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -992,8 +977,7 @@ algorithm
 end prepairOrphansOrder2;
 
 protected function prepairOrphansOrder3
-"function prepairOrphansOrder3
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -1125,8 +1109,7 @@ algorithm
 end generateResidualClique;
 
 protected function getOrphansOrderEdvanced
-"function getOrphansOrderEdvanced
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -1162,8 +1145,7 @@ algorithm
 end getOrphansOrderEdvanced;
 
 protected function hasOrphanEdvanced
-"function hasOrphanEdvanced
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> rows;
   input array<Integer> ass1;
   input list<Integer> iAcc;
@@ -1188,8 +1170,7 @@ algorithm
 end hasOrphanEdvanced;
 
 protected function hasOrphanEdvanced1
-"function hasOrphanEdvanced does not look backward
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input Integer r;
   input array<Integer> ass1;
   input Integer preorphan;
@@ -1251,8 +1232,7 @@ algorithm
 end addPreOrphans;
 
 protected function getOrphansOrderEdvanced1
-"function getOrphansOrderEdvanced1
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -1312,8 +1292,7 @@ end getOrphansOrderEdvanced1;
 
 
 protected function getConstraintesOrphansOrderEdvanced
-"function getOrphansOrderEdvanced
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -1349,8 +1328,7 @@ algorithm
 end getConstraintesOrphansOrderEdvanced;
 
 protected function getConstraintesOrphansOrderEdvanced1
-"function getConstraintesOrphansOrderEdvanced1
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -1726,8 +1704,7 @@ algorithm
 end reduceOrphancMatrix1;
 
 protected function hasResidualOrphan1
-"function hasResidualOrphan
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> eqns;
   input array<list<Integer>> ass;
   input BackendDAE.EquationArray eqnsarr;
@@ -1751,8 +1728,7 @@ algorithm
 end hasResidualOrphan1;
 
 protected function hasResidualOrphan
-"function hasResidualOrphan
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> eqns;
   input array<list<Integer>> ass;
   output Integer Orphan;
@@ -1773,8 +1749,7 @@ algorithm
 end hasResidualOrphan;
 
 protected function makeCrefExps
-"function makeCrefExps
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input BackendDAE.Var v;
   output DAE.Exp e;
 algorithm
@@ -1782,8 +1757,7 @@ algorithm
 end makeCrefExps;
 
 protected function makeGausEliminationRow
-"function makeGausEliminationRow
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input list<tuple<Integer,DAE.Exp>> lst;
   input Integer size;
   input array<DAE.Exp> vars;
@@ -1816,8 +1790,7 @@ algorithm
 end makeGausEliminationRow;
 
 protected function makeGausElimination
-"function makeGausElimination
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer row;
   input Integer size;
   input array<list<tuple<Integer,DAE.Exp>>> matrix;
@@ -1847,8 +1820,7 @@ algorithm
 end makeGausElimination;
 
 protected function dumpMatrix1
-"function dumpMatrix1
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input tuple<Integer,DAE.Exp> inTpl;
   output String s;
 protected
@@ -1863,8 +1835,7 @@ algorithm
 end dumpMatrix1;
 
 public function dumpMatrix
-"function dumpMatrix
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer row;
   input Integer size;
   input array<list<tuple<Integer,DAE.Exp>>> matrix;
@@ -1887,8 +1858,7 @@ algorithm
 end dumpMatrix;
 
 protected function addRows
-"function addRows
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input list<tuple<Integer,DAE.Exp>> inA;
   input list<tuple<Integer,DAE.Exp>> inB;
   input Integer col;
@@ -1964,8 +1934,7 @@ algorithm
 end addRows;
 
 protected function mulRow
-"function mulRow
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input tuple<Integer,DAE.Exp> inTpl;
   input DAE.Exp e1;
   output tuple<Integer,DAE.Exp> outTpl;
@@ -1980,8 +1949,7 @@ algorithm
 end mulRow;
 
 protected function removeFromCol
-"function removeFromCol
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer i;
   input list<tuple<Integer,DAE.Exp>> inTpl;
   input list<tuple<Integer,DAE.Exp>> inAcc;
@@ -2009,8 +1977,7 @@ algorithm
 end removeFromCol;
 
 protected function makeDummyVar
-"function makeDummyVar
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input tuple<Integer,Integer> inTpl;
   input DAE.Exp e;
   input BackendDAE.Variables inVars "temporary variables";
@@ -2058,8 +2025,7 @@ algorithm
 end makeDummyVar;
 
 protected function gaussElimination1
-"function gaussElimination1
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer col;
   input Integer row;
   input Integer size;
@@ -2113,8 +2079,7 @@ algorithm
 end gaussElimination1;
 
 protected function gaussElimination
-"function gaussElimination
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer col;
   input Integer size;
   input array<list<tuple<Integer,DAE.Exp>>> matrix;
@@ -2588,8 +2553,7 @@ algorithm
 end sortVarsforOrder2;
 
 protected function getOrphansPairs
-"function getOrphansPairs
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -2622,8 +2586,7 @@ end getOrphansPairs;
 
 
 protected function getOrphansPairs1
-"function getOrphansPairs1
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> rows;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -2682,8 +2645,7 @@ end getOrphansPairs1;
 
 
 protected function getOrphansPairsConstraints
-"function getOrphansPairsConstraints
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> inOrphans;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -2718,8 +2680,7 @@ end getOrphansPairsConstraints;
 
 
 protected function getOrphansPairsConstraints1
-"function getOrphansPairsConstraints1
-  author: Frenkel TUD 2012-07"
+"author: Frenkel TUD 2012-07"
   input list<Integer> eqns;
   input array<Integer> ass1;
   input array<list<Integer>> ass2;
@@ -3126,8 +3087,7 @@ algorithm
 end isNoResOrphan;
 
 protected function doAssign
-"function doAssign
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer index;
   input array<list<Integer>> arr;
   input list<Integer> assign;
@@ -3136,8 +3096,7 @@ algorithm
 end doAssign;
 
 protected function doMark
-"function mark
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer index;
   input array<Integer> arr;
   input Integer mark;
@@ -3445,8 +3404,7 @@ algorithm
 end unassignedLst;
 
 protected function onefreeMatchingBFS
-"function onefreeMatchingBFS
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input BackendDAE.IncidenceMatrixElement queue;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
@@ -3481,8 +3439,7 @@ algorithm
 end onefreeMatchingBFS;
 
 protected function isAssignedSaveEnhanced
-"function isAssigned
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input array<Integer> ass;
   input Integer inTpl;
   output Boolean outB;
@@ -3501,8 +3458,7 @@ algorithm
 end isAssignedSaveEnhanced;
 
 protected function onefreeMatchingBFS1
-"function onefreeMatchingBFS1
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input BackendDAE.IncidenceMatrixElement rows;
   input Integer c;
   input BackendDAE.IncidenceMatrix mt;

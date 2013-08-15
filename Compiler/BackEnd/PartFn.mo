@@ -1239,8 +1239,7 @@ algorithm
   end matchcontinue;
 end fixCalls;
 
-protected function fixCallsAlg "function fixCallsAlg
-  fixes calls in algorithm sections of the new function"
+protected function fixCallsAlg "fixes calls in algorithm sections of the new function"
   input list<DAE.Statement> inStmts;
   input list<DAE.Function> inDAE;
   input Absyn.Path inPath;

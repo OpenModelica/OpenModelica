@@ -557,9 +557,7 @@ algorithm
 end translateClassdef;
 
 protected function translateAlternativeExternalAnnotation
-"function translateAlternativeExternalAnnotation
-  This function fills external declarations without annotation with the
-  first class annotation instead, since it is very common that an element
+"first class annotation instead, since it is very common that an element
   annotation is used for this purpose.
   For instance, instead of external \"C\" annotation(Library=\"foo.lib\";
   it says external \"C\" ; annotation(Library=\"foo.lib\";"

@@ -72,8 +72,7 @@ protected import ValuesUtil;
 
 protected constant ExpressionSimplifyTypes.Options optionSimplifyOnly = ExpressionSimplifyTypes.optionSimplifyOnly;
 
-public function simplify "function simplify
-  Simplifies expressions"
+public function simplify "Simplifies expressions"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
   output Boolean hasChanged;
@@ -81,8 +80,7 @@ algorithm
   (outExp,hasChanged) := simplifyWithOptions(inExp,optionSimplifyOnly);
 end simplify;
 
-public function condsimplify "function condsimplify
-  Simplifies expressions on condition"
+public function condsimplify "Simplifies expressions on condition"
   input Boolean cond;
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -4403,8 +4401,7 @@ algorithm
 end simplifyBinary;
 
 protected function simplifyBinaryDistributePow
-"function simplifyBinaryDistributePow
-  author: PA
+"author: PA
   Distributes the pow operator over a list of expressions.
   ({e1,e2,..,en} , pow_e) =>  {e1^pow_e, e2^pow_e,..,en^pow_e}"
   input list<DAE.Exp> inExpLst;

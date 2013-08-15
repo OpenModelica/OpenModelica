@@ -307,8 +307,7 @@ algorithm
 end loadCompletePackageFromMp2;
 
 public function loadFile
-"function loadFile
-  author: x02lucpo
+"author: x02lucpo
   load the file or the directory structure if the file is named package.mo"
   input String name;
   input String encoding;

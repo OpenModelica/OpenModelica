@@ -551,8 +551,7 @@ algorithm
 end elabCall;
 
 public function elabGraphicsExp
-"function elabGraphicsExp
-  This is an special case tha considers elabCallInteractive. If this function fails Static.elabGraphicsExp is called"
+"This is an special case tha considers elabCallInteractive. If this function fails Static.elabGraphicsExp is called"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;

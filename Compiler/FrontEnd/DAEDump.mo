@@ -831,8 +831,7 @@ algorithm
   end match;
 end dumpDirectionStr;
 
-protected function dumpStateSelectStr "function dumpStateSelectStr
-  Dump StateSelect to a string."
+protected function dumpStateSelectStr "Dump StateSelect to a string."
   input DAE.StateSelect inStateSelect;
   output String outString;
 algorithm
@@ -2689,9 +2688,7 @@ algorithm
   end match;
 end buildGraphviz;
 
-protected function buildGrList "function buildGrList
-
-  Helper function to build_graphviz.
+protected function buildGrList "Helper function to build_graphviz.
 "
   input list<DAE.Element> inElementLst;
   output list<Graphviz.Node> outGraphvizNodeLst;
@@ -2713,9 +2710,7 @@ algorithm
   end match;
 end buildGrList;
 
-protected function buildGrVars "function buildGrVars
-
-  Helper function to build_graphviz.
+protected function buildGrVars "Helper function to build_graphviz.
 "
   input list<DAE.Element> inElementLst;
   output list<Graphviz.Node> outGraphvizNodeLst;
@@ -2733,9 +2728,7 @@ algorithm
   end matchcontinue;
 end buildGrVars;
 
-public function buildGrStrlist "function buildGrStrlist
-
-  Helper function to build_graphviz.
+public function buildGrStrlist "Helper function to build_graphviz.
 "
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
@@ -2774,9 +2767,7 @@ algorithm
   end matchcontinue;
 end buildGrStrlist;
 
-protected function buildGrVarStr "function buildGrVarStr
-
-  Helper function to build_graphviz.
+protected function buildGrVarStr "Helper function to build_graphviz.
 "
   input DAE.Element inElement;
   output String outString;

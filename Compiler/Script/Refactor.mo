@@ -2009,9 +2009,7 @@ algorithm
   end matchcontinue;
 end cleanStyleAttrs2;
 
-protected function insertFillPatternInList "function insertFillPatternInList
-
-  Helperfunction to cleanStyleAttrs. Inserts a fillPattern attribute in a list
+protected function insertFillPatternInList "Helperfunction to cleanStyleAttrs. Inserts a fillPattern attribute in a list
   of annotations.
 "
 

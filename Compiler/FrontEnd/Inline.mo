@@ -569,8 +569,7 @@ algorithm
   end matchcontinue;
 end inlineStartAttribute;
 
-protected function inlineEventInfo "function inlineEventInfo
-  inlines function calls in event info"
+protected function inlineEventInfo "inlines function calls in event info"
   input BackendDAE.EventInfo inEventInfo;
   input Functiontuple inElementList;
   output BackendDAE.EventInfo outEventInfo;

@@ -1195,8 +1195,7 @@ algorithm
   end matchcontinue;
 end getStartAttrString;
 
-public function getMatchingElements "function getMatchingElements
-  author:  LS
+public function getMatchingElements "author:  LS
 
   Retrive the elements for which the function given as second argument
   succeeds.
@@ -1211,8 +1210,7 @@ algorithm
   oelist := List.filter(elist, cond);
 end getMatchingElements;
 
-public function getAllMatchingElements "function getAllMatchingElements
-  author:  PA
+public function getAllMatchingElements "author:  PA
 
   Similar to getMatchingElements but traverses down in COMP elements also.
 "
@@ -1243,8 +1241,7 @@ algorithm
   end matchcontinue;
 end getAllMatchingElements;
 
-public function findAllMatchingElements "function findAllMatchingElements
-  author:  adrpo
+public function findAllMatchingElements "author:  adrpo
   Similar to getMatchingElements but gets two conditions and returns two lists. The functions are copied to both."
   input DAE.DAElist elist;
   input FuncTypeElementTo cond1;
@@ -1309,8 +1306,7 @@ algorithm
   end matchcontinue;
 end isAfterIndexInlineFunc;
 
-public function isParameter "function isParameter
-  author: LS
+public function isParameter "author: LS
   Succeeds if element is parameter.
 "
   input DAE.Element inElement;
@@ -1372,8 +1368,7 @@ algorithm
   end match;
 end isParamOrConstVarKind;
 
-public function isInnerVar "function isInnerVar
-  author: PA
+public function isInnerVar "author: PA
 
   Succeeds if element is a variable with prefix inner.
 "
@@ -1386,8 +1381,7 @@ algorithm
   end matchcontinue;
 end isInnerVar;
 
-public function isOuterVar "function isOuterVar
-  author: PA
+public function isOuterVar "author: PA
   Succeeds if element is a variable with prefix outer.
 "
   input DAE.Element inElement;
@@ -1398,8 +1392,7 @@ algorithm _:= matchcontinue (inElement)
   end matchcontinue;
 end isOuterVar;
 
-public function isComp "function isComp
-  author: LS
+public function isComp "author: LS
 
   Succeeds if element is component, COMP.
 "
@@ -1411,8 +1404,7 @@ algorithm
   end matchcontinue;
 end isComp;
 
-public function getOutputVars "function getOutputVars
-  author: LS
+public function getOutputVars "author: LS
 
   Retrieve all output variables from an Element list.
 "
@@ -1433,8 +1425,7 @@ algorithm
   vl_1 := getMatchingElements(vl, assertProtectedVar);
 end getProtectedVars;
 
-public function getBidirVars "function get_output_vars
-  author: LS
+public function getBidirVars "author: LS
 
   Retrieve all bidirectional variables from an Element list.
 "
@@ -5054,8 +5045,7 @@ algorithm
   end matchcontinue;
 end avlTreeGet;
 
-protected function getOptionStr "function getOptionStr
-  Retrieve the string from a string option.
+protected function getOptionStr "Retrieve the string from a string option.
   If NONE() return empty string."
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;

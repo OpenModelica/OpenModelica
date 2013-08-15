@@ -448,8 +448,7 @@ end forallUnmarkedVarsInEqnBody;
 
 
 public function BFSB
-"function Breath first search based algorithm using augmenting paths
-          complexity O(n*tau)
+"        complexity O(n*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -779,8 +778,7 @@ end BFSBenque;
 
 
 public function DFSB
-"function Depth first search based algorithm using augmenting paths
-          complexity O(n*tau)
+"        complexity O(n*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -1042,8 +1040,7 @@ algorithm
 end DFSBreasign;
 
 public function MC21A
-"function Depth first search based algorithm using augmenting paths with lookahead mechanism
-          complexity O(n*tau)
+"        complexity O(n*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -1408,8 +1405,7 @@ end MC21AtraverseRows1;
 
 
 public function PF
-"function Depth first search based algorithm using augmenting paths with lookahead mechanism
-          complexity O(n*tau)
+"        complexity O(n*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -1810,8 +1806,7 @@ algorithm
 end PFtraverseRows1;
 
 public function PFPlus
-"function Depth first search based algorithm using augmenting paths with lookahead mechanism
-          complexity O(n*tau)
+"        complexity O(n*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -2165,8 +2160,7 @@ algorithm
 end PFPlustraverseRows1;
 
 public function HK
-"function Combined BFS and DFS algorithm
-          complexity O(sqrt(n)*tau)
+"        complexity O(sqrt(n)*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -2816,8 +2810,7 @@ end HKDFSreasign;
 
 
 public function HKDW
-"function Combined BFS and DFS algorithm
-          complexity O(sqrt(n)*tau)
+"        complexity O(sqrt(n)*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -3136,8 +3129,7 @@ end HKDWDFStraverseCollums1;
 
 
 public function ABMP
-"function Combined BFS and DFS algorithm
-          complexity O(sqrt(n)*tau)
+"        complexity O(sqrt(n)*tau)
  author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -3845,8 +3837,7 @@ end ABMPDFStraverseCollums1;
 
 
 public function PR_FIFO_FAIR
-"function matching algorithm using push relabel
-          complexity O(n*tau)
+"        complexity O(n*tau)
  author: Frenkel TUD 2012-04"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -5519,8 +5510,7 @@ end matchingExternalsetIncidenceMatrix;
 /*****************************************************/
 
 public function isAssigned
-"function isAssigned
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input array<Integer> ass;
   input Integer i;
   output Boolean b;
@@ -5529,8 +5519,7 @@ algorithm
 end isAssigned;
 
 public function isUnAssigned
-"function isUnAssigned
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input array<Integer> ass;
   input Integer i;
   output Boolean b;
@@ -5539,8 +5528,7 @@ algorithm
 end isUnAssigned;
 
 public function getMarked
-"function getMarked
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer ne;
   input Integer mark;
   input array<Integer> markArr;
@@ -5561,8 +5549,7 @@ algorithm
   end match;
 end getMarked;
 
-public function getUnassigned "function getUnassigned
-  author: Frenkel TUD 2012-05
+public function getUnassigned "author: Frenkel TUD 2012-05
   return all Indixes with ass[indx]<1, traverses the
   array from the ne element to the first."
   input Integer ne;
@@ -5585,8 +5572,7 @@ algorithm
 end getUnassigned;
 
 public function getAssigned
-"function getAssigned
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   return all Indixes with ass[indx]>0, traverses the
   array from the ne element to the first."
   input Integer ne;
@@ -5714,9 +5700,7 @@ algorithm
 end getEqnsforIndexReduction1;
 
 protected function getEqnsforIndexReductionphase
-"function getEqnsforIndexReductionphase
-  helper for getEqnsforIndexReduction
-  author: Frenkel TUD 2012-04"
+"author: Frenkel TUD 2012-04"
   input list<Integer> elst;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -5751,9 +5735,7 @@ algorithm
 end getEqnsforIndexReductionphase;
 
 protected function getEqnsforIndexReductiontraverseRows
-"function getEqnsforIndexReductiontraverseRows
-  helper for getEqnsforIndexReduction
-  author: Frenkel TUD 2012-04"
+"author: Frenkel TUD 2012-04"
   input list<Integer> rows;
   input list<Integer> nextColums;
   input BackendDAE.IncidenceMatrix m;

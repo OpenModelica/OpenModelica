@@ -772,8 +772,7 @@ algorithm
   end matchcontinue;
 end avlTreeGetSubs;
 
-protected function getOptionStr "function getOptionStr
-  Retrieve the string from a string option.
+protected function getOptionStr "Retrieve the string from a string option.
   If NONE() return empty string."
   input Option<Type_a> inTypeAOption;
   input FuncTypeType_aToString inFuncTypeTypeAToString;

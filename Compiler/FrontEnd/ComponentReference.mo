@@ -1138,8 +1138,7 @@ algorithm
   end matchcontinue;
 end isRecord;
 
-public function isArrayElement "function isArrayElement
-  returns true if cref is elemnt of an array"
+public function isArrayElement "returns true if cref is elemnt of an array"
   input DAE.ComponentRef cr;
   output Boolean b;
 algorithm
@@ -1833,8 +1832,7 @@ algorithm
   end match;
 end subscriptCrefWithInt;
 
-public function crefSetLastSubs "function crefSetLastSubs
-  sets the subs of the last componenentref ident"
+public function crefSetLastSubs "sets the subs of the last componenentref ident"
   input DAE.ComponentRef inComponentRef;
   input list<DAE.Subscript> inSubs;
   output DAE.ComponentRef outComponentRef;
@@ -2153,8 +2151,7 @@ algorithm
 end crefStripFirstIdent;
 
 public function crefStripLastSubsStringified
-"function crefStripLastSubsStringified
-  author: PA
+"author: PA
   Same as crefStripLastSubs but works on
   a stringified component ref instead."
   input DAE.ComponentRef inComponentRef;

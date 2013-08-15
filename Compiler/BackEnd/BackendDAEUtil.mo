@@ -108,8 +108,7 @@ type ZeroCrossing = BackendDAE.ZeroCrossing;
  * checkBackendDAE and stuff
  ************************************************/
 
-public function checkBackendDAEWithErrorMsg "function checkBackendDAEWithErrorMsg
-  author: Frenkel TUD
+public function checkBackendDAEWithErrorMsg "author: Frenkel TUD
   run checkDEALow and prints all errors"
   input BackendDAE.BackendDAE inBackendDAE;
 protected
@@ -429,8 +428,7 @@ end checkAssertCondition;
   Util function at Backend using for lowering and other stuff
  ************************************************************/
 
-public function createEmptyBackendDAE "function createEmptyBackendDAE
-  author: wbraun
+public function createEmptyBackendDAE "author: wbraun
   Copy the dae to avoid changes in vectors."
   input BackendDAE.BackendDAEType inBDAEType;
   output BackendDAE.BackendDAE outBDAE;
@@ -471,8 +469,7 @@ algorithm
                                               {}));
 end createEmptyBackendDAE;
 
-public function copyBackendDAE "function copyBackendDAE
-  author: Frenkel TUD, wbraun
+public function copyBackendDAE "author: Frenkel TUD, wbraun
   Copy the dae to avoid changes in vectors."
   input BackendDAE.BackendDAE inBDAE;
   output BackendDAE.BackendDAE outBDAE;
@@ -747,8 +744,7 @@ algorithm
 end addVarsToEqSystem;
 
 public function addDummyStateIfNeeded
-"function addDummyStateIfNeeded
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   adds a dummy state if dae contains no states"
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -888,8 +884,7 @@ algorithm
   end match;
 end calculateSizes;
 
-protected function calculateNumberZeroCrossings "function calculateNumberZeroCrossings
-  author: unknown"
+protected function calculateNumberZeroCrossings "author: unknown"
   input list<ZeroCrossing> zcLst;
   input Integer inZc_index;
   input Integer inSample_index;
@@ -1057,8 +1052,7 @@ algorithm
   end matchcontinue;
 end calculateVarSizes;
 
-public function numberOfZeroCrossings "function numberOfZeroCrossings
-  author: lochel"
+public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
   output Integer outNumZeroCrossings "number of zerocrossings" ;
   output Integer outNumTimeEvents    "number of zerocrossings that are samples" ;
@@ -1075,16 +1069,14 @@ algorithm
   outNumZeroCrossings := listLength(zeroCrossingLst);
 end numberOfZeroCrossings;
 
-public function numberOfDiscreteVars "function numberOfDiscreteVars
-  author: lochel"
+public function numberOfDiscreteVars "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
   output Integer outNumDiscreteReal;
 algorithm
   outNumDiscreteReal := countDiscreteVars(inBackendDAE);
 end numberOfDiscreteVars;
 
-protected function countDiscreteVars "function countDiscreteVars
-  author: lochel"
+protected function countDiscreteVars "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output Integer outNumDiscreteVars;
 protected
@@ -1097,8 +1089,7 @@ algorithm
   outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(alias, countDiscreteVars3, outNumDiscreteVars);
 end countDiscreteVars;
 
-protected function countDiscreteVars1 "function countDiscreteVars1
-  author: lochel"
+protected function countDiscreteVars1 "author: lochel"
   input BackendDAE.EqSystems inEqSystems;
   output Integer outNumDiscreteVars;
 algorithm
@@ -1106,8 +1097,7 @@ algorithm
   outNumDiscreteVars := List.fold(inEqSystems, countDiscreteVars2, outNumDiscreteVars);
 end countDiscreteVars1;
 
-protected function countDiscreteVars2 "function countDiscreteVars2
-  author: lochel"
+protected function countDiscreteVars2 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input Integer inNumDiscreteVars;
   output Integer outNumDiscreteVars;
@@ -1118,8 +1108,7 @@ algorithm
   outNumDiscreteVars := BackendVariable.traverseBackendDAEVars(vars, countDiscreteVars3, inNumDiscreteVars);
 end countDiscreteVars2;
 
-protected function countDiscreteVars3 "function countDiscreteVars3
-  author: lochel"
+protected function countDiscreteVars3 "author: lochel"
   input tuple<BackendDAE.Var, Integer> inTpl;
   output tuple<BackendDAE.Var, Integer> outTpl;
 algorithm
@@ -2067,8 +2056,7 @@ algorithm
   end matchcontinue;
 end splitBlocks;
 
-public function blockIsDynamic "function blockIsDynamic
-  Return true if the block contains a variable that is marked"
+public function blockIsDynamic "Return true if the block contains a variable that is marked"
   input list<Integer> inIntegerLst;
   input array<Integer> inIntegerArray;
   output Boolean outBoolean;
@@ -2177,8 +2165,7 @@ algorithm
 end markStateEquationsWork;
 
 protected function consNotMarked
-"function consNotMarked
-  author Frenkel TUD 2012-12
+"author Frenkel TUD 2012-12
   if mark[e]=0 then e::iQueue else iQueue"
   input Integer e;
   input array<Integer> mark;
@@ -2675,8 +2662,7 @@ algorithm
   end matchcontinue;
 end removediscreteAssingments;
 
-protected function removediscreteAssingmentsElse "function removediscreteAssingmentsElse
-  author: wbraun
+protected function removediscreteAssingmentsElse "author: wbraun
   Helper function for traverseDAEEquationsELse"
   input DAE.Else inElse;
   input BackendDAE.Variables inVars;
@@ -2718,8 +2704,7 @@ algorithm
   end matchcontinue;
 end collateAlgorithm;
 
-protected function collateArrExpStmt "function collateArrExpStmt
-  author: Frenkel TUD 2010-07
+protected function collateArrExpStmt "author: Frenkel TUD 2010-07
   wbraun: added as workaround for when condition.
   As long as we don't support fully array helpVars,
   we can't collate the expression of a when condition."
@@ -2739,8 +2724,7 @@ algorithm
   end matchcontinue;
 end collateArrExpStmt;
 
-protected function traversingcollateArrExpStmt "function traversingcollateArrExpStmt
-  author: Frenkel TUD 2010-07.
+protected function traversingcollateArrExpStmt "author: Frenkel TUD 2010-07.
   wbraun: added as workaround for when condition.
   As long as we don't support fully array helpVars,
   we can't collate the expression of a when condition."
@@ -3903,8 +3887,7 @@ algorithm
 end transposeRow;
 
 public function absIncidenceMatrix
-"function absIncidenceMatrix
-  author: PA
+"author: PA
   Applies absolute value to all entries in the incidence matrix.
   This can be used when e.g. der(x) and x are considered the same variable."
   input BackendDAE.IncidenceMatrix m;
@@ -4344,8 +4327,7 @@ algorithm
   end match;
 end getIncidenceMatrixfromOption;
 
-public function getIncidenceMatrix "function getIncidenceMatrix
-  this function returns the incidence matrix,
+public function getIncidenceMatrix "this function returns the incidence matrix,
   if the system contains multidimensional equations and the scalare one is needed us getIncidenceMatrixScalar"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndxType;
@@ -6091,8 +6073,7 @@ algorithm
   end matchcontinue;
 end traverseequationToResidualForm;
 
-public function traverseEquationToScalarResidualForm "function traverseEquationToScalarResidualForm
-  author: Frenkel TUD 2010-11
+public function traverseEquationToScalarResidualForm "author: Frenkel TUD 2010-11
   helper for calculateJacobian"
   input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
   output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
@@ -6476,8 +6457,7 @@ algorithm
   end matchcontinue;
 end analyzeJacobian;
 
-protected function varsNotInRelations "function varsNotInRelations
-  author: Frenkel TUD 2012-09"
+protected function varsNotInRelations "author: Frenkel TUD 2012-09"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> inTplExpTypeA;
   output tuple<DAE.Exp,Boolean, tuple<BackendDAE.Variables,Boolean>> outTplExpBoolTypeA;
 algorithm
@@ -6718,8 +6698,7 @@ algorithm
   ((_,(_,outBoolean))) := Expression.traverseExpTopDown(inExp,traverserjacobianNonlinearExp,(vars,false));
 end jacobianNonlinearExp;
 
-protected function traverserjacobianNonlinearExp "function traverserjacobianNonlinearExp
-  author: Frenkel TUD 2012-08"
+protected function traverserjacobianNonlinearExp "author: Frenkel TUD 2012-08"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> tpl;
   output tuple<DAE.Exp,Boolean, tuple<BackendDAE.Variables,Boolean>> outTpl;
 algorithm
@@ -7869,15 +7848,13 @@ end traverseBackendDAEExpsWrapper;
  ************************************************/
 
 partial function preoptimiseDAEModule
-"function preoptimiseDAEModule
-  This is the interface for pre optimisation modules."
+"This is the interface for pre optimisation modules."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 end preoptimiseDAEModule;
 
 partial function pastoptimiseDAEModule
-"function pastoptimiseDAEModule
-  This is the interface for past optimisation modules."
+"This is the interface for past optimisation modules."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 end pastoptimiseDAEModule;
@@ -7974,8 +7951,7 @@ algorithm
 end getSolvedSystem;
 
 public function preOptimiseBackendDAE
-"function preOptimiseBackendDAE
-  Run the optimisation modules"
+"Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   output BackendDAE.BackendDAE outDAE;
@@ -7987,8 +7963,7 @@ algorithm
 end preOptimiseBackendDAE;
 
 protected function preoptimiseDAE
-"function preoptimiseDAE
-  Run the optimisation modules"
+"Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
   input list<tuple<preoptimiseDAEModule,String,Boolean>> optModules;
   output BackendDAE.BackendDAE outDAE;
@@ -8029,8 +8004,7 @@ algorithm
 end preoptimiseDAE;
 
 public function transformBackendDAE
-"function transformBackendDAE
-  Run the matching and index reduction algorithm"
+"Run the matching and index reduction algorithm"
   input BackendDAE.BackendDAE inDAE;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input Option<String> strmatchingAlgorithm;
@@ -8046,8 +8020,7 @@ algorithm
 end transformBackendDAE;
 
 protected function causalizeDAE
-"function causalizeDAE
-  Run the matching Algorithm.
+"Run the matching Algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
   input BackendDAE.BackendDAE inDAE;
@@ -8077,8 +8050,7 @@ algorithm
 end causalizeDAE;
 
 protected function mapCausalizeDAE
-"function transformDAE
-  Run the matching Algorithm.
+"Run the matching Algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
   input list<BackendDAE.EqSystem> isysts;
@@ -8112,8 +8084,7 @@ algorithm
 end mapCausalizeDAE;
 
 protected function causalizeDAEWork
-"function causalizeDAEWork
-  Run the matching Algorithm.
+"Run the matching Algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
   input BackendDAE.EqSystem isyst;
@@ -8170,8 +8141,7 @@ algorithm
 end causalizeDAEWork;
 
 protected function stateDeselectionDAE
-"function causalizeDAE
-  Run the matching Algorithm.
+"Run the matching Algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
   input Boolean causalized;
@@ -8198,8 +8168,7 @@ algorithm
 end stateDeselectionDAE;
 
 protected function mapSortEqnsDAE
-"function mapSortEqnsDAE
-  Run Tarjans Algorithm."
+"Run Tarjans Algorithm."
   input list<BackendDAE.EqSystem> isysts;
   input BackendDAE.Shared ishared;
   input list<BackendDAE.EqSystem> acc;
@@ -8225,8 +8194,7 @@ algorithm
 end mapSortEqnsDAE;
 
 protected function sortEqnsDAEWork
-"function sortEqnsDAEWork
-  Run Tarjans Algorithm."
+"Run Tarjans Algorithm."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
@@ -8257,8 +8225,7 @@ algorithm
 end sortEqnsDAEWork;
 
 public function pastoptimiseDAE
-"function optimiseDAE
-  Run the optimisation modules"
+"Run the optimisation modules"
   input BackendDAE.BackendDAE inDAE;
   input list<tuple<pastoptimiseDAEModule,String,Boolean>> optModules;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;

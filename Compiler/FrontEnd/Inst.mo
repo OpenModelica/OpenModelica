@@ -2035,8 +2035,7 @@ protected constant DAE.Type distributionType =
                 {});
 
 protected function instRealClass
-"function instRealClass
-  Instantiation of the Real class"
+"Instantiation of the Real class"
   input Env.Cache cache;
   input Env.Env env;
   input DAE.Mod mods;
@@ -2150,8 +2149,7 @@ algorithm
 end instRealClass;
 
 protected function instIntegerClass
-"function instIntegerClass
-  Instantiation of the Integer class"
+"Instantiation of the Integer class"
   input Env.Cache cache;
   input Env.Env env;
   input DAE.Mod mods;
@@ -2224,8 +2222,7 @@ algorithm
 end instIntegerClass;
 
 protected function instStringClass
-"function instStringClass
-  Instantiation of the String class"
+"Instantiation of the String class"
   input Env.Cache cache;
   input Env.Env env;
   input DAE.Mod mods;
@@ -2276,8 +2273,7 @@ algorithm
 end instStringClass;
 
 protected function instBooleanClass
-"function instBooleanClass
-  Instantiation of the Boolean class"
+"Instantiation of the Boolean class"
   input Env.Cache cache;
   input Env.Env env;
   input DAE.Mod mods;
@@ -2328,8 +2324,7 @@ algorithm
 end instBooleanClass;
 
 protected function instEnumerationClass
-"function instEnumerationClass
-  Instantiation of the Enumeration class"
+"Instantiation of the Enumeration class"
   input Env.Cache cache;
   input Env.Env env;
   input DAE.Mod mods;
@@ -2386,8 +2381,7 @@ algorithm
 end instEnumerationClass;
 
 protected function instBuiltinAttribute
-"function instBuiltinAttribute
-  Help function to e.g. instRealClass, etc."
+"Help function to e.g. instRealClass, etc."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input String id;
@@ -6607,8 +6601,7 @@ algorithm
 end isStructuralParameter;
 
 protected function isStructuralIfEquationParameter
-"function isStructuralIfEquationParameter
-  author: PA
+"author: PA
   This function checks if a parameter is structural because
   it is present in the condition expression of an if equation."
   input Absyn.ComponentRef inComponentRef;
@@ -6869,8 +6862,7 @@ algorithm
 end addComponentToEnv;
 
 protected function addComponentsToEnv2
-"function addComponentsToEnv2
-  Helper function to addComponentsToEnv.
+"Helper function to addComponentsToEnv.
   Extends the environment with an untyped variable for the component."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6990,8 +6982,7 @@ algorithm
 end getCrefsFromCompdims;
 
 protected function memberCrefs
-"function memberCrefs
-  author: PA
+"author: PA
   This function checks if a componentreferece is a member of
   a list of component references, disregarding subscripts."
   input Absyn.ComponentRef inComponentRef;
@@ -10913,8 +10904,7 @@ algorithm
 end attrIsParam;
 
 public function elabComponentArraydimFromEnv
-"function elabComponentArraydimFromEnv
-  author: PA
+"author: PA
   Lookup uninstantiated component in env, elaborate its modifiers to
   find arraydimensions and return as DAE.Dimension list.
   Used when components have submodifiers (on e.g. attributes) using
@@ -11395,8 +11385,7 @@ algorithm
 end instClassDecl;
 
 public function implicitInstantiation
-"function implicitInstantiation
-  This function adds types to the environment.
+"This function adds types to the environment.
   If a class definition is a function or a package or an enumeration ,
   it is implicitly instantiated and added as a type binding under the
   same name as the class name."
@@ -12355,8 +12344,7 @@ algorithm
 end stripFuncOutputsMod;
 
 public function implicitFunctionTypeInstantiation
-"function implicitFunctionTypeInstantiation
-  author: PA
+"author: PA
   When looking up a function type it is sufficient to only instantiate the input and output arguments of the function.
   The implicitFunctionInstantiation function will instantiate the function body, resulting in a DAE for the body.
   This function does not do that. Therefore this function is the only solution available for recursive functions,
@@ -16987,8 +16975,7 @@ algorithm
 end getCrefFromCond;
 
 protected function updateComponentsInEnv2
-"function updateComponentsInEnv2
-  author: PA
+"author: PA
   Help function to updateComponentsInEnv."
   input Env.Cache inCache;
   input Env.Env inEnv;

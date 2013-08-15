@@ -507,8 +507,7 @@ algorithm
   end matchcontinue;
 end statementOutputs;
 
-protected function statementElseOutputs "function statementElseOutputs
-  Helper function to statementOutputs"
+protected function statementElseOutputs "Helper function to statementOutputs"
   input DAE.Else inElseBranch;
   input HashSet.HashSet iht;
   output HashSet.HashSet oht;
@@ -534,8 +533,7 @@ algorithm
   end match;
 end statementElseOutputs;
 
-protected function statementOutputsCrefFinder "function statementOutputsCrefFinder
-  author: Frenkel TUD 2012-06"
+protected function statementOutputsCrefFinder "author: Frenkel TUD 2012-06"
   input tuple<DAE.Exp, HashSet.HashSet > inExp;
   output tuple<DAE.Exp, Boolean, HashSet.HashSet > outExp;
 algorithm

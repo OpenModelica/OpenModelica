@@ -527,8 +527,7 @@ algorithm
 end statesInEquations;
 
 protected function isMarked
-"function isMarked
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input tuple<array<Integer>,Integer> ass;
   input Integer indx;
   output Boolean b;
@@ -541,8 +540,7 @@ algorithm
 end isMarked;
 
 protected function isUnMarked
-"function isUnMarked
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input tuple<array<Integer>,Integer> ass;
   input Integer indx;
   output Boolean b;
@@ -555,8 +553,7 @@ algorithm
 end isUnMarked;
 
 protected function markTrue
-"function markElement
-  author: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
   input Integer indx;
   input tuple<array<Integer>,Integer> iMark;
   output tuple<array<Integer>,Integer> oMark;
@@ -683,8 +680,7 @@ algorithm
   end matchcontinue;
 end collectVarEqns;
 
-protected function searchDerivativesEqn "function searchDerivativesEqn
-  author: Frenkel TUD 2012-11"
+protected function searchDerivativesEqn "author: Frenkel TUD 2012-11"
   input tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> itpl;
   output tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> outTpl;
 protected
@@ -695,8 +691,7 @@ algorithm
   outTpl := Expression.traverseExp(e,searchDerivativesExp,tpl);
 end searchDerivativesEqn;
 
-protected function searchDerivativesExp "function searchDerivativesExp
-  author: Frenkel TUD 2012-11"
+protected function searchDerivativesExp "author: Frenkel TUD 2012-11"
   input tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> tpl;
   output tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> outTpl;
 algorithm
@@ -788,8 +783,7 @@ algorithm
 end  addUnMarked;
 
 protected function getDerVars
-"function getDerVars
-  author Frenkel TUD 2013-01
+"author Frenkel TUD 2013-01
   collect all equations of assigned der(var)"
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,array<Integer>,list<Integer>>> inTpl;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables,array<Integer>,list<Integer>>> outTpl;
@@ -986,8 +980,7 @@ algorithm
 end replaceStateOrderExpFinder;
 
 protected function statesWithUnusedDerivative
-"function statesWithUnusedDerivative
-  author Frenkel TUD 2012-11
+"author Frenkel TUD 2012-11
   add to iAcc all states with no positiv rows in mt"
   input Integer state;
   input BackendDAE.IncidenceMatrix mt;
@@ -1484,8 +1477,7 @@ algorithm
 end dynamicStateSelection;
 
 protected function mapdynamicStateSelection
-"function mapdynamicStateSelection
-  Run the state selection Algorithm."
+"Run the state selection Algorithm."
   input list<BackendDAE.EqSystem> isysts;
   input BackendDAE.Shared ishared;
   input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> iargs;
@@ -1573,8 +1565,7 @@ algorithm
 end dynamicStateSelectionWork;
 
 protected function countStateCandidates
-"function countStateCandidates
-  author Frenkel TUD 2013-01
+"author Frenkel TUD 2013-01
   count the number of states in variables"
   input tuple<BackendDAE.Var,Integer> inTpl;
   output tuple<BackendDAE.Var,Integer> oTpl;
@@ -2132,8 +2123,7 @@ algorithm
 end generateStateSets;
 
 protected function makeStartExp
-"function makeStartExp
-  generate the expression: $_start(inExp)"
+"generate the expression: $_start(inExp)"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -2141,8 +2131,7 @@ algorithm
 end makeStartExp;
 
 protected function setStartExp
-"function makeStartExp
-  generate the expression: $_start(inExp)"
+"generate the expression: $_start(inExp)"
   input BackendDAE.Var inVar;
   input DAE.Exp startExp;
   input Integer size;
@@ -2340,8 +2329,7 @@ algorithm
 end selectStatesWork;
 
 protected function removeFirstOrderDerivatives
-"function removeFirstOrderDerivatives
-  author Frenkel TUD 2013-01
+"author Frenkel TUD 2013-01
   remove dummy derivatives from states with higher derivatives and no known derivative variable"
   input list<BackendDAE.Var> iDummyVars;
   input BackendDAE.Variables iVars;
@@ -2380,8 +2368,7 @@ algorithm
 end removeFirstOrderDerivatives;
 
 protected function getlowerOrderDerivatives
-"function getlowerOrderDerivatives
-  author Frenkel TUD 2013-01"
+"author Frenkel TUD 2013-01"
   input BackendDAE.Var inVar;
   input Integer level;
   input BackendDAE.StateOrder so;
@@ -2411,8 +2398,7 @@ algorithm
 end getlowerOrderDerivatives;
 
 protected function fixDerivativeIndex
-"function fixDerivativeIndex
-  author Frenkel TUD 2013-01"
+"author Frenkel TUD 2013-01"
   input BackendDAE.Var inVar;
   input Integer level;
   input BackendDAE.Variables iVars;
@@ -3496,9 +3482,7 @@ algorithm
 end getEqnsforDynamicStateSelection1;
 
 protected function getEqnsforDynamicStateSelectionPhase
-"function getEqnsforDynamicStateSelectionPhase
-  helper for getEqnsforDynamicStateSelection
-  author: Frenkel TUD 2012-12"
+"author: Frenkel TUD 2012-12"
   input list<Integer> elst;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -3537,9 +3521,7 @@ algorithm
 end getEqnsforDynamicStateSelectionPhase;
 
 protected function getEqnsforDynamicStateSelectionRows
-"function getEqnsforDynamicStateSelectionRows
-  helper for getEqnsforDynamicStateSelection
-  author: Frenkel TUD 2012-12"
+"author: Frenkel TUD 2012-12"
   input list<Integer> rows;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -4221,8 +4203,7 @@ algorithm
 end calculateVarPriorities;
 
 protected function varStateSelectHeuristicPrio
-"function varStateSelectHeuristicPrio
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input BackendDAE.Var v;
   input BackendDAE.Variables vars;
   input Integer index;
@@ -4266,8 +4247,7 @@ algorithm
 end printVarListtateSelectHeuristicPrio;
 
 protected function varStateSelectHeuristicPrio6
-"function varStateSelectHeuristicPrio6
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   Helper function to varStateSelectHeuristicPrio.
   added prio for states/variables, good state have much edges -> brackes loops"
   input BackendDAE.Var v;
@@ -4288,8 +4268,7 @@ algorithm
 end varStateSelectHeuristicPrio6;
 
 protected function varStateSelectHeuristicPrio5
-"function varStateSelectHeuristicPrio5
-  author: Frenkel TUD 2012-10
+"author: Frenkel TUD 2012-10
   Helper function to varStateSelectHeuristicPrio.
   added prio for states/variables, good if name is short"
   input BackendDAE.Var v;
@@ -4304,8 +4283,7 @@ algorithm
 end varStateSelectHeuristicPrio5;
 
 protected function varStateSelectHeuristicPrio4
-"function varStateSelectHeuristicPrio4
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   Helper function to varStateSelectHeuristicPrio.
   added prio for states/variables wich are derivatives of deselected states"
   input BackendDAE.Var inVar;
@@ -4328,8 +4306,7 @@ algorithm
 end varStateSelectHeuristicPrio4;
 
 protected function varStateSelectHeuristicPrio3
-"function varStateSelectHeuristicPrio3
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   Helper function to varStateSelectHeuristicPrio.
   added prio for variables with $DER. name. Thouse are dummy_states
   added by index reduction from normal variables"
@@ -4350,8 +4327,7 @@ algorithm
 end varStateSelectHeuristicPrio3;
 
 protected function varStateSelectHeuristicPrio2
-"function varStateSelectHeuristicPrio2
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   Helper function to varStateSelectHeuristicPrio.
   added prio for variables with fixed = true "
   input BackendDAE.Var v;
@@ -4367,8 +4343,7 @@ algorithm
 end varStateSelectHeuristicPrio2;
 
 protected function varStateSelectHeuristicPrio1
-"function varStateSelectHeuristicPrio1
-  author: wbraun
+"author: wbraun
   Helper function to varStateSelectHeuristicPrio.
   added prio for variables with a start value "
   input BackendDAE.Var v;
@@ -4386,8 +4361,7 @@ algorithm
 end varStateSelectHeuristicPrio1;
 
 protected function varStateSelectPrio
-"function varStateSelectPrio
-  Helper function to calculateVarPriorities.
+"Helper function to calculateVarPriorities.
   Calculates a priority contribution bases on the stateSelect attribute."
   input BackendDAE.Var v;
   output Real prio;
@@ -4764,8 +4738,7 @@ end transformJacToMatrix;
 //   equal := intEq(index,Util.tuple22(iTpl));
 // end isStateIndex;
 
-protected function solveOtherEquations "function solveOtherEquations
-  author: Frenkel TUD 2012-10
+protected function solveOtherEquations "author: Frenkel TUD 2012-10
   try to solve the equations"
   input list<Integer> assignedEqns;
   input array<Boolean> solvedeqns;
@@ -4835,8 +4808,7 @@ algorithm
   end match;
 end solveOtherEquations;
 
-protected function solveOtherEquations1 "function solveOtherEquations
-  author: Frenkel TUD 2011-05
+protected function solveOtherEquations1 "author: Frenkel TUD 2011-05
   try to solve the equations"
   input list<DAE.Exp> iExps1;
   input list<DAE.Exp> iExps2;
@@ -6335,8 +6307,7 @@ algorithm
 end makeDummyVarandDummyDerivative;
 
 protected function crefPrefixDerN
-"function crefPrefixDerN
-  author Frenkel TUD 2013-01
+"author Frenkel TUD 2013-01
   add n times $DER to name"
   input Integer n;
   input DAE.ComponentRef iName;
@@ -6361,8 +6332,7 @@ algorithm
   end matchcontinue;
 end crefPrefixDerN;
 
-protected function replaceFirstOrderDerivatives "function replaceFirstOrderDerivatives
-  author: Frenkel TUD 2013-01"
+protected function replaceFirstOrderDerivatives "author: Frenkel TUD 2013-01"
   input tuple<DAE.Exp,HashTable2.HashTable> itpl;
   output tuple<DAE.Exp,HashTable2.HashTable> outTpl;
 protected
@@ -6373,8 +6343,7 @@ algorithm
   outTpl := Expression.traverseExp(e,replaceFirstOrderDerivativesExp,ht);
 end replaceFirstOrderDerivatives;
 
-protected function replaceFirstOrderDerivativesExp "function replaceFirstOrderDerivativesExp
-  author: Frenkel TUD 2013-01"
+protected function replaceFirstOrderDerivativesExp "author: Frenkel TUD 2013-01"
   input tuple<DAE.Exp,HashTable2.HashTable> tpl;
   output tuple<DAE.Exp,HashTable2.HashTable> outTpl;
 algorithm
@@ -6392,8 +6361,7 @@ algorithm
   end matchcontinue;
 end replaceFirstOrderDerivativesExp;
 
-protected function replaceDummyDerivatives "function replaceDummyDerivatives
-  author: Frenkel TUD 2012-08"
+protected function replaceDummyDerivatives "author: Frenkel TUD 2012-08"
   input tuple<DAE.Exp,HashTableCrIntToExp.HashTable> itpl;
   output tuple<DAE.Exp,HashTableCrIntToExp.HashTable> outTpl;
 protected
@@ -6404,8 +6372,7 @@ algorithm
   outTpl := Expression.traverseExp(e,replaceDummyDerivativesExp,ht);
 end replaceDummyDerivatives;
 
-protected function replaceDummyDerivativesExp "function replaceDummyDerivativesExp
-  author: Frenkel TUD 2012-08"
+protected function replaceDummyDerivativesExp "author: Frenkel TUD 2012-08"
   input tuple<DAE.Exp,HashTableCrIntToExp.HashTable> tpl;
   output tuple<DAE.Exp,HashTableCrIntToExp.HashTable> outTpl;
 algorithm
@@ -6571,8 +6538,7 @@ end splitEqnsinConstraintAndOther;
  *****************************************/
 
 public function tryDeterminant
-"function tryDeterminant
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -6580,8 +6546,7 @@ algorithm
 end tryDeterminant;
 
 protected function tryDeterminant0
-"function tryDeterminant0
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared,Boolean> sharedChanged;
   output BackendDAE.EqSystem osyst;
@@ -6621,8 +6586,7 @@ end tryDeterminant0;
 
 
 public function determinant
-"function determinant
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input Integer size;
 protected
@@ -6650,8 +6614,7 @@ algorithm
 end determinant;
 
 protected function determinantfromZycles
-"function determinantfromZycles
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input list<tuple<list<DAE.Exp>,Integer>> zycles;
   input Integer size;
   input DAE.Exp iExp;
@@ -6750,8 +6713,7 @@ algorithm
 end dumpDigraph2;
 
 protected function getUnvisitedNode
-"function getUnvisitedNode
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   returns the first unvisited node"
   input Integer index;
   input Integer size;
@@ -6774,8 +6736,7 @@ algorithm
 end getUnvisitedNode;
 
 protected function determinantEdges
-"function determinantEdges
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   traverse each edge and call determinantNode"
   input list<tuple<Integer,DAE.Exp>> edges;
   input Integer size;
@@ -6847,8 +6808,7 @@ end determinantEdges;
 // end dumpZycle;
 
 protected function getDeterminantDigraph
-"function determinant
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   generate the digraph edges by {jac= list of (i,j,Eqn)} directed edge from j to i"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input array<list<tuple<Integer,DAE.Exp>>> iDigraph;
@@ -6872,8 +6832,7 @@ algorithm
 end getDeterminantDigraph;
 
 protected function dumpzycles
-"function dumpzycles
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input list<tuple<list<DAE.Exp>,Integer>> zycles;
   input Integer size;
 algorithm
@@ -6954,8 +6913,7 @@ algorithm
 end changeDerVariablestoStatesFinderNew;
 
 protected function algebraicState
-"function algebraicState
-  author Frenkel TUD 2013-01
+"author Frenkel TUD 2013-01
   change all algebraic vars to states and add
   them to the list of changed vars and update
   variables"
@@ -6989,8 +6947,7 @@ algorithm
   end match;
 end algebraicState;
 
-protected function increaseDifferentiation "function increaseDifferentiation
-  author: Frenkel TUD 2013-01
+protected function increaseDifferentiation "author: Frenkel TUD 2013-01
   increase the differentiation counter"
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> iVarIndxs;
@@ -8054,8 +8011,7 @@ end solvabilityWights;
 *****************************************/
 
 public function findStateOrder
-"function findStateOrderWork
-  author Frenkel TUD 2013-01"
+"author Frenkel TUD 2013-01"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -8069,8 +8025,7 @@ algorithm
 end findStateOrder;
 
 protected function findStateOrderWork
-"function findStateOrderWork
-  author Frenkel TUD 2013-01"
+"author Frenkel TUD 2013-01"
   input BackendDAE.EqSystem isyst;
   output BackendDAE.EqSystem osyst;
 protected

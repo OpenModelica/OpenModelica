@@ -218,8 +218,7 @@ algorithm
 end singularSystemCheck1;
 
 protected function freeStateAssignments
-"function freeStateAssignments
-  author Frenkel TUD 2013-01
+"author Frenkel TUD 2013-01
   unset assignments of statevariables."
   input tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> inTpl;
   output tuple<BackendDAE.Var, tuple<Integer,array<Integer>,array<Integer>>> outTpl;

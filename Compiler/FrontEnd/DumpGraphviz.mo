@@ -243,8 +243,7 @@ algorithm
   end match;
 end printElement;
 
-protected function printPath "function printPath
-  Create a Node from a Path."
+protected function printPath "Create a Node from a Path."
   input Absyn.Path p;
   output Graphviz.Node pn;
 protected

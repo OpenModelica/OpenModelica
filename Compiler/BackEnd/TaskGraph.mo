@@ -490,8 +490,7 @@ algorithm
   end matchcontinue;
 end buildResidualCode2;
 
-protected function storeMultipleResults "function storeMultipleResults
-  When a task calculates several values, this function is used.
+protected function storeMultipleResults "When a task calculates several values, this function is used.
   It collects the names of the values into one string, separated by semicolons
   and uses that as the resultstring.
 "
@@ -737,9 +736,7 @@ algorithm
 end buildAssignment;
 
 protected function buildExpression
-"function buildExpression
-  Builds the task graph for the expression and returns
-  the task no that calculates the result of the expr"
+"the task no that calculates the result of the expr"
   input DAE.Exp inExp;
   output Integer outInteger;
   output String outString;

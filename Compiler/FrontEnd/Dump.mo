@@ -4990,10 +4990,7 @@ algorithm
   end matchcontinue;
 end printList;
 
-public function getStringList "function getStringList
-
-  Append strings from a list of values output with a function converting
-  a value to a string.
+public function getStringList "a value to a string.
 "
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
@@ -5038,9 +5035,7 @@ algorithm
   printSelect(b, "true", "false");
 end printBool;
 
-public function getOptionStr "function getOptionStr
-
-  Retrieve the string from a string option.
+public function getOptionStr "Retrieve the string from a string option.
   If NONE() return empty string.
 "
   input Option<Type_a> inTypeAOption;
@@ -5067,9 +5062,7 @@ algorithm
   end match;
 end getOptionStr;
 
-public function getOptionStrDefault "function getOptionStrDefault
-
-  Retrieve the string from a string option.
+public function getOptionStrDefault "Retrieve the string from a string option.
   If NONE() return default string.
 "
   input Option<Type_a> inTypeAOption;

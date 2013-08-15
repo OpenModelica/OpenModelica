@@ -1752,9 +1752,7 @@ algorithm
 end elabCodeType;
 
 public function elabGraphicsExp
-"function elabGraphicsExp
-  This function is specially designed for elaboration of expressions when
-  investigating Modelica 2.0 graphical annotations.
+"investigating Modelica 2.0 graphical annotations.
   These have an array of records representing graphical objects. These
   elements can have different types, therefore elab_graphic_exp will allow
   arrays with elements of varying types. "
@@ -2646,8 +2644,7 @@ algorithm
   end matchcontinue;
 end elabGraphicsArray;
 
-protected function elabMatrixComma "function elabMatrixComma
-  This function is a helper function for elabMatrixSemi.
+protected function elabMatrixComma "This function is a helper function for elabMatrixSemi.
   It elaborates one matrix row of a matrix."
   input Env.Cache inCache;
   input Env.Env inEnv1;
@@ -9402,8 +9399,7 @@ algorithm
 end complexTypeFromSlots;
 
 protected function expListFromSlots
-"function expListFromSlots
-  Convers slots to expressions "
+"Convers slots to expressions "
   input list<Slot> inSlotLst;
   output list<DAE.Exp> outExpExpLst;
 algorithm
@@ -9575,8 +9571,7 @@ algorithm
 end fillGraphicsDefaultSlots;
 
 protected function printSlotsStr
-"function printSlotsStr
-  prints the slots to a string"
+"prints the slots to a string"
   input list<Slot> inSlotLst;
   output String outString;
 algorithm
@@ -9780,8 +9775,7 @@ algorithm
 end elabPositionalInputArgs;
 
 protected function elabNamedInputArgs
-"function elabNamedInputArgs
-  This function takes an Env, a NamedArg list, a DAE.FuncArg list and a
+"This function takes an Env, a NamedArg list, a DAE.FuncArg list and a
   Slot list.
   It builds up a new slot list and a list of elaborated expressions.
   If a slot is filled twice the function fails. If a slot is not filled at
@@ -9889,8 +9883,7 @@ algorithm
 end elabNamedInputArgs;
 
 protected function findNamedArgType
-"function findNamedArgType
-  This function takes an Ident and a FuncArg list, and returns the FuncArg
+"This function takes an Ident and a FuncArg list, and returns the FuncArg
   which has  that identifier.
   Used for instance when looking up named arguments from the function type."
   input String inIdent;
@@ -10360,8 +10353,7 @@ algorithm
 end makeEnumerationArray;
 
 protected function makeASUBArrayAdressing
-"function makeASUBArrayAdressing
-  This function remakes CREF subscripts to ASUB's of ASUB's
+"This function remakes CREF subscripts to ASUB's of ASUB's
   a[1,index,y[z]] (CREF_IDENT(a,{1,DAE.INDEX(CREF_IDENT('index',{})),DAE.INDEX(CREF_IDENT('y',{DAE.INDEX(CREF_IDENT('z))})) ))
   to
   ASUB( exp = CREF_IDENT(a,{}),
@@ -11023,8 +11015,7 @@ algorithm
 end crefVectorize;
 
 protected function extractDimensionOfChild
-"function extractDimensionOfChild
-  A function for extracting the type-dimension of the child to *me* to dimension *my* array-size.
+"A function for extracting the type-dimension of the child to *me* to dimension *my* array-size.
   Also returns wheter the array is a scalar or not."
   input DAE.Exp inExp;
   output DAE.Dimensions outExp;
@@ -11100,8 +11091,7 @@ algorithm
 end elabCrefSlice;
 
 protected function mergeQualWithRest
-"function mergeQualWithRest
-  Incase we have a qual with child references, this function merges them.
+"Incase we have a qual with child references, this function merges them.
   The input should be an array, or just one CREF_QUAL, of arrays...of arrays
   of CREF_QUALS and the same goes for 'rest'. Also the flat type as input."
   input DAE.Exp qual;
@@ -11135,8 +11125,7 @@ algorithm
 end mergeQualWithRest;
 
 protected function mergeQualWithRest2
-"function mergeQualWithRest
-  Helper to mergeQualWithRest, handles the case
+"Helper to mergeQualWithRest, handles the case
   when the child-qual is arrays of arrays."
   input DAE.Exp rest;
   input DAE.Exp qual;
@@ -11171,9 +11160,7 @@ algorithm
 end mergeQualWithRest2;
 
 protected function flattenSubscript
-"function flattenSubscript
-  Intermediate step for flattenSubscript
-  to catch subscript free CREF's."
+"to catch subscript free CREF's."
   input list<DAE.Subscript> inSubs;
   input String name;
   input DAE.Type inType;
@@ -11204,8 +11191,7 @@ end flattenSubscript;
 
 // BZ(2010-01-29): Changed to public to be able to vectorize crefs from other places
 public function flattenSubscript2
-"function flattenSubscript2
-  This function takes the created 'invalid' subscripts
+"This function takes the created 'invalid' subscripts
   and the name of the CREF and returning the CREFS
   Example: flattenSubscript2({SLICE({1,2}},SLICE({1}),\"a\",tp) ==> {{a[1,1]},{a[2,1]}}.
 
@@ -11297,8 +11283,7 @@ algorithm
 end removeDoubleEmptyArrays;
 
 protected function applySubscript
-"function applySubscript
-  here we apply the subscripts to the IDENTS of the CREF's.
+"here we apply the subscripts to the IDENTS of the CREF's.
   Special case for adressing INDEX[0], make an empty array.
   If we have an array of subscript, we call applySubscript2"
   input DAE.Exp inSub "dim n ";
@@ -11350,8 +11335,7 @@ algorithm
 end applySubscript;
 
 protected function applySubscript2
-"function applySubscript
-  Handles multiple subscripts for the expression.
+"Handles multiple subscripts for the expression.
   If it is an array, we listmap applySubscript3"
   input DAE.Exp inSub "The subs to add";
   input DAE.Exp inSubs "The already created subs";
@@ -11388,8 +11372,7 @@ algorithm
 end applySubscript2;
 
 protected function applySubscript3
-"function applySubscript
-  Final applySubscript function, here we call ourself
+"Final applySubscript function, here we call ourself
   recursive until we have the CREFS we are looking for."
   input DAE.Exp inSubs "The already created subs";
   input DAE.Exp inSub "The subs to add";
@@ -12928,8 +12911,7 @@ algorithm
   end matchcontinue;
 end isValidMatrixProductDims;
 
-public function nDims "function nDims
-  Returns the number of dimensions of a Type."
+public function nDims "Returns the number of dimensions of a Type."
   input DAE.Type inType;
   output Integer outInteger;
 algorithm

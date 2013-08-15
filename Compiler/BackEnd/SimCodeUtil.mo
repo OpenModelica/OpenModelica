@@ -1433,8 +1433,7 @@ end isLiteralExp;
 // 
 // =============================================================================
 
-public function createSimCode "function createSimCode
-  entry point to create SimCode from BackendDAE."
+public function createSimCode "entry point to create SimCode from BackendDAE."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Path inClassName;
   input String filenamePrefix;
@@ -2073,8 +2072,7 @@ end countandIndexAlgebraicLoopsSymJacColumn;
 // 
 // =============================================================================
 
-public function createEquationsForSystems "function createEquationsForSystems
-  Some kind of comments would be very helpful!"
+public function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.Shared shared;
   input Integer iuniqueEqIndex;
@@ -2747,8 +2745,7 @@ algorithm
   end match;
 end replaceIFBrancheswithoutVar;
 
-protected function solveAlgorithmInverse "function solveAlgorithmInverse
-  author: jfrenkel
+protected function solveAlgorithmInverse "author: jfrenkel
   This function solves symbolically a algorithm inverse for a few special cases."
   input list<DAE.Statement> inStmts;
   input list<BackendDAE.Var> inSolveFor;
@@ -3171,8 +3168,7 @@ algorithm
 end moveDivToMul;
 
 protected function createNonlinearResidualExp
-"function createNonlinearResidualExp
-  author Frenkel TUD 2012-10
+"author Frenkel TUD 2012-10
   do some numerical helpfull thinks like
   a = b/c - > a*c-b"
   input DAE.Exp iExp1;
@@ -4052,8 +4048,7 @@ algorithm
    end match;
 end createTornSystem;
 
-protected function solveOtherEquations "function solveOtherEquations
-  author: Frenkel TUD 2011-05
+protected function solveOtherEquations "author: Frenkel TUD 2011-05
   try to solve the equations"
   input list<tuple<Integer, list<Integer>>> otherEqns;
   input BackendDAE.EquationArray inEqns;
@@ -4108,8 +4103,7 @@ algorithm
   end match;
 end solveOtherEquations;
 
-protected function solveOtherEquations1 "function solveOtherEquations
-  author: Frenkel TUD 2011-05
+protected function solveOtherEquations1 "author: Frenkel TUD 2011-05
   try to solve the equations"
   input list<DAE.Exp> iExps1;
   input list<DAE.Exp> iExps2;
@@ -4229,8 +4223,7 @@ end createTornSystemOtherEqns1;
 // =============================================================================
 
 public function createStateSets 
-"function createStateSets
-  author: Frenkel TUD 2012
+"author: Frenkel TUD 2012
   This function handle states sets for code generation."
   input BackendDAE.BackendDAE inDAE;
   input list<SimCode.StateSet> iEquations;
@@ -6489,8 +6482,7 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode2;
 
-public function createInlineSolverEqns "function createInlineSolverEqns
-  author: lochel
+public function createInlineSolverEqns "author: lochel
   This function generates equations needed for inline integration."
   input Option<BackendDAE.BackendDAE> inInlineDAE;
   input Integer inUniqueEqIndex;
@@ -6536,8 +6528,7 @@ algorithm
   end matchcontinue;
 end createInlineSolverEqns;
 
-public function createInitialResiduals "function createInitialResiduals
-  author: lochel
+public function createInitialResiduals "author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
   input Option<BackendDAE.BackendDAE> inInitDAE;
@@ -8229,8 +8220,7 @@ end unparseCommentOptionNoAnnotationNoQuote;
 // 
 // =============================================================================
 
-protected function isMixedSystem "function isMixedSystem
-  author: PA
+protected function isMixedSystem "author: PA
   Returns true if the list of variables is an equation system contains
   both discrete and continuous variables."
   input list<BackendDAE.Var> inBackendDAEVarLst;
@@ -8254,8 +8244,7 @@ algorithm
   end matchcontinue;
 end isMixedSystem;
 
-protected function solveTrivialArrayEquation "function solveTrivialArrayEquation
-  Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
+protected function solveTrivialArrayEquation "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
   input DAE.ComponentRef v;
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -8331,8 +8320,7 @@ algorithm
   end match;
 end solveTrivialArrayEquation2;
 
-protected function getVectorizedCrefFromExp "function getVectorizedCrefFromExp
-  author: PA
+protected function getVectorizedCrefFromExp "author: PA
   Returns the component ref v if expression is on form
    {v{1}, v{2}, ...v{n}}  for some n.
   TODO: implement for 2D as well."
@@ -8365,8 +8353,7 @@ algorithm
   end match;
 end getVectorizedCrefFromExp;
 
-protected function transformXToXd "function transformXToXd
-  author: PA
+protected function transformXToXd "author: PA
   this function transforms x variables (in the state vector)
   to corresponding xd variable (in the derivatives vector)"
   input BackendDAE.Var inVar;
@@ -8410,8 +8397,7 @@ algorithm
   end matchcontinue;
 end transformXToXd;
 
-protected function getCalledFunctionsInFunctions "function getCalledFunctionsInFunctions
-  Goes through the given DAE, finds the given functions and collects
+protected function getCalledFunctionsInFunctions "Goes through the given DAE, finds the given functions and collects
   the names of the functions called from within those functions"
   input list<Absyn.Path> paths;
   input HashTableStringToPath.HashTable inHt;
@@ -8433,8 +8419,7 @@ algorithm
   end match;
 end getCalledFunctionsInFunctions;
 
-public function getCalledFunctionsInFunction2 "function getCalledFunctionsInFunction2
-  Goes through the given DAE, finds the given function and collects
+public function getCalledFunctionsInFunction2 "Goes through the given DAE, finds the given function and collects
   the names of the functions called from within those functions"
   input Absyn.Path inPath;
   input String pathstr;
@@ -8483,8 +8468,7 @@ end getCalledFunctionsInFunction2;
 // 
 // =============================================================================
 
-protected function getCallPath "function getCallPath
-  Retrive the function name from a CALL expression."
+protected function getCallPath "Retrive the function name from a CALL expression."
   input DAE.Exp inExp;
   output Absyn.Path outPath;
 algorithm
@@ -8503,8 +8487,7 @@ algorithm
   end matchcontinue;
 end getCallPath;
 
-protected function removeDuplicatePaths "function removeDuplicatePaths
-  Remove duplicate Paths in a list of Paths."
+protected function removeDuplicatePaths "Remove duplicate Paths in a list of Paths."
   input list<Absyn.Path> inAbsynPathLst;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
@@ -8615,8 +8598,7 @@ algorithm
   end match;
 end isDirectionNotInputNotOutput;
 
-protected function filterNg "function filterNg
-  Sets the number of zero crossings to zero if events are disabled."
+protected function filterNg "Sets the number of zero crossings to zero if events are disabled."
   input Integer ng;
   output Integer outInteger;
 algorithm
@@ -8629,8 +8611,7 @@ algorithm
   res := Flags.isSet(Flags.EVENTS);
 end useZerocrossing;
 
-protected function getCrefFromExp "function getCrefFromExp
-  Assume input Exp is CREF and return the ComponentRef, fail otherwise."
+protected function getCrefFromExp "Assume input Exp is CREF and return the ComponentRef, fail otherwise."
   input DAE.Exp e;
   output Absyn.ComponentRef c;
 algorithm
@@ -8822,8 +8803,7 @@ algorithm
   end matchcontinue;
 end getCausality;
 
-protected function traversingdlowvarToSimvarFold "function traversingdlowvarToSimvarFold
-  author: Frenkel TUD 2010-11"
+protected function traversingdlowvarToSimvarFold "author: Frenkel TUD 2010-11"
   input BackendDAE.Var v;
   input tuple<list<SimCode.SimVar>, BackendDAE.Variables> inTpl;
   output tuple<list<SimCode.SimVar>, BackendDAE.Variables> outTpl;
@@ -8831,8 +8811,7 @@ algorithm
   ((_, outTpl)) := traversingdlowvarToSimvar((v, inTpl));
 end traversingdlowvarToSimvarFold;
 
-public function traversingdlowvarToSimvar "function traversingdlowvarToSimvar
-  author: Frenkel TUD 2010-11"
+public function traversingdlowvarToSimvar "author: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>, BackendDAE.Variables>> inTpl;
   output tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>, BackendDAE.Variables>> outTpl;
 algorithm
@@ -8850,9 +8829,7 @@ algorithm
   end match;
 end traversingdlowvarToSimvar;
 
-protected function subsToScalar "function subsToScalar
-  Returns true if subscript results applied to variable or expression results in
-  scalar expression."
+protected function subsToScalar "scalar expression."
   input list<DAE.Subscript> inExpSubscriptLst;
   output Boolean outBoolean;
 algorithm
@@ -8883,8 +8860,7 @@ algorithm
   ((_, outExpLst)) := Expression.traverseExpList(inExps, inFn, {});
 end getMatchingExpsList;
 
-protected function matchNonBuiltinCallsAndFnRefPaths "function matchNonBuiltinCallsAndFnRefPaths
-  The extra argument is a tuple<list, list>; the second list is the list of variable
+protected function matchNonBuiltinCallsAndFnRefPaths "The extra argument is a tuple<list, list>; the second list is the list of variable
   names to filter out (so we don't add function references variables)"
   input tuple<DAE.Exp, tuple<list<Absyn.Path>, list<Absyn.Path>>> itpl;
   output tuple<DAE.Exp, tuple<list<Absyn.Path>, list<Absyn.Path>>> otpl;
@@ -8913,8 +8889,7 @@ algorithm
   end matchcontinue;
 end matchNonBuiltinCallsAndFnRefPaths;
 
-protected function matchMetarecordCalls "function matchMetarecordCalls
-  Used together with getMatchingExps"
+protected function matchMetarecordCalls "Used together with getMatchingExps"
   input tuple<DAE.Exp, list<DAE.Exp>> itpl;
   output tuple<DAE.Exp, list<DAE.Exp>> otpl;
 algorithm
@@ -8931,9 +8906,7 @@ algorithm
   end matchcontinue;
 end matchMetarecordCalls;
 
-protected function generateExtFunctionIncludes "function generateExtFunctionIncludes
-  Collects the includes and libs for an external function
-  by investigating the annotation of an external function."
+protected function generateExtFunctionIncludes "by investigating the annotation of an external function."
   input Absyn.Program program;
   input Absyn.Path path;
   input Option<SCode.Annotation> inAbsynAnnotationOption;
@@ -9261,8 +9234,7 @@ algorithm
   end matchcontinue;
 end generateExtFunctionDynamicLoad;
 
-protected function matchFnRefs "function matchFnRefs
-  Used together with getMatchingExps"
+protected function matchFnRefs "Used together with getMatchingExps"
   input tuple<DAE.Exp, list<DAE.Exp>> itpl;
   output tuple<DAE.Exp, list<DAE.Exp>> otpl;
 algorithm
@@ -9326,8 +9298,7 @@ algorithm
   end matchcontinue;
 end getImplicitRecordConstructors;
 
-protected function addDivExpErrorMsgtoExp "function addDivExpErrorMsgtoExp
-  author: Frenkel TUD 2010-02, Adds the error msg to Expression.Div."
+protected function addDivExpErrorMsgtoExp "author: Frenkel TUD 2010-02, Adds the error msg to Expression.Div."
   input DAE.Exp inExp;
   input DAE.ElementSource inSource;
   output DAE.Exp outExp;
@@ -9345,8 +9316,7 @@ algorithm
   end match;
 end addDivExpErrorMsgtoExp;
 
-protected function traversingXLOCExpFinder "function traversingXLOCExpFinder
-  author: Frenkel TUD 2010-02"
+protected function traversingXLOCExpFinder "author: Frenkel TUD 2010-02"
   input DAE.ComponentRef inCref;
   input Boolean inB;
   output Boolean  outB;
@@ -9358,8 +9328,7 @@ algorithm
   end match;
 end traversingXLOCExpFinder;
 
-protected function traversingDivExpFinder "function traversingDivExpFinder
-  author: Frenkel TUD 2010-02"
+protected function traversingDivExpFinder "author: Frenkel TUD 2010-02"
   input tuple<DAE.Exp, DAE.ElementSource> inExp;
   output tuple<DAE.Exp, DAE.ElementSource> outExp;
 algorithm
@@ -9406,8 +9375,7 @@ algorithm
   end matchcontinue;
 end traversingDivExpFinder;
 
-protected function generateDivExpErrorMsg "function generateDivExpErrorMsg
-  author: Frenkel TUD 2010-02. varOrigCref"
+protected function generateDivExpErrorMsg "author: Frenkel TUD 2010-02. varOrigCref"
   input DAE.Exp inExp;
   input DAE.Exp inDivisor;
   input DAE.ElementSource source;
@@ -9425,8 +9393,7 @@ algorithm
   outString := stringAppendList({se, " because ", se2, " == 0: File: ", fileName, " Line: ", s});
 end generateDivExpErrorMsg;
 
-protected function addDivExpErrorMsgtosimJac "function addDivExpErrorMsgtosimJac
-  helper for addDivExpErrorMsgtoSimEqSystem."
+protected function addDivExpErrorMsgtosimJac "helper for addDivExpErrorMsgtoSimEqSystem."
   input tuple<Integer, Integer, SimCode.SimEqSystem> inJac;
   output tuple<Integer, Integer, SimCode.SimEqSystem> outJac;
 algorithm
@@ -9442,8 +9409,7 @@ algorithm
   end match;
 end addDivExpErrorMsgtosimJac;
 
-protected function addDivExpErrorMsgtoSimEqSystem "function addDivExpErrorMsgtoSimEqSystem
-  Traverses all subexpressions of an expression of an equation."
+protected function addDivExpErrorMsgtoSimEqSystem "Traverses all subexpressions of an expression of an equation."
   input SimCode.SimEqSystem inSES;
   output SimCode.SimEqSystem outSES;
 algorithm
@@ -9585,8 +9551,7 @@ algorithm
   end matchcontinue;
 end crefIsDerivative;
 
-protected function extractVarUnit "function extractVarUnit
-  author: asodja, 2010-03-11
+protected function extractVarUnit "author: asodja, 2010-03-11
   Extract variable's unit and displayUnit as strings from 
   DAE.VariablesAttributes structures."
   input Option<DAE.VariableAttributes> var_attr;
@@ -9616,8 +9581,7 @@ algorithm
   end matchcontinue;
 end extractVarUnit;
 
-protected function getMinMaxValues "function getMinMaxValues
-  extract min/max values from BackendDAE.Variable and check whether they are constant"
+protected function getMinMaxValues "extract min/max values from BackendDAE.Variable and check whether they are constant"
   input BackendDAE.Var inDAELowVar;
   output Option<DAE.Exp> outMinValue;
   output Option<DAE.Exp> outMaxValue;
@@ -9650,8 +9614,7 @@ algorithm
   end matchcontinue;
 end getMinMaxValues;
 
-protected function getInitialValue "function getInitialValue
-  Extract initial value from BackendDAE.Variable, if it has any
+protected function getInitialValue "Extract initial value from BackendDAE.Variable, if it has any
   (merged and modified generateInitData3 and generateInitData4)"
   input BackendDAE.Var daelowVar;
   output Option<DAE.Exp> initVal;
@@ -9754,8 +9717,7 @@ algorithm
   end matchcontinue;
 end getInitialValue;
 
-protected function getNominalValue "function getNominalValue
-  Extract nominal value from BackendDAE.Variable, if it has any"
+protected function getNominalValue "Extract nominal value from BackendDAE.Variable, if it has any"
   input BackendDAE.Var daelowVar;
   output Option<DAE.Exp> nomVal;
 algorithm

@@ -102,8 +102,7 @@ end varEqual;
 
 
 
-public function setVarFixed "function setVarFixed
-  author: PA
+public function setVarFixed "author: PA
   Sets the fixed attribute of a variable."
   input BackendDAE.Var inVar;
   input Boolean inBoolean;
@@ -162,8 +161,7 @@ algorithm
   end match;
 end setVarFixed;
 
-public function varFixed "function varFixed
-  author: PA
+public function varFixed "author: PA
   Extracts the fixed attribute of a variable.
   The default fixed value is used if not found. Default is true for parameters
   (and constants) and false for variables."
@@ -194,8 +192,7 @@ algorithm
   end matchcontinue;
 end varFixed;
 
-public function setVarStartValue "function setVarStartValue
-  author: Frenkel TUD
+public function setVarStartValue "author: Frenkel TUD
   Sets the start value attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.Exp inExp;
@@ -253,8 +250,7 @@ algorithm
   end match;
 end setVarStartValue;
 
-public function setVarStartValueOption "function setVarStartValueOption
-  author: Frenkel TUD
+public function setVarStartValueOption "author: Frenkel TUD
   Sets the start value attribute of a variable."
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> inExp;
@@ -313,8 +309,7 @@ algorithm
   end match;
 end setVarStartValueOption;
 
-public function setVarStartOrigin "function setVarStartOrigin
-  author: Frenkel TUD
+public function setVarStartOrigin "author: Frenkel TUD
   Sets the startOrigin attribute of a variable."
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> startOrigin;
@@ -372,8 +367,7 @@ algorithm
   end match;
 end setVarStartOrigin;
 
-public function setVarAttributes "function setVarAttributes
-  sets the variable attributes of a variable.
+public function setVarAttributes "sets the variable attributes of a variable.
   author: Peter Aronsson (paronsson@wolfram.com)"
   input BackendDAE.Var v;
   input Option<DAE.VariableAttributes> attr;
@@ -399,8 +393,7 @@ algorithm
 end setVarAttributes;
 
 public function varStartValue
-"function varStartValue
-  author: PA
+"author: PA
   Returns the DAE.StartValue of a variable."
   input BackendDAE.Var v;
   output DAE.Exp sv;
@@ -412,8 +405,7 @@ algorithm
 end varStartValue;
 
 public function varStartValueFail
-"function varStartValueFail
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
   input BackendDAE.Var v;
@@ -426,8 +418,7 @@ algorithm
 end varStartValueFail;
 
 public function varStartValueType
-"function varStartValueType
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   Returns the DAE.StartValue of a variable. If nothing is set the type specific one is used"
   input BackendDAE.Var v;
   output DAE.Exp sv;
@@ -462,8 +453,7 @@ algorithm
 end varStartValueType;
 
 public function varStartValueOption
-"function varStartValueOption
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
   input BackendDAE.Var v;
@@ -482,8 +472,7 @@ algorithm
 end varStartValueOption;
 
 public function varStartOrigin
-"function varStartOrigin
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns the StartOrigin of a variable."
   input BackendDAE.Var v;
   output Option<DAE.Exp> so;
@@ -495,8 +484,7 @@ algorithm
 end varStartOrigin;
 
 public function varBindExp
-"function varBindExp
-  author: Frenkel TUD 2010-12
+"author: Frenkel TUD 2010-12
   Returns the bindExp of a variable."
   input BackendDAE.Var v;
   output DAE.Exp sv;
@@ -508,8 +496,7 @@ algorithm
 end varBindExp;
 
 public function varBindExpStartValue
-"function varBindExpStartValue
-  author: Frenkel TUD 2010-12
+"author: Frenkel TUD 2010-12
   Returns the bindExp or the start value if no bind is there of a variable."
   input BackendDAE.Var v;
   output DAE.Exp sv;
@@ -523,8 +510,7 @@ algorithm
 end varBindExpStartValue;
 
 public function varStateSelect
-"function varStateSelect
-  author: PA
+"author: PA
   Extracts the state select attribute of a variable. If no stateselect explicilty set, return
   StateSelect.default"
   input BackendDAE.Var inVar;
@@ -539,8 +525,7 @@ algorithm
   end matchcontinue;
 end varStateSelect;
 
-public function setVarStateSelect "function setVarStateSelect
-  author: Frenkel TUD
+public function setVarStateSelect "author: Frenkel TUD
   sets the state select attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.StateSelect stateSelect;
@@ -601,8 +586,7 @@ algorithm
 end setVarStateSelect;
 
 public function varStateDerivative
-"function varStateDerivative
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   Returns the name of the Derivative. Is no Derivative known the function will fail."
   input BackendDAE.Var inVar;
   output DAE.ComponentRef dcr;
@@ -611,8 +595,7 @@ algorithm
 end varStateDerivative;
 
 public function varHasStateDerivative
-"function varHasStateDerivative
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   Returns the name of the Derivative. Is no Derivative known the function will fail."
   input BackendDAE.Var inVar;
   output Boolean b;
@@ -623,8 +606,7 @@ algorithm
 end match;
 end varHasStateDerivative;
 
-public function setStateDerivative "function setStateDerivative
-  author: Frenkel TUD
+public function setStateDerivative "author: Frenkel TUD
   sets the state derivative."
   input BackendDAE.Var inVar;
   input Option<DAE.ComponentRef> dcr;
@@ -681,8 +663,7 @@ algorithm
   end match;
 end getVariableAttributefromType;
 
-public function setVarFinal "function setVarFinal
-  author: Frenkel TUD
+public function setVarFinal "author: Frenkel TUD
   Sets the final attribute of a variable."
   input BackendDAE.Var inVar;
   input Boolean finalPrefix;
@@ -739,8 +720,7 @@ algorithm
   end match;
 end setVarFinal;
 
-public function setVarMinMax "function setVarMinMax
-  author: Frenkel TUD
+public function setVarMinMax "author: Frenkel TUD
   Sets the minmax attribute of a variable."
   input BackendDAE.Var inVar;
   input tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
@@ -798,8 +778,7 @@ algorithm
 end setVarMinMax;
 
 public function varNominalValue
-"function varHasNominal
-  author: Frenkel TUD"
+"author: Frenkel TUD"
   input BackendDAE.Var inVar;
   output DAE.Exp outExp;
 algorithm
@@ -810,8 +789,7 @@ algorithm
   end match;
 end varNominalValue;
 
-public function setVarNominalValue "function setVarNominalValue
-  author: Frenkel TUD
+public function setVarNominalValue "author: Frenkel TUD
   Sets the nominal value attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.Exp inExp;
@@ -883,8 +861,7 @@ algorithm
   end match;
 end varType;
 
-public function varKind "function varKind
-  author: PA
+public function varKind "author: PA
   extracts the kind of a variable."
   input BackendDAE.Var inVar;
   output BackendDAE.VarKind outVarKind;
@@ -1103,8 +1080,7 @@ algorithm
 end failIfNonState;
 
 public function isDummyStateVar
-"function isDummyStateVar
-  Returns true for dummy state variables, false otherwise."
+"Returns true for dummy state variables, false otherwise."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1117,8 +1093,7 @@ algorithm
 end isDummyStateVar;
 
 public function isDummyDerVar
-"function isDummyDerVar
-  Returns true for dummy state variables, false otherwise."
+"Returns true for dummy state variables, false otherwise."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1644,8 +1619,7 @@ algorithm
 end isOutputVar;
 
 public function isProtectedVar
-"function isProtectedVar
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   Returns the DAE.Protected attribute."
   input BackendDAE.Var v;
   output Boolean prot;
@@ -1656,8 +1630,7 @@ algorithm
   prot := DAEUtil.getProtectedAttr(attr);
 end isProtectedVar;
 
-public function createpDerVar "function createpDerVar
-  author: wbraun
+public function createpDerVar "author: wbraun
   Create variable with $pDER.v as cref for jacobian variables."
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
@@ -1670,8 +1643,7 @@ algorithm
   outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
 end createpDerVar;
 
-public function createDummyVar "function createDummyVar
-  author: wbraun
+public function createDummyVar "author: wbraun
   Creates variable with $dummy."
   output BackendDAE.Var outVar;
   output DAE.ComponentRef outCr;
@@ -1683,8 +1655,7 @@ algorithm
                             NONE(),DAE.NON_CONNECTOR());
 end createDummyVar;
 
-public function copyVarNewName "function copyVarNewName
-  author: Frenkel TUD 2012-5
+public function copyVarNewName "author: Frenkel TUD 2012-5
   Create variable with new name as cref from other var."
   input DAE.ComponentRef cr;
   input BackendDAE.Var inVar;
@@ -1726,8 +1697,7 @@ algorithm
   outVars := List.map1(inVars,setVarKind,inVarKind);
 end setVarsKind;
 
-public function setVarKind "function setVarKind
-  author: PA
+public function setVarKind "author: PA
   Sets the BackendDAE.VarKind of a variable"
   input BackendDAE.Var inVar;
   input BackendDAE.VarKind inVarKind;
@@ -1761,8 +1731,7 @@ algorithm
   // referenceUpdate(inVar, 2, new_kind);
 end setVarKind;
 
-public function setBindExp "function setBindExp
-  author: lochel"
+public function setBindExp "author: lochel"
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> inBindExp;
   output BackendDAE.Var outVar;
@@ -1794,8 +1763,7 @@ algorithm
   outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, inBindExp, v, dim, source, attr, comment, ct);
 end setBindExp;
 
-public function setBindValue "function setBindValue
-  author: lochel"
+public function setBindValue "author: lochel"
   input BackendDAE.Var inVar;
   input Option<Values.Value> inBindValue;
   output BackendDAE.Var outVar;
@@ -1826,8 +1794,7 @@ algorithm
   outVar := BackendDAE.VAR(cr, varKind, dir, prl, tp, bindExp, inBindValue, dim, source, attr, comment, ct);
 end setBindValue;
 
-public function setVarDirectionTpl "function setVarDirectionTpl
-  author: "
+public function setVarDirectionTpl "author: "
   input tuple<BackendDAE.Var, DAE.VarDirection> inTpl;
   output tuple<BackendDAE.Var, DAE.VarDirection> outTpl;
 algorithm
@@ -1842,8 +1809,7 @@ algorithm
   end match;
 end setVarDirectionTpl;
 
-public function setVarDirection "function setVarDirection
-  author: Frenkel TUD 17-03-11
+public function setVarDirection "author: Frenkel TUD 17-03-11
   Sets the DAE.VarDirection of a variable"
   input BackendDAE.Var inVar;
   input DAE.VarDirection varDirection;
@@ -1882,8 +1848,7 @@ algorithm
   end match;
 end setVarDirection;
 
-public function getVarDirection "function getVarDirection
-  author: wbraun
+public function getVarDirection "author: wbraun
   Get the DAE.VarDirection of a variable"
   input BackendDAE.Var inVar;
   output DAE.VarDirection varDirection;
@@ -1894,9 +1859,7 @@ algorithm
 end getVarDirection;
 
 
-public function isVarOnTopLevelAndOutput "function isVarOnTopLevelAndOutput
-  this function checks if the provided cr is from a var that is on top model
-  and has the DAE.VarDirection = OUTPUT
+public function isVarOnTopLevelAndOutput "and has the DAE.VarDirection = OUTPUT
   The check for top-model is done by spliting the name at \'.\' and
   check if the list-length is 1"
   input BackendDAE.Var inVar;
@@ -1917,9 +1880,7 @@ algorithm
   end matchcontinue;
 end isVarOnTopLevelAndOutput;
 
-public function isVarOnTopLevelAndInput "function isVarOnTopLevelAndInput
-  this function checks if the provided cr is from a var that is on top model
-  and has the DAE.VarDirection = INPUT
+public function isVarOnTopLevelAndInput "and has the DAE.VarDirection = INPUT
   The check for top-model is done by spliting the name at \'.\' and
   check if the list-length is 1"
   input BackendDAE.Var inVar;
@@ -1968,8 +1929,7 @@ algorithm
 end topLevelOutput;
 
 
-public function isFinalVar "function isFinalVar
-  author: Frenkel TUD
+public function isFinalVar "author: Frenkel TUD
   Returns true if var is final."
   input BackendDAE.Var v;
   output Boolean b;
@@ -1984,8 +1944,7 @@ algorithm
    end match;
 end isFinalVar;
 
-public function getVariableAttributes "function getVariableAttributes
-  author: Frenkel TUD 2011-04
+public function getVariableAttributes "author: Frenkel TUD 2011-04
   returns the DAE.VariableAttributes of a variable"
   input BackendDAE.Var inVar;
   output Option<DAE.VariableAttributes> outAttr;
@@ -1997,8 +1956,7 @@ algorithm
   end match;
 end getVariableAttributes;
 
-public function getVarSource "function getVarSource
-  author: Frenkel TUD 2011-04
+public function getVarSource "author: Frenkel TUD 2011-04
   returns the DAE.ElementSource of a variable"
   input BackendDAE.Var inVar;
   output DAE.ElementSource outSource;
@@ -2010,8 +1968,7 @@ algorithm
   end match;
 end getVarSource;
 
-public function getMinMaxAsserts "function getMinMaxAsserts
-  author: Frenkel TUD 2011-03"
+public function getMinMaxAsserts "author: Frenkel TUD 2011-03"
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
   input DAE.ElementSource source;
@@ -2055,8 +2012,7 @@ algorithm
   end matchcontinue;
 end getMinMaxAsserts;
 
-protected function getMinMaxAsserts1 "function getMinMaxAsserts1
-  author: Frenkel TUD 2011-03"
+protected function getMinMaxAsserts1 "author: Frenkel TUD 2011-03"
   input list<Option<DAE.Exp>> ominmax;
   input DAE.Exp e;
   input DAE.Type tp;
@@ -2077,8 +2033,7 @@ algorithm
   end match;
 end getMinMaxAsserts1;
 
-public function getNominalAssert "function getNominalAssert
-  author: Frenkel TUD 2011-03"
+public function getNominalAssert "author: Frenkel TUD 2011-03"
   input Option<DAE.VariableAttributes> attr;
   input DAE.ComponentRef name;
   input DAE.ElementSource source;
@@ -2121,8 +2076,7 @@ algorithm
   end matchcontinue;
 end getNominalAssert;
 
-public function varSortFunc "function varSortFun
-  A sorting function (greatherThan) for Variables based on crefs"
+public function varSortFunc "A sorting function (greatherThan) for Variables based on crefs"
   input BackendDAE.Var v1;
   input BackendDAE.Var v2;
   output Boolean greaterThan;
@@ -2396,8 +2350,7 @@ end vararrayNth;
  * =======================================================
  */
 
-public function emptyVars "function emptyVars
-  author: PA
+public function emptyVars "author: PA
   Returns a Variable datastructure that is empty.
   Using the bucketsize 10000 and array size 1000."
   output BackendDAE.Variables outVariables;
@@ -2414,8 +2367,7 @@ algorithm
   outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0, arrSize, emptyarr), bucketSize, 0);
 end emptyVars;
 
-public function emptyVarsSized "function emptyVarsSized
-  author: Frenkel TUD 2013-02
+public function emptyVarsSized "author: Frenkel TUD 2013-02
   Returns a Variable datastructure that is empty.
   Using the bucketsize 10000 and array size 1000."
   input Integer size;
@@ -2464,8 +2416,7 @@ algorithm
   outVariables := List.fold(listReverse(inVarLst),addVar,outVariables);
 end listVar;
 
-public function listVarSized "function listVarSized
-  author: Frenkel TUD 2012-05
+public function listVarSized "author: Frenkel TUD 2012-05
   Takes BackendDAE.Var list and creates a BackendDAE.Variables structure, see also var_list."
   input list<BackendDAE.Var> inVarLst;
   input Integer size;
@@ -2474,8 +2425,7 @@ algorithm
   outVariables := List.fold(inVarLst,addVar,emptyVarsSized(size));
 end listVarSized;
 
-public function listVar1 "function listVar1
-  author: Frenkel TUD 2012-05
+public function listVar1 "author: Frenkel TUD 2012-05
   ToDo: replace all listVar calls with this function, tailrecursive implementation
   Takes BackendDAE.Var list and creates a BackendDAE.Variables structure, see also var_list."
   input list<BackendDAE.Var> inVarLst;
@@ -2669,8 +2619,7 @@ algorithm
   end matchcontinue;
 end isVariable;
 
-public function isVarKindVariable "function isVarKindVariable
-  This function takes a DAE.ComponentRef and two Variables. It searches
+public function isVarKindVariable "This function takes a DAE.ComponentRef and two Variables. It searches
   the two sets of variables and succeed if the variable is STATE or
   VARIABLE. Otherwise it fails.
   Note: An array variable is currently assumed that each scalar element has
@@ -2691,8 +2640,7 @@ algorithm
   end match;
 end isVarKindVariable;
 
-public function isTopLevelInputOrOutput "function isTopLevelInputOrOutput
-  author: LP
+public function isTopLevelInputOrOutput "author: LP
 
   This function checks if the provided cr is from a var that is on top model
   and is an input or an output, and returns true for such variables.
@@ -2729,8 +2677,7 @@ algorithm
   end matchcontinue;
 end isTopLevelInputOrOutput;
 
-public function deleteCrefs "function deleteCrefs
-  author: wbraun
+public function deleteCrefs "author: wbraun
   Removes a list of DAE.ComponentRef from BackendDAE.Variables"
   input list<DAE.ComponentRef> varlst;
   input BackendDAE.Variables vars;
@@ -2740,8 +2687,7 @@ algorithm
   vars_1 := listVar1(varList(vars_1));
 end deleteCrefs;
 
-public function deleteVars "function deleteVars
-  author: Frenkel TUD 2011-04
+public function deleteVars "author: Frenkel TUD 2011-04
   Deletes variables from Variables. This is an expensive operation
   since we need to create a new binary tree with new indexes as well
   as a new compacted vector of variables."
@@ -2805,8 +2751,7 @@ algorithm
   end match;
 end deleteVar;
 
-public function removeCrefs "function removeCrefs
-  author: wbraun
+public function removeCrefs "author: wbraun
   Removes a list of DAE.ComponentRef from BackendDAE.Variables"
   input list<DAE.ComponentRef> varlst;
   input BackendDAE.Variables vars;
@@ -2842,8 +2787,7 @@ algorithm
   end matchcontinue;
 end removeCref;
 
-public function removeVars "function removeVars
-  author: Frenkel TUD 2012-09
+public function removeVars "author: Frenkel TUD 2012-09
   Removes vars from the vararray but does not scaling down the array"
   input list<Integer> inVarPos "Position of vars to delete 1 based";
   input BackendDAE.Variables inVariables;
@@ -2897,8 +2841,7 @@ algorithm
   end match;
 end removeVarDAE;
 
-public function removeVar "function removeVar
-  author: Frenkel TUD 2011-04
+public function removeVar "author: Frenkel TUD 2011-04
   Removes a var from the vararray but does not scaling down the array"
   input Integer inVarPos "1 based index";
   input BackendDAE.Variables inVariables;
@@ -4301,8 +4244,7 @@ algorithm
   end matchcontinue;
 end mergeStartFixed;
 
-protected function startValueType "function startValueType
-  author: Frenkel TUD 2012-10
+protected function startValueType "author: Frenkel TUD 2012-10
   return the start value or the default value in case of NONE()"
   input Option<DAE.Exp> iExp;
   input DAE.Type iTy;
@@ -4338,8 +4280,7 @@ algorithm
   end matchcontinue;
 end startValueType;
 
-protected function mergeStartFixed1 "function mergeStartFixed1
-  author: Frenkel TUD 2011-04"
+protected function mergeStartFixed1 "author: Frenkel TUD 2011-04"
   input Boolean b "true if Alias Var have less dots in the name";
   input BackendDAE.Var inVar;
   input DAE.ComponentRef cr;
@@ -4719,8 +4660,7 @@ end mergeMinMax1;
 //   end matchcontinue;
 // end mergeDirection;
 
-public function calcAliasKey "function calcAliasKey
-  author Frenkel TUD 2011-04
+public function calcAliasKey "author Frenkel TUD 2011-04
   helper for selectAlias. This function is
   mainly usable to chose the favorite name
   of the keeped var"
@@ -4770,8 +4710,7 @@ algorithm
   end match;
 end selfGeneratedVar;
 
-public function varStateSelectPrioAlias "function varStateSelectPrioAlias
-  Helper function to calculateVarPriorities.
+public function varStateSelectPrioAlias "Helper function to calculateVarPriorities.
   Calculates a priority contribution bases on the stateSelect attribute."
   input BackendDAE.Var v;
   output Integer prio;
@@ -4786,10 +4725,7 @@ algorithm
   prio := Util.if_(knownDer,prio+1,prio);
 end varStateSelectPrioAlias;
 
-public function stateSelectToInteger "function stateSelectToInteger
-  helper function to stateSelectToInteger
-  return
-  Never: -1
+public function stateSelectToInteger "Never: -1
   Avoid: 0
   Default: 1
   Prefer: 2

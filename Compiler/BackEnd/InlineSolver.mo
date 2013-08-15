@@ -60,8 +60,7 @@ protected import Util;
 // These are functions, that can be used to do anything regarding inline solver.
 // =============================================================================
 
-public function generateDAE "function generateDAE
-  author: lochel
+public function generateDAE "author: lochel
   This function generates a algebraic system of equations for the inline solver"
   input BackendDAE.BackendDAE inDAE;
   output Option<BackendDAE.BackendDAE> outDAE;
@@ -96,8 +95,7 @@ algorithm
   end matchcontinue;
 end generateDAE;
 
-protected function dae_to_algSystem "function dae_to_algSystem
-  author: vitalij
+protected function dae_to_algSystem "author: vitalij
   This is a helper function for generateDAE.
   Transformation dae in algebraic system"
   input BackendDAE.BackendDAE inDAE;
@@ -138,8 +136,7 @@ algorithm
   outInlineVars := BackendVariable.emptyVars();
 end dae_to_algSystem;
 
-protected function addKnowInitialValueForState "function addKnowInitialValueForState
-  author: vitalij"
+protected function addKnowInitialValueForState "author: vitalij"
   input BackendDAE.Shared inShared;
   input BackendDAE.Variables invars;
   output BackendDAE.Shared outShared;
@@ -165,8 +162,7 @@ algorithm
    outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars,initialEqs, removedEqs, constraints, classAttrs, cache, env, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs);
 end addKnowInitialValueForState;
 
-protected function timeEquation "function timeEquation
-  author: vitalij"
+protected function timeEquation "author: vitalij"
   output BackendDAE.EqSystem outEqSystem;
 protected
   BackendDAE.EqSystem eqSystem;
@@ -226,8 +222,7 @@ algorithm
   (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
 end timeEquation;
 
-protected function eliminatedStatesDerivations "function eliminatedStatesDerivations
-  author: vitalij
+protected function eliminatedStatesDerivations "author: vitalij
   This is a helper function for dae_to_algSystem.
   change function call der(x) in  variable xder
   change kind: state in known variable"
@@ -266,8 +261,7 @@ algorithm
   outTupel := (listAppend(inSystems,{eqSystem}), BackendVariable.mergeVariables(invars,outvars));
 end eliminatedStatesDerivations;
 
-protected function replaceStates_eqs "function replaceStates_eqs
-  author: vitalij
+protected function replaceStates_eqs "author: vitalij
   This is a helper function for eliminiertStatesDerivations.
   replace der(x) with $DER.x."
   input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables, BackendDAE.EquationArray, String, String>> inTpl;
@@ -329,8 +323,7 @@ algorithm
     end matchcontinue;
 end isDerEq;
 
-protected function replaceDerStateCref "function replaceDerStateCref
-  author: vitalij
+protected function replaceDerStateCref "author: vitalij
   This is a helper function for dae_to_algSystem."
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> inExp;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> outExp;
@@ -345,8 +338,7 @@ algorithm
   outExp := Expression.traverseExp(e, replaceDerStateExp, (vars, i,preState,preDer));
 end replaceDerStateCref;
 
-protected function replaceDerStateExp "function replaceDerStateExp
-  author: vitalij
+protected function replaceDerStateExp "author: vitalij
   This is a helper function for replaceDerStateCref."
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> inExp;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> outExp;
@@ -378,8 +370,7 @@ algorithm
   end matchcontinue;
 end replaceDerStateExp;
 
-protected function crefPrefixStringWithpopCref "function crefPrefixStringWithpopCref
-  author: vitalij"
+protected function crefPrefixStringWithpopCref "author: vitalij"
   input String name;
   input DAE.ComponentRef in_cr;
   output DAE.ComponentRef out_cr;
@@ -388,8 +379,7 @@ protected function crefPrefixStringWithpopCref "function crefPrefixStringWithpop
    out_cr := ComponentReference.crefPrefixString(name, out_cr);
 end crefPrefixStringWithpopCref;
 
-protected function replaceStates_vars "function replaceStates_vars
-  author: vitalij"
+protected function replaceStates_vars "author: vitalij"
   input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables>> outTpl;
 algorithm
@@ -461,8 +451,7 @@ algorithm
   end matchcontinue;
 end replaceStates_vars;
 
-protected function stepLobatt "function stepLobatt
-  author: vitalij
+protected function stepLobatt "author: vitalij
   implicit Runge Kutta method"
   input DAE.ComponentRef x0_, x1_, x2_, x3_, x4_, derx0_, derx1_, derx2_, derx3_, derx4_;
   input DAE.Exp dt;
@@ -561,8 +550,7 @@ protected function LobattoTerms
    z1 := Expression.expMul(aa, x1);
 end LobattoTerms;
 
-protected function stringCrVar "function stringCrVar
-  author: vitalij"
+protected function stringCrVar "author: vitalij"
   input String varTyp;
   input DAE.ComponentRef inCR;
   input DAE.Type ty;

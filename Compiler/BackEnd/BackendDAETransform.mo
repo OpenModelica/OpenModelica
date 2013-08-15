@@ -547,8 +547,7 @@ algorithm
   end matchcontinue;
 end analyzeConstantJacobian;
 
-protected function transformXToXd "function transformXToXd
-  author: PA
+protected function transformXToXd "author: PA
   this function transforms x variables (in the state vector)
   to corresponding xd variable (in the derivatives vector)"
   input BackendDAE.Var inVar;
@@ -1716,8 +1715,7 @@ algorithm
 end traverseBackendDAEExpsWhenClauseLst;
 
 public function traverseBackendDAEExpsEqnList
-"function traverseBackendDAEExpsEqnList
-  author: Frenkel TUD 2010-11
+"author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
   replaceable type Type_a subtypeof Any;

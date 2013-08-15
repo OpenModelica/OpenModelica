@@ -90,8 +90,7 @@ protected import Util;
 //   - printVarList
 // =============================================================================
 
-public function printBackendDAE "function printBackendDAE
-  This function dumps the BackendDAE.BackendDAE representaton to stdout."
+public function printBackendDAE "This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
 protected
   BackendDAE.EqSystems eqs;
@@ -103,8 +102,7 @@ algorithm
   printShared(shared);
 end printBackendDAE;
 
-public function printEqSystem "function printEqSystem
-  This function prints the BackendDAE.EqSystem representaton to stdout."
+public function printEqSystem "This function prints the BackendDAE.EqSystem representaton to stdout."
   input BackendDAE.EqSystem inEqSystem;
 protected
   BackendDAE.Variables orderedVars;
@@ -131,30 +129,26 @@ algorithm
   dumpFullMatching(matching);
 end printEqSystem;
 
-public function printEquation "function printEquation
-  author: PA
+public function printEquation "author: PA
   Helper function to print_equations"
   input BackendDAE.Equation inEquation;
 algorithm
   print(equationString(inEquation) +& "\n");
 end printEquation;
 
-public function printEquationArray "function printEquationArray
-  Helper function to dump."
+public function printEquationArray "Helper function to dump."
   input BackendDAE.EquationArray eqns;
 algorithm
   _ := List.fold(BackendEquation.equationList(eqns), printEquationList2, (1, 1));
 end printEquationArray;
 
-public function printEquationList "function printEquationList
-  Helper function to dump."
+public function printEquationList "Helper function to dump."
   input list<BackendDAE.Equation> eqns;
 algorithm
   _ := List.fold(eqns, printEquationList2, (1, 1));
 end printEquationList;
 
-protected function printEquationList2 "function printEquationList2
-  Helper function for printEquationArray and printEquationList"
+protected function printEquationList2 "Helper function for printEquationArray and printEquationList"
   input BackendDAE.Equation inEquation;
   input tuple<Integer,Integer> inInteger;
   output tuple<Integer,Integer> oInteger;
@@ -167,8 +161,7 @@ algorithm
   oInteger := (i + 1,iscalar + size);
 end printEquationList2;
 
-public function printEquations "function printEquations
-  "
+public function printEquations ""
   input list<Integer> inIntegerLst;
   input BackendDAE.EqSystem syst;
 algorithm
@@ -184,8 +177,7 @@ algorithm
   end match;
 end printEquations;
 
-protected function printEquationNo "function printEquationNo
-  author: PA
+protected function printEquationNo "author: PA
   Helper function to printEquations"
   input Integer inInteger;
   input BackendDAE.EqSystem syst;
@@ -206,8 +198,7 @@ algorithm
   end match;
 end printEquationNo;
 
-public function printClassAttributes "function printClassAttributes
-  This unction print the  Optimica ClassAttributes: objetiveE, objetiveE"
+public function printClassAttributes "This unction print the  Optimica ClassAttributes: objetiveE, objetiveE"
   input DAE.ClassAttributes optimicaFun;
   protected
     Option<DAE.Exp> e1,e2;
@@ -220,8 +211,7 @@ public function printClassAttributes "function printClassAttributes
     print("\n");
 end printClassAttributes;
 
-public function printShared "function printShared
-  This function dumps the BackendDAE.Shared representaton to stdout."
+public function printShared "This function dumps the BackendDAE.Shared representaton to stdout."
   input BackendDAE.Shared inShared;
 protected
   BackendDAE.Variables knownVars, externalObjects, aliasVars;
@@ -273,15 +263,13 @@ algorithm
   end match;
 end printBackendDAEType;
 
-public function printStateSets "function printStateSets
-  author: Frenkel TUD"
+public function printStateSets "author: Frenkel TUD"
   input BackendDAE.StateSets stateSets;
 algorithm
   List.map_0(stateSets, printStateSet);
 end printStateSets;
 
-protected function printStateSet "function printStateSet
-  author: Frenkel TUD"
+protected function printStateSet "author: Frenkel TUD"
   input BackendDAE.StateSet statSet;
 protected
   Integer rang;
@@ -294,29 +282,25 @@ algorithm
   debuglst((crstates,ComponentReference.printComponentRefStr,"\n","\n"));
 end printStateSet;
 
-public function printVar "function printVar
-  "
+public function printVar ""
   input BackendDAE.Var inVar;
 algorithm
   print(varString(inVar) +& "\n");
 end printVar;
 
-public function printVariables "function printVariables
-  Helper function to dump."
+public function printVariables "Helper function to dump."
   input BackendDAE.Variables vars;
 algorithm
   _ := List.fold(BackendVariable.varList(vars), printVars1, 1);
 end printVariables;
 
-public function printVarList "function printVarList
-  Helper function to dump."
+public function printVarList "Helper function to dump."
   input list<BackendDAE.Var> vars;
 algorithm
   _ := List.fold(vars, printVars1, 1);
 end printVarList;
 
-protected function printVars1 "function printVars1
-  This is a helper function for printVariables and printVarList"
+protected function printVars1 "This is a helper function for printVariables and printVarList"
   input BackendDAE.Var inVar;
   input Integer inVarNo;
   output Integer outVarNo;
@@ -327,8 +311,7 @@ algorithm
   outVarNo := inVarNo + 1;
 end printVars1;
 
-protected function printExternalObjectClasses "function printExternalObjectClasses
-  dump classes of external objects"
+protected function printExternalObjectClasses "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses cls;
 algorithm
   _ := match(cls)
@@ -356,8 +339,7 @@ algorithm
   end match;
 end printExternalObjectClasses;
 
-protected function printSparsityPattern "function printSparsityPattern
-  author lochel"
+protected function printSparsityPattern "author lochel"
   input list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> inPattern;
 algorithm
   () := matchcontinue(inPattern)
@@ -408,8 +390,7 @@ end printSparsityPattern;
 protected constant String BORDER    = "########################################";
 protected constant String UNDERLINE = "========================================";
 
-public function dumpBackendDAE "function dumpBackendDAE
-  This function dumps the BackendDAE.BackendDAE representaton to stdout."
+public function dumpBackendDAE "This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
   input String heading;
 algorithm
@@ -463,8 +444,7 @@ algorithm
   print("\n");
 end dumpEquationList;
 
-protected function dumpExternalObjectClasses "function dumpExternalObjectClasses
-  dump classes of external objects"
+protected function dumpExternalObjectClasses "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses inEOC;
   input String heading;
 algorithm
@@ -509,8 +489,7 @@ algorithm
   print("\n");
 end dumpConstraintArray;
 
-public function dumpHashSet "function dumpHashSet
-  author lochel"
+public function dumpHashSet "author lochel"
   input HashSet.HashSet hashSet;
   input String heading;
 protected
@@ -522,8 +501,7 @@ algorithm
   print("\n");
 end dumpHashSet;
 
-public function dumpSparsityPattern "function dumpSparsityPattern
-  author lochel"
+public function dumpSparsityPattern "author lochel"
   input BackendDAE.SparsePattern inPattern;
   input String heading;
 protected
@@ -542,8 +520,7 @@ algorithm
   printSparsityPattern(pattern);
 end dumpSparsityPattern;
 
-public function dumpEquation "function dumpEquation
-  author: Frenkel TUD"
+public function dumpEquation "author: Frenkel TUD"
   input BackendDAE.Equation inEquation;
 algorithm
   _:=
@@ -737,8 +714,7 @@ algorithm
    print("===================\n");
 end dumpBackendDAEVarList;
 
-public function dumpEqnsSolved "function dumpEqnsSolved
-  This function dumps the equations in the order they have to be calculate."
+public function dumpEqnsSolved "This function dumps the equations in the order they have to be calculate."
   input BackendDAE.BackendDAE inBackendDAE;
   input String heading;
 protected
@@ -750,8 +726,7 @@ algorithm
   print("\n");
 end dumpEqnsSolved;
 
-protected function dumpEqnsSolved1 "function dumpEqnsSolved1
-  This is a helper for dumpEqnsSolved."
+protected function dumpEqnsSolved1 "This is a helper for dumpEqnsSolved."
   input BackendDAE.EqSystem inEqSystem;
 algorithm
   _:= match(inEqSystem)
@@ -771,8 +746,7 @@ algorithm
   end match;
 end dumpEqnsSolved1;
 
-protected function dumpEqnsSolved2 "function dumpEqnsSolved2
-  author: Frenkel TUD 2012-03"
+protected function dumpEqnsSolved2 "author: Frenkel TUD 2012-03"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Variables vars;
@@ -908,8 +882,7 @@ algorithm
   end matchcontinue;
 end dumpEqnsSolved2;
 
-public function dumpComponentsAdvanced "function dumpComponentsAdvanced
-  author: Frenkel TUD
+public function dumpComponentsAdvanced "author: Frenkel TUD
   Prints the blocks of the BLT sorting on stdout."
   input list<list<Integer>> l;
   input array<Integer> v2;
@@ -923,8 +896,7 @@ algorithm
   dumpComponentsAdvanced2(l, 1,v2,vars);
 end dumpComponentsAdvanced;
 
-protected function dumpComponentsAdvanced2 "function dumpComponentsAdvanced2
-  author: PA
+protected function dumpComponentsAdvanced2 "author: PA
   Helper function to dump_components."
   input list<list<Integer>> inIntegerLstLst;
   input Integer inInteger;
@@ -955,8 +927,7 @@ algorithm
   end match;
 end dumpComponentsAdvanced2;
 
-protected function dumpComponentsAdvanced3 "function dumpComponentsAdvanced3
-  author: PA
+protected function dumpComponentsAdvanced3 "author: PA
   Helper function to dump_components."
   input list<Integer> inIntegerLst;
   input array<Integer> v2;
@@ -1211,8 +1182,7 @@ algorithm
   end match;
 end strongComponentString;
 
-protected function whenEquationString "function whenEquationString
-  Helper function to equationString"
+protected function whenEquationString "Helper function to equationString"
   input BackendDAE.WhenEquation inWhenEqn;
   output String outString;
 algorithm
@@ -1242,8 +1212,7 @@ algorithm
   end match;
 end whenEquationString;
 
-public function equationString "function equationString
-  Helper function to e.g. dump."
+public function equationString "Helper function to e.g. dump."
   input BackendDAE.Equation inEquation;
   output String outString;
 algorithm
@@ -2307,8 +2276,7 @@ algorithm
   end match;
 end ifequationString;
 
-public function varString "function varString
-  Helper function to printVarList."
+public function varString "Helper function to printVarList."
   input BackendDAE.Var inVar;
   output String outStr;
 protected
@@ -3498,8 +3466,7 @@ algorithm
 end dumpCompShort2;
 
 public function dumpNrOfEquations
-"function dumpNrOfEquations
-  author Frenkel TUD 2012-11
+"author Frenkel TUD 2012-11
   prints the number of scalar equations in the dae system"
   input BackendDAE.BackendDAE inDAE;
   input String preStr;

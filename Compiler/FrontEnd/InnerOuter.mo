@@ -934,9 +934,7 @@ algorithm
 end outerConnection;
 
 public function assertDifferentFaces
-"function assertDifferentFaces
-  This function fails if two connectors have same
-  faces, e.g both inside or both outside connectors"
+"faces, e.g both inside or both outside connectors"
   input Env.Env env;
   input InstHierarchy inIH;
   input DAE.ComponentRef inComponentRef1;
@@ -1085,8 +1083,7 @@ algorithm
 end modificationOnOuter;
 
 public function switchInnerToOuterAndPrefix
-"function switchInnerToOuterAndPrefix
-  switches the inner to outer attributes of a component in the dae."
+"switches the inner to outer attributes of a component in the dae."
   input list<DAE.Element> inDae;
   input Absyn.InnerOuter io;
   input Prefix.Prefix pre;
@@ -1161,8 +1158,7 @@ public function switchInnerToOuterAndPrefix
 end switchInnerToOuterAndPrefix;
 
 public function prefixOuterDaeVars
-"function prefixOuterDaeVars
-  prefixes all the outer variables in the DAE with the given prefix."
+"prefixes all the outer variables in the DAE with the given prefix."
   input list<DAE.Element> inDae;
   input Prefix.Prefix crefPrefix;
   output list<DAE.Element> outDae;
