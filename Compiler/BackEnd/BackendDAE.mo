@@ -59,21 +59,14 @@ public type Type = .DAE.Type
  adrpo: yes we can, we just simplify the DAE.Type, see Types.simplifyType";
 
 public
-uniontype BackendDAEType
-"- BackendDAEType to indicate different types of BackendDAEs.
-   For example for simulation, initialization, jacobian, algebraic loops etc. "
-  record SIMULATION  "Type for the normal BackendDAE.DAE for simulation"
-  end SIMULATION;
-  record JACOBIAN  "Type for jacobian BackendDAE.DAE"
-  end JACOBIAN;
-  record ALGEQSYSTEM "Type for algebraic loop BackendDAE.DAE"
-  end ALGEQSYSTEM;
-  record ARRAYSYSTEM "Type for multidim equation arrays BackendDAE.DAE"
-  end ARRAYSYSTEM;
-  record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"
-  end PARAMETERSYSTEM;
-  record INITIALSYSTEM "Type for initial system BackendDAE.DAE"
-  end INITIALSYSTEM;
+uniontype BackendDAEType "BackendDAEType to indicate different types of BackendDAEs.
+  For example for simulation, initialization, jacobian, algebraic loops etc."
+  record SIMULATION      "Type for the normal BackendDAE.DAE for simulation" end SIMULATION;
+  record JACOBIAN        "Type for jacobian BackendDAE.DAE"                  end JACOBIAN;
+  record ALGEQSYSTEM     "Type for algebraic loop BackendDAE.DAE"            end ALGEQSYSTEM;
+  record ARRAYSYSTEM     "Type for multidim equation arrays BackendDAE.DAE"  end ARRAYSYSTEM;
+  record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"          end PARAMETERSYSTEM;
+  record INITIALSYSTEM   "Type for initial system BackendDAE.DAE"            end INITIALSYSTEM;
 end BackendDAEType;
 
 public
@@ -167,12 +160,11 @@ uniontype Equation "- Equation"
     list<Equation> eqnsfalse "Equations of false branch";
     .DAE.ElementSource source "origin of equation";
   end IF_EQUATION;
-
 end Equation;
 
 public
-uniontype WhenEquation "- When Equation"
-  record WHEN_EQ
+uniontype WhenEquation
+  record WHEN_EQ "equation when condition then left = right; [elsewhenPart] end when;"
     .DAE.Exp condition                "the when-condition" ;
     .DAE.ComponentRef left            "left hand side of equation" ;
     .DAE.Exp right                    "right hand side of equation" ;
@@ -185,7 +177,7 @@ uniontype WhenOperator "- Reinit Statement"
   record REINIT
     .DAE.ComponentRef stateVar "State variable to reinit" ;
     .DAE.Exp value             "Value after reinit" ;
-    .DAE.ElementSource source "origin of equation";
+    .DAE.ElementSource source  "origin of equation";
   end REINIT;
 
   record ASSERT
@@ -207,7 +199,6 @@ uniontype WhenOperator "- Reinit Statement"
     list< .DAE.Exp> functionArgs;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
-
 end WhenOperator;
 
 public
@@ -218,7 +209,6 @@ uniontype WhenClause "- When Clause"
     Option<Integer> elseClause          "index of elsewhen clause" ;
 
     // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
-    // what is HL?
 
     // The equations associated to the clause are linked to this when clause by the index in the
     // when clause list where this when clause is stored.

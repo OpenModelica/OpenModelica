@@ -260,8 +260,7 @@ algorithm
   dumpConstraintArray(constraints, "Constraints");
 end printShared;
 
-protected function printBackendDAEType "function printBackendDAEType
-  This is a helper for printShared."
+protected function printBackendDAEType "This is a helper for printShared."
   input BackendDAE.BackendDAEType btp;
 algorithm
   _ := match(btp)
