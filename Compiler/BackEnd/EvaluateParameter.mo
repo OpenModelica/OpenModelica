@@ -105,8 +105,7 @@ end selectParameterFunc;
  */
 
 public function evaluateFinalParameters
-"function: evaluateEvaluateParameters
-  author Frenkel TUD
+"author Frenkel TUD
   evaluate and replace parameters with final=true in variables and parameters"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -115,8 +114,7 @@ algorithm
 end evaluateFinalParameters;
 
 public function evaluateEvaluateParameters
-"function: evaluateEvaluateParameters
-  author Frenkel TUD
+"author Frenkel TUD
   evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -125,8 +123,7 @@ algorithm
 end evaluateEvaluateParameters;
 
 public function evaluateFinalEvaluateParameters
-"function: evaluateFinalEvaluateParameters
-  author Frenkel TUD
+"author Frenkel TUD
   evaluate and replace parameters with final=true in variables and parameters"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -135,8 +132,7 @@ algorithm
 end evaluateFinalEvaluateParameters;
 
 public function evaluateReplaceFinalParameters
-"function: evaluateReplaceFinalParameters
-  author Frenkel TUD
+"author Frenkel TUD
   evaluate and replace parameters with final=true in variables and parameters"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -148,8 +144,7 @@ algorithm
 end evaluateReplaceFinalParameters;
 
 public function evaluateReplaceEvaluateParameters
-"function: evaluateReplaceEvaluateParameters
-  author Frenkel TUD
+"author Frenkel TUD
   evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -161,8 +156,7 @@ algorithm
 end evaluateReplaceEvaluateParameters;
 
 public function evaluateReplaceFinalEvaluateParameters
-"function: evaluateReplaceFinalEvaluateParameters
-  author Frenkel TUD
+"author Frenkel TUD
   evaluate and replace parameters with final=true in variables and parameters"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -179,8 +173,7 @@ end evaluateReplaceFinalEvaluateParameters;
  */
 
 protected function evaluateParameters
-"function: evaluateParameters
-  author Frenkel TUD
+"author Frenkel TUD
   evaluate and replace parameters with annotation(Evaluate=true) in variables and parameters"
   input BackendDAE.BackendDAE inDAE;
   input selectParameterFunc selectParameterfunc;
@@ -314,8 +307,7 @@ end getParameterIncidenceMatrix;
 
 
 protected function evaluateSelectedParameters
-"function: evaluateSelectedParameters
-  author Frenkel TUD"
+"author Frenkel TUD"
   input list<Integer> iSelected;
   input BackendDAE.Variables iKnVars;
   input BackendDAE.IncidenceMatrix m;
@@ -367,8 +359,7 @@ algorithm
 end evaluateSelectedParameters;
 
 protected function evaluateSelectedParameters1
-"function: evaluateSelectedParameters1
-  author Frenkel TUD"
+"author Frenkel TUD"
   input list<Integer> iUsed;
   input BackendDAE.Variables iKnVars;
   input BackendDAE.IncidenceMatrix m;
@@ -414,8 +405,7 @@ end evaluateSelectedParameters1;
 
 
 protected function evaluateSelectedParameter
-"function: evaluateSelectedParameter
-  author Frenkel TUD"
+"author Frenkel TUD"
   input BackendDAE.Var var;
   input Integer index;
   input BackendDAE.Variables inKnVars;
@@ -550,8 +540,7 @@ algorithm
 end evaluateSelectedParameter;
 
 protected function evaluateParameter
-"function: evaluateParameter
-  author Frenkel TUD"
+"author Frenkel TUD"
   input BackendDAE.Var var;
   input BackendDAE.Variables inKnVars;
   input BackendDAE.EquationArray inIEqns;
@@ -959,8 +948,7 @@ end traverseExpVisitorWrapper;
 
 
 protected function replaceEvaluatedParametersSystem
-"function: replaceEvaluatedParametersSystem
-  author Frenkel TUD"
+"author Frenkel TUD"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Variables,BackendDAE.IncidenceMatrix,BackendDAE.EquationArray,Env.Cache,Env.Env,Integer,array<Integer>,BackendVarTransform.VariableReplacements,BackendVarTransform.VariableReplacements> inTypeA;
   output BackendDAE.EqSystem osyst;
@@ -1027,8 +1015,7 @@ algorithm
 end replaceEvaluatedParameterTraverser;
 
 protected function replaceEvaluatedParametersEqns
-"function: replaceEvaluatedParametersEqns
-  author Frenkel TUD"
+"author Frenkel TUD"
   input Boolean replacementsEmpty;
   input BackendDAE.BackendDAE inDAE;
   input BackendVarTransform.VariableReplacements repl;
@@ -1071,8 +1058,7 @@ algorithm
 end replaceEvaluatedParametersEqns;
 
 protected function replaceEvaluatedParametersSystemEqns
-"function: replaceEvaluatedParametersSystemEqns
-  author Frenkel TUD
+"author Frenkel TUD
   replace the evaluated parameters in the equationsystems"
   input BackendDAE.EqSystem isyst;
   input BackendVarTransform.VariableReplacements repl;

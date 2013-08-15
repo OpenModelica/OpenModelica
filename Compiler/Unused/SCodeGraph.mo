@@ -1214,8 +1214,7 @@ algorithm
 end analyzeUnit;
 
 public function getElementByName
-"function: getElementByName
-  Return the Element and its order with the name given in class"
+"Return the Element and its order with the name given in class"
   input String inIdent;
   input SCode.Element inClass;
   output SCode.Element outElement;
@@ -1253,8 +1252,7 @@ algorithm
 end getElementByName;
 
 protected function getElementNamedFromElts
-"function: getElementNamedFromElts
-  Helper function to getElementByName"
+"Helper function to getElementByName"
   input String inIdent;
   input list<SCode.Element> inElementLst;
   input Integer startAt;

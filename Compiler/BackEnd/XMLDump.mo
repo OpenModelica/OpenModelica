@@ -655,8 +655,7 @@ algorithm
 end dumpComment;
 
 protected function dumpComponents
-"function: dumpComponents
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   This function is used to print BLT information using xml format.
 The output is something like:
 <bltBlock id=\"\">
@@ -671,8 +670,7 @@ algorithm
 end dumpComponents;
 
 protected function dumpComponentsWork
-"function: dumpComponentsWork
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   wrapper for calling dumpComponents for each equation system"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -1505,8 +1503,7 @@ end dumpEquation;
 
 
 public function dumpExp
-"function: dumpExp
-  This function prints a complete expression
+"This function prints a complete expression
   as a MathML. The content is like:
   <MathML>
   <MATH xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -1537,8 +1534,7 @@ end dumpExp;
 
 
 public function dumpExp2
-"function: dumpExp2
-  Helper function to dumpExpression. It can also
+"Helper function to dumpExpression. It can also
   be used if it's not necessary to print the headers
   (MathML and MATH tags)."
   input DAE.Exp inExp;
@@ -1867,8 +1863,7 @@ end dumpExp2;
 
 
 public function dumpExp3
-"function: dumpExp3
-  This function is an auxiliary function for dumpExp2 function.
+"This function is an auxiliary function for dumpExp2 function.
 "
   input DAE.Exp e;
   //output String s;
@@ -2100,8 +2095,7 @@ algorithm
 end dumpFunctionsStr;
 
 protected function dumpIncidenceMatrix
-"function: dumpIncidenceMatrix
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   This function dumps a matrix using an xml representation.
 <matrix>
      <matrixrow>
@@ -2124,8 +2118,7 @@ algorithm
 end dumpIncidenceMatrix;
 
 protected function dumpIncidenceMatrixWork
-"function: dumpIncidenceMatrixWork
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   wrapper for calling dumpIncidenceMatrix for each equation system"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -2232,8 +2225,7 @@ end dumpKind;
 
 
 public function dumpList
-"function: printList
-  Print a list of values given a print
+"Print a list of values given a print
   function."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -2260,8 +2252,7 @@ end dumpList;
 
 
 public function dumpListSeparator
-"function: dumpListSeparator
-  Print a list of values given a print
+"Print a list of values given a print
   function and a separator string."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -2471,8 +2462,7 @@ algorithm
 end dumpLstStr;
 
 protected function dumpMatching
-"function: dumpMatchingWork
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   prints the matching information on stdout."
   input BackendDAE.BackendDAE dae;
 algorithm
@@ -2482,8 +2472,7 @@ algorithm
 end dumpMatching;
 
 protected function dumpMatchingWork
-"function: dumpMatchingWork
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   wrapper for calling dumpMatching for each equation system"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -2500,8 +2489,7 @@ algorithm
 end dumpMatchingWork;
 
 public function dumpMatching1
-"function: dumpMatching
-  author: PA
+"author: PA
   prints the matching information on stdout."
   input array<Integer> v;
   input Integer voffset;
@@ -2523,8 +2511,7 @@ end dumpMatching1;
 
 
 protected function dumpMatching2
-"function: dumpMatching2
-  Helper function to dumpMatching."
+"Helper function to dumpMatching."
   input Integer eqn;
   input tuple<Integer,Integer,Integer> inTpl;
   output tuple<Integer,Integer,Integer> outTpl;
@@ -2627,8 +2614,7 @@ end dumpOptValue;
 
 
 public function dumpRow
-"function: printRow
-  Prints a list of expressions to a string."
+"Prints a list of expressions to a string."
   input list<DAE.Exp> es_1;
   annotation(__OpenModelica_EarlyInline=true);
 algorithm

@@ -70,8 +70,7 @@ protected import VarTransform;
 
 
 public function inlineCalls
-"function: inlineCalls
-  searches for calls where the inline flag is true, and inlines them"
+"searches for calls where the inline flag is true, and inlines them"
   input list<DAE.InlineType> inITLst;
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -346,8 +345,7 @@ algorithm
 end inlineEqs;
 
 protected function inlineWhenEq
-"function: inlineWhenEq
-  inlines function calls in when equations"
+"inlines function calls in when equations"
   input BackendDAE.WhenEquation inWhenEquation;
   input Functiontuple fns;
   input DAE.ElementSource inSource;
@@ -385,8 +383,7 @@ algorithm
 end inlineWhenEq;
 
 protected function inlineVariables
-"function: inlineVariables
-  inlines function calls in variables"
+"inlines function calls in variables"
   input BackendDAE.Variables inVariables;
   input Functiontuple inElementList;
   output BackendDAE.Variables outVariables;
@@ -601,8 +598,7 @@ algorithm
 end inlineEventInfo;
 
 protected function inlineZeroCrossings
-"function: inlineZeroCrossings
-  inlines function calls in reinit statements"
+"inlines function calls in reinit statements"
   input list<BackendDAE.ZeroCrossing> inStmts;
   input Functiontuple fns;
   input list<BackendDAE.ZeroCrossing> iAcc;
@@ -627,8 +623,7 @@ algorithm
 end inlineZeroCrossings;
 
 protected function inlineZeroCrossing
-"function: inlineZeroCrossing
-  inlines function calls in a zero crossing"
+"inlines function calls in a zero crossing"
   input BackendDAE.ZeroCrossing inZeroCrossing;
   input Functiontuple inElementList;
   output BackendDAE.ZeroCrossing outZeroCrossing;
@@ -651,8 +646,7 @@ algorithm
 end inlineZeroCrossing;
 
 protected function inlineWhenClauses
-"function: inlineWhenClauses
-  inlines function calls in reinit statements"
+"inlines function calls in reinit statements"
   input list<BackendDAE.WhenClause> inStmts;
   input Functiontuple fns;
   input list<BackendDAE.WhenClause> iAcc;
@@ -677,8 +671,7 @@ algorithm
 end inlineWhenClauses;
 
 protected function inlineWhenClause
-"function: inlineWhenClause
-  inlines function calls in a when clause"
+"inlines function calls in a when clause"
   input BackendDAE.WhenClause inWhenClause;
   input Functiontuple inElementList;
   output BackendDAE.WhenClause outWhenClause;
@@ -705,8 +698,7 @@ algorithm
 end inlineWhenClause;
 
 protected function inlineReinitStmts
-"function: inlineReinitStmts
-  inlines function calls in reinit statements"
+"inlines function calls in reinit statements"
   input list<BackendDAE.WhenOperator> inStmts;
   input Functiontuple fns;
   input list<BackendDAE.WhenOperator> iAcc;
@@ -731,8 +723,7 @@ algorithm
 end inlineReinitStmts;
 
 protected function inlineReinitStmt
-"function: inlineReinitStmt
-  inlines function calls in a reinit statement"
+"inlines function calls in a reinit statement"
   input BackendDAE.WhenOperator inReinitStatement;
   input Functiontuple inElementList;
   output BackendDAE.WhenOperator outReinitStatement;
@@ -756,8 +747,7 @@ algorithm
 end inlineReinitStmt;
 
 public function inlineCallsInFunctions
-"function: inlineDAEElements
-  inlines calls in DAEElements"
+"inlines calls in DAEElements"
   input list<DAE.Function> inElementList;
   input Functiontuple inFunctions;
   input list<DAE.Function> iAcc;
@@ -851,8 +841,7 @@ algorithm
 end inlineDAEElements;
 
 protected function inlineDAEElement
-"function: inlineDAEElement
-  inlines calls in DAEElements"
+"inlines calls in DAEElements"
   input DAE.Element inElement;
   input Functiontuple inFunctions;
   output DAE.Element outElement;
@@ -1038,8 +1027,7 @@ algorithm
 end inlineDAEElement;
 
 public function inlineAlgorithm
-"function: inlineAlgorithm
-  inline calls in an DAE.Algorithm"
+"inline calls in an DAE.Algorithm"
   input DAE.Algorithm inAlgorithm;
   input Functiontuple inElementList;
   output DAE.Algorithm outAlgorithm;
@@ -1086,8 +1074,7 @@ algorithm
 end inlineStatements;
 
 protected function inlineStatement
-"function: inlineStatement
-  inlines calls in an DAE.Statement"
+"inlines calls in an DAE.Statement"
   input DAE.Statement inStatement;
   input Functiontuple inElementList;
   output DAE.Statement outStatement;
@@ -1210,8 +1197,7 @@ algorithm
 end inlineStatement;
 
 protected function inlineElse
-"function: inlineElse
-  inlines calls in an DAE.Else"
+"inlines calls in an DAE.Else"
   input DAE.Else inElse;
   input Functiontuple inElementList;
   input DAE.ElementSource inSource;
@@ -1395,8 +1381,7 @@ algorithm
 end checkExpsTypeEquiv;
 
 public function inlineCall
-"function: inlineCall
-  replaces an inline call with the expression from the function"
+"replaces an inline call with the expression from the function"
   input tuple<DAE.Exp, tuple<Functiontuple,Boolean>> inTuple;
   output tuple<DAE.Exp, tuple<Functiontuple,Boolean>> outTuple;
 algorithm
@@ -1495,8 +1480,7 @@ algorithm
 end dumpArgmap;
 
 public function forceInlineCall
-"function: inlineCall
-  replaces an inline call with the expression from the function"
+"replaces an inline call with the expression from the function"
   input tuple<DAE.Exp, tuple<Functiontuple,Boolean>> inTuple;
   output tuple<DAE.Exp, tuple<Functiontuple,Boolean>> outTuple;
 algorithm
@@ -1701,8 +1685,7 @@ algorithm
 end checkInlineType;
 
 protected function extendCrefRecords
-"function: extendCrefRecords
-  extends crefs from records"
+"extends crefs from records"
   input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgmap;
   input HashTableCG.HashTable inCheckCr;
   output list<tuple<DAE.ComponentRef, DAE.Exp>> outArgmap;
@@ -1798,8 +1781,7 @@ algorithm
 end getCheckCref;
 
 protected function extendCrefRecords1
-"function: extendCrefRecords1
-  helper for extendCrefRecords"
+"helper for extendCrefRecords"
   input DAE.Var ev;
   input DAE.ComponentRef c;
   input DAE.ComponentRef e;
@@ -1827,8 +1809,7 @@ algorithm
 end extendCrefRecords1;
 
 protected function extendCrefRecords2
-"function: extendCrefRecords1
-  helper for extendCrefRecords"
+"helper for extendCrefRecords"
   input DAE.Var ev;
   input DAE.ComponentRef c;
   output DAE.ComponentRef outArg;
@@ -1852,8 +1833,7 @@ algorithm
 end extendCrefRecords2;
 
 protected function getFunctionBody
-"function: getFunctionBody
-  returns the body of a function"
+"returns the body of a function"
   input Absyn.Path p;
   input Functiontuple fns;
   output list<DAE.Element> outfn;
@@ -1879,8 +1859,7 @@ algorithm
 end getFunctionBody;
 
 protected function getRhsExp
-"function: getRhsExp
-  returns the right hand side of an assignment from a function"
+"returns the right hand side of an assignment from a function"
   input list<DAE.Element> inElementList;
   output DAE.Exp outExp;
 algorithm
@@ -1905,8 +1884,7 @@ algorithm
 end getRhsExp;
 
 protected function replaceArgs
-"function: replaceArgs
-  finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
+"finds DAE.CREF and replaces them with new exps if the cref is in the argmap"
   input tuple<DAE.Exp, tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean>> inTuple;
   output tuple<DAE.Exp, tuple<list<tuple<DAE.ComponentRef,DAE.Exp>>,HashTableCG.HashTable,Boolean>> outTuple;
 algorithm
@@ -2014,8 +1992,7 @@ algorithm
 end functionReferenceType;
 
 protected function getExpFromArgMap
-"function: getExpFromArgMap
-  returns the exp from the given argmap with the given key"
+"returns the exp from the given argmap with the given key"
   input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgMap;
   input DAE.ComponentRef inComponentRef;
   output DAE.Exp outExp;
@@ -2048,8 +2025,7 @@ algorithm
 end getExpFromArgMap;
 
 protected function getInputCrefs
-"function: getInputCrefs
-  returns the crefs of vars that are inputs, wild if not input"
+"returns the crefs of vars that are inputs, wild if not input"
   input DAE.Element inElement;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -2062,8 +2038,7 @@ algorithm
 end getInputCrefs;
 
 protected function removeWilds
-"function: removeWilds
-  returns false if the given cref is a wild"
+"returns false if the given cref is a wild"
   input DAE.ComponentRef inComponentRef;
   output Boolean outBoolean;
 algorithm

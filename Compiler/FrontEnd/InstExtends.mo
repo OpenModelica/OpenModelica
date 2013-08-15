@@ -541,8 +541,7 @@ algorithm
 end instClassExtendsList2;
 
 public function instDerivedClasses
-"function: instDerivedClasses
-  author: PA
+"author: PA
   This function takes a class definition and returns the
   elements and equations and algorithms of the class.
   If the class is derived, the class is looked up and the
@@ -569,8 +568,7 @@ algorithm
 end instDerivedClasses;
 
 protected function instDerivedClassesWork
-"function: instDerivedClasses
-  author: PA
+"author: PA
   This function takes a class definition and returns the
   elements and equations and algorithms of the class.
   If the class is derived, the class is looked up and the
@@ -671,8 +669,7 @@ algorithm
 end instDerivedClassesWork;
 
 protected function noImportElements
-"function: noImportElements
-  Returns all elements except imports, i.e. filter out import elements."
+"Returns all elements except imports, i.e. filter out import elements."
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.Element> outSCodeElementLst;
 algorithm

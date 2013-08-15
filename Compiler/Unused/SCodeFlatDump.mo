@@ -180,8 +180,7 @@ algorithm
 end getComponentTypePath;
 
 public function printElementStr
-"function: printElementStr
-  Print SCode.Element to a string depending on the type of the name"
+"Print SCode.Element to a string depending on the type of the name"
   input SCode.Ident    inName;
   input SCode.Element inElement;
   input SCode.Mod     inMod;

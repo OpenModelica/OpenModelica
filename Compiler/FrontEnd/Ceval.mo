@@ -973,8 +973,7 @@ algorithm
 end cevalRangeIfConstant;
 
 protected function cevalBuiltin
-"function: cevalBuiltin
-  Helper for ceval. Parts for builtin calls are moved here, for readability.
+"Helper for ceval. Parts for builtin calls are moved here, for readability.
   See ceval for documentation.
   NOTE:    It\'s ok if cevalBuiltin fails. Just means the call was not a builtin function"
   input Env.Cache inCache;
@@ -1043,8 +1042,7 @@ algorithm
 end cevalBuiltin;
 
 protected function cevalBuiltinHandler
-"function: cevalBuiltinHandler
-  This function dispatches builtin functions and operators to a dedicated
+"This function dispatches builtin functions and operators to a dedicated
   function that evaluates that particular function.
   It takes an identifier as input and returns a function that evaluates that
   function or operator.
@@ -1144,8 +1142,7 @@ end cevalBuiltinHandler;
 
 
 
-public function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
-  Evaluates external functions that are known, e.g. all math functions."
+public function cevalKnownExternalFuncs "Evaluates external functions that are known, e.g. all math functions."
   input Env.Cache inCache;
   input Env.Env env;
   input Absyn.Path funcpath;
@@ -1358,8 +1355,7 @@ algorithm
   end match;
 end cevalKnownExternalFuncs2;
 
-protected function cevalMatrixElt "function: cevalMatrixElt
-  Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
+protected function cevalMatrixElt "Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst "matrix constr. elts";
@@ -1391,8 +1387,7 @@ algorithm
   end match;
 end cevalMatrixElt;
 
-protected function cevalBuiltinSize "function: cevalBuiltinSize
-  Evaluates the size operator."
+protected function cevalBuiltinSize "Evaluates the size operator."
   input Env.Cache inCache;
   input Env.Env inEnv1;
   input DAE.Exp inExp2;
@@ -1562,8 +1557,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSize;
 
-protected function cevalBuiltinSize2 "function: cevalBultinSize2
-  Helper function to cevalBuiltinSize"
+protected function cevalBuiltinSize2 "Helper function to cevalBuiltinSize"
   input Values.Value inValue;
   input Integer inInteger;
   output Values.Value outValue;
@@ -1596,8 +1590,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSize2;
 
-protected function cevalBuiltinSize3 "function: cevalBuiltinSize3
-  author: PA
+protected function cevalBuiltinSize3 "author: PA
   Helper function to cevalBuiltinSize.
   Used when recursive definition (attribute modifiers using size) is used."
   input DAE.Dimensions inInstDimExpLst;
@@ -1618,8 +1611,7 @@ algorithm
   end match;
 end cevalBuiltinSize3;
 
-protected function cevalBuiltinAbs "function: cevalBuiltinAbs
-  author: LP
+protected function cevalBuiltinAbs "author: LP
   Evaluates the abs operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1658,8 +1650,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinAbs;
 
-protected function cevalBuiltinSign "function: cevalBuiltinSign
-  author: PA
+protected function cevalBuiltinSign "author: PA
   Evaluates the sign operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1704,8 +1695,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSign;
 
-protected function cevalBuiltinExp "function: cevalBuiltinExp
-  author: PA
+protected function cevalBuiltinExp "author: PA
   Evaluates the exp function"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1737,8 +1727,7 @@ algorithm
   end match;
 end cevalBuiltinExp;
 
-protected function cevalBuiltinNoevent "function: cevalBuiltinNoevent
-  author: PA
+protected function cevalBuiltinNoevent "author: PA
   Evaluates the noEvent operator. During constant evaluation events are not
   considered, so evaluation will simply remove the operator and evaluate the
   operand."
@@ -1771,8 +1760,7 @@ algorithm
   end match;
 end cevalBuiltinNoevent;
 
-protected function cevalBuiltinCardinality "function: cevalBuiltinCardinality
-  author: PA
+protected function cevalBuiltinCardinality "author: PA
   Evaluates the cardinality operator. The cardinality of a connector
   instance is its number of (inside and outside) connections, i.e.
   number of occurences in connect equations."
@@ -1795,8 +1783,7 @@ algorithm
   outValue := cevalCardinality(exp, inEnv);
 end cevalBuiltinCardinality;
 
-protected function cevalCardinality "function: cevalCardinality
-  author: PA
+protected function cevalCardinality "author: PA
   counts the number of connect occurences of the
   component ref in equations in current scope."
   input DAE.Exp inExp;
@@ -1882,8 +1869,7 @@ algorithm
   end match;
 end cevalCardinality2;
 
-protected function cevalBuiltinCat "function: cevalBuiltinCat
-  author: PA
+protected function cevalBuiltinCat "author: PA
   Evaluates the cat operator, for matrix concatenation."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1920,8 +1906,7 @@ algorithm
   end match;
 end cevalBuiltinCat;
 
-protected function cevalBuiltinIdentity "function: cevalBuiltinIdentity
-  author: PA
+protected function cevalBuiltinIdentity "author: PA
   Evaluates the identity operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1959,8 +1944,7 @@ algorithm
   end match;
 end cevalBuiltinIdentity;
 
-protected function cevalBuiltinPromote "function: cevalBuiltinPromote
-  author: PA
+protected function cevalBuiltinPromote "author: PA
   Evaluates the internal promote operator, for promotion of arrays"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1995,8 +1979,7 @@ algorithm
   end match;
 end cevalBuiltinPromote;
 
-protected function cevalBuiltinPromote2 "function: cevalBuiltinPromote2
-  Helper function to cevalBuiltinPromote"
+protected function cevalBuiltinPromote2 "Helper function to cevalBuiltinPromote"
   input Values.Value inValue;
   input Integer inInteger;
   output Values.Value outValue;
@@ -2855,8 +2838,7 @@ algorithm
   end match;
 end extractValueStringChar;
 
-protected function cevalCat "function: cevalCat
-  evaluates the cat operator given a list of
+protected function cevalCat "evaluates the cat operator given a list of
   array values and a concatenation dimension."
   input list<Values.Value> v_lst;
   input Integer dim;
@@ -2868,8 +2850,7 @@ algorithm
   outValue := ValuesUtil.makeArray(v_lst_1);
 end cevalCat;
 
-protected function catDimension "function: catDimension
-  Helper function to cevalCat, concatenates a list
+protected function catDimension "Helper function to cevalCat, concatenates a list
   arrays as Values, given a dimension as integer."
   input list<Values.Value> inValuesValueLst;
   input Integer inInteger;
@@ -2902,8 +2883,7 @@ algorithm
   end matchcontinue;
 end catDimension;
 
-protected function catDimension2 "function: catDimension2
-  author: PA
+protected function catDimension2 "author: PA
   Helper function to catDimension."
   input list<list<Values.Value>> inValuesValueLstLst;
   input Integer inInteger;
@@ -2936,8 +2916,7 @@ algorithm
   end matchcontinue;
 end catDimension2;
 
-protected function cevalBuiltinFloor "function: cevalBuiltinFloor
-  author: LP
+protected function cevalBuiltinFloor "author: LP
   evaluates the floor operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3014,8 +2993,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinCeil;
 
-protected function cevalBuiltinSqrt "function: cevalBuiltinSqrt
-  author: LP
+protected function cevalBuiltinSqrt "author: LP
   Evaluates the builtin sqrt operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3706,8 +3684,7 @@ algorithm
   end match;
 end cevalBuiltinMax2;
 
-protected function cevalBuiltinMaxArr "function: cevalBuiltinMax2
-  Helper function to cevalBuiltinMax."
+protected function cevalBuiltinMaxArr "Helper function to cevalBuiltinMax."
   input Values.Value inValue;
   output Values.Value outValue;
 algorithm
@@ -3752,8 +3729,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinMaxArr;
 
-protected function cevalBuiltinMin "function: cevalBuiltinMin
-  author: PA
+protected function cevalBuiltinMin "author: PA
   Constant evaluation of builtin min function."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3828,8 +3804,7 @@ algorithm
   end match;
 end cevalBuiltinMin2;
 
-protected function cevalBuiltinMinArr "function: cevalBuiltinMinArr
-  Helper function to cevalBuiltinMin."
+protected function cevalBuiltinMinArr "Helper function to cevalBuiltinMin."
   input Values.Value inValue;
   output Values.Value outValue;
 algorithm
@@ -4227,8 +4202,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinDiagonal;
 
-protected function cevalBuiltinDiagonal2 "function: cevalBuiltinDiagonal2
-   This is a help function that is calling itself recursively to
+protected function cevalBuiltinDiagonal2 " This is a help function that is calling itself recursively to
    generate the a nxn matrix with some special diagonal elements.
    See cevalBuiltinDiagonal."
   input Env.Cache inCache;
@@ -4425,8 +4399,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinTranspose;
 
-protected function cevalBuiltinTranspose2 "function: cevalBuiltinTranspose2
-  author: PA
+protected function cevalBuiltinTranspose2 "author: PA
   Helper function to cevalBuiltinTranspose"
   input list<Values.Value> inValuesValueLst1;
   input Integer inInteger2 "index";
@@ -4450,8 +4423,7 @@ algorithm
   end matchcontinue;
 end cevalBuiltinTranspose2;
 
-protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
-  Helper function for cevalBuiltinSize, for size(A) where A is a matrix."
+protected function cevalBuiltinSizeMatrix "Helper function for cevalBuiltinSize, for size(A) where A is a matrix."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
@@ -4804,8 +4776,7 @@ algorithm
   newIndex := index + 1;
 end makeEnumValue;
 
-public function cevalList "function: cevalList
-  This function does constant
+public function cevalList "This function does constant
   evaluation on a list of expressions."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4840,8 +4811,7 @@ algorithm
   end match;
 end cevalList;
 
-public function cevalCref "function: cevalCref
-  Evaluates ComponentRef, i.e. variables, by
+public function cevalCref "Evaluates ComponentRef, i.e. variables, by
   looking up variables in the environment."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4964,8 +4934,7 @@ algorithm
   end match;
 end cevalCref_dispatch;
 
-public function cevalCrefBinding "function: cevalCrefBinding
-  Helper function to cevalCref.
+public function cevalCrefBinding "Helper function to cevalCref.
   Evaluates variables by evaluating their bindings."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5120,8 +5089,7 @@ algorithm
 end isRecursiveBinding;
   
 
-public function cevalSubscriptValue "function: cevalSubscriptValue
-  Helper function to cevalCrefBinding. It applies
+public function cevalSubscriptValue "Helper function to cevalCrefBinding. It applies
   subscripts to array values to extract array elements."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5233,8 +5201,7 @@ algorithm
   end match;
 end cevalSubscriptValueList;
 
-public function cevalSubscripts "function: cevalSubscripts
-  This function relates a list of subscripts to their canonical
+public function cevalSubscripts "This function relates a list of subscripts to their canonical
   forms, which is when all expressions are evaluated to constant
   values. For instance
   the subscript list {1,p,q} (as in x[1,p,q]) where p and q have constant values 2,3 respectively will become
@@ -5274,8 +5241,7 @@ algorithm
   end match;
 end cevalSubscripts;
 
-public function cevalSubscript "function: cevalSubscript
-  This function relates a subscript to its canonical forms, which
+public function cevalSubscript "This function relates a subscript to its canonical forms, which
   is when all expressions are evaluated to constant values."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5742,8 +5708,7 @@ algorithm
 end cevalSimple;
 
 public function cevalAstExp
-"function: cevalAstExp
-  Part of meta-programming using CODE.
+"Part of meta-programming using CODE.
   This function evaluates a piece of Expression AST, replacing Eval(variable)
   with the value of the variable, given that it is of type \"Expression\".
 
@@ -5874,8 +5839,7 @@ algorithm
 end cevalAstExp;
 
 public function cevalAstExpList
-"function: cevalAstExpList
-  List version of cevalAstExp"
+"List version of cevalAstExp"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -5942,8 +5906,7 @@ algorithm
 end cevalAstExpListList;
 
 public function cevalAstElt
-"function: cevalAstElt
-  Evaluates an ast constructor for Element nodes, e.g.
+"Evaluates an ast constructor for Element nodes, e.g.
   Code(parameter Real x=1;)"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5980,8 +5943,7 @@ algorithm
 end cevalAstElt;
 
 protected function cevalAstCitems
-"function: cevalAstCitems
-  Helper function to cevalAstElt."
+"Helper function to cevalAstElt."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
@@ -6053,8 +6015,7 @@ algorithm
   end match;
 end cevalAstModopt;
 
-protected function cevalAstModification "function: cevalAstModification
-  This function evaluates Eval(variable) inside an AST Modification  and replaces
+protected function cevalAstModification "This function evaluates Eval(variable) inside an AST Modification  and replaces
   the Eval operator with the value of the variable if it has a type \"Expression\""
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6091,8 +6052,7 @@ algorithm
   end match;
 end cevalAstModification;
 
-protected function cevalAstEltargs "function: cevalAstEltargs
-  Helper function to cevalAstModification."
+protected function cevalAstEltargs "Helper function to cevalAstModification."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -6135,8 +6095,7 @@ algorithm
   end matchcontinue;
 end cevalAstEltargs;
 
-protected function cevalAstArraydim "function: cevalAstArraydim
-  Helper function to cevaAstCitems"
+protected function cevalAstArraydim "Helper function to cevaAstCitems"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.ArrayDim inArrayDim;
@@ -6173,8 +6132,7 @@ algorithm
 end cevalAstArraydim;
 
 protected function cevalAstExpexpList
-"function: cevalAstExpexpList
-  For IFEXP"
+"For IFEXP"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;

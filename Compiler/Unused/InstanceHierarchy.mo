@@ -621,8 +621,7 @@ algorithm
 end printInstanceConnects;
 
 public function printElementStr
-"function: printElementStr
-  print SCode.Element to a string."
+"print SCode.Element to a string."
   input SCode.Element inElement;
   output String outString;
 algorithm

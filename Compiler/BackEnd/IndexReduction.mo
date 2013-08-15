@@ -87,8 +87,7 @@ protected import ValuesUtil;
  *****************************************/
 
 public function pantelidesIndexReduction
-"function: pantelidesIndexReduction
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
   input list<list<Integer>> eqns;
   input Integer actualEqn;
@@ -183,8 +182,7 @@ algorithm
 end getChangedEqnsAndLowest;
 
 protected function pantelidesIndexReduction1
-"function: pantelidesIndexReduction1
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
   input list<list<Integer>> unassignedStates;
   input list<list<Integer>> unassignedEqns;
@@ -239,8 +237,7 @@ algorithm
 end pantelidesIndexReduction1;
 
 protected function pantelidesIndexReductionMSS
-"function: pantelidesIndexReductionMSS
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
   input list<Integer> unassignedStates;
   input list<Integer> unassignedEqns;
@@ -307,8 +304,7 @@ algorithm
 end pantelidesIndexReductionMSS;
 
 protected function minimalStructurallySingularSystem
-"function: minimalStructurallySingularSystem
-  author: Frenkel TUD - 2012-04,
+"author: Frenkel TUD - 2012-04,
   checks if the subset of equations is minimal structurally singular. The
   check is done for all equations and variables and for each subset.
   The number of states must be larger or equal to the number of unmatched
@@ -346,8 +342,7 @@ algorithm
 end minimalStructurallySingularSystem;
 
 protected function minimalStructurallySingularSystemMSS
-"function: minimalStructurallySingularSystemMSS
-  author: Frenkel TUD - 2012-11,
+"author: Frenkel TUD - 2012-11,
   helper for minimalStructurallySingularSystem"
   input list<list<Integer>> inEqnsLst;
   input BackendDAE.EqSystem isyst;
@@ -392,8 +387,7 @@ algorithm
 end minimalStructurallySingularSystemMSS;
 
 protected function singulareSystemError
-"function: pantelidesIndexReductionMSS
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
   input Boolean b;
   input list<Integer> unassignedStates;
@@ -447,8 +441,7 @@ algorithm
 end singulareSystemError;
 
 protected function unassignedContinuesEqns
-"function: unassignedContinuesEqns
-  author: Frenkel TUD - 2012-11,
+"author: Frenkel TUD - 2012-11,
   check if it is an discrete equation and extract the
   states of the equation.
   Helper for minimalStructurallySingularSystem."
@@ -501,8 +494,7 @@ algorithm
 end unassignedContinuesEqns;
 
 protected function statesInEquations
-"function: statesInEquations
-  author: Frenkel TUD 2012-04"
+"author: Frenkel TUD 2012-04"
   input Integer eindx;
   input tuple<BackendDAE.IncidenceMatrix,array<Integer>,Integer> inTpl;
   input array<Integer> ass1;
@@ -567,8 +559,7 @@ algorithm
 end markTrue;
 
 protected function differentiateEqns
-"function: differentiateEqns
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   differentiates the constraint equations for
   Pantelides index reduction method."
   input list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> inEqnsTpl;
@@ -643,8 +634,7 @@ algorithm
 end differentiateEqns;
 
 protected function collectVarEqns
-"function: collectVarEqns
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   collect all equations of a list with var indexes"
   input list<Integer> inIntegerLst1;
   input list<Integer> inIntegerLst2;
@@ -712,8 +702,7 @@ algorithm
 end searchDerivativesExp;
 
 protected function differentiateSetEqns
-"function: differentiateSetEqns
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   differentiates the constraint equations for
   Pantelides index reduction method."
   input list<Integer> inEqns;
@@ -832,8 +821,7 @@ algorithm
 end getDerVarsExp;
 
 protected function differentiateEqnsLst
-"function: differentiateEqnsLst
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   differentiates the constraint equations for
   Pantelides index reduction method."
   input list<Integer> inEqns;
@@ -872,8 +860,7 @@ algorithm
 end differentiateEqnsLst;
 
 protected function replaceDifferentiatedEqns
-"function: replaceDifferentiatedEqns
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   replace the original equations with the derived"
   input list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> inEqnTplLst;
   input BackendDAE.Variables vars;
@@ -931,8 +918,7 @@ algorithm
 end replaceDifferentiatedEqns;
 
 protected function replaceStateOrderExp
-"function: replaceStateExp
-  author: Frenkel TUD 2011-05"
+"author: Frenkel TUD 2011-05"
   input tuple<DAE.Exp,BackendDAE.Variables> inTpl;
   output tuple<DAE.Exp,BackendDAE.Variables> outTpl;
 protected
@@ -944,8 +930,7 @@ algorithm
 end replaceStateOrderExp;
 
 protected function replaceStateOrderExpFinder
-"function: replaceStateOrderExpFinder
-  author: Frenkel TUD 2011-05 "
+"author: Frenkel TUD 2011-05 "
   input tuple<DAE.Exp,BackendDAE.Variables> inExp;
   output tuple<DAE.Exp, Boolean, BackendDAE.Variables> outExp;
 algorithm
@@ -1011,8 +996,7 @@ algorithm
 end isStateonIndex;
 
 protected function handleundifferntiableMSSLst
-"function: handleundifferntiableMSSLst
-  author: Frenkel TUD 2012-12
+"author: Frenkel TUD 2012-12
   handle list of undifferentiatable equations for
   Pantelides index reduction method."
   input list<tuple<list<Integer>,list<Integer>,list<Integer>>> iNotDiffableMSS;
@@ -1067,8 +1051,7 @@ algorithm
 end handleundifferntiableMSSLst;
 
 protected function handleundifferntiableMSS
-"function: handleundifferntiableMSS
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   try to solve a undifferentiable MSS."
   input Boolean b "true if length(unassignedEqns) == length(statesWithUnusedDerivative)";
   input list<Integer> statesWithUnusedDer;
@@ -1322,8 +1305,7 @@ algorithm
 end replaceFinalVarsGetExp;
 
 protected function replaceAliasState
-"function: replaceAliasState
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input list<Integer> inEqsLst;
   input DAE.Exp inCrExp;
   input DAE.Exp indCrExp;
@@ -1375,8 +1357,7 @@ algorithm
 end replaceAliasStateIncidence;
 
 protected function replaceAliasStateExp
-"function: replaceAliasStateExp
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> inTpl;
   output tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> outTpl;
 protected
@@ -1388,8 +1369,7 @@ algorithm
 end replaceAliasStateExp;
 
 protected function replaceAliasStateExp1
-"function: replaceAliasStateExp1
-  author: Frenkel TUD 2012-06 "
+"author: Frenkel TUD 2012-06 "
   input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> inExp;
   output tuple<DAE.Exp,Boolean,tuple<DAE.ComponentRef,DAE.Exp,DAE.Exp>> outExp;
 algorithm
@@ -1413,8 +1393,7 @@ algorithm
 end replaceAliasStateExp1;
 
 public function getStructurallySingularSystemHandlerArg
-"function: getStructurallySingularSystemHandlerArg
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   return initial the StructurallySingularSystemHandlerArg."
   input BackendDAE.EqSystem isyst "updates the state differentation indexes";
   input BackendDAE.Shared ishared;
@@ -1441,8 +1420,7 @@ end getStructurallySingularSystemHandlerArg;
  *****************************************/
 
 public function noStateDeselection
-"function: noStateDeselection
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   use the index 1/0 system as it is"
   input BackendDAE.BackendDAE inDAE;
   input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> inArgs;
@@ -1511,8 +1489,7 @@ algorithm
 end mapdynamicStateSelection;
 
 protected function dynamicStateSelectionWork
-"function: dynamicStateSelectionWork
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   dynamic state deselect of the system."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -1603,8 +1580,7 @@ algorithm
 end countStateCandidates;
 
 protected function countOrgEqns
-"function: countOrgEqns
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   return the number of orgens."
   input BackendDAE.ConstraintEquations inOrgEqns;
   input Integer iCount;
@@ -1626,8 +1602,7 @@ algorithm
 end countOrgEqns;
 
 protected function inlineOrgEqns
-"function: inlineOrgEqns
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   add an equation to the ConstrainEquations."
   input BackendDAE.ConstraintEquations inOrgEqns;
   input Inline.Functiontuple inA;
@@ -1651,8 +1626,7 @@ algorithm
 end inlineOrgEqns;
 
 protected function traverseOrgEqns
-"function: traverseOrgEqns
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   add an equation to the ConstrainEquations."
   input BackendDAE.ConstraintEquations inOrgEqns;
   input Type_a inA;
@@ -1682,8 +1656,7 @@ algorithm
 end traverseOrgEqns;
 
 protected function traverseOrgEqnsExp
-"function: traverseOrgEqnsExp
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   traverse all org eqns and call func for each expression in the equations."
   input BackendDAE.ConstraintEquations inOrgEqns;
   input Type_a inA;
@@ -1715,8 +1688,7 @@ algorithm
 end traverseOrgEqnsExp;
 
 protected function replaceDerStatesStates
-"function: replaceDerStatesStates
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   traverse an exp top down and ."
   input tuple<DAE.Exp, BackendDAE.StateOrder> inTpl;
   output tuple<DAE.Exp, BackendDAE.StateOrder> outTpl;
@@ -1729,8 +1701,7 @@ algorithm
 end replaceDerStatesStates;
 
 protected function replaceDerStatesStatesExp
-"function: replaceDerStatesStatesExp
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   helper for replaceDerStatesStates.
   replaces all der(x) with dx"
   input tuple<DAE.Exp, BackendDAE.StateOrder> inTuple;
@@ -1753,8 +1724,7 @@ algorithm
 end replaceDerStatesStatesExp;
 
 protected function hasDerivative
-"function: hasDerivative
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   returns true if the state have one."
   input DAE.ComponentRef cr;
   input BackendDAE.StateOrder so;
@@ -1771,8 +1741,7 @@ algorithm
 end hasDerivative;
 
 protected function highestOrderDerivatives
-"function: highestOrderDerivatives
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   collect all highest order derivatives from ODE"
   input BackendDAE.Variables v;
   input BackendDAE.StateOrder iSo;
@@ -1811,8 +1780,7 @@ algorithm
 end traversinghighestOrderDerivativesFinder;
 
 protected function lowerOrderDerivatives
-"function: lowerOrderDerivatives
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   collect all derivatives one order less than derivatives from v"
   input BackendDAE.Variables derv;
   input BackendDAE.Variables v;
@@ -1850,8 +1818,7 @@ algorithm
 end traversinglowerOrderDerivativesFinder;
 
 protected function getVar
-"function: getVar
-  author: Frnekel TUD 2012-05
+"author: Frnekel TUD 2012-05
   helper for traversinglowerOrderDerivativesFinder"
   input DAE.ComponentRef cr;
   input BackendDAE.Variables vars;
@@ -1861,8 +1828,7 @@ algorithm
 end getVar;
 
 protected function higerOrderDerivatives
-"function: higerOrderDerivatives
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   collect all derivatives from v"
   input BackendDAE.Variables v;
   input BackendDAE.Variables vAll;
@@ -1904,8 +1870,7 @@ end traversinghigerOrderDerivativesFinder;
 protected type StateSets = list<tuple<Integer,Integer,Integer,Integer,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> "Level,nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
 
 protected function processComps
-"function: processComps
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   process all strong connected components of the system and collect the
   derived equations for dummy state selection"
   input Integer cfreeStates;
@@ -1959,8 +1924,7 @@ algorithm
 end processComps;
 
 protected function processCompsWork
-"function: processCompsWork
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   process all strong connected components of the system and collect the
   derived equations for dummy state selection"
   input Integer cfreeStates;
@@ -2013,8 +1977,7 @@ algorithm
 end processCompsWork;
 
 protected function addStateSets
-"function: addStateSets
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   add the found state set to the system"
   input StateSets iTplLst;
   input Integer iSetIndex;
@@ -2041,8 +2004,7 @@ algorithm
 end addStateSets;
 
 protected function generateStateSets
-"function: generateStateSets
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   generate the found state sets for the system"
   input StateSets iTplLst "nStates,nStateCandidates,nUnassignedEquations,StateCandidates,ConstraintEqns,OtherVars,OtherEqns";
   input Integer iSetIndex;
@@ -2148,8 +2110,7 @@ algorithm
 end setStartExp;
 
 protected function selectStates
-"function: selectStates
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   check if size of states (without stateSelect.always) is equal to the number of
   differentiated equations, if this is the case no stateselection is neccesary"
   input Integer nfreeStates;
@@ -2232,8 +2193,7 @@ algorithm
 end selectStates;
 
 protected function selectStatesWork
-"function: selectStatesWork
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   process differentiated equations of the system and collect the information
   for dummy states"
   input Integer level;
@@ -2423,8 +2383,7 @@ algorithm
 end fixDerivativeIndex;
 
 protected function selectStatesWork1
-"function: selectStatesWork1
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   collect the additional equations of the system for state selection.
   This is neccessary to have the full constrained equations sets"
   input Integer nfreeStates;
@@ -2810,8 +2769,7 @@ algorithm
 end getIncidenceMatrixLevelEquations;
 
 protected function processComps1New
-"function: processComps1New
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   process all strong connected components of the system and collect the
   derived equations for dummy state selection"
   input BackendDAE.EqSystem isyst;
@@ -2873,8 +2831,7 @@ algorithm
 end processComps1New;
 
 protected function processComps2New
-"function: processComps2
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   process all strong connected components of the system and collect the
   derived equations for dummy state selection"
   input Integer freeStates;
@@ -2965,8 +2922,7 @@ end processComps2New;
 //protected import RemoveSimpleEquations;
 
 protected function processComps3New
-"function: processComps3
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   process all strong connected components of the system and collect the
   derived equations for dummy state selection"
   input Integer inVarSize;
@@ -3208,8 +3164,7 @@ algorithm
 end partitionSystemSplitt;
 
 protected function processComps4New
-"function: processComps4
-  author: Frenkel TUD 2012-12
+"author: Frenkel TUD 2012-12
   process all strong connected components of the system and collect the
   derived equations for dummy state selection"
   input list<list<Integer>> iSets;
@@ -3650,8 +3605,7 @@ algorithm
 end getEqnBlockMapper2;
 
 protected function processComps1
-"function: processComps1
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   process all strong connected components of the system and collect the
   derived equations for dummy state selection"
   input list<list<Integer>> inComps;
@@ -3699,8 +3653,7 @@ algorithm
 end processComps1;
 
 protected function compareOrgEqn
-"function: compareOrgEqn
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   returns inA number of diverentations < inB number of diverentations"
   input tuple<Integer, list<BackendDAE.Equation>, Integer> inA;
   input tuple<Integer, list<BackendDAE.Equation>, Integer> inB;
@@ -3710,8 +3663,7 @@ algorithm
 end compareOrgEqn;
 
 protected function getFirstOrgEqns
-"function: getFirstOrgEqns
-  author: Frenkel TUD 2011-11
+"author: Frenkel TUD 2011-11
   returns the first equation of each orgeqn list."
   input BackendDAE.ConstraintEquations inOrgEqns;
   input BackendDAE.ConstraintEquations inOrgEqns1;
@@ -3743,8 +3695,7 @@ algorithm
 end getFirstOrgEqns;
 
 protected function getOrgEqns
-"function: getOrgEqn
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   returns the first equation of each orgeqn list."
   input list<Integer> comp;
   input BackendDAE.ConstraintEquations inOrgEqns;
@@ -3792,8 +3743,7 @@ algorithm
 end getOrgEqns;
 
 protected function getCompVars
-"function: getCompVars
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   return all vars of a strong connected component"
   input Integer e;
   input array<Integer> vec2;
@@ -3831,8 +3781,7 @@ algorithm
 end getCompVars;
 
 protected function processComp
-"function: processComp
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   process all derivation levels of a strong connected component and calls for it the dummy
   state selection"
   input list<tuple<Integer, list<BackendDAE.Equation>, Integer>> orgEqnsLst;
@@ -3884,8 +3833,7 @@ algorithm
 end processComp;
 
 protected function processCompInv
-"function: getCompVars
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   process all derivation levels in reverse order of a strong connected component and calls for it the dummy
   state selection"
   input list<tuple<Integer, list<BackendDAE.Equation>, Integer>> orgEqnsLst;
@@ -3941,8 +3889,7 @@ algorithm
 end processCompInv;
 
 protected function getOrgEqn
-"function: getOrgEqn
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   returns the first equation of each orgeqn list."
   input list<tuple<Integer, list<BackendDAE.Equation>, Integer>> inOrgEqns;
   input list<BackendDAE.Equation> inEqns;
@@ -3978,8 +3925,7 @@ algorithm
 end getOrgEqn;
 
 protected function selectDummyDerivatives
-"function: selectDummyDerivatives
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   select dummy derivatives from strong connected component"
   input BackendDAE.Variables vars;
   input Integer varSize;
@@ -4119,8 +4065,7 @@ algorithm
 end selectDummyDerivatives;
 
 protected function sortStateCandidatesVars
-"function: sortStateCandidatesVars
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   sort the state candidates"
   input BackendDAE.Variables inVars;
   input BackendDAE.Variables allVars;
@@ -4156,8 +4101,7 @@ algorithm
 end sortStateCandidatesVars;
 
 protected function sortprioTuples
-"function: sortprioTuples
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   helper for sortStateCandidates"
   input tuple<DAE.ComponentRef,Integer,Real> inTpl1;
   input tuple<DAE.ComponentRef,Integer,Real> inTpl2;
@@ -4167,8 +4111,7 @@ algorithm
 end sortprioTuples;
 
 protected function calculateVarPriorities
-"function: calculateVarPriorities
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input Integer index;
   input BackendDAE.Variables vars;
   input Integer varsSize;
@@ -4395,8 +4338,7 @@ algorithm
 end stateSortFunc;
 
 protected function selectDummyDerivatives1
-"function: selectDummyDerivatives1
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   select dummy derivatives from strong connected component"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.AdjacencyMatrixTEnhanced meT;
@@ -4497,8 +4439,7 @@ algorithm
 end selectDummyDerivatives1;
 
 protected function selectDummyDerivatives2
-"function: selectDummyDerivatives2
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   select dummy derivatives from strong connected component"
   input list<tuple<DAE.ComponentRef, Integer>> dstates;
   input list<tuple<DAE.ComponentRef, Integer>> states;
@@ -4574,8 +4515,7 @@ algorithm
 end selectDummyDerivatives2;
 
 protected function selectDummyDerivatives2new
-"function: selectDummyDerivatives2new
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   select dummy derivatives from strong connected component"
   input list<tuple<DAE.ComponentRef, Integer>> dstates;
   input list<tuple<DAE.ComponentRef, Integer>> states;
@@ -4845,8 +4785,7 @@ algorithm
 end solveOtherEquations1;
 
 protected function dumpDeterminants
-"function: dumpDeterminants
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input tuple<DAE.Exp,list<Integer>> iTpl;
   output String s;
 algorithm
@@ -4854,8 +4793,7 @@ algorithm
 end dumpDeterminants;
 
 protected function setSelectArray
-"function: setSelectArray
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<tuple<DAE.ComponentRef, Integer>> dstates;
   input array<Integer> iSelect;
   input Integer i;
@@ -4875,8 +4813,7 @@ algorithm
 end setSelectArray;
 
 protected function unsetSelectArray
-"function: unsetSelectArray
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<tuple<DAE.ComponentRef, Integer>> dstates;
   input array<Integer> iSelect;
   output array<Integer> oSelect;
@@ -4895,8 +4832,7 @@ algorithm
 end unsetSelectArray;
 
 protected function getDeterminants
-"function: getDeterminants
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<tuple<DAE.ComponentRef, Integer>> states;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input Integer unassigned;
@@ -4960,8 +4896,7 @@ algorithm
 end getDeterminants;
 
 protected function getDeterminants1
-"function: getDeterminants1
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<tuple<DAE.ComponentRef, Integer>> states;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input Integer unassigned;
@@ -4989,8 +4924,7 @@ algorithm
 end getDeterminants1;
 
 protected function getDeterminantDigraphSelect
-"function: getDeterminantDigraphSelect
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input array<list<tuple<Integer,DAE.Exp>>> iDigraph;
   input array<Integer> select;
@@ -5020,8 +4954,7 @@ algorithm
 end getDeterminantDigraphSelect;
 
 protected function generateSetExpressions
-"function: generateSetExpressions
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<DAE.Exp> expLst;
   input Integer index;
   input DAE.Exp crconexppre;
@@ -5042,8 +4975,7 @@ algorithm
 end generateSetExpressions;
 
 protected function generateStartExpressions
-"function: generateStartExpressions
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<list<DAE.Exp>> istartvalues;
   input Integer index;
   input DAE.Exp contstartExp;
@@ -5064,8 +4996,7 @@ algorithm
 end generateStartExpressions;
 
 protected function generateStartExpressions1
-"function: generateStartExpressions1
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<DAE.Exp> es1;
   input list<DAE.Exp> es2;
   input Integer index;
@@ -5087,8 +5018,7 @@ algorithm
 end generateStartExpressions1;
 
 protected function setVarLstStartValue
-"function: setVarLstStartValue
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<BackendDAE.Var> isetvarlst;
   input list<DAE.Exp> istartvalues;
   input list<BackendDAE.Var> iAcc;
@@ -5111,8 +5041,7 @@ algorithm
 end setVarLstStartValue;
 
 protected function generateSelectEquationsMulti
-"function: generateSelectEquationsMulti
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<tuple<DAE.Exp,list<Integer>>> determinants;
   input Integer index;
   input DAE.ComponentRef crset;
@@ -5216,8 +5145,7 @@ algorithm
 end changeVarToStartValue;
 
 protected function generateSelectEquations
-"function: generateSelectEquations
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input Integer indx;
   input list<DAE.ComponentRef> crset;
   input DAE.Exp contexp;
@@ -5306,8 +5234,7 @@ end generateSelectEquations;
 // end generateCondition;
 
 protected function generateCondition1
-"function: generateCondition1
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input Integer p1;
   input Integer p2;
   input Integer size;
@@ -5341,8 +5268,7 @@ algorithm
 end generateCondition1;
 
 protected function generateCondition2
-"function: generateCondition2
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input Integer p1;
   input Integer p2;
   input Integer size;
@@ -5375,8 +5301,7 @@ algorithm
 end generateCondition2;
 
 protected function differentiateExp
-"function: differentiateExp
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input DAE.ComponentRef cr;
   input DAE.Exp exp;
   input DAE.FunctionTree ft;
@@ -5387,8 +5312,7 @@ algorithm
 end differentiateExp;
 
 protected function generateVar
-"function: generateVar
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input DAE.ComponentRef cr;
   input BackendDAE.VarKind varKind;
   input DAE.Type varType;
@@ -5400,8 +5324,7 @@ algorithm
 end generateVar;
 
 protected function generateArrayVar
-"function: generateArrayVar
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input DAE.ComponentRef name;
   input BackendDAE.VarKind varKind;
   input DAE.Type varType;
@@ -5435,8 +5358,7 @@ algorithm
 end generateArrayVar;
 
 protected function getStateSetNames
-"function: getStateSetNames
-  author: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
   input list<DAE.ComponentRef> states;
   input Integer setsize;
   input Integer nUnassigned;
@@ -5516,8 +5438,7 @@ algorithm
 end getStateSetNames;
 
 protected function setStartValue
-"function: setStartValue
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   fails if var is not a state"
   input BackendDAE.Var iv;
   input list<BackendDAE.Var> ivarlst;
@@ -5531,8 +5452,7 @@ algorithm
 end setStartValue;
 
 protected function stateVar
-"function: stateVar
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   fails if var is not a state"
   input BackendDAE.Var v;
 algorithm
@@ -5540,8 +5460,7 @@ algorithm
 end stateVar;
 
 protected function notVarStateSelectAlways
-"function: notVarStateSelectAlways
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   fails if var is StateSelect.always"
   input BackendDAE.Var v;
   input Integer level;
@@ -5558,8 +5477,7 @@ algorithm
 end notVarStateSelectAlways;
 
 protected function varStateSelectAlways
-"function: varStateSelectAlways
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   return true if var is StateSelect.always else false"
   input BackendDAE.Var v;
   output Boolean b;
@@ -5571,8 +5489,7 @@ algorithm
 end varStateSelectAlways;
 
 protected function incidenceMatrixfromEnhanced
-"function: incidenceMatrixfromEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   converts an AdjacencyMatrixEnhanced into a IncidenceMatrix"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   output BackendDAE.IncidenceMatrix m;
@@ -5581,8 +5498,7 @@ algorithm
 end incidenceMatrixfromEnhanced;
 
 protected function incidenceMatrixElementfromEnhanced
-"function: incidenceMatrixElementfromEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   helper for incidenceMatrixfromEnhanced"
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   output BackendDAE.IncidenceMatrixElement oRow;
@@ -5593,8 +5509,7 @@ algorithm
 end incidenceMatrixElementfromEnhanced;
 
 protected function AdjacencyMatrixElementEnhancedCMP
-"function: AdjacencyMatrixElementEnhancedCMP
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   helper for incidenceMatrixElementfromEnhanced"
   input tuple<Integer, BackendDAE.Solvability> inTplA;
   input tuple<Integer, BackendDAE.Solvability> inTplB;
@@ -5604,8 +5519,7 @@ algorithm
 end AdjacencyMatrixElementEnhancedCMP;
 
 protected function incidenceMatrixElementElementfromEnhanced
-"function: incidenceMatrixElementElementfromEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   converts an AdjacencyMatrix entry into a IncidenceMatrix entry"
   input tuple<Integer, BackendDAE.Solvability> inTpl;
   input list<Integer> iRow;
@@ -5622,8 +5536,7 @@ algorithm
 end incidenceMatrixElementElementfromEnhanced;
 
 protected function incidenceMatrixfromEnhanced1
-"function: incidenceMatrixfromEnhanced1
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   converts an AdjacencyMatrixEnhanced into a IncidenceMatrix"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   output BackendDAE.IncidenceMatrix m;
@@ -5632,8 +5545,7 @@ algorithm
 end incidenceMatrixfromEnhanced1;
 
 protected function incidenceMatrixElementfromEnhanced1
-"function: incidenceMatrixElementfromEnhanced1
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   helper for incidenceMatrixfromEnhanced1"
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   output BackendDAE.IncidenceMatrixElement oRow;
@@ -5644,8 +5556,7 @@ algorithm
 end incidenceMatrixElementfromEnhanced1;
 
 protected function incidenceMatrixElementElementfromEnhanced1
-"function: incidenceMatrixElementElementfromEnhanced1
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   converts an AdjacencyMatrix entry into a IncidenceMatrix entry"
   input tuple<Integer, BackendDAE.Solvability> inTpl;
   input list<Integer> iRow;
@@ -5663,8 +5574,7 @@ algorithm
 end incidenceMatrixElementElementfromEnhanced1;
 
 protected function incidenceMatrixfromEnhanced2
-"function: incidenceMatrixfromEnhanced2
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   converts an AdjacencyMatrixEnhanced into a IncidenceMatrix"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   input BackendDAE.Variables vars;
@@ -5674,8 +5584,7 @@ algorithm
 end incidenceMatrixfromEnhanced2;
 
 protected function incidenceMatrixElementfromEnhanced2
-"function: incidenceMatrixElementfromEnhanced2
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   helper for incidenceMatrixfromEnhanced2"
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   input BackendDAE.Variables vars;
@@ -5687,8 +5596,7 @@ algorithm
 end incidenceMatrixElementfromEnhanced2;
 
 protected function incidenceMatrixElementElementfromEnhanced2
-"function: incidenceMatrixElementElementfromEnhanced2
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   converts an AdjacencyMatrix entry into a IncidenceMatrix entry"
   input tuple<Integer, BackendDAE.Solvability> inTpl;
   input BackendDAE.Variables vars;
@@ -5729,8 +5637,7 @@ end incidenceMatrixElementElementfromEnhanced2;
 // end incidenceMatrixElementElementfromEnhanced2_1;
 
 protected function checkAssignment
-"function: checkAssignment
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   selects the assigned vars"
   input Integer indx;
   input Integer len;
@@ -5769,8 +5676,7 @@ algorithm
 end checkAssignment;
 
 protected function selectDummyStates
-"function: selectDummyStates
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   selects the first nstates from states as dummy states"
   input list<tuple<DAE.ComponentRef, Integer>> states;
   input Integer i;
@@ -5815,8 +5721,7 @@ algorithm
 end selectDummyStates;
 
 protected function selectDummyStateVars
-"function: selectDummyStateVars
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   selects the states as dummy states"
   input list<BackendDAE.Var> states;
   input BackendDAE.Variables vars;
@@ -5901,8 +5806,7 @@ algorithm
 end getLevelStates;
 
 protected function replaceHigherDerivatives
-"function: addHigherStates
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   change for var:STATE(2): der(var,2) to der($DER.var), der(var) -> DER.var, add Var $DER.var:STATE(1)"
   input BackendDAE.EqSystem isyst;
   output BackendDAE.EqSystem osyst;
@@ -5952,8 +5856,7 @@ algorithm
 end setHigerDerivativeAssignment;
 
 protected function makeHigherStatesRepl
-"function: makeHigherStatesRepl
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   This function creates a new variable named
   der+<varname> and adds it to the dae. The kind of the
   var with varname is changed to dummy_state"
@@ -5984,8 +5887,7 @@ algorithm
 end makeHigherStatesRepl;
 
 protected function makeHigherStatesRepl1
-"function: makeHigherStatesRepl1
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   This function creates a new variable named
   der+<varname> and adds it to the var list. The kind of the
   var with varname is changed to dummy_state"
@@ -6042,8 +5944,7 @@ algorithm
 end makeHigherStatesRepl1;
 
 protected function addAllDummyStates
-"function: addAllDummyStates
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   change all states not stateSelect.always to dummy states
   and add them to the system and generate replacement rules"
   input BackendDAE.EqSystem isyst;
@@ -6072,8 +5973,7 @@ algorithm
 end addAllDummyStates;
 
 protected function makeAllDummyVarandDummyDerivativeRepl
-"function: makeAllDummyVarandDummyDerivativeRepl
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   This function creates a new variable named
   der+<varname> and adds it to the dae. The kind of the
   var with varname is changed to dummy_state"
@@ -6145,8 +6045,7 @@ algorithm
 end makeAllDummyVarandDummyDerivativeRepl;
 
 protected function makeAllDummyVarandDummyDerivativeRepl1
-"function: makeAllDummyVarandDummyDerivativeRepl1
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   This function creates a new variable named
   der+<varname> and adds it to the var list. The kind of the
   var with varname is changed to dummy_state"
@@ -6215,8 +6114,7 @@ algorithm
 end makeAllDummyVarandDummyDerivativeRepl1;
 
 protected function addDummyStates
-"function: addDummyStates
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   add the dummy states to the system"
   input list<BackendDAE.Var> dummyStates;
   input Integer level;
@@ -6249,8 +6147,7 @@ algorithm
 end addDummyStates;
 
 protected function makeDummyVarandDummyDerivative
-"function: makeDummyVarandDummyDerivative
-  author: Frenkel TUD
+"author: Frenkel TUD
   This function creates a new variable named
   der+<varname> and adds it to the dae. The kind of the
   var with varname is changed to dummy_state"
@@ -6404,8 +6301,7 @@ algorithm
 end replaceDummyDerivativesExp;
 
 protected function replaceDummyDerivativesShared
-"function: replaceDummyDerivativesShared
-  author Frenkel TUD 2012-08"
+"author Frenkel TUD 2012-08"
   input BackendDAE.Shared ishared;
   input HashTableCrIntToExp.HashTable ht;
   output BackendDAE.Shared oshared;
@@ -6488,8 +6384,7 @@ end replaceDummyDerivativesVar;
 
 
 public function splitEqnsinConstraintAndOther
-"function: splitEqnsinConstraintAndOther
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   splitt the list of set equations in constrained equations and other equations"
   input list<BackendDAE.Var> inVarLst;
   input list<BackendDAE.Equation> inEqnsLst;
@@ -6644,8 +6539,7 @@ algorithm
 end determinantfromZycles;
 
 protected function dumpDigraph
-"function: dumpDigraph
-  author: Frenkel TUD"
+"author: Frenkel TUD"
   input array<list<tuple<Integer,DAE.Exp>>> digraph;
 protected
   Integer len;
@@ -6664,8 +6558,7 @@ algorithm
 end dumpDigraph;
 
 protected function dumpDigraph1
-"function: dumpDigraph1
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input list<list<tuple<Integer,DAE.Exp>>> inIntegerLstLst;
   input Integer rowIndex;
 algorithm
@@ -6684,8 +6577,7 @@ algorithm
 end dumpDigraph1;
 
 public function dumpDigraph2
-"function: dumpDigraph2
-  author: Frenkel TUD 2012-06"
+"author: Frenkel TUD 2012-06"
   input list<tuple<Integer,DAE.Exp>> inIntegerLst;
 algorithm
   _ := match (inIntegerLst)
@@ -6855,8 +6747,7 @@ algorithm
 end dumpzycles;
 
 protected function changeDerVariablestoStates
-"function: changeDerVariablestoStates
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   change the kind of all variables in a der to state"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> inTpl;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outTpl;
@@ -6869,8 +6760,7 @@ algorithm
 end changeDerVariablestoStates;
 
 protected function changeDerVariablestoStatesFinderNew
-"function: changeDerVariablestoStatesFinder
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStates"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix>> inExp;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outExp;
@@ -7010,8 +6900,7 @@ algorithm
 end increaseDifferentiation;
 
 protected function changeDerVariablestoStatesFinder
-"function: changeDerVariablestoStatesFinder
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStates"
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix>> inExp;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outExp;
@@ -7140,8 +7029,7 @@ algorithm
 end changeDerVariablestoStates1;
 
 protected function addDummyStateEqn
-"function: addDummyStateEqn
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStatesFinder"
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
@@ -7193,8 +7081,7 @@ algorithm
 end debugdifferentiateEqns;
 
 protected function getSetVars
-"function: getSetVars
-  author: Frenkel TUD 2012-12"
+"author: Frenkel TUD 2012-12"
   input Integer index;
   input Integer setsize;
   input Integer nStates;
@@ -7750,8 +7637,7 @@ algorithm
 end addVarNodes;
 
 protected function statesandVarsInEqns
-"function: statesandVarsInEqns
-  author: Frenkel TUD - 2012-04"
+"author: Frenkel TUD - 2012-04"
   input list<Integer> inEqnsLst;
   input BackendDAE.IncidenceMatrix m;
   input list<Integer> inStates;
@@ -7852,8 +7738,7 @@ algorithm
   end matchcontinue;
 end addDirectedNumEdgeGraphEnhanced;
 
-protected function addCompsGraph "function: addCompsGraph
-  author: Frenkel TUD 2013-02,
+protected function addCompsGraph "author: Frenkel TUD 2013-02,
   add for each component a node to the graph and strore
   varcomp[var] = comp."
   input BackendDAE.StrongComponents iComps;
@@ -7885,8 +7770,7 @@ algorithm
   end match;
 end addCompsGraph;
 
-protected function addCompsEdgesGraph "function: addCompsEdgesGraph
-  author: Frenkel TUD 2013-02,
+protected function addCompsEdgesGraph "author: Frenkel TUD 2013-02,
   add for each component the edges to the graph."
   input BackendDAE.StrongComponents iComps;
   input BackendDAE.IncidenceMatrix m;
@@ -7919,8 +7803,7 @@ algorithm
   end match;
 end addCompsEdgesGraph;
 
-protected function getUsedVarsComp "function: getUsedVarsComp
-  author: Frenkel TUD 2013-02,
+protected function getUsedVarsComp "author: Frenkel TUD 2013-02,
   get all used var of the comp."
   input list<Integer> iEqns;
   input BackendDAE.IncidenceMatrix m;
@@ -7945,8 +7828,7 @@ algorithm
   end match;
 end getUsedVarsComp;
 
-protected function addCompEdgesGraph "function: addCompEdgesGraph
-  author: Frenkel TUD 2013-02,
+protected function addCompEdgesGraph "author: Frenkel TUD 2013-02,
   add for eqach used var of the comp an edge."
   input list<Integer> iVars;
   input array<Integer> varcomp;
@@ -7984,8 +7866,7 @@ algorithm
 end addCompEdgesGraph;
 
 
-protected function solvabilityWights "function: solvabilityWights
-  author: Frenkel TUD 2012-05,
+protected function solvabilityWights "author: Frenkel TUD 2012-05,
   return a integer for the solvability, this function is used
   to calculade wights for variables to select the tearing variable."
   input BackendDAE.Solvability solva;
@@ -8043,8 +7924,7 @@ algorithm
 end findStateOrderWork;
 
 protected function traverseFindStateOrder
-"function: traverseFindStateOrder
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   collect all states and there derivatives"
  input tuple<BackendDAE.Equation, BackendDAE.Variables> inTpl;
  output tuple<BackendDAE.Equation, BackendDAE.Variables> outTpl;
@@ -8103,8 +7983,7 @@ algorithm
 end addStateOrderFinder;
 
 protected function dumpStates
-"function: dumpStates
-  author: Frenkel TUD"
+"author: Frenkel TUD"
   input tuple<DAE.ComponentRef,Integer> state;
   output String outStr;
 algorithm
@@ -8116,8 +7995,7 @@ end dumpStates;
  *****************************************/
 
 protected function addStateOrder
-"function: addStateOrder
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   add state and state derivative to the
   stateorder."
   input DAE.ComponentRef cr;
@@ -8266,8 +8144,7 @@ end addStateOrder;
 // end replaceDerStateOrder;
 
 protected function getStateOrder
-"function: getStateOrder
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   returns the derivative of a state.
   Fails if there is none"
   input DAE.ComponentRef cr;
@@ -8281,8 +8158,7 @@ algorithm
 end getStateOrder;
 
 protected function getDerStateOrder
-"function: getDerStateOrder
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   returns the states of a state derivative.
   Fails if there is none"
   input DAE.ComponentRef dcr;
@@ -8296,8 +8172,7 @@ algorithm
 end getDerStateOrder;
 
 protected function addOrgEqn
-"function: addOrgEqn
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   add an equation to the ConstrainEquations."
   input BackendDAE.ConstraintEquations inOrgEqns;
   input Integer e;
@@ -8331,8 +8206,7 @@ algorithm
 end addOrgEqn;
 
 protected function dumpStateOrder
-"function: dumpStateOrder
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   Prints the state order"
   input BackendDAE.StateOrder inStateOrder;
 algorithm

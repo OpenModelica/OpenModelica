@@ -80,8 +80,7 @@ protected constant Real HASHVECFACTOR = 1.4;
  */
 
 public function varEqual
-"function: varEqual
-  author: PA
+"author: PA
   Returns true if two Vars are equal."
   input BackendDAE.Var inVar1;
   input BackendDAE.Var inVar2;
@@ -846,8 +845,7 @@ algorithm
   end match;
 end setVarNominalValue;
 
-public function varType "function: varType
-  author: PA
+public function varType "author: PA
 
   extracts the type of a variable.
 "
@@ -873,8 +871,7 @@ algorithm
   end match;
 end varKind;
 
-public function varBindValue "function: varBindValue
-  author: PA
+public function varBindValue "author: PA
 
   extracts the bindValue of a variable.
 "
@@ -888,8 +885,7 @@ algorithm
   end match;
 end varBindValue;
 
-public function varNominal "function: varNominal
-  author: PA
+public function varNominal "author: PA
 
   Extacts the nominal attribute of a variable. If the variable has no
   nominal value, the function fails.
@@ -905,8 +901,7 @@ algorithm
 end varNominal;
 
 public function varCref
-"function: varCref
-  author: PA
+"author: PA
   extracts the ComponentRef of a variable."
   input BackendDAE.Var inVar;
   output DAE.ComponentRef outComponentRef;
@@ -920,8 +915,7 @@ algorithm
 end varCref;
 
 public function isStateVar
-"function: isStateVar
-  Returns true for state variables, false otherwise."
+"Returns true for state variables, false otherwise."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -952,8 +946,7 @@ algorithm
 end isState;
 
 public function isNonStateVar
-"function: isNonStateVar
-  this equation checks if the the varkind is state of variable
+"this equation checks if the the varkind is state of variable
   used both in build_equation and generate_compute_state"
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
@@ -1106,8 +1099,7 @@ algorithm
 end isDummyDerVar;
 
 public function isStateorStateDerVar
-"function: isStateorStateDerVar
-  Returns true for state and der(state) variables, false otherwise."
+"Returns true for state and der(state) variables, false otherwise."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1479,8 +1471,7 @@ algorithm
 end isVarConnector;
 
 public function isFlowVar
-"function: isFlowVar
-  Returns true for flow variables, false otherwise."
+"Returns true for flow variables, false otherwise."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1492,8 +1483,7 @@ algorithm
 end isFlowVar;
 
 public function isConst
-"function: isConst
-  Return true if variable is a constant."
+"Return true if variable is a constant."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1505,8 +1495,7 @@ algorithm
 end isConst;
 
 public function isParam
-"function: isParam
-  Return true if variable is a parameter."
+"Return true if variable is a parameter."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1518,8 +1507,7 @@ algorithm
 end isParam;
 
 public function isIntParam
-"function: isIntParam
-  Return true if variable is a parameter and integer."
+"Return true if variable is a parameter and integer."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1532,8 +1520,7 @@ algorithm
 end isIntParam;
 
 public function isBoolParam
-"function: isBoolParam
-  Return true if variable is a parameter and boolean."
+"Return true if variable is a parameter and boolean."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1545,8 +1532,7 @@ algorithm
 end isBoolParam;
 
 public function isStringParam
-"function: isStringParam
-  Return true if variable is a parameter."
+"Return true if variable is a parameter."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1558,8 +1544,7 @@ algorithm
 end isStringParam;
 
 public function isExtObj
-"function: isExtObj
-  Return true if variable is an external object."
+"Return true if variable is an external object."
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1571,8 +1556,7 @@ algorithm
 end isExtObj;
 
 public function isRealParam
-"function: isParam
-  Return true if variable is a parameter of real-type"
+"Return true if variable is a parameter of real-type"
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1583,8 +1567,7 @@ algorithm
 end isRealParam;
 
 public function isNonRealParam
-"function: isNonRealParam
-  Return true if variable is NOT a parameter of real-type"
+"Return true if variable is NOT a parameter of real-type"
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
@@ -1592,8 +1575,7 @@ algorithm
 end isNonRealParam;
 
 public function isInput
-"function: isInput
-  Returns true if variable is declared as input.
+"Returns true if variable is declared as input.
   See also is_ouput above"
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
@@ -1605,8 +1587,7 @@ algorithm
   end matchcontinue;
 end isInput;
 
-public function isOutputVar "function: isOutputVar
-  Return true if variable is declared as output. Note that the output
+public function isOutputVar "Return true if variable is declared as output. Note that the output
   attribute sticks with a variable even if it is originating from a sub
   component, which is not the case for Dymola."
   input BackendDAE.Var inVar;
@@ -1687,8 +1668,7 @@ algorithm
   outVar := BackendDAE.VAR(cr, kind, dir, prl, tp, bind, v, dim, source, attr, comment, ct);
 end copyVarNewName;
 
-public function setVarsKind "function: setVarsKind
-  author: lochel
+public function setVarsKind "author: lochel
   This function sets the BackendDAE.VarKind of a variable-list."
   input list<BackendDAE.Var> inVars;
   input BackendDAE.VarKind inVarKind;
@@ -1901,8 +1881,7 @@ algorithm
   end matchcontinue;
 end isVarOnTopLevelAndInput;
 
-public function topLevelInput "function: topLevelInput
-  author: PA
+public function topLevelInput "author: PA
   Succeds if variable is input declared at the top level of the model,
   or if it is an input in a connector instance at top level."
   input DAE.ComponentRef inComponentRef;
@@ -2136,8 +2115,7 @@ end getAlias1;
  */
 
 protected function vararrayList
-"function: vararrayList
-  Transforms a VariableArray to a Var list"
+"Transforms a VariableArray to a Var list"
   input BackendDAE.VariableArray inVariableArray;
   output list<BackendDAE.Var> outVarLst;
 algorithm
@@ -2160,8 +2138,7 @@ algorithm
 end vararrayList;
 
 protected function vararrayList2
-"function: vararrayList2
-  Helper function to vararrayList"
+"Helper function to vararrayList"
   input array<Option<BackendDAE.Var>> arr;
   input Integer pos;
   input list<BackendDAE.Var> inVarLst;
@@ -2219,8 +2196,7 @@ algorithm
 end numVariables;
 
 protected function vararrayLength
-"function: vararrayLength
-  author: PA
+"author: PA
   Returns the number of variable in the BackendDAE.VariableArray"
   input BackendDAE.VariableArray inVariableArray;
   output Integer outInteger;
@@ -2232,8 +2208,7 @@ algorithm
 end vararrayLength;
 
 protected function vararrayAdd
-"function: vararrayAdd
-  author: PA
+"author: PA
   Adds a variable last to the BackendDAE.VariableArray, increasing array size
   if no space left by factor 1.4"
   input BackendDAE.VariableArray inVariableArray;
@@ -2281,8 +2256,7 @@ algorithm
 end vararrayAdd;
 
 protected function vararraySetnth
-"function: vararraySetnth
-  author: PA
+"author: PA
   Set the n:th variable in the BackendDAE.VariableArray to v.
  inputs:  (BackendDAE.VariableArray, int /* n */, BackendDAE.Var /* v */)
  outputs: BackendDAE.VariableArray ="
@@ -2386,8 +2360,7 @@ algorithm
 end emptyVarsSized;
 
 public function varList
-"function: varList
-  Takes BackendDAE.Variables and returns a list of \'Var\', useful for e.g. dumping."
+"Takes BackendDAE.Variables and returns a list of \'Var\', useful for e.g. dumping."
   input BackendDAE.Variables inVariables;
   output list<BackendDAE.Var> outVarLst;
 algorithm
@@ -2403,8 +2376,7 @@ algorithm
 end varList;
 
 public function listVar
-"function: listVar
-  author: PA
+"author: PA
   Takes Var list and creates a BackendDAE.Variables structure, see also var_list."
   input list<BackendDAE.Var> inVarLst;
   output BackendDAE.Variables outVariables;
@@ -2479,8 +2451,7 @@ algorithm
   BackendDAE.SHARED(aliasVars = vars) := shared;
 end daeAliasVars;
 
-public function varsSize "function: varsSize
-  author: PA
+public function varsSize "author: PA
 
   Returns the number of variables
 "
@@ -2494,8 +2465,7 @@ algorithm
   end match;
 end varsSize;
 
-public function resizeVars "function: resizeVars
-  author: Frenkel TUD
+public function resizeVars "author: Frenkel TUD
 
   check the number of vars and the bucketSize and expand the bucketSize if neccessary.
   (Shure the hashentries also updated)
@@ -2511,8 +2481,7 @@ algorithm
   outVariables := Debug.bcallret2(intGt(numberOfVars,bucketSize),resizeVars1,varArr,numberOfVars,inVariables);
 end resizeVars;
 
-protected function resizeVars1 "function: resizeVars
-  author: Frenkel TUD
+protected function resizeVars1 "author: Frenkel TUD
 
   check the number of vars and the bucketSize and expand the bucketSize if neccessary.
   (Shure the hashentries also updated)
@@ -2534,8 +2503,7 @@ algorithm
 end resizeVars1;
 
 protected function resizeVars2
-"function: resizeVars2
-  author: Frenkel TUD"
+"author: Frenkel TUD"
   input Integer index;
   input array<Option<BackendDAE.Var>> varOptArr;
   input Integer bucketSize;
@@ -2555,8 +2523,7 @@ algorithm
 end resizeVars2;
 
 protected function resizeVars3
-"function: resizeVars3
-  author: Frenkel TUD"
+"author: Frenkel TUD"
   input Option<BackendDAE.Var> inVar;
   input Integer pos;
   input Integer bucketSize;
@@ -2730,8 +2697,7 @@ algorithm
 end deleteVars1;
 
 public function deleteVar
-"function: deleteVar
-  author: PA
+"author: PA
   Deletes a variable from Variables."
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVariables;
@@ -2761,8 +2727,7 @@ algorithm
 end removeCrefs;
 
 public function removeCref
-"function: removeCref
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   Deletes a variable from Variables."
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVariables;
@@ -2818,8 +2783,7 @@ algorithm
 end removeVars;
 
 public function removeVarDAE
-"function: removeVarDAE
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   Removes a var from the vararray but does not scaling down the array"
   input Integer inVarPos "1 based index";
   input BackendDAE.EqSystem syst;
@@ -2880,8 +2844,7 @@ algorithm
 end removeVar;
 
 protected function removeVar1
-"function: removeVar1
-  author: Frenkel TUD
+"author: Frenkel TUD
   Helper for removeVar"
   input BackendDAE.VariableArray inVariableArray;
   input Integer inInteger;
@@ -2990,8 +2953,7 @@ algorithm
 end compressVariables1;
 
 public function existsVar
-"function: existsVar
-  author: PA
+"author: PA
   Return true if a variable exists in the vector"
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVariables;
@@ -3016,8 +2978,7 @@ algorithm
 end existsVar;
 
 public function addVarDAE
-"function: addVarDAE
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   Add a variable to Variables of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
@@ -3039,8 +3000,7 @@ algorithm
 end addVarDAE;
 
 public function addKnVarDAE
-"function: addKnVarDAE
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   Add a variable to Variables of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
@@ -3068,8 +3028,7 @@ algorithm
 end addKnVarDAE;
 
 public function addNewKnVarDAE
-"function: addNewKnVarDAE
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   Add a variable to Variables of a BackendDAE.
   No Check if variable already exist. Use only for new variables"
   input BackendDAE.Var inVar;
@@ -3097,8 +3056,7 @@ algorithm
 end addNewKnVarDAE;
 
 public function addAliasVarDAE
-"function: addAliasVarDAE
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   Add a alias variable to Variables of a BackendDAE.Shared
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
@@ -3126,8 +3084,7 @@ algorithm
 end addAliasVarDAE;
 
 public function addNewAliasVarDAE
-"function: addNewAliasVarDAE
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   Add a alias variable to Variables of a BackendDAE.Shared
   No Check if variable already exist. Use only for new variables"
   input BackendDAE.Var inVar;
@@ -3154,8 +3111,7 @@ algorithm
   end match;
 end addNewAliasVarDAE;
 
-public function addVars "function: addVars
-  author: PA
+public function addVars "author: PA
   Adds a list of BackendDAE.Var to BackendDAE.Variables"
   input list<BackendDAE.Var> varlst;
   input BackendDAE.Variables vars;
@@ -3165,8 +3121,7 @@ algorithm
 end addVars;
 
 public function addVar
-"function: addVar
-  author: PA
+"author: PA
   Add a variable to Variables.
   If the variable already exists, the function updates the variable."
   input BackendDAE.Var inVar;
@@ -3220,8 +3175,7 @@ algorithm
 end addVar;
 
 public function addNewVar
-"function: addNewVar
-  author: Frenkel TUD - 2012-07
+"author: Frenkel TUD - 2012-07
   Add a variable to Variables.
   Did not check if the variable is already there. Use it only for
   new variables."
@@ -3258,8 +3212,7 @@ algorithm
 end addNewVar;
 
 public function expandVarsDAE
-"function: expandVars
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   Expand the Variable array."
   input Integer needed;
   input BackendDAE.EqSystem syst;
@@ -3280,8 +3233,7 @@ algorithm
 end expandVarsDAE;
 
 public function expandVars
-"function: expandVars
-  author: Frenkel TUD - 2012-07
+"author: Frenkel TUD - 2012-07
   Expand the variable array"
   input Integer needed;
   input BackendDAE.Variables inVariables;
@@ -3315,8 +3267,7 @@ algorithm
 end expandVars;
 
 public function getVarAt
-"function: getVarAt
-  author: PA
+"author: PA
   Return variable at a given position, enumerated from 1..n"
   input BackendDAE.Variables inVariables;
   input Integer inInteger;
@@ -3343,8 +3294,7 @@ algorithm
 end getVarAt;
 
 public function setVarAt
-"function: setVarAt
-  author: Frenkel TUD
+"author: Frenkel TUD
   set variable at a given position, enumerated from 1..n"
   input BackendDAE.Variables inVariables;
   input Integer pos;
@@ -3371,8 +3321,7 @@ algorithm
 end setVarAt;
 
 public function getVarSharedAt
-"function: getVarSharedAt
-  author: Frenkel TUD 2012-12
+"author: Frenkel TUD 2012-12
   return a Variable."
   input Integer inInteger;
   input BackendDAE.Shared shared;
@@ -3385,8 +3334,7 @@ algorithm
 end getVarSharedAt;
 
 public function getVarDAE
-"function: getVarDAE
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   return a Variable."
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.EqSystem syst;
@@ -3407,8 +3355,7 @@ algorithm
 end getVarDAE;
 
 public function getVarShared
-"function: getVarShared
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   return a Variable."
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Shared shared;
@@ -3429,8 +3376,7 @@ algorithm
 end getVarShared;
 
 public function getVar
-"function: getVar
-  author: PA
+"author: PA
   Return a variable(s) and its index(es) in the vector.
   The indexes is enumerated from 1..n
   Normally a variable has only one index, but in case of an array variable
@@ -3597,8 +3543,7 @@ algorithm
 end getVarLst;
 
 protected function getVar2
-"function: getVar2
-  author: PA
+"author: PA
   Helper function to getVar, checks one scalar variable"
   input DAE.ComponentRef inComponentRef;
   input BackendDAE.Variables inVariables;
@@ -3722,8 +3667,7 @@ algorithm
 end traversingVarIndexFinder;
 
 public function mergeVariables
-"function: mergeVariables
-  author: PA
+"author: PA
   Takes two sets of BackendDAE.Variables and merges them. The variables of the
   first argument takes precedence over the second set, i.e. if a
   variable name exists in both sets, the variable definition from
@@ -3764,8 +3708,7 @@ algorithm
   outTpl := (v,vars);
 end mergeVariables1;
 
-public function traverseBackendDAEVars "function: traverseBackendDAEVars
-  author: Frenkel TUD
+public function traverseBackendDAEVars "author: Frenkel TUD
 
   traverse all vars of a BackenDAE.Variables array.
 "
@@ -3798,8 +3741,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVars;
 
-public function traverseBackendDAEVarsWithStop "function: traverseBackendDAEVarsWithStop
-  author: Frenkel TUD
+public function traverseBackendDAEVarsWithStop "author: Frenkel TUD
 
   traverse all vars of a BackenDAE.Variables array.
 "
@@ -3832,8 +3774,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVarsWithStop;
 
-protected function traverseBackendDAEVar "function: traverseBackendDAEVar
-  author: Frenkel TUD
+protected function traverseBackendDAEVar "author: Frenkel TUD
   Helper traverseBackendDAEVars."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Var> inVar;
@@ -3864,8 +3805,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVar;
 
-protected function traverseBackendDAEVarWithStop "function: traverseBackendDAEVarWithStop
-  author: Frenkel TUD
+protected function traverseBackendDAEVarWithStop "author: Frenkel TUD
   Helper traverseBackendDAEVars."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Var> inVar;
@@ -3898,8 +3838,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVarWithStop;
 
-public function traverseBackendDAEVarsWithUpdate "function: traverseBackendDAEVarsWithUpdate
-  author: Frenkel TUD
+public function traverseBackendDAEVarsWithUpdate "author: Frenkel TUD
 
   traverse all vars of a BackenDAE.Variables array.
 "
@@ -3934,8 +3873,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVarsWithUpdate;
 
-protected function traverseBackendDAEVarWithUpdate "function: traverseBackendDAEVarWithUpdate
-  author: Frenkel TUD
+protected function traverseBackendDAEVarWithUpdate "author: Frenkel TUD
   Helper traverseBackendDAEVarsWithUpdate."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Var> inVar;

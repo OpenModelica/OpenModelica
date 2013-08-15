@@ -74,8 +74,7 @@ protected import Util;
 
 protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
-public function lower "function: lower
-  This function translates a DAE, which is the result from instantiating a
+public function lower "This function translates a DAE, which is the result from instantiating a
   class, into a more precise form, called BackendDAE.BackendDAE defined in this module.
   The BackendDAE.BackendDAE representation splits the DAE into equations and variables
   and further divides variables into known and unknown variables and the
@@ -503,8 +502,7 @@ end transformBuiltinExpression;
  */
 
 protected function lowerVar
-"function: lowerVar
-  Transforms a DAE variable to DAE variable.
+"Transforms a DAE variable to DAE variable.
   Includes changing the ComponentRef name to a simpler form
   \'a\'.\'b\'{2}\'c\'{5} becomes
   \'a.b{2}.c\' (as CREF_IDENT(\"a.b.c\", {2}) )
@@ -594,8 +592,7 @@ algorithm
 end isStateOrAlgvar;
 
 protected function lowerDynamicVar
-"function: lowerDynamicVar
-  Transforms a DAE variable to DAE variable.
+"Transforms a DAE variable to DAE variable.
   Includes changing the ComponentRef name to a simpler form
   \'a\'.\'b\'{2}\'c\'{5} becomes
   \'a.b{2}.c\' (as CREF_IDENT(\"a.b.c\", {2}) )
@@ -648,8 +645,7 @@ algorithm
 end lowerDynamicVar;
 
 protected function lowerKnownVar
-"function: lowerKnownVar
-  Helper function to lower2"
+"Helper function to lower2"
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
@@ -866,8 +862,7 @@ end setMinMaxFromEnumeration1;
 // end fixParameterStartBinding;
 
 protected function lowerVarkind
-"function: lowerVarkind
-  Helper function to lowerVar.
+"Helper function to lowerVar.
   inputs: (DAE.VarKind,
            Type,
            DAE.ComponentRef,
@@ -943,8 +938,7 @@ algorithm
 end lowerVarkind;
 
 protected function lowerKnownVarkind
-"function: lowerKnownVarkind
-  Helper function to lowerKnownVar.
+"Helper function to lowerKnownVar.
   NOTE: Fails for everything but parameters and constants and top level inputs"
   input DAE.VarKind inVarKind;
   input DAE.ComponentRef inComponentRef;
@@ -1054,8 +1048,7 @@ end lowerExtObjVarkind;
  */
 
 protected function lowerEqn
-"function: lowerEqn
-  Helper function to lower2.
+"Helper function to lower2.
   Transforms a DAE.Element to Equation."
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
@@ -1871,8 +1864,7 @@ algorithm
 end lowerWhenTupleEqn;
 
 protected function lowerWhenIfEqns2
-"function: lowerWhenIfEqns
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   helper for lowerWhen"
   input list<tuple<DAE.ComponentRef, tuple<DAE.Exp, DAE.ElementSource>>> crexplst;
   input DAE.Exp inCond;
@@ -1900,8 +1892,7 @@ algorithm
 end lowerWhenIfEqns2;
 
 protected function lowerWhenIfEqns
-"function: lowerWhenIfEqns
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   helper for lowerWhen"
   input list<DAE.Exp> conditions;
   input list<list<DAE.Element>> theneqns;
@@ -1928,8 +1919,7 @@ algorithm
 end lowerWhenIfEqns;
 
 protected function lowerWhenIfEqns1
-"function: simplifySolvedIfEqns1
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input DAE.Exp condition;
   input list<DAE.Element> brancheqns;
@@ -2015,8 +2005,7 @@ algorithm
 end lowerWhenIfEqns1;
 
 protected function lowerWhenIfEqnsMergeNestedIf
-"function: lowerWhenIfEqnsMergeNestedIf
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input list<tuple<DAE.ComponentRef, tuple<DAE.Exp, DAE.ElementSource>>> crexplst;
   input DAE.Exp inCond;
@@ -2046,8 +2035,7 @@ algorithm
 end lowerWhenIfEqnsMergeNestedIf;
 
 protected function lowerWhenIfEqnsElse
-"function: lowerWhenIfEqnsElse
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input list<DAE.Element> elseenqs;
   input DAE.FunctionTree functionTree;
@@ -2117,8 +2105,7 @@ algorithm
 end lowerWhenIfEqnsElse;
 
 protected function makeWhenClauses
-"function: makeWhenClauses
-  Constructs a list of identical BackendDAE.WhenClause elements
+"Constructs a list of identical BackendDAE.WhenClause elements
   Arg1: Number of elements to construct
   Arg2: condition expression of the when clause
   outputs: (WhenClause list)"
@@ -2240,8 +2227,7 @@ end lowerTupleAssignment;
  */
 
 protected function lowerAlgorithm
-"function: lowerAlgorithm
-  Helper function to lower2.
+"Helper function to lower2.
   Transforms a DAE.Element to Equation."
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
@@ -2876,8 +2862,7 @@ end replaceableAlias;
  */
 
 protected function detectImplicitDiscrete
-"function: detectImplicitDiscrete
-  This function updates the variable kind to discrete
+"This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Variables inVariables;
   input BackendDAE.Variables inKnVariables;
@@ -2888,8 +2873,7 @@ algorithm
 end detectImplicitDiscrete;
 
 protected function detectImplicitDiscreteFold
-"function: detectImplicitDiscrete
-  This function updates the variable kind to discrete
+"This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables inKnVariables;
@@ -2913,8 +2897,7 @@ algorithm
 end detectImplicitDiscreteFold;
 
 protected function getVarsFromExp
-"function: getVarsFromExp
-  This function collects all variables from an expression-list."
+"This function collects all variables from an expression-list."
   input list<DAE.Exp> inExpLst;
   input BackendDAE.Variables inVariables;
   output list<BackendDAE.Var> outVarLst;
@@ -2938,8 +2921,7 @@ algorithm
 end getVarsFromExp;
 
 protected function detectImplicitDiscreteAlgsStatemens
-"function: detectImplicitDiscreteAlgsStatemens
-  This function updates the variable kind to discrete
+"This function updates the variable kind to discrete
   for variables set in when equations."
   input BackendDAE.Variables inVariables;
   input BackendDAE.Variables inKnVariables;
@@ -3049,8 +3031,7 @@ algorithm
 end detectImplicitDiscreteAlgsStatemens;
 
 protected function detectImplicitDiscreteAlgsStatemensFor
-"function: detectImplicitDiscreteAlgsStatemensFor
-  "
+""
   input DAE.Exp inIteratorExp;
   input list<DAE.Exp> inExplst;
   input BackendDAE.Variables inVariables;
@@ -3116,8 +3097,7 @@ algorithm
 end replaceExp;
 
 protected function extendRange
-"function: extendRange
-  "
+""
   input DAE.Exp rangeExp;
   input BackendDAE.Variables inKnVariables;
   output list<DAE.Exp> outExpLst;
@@ -3425,8 +3405,7 @@ end updateStatesVars;
 // BackendDAE.
 // =============================================================================
 
-public function findZeroCrossings "function: findZeroCrossings
-  This function finds all zerocrossings in the list of equations and
+public function findZeroCrossings "This function finds all zerocrossings in the list of equations and
   the list of when clauses."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -3438,8 +3417,7 @@ algorithm
   outDAE := findZeroCrossingsShared(dae, vars);
 end findZeroCrossings;
 
-protected function findZeroCrossingsShared "function: findZeroCrossingsShared
-  This function finds all zerocrossings in the shared part of the dae."
+protected function findZeroCrossingsShared "This function finds all zerocrossings in the shared part of the dae."
   input BackendDAE.BackendDAE inDAE;
   input list<BackendDAE.Var> allvars;
   output BackendDAE.BackendDAE outDAE;
@@ -3483,8 +3461,7 @@ algorithm
   end match;
 end findZeroCrossingsShared;
 
-protected function findZeroCrossings1 "function: findZeroCrossings
-  This function finds all zerocrossings in the list of equations and
+protected function findZeroCrossings1 "This function finds all zerocrossings in the list of equations and
   the list of when clauses."
     input BackendDAE.EqSystem syst;
     input tuple<BackendDAE.Shared, list<BackendDAE.Var>> shared;
@@ -3668,8 +3645,7 @@ algorithm
 end findZeroCrossings2;
 
 protected function findZeroCrossingsWhenEqns
-"function: findZeroCrossingsWhenEqns
-  Helper function to findZeroCrossing."
+"Helper function to findZeroCrossing."
   input BackendDAE.WhenEquation inWhenEqn;
   input list<BackendDAE.ZeroCrossing> inZeroCrossings;
   input list<BackendDAE.ZeroCrossing> inrelationsinZC;
@@ -3711,8 +3687,7 @@ algorithm
 end findZeroCrossingsWhenEqns;
 
 protected function findZeroCrossingsIfEqns
-"function: findZeroCrossingsIfEqns
-  Helper function to findZeroCrossing."
+"Helper function to findZeroCrossing."
   input BackendDAE.Equation inIfEqn;
   input list<BackendDAE.ZeroCrossing> inZeroCrossings;
   input list<BackendDAE.ZeroCrossing> inrelationsinZC;
@@ -3760,8 +3735,7 @@ algorithm
 end findZeroCrossingsIfEqns;
 
 protected function findZeroCrossings3
-"function: findZeroCrossings3
-  Helper function to findZeroCrossing."
+"Helper function to findZeroCrossing."
   input DAE.Exp e;
   input list<BackendDAE.ZeroCrossing> inZeroCrossings;
   input list<BackendDAE.ZeroCrossing> inrelationsinZC;
@@ -4120,8 +4094,7 @@ algorithm
 end collectZCAlgs;
 
 /* TODO: implement math functions support here */
-protected function collectZCAlgsFor "function: collectZeroCrossings
-  Collects zero crossings in for loops
+protected function collectZCAlgsFor "Collects zero crossings in for loops
   added: 2011-01 by wbraun"
   input tuple<DAE.Exp, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>> inTplExpExpTplExpExpLstVariables;
   output tuple<DAE.Exp, Boolean, tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, list<BackendDAE.ZeroCrossing>, Integer, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>> outTplExpExpTplExpExpLstVariables;
@@ -4404,8 +4377,7 @@ algorithm
 end zeroCrossingEquations;
 
 protected function mergeZeroCrossings
-"function: mergeZeroCrossings
-  Takes a list of zero crossings and if more than one have identical
+"Takes a list of zero crossings and if more than one have identical
   function expressions they are merged into one zerocrossing.
   In the resulting list all zerocrossing have uniq function expressions."
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst;
@@ -4516,8 +4488,7 @@ algorithm
   res_1 := boolNot(res);
 end differentZeroCrossing;
 
-protected function traverseStmtsExps "function: traverseStmtExps
-  Handles the traversing of list<DAE.Statement>.
+protected function traverseStmtsExps "Handles the traversing of list<DAE.Statement>.
   Works with the help of Expression.traverseExpTopDown to find
   ZeroCrossings in algorithm statements
   modified: 2011-01 by wbraun"
@@ -4773,8 +4744,7 @@ algorithm
 end traverseStmtsForExps;
 
 protected function makeZeroCrossing
-"function: makeZeroCrossing
-  Constructs a BackendDAE.ZeroCrossing from an expression and lists of equation indices
+"Constructs a BackendDAE.ZeroCrossing from an expression and lists of equation indices
   and when clause indices."
   input DAE.Exp inExp1;
   input list<Integer> eq_ind;
@@ -4785,8 +4755,7 @@ algorithm
 end makeZeroCrossing;
 
 protected function makeZeroCrossings
-"function: makeZeroCrossings
-  Constructs a list of ZeroCrossings from a list expressions
+"Constructs a list of ZeroCrossings from a list expressions
   and lists of equation indices and when clause indices.
   Each Zerocrossing gets the same lists of indicies."
   input list<DAE.Exp> inExpExpLst1;

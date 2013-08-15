@@ -106,8 +106,7 @@ algorithm
   cmp := Debug.bcallret2(cmp == 0, stringCompare, lstr, rstr, cmp);
 end keyCompareNinjaSecretHashTricks;
 
-public function treeGet "function: treeGet
-  author: PA
+public function treeGet "author: PA
 
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string can not be uniquely mapped to an int. Therefore we need to compare two strings
@@ -172,8 +171,7 @@ algorithm
   end match;
 end treeGet3;
 
-public function treeAddList "function: treeAddList
-  author: Frenkel TUD"
+public function treeAddList "author: Frenkel TUD"
   input BinTree inBinTree;
   input list<Key> inKeyLst;
   output BinTree outBinTree;
@@ -195,8 +193,7 @@ algorithm
   end match;
 end treeAddList;
 
-public function treeAdd "function: treeAdd
-  author: PA
+public function treeAdd "author: PA
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
   to get a unique ordering.
@@ -215,8 +212,7 @@ algorithm
   outBinTree := treeAdd2(inBinTree,inKey,System.stringHashDjb2Mod(str,BaseHashTable.hugeBucketSize),str,inValue);
 end treeAdd;
 
-protected function treeAdd2 "function: treeAdd
-  author: PA
+protected function treeAdd2 "author: PA
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
   to get a unique ordering."
@@ -450,8 +446,7 @@ end treeAdd2;
 // end bintreeDepth;
 
 
-public function bintreeToList "function: bintreeToList
-  author: PA
+public function bintreeToList "author: PA
 
   This function takes a BinTree and transform it into a list
   representation, i.e. two lists of keys and values
@@ -478,8 +473,7 @@ algorithm
   end matchcontinue;
 end bintreeToList;
 
-protected function bintreeToList2 "function: bintreeToList2
-  author: PA
+protected function bintreeToList2 "author: PA
   helper function to bintreeToList"
   input BinTree inBinTree;
   input list<Key> inKeyLst;
@@ -514,8 +508,7 @@ algorithm
   end matchcontinue;
 end bintreeToList2;
 
-protected function bintreeToListOpt "function: bintreeToListOpt
-  author: PA
+protected function bintreeToListOpt "author: PA
   helper function to bintreeToList"
   input Option<BinTree> inBinTreeOption;
   input list<Key> inKeyLst;

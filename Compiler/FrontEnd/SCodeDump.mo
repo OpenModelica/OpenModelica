@@ -77,8 +77,7 @@ algorithm
 end equationStr;
 
 public function printModStr
-"function: printModStr
-  Prints SCode.Mod to a string."
+"Prints SCode.Mod to a string."
   input SCode.Mod inMod;
   output String outString;
 algorithm
@@ -86,8 +85,7 @@ algorithm
 end printModStr;
 
 public function restrString
-"function: restrString
-  Prints SCode.Restriction to a string."
+"Prints SCode.Restriction to a string."
   input SCode.Restriction inRestriction;
   output String outString;
 algorithm
@@ -132,8 +130,7 @@ algorithm
 end restrictionStringPP;
 
 public function printRestr
-"function: printRestr
-  Prints SCode.Restriction to the Print buffer."
+"Prints SCode.Restriction to the Print buffer."
   input SCode.Restriction restr;
 protected
   String str;
@@ -143,8 +140,7 @@ algorithm
 end printRestr;
 
 protected function printFinal
-"function: printFinal
-  Prints \"final\" to the Print buffer."
+"Prints \"final\" to the Print buffer."
   input Boolean inBoolean;
 algorithm
   _ := matchcontinue (inBoolean)
@@ -158,8 +154,7 @@ algorithm
 end printFinal;
 
 public function printElementList
-"function: printElementList
-  Print SCode.Element list to Print buffer."
+"Print SCode.Element list to Print buffer."
   input list<SCode.Element> inElementLst;
 algorithm
   _ := matchcontinue (inElementLst)
@@ -177,8 +172,7 @@ algorithm
 end printElementList;
 
 public function printElement
-"function: printElement
-  Print SCode.Element to Print buffer."
+"Print SCode.Element to Print buffer."
   input SCode.Element elt;
 protected
   String str;
@@ -188,8 +182,7 @@ algorithm
 end printElement;
 
 public function printElementStr
-"function: printElementStr
-  Print SCode.Element to a string."
+"Print SCode.Element to a string."
   input SCode.Element inElement;
   output String outString;
 algorithm
@@ -248,8 +241,7 @@ end printElementStr;
 protected constant String noEachStr = "";
 
 public function unparseElementStr
-"function: unparseElementStr
-  Print SCode.Element to a string."
+"Print SCode.Element to a string."
   input SCode.Element inElement;
   output String outString;
 algorithm
@@ -257,8 +249,7 @@ algorithm
 end unparseElementStr;
 
 public function shortElementStr
-"function: shortElementStr
-  Print SCode.Element to a string."
+"Print SCode.Element to a string."
   input SCode.Element inElement;
   output String outString;
 algorithm
@@ -451,8 +442,7 @@ algorithm
 end printEnumStr;
 
 public function variabilityString
-"function: variabilityString
-  Print Variability to a string."
+"Print Variability to a string."
   input SCode.Variability inVariability;
   output String outString;
 algorithm
@@ -465,8 +455,7 @@ algorithm
 end variabilityString;
 
 public function parallelismString
-"function: parallelismString
-  Print parallelism to a string."
+"Print parallelism to a string."
   input SCode.Parallelism inParallelism;
   output String outString;
 algorithm
@@ -478,8 +467,7 @@ algorithm
 end parallelismString;
 
 public function innerouterString
-"function: innerouterString
-  Print a inner outer info to a string."
+"Print a inner outer info to a string."
   input Absyn.InnerOuter innerOuter;
   output String outString;
 algorithm
@@ -492,8 +480,7 @@ algorithm
 end innerouterString;
 
 public function unparseVariability
-"function: variabilityString
-  Print Variability to a string."
+"Print Variability to a string."
   input SCode.Variability inVariability;
   output String outString;
 algorithm

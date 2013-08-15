@@ -326,8 +326,7 @@ algorithm
   end matchcontinue;
 end printState;
 
-public function getStateName "function: getStateName
-  Returns the classname of the state."
+public function getStateName "Returns the classname of the state."
   input State inState;
   output Absyn.Path outPath;
 algorithm
@@ -574,8 +573,7 @@ algorithm
   end match;
 end valid;
 
-public function assertValid "function: assertValid
-  This function has the same semantical meaning as the function
+public function assertValid "This function has the same semantical meaning as the function
   `valid\'.  However, it prints an error message when it fails."
   input State inState;
   input SCode.Restriction inRestriction;
@@ -602,8 +600,7 @@ algorithm
   end matchcontinue;
 end assertValid;
 
-public function assertTrans "function: assertTrans
-  This function has the same semantical meaning as the function
+public function assertTrans "This function has the same semantical meaning as the function
   `trans\'.  However, it prints an error message when it fails."
   input State inState;
   input Event event;
@@ -666,8 +663,7 @@ algorithm
 end matchingState;
 
 public function isFunction
-"function: isFunction
-  returns true if state is FUNCTION."
+"returns true if state is FUNCTION."
   input State inState;
   output Boolean b;
 algorithm

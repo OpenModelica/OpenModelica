@@ -592,8 +592,7 @@ algorithm
 end simpleInitialEnv;
 
 public function initialEnv
-"function: initialEnv
-  The initial environment where instantiation takes place is built
+"The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in definitions to it.
   NOTE:
@@ -852,8 +851,7 @@ algorithm
 end getSetInitialEnv;
 
 public function initialGraphEnv
-"function: initialEnv
-  The initial environment where instantiation takes place is built
+"The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in definitions to it.
   NOTE:

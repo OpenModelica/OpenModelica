@@ -247,8 +247,7 @@ public constant SymbolTable emptySymboltable =
                  {}) "Empty Interactive Symbol Table" ;
 
 public function evaluate
-"function: evaluate
-  This function evaluates expressions or statements feed interactively to the compiler.
+"This function evaluates expressions or statements feed interactively to the compiler.
   inputs:   (Statements, SymbolTable, bool /* verbose */)
   outputs:   string:
                      The resulting string after evaluation. If an error has occurred, this string
@@ -292,8 +291,7 @@ algorithm
 end evaluate;
 
 public function evaluateToStdOut
-"function: evaluateToStdOut
-  This function evaluates expressions or statements feed interactively to the compiler.
+"This function evaluates expressions or statements feed interactively to the compiler.
   The resulting string after evaluation is printed.
   If an error has occurred, this string will be empty.
   The error messages can be retrieved by calling print_messages_str() in Error.mo."
@@ -353,8 +351,7 @@ algorithm
 end showStatement;
 
 protected function selectResultstr
-"function: selectResultstr
-  Returns result string depending on three boolean variables
+"Returns result string depending on three boolean variables
   - semicolon
   - verbose
   - echo"
@@ -374,8 +371,7 @@ algorithm
 end selectResultstr;
 
 protected function getEcho
-"function: getEcho
-  Return echo variable, which determines
+"Return echo variable, which determines
   if result should be printed or not."
   output Boolean outBoolean;
 algorithm
@@ -383,8 +379,7 @@ algorithm
 end getEcho;
 
 public function evaluate2
-"function: evaluate2
-  Helper function to evaluate."
+"Helper function to evaluate."
   input Statements inStatements;
   input SymbolTable inSymbolTable;
   output String outString;
@@ -430,8 +425,7 @@ algorithm
 end evaluate2;
 
 protected function evaluateAlgStmt
-"function: evaluateAlgStmt
-  This function takes an AlgorithmItem, i.e. a statement located in an
+"This function takes an AlgorithmItem, i.e. a statement located in an
   algorithm section, and a symboltable as input arguments. The statements
   are recursivly evalutated and a new interactive symbol table is returned."
   input Absyn.AlgorithmItem inAlgorithmItem;
@@ -681,8 +675,7 @@ algorithm
 end evaluateForStmtRangeOpt;
 
 protected function evaluateWhileStmt
-"function: evaluateWhileStmt
-  Recursively evaluates the while statement.
+"Recursively evaluates the while statement.
   Note that it is tail-recursive, so we should result
   in a iterative implementation."
   input Values.Value inValue;
@@ -731,8 +724,7 @@ algorithm
 end evaluateWhileStmt;
 
 protected function evaluatePartOfIfStatement
-"function: evaluatePartOfIfStatement
-  Evaluates one part of a if statement, i.e. one \"case\". If the condition is true, the algorithm items
+"Evaluates one part of a if statement, i.e. one \"case\". If the condition is true, the algorithm items
   associated with this condition are evaluated. The first argument returned is set to true if the
   condition was evaluated to true. Fails if the value is not a boolean.
   Note that we are sending the expression as an value, so that it does not need to be evaluated twice."
@@ -781,8 +773,7 @@ algorithm
 end evaluatePartOfIfStatement;
 
 protected function evaluateIfStatementLst
-"function: evaluateIfStatementLst
-  Evaluates all parts of a if statement
+"Evaluates all parts of a if statement
   (i.e. a list of exp  statements)"
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input SymbolTable inSymbolTable;
@@ -811,8 +802,7 @@ algorithm
 end evaluateIfStatementLst;
 
 protected function evaluateAlgStmtLst
-"function: evaluateAlgStmtLst
-   Evaluates a list of algorithm statements"
+" Evaluates a list of algorithm statements"
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
@@ -834,8 +824,7 @@ algorithm
 end evaluateAlgStmtLst;
 
 protected function evaluateExpr
-"function: evaluateExpr
-   Evaluates an expression and returns its value.
+" Evaluates an expression and returns its value.
    We need to return the symbol table, since the command loadFile()
    reads in data to the interactive environment.
    Note that this function may fail.
@@ -883,8 +872,7 @@ algorithm
 end evaluateExpr;
 
 protected function stringRepresOfExpr
-"function: stringRepresOfExpr
-   This function returns a string representation of an expression. For example expression
+" This function returns a string representation of an expression. For example expression
    33+22 will result in \"55\" and expression: \"my\" + \"string\" will result in  \"\"my\"+\"string\"\". "
   input Absyn.Exp exp;
   input SymbolTable ist;
@@ -903,8 +891,7 @@ algorithm
 end stringRepresOfExpr;
 
 protected function evaluateExprToStr
-"function: evaluateExprToStr
-   This function is similar to evaluateExpr, with the difference that it returns a string
+" This function is similar to evaluateExpr, with the difference that it returns a string
    and that it never fails. If the expression contain errors, an empty string will be returned
    and the errors will be stated using Error.mo
 
@@ -982,8 +969,7 @@ algorithm
 end makeTupleCref;
 
 public function getTypeOfVariable
-"function: getTypeOfVariables
-  Return the type of an interactive variable,
+"Return the type of an interactive variable,
   given a list of variables and a variable identifier."
   input Absyn.Ident inIdent;
   input list<Variable> inVariableLst;
@@ -1191,8 +1177,7 @@ algorithm
 end addVarToVarList4;
     
 public function buildEnvFromSymboltable
-"function: buildEnvFromSymboltable
-   author: PA
+" author: PA
    Builds an environment from a symboltable by adding all
    interactive variables and their bindings to the environment."
   input SymbolTable inSymbolTable;
@@ -1217,8 +1202,7 @@ algorithm
 end buildEnvFromSymboltable;
 
 protected function addVarsToEnv
-"function: addVarsToEnv
-  Helper function to buildEnvFromSymboltable."
+"Helper function to buildEnvFromSymboltable."
   input list<Variable> inVariableLst;
   input Env.Env inEnv;
   output Env.Env outEnv;
@@ -1313,8 +1297,7 @@ algorithm
 end getApiFunctionNamedArgs;
 
 protected function evaluateGraphicalApi
-"function: evaluateGraphicalApi
-  Evaluating graphical api.
+"Evaluating graphical api.
   NOTE: the graphical API is always evaluated with checkModel ON and +d=nogen,noevalfunc ON"
   input Statements inStatements;
   input SymbolTable inSymbolTable;
@@ -1343,8 +1326,7 @@ algorithm
 end evaluateGraphicalApi;
 
 protected function evaluateGraphicalApi_dispatch
-"function: evaluateGraphicalApi
-  This function evaluates all primitives in the graphical api."
+"This function evaluates all primitives in the graphical api."
   input Statements inStatements;
   input SymbolTable inSymbolTable;
   output String outString;
@@ -2438,8 +2420,7 @@ algorithm
 end isClassReadOnly;
 
 protected function renameComponent
-"function: renameComponent
-  author: x02lucpo
+"author: x02lucpo
   This function renames a component in a class
   inputs:  (Absyn.Program,
               Absyn.ComponentRef, /* old class as qualified name */
@@ -4682,8 +4663,7 @@ algorithm
 end dumpComponentsToString;
 
 protected function isParameterElement
-"function: isParameterElement
-   Returns true if Element is a component of
+" Returns true if Element is a component of
    variability parameter, false otherwise."
   input Absyn.Element inElement;
   output Boolean outBoolean;
@@ -4696,8 +4676,7 @@ algorithm
 end isParameterElement;
 
 protected function getParameterNames
-"function: getParameterNames
-   Retrieves the names of all parameters in the class
+" Retrieves the names of all parameters in the class
    inputs:  (Absyn.ComponentRef, /* class */
                Absyn.Program)
    outputs:  string"
@@ -4735,8 +4714,7 @@ algorithm
 end getParameterNames;
 
 public function getClassEnv
-"function: getClassEnv
-   Retrieves the environment of the class,
+" Retrieves the environment of the class,
    including the frame of the class itself
    by partially instantiating it."
   input Absyn.Program p;
@@ -4780,8 +4758,7 @@ algorithm
 end getClassEnv;
 
 protected function setComponentProperties
-"function: setComponentProperties
-  Sets the following \"properties\" of a component.
+"Sets the following \"properties\" of a component.
   - final
   - flow
   - stream
@@ -4843,8 +4820,7 @@ algorithm
 end setComponentProperties;
 
 protected function setComponentPropertiesInClass
-"function: setComponentPropertiesInClass
-  Helper function to setComponentProperties.
+"Helper function to setComponentProperties.
   inputs:  (Absyn.Class,
               string, /* comp_name */
               bool, /* final */
@@ -4915,8 +4891,7 @@ algorithm
 end setComponentPropertiesInClass;
 
 protected function setComponentPropertiesInClassparts
-"function: setComponentPropertiesInClassparts
-   Helper function to setComponentPropertiesInClass.
+" Helper function to setComponentPropertiesInClass.
    inputs: (Absyn.ClassPart list,
               Absyn.Ident, /* comp_name */
               bool, /* final */
@@ -5004,8 +4979,7 @@ algorithm
 end setComponentPropertiesInClassparts;
 
 protected function setComponentPropertiesInElementitems
-"function: setComponentPropertiesInElementitems
-  Helper function to setComponentPropertiesInClassparts.
+"Helper function to setComponentPropertiesInClassparts.
   inputs:  (Absyn.ElementItem list,
               Absyn.Ident, /* comp_name */
               bool, /* final */
@@ -5056,8 +5030,7 @@ algorithm
 end setComponentPropertiesInElementitems;
 
 protected function setComponentPropertiesInElement
-"function: setComponentPropertiesInElement
-  Helper function to e.g. setComponentPropertiesInElementitems.
+"Helper function to e.g. setComponentPropertiesInElementitems.
   inputs:  (Absyn.Element,
               Absyn.Ident,
               bool, /* final */
@@ -5109,8 +5082,7 @@ algorithm
 end setComponentPropertiesInElement;
 
 protected function setReplaceableKeywordAttributes
-"function: setReplaceableKeywordAttributes
-  Sets The RedeclareKeywords of an Element given a boolean \'replaceable\'.
+"Sets The RedeclareKeywords of an Element given a boolean \'replaceable\'.
   inputs:  (Absyn.RedeclareKeywords option,
               bool /* repl */)
   outputs: Absyn.RedeclareKeywords option ="
@@ -5132,8 +5104,7 @@ algorithm
 end setReplaceableKeywordAttributes;
 
 protected function setInnerOuterAttributes
-"function: setInnerOuterAttributes
-  Sets InnerOuter according to a list of two booleans, {inner, outer}."
+"Sets InnerOuter according to a list of two booleans, {inner, outer}."
   input list<Boolean> inBooleanLst;
   output Absyn.InnerOuter outInnerOuter;
 algorithm
@@ -5147,8 +5118,7 @@ algorithm
 end setInnerOuterAttributes;
 
 protected function setComponentPropertiesInElementspec
-"function: setComponentPropertiesInElementspec
-  Sets component attributes on an elements spec if identifier matches.
+"Sets component attributes on an elements spec if identifier matches.
   inputs:  (Absyn.ElementSpec,
               Absyn.Ident,
               bool, /* flow */
@@ -5187,8 +5157,7 @@ algorithm
 end setComponentPropertiesInElementspec;
 
 protected function itemsContainCompname
-"function: itemsContainCompname
-  Checks if a list of ElementItems contain a component named \'cr\'."
+"Checks if a list of ElementItems contain a component named \'cr\'."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.Ident inIdent;
 algorithm
@@ -5211,8 +5180,7 @@ algorithm
 end itemsContainCompname;
 
 protected function setElementAttributes
-"function: setElementAttributes
-  Sets  attributes associated with ElementAttribues.
+"Sets  attributes associated with ElementAttribues.
   inputs: (Absyn.ElementAttributes,
              bool, /* flow */
              bool, /* stream */
@@ -5288,8 +5256,7 @@ algorithm
 end setElementCausality;
 
 protected function selectString
-"function: selectString
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2006-02-05
    if bool is true select first string, otherwise the second one"
   input Boolean inSelector;
@@ -5306,8 +5273,7 @@ algorithm
 end selectString;
 
 protected function getCrefInfo
-"function: getCrefInfo
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2005-11-03, changed 2006-02-05 to match new Absyn.INFO
    Retrieves the Info attribute of a Class.
    When parsing classes, the source:
@@ -5358,8 +5324,7 @@ algorithm
 end getCrefInfo;
 
 protected function getImportString
-"function: getImportString
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2005-11-11
    helperfunction to getElementType "
   input Absyn.Import inImport;
@@ -5392,8 +5357,7 @@ algorithm
 end getImportString;
 
 protected function getElementType
-"function: getElementType
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2005-11-11
    helperfunction to getElementInfo"
   input Absyn.ElementSpec inElementSpec;
@@ -5438,8 +5402,7 @@ algorithm
 end getElementType;
 
 protected function getElementInfo
-"function: getElementInfo
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2005-11-11
    helperfunction to constructElementInfo & getElementsInfo"
   input Absyn.ElementItem inElementItem;
@@ -5505,8 +5468,7 @@ algorithm
 end getElementInfo;
 
 protected function constructElementsInfo
-"function: constructElementsInfo
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2005-11-11
    helperfunction to getElementsInfo
    inputs:  (string /* \"public\" or \"protected\" */, Absyn.ElementItem list)
@@ -5541,8 +5503,7 @@ algorithm
 end constructElementsInfo;
 
 protected function appendNonEmptyStrings
-"function: appendNonEmptyStrings
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2005-11-11
    helper to get_elements_info
    input: \"\", \"\", \",\" => \"\"
@@ -5568,8 +5529,7 @@ algorithm
 end appendNonEmptyStrings;
 
 protected function getElementsInfo
-"function: getElementsInfo
-   author: adrpo@ida
+" author: adrpo@ida
    date  : 2005-11-11, changed 2006-02-06 to mirror the new Absyn.INFO
    Retrieves the Info attribute of an element.
    When parsing elements of the class composition, the source:
@@ -5630,8 +5590,7 @@ algorithm
 end getElementsInfo;
 
 public function getSourceFile
-"function: getSourceFile
-   author: PA
+" author: PA
    Retrieves the Source file attribute of a Class.
    When parsing classes, the source file name is added to the Class
    definition and to all Elements, see Absyn. This function retrieves the
@@ -5659,8 +5618,7 @@ algorithm
 end getSourceFile;
 
 public function setSourceFile
-"function: setSourceFile
-   author: PA
+" author: PA
    Sets the source file of a Class. Is for instance used
    when adding a new class to an aldready stored package.
    The class should then have the same file as the package.
@@ -5696,8 +5654,7 @@ algorithm
 end setSourceFile;
 
 protected function setExtendsModifierValue
-"function: setExtendsModifierValue
-   This function sets the submodifier value of an
+" This function sets the submodifier value of an
    extends clause in a Class. For instance,
    model test extends A(p1=3,p2(z=3));end test;
    setExtendsModifierValue(test,A,p1,Code(=4)) => OK
@@ -5743,8 +5700,7 @@ algorithm
 end setExtendsModifierValue;
 
 protected function setExtendsSubmodifierInClass
-"function: setExtendsSubmodifierInClass
-   author: PA
+" author: PA
    Sets a modifier of an extends clause for a given subcomponent.
    For instance,
    extends A(b=4); // b is subcomponent
@@ -5798,8 +5754,7 @@ algorithm
 end setExtendsSubmodifierInClass;
 
 protected function setExtendsSubmodifierInClassparts
-"function: setExtendsSubmodifierInClassparts
-   Helper function to setExtendsSubmodifierInClass
+" Helper function to setExtendsSubmodifierInClass
    inputs:   (Absyn.ClassPart list,
                 Absyn.Path, /* inherit_name */
                 Absyn.ComponentRef, /* submodifier */
@@ -5845,8 +5800,7 @@ algorithm
 end setExtendsSubmodifierInClassparts;
 
 protected function setExtendsSubmodifierInElementitems
-"function: setExtendsSubmodifierInElementitems
-   Helper function to setExtendsSubmodifierInClassparts
+" Helper function to setExtendsSubmodifierInClassparts
    inputs:  (Absyn.ElementItem list,
                Absyn.Path, /* inherit_name */
                Absyn.ComponentRef, /* submodifier */
@@ -5886,8 +5840,7 @@ algorithm
 end setExtendsSubmodifierInElementitems;
 
 protected function setExtendsSubmodifierInElement
-"function: setExtendsSubmodifierInElement
-   Helper function to setExtendsSubmodifierInElementitems
+" Helper function to setExtendsSubmodifierInElementitems
    inputs: (Absyn.Element,
               Absyn.Path, /* inherit_name */
               Absyn.ComponentRef, /* submodifier */
@@ -5937,8 +5890,7 @@ algorithm
 end setExtendsSubmodifierInElement;
 
 protected function getExtendsModifierValue
-"function: getExtendsModifierValue
-   Return the submodifier value of an extends clause
+" Return the submodifier value of an extends clause
    for instance,
    model test extends A(p1=3,p2(z=3));end test;
    getExtendsModifierValue(test,A,p1) => =3
@@ -5983,8 +5935,7 @@ algorithm
 end getExtendsModifierValue;
 
 protected function makeExtendsFullyQualified
-"function: makeExtendsFullyQualified
-   Makes an EXTENDS ElementSpec having a
+" Makes an EXTENDS ElementSpec having a
    fully qualified extends path."
   input Absyn.ElementSpec inElementSpec;
   input Env.Env inEnv;
@@ -6007,8 +5958,7 @@ algorithm
 end makeExtendsFullyQualified;
 
 protected function getExtendsModifierNames
-"function: getExtendsModifierNames
-   Return the modifier names of a
+" Return the modifier names of a
    modification on an extends clause.
    For instance,
      model test extends A(p1=3,p2(z=3));end test;
@@ -6087,8 +6037,7 @@ algorithm
 end extendsName;
 
 protected function getExtendsElementspecInClass
-"function: getExtendsElementspecInClass
-  Retrieve all ElementSpec of a class that are EXTENDS."
+"Retrieve all ElementSpec of a class that are EXTENDS."
   input Absyn.Class inClass;
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
@@ -6122,8 +6071,7 @@ algorithm
 end getExtendsElementspecInClass;
 
 protected function getExtendsElementspecInClassparts
-"function: getExtendsElementspecInClassparts
-  Helper function to getExtendsElementspecInClass."
+"Helper function to getExtendsElementspecInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
@@ -6158,8 +6106,7 @@ algorithm
 end getExtendsElementspecInClassparts;
 
 protected function getExtendsElementspecInElementitems
-"function: getExtendsElementspecInElementitems
-  Helper function to getExtendsElementspecInClassparts."
+"Helper function to getExtendsElementspecInClassparts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
@@ -6187,8 +6134,7 @@ algorithm
 end getExtendsElementspecInElementitems;
 
 protected function getExtendsElementspecInElement
-"function: getExtendsElementspecInElement
-  Helper function to getExtendsElementspecInElementitems."
+"Helper function to getExtendsElementspecInElementitems."
   input Absyn.Element inElement;
   output Absyn.ElementSpec outElementSpec;
 algorithm
@@ -6200,8 +6146,7 @@ algorithm
 end getExtendsElementspecInElement;
 
 protected function setComponentModifier
-"function: setComponentModifier
-   Sets a submodifier of a component.
+" Sets a submodifier of a component.
    inputs:   (Absyn.ComponentRef, /* class */
                 Absyn.ComponentRef, /* variable name */
                 Absyn.ComponentRef, /* submodifier name */
@@ -6242,8 +6187,7 @@ algorithm
 end setComponentModifier;
 
 protected function setComponentSubmodifierInClass
-"function: setComponentSubmodifierInClass
-   Sets a sub modifier on a component in a class.
+" Sets a sub modifier on a component in a class.
    inputs: (Absyn.Class,
               Absyn.Ident, /* component name */
               Absyn.ComponentRef, /* subvariable path */
@@ -6290,8 +6234,7 @@ algorithm
 end setComponentSubmodifierInClass;
 
 protected function setComponentSubmodifierInClassparts
-"function: setComponentSubmodifierInClassparts
-   Helper function to setComponentSubmodifierInClass
+" Helper function to setComponentSubmodifierInClass
    inputs:  (Absyn.ClassPart list,
                Absyn.Ident, /* component name */
                Absyn.ComponentRef, /* subvariable path */
@@ -6334,8 +6277,7 @@ algorithm
 end setComponentSubmodifierInClassparts;
 
 protected function setComponentSubmodifierInElementitems
-"function: setComponentSubmodifierInElementitems
-   Helper function to setComponentSubmodifierInClassparts
+" Helper function to setComponentSubmodifierInClassparts
    inputs: (Absyn.ElementItem list,
               Absyn.Ident, /* component name */
               Absyn.ComponentRef, /* subvariable path */
@@ -6372,8 +6314,7 @@ algorithm
 end setComponentSubmodifierInElementitems;
 
 protected function setComponentSubmodifierInElement
-"function: setComponentSubmodifierInElement
-   Helper function to setComponentSubmodifierInElementitems
+" Helper function to setComponentSubmodifierInElementitems
    inputs: (Absyn.Element,
               Absyn.Ident, /* component name */
               Absyn.ComponentRef, /* submodifier path */
@@ -6412,8 +6353,7 @@ algorithm
 end setComponentSubmodifierInElement;
 
 protected function setComponentSubmodifierInCompitems
-"function: setComponentSubmodifierInCompitems
-   Helper function to setComponentSubmodifierInElement
+" Helper function to setComponentSubmodifierInElement
    inputs:  (Absyn.ComponentItem list,
                Absyn.Ident, /* component name */
                Absyn.ComponentRef, /* submodifier path */
@@ -6497,8 +6437,7 @@ algorithm
 end setComponentSubmodifierInCompitems;
 
 protected function createOptModificationFromEltargs
-"function: createOptModificationFromEltargs
-  Creates an Modification option from an ElementArg
+"Creates an Modification option from an ElementArg
   list. If list is empty, NONE() is created."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Absyn.EqMod eqMod;
@@ -6515,8 +6454,7 @@ algorithm
 end createOptModificationFromEltargs;
 
 protected function setSubmodifierInElementargs
-"function: setSubmodifierInElementargs
-   Helper function to setComponentSubmodifierInCompitems
+" Helper function to setComponentSubmodifierInCompitems
    inputs:  (Absyn.ElementArg list,
                Absyn.ComponentRef, /* subcomponent name */
                Absyn.Modification)
@@ -6701,8 +6639,7 @@ algorithm
 end getComponentModifierValue;
 
 public function getModificationValue
-"function: getModificationValue
-   Helper function to getComponentModifierValue
+" Helper function to getComponentModifierValue
    Investigates modifications to find submodifier."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Absyn.Path inPath;
@@ -6738,8 +6675,7 @@ algorithm
 end getModificationValue;
 
 protected function getComponentModifierNames
-"function: getComponentModifierNames
-   Return the modifiernames of a component, i.e. Foo f( )
+" Return the modifiernames of a component, i.e. Foo f( )
    inputs:  (Absyn.ComponentRef, /* class */
                Absyn.ComponentRef, /* variable name */
                Absyn.Program)
@@ -6781,8 +6717,7 @@ algorithm
 end getComponentModifierNames;
 
 protected function getModificationNames
-"function: getModificationNames
-  Helper function to getComponentModifierNames"
+"Helper function to getComponentModifierNames"
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   output list<String> outStringLst;
 algorithm
@@ -6839,8 +6774,7 @@ algorithm
 end getModificationNames;
 
 protected function getComponentBinding
-"function: getComponentBinding
-   Returns the value of a component in a class.
+" Returns the value of a component in a class.
    For example, the component
      Real x=1;
      returns 1.
@@ -6901,8 +6835,7 @@ algorithm
 end getComponentBinding;
 
 protected function getVariableBindingInComponentitem
-"function: getVariableBindingInComponentitem
-   Retrieve the variable binding from an ComponentItem"
+" Retrieve the variable binding from an ComponentItem"
   input Absyn.ComponentItem inComponentItem;
   output Absyn.Exp outExp;
 algorithm
@@ -6913,8 +6846,7 @@ algorithm
 end getVariableBindingInComponentitem;
 
 protected function setParameterValue
-"function: setParameterValue
-   Sets the parameter value of a class and returns the updated program.
+" Sets the parameter value of a class and returns the updated program.
    inputs:  (Absyn.ComponentRef, /* class */
                Absyn.ComponentRef, /* ident */
                Absyn.Exp,          /* exp */
@@ -6968,8 +6900,7 @@ algorithm
 end setParameterValue;
 
 protected function setVariableBindingInClass
-"function: setVariableBindingInClass
-   Takes a class and an identifier and value an
+" Takes a class and an identifier and value an
    sets the variable binding to the passed expression."
   input Absyn.Class inClass;
   input Absyn.Ident inIdent;
@@ -7013,8 +6944,7 @@ algorithm
 end setVariableBindingInClass;
 
 protected function setVariableBindingInClassparts
-"function: setVariableBindingInClassparts
-   Sets a binding of a variable in a ClassPart
+" Sets a binding of a variable in a ClassPart
    list, named by the passed argument."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Absyn.Ident inIdent;
@@ -7058,8 +6988,7 @@ algorithm
 end setVariableBindingInClassparts;
 
 protected function setVariableBindingInElementitems
-"function: setVariableBindingInElementitems
-   Sets a variable binding in a list of ElementItems"
+" Sets a variable binding in a list of ElementItems"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Ident inIdent;
   input Absyn.Exp inExp;
@@ -7095,8 +7024,7 @@ algorithm
 end setVariableBindingInElementitems;
 
 protected function setVariableBindingInElement
-"function: setVariableBindingInElement
-   Sets a variable binding in an Element."
+" Sets a variable binding in an Element."
   input Absyn.Element inElement;
   input Absyn.Ident inIdent;
   input Absyn.Exp inExp;
@@ -7129,8 +7057,7 @@ algorithm
 end setVariableBindingInElement;
 
 protected function setVariableBindingInCompitems
-"function: setVariableBindingInCompitems
-   Sets a variable binding in a ComponentItem list
+" Sets a variable binding in a ComponentItem list
    and returns true if it found it"
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.Ident inIdent;
@@ -7173,8 +7100,7 @@ algorithm
 end setVariableBindingInCompitems;
 
 public function buildWithin
-"function: buildWithin
-   From a fully qualified model name, build a suitable within clause"
+" From a fully qualified model name, build a suitable within clause"
   input Absyn.Path inPath;
   output Absyn.Within outWithin;
 algorithm
@@ -7193,8 +7119,7 @@ algorithm
 end buildWithin;
 
 protected function componentitemNamed
-"function: componentitemNamed
-   Returns true if the component item has
+" Returns true if the component item has
    the name matching the second argument."
   input Absyn.ComponentItem inComponentItem;
   input Absyn.Ident inIdent;
@@ -7212,8 +7137,7 @@ algorithm
 end componentitemNamed;
 
 protected function getComponentitemName
-"function: getComponentitemName
-   Returns the name of a ComponentItem"
+" Returns the name of a ComponentItem"
   input Absyn.ComponentItem inComponentItem;
   output Absyn.Ident outIdent;
 algorithm
@@ -7224,8 +7148,7 @@ algorithm
 end getComponentitemName;
 
 protected function getComponentitemsInElement
-"function: getComponentitemsInElement
-   Retrieves the ComponentItems of a component Element.
+" Retrieves the ComponentItems of a component Element.
    If Element is not a component, empty list is returned."
   input Absyn.Element inElement;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
@@ -7238,8 +7161,7 @@ algorithm
 end getComponentitemsInElement;
 
 protected function renameClass
-"function: renameClass
-   This function renames a class (given as a qualified path name) to a
+" This function renames a class (given as a qualified path name) to a
    new name -in the same scope-. All references to the class name in the
    program is updated to the new name. Thefunction does not allow a
    renaming that will move the class to antoher package. To do this, the
@@ -7301,8 +7223,7 @@ algorithm
 end renameClass;
 
 protected function renameClassVisitor
-"function: renameClassVisitor
-   This visitor renames a class given a new name.
+" This visitor renames a class given a new name.
    It returns a list of strings of renamed classes.
    The 'traversal-tuple' is therefore
    tuple<oldname, newname, program, string list, env>."
@@ -7671,8 +7592,7 @@ algorithm
 end changeLastIdent;
 
 public function traverseClasses
-"function: traverseClasses
-   This function traverses all classes of a program and applies a function
+" This function traverses all classes of a program and applies a function
    to each class. The function takes the Absyn.Class, Absyn.Path option
    and an additional argument and returns an updated class and the
    additional values. The Absyn.Path option contains the path to the class
@@ -7716,8 +7636,7 @@ algorithm
 end traverseClasses;
 
 protected function traverseClasses2
-"function: traverseClasses2
-   Helperfunction to traverseClasses."
+" Helperfunction to traverseClasses."
   input list<Absyn.Class> inAbsynClassLst;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
@@ -7825,8 +7744,7 @@ algorithm
 end eltsHasLocalClass;
 
 protected function traverseInnerClass
-"function: traverseInnerClass
-   Helperfunction to traverseClasses2. This function traverses all inner classes of a class."
+" Helperfunction to traverseClasses2. This function traverses all inner classes of a class."
   input Absyn.Class inClass;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
@@ -7918,8 +7836,7 @@ algorithm
 end traverseInnerClass;
 
 protected function traverseInnerClassParts
-"function: traverseInnerClassParts
-   Helper function to traverseInnerClass"
+" Helper function to traverseInnerClass"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
@@ -8031,8 +7948,7 @@ algorithm
 end traverseInnerClassElements;
 
 protected function traverseInnerClassElementspec
-"function: traverseInnerClassElementspec
-   Helperfunction to traverseInnerClassElements"
+" Helperfunction to traverseInnerClassElements"
   input Absyn.ElementSpec inElementSpec;
   input Option<Absyn.Path> inAbsynPathOption;
   input FuncTypeTplAbsyn_ClassAbsyn_PathOptionType_aToTplAbsyn_ClassAbsyn_PathOptionType_a inFuncTypeTplAbsynClassAbsynPathOptionTypeAToTplAbsynClassAbsynPathOptionTypeA;
@@ -8068,8 +7984,7 @@ algorithm
 end traverseInnerClassElementspec;
 
 public function isPrimitive
-"function: isPrimitive
-  Thisfunction takes a component reference and a program.
+"Thisfunction takes a component reference and a program.
   It returns the true if the refrenced type is a primitive
   type, otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8100,8 +8015,7 @@ algorithm
 end isPrimitive;
 
 protected function deleteClass
-"function: deleteClass
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It deletes the class specified by the component reference from the
    given program."
   input Absyn.ComponentRef inComponentRef;
@@ -8153,8 +8067,7 @@ algorithm
 end deleteClass;
 
 protected function deleteClassFromList
-"function: deleteClassFromList
-  Helper function to deleteClass."
+"Helper function to deleteClass."
   input Absyn.Class inClass;
   input list<Absyn.Class> inAbsynClassLst;
   output list<Absyn.Class> outAbsynClassLst;
@@ -8189,8 +8102,7 @@ algorithm
 end deleteClassFromList;
 
 public function setClassComment
-"function: setClassComment
-  author: PA
+"author: PA
   Sets the class comment."
   input Absyn.Path path;
   input String inString;
@@ -8221,8 +8133,7 @@ algorithm
 end setClassComment;
 
 protected function setClassCommentInClass
-"function: setClassCommentInClass
-  author: PA
+"author: PA
   Helper function to setClassComment"
   input Absyn.Class inClass;
   input String inString;
@@ -8245,8 +8156,7 @@ algorithm
 end setClassCommentInClass;
 
 protected function setClassCommentInClassdef
-"function: setClassCommentInClassdef
-  author: PA
+"author: PA
   Helper function to setClassCommentInClass"
   input Absyn.ClassDef inClassDef;
   input String inString;
@@ -8293,8 +8203,7 @@ algorithm
 end setClassCommentInClassdef;
 
 protected function setClassCommentInCommentOpt
-"function: setClassCommentInCommentOpt
-  author: PA
+"author: PA
   Sets the string comment in an Comment option."
   input Option<Absyn.Comment> inAbsynCommentOption;
   input String inString;
@@ -8312,8 +8221,7 @@ algorithm
 end setClassCommentInCommentOpt;
 
 protected function getClassInformation
-"function: getClassInformation
-  author: PA
+"author: PA
   Returns all the possible class information.
   changed by adrpo 2006-02-24 (latest 2006-03-14) to return more info and in a different format:
   {\"restriction\",\"comment\",\"filename.mo\",{bool,bool,bool},{\"readonly|writable\",int,int,int,int}}
@@ -8354,8 +8262,7 @@ algorithm
 end getClassInformation;
 
 protected function getShortDefinitionBaseClassInformation
-"function: getShortDefinitionBaseClassInformation
-  author: adrpo
+"author: adrpo
   Returns all the prefixes of the base class and the base class array dimensions.
   {{bool,bool,bool}}"
   input Absyn.ComponentRef cr;
@@ -8398,8 +8305,7 @@ algorithm
 end getShortDefinitionBaseClassInformation;
 
 protected function getExternalFunctionSpecification
-"function: getExternalFunctionSpecification
-  author: adrpo
+"author: adrpo
   Returns the external declaration from the function definition"
   input Absyn.ComponentRef cr;
   input Absyn.Program p;
@@ -8457,8 +8363,7 @@ algorithm
 end getClassDimensions;
 
 protected function getClassAttributes
-"function: getClassAttributes
-  author: Adrian Pop, 2006-02-24
+"author: Adrian Pop, 2006-02-24
   Returns all the possible class information in this format:
   { name=\"Ident\", partial=(true|false), final=(true|false),
     encapsulated=(true|false), restriction=\"PACKAGE|CLASS|..\",
@@ -8498,8 +8403,7 @@ algorithm
 end getClassAttributes;
 
 public function getClassComment
-"function: getClassComment
-  author: PA
+"author: PA
   Returns the class comment of a Absyn.ClassDef"
   input Absyn.ClassDef cdef;
   output String res;
@@ -8511,8 +8415,7 @@ algorithm
 end getClassComment;
 
 protected function getClassComment2
-"function: getClassComment2
-  Helper function to getClassComment."
+"Helper function to getClassComment."
   input Absyn.ClassDef inClassDef;
   output String outString;
 algorithm
@@ -8548,8 +8451,7 @@ algorithm
 end getClassComment2;
 
 public function getClassRestriction
-"function: getClassRestriction
-  author: PA
+"author: PA
   Returns the class restriction of a class as a string."
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
@@ -8576,8 +8478,7 @@ algorithm
 end getClassRestriction;
 
 public function isType
-"function: isType
-  This function takes a component reference and a program.
+"This function takes a component reference and a program.
   It returns true if the refrenced class has the restriction
   \"type\", otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8601,8 +8502,7 @@ algorithm
 end isType;
 
 protected function isConnector
-"function: isConnector
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"connector\", otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8632,8 +8532,7 @@ algorithm
 end isConnector;
 
 public function isModel
-"function: isModel
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"model\", otherwise it returns false."
   input Absyn.Path path;
@@ -8652,8 +8551,7 @@ algorithm
 end isModel;
 
 public function isOperator
-"function: isOperator
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"operator\", otherwise it returns false."
   input Absyn.Path path;
@@ -8672,8 +8570,7 @@ algorithm
 end isOperator;
 
 public function isOperatorRecord
-"function: isOperatorRecord
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"operator record\", otherwise it returns false."
   input Absyn.Path path;
@@ -8692,8 +8589,7 @@ algorithm
 end isOperatorRecord;
 
 public function isOperatorFunction
-"function: isOperatorFunction
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"operator function\", otherwise it returns false."
   input Absyn.Path path;
@@ -8712,8 +8608,7 @@ algorithm
 end isOperatorFunction;
 
 protected function isRecord
-"function: isRecord
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"record\", otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8737,8 +8632,7 @@ algorithm
 end isRecord;
 
 protected function isBlock
-"function: isBlock
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"block\", otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8762,8 +8656,7 @@ algorithm
 end isBlock;
 
 protected function isOptimization
-"function: isOptimization
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"Optimization\", otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8787,8 +8680,7 @@ algorithm
 end isOptimization;
 
 public function isFunction
-"function: isFunction
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"function\", otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8812,8 +8704,7 @@ algorithm
 end isFunction;
 
 public function isPackage
-"function: isPackage
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"package\", otherwise it returns false."
   input Absyn.Path path;
@@ -8834,8 +8725,7 @@ algorithm
 end isPackage;
 
 protected function isClass
-"function: isClass
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"class\", otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -8859,8 +8749,7 @@ algorithm
 end isClass;
 
 public function isPartial
-"function: isClass
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class has the restriction
    \"class\", otherwise it returns false."
   input Absyn.Path p;
@@ -8878,8 +8767,7 @@ algorithm
 end isPartial;
 
 protected function isParameter
-"function: isParameter
-   This function takes a class and a component reference and a program
+" This function takes a class and a component reference and a program
    and returns true if the component referenced is a parameter."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
@@ -8920,8 +8808,7 @@ algorithm
 end isParameter;
 
 protected function isProtected
-"function: isProtected
-   This function takes a class and a component reference and a program
+" This function takes a class and a component reference and a program
    and returns true if the component referenced is in a protected section."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
@@ -8975,8 +8862,7 @@ algorithm
 end isProtected;
 
 protected function isConstant
-"function: isConstant
-   This function takes a class and a component reference and a program
+" This function takes a class and a component reference and a program
    and returns true if the component referenced is a constant."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
@@ -9014,8 +8900,7 @@ algorithm
 end isConstant;
 
 protected function isEnumeration
-"function: isEnumeration
-   It returns true if the refrenced class has the restriction
+" It returns true if the refrenced class has the restriction
    \"type\" and is an \"Enumeration\", otherwise it returns false."
   input Absyn.Class inClass;
   output Boolean outBoolean;
@@ -9030,8 +8915,7 @@ algorithm
 end isEnumeration;
 
 protected function isReplaceable
-"function: isReplaceable
-  Returns true if the class referenced by inString within inComponentRef1 is replaceable.
+"Returns true if the class referenced by inString within inComponentRef1 is replaceable.
   Only look to Element Items of inComponentRef1 for components use getComponents."
   input Absyn.ComponentRef inComponentRef1;
   input String inString;
@@ -9092,8 +8976,7 @@ algorithm
 end isReplaceable;
 
 protected function isReplaceableInElements
-"function: isReplaceableInElements
-  Helper function to isReplaceable."
+"Helper function to isReplaceable."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input String inString;
   output Boolean outBoolean;
@@ -9120,8 +9003,7 @@ algorithm
 end isReplaceableInElements;
 
 public function isProtectedClass
-"function: isProtectedClass
-  Returns true if the class referenced by inString within path is protected.
+"Returns true if the class referenced by inString within path is protected.
   Only look to Element Items of inComponentRef1 for components use getComponents."
   input Absyn.Path path;
   input String inString;
@@ -9158,8 +9040,7 @@ algorithm
 end isProtectedClass;
 
 protected function isProtectedClassInElements
-"function: isProtectedClassInElements
-  Helper function to isProtectedClass."
+"Helper function to isProtectedClass."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input String inString;
   output Boolean outBoolean;
@@ -9185,8 +9066,7 @@ algorithm
 end isProtectedClassInElements;
 
 protected function getEnumLiterals
-"function: getEnumLiterals
-  Returns the enum literals as a list of string."
+"Returns the enum literals as a list of string."
   input Absyn.Class inClass;
   output String outString;
 algorithm
@@ -9207,8 +9087,7 @@ algorithm
 end getEnumLiterals;
 
 public function getDerivedClassModifierNames
-"function: getDerivedClassModifierNames
-  Returns the derived class modifier names."
+"Returns the derived class modifier names."
   input Absyn.Class inClass;
   output list<String> outString;
 algorithm
@@ -9226,8 +9105,7 @@ algorithm
 end getDerivedClassModifierNames;
 
 public function getDerivedClassModifierValue
-"function: getDerivedClassModifierValue
-  Returns the derived class modifier value."
+"Returns the derived class modifier value."
   input Absyn.Class inClass;
   input Absyn.Path inPath;
   output String outString;
@@ -9248,8 +9126,7 @@ algorithm
 end getDerivedClassModifierValue;
 
 protected function getElementitemContainsName
-"function: getElementitemContainsName
-  Returns the element that has the component name given as argument."
+"Returns the element that has the component name given as argument."
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output Absyn.ElementItem outElementItem;
@@ -9274,8 +9151,7 @@ algorithm
 end getElementitemContainsName;
 
 protected function getComponentsContainsName
-"function: getComponentsContainsName
-  Return the ElementSpec containing the name
+"Return the ElementSpec containing the name
   given as argument from a list of ElementItems"
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
@@ -9303,8 +9179,7 @@ algorithm
 end getComponentsContainsName;
 
 protected function getElementContainsName
-"function: getElementContainsName
-  Return the Element containing the component name
+"Return the Element containing the component name
   given as argument from a list of ElementItems."
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
@@ -9332,8 +9207,7 @@ algorithm
 end getElementContainsName;
 
 protected function getCompitemNamed
-"function: getCompitemNamed
-  Helper function to getComponentsContainsName."
+"Helper function to getComponentsContainsName."
   input Absyn.ComponentRef inComponentRef;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output Absyn.ComponentItem outComponentItem;
@@ -9360,8 +9234,7 @@ algorithm
 end getCompitemNamed;
 
 public function existClass
-"function: existClass
-   This function takes a component reference and a program.
+" This function takes a component reference and a program.
    It returns true if the refrenced class exists in the
    symbol table, otherwise it returns false."
   input Absyn.ComponentRef inComponentRef;
@@ -9386,8 +9259,7 @@ algorithm
 end existClass;
 
 public function isPrimitiveClass
-"function: isPrimitiveClass
-  Return true of a class is a primitive class, i.e. one of the builtin
+"Return true of a class is a primitive class, i.e. one of the builtin
   classes or the \'type\' restricted class. It also checks derived classes
   using short class definition."
   input Absyn.Class inClass;
@@ -9418,8 +9290,7 @@ algorithm
 end isPrimitiveClass;
 
 public function removeCompiledFunctions
-"function: removeCompiledFunctions
-   A Compiled function should be removed if its definition is updated."
+" A Compiled function should be removed if its definition is updated."
   input Absyn.Program inProgram;
   input list<CompiledCFunction> inTplAbsynPathTypesTypeLst;
   output list<CompiledCFunction> outTplAbsynPathTypesTypeLst;
@@ -9438,8 +9309,7 @@ algorithm
 end removeCompiledFunctions;
 
 protected function removeAnySubFunctions
-"function: removeAnySubFunctions
-  Will remove any functions contain within the class from cflist."
+"Will remove any functions contain within the class from cflist."
   input Absyn.Path inPath;
   input Absyn.Class inClass;
   input list<CompiledCFunction> inCompiledFunctions;
@@ -9473,8 +9343,7 @@ algorithm
 end removeAnySubFunctions;
 
 protected function removeAnyPartsFunctions
-"function: removeAnyPartsFunctions
-  Helper function to removeAnyBodyFunctions."
+"Helper function to removeAnyBodyFunctions."
   input Absyn.Path inPath;
   input list<Absyn.ClassPart> inParts;
   input list<CompiledCFunction> inCompiledFunctions;
@@ -9517,8 +9386,7 @@ algorithm
 end removeAnyPartsFunctions;
 
 function removeAnyEltsFunctions
-"function: removeAnyEltsFunctions
-  Helper function to removeAnyPartsFunctions."
+"Helper function to removeAnyPartsFunctions."
   input Absyn.Path inPath;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input list<CompiledCFunction> inCompiledFunctions;
@@ -9549,8 +9417,7 @@ algorithm
 end removeAnyEltsFunctions;
 
 public function removeCfAndDependencies
-"function: removeCf
-  Helper function to removeCompiledFunctions and removeAnySubFunctions."
+"Helper function to removeCompiledFunctions and removeAnySubFunctions."
   input list<CompiledCFunction> inCompiledFunctions;
   input list<Absyn.Path> functionAndDependencies "the main function path plus all dependencies!";
   output list<CompiledCFunction> outCompiledFunctions;
@@ -9576,8 +9443,7 @@ algorithm
 end removeCfAndDependencies;
 
 public function removeCf
-"function: removeCf
-  Helper function to removeCompiledFunctions and removeAnySubFunctions."
+"Helper function to removeCompiledFunctions and removeAnySubFunctions."
   input list<CompiledCFunction> inCompiledFunctions;
   input Absyn.Path functionName "the main function path";
   output list<CompiledCFunction> outCompiledFunctions;
@@ -9611,8 +9477,7 @@ algorithm
 end removeCf;
 
 public function updateProgram
-"function: updateProgram
-   This function takes an old program (second argument), i.e. the old
+" This function takes an old program (second argument), i.e. the old
    symboltable, and a new program (first argument), i.e. a new set of
    classes and updates the old program with the definitions in the new one.
    It also takes in the current symboltable and returns a new one with any
@@ -9629,8 +9494,7 @@ algorithm
 end updateProgram;
 
 protected function updateProgram2
-"function: updateProgram
-   This function takes an old program (second argument), i.e. the old
+" This function takes an old program (second argument), i.e. the old
    symboltable, and a new program (first argument), i.e. a new set of
    classes and updates the old program with the definitions in the new one.
    It also takes in the current symboltable and returns a new one with any
@@ -9676,8 +9540,7 @@ algorithm
 end updateProgram2;
 
 public function addScope
-"function: addScope
-   This function adds the scope of the scope variable to
+" This function adds the scope of the scope variable to
    the program, so it can be inserted at the correct place.
    It also adds the scope to BEGIN_DEFINITION, COMP_DEFINITION
    and IMPORT_DEFINITION so an empty class definition can be
@@ -9718,8 +9581,7 @@ algorithm
 end addScope;
 
 protected function getVariableValue
-"function: getVariableValue
-  Return the value of an interactive variable
+"Return the value of an interactive variable
   from a list of Variable."
   input Absyn.Ident inIdent;
   input list<Variable> inVariableLst;
@@ -9747,8 +9609,7 @@ algorithm
 end getVariableValue;
 
 protected function getVariableValueLst
-"function: getVariableValue
-  Return the value of an interactive variable
+"Return the value of an interactive variable
   from a list of Variable."
   input list<String> ids;
   input list<Variable> vars;
@@ -9790,8 +9651,7 @@ algorithm
 end getVariableValueLst;
 
 protected function lookupClassdef
-"function: lookupClassdef
-   This function takes a Path of a class to lookup and a Path
+" This function takes a Path of a class to lookup and a Path
    as a starting point for the lookup rules and a Program.
    It returns the Class definition and the complete Path to the class."
   input Absyn.Path inPath1;
@@ -9858,8 +9718,7 @@ algorithm
 end lookupClassdef;
 
 protected function deleteComponent
-"function: deleteComponent
-   This function deletes a component from a class given the name of the
+" This function deletes a component from a class given the name of the
    component instance, the model in which the component is instantiated in,
    and the Program. Both public and protected lists are searched."
   input String inString;
@@ -9907,8 +9766,7 @@ algorithm
 end deleteComponent;
 
 protected function deleteComponentFromClass
-"function: deleteComponentFromClass
-   This function deletes a component from a class given
+" This function deletes a component from a class given
    the name of the component instance, and a \'Class\'.
    Both public and protected lists are searched."
   input String inString;
@@ -9995,8 +9853,7 @@ algorithm
 end deleteComponentFromClass;
 
 protected function deleteComponentFromElementitems
-"function: deleteComponentFromElementitems
-  Helper function to deleteComponentFromClass."
+"Helper function to deleteComponentFromClass."
   input String inString;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
@@ -10223,8 +10080,7 @@ algorithm
 end getDefaultComponentPrefixesModStr;
 
 protected function updateComponent
-"function: updateComponent
-   This function updates a component in a class. The reason for having
+" This function updates a component in a class. The reason for having
    thisfunction is that a deletion followed by an addition would mean that
    all optional arguments must be present to the add_componentfunction
    in order to get the same component attributes,etc. as previous."
@@ -10398,8 +10254,7 @@ algorithm
 end addClassAnnotation;
 
 protected function addClassAnnotationToClass
-"function: addClassAnnotationToClass
-   This function adds an annotation on element level to a `Class´."
+" This function adds an annotation on element level to a `Class´."
   input Absyn.Class inClass;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Absyn.Class outClass;
@@ -10443,8 +10298,7 @@ algorithm
 end addClassAnnotationToClass;
 
 protected function getInheritanceCount
-"function: getInheritanceCount
-  This function takes a ComponentRef and a Program and
+"This function takes a ComponentRef and a Program and
   returns the number of inherited classes in the class
   referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
@@ -10470,8 +10324,7 @@ algorithm
 end getInheritanceCount;
 
 protected function getNthInheritedClass
-"function: getNthInheritedClass
-  This function takes a ComponentRef, an integer and a Program and returns
+"This function takes a ComponentRef, an integer and a Program and returns
   the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
   input Integer inInteger;
@@ -10521,8 +10374,7 @@ algorithm
 end getNthInheritedClass;
 
 protected function getNthInheritedClassAnnotationOpt
-"function: getNthInheritedClassAnnotation
-  This function takes a ComponentRef, an integer and a Program and returns
+"This function takes a ComponentRef, an integer and a Program and returns
   the ANNOTATION on the extends of the nth inherited class in the class referenced by the modelpath."
   input Absyn.Path inModelPath;
   input Integer inInteger;
@@ -10604,8 +10456,7 @@ algorithm
 end getMapAnnotationStr;
 
 protected function getNthInheritedClassMapAnnotation
-"function: getNthInheritedClassIconMapAnnotation
-  This function takes a ComponentRef, an integer and a Program and returns
+"This function takes a ComponentRef, an integer and a Program and returns
   the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.Path inModelPath;
   input Integer inInteger;
@@ -10642,8 +10493,7 @@ algorithm
 end getNthInheritedClassMapAnnotation;
 
 protected function getExtendsInClass
-"function: getExtendsInClass
-  Returns all ElementSpec of EXTENDS in a class."
+"Returns all ElementSpec of EXTENDS in a class."
   input Absyn.Class inClass;
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
 algorithm
@@ -10674,8 +10524,7 @@ algorithm
 end getExtendsInClass;
 
 protected function getExtendsInParts
-"function: getExtendsInParts
-  author: PA
+"author: PA
   Helper function to getExtendsInElass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
@@ -10709,8 +10558,7 @@ algorithm
 end getExtendsInParts;
 
 protected function getExtendsInElementitems
-"function: getExtendsInElementitems
-  author: PA
+"author: PA
   Helper function to getExtendsInParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Absyn.ElementSpec> outAbsynElementSpecLst;
@@ -10736,8 +10584,7 @@ algorithm
 end getExtendsInElementitems;
 
 protected function getNthInheritedClass2
-"function: getNthInheritedClass2
-  Helper function to getNthInheritedClass."
+"Helper function to getNthInheritedClass."
   input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
@@ -10786,8 +10633,7 @@ algorithm
 end getNthInheritedClass2;
 
 public function getComponentCount
-"function: getComponentCount
-   This function takes a ComponentRef and a Program and returns the
+" This function takes a ComponentRef and a Program and returns the
    number of public components in the class referenced by the ComponentRef."
   input Absyn.ComponentRef model_;
   input Absyn.Program p;
@@ -10802,8 +10648,7 @@ algorithm
 end getComponentCount;
 
 protected function countComponents
-"function: countComponents
-   This function takes a Class and returns the
+" This function takes a Class and returns the
    number of components in that class"
   input Absyn.Class inClass;
   output Integer outInteger;
@@ -10873,8 +10718,7 @@ algorithm
 end countComponents;
 
 protected function countComponentsInElts
-"function: countComponentsInElts
-  Helper function to countComponents"
+"Helper function to countComponents"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output Integer outInteger;
 algorithm
@@ -10941,8 +10785,7 @@ algorithm
 end getNthComponent;
 
 protected function getNthComponent2
-"function: getNthComponent2
-  Helper function to get_nth_component."
+"Helper function to get_nth_component."
   input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
@@ -11020,8 +10863,7 @@ algorithm
 end insertQuotesToList;
 
 public function getComponents
-"function: getComponents
-   This function takes a `ComponentRef\', a `Program\' and an int and  returns
+" This function takes a `ComponentRef\', a `Program\' and an int and  returns
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef cr;
   input Boolean inBoolean;
@@ -11033,8 +10875,7 @@ algorithm
 end getComponents;
 
 protected function getComponents2
-"function: getComponents
-   This function takes a `ComponentRef\', a `Program\' and an int and  returns
+" This function takes a `ComponentRef\', a `Program\' and an int and  returns
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
@@ -11084,8 +10925,7 @@ algorithm
   end matchcontinue;
 end getComponents2;
 
-protected function getComponentAnnotations "function: getComponentAnnotations
-   This function takes a `ComponentRef\', a `Program\' and
+protected function getComponentAnnotations " This function takes a `ComponentRef\', a `Program\' and
    returns a list of all component annotations, as returned by
    get_nth_component_annotation.
    Both public and protected components are returned, but they need to
@@ -11187,8 +11027,7 @@ algorithm
 end getNthComponentModification;
 
 protected function getNthComponentCondition
-"function: getNthComponentCondition
-  This function takes a `ComponentRef\', a `Program\' and an int and
+"This function takes a `ComponentRef\', a `Program\' and an int and
   returns a component condition."
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
@@ -11220,8 +11059,7 @@ algorithm
 end getNthComponentCondition;
 
 protected function getComponentCondition
-"function: getComponentCondition
-   Helper function to getNthComponentCondition."
+" Helper function to getNthComponentCondition."
   input Absyn.Element inElement;
   output String outString;
 algorithm
@@ -11240,8 +11078,7 @@ algorithm
 end getComponentCondition;
 
 protected function getComponentitemsCondition
-"function: getComponentitemsCondition
-  Helper function to getNthComponentCondition."
+"Helper function to getNthComponentCondition."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output String outString;
 algorithm
@@ -11469,8 +11306,7 @@ algorithm
 end deleteConnection;
 
 protected function deleteEquationInClass
-"function: deleteEquationInClass
-  Helper function to deleteConnection."
+"Helper function to deleteConnection."
   input Absyn.Class inClass1;
   input Absyn.ComponentRef inComponentRef2;
   input Absyn.ComponentRef inComponentRef3;
@@ -11513,8 +11349,7 @@ algorithm
 end deleteEquationInClass;
 
 protected function deleteEquationInEqlist
-"function: deleteEquationInEqlist
-  Helper function to deleteConnection."
+"Helper function to deleteConnection."
   input list<Absyn.EquationItem> inAbsynEquationItemLst1;
   input Absyn.ComponentRef inComponentRef2;
   input Absyn.ComponentRef inComponentRef3;
@@ -11543,8 +11378,7 @@ algorithm
 end deleteEquationInEqlist;
 
 protected function getComponentComment
-"function: getComponentComment
-  Get the component commment."
+"Get the component commment."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
   input Absyn.Program inProgram4;
@@ -11569,8 +11403,7 @@ algorithm
 end getComponentComment;
 
 protected function getComponentCommentInClass
-"function: getComponentCommentInClass
-  Helper function to getComponentComment."
+"Helper function to getComponentComment."
   input Absyn.Class inClass;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11596,8 +11429,7 @@ algorithm
 end getComponentCommentInClass;
 
 protected function getComponentCommentInParts
-"function: getComponentCommentInParts
-  Helper function to getComponentComment."
+"Helper function to getComponentComment."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11638,8 +11470,7 @@ algorithm
 end getComponentCommentInParts;
 
 protected function getComponentCommentInElementitems
-"function: getComponentCommentInElementitems
-  Helper function to getComponentComment."
+"Helper function to getComponentComment."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11670,8 +11501,7 @@ algorithm
 end getComponentCommentInElementitems;
 
 protected function getComponentCommentInElementspec
-"function: getComponentCommentInElementspec
-  Helper function to getComponentComment."
+"Helper function to getComponentComment."
   input Absyn.ElementSpec inElementSpec;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11692,8 +11522,7 @@ algorithm
 end getComponentCommentInElementspec;
 
 protected function getComponentCommentInCompitems
-"function: getComponentCommentInCompitems
-  Helper function to getComponentComment."
+"Helper function to getComponentComment."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.ComponentRef inComponentRef;
   output String outString;
@@ -11723,8 +11552,7 @@ algorithm
 end getComponentCommentInCompitems;
 
 protected function getClassCommentInCommentOpt
-"function: getClassCommentInCommentOpt
-  Helper function to getComponentComment."
+"Helper function to getComponentComment."
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
@@ -11737,8 +11565,7 @@ algorithm
 end getClassCommentInCommentOpt;
 
 protected function setComponentComment
-"function: setComponentComment
-  author :PA
+"author :PA
   Sets the component commment given by class name and ComponentRef."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
@@ -11775,8 +11602,7 @@ algorithm
 end setComponentComment;
 
 protected function setComponentCommentInClass
-"function: setComponentCommentInClass
-  author: PA
+"author: PA
   Helper function to setComponentComment."
   input Absyn.Class inClass;
   input Absyn.ComponentRef inComponentRef;
@@ -11814,8 +11640,7 @@ algorithm
 end setComponentCommentInClass;
 
 protected function setComponentCommentInParts
-"function: setComponentCommentInParts
-  author: PA
+"author: PA
   Helper function to setComponentCommentInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Absyn.ComponentRef inComponentRef;
@@ -11859,8 +11684,7 @@ algorithm
 end setComponentCommentInParts;
 
 protected function setComponentCommentInElementitems
-"function: setComponentCommentInElementitems
-  author: PA
+"author: PA
   Helper function to setComponentParts. "
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.ComponentRef inComponentRef;
@@ -11894,8 +11718,7 @@ algorithm
 end setComponentCommentInElementitems;
 
 protected function setComponentCommentInElementspec
-"function: setComponentCommentInElementspec
-  author: PA
+"author: PA
   Helper function to setComponentElementitems."
   input Absyn.ElementSpec inElementSpec;
   input Absyn.ComponentRef inComponentRef;
@@ -11919,8 +11742,7 @@ algorithm
 end setComponentCommentInElementspec;
 
 protected function setComponentCommentInCompitems
-"function: setComponentCommentInCompitems
-  author: PA
+"author: PA
   Helper function to set_component_elementspec."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.ComponentRef inComponentRef;
@@ -11953,8 +11775,7 @@ algorithm
 end setComponentCommentInCompitems;
 
 protected function setConnectionComment
-"function: setConnectionComment
-  author: PA
+"author: PA
   Sets the nth connection comment."
   input Absyn.ComponentRef inComponentRef1;
   input Absyn.ComponentRef inComponentRef2;
@@ -11988,8 +11809,7 @@ algorithm
 end setConnectionComment;
 
 protected function setConnectionCommentInClass
-"function: setConnectionCommentInClass
-  author: PA
+"author: PA
   Sets a connection comment in a Absyn.Class given two Absyn,ComponentRef"
   input Absyn.Class inClass1;
   input Absyn.ComponentRef inComponentRef2;
@@ -12029,8 +11849,7 @@ algorithm
 end setConnectionCommentInClass;
 
 protected function setConnectionCommentInParts
-"function: setConnectionCommentInParts
-  author: PA
+"author: PA
   Helper function to setConnectionCommentInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst1;
   input Absyn.ComponentRef inComponentRef2;
@@ -12065,8 +11884,7 @@ algorithm
 end setConnectionCommentInParts;
 
 protected function setConnectionCommentInEquations
-"function: setConnectionCommentInEquations
-  author: PA
+"author: PA
   Helper function to setConnectionCommentInParts"
   input list<Absyn.EquationItem> inAbsynEquationItemLst1;
   input Absyn.ComponentRef inComponentRef2;
@@ -12099,8 +11917,7 @@ algorithm
 end setConnectionCommentInEquations;
 
 protected function getNthConnectionAnnotation
-"function: getNthConnectionAnnotation
-  This function takes a ComponentRef and a Program and an int and
+"This function takes a ComponentRef and a Program and an int and
   returns a comma separated string  of values for the annotation of
   the nth connection."
   input Absyn.Path inModelPath;
@@ -12129,8 +11946,7 @@ algorithm
 end getNthConnectionAnnotation;
 
 protected function getConnectorCount
-"function: getConnectorCount
-  This function takes a ComponentRef and a Program and returns the number
+"This function takes a ComponentRef and a Program and returns the number
   of connector components in the class given by the classname in the
   ComponentRef. A partial instantiation of the inheritance structure is
   performed in order to find all connectors of the class.
@@ -12166,8 +11982,7 @@ algorithm
 end getConnectorCount;
 
 protected function getNthConnector
-"function: getNthConnector
-  This function takes a ComponentRef and a Program and an int and returns
+"This function takes a ComponentRef and a Program and an int and returns
   a string with the name of the nth
   connector component in the class given by ComponentRef in the Program."
   input Absyn.Path inModelPath;
@@ -12196,8 +12011,7 @@ algorithm
 end getNthConnector;
 
 protected function getNthConnectorIconAnnotation
-"function: getNthConnectorIconAnnotation
-   This function takes a ComponentRef and a Program and an int and returns
+" This function takes a ComponentRef and a Program and an int and returns
    a string with the name of the nth connectors icon annotation in the
    class given by ComponentRef in the Program."
   input Absyn.Path inModelPath;
@@ -12224,8 +12038,7 @@ algorithm
 end getNthConnectorIconAnnotation;
 
 protected function getDiagramAnnotation
-"function: getDiagramAnnotation
-  This function takes a Path and a Program and returns a comma separated
+"This function takes a Path and a Program and returns a comma separated
   string of values for the diagram annotation for the class named by the
   first argument."
   input Absyn.Path inPath;
@@ -12251,8 +12064,7 @@ algorithm
 end getDiagramAnnotation;
 
 public function getNamedAnnotation
-"function: getNamedAnnotation
-  This function takes a Path and a Program and returns a comma separated
+"This function takes a Path and a Program and returns a comma separated
   string of values for the Documentation annotation for the class named by the
   first argument."
   input Absyn.Path inPath;
@@ -12286,8 +12098,7 @@ algorithm
 end getNamedAnnotation;
 
 public function getUsesAnnotation
-"function: getNamedAnnotation
-  This function takes a Path and a Program and returns a comma separated
+"This function takes a Path and a Program and returns a comma separated
   string of values for the Documentation annotation for the class named by the
   first argument."
   input Absyn.Program p;
@@ -12308,8 +12119,7 @@ algorithm
 end getUsesAnnotation;
 
 public function getUsesAnnotationOrDefault
-"function: getUsesAnnotationOrDefault
-  This function takes a Path and a Program and returns a comma separated
+"This function takes a Path and a Program and returns a comma separated
   string of values for the Documentation annotation for the class named by the
   first argument."
   input Absyn.Program p;
@@ -12367,8 +12177,7 @@ algorithm
 end getUsesAnnotationString2;
 
 protected function getIconAnnotation
-"function: getIconAnnotation
-  This function takes a Path and a Program and returns a comma separated
+"This function takes a Path and a Program and returns a comma separated
   string of values for the icon annotation for the class named by the
   first argument."
   input Absyn.Path inPath;
@@ -12394,8 +12203,7 @@ algorithm
 end getIconAnnotation;
 
 public function getPackagesInPath
-"function: getPackagesInPath
-   This function takes a Path and a Program and returns a list of the
+" This function takes a Path and a Program and returns a list of the
    names of the packages found in the Path."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
@@ -12415,8 +12223,7 @@ algorithm
 end getPackagesInPath;
 
 public function getTopPackages
-"function: getTopPackages
-   This function takes a Path and a Program and returns a list of the
+" This function takes a Path and a Program and returns a list of the
    names of the packages found in the Path."
   input Absyn.Program p;
   output list<Absyn.Path> paths;
@@ -12425,8 +12232,7 @@ algorithm
 end getTopPackages;
 
 protected function getTopPackagesInProgram
-"function: getTopPackagesInProgram
-  Helper function to getTopPackages."
+"Helper function to getTopPackages."
   input Absyn.Program inProgram;
   output list<String> outStringLst;
 algorithm
@@ -12454,8 +12260,7 @@ algorithm
 end getTopPackagesInProgram;
 
 protected function getPackagesInClass
-"function: getPackagesInClass
-   This function takes a Class definition and a Path identifying
+" This function takes a Class definition and a Path identifying
    the class. It returns a string containing comma separated package
    names found in the class definition."
   input Absyn.Path inPath;
@@ -12493,8 +12298,7 @@ algorithm
 end getPackagesInClass;
 
 protected function getPackagesInParts
-"function: getPackagesInParts
-  Helper function to getPackagesInClass."
+"Helper function to getPackagesInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<String> outStringLst;
 algorithm
@@ -12521,8 +12325,7 @@ algorithm
 end getPackagesInParts;
 
 protected function getPackagesInElts
-"function: getPackagesInElts
-  Helper function to getPackagesInParts."
+"Helper function to getPackagesInParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<String> outStringLst;
 algorithm
@@ -12547,8 +12350,7 @@ algorithm
 end getPackagesInElts;
 
 public function getClassnamesInPath
-"function: getClassnamesInPath
-  Return a comma separated list of classes in a given Path."
+"Return a comma separated list of classes in a given Path."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Boolean inShowProtected;
@@ -12570,8 +12372,7 @@ algorithm
 end getClassnamesInPath;
 
 public function getTopClassnames
-"function: getTopClassnames
-   This function takes a Path and a Program and returns a list of
+" This function takes a Path and a Program and returns a list of
    the names of the packages found at the top scope."
   input Absyn.Program p;
   output list<Absyn.Path> paths;
@@ -12580,8 +12381,7 @@ algorithm
 end getTopClassnames;
 
 public function getTopClassnamesInProgram
-"function: getTopClassnamesInProgram
-  Helper function to getTopClassnames."
+"Helper function to getTopClassnames."
   input Absyn.Program inProgram;
   output list<String> outStringLst;
 algorithm
@@ -12640,8 +12440,7 @@ algorithm
 end getTopQualifiedClassnames;
 
 protected function getClassnamesInClass
-"function: getClassnamesInClass
-   This function takes a `Class\' definition and a Path identifying the
+" This function takes a `Class\' definition and a Path identifying the
    class.
    It returns a string containing comma separated package names found
    in the class definition.
@@ -12681,8 +12480,7 @@ algorithm
 end getClassnamesInClass;
 
 public function getClassnamesInParts
-"function: getClassnamesInParts
-  Helper function to getClassnamesInClass."
+"Helper function to getClassnamesInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Boolean inShowProtected;
   output list<String> outStringLst;
@@ -12719,8 +12517,7 @@ algorithm
 end getClassnamesInParts;
 
 public function getClassnamesInElts
-"function: getClassnamesInElts
-  Helper function to getClassnamesInParts."
+"Helper function to getClassnamesInParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<String> outStringLst;
 algorithm
@@ -12756,8 +12553,7 @@ algorithm
 end getClassnamesInElts;
 
 protected function getBaseClasses
-"function: getBaseClasses
-   This function gets all base classes of a class, NOT Recursive.
+" This function gets all base classes of a class, NOT Recursive.
    It uses the environment to get the fully qualified names of the classes."
   input Absyn.Class inClass;
   input Env.Env inEnv;
@@ -12819,8 +12615,7 @@ algorithm
 end getBaseClasses;
 
 protected function getBaseClassesFromParts
-"function: getBaseClassesFromParts
-  Helper function to getBaseClasses."
+"Helper function to getBaseClasses."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Env.Env inEnv;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
@@ -12852,8 +12647,7 @@ algorithm
 end getBaseClassesFromParts;
 
 protected function getBaseClassesFromElts
-"function: getBaseClassesFromElts
-  Helper function to getBaseClassesFromParts."
+"Helper function to getBaseClassesFromParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Env.Env inEnv;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
@@ -12900,8 +12694,7 @@ algorithm
 end getBaseClassesFromElts;
 
 protected function countBaseClasses
-"function: countBaseClasses
-   This function counts the number of base classes of a class"
+" This function counts the number of base classes of a class"
   input Absyn.Class inClass;
   output Integer outInteger;
 algorithm
@@ -12931,8 +12724,7 @@ algorithm
 end countBaseClasses;
 
 protected function countBaseClassesFromParts
-"function: countBaseClassesFromParts
-  Helper function to countBaseClasses."
+"Helper function to countBaseClasses."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
@@ -12961,8 +12753,7 @@ algorithm
 end countBaseClassesFromParts;
 
 protected function countBaseClassesFromElts
-"function: countBaseClassesFromElts
-  Helper function to countBaseClassesFromParts."
+"Helper function to countBaseClassesFromParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output Integer outInteger;
 algorithm
@@ -13046,8 +12837,7 @@ algorithm
 end isAnnotationType;
 
 protected function containAnnotation
-"function: containAnnotation
-  Helper function to getAnnotationFromElts."
+"Helper function to getAnnotationFromElts."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input AnnotationType annotationType;
 algorithm
@@ -13071,8 +12861,7 @@ algorithm
 end containAnnotation;
 
 protected function getAnnotationStr
-"function: getIconAnnotationStr
-  Helper function to getIconAnnotationInClass."
+"Helper function to getIconAnnotationInClass."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input AnnotationType annotationType;
   input Absyn.Class inClass;
@@ -13107,8 +12896,7 @@ algorithm
 end getAnnotationStr;
 
 public function getNamedAnnotationInClass
-"function: getNamedAnnotationInClass
-  Retrieve the documentation annotation as a
+"Retrieve the documentation annotation as a
   string from the class passed as argument."
   input Absyn.Class inClass;
   input Absyn.Path id;
@@ -13219,8 +13007,7 @@ algorithm
 end getDefaultComponentPrefixes;
 
 protected function getNamedAnnotationStr
-"function: getNamedAnnotationStr
-  Helper function to getNamedAnnotationInElementitemlist."
+"Helper function to getNamedAnnotationInElementitemlist."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   input Absyn.Path id;
   input ModFunc f;
@@ -13422,8 +13209,7 @@ algorithm
 end getDocumentationAnnotationRevision;
 
 protected function getNthPublicConnectorStr
-"function: getNthPublicConnectorStr
-  Helper function to getNthConnector."
+"Helper function to getNthConnector."
   input Absyn.Path inPath;
   input Absyn.Class inClass;
   input Absyn.Program inProgram;
@@ -13506,8 +13292,7 @@ algorithm
 end getNthPublicConnectorStr;
 
 protected function getNthConnectorStr
-"function: getNthConnectorStr
-   This function takes an ElementItem list and an int and
+" This function takes an ElementItem list and an int and
    returns the name of the nth connector component in that list."
   input Absyn.Program inProgram;
   input Absyn.Path inPath;
@@ -13579,8 +13364,7 @@ algorithm
 end getNthConnectorStr;
 
 protected function getNthCompname
-"function: getNthCompname
-  Returns the nth component name from a list of ComponentItems.
+"Returns the nth component name from a list of ComponentItems.
   Index is from 1..n."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Integer inInteger;
@@ -13607,8 +13391,7 @@ algorithm
 end getNthCompname;
 
 protected function countPublicConnectors
-"function: countPublicConnectors
-  This function takes a Class and counts the number of connector
+"This function takes a Class and counts the number of connector
   components in the class. This also includes counting in inherited classes."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
@@ -13689,8 +13472,7 @@ algorithm
 end countPublicConnectors;
 
 protected function countConnectors
-"function: countConnectors
-  This function takes a Path to the current model and a ElementItem
+"This function takes a Path to the current model and a ElementItem
   list and returns the number of connector components in that list."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
@@ -13792,8 +13574,7 @@ algorithm
 end getConnectionAnnotationStrElArgs;
 
 protected function getConnectionAnnotationStr
-"function: getConnectionAnnotationStr
-   This function takes an `EquationItem\' and returns a comma separated
+" This function takes an `EquationItem\' and returns a comma separated
    string of values  from the flat record of a connection annotation that
    is found in the `EquationItem\'."
   input Absyn.EquationItem inEquationItem;
@@ -13825,8 +13606,7 @@ algorithm
 end getConnectionAnnotationStr;
 
 protected function createFuncargsFromElementargs
-"function: create_functionargs_from_elementargs
-  Trasform an ElementArg list to function argments. This is used when
+"Trasform an ElementArg list to function argments. This is used when
   translating a graphical annotation to a record constructor."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   output Absyn.FunctionArgs outFunctionArgs;
@@ -13856,8 +13636,7 @@ algorithm
 end createFuncargsFromElementargs;
 
 protected function getNthConnectionitemInClass
-"function: getNthConnectionitemInClass
-   This function takes a Class and  an int ane returns the nth
+" This function takes a Class and  an int ane returns the nth
    `EquationItem\' containing a connect statement in that class."
   input Absyn.Class inClass;
   input Integer inInteger;
@@ -13884,8 +13663,7 @@ algorithm
 end getNthConnectionitemInClass;
 
 protected function getNthConnectionitemInClassparts
-"function: getNthConnectionitemInClassparts
-  This function takes a `ClassPart\' list and an int and returns
+"This function takes a `ClassPart\' list and an int and returns
   the nth connections as an `EquationItem\'."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Integer inInteger;
@@ -13921,8 +13699,7 @@ algorithm
 end getNthConnectionitemInClassparts;
 
 protected function getNthConnectionitemInEquations
-"function: getNthConnectionitemInEquations
-   This function takes  an Equation list and an int
+" This function takes  an Equation list and an int
    and returns the nth connection as an Equation.
    If the number is larger than the number of connections
    in the list, the function fails."
@@ -13957,8 +13734,7 @@ algorithm
 end getNthConnectionitemInEquations;
 
 protected function getConnectionStr
-"function: getConnectionStr
-   This function takes an Equation assumed to contain a connection and
+" This function takes an Equation assumed to contain a connection and
    returns a comma separated string of componentreferences, e.g \"R1.n,C.p\"
    for  connect(R1.n,C.p)."
   input Absyn.Equation inEquation;
@@ -13980,8 +13756,7 @@ algorithm
 end getConnectionStr;
 
 protected function countConnections
-"function: countConnections
-  This function takes a Class and returns an int
+"This function takes a Class and returns an int
   with the number of connections in the Class."
   input Absyn.Class inClass;
   output Integer outInteger;
@@ -14010,8 +13785,7 @@ algorithm
 end countConnections;
 
 protected function countConnectionsInClassparts
-"function: countConnectionsInClassparts
-   This function takes a ClassPart list and returns
+" This function takes a ClassPart list and returns
    an int with the number of connections in that list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
@@ -14041,8 +13815,7 @@ algorithm
 end countConnectionsInClassparts;
 
 protected function countConnectionsInEquations
-"function: countConnectionsInEquations
-   This function takes an Equation list and returns an int
+" This function takes an Equation list and returns an int
    with the number of connect statements in that list."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output Integer outInteger;
@@ -14072,8 +13845,7 @@ algorithm
 end countConnectionsInEquations;
 
 protected function getComponentAnnotationsFromElts
-"function: getComponentAnnotationsFromElts
-  Helper function to getComponentAnnotations."
+"Helper function to getComponentAnnotations."
   input list<Absyn.Element> comps;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
@@ -14093,8 +13865,7 @@ algorithm
 end getComponentAnnotationsFromElts;
 
 protected function getComponentitemsAnnotations
-"function: getComponentitemsAnnotations
-  Helper function to getComponentAnnotationsFromElts"
+"Helper function to getComponentAnnotationsFromElts"
   input list<Absyn.Element> inAbsynElementLst;
   input Env.Env inEnv;
   input Absyn.Class inClass;
@@ -14135,8 +13906,7 @@ algorithm
 end getComponentitemsAnnotations;
 
 protected function getComponentitemsAnnotationsElArgs
-"function: getComponentitemsAnnotationsElArgs
-  Helper function to getComponentitemsAnnotationsFromItems."
+"Helper function to getComponentitemsAnnotationsFromItems."
   input list<Absyn.ElementArg> inElArgLst;
   input Env.Env inEnv;
   input Absyn.Class inClass;
@@ -14194,8 +13964,7 @@ algorithm
 end getComponentitemsAnnotationsElArgs;
 
 protected function getComponentitemsAnnotationsFromItems
-"function: getComponentitemsAnnotationsFromItems
-  Helper function to getComponentitemsAnnotations."
+"Helper function to getComponentitemsAnnotations."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Env.Env inEnv;
   input Absyn.Class inClass;
@@ -14242,8 +14011,7 @@ algorithm
 end getComponentitemsAnnotationsFromItems;
 
 protected function getComponentAnnotation
-"function: getComponentAnnotation
-  This function takes an Element and returns a comma separated string
+"This function takes an Element and returns a comma separated string
   of values corresponding to the flat record for a component annotation.
   If several components are declared within the eleement, a list of values
   is given for each of them."
@@ -14295,8 +14063,7 @@ algorithm
 end modelicaAnnotationProgram;
 
 protected function getComponentitemsAnnotation
-"function: getComponentitemsAnnotation
-  Helper function to get_component_annotation."
+"Helper function to get_component_annotation."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
@@ -14348,8 +14115,7 @@ algorithm
 end getComponentitemsAnnotation;
 
 public function getComponentModification
-"function: getComponentModification
-   This function takes an Element and returns a comma separated
+" This function takes an Element and returns a comma separated
    list of Code expression for the modification of the component."
   input Absyn.Element inElement;
   output String outString;
@@ -14369,8 +14135,7 @@ algorithm
 end getComponentModification;
 
 protected function getComponentitemsModification
-"function: getComponentitemsModification
-  Helper function to get_component_modification."
+"Helper function to get_component_modification."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output String outString;
 algorithm
@@ -14679,8 +14444,7 @@ algorithm
 end getAnnotationString;
 
 protected function stripGraphicsAndInteractionModification
-"function: stripGraphicsAndInteractionModification
-   This function strips out the `graphics\' modification from an ElementArg
+" This function strips out the `graphics\' modification from an ElementArg
    list and return two lists, one with the other modifications and the
    second with the `graphics\' modification"
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -14727,8 +14491,7 @@ algorithm
 end stripGraphicsAndInteractionModification;
 
 public function getComponentsInClass
-"function: getComponentsInClass
-   Both public and protected lists are searched."
+" Both public and protected lists are searched."
   input Absyn.Class inClass;
   output list<Absyn.Element> outAbsynElementLst;
 algorithm
@@ -14789,8 +14552,7 @@ algorithm
 end getComponentsInClass;
 
 protected function getPublicComponentsInClass
-"function: getPublicComponentsInClass
-   Public lists are searched."
+" Public lists are searched."
   input Absyn.Class inClass;
   output list<Absyn.Element> outAbsynElementLst;
 algorithm
@@ -14848,8 +14610,7 @@ algorithm
 end getPublicComponentsInClass;
 
 protected function getProtectedComponentsInClass
-"function: getProtectedComponentsInClass
-   Protected lists are searched."
+" Protected lists are searched."
   input Absyn.Class inClass;
   output list<Absyn.Element> outAbsynElementLst;
 algorithm
@@ -14909,8 +14670,7 @@ algorithm
 end getProtectedComponentsInClass;
 
 protected function getComponentsInElementitems
-"function: getComponentsInElementitems
-  Helper function to getComponentsInClass."
+"Helper function to getComponentsInClass."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Absyn.Element> outAbsynElementLst;
 algorithm
@@ -14935,8 +14695,7 @@ algorithm
 end getComponentsInElementitems;
 
 protected function getNthComponentInClass
-"function: getNthComponentInClass
-  Returns the nth Component of a class. Indexed from 1..n."
+"Returns the nth Component of a class. Indexed from 1..n."
   input Absyn.Class inClass;
   input Integer inInteger;
   output Absyn.Element outElement;
@@ -15092,8 +14851,7 @@ algorithm
 end getDefineunitsInElements;
 
 public function getElementitemsInClass
-"function: getElementitemsInClass
-   Both public and protected lists are searched."
+" Both public and protected lists are searched."
   input Absyn.Class inClass;
   output list<Absyn.ElementItem> outAbsynElementItemLst;
 algorithm
@@ -15154,8 +14912,7 @@ algorithm
 end getElementitemsInClass;
 
 protected function getNthComponentInElementitems
-"function: getNthComponentInElementitems
-   This function takes an ElementItem list and and integer
+" This function takes an ElementItem list and and integer
    and returns the nth component in the list, indexed from 1..n."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Integer inInteger;
@@ -15217,8 +14974,7 @@ algorithm
 end getNthComponentInElementitems;
 
 protected function getComponentInfo
-"function: getComponentInfo
-   This function takes an Element and returns a list of strings
+" This function takes an Element and returns a list of strings
    of comma separated values of the type and name and comment,
    and attributes of  of the component, If Element is not a
    component, the empty string is returned.
@@ -15333,8 +15089,7 @@ end arrayDimensionStr;
 
 
 protected function getComponentsInfo
-"function: getComponentsInfo
-  Helper function to get_components.
+"Helper function to get_components.
   Return all the info as a comma separated list of values.
   get_component_info => {{name, type, comment, access, final, flow, stream, replaceable, variability,innerouter,vardirection},..}
   where access is one of: \"public\", \"protected\"
@@ -15375,8 +15130,7 @@ algorithm
 end getComponentsInfo;
 
 protected function getComponentsInfo2
-"function: getComponentsInfo2
-  Helper function to getComponentsInfo
+"Helper function to getComponentsInfo
   inputs: (Absyn.Element list, string /* \"public\" or \"protected\" */, Env.Env)
   outputs: string list"
   input list<Absyn.Element> inAbsynElementLst;
@@ -15403,8 +15157,7 @@ algorithm
 end getComponentsInfo2;
 
 protected function keywordReplaceable
-"function: keywordReplaceable
-  Returns true if RedeclareKeywords contains replaceable."
+"Returns true if RedeclareKeywords contains replaceable."
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption;
   output Boolean outBoolean;
 algorithm
@@ -15417,8 +15170,7 @@ algorithm
 end keywordReplaceable;
 
 protected function getComponentInfoOld
-"function: getComponentInfoOld
-   This function takes an `Element\' and returns a list of strings
+" This function takes an `Element\' and returns a list of strings
    of comma separated values of the type and name and comment of
    the component, e.g. \'Resistor,R1, \"comment\"\'
    or \'Resistor,R1,\"comment1\",R2,\"comment2\"\'
@@ -15476,8 +15228,7 @@ algorithm
 end getComponentInfoOld;
 
 protected function innerOuterStr
-"function: innerOuterStr
-  Helper function to getComponentInfo, retrieve the inner outer string."
+"Helper function to getComponentInfo, retrieve the inner outer string."
   input Absyn.InnerOuter inInnerOuter;
   output String outString;
 algorithm
@@ -15491,8 +15242,7 @@ algorithm
 end innerOuterStr;
 
 protected function attrFlowStr
-"function: attrFlowStr
-  Helper function to get_component_info,
+"Helper function to get_component_info,
   retrieve flow attribite as bool string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
@@ -15511,8 +15261,7 @@ algorithm
 end attrFlowStr;
 
 protected function attrStreamStr
-"function: attrStreamStr
-  Helper function to get_component_info,
+"Helper function to get_component_info,
   retrieve stream attribute as bool string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
@@ -15531,8 +15280,7 @@ algorithm
 end attrStreamStr;
 
 protected function attrParallelismStr
-"function: attrParallelismStr
-  Helper function to get_component_info,
+"Helper function to get_component_info,
   retrieve parallelism as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
@@ -15546,8 +15294,7 @@ algorithm
 end attrParallelismStr;
 
 protected function attrVariabilityStr
-"function: attrVariabilityStr
-  Helper function to get_component_info,
+"Helper function to get_component_info,
   retrieve variability as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
@@ -15575,8 +15322,7 @@ algorithm
 end attrDimensionStr;
 
 protected function attrDirectionStr
-"function: attrDirectionStr
-  Helper function to get_component_info,
+"Helper function to get_component_info,
   retrieve direction as a string."
   input Absyn.ElementAttributes inElementAttributes;
   output String outString;
@@ -15622,8 +15368,7 @@ algorithm
 end getComponentitemsDimension;
 
 protected function suffixInfos
-"function: suffixInfos
-  Helper function to getComponentInfo.
+"Helper function to getComponentInfo.
   Add suffix info (from each component) to element names, dimensions, etc."
   input list<String> eltInfo;
   input list<String> idims;
@@ -15651,8 +15396,7 @@ algorithm
 end suffixInfos;
 
 protected function prefixTypename
-"function: prefixTypename
-  Helper function to getComponentInfo. Add a prefix typename to each string in the list."
+"Helper function to getComponentInfo. Add a prefix typename to each string in the list."
   input String inString;
   input list<String> inStringLst;
   output list<String> outStringLst;
@@ -15718,8 +15462,7 @@ algorithm
 end getComponentitemsName;
 
 public function addToPublic
-"function: addToPublic
-   This function takes a Class definition and adds an
+" This function takes a Class definition and adds an
    ElementItem to the first public list in the class.
    If no public list is available in the class one is created."
   input Absyn.Class inClass;
@@ -15784,8 +15527,7 @@ algorithm
 end addToPublic;
 
 protected function addToProtected
-"function: addToProtected
-   This function takes a Class definition and adds an
+" This function takes a Class definition and adds an
    ElementItem to the first protected list in the class.
    If no protected list is available in the class one is created."
   input Absyn.Class inClass;
@@ -15855,8 +15597,7 @@ algorithm
 end addToProtected;
 
 protected function addToEquation
-"function: addToEquation
-   This function takes a Class definition and adds an
+" This function takes a Class definition and adds an
    EquationItem to the first equation list in the class.
    If no public list is available in the class one is created."
   input Absyn.Class inClass;
@@ -15933,8 +15674,7 @@ algorithm
 end addToEquation;
 
 protected function buildPath
-"function: buildPath
-  Helper function to replaceClassInProgram.
+"Helper function to replaceClassInProgram.
   Takes a programs 'within' and a ident, and creates a path out of it."
   input Absyn.Within inWithin;
   input Absyn.Path inPath;
@@ -15949,8 +15689,7 @@ algorithm
 end buildPath;
 
 protected function replaceClassInProgram
-"function: replaceClassInProgram
-   This function takes a Class and a Program and replaces the class
+" This function takes a Class and a Program and replaces the class
    definition at the top level in the program by the class definition of
    the Class. It also updates the functionlist for the symboltable if needed."
   input Absyn.Class inClass;
@@ -15993,8 +15732,7 @@ algorithm
 end replaceClassInProgram;
 
 protected function insertClassInProgram
-"function: insertClassInProgram
-   This function inserts the class into the Program at the scope given by
+" This function inserts the class into the Program at the scope given by
    the within argument. If the class referenced by the within argument is
    not defined, the function prints an error message and fails."
   input Absyn.Class inClass;
@@ -16148,8 +15886,7 @@ algorithm
 end removeInnerClass;
 
 protected function removeClassInElementitemlist
-"function: removeClassInElementitemlist
-   This function takes an Element list and a Class and returns a modified
+" This function takes an Element list and a Class and returns a modified
    element list where the class definition of the class is removed."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Class inClass;
@@ -16185,8 +15922,7 @@ algorithm
 end removeClassInElementitemlist;
 
 protected function replaceInnerClass
-"function: replaceInnerClass
-  This function takes two class definitions. The first one is
+"This function takes two class definitions. The first one is
   inserted/replaced as a local class inside the second one."
   input Absyn.Class inClass1;
   input Absyn.Class inClass2;
@@ -16234,8 +15970,7 @@ algorithm
 end replaceInnerClass;
 
 protected function replaceClassInElementitemlist
-"function: replaceClassInElementitemlist
-  This function takes an Element list and a Class and returns a modified
+"This function takes an Element list and a Class and returns a modified
   element list where the class definition of the class is updated or added."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   input Absyn.Class inClass;
@@ -16276,8 +16011,7 @@ algorithm
 end replaceClassInElementitemlist;
 
 protected function getInnerClass
-"function: getInnerClass
-  This function takes a class name and a class and
+"This function takes a class name and a class and
   returns the inner class definition having that name."
   input Absyn.Class inClass;
   input Absyn.Ident inIdent;
@@ -16320,8 +16054,7 @@ algorithm
 end getInnerClass;
 
 protected function replacePublicList
-"function: replacePublicList
-   This function replaces the ElementItem list in
+" This function replaces the ElementItem list in
    the ClassPart list, and returns the updated list.
    If no public list is available, one is created."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
@@ -16559,8 +16292,7 @@ algorithm
   end matchcontinue;
 end getPublicList;
 
-protected function getProtectedList "function: getProtectedList
-   This function takes a ClassPart List and returns an appended list of
+protected function getProtectedList " This function takes a ClassPart List and returns an appended list of
    all protected lists.
 "
   input list<Absyn.ClassPart> inAbsynClassPartLst;
@@ -16587,8 +16319,7 @@ algorithm
   end matchcontinue;
 end getProtectedList;
 
-protected function getEquationList "function: getEquationList
-  This function takes a ClassPart List and returns the first EquationItem
+protected function getEquationList "This function takes a ClassPart List and returns the first EquationItem
   list of the class."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.EquationItem> outAbsynEquationItemLst;
@@ -16608,8 +16339,7 @@ algorithm
   end matchcontinue;
 end getEquationList;
 
-protected function getInitialEquationList "function: getInitialEquationList
-  This function takes a ClassPart List and returns the first InitialEquationItem
+protected function getInitialEquationList "This function takes a ClassPart List and returns the first InitialEquationItem
   list of the class."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.EquationItem> outAbsynInitialEquationItemLst;
@@ -16629,8 +16359,7 @@ algorithm
   end matchcontinue;
 end getInitialEquationList;
 
-protected function getAlgorithmList "function: getAlgorithmList
-  This function takes a ClassPart List and returns the first AlgorithmItem
+protected function getAlgorithmList "This function takes a ClassPart List and returns the first AlgorithmItem
   list of the class."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.AlgorithmItem> outAbsynAlgorithmItemLst;
@@ -16650,8 +16379,7 @@ algorithm
   end matchcontinue;
 end getAlgorithmList;
 
-protected function getInitialAlgorithmList "function: getInitialAlgorithmList
-  This function takes a ClassPart List and returns the first InitialAlgorithmItem
+protected function getInitialAlgorithmList "This function takes a ClassPart List and returns the first InitialAlgorithmItem
   list of the class."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.AlgorithmItem> outAbsynInitialAlgorithmItemLst;
@@ -16707,8 +16435,7 @@ algorithm
 end getClassFromElementitemlist;
 
 protected function classInProgram
-"function: classInProgram
-  This function takes a name and a Program and returns
+"This function takes a name and a Program and returns
   true if the name exists as a top class in the program."
   input String inString;
   input Absyn.Program inProgram;
@@ -16734,8 +16461,7 @@ algorithm
 end classInProgram;
 
 public function getPathedClassInProgram
-"function: getPathedClassInProgram
-  This function takes a Path and a Program and retrieves the
+"This function takes a Path and a Program and retrieves the
   class definition referenced by the Path from the Program."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
@@ -16753,8 +16479,7 @@ algorithm
 end getPathedClassInProgram;
 
 public function getPathedClassInProgramWork
-"function: getPathedClassInProgramWork
-  This function takes a Path and a Program and retrieves the
+"This function takes a Path and a Program and retrieves the
   class definition referenced by the Path from the Program."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
@@ -16791,8 +16516,7 @@ algorithm
 end getPathedClassInProgramWork;
 
 protected function getClassesInClass
-"function: getClassesInClass
-  This function takes a Class definition and returns
+"This function takes a Class definition and returns
   a list of local Class definitions of that class."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
@@ -16829,8 +16553,7 @@ algorithm
 end getClassesInClass;
 
 protected function getClassesInParts
-"function: getClassesInParts
-  Helper function to getClassesInClass."
+"Helper function to getClassesInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.Class> outAbsynClassLst;
 algorithm
@@ -16864,8 +16587,7 @@ algorithm
 end getClassesInParts;
 
 protected function getClassesInElts
-"function: getClassesInElts
-  Helper function to getClassesInParts."
+"Helper function to getClassesInParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Absyn.Class> outAbsynClassLst;
 algorithm
@@ -16890,8 +16612,7 @@ algorithm
 end getClassesInElts;
 
 protected function getClassInProgram
-"function: getClassInProgram
-   This function takes a Path and a Program
+" This function takes a Path and a Program
    and returns the class with the name Path.
    If that class does not exist, the function fails"
   input String inString;
@@ -16936,8 +16657,7 @@ algorithm
 end getClassInProgram;
 
 protected function modificationToAbsyn
-"function: modificationToAbsyn
-   This function takes a list of NamedArg and returns an Absyn.Modification option.
+" This function takes a list of NamedArg and returns an Absyn.Modification option.
    It collects binding equation from the named argument binding=<expr> and creates
    corresponding Modification option Absyn node.
    Future extension: add general modifiers. Problem: how to express this using named
@@ -16965,8 +16685,7 @@ algorithm
 end modificationToAbsyn;
 
 protected function modificationToAbsyn2
-"function: modificationToAbsyn2
-  Helper function to modificationToAbsyn."
+"Helper function to modificationToAbsyn."
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Option<Absyn.Modification> outAbsynModificationOption;
 algorithm
@@ -16999,8 +16718,7 @@ algorithm
 end selectAnnotation;
 
 protected function annotationListToAbsynComment
-"function: annotationListToAbsynComment
-   This function takes a list of NamedArg and returns an absyn Comment.
+" This function takes a list of NamedArg and returns an absyn Comment.
    for instance {annotation = Placement( ...), comment=\"stringcomment\" }
    is converted to SOME(COMMENT(ANNOTATION(Placement(...), SOME(\"stringcomment\"))))"
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
@@ -17055,8 +16773,7 @@ algorithm
 end annotationListToAbsynComment;
 
 protected function annotationListToAbsynComment2
-"function: annotationListToAbsynComment2
-  Helper function to annotationListToAbsynComment2."
+"Helper function to annotationListToAbsynComment2."
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Option<Absyn.Comment> outAbsynCommentOption;
 algorithm
@@ -17096,8 +16813,7 @@ algorithm
 end annotationListToAbsynComment2;
 
 protected function commentToAbsyn
-"function: commentToAbsyn
-  Helper function to annotationListToAbsynComment2."
+"Helper function to annotationListToAbsynComment2."
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Option<String> outStringOption;
 algorithm
@@ -17122,8 +16838,7 @@ algorithm
 end commentToAbsyn;
 
 protected function annotationListToAbsyn
-"function: annotationListToAbsyn
-  This function takes a list of NamedArg and returns an Absyn.Annotation.
+"This function takes a list of NamedArg and returns an Absyn.Annotation.
   for instance {annotation = Placement( ...) } is converted to ANNOTATION(Placement(...))"
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   output Absyn.Annotation outAnnotation;
@@ -17150,8 +16865,7 @@ algorithm
 end annotationListToAbsyn;
 
 protected function recordConstructorToModification
-"function: recordConstructorToModification
-   This function takes a record constructor expression and translates
+" This function takes a record constructor expression and translates
    it into a ElementArg. Since modifications must be named, only named
    arguments are treated in the record constructor."
   input Absyn.Exp inExp;
@@ -17202,8 +16916,7 @@ algorithm
 end recordConstructorToModification;
 
 protected function namedargToModification
-"function: namedargToModification
-  This function takes a NamedArg and translates it into a ElementArg."
+"This function takes a NamedArg and translates it into a ElementArg."
   input Absyn.NamedArg inNamedArg;
   output Absyn.ElementArg outElementArg;
 algorithm
@@ -17236,8 +16949,7 @@ algorithm
 end namedargToModification;
 
 public function addInstantiatedClass
-"function: addInstantiatedClass
-   This function adds an instantiated class to the list of instantiated
+" This function adds an instantiated class to the list of instantiated
    classes. If the class path already exists, the class is replaced."
   input list<InstantiatedClass> inInstantiatedClassLst;
   input InstantiatedClass inInstantiatedClass;
@@ -17267,8 +16979,7 @@ algorithm
 end addInstantiatedClass;
 
 public function getInstantiatedClass
-"function: getInstantiatedClass
-  This function get an instantiated class
+"This function get an instantiated class
   from the list of instantiated classes."
   input list<InstantiatedClass> inInstantiatedClassLst;
   input Absyn.Path inPath;
@@ -17297,8 +17008,7 @@ algorithm
 end getInstantiatedClass;
 
 public function getContainedClassAndFile
-"function: getContainedClassAndFile
-   author: PA
+" author: PA
    Returns the package or class in which the model is saved and the file
    name it is saved in. This is used to save a model in a package when the
    whole package is saved in a file.
@@ -17351,8 +17061,7 @@ algorithm
 end removeInnerDiffFiledClasses;
 
 protected function removeInnerDiffFiledClass
-"function: removeInnerDiffFiledClass
-   author: PA
+" author: PA
    Helper function to removeInnerDiffFiledClasses, removes all local
    classes in class that does not have the same filename as the class
    iteself."
@@ -17402,8 +17111,7 @@ algorithm
 end removeInnerDiffFiledClass;
 
 protected function removeClassDiffFiledInElementitemlist
-"function: removeClassDiffFiledInElementitemlist
-  author: PA
+"author: PA
   This function takes an Element list and a filename
   and returns a modified element list where the elements
   not stored in filename are removed.
@@ -17447,8 +17155,7 @@ algorithm
 end removeClassDiffFiledInElementitemlist;
 
 protected function getSurroundingPackage
-"function: getSurroundingPackage
-   author: PA
+" author: PA
    This function investigates the surrounding packages and returns
    the outermost package that has the same filename as the class"
   input Absyn.Path inPath;
@@ -18275,8 +17982,7 @@ algorithm
 end getDefinitions;
 
 protected function getLocalVariables
-"function: getLocalVariables
-  Returns the string list of local varibales defined with in the algorithm."
+"Returns the string list of local varibales defined with in the algorithm."
   input Absyn.Class inClass;
   input Boolean inBoolean;
   input Env.Env inEnv;
@@ -18955,8 +18661,7 @@ algorithm
 end getVisElementNameFromStr;
 
 protected function getComponentBindingMapable
-"function: getComponentBindingMapable
-  Returns the value of a component in a class.
+"Returns the value of a component in a class.
   For example, the component
    Real x=1; returns 1.
   This can be used for both parameters, constants and variables.
@@ -19066,8 +18771,7 @@ algorithm
 end joinPaths;
 
 public function getClassNamesRecursive
-"function: getClassNamesRecursive
-  Returns a string with all the classes for a given path."
+"Returns a string with all the classes for a given path."
   input Option<Absyn.Path> inPath;
   input Absyn.Program inProgram;
   input Boolean inShowProtected;

@@ -67,8 +67,7 @@ protected import Inline;
 protected import List;
 protected import Util;
 
-public function differentiateEquationTime "function: differentiateEquationTime
-  Differentiates an equation with respect to the time variable."
+public function differentiateEquationTime "Differentiates an equation with respect to the time variable."
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Shared shared;
@@ -160,8 +159,7 @@ algorithm
   end matchcontinue;
 end differentiateEquationTime;
 
-public function differentiateExpTime "function: differentiateExpTime
-  This function differentiates expressions with respect to the \'time\' variable.
+public function differentiateExpTime "This function differentiates expressions with respect to the \'time\' variable.
   All other variables that are varying over time are given as the second variable.
   For instance, given the model:
   model test
@@ -710,8 +708,7 @@ algorithm
 end differentiateExpTime;
 
 protected function differentiateMatrixTime
-"function: differentiateMatrixTime
-  author: Frenkel TUD
+"author: Frenkel TUD
    Helper function to differentiateExpTime, differentiate matrix expressions."
   input list<list<DAE.Exp>> inTplExpBooleanLstLst;
   input tuple<BackendDAE.Variables,BackendDAE.Shared> inVariables;
@@ -1151,8 +1148,7 @@ algorithm
   outExp := differentiateExp(inExp,inComponentRef,false,inFuncs);
 end differentiateExpCont;
 
-public function differentiateExp "function: differentiateExp
-  This function differentiates expressions with respect
+public function differentiateExp "This function differentiates expressions with respect
   to a given variable,given as second argument.
   For example: differentiateExp(2xy+2x+y,x) => 2x+2"
   input DAE.Exp inExp;
@@ -1475,8 +1471,7 @@ algorithm
   end matchcontinue;
 end differentiateExp;
 
-protected function differentiateCallExp1Arg "function: differentiateCallExp1Arg
-  This function differentiates builtin call expressions with 1 argument
+protected function differentiateCallExp1Arg "This function differentiates builtin call expressions with 1 argument
   with respect to a given variable,given as second argument.
   The argument must contain the variable to differentiate w.r.t."
   input String name;

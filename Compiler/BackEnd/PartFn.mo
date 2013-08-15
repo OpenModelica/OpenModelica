@@ -115,8 +115,7 @@ algorithm
 end replaceCrefDot;
 
 public function partEvalBackendDAE
-"function: partEvalBackendDAE
-  handles partially evaluated function in BackendDAE format"
+"handles partially evaluated function in BackendDAE format"
   input BackendDAE.BackendDAE inDAE;
   input list<DAE.Function> inFuncs;
   output list<DAE.Function> outFuncs;
@@ -143,8 +142,7 @@ algorithm
 end partEvalExp;
 
 public function partEvalDAE
-"function: partEvalDAE
-  goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
+"goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
   input DAE.DAElist inDAE;
   input list<DAE.Function> infuncs;
   output DAE.DAElist outDAE;
@@ -175,8 +173,7 @@ algorithm
 end partEvalDAE;
 
 public function createPartEvalFunctions
-"function: createPartEvalFunctions
-  goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
+"goes through the DAE for Expression.PARTEVALFUNCTION, creates new classes and changes the function calls"
   input list<DAE.Function> inDAElist;
   output list<DAE.Function> outDAElist;
 algorithm
@@ -202,8 +199,7 @@ algorithm
 end createPartEvalFunctions;
 
 protected function replaceFnInFnLst
-"function: replaceFnInFnLst
-  takes a given function and replaces the function with the same path in the daelist with it"
+"takes a given function and replaces the function with the same path in the daelist with it"
   input DAE.Function inFunction;
   input list<DAE.Function> inElementList;
   output list<DAE.Function> outElementList;
@@ -232,8 +228,7 @@ algorithm
 end replaceFnInFnLst;
 
 protected function elabElements
-"function: elabElements
-  goes through a list of DAE.Element for partevalfunction"
+"goes through a list of DAE.Element for partevalfunction"
   input list<DAE.Element> els;
   input list<DAE.Function> dae;
   output list<DAE.Element> oels;
@@ -243,8 +238,7 @@ algorithm
 end elabElements;
 
 protected function elabElement
-"function: elabElements
-  goes through a list of DAE.Element for partevalfunction"
+"goes through a list of DAE.Element for partevalfunction"
   input DAE.Element iel;
   input list<DAE.Function> idae;
   output DAE.Element oel;
@@ -475,8 +469,7 @@ algorithm
 end elabFunctions;
 
 protected function elabAlg
-"function: elabAlg
-  elaborates an algorithm section"
+"elaborates an algorithm section"
   input DAE.Algorithm inAlgorithm;
   input list<DAE.Function> inElementList;
   output DAE.Algorithm outAlgorithm;
@@ -500,8 +493,7 @@ algorithm
 end elabAlg;
 
 protected function elabStmts
-"function: elabStmts
-  elaborates a list of algorithm statements"
+"elaborates a list of algorithm statements"
   input list<DAE.Statement> inStatements;
   input list<DAE.Function> inElementList;
   output list<DAE.Statement> outStatements;
@@ -642,8 +634,7 @@ algorithm
 end elabStmts;
 
 protected function elabElse
-"function: elabElse
-  elabs an algorithm else case"
+"elabs an algorithm else case"
   input DAE.Else inElse;
   input list<DAE.Function> inElementList;
   output DAE.Else outElse;
@@ -677,8 +668,7 @@ algorithm
 end elabElse;
 
 protected function elabExpMatrix
-"function: elabExpMatrix
-  elabs an exp matrix"
+"elabs an exp matrix"
   input list<list<DAE.Exp>> inExpMatrix;
   input list<DAE.Function> inElementList;
   output list<list<DAE.Exp>> outExpMatrix;
@@ -705,8 +695,7 @@ algorithm
 end elabExpMatrix;
 
 protected function elabExpList
-"function: elabExpList
-  elabs an exp list"
+"elabs an exp list"
   input list<DAE.Exp> inExpList;
   input list<DAE.Function> inElementList;
   output list<DAE.Exp> outExpList;
@@ -733,8 +722,7 @@ algorithm
 end elabExpList;
 
 protected function elabExpOption
-"function: elabExpOption
-  elabs an exp option if it is SOME, returns NONE() otherwise"
+"elabs an exp option if it is SOME, returns NONE() otherwise"
   input Option<DAE.Exp> inExp;
   input list<DAE.Function> inElementList;
   output Option<DAE.Exp> outExp;
@@ -754,8 +742,7 @@ algorithm
 end elabExpOption;
 
 protected function elabExp
-"function: elabExp
-  looks for a function call, checks the arguments for DAE.PARTEVALFUNCTION
+"looks for a function call, checks the arguments for DAE.PARTEVALFUNCTION
   creates new functions and replaces the call as necessary"
   input tuple<DAE.Exp, list<DAE.Function>> inTuple;
   output tuple<DAE.Exp, list<DAE.Function>> outTuple;
@@ -782,8 +769,7 @@ algorithm
 end elabExp;
 
 protected function makeNewFnPath
-"function: makeNewFnPath
-  creates a path for the new function using the path for the caller and the callee"
+"creates a path for the new function using the path for the caller and the callee"
   input Absyn.Path inCaller;
   input Absyn.Path inCallee;
   output Absyn.Path newPath;
@@ -797,8 +783,7 @@ algorithm
 end makeNewFnPath;
 
 protected function buildNewFunction
-"function: buildNewFunction
-  creates a new function from the old one, given the old and new paths"
+"creates a new function from the old one, given the old and new paths"
   input list<DAE.Function> inElementList;
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
@@ -828,8 +813,7 @@ algorithm
 end buildNewFunction;
 
 protected function buildNewFunction2
-"function: buildNewFunction2
-  creates a new function based on given data"
+"creates a new function based on given data"
   input DAE.Function bigFunction;
   input DAE.Function smallFunction;
   input Absyn.Path inPath;
@@ -867,8 +851,7 @@ algorithm
 end buildNewFunction2;
 
 protected function buildNewFunctionType
-"function: buildNewFunctionType
-  removes the funcarg that is of T_FUNCTION type and inserts the list of vars as funcargs at that location"
+"removes the funcarg that is of T_FUNCTION type and inserts the list of vars as funcargs at that location"
   input DAE.Type inType;
   input list<DAE.Var> inVarList;
   output DAE.Type outType;
@@ -915,8 +898,7 @@ algorithm
 end buildNewFunctionType_params;
 
 protected function isNotFunctionType
-"function: isNotFunctionType
-  checks to make sure a DAE.FuncArg is not of type T_FUNCTION"
+"checks to make sure a DAE.FuncArg is not of type T_FUNCTION"
   input DAE.FuncArg inFuncArg;
   output Boolean outBoolean;
 algorithm
@@ -927,8 +909,7 @@ algorithm
 end isNotFunctionType;
 
 protected function buildNewFunctionParts
-"function: buildNewFunctionParts
-  inserts variables and alters call expressions in the new function"
+"inserts variables and alters call expressions in the new function"
   input list<DAE.Element> inFunctionParts;
   input DAE.Function smallFunction;
   input list<DAE.Function> inFunctions;
@@ -969,8 +950,7 @@ algorithm
 end buildNewFunctionParts;
 
 protected function buildTypeVar
-"function: buildTypeVar
-  turns a DAE.VAR into Types.VAR"
+"turns a DAE.VAR into Types.VAR"
   input DAE.Element inElement;
   output DAE.Var outVar;
 algorithm
@@ -996,8 +976,7 @@ algorithm
 end buildTypeVar;
 
 protected function isNotFunctionInput
-"function: isNotFunctionInput
-  checks if an input var is of T_FUNCTION type"
+"checks if an input var is of T_FUNCTION type"
   input DAE.Element inElement;
   output Boolean outBoolean;
 algorithm
@@ -1008,8 +987,7 @@ algorithm
 end isNotFunctionInput;
 
 protected function getFirstNInputs
-"function: getLastNInputs
-  returns the last n inputs from a given list"
+"returns the last n inputs from a given list"
   input list<DAE.Element> inInputs;
   input Integer inInteger;
   output list<DAE.Element> outInputs;
@@ -1030,8 +1008,7 @@ algorithm
 end getFirstNInputs;
 
 protected function insertAfterInputs
-"function: insertAfterInputs
-  goes through the first list of DAE.Element until it finds the end of the inputs
+"goes through the first list of DAE.Element until it finds the end of the inputs
   then inserts the given list of DAE.Element"
   input list<DAE.Element> inParts;
   input list<DAE.Element> inInputs;
@@ -1066,8 +1043,7 @@ algorithm
 end insertAfterInputs;
 
 protected function renameInput
-"function: renameInput
-  assumes that the given element is a DAE.VAR with Input direction
+"assumes that the given element is a DAE.VAR with Input direction
   prepends the given string to the ComponentRef"
   input DAE.Element inElement;
   input String inString;
@@ -1094,8 +1070,7 @@ algorithm
 end renameInput;
 
 protected function isInput
-"function: isInput
-  checks if a DAE.Element is an input var or not"
+"checks if a DAE.Element is an input var or not"
   input DAE.Element inElement;
   output Boolean outBoolean;
 algorithm
@@ -1106,8 +1081,7 @@ algorithm
 end isInput;
 
 protected function fixCalls
-"function: fixCalls
-  replaces calls in the newly built function with calls to the appropriate function, with the correct number of args"
+"replaces calls in the newly built function with calls to the appropriate function, with the correct number of args"
   input list<DAE.Element> inParts;
   input list<DAE.Function> inDAE;
   input Absyn.Path inPath;
@@ -1391,8 +1365,7 @@ algorithm
 end fixCallsAlg;
 
 protected function fixCallsElse
-"function: fixCallsElse
-  fixes calls in an DAE.Else"
+"fixes calls in an DAE.Else"
   input DAE.Else inElse;
   input list<DAE.Function> inDAE;
   input Absyn.Path inPath;
@@ -1425,8 +1398,7 @@ algorithm
 end fixCallsElse;
 
 protected function handleExpList2
-"function: handleExpList2
-  helper function to fixCallsAlg"
+"helper function to fixCallsAlg"
   input DAE.Exp inExp;
   input tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path> inTuple;
   output DAE.Exp outExp;
@@ -1449,8 +1421,7 @@ algorithm
 end handleExpList2;
 
 protected function fixCall
-"function: fixCall
-  replaces the path and args in a function call"
+"replaces the path and args in a function call"
   input tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path>> inTuple;
   output tuple<DAE.Exp, tuple<Absyn.Path, list<DAE.Element>, list<DAE.Function>, Absyn.Path>> outTuple;
 algorithm
@@ -1501,8 +1472,7 @@ algorithm
 end fixCall;
 
 protected function replaceFnRef
-"function: replaceFnRef
-  takes 2 arg lists, replaces the function ref in the first one wtih the exps in the second one"
+"takes 2 arg lists, replaces the function ref in the first one wtih the exps in the second one"
   input list<DAE.Exp> inOriginalArgs;
   input list<DAE.Exp> inNewArgs;
   output list<DAE.Exp> outNewArgs;
@@ -1531,8 +1501,7 @@ algorithm
 end replaceFnRef;
 
 protected function isSimpleArg
-"function: isSimpleArg
-  checks if a funcarg list is simple or not"
+"checks if a funcarg list is simple or not"
   input list<DAE.Exp> inArgs;
   output Boolean outBoolean;
 algorithm
@@ -1563,8 +1532,7 @@ algorithm
 end isSimpleArg;
 
 protected function getPartEvalFunction
-"function: getPartEvalFunction
-  gets the exp and index of a partevalfunction from a list of exps
+"gets the exp and index of a partevalfunction from a list of exps
   fail if no partevalfunction is present"
   input list<DAE.Exp> inExpList;
   input Integer inInteger "accumulator";

@@ -2183,8 +2183,7 @@ algorithm
 end valueArrayLength;
 
 public function valueArrayAdd
-"function: valueArrayAdd
-  author: PA
+"author: PA
   Adds an entry last to the ValueArray, increasing
   array size if no space left by factor 1.4"
   input ValueArray valueArray;
@@ -2226,8 +2225,7 @@ algorithm
 end valueArrayAdd;
 
 public function valueArraySetnth
-"function: valueArraySetnth
-  author: PA
+"author: PA
   Set the n:th variable in the ValueArray to value."
   input ValueArray valueArray;
   input Integer pos;
@@ -2278,8 +2276,7 @@ algorithm
 end valueArrayClearnth;
 
 public function valueArrayNth
-"function: valueArrayNth
-  author: PA
+"author: PA
   Retrieve the n:th Vale from ValueArray, index from 0..n-1."
   input ValueArray valueArray;
   input Integer pos;

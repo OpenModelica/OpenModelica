@@ -2644,8 +2644,7 @@ algorithm
 end dumpAdjacencyLst;
 
 public function dumpAdjacencyRow
-"function: dumpIncidenceRow
-  author: PA
+"author: PA
   Helper function to dumpIncidenceMatrix2."
   input list<Integer> inIntegerLst;
 algorithm

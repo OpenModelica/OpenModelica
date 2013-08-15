@@ -207,8 +207,7 @@ algorithm
 end decrementInt;
 
 public function makeCrefRecordExp
-"function: makeCrefRecordExp
-  Helper function to generate records."
+"Helper function to generate records."
   input DAE.ComponentRef inCRefRecord;
   input DAE.Var inVar;
   output DAE.Exp outExp;
@@ -875,8 +874,7 @@ algorithm
 end elaborateFunction;
 
 protected function typesSimFunctionArg
-"function: generateFunctionArgs
-  Generates code from a function argument."
+"Generates code from a function argument."
   input DAE.FuncArg inFuncArg;
   output SimCode.Variable outVar;
 algorithm
@@ -4245,8 +4243,7 @@ algorithm
 end createStateSets;
 
 protected function createStateSetsSystem
-"function: createStateSetsSystem
-  author: Frenkel TUD 2012-12
+"author: Frenkel TUD 2012-12
   traverse an Equationsystem to handle states sets"
   input BackendDAE.EqSystem isyst; 
   input tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>, Integer, list<SimCode.SimVar>, Integer>> sharedChanged;
@@ -4449,8 +4446,7 @@ algorithm
 end foundMarked;
 
 protected function getStateSetCompVarEqns
-"function: getEquationAndSolvedVar
-  author: Frenkel TUD 2013-01
+"author: Frenkel TUD 2013-01
   Retrieves the equation and the variable for a state set"
   input BackendDAE.StrongComponents inComp;
   input array<Boolean> marked;
@@ -5257,8 +5253,7 @@ algorithm
   end matchcontinue;
 end createInitSymbolicJacobianssSimCode;
 
-public function createInitialMatrices "function: createInitialMatrices
-  author: lochel
+public function createInitialMatrices "author: lochel
   This function generates matrices for initialization."
   input BackendDAE.BackendDAE inDAE;
   input Integer inIniqueEqIndex;
@@ -6856,8 +6851,7 @@ algorithm
   end matchcontinue;
 end createParameterEquations;
 
-protected function traverseAlgorithmFinder "function: traverseAlgorithmFinder
-  author: Frenkel TUD 2010-12
+protected function traverseAlgorithmFinder "author: Frenkel TUD 2010-12
   collect all used algorithms"
   input tuple<BackendDAE.Equation, list<DAE.Algorithm>> inTpl;
   output tuple<BackendDAE.Equation, list<DAE.Algorithm>> outTpl;
@@ -7543,8 +7537,7 @@ algorithm
 end sortSimvars;
 
 protected function setArrayElementnoFirst
-"function: setArrayElementnoFirst
-  author: Frenkel TUD 2012-10"
+"author: Frenkel TUD 2012-10"
   input SimCode.SimVar iVar;
   input HashSet.HashSet iSet;
   output SimCode.SimVar oVar;
@@ -7572,8 +7565,7 @@ algorithm
 end setArrayElementnoFirst;
 
 protected function addSimVarArrayCref
-"function: addSimVarArrayCref
-  author: Frenkel TUD 2012-10"
+"author: Frenkel TUD 2012-10"
   input SimCode.SimVar iVar;
   input DAE.ComponentRef arrayCref;
   output SimCode.SimVar oVar;
@@ -7606,8 +7598,7 @@ algorithm
 end addSimVarArrayCref;
 
 protected function collectArrayFirstVars
-"function: collectArrayFirstVars
-  author: Frenkel TUD 2012-10"
+"author: Frenkel TUD 2012-10"
   input SimCode.SimVar var;
   input HashSet.HashSet iSet;
   output HashSet.HashSet oSet;
@@ -7625,8 +7616,7 @@ algorithm
 end collectArrayFirstVars;
 
 protected function sortSimVars1
-"function: sortSimVars1
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input list<SimCode.SimVar> unsorted;
   output list<SimCode.SimVar> sorted; 
 protected
@@ -7643,8 +7633,7 @@ algorithm
 end sortSimVars1;
 
 protected function extractArrayVars
-"function: extractArrayVars
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input list<SimCode.SimVar> inVars;
   input list<SimCode.SimVar> iscalarVars;
   input HashTableCrSimVars.HashTable iHt;
@@ -7676,8 +7665,7 @@ algorithm
 end extractArrayVars;
 
 protected function addSimVarHashTableCrSimVars
-"function: addSimVarHashTableCrSimVars
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input DAE.ComponentRef crnosub;
   input SimCode.SimVar var;
   input HashTableCrSimVars.HashTable iHt;
@@ -7707,8 +7695,7 @@ algorithm
 end addSimVarHashTableCrSimVars;
 
 protected function sortSimVars2
-"function: sortSimVars2
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input list<list<SimCode.SimVar>> varlstlst;
   input list<SimCode.SimVar> iVars;
   output list<SimCode.SimVar> sortedVars;
@@ -7737,8 +7724,7 @@ algorithm
 end sortSimVars2;
 
 protected function sortArrayVars
-"function: sortArrayVars
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input list<SimCode.SimVar> varlst;
   input list<SimCode.SimVar> iVars;
   output list<SimCode.SimVar> sortedVars;
@@ -7792,8 +7778,7 @@ algorithm
 end sortArrayVars;
 
 protected function comparingArrayVarsIndexes1
-"function: comparingArrayVarsIndexes1
-  author: Frenkel TUD
+"author: Frenkel TUD
   Helper function for comparingArrayVarsIndexes.
   Check if a element of a non scalar has his place
   before or after another element in a one
@@ -7820,8 +7805,7 @@ algorithm
 end comparingArrayVarsIndexes1;
 
 protected function comparingArrayVarsIndexes
-"function: comparingArrayVarsIndexes
-  author: Frenkel TUD
+"author: Frenkel TUD
   Comparing two NonScalars.
   Example:  A[2, 2], A[1, 1] -> {A[1, 1], A[2, 2]}"
   input SimCode.SimVar invar1;
@@ -7844,8 +7828,7 @@ algorithm
 end comparingArrayVarsIndexes;
 
 protected function getVarsFromArray
-"function: getVarsFromArray
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input Integer index;
   input array<Option<SimCode.SimVar>> arr;
   input list<SimCode.SimVar> iVars;
@@ -7872,8 +7855,7 @@ algorithm
 end getVarsFromArray;
 
 protected function insertArrayVars
-"function: insertArrayVars
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input SimCode.SimVar var;
   input list<Integer> dims;
   input array<Option<SimCode.SimVar>> iarr;
@@ -7900,8 +7882,7 @@ algorithm
 end insertArrayVars;
 
 protected function calculateIndex
-"function: calculateIndex
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   Helper function for insertArrayVars.
   Calculate based on the dimensions and the
   indexes the place of the element in a one
@@ -8294,8 +8275,7 @@ algorithm
 end solveTrivialArrayEquation;
 
 protected function solveTrivialArrayEquation2
-"function: solveTrivialArrayEquation2
-  author: Frenkel TUD - 2012-07
+"author: Frenkel TUD - 2012-07
   helper for solveTrivialArrayEquation"
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -10169,8 +10149,7 @@ algorithm
   end match;
 end valueArrayLength;
 
-public function valueArrayAdd "function: valueArrayAdd
-  author: PA
+public function valueArrayAdd "author: PA
   Adds an entry last to the ValueArray, increasing array size
   if no space left by factor 1.4
 "
@@ -10213,8 +10192,7 @@ algorithm
   end matchcontinue;
 end valueArrayAdd;
 
-public function valueArraySetnth "function: valueArraySetnth
-  author: PA
+public function valueArraySetnth "author: PA
   Set the n:th variable in the ValueArray to value.
 "
   input SimCode.ValueArray valueArray;
@@ -10268,8 +10246,7 @@ end valueArraySetnth;
  end matchcontinue;
  end valueArrayClearnth;
  */
-public function valueArrayNth "function: valueArrayNth
-  author: PA
+public function valueArrayNth "author: PA
 
   Retrieve the n:th Vale from ValueArray, index from 0..n-1.
  "

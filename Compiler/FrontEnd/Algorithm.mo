@@ -94,8 +94,7 @@ algorithm
 end isNotAssertStatement;
 
 public function makeAssignment
-"function: makeAssignment
-  This function creates an `DAE.STMT_ASSIGN\' construct, and checks that the
+"This function creates an `DAE.STMT_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
   being assigned is not constant, and that the types match.
   LS: Added call to getPropType and isPropAnyConst instead of
@@ -270,8 +269,7 @@ algorithm
   end match;
 end makeAssignmentsList;
 
-public function makeTupleAssignment "function: makeTupleAssignment
-  This function creates an `DAE.STMT_TUPLE_ASSIGN\' construct, and checks that the
+public function makeTupleAssignment "This function creates an `DAE.STMT_TUPLE_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component
   being assigned is not constant, and that the types match."
   input list<DAE.Exp> inExpExpLst;
@@ -356,8 +354,7 @@ algorithm
   end matchcontinue;
 end makeTupleAssignment;
 
-protected function getPropExpType "function: getPropExpType
-  Returns the expression type for a given Properties by calling
+protected function getPropExpType "Returns the expression type for a given Properties by calling
   getTypeExpType. Used by makeAssignment."
   input DAE.Properties p;
   output DAE.Type t;
@@ -368,8 +365,7 @@ algorithm
   t := Types.simplifyType(ty);
 end getPropExpType;
 
-public function makeIf "function: makeIf
-  This function creates an `DAE.STMT_IF\' construct, checking that the types
+public function makeIf "This function creates an `DAE.STMT_IF\' construct, checking that the types
   of the parts are correct. Else part is generated using the makeElse
   function."
   input DAE.Exp inExp1;
@@ -488,8 +484,7 @@ algorithm
   end match;
 end optimizeElseIf;
 
-protected function makeElse "function: makeElse
-  This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
+protected function makeElse "This function creates the ELSE part of the DAE.STMT_IF and checks if is correct."
   input list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> inTuple;
   input list<DAE.Statement> inStatementLst;
   input DAE.ElementSource inSource;
@@ -526,8 +521,7 @@ algorithm
   end matchcontinue;
 end makeElse;
 
-public function makeFor "function: makeFor
-  This function creates a DAE.STMT_FOR construct, checking
+public function makeFor "This function creates a DAE.STMT_FOR construct, checking
   that the types of the parts are correct."
   input String inIdent;
   input DAE.Exp inExp;
@@ -563,8 +557,7 @@ algorithm
   end matchcontinue;
 end makeFor;
 
-public function makeParFor "function: makeParFor
-  This function creates a DAE.STMT_PARFOR construct, checking
+public function makeParFor "This function creates a DAE.STMT_PARFOR construct, checking
   that the types of the parts are correct."
   input String inIdent;
   input DAE.Exp inExp;
@@ -601,8 +594,7 @@ algorithm
   end matchcontinue;
 end makeParFor;
 
-public function makeWhile "function: makeWhile
-  This function creates a DAE.STMT_WHILE construct, checking that the types
+public function makeWhile "This function creates a DAE.STMT_WHILE construct, checking that the types
   of the parts are correct."
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
@@ -628,8 +620,7 @@ algorithm
   end matchcontinue;
 end makeWhile;
 
-public function makeWhenA "function: makeWhenA
-  This function creates a DAE.STMT_WHEN algorithm construct,
+public function makeWhenA "This function creates a DAE.STMT_WHEN algorithm construct,
   checking that the types of the parts are correct."
   input DAE.Exp inExp;
   input DAE.Properties inProperties;
@@ -686,8 +677,7 @@ algorithm
   end matchcontinue;
 end makeReinit;
 
-public function makeAssert "function: makeAssert
-  Creates an assert statement from two expressions.
+public function makeAssert "Creates an assert statement from two expressions.
 "
   input DAE.Exp cond "condition";
   input DAE.Exp msg "message";

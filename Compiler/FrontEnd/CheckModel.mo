@@ -52,8 +52,7 @@ protected import HashSet;
 protected import List;
 protected import Util;
 
-public function checkModel "function: checkModel
-  This function perform a model check. Count Variables and equations and
+public function checkModel "This function perform a model check. Count Variables and equations and
   detect the simple equations."
   input DAE.DAElist inDAELst;
   output Integer varSize;
@@ -346,8 +345,7 @@ algorithm
   end match;
 end countVarEqnSize;
 
-public function topLevelInput "function: topLevelInput
-  author: PA
+public function topLevelInput "author: PA
   if variable is input declared at the top level of the model,
   or if it is an input in a connector instance at top level return true."
   input DAE.ComponentRef inComponentRef;
@@ -363,8 +361,7 @@ algorithm
   end match;
 end topLevelInput;
 
-public function algorithmOutputs "function: algorithmOutputs
-  This function finds the the outputs of an algorithm.
+public function algorithmOutputs "This function finds the the outputs of an algorithm.
   An input is all values that are reffered on the right hand side of any
   statement in the algorithm and an output is a variables belonging to the
   variables that are assigned a value in the algorithm. If a variable is an
@@ -378,8 +375,7 @@ algorithm
   outCrefLst := algorithmStatementListOutputs(stmts);
 end algorithmOutputs;
 
-public function algorithmStatementListOutputs "function: algorithmStatementListOutputs
-  This function finds the the outputs of an algorithm.
+public function algorithmStatementListOutputs "This function finds the the outputs of an algorithm.
   An input is all values that are reffered on the right hand side of any
   statement in the algorithm and an output is a variables belonging to the
   variables that are assigned a value in the algorithm. If a variable is an
@@ -394,8 +390,7 @@ algorithm
   outCrefLst := BaseHashSet.hashSetList(hs);
 end algorithmStatementListOutputs;
 
-protected function statementOutputs "function: statementOutputs
-  Helper relation to algorithmOutputs"
+protected function statementOutputs "Helper relation to algorithmOutputs"
   input DAE.Statement inStatement;
   input  HashSet.HashSet iht;
   output HashSet.HashSet oht;
@@ -876,8 +871,7 @@ algorithm
   end matchcontinue;
 end simpleEquation;
 
-protected function traversingComponentRefFinder "function: traversingComponentRefFinder
-  author: Frenkel TUD 2012-06"
+protected function traversingComponentRefFinder "author: Frenkel TUD 2012-06"
   input tuple<DAE.Exp, tuple<HashSet.HashSet, list<DAE.ComponentRef>>> inExp;
   output tuple<DAE.Exp, tuple<HashSet.HashSet, list<DAE.ComponentRef>>> outExp;
 algorithm

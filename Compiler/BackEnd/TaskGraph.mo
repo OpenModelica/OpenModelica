@@ -109,8 +109,7 @@ algorithm
   end matchcontinue;
 end buildTaskgraph;
 
-protected function buildInits "function: buildInits
-  This function traverses the DAE and calls external functions to build
+protected function buildInits "This function traverses the DAE and calls external functions to build
   the initialization values for the DAE
   This is implemented in C++ as a set of vectors"
   input BackendDAE.BackendDAE inBackendDAE;
@@ -353,8 +352,7 @@ algorithm
   end matchcontinue;
 end buildEquation;
 
-protected function buildNonlinearEquations "function: buildNonlinearEquations
-  builds task graph for solving non-linear equations
+protected function buildNonlinearEquations "builds task graph for solving non-linear equations
 "
   input list<DAE.Exp> inExpExpLst1;
   input list<DAE.Exp> inExpExpLst2;
@@ -386,8 +384,7 @@ algorithm
   end matchcontinue;
 end buildNonlinearEquations;
 
-protected function buildResidualCode "function: buildResidualCode
-  This function takes a list of expressions and builds code for
+protected function buildResidualCode "This function takes a list of expressions and builds code for
   calculating the residuals as a string. Used for e.g. solving non-linear equations.
 "
   input list<DAE.Exp> inExpExpLst1;
@@ -414,8 +411,7 @@ algorithm
   end matchcontinue;
 end buildResidualCode;
 
-protected function makeResidualReplacements "function: makeResidualReplacements
-  This function makes replacement rules for variables occuring in a
+protected function makeResidualReplacements "This function makes replacement rules for variables occuring in a
   nonlinear equation system. They should be replaced by x{index}, i.e.
   an unique index in the x vector.
 "
@@ -555,8 +551,7 @@ algorithm
   end matchcontinue;
 end buildNonlinearEquations2;
 
-protected function addEdgesFromVars "function: addEdgesFromVars
-  Adds an edge between the tasks where the variables are defined and the tasks
+protected function addEdgesFromVars "Adds an edge between the tasks where the variables are defined and the tasks
   given as second argument.
 "
   input list<DAE.ComponentRef> inExpComponentRefLst1;

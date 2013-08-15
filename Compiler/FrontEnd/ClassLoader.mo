@@ -66,8 +66,7 @@ protected uniontype PackageOrder
 end PackageOrder;
 
 public function loadClass
-"function: loadClass
-  This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string
+"This function takes a \'Path\' and the $OPENMODELICALIBRARY as a string
   and tries to load the class from the path.
   If the classname is qualified, the complete package is loaded.
   E.g. load_class(Modelica.SIunits.Voltage) -> whole Modelica package loaded."
@@ -109,16 +108,14 @@ algorithm
 end loadClass;
 
 protected function existRegularFile
-"function: existRegularFile
-  Checks if a file exists"
+"Checks if a file exists"
   input String filename;
 algorithm
   true := System.regularFileExists(filename);
 end existRegularFile;
 
 public function existDirectoryFile
-"function: existDirectoryFile
-  Checks if a directory exist"
+"Checks if a directory exist"
   input String filename;
 algorithm
   true := System.directoryExists(filename);
@@ -181,8 +178,7 @@ algorithm
 end loadClassFromMp;
 
 protected function loadCompletePackageFromMp
-"function: loadCompletePackageFromMp
-  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
+"Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
   input String id "actual class identifier";
   input Absyn.Ident inIdent;
   input String inString;
@@ -250,8 +246,7 @@ algorithm
 end mergeBefore;
 
 protected function loadCompletePackageFromMp2
-"function: loadCompletePackageFromMp
-  Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
+"Loads a whole package from the ModelicaPaths defined in OPENMODELICALIBRARY"
   input PackageOrder po "mo-file or directory";
   input String mp;
   input String encoding;

@@ -75,8 +75,7 @@ algorithm
 end dumpExp;
 
 public function dump
-"function: dump
-  Prints a program, i.e. the whole AST, to the Print buffer."
+"Prints a program, i.e. the whole AST, to the Print buffer."
   input Absyn.Program inProgram;
 algorithm
   _ := match (inProgram)
@@ -96,8 +95,7 @@ algorithm
 end dump;
 
 public function unparseStr
-"function: unparseStr
-  Prettyprints the Program, i.e. the whole AST, to a string."
+"Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
   input Boolean markup "
     Used by MathCore, and dependencies to other modules requires this to also be in OpenModelica.
@@ -126,8 +124,7 @@ algorithm
 end unparseStr;
 
 public function unparseClassList
-"function: unparseClassList
-  Prettyprints a list of classes"
+"Prettyprints a list of classes"
   input Integer inInteger;
   input list<Absyn.Class> inAbsynClassLst;
   output String outString;
@@ -150,8 +147,7 @@ algorithm
 end unparseClassList;
 
 public function unparseWithin
-"function: unparseWithin
-  Prettyprints a within statement."
+"Prettyprints a within statement."
   input Integer inInteger;
   input Absyn.Within inWithin;
   output String outString;
@@ -173,8 +169,7 @@ algorithm
 end unparseWithin;
 
 protected function dumpWithin
-"function: dumpWithin
-  Dumps within to the Print buffer."
+"Dumps within to the Print buffer."
   input Absyn.Within inWithin;
 algorithm
   _ := match (inWithin)
@@ -195,8 +190,7 @@ algorithm
 end dumpWithin;
 
 public function unparseClassStr
-"function: unparseClassStr
-  Prettyprints a Class.
+"Prettyprints a Class.
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
     //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
     // if the order is not the one above on re-parse will give errors!"
@@ -357,8 +351,7 @@ algorithm
 end unparseClassStr;
 
 public function unparseClassAttributesStr
-"function: unparseClassAttributesStr
-  Prettyprints Class attributes."
+"Prettyprints Class attributes."
   input Absyn.Class inClass;
   output String outString;
 algorithm
@@ -381,8 +374,7 @@ algorithm
 end unparseClassAttributesStr;
 
 public function unparseCommentOption
-"function: unparseCommentOption
-  Prettyprints a Comment."
+"Prettyprints a Comment."
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
@@ -409,8 +401,7 @@ algorithm
 end unparseCommentOption;
 
 public function unparseCommentOptionNoAnnotation
-"function: unparseCommentOptionNoAnnotation
-  Prettyprints a Comment without printing the annotation part."
+"Prettyprints a Comment without printing the annotation part."
   input Option<Absyn.Comment> inAbsynCommentOption;
   output String outString;
 algorithm
@@ -428,8 +419,7 @@ algorithm
 end unparseCommentOptionNoAnnotation;
 
 protected function dumpCommentOption
-"function: dumpCommentOption
-  Prints a Comment to the Print buffer."
+"Prints a Comment to the Print buffer."
   input Option<Absyn.Comment> inAbsynCommentOption;
 algorithm
   _ := match (inAbsynCommentOption)
@@ -463,8 +453,7 @@ algorithm
 end dumpCommentOption;
 
 protected function dumpAnnotationOption
-"function: dumpAnnotationOption
-  Dumps an annotation option to the Print buffer."
+"Dumps an annotation option to the Print buffer."
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
 algorithm
   _ := match (inAbsynAnnotationOption)
@@ -487,8 +476,7 @@ algorithm
 end dumpAnnotationOption;
 
 protected function unparseEnumliterals
-"function: unparseEnumliterals
-  Prettyprints enumeration literals, each consisting of an identifier and an optional comment."
+"Prettyprints enumeration literals, each consisting of an identifier and an optional comment."
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
   output String outString;
 algorithm
@@ -521,8 +509,7 @@ algorithm
 end unparseEnumliterals;
 
 protected function printEnumliterals
-"function: printEnumliterals
-  Prints enumeration literals, each consisting of an
+"Prints enumeration literals, each consisting of an
   identifier and an optional comment to the Print buffer."
   input list<Absyn.EnumLiteral> lst;
 algorithm
@@ -532,8 +519,7 @@ algorithm
 end printEnumliterals;
 
 protected function printEnumliterals2
-"function: printEnumliterals2
-  Helper function to printEnumliterals"
+"Helper function to printEnumliterals"
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
 algorithm
   _ := matchcontinue (inAbsynEnumLiteralLst)
@@ -573,8 +559,7 @@ algorithm
 end printEnumliterals2;
 
 public function unparseRestrictionStr
-"function: unparseRestrictionStr
-  Prettyprints the class restriction."
+"Prettyprints the class restriction."
   input Absyn.Restriction inRestriction;
   output String outString;
 algorithm
@@ -607,8 +592,7 @@ algorithm
 end unparseRestrictionStr;
 
 public function printInfo
-"function: printInfo
-  author: adrpo, 2006-02-05
+"author: adrpo, 2006-02-05
   Dumps an Info to the Print buffer."
   input Absyn.Info inInfo;
 algorithm
@@ -644,8 +628,7 @@ algorithm
 end printInfo;
 
 public function unparseInfoStr
-"function: unparseInfoStr
-  author: adrpo, 2006-02-05
+"author: adrpo, 2006-02-05
   Translates Info to a string representation"
   input Absyn.Info inInfo;
   output String outString;
@@ -672,8 +655,7 @@ algorithm
 end unparseInfoStr;
 
 protected function printClass
-"function: printClass
-  Dumps a Class to the Print buffer.
+"Dumps a Class to the Print buffer.
   changed by adrpo, 2006-02-05 to use printInfo."
   input Absyn.Class inClass;
 algorithm
@@ -700,8 +682,7 @@ algorithm
 end printClass;
 
 protected function printClassdef
-"function: printClassdef
-  Prints a ClassDef to the Print buffer."
+"Prints a ClassDef to the Print buffer."
   input Absyn.ClassDef inClassDef;
 algorithm
   _ := match (inClassDef)
@@ -779,8 +760,7 @@ algorithm
 end printClassdef;
 
 protected function printClassRestriction
-"function: printClassRestriction
-  Prints the class restriction to the Print buffer."
+"Prints the class restriction to the Print buffer."
   input Absyn.Restriction inRestriction;
 algorithm
   _ := matchcontinue (inRestriction)
@@ -816,8 +796,7 @@ algorithm
 end printClassRestriction;
 
 protected function printClassModification
-"function: printClassModification
-  Prints a class modification to a print buffer."
+"Prints a class modification to a print buffer."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
 algorithm
   _ := matchcontinue (inAbsynElementArgLst)
@@ -834,8 +813,7 @@ algorithm
 end printClassModification;
 
 protected function unparseClassModificationStr
-"function: unparseClassModificationStr
-  Prettyprints a class modification to a string."
+"Prettyprints a class modification to a string."
   input Absyn.Modification inModification;
   output String outString;
 algorithm
@@ -866,8 +844,7 @@ algorithm
 end unparseClassModificationStr;
 
 protected function printElementArg
-"function: printElementArg
-  Prints an ElementArg to the Print buffer."
+"Prints an ElementArg to the Print buffer."
   input Absyn.ElementArg inElementArg;
 algorithm
   _ := match (inElementArg)
@@ -906,8 +883,7 @@ algorithm
 end printElementArg;
 
 public function unparseElementArgStr
-"function: unparseElementArgStr
-  Prettyprints an ElementArg to a string."
+"Prettyprints an ElementArg to a string."
   input Absyn.ElementArg inElementArg;
   output String outString;
 algorithm
@@ -955,8 +931,7 @@ algorithm
 end unparseElementArgStr;
 
 protected function unparseRedeclarekeywords
-"function: unparseRedeclarekeywords
-  Prettyprints the redeclare keywords, i.e replaceable and redeclare"
+"Prettyprints the redeclare keywords, i.e replaceable and redeclare"
   input Absyn.RedeclareKeywords inRedeclareKeywords;
   output tuple<String,String> outTupleRedeclareReplaceable;
 algorithm
@@ -968,8 +943,7 @@ algorithm
 end unparseRedeclarekeywords;
 
 public function unparseEachStr
-"function: unparseEachStr
-  Prettyprints the each keyword."
+"Prettyprints the each keyword."
   input Absyn.Each inEach;
   output String outString;
 algorithm
@@ -980,8 +954,7 @@ algorithm
 end unparseEachStr;
 
 protected function dumpEach
-"function: dumpEach
-  Print the each keyword to the Print buffer"
+"Print the each keyword to the Print buffer"
   input Absyn.Each inEach;
 algorithm
   _ := match (inEach)
@@ -991,8 +964,7 @@ algorithm
 end dumpEach;
 
 protected function printClassPart
-"function: printClassPart
-  Prints the ClassPart to the Print buffer."
+"Prints the ClassPart to the Print buffer."
   input Absyn.ClassPart inClassPart;
 algorithm
   _ := match (inClassPart)
@@ -1063,8 +1035,7 @@ algorithm
 end printClassPart;
 
 protected function printExternalDecl
-"function: printExternalDecl
-  Prints an external declaration to the Print buffer."
+"Prints an external declaration to the Print buffer."
   input Absyn.ExternalDecl inExternalDecl;
 algorithm
   _ := match (inExternalDecl)
@@ -1095,8 +1066,7 @@ algorithm
 end printExternalDecl;
 
 public function unparseClassPartStrLst
-"function: unparseClassPartStrLst
-  Prettyprints a ClassPart list to a string."
+"Prettyprints a ClassPart list to a string."
   input Integer inInteger;
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Boolean inBoolean;
@@ -1121,8 +1091,7 @@ algorithm
 end unparseClassPartStrLst;
 
 protected function unparseClassPartStr
-"function: unparseClassPartStr
-  Prettyprints a ClassPart to a string."
+"Prettyprints a ClassPart to a string."
   input Integer inInteger;
   input Absyn.ClassPart inClassPart;
   input Boolean inBoolean;
@@ -1273,8 +1242,7 @@ algorithm
 end unparseClassPartStr;
 
 protected function getExtlangStr
-"function: getExtlangStr
-  Prettyprints the external function language string to a string."
+"Prettyprints the external function language string to a string."
   input Option<String> inStringOption;
   output String outString;
 algorithm
@@ -1287,8 +1255,7 @@ algorithm
 end getExtlangStr;
 
 protected function printElementitems
-"function: printElementitems
-  Print a list of ElementItems to the Print buffer."
+"Print a list of ElementItems to the Print buffer."
   input list<Absyn.ElementItem> elts;
 algorithm
   Print.printBuf("[");
@@ -1297,8 +1264,7 @@ algorithm
 end printElementitems;
 
 protected function printElementitems2
-"function: printElementitems2
-  Helper function to printElementitems"
+"Helper function to printElementitems"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
 algorithm
   _ := matchcontinue (inAbsynElementItemLst)
@@ -1331,8 +1297,7 @@ algorithm
 end printElementitems2;
 
 protected function printAnnotation
-"function: printAnnotation
-  Prints an annotation to the Print buffer."
+"Prints an annotation to the Print buffer."
   input Absyn.Annotation inAnnotation;
 algorithm
   _ := match (inAnnotation)
@@ -1348,8 +1313,7 @@ algorithm
 end printAnnotation;
 
 public function unparseElementitemStrLst
-"function: unparseElementitemStrLst
-  Prettyprints a list of ElementItem to a string."
+"Prettyprints a list of ElementItem to a string."
   input Integer inInteger;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output String outString;
@@ -1372,8 +1336,7 @@ algorithm
 end unparseElementitemStrLst;
 
 public function unparseElementitemStr
-"function: unparseElementitemStr
-  Prettyprints and ElementItem."
+"Prettyprints and ElementItem."
   input Integer inInteger;
   input Absyn.ElementItem inElementItem;
   output String outString;
@@ -1398,8 +1361,7 @@ algorithm
 end unparseElementitemStr;
 
 protected function unparseAnnotationOptionSemi
-"function: unparseAnnotationOptionSemi
-  Prettyprint an annotation and a semicolon if annoation present."
+"Prettyprint an annotation and a semicolon if annoation present."
   input Integer inInteger;
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
   output String outString;
@@ -1420,8 +1382,7 @@ algorithm
 end unparseAnnotationOptionSemi;
 
 public function unparseAnnotation
-"function: unparseAnnotation
-  Prettyprint an annotation."
+"Prettyprint an annotation."
   input Absyn.Annotation inAbsynAnnotation;
   input Integer inInteger;
   output String outString;
@@ -1449,8 +1410,7 @@ algorithm
 end unparseAnnotation;
 
 public function unparseAnnotationOption
-"function: unparseAnnotation
-  Prettyprint an annotation."
+"Prettyprint an annotation."
   input Integer i;
   input Option<Absyn.Annotation> inAbsynAnnotation;
   output String outString;
@@ -1608,8 +1568,7 @@ algorithm
 end unparseElementStr;
 
 protected function unparseConstrainclassOptStr
-"function: unparseConstrainclassOptStr
-  author: PA
+"author: PA
   This function prettyprints a ConstrainClass option to a string."
   input Option<Absyn.ConstrainClass> inAbsynConstrainClassOption;
   output String outString;
@@ -1629,8 +1588,7 @@ algorithm
 end unparseConstrainclassOptStr;
 
 public function unparseConstrainclassStr
-"function: unparseConstrainclassStr
-  author: PA
+"author: PA
   This function prettyprints a ConstrainClass to a string."
   input Absyn.ConstrainClass inConstrainClass;
   output String outString;
@@ -1658,8 +1616,7 @@ algorithm
 end unparseConstrainclassStr;
 
 protected function printInnerouter
-"function: printInnerouter
-  Prints the inner or outer keyword to the Print buffer."
+"Prints the inner or outer keyword to the Print buffer."
   input Absyn.InnerOuter inInnerOuter;
 algorithm
   _:=
@@ -1724,8 +1681,7 @@ algorithm
 end unparseElementPrefixKeywords;
 
 public function printElementspec
-"function: printElementspec
-  Prints the ElementSpec to the Print buffer."
+"Prints the ElementSpec to the Print buffer."
   input Absyn.ElementSpec inElementSpec;
 algorithm
   _:=
@@ -1798,8 +1754,7 @@ algorithm
 end printElementspec;
 
 protected function unparseElementspecStr
-"function: unparseElementspecStr
-  Prettyprints the ElementSpec to a string."
+"Prettyprints the ElementSpec to a string."
   input Integer indent "indent";
   input Absyn.ElementSpec elementSpec "element specification";
   input String finalStr;
@@ -1884,8 +1839,7 @@ algorithm
 end unparseElementspecStr;
 
 public function printImport
-"function: printImport
-  Prints an Import to the Print buffer."
+"Prints an Import to the Print buffer."
   input Absyn.Import inImport;
 algorithm
   _ := match (inImport)
@@ -1944,8 +1898,7 @@ algorithm
 end unparseGroupImport;
 
 public function unparseImportStr
-"function: unparseImportStr
-  Prettyprints an Import to a string."
+"Prettyprints an Import to a string."
   input Absyn.Import inImport;
   output String outString;
 algorithm
@@ -1988,8 +1941,7 @@ algorithm
   end match;
 end unparseImportStr;
 
-protected function printElementattr "function: printElementattr
-  Prints ElementAttributes to the Print buffer."
+protected function printElementattr "Prints ElementAttributes to the Print buffer."
   input Absyn.ElementAttributes inElementAttributes;
 algorithm
   _ := matchcontinue (inElementAttributes)
@@ -2126,8 +2078,7 @@ algorithm
   end match;
 end unparseVariabilitySymbolStr;
 
-public function unparseDirectionSymbolStr "function: unparseDirectionSymbolStr
-  Returns a prettyprinted string of direction."
+public function unparseDirectionSymbolStr "Returns a prettyprinted string of direction."
   input Absyn.Direction inDirection;
   output String outString;
 algorithm
@@ -2151,8 +2102,7 @@ algorithm
   end match;
 end unparseParallelismSymbolStr;
 
-public function printComponent "function: printComponent
-  Prints a Component to the Print buffer."
+public function printComponent "Prints a Component to the Print buffer."
   input Absyn.Component inComponent;
 algorithm
   _ := match (inComponent)
@@ -2174,8 +2124,7 @@ algorithm
   end match;
 end printComponent;
 
-protected function printComponentitem "function: printComponentitem
-  Prints a ComponentItem to the Print buffer."
+protected function printComponentitem "Prints a ComponentItem to the Print buffer."
   input Absyn.ComponentItem inComponentItem;
 algorithm
   _ := match (inComponentItem)
@@ -2219,8 +2168,7 @@ algorithm
   end match;
 end unparseComponentStr;
 
-public function unparseComponentitemStr "function: unparseComponentitemStr
-  Prettyprints a ComponentItem to a string."
+public function unparseComponentitemStr "Prettyprints a ComponentItem to a string."
   input Absyn.ComponentItem inComponentItem;
   output String outString;
 algorithm
@@ -2241,8 +2189,7 @@ algorithm
   end match;
 end unparseComponentitemStr;
 
-public function unparseComponentCondition "function: unparseComponentCondition
-  Prints a ComponentCondition option to a string."
+public function unparseComponentCondition "Prints a ComponentCondition option to a string."
   input Option<Absyn.ComponentCondition> inAbsynComponentConditionOption;
   output String outString;
 algorithm
@@ -2631,8 +2578,7 @@ algorithm
   end matchcontinue;
 end printEquation;
 
-protected function printEquationitem "function: printEquationitem
-  Prints and EquationItem to the Print buffer."
+protected function printEquationitem "Prints and EquationItem to the Print buffer."
   input Absyn.EquationItem inEquationItem;
 algorithm
   _ := match (inEquationItem)
@@ -2651,8 +2597,7 @@ algorithm
 end printEquationitem;
 
 public function unparseEquationStr
-"function: unparseEquationStr
-  Prettyprints an Equation to a string."
+"Prettyprints an Equation to a string."
   input Integer inInteger;
   input Absyn.Equation inEquation;
   output String outString;
@@ -2781,8 +2726,7 @@ algorithm
   end match;
 end unparseEquationitemStrLst;
 
-public function unparseEquationitemStr "function: unparseEquationitemStr
-  Prettyprints an EquationItem to a string."
+public function unparseEquationitemStr "Prettyprints an EquationItem to a string."
   input Integer inInteger;
   input Absyn.EquationItem inEquationItem;
   output String outString;
@@ -2809,8 +2753,7 @@ algorithm
   end match;
 end unparseEquationitemStr;
 
-protected function printEqElseif "function: printEqElseif
-  Prints an Elseif branch to the Print buffer."
+protected function printEqElseif "Prints an Elseif branch to the Print buffer."
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
 algorithm
   _ := match (inTplAbsynExpAbsynEquationItemLst)
@@ -2829,8 +2772,7 @@ algorithm
   end match;
 end printEqElseif;
 
-protected function unparseEqElseifStrLst "function: unparseEqElseifStrLst
-  Prettyprints an elseif branch to a string."
+protected function unparseEqElseifStrLst "Prettyprints an elseif branch to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> inTplAbsynExpAbsynEquationItemLstLst;
   input String inString;
@@ -2869,8 +2811,7 @@ algorithm
   end matchcontinue;
 end unparseEqElseifStrLst;
 
-protected function unparseEqElseifStr "function: unparseEqElseifStr
-  Helper function to unparseEqElseifStrLst"
+protected function unparseEqElseifStr "Helper function to unparseEqElseifStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
   output String outString;
@@ -2916,8 +2857,7 @@ algorithm
 end printAlgorithmitem;
 
 public function printAlgorithm
-"function: printAlgorithm
-  Prints an Algorithm to the Print buffer."
+"Prints an Algorithm to the Print buffer."
   input Absyn.Algorithm inAlgorithm;
 algorithm
   _ := matchcontinue (inAlgorithm)
@@ -3040,8 +2980,7 @@ algorithm
   end matchcontinue;
 end printAlgorithm;
 
-public function unparseAlgorithmStrLst "function: unparseAlgorithmStrLst
-  Prettyprints an AlgorithmItem list to a string."
+public function unparseAlgorithmStrLst "Prettyprints an AlgorithmItem list to a string."
   input Integer inInteger;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input String inString;
@@ -3093,8 +3032,7 @@ algorithm
   end matchcontinue;
 end unparseAlgorithmStrLstLst;
 
-public function unparseAlgorithmStr "function: unparseAlgorithmStr
-  Helper function to unparseAlgorithmStr"
+public function unparseAlgorithmStr "Helper function to unparseAlgorithmStr"
   input Integer inInteger;
   input Absyn.AlgorithmItem inAlgorithmItem;
   output String outString;
@@ -3262,8 +3200,7 @@ algorithm
   end matchcontinue;
 end unparseAlgorithmStr;
 
-protected function unparseAlgElsewhenStrLst "function: unparseAlgElsewhenStrLst
-  Unparses an elsewhen branch in an algorithm to a string."
+protected function unparseAlgElsewhenStrLst "Unparses an elsewhen branch in an algorithm to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   output String outString;
@@ -3301,8 +3238,7 @@ algorithm
   end matchcontinue;
 end unparseAlgElsewhenStrLst;
 
-protected function unparseAlgElsewhenStr "function: unparseAlgElsewhenStr
-  Helper function to unparseAlgElsewhenStrLst"
+protected function unparseAlgElsewhenStr "Helper function to unparseAlgElsewhenStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
   output String outString;
@@ -3325,8 +3261,7 @@ algorithm
   end match;
 end unparseAlgElsewhenStr;
 
-protected function unparseEqElsewhenStrLst "function: unparseEqElsewhenStrLst
-  Prettyprints an equation elsewhen branch to a string."
+protected function unparseEqElsewhenStrLst "Prettyprints an equation elsewhen branch to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> inTplAbsynExpAbsynEquationItemLstLst;
   output String outString;
@@ -3364,8 +3299,7 @@ algorithm
   end matchcontinue;
 end unparseEqElsewhenStrLst;
 
-protected function unparseEqElsewhenStr "function: unparseEqElsewhenStr
-  Helper function to unparseEqWlsewhenStrLst"
+protected function unparseEqElsewhenStr "Helper function to unparseEqWlsewhenStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.EquationItem>> inTplAbsynExpAbsynEquationItemLst;
   output String outString;
@@ -3388,8 +3322,7 @@ algorithm
   end match;
 end unparseEqElsewhenStr;
 
-protected function printAlgElseif "function: printAlgElseif
-  Prints an algorithm elseif branch to the Print buffer."
+protected function printAlgElseif "Prints an algorithm elseif branch to the Print buffer."
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
 algorithm
   _ := match (inTplAbsynExpAbsynAlgorithmItemLst)
@@ -3408,8 +3341,7 @@ algorithm
   end match;
 end printAlgElseif;
 
-protected function unparseAlgElseifStrLst "function: unparseAlgElseifStrLst
-  Prettyprints an algorithm elseif branch to a string."
+protected function unparseAlgElseifStrLst "Prettyprints an algorithm elseif branch to a string."
   input Integer inInteger;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input String inString;
@@ -3436,8 +3368,7 @@ algorithm
   end match;
 end unparseAlgElseifStrLst;
 
-protected function unparseAlgElseifStr "function: unparseAlgElseifStr
-  Helper function to unparseAlgElseifStrLst"
+protected function unparseAlgElseifStr "Helper function to unparseAlgElseifStrLst"
   input Integer inInteger;
   input tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> inTplAbsynExpAbsynAlgorithmItemLst;
   output String outString;
@@ -3515,8 +3446,7 @@ algorithm
   end match;
 end printComponentRef;
 
-public function printSubscripts "function: printSubscripts
-  Prints a Subscript to the Print buffer."
+public function printSubscripts "Prints a Subscript to the Print buffer."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
 algorithm
   _ := matchcontinue (inAbsynSubscriptLst)
@@ -3539,8 +3469,7 @@ algorithm
   end matchcontinue;
 end printSubscripts;
 
-public function printComponentRefStr "function: printComponentRefStr
-  Print a ComponentRef and return as a string."
+public function printComponentRefStr "Print a ComponentRef and return as a string."
   input Absyn.ComponentRef inComponentRef;
   output String outString;
 algorithm
@@ -3583,8 +3512,7 @@ algorithm
   end match;
 end printComponentRefStr;
 
-public function printSubscriptsStr "function: printSubscriptsStr
-  Prettyprint a Subscript list to a string."
+public function printSubscriptsStr "Prettyprint a Subscript list to a string."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   output String outString;
 algorithm
@@ -3605,8 +3533,7 @@ algorithm
   end matchcontinue;
 end printSubscriptsStr;
 
-public function printPath "function: printPath
-  Print a Path."
+public function printPath "Print a Path."
   input Absyn.Path p;
 protected
   String s;
@@ -3615,8 +3542,7 @@ algorithm
   Print.printBuf(s);
 end printPath;
 
-protected function dumpPath "function: dumpPath
-  Dumps path to the Print buffer"
+protected function dumpPath "Dumps path to the Print buffer"
   input Absyn.Path inPath;
 algorithm
   _ := match (inPath)
@@ -3644,16 +3570,14 @@ algorithm
   end match;
 end dumpPath;
 
-protected function printPathStr "function: printPathStr
-  Print a Path."
+protected function printPathStr "Print a Path."
   input Absyn.Path p;
   output String s;
 algorithm
   s := Absyn.pathString(p);
 end printPathStr;
 
-public function printExp "function: printExp
-  This function prints a complete expression to the Print buffer."
+public function printExp "This function prints a complete expression to the Print buffer."
   input Absyn.Exp inExp;
 algorithm
   _ := matchcontinue (inExp)
@@ -4114,8 +4038,7 @@ algorithm
 end printIteratorsStr;
 
 public function printNamedArg
-"function: printNamedArg
-  Print NamedArg to the Print buffer."
+"Print NamedArg to the Print buffer."
   input Absyn.NamedArg inNamedArg;
 algorithm
   _:=
@@ -4134,8 +4057,7 @@ algorithm
 end printNamedArg;
 
 public function printNamedArgStr
-"function: printNamedArgStr
-  Prettyprint NamedArg to a string."
+"Prettyprint NamedArg to a string."
   input Absyn.NamedArg inNamedArg;
   output String outString;
 algorithm
@@ -4510,8 +4432,7 @@ algorithm
 end printExpStr;
 
 function unparseLocalElements
-"function: unparseLocalElements
-  @author: adrpo
+"@author: adrpo
   unparses the local declarations of elements
   (they can appear only in MetaModelica)"
   input Integer indent;
@@ -4530,8 +4451,7 @@ algorithm
 end unparseLocalElements;
 
 function unparseLocalEquations
-"function: unparseLocalElements
-  @author: adrpo
+"@author: adrpo
   unparses the local declarations of elements
   (they can appear only in MetaModelica)"
   input Integer indent;
@@ -4608,8 +4528,7 @@ algorithm
 end printPatternGuard;
 
 public function printCodeStr
-"function: printCodeStr
-  Prettyprint Code to a string."
+"Prettyprint Code to a string."
   input Absyn.CodeNode inCode;
   output String outString;
 algorithm
@@ -4667,8 +4586,7 @@ algorithm
 end printCodeStr;
 
 protected function printElseifStr
-"function: printEleseifStr
-  Prettyprint elseif to a string"
+"Prettyprint elseif to a string"
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
   output String outString;
 algorithm
@@ -4690,8 +4608,7 @@ algorithm
 end printElseifStr;
 
 protected function printRowStr
-"function: printRowStr
-  Prettyprint a list of expressions to a string."
+"Prettyprint a list of expressions to a string."
   input list<Absyn.Exp> es;
   output String s;
 algorithm
@@ -4699,8 +4616,7 @@ algorithm
 end printRowStr;
 
 protected function printListStr
-"function: printListStr
-  Same as printList, except it returns a string instead of printing"
+"Same as printList, except it returns a string instead of printing"
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
   input String inString;
@@ -4735,8 +4651,7 @@ algorithm
 end printListStr;
 
 public function opSymbol
-"function: opSymbol
-  Make a string describing different operators."
+"Make a string describing different operators."
   input Absyn.Operator inOperator;
   output String outString;
 algorithm
@@ -4772,8 +4687,7 @@ algorithm
 end opSymbol;
 
 public function opSymbolCompact
-"function: opSymbolCompact
-  same as opSymbol but without spaces included
+"same as opSymbol but without spaces included
   used for operator overload resolving.
   Some of them are not supported ?? but have them
   anyway"
@@ -4813,8 +4727,7 @@ algorithm
 end opSymbolCompact;
 
 protected function dumpOpSymbol
-"function: dumpOpSymbol
-  Make a string describing different operators."
+"Make a string describing different operators."
   input Absyn.Operator inOperator;
   output String outString;
 algorithm
@@ -4857,8 +4770,7 @@ end dumpOpSymbol;
  */
 
 public function selectString
-"function: selectString
-  Select one of the two strings depending on boolean value."
+"Select one of the two strings depending on boolean value."
   input Boolean inBoolean1;
   input String inString2;
   input String inString3;

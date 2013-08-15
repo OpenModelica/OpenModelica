@@ -449,8 +449,7 @@ algorithm
 end edgeCref;
 
 public function simplify1
-"function: simplify1
-  This function does some very basic simplification
+"This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -460,8 +459,7 @@ algorithm
 end simplify1;
 
 public function simplify1WithOptions
-"function: simplify1
-  This function does some very basic simplification
+"This function does some very basic simplification
   on expressions, like 0*a = 0, [1][1] => 1, etc."
   input DAE.Exp inExp;
   input ExpressionSimplifyTypes.Options options;
@@ -797,8 +795,7 @@ algorithm
 end simplifyCast;
 
 protected function addCast
-"function: addCast
-  Adds a cast of a Type to an expression."
+"Adds a cast of a Type to an expression."
   input DAE.Exp inExp;
   input Type inType;
   output DAE.Exp outExp;
@@ -1639,8 +1636,7 @@ algorithm
   end matchcontinue;
 end simplify2;
 
-protected function simplifyBinaryArray "function: simplifyBinaryArray
-  Simplifies binary array expressions,
+protected function simplifyBinaryArray "Simplifies binary array expressions,
   e.g. matrix multiplication, etc."
   input DAE.Exp inExp1;
   input Operator inOperator2;
@@ -1801,8 +1797,7 @@ algorithm
 end unliftOperator;
 
 protected function simplifyVectorScalar
-"function: simplifyVectorScalar
-  Simplifies vector scalar operations."
+"Simplifies vector scalar operations."
   input DAE.Exp inExp1;
   input Operator inOperator2;
   input DAE.Exp inExp3;
@@ -1906,8 +1901,7 @@ algorithm
 end simplifyVectorBinary0;
 
 protected function simplifyVectorBinary
-"function: simlify_binary_array
-  author: PA
+"author: PA
   Simplifies vector addition and subtraction"
   input DAE.Exp inExp1;
   input Operator inOperator2;
@@ -1942,8 +1936,7 @@ algorithm
 end simplifyVectorBinary;
 
 protected function simplifyMatrixBinary
-"function: simlify_binary_matrix
-  author: PA
+"author: PA
   Simplifies matrix addition and subtraction"
   input DAE.Exp inExp1;
   input Operator inOperator2;
@@ -2026,8 +2019,7 @@ algorithm
 end simplifyMatrixBinary;
 
 protected function simplifyMatrixBinary1
-"function: simlify_binary_matrix
-  author: PA
+"author: PA
   Simplifies matrix addition and subtraction"
   input list<DAE.Exp> inExp1;
   input Operator inOperator2;
@@ -2057,8 +2049,7 @@ algorithm
 end simplifyMatrixBinary1;
 
 protected function simplifyMatrixPow
-"function: simplifyMatrixPow
-  author: Frenkel TUD
+"author: Frenkel TUD
   Simplifies matrix powers."
   input DAE.Exp inExp1;
   input Type inType;
@@ -2126,8 +2117,7 @@ algorithm
 end simplifyMatrixPow;
 
 protected function simplifyMatrixPow1
-"function: simplifyMatrixPow1
-  author: Frenkel TUD
+"author: Frenkel TUD
   Simplifies matrix powers."
   input list<Integer> inRange;
   input list<list<DAE.Exp>> inMatrix;
@@ -2281,8 +2271,7 @@ algorithm
 end simplifyMatrixProduct4;
 
 protected function simplifyBinarySortConstants
-"function: simplifyBinarySortConstants
-  author: PA
+"author: PA
   Sorts all constants of a sum or product to the
   beginning of the expression.
   Also combines expressions like 2a+4a and aaa+3a^3."
@@ -2331,8 +2320,7 @@ algorithm
 end simplifyBinarySortConstants;
 
 protected function simplifyBinaryCoeff
-"function: simplifyBinaryCoeff
-  author: PA
+"author: PA
   Combines expressions like 2a+4a and aaa+3a^3, etc"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -2389,8 +2377,7 @@ algorithm
 end simplifyBinaryCoeff;
 
 protected function simplifyBinaryAddConstants
-"function: simplifyBinaryAddConstants
-  author: PA
+"author: PA
   Adds all expressions in the list, given that they are constant."
   input list<DAE.Exp> inExpLst;
   output list<DAE.Exp> outExpLst;
@@ -2420,8 +2407,7 @@ algorithm
 end simplifyBinaryAddConstants;
 
 protected function simplifyBinaryMulConstants
-"function: simplifyBinaryMulConstants
-  author: PA
+"author: PA
   Multiplies all expressions in the list, given that they are constant."
   input list<DAE.Exp> inExpLst;
   output list<DAE.Exp> outExpLst;
@@ -2447,8 +2433,7 @@ algorithm
 end simplifyBinaryMulConstants;
 
 protected function simplifyMul
-"function: simplifyMul
-  author: PA
+"author: PA
   Simplifies expressions like a*a*a*b*a*b*a"
   input list<DAE.Exp> expl;
   output list<DAE.Exp> expl_1;
@@ -2461,8 +2446,7 @@ algorithm
 end simplifyMul;
 
 protected function simplifyMul2
-"function: simplifyMul2
-  author: PA
+"author: PA
   Helper function to simplifyMul."
   input list<DAE.Exp> inExpLst;
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
@@ -2513,8 +2497,7 @@ algorithm
 end simplifyMulJoinFactors;
 
 protected function simplifyMulJoinFactorsFind
-"function: simplifyMulJoinFactorsFind
-  author: PA
+"author: PA
   Helper function to simplifyMulJoinFactors.
   Searches rest of list to find all occurences of a base."
   input DAE.Exp inExp;
@@ -2556,8 +2539,7 @@ algorithm
 end simplifyMulJoinFactorsFind;
 
 protected function simplifyMulMakePow
-"function: simplifyMulMakePow
-  author: PA
+"author: PA
   Helper function to simplifyMul.
   Makes each item in the list into a pow
   expression, except when exponent is 1.0."
@@ -2589,8 +2571,7 @@ algorithm
 end simplifyMulMakePow;
 
 protected function simplifyAdd
-"function: simplifyAdd
-  author: PA
+"author: PA
   Simplifies terms like 2a+4b+2a+a+b"
   input list<DAE.Exp> inExpLst;
   output list<DAE.Exp> outExpLst;
@@ -2617,8 +2598,7 @@ algorithm
 end simplifyAdd;
 
 protected function simplifyAdd2
-"function: simplifyAdd2
-  author: PA
+"author: PA
   Helper function to simplifyAdd"
   input list<DAE.Exp> inExpLst;
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
@@ -2648,8 +2628,7 @@ algorithm
 end simplifyAdd2;
 
 protected function simplifyAddJoinTerms
-"function: simplifyAddJoinTerms
-  author: PA
+"author: PA
   Helper function to simplifyAdd.
   Join all terms with the same expression.
   i.e. 2a+4a gives an element (a,6) in the list."
@@ -2675,8 +2654,7 @@ algorithm
 end simplifyAddJoinTerms;
 
 protected function simplifyAddJoinTermsFind
-"function: simplifyAddJoinTermsFind
-  author: PA
+"author: PA
   Helper function to simplifyAddJoinTerms, finds all occurences of Expression."
   input DAE.Exp inExp;
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
@@ -2708,8 +2686,7 @@ algorithm
 end simplifyAddJoinTermsFind;
 
 protected function simplifyAddMakeMul
-"function: simplifyAddMakeMul
-  author: PA
+"author: PA
   Makes multiplications of each element
   in the list, except for coefficient 1.0"
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
@@ -2749,8 +2726,7 @@ algorithm
 end simplifyAddMakeMul;
 
 protected function simplifyBinaryAddCoeff2
-"function: simplifyBinaryAddCoeff2
-  This function checks for x+x+x+x and returns (x,4.0)"
+"This function checks for x+x+x+x and returns (x,4.0)"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
   output Real outReal;
@@ -2800,8 +2776,7 @@ algorithm
 end simplifyBinaryAddCoeff2;
 
 protected function simplifyBinaryMulCoeff2
-"function: simplifyBinaryMulCoeff2
-  This function takes an expression XXXXX
+"This function takes an expression XXXXX
   and return (X,5.0) to be used for X^5."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -2986,8 +2961,7 @@ algorithm
 end simplifyAsubCref;
 
 protected function simplifyAsub
-"function: simplifyAsub
-  This function simplifies array subscripts on vector operations"
+"This function simplifies array subscripts on vector operations"
   input DAE.Exp inExp;
   input DAE.Exp inSub;
   output DAE.Exp outExp;
@@ -3243,8 +3217,7 @@ algorithm
 end simplifyAsubSlicing2;
 
 protected function simplifyBinaryConst
-"function: simplifyBinaryConst
-  This function evaluates constant binary expressions."
+"This function evaluates constant binary expressions."
   input Operator inOperator1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
@@ -3762,8 +3735,7 @@ algorithm
 end simplifyBinaryCommutativeWork;
 
 protected function simplifyBinary
-"function: simplifyBinary
-  This function simplifies binary expressions."
+"This function simplifies binary expressions."
   input Operator inOperator2;
   input DAE.Exp inExp3 "Note: already simplified"; // lhs
   input DAE.Exp inExp4 "Note: aldready simplified"; // rhs
@@ -4435,8 +4407,7 @@ algorithm
 end simplifyBinaryDistributePow;
 
 protected function simplifyUnary
-"function: simplifyUnary
-  Simplifies unary expressions."
+"Simplifies unary expressions."
   input Operator inOperator2;
   input DAE.Exp inExp3;
   output DAE.Exp outExp;

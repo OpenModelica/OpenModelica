@@ -47,8 +47,7 @@ protected import Interactive;
 protected import Inst;
 protected import Env;
 
-public function refactorGraphicalAnnotation "function: refactorGraphicalAnnnotation
-  This function refactors the graphical annotations of a class to the modelica standard.
+public function refactorGraphicalAnnotation "This function refactors the graphical annotations of a class to the modelica standard.
 "
   input Absyn.Program wholeAST; //AST
   input Absyn.Class classToRefactor;
@@ -66,8 +65,7 @@ algorithm
   end match;
 end refactorGraphicalAnnotation;
 
-protected function refactorGraphAnnInClass "function: refactorGraphAnnInClass
-  Helper function to refactorGraphicalAnnotation. Part of the AST traverse.
+protected function refactorGraphAnnInClass "Helper function to refactorGraphicalAnnotation. Part of the AST traverse.
 "
   input Absyn.Class inClass;
   input Absyn.Program inProgram;
@@ -123,8 +121,7 @@ algorithm
 
 end refactorGraphAnnInClass;
 
-protected function refactorGraphAnnInClassDef "function: refactorGraphAnnInClassDef
-  Helper function to refactorGraphAnnInClass. Part of AST traverse.
+protected function refactorGraphAnnInClassDef "Helper function to refactorGraphAnnInClass. Part of AST traverse.
 "
   input Absyn.ClassDef inDef;
   input Absyn.Program inProgram;
@@ -165,8 +162,7 @@ algorithm
 
 end refactorGraphAnnInClassDef;
 
-protected function refactorGraphAnnInClassParts "function: refactorGraphAnnInClassParts
-  Helper function to refactorGraphAnnInClassDef. Part of the AST traverse.
+protected function refactorGraphAnnInClassParts "Helper function to refactorGraphAnnInClassDef. Part of the AST traverse.
 "
   input list<Absyn.ClassPart> inParts;
   input Absyn.Program inProgram;
@@ -190,8 +186,7 @@ algorithm
   end match;
 end refactorGraphAnnInClassParts;
 
-protected function refactorGraphAnnInClassPart"function: refactorGraphAnnInClassPart
-  Helper function to refactorGraphAnnInClassParts. Part of the AST traverse.
+protected function refactorGraphAnnInClassPart"Helper function to refactorGraphAnnInClassParts. Part of the AST traverse.
 "
   input Absyn.ClassPart inPart;
   input Absyn.Program inProgram;
@@ -254,8 +249,7 @@ algorithm
 end refactorGraphAnnInClassPart;
 
 
-protected function refactorGraphAnnInContentList"function: refactorGraphAnnInContentList
-  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+protected function refactorGraphAnnInContentList"Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input list<contentType> inList;
   input refactorGraphAnnInContent refactorGraphAnnInItem;
@@ -290,8 +284,7 @@ algorithm
   end match;
 end refactorGraphAnnInContentList;
 
-protected function refactorGraphAnnInElItem"function: refactorGraphAnnInElItem
-  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+protected function refactorGraphAnnInElItem"Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input Absyn.ElementItem inItem;
   input Absyn.Program inProgram;
@@ -315,8 +308,7 @@ algorithm
   end match;
 end refactorGraphAnnInElItem;
 
-protected function refactorGraphAnnInEqItem"function: refactorGraphAnnInEqItem
-  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+protected function refactorGraphAnnInEqItem"Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input Absyn.EquationItem inItem;
   input Absyn.Program inProgram;
@@ -346,8 +338,7 @@ algorithm
   end matchcontinue;
 end refactorGraphAnnInEqItem;
 
-protected function refactorGraphAnnInAlgItem"function: refactorGraphAnnInAlgItem
-  Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
+protected function refactorGraphAnnInAlgItem"Helper function to refactorGraphAnnInClassPart. Part of the AST traverse.
 "
   input Absyn.AlgorithmItem inItem;
   input Absyn.Program inProgram;
@@ -971,8 +962,7 @@ algorithm
 
 end getFlipAnn;
 
-protected function getRotationAnn"function: getRotationAnn
-  Helper function to getIconTransformation and getDiagramTransformation.
+protected function getRotationAnn"Helper function to getIconTransformation and getDiagramTransformation.
   This function calculates and returns the rotation annotation."
   input Real rot;
   output Absyn.ElementArg rotation;
@@ -984,8 +974,7 @@ algorithm
 end getRotationAnn;
 
 
-protected function getCoordsInPath"function: getCoordsInPath
-  Helper function to transformComponentAnnList. This function takes a path and a program
+protected function getCoordsInPath"Helper function to transformComponentAnnList. This function takes a path and a program
   as arguments and then returns the diagram or icon coordinates in that path.
 "
   input Absyn.Path classPath;
@@ -1172,8 +1161,7 @@ algorithm
 end getExtentModification ;
 
 protected function getCoordsFromLayerArgs
-"function: getCoordsFromLayerArgs
-  Helper function to getCoordsInAnnList."
+"Helper function to getCoordsInAnnList."
   input list<Absyn.ElementArg> inAnns;
   output Absyn.Exp x1;
   output Absyn.Exp y1;
@@ -2165,8 +2153,7 @@ algorithm
 end isFillColorInList;
 
 
-protected function setDefaultLineInList "function: setDefaultLineinList
-  Helperfunction to cleanStyleAttrs. Sets the line annotation to defualt values."
+protected function setDefaultLineInList "Helperfunction to cleanStyleAttrs. Sets the line annotation to defualt values."
   input list<Absyn.ElementArg> inList;
   output list<Absyn.ElementArg> outList;
 algorithm

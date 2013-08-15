@@ -118,8 +118,7 @@ protected type DAEHandler = tuple<StructurallySingularSystemHandlerFunc,String,s
  *****************************************/
 
 public function singularSystemCheck
-"function: singularSystemCheck
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
 
   Checks that the system is qualified for matching, i.e. that the number of variables
   is the same as the number of equations. If not, the function fails and
@@ -173,8 +172,7 @@ end singularSystemCheck;
 //protected import BackendDAETransform;
 
 protected function singularSystemCheck1
-"function: singularSystemCheck1
-  author: Frenkel TUD 2012-12
+"author: Frenkel TUD 2012-12
   check if the system is singular"
   input Integer nVars;
   input Integer nEqns;
@@ -239,8 +237,7 @@ algorithm
 end freeStateAssignments;
 
 protected function foundSingularSystem
-"function: foundSingularSystem
-  author: Frenkel TUD 2012-12
+"author: Frenkel TUD 2012-12
   check if the system is singular"
   input list<list<Integer>> eqns;
   input Integer actualEqn;

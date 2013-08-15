@@ -3791,8 +3791,7 @@ algorithm
   end match;
 end runOpenTURNSPythonScript;
 
-public function getFileDir "function: getFileDir
-  author: x02lucpo
+public function getFileDir "author: x02lucpo
   returns the dir where class file (.mo) was saved or
   $OPENMODELICAHOME/work if the file was not saved yet"
   input Absyn.ComponentRef inComponentRef "class";
@@ -3834,8 +3833,7 @@ algorithm
   end matchcontinue;
 end getFileDir;
 
-public function compileModel "function: compileModel
-  author: PA, x02lucpo
+public function compileModel "author: PA, x02lucpo
   Compiles a model given a file-prefix, helper function to buildModel."
   input String inFilePrefix;
   input list<String> inLibsList;
@@ -3923,8 +3921,7 @@ algorithm
   end matchcontinue;
 end compileModel;
 
-protected function winCitation "function: winCitation
-  author: PA
+protected function winCitation "author: PA
   Returns a citation mark if platform is windows, otherwise empty string.
   Used by simulate to make whitespaces work in filepaths for WIN32"
   output String outString;
@@ -4549,8 +4546,7 @@ algorithm
   (outCache,metarecordTypes) := Lookup.lookupMetarecordsRecursive(inCache, env, uniontypePaths);
 end collectDependencies;
 
-public function cevalGenerateFunction "function: cevalGenerateFunction
-  Generates code for a given function name."
+public function cevalGenerateFunction "Generates code for a given function name."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Program program;
@@ -4934,8 +4930,7 @@ algorithm
 end getVariableNames;
 
 protected function getAlgorithms
-"function: getAlgorithms
-  Counts the number of Algorithm sections in a class."
+"Counts the number of Algorithm sections in a class."
   input Absyn.Class inClass;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -4959,8 +4954,7 @@ algorithm
 end getAlgorithms;
 
 protected function getAlgorithmsInClassParts
-"function: getAlgorithmsInClassParts
-  Helper function to getAlgorithms"
+"Helper function to getAlgorithms"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -4985,8 +4979,7 @@ algorithm
 end getAlgorithmsInClassParts;
 
 protected function getNthAlgorithm
-"function: getNthAlgorithm
-  Returns the Nth Algorithm section from a class."
+"Returns the Nth Algorithm section from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -4997,8 +4990,7 @@ algorithm
 end getNthAlgorithm;
 
 protected function getNthAlgorithmInClass
-"function: getNthAlgorithmInClass
-  Helper function to getNthAlgorithm."
+"Helper function to getNthAlgorithm."
   input Absyn.ClassPart inClassPart;
   output String outString;
 algorithm
@@ -5015,8 +5007,7 @@ algorithm
 end getNthAlgorithmInClass;
 
 protected function getInitialAlgorithms
-"function: getInitialAlgorithms
-  Counts the number of Initial Algorithm sections in a class."
+"Counts the number of Initial Algorithm sections in a class."
   input Absyn.Class inClass;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -5040,8 +5031,7 @@ algorithm
 end getInitialAlgorithms;
 
 protected function getInitialAlgorithmsInClassParts
-"function: getInitialAlgorithmsInClassParts
-  Helper function to getInitialAlgorithms"
+"Helper function to getInitialAlgorithms"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -5066,8 +5056,7 @@ algorithm
 end getInitialAlgorithmsInClassParts;
 
 protected function getNthInitialAlgorithm
-"function: getNthInitialAlgorithm
-  Returns the Nth Initial Algorithm section from a class."
+"Returns the Nth Initial Algorithm section from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5078,8 +5067,7 @@ algorithm
 end getNthInitialAlgorithm;
 
 protected function getNthInitialAlgorithmInClass
-"function: getNthInitialAlgorithmInClass
-  Helper function to getNthInitialAlgorithm."
+"Helper function to getNthInitialAlgorithm."
   input Absyn.ClassPart inClassPart;
   output String outString;
 algorithm
@@ -5096,8 +5084,7 @@ algorithm
 end getNthInitialAlgorithmInClass;
 
 protected function getAlgorithmItemsCount
-"function: getAlgorithmItemsCount
-  Counts the number of Algorithm items in a class."
+"Counts the number of Algorithm items in a class."
   input Absyn.Class inClass;
   output Integer outInteger;
 algorithm
@@ -5121,8 +5108,7 @@ algorithm
 end getAlgorithmItemsCount;
 
 protected function getAlgorithmItemsCountInClassParts
-"function: getAlgorithmItemsCountInClassParts
-  Helper function to getAlgorithmItemsCount"
+"Helper function to getAlgorithmItemsCount"
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
@@ -5147,8 +5133,7 @@ algorithm
 end getAlgorithmItemsCountInClassParts;
 
 protected function getAlgorithmItemsCountInAlgorithmItems
-"function: getAlgorithmItemsCountInAlgorithmItems
-  Helper function to getAlgorithmItemsCountInClassParts"
+"Helper function to getAlgorithmItemsCountInClassParts"
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output Integer outInteger;
 algorithm
@@ -5172,8 +5157,7 @@ algorithm
 end getAlgorithmItemsCountInAlgorithmItems;
 
 protected function getNthAlgorithmItem
-"function: getNthAlgorithmItem
-  Returns the Nth Algorithm Item from a class."
+"Returns the Nth Algorithm Item from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5198,8 +5182,7 @@ algorithm
 end getNthAlgorithmItem;
 
 protected function getNthAlgorithmItemInClassParts
-"function: getNthAlgorithmItemInClassParts
-  Helper function to getNthAlgorithmItem"
+"Helper function to getNthAlgorithmItem"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Integer inInteger;
   output String outString;
@@ -5231,8 +5214,7 @@ algorithm
 end getNthAlgorithmItemInClassParts;
 
 protected function getNthAlgorithmItemInAlgorithms
-"function: getNthAlgorithmItemInAlgorithms
-   This function takes an Algorithm list and an int
+" This function takes an Algorithm list and an int
    and returns the nth algorithm item as String.
    If the number is larger than the number of algorithms
    in the list, the function fails. Helper function to getNthAlgorithmItemInClassParts."
@@ -5264,8 +5246,7 @@ algorithm
 end getNthAlgorithmItemInAlgorithms;
 
 protected function getInitialAlgorithmItemsCount
-"function: getInitialAlgorithmItemsCount
-  Counts the number of Initial Algorithm items in a class."
+"Counts the number of Initial Algorithm items in a class."
   input Absyn.Class inClass;
   output Integer outInteger;
 algorithm
@@ -5289,8 +5270,7 @@ algorithm
 end getInitialAlgorithmItemsCount;
 
 protected function getInitialAlgorithmItemsCountInClassParts
-"function: getInitialAlgorithmItemsCountInClassParts
-  Helper function to getInitialAlgorithmItemsCount"
+"Helper function to getInitialAlgorithmItemsCount"
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
@@ -5315,8 +5295,7 @@ algorithm
 end getInitialAlgorithmItemsCountInClassParts;
 
 protected function getNthInitialAlgorithmItem
-"function: getNthInitialAlgorithmItem
-  Returns the Nth Initial Algorithm Item from a class."
+"Returns the Nth Initial Algorithm Item from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5341,8 +5320,7 @@ algorithm
 end getNthInitialAlgorithmItem;
 
 protected function getNthInitialAlgorithmItemInClassParts
-"function: getNthInitialAlgorithmItemInClassParts
-  Helper function to getNthInitialAlgorithmItem"
+"Helper function to getNthInitialAlgorithmItem"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Integer inInteger;
   output String outString;
@@ -5374,8 +5352,7 @@ algorithm
 end getNthInitialAlgorithmItemInClassParts;
 
 protected function getEquations
-"function: getEquations
-  Counts the number of Equation sections in a class."
+"Counts the number of Equation sections in a class."
   input Absyn.Class inClass;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -5399,8 +5376,7 @@ algorithm
 end getEquations;
 
 protected function getEquationsInClassParts
-"function: getEquationsInClassParts
-  Helper function to getEquations"
+"Helper function to getEquations"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -5425,8 +5401,7 @@ algorithm
 end getEquationsInClassParts;
 
 protected function getNthEquation
-"function: getNthEquation
-  Returns the Nth Equation section from a class."
+"Returns the Nth Equation section from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5437,8 +5412,7 @@ algorithm
 end getNthEquation;
 
 protected function getNthEquationInClass
-"function: getNthEquationInClass
-  Helper function to getNthEquation"
+"Helper function to getNthEquation"
   input Absyn.ClassPart inClassPart;
   output String outString;
 algorithm
@@ -5455,8 +5429,7 @@ algorithm
 end getNthEquationInClass;
 
 protected function getInitialEquations
-"function: getInitialEquations
-  Counts the number of Initial Equation sections in a class."
+"Counts the number of Initial Equation sections in a class."
   input Absyn.Class inClass;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -5480,8 +5453,7 @@ algorithm
 end getInitialEquations;
 
 protected function getInitialEquationsInClassParts
-"function: getInitialEquationsInClassParts
-  Helper function to getInitialEquations"
+"Helper function to getInitialEquations"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Absyn.ClassPart> outList;
 algorithm
@@ -5506,8 +5478,7 @@ algorithm
 end getInitialEquationsInClassParts;
 
 protected function getNthInitialEquation
-"function: getNthInitialEquation
-  Returns the Nth Initial Equation section from a class."
+"Returns the Nth Initial Equation section from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5518,8 +5489,7 @@ algorithm
 end getNthInitialEquation;
 
 protected function getNthInitialEquationInClass
-"function: getNthInitialEquationInClass
-  Helper function to getNthInitialEquation."
+"Helper function to getNthInitialEquation."
   input Absyn.ClassPart inClassPart;
   output String outString;
 algorithm
@@ -5536,8 +5506,7 @@ algorithm
 end getNthInitialEquationInClass;
 
 protected function getEquationItemsCount
-"function: getAlgorithmItemsCount
-  Counts the number of Equation items in a class."
+"Counts the number of Equation items in a class."
   input Absyn.Class inClass;
   output Integer outInteger;
 algorithm
@@ -5561,8 +5530,7 @@ algorithm
 end getEquationItemsCount;
 
 protected function getEquationItemsCountInClassParts
-"function: getEquationItemsCountInClassParts
-  Helper function to getEquationItemsCount"
+"Helper function to getEquationItemsCount"
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
@@ -5587,8 +5555,7 @@ algorithm
 end getEquationItemsCountInClassParts;
 
 protected function getEquationItemsCountInEquationItems
-"function: getEquationItemsCountInEquationItems
-  Helper function to getEquationItemsCountInClassParts"
+"Helper function to getEquationItemsCountInClassParts"
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output Integer outInteger;
 algorithm
@@ -5612,8 +5579,7 @@ algorithm
 end getEquationItemsCountInEquationItems;
 
 protected function getNthEquationItem
-"function: getNthEquationItem
-  Returns the Nth Equation Item from a class."
+"Returns the Nth Equation Item from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5638,8 +5604,7 @@ algorithm
 end getNthEquationItem;
 
 protected function getNthEquationItemInClassParts
-"function: getNthEquationItemInClassParts
-  Helper function to getNthEquationItem"
+"Helper function to getNthEquationItem"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Integer inInteger;
   output String outString;
@@ -5671,8 +5636,7 @@ algorithm
 end getNthEquationItemInClassParts;
 
 protected function getNthEquationItemInEquations
-"function: getNthEquationItemInEquations
-   This function takes an Equation list and an int
+" This function takes an Equation list and an int
    and returns the nth Equation item as String.
    If the number is larger than the number of algorithms
    in the list, the function fails. Helper function to getNthEquationItemInClassParts."
@@ -5704,8 +5668,7 @@ algorithm
 end getNthEquationItemInEquations;
 
 protected function getInitialEquationItemsCount
-"function: getInitialEquationItemsCount
-  Counts the number of Initial Equation items in a class."
+"Counts the number of Initial Equation items in a class."
   input Absyn.Class inClass;
   output Integer outInteger;
 algorithm
@@ -5729,8 +5692,7 @@ algorithm
 end getInitialEquationItemsCount;
 
 protected function getInitialEquationItemsCountInClassParts
-"function: getInitialEquationItemsCountInClassParts
-  Helper function to getInitialEquationItemsCount"
+"Helper function to getInitialEquationItemsCount"
  input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
@@ -5755,8 +5717,7 @@ algorithm
 end getInitialEquationItemsCountInClassParts;
 
 protected function getNthInitialEquationItem
-"function: getNthInitialEquationItem
-  Returns the Nth Initial Equation Item from a class."
+"Returns the Nth Initial Equation Item from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5781,8 +5742,7 @@ algorithm
 end getNthInitialEquationItem;
 
 protected function getNthInitialEquationItemInClassParts
-"function: getNthInitialEquationItemInClassParts
-  Helper function to getNthInitialEquationItem"
+"Helper function to getNthInitialEquationItem"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Integer inInteger;
   output String outString;
@@ -5814,8 +5774,7 @@ algorithm
 end getNthInitialEquationItemInClassParts;
 
 protected function getAnnotationCount
-"function: getAnnotationCount
-  Counts the number of Annotation sections in a class."
+"Counts the number of Annotation sections in a class."
   input Absyn.Class inClass;
   output Integer outInteger;
 algorithm
@@ -5833,8 +5792,7 @@ algorithm
 end getAnnotationCount;
 
 protected function getNthAnnotationString
-"function: getNthAnnotationString
-  Returns the Nth Annotation String from a class."
+"Returns the Nth Annotation String from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output String outString;
@@ -5866,8 +5824,7 @@ algorithm
 end getNthAnnotationString;
 
 protected function getImportCount
-"function: getImportCount
-  Counts the number of Import sections in a class."
+"Counts the number of Import sections in a class."
   input Absyn.Class inClass;
   output Integer outInteger;
 algorithm
@@ -5891,8 +5848,7 @@ algorithm
 end getImportCount;
 
 protected function getImportsInClassParts
-"function: getImportsInClassParts
-  Helper function to getImportCount"
+"Helper function to getImportCount"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Integer outInteger;
 algorithm
@@ -5923,8 +5879,7 @@ algorithm
 end getImportsInClassParts;
 
 protected function getImportsInElementItems
-"function: getImportsInElementItems
-  Helper function to getImportCount"
+"Helper function to getImportCount"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output Integer outInteger;
 algorithm
@@ -5948,8 +5903,7 @@ algorithm
 end getImportsInElementItems;
 
 protected function getNthImport
-"function: getNthImport
-  Returns the Nth Import String from a class."
+"Returns the Nth Import String from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output list<Values.Value> outValue;
@@ -5974,8 +5928,7 @@ algorithm
 end getNthImport;
 
 protected function getNthImportInClassParts
-"function: getNthImportInClassParts
-  Helper function to getNthImport"
+"Helper function to getNthImport"
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   input Integer inInteger;
   output list<Values.Value> outValue;
@@ -6019,8 +5972,7 @@ algorithm
 end getNthImportInClassParts;
 
 protected function getNthImportInElementItems
-"function: getNthImportInElementItems
-   This function takes an Element list and an int
+" This function takes an Element list and an int
    and returns the nth import as string.
    If the number is larger than the number of annotations
    in the list, the function fails. Helper function to getNthImport."
@@ -6055,8 +6007,7 @@ algorithm
 end getNthImportInElementItems;
 
 public function unparseNthImport
-"function: unparseNthImport
-   helperfunction to getNthImport."
+" helperfunction to getNthImport."
   input Absyn.Import inImport;
   output list<Values.Value> outValue;
 algorithm
@@ -6505,8 +6456,7 @@ algorithm
   end match;
 end isCevaluableFunction2;
 
-public function cevalCallFunction "function: cevalCallFunction
-  This function evaluates CALL expressions, i.e. function calls.
+public function cevalCallFunction "This function evaluates CALL expressions, i.e. function calls.
   They are currently evaluated by generating code for the function and
   then dynamicly load the function and call it."
   input Env.Cache inCache;

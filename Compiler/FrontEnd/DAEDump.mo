@@ -96,8 +96,7 @@ end functionList;
 
 
 
-public function printDAE "function: printDAE
-  This function prints out a list of elements (i.e. a DAE)
+public function printDAE "This function prints out a list of elements (i.e. a DAE)
   to the stdout. Useful for example when called from Inst.instClass"
   input DAE.DAElist inDAElist;
 algorithm
@@ -117,8 +116,7 @@ algorithm
   end matchcontinue;
 end printDAE;
 
-public function dump "function: dump
-  This function prints the DAE in the standard output format to the Print buffer.
+public function dump "This function prints the DAE in the standard output format to the Print buffer.
   For printing to the stdout use print(dumpStr(dae)) instead."
   input DAE.DAElist dae;
   input DAE.FunctionTree functionTree;
@@ -286,8 +284,7 @@ algorithm
   Print.clearBuf();
 end dump2str;
 
-public function dump2 "function: dump2
-  Helper function to dump. Prints the DAE using module Print."
+public function dump2 "Helper function to dump. Prints the DAE using module Print."
   input DAE.DAElist inDAElist;
 algorithm
   _ := matchcontinue (inDAElist)
@@ -575,8 +572,7 @@ algorithm
   end matchcontinue;
 end dump2;
 
-protected function dumpStartValue "function: dumpStartValue
-  Dumps the StartValue for a variable."
+protected function dumpStartValue "Dumps the StartValue for a variable."
   input DAE.StartValue inStartValue;
 algorithm
   _ := matchcontinue (inStartValue)
@@ -593,8 +589,7 @@ algorithm
   end matchcontinue;
 end dumpStartValue;
 
-public function dumpStartValueStr "function: dumpStartValueStr
-  Dumps the start value for a variable to a string."
+public function dumpStartValueStr "Dumps the start value for a variable to a string."
   input DAE.StartValue inStartValue;
   output String outString;
 algorithm
@@ -612,8 +607,7 @@ algorithm
   end matchcontinue;
 end dumpStartValueStr;
 
-public function dumpExtDeclStr "function: dumpExtDeclStr
-  Dumps the external declaration to a string."
+public function dumpExtDeclStr "Dumps the external declaration to a string."
   input DAE.ExternalDecl inExternalDecl;
   output String outString;
 algorithm
@@ -633,8 +627,7 @@ algorithm
   end match;
 end dumpExtDeclStr;
 
-public function dumpExtArgStr "function: dumpExtArgStr
-  Helper function to dumpExtDeclStr"
+public function dumpExtArgStr "Helper function to dumpExtDeclStr"
   input DAE.ExtArg inExtArg;
   output String outString;
 algorithm
@@ -670,8 +663,7 @@ algorithm
   end match;
 end dumpExtArgStr;
 
-protected function dumpCompElement "function: dumpCompElement
-  Dumps Component elements."
+protected function dumpCompElement "Dumps Component elements."
   input DAE.Element inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -695,8 +687,7 @@ algorithm
   end matchcontinue;
 end dumpCompElement;
 
-public function dumpElements "function: dumpElements
-  Dump elements."
+public function dumpElements "Dump elements."
   input list<DAE.Element> l;
 algorithm
   dumpVars(l, false);
@@ -710,16 +701,14 @@ algorithm
   List.map_0(l, dumpCompElement);
 end dumpElements;
 
-public function dumpFunctionElements "function: dumpElements
-  Dump function elements."
+public function dumpFunctionElements "Dump function elements."
   input list<DAE.Element> l;
 algorithm
   dumpVars(l, true);
   List.map_0(l, dumpAlgorithm);
 end dumpFunctionElements;
 
-protected function dumpVars "function: dumpVars
-  Dump variables to Print buffer."
+protected function dumpVars "Dump variables to Print buffer."
   input list<DAE.Element> lst;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
 protected
@@ -732,8 +721,7 @@ algorithm
   Print.printBuf(str);
 end dumpVars;
 
-protected function dumpKind "function: dumpKind
-  Dump VarKind."
+protected function dumpKind "Dump VarKind."
   input DAE.VarKind inVarKind;
 algorithm
   _ := match (inVarKind)
@@ -760,8 +748,7 @@ algorithm
   end match;
 end dumpKind;
 
-protected function dumpKindStr "function: dumpKindStr
-  Dump VarKind to a string."
+protected function dumpKindStr "Dump VarKind to a string."
   input DAE.VarKind inVarKind;
   output String outString;
 algorithm
@@ -773,8 +760,7 @@ algorithm
   end match;
 end dumpKindStr;
 
-protected function dumpDirection "function: dumpDirection
-  Dump VarDirection."
+protected function dumpDirection "Dump VarDirection."
   input DAE.VarDirection inVarDirection;
 algorithm
   _ := matchcontinue (inVarDirection)
@@ -796,8 +782,7 @@ algorithm
   end matchcontinue;
 end dumpDirection;
 
-protected function dumpParallelism "function: dumpParallelism
-  Dump VarParallelism."
+protected function dumpParallelism "Dump VarParallelism."
   input DAE.VarParallelism inVarParallelism;
 algorithm
   _ := matchcontinue (inVarParallelism)
@@ -819,8 +804,7 @@ algorithm
   end matchcontinue;
 end dumpParallelism;
 
-public function dumpDirectionStr "function: dumpDirectionStr
-  Dump VarDirection to a string"
+public function dumpDirectionStr "Dump VarDirection to a string"
   input DAE.VarDirection inVarDirection;
   output String outString;
 algorithm
@@ -885,8 +869,7 @@ algorithm
   end match;
 end dumpDistributionStr;
 
-public function dumpVariableAttributes "function: dumpVariableAttributes
-  Dump VariableAttributes option."
+public function dumpVariableAttributes "Dump VariableAttributes option."
   input Option<DAE.VariableAttributes> attr;
 protected
   String res;
@@ -895,8 +878,7 @@ algorithm
   Print.printBuf(res);
 end dumpVariableAttributes;
 
-public function dumpVariableAttributesStr "function: dumpVariableAttributesStr
-  Dump VariableAttributes option to a string."
+public function dumpVariableAttributesStr "Dump VariableAttributes option to a string."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output String outString;
 algorithm
@@ -1103,8 +1085,7 @@ algorithm
   end match;
 end dumpVarVisibilityStr;
 
-public function dumpVarParallelismStr "function: dumVarParallelismStr
-  Dump VarParallelism to a string"
+public function dumpVarParallelismStr "Dump VarParallelism to a string"
   input DAE.VarParallelism inVarParallelism;
   output String outString;
 algorithm
@@ -1179,8 +1160,7 @@ algorithm
   end match;
 end dumpCommentAnnotationStr;
 
-protected function dumpCommentOption "function: dumpCommentOption_str
-  Dump Comment option."
+protected function dumpCommentOption "Dump Comment option."
   input Option<SCode.Comment> comment;
 protected
   String str;
@@ -1189,8 +1169,7 @@ algorithm
   Print.printBuf(str);
 end dumpCommentOption;
 
-protected function dumpEquation "function: dumpEquation
-  Dump equation."
+protected function dumpEquation "Dump equation."
   input DAE.Element inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -1296,8 +1275,7 @@ algorithm
   end matchcontinue;
 end dumpEquation;
 
-protected function dumpInitialEquation "function: dumpInitialequation
-  Dump initial equation."
+protected function dumpInitialEquation "Dump initial equation."
   input DAE.Element inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -1369,8 +1347,7 @@ algorithm
   end matchcontinue;
 end dumpInitialEquation;
 
-public function dumpEquationStr "function: dumpEquationStr
-  Dump equation to a string."
+public function dumpEquationStr "Dump equation to a string."
   input DAE.Element inElement;
   output String outString;
 algorithm
@@ -1470,8 +1447,7 @@ algorithm
   end matchcontinue;
 end dumpEquationStr;
 
-public function dumpAlgorithm "function: dumpAlgorithm
-  Dump algorithm."
+public function dumpAlgorithm "Dump algorithm."
   input DAE.Element inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -1486,8 +1462,7 @@ algorithm
   end matchcontinue;
 end dumpAlgorithm;
 
-protected function dumpInitialAlgorithm "function: dump_algorithm
-  Dump initial algorithm."
+protected function dumpInitialAlgorithm "Dump initial algorithm."
   input DAE.Element inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -1503,8 +1478,7 @@ algorithm
 end dumpInitialAlgorithm;
 
 protected function dumpExtObjectClass
-"function: dumpExtObjectClass
-  Dump External Object class"
+"Dump External Object class"
   input DAE.Element inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -1546,8 +1520,7 @@ algorithm
 end derivativeCondStr;
 
 protected function dumpFunction
-"function: dumpFunction
-  Dump function"
+"Dump function"
   input DAE.Function inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -1715,16 +1688,14 @@ algorithm
 end printRecordConstructorBinding;
 
 protected function ppStatement
-"function: ppStatement
-  Prettyprint an algorithm statement"
+"Prettyprint an algorithm statement"
   input DAE.Statement alg;
 algorithm
   ppStmt(alg, 2);
 end ppStatement;
 
 public function ppStatementStr
-"function: ppStatementStr
-  Prettyprint an algorithm statement to a string."
+"Prettyprint an algorithm statement to a string."
   input DAE.Statement alg;
   output String str;
 algorithm
@@ -1732,8 +1703,7 @@ algorithm
 end ppStatementStr;
 
 protected function ppStmt
-"function: ppStmt
-  Helper function to ppStatement."
+"Helper function to ppStatement."
   input DAE.Statement inStatement;
   input Integer inInteger;
 algorithm
@@ -2949,8 +2919,7 @@ algorithm
   end matchcontinue;
 end unparseDimensions;
 
-public function dumpStr "function: dumpStr
-  This function prints the DAE to a string."
+public function dumpStr "This function prints the DAE to a string."
   input DAE.DAElist inDAElist;
   input DAE.FunctionTree functionTree;
   output String outString;
@@ -2986,8 +2955,7 @@ algorithm
   end matchcontinue;
 end dumpStr;
 
-public function dumpElementsStr "function: dumpElementsStr
-  This function prints the DAE to a string."
+public function dumpElementsStr "This function prints the DAE to a string."
   input list<DAE.Element> els;
   output String outString;
 algorithm
@@ -3006,8 +2974,7 @@ algorithm
   end match;
 end dumpElementsStr;
 
-public function dumpAlgorithmsStr "function: dumpAlgorithmsStr
-  This function prints the algorithms to a string."
+public function dumpAlgorithmsStr "This function prints the algorithms to a string."
   input list<DAE.Element> algs;
   output String outString;
 algorithm
@@ -3027,8 +2994,7 @@ algorithm
 end dumpAlgorithmsStr;
 
 
-public function dumpConstraintsStr "function: dumpConstraintsStr
-  This function prints the constraints to a string."
+public function dumpConstraintsStr "This function prints the constraints to a string."
   input list<DAE.Element> constrs;
   output String outString;
 algorithm
@@ -3052,8 +3018,7 @@ end dumpConstraintsStr;
 /************ IOStream based implementation ***************/
 /************ IOStream based implementation ***************/
 
-public function dumpStream "function: dumpStream
-  This function prints the DAE to a stream."
+public function dumpStream "This function prints the DAE to a stream."
   input DAE.DAElist dae;
   input DAE.FunctionTree functionTree;
   input IOStream.IOStream inStream;
@@ -3077,8 +3042,7 @@ algorithm
   end match;
 end dumpStream;
 
-public function dumpDAEList "function: dumpDAEList
-   returns split  DAE elements(Mainly important for template based DAE unparser) :
+public function dumpDAEList " returns split  DAE elements(Mainly important for template based DAE unparser) :
    variables, initial equations, initial algorithms,
    equations, algorithms, constraints and external objects"
   input DAE.Element inElement;
@@ -3138,8 +3102,7 @@ end dumpFunctionList;
 
 
 
-protected function dumpCompElementStream "function: dumpCompElementStream
-  Dumps components to a stream."
+protected function dumpCompElementStream "Dumps components to a stream."
   input DAE.Element inElement;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3169,8 +3132,7 @@ algorithm
   end matchcontinue;
 end dumpCompElementStream;
 
-public function dumpElementsStream "function: dumpElementsStream
-  Dump elements to a stream"
+public function dumpElementsStream "Dump elements to a stream"
   input list<DAE.Element> l;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3205,8 +3167,7 @@ algorithm
   end match;
 end dumpElementsStream;
 
-public function dumpAlgorithmsStream "function: dumpAlgorithmsStream
-  Dump algorithms to a stream."
+public function dumpAlgorithmsStream "Dump algorithms to a stream."
   input list<DAE.Element> inElementLst;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3235,8 +3196,7 @@ algorithm
   end matchcontinue;
 end dumpAlgorithmsStream;
 
-protected function dumpInitialAlgorithmsStream "function: dumpInitialalgorithmsStream
-  Dump initialalgorithms to a stream."
+protected function dumpInitialAlgorithmsStream "Dump initialalgorithms to a stream."
   input list<DAE.Element> inElementLst;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3265,8 +3225,7 @@ algorithm
   end matchcontinue;
 end dumpInitialAlgorithmsStream;
 
-protected function dumpEquationsStream "function: dumpEquationsStream
-  Dump equations to a stream."
+protected function dumpEquationsStream "Dump equations to a stream."
   input list<DAE.Element> inElementLst;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3486,8 +3445,7 @@ algorithm
   end match;
 end dumpIfEquationsStream;
 
-protected function dumpInitialEquationsStream "function: dumpInitialequationsStr
-  Dump initial equations to a stream."
+protected function dumpInitialEquationsStream "Dump initial equations to a stream."
   input list<DAE.Element> inElementLst;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3562,8 +3520,7 @@ algorithm
   end matchcontinue;
 end dumpInitialEquationsStream;
 
-public function dumpConstraintStream "function: dumpConstraintStream
-  Dump constraints to a stream."
+public function dumpConstraintStream "Dump constraints to a stream."
   input list<DAE.Element> inElementLst;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3616,8 +3573,7 @@ algorithm
   end match;
 end dumpDAEElementsStr;
 
-public function dumpVarsStream "function: dumpVarsStream
-  Dump variables to a string."
+public function dumpVarsStream "Dump variables to a string."
   input list<DAE.Element> inElementLst;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
   input IOStream.IOStream inStream;
@@ -3640,8 +3596,7 @@ algorithm
   end match;
 end dumpVarsStream;
 
-protected function dumpVarStream "function: dumpVarStream
-  Dump var to a stream."
+protected function dumpVarStream "Dump var to a stream."
   input DAE.Element inElement;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
   input IOStream.IOStream inStream;
@@ -3720,8 +3675,7 @@ algorithm
 end dumpVarStream;
 
 public function dumpAlgorithmStream
-"function: dumpAlgorithmStream
-  Dump algorithm to a stream"
+"Dump algorithm to a stream"
   input DAE.Element inElement;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3742,8 +3696,7 @@ algorithm
 end dumpAlgorithmStream;
 
 public function dumpInitialAlgorithmStream
-"function: dumpInitialAlgorithmStream
-  Dump algorithm to a stream"
+"Dump algorithm to a stream"
   input DAE.Element inElement;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3764,8 +3717,7 @@ algorithm
 end dumpInitialAlgorithmStream;
 
 public function ppStatementStream
-"function: ppStatementStr
-  Prettyprint an algorithm statement to a string."
+"Prettyprint an algorithm statement to a string."
   input DAE.Statement alg;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3780,8 +3732,7 @@ algorithm
   Print.printBuf(tmp);
 end ppStatementStream;
 
-public function dumpFunctionStr "function: dumpFunctionStr
-  Dump function to a string."
+public function dumpFunctionStr "Dump function to a string."
   input DAE.Function inElement;
   output String outString;
 algorithm
@@ -3805,8 +3756,7 @@ algorithm
 end dumpFunctionStr;
 
 protected function dumpExtObjClassStr
-"function: dumpExtObjStr
-  Dump external object class to a string."
+"Dump external object class to a string."
   input DAE.Element inElement;
   output String outString;
 algorithm
@@ -3830,8 +3780,7 @@ algorithm
 end dumpExtObjClassStr;
 
 protected function dumpFunctionStream
-"function: dumpFunctionStream
-  Dump function to a stream"
+"Dump function to a stream"
   input DAE.Function inElement;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
@@ -3909,8 +3858,7 @@ algorithm
   end matchcontinue;
 end dumpFunctionStream;
 
-public function dumpFunctionElementsStream "function: dumpFunctionElementsStream
-  Dump function elements to a stream."
+public function dumpFunctionElementsStream "Dump function elements to a stream."
   input list<DAE.Element> l;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;

@@ -300,8 +300,7 @@ algorithm
 end newEnvironment;
 
 public function newFrame
-"function: newFrame
-  This function creates a new frame, which
+"This function creates a new frame, which
   includes setting up the hashtable for the
   frame."
   input Option<Ident> inName;
@@ -340,8 +339,7 @@ algorithm
 end isTyped;
 
 public function openScope
-"function: openScope
-  Opening a new scope in the environment means adding a new frame on
+"Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
   of the scope should be provided such that a name for the scope can be
   derived, see nameScope."
@@ -363,8 +361,7 @@ algorithm
 end openScope;
 
 public function openScopeForClass
-"function: openScope
-  Opening a new scope in the environment means adding a new frame on
+"Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
   of the scope should be provided such that a name for the scope can be
   derived, see nameScope."
@@ -604,8 +601,7 @@ algorithm
 end updateEnvClassesInTreeOpt;
 
 public function extendFrameC
-"function: extendFrameC
-  This function adds a class definition to the environment."
+"This function adds a class definition to the environment."
   input Env inEnv;
   input SCode.Element inClass;
   output Env outEnv;
@@ -644,8 +640,7 @@ algorithm
 end extendFrameC;
 
 public function extendFrameCBuiltin
-"function: extendFrameCBuiltin
-  This function adds a builtin class definition to the environment."
+"This function adds a builtin class definition to the environment."
   input Env inEnv;
   input SCode.Element inClass;
   output Env outEnv;
@@ -654,8 +649,7 @@ algorithm
 end extendFrameCBuiltin;
 
 public function extendFrameCItemType
-"function: extendFrameCItemType
-  This function adds a class definition to the environment with the given class type."
+"This function adds a class definition to the environment with the given class type."
   input Env inEnv;
   input SCode.Element inClass;
   input ItemType inItemType;
@@ -690,8 +684,7 @@ algorithm
   end matchcontinue;
 end extendFrameCItemType;
 
-public function updateFrameC "function: updateFrameC
-  This function updates a component already added to the environment, but
+public function updateFrameC "This function updates a component already added to the environment, but
   that prior to the update did not have any binding. I.e this function is
   called in the second stage of instantiation with declare before use."
   input Env inEnv;
@@ -753,8 +746,7 @@ algorithm
 end updateFrameC;
 
 public function extendFrameClasses
-"function: extendFrameClasses
-  Adds all builtin clases in a Program to the environment."
+"Adds all builtin clases in a Program to the environment."
   input Env inEnv;
   input SCode.Program inProgram;
   input Option<ItemType> inItemType;
@@ -797,8 +789,7 @@ algorithm
 end getItemType;
 
 public function removeComponentsFromFrameV
-"function: removeComponentsFromFrameV
-  This function removes all components from frame."
+"This function removes all components from frame."
   input Env inEnv;
   output Env outEnv;
 algorithm
@@ -825,8 +816,7 @@ algorithm
   end match;
 end removeComponentsFromFrameV;
 
-public function extendFrameV "function: extendFrameV
-  This function adds a component to the environment."
+public function extendFrameV "This function adds a component to the environment."
   input Env inEnv;
   input DAE.Var inVar;
   input SCode.Element inVarEl;
@@ -869,8 +859,7 @@ algorithm
   end matchcontinue;
 end extendFrameV;
 
-public function updateFrameV "function: updateFrameV
-  This function updates a component already added to the environment, but
+public function updateFrameV "This function updates a component already added to the environment, but
   that prior to the update did not have any binding. I.e this function is
   called in the second stage of instantiation with declare before use."
   input Env inEnv;
@@ -926,8 +915,7 @@ algorithm
   end matchcontinue;
 end updateFrameV;
 
-public function extendFrameT "function: extendFrameT
-  This function adds a type to the environment.  Types in the
+public function extendFrameT "This function adds a type to the environment.  Types in the
   environment are used for looking up constants etc. inside class
   definitions, such as packages.  For each type in the environment,
   there is a class definition with the same name in the
@@ -971,8 +959,7 @@ algorithm
 end extendFrameT;
 
 public function extendFrameI
-"function: extendFrameI
-  Adds an import statement to the environment."
+"Adds an import statement to the environment."
   input Env inEnv;
   input SCode.Element inImport;
   output Env outEnv;
@@ -1573,8 +1560,7 @@ algorithm
   end match;
 end extendFrameForIterator;
 
-public function topFrame "function: topFrame
-  Returns the top frame."
+public function topFrame "Returns the top frame."
   input Env inEnv;
   output Frame outFrame;
 algorithm
@@ -1643,8 +1629,7 @@ algorithm
   end match;
 end getEnvName2;
 
-public function getEnvPath "function: getEnvPath
-  This function returns all partially instantiated parents as an Absyn.Path
+public function getEnvPath "This function returns all partially instantiated parents as an Absyn.Path
   option I.e. it collects all identifiers of each frame until it reaches
   the topmost unnamed frame. If the environment is only the topmost frame,
   NONE() is returned."
@@ -1665,8 +1650,7 @@ algorithm
   end matchcontinue;
 end getEnvPath;
 
-public function getEnvPathNoImplicitScope "function: getEnvPath
-  This function returns all partially instantiated parents as an Absyn.Path
+public function getEnvPathNoImplicitScope "This function returns all partially instantiated parents as an Absyn.Path
   option I.e. it collects all identifiers of each frame until it reaches
   the topmost unnamed frame. If the environment is only the topmost frame,
   NONE() is returned."
@@ -1698,8 +1682,7 @@ algorithm
   end matchcontinue;
 end getEnvPathNoImplicitScope;
 
-public function joinEnvPath "function: joinEnvPath
-  Used to join an Env with an Absyn.Path (probably an IDENT)"
+public function joinEnvPath "Used to join an Env with an Absyn.Path (probably an IDENT)"
   input Env inEnv;
   input Absyn.Path inPath;
   output Absyn.Path outPath;
@@ -1752,8 +1735,7 @@ algorithm
   end matchcontinue;
 end printEnvPathStr;
 
-public function printEnvPath "function: printEnvPath
-  Print the environment path to the Print buffer.
+public function printEnvPath "Print the environment path to the Print buffer.
   See also getEnvPath"
   input Env inEnv;
 algorithm
@@ -1777,8 +1759,7 @@ algorithm
   end matchcontinue;
 end printEnvPath;
 
-public function printEnvStr "function: printEnvStr
-  Print the environment as a string."
+public function printEnvStr "Print the environment as a string."
   input Env inEnv;
   output String outString;
 algorithm
@@ -1798,8 +1779,7 @@ algorithm
   end match;
 end printEnvStr;
 
-public function printEnv "function: printEnv
-  Print the environment to the Print buffer."
+public function printEnv "Print the environment to the Print buffer."
   input Env e;
 protected
   Ident s;
@@ -1826,8 +1806,7 @@ algorithm
   end matchcontinue;
 end printEnvConnectionCrefs;
 
-protected function printFrameStr "function: printFrameStr
-  Print a Frame to a string."
+protected function printFrameStr "Print a Frame to a string."
   input Frame inFrame;
   output String outString;
 algorithm
@@ -1859,8 +1838,7 @@ algorithm
   end match;
 end printFrameStr;
 
-protected function printFrameVarsStr "function: printFrameVarsStr
-  Print only the variables in a Frame to a string."
+protected function printFrameVarsStr "Print only the variables in a Frame to a string."
   input Frame inFrame;
   output String outString;
 algorithm
@@ -1905,8 +1883,7 @@ algorithm
   end match;
 end printFrameTypeStr;
 
-protected function printImportsStr "function: printImportsStr
-  Print import statements to a string."
+protected function printImportsStr "Print import statements to a string."
   input list<Item> inItemLst;
   output String outString;
 algorithm
@@ -1932,8 +1909,7 @@ algorithm
   end matchcontinue;
 end printImportsStr;
 
-protected function printFrameElementStr "function: printFrameElementStr
-  Print frame element to a string"
+protected function printFrameElementStr "Print frame element to a string"
   input tuple<Ident, Item> inTplIdentItem;
   output String outString;
 algorithm
@@ -2092,8 +2068,7 @@ end cacheAdd;
 
 // moved from Inst as is more natural to be here!
 public function addCachedEnv
-"function: addCachedEnv
-  add a new environment in the cache obtaining a new cache"
+"add a new environment in the cache obtaining a new cache"
   input Cache inCache;
   input String id;
   input Env env;

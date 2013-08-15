@@ -136,8 +136,7 @@ algorithm
 end subscriptIsZero;
 
 public function unelabExp
-"function: unelabExp
-  Transform an DAE.Exp into Absyn.Expression.
+"Transform an DAE.Exp into Absyn.Expression.
   Note: This function currently only works for
   constants and component references."
   input DAE.Exp inExp;
@@ -351,8 +350,7 @@ algorithm
 end unelabOperator;
 
 public function stringifyCrefs
-"function: stringifyCrefs
-  This function takes an expression and transforms all component
+"This function takes an expression and transforms all component
   reference  names contained in the expression to a simpler form.
   For instance DAE.CREF_QUAL(a,{}, DAE.CREF_IDENT(b,{})) becomes
   DAE.CREF_IDENT(a.b,{})
@@ -512,8 +510,7 @@ end dimensionSubscript;
 /***************************************************/
 
 public function negate
-"function: negate
-  author: PA
+"author: PA
   Negates an expression."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -599,8 +596,7 @@ algorithm
 end expand;
 
 public function expDer
-"function: expDer
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   exp -> der(exp)"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -609,8 +605,7 @@ algorithm
 end expDer;
 
 public function expAbs
-"function: expAbs
-  author: PA
+"author: PA
   Makes the expression absolute. i.e. non-negative."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
@@ -739,8 +734,7 @@ algorithm
 end addNoEventToEventTriggeringFunctionsExp;
 
 public function expStripLastSubs
-"function: expStripLastSubs
-  Strips the last subscripts of a Exp"
+"Strips the last subscripts of a Exp"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -772,8 +766,7 @@ algorithm
 end expStripLastSubs;
 
 public function expStripLastIdent
-"function: expStripLastIdent
-  Strips the last identifier of a cref Exp"
+"Strips the last identifier of a cref Exp"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -931,8 +924,7 @@ end subscriptExp;
 
 
 public function unliftArray
-"function: unliftArray
-  Converts an array type into its element type
+"Converts an array type into its element type
   See also Types.unliftArray.
   ."
   input DAE.Type inType;
@@ -1207,8 +1199,7 @@ algorithm
 end isArrayScalarOp;
 
 public function subscriptsAppend
-"function: subscriptsAppend
-  This function takes a subscript list and adds a new subscript.
+"This function takes a subscript list and adds a new subscript.
   But there are a few special cases.  When the last existing
   subscript is a slice, it is replaced by the slice indexed by
   the new subscript."
@@ -1394,8 +1385,7 @@ algorithm
 end varType;
 
 public function expCref
-"function: expCref
-  Returns the componentref if DAE.Exp is a CREF,"
+"Returns the componentref if DAE.Exp is a CREF,"
   input DAE.Exp inExp;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -1407,8 +1397,7 @@ algorithm
 end expCref;
 
 public function expCrefNegCref
-"function: expCrefNegCref
-  Returns the componentref if DAE.Exp is a CREF or -CREF"
+"Returns the componentref if DAE.Exp is a CREF or -CREF"
   input DAE.Exp inExp;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -1422,8 +1411,7 @@ algorithm
 end expCrefNegCref;
 
 public function expCrefTuple
-"function: expCrefTuple
-  Returns the componentref if the expression in inTuple is a CREF."
+"Returns the componentref if the expression in inTuple is a CREF."
   input tuple<DAE.Exp, Boolean> inTuple;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -1435,8 +1423,7 @@ algorithm
 end expCrefTuple;
 
 public function expCrefInclIfExpFactors
-"function: expCrefInclIfExpFactors
-  Returns the componentref if DAE.Exp is a CREF, or the factors of CREF if expression is an if expression.
+"Returns the componentref if DAE.Exp is a CREF, or the factors of CREF if expression is an if expression.
   This is used in e.g. the tearing algorithm to detect potential division by zero in
   expressions like 1/(if b then 1.0 else x) which could lead to division by zero if b is false and x is 0; "
   input DAE.Exp inExp;
@@ -1526,8 +1513,7 @@ end getRealConst;
 
 // stefan
 public function unboxExpType
-"function: unboxExpType
-  takes a type, and if it is boxed, unbox it
+"takes a type, and if it is boxed, unbox it
   otherwise return the given type"
   input DAE.Type inType;
   output DAE.Type outType;
@@ -1588,8 +1574,7 @@ algorithm
 end getSubscriptExp;
 
 public function subscriptNonExpandedExp
-"function: subscriptNonExpandedExp
-  Returns the expression in a subscript representing non-expanded array.
+"Returns the expression in a subscript representing non-expanded array.
   If the subscript is not WHOLE_NONEXP the function fails."
   input DAE.Subscript inSubscript;
   output DAE.Exp outExp;
@@ -1618,8 +1603,7 @@ algorithm
 end subscriptIsFirst;
 
 public function nthArrayExp
-"function: nthArrayExp
-  author: PA
+"author: PA
   Returns the nth expression of an array expression."
   input DAE.Exp inExp;
   input Integer inInteger;
@@ -1639,8 +1623,7 @@ algorithm
 end nthArrayExp;
 
 public function expLastSubs
-"function: expLastSubs
-  Return the last subscripts of a Exp"
+"Return the last subscripts of a Exp"
   input DAE.Exp inExp;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
@@ -1751,8 +1734,7 @@ algorithm
 end subscriptDimension;
 
 public function arrayEltType
-"function: arrayEltType
-   Returns the element type of an array expression."
+" Returns the element type of an array expression."
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
@@ -1997,8 +1979,7 @@ algorithm
 end typeofRelation;
 
 public function typeofOp
-"function: typeofOp
-  Helper function to typeof"
+"Helper function to typeof"
   input DAE.Operator inOperator;
   output DAE.Type outType;
 algorithm
@@ -2041,8 +2022,7 @@ algorithm
 end typeofOp;
 
 public function getRelations
-"function: getRelations
-  Retrieve all function sub expressions in an expression."
+"Retrieve all function sub expressions in an expression."
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
@@ -2336,8 +2316,7 @@ algorithm
 end terms2;
 
 public function quotient
-"function: quotient
-  author: PA
+"author: PA
   Returns the quotient of an expression.
   For instance e = p/q returns (p,q) for numerator p and denominator q."
   input DAE.Exp inExp;
@@ -2366,8 +2345,7 @@ algorithm
 end quotient;
 
 public function factors
-"function: factors
-  Returns the factors of the expression if any as a list of expressions"
+"Returns the factors of the expression if any as a list of expressions"
   input DAE.Exp inExp;
   output list<DAE.Exp> outExpLst;
 algorithm
@@ -2377,8 +2355,7 @@ algorithm
 end factors;
 
 protected function factorsWork
-"function: factors
-  Returns the factors of the expression if any as a list of expressions"
+"Returns the factors of the expression if any as a list of expressions"
   input DAE.Exp inExp;
   input list<DAE.Exp> inAcc;
   input Boolean noFactors "Decides if the default is the empty list or not";
@@ -2821,8 +2798,7 @@ algorithm
 end makeScalarArray;
 
 public function makeRealArray
-"function: makeRealArray
-  Construct an array node of an DAE.Exp list of type REAL."
+"Construct an array node of an DAE.Exp list of type REAL."
   input list<DAE.Exp> expl;
   output DAE.Exp outExp;
 algorithm
@@ -2830,8 +2806,7 @@ algorithm
 end makeRealArray;
 
 public function makeRealAdd
-"function: makeRealAdd
-  Construct an add node of the two expressions of type REAL."
+"Construct an add node of the two expressions of type REAL."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   output DAE.Exp outExp;
@@ -2840,8 +2815,7 @@ algorithm
 end makeRealAdd;
 
 public function expAdd
-"function: expAdd
-  author: PA
+"author: PA
   Adds two scalar expressions."
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -2898,8 +2872,7 @@ algorithm
 end expAdd;
 
 public function expSub
-"function: expSub
-  author: PA
+"author: PA
   Subtracts two scalar expressions."
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -3042,8 +3015,7 @@ algorithm
 end makeLBinary;
 
 public function makeSum
-"function: makeSum
-  Takes a list of expressions an makes a sum
+"Takes a list of expressions an makes a sum
   expression adding all elements in the list."
   input list<DAE.Exp> inExpLst;
   output DAE.Exp outExp;
@@ -3110,8 +3082,7 @@ algorithm
 end makeSum;
 
 public function expMul
-"function: expMul
-  author: PA
+"author: PA
   Multiplies two scalar expressions."
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -3267,8 +3238,7 @@ algorithm
 end expPow;
 
 
-public function expMaxScalar "function: expMax
-  author: Frenkel TUD 2011-04
+public function expMaxScalar "author: Frenkel TUD 2011-04
   returns max(e1,e2)."
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -3280,8 +3250,7 @@ algorithm
   outExp := DAE.CALL(Absyn.IDENT("max"),{e1,e2},DAE.CALL_ATTR(tp,false,true,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
 end expMaxScalar;
 
-public function expMinScalar "function: expMin
-  author: Frenkel TUD 2011-04
+public function expMinScalar "author: Frenkel TUD 2011-04
   returns min(e1,e2)."
   input DAE.Exp e1;
   input DAE.Exp e2;
@@ -3313,8 +3282,7 @@ algorithm
 end makeProduct;
 
 public function makeProductLst
-"function: makeProductLst
-  Takes a list of expressions an makes a product
+"Takes a list of expressions an makes a product
   expression multiplying all elements in the list."
   input list<DAE.Exp> inExpLst;
   output DAE.Exp outExp;
@@ -3817,8 +3785,7 @@ algorithm
 end concatArrayType;
 
 public function replaceExp
-"function: replaceExp
-  Helper function to replaceExpList."
+"Helper function to replaceExpList."
   input DAE.Exp inExp;
   input DAE.Exp inSourceExp;
   input DAE.Exp inTargetExp;
@@ -3871,8 +3838,7 @@ algorithm
 end expressionCollector;
 
 public function replaceCref
-"function: replaceCref
-  Replace a componentref with a expression"
+"Replace a componentref with a expression"
   input tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> inTpl;
   output tuple<DAE.Exp,tuple<DAE.ComponentRef,DAE.Exp>> otpl;
 algorithm
@@ -4296,8 +4262,7 @@ algorithm
 end traverseSubexpressionsHelper;
 
 protected function traverseExpMatrix
-"function: traverseExpMatrix
-  author: PA
+"author: PA
    Helper function to traverseExp, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
   input list<list<DAE.Exp>> inTplExpBooleanLstLst;
@@ -4697,8 +4662,7 @@ algorithm
 end traverseExpWithoutRelations;
 
 protected function traverseExpWithoutRelationsMatrix
-"function: traverseExpWithoutRelationsMatrix
-  author: Frenkel TUD
+"author: Frenkel TUD
    Helper function to traverseExpWithoutRelations, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
   input list<list<DAE.Exp>> inTplExpBooleanLstLst;
@@ -5034,8 +4998,7 @@ algorithm
 end traverseExpTopDown1;
 
 protected function traverseExpMatrixTopDown
-"function: traverseExpMatrixTopDown
-  author: PA
+"author: PA
    Helper function to traverseExpTopDown, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
   input list<list<DAE.Exp>> inTplExpBooleanLstLst;
@@ -6134,8 +6097,7 @@ algorithm
 end operatorDivOrMul;
 
 public function isRange
-"function: isRange
-  Returns true if expression is a range expression."
+"Returns true if expression is a range expression."
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
@@ -6156,8 +6118,7 @@ algorithm
 end isReduction;
 
 public function isOne
-"function: isOne
-  Returns true if an expression is constant
+"Returns true if an expression is constant
   and has the value one, otherwise false"
   input DAE.Exp inExp;
   output Boolean outBoolean;
@@ -6182,8 +6143,7 @@ algorithm
 end isOne;
 
 public function isZero
-"function: isZero
-  Returns true if an expression is constant
+"Returns true if an expression is constant
   and has the value zero, otherwise false"
   input DAE.Exp inExp;
   output Boolean outBoolean;
@@ -6265,8 +6225,7 @@ algorithm
 end isPositiveOrZero;
 
 public function isNegativeOrZero
-"function: isNegativeOrZero
-  Returns true if an expression is known to be <= 0"
+"Returns true if an expression is known to be <= 0"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
@@ -6458,8 +6417,7 @@ algorithm
 end isNotConst;
 
 public function isRelation
-"function: isRelation
-  Returns true if expression is a function expression."
+"Returns true if expression is a function expression."
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
@@ -6583,8 +6541,7 @@ algorithm
 end equalTypesComplexVars;
 
 public function typeBuiltin
-"function: typeBuiltin
-  Returns true if type is one of the builtin types."
+"Returns true if type is one of the builtin types."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -6681,8 +6638,7 @@ algorithm
 end isConstTrue;
 
 public function isConstOne
-"function: isConstOne
-  Return true if expression is 1"
+"Return true if expression is 1"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
@@ -6709,8 +6665,7 @@ algorithm
 end isConstOne;
 
 public function isConstMinusOne
-"function: isConstMinusOne
-  Return true if expression is -1"
+"Return true if expression is -1"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
@@ -6908,8 +6863,7 @@ algorithm
 end containVectorFunctioncall;
 
 public function containFunctioncall
-"function: containFunctioncall
-  Returns true if expression or subexpression
+"Returns true if expression or subexpression
   is a functioncall, otherwise false.
   Note: the der and pre operators are represented
         as function calls but still returns false."
@@ -7265,8 +7219,7 @@ algorithm
 end isIntegerOrReal;
 
 public function expEqual
-"function: expEqual
-  Returns true if the two expressions are equal."
+"Returns true if the two expressions are equal."
   input DAE.Exp e1;
   input DAE.Exp e2;
   output Boolean outBoolean;
@@ -7549,8 +7502,7 @@ algorithm
 end expEqualWorkList;
 
 public function expStructuralEqual
-"function: expStructuralEqual
-  Returns true if the two expressions are structural equal. This means
+"Returns true if the two expressions are structural equal. This means
   only the componentreference can be different"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -7844,8 +7796,7 @@ algorithm
 end expStructuralEqualListLst;
 
 public function expContains
-"function: expContains
-  Returns true if first expression contains the
+"Returns true if first expression contains the
   second one as a sub expression. Only component
   references or der(componentReference) can be
   checked so far."
@@ -8021,8 +7972,7 @@ algorithm
 end isExpCrefOrIfExp;
 
 public function operatorEqual
-"function: operatorEqual
-  Helper function to expEqual."
+"Helper function to expEqual."
   input DAE.Operator inOperator1;
   input DAE.Operator inOperator2;
   output Boolean outBoolean;
@@ -8269,8 +8219,7 @@ algorithm
 end dimensionUnknownOrExp;
 
 public function subscriptEqual
-"function: subscriptEqual
-  Returns true if two subscript lists are equal."
+"Returns true if two subscript lists are equal."
   input list<DAE.Subscript> inSubscriptLst1;
   input list<DAE.Subscript> inSubscriptLst2;
   output Boolean outBoolean;
@@ -8338,8 +8287,7 @@ algorithm
   end matchcontinue;
 end isValidSubscript;
 
-public function subscriptContain "function: subscriptContain
-  This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM())"
+public function subscriptContain "This function checks whether sub2 contains sub1 or not(DAE.WHOLEDIM())"
   input list<DAE.Subscript> issl1;
   input list<DAE.Subscript> issl2;
   output Boolean contained;

@@ -65,8 +65,7 @@ protected import Print;
 //protected import Util;
 protected import System;
 
-public function printPrefixStr "function: printPrefixStr
-  Prints a Prefix to a string."
+public function printPrefixStr "Prints a Prefix to a string."
   input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
@@ -105,8 +104,7 @@ algorithm
   end matchcontinue;
 end printPrefixStr;
 
-public function printPrefixStr2 "function: printPrefixStr2
-  Prints a Prefix to a string. Designed to be used in Error messages to produce qualified component names"
+public function printPrefixStr2 "Prints a Prefix to a string. Designed to be used in Error messages to produce qualified component names"
   input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
@@ -119,8 +117,7 @@ algorithm
   end matchcontinue;
 end printPrefixStr2;
 
-public function printPrefixStr3 "function: printPrefixStr2
-  Prints a Prefix to a string as a component name. Designed to be used in Error messages"
+public function printPrefixStr3 "Prints a Prefix to a string as a component name. Designed to be used in Error messages"
   input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
@@ -133,8 +130,7 @@ algorithm
   end matchcontinue;
 end printPrefixStr3;
 
-public function printPrefixStrIgnoreNoPre "function: printPrefixStrIgnoreNoPre
-  Prints a Prefix to a string as a component name. Designed to be used in Error messages"
+public function printPrefixStrIgnoreNoPre "Prints a Prefix to a string as a component name. Designed to be used in Error messages"
   input Prefix.Prefix inPrefix;
   output String outString;
 algorithm
@@ -147,8 +143,7 @@ algorithm
   end matchcontinue;
 end printPrefixStrIgnoreNoPre;
 
-public function printPrefix "function: printPrefix
-  Prints a prefix to the Print buffer."
+public function printPrefix "Prints a prefix to the Print buffer."
   input Prefix.Prefix p;
 protected
   String s;
@@ -157,8 +152,7 @@ algorithm
   Print.printBuf(s);
 end printPrefix;
 
-public function prefixAdd "function: prefixAdd
-  This function is used to extend a prefix with another level.  If
+public function prefixAdd "This function is used to extend a prefix with another level.  If
   the prefix `a.b{10}.c\' is extended with `d\' and an empty subscript
   list, the resulting prefix is `a.b{10}.c.d\'.  Remember that
   prefixes components are stored in the opposite order from the
@@ -212,8 +206,7 @@ algorithm
   outCref := DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, subs);
 end prefixFirstCref;
 
-public function prefixLast "function: prefixLast
-  Returns the last NONPRE Prefix of a prefix"
+public function prefixLast "Returns the last NONPRE Prefix of a prefix"
   input Prefix.Prefix inPrefix;
   output Prefix.Prefix outPrefix;
 algorithm
@@ -270,8 +263,7 @@ algorithm
    end match;
 end compPreStripLast;
 
-public function prefixPath "function: prefixPath
-  Prefix a Path variable by adding the supplied
+public function prefixPath "Prefix a Path variable by adding the supplied
   prefix to it and returning a new Path."
   input Absyn.Path inPath;
   input Prefix.Prefix inPrefix;
@@ -298,8 +290,7 @@ algorithm
   end matchcontinue;
 end prefixPath;
 
-public function prefixToPath "function: prefixToPath
-  Convert a Prefix to a Path"
+public function prefixToPath "Convert a Prefix to a Path"
   input Prefix.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
@@ -324,8 +315,7 @@ algorithm
   end matchcontinue;
 end prefixToPath;
 
-public function prefixCref "function: prefixCref
-  Prefix a ComponentRef variable by adding the supplied prefix to
+public function prefixCref "Prefix a ComponentRef variable by adding the supplied prefix to
   it and returning a new ComponentRef.
   LS: Changed to call prefixToCref which is more general now"
   input Env.Cache cache;
@@ -339,8 +329,7 @@ algorithm
   (outCache,cref_1) := prefixToCref2(cache,env,inIH,pre, SOME(cref));
 end prefixCref;
 
-public function prefixCrefNoContext "function: prefixCrefNoContext
-  Prefix a ComponentRef variable by adding the supplied prefix to
+public function prefixCrefNoContext "Prefix a ComponentRef variable by adding the supplied prefix to
   it and returning a new ComponentRef.
   LS: Changed to call prefixToCref which is more general now"
   input Prefix.Prefix inPre;
@@ -350,16 +339,14 @@ algorithm
   (_, outCref) := prefixToCref2(Env.emptyCache(), {}, InnerOuter.emptyInstHierarchy, inPre, SOME(inCref));
 end prefixCrefNoContext;
 
-public function prefixToCref "function: prefixToCref
-  Convert a prefix to a component reference."
+public function prefixToCref "Convert a prefix to a component reference."
   input Prefix.Prefix pre;
   output DAE.ComponentRef cref_1;
 algorithm
   (_,cref_1) := prefixToCref2(Env.emptyCache(),{},InnerOuter.emptyInstHierarchy,pre, NONE());
 end prefixToCref;
 
-protected function prefixToCref2 "function: prefixToCref2
-  Convert a prefix to a component reference. Converting Prefix.NOPRE with no
+protected function prefixToCref2 "Convert a prefix to a component reference. Converting Prefix.NOPRE with no
   component reference is an error because a component reference cannot be
   empty"
   input Env.Cache inCache;
@@ -402,16 +389,14 @@ algorithm
   end match;
 end prefixToCref2;
 
-public function prefixToCrefOpt "function: prefixToCref
-  Convert a prefix to an optional component reference."
+public function prefixToCrefOpt "Convert a prefix to an optional component reference."
   input Prefix.Prefix pre;
   output Option<DAE.ComponentRef> cref_1;
 algorithm
   cref_1 := prefixToCrefOpt2(pre, NONE());
 end prefixToCrefOpt;
 
-public function prefixToCrefOpt2 "function: prefixToCrefOpt2
-  Convert a prefix to a component reference. Converting Prefix.NOPRE with no
+public function prefixToCrefOpt2 "Convert a prefix to a component reference. Converting Prefix.NOPRE with no
   component reference gives a NONE"
   input Prefix.Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
@@ -563,8 +548,7 @@ algorithm
   end match;
 end prefixSubscript;
 
-public function prefixCrefInnerOuter "function: prefixCrefInnerOuter
-  Search for the prefix of the inner when the cref is
+public function prefixCrefInnerOuter "Search for the prefix of the inner when the cref is
   an outer and add that instead of the given prefix!
   If the cref is an inner, prefix it normally."
   input Env.Cache inCache;
@@ -644,8 +628,7 @@ algorithm
   end matchcontinue;
 end prefixCrefInnerOuter;
 
-public function prefixExp "function: prefixExp
-  Add the supplied prefix to all component references in an expression."
+public function prefixExp "Add the supplied prefix to all component references in an expression."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -928,8 +911,7 @@ algorithm
   end match;
 end prefixIterators;
 
-public function prefixExpList "function: prefixExpList
-  This function prefixes a list of expressions using the prefixExp function."
+public function prefixExpList "This function prefixes a list of expressions using the prefixExp function."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -962,8 +944,7 @@ end prefixExpList;
 
 //--------------------------------------------
 //   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS
-protected function prefixDecls "function: prefixDecls
-  Add the supplied prefix to the DAE elements located in Expression.mo.
+protected function prefixDecls "Add the supplied prefix to the DAE elements located in Expression.mo.
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;
@@ -1028,8 +1009,7 @@ algorithm
  end matchcontinue;
 end prefixDecls;
 
-protected function prefixStatements "function: prefixStatements
-  Prefix statements.
+protected function prefixStatements "Prefix statements.
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;
@@ -1167,8 +1147,7 @@ algorithm
   end matchcontinue;
 end prefixStatements;
 
-protected function prefixElse "function: prefixElse
-  Prefix else statements.
+protected function prefixElse "Prefix else statements.
   PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;

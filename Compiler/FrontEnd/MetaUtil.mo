@@ -51,8 +51,7 @@ protected import List;
 protected import Types;
 protected import Util;
 
-public function isList "function: isList
-  author: KS
+public function isList "author: KS
   Return true if list
 "
   input DAE.Properties prop;
@@ -181,8 +180,7 @@ algorithm
   end matchcontinue;
 end classHasRestriction;
 
-public function createMetaClassesInProgram "function: createMetaClassesInProgram
-  Adds metarecord classes to the AST. This function handles a whole program,
+public function createMetaClassesInProgram "Adds metarecord classes to the AST. This function handles a whole program,
   including packages."
   input Absyn.Program program;
   output Absyn.Program out;
@@ -210,8 +208,7 @@ algorithm
   end matchcontinue;
 end createMetaClassesInProgram;
 
-protected function createMetaClassesFromPackage "function: createMetaClassesFromPackages
-  Helper function to createMetaClassesInProgram"
+protected function createMetaClassesFromPackage "Helper function to createMetaClassesInProgram"
   input Absyn.Class cl;
   output Absyn.Class out;
 algorithm
@@ -606,8 +603,7 @@ algorithm
   end matchcontinue;
 end isTupleExp;
 
-public function extractListFromTuple "function: extractListFromTuple
-  author: KS
+public function extractListFromTuple "author: KS
  Given an Absyn.Exp, this function will extract the list of expressions if the
  expression is a tuple, otherwise a list of length one is created"
   input Absyn.Exp inExp;

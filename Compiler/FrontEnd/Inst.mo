@@ -149,8 +149,7 @@ protected import NFSCodeFlatten;
 protected import SCodeDump;
 
 public function newIdent
-"function: newIdent
-  This function creates a new, unique identifer.
+"This function creates a new, unique identifer.
   The same name is never returned twice."
   output DAE.ComponentRef outComponentRef;
 protected
@@ -164,8 +163,7 @@ algorithm
 end newIdent;
 
 protected function isNotFunction
-"function: isNotFunction
-  This function returns true if the Class is not a function."
+"This function returns true if the Class is not a function."
   input SCode.Element cls;
   output Boolean res;
 algorithm
@@ -340,8 +338,7 @@ algorithm
 end scodeFlattenProgram;
 
 public function instantiateClass
-"function: instantiateClass
-  To enable interactive instantiation, an arbitrary class in the program
+"To enable interactive instantiation, an arbitrary class in the program
   needs to be possible to instantiate. This function performs the same
   action as instProgram, but given a specific class to instantiate.
 
@@ -593,8 +590,7 @@ algorithm
 end instantiatePartialClass;
 
 public function instantiateClassImplicit
-"function: instantiateClassImplicit
-  author: PA
+"author: PA
   Similar to instantiate_class, i.e. instantation of arbitrary classes
   but this one instantiates the class implicit, which is less costly."
   input Env.Cache inCache;
@@ -650,8 +646,7 @@ algorithm
 end instantiateClassImplicit;
 
 public function instantiateFunctionImplicit
-"function: instantiateFunctionImplicit
-  author: PA
+"author: PA
   Similar to instantiateClassImplict, i.e. instantation of arbitrary
   classes but this one instantiates the class implicit for functions."
   input Env.Cache inCache;
@@ -871,8 +866,7 @@ algorithm
 end instFunctionInProgramImplicit;
 
 protected function instClassDecls
-"function: instClassDecls
-  This function instantiated class definitions, i.e.
+"This function instantiated class definitions, i.e.
   adding the class definitions to the environment.
   See also partialInstClassIn."
   input Env.Cache inCache;
@@ -907,8 +901,7 @@ algorithm
 end instClassDecls;
 
 public function makeEnvFromProgram
-"function: makeEnvFromProgram
-  This function takes a SCode.Program and builds
+"This function takes a SCode.Program and builds
   an environment, excluding the class in A1."
   input Env.Cache inCache;
   input SCode.Program prog;
@@ -926,8 +919,7 @@ algorithm
 end makeEnvFromProgram;
 
 public function instClass
-"function: instClass
-  Instantiation of a class can be either implicit or normal.
+"Instantiation of a class can be either implicit or normal.
   This function is used in both cases. When implicit instantiation
   is performed, the last argument is true, otherwise it is false.
 
@@ -1307,8 +1299,7 @@ algorithm outCref := matchcontinue(cr1,cr2)
 end updateCrefTypesWithConnectorPrefix;
 
 protected function instClassBasictype
-"function: instClassBasictype
-  author: PA
+"author: PA
   This function instantiates a basictype class, e.g. Real, Integer, Real[2],
   etc. This function has the same functionality as instClass except that
   it will create array types when needed. (instClass never creates array
@@ -1751,8 +1742,7 @@ algorithm
 end prefixEqualUnlessBasicType;
 
 public function instClassIn_dispatch
-"function: instClassIn
-  This rule instantiates the contents of a class definition, with a new
+"This rule instantiates the contents of a class definition, with a new
   environment already setup.
   The *implicitInstantiation* boolean indicates if the class should be
   instantiated implicit, i.e. without generating DAE.
@@ -2485,8 +2475,7 @@ algorithm
 end instBuiltinAttribute;
 
 protected function arrayBasictypeBaseclass
-"function: arrayBasictypeBaseclass
-  author: PA"
+"author: PA"
   input list<list<DAE.Subscript>>inInstDims;
   input DAE.Type inType;
   output Option<DAE.Type> outOptType;
@@ -2509,8 +2498,7 @@ algorithm
 end arrayBasictypeBaseclass;
 
 public function partialInstClassIn
-"function: partialInstClassIn
-  This function is used when instantiating classes in lookup of other classes.
+"This function is used when instantiating classes in lookup of other classes.
   The only work performed by this function is to instantiate local classes and
   inherited classes."
   input Env.Cache inCache;
@@ -2651,8 +2639,7 @@ algorithm
 end partialInstClassIn;
 
 protected function partialInstClassIn_dispatch
-"function: partialInstClassIn
-  This function is used when instantiating classes in lookup of other classes.
+"This function is used when instantiating classes in lookup of other classes.
   The only work performed by this function is to instantiate local classes and
   inherited classes."
   input Env.Cache inCache;
@@ -2760,8 +2747,7 @@ algorithm
 end equalityConstraintOutputDimension;
 
 protected function equalityConstraint
-  "function: equalityConstraint
-    Tests if the given elements contain equalityConstraint function and returns
+  "  Tests if the given elements contain equalityConstraint function and returns
     corresponding DAE.EqualityConstraint."
   input Env.Env inEnv;
   input list<SCode.Element> inCdefelts;
@@ -4447,8 +4433,7 @@ algorithm
 end printExtcomps;
 
 protected function instBasictypeBaseclass
-"function: instBasictypeBaseclass
-  This function finds the type of classes that extends a basic type.
+"This function finds the type of classes that extends a basic type.
   For instance,
   connector RealSignal
     extends SignalType;
@@ -4655,8 +4640,7 @@ algorithm
 end addConnectionCrefsFromEqs;
 
 protected function addConnectionSetToEnv
-"function: addConnectionSetToEnv
-  Adds the connection set and Prefix to the environment such that Ceval can reach it.
+"Adds the connection set and Prefix to the environment such that Ceval can reach it.
   It is required to evaluate cardinality."
   input Connect.Sets inSets;
   input Prefix.Prefix prefix;
@@ -4771,8 +4755,7 @@ algorithm
 end extractConnectionCrefs;
 
 protected function filterConnectionSetCrefs
-"function: filterConnectionSetCrefs
-  author: PA
+"author: PA
   This function investigates Prefix and filters all connectRefs
   to only contain references starting with actual prefix."
   input Connect.Sets inSets;
@@ -4802,8 +4785,7 @@ algorithm
 end filterConnectionSetCrefs;
 
 protected function partialInstClassdef
-"function: partialInstClassdef
-  This function is used by partialInstClassIn for instantiating local
+"This function is used by partialInstClassIn for instantiating local
   class definitons and inherited class definitions only."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5239,8 +5221,7 @@ algorithm
 end updateCompeltsMods;
 
 protected function updateCompeltsMods_dispatch
-"function: updateCompeltsMods
-  author: PA
+"author: PA
   This function updates component modifiers to typed modifiers.
   Typed modifiers are needed  to merge modifiers and to be able to
   fully instantiate a component."
@@ -5357,8 +5338,7 @@ algorithm
 end updateCompeltsMods_dispatch;
 
 protected function getOptionArraydim
-"function: getOptionArraydim
-  Return the Arraydim of an optional arradim.
+"Return the Arraydim of an optional arradim.
   Empty list returned if no arraydim present."
   input Option<Absyn.ArrayDim> inAbsynArrayDimOption;
   output Absyn.ArrayDim outArrayDim;
@@ -5371,8 +5351,7 @@ algorithm
 end getOptionArraydim;
 
 public function addNomod
-"function: addNomod
-  This function takes an SCode.Element list and tranforms it into a
+"This function takes an SCode.Element list and tranforms it into a
   (SCode.Element Mod) list by inserting DAE.NOMOD() for each element.
   Used to transform elements into a uniform list combined from inherited
   elements and ordinary elements."
@@ -5690,8 +5669,7 @@ algorithm
 end getExpsFromMod;
 
 protected function getCrefFromDim
-"function: getCrefFromDim
-  author: PA
+"author: PA
   Similar to getCrefFromMod, but investigates
   array dimensionalitites instead."
   input Absyn.ArrayDim inArrayDim;
@@ -6054,8 +6032,7 @@ algorithm
 end elementName;
 
 protected function instElementList2
-"function: instElementList
-  Moved to instClassdef, FIXME: Move commments later
+"Moved to instClassdef, FIXME: Move commments later
   Instantiate elements one at a time, and concatenate the resulting
   lists of equations.
   P.A, Modelica1.4: (allows declare before use)
@@ -6133,8 +6110,7 @@ algorithm
 end instElementList2;
 
 public function instElement2
-"function: instElementList
-  Moved to instClassdef, FIXME: Move commments later
+"Moved to instClassdef, FIXME: Move commments later
   Instantiate elements one at a time, and concatenate the resulting
   lists of equations.
   P.A, Modelica1.4: (allows declare before use)
@@ -6259,8 +6235,7 @@ algorithm
 end instElement2;
 
 protected function classdefElts2
-"function: classdeElts2
-  author: PA
+"author: PA
   This function filters out the class definitions (ElementMod) list."
   input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
   input SCode.Partial partialPrefix;
@@ -6299,8 +6274,7 @@ algorithm
 end classdefElts2;
 
 public function classdefAndImpElts
-"function: classdefAndImpElts
-  author: PA
+"author: PA
   This function filters out the class definitions
   and import statements of an Element list."
   input list<SCode.Element> elts;
@@ -6336,8 +6310,7 @@ end classdefAndImpElts;
 
 /*
 protected function extendsElts
-"function: extendsElts
-  author: PA
+"author: PA
   This function filters out the extends Element in an Element list"
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.Element> outSCodeElementLst;
@@ -6362,8 +6335,7 @@ end extendsElts;
 */
 
 public function componentElts
-"function: componentElts
-  author: PA
+"author: PA
   This function filters out the component Element in an Element list"
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.Element> outSCodeElementLst;
@@ -6387,8 +6359,7 @@ algorithm
 end componentElts;
 
 public function addClassdefsToEnv
-"function: addClassdefsToEnv
-  author: PA
+"author: PA
 
   This function adds classdefinitions and
   import statements to the  environment."
@@ -6426,8 +6397,7 @@ algorithm
 end addClassdefsToEnv;
 
 protected function addClassdefsToEnv2
-"function: addClassdefsToEnv2
-  author: PA
+"author: PA
   Helper relation to addClassdefsToEnv"
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -6456,8 +6426,7 @@ algorithm
 end addClassdefsToEnv2;
 
 protected function addClassdefToEnv2
-"function: addClassdefToEnv2
-  author: PA
+"author: PA
   Helper relation to addClassdefsToEnv"
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -6555,8 +6524,7 @@ algorithm
 end addClassdefToEnv2;
 
 protected function isStructuralParameter
-"function: isStructuralParameter
-  author: PA
+"author: PA
   This function investigates a component to find out if it is a structural parameter.
   This is achieved by looking at the restriction to find if it is a parameter
   and by investigating all components to find it is used in array dimensions
@@ -6659,8 +6627,7 @@ algorithm
 end checkCompEnvPathVsCompTypePath;
 
 public function addComponentsToEnv
-"function: addComponentsToEnv
-  author: PA
+"author: PA
   Since Modelica has removed the declare before use limitation, all
   components are intially added untyped to the environment, i.e. the
   SCode.Element is added. This is performed by this function. Later,
@@ -6710,8 +6677,7 @@ algorithm
 end addComponentsToEnv;
 
 protected function addComponentToEnv
-"function: addComponentToEnv
-  author: PA
+"author: PA
   Since Modelica has removed the declare before use limitation, all
   components are intially added untyped to the environment, i.e. the
   SCode.Element is added. This is performed by this function. Later,
@@ -6952,8 +6918,7 @@ algorithm
 end addComponentsToEnv2;
 
 protected function getCrefsFromCompdims
-"function: getCrefsFromCompdims
-  author: PA
+"author: PA
   This function collects all variables from the dimensionalities of
   component elements. These variables are candidates for structural
   parameters."
@@ -7887,8 +7852,7 @@ algorithm
 end removeOptCrefFromCrefs;
 
 protected function removeCrefFromCrefs
-"function: removeCrefFromCrefs
-  Removes a variable from a variable list"
+"Removes a variable from a variable list"
   input list<Absyn.ComponentRef> inAbsynComponentRefLst;
   input Absyn.ComponentRef inComponentRef;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
@@ -7924,8 +7888,7 @@ algorithm
 end removeCrefFromCrefs;
 
 protected function redeclareType
-"function: redeclareType
-  This function takes a DAE.Mod and an SCode.Element and if the modification
+"This function takes a DAE.Mod and an SCode.Element and if the modification
   contains a redeclare of that element, the type is changed and an updated
   element is returned."
   input Env.Cache inCache;
@@ -8214,8 +8177,7 @@ algorithm
 end extractConstrainingComps;
 
 protected function instVar
-"function: instVar
-  this function will look if a variable is inner/outer and depending on that will:
+"this function will look if a variable is inner/outer and depending on that will:
   - lookup for inner in the instanance hieararchy if we have ONLY outer
   - instantiate normally via instVar_dispatch otherwise
   - report an error if we have modifications on outer"
@@ -8553,8 +8515,7 @@ algorithm
     end matchcontinue;
 end instVar;
 
-protected function instVar_dispatch "function: instVar_dispatch
-  A component element in a class may consist of several subcomponents
+protected function instVar_dispatch "A component element in a class may consist of several subcomponents
   or array elements.  This function is used to instantiate a
   component, instantiating all subcomponents and array elements
   separately.
@@ -8725,8 +8686,7 @@ algorithm
 end addArrayVarEquation;
 
 protected function instVar2
-"function: instVar2
-  Helper function to instVar, does the main work."
+"Helper function to instVar, does the main work."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -9504,8 +9464,7 @@ algorithm
 end checkHigherVariability;
 
 public function makeArrayType
-"function: makeArrayType
-  Creates an array type from the element type
+"Creates an array type from the element type
   given as argument and a list of dimensional sizes."
   input DAE.Dimensions inDimensionLst;
   input DAE.Type inType;
@@ -9538,8 +9497,7 @@ algorithm
 end makeArrayType;
 
 public function getUsertypeDimensions
-"function: getUsertypeDimensions
-  Retrieves the dimensions of a usertype and the innermost class type to instantiate,
+"Retrieves the dimensions of a usertype and the innermost class type to instantiate,
   and also any modifications from the base classes of the usertype.
   The builtin types have no dimension, whereas a user defined type might
   have dimensions. For instance, type Point = Real[3];
@@ -9726,8 +9684,7 @@ algorithm
 end addEnumerationLiteralToEnv;
 
 protected function updateComponentsInEnv
-"function: updateComponentsInEnv
-  author: PA
+"author: PA
   This function is the second pass of component instantiation, when a
   component can be instantiated fully and the type of the component can be
   determined. The type is added/updated to the environment such that other
@@ -9795,8 +9752,7 @@ algorithm
 end updateClassInfState;
 
 protected function updateComponentInEnv
-"function: updateComponentInEnv
-  author: PA
+"author: PA
   Helper function to updateComponentsInEnv.
   Does the work for one variable."
   input Env.Cache inCache;
@@ -10248,8 +10204,7 @@ algorithm
 end updateComponentInEnv3;
 
 protected function instDimExpLst
-"function: instDimExpLst
-  Instantiates dimension expressions, DAE.Dimension, which are transformed to DAE.Subscript\'s"
+"Instantiates dimension expressions, DAE.Dimension, which are transformed to DAE.Subscript\'s"
   input DAE.Dimensions inDimensionLst;
   input Boolean inBoolean;
   output list<DAE.Subscript> outExpSubscriptLst;
@@ -10298,8 +10253,7 @@ algorithm
 end instDimExp;
 
 protected function instDimExpNonSplit
-"function: instDimExpNonSplit
-  the vesrion of instDimExp for the case of non-expanded arrays"
+"the vesrion of instDimExp for the case of non-expanded arrays"
   input DAE.Dimension inDimension;
   input Boolean inBoolean;
   output DAE.Subscript outSubscript;
@@ -10643,8 +10597,7 @@ algorithm
 end propagateConnectorType;
 
 protected function absynDirToDaeDir
-"function: absynDirToDaeDir
-  Translates Absyn.Direction to DAE.VarDirection.
+"Translates Absyn.Direction to DAE.VarDirection.
   Needed so that input, output is transferred to DAE."
   input Absyn.Direction inDirection;
   output DAE.VarDirection outVarDirection;
@@ -10657,8 +10610,7 @@ algorithm
 end absynDirToDaeDir;
 
 protected function instArray
-"function: instArray
-  When an array is instantiated by instVar, this function is used
+"When an array is instantiated by instVar, this function is used
   to go through all the array elements and instantiate each array
   element separately."
   input Env.Cache inCache;
@@ -10892,8 +10844,7 @@ algorithm
 end instArray;
 
 protected function attrIsParam
-"function: attrIsParam
-  Returns true if attributes contain PARAM"
+"Returns true if attributes contain PARAM"
   input SCode.Attributes inAttributes;
   output Boolean outBoolean;
 algorithm
@@ -10963,8 +10914,7 @@ algorithm
 end elabComponentArraydimFromEnv;
 
 protected function elabComponentArraydimFromEnv2
-"function: elabComponentArraydimFromEnv2
-  author: PA
+"author: PA
   Helper function to elabComponentArraydimFromEnv.
   This function is similar to elabArraydim, but it will only
   investigate binding (DAE.EqMod) and not the component declaration."
@@ -10994,8 +10944,7 @@ algorithm
 end elabComponentArraydimFromEnv2;
 
 protected function elabArraydimOpt
-"function: elabArraydimOpt
-  Same functionality as elabArraydim, but takes an optional arraydim.
+"Same functionality as elabArraydim, but takes an optional arraydim.
   In case of NONE(), empty DAE.Dimension list is returned."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -11036,8 +10985,7 @@ algorithm
 end elabArraydimOpt;
 
 protected function elabArraydim
-"function: elabArraydim
-  This functions examines both an `Absyn.ArrayDim\' and an `DAE.EqMod
+"This functions examines both an `Absyn.ArrayDim\' and an `DAE.EqMod
   option\' argument to find out the dimensions af a component.  If
   no equation modifications is given, only the declared dimension is
   used.
@@ -11153,8 +11101,7 @@ algorithm
 end elabArraydim;
 
 protected function printDimStr
-"function: printDimStr
-  This function prints array dimensions.
+"This function prints array dimensions.
   The code is not included in the report."
   input DAE.Dimensions inDimensionLst;
   output String outString;
@@ -11199,8 +11146,7 @@ algorithm
 end compatibleArraydim;
 
 protected function elabArraydimType
-"function: elabArraydimType
-  Find out the dimension sizes of a type. The second argument is
+"Find out the dimension sizes of a type. The second argument is
   used to know how many dimensions should be extracted from the
   type."
   input DAE.Type inType;
@@ -11335,8 +11281,7 @@ algorithm
 end elabArraydimType2;
 
 public function instClassDecl
-"function: instClassDecl
-  The class definition is instantiated although no variable is declared with it.
+"The class definition is instantiated although no variable is declared with it.
   After instantiating it, it is checked to see if it can be used as a package,
   and if it can, then it is added as a variable under the same name as the class.
   This makes it possible to use a unified lookup mechanism.
@@ -11432,8 +11377,7 @@ algorithm
 end implicitInstantiation;
 
 public function makeFullyQualified
-"function: makeFullyQualified
-  author: PA
+"author: PA
   Transforms a class name to its fully qualified name by investigating the environment.
   For instance, the model Resistor in Modelica.Electrical.Analog.Basic will given the
   correct environment have the fully qualified name: Modelica.Electrical.Analog.Basic.Resistor"
@@ -11565,8 +11509,7 @@ algorithm
 end addFunctionsToDAE;
 
 public function implicitFunctionInstantiation
-"function: implicitFunctionInstantiation
-  This function instantiates a function, which is performed *implicitly*
+"This function instantiates a function, which is performed *implicitly*
   since the variables of a function should not be instantiated as for an
   ordinary class."
   input Env.Cache inCache;
@@ -11625,8 +11568,7 @@ algorithm
 end implicitFunctionInstantiation;
 
 protected function implicitFunctionInstantiation2
-"function: implicitFunctionInstantiation2
-  This function instantiates a function, which is performed *implicitly*
+"This function instantiates a function, which is performed *implicitly*
   since the variables of a function should not be instantiated as for an
   ordinary class."
   input Env.Cache inCache;
@@ -12431,8 +12373,7 @@ algorithm
 end implicitFunctionTypeInstantiation;
 
 protected function instOverloadedFunctions
-"function: instOverloadedFunctions
-  This function instantiates the functions in the overload list of a
+"This function instantiates the functions in the overload list of a
   overloading function definition and register the function types using
   the overloaded name. It also creates dae elements for the functions."
   input Env.Cache inCache;
@@ -12482,8 +12423,7 @@ algorithm
 end instOverloadedFunctions;
 
 protected function instExtDecl
-"function: instExtDecl
-  author: LS
+"author: LS
   This function handles the external declaration. If there is an explicit
   call of the external function, the component references are looked up and
   inserted in the argument list, otherwise the input and output parameters
@@ -12759,8 +12699,7 @@ algorithm
 end extArgCrefEq;
 
 protected function isExtExplicitCall
-"function: isExtExplicitCall
-  If the external function id is present, then a function call must
+"If the external function id is present, then a function call must
   exist, i.e. explicit call was written in the external clause."
   input SCode.ExternalDecl inExternalDecl;
 algorithm
@@ -12771,8 +12710,7 @@ algorithm
 end isExtExplicitCall;
 
 protected function instExtMakeExternaldecl
-"function: instExtMakeExternaldecl
-  author: LS
+"author: LS
    This function generates a default explicit function call,
   when it is omitted. If only one output variable exists,
   the implicit call is equivalent to:
@@ -12827,8 +12765,7 @@ algorithm
 end instExtMakeExternaldecl;
 
 protected function isInoutVar
-"function: isInoutVar
-  Succeds for Elements that are input or output components"
+"Succeds for Elements that are input or output components"
   input SCode.Element inElement;
 algorithm
   _ := matchcontinue (inElement)
@@ -12839,8 +12776,7 @@ algorithm
 end isInoutVar;
 
 protected function isOutputVar
-"function: isOutputVar
-  Succeds for element that is output component"
+"Succeds for element that is output component"
   input SCode.Element inElement;
 algorithm
   _ := match (inElement)
@@ -12849,8 +12785,7 @@ algorithm
 end isOutputVar;
 
 protected function isInputVar
-"function: isInputVar
-  Succeds for element that is input component"
+"Succeds for element that is input component"
   input SCode.Element inElement;
 algorithm
   _ := match (inElement)
@@ -12859,8 +12794,7 @@ algorithm
 end isInputVar;
 
 protected function instExtMakeCrefs
-"function: instExtMakeCrefs
-  author: LS
+"author: LS
   This function is used in external function declarations.
   It collects the component identifier and the dimension
   sizes and returns as a Absyn.Exp list"
@@ -12896,8 +12830,7 @@ algorithm
 end instExtMakeCrefs;
 
 protected function instExtMakeCrefs2
-"function: instExtMakeCrefs2
-  Helper function to instExtMakeCrefs, collects array dimension sizes."
+"Helper function to instExtMakeCrefs, collects array dimension sizes."
   input SCode.Ident inIdent;
   input Absyn.ArrayDim inArrayDim;
   input Integer inInteger;
@@ -12927,8 +12860,7 @@ algorithm
 end instExtMakeCrefs2;
 
 protected function instExtGetFname
-"function: instExtGetFname
-  Returns the function name of the externally defined function."
+"Returns the function name of the externally defined function."
   input SCode.ExternalDecl inExternalDecl;
   input String inIdent;
   output String outIdent;
@@ -12941,8 +12873,7 @@ algorithm
 end instExtGetFname;
 
 protected function instExtGetAnnotation
-"function: instExtGetAnnotation
-  author: PA
+"author: PA
   Return the annotation associated with an external function declaration.
   If no annotation is found, check the classpart annotations."
   input SCode.ExternalDecl inExternalDecl;
@@ -12955,8 +12886,7 @@ algorithm
 end instExtGetAnnotation;
 
 protected function instExtGetLang
-"function: instExtGetLang
-  Return the implementation language of the external function declaration.
+"Return the implementation language of the external function declaration.
   Defaults to \"C\" if no language specified."
   input SCode.ExternalDecl inExternalDecl;
   output String outString;
@@ -12969,8 +12899,7 @@ algorithm
 end instExtGetLang;
 
 protected function elabExpListExt
-"function: elabExpListExt
-  Special elabExp for explicit external calls.
+"Special elabExp for explicit external calls.
   This special function calls elabExpExt which handles size builtin
   calls specially, and uses the ordinary Static.elab_exp for other
   expressions."
@@ -13011,8 +12940,7 @@ algorithm
 end elabExpListExt;
 
 protected function elabExpExt
-"function: elabExpExt
-  author: LS
+"author: LS
   special elabExp for explicit external calls.
   This special function calls elabExpExt which handles size builtin calls
   specially, and uses the ordinary Static.elab_exp for other expressions."
@@ -13071,8 +12999,7 @@ algorithm
 end elabExpExt;
 
 protected function instExtGetFargs
-"function: instExtGetFargs
-  author: LS
+"author: LS
   instantiates function arguments, i.e. actual parameters, in external declaration."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -13111,8 +13038,7 @@ algorithm
 end instExtGetFargs;
 
 protected function instExtGetFargs2
-"function: instExtGetFargs2
-  author: LS
+"author: LS
   Helper function to instExtGetFargs"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -13142,8 +13068,7 @@ algorithm
 end instExtGetFargs2;
 
 protected function instExtGetFargsSingle
-"function: instExtGetFargsSingle
-  author: LS
+"author: LS
   Helper function to instExtGetFargs2, does the work for one argument."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -13217,8 +13142,7 @@ algorithm
 end instExtGetFargsSingle;
 
 protected function instExtGetRettype
-"function: instExtGetRettype
-  author: LS
+"author: LS
   Instantiates the return type of an external declaration."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -13291,8 +13215,7 @@ algorithm
 end assertExtArgOutputIsCrefVariable;
 
 public function instEnumeration
-"function: instEnumeration
-  author: PA
+"author: PA
   This function takes an Ident and list of strings, and returns an enumeration class."
   input SCode.Ident n;
   input list<SCode.Enum> l;
@@ -13325,8 +13248,7 @@ algorithm
 end makeEnumComponents;
 
 public function daeDeclare
-"function: daeDeclare
-  Given a global component name, a type, and a set of attributes, this function declares a component for the DAE result.
+"Given a global component name, a type, and a set of attributes, this function declares a component for the DAE result.
   Altough this function returns a list of DAE.Element, only one component is actually declared.
   The functions daeDeclare2 and daeDeclare3 below are helper functions that perform parts of the task.
   Note: Currently, this function can only declare scalar variables, i.e. the element type of an array type is used. To indicate that the variable
@@ -13389,8 +13311,7 @@ algorithm
 end daeDeclare;
 
 protected function daeDeclare2
-"function: daeDeclare2
-  Helper function to daeDeclare."
+"Helper function to daeDeclare."
   input DAE.ComponentRef inComponentRef;
   input DAE.Type inType;
   input DAE.ConnectorType inConnectorType;
@@ -13454,8 +13375,7 @@ algorithm
 end daeDeclare2;
 
 protected function daeDeclare3
-"function: daeDeclare3
-  Helper function to daeDeclare2."
+"Helper function to daeDeclare2."
   input DAE.ComponentRef inComponentRef;
   input DAE.Type inType;
   input DAE.ConnectorType inConnectorType;
@@ -13528,8 +13448,7 @@ algorithm
 end makeDaeProt;
 
 protected function daeDeclare4
-"function: daeDeclare4
-  Helper function to daeDeclare3."
+"Helper function to daeDeclare3."
   input DAE.ComponentRef inComponentRef;
   input DAE.Type inType;
   input DAE.ConnectorType inConnectorType;
@@ -13694,8 +13613,7 @@ algorithm
 end daeDeclare4;
 
 protected function mktype
-"function: mktype
-  From a class typename, its inference state, and a list of subcomponents,
+"From a class typename, its inference state, and a list of subcomponents,
   this function returns DAE.Type.  If the class inference state
   indicates that the type should be a built-in type, one of the
   built-in type constructors is used.  Otherwise, a T_COMPLEX is
@@ -13838,8 +13756,7 @@ algorithm
 end arrayTTypeToClassInfState;
 
 protected function mktypeWithArrays
-"function: mktypeWithArrays
-  author: PA
+"author: PA
   This function is similar to mktype with the exception
   that it will create array types based on the last argument,
   which indicates wheter the class extends from a basictype.
@@ -13943,8 +13860,7 @@ algorithm
 end mktypeWithArrays;
 
 protected function getOptPath
-"function: getOptPath
-  Helper function to mktype
+"Helper function to mktype
   Transforms a Path into a Path option."
   input Absyn.Path inPath;
   output Option<Absyn.Path> outAbsynPathOption;
@@ -13957,8 +13873,7 @@ algorithm
 end getOptPath;
 
 public function instList
-"function: instList
-  This is a utility used to do instantiation of list
+"This is a utility used to do instantiation of list
   of things, collecting the result in another list."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -14204,8 +14119,7 @@ end insertClassAttribute;
 
 
 protected function instBinding
-"function: instBinding
-  This function investigates a modification and extracts the
+"This function investigates a modification and extracts the
   <...> modification. E.g. Real x(<...>=1+3) => 1+3
   It also handles the case Integer T0[2](final <...>={5,6})={9,10} becomes
   Integer T0[1](<...>=5); Integer T0[2](<...>=6);
@@ -14275,8 +14189,7 @@ algorithm
 end instBinding;
 
 protected function instBinding2
-"function: instBinding2
-  This function investigates a modification and extracts the <...>
+"This function investigates a modification and extracts the <...>
   modification if the modification is in array of components.
   Help-function to instBinding"
   input DAE.Mod inMod;
@@ -14322,8 +14235,7 @@ algorithm
 end instBinding2;
 
 protected function instStartBindingExp
-"function: instStartBindingExp
-  This function investigates a modification and extracts the
+"This function investigates a modification and extracts the
   start modification. E.g. Real x(start=1+3) => 1+3
   It also handles the case Integer T0{2}(final start={5,6})={9,10} becomes
   Integer T0{1}(start=5); Integer T0{2}(start=6);
@@ -14359,8 +14271,7 @@ algorithm
 end instStartBindingExp;
 
 protected function instStartOrigin
-"function: instStartOrigin
-  This function investigates if the start value comes from the modification or the type"
+"This function investigates if the start value comes from the modification or the type"
   input DAE.Mod inMod;
   input list<DAE.Var> inVarLst;
   input String inString;
@@ -14396,8 +14307,7 @@ algorithm
 end instStartOrigin;
 
 protected function instDaeVariableAttributes
-"function: instDaeVariableAttributes
-  this function extracts the attributes from the modification
+"this function extracts the attributes from the modification
   It returns a DAE.VariableAttributes option because
   somtimes a varible does not contain the variable-attr."
   input Env.Cache inCache;
@@ -14504,8 +14414,7 @@ algorithm
 end instDaeVariableAttributes;
 
 protected function instEnumerationBinding
-"function: instEnumerationBinding
-  author: LP
+"author: LP
   instantiates a enumeration binding and retrieves the value."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -14542,8 +14451,7 @@ algorithm
 end instEnumerationBinding;
 
 protected function getStateSelectFromExpOption
-"function: getStateSelectFromExpOption
-  author: LP
+"author: LP
   Retrieves the stateSelect value, as defined in DAE,  from an Expression option."
   input Option<DAE.Exp> inExpExpOption;
   output Option<DAE.StateSelect> outDAEStateSelectOption;
@@ -14634,8 +14542,7 @@ algorithm
 end getUncertainFromExpOption;
 
 protected function instModEquation
-"function: instModEquation
-  This function adds the equation in the declaration
+"This function adds the equation in the declaration
   of a variable, if such an equation exists."
   input DAE.ComponentRef inComponentRef;
   input DAE.Type inType;
@@ -14698,8 +14605,7 @@ algorithm
 end instModEquation;
 
 protected function checkProt
-"function: checkProt
-  This function is used to check that a
+"This function is used to check that a
   protected element is not modified."
   input SCode.Visibility inVisibility;
   input DAE.Mod inMod;
@@ -14724,8 +14630,7 @@ algorithm
 end checkProt;
 
 public function makeBinding
-"function: makeBinding
-  This function looks at the equation part of a modification, and
+"This function looks at the equation part of a modification, and
   if there is a declaration equation builds a DAE.Binding for it."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -15091,8 +14996,7 @@ algorithm
 end liftRecordBinding;
 
 public function instRecordConstructorElt
-"function: instRecordConstructorElt
-  author: PA
+"author: PA
   This function takes an Env and an Element and builds a input argument to
   a record constructor.
   E.g if the element is Real x; the resulting Var is \"input Real x;\""
@@ -15182,8 +15086,7 @@ algorithm
 end instRecordConstructorElt;
 
 protected function isTopCall
-"function: isTopCall
-  author: PA
+"author: PA
   The topmost instantiation call is treated specially with for instance unconnected connectors.
   This function returns true if the CallingScope indicates the top call."
   input InstTypes.CallingScope inCallingScope;

@@ -173,8 +173,7 @@ algorithm
 end equationList2;
 
 public function getWhenEquationExpr
-"function: getWhenEquationExpr
-  Get the left and right hand parts from an equation appearing in a when clause"
+"Get the left and right hand parts from an equation appearing in a when clause"
   input BackendDAE.WhenEquation inWhenEquation;
   output DAE.ComponentRef outComponentRef;
   output DAE.Exp outExp;
@@ -185,8 +184,7 @@ algorithm
   end match;
 end getWhenEquationExpr;
 
-public function getZeroCrossingIndicesFromWhenClause "function: getZeroCrossingIndicesFromWhenClause
-  Returns a list of indices of zerocrossings that a given when clause is dependent on.
+public function getZeroCrossingIndicesFromWhenClause "Returns a list of indices of zerocrossings that a given when clause is dependent on.
 "
   input BackendDAE.BackendDAE inBackendDAE;
   input Integer inInteger;
@@ -206,8 +204,7 @@ algorithm
   end matchcontinue;
 end getZeroCrossingIndicesFromWhenClause;
 
-protected function getZeroCrossingIndicesFromWhenClause2 "function: getZeroCrossingIndicesFromWhenClause2
-  helper function to get_zero_crossing_indices_from_when_clause
+protected function getZeroCrossingIndicesFromWhenClause2 "helper function to get_zero_crossing_indices_from_when_clause
 "
   input list<BackendDAE.ZeroCrossing> inZeroCrossingLst1;
   input Integer inInteger2;
@@ -237,8 +234,7 @@ end getZeroCrossingIndicesFromWhenClause2;
 
 
 public function copyEquationArray
-"function: copyEquationArray
-  author: wbraun"
+"author: wbraun"
   input BackendDAE.EquationArray inEquations;
   output BackendDAE.EquationArray outEquations;
 protected
@@ -252,8 +248,7 @@ algorithm
 end copyEquationArray;
 
 public function equationsLstVarsWithoutRelations
-"function: equationsLstVarsWithoutRelations
-  author: Frenkel TUD 2012-03
+"author: Frenkel TUD 2012-03
   From the equations and a variable array return all
   occuring variables form the array."
   input list<BackendDAE.Equation> inEquationLst;
@@ -270,8 +265,7 @@ algorithm
 end equationsLstVarsWithoutRelations;
 
 public function equationsVarsWithoutRelations
-"function: equationsVarsWithoutRelations
-  author: Frenkel TUD 2012-03
+"author: Frenkel TUD 2012-03
   From the equations and a variable array return all
   occuring variables form the array without relations."
   input BackendDAE.EquationArray inEquations;
@@ -307,8 +301,7 @@ algorithm
 end checkEquationsVarsWithoutRelations;
 
 public function equationsLstVars
-"function: equationsLstVars
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   From the equations and a variable array return all
   occuring variables form the array."
   input list<BackendDAE.Equation> inEquationLst;
@@ -325,8 +318,7 @@ algorithm
 end equationsLstVars;
 
 public function equationsVars
-"function: equationsVars
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   From the equations and a variable array return all
   occuring variables form the array."
   input BackendDAE.EquationArray inEquations;
@@ -343,8 +335,7 @@ algorithm
 end equationsVars;
 
 public function equationVars
-"function: equationVars
-  author: Frenkel TUD 2012-03
+"author: Frenkel TUD 2012-03
   From the equation and a variable array return all
   variables in the equation."
   input BackendDAE.Equation inEquation;
@@ -361,8 +352,7 @@ algorithm
 end equationVars;
 
 public function expressionVars
-"function: equationVars
-  author: Frenkel TUD 2012-03
+"author: Frenkel TUD 2012-03
   From the expression and a variable array return all
   variables in the expression."
   input DAE.Exp inExp;
@@ -423,8 +413,7 @@ algorithm
 end checkEquationsVarsExp;
 
 public function equationsStates
-"function: equationsStates
-  author: Frenkel TUD
+"author: Frenkel TUD
   From a list of equations return all
   occuring state variables references."
   input list<BackendDAE.Equation> inEquationLst;
@@ -434,8 +423,7 @@ algorithm
   (_,(outExpComponentRefLst,_)) := traverseBackendDAEExpsEqnList(inEquationLst,extractStatesFromExp,({},inVars));
 end equationsStates;
 
-protected function extractStatesFromExp "function: extractStatesFromExp
-  author: Frenkel TUD 2011-05
+protected function extractStatesFromExp "author: Frenkel TUD 2011-05
   helper for equationsCrefs"
  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,BackendDAE.Variables>> inTpl;
  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,BackendDAE.Variables>> outTpl;
@@ -477,8 +465,7 @@ algorithm
 end traversingStateRefFinder;
 
 public function equationsCrefs
-"function: equationsCrefs
-  author: PA
+"author: PA
   From a list of equations return all
   occuring variables/component references."
   input list<BackendDAE.Equation> inEquationLst;
@@ -507,8 +494,7 @@ algorithm
   outTpl := (e,cr_lst);
 end traversingEquationCrefFinder;
 
-protected function extractCrefsFromExp "function: extractCrefsFromExp
-  author: Frenkel TUD 2010-11
+protected function extractCrefsFromExp "author: Frenkel TUD 2010-11
   helper for equationsCrefs"
  input tuple<DAE.Exp, list<DAE.ComponentRef>> inTpl;
  output tuple<DAE.Exp, list<DAE.ComponentRef>> outTpl;
@@ -521,8 +507,7 @@ algorithm
 end extractCrefsFromExp;
 
 public function equationUnknownCrefs
-"function: equationUnknownVars
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   From the equation and a variable array return all
   variables in the equation an not in the variable array."
   input list<BackendDAE.Equation> inEquationLst;
@@ -623,8 +608,7 @@ algorithm
   end matchcontinue;
 end checkEquationsUnknownCrefsExp;
 
-public function traverseBackendDAEExpsEqnList"function: traverseBackendDAEExpsEqnList
-  author: Frenkel TUD 2010-11
+public function traverseBackendDAEExpsEqnList"author: Frenkel TUD 2010-11
   traverse all expressions of a list of Equations. It is possible to change the equations"
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
@@ -641,8 +625,7 @@ algorithm
 end traverseBackendDAEExpsEqnList;
 
 public function traverseBackendDAEExpsEqnListWithStop
-"function: traverseBackendDAEExpsEqnListWithStop
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   traverse all expressions of a list of Equations. It is possible to change the equations"
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
@@ -672,8 +655,7 @@ algorithm
 end traverseBackendDAEExpsEqnListWithStop;
 
 public function traverseBackendDAEExpsEqnListListWithStop
-"function: traverseBackendDAEExpsEqnListListWithStop
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   traverse all expressions of a list of Equations. It is possible to change the equations"
   replaceable type Type_a subtypeof Any;
   input list<list<BackendDAE.Equation>> inEquations;
@@ -702,8 +684,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsEqnListListWithStop;
 
-public function traverseBackendDAEExpsEqn "function: traverseBackendDAEExpsEqn
-  author: Frenkel TUD 2010-11
+public function traverseBackendDAEExpsEqn "author: Frenkel TUD 2010-11
   traverse all expressions of a Equation. It is possible to change the equation"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
@@ -799,8 +780,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsEqn;
 
-public function traverseBackendDAEExpsEqnWithStop "function: traverseBackendDAEExpsEqnWithStop
-  author: Frenkel TUD 2010-11
+public function traverseBackendDAEExpsEqnWithStop "author: Frenkel TUD 2010-11
   traverse all expressions of a Equation. It is possible to change the equation"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
@@ -898,8 +878,7 @@ algorithm
 end traverseBackendDAEExpsEqnWithStop;
 
 public function traverseBackendDAEExpsEqnListOutEqn
-"function: traverseBackendDAEExpsEqnList
-  author: Frenkel TUD 2010-11
+"author: Frenkel TUD 2010-11
   traverse all expressions of a list of Equations. It is possible to change the equations"
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
@@ -919,8 +898,7 @@ algorithm
 end traverseBackendDAEExpsEqnListOutEqn;
 
 protected function traverseBackendDAEExpsEqnListOutEqnwork
-"function: traverseBackendDAEExpsEqnList
-  author: Frenkel TUD 2010-11
+"author: Frenkel TUD 2010-11
   traverse all expressions of a list of Equations. It is possible to change the equations"
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquations;
@@ -954,8 +932,7 @@ algorithm
 end traverseBackendDAEExpsEqnListOutEqnwork;
 
 public function traverseBackendDAEExpsEqnOutEqn
- "function: traverseBackendDAEExpsEqnOutEqn
-  copy of traverseBackendDAEExpsEqn
+ "copy of traverseBackendDAEExpsEqn
   author: Frenkel TUD 2010-11
   traverse all expressions of a Equation. It is possible to change the equation.
   additinal the equation is passed to FuncExpTyp.
@@ -1069,8 +1046,7 @@ algorithm
 end traverseBackendDAEExpsEqnOutEqn;
 
 protected function traverseBackendDAEExpsEqnOutEqnIfEqns
-"function: traverseBackendDAEExpsEqnOutEqnIfEqns
-  Helper function to traverseBackendDAEExpsEqnOutEqn."
+"Helper function to traverseBackendDAEExpsEqnOutEqn."
   replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inIfEqn;
   input FuncExpType func;
@@ -1205,8 +1181,7 @@ algorithm
   end match;
 end traverseBackendDAEEqnsList;
 
-public function traverseBackendDAEEqns "function: traverseBackendDAEEqns
-  author: Frenkel TUD
+public function traverseBackendDAEEqns "author: Frenkel TUD
 
   traverses all equations of a BackendDAE.EquationArray.
 "
@@ -1234,8 +1209,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEEqns;
 
-protected function traverseBackendDAEOptEqn "function: traverseBackendDAEOptEqn
-  author: Frenkel TUD 2010-11
+protected function traverseBackendDAEOptEqn "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqns."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
@@ -1265,8 +1239,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEOptEqn;
 
-public function traverseBackendDAEEqnsWithStop "function: traverseBackendDAEEqns
-  author: Frenkel TUD
+public function traverseBackendDAEEqnsWithStop "author: Frenkel TUD
 
   traverses all equations of a BackendDAE.EquationArray.
 "
@@ -1294,8 +1267,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEEqnsWithStop;
 
-protected function traverseBackendDAEOptEqnWithStop "function: traverseBackendDAEOptEqnWithStop
-  author: Frenkel TUD 2010-11
+protected function traverseBackendDAEOptEqnWithStop "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqnsWithStop."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
@@ -1327,8 +1299,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEOptEqnWithStop;
 
-public function traverseBackendDAEEqnsWithUpdate "function: traverseBackendDAEEqnsWithUpdate
-  author: Frenkel TUD
+public function traverseBackendDAEEqnsWithUpdate "author: Frenkel TUD
 
   traverses all equations of a BackendDAE.EquationArray.
 "
@@ -1361,8 +1332,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEEqnsWithUpdate;
 
-protected function traverseBackendDAEOptEqnWithUpdate "function: traverseBackendDAEOptEqnWithUpdate
-  author: Frenkel TUD 2010-11
+protected function traverseBackendDAEOptEqnWithUpdate "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqnsWithUpdate."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
@@ -1460,8 +1430,7 @@ algorithm
   end matchcontinue;
 end equationEqual;
 
-public function addEquations "function: addEquations
-  author: wbraun
+public function addEquations "author: wbraun
   Adds a list of BackendDAE.Equation to BackendDAE.EquationArray"
   input list<BackendDAE.Equation> eqnlst;
   input BackendDAE.EquationArray eqns;
@@ -1480,8 +1449,7 @@ algorithm
   outEqns := addEquations(equationList(inEqns1), inEqns2);
 end mergeEquationArray;
 
-public function equationAdd "function: equationAdd
-  author: PA
+public function equationAdd "author: PA
 
   Adds an equation to an EquationArray.
 "
@@ -1528,8 +1496,7 @@ algorithm
 end equationAdd;
 
 public function equationAddDAE
-"function: equationAddDAE
-  author: Frenkel TUD 2011-05"
+"author: Frenkel TUD 2011-05"
   input BackendDAE.Equation inEquation;
   input BackendDAE.EqSystem syst;
   output BackendDAE.EqSystem osyst;
@@ -1549,8 +1516,7 @@ algorithm
 end equationAddDAE;
 
 public function equationsAddDAE
-"function: equationAddDAE
-  author: Frenkel TUD 2011-05"
+"author: Frenkel TUD 2011-05"
   input list<BackendDAE.Equation> inEquations;
   input BackendDAE.EqSystem syst;
   output BackendDAE.EqSystem osyst;
@@ -1570,8 +1536,7 @@ algorithm
 end equationsAddDAE;
 
 public function requationsAddDAE
-"function: requationsAddDAE
-  author: Frenkel TUD 2012-10
+"author: Frenkel TUD 2012-10
   Add a list of equations to removed equations of a BackendDAE.
   If the variable already exists, the function updates the variable."
   input list<BackendDAE.Equation> inEquations;
@@ -1643,8 +1608,7 @@ algorithm
   end match;
 end equationSetnth;
 
-public function getEqns "function: getEqns
-  author: Frenkel TUD 2011-05
+public function getEqns "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"
   input list<Integer> inIndxes;
   input BackendDAE.EquationArray inEquationArray;
@@ -1653,8 +1617,7 @@ algorithm
   outEqns := List.map1r(inIndxes, equationNth, inEquationArray);
 end getEqns;
 
-public function equationNth "function: equationNth
-  author: PA
+public function equationNth "author: PA
 
   Return the n:th equation from the expandable equation array
   indexed from 1..n.
@@ -1691,8 +1654,7 @@ algorithm
   end matchcontinue;
 end equationNth;
 
-public function equationDelete "function: equationDelete
-  author: Frenkel TUD 2010-12
+public function equationDelete "author: Frenkel TUD 2010-12
   Delets the equations from the list of Integers."
   input BackendDAE.EquationArray inEquationArray;
   input list<Integer> inIntLst;
@@ -1721,8 +1683,7 @@ algorithm
 end equationDelete;
 
 protected function equationDelete1
- "function: equationDelete1
-  author: Frenkel TUD 2012-09
+ "author: Frenkel TUD 2012-09
   helper for equationDelete."
   input Integer index;
   input array<Option<BackendDAE.Equation>> equOptArr;
@@ -1744,8 +1705,7 @@ algorithm
   end matchcontinue;
 end equationDelete1;
 
-public function equationRemove "function: equationRemove
-  author: Frenkel TUD 2012-09
+public function equationRemove "author: Frenkel TUD 2012-09
   Removes the equations from the array on the given possitoin but
   does not scale down the array size"
   input Integer inPos "1 based index";
@@ -1846,8 +1806,7 @@ algorithm
   end matchcontinue;
 end compressEquations1;
 
-public function equationToScalarResidualForm "function: equationToScalarResidualForm
-  author: Frenkel TUD 2012-06
+public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   This function transforms an equation to its scalar residual form.
   For instance, a=b is transformed to a-b=0, and the instance {a[1],a[2]}=b to a[1]=b[1] and a[2]=b[2]"
   input BackendDAE.Equation inEquation;
@@ -1953,8 +1912,7 @@ algorithm
   end match;
 end equationTupleToScalarResidualForm;
 
-public function equationToResidualForm "function: equationToResidualForm
-  author: PA
+public function equationToResidualForm "author: PA
   This function transforms an equation to its residual form.
   For instance, a=b is transformed to a-b=0"
   input BackendDAE.Equation inEquation;

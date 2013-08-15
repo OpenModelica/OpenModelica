@@ -76,8 +76,7 @@ protected import TplMain;
 protected import Util;
 
 protected function serverLoop
-"function: serverLoop
-  This function is the main loop of the server listening
+"This function is the main loop of the server listening
   to a port which recieves modelica expressions."
   input Integer inInteger;
   input Interactive.SymbolTable inInteractiveSymbolTable;
@@ -301,8 +300,7 @@ algorithm
 end makeClassDefResult;
 
 protected function isModelicaFile
-"function: isModelicaFile
-  Succeeds if filename ends with .mo or .mof"
+"Succeeds if filename ends with .mo or .mof"
   input String inString;
 algorithm
   _ := matchcontinue (inString)
@@ -330,8 +328,7 @@ algorithm
 end isModelicaFile;
 
 protected function isFlatModelicaFile
-"function: isFlatModelicaFile
-  Succeeds if filename ends with .mof"
+"Succeeds if filename ends with .mof"
   input String filename;
 protected
   list<String> lst;
@@ -343,8 +340,7 @@ algorithm
 end isFlatModelicaFile;
 
 protected function isModelicaScriptFile
-"function: isModelicaScriptFile
-  Succeeds if filname end with .mos"
+"Succeeds if filname end with .mos"
   input String filename;
 protected
   list<String> lst;
@@ -357,8 +353,7 @@ algorithm
 end isModelicaScriptFile;
 
 protected function isCodegenTemplateFile
-"function: isCodegenTemplateFile
-  Succeeds if filname end with .tpl"
+"Succeeds if filname end with .tpl"
   input String filename;
 protected
   list<String> lst;
@@ -496,8 +491,7 @@ algorithm
 end loadLibs;
 
 protected function translateFile
-"function: translateFile
-  This function invokes the translator on a source file.  The argument should be
+"This function invokes the translator on a source file.  The argument should be
   a list with a single file name, with the rest of the list being an optional
   list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
@@ -686,8 +680,7 @@ algorithm
 end instantiate;
 
 protected function optimizeDae
-"function: optimizeDae
-  Run the backend. Used for both parallization and for normal execution."
+"Run the backend. Used for both parallization and for normal execution."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.DAElist dae;
@@ -826,8 +819,7 @@ algorithm
 end simcodegen;
 
 protected function interactivemode
-"function: interactivemode
-  Initiate the interactive mode using socket communication."
+"Initiate the interactive mode using socket communication."
   input Interactive.SymbolTable symbolTable;
 algorithm
   print("Opening a socket on port " +& intString(29500) +& "\n");
@@ -835,8 +827,7 @@ algorithm
 end interactivemode;
 
 protected function interactivemodeCorba
-"function: interactivemodeCorba
-  Initiate the interactive mode using corba communication."
+"Initiate the interactive mode using corba communication."
   input Interactive.SymbolTable inInteractiveSymbolTable;
 algorithm
   _:=
@@ -861,8 +852,7 @@ end interactivemodeCorba;
 
 
 protected function serverLoopCorba
-"function: serverLoopCorba
-  This function is the main loop of the server for a CORBA impl."
+"This function is the main loop of the server for a CORBA impl."
   input Interactive.SymbolTable inInteractiveSymbolTable;
   output Interactive.SymbolTable outInteractiveSymbolTable;
 algorithm
@@ -1023,8 +1013,7 @@ algorithm
 end setWindowsPaths;
 
 public function main
-"function: main
-  This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
+"This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
   start the translation."
   input list<String> args;
 protected
@@ -1049,8 +1038,7 @@ algorithm
 end main;
 
 protected function main2
-"function: main
-  This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
+"This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
   start the translation."
   input list<String> args;
 algorithm

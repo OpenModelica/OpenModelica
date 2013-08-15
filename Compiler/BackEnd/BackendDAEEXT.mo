@@ -212,8 +212,7 @@ public function setIncidenceMatrix "author: Frenkel TUD 2012-04"
 end setIncidenceMatrix;
 
 public function cheapmatching
-"function: cheapmatching
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   calls cheapmatching algorithms
   cheapID: id of cheap algo (1-4)
       1: Simple Greedy
@@ -231,8 +230,7 @@ public function cheapmatching
 end cheapmatching;
 
 public function matching
-"function: matching
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   calls matching algorithms
   matchingID: id of match algo (1-9)
       1: DFS based
@@ -277,8 +275,7 @@ public function getAssignment "author: Frenkel TUD 2012-04"
 end getAssignment;
 
 public function setAssignment
-"function: setAssignment
-  author: Frenkel TUD 2012-04"
+"author: Frenkel TUD 2012-04"
   input Integer lenass1;
   input Integer lenass2;
   input array<Integer> ass1;

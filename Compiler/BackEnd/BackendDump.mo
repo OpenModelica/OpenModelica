@@ -1308,8 +1308,7 @@ algorithm
 end match;
 end zeroCrossingListString;
 
-protected function zeroCrossingString "function: zeroCrossingString
-  Dumps a zerocrossing into a string, for debugging purposes."
+protected function zeroCrossingString "Dumps a zerocrossing into a string, for debugging purposes."
   input BackendDAE.ZeroCrossing inZeroCrossing;
   output String outString;
 algorithm
@@ -1372,8 +1371,7 @@ algorithm
   outString := stringDelimitList(strList, ",\n");
 end whenClauseListString;
 
-public function whenClauseString "function: whenClauseString
-  Dumps a whenclause into a string, for debugging purposes."
+public function whenClauseString "Dumps a whenclause into a string, for debugging purposes."
   input BackendDAE.WhenClause inWhenClause;
   output String outString;
 algorithm
@@ -1678,8 +1676,7 @@ end debuglst;
 // =============================================================================
 
 public function printCallFunction2StrDIVISION
-"function: printCallFunction2Str
-  Print the exp of typ DAE.CALL."
+"Print the exp of typ DAE.CALL."
   input DAE.Exp inExp;
   input String stringDelimiter;
   input Option<tuple<strongComponentStringRefStrFunc,Type_a>> opcreffunc "tuple of function that print component references and a extra parameter passet throug the function";
@@ -1792,8 +1789,7 @@ algorithm
 end dumpTypeStr;
 
 public function dumpWhenOperatorStr
-"function: dumpWhenOperatorStr
-  Dumps a WhenOperator into a string, for debugging purposes."
+"Dumps a WhenOperator into a string, for debugging purposes."
   input BackendDAE.WhenOperator inWhenOperator;
   output String outString;
 algorithm
@@ -1853,8 +1849,7 @@ algorithm
 end dumpOption;
 
 protected function dumpEqSystemHTML
-"function: dumpEqSystemHTML
-  This function dumps the BackendDAE.EqSystem representaton to stdout."
+"This function dumps the BackendDAE.EqSystem representaton to stdout."
   input BackendDAE.EqSystem inEqSystem;
   input String inPrefixIdstr;
   input tuple<DumpHTML.Document,Integer> inTpl;
@@ -1894,8 +1889,7 @@ algorithm
 end dumpEqSystemHTML;
 
 protected function printVarListHTML
-"function: printVarListHTML
-  Helper function to printVarList."
+"Helper function to printVarList."
   input list<BackendDAE.Var> vars;
   input String prefixId;
   input DumpHTML.Tags inTags;
@@ -1909,8 +1903,7 @@ algorithm
 end printVarListHTML;
 
 protected function dumpVarHTML
-"function: dumpVar
-  Helper function to printVarList."
+"Helper function to printVarList."
   input BackendDAE.Var inVar;
   input String prefixId;
   input tuple<DumpHTML.Tags,Integer> inTpl;
@@ -1930,8 +1923,7 @@ algorithm
 end dumpVarHTML;
 
 protected function dumpEqnsHTML
-"function: printVarListHTML
-  Helper function to printVarList."
+"Helper function to printVarList."
   input list<BackendDAE.Equation> eqns;
   input String prefixId;
   input DumpHTML.Tags inTags;
@@ -1945,8 +1937,7 @@ algorithm
 end dumpEqnsHTML;
 
 protected function dumpEqnHTML
-"function: dumpEqnHTML
-  Helper function to dump_eqns"
+"Helper function to dump_eqns"
   input BackendDAE.Equation inEquation;
   input String prefixId;
   input tuple<DumpHTML.Tags,Integer> inTpl;
@@ -1987,8 +1978,7 @@ algorithm
 end dumpFullMatchingHTML;
 
 protected function dumpMatchingHTML
-"function: dumpMatching
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   prints the matching information on stdout."
   input array<Integer> v;
   input String prefixId;
@@ -2009,8 +1999,7 @@ algorithm
 end dumpMatchingHTML;
 
 protected function dumpMatchingHTML2
-"function: dumpMatchingHTML2
-  author: PA
+"author: PA
   Helper function to dumpMatching."
   input array<Integer> v;
   input Integer i;
@@ -2039,8 +2028,7 @@ algorithm
 end dumpMatchingHTML2;
 
 protected function dumpSharedHTML
-"function: dumpSharedHTML
-  This function dumps the BackendDAE.Shared representaton to stdout."
+"This function dumps the BackendDAE.Shared representaton to stdout."
   input BackendDAE.Shared inShared;
   input DumpHTML.Document inDoc;
   output DumpHTML.Document outDoc;
@@ -2141,8 +2129,7 @@ algorithm
 end dumpSparsePattern2;
 
 public function dumpJacobianStr
-"function: dumpJacobianStr
-  Dumps the sparse jacobian.
+"Dumps the sparse jacobian.
   Uses the variables to determine size of Jacobian matrix."
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerEquationLstOption;
   output String outString;
@@ -2164,8 +2151,7 @@ algorithm
 end dumpJacobianStr;
 
 protected function dumpJacobianStr2
-"function: dumpJacobianStr2
-  Helper function to dumpJacobianStr"
+"Helper function to dumpJacobianStr"
   input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
   output list<String> outStringLst;
 algorithm
@@ -2190,8 +2176,7 @@ algorithm
   end match;
 end dumpJacobianStr2;
 
-public function jacobianTypeStr "function: jacobianTypeStr
-  author: PA
+public function jacobianTypeStr "author: PA
   Returns the jacobian type as a string, used for debugging."
   input BackendDAE.JacobianType inJacobianType;
   output String outString;
@@ -2205,8 +2190,7 @@ algorithm
 end jacobianTypeStr;
 
 public function dumpEqnsStr
-"function: printEquationList
-  Helper function to dump."
+"Helper function to dump."
   input list<BackendDAE.Equation> eqns;
   output String str;
 algorithm
@@ -2214,8 +2198,7 @@ algorithm
 end dumpEqnsStr;
 
 protected function dumpEqnsStr2
-"function: dumpEqnsStr2
-  Helper function to dump_eqns"
+"Helper function to dump_eqns"
   input list<BackendDAE.Equation> inEquationLst;
   input Integer inInteger;
   input list<String> inAcc;
@@ -2313,16 +2296,14 @@ algorithm
 end varString;
 
 public function dumpKind
-"function: dumpKind
-  Helper function to dump."
+"Helper function to dump."
   input BackendDAE.VarKind inVarKind;
 algorithm
   print(kindString(inVarKind));
 end dumpKind;
 
 public function kindString
-"function: kindString
-  Helper function to dump."
+"Helper function to dump."
   input BackendDAE.VarKind inVarKind;
   output String kindStr;
 algorithm
@@ -2365,8 +2346,7 @@ algorithm
 end connectorTypeString;
 
 public function dumpAttributes
-"function: dumpAttributes
-  Helper function to dump."
+"Helper function to dump."
   input Option<DAE.VariableAttributes> inAttr;
 algorithm
   _:=
@@ -2471,8 +2451,7 @@ algorithm
 end dumpOptStateSelection;
 
 protected function dumpOptExpression
-"function: dumpOptExpression
-  Helper function to dump."
+"Helper function to dump."
   input Option<DAE.Exp> inExp;
   input String inString;
 algorithm
@@ -2492,8 +2471,7 @@ algorithm
 end dumpOptExpression;
 
 protected function dumpOptBoolean
-"function: dumpOptBoolean
-  Helper function to dump."
+"Helper function to dump."
   input Option<Boolean> inExp;
   input String inString;
 algorithm
@@ -2511,8 +2489,7 @@ algorithm
 end dumpOptBoolean;
 
 public function attributesString
-"function: attributesString
-  Helper function to dump."
+"Helper function to dump."
   input Option<DAE.VariableAttributes> inAttr;
   output String outString;
 algorithm
@@ -2613,8 +2590,7 @@ algorithm
 end optStateSelectionString;
 
 protected function optExpressionString
-"function: optExpressionString
-  Helper function to dump."
+"Helper function to dump."
   input Option<DAE.Exp> inExp;
   input String inString;
   output String outString;
@@ -2634,8 +2610,7 @@ algorithm
 end optExpressionString;
 
 protected function optBooleanString
-"function: optBooleanString
-  Helper function to dump."
+"Helper function to dump."
   input Option<Boolean> inExp;
   input String inString;
   output String outString;
@@ -2653,8 +2628,7 @@ algorithm
 end optBooleanString;
 
 public function dumpIncidenceMatrix
-"function: dumpIncidenceMatrix
-  author: PA
+"author: PA
   Prints the incidence matrix on stdout."
   input BackendDAE.IncidenceMatrix m;
 protected
@@ -2675,8 +2649,7 @@ algorithm
 end dumpIncidenceMatrix;
 
 public function dumpIncidenceMatrixT
-"function: dumpIncidenceMatrixT
-  author: PA
+"author: PA
   Prints the transposed incidence matrix on stdout."
   input BackendDAE.IncidenceMatrix m;
 protected
@@ -2697,8 +2670,7 @@ algorithm
 end dumpIncidenceMatrixT;
 
 protected function dumpIncidenceMatrix2
-"function: dumpIncidenceMatrix2
-  author: PA
+"author: PA
   Helper function to dumpIncidenceMatrix (+T)."
   input list<list<Integer>> inIntegerLstLst;
   input Integer rowIndex;
@@ -2719,8 +2691,7 @@ algorithm
 end dumpIncidenceMatrix2;
 
 public function dumpIncidenceRow
-"function: dumpIncidenceRow
-  author: PA
+"author: PA
   Helper function to dumpIncidenceMatrix2."
   input list<Integer> inIntegerLst;
 algorithm
@@ -2746,8 +2717,7 @@ algorithm
 end dumpIncidenceRow;
 
 public function dumpAdjacencyMatrixEnhanced
-"function: dumpAdjacencyMatrixEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Prints the incidence matrix on stdout."
   input BackendDAE.AdjacencyMatrixEnhanced m;
 protected
@@ -2767,8 +2737,7 @@ algorithm
 end dumpAdjacencyMatrixEnhanced;
 
 public function dumpAdjacencyMatrixTEnhanced
-"function: dumpAdjacencyMatrixEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Prints the transposed incidence matrix on stdout."
   input BackendDAE.AdjacencyMatrixTEnhanced m;
 protected
@@ -2788,8 +2757,7 @@ algorithm
 end dumpAdjacencyMatrixTEnhanced;
 
 protected function dumpAdjacencyMatrixEnhanced2
-"function: dumpAdjacencyMatrixEnhanced2
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to dumpAdjacencyMatrixEnhanced (+T)."
   input list<BackendDAE.AdjacencyMatrixElementEnhanced> inRows;
   input Integer rowIndex;
@@ -2810,8 +2778,7 @@ algorithm
 end dumpAdjacencyMatrixEnhanced2;
 
 public function dumpAdjacencyRowEnhanced
-"function: dumpAdjacencyRowEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to dumpAdjacencyMatrixEnhanced2."
   input BackendDAE.AdjacencyMatrixElementEnhanced inRow;
 algorithm
@@ -2839,8 +2806,7 @@ algorithm
 end dumpAdjacencyRowEnhanced;
 
 public function dumpSolvability
-"function: dumpSolvability
-  author: Frenkel TUD 2012-05,
+"author: Frenkel TUD 2012-05,
   returns a string for the Solvability"
   input BackendDAE.Solvability solva;
   output String s;
@@ -2876,8 +2842,7 @@ algorithm
 end dumpFullMatching;
 
 public function dumpMatching
-"function: dumpMatching
-  author: PA
+"author: PA
   prints the matching information on stdout."
   input array<Integer> v;
 protected
@@ -2894,8 +2859,7 @@ algorithm
 end dumpMatching;
 
 protected function dumpMatching2
-"function: dumpMatching2
-  author: PA
+"author: PA
   Helper function to dumpMatching."
   input array<Integer> v;
   input Integer i;
@@ -3034,8 +2998,7 @@ algorithm
   end matchcontinue;
 end dumpComponentsGraphStr2;
 
-public function dumpList "function: dumpList
-  author: PA
+public function dumpList "author: PA
 
   Helper function to dump.
 "
@@ -3052,8 +3015,7 @@ algorithm
   print("\n");
 end dumpList;
 
-public function dumpComponentsOLD "function: dumpComponents
-  author: PA
+public function dumpComponentsOLD "author: PA
 
   Prints the blocks of the BLT sorting on stdout.
 "
@@ -3064,8 +3026,7 @@ algorithm
   dumpComponents2(l, 1);
 end dumpComponentsOLD;
 
-protected function dumpComponents2 "function: dumpComponents2
-  author: PA
+protected function dumpComponents2 "author: PA
 
   Helper function to dump_components.
 "
@@ -3129,8 +3090,7 @@ end intListStr;
 //   end matchcontinue;
 // end dumpAliasVariable;
 
-public function dumpStateVariables "function: dumpStateVariables
-  author: Frenkel TUD 2010-12
+public function dumpStateVariables "author: Frenkel TUD 2010-12
 
   dump State Variables.
 "

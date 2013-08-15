@@ -138,8 +138,7 @@ algorithm
   end match;
 end dumpNode;
 
-protected function makeLabel "function: makeLabel
-  Creates a label from a list of strings."
+protected function makeLabel "Creates a label from a list of strings."
   input list<String> sl;
   output String s2;
 protected
@@ -150,8 +149,7 @@ algorithm
   s2 := stringAppend(s1, "\"");
 end makeLabel;
 
-protected function makeLabelReq "function: makeLabelReq
-  Helper function to makeLabel"
+protected function makeLabelReq "Helper function to makeLabel"
   input list<String> inStringLst;
   output String outString;
 algorithm
@@ -179,8 +177,7 @@ algorithm
   end matchcontinue;
 end makeLabelReq;
 
-protected function dumpChildren "function: dumpChildren
-  Helper function to dumpNode"
+protected function dumpChildren "Helper function to dumpNode"
   input Ident inIdent;
   input Children inChildren;
 algorithm
@@ -202,8 +199,7 @@ algorithm
   end match;
 end dumpChildren;
 
-protected function nodename "function: nodename
-  Creates a unique node name,
+protected function nodename "Creates a unique node name,
   changed use of str as part of nodename, since it may contain spaces"
   input String str;
   output String s;
@@ -216,8 +212,7 @@ algorithm
   s := stringAppend("GVNOD", is);
 end nodename;
 
-protected function printEdge "function: printEdge
-  Prints an edge between two nodes."
+protected function printEdge "Prints an edge between two nodes."
   input Ident n1;
   input Ident n2;
 protected
@@ -228,8 +223,7 @@ algorithm
   print(";\n");
 end printEdge;
 
-protected function makeEdge "function: makeEdge
-  Creates a string representing an edge between two nodes."
+protected function makeEdge "Creates a string representing an edge between two nodes."
   input Ident n1;
   input Ident n2;
   output String str;
@@ -240,8 +234,7 @@ algorithm
   str := stringAppend(s, n2);
 end makeEdge;
 
-protected function makeNode "function: makeNode
-  Creates string from a node."
+protected function makeNode "Creates string from a node."
   input Ident nm;
   input Attributes attr;
   output String str;
@@ -253,8 +246,7 @@ algorithm
   str := stringAppend(s_1, ";");
 end makeNode;
 
-protected function makeAttr "function: makeAttr
-  Creates a string from an Attribute list."
+protected function makeAttr "Creates a string from an Attribute list."
   input list<Attribute> l;
   output String str;
 protected
@@ -265,8 +257,7 @@ algorithm
   str := stringAppend(s, "]");
 end makeAttr;
 
-protected function makeAttrReq "function: makeAttrReq
-  Helper function to makeAttrReq."
+protected function makeAttrReq "Helper function to makeAttrReq."
   input list<Attribute> inAttributeLst;
   output String outString;
 algorithm

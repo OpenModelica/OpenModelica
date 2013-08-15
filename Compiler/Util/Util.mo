@@ -1085,8 +1085,7 @@ algorithm
   end matchcontinue;
 end arrayReplaceAtWithFill;
 
-public function arrayExpand "function: arrayExpand
-  Increases the number of elements of a list with n.
+public function arrayExpand "Increases the number of elements of a list with n.
   Each of the new elements have the value v."
   input Integer n;
   input array<Type_a> arr;
@@ -1213,8 +1212,7 @@ algorithm
   out := arrayUpdate(arr,index,l);
 end arrayListAppend;
 
-public function arrayCopy "function: arrayCopy
-  copies all values in src array into dest array.
+public function arrayCopy "copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."
   input array<Type_a> inTypeAArray1;
   input array<Type_a> inTypeAArray2;
@@ -1270,8 +1268,7 @@ algorithm
   end match;
 end arrayCopy2;
 
-public function arraySet "function: arraySet
-  Sets from position start to position end_ the value v."
+public function arraySet "Sets from position start to position end_ the value v."
   input Integer start;
   input Integer end_;
   input array<Type_a> arr;
@@ -1337,8 +1334,7 @@ algorithm
   res := intLt(a,b);
 end compareTuple2IntLt;
 
-public function tuple21 "function: tuple21
-  Takes a tuple of two values and returns the first value.
+public function tuple21 "Takes a tuple of two values and returns the first value.
   Example: tuple21((\"a\",1)) => \"a\""
   input tuple<Type_a, Type_b> inTplTypeATypeB;
   output Type_a outTypeA;
@@ -1351,8 +1347,7 @@ algorithm
   end match;
 end tuple21;
 
-public function tuple22 "function: tuple22
-  Takes a tuple of two values and returns the second value.
+public function tuple22 "Takes a tuple of two values and returns the second value.
   Example: tuple22((\"a\",1)) => 1"
   input tuple<Type_a, Type_b> inTplTypeATypeB;
   output Type_b outTypeB;
@@ -1366,8 +1361,7 @@ algorithm
   end match;
 end tuple22;
 
-public function optTuple22 "function: optTuple22
-  Takes an option tuple of two values and returns the second value.
+public function optTuple22 "Takes an option tuple of two values and returns the second value.
   Example: optTuple22(SOME(\"a\",1)) => 1"
   input Option<tuple<Type_a, Type_b>> inTplTypeATypeB;
   output Type_b outTypeB;
@@ -1487,8 +1481,7 @@ algorithm
   (_,_,_,out) := tpl;
 end tuple44;
 
-public function splitTuple2List "function: splitTuple2List
-  Takes a list of two-tuples and splits it into two lists.
+public function splitTuple2List "Takes a list of two-tuples and splits it into two lists.
   Example: splitTuple2List({(\"a\",1),(\"b\",2),(\"c\",3)}) => ({\"a\",\"b\",\"c\"}, {1,2,3})"
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
   output list<Type_a> outTypeALst;
@@ -1514,8 +1507,7 @@ algorithm
 end splitTuple2List;
 
 public function splitTuple211List
-"function: splitTuple211List
-  Takes a list of two-tuples and outputs the first one."
+"Takes a list of two-tuples and outputs the first one."
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
@@ -1537,8 +1529,7 @@ algorithm
 end splitTuple211List;
 
 public function splitTuple212List
- "function: splitTuple212List
-  Takes a list of two-tuples and outputs the second one."
+ "Takes a list of two-tuples and outputs the second one."
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
   output list<Type_b> outTypeBLst;
   replaceable type Type_a subtypeof Any;
@@ -1592,8 +1583,7 @@ algorithm
   end matchcontinue;
 end filterList;
 
-public function if_ "function: if_
-  Takes a boolean and two values.
+public function if_ "Takes a boolean and two values.
   Returns the first value (second argument) if the boolean value is
   true, otherwise the second value (third argument) is returned.
   Example: if_(true,\"a\",\"b\") => \"a\""
@@ -1650,8 +1640,7 @@ algorithm
   end matchcontinue;
 end stringDelimitListPrintBuf;
 
-public function stringDelimitListAndSeparate "function: stringDelimitListAndSeparate
-  author: PA
+public function stringDelimitListAndSeparate "author: PA
   This function is similar to stringDelimitList, i.e it inserts string delimiters between
   consecutive strings in a list. But it also count the lists and inserts a second string delimiter
   when the counter is reached. This can be used when for instance outputting large lists of values
@@ -1671,8 +1660,7 @@ algorithm
   Print.printBuf(tmpBuf);
 end stringDelimitListAndSeparate;
 
-protected function stringDelimitListAndSeparate2 "function: stringDelimitListAndSeparate2
-  author: PA
+protected function stringDelimitListAndSeparate2 "author: PA
   Helper function to stringDelimitListAndSeparate"
   input list<String> inStringLst1;
   input String inString2;
@@ -1999,8 +1987,7 @@ algorithm
   end match;
 end boolOrList;
 
-public function boolAndList "function: boolAndList
-  Takes a list of boolean values and applies the boolean AND operator on the elements
+public function boolAndList "Takes a list of boolean values and applies the boolean AND operator on the elements
   Example:
   boolAndList({}) => true
   boolAndList({true, true}) => true
@@ -2019,8 +2006,7 @@ algorithm
   end match;
 end boolAndList;
 
-public function applyOption "function: applyOption
-  Takes an option value and a function over the value.
+public function applyOption "Takes an option value and a function over the value.
   It returns in another option value, resulting
   from the application of the function on the value.
   Example:
@@ -2168,8 +2154,7 @@ algorithm
   end match;
 end makeOptionOnTrue;
 
-public function stringOption "function: stringOption
-  author: PA
+public function stringOption "author: PA
   Returns string value or empty string from string option."
   input Option<String> inStringOption;
   output String outString;
@@ -2206,8 +2191,7 @@ algorithm
   end matchcontinue;
 end getOptionOrDefault;
 
-public function genericOption "function: genericOption
-  author: BZ
+public function genericOption "author: BZ
   Returns a list with single value or an empty list if there is no optional value."
   input Option<Type_a> inOption;
   output list<Type_a> unOption;
@@ -2249,16 +2233,14 @@ algorithm
   end match;
 end isSome;
 
-public function intPositive "function: intPositive
-  Returns true if integer value is positive (>= 0)"
+public function intPositive "Returns true if integer value is positive (>= 0)"
   input Integer v;
   output Boolean res;
 algorithm
   res := (v >= 0);
 end intPositive;
 
-public function intNegative "function: intNegative
-  Returns true if integer value is negative (< 0)"
+public function intNegative "Returns true if integer value is negative (< 0)"
   input Integer v;
   output Boolean res;
 algorithm
@@ -2292,8 +2274,7 @@ algorithm
   end matchcontinue;
 end intCompare;
 
-public function flattenOption "function: flattenOption
-  Returns the second argument if NONE() or the element in SOME(element)"
+public function flattenOption "Returns the second argument if NONE() or the element in SOME(element)"
   input Option<Type_a> inTypeAOption;
   input Type_a inTypeA;
   output Type_a outTypeA;
@@ -2306,24 +2287,21 @@ algorithm
   end matchcontinue;
 end flattenOption;
 
-public function isEmptyString "function: isEmptyString
-  Returns true if string is the empty string."
+public function isEmptyString "Returns true if string is the empty string."
   input String inString;
   output Boolean outBoolean;
 algorithm
   outBoolean := stringEq(inString, "");
 end isEmptyString;
 
-public function isNotEmptyString "function: isNotEmptyString
-  Returns true if string is not the empty string."
+public function isNotEmptyString "Returns true if string is not the empty string."
   input String inString;
   output Boolean outBoolean;
 algorithm
   outBoolean := boolNot(stringEq(inString, ""));
 end isNotEmptyString;
 
-public function writeFileOrErrorMsg "function: writeFileOrErrorMsg
-  This function tries to write to a file and if it fails then it
+public function writeFileOrErrorMsg "This function tries to write to a file and if it fails then it
   outputs \"# Cannot write to file: <filename>.\" to errorBuf"
   input String inString1;
   input String inString2;
@@ -2368,8 +2346,7 @@ algorithm
   end matchcontinue;
 end systemCallWithErrorMsg;
 
-public function strncmp "function: strncmp
-  Compare two strings up to the nth character
+public function strncmp "Compare two strings up to the nth character
   Returns true if they are equal."
   input String inString1;
   input String inString2;
@@ -2388,8 +2365,7 @@ algorithm
   outBoolean := not strncmp(inString1,inString2,inInteger3);
 end notStrncmp;
 
-public function tickStr "function: tickStr
-  author: PA
+public function tickStr "author: PA
   Returns tick as a string, i.e. an unique number."
   output String s;
 algorithm
@@ -2454,8 +2430,7 @@ algorithm
 end getAbsoluteDirectoryAndFile;
 
 
-public function rawStringToInputString "function: rawStringToInputString
-  author: x02lucpo
+public function rawStringToInputString "author: x02lucpo
   replace the double-backslash with backslash"
   input String inString;
   output String s;
@@ -2730,8 +2705,7 @@ algorithm
 end absIntegerList;
 
 /*
-public function arrayMap "function: arrayMap
-  Takes a list and a function over the elements of the array, which is applied
+public function arrayMap "Takes a list and a function over the elements of the array, which is applied
   for each element, producing a new array.
   Example: arrayMap({1,2,3}, intString) => { \"1\", \"2\", \"3\"}"
   input array<Type_a> inTypeAArr;
@@ -2818,8 +2792,7 @@ algorithm
 end arrayMapDispatch;
 */
 
-public function buildMapStr "function: buildMapStr
-  Takes two lists of the same type and builds a string like x = val1, y = val2, ....
+public function buildMapStr "Takes two lists of the same type and builds a string like x = val1, y = val2, ....
   Example: listThread({1,2,3},{4,5,6},'=',',') => 1=4, 2=5, 3=6"
   input list<String> inLst1;
   input list<String> inLst2;

@@ -1351,8 +1351,7 @@ algorithm
   end matchcontinue;
 end getClassEnvNoElaborationScope;
 
-public function getClassEnvNoElaboration "function: getClassEnvNoElaboration
-   Retrieves the environment of the class, including the frame of the class
+public function getClassEnvNoElaboration " Retrieves the environment of the class, including the frame of the class
    itself by partially instantiating it.
 
    If partial instantiation fails, a full instantiation is performed.

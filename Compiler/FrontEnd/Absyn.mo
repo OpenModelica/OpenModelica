@@ -1172,8 +1172,7 @@ end setTimeStampBool;
 
 // stefan
 public function traverseEquation
-"function: traverseEquation
-  Traverses all subequations of an equation
+"Traverses all subequations of an equation
   takes a function and an extra argument passed through the traversal"
   input Equation inEquation;
   input FuncTplToTpl inFunc;
@@ -1233,8 +1232,7 @@ end traverseEquation;
 
 // stefan
 protected function traverseEquationItem
-"function: traverseEquationItem
-  Traverses the equation inside an equationitem"
+"Traverses the equation inside an equationitem"
   input EquationItem inEquationItem;
   input FuncTplToTpl inFunc;
   input TypeA inTypeA;
@@ -1265,8 +1263,7 @@ end traverseEquationItem;
 
 // stefan
 public function traverseEquationItemList
-"function: traverseEquationItemList
-  calls traverseEquationItem on every element of the given list"
+"calls traverseEquationItem on every element of the given list"
   input list<EquationItem> inEquationItemList;
   input FuncTplToTpl inFunc;
   input TypeA inTypeA;
@@ -1296,8 +1293,7 @@ end traverseEquationItemList;
 
 // stefan
 public function traverseExpEqItemTupleList
-"function: traverseExpEqItemTupleList
-  traverses a list of Exp * EquationItem list tuples
+"traverses a list of Exp * EquationItem list tuples
   mostly used for else-if blocks"
   input list<tuple<Exp, list<EquationItem>>> inList;
   input FuncTplToTpl inFunc;
@@ -1329,8 +1325,7 @@ end traverseExpEqItemTupleList;
 
 // stefan
 public function traverseAlgorithm
-"function: traverseAlgorithm
-  Traverses all subalgorithms of an algorithm
+"Traverses all subalgorithms of an algorithm
   Takes a function and an extra argument passed through the traversal"
   input Algorithm inAlgorithm;
   input FuncTplToTpl inFunc;
@@ -1408,8 +1403,7 @@ end traverseAlgorithm;
 
 // stefan
 public function traverseAlgorithmItem
-"function: traverseAlgorithmItem
-  traverses the Algorithm contained in an AlgorithmItem, if any
+"traverses the Algorithm contained in an AlgorithmItem, if any
   see traverseAlgorithm"
   input AlgorithmItem inAlgorithmItem;
   input FuncTplToTpl inFunc;
@@ -1441,8 +1435,7 @@ end traverseAlgorithmItem;
 
 // stefan
 public function traverseAlgorithmItemList
-"function: traverseAlgorithmItemList
-  calls traverseAlgorithmItem on each item in a list of AlgorithmItems"
+"calls traverseAlgorithmItem on each item in a list of AlgorithmItems"
   input list<AlgorithmItem> inAlgorithmItemList;
   input FuncTplToTpl inFunc;
   input TypeA inTypeA;
@@ -1472,8 +1465,7 @@ end traverseAlgorithmItemList;
 
 // stefan
 public function traverseExpAlgItemTupleList
-"function: traverseExpAlgItemTupleList
-  traverses a list of Exp * AlgorithmItem list tuples
+"traverses a list of Exp * AlgorithmItem list tuples
   mostly used for else-if blocks"
   input list<tuple<Exp, list<AlgorithmItem>>> inList;
   input FuncTplToTpl inFunc;
@@ -1670,8 +1662,7 @@ end traverseExpListList;
 
 // stefan
 public function traverseExpList
-"function: traverseExpList
-  calls traverseExp on each element in the given list"
+"calls traverseExp on each element in the given list"
   input list<Exp> inExpList;
   input FuncTplToTpl inFunc;
   input Type_a inTypeA;
@@ -2515,8 +2506,7 @@ algorithm
   end match;
 end className;
 
-public function elementSpecName "function: elementSpecName
-  The ElementSpec type contans the name of the element, and this
+public function elementSpecName "The ElementSpec type contans the name of the element, and this
   function extracts this name."
   input ElementSpec inElementSpec;
   output Ident outIdent;
@@ -2615,8 +2605,7 @@ algorithm
   end match;
 end printComponentRefStr;
 
-public function pathEqual "function: pathEqual
-  Returns true if two paths are equal."
+public function pathEqual "Returns true if two paths are equal."
   input Path inPath1;
   input Path inPath2;
   output Boolean outBoolean;
@@ -2713,8 +2702,7 @@ algorithm b:= matchcontinue(oad1,oad2)
 end matchcontinue;
 end optArrayDimEqual;
 
-public function typeSpecPathString "function: pathString
-  This function simply converts a Path to a string."
+public function typeSpecPathString "This function simply converts a Path to a string."
   input TypeSpec tp;
   output String s;
 algorithm s := match(tp)
@@ -2752,8 +2740,7 @@ algorithm
   end match;
 end typeSpecDimensions;
 
-public function pathString "function: pathString
-  This function simply converts a Path to a string."
+public function pathString "This function simply converts a Path to a string."
   input Path path;
   output String s;
 algorithm
@@ -2777,8 +2764,7 @@ algorithm
   hash := System.stringHashDjb2Mod(pathString(path),mod);
 end pathHashMod;
 
-public function optPathString "function: optPathString
-  Returns a path converted to string or an empty string if nothing exist"
+public function optPathString "Returns a path converted to string or an empty string if nothing exist"
   input Option<Path> inPathOption;
   output String outString;
 algorithm
@@ -2822,8 +2808,7 @@ algorithm
   end match;
 end pathString2;
 
-public function pathStringReplaceDot "function: pathStringReplaceDot
-  Helper function to pathString."
+public function pathStringReplaceDot "Helper function to pathString."
   input Path inPath;
   input String inString;
   output String outString;
@@ -2951,8 +2936,7 @@ algorithm
   end match;
 end pathLastIdent;
 
-public function pathFirstIdent "function: pathFirstIdent
-  Returns the first ident (before first dot) in a path"
+public function pathFirstIdent "Returns the first ident (before first dot) in a path"
   input Path inPath;
   output Ident outIdent;
 algorithm
@@ -3188,8 +3172,7 @@ algorithm
 end pathPrefixOf;
 
 public function crefPrefixOf
-"function: crefPrefixOf
-  Alternative names: crefIsPrefixOf, isPrefixOf, prefixOf
+"Alternative names: crefIsPrefixOf, isPrefixOf, prefixOf
   Author: DH 2010-03
 
   Returns true if prefixCr is a prefix of cr, i.e., false otherwise.
@@ -3593,8 +3576,7 @@ algorithm
   end matchcontinue;
 end getCrefFromExp;
 
-public function getCrefFromFarg "function: getCrefFromFarg
-  Returns the flattened list of all component references
+public function getCrefFromFarg "Returns the flattened list of all component references
   present in a list of function arguments."
   input FunctionArgs inFunctionArgs;
   input Boolean includeSubs "include crefs from array subscripts";
@@ -3657,8 +3639,7 @@ end iteratorGuard;
 
 // stefan
 public function getNamedFuncArgNamesAndValues
-"function: getNamedFuncArgNames
-  returns the names from a list of NamedArgs as a string list"
+"returns the names from a list of NamedArgs as a string list"
   input list<NamedArg> inNamedArgList;
   output list<String> outStringList;
   output list<Exp> outExpList;
@@ -3680,8 +3661,7 @@ algorithm
   end match;
 end getNamedFuncArgNamesAndValues;
 
-protected function getCrefFromNarg "function: getCrefFromNarg
-  Returns the flattened list of all component references
+protected function getCrefFromNarg "Returns the flattened list of all component references
   present in a list of named function arguments."
   input NamedArg inNamedArg;
   input Boolean includeSubs "include crefs from array subscripts";
@@ -3700,8 +3680,7 @@ algorithm
   end match;
 end getCrefFromNarg;
 
-public function joinPaths "function: joinPaths
-  This function joins two paths"
+public function joinPaths "This function joins two paths"
   input Path inPath1;
   input Path inPath2;
   output Path outPath;
@@ -3721,8 +3700,7 @@ algorithm
   end match;
 end joinPaths;
 
-public function joinPathsOpt "function: joinPathsOpt
-  This function joins two paths when the first one might be NONE"
+public function joinPathsOpt "This function joins two paths when the first one might be NONE"
   input Option<Path> inPath1;
   input Path inPath2;
   output Path outPath;
@@ -3749,8 +3727,7 @@ algorithm
   end match;
 end joinPathsOptSuffix;
 
-public function selectPathsOpt "function: selectPathsOpt
-  This function selects the second path when the first one
+public function selectPathsOpt "This function selects the second path when the first one
   is NONE() otherwise it will select the first one."
   input Option<Path> inPath1;
   input Path inPath2;
@@ -3764,8 +3741,7 @@ algorithm
   end match;
 end selectPathsOpt;
 
-public function pathAppendList "function: pathAppendList
-  author Lucian
+public function pathAppendList "author Lucian
   This function joins a path list"
   input list<Path> inPathLst;
   output Path outPath;
@@ -3785,8 +3761,7 @@ algorithm
   end match;
 end pathAppendList;
 
-public function stripLast "function: stripLast
-  Returns the path given as argument to
+public function stripLast "Returns the path given as argument to
   the function minus the last ident."
   input Path inPath;
   output Path outPath;
@@ -3808,8 +3783,7 @@ algorithm
   end match;
 end stripLast;
 
-public function crefStripLast "function: stripLast
-  Returns the path given as argument to
+public function crefStripLast "Returns the path given as argument to
   the function minus the last ident."
   input ComponentRef inCref;
   output ComponentRef outCref;
@@ -3865,8 +3839,7 @@ algorithm (outPath1,outPath2) := match(inPath)
   end match;
 end splitQualAndIdentPath;
 
-public function stripFirst "function: stripFirst
-  Returns the path given as argument
+public function stripFirst "Returns the path given as argument
   to the function minus the first ident."
   input Path inPath;
   output Path outPath;
@@ -3880,8 +3853,7 @@ algorithm
   end matchcontinue;
 end stripFirst;
 
-public function crefToPath "function: crefToPath
-  This function converts a ComponentRef to a Path, if possible.
+public function crefToPath "This function converts a ComponentRef to a Path, if possible.
   If the component reference contains subscripts, it will silently fail."
   input ComponentRef inComponentRef;
   output Path outPath;
@@ -3933,8 +3905,7 @@ algorithm
   end match;
 end crefToPathIgnoreSubs;
 
-public function pathToCref "function: pathToCref
-  This function converts a Path to a ComponentRef."
+public function pathToCref "This function converts a Path to a ComponentRef."
   input Path inPath;
   output ComponentRef outComponentRef;
 algorithm
@@ -4039,8 +4010,7 @@ algorithm
   end match;
 end crefIsQual;
 
-public function crefLastSubs "function: crefLastSubs
-  Return the last subscripts of an Absyn.ComponentRef"
+public function crefLastSubs "Return the last subscripts of an Absyn.ComponentRef"
   input ComponentRef inComponentRef;
   output list<Subscript> outSubscriptLst;
 algorithm
@@ -4064,8 +4034,7 @@ algorithm
   end match;
 end crefLastSubs;
 
-public function crefHasSubscripts "function: crefHasSubscripts
-  This function finds if a cref has subscripts"
+public function crefHasSubscripts "This function finds if a cref has subscripts"
   input ComponentRef inComponentRef;
   output Boolean outHasSubscripts;
 algorithm
@@ -4123,8 +4092,7 @@ end getSubsFromCref;
 
 // stefan
 public function crefGetLastIdent
-"function: crefGetLastIdent
-  Gets the last ident in a ComponentRef"
+"Gets the last ident in a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm
@@ -4147,8 +4115,7 @@ algorithm
   end match;
 end crefGetLastIdent;
 
-public function crefStripLastSubs "function: crefStripLastSubs
-  Strips the last subscripts of a ComponentRef"
+public function crefStripLastSubs "Strips the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm
@@ -4172,8 +4139,7 @@ algorithm
   end match;
 end crefStripLastSubs;
 
-public function joinCrefs "function: joinCrefs
-  This function joins two ComponentRefs."
+public function joinCrefs "This function joins two ComponentRefs."
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output ComponentRef outComponentRef;
@@ -4201,8 +4167,7 @@ algorithm
   end match;
 end joinCrefs;
 
-public function crefGetFirst "function: crefGetFirst
-  Returns first ident from a ComponentRef"
+public function crefGetFirst "Returns first ident from a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm
@@ -4217,8 +4182,7 @@ algorithm
   end matchcontinue;
 end crefGetFirst;
 
-public function crefStripFirst "function: crefStripFirst
-  Strip the first ident from a ComponentRef"
+public function crefStripFirst "Strip the first ident from a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
 algorithm
@@ -4241,8 +4205,7 @@ algorithm
   end match;
 end crefMakeFullyQualified;
 
-public function restrString "function: restrString
-  Maps a class restriction to the corresponding string for printing"
+public function restrString "Maps a class restriction to the corresponding string for printing"
   input Restriction inRestriction;
   output String outString;
 algorithm
@@ -4272,8 +4235,7 @@ algorithm
   end match;
 end restrString;
 
-public function lastClassname "function: lastClassname
-  Returns the path (=name) of the last class in a program"
+public function lastClassname "Returns the path (=name) of the last class in a program"
   input Program inProgram;
   output Path outPath;
 algorithm
@@ -5120,8 +5082,7 @@ algorithm
   end match;
 end makeNotFullyQualified;
 
-public function importEqual "function: importEqual
-  Compares two import elements. "
+public function importEqual "Compares two import elements. "
   input Import im1;
   input Import im2;
   output Boolean outBoolean;
@@ -5874,8 +5835,7 @@ algorithm
 end importName;
 
 public function mergeAnnotations
-"function: mergeAnnotations
-   This function takes an old annotation as first argument and a new
+" This function takes an old annotation as first argument and a new
    annotation as  second argument and merges the two.
    Annotation \"parts\" that exist in both the old and the new annotation
    will be changed according to the new definition. For instance,
@@ -5908,8 +5868,7 @@ algorithm
 end mergeAnnotations;
 
 protected function removeModificationInElementargs
-"function: removeModificationInElementargs
-   This function removes the class modification named by the second argument.
+" This function removes the class modification named by the second argument.
    If no such class modification is found thefunction fails.
    Currently, only identifiers are allowed as class modifiers,
    i.e. a(...) and not a.b(...)"
@@ -6098,8 +6057,7 @@ algorithm
 end getArrayDimOptAsList;
 
 public function removeCrefFromCrefs
-"function: removeCrefFromCrefs
-  Removes a variable from a variable list"
+"Removes a variable from a variable list"
   input list<ComponentRef> inAbsynComponentRefLst;
   input ComponentRef inComponentRef;
   output list<ComponentRef> outAbsynComponentRefLst;

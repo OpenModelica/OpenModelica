@@ -74,8 +74,7 @@ protected import System;
 protected import Util;
 protected import SCodeDump;
 
-protected function generatePositionalArgs "function: generatePositionalArgs
-  author: KS
+protected function generatePositionalArgs "author: KS
   This function is used in the following cases:
   v := matchcontinue (x)
       case REC(a=1,b=2)
@@ -105,8 +104,7 @@ algorithm
   end match;
 end generatePositionalArgs;
 
-protected function findFieldExpInList "function: findFieldExpInList
-  author: KS
+protected function findFieldExpInList "author: KS
   Helper function to generatePositionalArgs
 "
   input Absyn.Ident firstFieldName;

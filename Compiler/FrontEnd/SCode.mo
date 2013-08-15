@@ -630,8 +630,7 @@ algorithm
 end stripSubmod;
 
 public function getElementNamed
-"function: getElementNamed
-  Return the Element with the name given as first argument from the Class."
+"Return the Element with the name given as first argument from the Class."
   input Ident inIdent;
   input Element inClass;
   output Element outElement;
@@ -658,8 +657,7 @@ algorithm
 end getElementNamed;
 
 public function getElementNamedFromElts
-"function: getElementNamedFromElts
-  Helper function to getElementNamed."
+"Helper function to getElementNamed."
   input Ident inIdent;
   input list<Element> inElementLst;
   output Element outElement;
@@ -734,8 +732,7 @@ algorithm
 end isNotElementClassExtends;
 
 public function isParameterOrConst
-"function: isParameterOrConst
-  Returns true if Variability indicates a parameter or constant."
+"Returns true if Variability indicates a parameter or constant."
   input Variability inVariability;
   output Boolean outBoolean;
 algorithm
@@ -747,8 +744,7 @@ algorithm
 end isParameterOrConst;
 
 public function isConstant
-"function: isConstant
-  Returns true if Variability is constant, otherwise false"
+"Returns true if Variability is constant, otherwise false"
   input Variability inVariability;
   output Boolean outBoolean;
 algorithm
@@ -759,8 +755,7 @@ algorithm
 end isConstant;
 
 public function countParts
-"function: countParts
-  Counts the number of ClassParts of a Class."
+"Counts the number of ClassParts of a Class."
   input Element inClass;
   output Integer outInteger;
 algorithm
@@ -788,8 +783,7 @@ algorithm
 end countParts;
 
 public function componentNames
-"function: componentNames
-  Return a string list of all component names of a class."
+"Return a string list of all component names of a class."
   input Element inClass;
   output list<String> outStringLst;
 algorithm
@@ -916,8 +910,7 @@ algorithm
 end enumName;
 
 public function componentNamesFromElts
-"function: componentNamesFromElts
-  Helper function to componentNames."
+"Helper function to componentNames."
   input list<Element> inElementLst;
   output list<String> outStringLst;
 algorithm
@@ -935,8 +928,7 @@ algorithm
 end componentNamesFromElts;
 
 public function isRecord
-"function: isRecord
-  Return true if Class is a record."
+"Return true if Class is a record."
   input Element inClass;
   output Boolean outBoolean;
 algorithm
@@ -947,8 +939,7 @@ algorithm
 end isRecord;
 
 public function isFunction
-"function: isFunction
-  Return true if Class is a function."
+"Return true if Class is a function."
   input Element inClass;
   output Boolean outBoolean;
 algorithm
@@ -959,8 +950,7 @@ algorithm
 end isFunction;
 
 public function isFunctionRestriction
-"function: isFunctionRestriction
-  Return true if restriction is a function."
+"Return true if restriction is a function."
   input Restriction inRestriction;
   output Boolean outBoolean;
 algorithm
@@ -998,8 +988,7 @@ algorithm
  end isOperator;
 
 public function className
-"function: className
-  Returns the class name of a Class."
+"Returns the class name of a Class."
   input Element inClass;
   output String outString;
 algorithm
@@ -1011,8 +1000,7 @@ algorithm
 end className;
 
 public function classSetPartial
-"function: classSetPartial
-  author: PA
+"author: PA
   Sets the partial attribute of a Class"
   input Element inClass;
   input Partial inPartial;
@@ -1116,8 +1104,7 @@ public function elementEqual
 
 // stefan
 public function annotationEqual
-"function: annotationEqual
-  returns true if 2 annotations are equal"
+"returns true if 2 annotations are equal"
   input Annotation annotation1;
   input Annotation annotation2;
   output Boolean equal;
@@ -5197,8 +5184,7 @@ algorithm
 end propagatePrefixInnerOuter;
 
 public function isPartial
-"function: isPartial
-  Return true if Class is a partial."
+"Return true if Class is a partial."
   input Element inClass;
   output Boolean outBoolean;
 algorithm

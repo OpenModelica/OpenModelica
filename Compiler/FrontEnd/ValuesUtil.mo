@@ -57,8 +57,7 @@ protected import ClassInf;
 protected import Types;
 protected import SimulationResults;
 
-public function typeConvert "function: typeConvert
-  Apply type conversion on a list of Values"
+public function typeConvert "Apply type conversion on a list of Values"
   input DAE.Type inType1;
   input DAE.Type inType2;
   input list<Values.Value> inValueLst3;
@@ -164,8 +163,7 @@ algorithm
 end isZero;
 
 
-public function isArray "function: isArray
-  Return true if Value is an array."
+public function isArray "Return true if Value is an array."
   input Values.Value inValue;
   output Boolean outBoolean;
 algorithm
@@ -183,8 +181,7 @@ algorithm
   end match;
 end isArray;
 
-public function isRecord "function: isArray
-  Return true if Value is an array."
+public function isRecord "Return true if Value is an array."
   input Values.Value inValue;
   output Boolean outBoolean;
 algorithm
@@ -202,8 +199,7 @@ algorithm
   end matchcontinue;
 end isRecord;
 
-public function nthArrayelt "function: nthArrayelt
-  author: PA
+public function nthArrayelt "author: PA
   Return the nth value of an array, indexed from 1..n"
   input Values.Value inValue;
   input Integer inInteger;
@@ -225,8 +221,7 @@ algorithm
   end match;
 end nthArrayelt;
 
-public function unparseValues "function: unparseValues
-  Prints a list of Value to a string."
+public function unparseValues "Prints a list of Value to a string."
   input list<Values.Value> inValueLst;
   output String outString;
 algorithm
@@ -247,8 +242,7 @@ algorithm
   end match;
 end unparseValues;
 
-protected function unparseValueNumbers "function: unparseValueNumbers
-  Helper function to unparse_values.
+protected function unparseValueNumbers "Helper function to unparse_values.
   Prints all the numbers of the values."
   input list<Values.Value> inValueLst;
   output String outString;
@@ -855,8 +849,7 @@ algorithm
   end match;
 end powElementwiseArrayelt;
 
-public function expValue "function: expValue
-  Returns the value of constant expressions in DAE.Exp"
+public function expValue "Returns the value of constant expressions in DAE.Exp"
   input DAE.Exp inExp;
   output Values.Value outValue;
 algorithm
@@ -1166,8 +1159,7 @@ algorithm
   end matchcontinue;
 end matrixValueReals;
 
-public function valueNeg "function: valueNeg
-  author: PA
+public function valueNeg "author: PA
 
   Negates a Value
 "
@@ -1783,8 +1775,7 @@ algorithm
 end multMatrix;
 
 public function divArrayeltScalar
-"function: divArrayeltScalar
-  Divide each array element with a scalar."
+"Divide each array element with a scalar."
   input Values.Value inValue;
   input list<Values.Value> inValueLst;
   output list<Values.Value> outValueLst;
@@ -1848,8 +1839,7 @@ algorithm
   end matchcontinue;
 end divArrayeltScalar;
 
-protected function matrixStripFirstColumn "function: matrixStripFirstColumn
-  This function takes a Value list representing a matrix and strips the
+protected function matrixStripFirstColumn "This function takes a Value list representing a matrix and strips the
   first column of the matrix, i.e. for each sub list it removes the first
   element. Returning both the stripped column and the resulting matrix."
   input list<Values.Value> inValueLst;
@@ -1996,8 +1986,7 @@ algorithm
   outArray := makeArray(List.map(inReals, makeRealArray));
 end makeRealMatrix;
 
-public function valString "function: valString
-  This function returns a textual representation of a value."
+public function valString "This function returns a textual representation of a value."
   input Values.Value inValue;
   output String outString;
 protected
@@ -2009,8 +1998,7 @@ algorithm
   Print.restoreBuf(handle);
 end valString;
 
-public function valString2 "function: valString
-  This function returns a textual representation of a value.
+public function valString2 "This function returns a textual representation of a value.
   Uses an external buffer to store intermediate results."
   input Values.Value inValue;
 algorithm
@@ -2225,8 +2213,7 @@ algorithm
 end filterSimulationResults;
 
 protected function valRecordString
-"function: valRecordString
-  This function returns a textual representation of a record,
+"This function returns a textual representation of a record,
  separating each value with a comma."
   input list<Values.Value> inValues;
   input list<String> inIds;
@@ -2343,8 +2330,7 @@ algorithm
   end match;
 end writePtolemyplotDataset;
 
-protected function unparsePtolemyValues "function: unparsePtolemyValues
-  Helper function to writePtolemyplotDataset."
+protected function unparsePtolemyValues "Helper function to writePtolemyplotDataset."
   input Values.Value inValue;
   input list<Values.Value> inValueLst;
   input list<String> inStringLst;
@@ -2366,8 +2352,7 @@ algorithm
   end match;
 end unparsePtolemyValues;
 
-protected function unparsePtolemySet "function: unparsePtolemySet
-  Helper function to unparsePtolemyValues."
+protected function unparsePtolemySet "Helper function to unparsePtolemyValues."
   input Values.Value v1;
   input Values.Value v2;
   input String varname;
@@ -2376,8 +2361,7 @@ algorithm
   unparsePtolemySet2(v1, v2);
 end unparsePtolemySet;
 
-protected function unparsePtolemySet2 "function: unparsePtolemySet2
-  Helper function to unparsePtolemySet"
+protected function unparsePtolemySet2 "Helper function to unparsePtolemySet"
   input Values.Value inValue1;
   input Values.Value inValue2;
 algorithm
@@ -2408,8 +2392,7 @@ algorithm
   end matchcontinue;
 end unparsePtolemySet2;
 
-public function reverseMatrix "function: reverseMatrix
-  Reverses each line and each row of a matrix.
+public function reverseMatrix "Reverses each line and each row of a matrix.
   Implementation reverses all dimensions..."
   input Values.Value inValue;
   output Values.Value outValue;
@@ -2429,8 +2412,7 @@ algorithm
   end matchcontinue;
 end reverseMatrix;
 
-public function printVal "function: printVal
-  This function prints a value."
+public function printVal "This function prints a value."
   input Values.Value v;
 protected
   String s;
@@ -2447,8 +2429,7 @@ algorithm
   s := valString(v);
 end printValStr;
 
-public function nthnthArrayelt "function: nthArrayelt
-  author: BZ
+public function nthnthArrayelt "author: BZ
 
   Return the nth nth....nth value of an array, indexed from 1..n
 "

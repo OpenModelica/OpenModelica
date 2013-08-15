@@ -214,8 +214,7 @@ algorithm
   end match;
 end getSimulationArguments;
 
-public function elabCallInteractive "function: elabCallInteractive
-  This function elaborates the functions defined in the interactive environment.
+public function elabCallInteractive "This function elaborates the functions defined in the interactive environment.
   Since some of these functions are meta-functions, they can not be described in the type
   system, and is thus given the the type T_UNKNOWN"
   input Env.Cache inCache;

@@ -145,8 +145,7 @@ algorithm
 end instEquation;
 
 protected function instEEquation
-"function: instEEquation
-  Instantiation of EEquation, used in for loops and if-equations."
+"Instantiation of EEquation, used in for loops and if-equations."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -197,8 +196,7 @@ algorithm
 end instEEquation;
 
 public function instInitialEquation
-"function: instInitialEquation
-  author: LS, ELN
+"author: LS, ELN
   Instantiates initial equation by calling inst_equation_common with Inital
   set to INITIAL."
   input Env.Cache inCache;
@@ -251,8 +249,7 @@ algorithm
 end instInitialEquation;
 
 protected function instEInitialEquation
-"function: instEInitialEquation
-  Instantiates initial EEquation used in for loops and if equations "
+"Instantiates initial EEquation used in for loops and if equations "
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -297,8 +294,7 @@ algorithm
 end instEInitialEquation;
 
 protected function instEquationCommon
-"function: instEquationCommon
-  The DAE output of the translation contains equations which
+"The DAE output of the translation contains equations which
   in most cases directly corresponds to equations in the source.
   Some of them are also generated from `connect\' clauses.
 
@@ -328,8 +324,7 @@ algorithm
 end instEquationCommon;
 
 protected function instEquationCommon2
-"function: instEquationCommon
-  The DAE output of the translation contains equations which
+"The DAE output of the translation contains equations which
   in most cases directly corresponds to equations in the source.
   Some of them are also generated from `connect\' clauses.
 
@@ -389,8 +384,7 @@ algorithm
 end instEquationCommon2;
 
 protected function instEquationCommonWork
-"function: instEquationCommon
-  The DAE output of the translation contains equations which
+"The DAE output of the translation contains equations which
   in most cases directly corresponds to equations in the source.
   Some of them are also generated from `connect\' clauses.
 
@@ -1103,8 +1097,7 @@ end expandTupleEquationWithWild;
 
 
 protected function instEquationCommonCiTrans
-"function: instEquationCommonCiTrans
-  updats The ClassInf state machine when an equation is instantiated."
+"updats The ClassInf state machine when an equation is instantiated."
   input ClassInf.State inState;
   input SCode.Initial inInitial;
   output ClassInf.State outState;
@@ -1120,8 +1113,7 @@ algorithm
   end match;
 end instEquationCommonCiTrans;
 
-protected function unroll "function: unroll
-  Unrolling a loop is a way of removing the non-linear structure of
+protected function unroll "Unrolling a loop is a way of removing the non-linear structure of
   the FOR clause by explicitly repeating the body of the loop once
   for each iteration."
   input Env.Cache inCache;
@@ -1241,8 +1233,7 @@ algorithm
   newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addParForLoopScope;
 
-public function instEqEquation "function: instEqEquation
-  author: LS, ELN
+public function instEqEquation "author: LS, ELN
   Equations follow the same typing rules as equality expressions.
   This function adds the equation to the DAE."
   input DAE.Exp inExp1;
@@ -1376,8 +1367,7 @@ algorithm
 end instEqEquation;
 
 protected function instEqEquation2
-"function: instEqEquation2
-  author: LS, ELN
+"author: LS, ELN
   This is the second stage of instEqEquation, when the types are checked."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -1653,8 +1643,7 @@ end matchcontinue;
 end assignComplexConstantConstructToArray;
 
 public function makeDaeEquation
-"function: makeDaeEquation
-  author: LS, ELN
+"author: LS, ELN
   Constructs an equation in the DAE, they can be
   either an initial equation or an ordinary equation."
   input DAE.Exp inExp1;
@@ -1673,8 +1662,7 @@ algorithm
 end makeDaeEquation;
 
 protected function makeDaeDefine
-"function: makeDaeDefine
-  author: LS, ELN "
+"author: LS, ELN "
   input DAE.ComponentRef inComponentRef;
   input DAE.Exp inExp;
   input DAE.ElementSource source "the origin of the element";
@@ -2208,8 +2196,7 @@ algorithm
 end makeComplexDaeEquation;
 
 public function instAlgorithm
-"function: instAlgorithm
-  Algorithms are converted to the representation defined in
+"Algorithms are converted to the representation defined in
   the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
   input Env.Cache inCache;
@@ -2281,8 +2268,7 @@ algorithm
 end instAlgorithm;
 
 public function instInitialAlgorithm
-"function: instInitialAlgorithm
-  Algorithms are converted to the representation defined
+"Algorithms are converted to the representation defined
   in the module Algorithm, and the added to the DAE result.
   This function converts an algorithm section."
   input Env.Cache inCache;
@@ -2341,8 +2327,7 @@ algorithm
 end instInitialAlgorithm;
 
 public function instConstraint
-"function: instConstraint
-  Constraints are elaborated and converted to DAE"
+"Constraints are elaborated and converted to DAE"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
@@ -2396,8 +2381,7 @@ algorithm
 end instConstraint;
 
 public function instStatements
-"function: instStatements
-  This function converts a list of algorithm statements."
+"This function converts a list of algorithm statements."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -2999,8 +2983,7 @@ algorithm
 end instIfTrueBranches;
 
 protected function instElseIfs
-"function: instElseIfs
-  This function helps instStatement to handle elseif parts."
+"This function helps instStatement to handle elseif parts."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -3831,8 +3814,7 @@ algorithm
 end flipDirection;
 
 protected function validConnector
-"function: validConnector
-  This function tests whether a type is a eligible to be used in connections."
+"This function tests whether a type is a eligible to be used in connections."
   input DAE.Type inType;
   input DAE.ComponentRef inCref;
   input Absyn.Info inInfo;
@@ -4428,8 +4410,7 @@ algorithm
 end connectArrayComponents;
 
 protected function connectVars
-"function: connectVars
-  This function connects two subcomponents by adding the component
+"This function connects two subcomponents by adding the component
   name to the current path and recursively connecting the components
   using the function connectComponents."
   input Env.Cache inCache;

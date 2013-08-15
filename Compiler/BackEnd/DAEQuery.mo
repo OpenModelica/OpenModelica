@@ -107,8 +107,7 @@ algorithm
 end getEquations;
 
 public function equationStr
-"function: equationStr
-  Helper function to getEqustions."
+"Helper function to getEqustions."
   input BackendDAE.Equation inEquation;
   input list<BackendDAE.WhenClause> wcLst;
   output String outString;
@@ -175,8 +174,7 @@ algorithm
   end match;
 end equationStr;
 
-protected function getIncidenceMatrix "function: getIncidenceMatrix
-  gets the incidence matrix as a string"
+protected function getIncidenceMatrix "gets the incidence matrix as a string"
   input array<list<String>> m;
   output String strIMatrix;
 protected
@@ -194,8 +192,7 @@ algorithm
     "IM={", mstr, "};"});
 end getIncidenceMatrix;
 
-protected function getIncidenceMatrix2 "function: getIncidenceMatrix2
-  author: adrpo
+protected function getIncidenceMatrix2 "author: adrpo
   Helper function to getIncidenceMatrix (+_t).
 "
   input list<list<String>> inStringLstLst;
@@ -225,8 +222,7 @@ algorithm
   end matchcontinue;
 end getIncidenceMatrix2;
 
-protected function getIncidenceRow "function: getIncidenceRow
-  author: adrpo
+protected function getIncidenceRow "author: adrpo
   Helper function to getIncidenceMatrix2.
 "
   input list<String> inStringLst;
@@ -248,8 +244,7 @@ algorithm
   end matchcontinue;
 end getIncidenceRow;
 
-public function getVariables "function: getVariables
-  This function returns the variables
+public function getVariables "This function returns the variables
 "
   input BackendDAE.BackendDAE inBackendDAE;
   output String strVars;
@@ -270,8 +265,7 @@ algorithm
   end match;
 end getVariables;
 
-public function dumpVars "function: dumpVars
-  Helper function to dump.
+public function dumpVars "Helper function to dump.
 "
   input list<BackendDAE.Var> vars;
   output String strVars;
@@ -279,8 +273,7 @@ algorithm
   strVars := dumpVars2(vars, 1);
 end dumpVars;
 
-protected function dumpVars2 "function: dumpVars2
-  Helper function to dump_vars.
+protected function dumpVars2 "Helper function to dump_vars.
 "
   input list<BackendDAE.Var> inVarLst;
   input Integer inInteger;
@@ -379,8 +372,7 @@ algorithm
 end dumpVars2;
 
 public function incidenceMatrix
-"function: incidenceMatrix
-  author: PA
+"author: PA
   Calculates the incidence matrix, i.e. which
   variables are present in each equation."
   input BackendDAE.BackendDAE inBackendDAE;
@@ -409,8 +401,7 @@ algorithm
   end matchcontinue;
 end incidenceMatrix;
 
-protected function incidenceMatrix2 "function: incidenceMatrix2
-  author: PA
+protected function incidenceMatrix2 "author: PA
 
   Helper function to incidence_matrix
   Calculates the incidence matrix as a list of list of integers
@@ -442,8 +433,7 @@ algorithm
   end matchcontinue;
 end incidenceMatrix2;
 
-protected function incidenceRow "function: incidenceRow
-  author: PA
+protected function incidenceRow "author: PA
   Helper function to incidence_matrix. Calculates the indidence row
   in the matrix for one equation."
   input BackendDAE.Variables inVariables;
@@ -633,8 +623,7 @@ end incidenceRow;
 //   end matchcontinue;
 // end incidenceRowStmts;
 
-protected function incidenceRowExp "function: incidenceRowExp
-  author: PA
+protected function incidenceRowExp "author: PA
   Helper function to incidenceRow, investigates expressions for
   variables, returning variable indexes."
   input DAE.Exp inExp;
@@ -906,8 +895,7 @@ algorithm
   end match;
 end incidenceRowIter;
 
-protected function incidenceRowMatrixExp "function: incidenceRowMatrixExp
-  author: PA
+protected function incidenceRowMatrixExp "author: PA
   Traverses matrix expressions for building incidence matrix."
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst;
   input BackendDAE.Variables inVariables;

@@ -97,8 +97,7 @@ end matchingAlgorithmFunc;
 /*************************************/
 
 public function DFSLH
-"function: DFSLH
-  deapth first search with look ahead feature. basically the same like MC21A."
+"deapth first search with look ahead feature. basically the same like MC21A."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
@@ -155,8 +154,7 @@ algorithm
 end DFSLH;
 
 protected function DFSLH2
-"function: DFSLH2
-  author: PA
+"author: PA
   This is the outer loop of the matching algorithm
   The find_path algorithm is called for each equation/variable.
   inputs:  (BackendDAE,IncidenceMatrix, IncidenceMatrixT
@@ -264,8 +262,7 @@ algorithm
   end matchcontinue;
 end DFSLH2;
 
-protected function pathFound "function: pathFound
-  author: PA
+protected function pathFound "author: PA
   This function is part of the matching algorithm.
   It tries to find a matching for the equation index given as
   third argument, i.
@@ -301,8 +298,7 @@ algorithm
   end matchcontinue;
 end pathFound;
 
-protected function assignOneInEqn "function: assignOneInEqn
-  author: PA
+protected function assignOneInEqn "author: PA
   Helper function to pathFound."
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mt;
@@ -319,8 +315,7 @@ algorithm
 end assignOneInEqn;
 
 protected function assignFirstUnassigned
-"function: assignFirstUnassigned
-  author: PA
+"author: PA
   This function assigns the first unassign variable to the equation
   given as first argument. It is part of the matching algorithm.
   inputs:  (int /* equation */,
@@ -358,8 +353,7 @@ algorithm
 end assignFirstUnassigned;
 
 protected function forallUnmarkedVarsInEqn
-"function: forallUnmarkedVarsInEqn
-  author: PA
+"author: PA
   This function is part of the matching algorithm.
   It loops over all umarked variables in an equation.
   inputs:  (IncidenceMatrix,
@@ -387,8 +381,7 @@ algorithm
 end forallUnmarkedVarsInEqn;
 
 protected function isNotVMarked
-"function: isNotVMarked
-  author: PA
+"author: PA
   This function succeds for variables that are not marked."
   input Integer i;
   input tuple<Integer,array<Integer>> inTpl;
@@ -401,8 +394,7 @@ algorithm
 end isNotVMarked;
 
 protected function forallUnmarkedVarsInEqnBody
-"function: forallUnmarkedVarsInEqnBody
-  author: PA
+"author: PA
   This function is part of the matching algorithm.
   It is the body of the loop over all unmarked variables.
   inputs:  (IncidenceMatrix, BackendDAE.IncidenceMatrixT,
@@ -1199,8 +1191,7 @@ algorithm
 end MC21A1fixArrays;
 
 protected function MC21A1fixArray
-"function: MC21A1fixArray
-  author: Frenkel TUD 2012-04"
+"author: Frenkel TUD 2012-04"
   input list<Integer> meqns "Marked Equations for Index Reduction";
   input array<Integer> arr;
 algorithm
@@ -5492,8 +5483,7 @@ algorithm
 end countincidenceMatrixEntries;
 
 public function matchingExternalsetIncidenceMatrix
-"function: matchingExternalsetIncidenceMatrix
-  author: Frenkel TUD 2012-04
+"author: Frenkel TUD 2012-04
   "
   input Integer nv;
   input Integer ne;
@@ -5885,8 +5875,7 @@ algorithm
 end assignmentsArrayExpand;
 
 protected function prune
-"function: prune
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   function to prune, mark as never again test, collums"
   input list<Integer> inVisitedcolums;
   input Integer ne;
@@ -5909,8 +5898,7 @@ algorithm
 end prune;
 
 protected function checkAssignment
-"function: checkAssignment
-  author: Frenkel TUD 2012-06
+"author: Frenkel TUD 2012-06
   Check if the assignment is complet/maximum,
   returns all unmatched equations"
   input Integer indx;

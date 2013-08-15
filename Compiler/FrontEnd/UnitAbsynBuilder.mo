@@ -400,8 +400,7 @@ algorithm
   newarr_1 := arrayCopy(arr, newarr);
 end arrayExpand;
 
-public function arrayCopy "function: arrayCopy
-  copies all values in src array into dest array.
+public function arrayCopy "copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."
   input array<Type_a> inTypeAArray1;
   input array<Type_a> inTypeAArray2;

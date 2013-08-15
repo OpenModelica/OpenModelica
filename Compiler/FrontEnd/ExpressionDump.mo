@@ -117,8 +117,7 @@ algorithm
 end binopSymbol;
 
 public function binopSymbol1
-"function: binopSymbol1
-  Helper function to binopSymbol"
+"Helper function to binopSymbol"
   input DAE.Operator inOperator;
   output String outString;
 algorithm
@@ -148,8 +147,7 @@ algorithm
 end binopSymbol1;
 
 public function debugBinopSymbol
-"function: binopSymbol1
-  Helper function to binopSymbol"
+"Helper function to binopSymbol"
   input DAE.Operator inOperator;
   output String outString;
 algorithm
@@ -179,8 +177,7 @@ algorithm
 end debugBinopSymbol;
 
 protected function binopSymbol2
-"function: binopSymbol2
-  Helper function to binopSymbol."
+"Helper function to binopSymbol."
   input DAE.Operator inOperator;
   output String outString;
 algorithm
@@ -252,8 +249,7 @@ algorithm
 end binopSymbol2;
 
 public function unaryopSymbol
-"function: unaryopSymbol
-  Return string representation of unary operators."
+"Return string representation of unary operators."
   input DAE.Operator inOperator;
   output String outString;
 algorithm
@@ -265,8 +261,7 @@ algorithm
 end unaryopSymbol;
 
 public function lbinopSymbol
-"function: lbinopSymbol
-  Return string representation of logical binary operator."
+"Return string representation of logical binary operator."
   input DAE.Operator inOperator;
   output String outString;
 algorithm
@@ -278,8 +273,7 @@ algorithm
 end lbinopSymbol;
 
 public function lunaryopSymbol
-"function: lunaryopSymbol
-  Return string representation of logical unary operator."
+"Return string representation of logical unary operator."
   input DAE.Operator inOperator;
   output String outString;
 algorithm
@@ -289,8 +283,7 @@ algorithm
 end lunaryopSymbol;
 
 public function relopSymbol
-"function: relopSymbol
-  Return string representation of function operator."
+"Return string representation of function operator."
   input DAE.Operator inOperator;
   output String outString;
 algorithm
@@ -306,8 +299,7 @@ algorithm
 end relopSymbol;
 
 public function printList
-"function: printList
-  Print a list of values given a print
+"Print a list of values given a print
   function and a separator string."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -341,16 +333,14 @@ algorithm
 end printList;
 
 protected function printRow
-"function: printRow
-  Print a list of expressions to the Print buffer."
+"Print a list of expressions to the Print buffer."
   input list<DAE.Exp> es_1;
 algorithm
   printList(es_1, printExp, ",");
 end printRow;
 
 public function printListStr
-"function: printListStr
-  Same as printList, except it returns
+"Same as printList, except it returns
   a string instead of printing."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aToString inFuncTypeTypeAToString;
@@ -436,8 +426,7 @@ end printExpListStr;
 
 // stefan
 public function printExpListStrNoSpace
-"function: printExpListStrNoSpace
-  same as printExpListStr, but the string will not have any spaces or commas between expressions"
+"same as printExpListStr, but the string will not have any spaces or commas between expressions"
   input list<DAE.Exp> expl;
   output String res;
 algorithm
@@ -457,8 +446,7 @@ algorithm
 end printOptExpStr;
 
 public function printExpStr
-"function: printExpStr
-  This function prints a complete expression."
+"This function prints a complete expression."
   input DAE.Exp e;
   output String s;
 algorithm
@@ -473,8 +461,7 @@ algorithm
 end printCrefsFromExpStr;
 
 public function printExp2Str
-"function: printExp2Str
-  Helper function to printExpStr."
+"Helper function to printExpStr."
   input DAE.Exp inExp;
   input String stringDelimiter;
   input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that prints component references and an extra parameter passed through to the function";
@@ -1019,8 +1006,7 @@ algorithm
 end expPriority;
 
 public function printRowStr
-"function: printRowStr
-  Prints a list of expressions to a string."
+"Prints a list of expressions to a string."
   input list<DAE.Exp> es_1;
   input String stringDelimiter;
   output String s;
@@ -1029,8 +1015,7 @@ algorithm
 end printRowStr;
 
 public function dumpExpGraphviz
-"function: dumpExpGraphviz
-  Creates a Graphviz Node from an Expression."
+"Creates a Graphviz Node from an Expression."
   input DAE.Exp inExp;
   output Graphviz.Node outNode;
 algorithm
@@ -1217,8 +1202,7 @@ algorithm
 end dumpExpGraphviz;
 
 public function dumpExpStr
-"function: dumpExpStr
-  Dumps expression to a string."
+"Dumps expression to a string."
   input DAE.Exp inExp;
   input Integer inInteger;
   output String outString;
@@ -1662,8 +1646,7 @@ algorithm
 end dumpExp;
 
 public function printSubscript
-"function: printSubscript
-  Print a Subscript."
+"Print a Subscript."
   input DAE.Subscript inSubscript;
 algorithm
   _ := match (inSubscript)
@@ -1693,16 +1676,14 @@ algorithm
 end printSubscript;
 
 public function printExp
-"function: printExp
-  This function prints a complete expression."
+"This function prints a complete expression."
   input DAE.Exp e;
 algorithm
   Tpl.tplPrint2(ExpressionDumpTpl.dumpExp, e, "\"");
 end printExp;
 
 public function parenthesize
-"function: parenthesize
-  Adds parentheisis to a string if expression
+"Adds parentheisis to a string if expression
   and parent expression priorities requires it."
   input String inString1;
   input Integer inInteger2;

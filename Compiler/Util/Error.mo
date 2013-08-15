@@ -889,8 +889,7 @@ algorithm
   res := ErrorExt.printErrorsNoWarning();
 end printErrorsNoWarning;
 
-public function printMessagesStrLst "function: printMessagesStr
-  Returns all messages as a list of strings, one for each message."
+public function printMessagesStrLst "Returns all messages as a list of strings, one for each message."
   output list<String> outStringLst;
 algorithm
   outStringLst := matchcontinue ()
@@ -898,8 +897,7 @@ algorithm
   end matchcontinue;
 end printMessagesStrLst;
 
-public function printMessagesStrLstType "function: printMessagesStrLstType
-   Returns all messages as a list of strings, one for each message.
+public function printMessagesStrLstType " Returns all messages as a list of strings, one for each message.
    Filters out messages of certain type."
   input MessageType inMessageType;
   output list<String> outStringLst;
@@ -909,8 +907,7 @@ algorithm
   end matchcontinue;
 end printMessagesStrLstType;
 
-public function printMessagesStrLstSeverity "function: printMessagesStrLstSeverity
-  Returns all messages as a list of strings, one for each message.
+public function printMessagesStrLstSeverity "Returns all messages as a list of strings, one for each message.
   Filters out messages of certain severity"
   input Severity inSeverity;
   output list<String> outStringLst;

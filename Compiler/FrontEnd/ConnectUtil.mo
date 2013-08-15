@@ -3354,8 +3354,7 @@ algorithm
 end compareCrefStreamSet;
 
 public function componentFace
-"function: componentFace
-  This function determines whether a component
+"This function determines whether a component
   reference refers to an inner or outer connector:
   Rules:
     qualified cref and connector     => OUTSIDE
@@ -3397,8 +3396,7 @@ algorithm
 end componentFace;
 
 public function componentFaceType
-"function: componentFaceType
-  Author: BZ, 2008-12
+"Author: BZ, 2008-12
   Same functionalty as componentFace, with the difference that
   this function checks ident-type rather then env->lookup ==> type.
   Rules:

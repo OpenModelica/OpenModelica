@@ -137,8 +137,7 @@ algorithm
      end matchcontinue;
 end checkBackendDAEWithErrorMsg;
 
-public function printcheckBackendDAEWithErrorMsg"function: printcheckBackendDAEWithErrorMsg
-  author: Frenkel TUD
+public function printcheckBackendDAEWithErrorMsg"author: Frenkel TUD
   helper for checkDEALowWithErrorMsg"
   input list<tuple<DAE.Exp,list<DAE.ComponentRef>>> inExpCrefs;
   input list<BackendDAE.Equation> inWrongEqns;
@@ -174,8 +173,7 @@ algorithm
   end match;
 end printcheckBackendDAEWithErrorMsg;
 
-protected function printEqnSizeError"function: printEqnSizeError
-  author: Frenkel TUD 2010-12"
+protected function printEqnSizeError"author: Frenkel TUD 2010-12"
     input BackendDAE.Equation inEqn;
 algorithm
   _ := matchcontinue(inEqn)
@@ -211,8 +209,7 @@ algorithm
   end matchcontinue;
 end printEqnSizeError;
 
-public function checkBackendDAE "function: checkBackendDAE
-  author: Frenkel TUD
+public function checkBackendDAE "author: Frenkel TUD
   This function checks the BackendDAE object if
   -  all component refercences used in the expressions are
      part of the BackendDAE object.
@@ -358,8 +355,7 @@ algorithm
                      DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
 end makeIterVariable;
 
-protected function checkEquationSize"function: checkEquationSize
-  author: Frenkel TUD 2010-12
+protected function checkEquationSize"author: Frenkel TUD 2010-12
   - check if the left hand side and the rigth hand side have equal types."
   input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
   output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
@@ -795,8 +791,7 @@ algorithm
 end traverserVaraddDummyStateIfNeeded;
 
 protected function addDummyState
-"function: addDummyState
-  In order for the solver to work correctly at least one state variable
+"In order for the solver to work correctly at least one state variable
   must exist in the equation system. This function therefore adds a
   dummy state variable and an equation for that variable."
   input BackendDAE.EqSystems isysts;
@@ -832,8 +827,7 @@ end addDummyState;
 /* Actually obsolete code, should be removed
    but is used in modpar in Main.mo
  */
-public function calculateSizes "function: calculateSizes
-  author: PA
+public function calculateSizes "author: PA
   Calculates the number of state variables, nx,
   the number of algebraic variables, ny
   and the number of parameters/constants, np.
@@ -933,8 +927,7 @@ algorithm
   end matchcontinue;
 end calculateNumberZeroCrossings;
 
-protected function calculateParamSizes "function: calculateParamSizes
-  author: PA
+protected function calculateParamSizes "author: PA
   Helper function to calculateSizes"
   input tuple<Var, tuple<Integer,Integer,Integer,Integer>> inTpl;
   output tuple<Var, tuple<Integer,Integer,Integer,Integer>> outTpl;
@@ -968,8 +961,7 @@ algorithm
   end matchcontinue;
 end calculateParamSizes;
 
-protected function calculateVarSizes "function: calculateVarSizes
-  author: PA
+protected function calculateVarSizes "author: PA
   Helper function to calculateSizes"
   input tuple<Var, tuple<Integer,Integer,Integer,Integer,Integer>> inTpl;
   output tuple<Var, tuple<Integer,Integer,Integer,Integer,Integer>> outTpl;
@@ -1127,8 +1119,7 @@ algorithm
   end matchcontinue;
 end countDiscreteVars3;
 
-protected function calculateValues "function: calculateValues
-  author: PA
+protected function calculateValues "author: PA
   This function calculates the values from the parameter binding expressions.
   modefication: wbraun
   Use really only parameter bindungs for evaluation."
@@ -1237,8 +1228,7 @@ algorithm
 end makeExpType;
 
 public function addAliasVariables
-"function: addAliasVariables
-  author: Frenkel TUD 2010-12
+"author: Frenkel TUD 2010-12
   Add an alias variable to the AliasVariables "
   input list<BackendDAE.Var> inVars;
   input BackendDAE.Variables inAliasVariables;
@@ -1505,8 +1495,7 @@ algorithm
   end match;
 end isVarDiscrete;
 
-protected function isKindDiscrete "function: isKindDiscrete
-  Returns true if VarKind is discrete."
+protected function isKindDiscrete "Returns true if VarKind is discrete."
   input VarKind inVarKind;
   output Boolean outBoolean;
 algorithm
@@ -1519,8 +1508,7 @@ algorithm
 end isKindDiscrete;
 
 public function statesAndVarsExp
-"function: statesAndVarsExp
-  This function investigates an expression and returns as subexpressions
+"This function investigates an expression and returns as subexpressions
   that are variable names or derivatives of state names or states
   inputs:  (DAE.Exp, BackendDAE.Variables)
   outputs: DAE.Exp list"
@@ -1754,8 +1742,7 @@ algorithm
   end match;
 end rangeIntExprs;
 
-public function equationNth "function: equationNth
-  author: PA
+public function equationNth "author: PA
 
   Return the n:th equation from the expandable equation array
   indexed from 0..1.
@@ -1794,8 +1781,7 @@ algorithm
 end equationNth;
 
 public function daeSize
-"function: daeSize
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns the size of the dae system, wich corsopndens to the number of variables."
   input BackendDAE.BackendDAE dae;
   output Integer size;
@@ -1810,8 +1796,7 @@ end daeSize;
 
 
 public function systemSize
-"function: equationSize
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns the size of the dae system, the size of the equations in an EquationArray,
   which not corresponds to the number of equations in a system."
   input BackendDAE.EqSystem syst;
@@ -1827,8 +1812,7 @@ algorithm
   end match;
 end systemSize;
 
-public function equationSize "function: equationSize
-  author: PA
+public function equationSize "author: PA
 
   Returns the size of the equations in an EquationArray, which not
   corresponds to the number of equations in a system."
@@ -1843,8 +1827,7 @@ algorithm
 end equationSize;
 
 public function equationArraySizeDAE
-"function: equationArraySizeDAE
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns the number of equations in a system."
   input BackendDAE.EqSystem dae;
   output Integer n;
@@ -1859,8 +1842,7 @@ algorithm
   end match;
 end equationArraySizeDAE;
 
-public function equationArraySize "function: equationArraySize
-  author: PA
+public function equationArraySize "author: PA
 
   Returns the number of equations in an EquationArray, which not
   corresponds to the number of equations in a system but not
@@ -2016,8 +1998,7 @@ algorithm
   end matchcontinue;
 end generateStatePartition;
 
-protected function splitBlocks "function: splitBlocks
-  Split the blocks into two parts, one dynamic and one output, depedning
+protected function splitBlocks "Split the blocks into two parts, one dynamic and one output, depedning
   on if an equation in the block is marked or not.
   inputs:  (blocks: int list list, marks: int array)
   outputs: (dynamic: int list list, output: int list list)"
@@ -2083,8 +2064,7 @@ algorithm
   end matchcontinue;
 end blockIsDynamic;
 
-public function markStateEquations "function: markStateEquations
-  This function goes through all equations and marks the ones that
+public function markStateEquations "This function goes through all equations and marks the ones that
   calculates a state, or is needed in order to calculate a state,
   with a non-zero value in the array passed as argument.
   This is done by traversing the directed graph of nodes where
@@ -2114,8 +2094,7 @@ algorithm
 end markStateEquations;
 
 protected function markStateEquationsWork
-"function: markStateEquationsWork
-  Helper function to mark_state_equation
+"Helper function to mark_state_equation
   Does the job by looking at variable indexes and incidencematrices.
   inputs: (eqns: int list,
              marks: (int array  BackendDAE.IncidenceMatrix  int vector  int vector))
@@ -2176,8 +2155,7 @@ algorithm
 end consNotMarked;
 
 public function removeNegative
-"function: removeNegative
-  author: PA
+"author: PA
   Removes all negative integers."
   input list<Integer> lst;
   output list<Integer> lst_1;
@@ -2186,8 +2164,7 @@ algorithm
 end removeNegative;
 
 public function eqnsForVarWithStates
-"function: eqnsForVarWithStates
-  author: PA
+"author: PA
   This function returns all equations as a list of equation indices
   given a variable as a variable index, including the equations containing
   the state variable but not its derivative. This must be used to update
@@ -2227,8 +2204,7 @@ algorithm
 end eqnsForVarWithStates;
 
 public function varsInEqn
-"function: varsInEqn
-  author: PA
+"author: PA
   This function returns all variable indices as a list for
   a given equation, given as an equation index. (1...n)
   Negative indexes are removed.
@@ -2254,8 +2230,7 @@ algorithm
 end varsInEqn;
 
 public function varsInEqnEnhanced
-"function: varsInEqnEnhanced
-  author: Frenkel TUD
+"author: Frenkel TUD
   This function returns all variable indices as a list for
   a given equation, given as an equation index. (1...n)
   Negative indexes are removed.
@@ -2270,8 +2245,7 @@ algorithm
 end varsInEqnEnhanced;
 
 public function varsInEqnEnhanced1
-"function: varsInEqnEnhanced
-  author: Frenkel TUD
+"author: Frenkel TUD
   This function returns all variable indices as a list for
   a given equation, given as an equation index. (1...n)
   Negative indexes are removed.
@@ -2289,8 +2263,7 @@ algorithm
 end varsInEqnEnhanced1;
 
 public function subscript2dCombinations
-"function: susbscript2dCombinations
-  This function takes two lists of list of subscripts and combines them in
+"This function takes two lists of list of subscripts and combines them in
   all possible combinations. This is used when finding all indexes of a 2d
   array.
   For instance, subscript2dCombinations({{a},{b},{c}},{{x},{y},{z}})
@@ -2372,8 +2345,7 @@ algorithm
 end splitoutEquationAndVars;
 
 public function whenClauseAddDAE
-"function: whenClauseAddDAE
-  author: Frenkel TUD 2011-05"
+"author: Frenkel TUD 2011-05"
   input list<BackendDAE.WhenClause> inWcLst;
   input BackendDAE.Shared shared;
   output BackendDAE.Shared oshared;
@@ -2402,8 +2374,7 @@ algorithm
 end whenClauseAddDAE;
 
 public function getStrongComponents
-"function: getStrongComponents
-  author: Frenkel TUD 2011-11
+"author: Frenkel TUD 2011-11
   This function returns the strongComponents of a BackendDAE."
   input BackendDAE.EqSystem syst;
   output BackendDAE.StrongComponents outComps;
@@ -2412,8 +2383,7 @@ algorithm
 end getStrongComponents;
 
 public function getFunctions
-"function: getFunctions
-  author: Frenkel TUD 2011-11
+"author: Frenkel TUD 2011-11
   This function returns the Functions of a BackendDAE."
   input BackendDAE.Shared shared;
   output DAE.FunctionTree functionTree;
@@ -2945,8 +2915,7 @@ algorithm
   outSubslst := List.map1(inRangelist, List.consr, inSub);
 end rangesToSubscripts1;
 
-public function getEquationBlock"function: getEquationBlock
-  author: PA
+public function getEquationBlock"author: PA
 
   Returns the block the equation belongs to.
 "
@@ -2985,8 +2954,7 @@ end getEquationBlock;
 ******************************************************************/
 
 public function incidenceMatrix
-"function: incidenceMatrix
-  author: PA, adrpo
+"author: PA, adrpo
   Calculates the incidence matrix, i.e. which variables are present in each equation.
   You can ask for absolute indexes or normal (negative for der) via the IndexType.
     wbraun: beware dim(IncidenceMatrix) != dim(IncidenceMatrixT) due to array equations. "
@@ -3020,8 +2988,7 @@ algorithm
 end incidenceMatrix;
 
 public function incidenceMatrixScalar
-"function: incidenceMatrixScalar
-  author: PA, adrpo
+"author: PA, adrpo
   Calculates the incidence matrix, i.e. which variables are present in each equation.
   You can ask for absolute indexes or normal (negative for der) via the IndexType"
   input BackendDAE.EqSystem syst;
@@ -3235,8 +3202,7 @@ algorithm
 end fillincidenceMatrixT;
 
 public function incidenceRow
-"function: incidenceRow
-  author: PA
+"author: PA
   Helper function to incidenceMatrix. Calculates the indidence row
   in the matrix for one equation."
   input BackendDAE.Equation inEquation;
@@ -3352,8 +3318,7 @@ algorithm
 end incidenceRow;
 
 protected function incidenceRowLst
-"function: incidenceRowLst
-  author: Frenkel TUD
+"author: Frenkel TUD
   Helper function to incidenceMatrix. Calculates the indidence row
   in the matrix for if equation."
   input list<BackendDAE.Equation> inEquation;
@@ -3383,8 +3348,7 @@ algorithm
 end incidenceRowLst;
 
 protected function incidenceRowLstLst
-"function: incidenceRowLst
-  author: Frenkel TUD
+"author: Frenkel TUD
   Helper function to incidenceMatrix. Calculates the indidence row
   in the matrix for if equation."
   input list<list<BackendDAE.Equation>> inEquation;
@@ -3414,8 +3378,7 @@ algorithm
 end incidenceRowLstLst;
 
 protected function incidenceRowWhen
-"function: incidenceRowWhen
-  author: Frenkel TUD
+"author: Frenkel TUD
   Helper function to incidenceMatrix. Calculates the indidence row
   in the matrix for a when equation."
   input BackendDAE.Variables inVariables;
@@ -3510,8 +3473,7 @@ algorithm
   end match;
 end incidenceRow1;
 
-public function incidenceRowExp "function: incidenceRowExp
-  author: PA
+public function incidenceRowExp "author: PA
   Helper function to incidenceRow, investigates expressions for
   variables, returning variable indexes."
   input DAE.Exp inExp;
@@ -3843,8 +3805,7 @@ end incidenceRowExp1withInput;
 
 
 public function transposeMatrix
-"function: transposeMatrix
-  author: Frenkel TUD 2012-11
+"author: Frenkel TUD 2012-11
   Calculates the transpose of the incidence matrix,
   i.e. which equations each variable is present in."
   input BackendDAE.IncidenceMatrix m;
@@ -3856,8 +3817,7 @@ algorithm
 end transposeMatrix;
 
 protected function transposeRow
-"function: transposeRow
-  author: PA
+"author: PA
   Helper function to transposeMatrix2.
   Input: BackendDAE.IncidenceMatrix (eqn => var)
   Input: row number (variable)
@@ -3901,8 +3861,7 @@ algorithm
 end absIncidenceMatrix;
 
 public function varsIncidenceMatrix
-"function: varsIncidenceMatrix
-  author: PA
+"author: PA
   Return all variable indices in the incidence
   matrix, i.e. all elements of the matrix."
   input BackendDAE.IncidenceMatrix m;
@@ -3915,8 +3874,7 @@ algorithm
 end varsIncidenceMatrix;
 
 public function updateIncidenceMatrix
-"function: updateIncidenceMatrix
-  author: PA
+"author: PA
   Takes a daelow and the incidence matrix and its transposed
   represenation and a list of  equation indexes that needs to be updated.
   First the BackendDAE.IncidenceMatrix is updated, i.e. the mapping from equations
@@ -3999,8 +3957,7 @@ algorithm
 end updateIncidenceMatrix1;
 
 public function updateIncidenceMatrixScalar
-"function: updateIncidenceMatrixScalar
-  author: PA
+"author: PA
   Takes a daelow and the incidence matrix and its transposed
   represenation and a list of  equation indexes that needs to be updated.
   First the BackendDAE.IncidenceMatrix is updated, i.e. the mapping from equations
@@ -4186,8 +4143,7 @@ algorithm
 end getOldVars;
 
 protected function removeValuefromMatrix
-"function: removeValuefromMatrix
-  author: Frenkel TUD 2011-04"
+"author: Frenkel TUD 2011-04"
   input Integer inValue;
   input list<Integer> inIntegerLst;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
@@ -4226,8 +4182,7 @@ algorithm
 end removeValuefromMatrix;
 
 protected function addValuetoMatrix
-"function: addValuetoMatrix
-  author: Frenkel TUD 2011-04"
+"author: Frenkel TUD 2011-04"
   input Integer inValue;
   input list<Integer> inIntegerLst;
   input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
@@ -4367,8 +4322,7 @@ algorithm
 end getIncidenceMatrixScalar;
 
 
-protected function traverseStmts "function: traverseStmts
-  Author: Frenkel TUD 2012-06
+protected function traverseStmts "Author: Frenkel TUD 2012-06
   traverese DAE.Statement without change possibility."
   input list<DAE.Statement> inStmts;
   input FuncExpType func;
@@ -4572,8 +4526,7 @@ end traverseStmtsElse;
 ******************************************************************/
 
 public function getAdjacencyMatrixEnhancedScalar
-"function: getAdjacencyMatrixEnhancedScalar
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Calculates the Adjacency matrix, i.e. which variables are present in each equation
   and add some information how the variable occure in the equation(see BackendDAE.BackendDAE.Solvability)."
   input BackendDAE.EqSystem syst;
@@ -4674,8 +4627,7 @@ end adjacencyMatrixDispatchEnhancedScalar;
 
 
 public function getAdjacencyMatrixEnhanced
-"function: getAdjacencyMatrixEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Calculates the Adjacency matrix, i.e. which variables are present in each equation
   and add some information how the variable occure in the equation(see BackendDAE.BackendDAE.Solvability)."
   input BackendDAE.EqSystem syst;
@@ -4811,8 +4763,7 @@ algorithm
 end fillincAdjacencyMatrixTEnhanced;
 
 protected function adjacencyRowEnhanced
-"function: adjacencyRowEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
   in the matrix for one equation."
   input BackendDAE.Variables inVariables;
@@ -5024,8 +4975,7 @@ algorithm
 end adjacencyRowEnhancedEqnLst;
 
 protected function adjacencyRowAlgorithmOutputs
-"function: adjacencyRowAlgorithmOutputs
-  author: Frenkel TUD 10-2012
+"author: Frenkel TUD 10-2012
   Helper function to adjacencyRowEnhanced. Mark all algorithm outputs
   as solved."
   input list<DAE.ComponentRef> algOutputs;
@@ -5052,8 +5002,7 @@ algorithm
 end adjacencyRowAlgorithmOutputs;
 
 protected function adjacencyRowAlgorithmOutputs1
-"function: adjacencyRowAlgorithmOutputs
-  author: Frenkel TUD 10-2012
+"author: Frenkel TUD 10-2012
   Helper function to adjacencyRowEnhanced. Mark all algorithm outputs
   as solved."
   input list<Integer> vindx;
@@ -5076,8 +5025,7 @@ algorithm
 end adjacencyRowAlgorithmOutputs1;
 
 protected function adjacencyRowAlgorithmInputs
-"function: adjacencyRowAlgorithmInputs
-  author: Frenkel TUD 10-2012
+"author: Frenkel TUD 10-2012
   Helper function to adjacencyRowEnhanced. Mark all algorithm inputs
   as unsolvable."
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer,array<Integer>,BackendDAE.AdjacencyMatrixElementEnhanced>> iTpl;
@@ -5105,8 +5053,7 @@ algorithm
 end adjacencyRowAlgorithmInputs;
 
 protected function adjacencyRowAlgorithmInputs1
-"function: adjacencyRowAlgorithmInputs1
-  author: Frenkel TUD 10-2012
+"author: Frenkel TUD 10-2012
   Helper function to adjacencyRowEnhanced. Mark all algorithm inputs
   as unsolvable."
   input list<Integer> vindx;
@@ -5137,8 +5084,7 @@ algorithm
 end adjacencyRowAlgorithmInputs1;
 
 protected function adjacencyRowWhenEnhanced
-"function: adjacencyRowWhenEnhanced
-  author: Frenkel TUD
+"author: Frenkel TUD
   Helper function to adjacencyMatrixDispatchEnhanced. Calculates the adjacency row
   in the matrix for one equation."
   input BackendDAE.Variables inVariables;
@@ -5185,8 +5131,7 @@ algorithm
 end adjacencyRowWhenEnhanced;
 
 protected function markNegativ
-"function: markNegativ
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced. Update the array
   with a negative entry in indx."
   input Integer indx;
@@ -5199,8 +5144,7 @@ algorithm
 end markNegativ;
 
 protected function adjacencyRowEnhanced1
-"function: adjacencyRowEnhanced1
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced. Calculates the
   solvability of the variables."
   input list<Integer> lst;
@@ -5471,8 +5415,7 @@ algorithm
 end expCrefLstHasCref;
 
 protected function adjacencyRowEnhanced2
-"function: adjacencyRowEnhanced2
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced. Calculates the
   solvability of the variables."
   input DAE.ComponentRef cr;
@@ -5505,8 +5448,7 @@ algorithm
 end adjacencyRowEnhanced2;
 
 protected function adjacencyRowEnhanced3
-"function: adjacencyRowEnhanced3
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced. Calculates the
   solvability of the variables."
   input Boolean b1;
@@ -5556,8 +5498,7 @@ algorithm
 end adjacencyRowEnhanced3;
 
 protected function replaceVartraverser
-"function: replaceVartraverser
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced3. Traverser
   to replace variables(parameters) with there bind expression."
   input tuple<DAE.Exp, BackendDAE.Variables > inExp;
@@ -5584,8 +5525,7 @@ algorithm
 end replaceVartraverser;
 
 protected function adjacencyRowExpEnhanced
-"function: adjacencyRowExpEnhanced
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to adjacencyRowEnhanced, investigates expressions for
   variables, returning variable indexes, and mark the solvability."
   input DAE.Exp inExp;
@@ -5817,8 +5757,7 @@ algorithm
 end getIfExpBranchVarOccurency;
 
 protected function adjacencyRowExpEnhanced1
-"function: adjacencyRowExpEnhanced1
-  author: Frenkel TUD 2012-05
+"author: Frenkel TUD 2012-05
   Helper function to traversingadjacencyRowExpSolvableEnhancedFinder, fill the variable indexes
   int the list and update the array to mark the variables."
   input list<BackendDAE.Var> inVarLst;
@@ -5935,8 +5874,7 @@ algorithm
 end adjacencyRowExpEnhanced1;
 
 public function solvabilityWights
-"function: solvabilityWights
-  author: Frenkel TUD 2012-05,
+"author: Frenkel TUD 2012-05,
   return a integer for the solvability, this function is used
   to calculade wights for variables "
   input BackendDAE.Solvability solva;
@@ -5956,8 +5894,7 @@ algorithm
 end solvabilityWights;
 
 public function solvabilityCMP
-"function: solvabilityCMP
-  author: Frenkel TUD 2012-05,
+"author: Frenkel TUD 2012-05,
   function to compare solvabilities in the way solvabilityA < solvabilityB with
   solved < constone < const < parameter < timevarying < nonlinear < unsolvable."
   input BackendDAE.Solvability sa;
@@ -6001,8 +5938,7 @@ end solvabilityCMP;
  jacobian stuff
  ************************************/
 
-public function calculateJacobian "function: calculateJacobian
-  This function takes an array of equations and the variables of the equation
+public function calculateJacobian "This function takes an array of equations and the variables of the equation
   and calculates the jacobian of the equations."
   input BackendDAE.Variables inVariables;
   input BackendDAE.EquationArray inEquationArray;
@@ -6029,8 +5965,7 @@ algorithm
   end matchcontinue;
 end calculateJacobian;
 
-public function calculateJacobianEnhanced "function: calculateJacobianEnhanced
-  This function takes an array of equations and the variables of the equation
+public function calculateJacobianEnhanced "This function takes an array of equations and the variables of the equation
   and calculates the jacobian of the equations."
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
@@ -6054,8 +5989,7 @@ algorithm
   end matchcontinue;
 end calculateJacobianEnhanced;
 
-public function traverseequationToResidualForm "function: traverseequationToResidualForm
-  author: Frenkel TUD 2010-11
+public function traverseequationToResidualForm "author: Frenkel TUD 2010-11
   helper for calculateJacobian"
   input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
   output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
@@ -6093,8 +6027,7 @@ algorithm
   end matchcontinue;
 end traverseEquationToScalarResidualForm;
 
-protected function calculateJacobianRows "function: calculateJacobianRows
-  author: PA
+protected function calculateJacobianRows "author: PA
   This function takes a list of Equations and a set of variables and
   calculates the jacobian expression for each variable over each equations,
   returned in a sparse matrix representation.
@@ -6133,8 +6066,7 @@ algorithm
   end match;
 end calculateJacobianRows;
 
-protected function calculateJacobianRow "function: calculateJacobianRow
-  author: PA
+protected function calculateJacobianRow "author: PA
   Calculates the jacobian for one equation. See calculateJacobianRows.
   inputs:  (Equation,
               BackendDAE.Variables,
@@ -6227,8 +6159,7 @@ algorithm
   end match;
 end calculateJacobianRow;
 
-public function getArrayEquationSub"function: getArrayEquationSub
-  author: Frenkel TUD
+public function getArrayEquationSub"author: Frenkel TUD
   helper for calculateJacobianRow"
   input Integer Index;
   input list<Option<Integer>> inAD;
@@ -6304,8 +6235,7 @@ algorithm
   end match;
 end arrayDimensionsToRange;
 
-protected function calculateJacobianRowLst "function: calculateJacobianRowLst
-  author: Frenkel TUD 2012-06
+protected function calculateJacobianRowLst "author: Frenkel TUD 2012-06
   calls calculateJacobianRow2 for a list of DAE.Exp"
   input list<DAE.Exp> inExps;
   input BackendDAE.Variables vars;
@@ -6331,8 +6261,7 @@ algorithm
   end match;
 end calculateJacobianRowLst;
 
-protected function calculateJacobianRow2 "function: calculateJacobianRow2
-  author: PA
+protected function calculateJacobianRow2 "author: PA
   Helper function to calculateJacobianRow
   Differentiates expression for each variable cref.
   inputs: (DAE.Exp,
@@ -6415,8 +6344,7 @@ algorithm
   end matchcontinue;
 end calculateJacobianRow3;
 
-public function analyzeJacobian "function: analyzeJacobian
-  author: PA
+public function analyzeJacobian "author: PA
   Analyze the jacobian to find out if the jacobian of system of equations
   can be solved at compiletime or runtime or if it is a nonlinear system
   of equations."
@@ -6517,8 +6445,7 @@ algorithm
   end match;
 end varsNotInRelations;
 
-protected function rhsConstant "function: rhsConstant
-  author: PA
+protected function rhsConstant "author: PA
   Determines if the right hand sides of an equation system,
   represented as a BackendDAE, is constant."
   input BackendDAE.Variables vars;
@@ -6544,8 +6471,7 @@ algorithm
   end matchcontinue;
 end rhsConstant;
 
-protected function rhsConstant2 "function: rhsConstant2
-  author: PA
+protected function rhsConstant2 "author: PA
   Helper function to rhsConstant, traverses equation list."
   input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> inTpl;
   output tuple<BackendDAE.Equation, Boolean, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> outTpl;
@@ -6626,8 +6552,7 @@ end rhsConstant2;
 //   end matchcontinue;
 // end freeFromAnyVar;
 
-protected function jacobianConstant "function: jacobianConstant
-  author: PA
+protected function jacobianConstant "author: PA
   Checks if jacobian is constant, i.e. all expressions in each equation are constant."
   input list<tuple<Integer, Integer, BackendDAE.Equation>> inTplIntegerIntegerEquationLst;
   output Boolean outBoolean;
@@ -6657,8 +6582,7 @@ algorithm
   end matchcontinue;
 end jacobianConstant;
 
-protected function jacobianNonlinear "function: jacobianNonlinear
-  author: PA
+protected function jacobianNonlinear "author: PA
   Check if jacobian indicates a nonlinear system.
   TODO: Algorithms and Array equations"
   input BackendDAE.Variables vars;
@@ -6686,8 +6610,7 @@ algorithm
   end matchcontinue;
 end jacobianNonlinear;
 
-protected function jacobianNonlinearExp "function: jacobianNonlinearExp
-  author: PA
+protected function jacobianNonlinearExp "author: PA
   Checks wheter the jacobian indicates a nonlinear system.
   This is true if the jacobian contains any of the variables
   that is solved for."
@@ -6725,8 +6648,7 @@ algorithm
   end matchcontinue;
 end traverserjacobianNonlinearExp;
 
-protected function containAnyVar "function: containAnyVar
-  author: PA
+protected function containAnyVar "author: PA
   Returns true if any of the variables given
   as ComponentRef list is among the BackendDAE.Variables."
   input list<DAE.ComponentRef> inExpComponentRefLst;
@@ -6750,8 +6672,7 @@ algorithm
   end matchcontinue;
 end containAnyVar;
 
-public function getEqnSysRhs "function: getEqnSysRhs
-  author: Frenkel TUD 2013-02
+public function getEqnSysRhs "author: Frenkel TUD 2013-02
 
   Retrieve the right hand side of an equation system, given a set of variables.
   Uses A1*x + b1= A2*x + b2 -> 0 = (A1 - A2)*x+(b1-b2) -> x=0 -> rhs= A*0+b=b.
@@ -6835,8 +6756,7 @@ algorithm
   end matchcontinue;
 end equationToExp;
 
-protected function getEqnsysRhsExp "function: getEqnsysRhsExp
-  author: PA
+protected function getEqnsysRhsExp "author: PA
 
   Retrieve the right hand side expression of an equation
   in an equation system, given a set of variables.
@@ -7004,8 +6924,7 @@ end makeZeroReplacement;
 /*************************************************
  * traverseBackendDAE and stuff
  ************************************************/
-public function traverseBackendDAEExps "function: traverseBackendDAEExps
-  author: Frenkel TUD
+public function traverseBackendDAEExps "author: Frenkel TUD
 
   This function goes through the BackendDAE structure and finds all the
   expressions and performs the function on them in a list
@@ -7086,8 +7005,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsNoCopyWithUpdate;
 
-public function traverseBackendDAEExpsEqSystem "function: traverseBackendDAEExps
-  author: Frenkel TUD
+public function traverseBackendDAEExpsEqSystem "author: Frenkel TUD
 
   This function goes through the BackendDAE structure and finds all the
   expressions and performs the function on them in a list
@@ -7111,8 +7029,7 @@ algorithm
   outTypeA := traverseBackendDAEExpsEqns(eqns,func,outTypeA);
 end traverseBackendDAEExpsEqSystem;
 
-public function traverseBackendDAEExpsEqSystemWithUpdate "function: traverseBackendDAEExps
-  author: Frenkel TUD
+public function traverseBackendDAEExpsEqSystemWithUpdate "author: Frenkel TUD
 
   This function goes through the BackendDAE structure and finds all the
   expressions and performs the function on them in a list
@@ -7136,8 +7053,7 @@ algorithm
   outTypeA := traverseBackendDAEExpsEqnsWithUpdate(eqns,func,outTypeA);
 end traverseBackendDAEExpsEqSystemWithUpdate;
 
-public function traverseBackendDAEExpsVars "function: traverseBackendDAEExpsVars
-  author: Frenkel TUD
+public function traverseBackendDAEExpsVars "author: Frenkel TUD
 
   Helper for traverseBackendDAEExps
 "
@@ -7169,8 +7085,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsVars;
 
-public function traverseBackendDAEExpsVarsWithUpdate "function: traverseBackendDAEExpsVars
-  author: Frenkel TUD
+public function traverseBackendDAEExpsVarsWithUpdate "author: Frenkel TUD
 
   Helper for traverseBackendDAEExps
 "
@@ -7353,8 +7268,7 @@ algorithm
   end match;
 end arrayUpdateCond;
 
-protected function traverseBackendDAEExpsVar "function: traverseBackendDAEExpsVar
-  author: Frenkel TUD
+protected function traverseBackendDAEExpsVar "author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
   DAE.T_UNKNOWN_DEFAULT is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
@@ -7371,8 +7285,7 @@ algorithm
   (_,outTypeA):=traverseBackendDAEExpsVarWithUpdate(inVar,func,inTypeA);
 end traverseBackendDAEExpsVar;
 
-protected function traverseBackendDAEExpsVarWithUpdate "function: traverseBackendDAEExpsVar
-  author: Frenkel TUD
+protected function traverseBackendDAEExpsVarWithUpdate "author: Frenkel TUD
   Helper traverseBackendDAEExpsVar. Get all exps from a  Var.
   DAE.T_UNKNOWN_DEFAULT is used as type for componentref. Not important here.
   We only use the exp list for finding function calls"
@@ -7561,8 +7474,7 @@ end traverseBackendDAEAttrDistribution;
 //   end match;
 // end traverseBackendDAEExpsSubscript;
 
-protected function traverseBackendDAEExpsSubscriptWithUpdate "function: traverseBackendDAEExpsSubscript
-  author: Frenkel TUD
+protected function traverseBackendDAEExpsSubscriptWithUpdate "author: Frenkel TUD
   helper for traverseBackendDAEExpsSubscript"
   replaceable type Type_a subtypeof Any;
   input DAE.Subscript inSubscript;
@@ -7592,8 +7504,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsSubscriptWithUpdate;
 
-public function traverseBackendDAEExpsEqns "function: traverseBackendDAEExpsEqns
-  author: Frenkel TUD
+public function traverseBackendDAEExpsEqns "author: Frenkel TUD
 
   Helper for traverseBackendDAEExpsEqns
 "
@@ -7621,8 +7532,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqns;
 
-public function traverseBackendDAEExpsEqnsWithStop "function: traverseBackendDAEExpsEqnsWithStop
-  author: Frenkel TUD
+public function traverseBackendDAEExpsEqnsWithStop "author: Frenkel TUD
 
   Helper for traverseBackendDAEExpsEqns
 "
@@ -7650,8 +7560,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqnsWithStop;
 
-public function traverseBackendDAEExpsEqnsWithUpdate "function: traverseBackendDAEExpsEqns
-  author: Frenkel TUD
+public function traverseBackendDAEExpsEqnsWithUpdate "author: Frenkel TUD
 
   Helper for traverseBackendDAEExpsEqns
 "
@@ -7681,8 +7590,7 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqnsWithUpdate;
 
-protected function traverseBackendDAEExpsOptEqn "function: traverseBackendDAEExpsOptEqn
-  author: Frenkel TUD 2010-11
+protected function traverseBackendDAEExpsOptEqn "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqn."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
@@ -7697,8 +7605,7 @@ algorithm
   (_,outTypeA) := traverseBackendDAEExpsOptEqnWithUpdate(inEquation,func,inTypeA);
 end traverseBackendDAEExpsOptEqn;
 
-protected function traverseBackendDAEExpsOptEqnWithStop "function: traverseBackendDAEExpsOptEqnWithStop
-  author: Frenkel TUD 2010-11
+protected function traverseBackendDAEExpsOptEqnWithStop "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsOptEqnWithStop."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
@@ -7725,8 +7632,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsOptEqnWithStop;
 
-protected function traverseBackendDAEExpsOptEqnWithUpdate "function: traverseBackendDAEExpsOptEqn
-  author: Frenkel TUD 2010-11
+protected function traverseBackendDAEExpsOptEqnWithUpdate "author: Frenkel TUD 2010-11
   Helper for traverseBackendDAEExpsEqn."
   replaceable type Type_a subtypeof Any;
   input Option<BackendDAE.Equation> inEquation;
@@ -7810,8 +7716,7 @@ algorithm
 end traverseAlgorithmExpsWithUpdate;
 
 /*
-protected function traverseBackendDAEExpsWrapper "function: traverseBackendDAEExpsWrapper
-  author: Frenkel TUD
+protected function traverseBackendDAEExpsWrapper "author: Frenkel TUD
 
   Helper function to traverse BackendDAE Exps
 "
@@ -7877,8 +7782,7 @@ partial function StructurallySingularSystemHandlerFunc
 end StructurallySingularSystemHandlerFunc;
 
 partial function matchingAlgorithmFunc
-"function: matchingAlgorithmFunc
-  This is the interface for the matching algorithm"
+"This is the interface for the matching algorithm"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;

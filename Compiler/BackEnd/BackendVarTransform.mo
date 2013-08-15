@@ -99,8 +99,7 @@ algorithm
   end match;
 end emptyReplacements;
 
-public function emptyReplacementsSized "function: emptyReplacements
-  Returns an empty set of replacement rules, giving a size of hashtables to allocate"
+public function emptyReplacementsSized "Returns an empty set of replacement rules, giving a size of hashtables to allocate"
   input Integer size;
   output VariableReplacements outVariableReplacements;
 algorithm
@@ -471,8 +470,7 @@ algorithm
 end makeTransitive2;
 
 protected function addExtendReplacement
-"function: addExtendReplacement
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   checks if the parents of cref from type array or record
   and add a rule to extend them."
   input HashTable2.HashTable extendrepl;
@@ -813,8 +811,7 @@ end replacementCurrentSize;
 /* replace Expression with condition function */
 /*********************************************************/
 
-public function replaceExp "function: replaceExp
-  Takes a set of replacement rules and an expression and a function
+public function replaceExp "Takes a set of replacement rules and an expression and a function
   giving a boolean value for an expression.
   The function replaces all variables in the expression using
   the replacement rules, if the boolean value is true children of the
@@ -1237,8 +1234,7 @@ algorithm
   end match;
 end replaceExpCond;
 
-protected function replaceExpMatrix "function: replaceExpMatrix
-  author: PA
+protected function replaceExpMatrix "author: PA
   Helper function to replaceExp, traverses Matrix expression list."
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst;
   input VariableReplacements inVariableReplacements;
@@ -1276,8 +1272,7 @@ end replaceExpMatrix;
 /* condition function for replace Expression  */
 /*********************************************************/
 
-public function skipPreOperator "function: skipPreOperator
-  The variable/exp in the pre operator should not be replaced.
+public function skipPreOperator "The variable/exp in the pre operator should not be replaced.
   This function is passed to replace_exp to ensure this."
   input DAE.Exp inExp;
   output Boolean outBoolean;
@@ -1288,8 +1283,7 @@ algorithm
   end matchcontinue;
 end skipPreOperator;
 
-public function skipPreChangeEdgeOperator "function: skipPreChangeEdgeOperator
-  The variable/exp in the pre/change/edge operator should not be replaced.
+public function skipPreChangeEdgeOperator "The variable/exp in the pre/change/edge operator should not be replaced.
   This function is passed to replace_exp to ensure this."
   input DAE.Exp inExp;
   output Boolean outBoolean;
@@ -1326,8 +1320,7 @@ end selfGeneratedVar;
 /*********************************************************/
 
 public function replaceEquationsArr
-"function: replaceEquationsArr
-  This function takes a list of equations ana a set of variable
+"This function takes a list of equations ana a set of variable
   replacements and applies the replacements on all equations.
   The function returns the updated list of equations"
   input BackendDAE.EquationArray inEqns;
@@ -1378,8 +1371,7 @@ algorithm
 end replaceEquationTraverser;
 
 public function replaceEquations
-"function: replaceEquations
-  This function takes a list of equations ana a set of variable
+"This function takes a list of equations ana a set of variable
   replacements and applies the replacements on all equations.
   The function returns the updated list of equations"
   input list<BackendDAE.Equation> inEqns;
@@ -1682,8 +1674,7 @@ end replaceWhenEquation;
 /*********************************************************/
 
 public function replaceWhenClauses
-"function: replaceWhenClauses
-  This function takes a list of when clauses ana a set of variable
+"This function takes a list of when clauses ana a set of variable
   replacements and applies the replacements on all clauses.
   The function returns the updated list of clauses"
   input list<BackendDAE.WhenClause> iWhenclauses;
@@ -1716,8 +1707,7 @@ algorithm
 end replaceWhenClauses;
 
 protected function replaceWhenClausesLst
-"function: replaceWhenClausesLst
-  author: Frenkel TUD 2012-09
+"author: Frenkel TUD 2012-09
   Traverse all expressions of a when clause list. It is possible to change the expressions"
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   input VariableReplacements repl;
@@ -1757,8 +1747,7 @@ algorithm
 end replaceWhenClausesLst;
 
 protected function replaceWhenOperator
-"function: replaceWhenOperator
-  author: Frenkel TUD 2012-09"
+"author: Frenkel TUD 2012-09"
   input list<BackendDAE.WhenOperator> inReinitStmtLst;
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
@@ -2320,8 +2309,7 @@ algorithm
 end dumpReplacements;
 
 public function dumpExtendReplacements
-"function: dumpReplacements
-  Prints the variable extendreplacements on form var1 -> var2"
+"Prints the variable extendreplacements on form var1 -> var2"
   input VariableReplacements inVariableReplacements;
 algorithm
   _:=
@@ -2349,8 +2337,7 @@ algorithm
 end dumpExtendReplacements;
 
 public function dumpDerConstReplacements
-"function: dumpReplacements
-  Prints the variable derConst replacements on form var1 -> exp"
+"Prints the variable derConst replacements on form var1 -> exp"
   input VariableReplacements inVariableReplacements;
 algorithm
   _:=
@@ -2389,8 +2376,7 @@ algorithm
 end printReplacementTupleStr;
 
 public function dumpStatistics
-"function: dumpStatistics
-  author Frenkel TUD 2013-02
+"author Frenkel TUD 2013-02
   Prints the size of replacement,inverse replacements and"
   input VariableReplacements inVariableReplacements;
 protected

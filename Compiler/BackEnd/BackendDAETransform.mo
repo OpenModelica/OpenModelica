@@ -68,8 +68,7 @@ protected import Values;
  strongComponents and stuff
  *****************************************/
 
-public function strongComponentsScalar "function: strongComponents
-  author: PA
+public function strongComponentsScalar "author: PA
 
   This is the second part of the BLT sorting. It takes the variable
   assignments and the incidence matrix as input and identifies strong
@@ -172,8 +171,7 @@ algorithm
   end matchcontinue;
 end varAssignmentNonScalar;
 
-protected function analyseStrongComponentsScalar"function: analyseStrongComponents
-  author: Frenkel TUD 2011-05
+protected function analyseStrongComponentsScalar"author: Frenkel TUD 2011-05
   analyse the type of the strong connect components and
   calculate the jacobian."
   input list<list<Integer>> inComps;
@@ -209,8 +207,7 @@ algorithm
   end match;
 end analyseStrongComponentsScalar;
 
-protected function analyseStrongComponentScalar"function: analyseStrongComponent
-  author: Frenkel TUD 2011-05
+protected function analyseStrongComponentScalar"author: Frenkel TUD 2011-05
   helper for analyseStrongComponents."
   input list<Integer> inComp;
   input BackendDAE.EqSystem syst;
@@ -279,8 +276,7 @@ algorithm
 end uniqueComp;
 
 
-public function strongComponents "function: strongComponents
-  author: PA
+public function strongComponents "author: PA
 
   This is the second part of the BLT sorting. It takes the variable
   assignments and the incidence matrix as input and identifies strong
@@ -318,8 +314,7 @@ algorithm
   end matchcontinue;
 end strongComponents;
 
-protected function analyseStrongComponents"function: analyseStrongComponents
-  author: Frenkel TUD 2011-05
+protected function analyseStrongComponents"author: Frenkel TUD 2011-05
   analyse the type of the strong connect components and
   calculate the jacobian."
   input list<list<Integer>> inComps;
@@ -350,8 +345,7 @@ algorithm
   end match;
 end analyseStrongComponents;
 
-protected function analyseStrongComponent"function: analyseStrongComponent
-  author: Frenkel TUD 2011-05
+protected function analyseStrongComponent"author: Frenkel TUD 2011-05
   helper for analyseStrongComponents."
   input list<Integer> inComp;
   input BackendDAE.EqSystem syst;
@@ -384,8 +378,7 @@ algorithm
   end match;
 end analyseStrongComponent;
 
-protected function analyseStrongComponentBlock "function: analyseStrongComponentBlock
-  author: Frenkel TUD 2011-05
+protected function analyseStrongComponentBlock "author: Frenkel TUD 2011-05
   helper for analyseStrongComponent."
   input list<Integer> inComp;
   input list<BackendDAE.Equation> inEqnLst;
@@ -649,8 +642,7 @@ algorithm
 end replaceDerOpInExpTraverser;
 
 public function getEquationAndSolvedVar
-"function: getEquationAndSolvedVar
-  author: PA
+"author: PA
   Retrieves the equation and the variable solved in that equation
   given an equation number and the variable assignments2"
   input BackendDAE.StrongComponent inComp;
@@ -753,8 +745,7 @@ algorithm
 end getEquationAndSolvedVar;
 
 protected function getEquationAndSolvedVar_Internal
-"function: getEquationAndSolvedVar_Internal
-  author: PA
+"author: PA
   Retrieves the equation and the variable solved in that equation
   given an equation number and the variable assignments2"
   input Integer inInteger;
@@ -791,8 +782,7 @@ algorithm
 end getEquationAndSolvedVar_Internal;
 
 public function getEquationAndSolvedVarIndxes
-"function: getEquationAndSolvedVarIndxes
-  author: Frenkel TUD
+"author: Frenkel TUD
   Retrieves the equation and the variable indexes solved in that equation
   given an equation number and the variable assignments2"
   input BackendDAE.StrongComponent inComp;
@@ -851,8 +841,7 @@ algorithm
   end matchcontinue;
 end getEquationAndSolvedVarIndxes;
 
-protected function splitMixedEquations "function: splitMixedEquations
-  author: PA
+protected function splitMixedEquations "author: PA
 
   Splits the equation of a mixed equation system into its continuous and
   discrete parts.
@@ -1034,8 +1023,7 @@ Try to break the loop by using the pre operator."});
   end matchcontinue;
 end findDiscreteEquation;
 
-public function tarjanAlgorithm "function: tarjanAlgorithm
-  author: PA
+public function tarjanAlgorithm "author: PA
 
   This is the second part of the BLT sorting. It takes the variable
   assignments and the incidence matrix as input and identifies strong
@@ -1071,8 +1059,7 @@ algorithm
   end matchcontinue;
 end tarjanAlgorithm;
 
-public function strongConnectMain "function: strongConnectMain
-  author: PA
+public function strongConnectMain "author: PA
 
   Helper function to strong_components
 
@@ -1130,8 +1117,7 @@ algorithm
   end matchcontinue;
 end strongConnectMain;
 
-protected function strongConnect "function: strongConnect
-  author: PA
+protected function strongConnect "author: PA
 
   Helper function to strong_connect_main
 
@@ -1179,8 +1165,7 @@ algorithm
   end matchcontinue;
 end strongConnect;
 
-protected function consIfNonempty "function: consIfNonempty
-  author: PA
+protected function consIfNonempty "author: PA
 
   Small helper function to avoid empty sublists.
   Consider moving to Util?
@@ -1199,8 +1184,7 @@ algorithm
   end matchcontinue;
 end consIfNonempty;
 
-public function reachableNodes "function: reachableNodes
-  author: PA
+public function reachableNodes "author: PA
 
   Helper function to strong_connect.
   Returns a list of reachable nodes (equations), corresponding
@@ -1239,8 +1223,7 @@ algorithm
   end matchcontinue;
 end reachableNodes;
 
-protected function iterateReachableNodes "function: iterateReachableNodes
-  author: PA
+protected function iterateReachableNodes "author: PA
 
   Helper function to strong_connect.
 
@@ -1306,8 +1289,7 @@ algorithm
   end matchcontinue;
 end iterateReachableNodes;
 
-protected function checkRoot "function: checkRoot
-  author: PA
+protected function checkRoot "author: PA
 
   Helper function to strong_connect.
 
@@ -1339,8 +1321,7 @@ algorithm
   end matchcontinue;
 end checkRoot;
 
-protected function checkStack "function: checkStack
-  author: PA
+protected function checkStack "author: PA
 
   Helper function to check_root.
 
@@ -1376,8 +1357,7 @@ end checkStack;
  *****************************************/
 
 public function traverseBackendDAEExpsEqn
-"function: traverseBackendDAEExpsEqn
-  author: Frenkel TUD 2010-11
+"author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
   replaceable type Type_a subtypeof Any;
@@ -1610,8 +1590,7 @@ algorithm
 end traverseBackendDAEExpsEqnLstLstWithSymbolicOperation;
 
 protected function traverseBackendDAEExpsWhenOperator
-"function: traverseBackendDAEExpsWhenOperator
-  author: Frenkel TUD 2010-11
+"author: Frenkel TUD 2010-11
   Traverse all expressions of a list of Equations. It is possible to change the equations
   and the multidim equations and the algorithms."
   replaceable type Type_a subtypeof Any;
@@ -1675,8 +1654,7 @@ algorithm
 end traverseBackendDAEExpsWhenOperator;
 
 public function traverseBackendDAEExpsWhenClauseLst
-"function: traverseBackendDAEExpsWhenClauseLst
-  author: Frenkel TUD 2010-11
+"author: Frenkel TUD 2010-11
   Traverse all expressions of a when clause list. It is possible to change the expressions"
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.WhenClause> inWhenClauseLst;

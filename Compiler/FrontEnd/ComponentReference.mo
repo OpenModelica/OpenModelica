@@ -217,8 +217,7 @@ end makeCrefQual;
 /***************************************************/
 
 public function crefToPath
-"function: crefToPath
-  This function converts a ComponentRef to a Path, if possible.
+"This function converts a ComponentRef to a Path, if possible.
   If the component reference contains subscripts, it will silently
   fail."
   input DAE.ComponentRef inComponentRef;
@@ -260,8 +259,7 @@ algorithm
 end crefToPathIgnoreSubs;
 
 public function pathToCref
-"function: pathToCref
-  This function converts a Absyn.Path to a ComponentRef."
+"This function converts a Absyn.Path to a ComponentRef."
   input Absyn.Path inPath;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -302,8 +300,7 @@ algorithm
 end creffromVar;
 
 public function unelabCref
-"function: unelabCref
-  Transform an ComponentRef into Absyn.ComponentRef."
+"Transform an ComponentRef into Absyn.ComponentRef."
   input DAE.ComponentRef inComponentRef;
   output Absyn.ComponentRef outComponentRef;
 algorithm
@@ -348,8 +345,7 @@ algorithm
 end unelabCref;
 
 protected function unelabSubscripts
-"function: unelabSubscripts
-  Helper function to unelabCref, handles subscripts."
+"Helper function to unelabCref, handles subscripts."
   input list<DAE.Subscript> inSubscriptLst;
   output list<Absyn.Subscript> outAbsynSubscriptLst;
 algorithm
@@ -386,8 +382,7 @@ algorithm
 end unelabSubscripts;
 
 public function toExpCref
-"function: toExpCref
-  Translate an Absyn.ComponentRef into a ComponentRef.
+"Translate an Absyn.ComponentRef into a ComponentRef.
   Note: Only support for indexed subscripts of integers"
   input Absyn.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
@@ -425,8 +420,7 @@ algorithm
 end toExpCref;
 
 protected function toExpCrefSubs
-"function: toExpCrefSubs
-  Helper function to toExpCref."
+"Helper function to toExpCref."
   input list<Absyn.Subscript> inAbsynSubscriptLst;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
@@ -476,8 +470,7 @@ end toExpCrefSubs;
 
 
 public function crefToStr
-"function: crefStr
-  This function converts a ComponentRef to a String.
+"This function converts a ComponentRef to a String.
   It is a tail recursive implementation, because of that it
   neads inPreString. Use inNameSeperator to define the 
   Separator inbetween and between the namespace names and the name"
@@ -505,8 +498,7 @@ algorithm
 end crefToStr;
 
 public function crefStr
-"function: crefStr
-  This function simply converts a ComponentRef to a String."
+"This function simply converts a ComponentRef to a String."
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
@@ -514,8 +506,7 @@ algorithm
 end crefStr;
 
 public function crefModelicaStr
-"function: crefModelicaStr
-  Same as crefStr, but uses _ instead of . "
+"Same as crefStr, but uses _ instead of . "
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
@@ -547,8 +538,7 @@ algorithm
 end printComponentRefOptStr;
 
 public function printComponentRefStr
-"function: printComponentRefStr
-  Print a ComponentRef.
+"Print a ComponentRef.
   LS: print functions that return a string instead of printing
       Had to duplicate the huge printExp2 and modify.
       An alternative would be to implement sprint somehow
@@ -608,8 +598,7 @@ algorithm
 end printComponentRefStr;
 
 public function printComponentRef2Str
-"function: printComponentRef2Str
-  Helper function to printComponentRefStr."
+"Helper function to printComponentRefStr."
   input DAE.Ident inIdent;
   input list<DAE.Subscript> inSubscriptLst;
   output String outString;
@@ -693,8 +682,7 @@ end debugPrintComponentRefTypeStr;
 /***************************************************/
 
 public function crefLastIdentEqual
-"function: crefLastIdentEqual
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns true if the ComponentRefs has the same name (the last identifier)."
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
@@ -708,8 +696,7 @@ algorithm
 end crefLastIdentEqual;
 
 public function crefFirstCrefEqual
-"function: crefFirstCrefEqual
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns true if the ComponentRefs have the same first Cref."
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
@@ -723,8 +710,7 @@ algorithm
 end crefFirstCrefEqual;
 
 public function crefFirstCrefLastCrefEqual
-"function: crefFirstCrefEqual
-  author: Frenkel TUD
+"author: Frenkel TUD
   Returns true if the ComponentRefs have the same first Cref."
   input DAE.ComponentRef cr1 "First Cref";
   input DAE.ComponentRef cr2 "Last Cref";
@@ -759,8 +745,7 @@ algorithm
 end crefSortFunc;
 
 public function crefContainedIn
-"function: crefContainedIn
-  author: PA
+"author: PA
   Returns true if second arg is a sub component ref of first arg.
   For instance, b.c. is a sub_component of a.b.c."
   input DAE.ComponentRef containerCref "the cref that might contain";
@@ -796,8 +781,7 @@ algorithm
 end crefContainedIn;
 
 public function crefPrefixOf
-"function: crefPrefixOf
-  author: PA
+"author: PA
   Returns true if prefixCref is a prefix of fullCref
   For example, a.b is a prefix of a.b.c.
   adrpo 2010-10-07, 
@@ -882,8 +866,7 @@ algorithm
 end crefNotPrefixOf;
 
 public function crefEqual
-"function: crefEqual
-  Returns true if two component references are equal.
+"Returns true if two component references are equal.
   No string comparison of unparsed crefs is performed!"
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
@@ -893,8 +876,7 @@ algorithm
 end crefEqual;
 
 public function crefEqualStringCompare
-"function: crefEqualStringCompare
-  Returns true if two component references are equal, 
+"Returns true if two component references are equal, 
   comparing strings in no other solution is found"
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
@@ -998,8 +980,7 @@ algorithm
 end crefEqualStringCompare;
 
 public function crefEqualNoStringCompare
-"function: crefEqualNoStringCompare
-  Returns true if two component references are equal!
+"Returns true if two component references are equal!
   IMPORTANT! do not use this function if you have
   stringified components, meaning this function will
   return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
@@ -1011,8 +992,7 @@ algorithm
 end crefEqualNoStringCompare;
 
 protected function crefEqualNoStringCompare2
-"function: crefEqualNoStringCompare
-  Returns true if two component references are equal!
+"Returns true if two component references are equal!
   IMPORTANT! do not use this function if you have
   stringified components, meaning this function will
   return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
@@ -1049,8 +1029,7 @@ algorithm
 end crefEqualNoStringCompare2;
 
 public function crefEqualReturn
-"function: crefEqualReturn
-  author: PA
+"author: PA
   Checks if two crefs are equal and if
   so returns the cref, otherwise fail."
   input DAE.ComponentRef cr;
@@ -1185,8 +1164,7 @@ algorithm
 end popCref;
 
 public function crefIsFirstArrayElt
-"function: crefIsFirstArrayElt
-  This function returns true for component references that
+"This function returns true for component references that
   are arrays and references the first element of the array.
   like for instance a.b{1,1} and a{1} returns true but
   a.b{1,2} or a{2} returns false."
@@ -1394,8 +1372,7 @@ algorithm
 end crefFirstIdent;
 
 public function crefLastIdent
-"function: crefLastIdent
-  author: PA
+"author: PA
   Returns the last identfifier of a ComponentRef."
   input DAE.ComponentRef inComponentRef;
   output DAE.Ident outIdent;
@@ -1500,8 +1477,7 @@ algorithm
   end match;
 end crefSubs;
 
-public function crefLastSubs "function: crefLastSubs
-  Return the last subscripts of a ComponentRef"
+public function crefLastSubs "Return the last subscripts of a ComponentRef"
   input DAE.ComponentRef inComponentRef;
   output list<DAE.Subscript> outSubscriptLst;
 algorithm
@@ -1700,8 +1676,7 @@ algorithm
 end prefixWithPath;
 
 public function prependStringCref
-"function: prependStringCref
-  Prepend a string to a component reference.
+"Prepend a string to a component reference.
   For qualified named, this means prepending a
   string to the first identifier."
   input String inString;
@@ -1738,8 +1713,7 @@ algorithm
 end appendStringCref;
 
 public function joinCrefs
-"function: joinCrefs
-  Join two component references by concatenating them.
+"Join two component references by concatenating them.
   
   alternative names: crefAppend
 
@@ -1768,8 +1742,7 @@ algorithm
 end joinCrefs;
 
 public function subscriptCref
-"function: subscriptCref
-  The subscriptCref function adds a subscript to the ComponentRef
+"The subscriptCref function adds a subscript to the ComponentRef
   For instance a.b with subscript 10 becomes a.b[10] and c.d[1,2]
   with subscript 3,4 becomes c.d[1,2,3,4]"
   input DAE.ComponentRef inComponentRef;
@@ -2113,8 +2086,7 @@ algorithm
 end crefStripLastIdent;
 
 public function crefStripLastSubs
-"function: crefStripLastSubs
-  Strips the last subscripts of a ComponentRef"
+"Strips the last subscripts of a ComponentRef"
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -2179,8 +2151,7 @@ algorithm
 end crefStripLastSubsStringified;
 
 public function stringifyComponentRef
-"function: stringifyComponentRef
-  Translates a ComponentRef into a DAE.CREF_IDENT by putting
+"Translates a ComponentRef into a DAE.CREF_IDENT by putting
   the string representation of the ComponentRef into it.
   See also stringigyCrefs.
 
@@ -2206,8 +2177,7 @@ end stringifyComponentRef;
 /***************************************************/
 
 public function printComponentRef
-"function: printComponentRef
-  Print a ComponentRef."
+"Print a ComponentRef."
   input DAE.ComponentRef inComponentRef;
 algorithm
   _ := matchcontinue (inComponentRef)
@@ -2248,8 +2218,7 @@ algorithm
 end printComponentRef;
 
 protected function printComponentRef2
-"function: printComponentRef2
-  Helper function to printComponentRef"
+"Helper function to printComponentRef"
   input DAE.Ident inString;
   input list<DAE.Subscript> inSubscriptLst;
 algorithm

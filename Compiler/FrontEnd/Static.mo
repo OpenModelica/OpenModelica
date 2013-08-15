@@ -193,8 +193,7 @@ algorithm
 end elabExpList2;
 
 public function elabExpListList
-"function: elabExpListList
-  Expression elaboration of lists of lists of expressions.
+"Expression elaboration of lists of lists of expressions.
   Used in for instance matrices, etc."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1100,8 +1099,7 @@ algorithm
   end matchcontinue;
 end fromEquationToAlgAssignment;
 
-protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions
-  Helper function to elab_exp (MATRIX). Calculates the dimensions of the
+protected function elabMatrixGetDimensions "Helper function to elab_exp (MATRIX). Calculates the dimensions of the
   matrix by investigating the elaborated expression."
   input DAE.Exp inExp;
   output Integer outInteger1;
@@ -1169,8 +1167,7 @@ algorithm
   end match;
 end elabMatrixToMatrixExp2;
 
-protected function matrixConstrMaxDim "function: matrixConstrMaxDim
-  Helper function to elab_exp (MATRIX).
+protected function matrixConstrMaxDim "Helper function to elab_exp (MATRIX).
   Determines the maximum dimension of the array arguments to the matrix
   constructor as.
   max(2, ndims(A), ndims(B), ndims(C),..) for matrix constructor arguments
@@ -1201,8 +1198,7 @@ algorithm
 end matrixConstrMaxDim;
 
 protected function elabCallReduction
-"function: elabCallReduction
-  This function elaborates reduction expressions that look like function
+"This function elaborates reduction expressions that look like function
   calls. For example an array constructor."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -1667,8 +1663,7 @@ algorithm
   end match;
 end constructArrayType;
 
-protected function replaceOperatorWithFcall "function: replaceOperatorWithFcall
-  Replaces a userdefined operator expression with a corresponding function
+protected function replaceOperatorWithFcall "Replaces a userdefined operator expression with a corresponding function
   call expression. Other expressions just passes through."
   input Absyn.Exp AbExp;
   input DAE.Exp inExp1;
@@ -1716,8 +1711,7 @@ algorithm
   end matchcontinue;
 end replaceOperatorWithFcall;
 
-protected function elabCodeType "function: elabCodeType
-  This function will construct the correct type for the given Code
+protected function elabCodeType "This function will construct the correct type for the given Code
   expression. The types are built-in classes of different types. E.g.
   the class TypeName is the type
   of Code expressions corresponding to a type name Code expression."
@@ -1962,8 +1956,7 @@ algorithm
   end matchcontinue;
 end elabGraphicsExp;
 
-protected function deoverloadRange "function: deoverloadRange
-  Does deoverloading of range expressions.
+protected function deoverloadRange "Does deoverloading of range expressions.
   They can be both Integer ranges and Real ranges.
   This function determines which one to use."
   input tuple<DAE.Exp, DAE.Type> inStart;
@@ -2199,8 +2192,7 @@ algorithm
   end matchcontinue;
 end elabRangeSize;
 
-protected function elabTuple "function: elabTuple
-  This function does elaboration of tuples, i.e. function calls returning several values."
+protected function elabTuple "This function does elaboration of tuples, i.e. function calls returning several values."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -2248,8 +2240,7 @@ end elabTuple;
 
 // stefan
 protected function elabPartEvalFunction
-"function: elabPartEvalFunction
-  turns an Absyn.PARTEVALFUNCTION into an DAE.PARTEVALFUNCTION"
+"turns an Absyn.PARTEVALFUNCTION into an DAE.PARTEVALFUNCTION"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Exp inExp;
@@ -2353,8 +2344,7 @@ algorithm
 end stripExtraArgsFromType2;
 
 protected function elabArray
-"function: elabArray
-  This function elaborates on array expressions.
+"This function elaborates on array expressions.
 
   All types of an array should be equivalent. However, mixed Integer and Real
   elements are allowed in an array and in that case the Integer elements
@@ -2401,8 +2391,7 @@ algorithm
 end elabArray;
 
 protected function elabArrayHasMixedIntReals
-"function: elabArrayHasMixedIntReals
-  Helper function to elab_array, checks if expression list contains both
+"Helper function to elab_array, checks if expression list contains both
   Integer and Real types."
   input list<DAE.Properties> props;
   output DAE.Type ty;
@@ -2412,8 +2401,7 @@ algorithm
 end elabArrayHasMixedIntReals;
 
 protected function elabArrayHasInt
-"function: elabArrayHasInt
-  author :PA
+"author :PA
   Helper function to elabArray."
   input list<DAE.Properties> inProps;
 algorithm
@@ -2437,8 +2425,7 @@ algorithm
 end elabArrayHasInt;
 
 protected function elabArrayFirstPropsReal
-"function: elabArrayFirstPropsReal
-  author: PA
+"author: PA
   Pick the first type among the list of
   properties which has elementype Real."
   input list<DAE.Properties> inTypesPropertiesLst;
@@ -2465,8 +2452,7 @@ algorithm
 end elabArrayFirstPropsReal;
 
 protected function elabArrayConst
-"function: elabArrayConst
-  Constructs a const value from a list of properties, using constAnd."
+"Constructs a const value from a list of properties, using constAnd."
   input list<DAE.Properties> inTypesPropertiesLst;
   output DAE.Const outConst;
 algorithm
@@ -2491,8 +2477,7 @@ algorithm
 end elabArrayConst;
 
 protected function elabArrayReal2
-"function: elabArrayReal2
-  author: PA
+"author: PA
   Applies type_convert to all expressions in a list to the type given
   as argument."
   input list<DAE.Exp> inExpExpLst;
@@ -2524,8 +2509,7 @@ algorithm
 end elabArrayReal2;
 
 protected function elabArray2
-"function: elabArray2
-  Helper function to elabArray, checks that all elements are equivalent."
+"Helper function to elabArray, checks that all elements are equivalent."
   input list<DAE.Exp> es;
   input list<DAE.Properties> inProps;
   input Prefix.Prefix pre;
@@ -2585,8 +2569,7 @@ algorithm
 end elabArray2;
 
 protected function elabGraphicsArray
-"function: elabGraphicsArray
-  This function elaborates array expressions for graphics elaboration."
+"This function elaborates array expressions for graphics elaboration."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -2708,8 +2691,7 @@ algorithm
   end matchcontinue;
 end elabMatrixComma;
 
-protected function elabMatrixCatTwoExp "function: elabMatrixCatTwoExp
-  author: PA
+protected function elabMatrixCatTwoExp "author: PA
   This function takes an array expression of dimension >=3 and
   concatenates each array element along the second dimension.
   For instance
@@ -2735,8 +2717,7 @@ algorithm
   end matchcontinue;
 end elabMatrixCatTwoExp;
 
-protected function elabMatrixCatTwo "function: elabMatrixCatTwo
-  author: PA
+protected function elabMatrixCatTwo "author: PA
   Concatenates a list of matrix(or higher dim) expressions along
   the second dimension."
   input list<DAE.Exp> inExpExpLst;
@@ -2768,8 +2749,7 @@ algorithm
   end matchcontinue;
 end elabMatrixCatTwo;
 
-protected function elabMatrixCatTwo2 "function: elabMatrixCatTwo2
-  Helper function to elabMatrixCatTwo
+protected function elabMatrixCatTwo2 "Helper function to elabMatrixCatTwo
   Concatenates two array expressions that are matrices (or higher dimension)
   along the first dimension (row)."
   input DAE.Exp inExp1;
@@ -2793,8 +2773,7 @@ algorithm
   end match;
 end elabMatrixCatTwo2;
 
-protected function elabMatrixCatTwo3 "function: elabMatrixCatTwo3
-  Helper function to elabMatrixCatTwo2"
+protected function elabMatrixCatTwo3 "Helper function to elabMatrixCatTwo2"
   input list<DAE.Exp> inExpExpLst1;
   input list<DAE.Exp> inExpExpLst2;
   output list<DAE.Exp> outExpExpLst;
@@ -2817,8 +2796,7 @@ algorithm
   end match;
 end elabMatrixCatTwo3;
 
-protected function elabMatrixCatOne "function: elabMatrixCatOne
-  author: PA
+protected function elabMatrixCatOne "author: PA
   Concatenates a list of matrix(or higher dim) expressions along
   the first dimension.
   i.e. elabMatrixCatOne( { {1,2;3,4}, {5,6;7,8} }) => {1,2;3,4;5,6;7,8}"
@@ -2895,8 +2873,7 @@ algorithm
 end promoteExp;
 
 protected function elabMatrixSemi
-"function: elabMatrixSemi
-  This function elaborates Matrix expressions, e.g. {1,0;2,1}
+"This function elaborates Matrix expressions, e.g. {1,0;2,1}
   A row is elaborated with elabMatrixComma."
   input Env.Cache inCache;
   input Env.Env inEnv1;
@@ -3027,8 +3004,7 @@ algorithm
 end verifyBuiltInHandlerType;
 
 protected function elabBuiltinCardinality
-"function: elabBuiltinCardinality
-  author: PA
+"author: PA
   This function elaborates the cardinality operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3163,8 +3139,7 @@ algorithm
 end elabBuiltinSmooth;
 
 protected function elabBuiltinSize
-"function: elabBuiltinSize
-  This function elaborates the size operator.
+"This function elaborates the size operator.
   Input is the list of arguments to size as Absyn.Exp
   expressions and the environment, Env.Env."
   input Env.Cache inCache;
@@ -3405,8 +3380,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinNDims;
 
-protected function elabBuiltinFill "function: elabBuiltinFill
-  This function elaborates the builtin operator fill.
+protected function elabBuiltinFill "This function elaborates the builtin operator fill.
   The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3651,8 +3625,7 @@ algorithm
   end match;
 end elabBuiltinSymmetric;
 
-protected function elabBuiltinTranspose "function: elabBuiltinTranspose
-  This function elaborates the builtin operator transpose
+protected function elabBuiltinTranspose "This function elaborates the builtin operator transpose
   The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3744,8 +3717,7 @@ algorithm
   end match;
 end transposeExpType;
 
-protected function elabBuiltinTranspose2 "function: elabBuiltinTranspose2
-  author: PA
+protected function elabBuiltinTranspose2 "author: PA
   Helper function to elab_builtin_transpose.
   Tries to symbolically transpose a matrix expression in ARRAY form."
   input list<DAE.Exp> inExpExpLst1;
@@ -3775,8 +3747,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinTranspose2;
 
-protected function elabBuiltinTranspose3 "function: elabBuiltinTranspose3
-  author: PA
+protected function elabBuiltinTranspose3 "author: PA
   Helper function to elab_builtin_transpose. Tries to symbolically transpose
   a MATRIX expression list"
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst1;
@@ -3808,8 +3779,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinTranspose3;
 
-protected function elabBuiltinSum "function: elabBuiltinSum
-  This function elaborates the builtin operator sum.
+protected function elabBuiltinSum "This function elaborates the builtin operator sum.
   The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3851,8 +3821,7 @@ algorithm
   end match;
 end elabBuiltinSum;
 
-protected function elabBuiltinProduct "function: elabBuiltinProduct
-  This function elaborates the builtin operator product.
+protected function elabBuiltinProduct "This function elaborates the builtin operator product.
   The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3937,8 +3906,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinProduct2;
 
-protected function elabBuiltinPre "function: elabBuiltinPre
-  This function elaborates the builtin operator pre.
+protected function elabBuiltinPre "This function elaborates the builtin operator pre.
   Input is the arguments to the pre operator and the environment, Env.Env."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4035,8 +4003,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinPre;
 
-protected function elabBuiltinPre2 "function: elabBuiltinPre
-  Help function for elabBuiltinPre, when type is array, send it here.
+protected function elabBuiltinPre2 "Help function for elabBuiltinPre, when type is array, send it here.
 "
 input DAE.Exp inExp;
 input DAE.Type t;
@@ -4067,8 +4034,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinPre2;
 
-protected function elabBuiltinInStream "function: elabBuiltinInStream
-  This function elaborates the builtin operator inStream.
+protected function elabBuiltinInStream "This function elaborates the builtin operator inStream.
   Input is the arguments to the inStream operator and the environment, Env.Env."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4113,8 +4079,7 @@ algorithm
   end match;
 end elabBuiltinInStream;
 
-protected function elabBuiltinActualStream "function: elabBuiltinActualStream
-  This function elaborates the builtin operator actualStream.
+protected function elabBuiltinActualStream "This function elaborates the builtin operator actualStream.
   Input is the arguments to the actualStream operator and the environment, Env.Env."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4219,8 +4184,7 @@ algorithm
 end validateBuiltinStreamOperator;
 
 protected function makePreLst
-"function: makePreLst
-  Takes a list of expressions and makes a list of pre - expressions"
+"Takes a list of expressions and makes a list of pre - expressions"
   input list<DAE.Exp> inExpLst;
   input DAE.Type t;
   output list<DAE.Exp> outExp;
@@ -4383,8 +4347,7 @@ algorithm
   end match;
 end elabBuiltinArray3;
 
-protected function elabBuiltinZeros "function: elabBuiltinZeros
-  This function elaborates the builtin operator zeros(n)."
+protected function elabBuiltinZeros "This function elaborates the builtin operator zeros(n)."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4494,8 +4457,7 @@ algorithm
   end matchcontinue;
 end sameDimensions3;
 
-protected function elabBuiltinOnes "function: elabBuiltinOnes
-  This function elaborates on the builtin opeator ones(n)."
+protected function elabBuiltinOnes "This function elaborates on the builtin opeator ones(n)."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4708,8 +4670,7 @@ algorithm
 end elabBuiltinDelay2;
 
 protected function elabBuiltinBoolean
-"function: elabBuiltinBoolean
-  This function elaborates on the builtin operator boolean, which extracts
+"This function elaborates on the builtin operator boolean, which extracts
   the boolean value of a Real, Integer or Boolean value."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4748,8 +4709,7 @@ algorithm
 end elabBuiltinBoolean;
 
 protected function elabBuiltinIntegerEnum
-"function: elabBuiltinIntegerEnum
-  This function elaborates on the builtin operator Integer for Enumerations, which extracts
+"This function elaborates on the builtin operator Integer for Enumerations, which extracts
   the Integer value of a Enumeration element."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4779,8 +4739,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinIntegerEnum;
 
-protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
-  This function elaborates on the builtin operator diagonal, creating a
+protected function elabBuiltinDiagonal "This function elaborates on the builtin operator diagonal, creating a
   matrix with a value of the diagonal. The other elements are zero."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4839,8 +4798,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinDiagonal;
 
-protected function elabBuiltinDiagonal2 "function: elabBuiltinDiagonal2
-  author: PA
+protected function elabBuiltinDiagonal2 "author: PA
   Tries to symbolically simplify diagonal.
   For instance diagonal({a,b}) => {a,0;0,b}"
   input list<DAE.Exp> expl;
@@ -4887,8 +4845,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinDiagonal3;
 
-protected function elabBuiltinDifferentiate "function: elabBuiltinDifferentiate
-  This function elaborates on the builtin operator differentiate, by deriving the Exp"
+protected function elabBuiltinDifferentiate "This function elaborates on the builtin operator differentiate, by deriving the Exp"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4935,8 +4892,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinDifferentiate;
 
-protected function elabBuiltinSimplify "function: elabBuiltinSimplify
-  This function elaborates the simplify function.
+protected function elabBuiltinSimplify "This function elaborates the simplify function.
   The call in mosh is: simplify(x+yx-x,\"Real\") if the variable should be
   Real or simplify(x+yx-x,\"Integer\") if the variable should be Integer
   This function is only for testing ExpressionSimplify.simplify"
@@ -5117,8 +5073,7 @@ algorithm
 end elabBuiltinEdge;
 
 protected function elabBuiltinDer
-"function: elabBuiltinDer
-  This function handles the built in der operator."
+"This function handles the built in der operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -5200,8 +5155,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinDer;
 
-protected function elabBuiltinChange "function: elabBuiltinChange
-  author: PA
+protected function elabBuiltinChange "author: PA
 
   This function handles the built in change operator.
 "
@@ -5245,8 +5199,7 @@ algorithm
   end match;
 end elabBuiltinChange;
 
-protected function elabBuiltinChange2 "function: elabBuiltinChange
-  author: PA
+protected function elabBuiltinChange2 "author: PA
 
   This function handles the built in change operator.
 "
@@ -5317,8 +5270,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinChange2;
 
-protected function elabBuiltinCat "function: elabBuiltinCat
-  author: PA
+protected function elabBuiltinCat "author: PA
   This function handles the built in cat operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5406,8 +5358,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinCat;
 
-protected function elabBuiltinCat2 "function: elabBuiltinCat2
-  Helper function to elab_builtin_cat. Updates the result type given
+protected function elabBuiltinCat2 "Helper function to elab_builtin_cat. Updates the result type given
   the input type, number of matrices given to cat and dimension to concatenate
   along."
   input DAE.Type inType1;
@@ -5445,8 +5396,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinCat2;
 
-protected function elabBuiltinIdentity "function: elabBuiltinIdentity
-  author: PA
+protected function elabBuiltinIdentity "author: PA
   This function handles the built in identity operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5512,8 +5462,7 @@ algorithm
 end elabBuiltinIdentity;
 
 protected function elabBuiltinIsRoot
-"function: elabBuiltinIsRoot
-  This function elaborates on the builtin operator Connections.isRoot."
+"This function elaborates on the builtin operator Connections.isRoot."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -5581,8 +5530,7 @@ algorithm
   end match;
 end elabBuiltinRooted;
 
-protected function elabBuiltinScalar "function: elab_builtin_
-  author: PA
+protected function elabBuiltinScalar "author: PA
 
   This function handles the built in scalar operator.
   For example, scalar({1}) => 1 or scalar({a}) => a
@@ -5777,8 +5725,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinGetInstanceName;
 
-protected function elabBuiltinVector "function: elabBuiltinVector
-  author: PA
+protected function elabBuiltinVector "author: PA
   This function handles the built in vector operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -5943,8 +5890,7 @@ algorithm
   end matchcontinue;
 end flattenArray;
 
-protected function dimensionListMaxOne "function: elabBuiltinVector2
-  Helper function to elab_builtin_vector."
+protected function dimensionListMaxOne "Helper function to elab_builtin_vector."
   input list<Integer> inIntegerLst;
   output Integer dimensions;
 algorithm
@@ -5970,8 +5916,7 @@ algorithm
   end matchcontinue;
 end dimensionListMaxOne;
 
-protected function elabBuiltinVector2 "function: elabBuiltinVector2
-  Helper function to elabBuiltinVector, for matrix expressions."
+protected function elabBuiltinVector2 "Helper function to elabBuiltinVector, for matrix expressions."
   input list<DAE.Exp> inExpExpLst;
   input list<Integer> inIntegerLst;
   output list<DAE.Exp> outExpExpLst;
@@ -6293,8 +6238,7 @@ algorithm
   end match;
 end elabBuiltinHandlerInternal;
 
-protected function isBuiltinFunc "function: isBuiltinFunc
-  Returns true if the function name given as argument
+protected function isBuiltinFunc "Returns true if the function name given as argument
   is a builtin function, which either has a elabBuiltinHandler function
   or can be found in the builtin environment."
   input Absyn.Path inPath "the path of the found function";
@@ -6343,8 +6287,7 @@ algorithm
   end matchcontinue;
 end isBuiltinFunc;
 
-protected function elabCallBuiltin "function: elabCallBuiltin
-  This function elaborates on builtin operators (such as \"pre\", \"der\" etc.),
+protected function elabCallBuiltin "This function elaborates on builtin operators (such as \"pre\", \"der\" etc.),
   by calling the builtin handler to retrieve the correct function to call."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6560,8 +6503,7 @@ algorithm
   end matchcontinue;
 end hasBuiltInHandler;
 
-public function elabVariablenames "function: elabVariablenames
-  This function elaborates variablenames to DAE.Expression. A variablename can
+public function elabVariablenames "This function elaborates variablenames to DAE.Expression. A variablename can
   be used in e.g. plot(model,{v1{3},v2.t}) It should only be used in interactive
   functions that uses variablenames as componentreferences.
 "
@@ -6651,8 +6593,7 @@ algorithm
   end matchcontinue;
 end absynExpListToDaeExpList;
 
-public function getOptionalNamedArg "function: getOptionalNamedArg
-   This function is used to \"elaborate\" interactive functions optional parameters,
+public function getOptionalNamedArg " This function is used to \"elaborate\" interactive functions optional parameters,
   e.g. simulate(A.b, startTime=1), startTime is an optional parameter
 "
   input Env.Cache inCache;
@@ -6698,8 +6639,7 @@ algorithm
   end matchcontinue;
 end getOptionalNamedArg;
 
-public function elabUntypedCref "function: elabUntypedCref
-  This function elaborates a ComponentRef without adding type information.
+public function elabUntypedCref "This function elaborates a ComponentRef without adding type information.
    Environment is passed along, such that constant subscripts can be elabed using existing
   functions
 "
@@ -6738,8 +6678,7 @@ algorithm
   end match;
 end elabUntypedCref;
 
-protected function pathToComponentRef "function: pathToComponentRef
-  This function translates a typename to a variable name.
+protected function pathToComponentRef "This function translates a typename to a variable name.
 "
   input Absyn.Path inPath;
   output DAE.ComponentRef outComponentRef;
@@ -6760,8 +6699,7 @@ algorithm
   end match;
 end pathToComponentRef;
 
-public function componentRefToPath "function: componentRefToPath
-  This function translates a variable name to a type name."
+public function componentRefToPath "This function translates a variable name to a type name."
   input DAE.ComponentRef inComponentRef;
   output Absyn.Path outPath;
 algorithm
@@ -6800,8 +6738,7 @@ algorithm
 end needToRebuild;
 
 public function isFunctionInCflist
-"function: isFunctionInCflist
-  This function returns true if a function, named by an Absyn.Path,
+"This function returns true if a function, named by an Absyn.Path,
   is present in the list of precompiled functions that can be executed
   in the interactive mode. If it returns true, it also returns the
   functionHandle stored in the cflist."
@@ -8088,8 +8025,7 @@ end isExternalObjectFunction;
 
 protected constant String vectorizeArg = "$vectorizeArg";
 
-protected function vectorizeCall "function: vectorizeCall
-  author: PA
+protected function vectorizeCall "author: PA
   Takes an expression and a list of array dimensions and the Slot list.
   It will vectorize the expression over the dimension given as array dim
   for the slots which have that dimension.
@@ -8284,8 +8220,7 @@ algorithm
 end vectorizeCallArray;
 
 protected function vectorizeCallArray2
-"function: vectorizeCallArray2
-  author: PA
+"author: PA
   Helper function to vectorizeCallArray"
   input list<DAE.Exp> inExpExpLst;
   input DAE.Type inType;
@@ -8311,8 +8246,7 @@ algorithm
   end match;
 end vectorizeCallArray2;
 
-protected function vectorizeCallArray3 "function: vectorizeCallArray3
-  author: PA
+protected function vectorizeCallArray3 "author: PA
   Helper function to vectorizeCallArray2"
   input DAE.Exp inExp;
   input DAE.Type inType;
@@ -8341,8 +8275,7 @@ algorithm
 end vectorizeCallArray3;
 
 protected function vectorizeCallScalar
-"function: vectorizeCallScalar
-  author: PA
+"author: PA
   Helper function to vectorizeCall, vectorizes CALL expressions to
   array expressions."
   input DAE.Exp inExp "e.g. abs(v)";
@@ -8380,8 +8313,7 @@ algorithm
 end vectorizeCallScalar;
 
 protected function vectorizeCallScalar2
-"function: vectorizeCallScalar2
-  author: PA
+"author: PA
   Iterates through vectorized dimension an creates argument list according
   to vectorized dimension in corresponding slot."
   input list<DAE.Exp> inExpExpLst1;
@@ -8414,8 +8346,7 @@ algorithm
 end vectorizeCallScalar2;
 
 protected function vectorizeCallScalar3
-"function: vectorizeCallScalar3
-  author: PA
+"author: PA
   Helper function to vectorizeCallScalar2"
   input list<DAE.Exp> inExpExpLst;
   input list<Slot> inSlotLst;
@@ -8452,8 +8383,7 @@ algorithm
 end vectorizeCallScalar3;
 
 protected function deoverloadFuncname
-"function: deoverloadFuncname
-  This function is used to deoverload function calls. It investigates the
+"This function is used to deoverload function calls. It investigates the
   type of the function to see if it has the optional functionname set. If
   so this is returned. Otherwise return input."
   input Absyn.Path inPath;
@@ -8479,8 +8409,7 @@ algorithm
 end deoverloadFuncname;
 
 protected function isTuple
-"function: isTuple
-  Return true if Type is a Tuple type."
+"Return true if Type is a Tuple type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -8877,8 +8806,7 @@ algorithm
 end createActualFunctype;
 
 protected function slotsVectorizable
-"function: slotsVectorizable
-  author: PA
+"author: PA
   This function checks all vectorized array dimensions in the slots and
   confirms that they all are of same dimension,or no dimension, i.e. not
   vectorized. The uniform vectorized array dimension is returned."
@@ -8910,8 +8838,7 @@ algorithm
 end slotsVectorizable;
 
 protected function sameSlotsVectorizable
-"function: sameSlotsVectorizable
-  author: PA
+"author: PA
   This function succeds if all slots in the list either has the array
   dimension as given by the second argument or no array dimension at all.
   The array dimension must match both in dimension size and number of
@@ -8940,8 +8867,7 @@ algorithm
 end sameSlotsVectorizable;
 
 protected function sameArraydimLst
-"function: sameArraydimLst
-  author: PA
+"author: PA
   Helper function to sameSlotsVectorizable. "
   input DAE.Dimensions inTypesArrayDimLst1;
   input DAE.Dimensions inTypesArrayDimLst2;
@@ -8984,8 +8910,7 @@ algorithm
 end sameArraydimLst;
 
 protected function getProperties
-"function: getProperties
-  This function creates a Properties object from a DAE.Type and a
+"This function creates a Properties object from a DAE.Type and a
   DAE.TupleConst value."
   input DAE.Type inType;
   input DAE.TupleConst inTupleConst;
@@ -9022,8 +8947,7 @@ algorithm
 end getProperties;
 
 protected function buildTupleConst
-"function: buildTupleConst
-  author: LS
+"author: LS
   Build a TUPLE_CONST (DAE.TupleConst) for a PROP_TUPLE for a function call
   from a list of bools derived from arguments
   We should check functions actual arguments instead of their formal
@@ -9038,8 +8962,7 @@ algorithm
 end buildTupleConst;
 
 protected function buildTupleConstList
-"function: buildTupleConstList
-  Helper function to buildTupleConst"
+"Helper function to buildTupleConst"
   input list<DAE.Const> inTypesConstLst;
   output list<DAE.TupleConst> outTypesTupleConstLst;
 algorithm
@@ -9059,8 +8982,7 @@ algorithm
   end matchcontinue;
 end buildTupleConstList;
 
-protected function elabConsts "function: elabConsts
-  author: PR
+protected function elabConsts "author: PR
   This just splits the properties list into a type list and a const list.
   LS: Changed to take a Type, which is the functions return type.
   LS: Update: const is derived from the input arguments and sent here."
@@ -9092,8 +9014,7 @@ algorithm
 end elabConsts;
 
 protected function checkConsts
-"function: checkConsts
-  LS: Changed to take a Type list, which is the functions return type. Only
+"LS: Changed to take a Type list, which is the functions return type. Only
    for functions returning a tuple
   LS: Update: const is derived from the input arguments and sent here "
   input list<DAE.Type> inTypesTypeLst;
@@ -9119,8 +9040,7 @@ algorithm
   end match;
 end checkConsts;
 
-protected function checkConst "function: checkConst
-  author: PR
+protected function checkConst "author: PR
    At the moment this make all outputs non cons.
   All ouputs should be checked in the function body for constness.
   LS: but it says true?
@@ -9144,8 +9064,7 @@ algorithm
   end matchcontinue;
 end checkConst;
 
-protected function splitProps "function: splitProps
-  Splits the properties list into the separated types list and const list."
+protected function splitProps "Splits the properties list into the separated types list and const list."
   input list<DAE.Properties> inTypesPropertiesLst;
   output list<DAE.Type> outTypesTypeLst;
   output list<DAE.TupleConst> outTypesTupleConstLst;
@@ -9176,8 +9095,7 @@ algorithm
 end splitProps;
 
 protected function getTypes
-"function: getTypes
-  This function returns the types of a DAE.FuncArg list."
+"This function returns the types of a DAE.FuncArg list."
   input list<DAE.FuncArg> farg;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
@@ -9185,8 +9103,7 @@ algorithm
 end getTypes;
 
 protected function functionParams
-"function: functionParams
-  A function definition is just a clas definition where all publi
+"A function definition is just a clas definition where all publi
   components are declared as either inpu or outpu.  This
   function_ find all those components and_ separates them into two
   separate lists.
@@ -9325,8 +9242,7 @@ algorithm
 end elabInputArgs;
 
 protected function makeEmptySlots
-"function: makeEmptySlots
-  Helper function to elabInputArgs.
+"Helper function to elabInputArgs.
   Creates the slots to be filled with arguments. Intially they are empty."
   input list<DAE.FuncArg> inTypesFuncArgLst;
   output list<Slot> outSlotLst;
@@ -9645,8 +9561,7 @@ algorithm
 end evalExternalObjectInput;
 
 protected function elabPositionalInputArgs
-"function: elabPositionalInputArgs
-  This function elaborates the positional input arguments of a function.
+"This function elaborates the positional input arguments of a function.
   A list of slots is filled from the beginning with types of each
   positional argument."
   input Env.Cache inCache;
@@ -9911,8 +9826,7 @@ algorithm
 end findNamedArgType;
 
 protected function fillSlot
-"function: fillSlot
-  This function takses a `FuncArg\' and an DAE.Exp and a Slot list and fills
+"This function takses a `FuncArg\' and an DAE.Exp and a Slot list and fills
   the slot holding the FuncArg, by setting the boolean value of the slot
   and setting the expression. The function fails if the slot is allready set."
   input DAE.FuncArg inFuncArg;
@@ -10485,8 +10399,7 @@ end allowQualSubscript;
 */
 
 protected function fillCrefSubscripts
-"function: fillCrefSubscripts
-  This is a helper function to elab_cref2.
+"This is a helper function to elab_cref2.
   It investigates a DAE.Type in order to fill the subscript lists of a
   component reference. For instance, the name a.b with the type array of
   one dimension will become a.b[:]."
@@ -10522,8 +10435,7 @@ algorithm
 end fillCrefSubscripts;
 
 protected function fillSubscripts
-"function: fillSubscripts
-  Helper function to fillCrefSubscripts."
+"Helper function to fillCrefSubscripts."
   input list<DAE.Subscript> inExpSubscriptLst;
   input DAE.Type inType;
   output list<DAE.Subscript> outExpSubscriptLst;
@@ -10552,8 +10464,7 @@ algorithm
 end fillSubscripts;
 
 protected function elabCref2
-"function: elabCref2
-  This function check whether the component reference found in
+"This function check whether the component reference found in
   elabCref has a binding, and if that binding is constant.
   If the binding is a VALBOUND binding, the value is substituted.
   Constant values are e.g.:
@@ -10929,8 +10840,7 @@ algorithm
 end elabCref2;
 
 public function crefVectorize
-"function: crefVectorize
-  This function takes a DAE.Exp and a DAE.Type and if the expression
+"This function takes a DAE.Exp and a DAE.Type and if the expression
   is a ComponentRef and the type is an array it returns an array of
   component references with subscripts for each index.
   For instance, parameter Real x[3];
@@ -11410,8 +11320,7 @@ end applySubscript3;
 
 
 protected function callVectorize
-"function: callVectorize
-  author: PA
+"author: PA
 
   Takes an expression that is a function call and an expresion list
   and maps the call to each expression in the list.
@@ -11450,8 +11359,7 @@ algorithm
 end callVectorize;
 
 protected function createCrefArray
-"function: createCrefArray
-  helper function to crefVectorize, creates each individual cref,
+"helper function to crefVectorize, creates each individual cref,
   e.g. {x{1},x{2}, ...} from x."
   input DAE.ComponentRef inComponentRef1;
   input Integer inInteger2;
@@ -11518,8 +11426,7 @@ algorithm
 end createCrefArray;
 
 protected function createCrefArray2d
-"function: createCrefArray2d
-  helper function to cref_vectorize, creates each
+"helper function to cref_vectorize, creates each
   individual cref, e.g. {x{1,1},x{2,1}, ...} from x."
   input DAE.ComponentRef inComponentRef1;
   input Integer inInteger2;
@@ -11564,8 +11471,7 @@ algorithm
   end matchcontinue;
 end createCrefArray2d;
 
-public function absynCrefToComponentReference "function: absynCrefToComponentReference
-  This function converts an absyn cref to a component reference"
+public function absynCrefToComponentReference "This function converts an absyn cref to a component reference"
   input Absyn.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm
@@ -11598,8 +11504,7 @@ algorithm
 end absynCrefToComponentReference;
 
 protected function elabCrefSubs
-"function: elabCrefSubs
-  This function elaborates on all subscripts in a component reference."
+"This function elaborates on all subscripts in a component reference."
   input Env.Cache inCache;
   input Env.Env inCrefEnv "search for the cref in this environment";
   input Absyn.ComponentRef inComponentRef;
@@ -11703,8 +11608,7 @@ algorithm
 end elabCrefSubs;
 
 public function elabSubscripts
-"function: elabSubscripts
-  This function converts a list of Absyn.Subscript to a list of
+"This function converts a list of Absyn.Subscript to a list of
   DAE.Subscript, and checks if all subscripts are constant.
   HJ: not checking for constant, returning if constant or not"
   input Env.Cache inCache;
@@ -11743,8 +11647,7 @@ algorithm
 end elabSubscripts;
 
 protected function elabSubscriptsDims
-"function: elabSubscriptsDims
-  Helper function to elabSubscripts"
+"Helper function to elabSubscripts"
   input Env.Cache cache;
   input Env.Env env;
   input list<Absyn.Subscript> subs;
@@ -11923,8 +11826,7 @@ algorithm
   end matchcontinue;
 end elabSubscriptsDims3;
 
-protected function elabSubscript "function: elabSubscript
-  This function converts an Absyn.Subscript to an
+protected function elabSubscript "This function converts an Absyn.Subscript to an
   DAE.Subscript."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -11978,8 +11880,7 @@ algorithm
   end matchcontinue;
 end elabSubscript;
 
-protected function elabSubscriptType "function: elabSubscriptType
-  This function is used to find the correct constructor for
+protected function elabSubscriptType "This function is used to find the correct constructor for
   DAE.Subscript to use for an indexing expression.  If an integer
   is given as index, DAE.INDEX() is used, and if an integer array
   is given, DAE.SLICE() is used."
@@ -12025,8 +11926,7 @@ algorithm
 end elabSubscriptType;
 
 protected function subscriptCrefType
-"function: subscriptCrefType
-  If a component of an array type is subscripted, the type of the
+"If a component of an array type is subscripted, the type of the
   component reference is of lower dimensionality than the
   component.  This function shows the function between the component
   type and the component reference expression type.
@@ -12078,8 +11978,7 @@ algorithm
   end matchcontinue;
 end subscriptCrefType2;
 
-protected function subscriptType "function: subscriptType
-  Given an array dimensionality and a list of subscripts, this
+protected function subscriptType "Given an array dimensionality and a list of subscripts, this
   function reduces the dimensionality.
   This does not handle slices or check that subscripts are not out
   of bounds."
@@ -12124,8 +12023,7 @@ algorithm
   end matchcontinue;
 end subscriptType;
 
-protected function makeIfexp "function: makeIfexp
-  This function elaborates on the parts of an if expression."
+protected function makeIfexp "This function elaborates on the parts of an if expression."
   input Env.Cache inCache;
   input Env.Env inEnv1;
   input DAE.Exp inExp2;
@@ -12217,8 +12115,7 @@ algorithm
   end matchcontinue;
 end makeIfexp;
 
-protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
-  author: PA
+protected function cevalIfexpIfConstant "author: PA
   Constant evaluates the condition of an expression if it is constants and
   elimitates the if expressions by selecting branch."
   input Env.Cache inCache;
@@ -12277,8 +12174,7 @@ algorithm
   end matchcontinue;
 end cevalIfexpIfConstant;
 
-protected function constIfexp "function: constIfexp
-  Tests wether an *if* expression is constant.  This is done by
+protected function constIfexp "Tests wether an *if* expression is constant.  This is done by
   first testing if the conditional is constant, and if so evaluating
   it to see which branch should be tested for constant-ness.
   This will miss some occations where the expression actually
@@ -12299,8 +12195,7 @@ algorithm
   end match;
 end constIfexp;
 
-protected function canonCref2 "function: canonCref2
-  This function relates a DAE.ComponentRef to its canonical form,
+protected function canonCref2 "This function relates a DAE.ComponentRef to its canonical form,
   which is when all subscripts are evaluated to constant values.
   If Such an evaluation is not possible, there is no canonical
   form and this function fails."
@@ -12335,8 +12230,7 @@ algorithm
   end matchcontinue;
 end canonCref2;
 
-public function canonCref "function: canonCref
-  Transform expression to canonical form
+public function canonCref "Transform expression to canonical form
   by constant evaluating all subscripts."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -12455,8 +12349,7 @@ algorithm
   end match;
 end eqSubscripts;
 
-protected function eqSubscript "function: eqSubscript
-  This function test whether two subscripts are equal.
+protected function eqSubscript "This function test whether two subscripts are equal.
   Two subscripts are equal if they have the same constructor, and
   if all corresponding expressions are either syntactically equal,
   or if they have the same constant value."
@@ -12490,8 +12383,7 @@ end eqSubscript;
  */
 
 protected function elabArglist
-"function: elabArglist
-  Given a list of parameter types and an argument list, this
+"Given a list of parameter types and an argument list, this
   function tries to match the two, promoting the type of
   arguments when necessary."
   input list<DAE.Type> inTypesTypeLst;
@@ -12520,8 +12412,7 @@ algorithm
   end match;
 end elabArglist;
 
-protected function deoverload "function: deoverload
-  Given several lists of parameter types and one argument list,
+protected function deoverload "Given several lists of parameter types and one argument list,
   this function tries to find one list of parameter types which
   is compatible with the argument list. It uses elabArglist to
   do the matching, which means that automatic type conversions
@@ -12589,8 +12480,7 @@ algorithm
   end matchcontinue;
 end deoverload;
 
-protected function computeReturnType "function: computeReturnType
-  This function determines the return type of
+protected function computeReturnType "This function determines the return type of
   an operator and the types of the operands."
   input DAE.Operator inOperator;
   input list<DAE.Type> inTypesTypeLst;
@@ -12935,8 +12825,7 @@ algorithm
   end match;
 end nDims;
 
-protected function elementType "function: elementType
-  Returns the element type of a type, i.e. for arrays, return the
+protected function elementType "Returns the element type of a type, i.e. for arrays, return the
   element type, and for bulitin scalar types return the type itself."
   input DAE.Type inType;
   output DAE.Type outType;
@@ -13560,8 +13449,7 @@ algorithm
 end operatorDeoverloadUnary;
 
 
-protected function operatorsBinary "function: operators
-  This function relates the operators in the abstract syntax to the
+protected function operatorsBinary "This function relates the operators in the abstract syntax to the
   de-overloaded operators in the SCode. It produces a list of available
   types for a specific operator, that the overload function chooses from.
   Therefore, in order for the builtin type conversion from Integer to
@@ -13937,8 +13825,7 @@ algorithm
   end matchcontinue;
 end operatorsBinary;
 
-protected function operatorsUnary "function: operatorsUnary
-  This function relates the operators in the abstract syntax to the
+protected function operatorsUnary "This function relates the operators in the abstract syntax to the
   de-overloaded operators in the SCode. It produces a list of available
   types for a specific operator, that the overload function chooses from.
   Therefore, in order for the builtin type conversion from Integer to
@@ -14020,8 +13907,7 @@ algorithm
 end makeEnumOperator;
 
 protected function buildOperatorTypes
-"function: buildOperatorTypes
-  This function takes the types operator overloaded user functions and
+"This function takes the types operator overloaded user functions and
   builds  the type list structure suitable for the deoverload function."
   input list<DAE.Type> inTypesTypeLst;
   input Absyn.Path inPath;
@@ -14044,8 +13930,7 @@ algorithm
   end matchcontinue;
 end buildOperatorTypes;
 
-protected function nDimArray "function: nDimArray
-  Returns a type based on the type given as input but as an array type with n dimensions."
+protected function nDimArray "Returns a type based on the type given as input but as an array type with n dimensions."
   input Integer inInteger;
   input DAE.Type inType;
   output DAE.Type outType;
@@ -14064,8 +13949,7 @@ algorithm
   end matchcontinue;
 end nDimArray;
 
-protected function nTypes "function: nTypes
-  Creates n copies of the type type.
+protected function nTypes "Creates n copies of the type type.
   This could instead be accomplished with Util.list_fill..."
   input Integer inInteger;
   input DAE.Type inType;
@@ -14086,8 +13970,7 @@ algorithm
   end matchcontinue;
 end nTypes;
 
-protected function operatorReturn "function: operatorReturn
-  This function collects the types and operator lists into a tuple list, suitable
+protected function operatorReturn "This function collects the types and operator lists into a tuple list, suitable
   for the deoverloading function for binary operations."
   input DAE.Operator inOperator1;
   input list<DAE.Type> inTypesTypeLst2;
@@ -14113,8 +13996,7 @@ algorithm
   end match;
 end operatorReturn;
 
-protected function operatorReturnUnary "function: operatorReturnUnary
-  This function collects the types and operator lists into a tuple list,
+protected function operatorReturnUnary "This function collects the types and operator lists into a tuple list,
   suitable for the deoverloading function to be used for unary
   expressions."
   input DAE.Operator inOperator1;
@@ -14140,8 +14022,7 @@ algorithm
   end match;
 end operatorReturnUnary;
 
-protected function arrayTypeList "function: arrayTypeList
-  This function creates a list of types using the original type passed as input, but
+protected function arrayTypeList "This function creates a list of types using the original type passed as input, but
   as array types up to n dimensions."
   input Integer inInteger;
   input DAE.Type inType;

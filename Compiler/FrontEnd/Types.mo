@@ -82,8 +82,7 @@ protected import DAEUtil;
 protected import SCodeDump;
 
 public function discreteType
-"function: discreteType
-  author: PA
+"author: PA
   Succeeds for all the discrete types, Integer, String, Boolean and enumeration."
   input DAE.Type inType;
 algorithm
@@ -125,8 +124,7 @@ end propsAnd;
 
 // stefan
 public function makePropsNotConst
-"function: makePropsNotConst
-  returns the same Properties but with the const flag set to Var"
+"returns the same Properties but with the const flag set to Var"
   input DAE.Properties inProperties;
   output DAE.Properties outProperties;
 algorithm outProperties := matchcontinue (inProperties)
@@ -138,8 +136,7 @@ end makePropsNotConst;
 
 // stefan
 public function setTypeInProps
-"function: setTypeInProps
-  sets the Type in a Properties record"
+"sets the Type in a Properties record"
   input DAE.Type inType;
   input DAE.Properties inProperties;
   output DAE.Properties outProperties;
@@ -156,8 +153,7 @@ end setTypeInProps;
 
 // stefan
 public function getConstList
-"function: getConstList
-  retrieves a list of Consts from a list of Properties"
+"retrieves a list of Consts from a list of Properties"
   input list<DAE.Properties> inPropertiesList;
   output list<DAE.Const> outConstList;
 algorithm
@@ -300,8 +296,7 @@ algorithm
   end match;
 end externalObjectConstructorType;
 
-public function simpleType "function: simpleType
-  author: PA
+public function simpleType "author: PA
   Succeeds for all the builtin types, Integer, String, Real, Boolean"
   input DAE.Type inType;
 algorithm
@@ -335,8 +330,7 @@ algorithm
   end match;
 end isSimpleNumericType;
 
-public function isNumericType "function: isSimpleNumericArray
-  This function checks if the element type is Numeric type or array of Numeric type."
+public function isNumericType "This function checks if the element type is Numeric type or array of Numeric type."
   input DAE.Type inType;
   output Boolean outBool;
 algorithm
@@ -726,8 +720,7 @@ algorithm
  end matchcontinue;
 end isBoolean;
 
-public function integerOrReal "function: integerOrReal
-  author: PA
+public function integerOrReal "author: PA
   Succeeds for the builtin types Integer and Real
   (including classes extending the basetype Integer or Real)."
   input DAE.Type inType;
@@ -743,8 +736,7 @@ algorithm
   end match;
 end integerOrReal;
 
-public function isArray "function: isArray
-  Returns true if Type is an array."
+public function isArray "Returns true if Type is an array."
   input DAE.Type inType;
   input DAE.Dimensions inDims;
   output Boolean outBoolean;
@@ -771,8 +763,7 @@ algorithm
   end matchcontinue;
 end isEmptyArray;
 
-public function isString "function: isString
-  Return true if Type is the builtin String type."
+public function isString "Return true if Type is the builtin String type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -782,8 +773,7 @@ algorithm
   end matchcontinue;
 end isString;
 
-public function isEnumeration "function: isEnumeration
-  Return true if Type is the builtin String type."
+public function isEnumeration "Return true if Type is the builtin String type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -793,8 +783,7 @@ algorithm
   end matchcontinue;
 end isEnumeration;
 
-public function isArrayOrString "function: isArrayOrString
-  Return true if Type is array or the builtin String type."
+public function isArrayOrString "Return true if Type is array or the builtin String type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -814,8 +803,7 @@ algorithm
   end matchcontinue;
 end isArrayOrString;
 
-public function numberOfDimensions "function: ndims
-  Return the number of dimensions of a Type."
+public function numberOfDimensions "Return the number of dimensions of a Type."
   input DAE.Type inType;
   output Integer outInteger;
 algorithm
@@ -874,8 +862,7 @@ algorithm
   end matchcontinue;
 end dimensionsKnown;
 
-public function getDimensionSizes "function: getDimensionSizes
-  Return the dimension sizes of a Type."
+public function getDimensionSizes "Return the dimension sizes of a Type."
   input DAE.Type inType;
   output list<Integer> outIntegerLst;
 algorithm
@@ -1045,8 +1032,7 @@ algorithm
   end matchcontinue;
 end valuesToVars;
 
-public function typeOfValue "function: typeOfValue
-  author: PA
+public function typeOfValue "author: PA
   Returns the type of a Values.Value.
   Some information is lost in the translation, like attributes
   of the builtin type."
@@ -1163,8 +1149,7 @@ algorithm
   end matchcontinue;
 end typeOfValue;
 
-public function basicType "function: basicType
-  Test whether a type is one of the builtin types."
+public function basicType "Test whether a type is one of the builtin types."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -1178,8 +1163,7 @@ algorithm
   end match;
 end basicType;
 
-public function extendsBasicType "function: basicType
-  Test whether a type extends one of the builtin types."
+public function extendsBasicType "Test whether a type extends one of the builtin types."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -1203,8 +1187,7 @@ algorithm
   end match;
 end derivedBasicType;
 
-public function arrayType "function: arrayType
-  Test whether a type is an array type."
+public function arrayType "Test whether a type is an array type."
   input DAE.Type inType;
   output Boolean outBoolean;
 algorithm
@@ -1338,8 +1321,7 @@ algorithm
 end semiEquivTypes;
 
 
-public function equivtypes "function: equivtypes
-  This is the type equivalence function.  It is defined in terms of
+public function equivtypes "This is the type equivalence function.  It is defined in terms of
   the subtype function.  Two types are considered equivalent if they
   are subtypes of each other."
   input DAE.Type t1;
@@ -1358,8 +1340,7 @@ algorithm
   outBoolean := subtype2(t1, t2, false /* Allow record names to differ */) and subtype2(t2, t1, false);
 end equivtypesOrRecordSubtypeOf;
 
-public function subtype "function: subtype
-  Is the first type a subtype of the second type?
+public function subtype "Is the first type a subtype of the second type?
   This function specifies the rules for subtyping in Modelica."
   input DAE.Type inType1;
   input DAE.Type inType2;
@@ -1368,8 +1349,7 @@ algorithm
   outBoolean := subtype2(inType1,inType2,true);
 end subtype;
 
-protected function subtype2 "function: subtype
-  Is the first type a subtype of the second type?
+protected function subtype2 "Is the first type a subtype of the second type?
   This function specifies the rules for subtyping in Modelica."
   input DAE.Type inType1;
   input DAE.Type inType2;
@@ -1605,8 +1585,7 @@ algorithm
   end matchcontinue;
 end subtypeTypelist;
 
-protected function subtypeVarlist "function: subtypeVarlist
-  This function checks if the Var list in the first list is a
+protected function subtypeVarlist "This function checks if the Var list in the first list is a
   subset of the list in the second argument.  More precisely, it
   checks if, for each Var in the second list there is a Var in
   the first list with a type that is a subtype of the Var in the
@@ -1633,8 +1612,7 @@ algorithm
   end matchcontinue;
 end subtypeVarlist;
 
-public function varlistLookup "function: varlistLookup
-  Given a list of Var and a name, this function finds any Var with the given name."
+public function varlistLookup "Given a list of Var and a name, this function finds any Var with the given name."
   input list<DAE.Var> inVarLst;
   input String inIdent;
   output DAE.Var outVar;
@@ -1659,8 +1637,7 @@ algorithm
   end matchcontinue;
 end varlistLookup;
 
-public function lookupComponent "function: lookupComponent
-  This function finds a subcomponent by name."
+public function lookupComponent "This function finds a subcomponent by name."
   input DAE.Type inType;
   input String inIdent;
   output DAE.Var outVar;
@@ -1718,8 +1695,7 @@ algorithm
   end matchcontinue;
 end lookupComponent;
 
-protected function lookupInBuiltin "function: lookupInBuiltin
-  Since builtin types are not represented as DAE.T_COMPLEX, special care
+protected function lookupInBuiltin "Since builtin types are not represented as DAE.T_COMPLEX, special care
   is needed to be able to lookup the attributes (*start* etc) in
   them.
 
@@ -1784,8 +1760,7 @@ algorithm
   end matchcontinue;
 end lookupInBuiltin;
 
-protected function lookupComponent2 "function: lookupComponent2
-  This function finds a named Var in a list of Vars, comparing
+protected function lookupComponent2 "This function finds a named Var in a list of Vars, comparing
   the name against the second argument to this function."
   input list<DAE.Var> inVarLst;
   input String inIdent;
@@ -1811,8 +1786,7 @@ algorithm
   end matchcontinue;
 end lookupComponent2;
 
-public function makeArray "function: makeArray
-  This function makes an array type given a Type and an Absyn.ArrayDim"
+public function makeArray "This function makes an array type given a Type and an Absyn.ArrayDim"
   input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
   output DAE.Type outType;
@@ -1831,8 +1805,7 @@ algorithm
   end matchcontinue;
 end makeArray;
 
-public function makeArraySubscripts "function: makeArray
-   This function makes an array type given a Type and a list of DAE.Subscript"
+public function makeArraySubscripts " This function makes an array type given a Type and a list of DAE.Subscript"
   input DAE.Type inType;
   input list<DAE.Subscript> lst;
   output DAE.Type outType;
@@ -1873,8 +1846,7 @@ algorithm
   end matchcontinue;
 end makeArraySubscripts;
 
-public function liftArray "function: liftArray
-  This function turns a type into an array of that type.
+public function liftArray "This function turns a type into an array of that type.
   If the type already is an array, another dimension is simply added."
   input DAE.Type inType;
   input DAE.Dimension inDimension;
@@ -1899,8 +1871,7 @@ algorithm
   end match;
 end liftArrayListDims;
 
-public function liftArrayRight "function: liftArrayRight
-  This function adds an array dimension to *the right* of the passed type."
+public function liftArrayRight "This function adds an array dimension to *the right* of the passed type."
   input DAE.Type inType;
   input DAE.Dimension inIntegerOption;
   output DAE.Type outType;
@@ -1936,8 +1907,7 @@ algorithm
   end matchcontinue;
 end liftArrayRight;
 
-public function unliftArray "function: unliftArray
-  This function turns an array of a type into that type."
+public function unliftArray "This function turns an array of a type into that type."
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
@@ -1967,8 +1937,7 @@ algorithm
   end match;
 end unliftArrayOrList;
 
-protected function typeArraydim "function: typeArraydim
-  If type is an array, return it array dimension"
+protected function typeArraydim "If type is an array, return it array dimension"
   input DAE.Type inType;
   output DAE.Dimension outArrayDim;
 algorithm
@@ -1978,8 +1947,7 @@ algorithm
   end matchcontinue;
 end typeArraydim;
 
-public function arrayElementType "function: arrayElementType
-  This function turns an array into the element type of the array."
+public function arrayElementType "This function turns an array into the element type of the array."
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
@@ -2050,8 +2018,7 @@ algorithm
 end unparseOptionEqMod;
 
 public function unparseType
-"function: unparseType
-  This function prints a Modelica type as a piece of Modelica code."
+"This function prints a Modelica type as a piece of Modelica code."
   input DAE.Type inType;
   output String outString;
 algorithm
@@ -2282,8 +2249,7 @@ algorithm
   end match;
 end printTupleConstStr;
 
-public function printTypeStr "function: printTypeStr
-  This function prints a textual description of a Modelica type to a string.
+public function printTypeStr "This function prints a textual description of a Modelica type to a string.
   If the type is not one of the primitive types, it simply prints composite."
   input DAE.Type inType;
   output String str;
@@ -2541,8 +2507,7 @@ algorithm
   end matchcontinue;
 end printConnectorTypeStr;
 
-public function printParamsStr "function: printParams
-  Prints function arguments to a string."
+public function printParamsStr "Prints function arguments to a string."
   input list<DAE.FuncArg> inFuncArgLst;
   output String str;
 algorithm
@@ -2597,8 +2562,7 @@ algorithm
 end unparseVarAttr;
 
 public function unparseVar
-"function: unparseVar
-  Prints a variable to a string."
+"Prints a variable to a string."
   input DAE.Var inVar;
   output String outString;
 algorithm
@@ -2616,8 +2580,7 @@ algorithm
   end match;
 end unparseVar;
 
-protected function unparseParam "function: unparseParam
-  Prints a function argument to a string."
+protected function unparseParam "Prints a function argument to a string."
   input DAE.FuncArg inFuncArg;
   output String outString;
 algorithm
@@ -2645,8 +2608,7 @@ algorithm
   end match;
 end unparseParam;
 
-public function printVarStr "function: printVar
-  author: LS
+public function printVarStr "author: LS
   Prints a Var to the a string."
   input DAE.Var inVar;
   output String str;
@@ -2675,8 +2637,7 @@ algorithm
   end matchcontinue;
 end printVarStr;
 
-public function printBindingStr "function: print_binding_str
-  Print a variable binding to a string."
+public function printBindingStr "Print a variable binding to a string."
   input DAE.Binding inBinding;
   output String outString;
 algorithm
@@ -2718,8 +2679,7 @@ algorithm
   end matchcontinue;
 end printBindingStr;
 
-public function makeFunctionType "function: makeFunctionType
-  author: LS
+public function makeFunctionType "author: LS
   Creates a function type from a function name an a list of input and
   output variables."
   input Absyn.Path p;
@@ -2806,8 +2766,7 @@ algorithm
   end match;
 end makeEnumerationType1;
 
-public function printFarg "function: printFarg
-  Prints a function argument to the Print buffer."
+public function printFarg "Prints a function argument to the Print buffer."
   input DAE.FuncArg inFuncArg;
 algorithm
   _ := matchcontinue (inFuncArg)
@@ -2824,8 +2783,7 @@ algorithm
   end matchcontinue;
 end printFarg;
 
-public function printFargStr "function: printFargStr
-  Prints a function argument to a string"
+public function printFargStr "Prints a function argument to a string"
   input DAE.FuncArg inFuncArg;
   output String outString;
 algorithm
@@ -2844,8 +2802,7 @@ algorithm
   end match;
 end printFargStr;
 
-protected function getInputVars "function: getInputVars
-  author: LS
+protected function getInputVars "author: LS
   Retrieve all the input variables from a list of variables."
   input list<DAE.Var> vl;
   output list<DAE.Var> vl_1;
@@ -2853,8 +2810,7 @@ algorithm
   vl_1 := getVars(vl, isInputVar);
 end getInputVars;
 
-protected function getOutputVars "function: getOutputVars
-  author: LS
+protected function getOutputVars "author: LS
   Retrieve all output variables from a list of variables."
   input list<DAE.Var> vl;
   output list<DAE.Var> vl_1;
@@ -2901,16 +2857,14 @@ algorithm
   end matchcontinue;
 end getFixedVarAttribute;
 
-public function getClassname "function: getClassname
-  Return the classname from a type."
+public function getClassname "Return the classname from a type."
   input DAE.Type inType;
   output Absyn.Path outPath;
 algorithm
   {outPath} := getTypeSource(inType);
 end getClassname;
 
-public function getClassnameOpt "function: getClassname
-  Return the classname as option from a type."
+public function getClassnameOpt "Return the classname as option from a type."
   input DAE.Type inType;
   output Option<Absyn.Path> outPath;
 algorithm
@@ -3004,8 +2958,7 @@ algorithm
   end match;
 end isOutputVar;
 
-public function isInputAttr "function: isInputAttr
-  Returns true if the Attributes of a variable indicates
+public function isInputAttr "Returns true if the Attributes of a variable indicates
   that the variable is input."
   input DAE.Attributes inAttributes;
   output Boolean outBoolean;
@@ -3016,8 +2969,7 @@ algorithm
   end matchcontinue;
 end isInputAttr;
 
-public function isOutputAttr "function: isOutputAttr
-  Returns true if the Attributes of a variable indicates
+public function isOutputAttr "Returns true if the Attributes of a variable indicates
   that the variable is output."
   input DAE.Attributes inAttributes;
   output Boolean outBoolean;
@@ -3028,8 +2980,7 @@ algorithm
   end matchcontinue;
 end isOutputAttr;
 
-public function isBidirAttr "function: isBidirAttr
-  Returns true if the Attributes of a variable indicates that the variable
+public function isBidirAttr "Returns true if the Attributes of a variable indicates that the variable
   is bidirectional, i.e. neither input nor output."
   input DAE.Attributes inAttributes;
   output Boolean outBoolean;
@@ -3173,8 +3124,7 @@ algorithm
   end match;
 end makeFarg;
 
-protected function makeReturnType "function: makeReturnType
-  author: LS
+protected function makeReturnType "author: LS
   Create a return type from a list of output variables.
   Depending on the length of the output variable list, different
   kinds of return types are created."
@@ -3204,8 +3154,7 @@ algorithm
   end matchcontinue;
 end makeReturnType;
 
-protected function makeReturnTypeSingle "function: makeReturnTypeSingle
-  author: LS
+protected function makeReturnTypeSingle "author: LS
   Create the return type for a single return value."
   input DAE.Var inVar;
   output DAE.Type outType;
@@ -3218,8 +3167,7 @@ algorithm
   end match;
 end makeReturnTypeSingle;
 
-protected function makeReturnTypeTuple "function: makeReturnTypeTuple
-  author: LS
+protected function makeReturnTypeTuple "author: LS
   Create the return type for a tuple, i.e. a function returning several
   values."
   input list<DAE.Var> inVarLst;
@@ -3241,8 +3189,7 @@ algorithm
   end match;
 end makeReturnTypeTuple;
 
-public function isParameterVar "function: isParameter
-  author: LS
+public function isParameterVar "author: LS
   Succeds if a variable is a parameter."
   input DAE.Var inVar;
 algorithm
@@ -3292,8 +3239,7 @@ algorithm
   end match;
 end isVar;
 
-public function containReal "function: containReal
-  Returns true if a builtin type, or array-type is Real."
+public function containReal "Returns true if a builtin type, or array-type is Real."
   input list<DAE.Type> inTypeLst;
   output Boolean outBoolean;
 algorithm
@@ -3330,8 +3276,7 @@ algorithm
   end matchcontinue;
 end containReal;
 
-public function flattenArrayType "function: flattenArrayType
-   Returns the element type of a Type and the list of dimensions of the type.
+public function flattenArrayType " Returns the element type of a Type and the list of dimensions of the type.
    The dimensions are in a backwards order ex:
    a[4,5] will give {5,4} in return value."
   input DAE.Type inType;
@@ -3370,8 +3315,7 @@ algorithm
   end matchcontinue;
 end flattenArrayType;
 
-public function flattenArrayTypeOpt "function: flattenArrayTypeOpt
-  Returns the element type of a Type and the list of dimensions of the type."
+public function flattenArrayTypeOpt "Returns the element type of a Type and the list of dimensions of the type."
   input DAE.Type inType;
   output DAE.Type outType;
   output DAE.Dimensions outDimensionLst;
@@ -3409,8 +3353,7 @@ algorithm
   end matchcontinue;
 end flattenArrayTypeOpt;
 
-public function getTypeName "function: getTypeName
-  Return the type name of a Type."
+public function getTypeName "Return the type name of a Type."
   input DAE.Type inType;
   output String outString;
 algorithm
@@ -3456,8 +3399,7 @@ algorithm
   end matchcontinue;
 end getTypeName;
 
-public function propAllConst "function: propAllConst
-  author: LS
+public function propAllConst "author: LS
   If PROP_TUPLE, returns true if all of the flags are constant."
   input DAE.Properties inProperties;
   output DAE.Const outConst;
@@ -3485,8 +3427,7 @@ algorithm
   end matchcontinue;
 end propAllConst;
 
-public function propAnyConst "function: propAnyConst
-  author: LS
+public function propAnyConst "author: LS
   If PROP_TUPLE, returns true if any of the flags are true"
   input DAE.Properties inProperties;
   output DAE.Const outConst;
@@ -3514,8 +3455,7 @@ algorithm
   end matchcontinue;
 end propAnyConst;
 
-protected function propTupleAnyConst "function: propTupleAnyConst
-  author: LS
+protected function propTupleAnyConst "author: LS
   Helper function to prop_any_const."
   input DAE.TupleConst inTupleConst;
   output DAE.Const outConst;
@@ -3565,8 +3505,7 @@ algorithm
   end matchcontinue;
 end propTupleAnyConst;
 
-public function propTupleAllConst "function: propTupleAllConst
-  author: LS
+public function propTupleAllConst "author: LS
   Helper function to propAllConst."
   input DAE.TupleConst inTupleConst;
   output DAE.Const outConst;
@@ -3703,8 +3642,7 @@ algorithm
   end match;
 end propTuplePropList2;
 
-public function getPropConst "function: getPropConst
-  author: adrpo
+public function getPropConst "author: adrpo
   Return the const from Properties (no tuples!)."
   input DAE.Properties inProperties;
   output DAE.Const outConst;
@@ -3712,8 +3650,7 @@ algorithm
    DAE.PROP(constFlag = outConst) := inProperties;
 end getPropConst;
 
-public function getPropType "function: getPropType
-  author: LS
+public function getPropType "author: LS
   Return the Type from Properties."
   input DAE.Properties inProperties;
   output DAE.Type outType;
@@ -3982,8 +3919,7 @@ algorithm
 end varsElabEquivalent;
 
 public function matchProp
-"function: matchProp
-  This is basically a wrapper aroune matchType.
+"This is basically a wrapper aroune matchType.
   It matches an expression with properties with another set of properties.
   If necessary, the expression is modified to match.
   The only relevant property is the type."
@@ -4152,8 +4088,7 @@ algorithm
   end matchcontinue;
 end matchTypeTupleCall;
 
-public function vectorizableType "function: vectorizableType
-  author: PA
+public function vectorizableType "author: PA
   This function checks if a given type can be (converted and) vectorized to
   a expected type.
   For instance and argument of type Integer{:} can be vectorized to an
@@ -4264,8 +4199,7 @@ algorithm
 end unflattenArrayType2;
 
 protected function typeConvert
-"function: typeConvert
-  This functions converts the expression in the first argument to
+"This functions converts the expression in the first argument to
   the type specified in the third argument.  The current type of the
   expression is given in the second argument.
   If no type conversion is possible, this function fails."
@@ -4901,8 +4835,7 @@ algorithm
   t1 := DAE.T_METALIST(t1,DAE.emptyTypeSource);
 end typeConvertMatrixRowToList;
 
-public function matchWithPromote "function: matchWithPromote
-  This function is used for matching expressions in matrix construction,
+public function matchWithPromote "This function is used for matching expressions in matrix construction,
   where automatic promotion is allowed. This means that array dimensions of
   size one (1) is added from the right to arrays of matrix construction until
   all elements have the same dimension size (with a maximum of 2).
@@ -5048,8 +4981,7 @@ algorithm
   end matchcontinue;
 end matchWithPromote;
 
-public function constAnd "function: constAnd
-  Returns the *and* operator of two Consts.
+public function constAnd "Returns the *and* operator of two Consts.
   I.e. C_CONST iff. both are C_CONST,
        C_PARAM iff both are C_PARAM (or one of them C_CONST),
        V_VAR otherwise."
@@ -5068,8 +5000,7 @@ algorithm
   end matchcontinue;
 end constAnd;
 
-protected function constTupleAnd "function: constTupleAnd
-  Returns the *and* operator of two TupleConsts
+protected function constTupleAnd "Returns the *and* operator of two TupleConsts
   For now, returns first tuple."
   input DAE.TupleConst inTupleConst1;
   input DAE.TupleConst inTupleConst2;
@@ -5081,8 +5012,7 @@ algorithm
   end match;
 end constTupleAnd;
 
-public function constOr "function: constOr
-  Returns the *or* operator of two Const's.
+public function constOr "Returns the *or* operator of two Const's.
   I.e. C_CONST if some is C_CONST,
        C_PARAM if none is C_CONST but some is C_PARAM and
        V_VAR otherwise."
@@ -5101,8 +5031,7 @@ algorithm
   end matchcontinue;
 end constOr;
 
-public function boolConst "function: boolConst
-  author: PA
+public function boolConst "author: PA
   Creates a Const value from a bool.
   if true, C_CONST,
   if false C_VAR
@@ -5116,8 +5045,7 @@ algorithm
   end match;
 end boolConst;
 
-public function boolConstSize "function: boolConstSize
-  author: alleb
+public function boolConstSize "author: alleb
   A version of boolConst supposed to be used by Static.elabBuiltinSize.
   Creates a Const value from a bool. If true, C_CONST, if false C_PARAM."
   input Boolean inBoolean;
@@ -5182,8 +5110,7 @@ algorithm
   b := constEqual(c, DAE.C_CONST());
 end constIsConst;
 
-public function printPropStr "function: printPropStr
-  Print the properties to a string."
+public function printPropStr "Print the properties to a string."
   input DAE.Properties inProperties;
   output String outString;
 algorithm
@@ -5210,8 +5137,7 @@ algorithm
   end match;
 end printPropStr;
 
-public function printProp "function: printProp
-  Print the Properties to the Print buffer."
+public function printProp "Print the Properties to the Print buffer."
   input DAE.Properties p;
 protected
   String str;
@@ -5220,8 +5146,7 @@ algorithm
   Print.printErrorBuf(str);
 end printProp;
 
-public function flowVariables "function: flowVariables
-  This function retrieves all variables names that are flow variables, and
+public function flowVariables "This function retrieves all variables names that are flow variables, and
   prepends the prefix given as an DAE.ComponentRef"
   input list<DAE.Var> inVarLst;
   input DAE.ComponentRef inComponentRef;
@@ -5259,8 +5184,7 @@ algorithm
   end matchcontinue;
 end flowVariables;
 
-public function streamVariables "function: streamVariables
-  This function retrieves all variables names that are stream variables,
+public function streamVariables "This function retrieves all variables names that are stream variables,
   and prepends the prefix given as an DAE.ComponentRef"
   input list<DAE.Var> inVarLst;
   input DAE.ComponentRef inComponentRef;
@@ -5292,8 +5216,7 @@ algorithm
   end matchcontinue;
 end streamVariables;
 
-public function getAllExps "function: getAllExps
-  This function goes through the Type structure and finds all the
+public function getAllExps "This function goes through the Type structure and finds all the
   expressions and returns them in a list"
   input DAE.Type inType;
   output list<DAE.Exp> outExpExpLst;
@@ -5301,8 +5224,7 @@ algorithm
   outExpExpLst := getAllExpsTt(inType);
 end getAllExps;
 
-protected function getAllExpsTt "function: getAllExpsTt
-  This function goes through the TType structure and finds all the
+protected function getAllExpsTt "This function goes through the TType structure and finds all the
   expressions and returns them in a list"
   input DAE.Type inType;
   output list<DAE.Exp> outExpExpLst;
@@ -5381,8 +5303,7 @@ algorithm
   end matchcontinue;
 end getAllExpsTt;
 
-protected function getAllExpsVars "function: getAllExpsVars
-  Helper function to getAllExpsTt."
+protected function getAllExpsVars "Helper function to getAllExpsTt."
   input list<DAE.Var> vars;
   output list<DAE.Exp> exps;
 protected
@@ -5392,8 +5313,7 @@ algorithm
   exps := List.flatten(explist);
 end getAllExpsVars;
 
-protected function getAllExpsVar "function: getAllExpsVar
-  Helper function to getAllExpsVars."
+protected function getAllExpsVar "Helper function to getAllExpsVars."
   input DAE.Var inVar;
   output list<DAE.Exp> outExpExpLst;
 algorithm
@@ -5414,8 +5334,7 @@ algorithm
   end matchcontinue;
 end getAllExpsVar;
 
-protected function getAllExpsBinding "function: getAllExpsBinding
-  Helper function to get_all_exps_var."
+protected function getAllExpsBinding "Helper function to get_all_exps_var."
   input DAE.Binding inBinding;
   output list<DAE.Exp> outExpExpLst;
 algorithm
@@ -5718,8 +5637,7 @@ algorithm
   end matchcontinue;
 end matchTypePolymorphic;
 
-public function matchType "function: matchType
-  This function matches an expression with an expected type, and
+public function matchType "This function matches an expression with an expected type, and
   converts the expression to the expected type if necessary."
   input DAE.Exp exp;
   input DAE.Type actual;
@@ -7140,8 +7058,7 @@ algorithm
   end match;
 end optInteger;
 
-public function typeToValue "function: typeToValue
-  This function builds Values.Value out of a type using generated bindings."
+public function typeToValue "This function builds Values.Value out of a type using generated bindings."
   input DAE.Type inType;
   output Values.Value defaultValue;
 algorithm

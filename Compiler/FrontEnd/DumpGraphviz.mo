@@ -42,8 +42,7 @@ public import Absyn;
 public import Graphviz;
 protected import Dump;
 
-public function dump "function: dump
-  Dumps a Program to a Graphviz graph."
+public function dump "Dumps a Program to a Graphviz graph."
   input Absyn.Program p;
 protected
   Graphviz.Node r;
@@ -52,8 +51,7 @@ algorithm
   Graphviz.dump(r);
 end dump;
 
-protected function buildGraphviz "function: buildGraphviz
-  Build the graphviz graph for a Program."
+protected function buildGraphviz "Build the graphviz graph for a Program."
   input Absyn.Program inProgram;
   output Graphviz.Node outNode;
 algorithm
@@ -70,8 +68,7 @@ algorithm
   end match;
 end buildGraphviz;
 
-protected function printClasses "function: printClasses
-  Creates Nodes from a Class list."
+protected function printClasses "Creates Nodes from a Class list."
   input list<Absyn.Class> inAbsynClassLst;
   output list<Graphviz.Node> outNodeLst;
 algorithm
@@ -93,8 +90,7 @@ algorithm
   end match;
 end printClasses;
 
-protected function printClass "function: printClass
-  Creates a Node for a Class."
+protected function printClass "Creates a Node for a Class."
   input Absyn.Class inClass;
   output Graphviz.Node outNode;
 algorithm
@@ -115,8 +111,7 @@ algorithm
   end match;
 end printClass;
 
-protected function printParts "function: printParts
-  Creates a Node list from a ClassPart list."
+protected function printParts "Creates a Node list from a ClassPart list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<Graphviz.Node> outNodeLst;
 algorithm
@@ -138,8 +133,7 @@ algorithm
   end match;
 end printParts;
 
-protected function printClassPart "function: printClassPart
-  Creates a Node from A ClassPart."
+protected function printClassPart "Creates a Node from A ClassPart."
   input Absyn.ClassPart inClassPart;
   output Graphviz.Node outNode;
 algorithm
@@ -178,8 +172,7 @@ algorithm
   end matchcontinue;
 end printClassPart;
 
-protected function printElementitems "function: printElementitems
-  Creates a Node list from ElementItem list."
+protected function printElementitems "Creates a Node list from ElementItem list."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Graphviz.Node> outNodeLst;
 algorithm
@@ -201,8 +194,7 @@ algorithm
   end match;
 end printElementitems;
 
-protected function makeBoolAttr "function: makeBoolAttr
-  Create an Attribute from a bool value and a description string."
+protected function makeBoolAttr "Create an Attribute from a bool value and a description string."
   input String str;
   input Boolean flag;
   output Graphviz.Attribute outAttribute;
@@ -213,8 +205,7 @@ algorithm
   outAttribute := Graphviz.ATTR(str,s);
 end makeBoolAttr;
 
-protected function makeLeaf "function: makeLeaf
-  Create a leaf Node from a string an a list of attributes."
+protected function makeLeaf "Create a leaf Node from a string an a list of attributes."
   input String str;
   input list<Graphviz.Attribute> al;
   output Graphviz.Node outNode;
@@ -222,8 +213,7 @@ algorithm
   outNode := Graphviz.NODE(str,al,{});
 end makeLeaf;
 
-protected function printElement "function: printElement
-  Create a Node from an Element."
+protected function printElement "Create a Node from an Element."
   input Absyn.Element inElement;
   output Graphviz.Node outNode;
 algorithm
@@ -253,8 +243,7 @@ algorithm
   pn := makeLeaf(s, {});
 end printPath;
 
-protected function printElementspec "function: printElementspec
-  Create a Node from an ElementSpec"
+protected function printElementspec "Create a Node from an ElementSpec"
   input Absyn.ElementSpec inElementSpec;
   output Graphviz.Node outNode;
 algorithm
@@ -299,8 +288,7 @@ algorithm
   end matchcontinue;
 end printElementspec;
 
-protected function printComponents "function: printComponents
-  Create a Node list from a ComponentItem list."
+protected function printComponents "Create a Node list from a ComponentItem list."
   input list<Absyn.ComponentItem> inAbsynComponentItemLst;
   output list<Graphviz.Node> outNodeLst;
 algorithm
@@ -322,8 +310,7 @@ algorithm
   end match;
 end printComponents;
 
-protected function printComponentitem "function: printComponentitem
-  Create a Node from a ComponentItem."
+protected function printComponentitem "Create a Node from a ComponentItem."
   input Absyn.ComponentItem inComponentItem;
   output Graphviz.Node outNode;
 algorithm
@@ -342,8 +329,7 @@ algorithm
   end match;
 end printComponentitem;
 
-protected function printEquations "function: printEquations
-  Create a Node list from an EquationItem list."
+protected function printEquations "Create a Node list from an EquationItem list."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   output list<Graphviz.Node> outNodeLst;
 algorithm
@@ -412,8 +398,7 @@ algorithm
   end matchcontinue;
 end printEquation;
 
-protected function printAlgorithms "function: printAlgorithms
-  Create a Node list from an AlgorithmItem list."
+protected function printAlgorithms "Create a Node list from an AlgorithmItem list."
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output list<Graphviz.Node> outNodeLst;
 algorithm
@@ -435,8 +420,7 @@ algorithm
   end match;
 end printAlgorithms;
 
-protected function printAlgorithmitem "function: printAlgorithmitem
-  Create a Node from an AlgorithmItem."
+protected function printAlgorithmitem "Create a Node from an AlgorithmItem."
   input Absyn.AlgorithmItem inAlgorithmItem;
   output Graphviz.Node outNode;
 algorithm
@@ -454,8 +438,7 @@ algorithm
   end matchcontinue;
 end printAlgorithmitem;
 
-protected function printAlgorithm "function: printAlgorithm
-  Create a Node from an Algorithm."
+protected function printAlgorithm "Create a Node from an Algorithm."
   input Absyn.Algorithm inAlgorithm;
   output Graphviz.Node outNode;
 algorithm
@@ -468,8 +451,7 @@ algorithm
   end matchcontinue;
 end printAlgorithm;
 
-protected function variabilitySymbol "function: variabilitySymbol
-  Return Variability as a string."
+protected function variabilitySymbol "Return Variability as a string."
   input Absyn.Variability inVariability;
   output String outString;
 algorithm
@@ -481,8 +463,7 @@ algorithm
   end matchcontinue;
 end variabilitySymbol;
 
-protected function directionSymbol "function: directionSymbol
-  Return direction as a string."
+protected function directionSymbol "Return direction as a string."
   input Absyn.Direction inDirection;
   output String outString;
 algorithm

@@ -1584,8 +1584,7 @@ algorithm
   end match;
 end isFunctionRefVar;
 
-public function isAlgorithm "function: isAlgorithm
-  author: LS
+public function isAlgorithm "author: LS
 
   Succeeds if Element is an algorithm."
   input DAE.Element inElement;
@@ -1595,8 +1594,7 @@ algorithm
   end match;
 end isAlgorithm;
 
-public function isFunctionInlineFalse "function: isFunctionInlineFalse
-  author: PA
+public function isFunctionInlineFalse "author: PA
 
   Succeeds if is a function with Inline=false"
   input DAE.Function inElement;
@@ -1770,8 +1768,7 @@ algorithm
   end match;
 end toConnectorType;
 
-public function toDaeParallelism "function: toDaeParallel
-  Converts scode parallelsim to dae parallelism.
+public function toDaeParallelism "Converts scode parallelsim to dae parallelism.
   Prints a warning if parallel variables are used
   in a non-function class."
   input DAE.ComponentRef inCref;
@@ -1817,8 +1814,7 @@ algorithm
 end toDaeParallelism;
 
 public function scodePrlToDaePrl
-"function: scodePrlToDaePrl
-  Translates SCode.Parallelism to DAE.VarParallelism
+"Translates SCode.Parallelism to DAE.VarParallelism
   without considering if it is a function or not."
   input SCode.Parallelism inParallelism;
   output DAE.VarParallelism outVarParallelism;
@@ -1843,8 +1839,7 @@ algorithm
   end match;
 end daeParallelismEqual;
 
-public function getFlowVariables "function: getFlowVariables
-  Retrive the flow variables of an Element list."
+public function getFlowVariables "Retrive the flow variables of an Element list."
   input list<DAE.Element> inElementLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
@@ -1900,8 +1895,7 @@ algorithm
   end matchcontinue;
 end getFlowVariables2;
 
-public function getStreamVariables "function: getStreamVariables
-  Retrive the stream variables of an Element list."
+public function getStreamVariables "Retrive the stream variables of an Element list."
   input list<DAE.Element> inElementLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
@@ -1958,8 +1952,7 @@ algorithm
   end matchcontinue;
 end getStreamVariables2;
 
-public function daeToRecordValue "function: daeToRecordValue
-  Transforms a list of elements into a record value.
+public function daeToRecordValue "Transforms a list of elements into a record value.
   TODO: This does not work for records inside records.
   For a general approach we need to build an environment from the DAE and then
   instead investigate the variables and lookup their values from the created environment."
@@ -2037,8 +2030,7 @@ algorithm
   end matchcontinue;
 end toModelicaForm;
 
-protected function toModelicaFormElts "function: toModelicaFormElts
-  Helper function to toModelicaForm."
+protected function toModelicaFormElts "Helper function to toModelicaForm."
   input list<DAE.Element> inElementLst;
   output list<DAE.Element> outElementLst;
 algorithm
@@ -2248,8 +2240,7 @@ algorithm
   end match;
 end replaceCrefInVar;
 
-protected function toModelicaFormExpOpt "function: toModelicaFormExpOpt
-  Helper function to toMdelicaFormElts."
+protected function toModelicaFormExpOpt "Helper function to toMdelicaFormElts."
   input Option<DAE.Exp> inExpExpOption;
   output Option<DAE.Exp> outExpExpOption;
 algorithm
@@ -2260,8 +2251,7 @@ algorithm
   end matchcontinue;
 end toModelicaFormExpOpt;
 
-protected function toModelicaFormCref "function: toModelicaFormCref
-  Helper function to toModelicaFormElts."
+protected function toModelicaFormCref "Helper function to toModelicaFormElts."
   input DAE.ComponentRef cr;
   output DAE.ComponentRef outComponentRef;
 protected
@@ -2274,8 +2264,7 @@ algorithm
   outComponentRef := ComponentReference.makeCrefIdent(str_1,ty,{});
 end toModelicaFormCref;
 
-protected function toModelicaFormExp "function: toModelicaFormExp
-  Helper function to toModelicaFormElts."
+protected function toModelicaFormExp "Helper function to toModelicaFormElts."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
@@ -2604,8 +2593,7 @@ algorithm (outrefs,matching) := matchcontinue(inCrefs)
 end compareCrefList;
 
 public function evaluateAnnotation
-"function: evaluateAnnotation
-  evaluates the annotation Evaluate"
+"evaluates the annotation Evaluate"
   input Env.Cache inCache;
   input list<Env.Frame> env;
   input DAE.DAElist inDAElist;
@@ -2745,8 +2733,7 @@ algorithm
 end getParameterVars2;
 
 public function evaluateAnnotation1
-"function: evaluateAnnotation1
-  evaluates the annotation Evaluate"
+"evaluates the annotation Evaluate"
   input DAE.DAElist dae;
   input HashTable2.HashTable pv;
   input HashTable2.HashTable ht;
@@ -2760,8 +2747,7 @@ algorithm
 end evaluateAnnotation1;
 
 protected function evaluateAnnotation1Fold
-"function: evaluateAnnotation1
-  evaluates the annotation Evaluate"
+"evaluates the annotation Evaluate"
   input tuple<HashTable2.HashTable,Boolean> tpl;
   input DAE.Element el;
   input HashTable2.HashTable inPV;
@@ -2863,8 +2849,7 @@ algorithm
 end evaluateAnnotation2_loop1;
 
 protected function evaluateAnnotation2
-"function: evaluateAnnotation2
-  evaluates the parameters with bindings parameters with annotation Evaluate"
+"evaluates the parameters with bindings parameters with annotation Evaluate"
   input Env.Cache inCache;
   input list<Env.Frame> env;
   input DAE.DAElist inDAElist;
@@ -2888,8 +2873,7 @@ algorithm
 end evaluateAnnotation2;
 
 protected function evaluateAnnotation3
-"function: evaluateAnnotation3
-  evaluates the parameters with bindings parameters with annotation Evaluate"
+"evaluates the parameters with bindings parameters with annotation Evaluate"
   input DAE.Element iel;
   input tuple<HashTable2.HashTable,Env.Cache,list<Env.Frame>> inHt;
   output DAE.Element oel;
@@ -2942,8 +2926,7 @@ algorithm
 end evaluateAnnotation3;
 
 protected function evaluateAnnotation4
-"function: evaluateAnnotation4
-  evaluates the parameters with bindings parameters with annotation Evaluate"
+"evaluates the parameters with bindings parameters with annotation Evaluate"
   input Env.Cache inCache;
   input list<Env.Frame> env;
   input DAE.ComponentRef inCr;
@@ -3685,8 +3668,7 @@ algorithm
   end match;
 end traverseDAE2_tail2;
 
-public function traverseDAEEquationsStmts "function: traverseDAEEquationsStmts
-  Author: BZ, 2008-12
+public function traverseDAEEquationsStmts "Author: BZ, 2008-12
   Helper function to traverseDAE,
   Handles the traversing of DAE.Statement."
   input list<DAE.Statement> inStmts;
@@ -3898,8 +3880,7 @@ end match;
 end traverseDAEEquationsStmtsElse;
 
 public function traverseDAEStmts
- "function: traverseDAEStmts
-  Author: BZ, 2008-12, wbraun 2012-09
+ "Author: BZ, 2008-12, wbraun 2012-09
   Traversing statemeant and provide current statement
   to FuncExptype
   Handles the traversing of DAE.Statement."
@@ -5145,8 +5126,7 @@ public function splitElements
 algorithm
   (v,ie,ia,e,a,ca,co,o) := splitElements_dispatch(inElements,{},{},{},{},{},{},{},{});
 end splitElements;
-protected function isIfEquation "function: isIfEquation
-  Succeeds if Element is an if-equation.
+protected function isIfEquation "Succeeds if Element is an if-equation.
 "
   input DAE.Element inElement;
 algorithm

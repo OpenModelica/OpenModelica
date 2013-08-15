@@ -625,8 +625,7 @@ algorithm
 end translateFunctions;
 
 public function getCalledFunctionsInFunction
-"function: getCalledFunctionsInFunction
-  Goes through the given DAE, finds the given function and collects
+"Goes through the given DAE, finds the given function and collects
   the names of the functions called from within those functions"
   input Absyn.Path path;
   input DAE.FunctionTree funcs;

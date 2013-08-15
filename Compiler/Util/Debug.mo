@@ -50,8 +50,7 @@ protected import Print;
 protected import System;
 
 public function trace
-"function: print
-  author: adrpo
+"author: adrpo
   used for debug printing."
   input String s;
 algorithm
@@ -59,8 +58,7 @@ algorithm
 end trace;
 
 public function traceln
-"function: traceln
-  author: adrpo
+"author: adrpo
   printing with newline."
   input String str;
 algorithm
@@ -69,8 +67,7 @@ algorithm
 end traceln;
 
 public function fprint
-"function: fprint
-  author: LS
+"author: LS
   Flag controlled debugging"
   input Flags.DebugFlag flag;
   input String str;
@@ -80,8 +77,7 @@ algorithm
 end fprint;
 
 public function bprint
-"function: bprint
-  author: LS
+"author: LS
   Boolean controlled debugging"
   input Boolean cond;
   input String str;
@@ -97,8 +93,7 @@ algorithm
 end bprint;
 
 public function bprintln
-"function: bprintln
-  author: LS
+"author: LS
   Boolean controlled debugging"
   input Boolean cond;
   input String str;
@@ -115,8 +110,7 @@ algorithm
 end bprintln;
 
 public function fprintln
-"function: fprintln
-  Flag controlled debugging, printing with newline."
+"Flag controlled debugging, printing with newline."
   input Flags.DebugFlag flag;
   input String str;
   // annotation(__OpenModelica_EarlyInline=true);
@@ -125,8 +119,7 @@ algorithm
 end fprintln;
 
 public function fprintl
-"function: fprintl
-  flag controlled debugging, printing of string list."
+"flag controlled debugging, printing of string list."
   input Flags.DebugFlag inFlag;
   input list<String> inStringLst;
   // annotation(__OpenModelica_EarlyInline=true);
@@ -147,8 +140,7 @@ algorithm
 end fprintl;
 
 public function fcall2
-"function: fcall2
-  Flag controlled calling of the given function (2nd arg)"
+"Flag controlled calling of the given function (2nd arg)"
   input Flags.DebugFlag inFlag;
   input FuncTypeTypeATypeB func;
   input Type_a inTypeA;
@@ -176,8 +168,7 @@ algorithm
 end fcall2;
 
 public function fcall
-"function: fcall
-  Flag controlled calling of the given function (2nd arg)"
+"Flag controlled calling of the given function (2nd arg)"
   input Flags.DebugFlag inFlag;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input Type_a inTypeA;
@@ -201,8 +192,7 @@ algorithm
 end fcall;
 
 public function fcall0
-"function: fcall0
-  Flag controlled calling of given function  (2nd arg)"
+"Flag controlled calling of given function  (2nd arg)"
   input Flags.DebugFlag inFlag;
   input FuncTypeTo inFuncTypeTo;
   partial function FuncTypeTo
@@ -222,8 +212,7 @@ algorithm
 end fcall0;
 
 public function fcallret0
-"function: fcallret0
-  Flag controlled calling of given function (2nd arg).
+"Flag controlled calling of given function (2nd arg).
   The passed function gets 0 arguments.
   The last parameter is returned if the given flag is not set."
   input Flags.DebugFlag inFlag;
@@ -250,8 +239,7 @@ algorithm
 end fcallret0;
 
 public function fcallret1
-"function: fcallret1
-  Flag controlled calling of given function (2nd arg).
+"Flag controlled calling of given function (2nd arg).
   The passed function gets 1 arguments.
   The last parameter is returned if the given flag is not set."
   input Flags.DebugFlag inFlag;
@@ -282,8 +270,7 @@ algorithm
 end fcallret1;
 
 public function fcallret2
-"function: fcallret2
-  Flag controlled calling of given function (2nd arg).
+"Flag controlled calling of given function (2nd arg).
   The passed function gets 2 arguments.
   The last parameter is returned if the given flag is not set."
   input Flags.DebugFlag inFlag;
@@ -313,8 +300,7 @@ algorithm
 end fcallret2;
 
 public function fcallret3
-"function: fcallret3
-  Flag controlled calling of given function (3nd arg).
+"Flag controlled calling of given function (3nd arg).
   The passed function gets 3 arguments.
   The last parameter is returned if the given flag is not set."
   input Flags.DebugFlag inFlag;
@@ -346,8 +332,7 @@ algorithm
 end fcallret3;
 
 public function bcallret0
-"function: bcallret0
-  Boolean-controlled calling of given function (2nd arg).
+"Boolean-controlled calling of given function (2nd arg).
   The passed function gets 0 arguments.
   The last parameter is returned if the boolean is false."
   input Boolean flag;
@@ -370,8 +355,7 @@ algorithm
 end bcallret0;
 
 public function bcallret1
-"function: bcallret1
-  Boolean-controlled calling of given function (2nd arg).
+"Boolean-controlled calling of given function (2nd arg).
   The passed function gets 1 arguments.
   The last parameter is returned if the boolean is false."
   input Boolean flag;
@@ -608,8 +592,7 @@ algorithm
 end bcallret3_2;
 
 public function bcall
-"function: bcall
-  bool controlled calling of function."
+"bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aTo inFuncTypeTypeATo;
   input Type_a inTypeA;
@@ -632,8 +615,7 @@ algorithm
 end bcall;
 
 public function bcall0
-"function: bcall0
-  bool controlled calling of function."
+"bool controlled calling of function."
   input Boolean inBoolean;
   input Func func;
   partial function Func end Func;
@@ -648,8 +630,7 @@ algorithm
 end bcall0;
 
 public function bcall1
-"function: bcall1
-  bool controlled calling of function."
+"bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aType_bTo func;
   input Type_a inTypeA;
@@ -669,8 +650,7 @@ algorithm
 end bcall1;
 
 public function bcall2
-"function: bcall2
-  bool controlled calling of function."
+"bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aType_bTo func;
   input Type_a inTypeA;
@@ -693,8 +673,7 @@ algorithm
 end bcall2;
 
 public function bcall3
-"function: bcall3
-  bool controlled calling of function."
+"bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aType_bType_cTo fn;
   input Type_a inTypeA;
@@ -720,8 +699,7 @@ algorithm
 end bcall3;
 
 public function bcall4
-"function: bcall4
-  bool controlled calling of function."
+"bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aType_bType_cType_dTo fn;
   input Type_a inTypeA;
@@ -750,8 +728,7 @@ algorithm
 end bcall4;
 
 public function notfcall
-"function: notfcall
-  Call the given function (2nd arg)
+"Call the given function (2nd arg)
   if the flag given in 1st arg is
   NOT set"
   input Flags.DebugFlag inFlag;
@@ -777,8 +754,7 @@ algorithm
 end notfcall;
 
 public function fprintList
-"function: fprintList
-  If flag is set, print the elements in
+"If flag is set, print the elements in
   the list, using the passed function."
   input Flags.DebugFlag inFlag;
   input list<Type_a> inTypeALst2;
@@ -805,8 +781,7 @@ algorithm
 end fprintList;
 
 protected function printList
-"function: fprintList
-  If flag is set, print the elements in
+"If flag is set, print the elements in
   the list, using the passed function."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;

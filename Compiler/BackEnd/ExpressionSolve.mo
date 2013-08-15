@@ -54,8 +54,7 @@ protected import Flags;
 protected import List;
 
 public function solve
-"function: solve
-  Solves an equation consisting of a right hand side (rhs) and a
+"Solves an equation consisting of a right hand side (rhs) and a
   left hand side (lhs), with respect to the expression given as
   third argument, usually a variable."
   input DAE.Exp inExp1 "lhs";
@@ -169,8 +168,7 @@ algorithm
 end solve_work;
 
 protected function solveSimple
-"function: solveSimple
-  Solves simple equations like
+"Solves simple equations like
   a = f(..)
   der(a) = f(..)
   -a = f(..)
@@ -317,8 +315,7 @@ end solveSimple;
 
 
 protected function solve2
-"function: solve2
-  This function solves an equation e1 = e2 with
+"This function solves an equation e1 = e2 with
   respect to the variable given as an expression e3"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -568,8 +565,7 @@ algorithm
 end generateAssertType;
 
 protected function solve3
-"function: solve3
-  helper for solve2
+"helper for solve2
   This function checks if one part of a product expression
   does not contain inExp2"
   input DAE.Exp inExp1;
@@ -602,8 +598,7 @@ algorithm
 end solve3;
 
 protected function solve4
-"function: solve4
-  helper for solve3
+"helper for solve3
   This function checks the operator"
   input DAE.Operator inOp;
   output Boolean outBool;

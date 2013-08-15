@@ -480,8 +480,7 @@ algorithm
   end matchcontinue;
 end  applyReplacementsVarAttr;
 
-public function applyReplacements "function: applyReplacements
-  This function takes a VariableReplacements and two component references.
+public function applyReplacements "This function takes a VariableReplacements and two component references.
   It applies the replacements to each component reference.
 "
   input VariableReplacements inVariableReplacements1;
@@ -828,8 +827,7 @@ algorithm
 end replaceOptEquationsStmts;
 
 public function dumpReplacements
-"function: dumpReplacements
-  Prints the variable replacements on form var1 -> var2"
+"Prints the variable replacements on form var1 -> var2"
   input VariableReplacements inVariableReplacements;
 algorithm
   _:=
@@ -1129,8 +1127,7 @@ algorithm
   end matchcontinue;
 end amortizeUnion;
 
-public function addReplacementIfNot "function: addReplacementIf
-  Calls addReplacement() if condition (first argument) is false,
+public function addReplacementIfNot "Calls addReplacement() if condition (first argument) is false,
   otherwise does nothing.
 
   Author: asodja, 2010-03-03
@@ -1702,8 +1699,7 @@ algorithm
   end match;
 end replaceExpCond;
 
-protected function replaceExpMatrix "function: replaceExpMatrix
-  author: PA
+protected function replaceExpMatrix "author: PA
   Helper function to replaceExp, traverses Matrix expression list."
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst;
   input VariableReplacements inVariableReplacements;
@@ -1737,8 +1733,7 @@ algorithm
   end match;
 end replaceExpMatrix;
 
-protected function bintreeToExplist "function: bintree_to_list
-  This function takes a BinTree and transform it into a list
+protected function bintreeToExplist "This function takes a BinTree and transform it into a list
   representation, i.e. two lists of keys and values"
   input BinTree inBinTree;
   output list<DAE.Exp> outExpExpLst1;
@@ -1757,8 +1752,7 @@ algorithm
   end matchcontinue;
 end bintreeToExplist;
 
-protected function bintreeToExplist2 "function: bintree_to_list2
-  helper function to bintree_to_list"
+protected function bintreeToExplist2 "helper function to bintree_to_list"
   input BinTree inBinTree1;
   input list<DAE.Exp> inExpExpLst2;
   input list<DAE.Exp> inExpExpLst3;
@@ -1791,8 +1785,7 @@ algorithm
   end matchcontinue;
 end bintreeToExplist2;
 
-protected function bintreeToExplistOpt "function: bintree_to_list_opt
-  helper function to bintree_to_list"
+protected function bintreeToExplistOpt "helper function to bintree_to_list"
   input Option<BinTree> inBinTreeOption1;
   input list<DAE.Exp> inExpExpLst2;
   input list<DAE.Exp> inExpExpLst3;
@@ -1978,8 +1971,7 @@ algorithm
 end treeGet2;
 
 protected function treeAdd2
-"function: treeAdd2
-  Copied from generic implementation. Changed that no hashfunction is passed
+"Copied from generic implementation. Changed that no hashfunction is passed
   since a string (ComponentRef) can not be uniquely mapped to an int.
   Therefore we need to compare two strings to get a unique ordering."
   input BinTree2 inBinTree2;

@@ -355,8 +355,7 @@ algorithm
 end elabModQualifyTypespec;
 
 protected function elabModValue
-"function: elabModValue
-  author: PA
+"author: PA
   Helper function to elabMod. Builds values from modifier expressions if possible.
   Tries to Constant evaluate an expressions an create a Value option for it."
   input Env.Cache inCache;
@@ -391,8 +390,7 @@ algorithm
 end elabModValue;
 
 public function unelabMod
-"function: unelabMod
-  Transforms Mod back to SCode.Mod, loosing type information."
+"Transforms Mod back to SCode.Mod, loosing type information."
   input DAE.Mod inMod;
   output SCode.Mod outMod;
 algorithm
@@ -468,8 +466,7 @@ algorithm
 end unelabMod;
 
 protected function unelabSubmods
-"function: unelabSubmods
-  Helper function to unelabMod."
+"Helper function to unelabMod."
   input list<DAE.SubMod> inTypesSubModLst;
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
@@ -491,8 +488,7 @@ algorithm
 end unelabSubmods;
 
 protected function unelabSubmod
-"function: unelabSubmod
-  This function unelaborates on a submodification."
+"This function unelaborates on a submodification."
   input DAE.SubMod inSubMod;
   output list<SCode.SubMod> outSCodeSubModLst;
 algorithm
@@ -532,8 +528,7 @@ algorithm
 end unelabSubscript;
 
 public function updateMod
-"function: updateMod
-  This function updates an untyped modification to a typed one, by looking
+"This function updates an untyped modification to a typed one, by looking
   up the type of the modifier in the environment and update it."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -724,8 +719,7 @@ algorithm
 end elabUntypedMod;
 
 protected function elabSubmods
-"function: elabSubmods
-  This function helps elabMod by recusively elaborating on a list of submodifications."
+"This function helps elabMod by recusively elaborating on a list of submodifications."
     input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -760,8 +754,7 @@ algorithm
 end elabSubmods;
 
 protected function elabSubmod
-"function: elabSubmod
-  This function elaborates on a submodification, turning an
+"This function elaborates on a submodification, turning an
   SCode.SubMod into one or more DAE.SubMod."
     input Env.Cache inCache;
   input Env.Env inEnv;
@@ -855,8 +848,7 @@ algorithm
   end match;
 end elabUntypedSubmod;
 
-protected function insertSubmods "function: insertSubmods
-  This function repeatedly calls insertSubmod to incrementally
+protected function insertSubmods "This function repeatedly calls insertSubmod to incrementally
   insert several sub-modifications."
   input list<DAE.SubMod> inTypesSubModLst1;
   input list<DAE.SubMod> inTypesSubModLst2;
@@ -882,8 +874,7 @@ algorithm
   end match;
 end insertSubmods;
 
-protected function insertSubmod "function: insertSubmod
-  This function inserts a SubMod into a list of unique SubMods,
+protected function insertSubmod "This function inserts a SubMod into a list of unique SubMods,
   while keeping the uniqueness, merging the submod if necessary."
   input DAE.SubMod inSubMod;
   input list<DAE.SubMod> inTypesSubModLst;
@@ -910,8 +901,7 @@ algorithm
 end insertSubmod;
 
 // - Lookup
-public function lookupModificationP "function: lookupModificationP
-  This function extracts a modification from inside another
+public function lookupModificationP "This function extracts a modification from inside another
   modification, using a name to look up submodifications."
   input DAE.Mod inMod;
   input Absyn.Path inPath;
@@ -942,8 +932,7 @@ algorithm
   end matchcontinue;
 end lookupModificationP;
 
-public function lookupCompModification "function: lookupCompModification
-  This function is used to look up an identifier in a modification."
+public function lookupCompModification "This function is used to look up an identifier in a modification."
   input DAE.Mod inMod;
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
@@ -1056,8 +1045,7 @@ algorithm
   end matchcontinue;
 end mergeSubMods;
 
-public function lookupCompModificationFromEqu "function: lookupCompModification
-  This function is used to look up an identifier in a modification."
+public function lookupCompModificationFromEqu "This function is used to look up an identifier in a modification."
   input DAE.Mod inMod;
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
@@ -1356,8 +1344,7 @@ algorithm
   end match;
 end tryMergeSubMods;
 
-protected function lookupCompModification2 "function: lookupCompModification2
-  This function is just a helper to lookupCompModification"
+protected function lookupCompModification2 "This function is just a helper to lookupCompModification"
   input list<DAE.SubMod> inSubModLst;
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
@@ -1423,8 +1410,7 @@ algorithm
   end matchcontinue;
 end lookupCompModification2;
 
-public function lookupIdxModification "function: lookupIdxModification
-  This function extracts modifications to an array element, using an
+public function lookupIdxModification "This function extracts modifications to an array element, using an
   integer to index the modification."
   input DAE.Mod inMod;
   input Integer inInteger;
@@ -1465,8 +1451,7 @@ algorithm
   end matchcontinue;
 end lookupIdxModification;
 
-protected function lookupIdxModification2 "function: lookupIdxModification2
-  This function does part of the job for lookupIdxModification."
+protected function lookupIdxModification2 "This function does part of the job for lookupIdxModification."
   input list<DAE.SubMod> inTypesSubModLst;
   input Integer inInteger;
   output DAE.Mod outMod;
@@ -1512,8 +1497,7 @@ algorithm
   end matchcontinue;
 end lookupIdxModification2;
 
-protected function lookupIdxModification3 "function: lookupIdxModification3
-  Helper function to lookup_idx_modification2.
+protected function lookupIdxModification3 "Helper function to lookup_idx_modification2.
   when looking up index of a named mod, e.g. y={1,2,3}, it should
   subscript the expression {1,2,3} to corresponding index."
   input DAE.Mod inMod;
@@ -1546,8 +1530,7 @@ algorithm
   end matchcontinue;
 end lookupIdxModification3;
 
-protected function indexEqmod "function: indexEqmod
-  If there is an equation modification, this function can subscript
+protected function indexEqmod "If there is an equation modification, this function can subscript
   it using the provided indexing expressions.  This is used when a
   modification equates an array variable with an array expression.
   This expression will be expanded to produce one equation
@@ -1704,8 +1687,7 @@ algorithm
 end merge2;
 
 // - Merging
-protected function doMerge "function: merge
-  This function merges two modifications into one.
+protected function doMerge "This function merges two modifications into one.
   The first argument is the *outer* modification that
   should take precedence over the *inner* modification."
   input DAE.Mod inModOuter "the outer mod which should overwrite the inner mod";
@@ -1896,8 +1878,7 @@ algorithm
   end matchcontinue;
 end checkModification;
 
-protected function mergeSubs "function: mergeSubs
-  This function merges to list of DAE.SubMods."
+protected function mergeSubs "This function merges to list of DAE.SubMods."
   input list<DAE.SubMod> inTypesSubModLst1;
   input list<DAE.SubMod> inTypesSubModLst2;
   input Env.Env inEnv3;
@@ -1963,8 +1944,7 @@ algorithm
   end matchcontinue;
 end mergeSubs2_2;
 
-protected function mergeSubs2 "function: mergeSubs2
-  This function helps in the merging of two lists of DAE.SubMods.
+protected function mergeSubs2 "This function helps in the merging of two lists of DAE.SubMods.
   It compares one DAE.SubMod against a list of other DAE.SubMods,
   and if there is one with the same name, it is kept and the one
   DAE.SubMod given in the second argument is discarded."
@@ -2025,8 +2005,7 @@ algorithm
   end matchcontinue;
 end verifySubMerge;
 
-protected function mergeEq "function: mergeEq
-  The outer modification, given in the first argument,
+protected function mergeEq "The outer modification, given in the first argument,
   takes precedence over the inner modifications."
   input Option<DAE.EqMod> inTypesEqModOption1;
   input Option<DAE.EqMod> inTypesEqModOption2;
@@ -2040,8 +2019,7 @@ algorithm
   end match;
 end mergeEq;
 
-public function modEquation "function: modEquation
-  This function simply extracts the equation part of a modification."
+public function modEquation "This function simply extracts the equation part of a modification."
   input DAE.Mod inMod;
   output Option<DAE.EqMod> outTypesEqModOption;
 algorithm
@@ -2436,8 +2414,7 @@ algorithm
   end matchcontinue;
 end printModStr;
 
-public function printMod "function: printMod
-  Print a modifier on the Print buffer."
+public function printMod "Print a modifier on the Print buffer."
   input DAE.Mod m;
 protected
   String str;
@@ -2554,8 +2531,7 @@ algorithm
   end match;
 end prettyPrintSubmod;
 
-public function printSubs1Str "function: printSubs1Str
-  Helper function to printModStr"
+public function printSubs1Str "Helper function to printModStr"
   input list<DAE.SubMod> inTypesSubModLst;
   output list<String> outStringLst;
 algorithm
@@ -2576,8 +2552,7 @@ algorithm
   end match;
 end printSubs1Str;
 
-protected function printSubStr "function: printSubStr
-  Helper function to printSubs1Str"
+protected function printSubStr "Helper function to printSubs1Str"
   input DAE.SubMod inSubMod;
   output String outString;
 algorithm
@@ -2595,8 +2570,7 @@ algorithm
   end match;
 end printSubStr;
 
-protected function printSubscriptsStr "function: printSubscriptsStr
-  Helper function to printSubStr"
+protected function printSubscriptsStr "Helper function to printSubStr"
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
@@ -2617,8 +2591,7 @@ algorithm
   end match;
 end printSubscriptsStr;
 
-protected function printSubscripts2Str "function: printSubscripts2Str
-  Helper function to printSubscriptsStr"
+protected function printSubscripts2Str "Helper function to printSubscriptsStr"
   input list<Integer> inIntegerLst;
   output String outString;
 algorithm
@@ -2640,8 +2613,7 @@ algorithm
 end printSubscripts2Str;
 
 protected function printEqmodStr
-"function: printEqmodStr
-  Helper function to printModStr"
+"Helper function to printModStr"
   input Option<DAE.EqMod> inTypesEqModOption;
   output String outString;
 algorithm
@@ -3143,8 +3115,7 @@ end getUntypedCrefFromSubMod;
 
 // moved from Types!
 public function stripSubmod
-"function: stripSubmod
-  author: PA
+"author: PA
   Removes the sub modifiers of a modifier."
   input DAE.Mod inMod;
   output DAE.Mod outMod;

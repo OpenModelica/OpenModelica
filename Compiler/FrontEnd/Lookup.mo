@@ -566,8 +566,7 @@ algorithm
 end lookupPrevFrames;
 
 protected function lookupQualifiedImportedVarInFrame
-"function: lookupQualifiedImportedVarInFrame
-  author: PA
+"author: PA
   Looking up variables (constants) imported using qualified imports,
   i.e. import Modelica.Constants.PI;"
   input list<Absyn.Import> inImports;
@@ -599,8 +598,7 @@ algorithm
 end lookupQualifiedImportedVarInFrame;
 
 protected function moreLookupUnqualifiedImportedVarInFrame
-"function: moreLookupUnqualifiedImportedVarInFrame
-  Helper function for lookup_unqualified_imported_var_in_frame. Returns
+"Helper function for lookup_unqualified_imported_var_in_frame. Returns
   true if there are unqualified imports that matches a sought constant."
   input Env.Cache inCache;
   input list<Absyn.Import> inImports;
@@ -642,8 +640,7 @@ algorithm
   end matchcontinue;
 end moreLookupUnqualifiedImportedVarInFrame;
 
-protected function lookupUnqualifiedImportedVarInFrame "function: lookupUnqualifiedImportedVarInFrame
-  Find a variable from an unqualified import locally in a frame"
+protected function lookupUnqualifiedImportedVarInFrame "Find a variable from an unqualified import locally in a frame"
   input Env.Cache inCache;
   input list<Absyn.Import> inImports;
   input Env.Env inEnv;
@@ -697,8 +694,7 @@ algorithm
 end lookupUnqualifiedImportedVarInFrame;
 
 protected function lookupQualifiedImportedClassInFrame
-"function: lookupQualifiedImportedClassInFrame
-  Helper function to lookupQualifiedImportedClassInEnv."
+"Helper function to lookupQualifiedImportedClassInEnv."
   input Env.Cache inCache;
   input list<Absyn.Import> inImport;
   input Env.Env inEnv;
@@ -762,8 +758,7 @@ algorithm
 end lookupQualifiedImportedClassInFrame;
 
 protected function moreLookupUnqualifiedImportedClassInFrame
-"function: moreLookupUnqualifiedImportedClassInFrame
-  Helper function for lookupUnqualifiedImportedClassInFrame"
+"Helper function for lookupUnqualifiedImportedClassInFrame"
   input Env.Cache inCache;
   input list<Absyn.Import> inImports;
   input Env.Env inEnv;
@@ -819,8 +814,7 @@ algorithm
 end moreLookupUnqualifiedImportedClassInFrame;
 
 protected function lookupUnqualifiedImportedClassInFrame
-"function: lookupUnqualifiedImportedClassInFrame
-  Finds a class from an unqualified import locally in a frame"
+"Finds a class from an unqualified import locally in a frame"
   input Env.Cache inCache;
   input list<Absyn.Import> inImports;
   input Env.Env inEnv;
@@ -885,8 +879,7 @@ algorithm
 end lookupUnqualifiedImportedClassInFrame;
 
 public function lookupRecordConstructorClass
-"function: lookupRecordConstructorClass
-  Searches for a record constructor implicitly defined by a record class."
+"Searches for a record constructor implicitly defined by a record class."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -1066,8 +1059,7 @@ algorithm
   end matchcontinue;
 end checkPackageVariableConstant;
 
-public function lookupVarInternal "function: lookupVarInternal
-  Helper function to lookupVar. Searches the frames for variables."
+public function lookupVarInternal "Helper function to lookupVar. Searches the frames for variables."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
@@ -1139,8 +1131,7 @@ algorithm
   end matchcontinue;
 end frameIsImplAddedScope;
 
-public function lookupVarInPackages "function: lookupVarInPackages
-  This function is called when a lookup of a variable with qualified names
+public function lookupVarInPackages "This function is called when a lookup of a variable with qualified names
   does not have the first element as a component, e.g. A.B.C is looked up
   where A is not a component. This implies that A is a class, and this
   class should be temporary instantiated, and the lookup should
@@ -1331,8 +1322,7 @@ algorithm
 end getUnQualifiedImports;
 
 public function lookupVarLocal
-"function: lookupVarLocal
-  This function is very similar to `lookup_var\', but it only looks
+"This function is very similar to `lookup_var\', but it only looks
   in the topmost environment frame, which means that it only finds
   names defined in the local scope.
   ----EXCEPTION---: When the topmost scope is the scope of a for loop, the lookup
@@ -1358,8 +1348,7 @@ algorithm
     lookupVarInternal(inCache, inEnv, inComponentRef, InstTypes.SEARCH_LOCAL_ONLY());
 end lookupVarLocal;
 
-public function lookupIdentLocal "function: lookupIdentLocal
-  Searches for a variable in the local scope."
+public function lookupIdentLocal "Searches for a variable in the local scope."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input SCode.Ident inIdent;
@@ -1402,8 +1391,7 @@ algorithm
   end matchcontinue;
 end lookupIdentLocal;
 
-public function lookupClassLocal "function: lookupClassLocal
-  Searches for a class definition in the local scope."
+public function lookupClassLocal "Searches for a class definition in the local scope."
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   output SCode.Element outClass;
@@ -1425,8 +1413,7 @@ algorithm
 end lookupClassLocal;
 
 public function lookupIdent
-"function: lookupIdent
-  Same as lookupIdentLocal, except check all frames"
+"Same as lookupIdentLocal, except check all frames"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input SCode.Ident inIdent;
@@ -1467,8 +1454,7 @@ end lookupIdent;
 
 // Function lookup
 public function lookupFunctionsInEnv
-"function: lookupFunctionsInEnv
-  Returns a list of types that the function has."
+"Returns a list of types that the function has."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inId;
@@ -1587,8 +1573,7 @@ algorithm
 end lookupFunctionsListInEnv;
 
 protected function lookupFunctionsInEnv2
-"function: lookupFunctionsInEnv
-  Returns a list of types that the function has."
+"Returns a list of types that the function has."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -1675,8 +1660,7 @@ algorithm
 end lookupFunctionsInEnv2;
 
 protected function createGenericBuiltinFunctions
-"function: createGenericBuiltinFunctions
-  author: PA
+"author: PA
   This function creates function types on-the-fly for special builtin
   operators/functions which can not be represented in the builtin
   environment."
@@ -1743,8 +1727,7 @@ algorithm
 end lookupTypeInEnv;
 
 protected function lookupTypeInFrame
-"function: lookupTypeInFrame
-  Searches a frame for a type."
+"Searches a frame for a type."
   input Env.Cache inCache;
   input Env.AvlTree inBinTree1;
   input Env.AvlTree inBinTree2;
@@ -1774,8 +1757,7 @@ algorithm
 end lookupTypeInFrame;
 
 protected function lookupTypeInFrame2
-"function: lookupTypeInFrame
-  Searches a frame for a type."
+"Searches a frame for a type."
   input Env.Cache inCache;
   input Env.Item item;
   input Env.Env inEnv3;
@@ -1836,8 +1818,7 @@ algorithm
 end lookupTypeInFrame2;
 
 protected function lookupFunctionsInFrame
-"function: lookupFunctionsInFrame
-  This actually only looks up the function name and find all
+"This actually only looks up the function name and find all
   corresponding types that have this function name."
   input Env.Cache inCache;
   input Env.AvlTree inBinTree1;
@@ -2076,8 +2057,7 @@ algorithm
 end selectModifier;
 
 protected function buildRecordConstructorElts
-"function: buildRecordConstructorElts
-  Helper function to build_record_constructor_class. Creates the elements
+"Helper function to build_record_constructor_class. Creates the elements
   of the function class.
 
   TODO: This function should be replaced by a proper instantiation using instClassIn instead, followed by a
@@ -2235,8 +2215,7 @@ algorithm
 end buildRecordConstructorElts;
 
 protected function buildRecordConstructorResultElt
-"function: buildRecordConstructorResultElt
-  This function builds the result element of a
+"This function builds the result element of a
   record constructor function, i.e. the returned variable"
   input list<SCode.Element> elts;
   input SCode.Ident id;
@@ -2363,8 +2342,7 @@ algorithm
   end matchcontinue;
 end lookupClassInEnv;
 
-protected function lookupClassInFrame "function: lookupClassInFrame
-  Search for a class within one frame."
+protected function lookupClassInFrame "Search for a class within one frame."
   input Env.Cache inCache;
   input Env.Frame inFrame;
   input Env.Env inEnv;
@@ -2460,8 +2438,7 @@ algorithm
 end reportSeveralNamesError;
 
 protected function lookupVar2
-"function: lookupVar2
-  Helper function to lookupVarF and lookupIdent."
+"Helper function to lookupVarF and lookupIdent."
   input Env.Cache inCache;
   input Env.AvlTree inBinTree;
   input SCode.Ident inIdent;
@@ -2504,8 +2481,7 @@ algorithm
   end matchcontinue;
 end lookupVar2;
 
-protected function checkSubscripts "function: checkSubscripts
-  This function checks a list of subscripts agains type, and removes
+protected function checkSubscripts "This function checks a list of subscripts agains type, and removes
   dimensions from the type according to the subscripting."
   input DAE.Type inType;
   input list<DAE.Subscript> inExpSubscriptLst;
@@ -2672,8 +2648,7 @@ algorithm
 end checkSubscriptsRange2;
 
 protected function lookupVarF
-"function: lookupVarF
-  This function looks in a frame to find a declared variable.  If
+"This function looks in a frame to find a declared variable.  If
   the name being looked up is qualified, the first part of the name
   is looked up, and lookupVar2 is used to for further lookup in
   the result of that lookup.

@@ -130,8 +130,7 @@ algorithm
   end match;
 end inlineArrayEqnShared;
 
-protected function inlineArrayEqn1 "function: inlineArrayEqn1
-  author: Frenkel TUD 2011-5"
+protected function inlineArrayEqn1 "author: Frenkel TUD 2011-5"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared,Boolean> sharedOptimized;
   output BackendDAE.EqSystem osyst;
@@ -819,8 +818,7 @@ algorithm
 end traversingTimeEqnsFinder;
 
 public function countSimpleEquations
-"function: countSimpleEquations
-  author: Frenkel TUD 2011-05
+"author: Frenkel TUD 2011-05
   This function count the simple equations on the form a=b and a=const and a=f(not time)
   in BackendDAE.BackendDAE. Note this functions does not use variable replacements, because
   of this the number of simple equations is maybe smaller than using variable replacements."
@@ -960,8 +958,7 @@ end countsimpleEquation;
 //
 // =============================================================================
 public function removeParameters
-"function: removeParameters
-  author wbraun"
+"author wbraun"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -994,8 +991,7 @@ algorithm
 end removeParameters;
 
 protected function removeParameterswork
-"function: removeParameterswork
-  author wbraun"
+"author wbraun"
   input BackendDAE.EqSystem isyst;
   input BackendVarTransform.VariableReplacements repl;
   output BackendDAE.EqSystem osyst;
@@ -1152,8 +1148,7 @@ end traverseExpVisitorWrapper;
 //
 // =============================================================================
 public function removeProtectedParameters
-"function: removeProtectedParameters
-  author Frenkel TUD"
+"author Frenkel TUD"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -1184,8 +1179,7 @@ algorithm
 end removeProtectedParameters;
 
 protected function removeProtectedParameterswork
-"function: removeProtectedParameterswork
-  author Frenkel TUD"
+"author Frenkel TUD"
   input BackendDAE.EqSystem isyst;
   input BackendVarTransform.VariableReplacements repl;
   output BackendDAE.EqSystem osyst;
@@ -1245,8 +1239,7 @@ end protectedParametersFinder;
 //
 // =============================================================================
 public function removeEqualFunctionCalls
-"function: removeEqualFunctionCalls
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   This function detect equal function call on the form a=f(b) and c=f(b)
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.BackendDAE dae;
@@ -1256,8 +1249,7 @@ algorithm
 end removeEqualFunctionCalls;
 
 protected function removeEqualFunctionCallsWork
-"function: removeEqualFunctionCalls
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   This function detect equal function call on the form a=f(b) and c=f(b)
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem isyst;
@@ -1457,8 +1449,7 @@ algorithm
 end removeEqualFunctionCall;
 
 public function replaceExp
-"function: replaceExp
-  author: Frenkel TUD"
+"author: Frenkel TUD"
   input tuple<DAE.Exp,tuple<list<DAE.SymbolicOperation>,tuple<DAE.Exp,DAE.Exp,Integer>>> inTpl;
   output tuple<DAE.Exp,tuple<list<DAE.SymbolicOperation>,tuple<DAE.Exp,DAE.Exp,Integer>>> outTpl;
 protected
@@ -1479,8 +1470,7 @@ end replaceExp;
 //
 // =============================================================================
 public function removeUnusedParameter
-"function: removeUnusedParameter
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   This function remove unused parameters
   in BackendDAE.BackendDAE to get speed up for compilation of
   target code"
@@ -1619,8 +1609,7 @@ end checkUnusedParameterExp;
 //
 // =============================================================================
 public function removeUnusedVariables
-"function: removeUnusedVariables
-  author: Frenkel TUD 2011-04
+"author: Frenkel TUD 2011-04
   This function remove unused variables
   from BackendDAE.BackendDAE to get speed up for compilation of
   target code"
@@ -1737,8 +1726,7 @@ end checkUnusedVariablesExp;
 //
 // =============================================================================
 public function removeUnusedFunctions
-"function: removeUnusedFunctions
-  author: Frenkel TUD 2012-03
+"author: Frenkel TUD 2012-03
   This function remove unused functions
   from DAE.FunctionTree to get speed up for compilation of
   target code"
@@ -1911,8 +1899,7 @@ algorithm
 end checkUnusedFunctionsExp;
 
 protected function getFunctionAndBody
-"function: getFunctionBody
-  returns the body of a function"
+"returns the body of a function"
   input Absyn.Path inPath;
   input DAE.FunctionTree fns;
   output Option<DAE.Function> outFn;
@@ -6045,8 +6032,7 @@ end countOperator;
 // =============================================================================
 
 public function simplifyIfEquations
-"function: simplifyIfEquations
-  author: Frenkel TUD 2012-07
+"author: Frenkel TUD 2012-07
   This function traveres all if equations and if expressions and tries to simplify it by using the
   information from evaluation of parameters"
   input BackendDAE.BackendDAE dae;
@@ -6056,8 +6042,7 @@ algorithm
 end simplifyIfEquations;
 
 protected function simplifyIfEquationsWork
-"function: simplifyIfEquationsWork
-  author: Frenkel TUD 2012-07
+"author: Frenkel TUD 2012-07
   This function traveres all if equations and tries to simplify it by using the
   information from evaluation of parameters"
   input BackendDAE.EqSystem isyst;
@@ -6089,8 +6074,7 @@ algorithm
 end simplifyIfEquationsWork;
 
 protected function simplifyIfEquationsFinder
-"function: simplifyIfEquationsFinder
-  author: Frenkel TUD 2012-07
+"author: Frenkel TUD 2012-07
   helper for simplifyIfEquations"
   input BackendDAE.Equation inElem;
   input BackendDAE.Variables inConstArg;
@@ -6166,8 +6150,7 @@ algorithm
 end simplifyevaluatedParamter;
 
 protected function simplifyIfEquation
-"function: simplifyIfEquation
-  author: Frenkel TUD 2012-07
+"author: Frenkel TUD 2012-07
   helper for simplifyIfEquations"
   input list<DAE.Exp> conditions;
   input list<list<BackendDAE.Equation>> theneqns;
@@ -6244,8 +6227,7 @@ algorithm
 end simplifyIfEquation;
 
 protected function simplifyIfEquation1
-"function: simplifyIfEquation1
-  author: Frenkel TUD 2012-07
+"author: Frenkel TUD 2012-07
   helper for simplifyIfEquations"
   input list<DAE.Exp> conditions;
   input list<list<BackendDAE.Equation>> theneqns;
@@ -6315,8 +6297,7 @@ algorithm
 end simplifySolvedIfEqns2;
 
 protected function simplifySolvedIfEqns
-"function: simplifySolvedIfEqns
-  author: Frenkel TUD 2012-10
+"author: Frenkel TUD 2012-10
   helper for simplifyIfEquations"
   input list<DAE.Exp> conditions;
   input list<list<BackendDAE.Equation>> theneqns;
@@ -6342,8 +6323,7 @@ algorithm
 end simplifySolvedIfEqns;
 
 protected function simplifySolvedIfEqns1
-"function: simplifySolvedIfEqns1
-  author: Frenkel TUD 2012-10
+"author: Frenkel TUD 2012-10
   helper for simplifyIfEquations"
   input DAE.Exp condition;
   input list<BackendDAE.Equation> brancheqns;
@@ -6381,8 +6361,7 @@ algorithm
 end simplifySolvedIfEqns1;
 
 protected function simplifySolvedIfEqnsElse
-"function: simplifySolvedIfEqnsElse
-  author: Frenkel TUD 2012-10
+"author: Frenkel TUD 2012-10
   helper for simplifyIfEquations"
   input list<BackendDAE.Equation> elseenqs;
   input HashTable2.HashTable iHt;
@@ -6417,8 +6396,7 @@ algorithm
 end simplifySolvedIfEqnsElse;
 
 protected function simplifyIfEquationAsserts
-"function: simplifyIfEquationAsserts
-  author: Frenkel TUD 2012-07
+"author: Frenkel TUD 2012-07
   helper for simplifyIfEquations"
   input list<DAE.Exp> conditions;
   input list<list<BackendDAE.Equation>> theneqns;
@@ -6452,8 +6430,7 @@ algorithm
 end simplifyIfEquationAsserts;
 
 protected function simplifyIfEquationAsserts1
-"function: simplifyIfEquationAsserts1
-  author: Frenkel TUD 2012-07
+"author: Frenkel TUD 2012-07
   helper for simplifyIfEquationAsserts"
   input list<BackendDAE.Equation> brancheqns;
   input Option<DAE.Exp> condition;
@@ -6748,8 +6725,7 @@ end makeEquationsFromResiduals;
 // =============================================================================
 
 public function simplifysemiLinear
-"function: simplifysemiLinear
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   This function traveres all equations and tries to simplify calls to semiLinear"
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
@@ -6807,8 +6783,7 @@ algorithm
 end simplifysemiLinearWork;
 
 protected function semiLinearReplaceEqns
-"function: semiLinearReplaceEqns
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input tuple<BackendDAE.Equation,Integer> iTpl;
   input BackendDAE.EquationArray iEqns;
@@ -6823,8 +6798,7 @@ algorithm
 end semiLinearReplaceEqns;
 
 protected function semiLinearOptimize
-"function: semiLinearOptimize
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input list<tuple<BackendDAE.Equation,Integer>> eqnslst;
   input list<tuple<BackendDAE.Equation,Integer>> iAcc;
@@ -6853,8 +6827,7 @@ algorithm
 end semiLinearOptimize;
 
 protected function semiLinearOptimize2
-"function: semiLinearOptimize2
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input list<DAE.Exp> saLst;
   input HashTableExpToIndex.HashTable iHt;
@@ -6899,8 +6872,7 @@ algorithm
 end semiLinearOptimize2;
 
 protected function semiLinearOptimize4
-"function: semiLinearOptimize3
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input list<tuple<DAE.Exp,Integer,DAE.ElementSource>> explst;
   input list<tuple<BackendDAE.Equation,Integer>> iAcc;
@@ -6924,8 +6896,7 @@ algorithm
 end semiLinearOptimize4;
 
 protected function semiLinearOptimize3
-"function: semiLinearOptimize3
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input DAE.Exp exp;
   input DAE.ElementSource isource;
@@ -6957,8 +6928,7 @@ algorithm
 end semiLinearOptimize3;
 
 protected function semiLinearGetSA
-"function: semiLinearGetSA
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input DAE.Exp key;
   input HashTableExpToIndex.HashTable iHt1;
@@ -6978,8 +6948,7 @@ algorithm
 end semiLinearGetSA;
 
 protected function semiLinearOptimize1
-"function: semiLinearOptimize1
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input list<tuple<BackendDAE.Equation,Integer>> eqnslst;
   input Integer i;
@@ -7041,8 +7010,7 @@ algorithm
 end semiLinearSort;
 
 protected function semiLinearSort1
-"function: semiLinearSort1
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input  list<list<tuple<BackendDAE.Equation,Integer>>> eqnslstlst;
   input  Integer size;
@@ -7075,8 +7043,7 @@ algorithm
 end semiLinearSort1;
 
 protected function semiLinearSort2
-"function: semiLinearSort2
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input  list<tuple<BackendDAE.Equation,Integer>> eqnslst;
   input  HashTableExpToIndex.HashTable iHt;
@@ -7115,8 +7082,7 @@ algorithm
 end semiLinearSort2;
 
 protected function simplifysemiLinearFinder
-"function: simplifysemiLinearFinder
-  author: Frenkel TUD 2012-08
+"author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input tuple<BackendDAE.Equation,tuple<list<tuple<BackendDAE.Equation,Integer>>,Integer,Boolean>> inTpl;
   output tuple<BackendDAE.Equation,tuple<list<tuple<BackendDAE.Equation,Integer>>,Integer,Boolean>> outTpl;
@@ -7302,8 +7268,7 @@ end traverserExpinputDerivativesUsed;
 //
 // =============================================================================
 public function removeConstants
-"function: removeConstants
-  author Frenkel TUD"
+"author Frenkel TUD"
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
@@ -7343,8 +7308,7 @@ algorithm
 end removeConstants;
 
 protected function removeConstantsWork
-"function: removeConstantsWork
-  author Frenkel TUD"
+"author Frenkel TUD"
   input BackendDAE.EqSystem isyst;
   input BackendVarTransform.VariableReplacements repl;
   output BackendDAE.EqSystem osyst;
@@ -7706,8 +7670,7 @@ algorithm
    end match;
 end addInitialStmtsToAlgorithms1;
 
-protected function eaddInitialStmtsToAlgorithms1Helper "function: eaddInitialStmtsToAlgorithms1Helper
-  Helper function to addInitialStmtsToAlgorithms1."
+protected function eaddInitialStmtsToAlgorithms1Helper "Helper function to addInitialStmtsToAlgorithms1."
   input tuple<BackendDAE.Equation, BackendDAE.Variables> inTpl;
   output tuple<BackendDAE.Equation, BackendDAE.Variables> outTpl;
 algorithm

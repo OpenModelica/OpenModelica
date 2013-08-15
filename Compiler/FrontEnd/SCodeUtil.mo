@@ -63,8 +63,7 @@ protected import NFSCodeFlatten;
 protected import SCodeDump;
 
 public function translateAbsyn2SCode
-"function: translateAbsyn2SCode
-  This function takes an Absyn.Program
+"This function takes an Absyn.Program
   and constructs a SCode.Program from it.
   This particular version of translate tries to fix any uniontypes
   in the inProgram before translating further. This should probably
@@ -77,8 +76,7 @@ algorithm
 end translateAbsyn2SCode;
 
 public function translateAbsyn2SCode2
-"function: translateAbsyn2SCode2
-  This function takes an Absyn.Program
+"This function takes an Absyn.Program
   and constructs a SCode.Program from it.
   This particular version of translate tries to fix any uniontypes
   in the inProgram before translating further. This should probably
@@ -304,8 +302,7 @@ end translatePurity;
 
 // Changed to public! krsta
 public function translateRestriction
-"function: translateRestriction
-  Convert a class restriction."
+"Convert a class restriction."
   input Absyn.Class inClass;
   input Absyn.Restriction inRestriction;
   output SCode.Restriction outRestriction;
@@ -359,8 +356,7 @@ algorithm
 end translateRestriction;
 
 protected function containsExternalFuncDecl
-"function: containExternalFuncDecl
-  Returns true if the Absyn.Class contains an external function declaration."
+"Returns true if the Absyn.Class contains an external function declaration."
   input Absyn.Class inClass;
   output Boolean outBoolean;
 algorithm
@@ -438,8 +434,7 @@ algorithm
 end translateConnectorType;
 
 protected function translateClassdef
-"function: translateClassdef
-  This function converts an Absyn.ClassDef to a SCode.ClassDef.
+"This function converts an Absyn.ClassDef to a SCode.ClassDef.
   For the DERIVED case, the conversion is fairly trivial, but for
   the PARTS case more work is needed.
   The result contains separate lists for:
@@ -608,8 +603,7 @@ algorithm
 end mergeSCodeAnnotationsFromParts;
 
 protected function translateEnumlist
-"function: translateEnumlist
-  Convert an EnumLiteral list to an Ident list.
+"Convert an EnumLiteral list to an Ident list.
   Comments are lost."
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
   output list<SCode.Enum> outEnumLst;
@@ -633,8 +627,7 @@ algorithm
 end translateEnumlist;
 
 protected function translateClassdefElements
-"function: translateClassdefElements
-  Convert an Absyn.ClassPart list to an Element list."
+"Convert an Absyn.ClassPart list to an Element list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Element> outElementLst;
 algorithm
@@ -669,8 +662,7 @@ algorithm
 end translateClassdefElements;
 
 protected function translateClassdefEquations
-"function: translateClassdefEquations
-  Convert an Absyn.ClassPart list to an Equation list."
+"Convert an Absyn.ClassPart list to an Equation list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Equation> outEquationLst;
 algorithm
@@ -696,8 +688,7 @@ algorithm
 end translateClassdefEquations;
 
 protected function translateClassdefInitialequations
-"function: translateClassdefInitialequations
-  Convert an Absyn.ClassPart list to an initial Equation list."
+"Convert an Absyn.ClassPart list to an initial Equation list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.Equation> outEquationLst;
 algorithm
@@ -723,8 +714,7 @@ algorithm
 end translateClassdefInitialequations;
 
 protected function translateClassdefAlgorithms
-"function: translateClassdefAlgorithms
-  Convert an Absyn.ClassPart list to an Algorithm list."
+"Convert an Absyn.ClassPart list to an Algorithm list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.AlgorithmSection> outAlgorithmLst;
 algorithm
@@ -757,8 +747,7 @@ algorithm
 end translateClassdefAlgorithms;
 
 protected function translateClassdefConstraints
-"function: translateClassdefConstraints
-  Convert an Absyn.ClassPart list to an Constraint list."
+"Convert an Absyn.ClassPart list to an Constraint list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.ConstraintSection> outConstraintLst;
 algorithm
@@ -789,8 +778,7 @@ algorithm
 end translateClassdefConstraints;
 
 protected function translateClassdefInitialalgorithms
-"function: translateClassdefInitialalgorithms
-  Convert an Absyn.ClassPart list to an initial Algorithm list."
+"Convert an Absyn.ClassPart list to an initial Algorithm list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output list<SCode.AlgorithmSection> outAlgorithmLst;
 algorithm
@@ -817,8 +805,7 @@ algorithm
 end translateClassdefInitialalgorithms;
 
 public function translateClassdefAlgorithmitems
-"function: translateClassdefAlgorithmitems
-  Filter out comments."
+"Filter out comments."
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   output list<SCode.Statement> outAbsynAlgorithmLst;
 algorithm
@@ -979,8 +966,7 @@ algorithm
 end translateBranches;
 
 protected function translateClassdefExternaldecls
-"function: translateClassdefExternaldecls
-  Converts an Absyn.ClassPart list to an SCode.ExternalDecl option.
+"Converts an Absyn.ClassPart list to an SCode.ExternalDecl option.
   The list should only contain one external declaration, so pick the first one."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
   output Option<SCode.ExternalDecl> outAbsynExternalDeclOption;
@@ -1011,8 +997,7 @@ algorithm
 end translateClassdefExternaldecls;
 
 public function translateEitemlist
-"function: translateEitemlist
-  This function converts a list of Absyn.ElementItem to a list of SCode.Element.
+"This function converts a list of Absyn.ElementItem to a list of SCode.Element.
   The boolean argument flags whether the elements are protected.
   Annotations are not translated, i.e. they are removed when converting to SCode."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
@@ -1047,8 +1032,7 @@ end translateEitemlist;
 
 // stefan
 public function translateAnnotation
-"function: translateAnnotation
-  translates an Absyn.Annotation into an SCode.Annotation"
+"translates an Absyn.Annotation into an SCode.Annotation"
   input Absyn.Annotation inAnnotation;
   output SCode.Annotation outAnnotation;
 algorithm
@@ -1067,8 +1051,7 @@ algorithm
 end translateAnnotation;
 
 public function translateElement
-"function: translateElement
-  This function converts an Absyn.Element to a list of SCode.Element.
+"This function converts an Absyn.Element to a list of SCode.Element.
   The original element may declare several components at once, and
   those are separated to several declarations in the result."
   input Absyn.Element inElement;
@@ -1141,8 +1124,7 @@ algorithm
 end translateDefineunitParam2;
 
 protected function translateElementspec
-"function: translateElementspec
-  This function turns an Absyn.ElementSpec to a list of SCode.Element.
+"This function turns an Absyn.ElementSpec to a list of SCode.Element.
   The boolean arguments say if the element is final and protected, respectively."
   input Option<Absyn.ConstrainClass> cc;
   input Boolean finalPrefix;
@@ -1371,8 +1353,7 @@ algorithm
 end setHasStreamConnectorsHandler;
 
 protected function translateRedeclarekeywords
-"function: translateRedeclarekeywords
-  author: PA
+"author: PA
   For now, translate to bool, replaceable."
   input Option<Absyn.RedeclareKeywords> inRedeclKeywords;
   output Boolean outIsReplaceable;
@@ -1413,8 +1394,7 @@ algorithm
 end translateConstrainClass;
 
 protected function translateParallelism
-"function: translateParallelism
-  Converts an Absyn.Parallelism to SCode.Parallelism."
+"Converts an Absyn.Parallelism to SCode.Parallelism."
   input Absyn.Parallelism inParallelism;
   output SCode.Parallelism outParallelism;
 algorithm
@@ -1426,8 +1406,7 @@ algorithm
 end translateParallelism;
 
 protected function translateVariability
-"function: translateVariability
-  Converts an Absyn.Variability to SCode.Variability."
+"Converts an Absyn.Variability to SCode.Variability."
   input Absyn.Variability inVariability;
   output SCode.Variability outVariability;
 algorithm
@@ -1440,8 +1419,7 @@ algorithm
 end translateVariability;
 
 protected function translateEquations
-"function: translateEquations
-  This function transforms a list of Absyn.Equation to a list of
+"This function transforms a list of Absyn.Equation to a list of
   SCode.Equation, by applying the translateEquation function to each
   equation."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
@@ -1479,8 +1457,7 @@ end translateEquations;
 
 
 protected function translateEEquations
-"function: translateEEquations
-  Helper function to translateEquations"
+"Helper function to translateEquations"
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
   input Boolean inIsInitial;
   output list<SCode.EEquation> outEEquationLst;
@@ -1510,8 +1487,7 @@ algorithm
 end translateEEquations;
 
 protected function translateComment
-"function: translateComment
-  turns an Absyn.Comment into an SCode.Comment"
+"turns an Absyn.Comment into an SCode.Comment"
   input Option<Absyn.Comment> inComment;
   output SCode.Comment outComment;
 algorithm
@@ -1556,8 +1532,7 @@ algorithm
 end translateCommentList;
 
 protected function translateCommentSeparate
-"function: translateComment
-  turns an Absyn.Comment into an SCode.Annotation + string"
+"turns an Absyn.Comment into an SCode.Annotation + string"
   input Option<Absyn.Comment> inComment;
   output Option<SCode.Annotation> outAnn;
   output Option<String> outStr;
@@ -1585,8 +1560,7 @@ algorithm
 end translateCommentSeparate;
 
 protected function translateEquation
-"function: translateEquation
-  The translation of equations are straightforward, with one exception.
+"The translation of equations are straightforward, with one exception.
   If clauses are translated so that the SCode only contains simple if-else constructs, and no elseif.
   PR Arrays seem to keep their Absyn.mo structure."
   input Absyn.Equation inEquation;
@@ -1750,8 +1724,7 @@ end translateElementAddinfo;
 
 /* Modification management */
 public function translateMod
-"function: translateMod
-  Builds an SCode.Mod from an Absyn.Modification."
+"Builds an SCode.Mod from an Absyn.Modification."
   input Option<Absyn.Modification> inAbsynModificationOption;
   input SCode.Final inFinalPrefix;
   input SCode.Each inEachPrefix;
@@ -1998,8 +1971,7 @@ algorithm
 end makeSubMod;
 
 protected function translateSub
-"function: translateSub
-  This function converts a Absyn.ComponentRef plus a list
+"This function converts a Absyn.ComponentRef plus a list
   of modifications into a number of nested SCode.SUBMOD."
   input Absyn.Path inPath;
   input SCode.Mod inMod;
