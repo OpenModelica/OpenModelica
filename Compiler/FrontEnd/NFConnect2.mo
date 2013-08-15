@@ -123,6 +123,6 @@ public uniontype Connections
   end CONNECTIONS;
 end Connections;
 
-public constant Connections emptyConnections := CONNECTIONS({}, {}, {}, {});
+public constant Connections emptyConnections = CONNECTIONS({}, {}, {}, {});
 
 end NFConnect2;
