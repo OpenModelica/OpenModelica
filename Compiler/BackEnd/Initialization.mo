@@ -70,8 +70,7 @@ protected import Matching;
 // These are functions that can be used to access the initialization.
 // =============================================================================
 
-public function solveInitialSystem "function solveInitialSystem
-  author: lochel
+public function solveInitialSystem "author: lochel
   This function generates a algebraic system of equations for the initialization and solves it."
   input BackendDAE.BackendDAE inDAE;
   output Option<BackendDAE.BackendDAE> outInitDAE;
@@ -206,8 +205,7 @@ end solveInitialSystem;
 //
 // =============================================================================
 
-protected function solveInitialSystemEqSystem "function solveInitialSystemEqSystem
-  author: lochel
+protected function solveInitialSystemEqSystem "author: lochel
   This is a helper function of solveInitialSystem and solves the generated system."
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared, BackendDAE.BackendDAE> sharedOptimized;
@@ -252,8 +250,7 @@ end solveInitialSystemEqSystem;
 // from a given BackenDAE to get the initial equation system.
 // =============================================================================
 
-protected function inlineWhenForInitialization "function inlineWhenForInitialization
-  author: lochel
+protected function inlineWhenForInitialization "author: lochel
   This function inlines when-clauses for the initialization."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -266,8 +263,7 @@ algorithm
   outDAE := BackendDAE.DAE(systs, shared);
 end inlineWhenForInitialization;
 
-protected function inlineWhenForInitializationSystem "function inlineWhenForInitializationSystem
-  author: lochel
+protected function inlineWhenForInitializationSystem "author: lochel
   This is a helper function for inlineWhenForInitialization."
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
@@ -286,8 +282,7 @@ algorithm
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
 end inlineWhenForInitializationSystem;
 
-protected function inlineWhenForInitializationEquation "function inlineWhenForInitializationEquation
-  author: lochel
+protected function inlineWhenForInitializationEquation "author: lochel
   This is a helper function for inlineWhenForInitialization1."
   input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables, list<BackendDAE.Equation>>> inTpl;
   output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables, list<BackendDAE.Equation>>> outTpl;
@@ -340,8 +335,7 @@ algorithm
   oAcc := List.consOnTrue(intEq(i, 0), cr, iAcc);
 end selectSecondZero;
 
-protected function inlineWhenForInitializationWhenEquation "function inlineWhenForInitializationWhenEquation
-  author: lochel
+protected function inlineWhenForInitializationWhenEquation "author: lochel
   This is a helper function for inlineWhenForInitializationEquation."
   input BackendDAE.WhenEquation inWEqn;
   input DAE.ElementSource source;
@@ -382,8 +376,7 @@ algorithm
   end matchcontinue;
 end inlineWhenForInitializationWhenEquation;
 
-protected function generateInitialWhenAlg "function generateInitialWhenAlg
-  author: lochel
+protected function generateInitialWhenAlg "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
   This is a helper function for inlineWhenForInitialization3."
   input list< DAE.Statement> inStmts;
@@ -428,8 +421,7 @@ algorithm
   end matchcontinue;
 end generateInitialWhenAlg;
 
-protected function inlineWhenForInitializationWhenStmt "function inlineWhenForInitializationWhenStmt
-  author: lochel
+protected function inlineWhenForInitializationWhenStmt "author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
   This is a helper function for inlineWhenForInitialization3."
   input DAE.Statement inWhen;
@@ -504,8 +496,7 @@ algorithm
   end matchcontinue;
 end addWhenLeftCr;
 
-protected function generateInactiveWhenEquationForInitialization "function generateInactiveWhenEquationForInitialization
-  author: lochel
+protected function generateInactiveWhenEquationForInitialization "author: lochel
   This is a helper function for inlineWhenForInitialization3."
   input list<DAE.ComponentRef> inCrLst;
   input DAE.ElementSource inSource;
@@ -543,8 +534,7 @@ end generateInactiveWhenEquationForInitialization;
 // collect all pre variables in time equations
 // =============================================================================
 
-protected function collectPreVariables "function collectPreVariables
-  author: lochel"
+protected function collectPreVariables "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   output HashSet.HashSet outHS;  
 protected
@@ -565,8 +555,7 @@ algorithm
   // BackendDump.debuglst((crefs,ComponentReference.printComponentRefStr,"\n","\n"));
 end collectPreVariables;
 
-protected function collectPreVariablesEquation "function collectPreVariablesEquation
-  author: lochel"
+protected function collectPreVariablesEquation "author: lochel"
   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
 protected
@@ -578,8 +567,7 @@ algorithm
   outTpl := (e, hs);
 end collectPreVariablesEquation;
 
-protected function collectPreVariablesEqSystem "function collectPreVariablesEqSystem
-  author: lochel"
+protected function collectPreVariablesEqSystem "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input HashSet.HashSet inHS;
   output HashSet.HashSet outHS;
@@ -591,8 +579,7 @@ algorithm
   outHS := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, collectPreVariablesTrverseExpsEqns, inHS);
 end collectPreVariablesEqSystem;
 
-protected function collectPreVariablesTrverseExpsEqns "function collectPreVariablesTrverseExpsEqns
-  author: lochel"
+protected function collectPreVariablesTrverseExpsEqns "author: lochel"
   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
 protected
@@ -604,8 +591,7 @@ algorithm
   outTpl := (e, hs);
 end collectPreVariablesTrverseExpsEqns;
 
-protected function collectPreVariablesTrverseExp "function collectPreVariablesTrverseExp
-  author: lochel"
+protected function collectPreVariablesTrverseExp "author: lochel"
   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
 algorithm
@@ -630,8 +616,7 @@ algorithm
   end match;
 end collectPreVariablesTrverseExp;
 
-protected function collectPreVariablesTrverseExp2 "function collectPreVariablesTrverseExp2
-  author: lochel"
+protected function collectPreVariablesTrverseExp2 "author: lochel"
   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
 algorithm 
@@ -656,8 +641,7 @@ end collectPreVariablesTrverseExp2;
 //
 // =============================================================================
 
-protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute "function warnAboutIterationVariablesWithDefaultZeroStartAttribute
-  author: lochel
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute "author: lochel
   This function ... read the function name."
   input BackendDAE.BackendDAE inBackendDAE;
   output Boolean outWarning;
@@ -668,8 +652,7 @@ algorithm
   outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute0(eqs);
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute;
 
-protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "function warnAboutIterationVariablesWithDefaultZeroStartAttribute0
-  author: lochel"
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute0 "author: lochel"
   input list<BackendDAE.EqSystem> inEqs;
   output Boolean outWarning;
 algorithm
@@ -686,8 +669,7 @@ algorithm
   end match;
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute0;
 
-protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute1 "function warnAboutIterationVariablesWithDefaultZeroStartAttribute1
-  author: lochel"
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   output Boolean outWarning;
 protected
@@ -699,8 +681,7 @@ algorithm
   outWarning := warnAboutIterationVariablesWithDefaultZeroStartAttribute2(comps, vars);
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute1;
 
-protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute2 "function warnAboutIterationVariablesWithDefaultZeroStartAttribute2
-  author: lochel"
+protected function warnAboutIterationVariablesWithDefaultZeroStartAttribute2 "author: lochel"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.Variables inVars;
   output Boolean outWarning;
@@ -749,8 +730,7 @@ algorithm
   end matchcontinue;
 end warnAboutIterationVariablesWithDefaultZeroStartAttribute2;
 
-function filterVarsWithoutStartValue "function filterVarsWithoutStartValue
-  author: lochel"
+function filterVarsWithoutStartValue "author: lochel"
   input list<BackendDAE.Var> inVars;
   output list<BackendDAE.Var> outVars;
 algorithm
@@ -774,8 +754,7 @@ algorithm
   end matchcontinue;
 end filterVarsWithoutStartValue;
 
-function warnAboutVars2 "function warnAboutVars2
-  author: lochel
+function warnAboutVars2 "author: lochel
   TODO: Replace this with an general BackendDump implementation."
   input list<BackendDAE.Var> inVars;
   output String outString;
@@ -808,8 +787,7 @@ end warnAboutVars2;
 //   - unfixed discrete -> pre(vd)
 // =============================================================================
 
-protected function selectInitializationVariablesDAE "function selectInitializationVariablesDAE
-  author: lochel
+protected function selectInitializationVariablesDAE "author: lochel
   This function wraps selectInitializationVariables."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.Variables outVars;
@@ -823,8 +801,7 @@ algorithm
   outVars := BackendVariable.traverseBackendDAEVars(alias, selectInitializationVariables2, outVars);
 end selectInitializationVariablesDAE;
 
-protected function selectInitializationVariables "function selectInitializationVariables
-  author: lochel"
+protected function selectInitializationVariables "author: lochel"
   input BackendDAE.EqSystems inEqSystems;
   output BackendDAE.Variables outVars;
 algorithm
@@ -832,8 +809,7 @@ algorithm
   outVars := List.fold(inEqSystems, selectInitializationVariables1, outVars);
 end selectInitializationVariables;
 
-protected function selectInitializationVariables1 "function selectInitializationVariables1
-  author: lochel"
+protected function selectInitializationVariables1 "author: lochel"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables outVars;
@@ -847,8 +823,7 @@ algorithm
   // outVars := List.fold(stateSets, selectInitialStateSetVars, outVars);
 end selectInitializationVariables1;
 
-protected function selectInitializationVariables2 "function selectInitializationVariables2
-  author: lochel"
+protected function selectInitializationVariables2 "author: lochel"
   input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
   output tuple<BackendDAE.Var, BackendDAE.Variables> outTpl;
 algorithm
@@ -894,8 +869,7 @@ end selectInitializationVariables2;
 // which occure in no equation.
 // =============================================================================
 
-protected function preBalanceInitialSystem "function preBalanceInitialSystem
-  author: lochel"
+protected function preBalanceInitialSystem "author: lochel"
   input BackendDAE.EqSystem inSystem;
   output BackendDAE.EqSystem outSystem;
   output list<BackendDAE.Var> outDumpVars;
@@ -913,8 +887,7 @@ algorithm
   outSystem := Util.if_(b, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets), inSystem);
 end preBalanceInitialSystem;
 
-protected function preBalanceInitialSystem1 "function preBalanceInitialSystem1
-  author: lochel"
+protected function preBalanceInitialSystem1 "author: lochel"
   input Integer n;
   input BackendDAE.IncidenceMatrix mt;
   input BackendDAE.Variables inVars;
@@ -984,8 +957,7 @@ algorithm
   end matchcontinue;
 end preBalanceInitialSystem1;
 
-protected function simplifyInitialFunctions "function simplifyInitialFunctions
-  author: Frenkel TUD 2012-12
+protected function simplifyInitialFunctions "author: Frenkel TUD 2012-12
   simplify initial() with true and sample with false"
   input tuple<DAE.Exp, Boolean /* homotopy used? */> inTpl;
   output tuple<DAE.Exp, Boolean /* homotopy used? */> outTpl;
@@ -997,8 +969,7 @@ algorithm
   outTpl := Expression.traverseExp(exp, simplifyInitialFunctionsExp, useHomotopy);
 end simplifyInitialFunctions;
 
-protected function simplifyInitialFunctionsExp "function simplifyInitialFunctionsExp
-  author: Frenkel TUD 2012-12
+protected function simplifyInitialFunctionsExp "author: Frenkel TUD 2012-12
   helper for simplifyInitialFunctions"
   input tuple<DAE.Exp, Boolean /* homotopy used? */> inExp;
   output tuple<DAE.Exp, Boolean /* homotopy used? */> outExp;
@@ -1021,8 +992,7 @@ algorithm
   end matchcontinue;
 end simplifyInitialFunctionsExp;
 
-protected function analyzeInitialSystem "function analyzeInitialSystem
-  author: lochel
+protected function analyzeInitialSystem "author: lochel
   This function fixes discrete and state variables to balance the initial equation system."
   input BackendDAE.BackendDAE initDAE;
   input BackendDAE.BackendDAE inDAE;      // original DAE
@@ -1033,8 +1003,7 @@ algorithm
   (outDAE, (_, _, outDumpVars)) := BackendDAEUtil.mapEqSystemAndFold(initDAE, analyzeInitialSystem2, (inDAE, inInitVars, {}));
 end analyzeInitialSystem;
 
-protected function analyzeInitialSystem2 "function analyzeInitialSystem2
-  author: lochel"
+protected function analyzeInitialSystem2 "author: lochel"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared, tuple<BackendDAE.BackendDAE, BackendDAE.Variables, list<BackendDAE.Var>>> sharedOptimized;
   output BackendDAE.EqSystem osyst;
@@ -1115,8 +1084,7 @@ algorithm
   end matchcontinue;
 end analyzeInitialSystem2;
 
-protected function fixUnderDeterminedInitialSystem "function fixUnderDeterminedInitialSystem
-  author: lochel"
+protected function fixUnderDeterminedInitialSystem "author: lochel"
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
@@ -1176,8 +1144,7 @@ algorithm
   outEqns := eqns;
 end fixUnderDeterminedInitialSystem;
 
-protected function replaceFixedCandidates "function replaceFixedCandidates
-  author: Frenkel TUD 2012-12
+protected function replaceFixedCandidates "author: Frenkel TUD 2012-12
   try to switch to more appropriate candidates for fixed variables"
   input list<Integer> iUnassigned;
   input Integer nVars;
@@ -1308,8 +1275,7 @@ algorithm
   end matchcontinue;
 end getAssignedVarFromInitVars;
 
-protected function pathFound "function pathFound
-  author: Frenkel TUD 2012-12
+protected function pathFound "author: Frenkel TUD 2012-12
   function helper for getAssignedVarFromInitVars, traverses all colums and perform a DFSB phase on each"
   input list<Integer> stack;
   input Integer i;
@@ -1334,8 +1300,7 @@ algorithm
   end match;
 end pathFound;
 
-protected function pathFoundtraverseEqns "function pathFoundtraverseEqns
-  author: Frenkel TUD 2012-12
+protected function pathFoundtraverseEqns "author: Frenkel TUD 2012-12
   function helper for pathFound, traverses all vars of a equations and search a augmenting path"
   input list<Integer> rows;
   input list<Integer> stack;
@@ -1374,8 +1339,7 @@ algorithm
   end matchcontinue;
 end pathFoundtraverseEqns;
 
-protected function pathFoundtraverseEqns1 "function pathFoundtraverseEqns1
-  author: Frenkel TUD 2012-12
+protected function pathFoundtraverseEqns1 "author: Frenkel TUD 2012-12
   function helper for pathFoundtraverseEqns"
   input Boolean b;
   input list<Integer> rows;
@@ -1394,8 +1358,7 @@ algorithm
   end match;
 end pathFoundtraverseEqns1;
 
-protected function reasign "function reasign
-  author: Frenkel TUD 2012-03
+protected function reasign "author: Frenkel TUD 2012-03
   function helper for pathfound, reasignment(rematching) allong the augmenting path
   remove all edges from the assignments that are in the path
   add all other edges to the assignment"
@@ -1419,8 +1382,7 @@ algorithm
   end match;
 end reasign;
 
-protected function addStartValueEquations "function addStartValueEquations
-  author: lochel"
+protected function addStartValueEquations "author: lochel"
   input list<BackendDAE.Var> inVarLst;
   input BackendDAE.EquationArray inEqns;
   input list<BackendDAE.Var> inDumpVars;
@@ -1486,8 +1448,7 @@ algorithm
   end matchcontinue;
 end addStartValueEquations;
 
-protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
-  author: lochel
+protected function collectInitialVarsEqnsSystem "author: lochel
   This function collects variables and equations for the initial system out of an given EqSystem."
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet> iTpl;
@@ -1508,8 +1469,7 @@ algorithm
   oTpl := (vars, fixvars, eqns, reqns, hs);
 end collectInitialVarsEqnsSystem;
 
-protected function collectInitialVars "function collectInitialVars
-  author: lochel
+protected function collectInitialVars "author: lochel
   This function collects all the vars for the initial system."
   input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> outTpl;
@@ -1654,8 +1614,7 @@ algorithm
   end matchcontinue;
 end collectInitialVars;
 
-protected function collectInitialAliasVars "function collectInitialAliasVars
-  author: lochel
+protected function collectInitialAliasVars "author: lochel
   This function collects all the vars for the initial system."
   input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> outTpl;
@@ -1698,8 +1657,7 @@ algorithm
   end matchcontinue;
 end collectInitialAliasVars;
 
-protected function collectInitialBindings "function collectInitialBindings
-  author: lochel
+protected function collectInitialBindings "author: lochel
   This function collects all the vars for the initial system."
   input tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> outTpl;
@@ -1737,8 +1695,7 @@ algorithm
   end match;
 end collectInitialBindings;
 
-protected function collectInitialEqns "function collectInitialEqns
-  author: lochel"
+protected function collectInitialEqns "author: lochel"
   input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> outTpl;
 protected
@@ -1761,8 +1718,7 @@ algorithm
   outTpl := (eqn, (eqns, reeqns));
 end collectInitialEqns;
 
-protected function replaceDerPreCref "function replaceDerPreCref
-  author: Frenkel TUD 2011-05
+protected function replaceDerPreCref "author: Frenkel TUD 2011-05
   helper for collectInitialEqns"
   input tuple<DAE.Exp, Integer> inExp;
   output tuple<DAE.Exp, Integer> outExp;
@@ -1774,8 +1730,7 @@ algorithm
   outExp := Expression.traverseExp(e, replaceDerPreCrefExp, i);
 end replaceDerPreCref;
 
-protected function replaceDerPreCrefExp "function replaceDerPreCrefExp
-  author: Frenkel TUD 2011-05
+protected function replaceDerPreCrefExp "author: Frenkel TUD 2011-05
   helper for replaceDerCref"
   input tuple<DAE.Exp, Integer> inExp;
   output tuple<DAE.Exp, Integer> outExp;
@@ -1799,8 +1754,7 @@ algorithm
   end matchcontinue;
 end replaceDerPreCrefExp;
 
-// protected function collectInitialStateSetVars "function collectInitialStateSetVars
-//    author: Frenkel TUD
+// protected function collectInitialStateSetVars "author: Frenkel TUD
 //    add the vars for state set to the initial system
 //    Because the statevars are calculated by
 //    set.x = set.A*dummystates we add set.A to the
@@ -1890,8 +1844,7 @@ end replaceDerPreCrefExp;
 // collect all pre(var) in time equations to get the discrete states
 // =============================================================================
 
-// protected function discreteStates "function discreteStates
-//   author: Frenkel TUD 2012-12
+// protected function discreteStates "author: Frenkel TUD 2012-12
 //   This function collect the discrete states and all initialized
 //   pre(var)s for the initialization."
 //   input BackendDAE.BackendDAE inDAE;
@@ -1909,8 +1862,7 @@ end replaceDerPreCrefExp;
 //   hs := BackendDAEUtil.traverseBackendDAEExpsEqns(initialEqs, discreteStatesIEquations, hs);
 // end discreteStates;
 //
-// protected function discreteStatesSystems "function discreteStatesSystems
-//   author: Frenkel TUD
+// protected function discreteStatesSystems "author: Frenkel TUD
 //   This is a helper function for discreteStates.
 //   The function collects all discrete states in the time equations."
 //   input BackendDAE.EqSystem inEqSystem;
@@ -1936,8 +1888,7 @@ end replaceDerPreCrefExp;
 //   outTpl := (exp, hs);
 // end discreteStatesEquations;
 //
-// protected function discreteStatesExp "function discreteStatesExp
-//   author: Frenkel TUD 2012"
+// protected function discreteStatesExp "author: Frenkel TUD 2012"
 //   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
 //   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
 // algorithm
@@ -1975,8 +1926,7 @@ end replaceDerPreCrefExp;
 //   outTpl := (exp, hs);
 // end discreteStatesIEquations;
 //
-// protected function discreteStatesCref "function discreteStatesCref
-//   author: Frenkel TUD 2012-12
+// protected function discreteStatesCref "author: Frenkel TUD 2012-12
 //   helper for discreteStatesExp"
 //   input tuple<DAE.Exp, HashSet.HashSet> inTpl;
 //   output tuple<DAE.Exp, HashSet.HashSet> outTpl;
@@ -1997,8 +1947,7 @@ end replaceDerPreCrefExp;
 //   end match;
 // end discreteStatesCref;
 //
-// protected function dumpDiscreteStates "function discreteStates
-//   author: Frenkel TUD 2012-12"
+// protected function dumpDiscreteStates "author: Frenkel TUD 2012-12"
 //   input HashSet.HashSet hs;
 // protected
 //   list<DAE.ComponentRef> crefs;
