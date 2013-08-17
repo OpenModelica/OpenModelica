@@ -40,7 +40,7 @@ encapsulated package ParserExt
   interactive mode."
 
 public import Absyn;
-public import Interactive;
+public import GlobalScript;
 
 public function parse "Parse a mo-file"
   input String filename;
@@ -60,7 +60,7 @@ public function parseexp "Parse a mos-file"
   input Integer acceptedGram;
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
-  output Interactive.Statements outStatements;
+  output GlobalScript.Statements outStatements;
 
   external "C" outStatements=ParserExt_parseexp(filename, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parseexp;
@@ -81,7 +81,7 @@ public function parsestringexp "Parse a string as if it was a sequence of statem
   input Integer acceptedGram;
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
-  output Interactive.Statements outStatements;
+  output GlobalScript.Statements outStatements;
   external "C" outStatements=ParserExt_parsestringexp(str,infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","antlr3","omcruntime"});
 end parsestringexp;
 end ParserExt;

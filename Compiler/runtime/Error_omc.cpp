@@ -36,6 +36,7 @@ extern "C" {
 #include "rml_compatibility.h"
 #define ADD_METARECORD_DEFINTIONS static
 #include "OpenModelicaBootstrappingHeader.h"
+#include "ModelicaUtilities.h"
 
 }
 
@@ -64,9 +65,16 @@ extern void* Error_getMessages()
   return listReverse(ErrorImpl__getMessages());
 }
 
+extern const char* Error_printErrorsNoWarning()
+{
+  std::string res = ErrorImpl__printErrorsNoWarning();
+  return MMC_STRINGDATA(mmc_mk_scon(res.c_str()));
+}
+
 extern const char* Error_printMessagesStr()
 {
-  return strdup(ErrorImpl__printMessagesStr().c_str());
+  std::string res = ErrorImpl__printMessagesStr();
+  return MMC_STRINGDATA(mmc_mk_scon(res.c_str()));
 }
 
 extern void Error_addSourceMessage(int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)

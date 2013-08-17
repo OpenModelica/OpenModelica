@@ -40,7 +40,7 @@ encapsulated package Parser
   interactive mode."
 
 public import Absyn;
-public import Interactive;
+public import GlobalScript;
 protected import Config;
 protected import Flags;
 protected import ParserExt;
@@ -60,7 +60,7 @@ end parse;
 
 public function parseexp "Parse a mos-file"
   input String filename;
-  output Interactive.Statements outStatements;
+  output GlobalScript.Statements outStatements;
 algorithm
   outStatements := ParserExt.parseexp(System.realpath(filename), Util.testsuiteFriendly(System.realpath(filename)), Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());
 end parseexp;
@@ -87,7 +87,7 @@ end parsebuiltinstring;
 public function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
   input String infoFilename := "<interactive>";
-  output Interactive.Statements outStatements;
+  output GlobalScript.Statements outStatements;
 algorithm
   outStatements := ParserExt.parsestringexp(str,infoFilename,
     Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Config.getRunningTestsuite());

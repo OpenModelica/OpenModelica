@@ -41,7 +41,7 @@ encapsulated package Interactive
   in the interactive environment.
   The module defines a symboltable used in the interactive environment containing:
   - Modelica models (described using Absyn AST)
-  - Variable bindings
+  - GlobalScript.Variable bindings
   - Compiled functions (so they do not need to be recompiled)
   - Instantiated classes (that can be reused, not impl. yet)
   - Modelica models in SCode form (to speed up instantiation. not impl. yet)"
@@ -52,6 +52,7 @@ public import AbsynDep;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
+public import GlobalScript;
 public import SCode;
 public import SCodeUtil;
 public import Settings;
@@ -96,194 +97,49 @@ protected import UnitAbsyn;
 protected import Util;
 protected import ValuesUtil;
 
-
-/*
-** CompiledCFunction
-** Absyn.Path = ie object path in class hierarcy
-** DAE.Type = The type of the return value
-** Integer = functionHandler
-*/
-//type CompiledCFunction = tuple<Absyn.Path, DAE.Type, Integer>;
-
-public
-uniontype CompiledCFunction
-  record CFunction
-    Absyn.Path path;
-    DAE.Type retType;
-    Integer funcHandle;
-    Real buildTime "the build time for this function";
-    String loadedFromFile "the file we loaded this function from";
-  end CFunction;
-end CompiledCFunction;
-
-public
-uniontype Statement
-"An Statement given in the interactive environment can either be
- an Algorithm statement or an expression.
- - Interactive Statement"
-  record IALG
-    Absyn.AlgorithmItem algItem "algItem" ;
-  end IALG;
-
-  record IEXP
-    Absyn.Exp exp "exp" ;
-  end IEXP;
-
-end Statement;
-
-public
-uniontype Statements
-  "Several interactive statements are used in Modelica scripts.
-  - Interactive Statements"
-  record ISTMTS
-    list<Statement> interactiveStmtLst "interactiveStmtLst" ;
-    Boolean semicolon "semicolon; true = statement ending with a semicolon. The result will not be shown in the interactive environment." ;
-  end ISTMTS;
-
-end Statements;
-
-public
-uniontype InstantiatedClass "- Instantiated Class"
-  record INSTCLASS
-    Absyn.Path qualName " The F.Q.name of the inst:ed class" ;
-    DAE.DAElist daeElementLst "The list of DAE elements" ;
-    Env.Env env "The env of the inst:ed class" ;
-  end INSTCLASS;
-
-end InstantiatedClass;
-
-public
-uniontype Variable "- Interactive Variable"
-  record IVAR
-    Absyn.Ident varIdent "The variable identifier" ;
-    Values.Value value "The value" ;
-    DAE.Type type_ "The type of the expression" ;
-  end IVAR;
-
-end Variable;
-
-public
-uniontype LoadedFile
-  "@author adrpo
-   A file entry holder, needed to cache the file information
-   so files are not loaded if not really necessary"
-  record FILE
-    String                  fileName            "The path of the file";
-    Real                    loadTime            "The time the file was loaded";
-    list<Absyn.Path>        classNamesQualified "The names of the classes from the file";
-  end FILE;
-end LoadedFile;
-
-public
-uniontype SymbolTable "- Interactive Symbol Table"
-  record SYMBOLTABLE
-    Absyn.Program ast "The ast" ;
-    AbsynDep.Depends depends "the dependency information";
-    Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
-    list<InstantiatedClass> instClsLst " List of instantiated classes" ;
-    list<Variable> lstVarVal "List of variables with values" ;
-    list<CompiledCFunction> compiledFunctions "List of compiled functions, F.Q name + type + functionhandler" ;
-    list<LoadedFile> loadedFiles "The list of the loaded files with their load time." ;
-  end SYMBOLTABLE;
-
-end SymbolTable;
-
-public
-uniontype Component "- a component in a class
-  this is used in extracting all the components in all the classes"
-  record COMPONENTITEM
-    Absyn.Path the1 "the class where the component is" ;
-    Absyn.Path the2 "the type of the component" ;
-    Absyn.ComponentRef the3 "the name of the component" ;
-  end COMPONENTITEM;
-
-  record EXTENDSITEM
-    Absyn.Path the1 "the class which is extended" ;
-    Absyn.Path the2 "the class which is the extension" ;
-  end EXTENDSITEM;
-
-end Component;
-
-public
-uniontype Components
-  record COMPONENTS
-    list<Component> componentLst;
-    Integer the "the number of components in list. used to optimize the get_dependency_on_class" ;
-  end COMPONENTS;
-
-end Components;
-
-public
-uniontype ComponentReplacement
-  record COMPONENTREPLACEMENT
-    Absyn.Path which1 "which class contain the old cref" ;
-    Absyn.ComponentRef the2 "the old cref" ;
-    Absyn.ComponentRef the3 "the new cref" ;
-  end COMPONENTREPLACEMENT;
-
-end ComponentReplacement;
-
-public
-uniontype ComponentReplacementRules
-  record COMPONENTREPLACEMENTRULES
-    list<ComponentReplacement> componentReplacementLst;
-    Integer the "the number of rules" ;
-  end COMPONENTREPLACEMENTRULES;
-
-end ComponentReplacementRules;
-
 protected uniontype AnnotationType
   record ICON_ANNOTATION end ICON_ANNOTATION;
   record DIAGRAM_ANNOTATION end DIAGRAM_ANNOTATION;
 end AnnotationType;
 
-public constant SymbolTable emptySymboltable =
-     SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp),
-                 AbsynDep.DEPENDS(AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE()),AbsynDep.AVLTREENODE(NONE(),0,NONE(),NONE())),
-                 NONE(),
-                 {},
-                 {},
-                 {},
-                 {}) "Empty Interactive Symbol Table" ;
-
 public function evaluate
 "This function evaluates expressions or statements feed interactively to the compiler.
-  inputs:   (Statements, SymbolTable, bool /* verbose */)
+  inputs:   (GlobalScript.Statements, GlobalScript.SymbolTable, bool /* verbose */)
   outputs:   string:
                      The resulting string after evaluation. If an error has occurred, this string
                      will be empty. The error messages can be retrieved by calling print_messages_str()
                      in Error.mo.
-             SymbolTable"
-  input Statements inStatements;
-  input SymbolTable inSymbolTable;
+             GlobalScript.SymbolTable"
+  input GlobalScript.Statements inStatements;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Boolean inBoolean;
   output String outString;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,inBoolean)
     local
       String res,res_1,res2,res_2;
-      SymbolTable newst,st,newst_1;
+      GlobalScript.SymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
-      Statement x;
-      list<Statement> xs;
+      GlobalScript.Statement x;
+      list<GlobalScript.Statement> xs;
 
-    case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation
         showStatement(x, semicolon);
-        (res,newst) = evaluate2(ISTMTS({x},verbose), st);
+        (res,newst) = evaluate2(GlobalScript.ISTMTS({x},verbose), st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
       then
         (res_1,newst);
 
-    case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
         showStatement(x, semicolon);
-        (res,newst) = evaluate2(ISTMTS({x},semicolon), st);
+        (res,newst) = evaluate2(GlobalScript.ISTMTS({x},semicolon), st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
-        (res2,newst_1) = evaluate(ISTMTS(xs,semicolon), newst, verbose);
+        (res2,newst_1) = evaluate(GlobalScript.ISTMTS(xs,semicolon), newst, verbose);
         res_2 = stringAppendList({res_1,res2});
       then
         (res_2,newst_1);
@@ -295,24 +151,24 @@ public function evaluateToStdOut
   The resulting string after evaluation is printed.
   If an error has occurred, this string will be empty.
   The error messages can be retrieved by calling print_messages_str() in Error.mo."
-  input Statements inStatements;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.Statements inStatements;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Boolean inBoolean;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable := matchcontinue (inStatements,inSymbolTable,inBoolean)
     local
       String res,res_1;
-      SymbolTable newst,st,newst_1;
+      GlobalScript.SymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
-      Statement x;
-      Statements new;
-      list<Statement> xs;
+      GlobalScript.Statement x;
+      GlobalScript.Statements new;
+      list<GlobalScript.Statement> xs;
 
-    case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation
         showStatement(x,semicolon);
-        new = ISTMTS({x},verbose);
+        new = GlobalScript.ISTMTS({x},verbose);
         (res,newst) = evaluate2(new, st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
@@ -320,29 +176,42 @@ algorithm
       then
         newst;
 
-    case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
         showStatement(x,semicolon);
-        new = ISTMTS({x},semicolon);
+        new = GlobalScript.ISTMTS({x},semicolon);
         (res,newst) = evaluate2(new, st);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
-        newst_1 = evaluateToStdOut(ISTMTS(xs,semicolon), newst, verbose);
+        newst_1 = evaluateToStdOut(GlobalScript.ISTMTS(xs,semicolon), newst, verbose);
       then
         newst_1;
   end matchcontinue;
 end evaluateToStdOut;
 
+public function evaluateFork
+"As evaluateToStdOut, but takes the inputs as a tuple of mos-script file and symbol table."
+  input tuple<String,GlobalScript.SymbolTable> inTpl;
+protected
+  String mosfile;
+  GlobalScript.Statements statements;
+  GlobalScript.SymbolTable st;
+algorithm
+  (mosfile,st) := inTpl;
+  statements := Parser.parseexp(mosfile);
+  _ := evaluateToStdOut(statements,st,true);
+end evaluateFork;
+
 protected function showStatement
-  input Statement s;
+  input GlobalScript.Statement s;
   input Boolean semicolon;
 algorithm
   _:= matchcontinue(s, semicolon)
     case (_, _)
       equation
         true = Flags.isSet(Flags.SHOW_STATEMENT);
-        print("Evaluating: " +& printIstmtStr(ISTMTS({s}, semicolon)) +& "\n");
+        print("Evaluating: " +& printIstmtStr(GlobalScript.ISTMTS({s}, semicolon)) +& "\n");
       then
         ();
 
@@ -380,23 +249,23 @@ end getEcho;
 
 public function evaluate2
 "Helper function to evaluate."
-  input Statements inStatements;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.Statements inStatements;
+  input GlobalScript.SymbolTable inSymbolTable;
   output String outString;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable)
     local
       String str,str_1;
-      SymbolTable st,newst,st_1;
-      Statements stmts;
+      GlobalScript.SymbolTable st,newst,st_1;
+      GlobalScript.Statements stmts;
       Absyn.AlgorithmItem algitem;
       Boolean outres;
       Absyn.Exp exp;
       Boolean partialInst;
 
     // evaluate graphical API
-    case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = _))})),st)
+    case ((stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(function_ = _))})),st)
       equation
         // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
         partialInst = System.getPartialInstantiation();
@@ -407,7 +276,7 @@ algorithm
         (str_1,newst);
 
     // Evaluate algorithm statements in  evaluateAlgStmt()
-    case (ISTMTS(interactiveStmtLst = {IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))}, semicolon = outres),st)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM(algorithm_ = _)))}, semicolon = outres),st)
       equation
         (str,st_1) = evaluateAlgStmt(algitem, st);
         str_1 = stringAppend(str, "\n");
@@ -415,7 +284,7 @@ algorithm
         (str_1,st_1);
 
     // Evaluate expressions in evaluate_exprToStr()
-    case ((stmts as ISTMTS(interactiveStmtLst = {IEXP(exp = exp)})),st)
+    case ((stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = exp)})),st)
       equation
         (str,st_1) = evaluateExprToStr(exp, st, Absyn.dummyInfo);
         str_1 = stringAppend(str, "\n");
@@ -429,16 +298,16 @@ protected function evaluateAlgStmt
   algorithm section, and a symboltable as input arguments. The statements
   are recursivly evalutated and a new interactive symbol table is returned."
   input Absyn.AlgorithmItem inAlgorithmItem;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   output String outString;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outString,outSymbolTable) := matchcontinue (inAlgorithmItem,inSymbolTable)
     local
       list<Env.Frame> env;
       DAE.Exp econd,msg_1,sexp,srexp;
       DAE.Properties prop,rprop;
-      SymbolTable st_1,st_2,st_3,st_4,st,newst;
+      GlobalScript.SymbolTable st_1,st_2,st_3,st_4,st,newst;
       Absyn.Exp cond,msg,exp,rexp;
       Absyn.Program p;
       String str,ident;
@@ -451,7 +320,7 @@ algorithm
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> cond1;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cond2,cond3,elseifexpitemlist;
       list<Absyn.AlgorithmItem> algitemlist,elseitemlist;
-      list<Variable> vars;
+      list<GlobalScript.Variable> vars;
       String iter,estr;
       list<Absyn.AlgorithmItem> algItemList;
       Values.Value startv, stepv, stopv;
@@ -467,7 +336,7 @@ algorithm
     case (Absyn.ALGORITHMITEM(info=info,
           algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
-          (st as SYMBOLTABLE(ast = p)))
+          (st as GlobalScript.SYMBOLTABLE(ast = p)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,econd,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, cond, true, SOME(st), true, Prefix.NOPRE(), info);
@@ -477,7 +346,7 @@ algorithm
 
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg}))),
-          (st as SYMBOLTABLE(ast = p)))
+          (st as GlobalScript.SYMBOLTABLE(ast = p)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,msg_1,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, msg, true, SOME(st), true, Prefix.NOPRE(), info);
@@ -500,7 +369,7 @@ algorithm
     case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
           Absyn.ALG_ASSIGN(assignComponent =
           Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr))),
-          (st as SYMBOLTABLE(lstVarVal = vars)))
+          (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars)))
       equation
         value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
         str = ValuesUtil.valString(value);
@@ -512,7 +381,7 @@ algorithm
       (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
         Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = asubs)),value = exp)),
-        (st as SYMBOLTABLE(ast = p)))
+        (st as GlobalScript.SYMBOLTABLE(ast = p)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
@@ -530,7 +399,7 @@ algorithm
       (Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
         Absyn.TUPLE(expressions = crefexps),value = rexp)),
-        (st as SYMBOLTABLE(ast = p)))
+        (st as GlobalScript.SYMBOLTABLE(ast = p)))
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
@@ -613,8 +482,8 @@ protected function evaluateForStmt
   input String iter "The iterator variable which will be assigned different values";
   input list<Values.Value> valList "List of values that the iterator later will be assigned to";
   input list<Absyn.AlgorithmItem> algItemList;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
   match (iter,valList,algItemList, inSymbolTable)
@@ -622,7 +491,7 @@ algorithm
       Values.Value val;
       list<Values.Value> vallst;
       list<Absyn.AlgorithmItem> algItems;
-      SymbolTable st1,st2,st3,st4,st5;
+      GlobalScript.SymbolTable st1,st2,st3,st4,st5;
       String str;
     case (_, val::vallst, algItems, st1)
     equation
@@ -647,14 +516,14 @@ protected function evaluateForStmtRangeOpt
   input Values.Value stepVal;
   input Values.Value stopVal;
   input list<Absyn.AlgorithmItem> algItemList;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable := matchcontinue (iter, startVal, stepVal, stopVal, algItemList, inSymbolTable)
     local
       Values.Value startv, stepv, stopv, nextv;
       list<Absyn.AlgorithmItem> algItems;
-      SymbolTable st1,st2,st3,st4,st5;
+      GlobalScript.SymbolTable st1,st2,st3,st4,st5;
 
     case (_, startv, stepv, stopv, algItems, st1)
       equation
@@ -681,14 +550,14 @@ protected function evaluateWhileStmt
   input Values.Value inValue;
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Absyn.Info info;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
   matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inSymbolTable,info)
     local
-      SymbolTable st,st_1,st_2,st_3;
+      GlobalScript.SymbolTable st,st_1,st_2,st_3;
       Values.Value value;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
@@ -732,14 +601,14 @@ protected function evaluatePartOfIfStatement
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Absyn.Info info;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
   matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,inSymbolTable,info)
     local
-      SymbolTable st_1,st;
+      GlobalScript.SymbolTable st_1,st;
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
       String estr,tstr;
@@ -776,14 +645,14 @@ protected function evaluateIfStatementLst
 "Evaluates all parts of a if statement
   (i.e. a list of exp  statements)"
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Absyn.Info info;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
   match (inTplAbsynExpAbsynAlgorithmItemLstLst,inSymbolTable,info)
     local
-      SymbolTable st,st_1,st_2;
+      GlobalScript.SymbolTable st,st_1,st_2;
       Values.Value value;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
@@ -804,13 +673,13 @@ end evaluateIfStatementLst;
 protected function evaluateAlgStmtLst
 " Evaluates a list of algorithm statements"
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable:=
   match (inAbsynAlgorithmItemLst,inSymbolTable)
     local
-      SymbolTable st,st_1,st_2;
+      GlobalScript.SymbolTable st,st_1,st_2;
       Absyn.AlgorithmItem algitem;
       list<Absyn.AlgorithmItem> algrest;
     case ({},st) then st;
@@ -830,13 +699,13 @@ protected function evaluateExpr
    Note that this function may fail.
 
    Input:  Absyn.Exp - Expression to be evaluated
-           SymbolTable - The symbol table
+           GlobalScript.SymbolTable - The symbol table
    Output: Values.Value - Resulting value of the expression"
   input Absyn.Exp inExp;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Absyn.Info info;
   output Values.Value outValue;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outValue,outSymbolTable):=
   matchcontinue (inExp,inSymbolTable,info)
@@ -844,23 +713,23 @@ algorithm
       list<Env.Frame> env;
       DAE.Exp sexp;
       DAE.Properties prop;
-      SymbolTable st_1,st_2,st;
+      GlobalScript.SymbolTable st_1,st_2,st;
       Values.Value value;
       Absyn.Exp exp;
       Absyn.Program p;
       Env.Cache cache;
-      list<Variable> vars;
+      list<GlobalScript.Variable> vars;
       Absyn.ComponentRef cr;
 
     // Special case to lookup fields of records.
     // SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
-    case (Absyn.CREF(cr),(st as SYMBOLTABLE(lstVarVal = vars)),_)
+    case (Absyn.CREF(cr),(st as GlobalScript.SYMBOLTABLE(lstVarVal = vars)),_)
       equation
         value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
       then
         (value,st);
 
-    case (exp,(st as SYMBOLTABLE(ast = p)),_)
+    case (exp,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         (env,st) = buildEnvFromSymboltable(st);
         (cache,sexp,prop,SOME(st_1)) = StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
@@ -875,14 +744,14 @@ protected function stringRepresOfExpr
 " This function returns a string representation of an expression. For example expression
    33+22 will result in \"55\" and expression: \"my\" + \"string\" will result in  \"\"my\"+\"string\"\". "
   input Absyn.Exp exp;
-  input SymbolTable ist;
+  input GlobalScript.SymbolTable ist;
   output String estr;
-  output SymbolTable st;
+  output GlobalScript.SymbolTable st;
 protected
   list<Env.Frame> env;
   DAE.Exp sexp;
   DAE.Properties prop;
-  SymbolTable st_1;
+  GlobalScript.SymbolTable st_1;
 algorithm
   (env,st) := buildEnvFromSymboltable(ist);
   (_,sexp,prop,SOME(st_1)) := StaticScript.elabExp(Env.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), Absyn.dummyInfo);
@@ -896,19 +765,19 @@ protected function evaluateExprToStr
    and the errors will be stated using Error.mo
 
    Input:  Absyn.Exp - Expression to be evaluated
-           SymbolTable - The symbol table
+           GlobalScript.SymbolTable - The symbol table
    Output: string - The resulting value represented as a string"
   input Absyn.Exp inExp;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Absyn.Info info;
   output String outString;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outString,outSymbolTable):=
   matchcontinue (inExp,inSymbolTable,info)
     local
       Values.Value value;
-      SymbolTable st_1,st;
+      GlobalScript.SymbolTable st_1,st;
       String str;
       Absyn.Exp exp;
 
@@ -972,22 +841,22 @@ public function getTypeOfVariable
 "Return the type of an interactive variable,
   given a list of variables and a variable identifier."
   input Absyn.Ident inIdent;
-  input list<Variable> inVariableLst;
+  input list<GlobalScript.Variable> inVariableLst;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue (inIdent,inVariableLst)
     local
       String id,varid;
       DAE.Type tp;
-      list<Variable> rest;
+      list<GlobalScript.Variable> rest;
 
     case (id,{}) then fail();
-    case (varid,(IVAR(varIdent = id,type_ = tp) :: rest))
+    case (varid,(GlobalScript.IVAR(varIdent = id,type_ = tp) :: rest))
       equation
         true = stringEq(varid, id);
       then
         tp;
-    case (varid,(IVAR(varIdent = id) :: rest))
+    case (varid,(GlobalScript.IVAR(varIdent = id) :: rest))
       equation
         false = stringEq(varid, id);
         tp = getTypeOfVariable(varid, rest);
@@ -1001,8 +870,8 @@ protected function addVarsToSymboltable
   input list<DAE.ComponentRef> inCref;
   input list<Values.Value> inValues;
   input Env.Env inEnv;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   outSymbolTable := List.threadFold1(inCref, inValues, addVarToSymboltable,
     inEnv, inSymbolTable);
@@ -1013,12 +882,12 @@ public function addVarToSymboltable
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
   input Env.Env inEnv;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 protected
-  list<Variable> vars;
+  list<GlobalScript.Variable> vars;
 algorithm
-  SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
+  GlobalScript.SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
   vars := addVarToVarList(inCref, inValue, inEnv, vars);
   outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
 end addVarToSymboltable;
@@ -1032,24 +901,24 @@ public function appendVarToSymboltable
   input Absyn.Ident inIdent;
   input Values.Value inValue;
   input DAE.Type inType;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 protected
-  list<Variable> vars;
+  list<GlobalScript.Variable> vars;
 algorithm
-  SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
-  vars := IVAR(inIdent, inValue, inType) :: vars;
+  GlobalScript.SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
+  vars := GlobalScript.IVAR(inIdent, inValue, inType) :: vars;
   outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
 end appendVarToSymboltable;
 
 public function deleteVarFromSymboltable
   input Absyn.Ident inIdent;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 protected
-  list<Variable> vars;
+  list<GlobalScript.Variable> vars;
 algorithm
-  SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
+  GlobalScript.SYMBOLTABLE(lstVarVal = vars) := inSymbolTable;
   vars := deleteVarFromVarlist(inIdent, vars);
   outSymbolTable := setSymbolTableVars(vars, inSymbolTable);
 end deleteVarFromSymboltable;
@@ -1057,19 +926,19 @@ end deleteVarFromSymboltable;
 protected function deleteVarFromVarlist
 "deletes the first variable found"
   input Absyn.Ident inIdent;
-  input list<Variable> inVariableLst;
-  output list<Variable> outVariableLst;
+  input list<GlobalScript.Variable> inVariableLst;
+  output list<GlobalScript.Variable> outVariableLst;
 algorithm
   outVariableLst := matchcontinue (inIdent,inVariableLst)
     local
       String ident,id2;
-      list<Variable> rest, rest2;
-      Variable var;
+      list<GlobalScript.Variable> rest, rest2;
+      GlobalScript.Variable var;
 
     case (ident,{})
       then {};
 
-    case (ident,(IVAR(varIdent = id2) :: rest))
+    case (ident,(GlobalScript.IVAR(varIdent = id2) :: rest))
       equation
         true = stringEq(ident, id2);
       then
@@ -1088,8 +957,8 @@ protected function addVarToVarList
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
   input Env.Env inEnv;
-  input list<Variable> inVariables;
-  output list<Variable> outVariables;
+  input list<GlobalScript.Variable> inVariables;
+  output list<GlobalScript.Variable> outVariables;
 protected
   Boolean found;
 algorithm
@@ -1099,16 +968,16 @@ algorithm
 end addVarToVarList;
   
 protected function addVarToVarList2
-  input Variable inOldVariable;
+  input GlobalScript.Variable inOldVariable;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
   input Env.Env inEnv;
-  output Variable outVariable;
+  output GlobalScript.Variable outVariable;
   output Boolean outFound;
 protected
   Absyn.Ident id1, id2;
 algorithm
-  IVAR(varIdent = id1) := inOldVariable;
+  GlobalScript.IVAR(varIdent = id1) := inOldVariable;
   DAE.CREF_IDENT(ident = id2) := inCref;
   outFound := stringEq(id1, id2);
   outVariable := addVarToVarList3(outFound, inOldVariable, inCref, inValue, inEnv);
@@ -1116,11 +985,11 @@ end addVarToVarList2;
   
 protected function addVarToVarList3
   input Boolean inFound;
-  input Variable inOldVariable;
+  input GlobalScript.Variable inOldVariable;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
   input Env.Env inEnv;
-  output Variable outVariable;
+  output GlobalScript.Variable outVariable;
 algorithm
   outVariable := match(inFound, inOldVariable, inCref, inValue, inEnv)
     local
@@ -1129,19 +998,19 @@ algorithm
       DAE.Type ty;
       list<DAE.Subscript> subs;
 
-    // Variable is not a match, keep the old one.
+    // GlobalScript.Variable is not a match, keep the old one.
     case (false, _, _, _, _) then inOldVariable;
 
     // Assigning whole variable => return new variable.
-    case (true, _, DAE.CREF_IDENT(id, ty, {}), _, _) then IVAR(id, inValue, ty);
+    case (true, _, DAE.CREF_IDENT(id, ty, {}), _, _) then GlobalScript.IVAR(id, inValue, ty);
 
     // Assigning array slice => update the old variable's value.
-    case (true, IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
+    case (true, GlobalScript.IVAR(id, val, ty), DAE.CREF_IDENT(subscriptLst = subs), _, _)
       equation
         (_, val, _) = CevalFunction.assignVector(inValue, val, subs,
           Env.emptyCache(), inEnv, NONE());
       then
-        IVAR(id, val, ty);
+        GlobalScript.IVAR(id, val, ty);
 
   end match;
 end addVarToVarList3;
@@ -1150,20 +1019,20 @@ protected function addVarToVarList4
   input Boolean inFound;
   input DAE.ComponentRef inCref;
   input Values.Value inValue;
-  input list<Variable> inVariables;
-  output list<Variable> outVariables;
+  input list<GlobalScript.Variable> inVariables;
+  output list<GlobalScript.Variable> outVariables;
 algorithm
   outVariables := match(inFound, inCref, inValue, inVariables)
     local
       Absyn.Ident id;
       DAE.Type ty;
 
-    // Variable was already updated in addVarToVar, do nothing.
+    // GlobalScript.Variable was already updated in addVarToVar, do nothing.
     case (true, _, _, _) then inVariables;
 
-    // Variable is new, add it to the list of variables.
+    // GlobalScript.Variable is new, add it to the list of variables.
     case (false, DAE.CREF_IDENT(id, ty, {}), _, _)
-      then IVAR(id, inValue, ty) :: inVariables;
+      then GlobalScript.IVAR(id, inValue, ty) :: inVariables;
 
     // Assigning to an array slice is only allowed for variables that have
     // already been defined, i.e. that have a size. Print an error otherwise.
@@ -1180,17 +1049,17 @@ public function buildEnvFromSymboltable
 " author: PA
    Builds an environment from a symboltable by adding all
    interactive variables and their bindings to the environment."
-  input SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   output Env.Env outEnv;
-  output SymbolTable st;
+  output GlobalScript.SymbolTable st;
 algorithm
   (outEnv,st) := match (inSymbolTable)
     local
       list<SCode.Element> p_1;
       list<Env.Frame> env,env_1;
-      list<Variable> vars;
+      list<GlobalScript.Variable> vars;
 
-    case (st as SYMBOLTABLE(lstVarVal = vars))
+    case (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars))
       equation
         (p_1,st) = symbolTableToSCode(st);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(), p_1, Absyn.IDENT(""));
@@ -1203,7 +1072,7 @@ end buildEnvFromSymboltable;
 
 protected function addVarsToEnv
 "Helper function to buildEnvFromSymboltable."
-  input list<Variable> inVariableLst;
+  input list<GlobalScript.Variable> inVariableLst;
   input Env.Env inEnv;
   output Env.Env outEnv;
 algorithm
@@ -1213,9 +1082,9 @@ algorithm
       String id;
       Values.Value v;
       DAE.Type tp;
-      list<Variable> rest;
+      list<GlobalScript.Variable> rest;
 
-    case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
+    case ((GlobalScript.IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
         (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
         env_1 = Env.updateFrameV(
@@ -1232,7 +1101,7 @@ algorithm
       then
         env_2;
 
-    case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
+    case ((GlobalScript.IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{})));
         env_1 = Env.extendFrameV(
@@ -1258,12 +1127,12 @@ end addVarsToEnv;
 
 protected function matchApiFunction
   "Checks if the interactive statement list contains a function with the given name."
-  input Statements inStmts;
+  input GlobalScript.Statements inStmts;
   input String inFunctionName;
 algorithm
   _ := match(inStmts, inFunctionName)
     local String fn;
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ =
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(function_ =
         Absyn.CREF_IDENT(name = fn)))}), _)
       equation
         true = stringEq(inFunctionName, fn);
@@ -1274,24 +1143,24 @@ end matchApiFunction;
 
 protected function getApiFunctionArgs
   "Returns a list of arguments to the function in the interactive statement list."
-  input Statements inStmts;
+  input GlobalScript.Statements inStmts;
   output list<Absyn.Exp> outArgs;
 algorithm
   outArgs := match(inStmts)
     local list<Absyn.Exp> args;
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(functionArgs =
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
       Absyn.FUNCTIONARGS(args = args)))})) then args;
   end match;
 end getApiFunctionArgs;
 
 protected function getApiFunctionNamedArgs
   "Returns a list of named arguments to the function in the interactive statement list."
-  input Statements inStmts;
+  input GlobalScript.Statements inStmts;
   output list<Absyn.NamedArg> outArgs;
 algorithm
   outArgs := match(inStmts)
     local list<Absyn.NamedArg> args;
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(functionArgs =
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
       Absyn.FUNCTIONARGS(argNames = args)))})) then args;
   end match;
 end getApiFunctionNamedArgs;
@@ -1299,11 +1168,11 @@ end getApiFunctionNamedArgs;
 protected function evaluateGraphicalApi
 "Evaluating graphical api.
   NOTE: the graphical API is always evaluated with checkModel ON and +d=nogen,noevalfunc ON"
-  input Statements inStatements;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.Statements inStatements;
+  input GlobalScript.SymbolTable inSymbolTable;
   input Boolean isPartialInst;
   output String outString;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,isPartialInst)
 
@@ -1327,10 +1196,10 @@ end evaluateGraphicalApi;
 
 protected function evaluateGraphicalApi_dispatch
 "This function evaluates all primitives in the graphical api."
-  input Statements inStatements;
-  input SymbolTable inSymbolTable;
+  input GlobalScript.Statements inStatements;
+  input GlobalScript.SymbolTable inSymbolTable;
   output String outString;
-  output SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable)
     local
@@ -1338,16 +1207,16 @@ algorithm
       String resstr,name,top_names_str,str,cmt,s1,res_str,res,causality,variability,filenameprefix,file_dir,method,reductionMethod;
       Absyn.ComponentRef class_,ident,subident,cr,tp,model_,cr1,cr2,c1,c2,old_cname,new_cname,cname,from_ident,to_ident,crident;
       Absyn.Exp exp;
-      SymbolTable st,newst;
+      GlobalScript.SymbolTable st,newst;
       list<SCode.Element> s_1;
       Absyn.Modification mod;
       Absyn.Path path_1,path,wpath;
       Integer count,n;
       list<Absyn.NamedArg> nargs;
       Boolean b1,b2,b,dref1,dref2,finalPrefix,flowPrefix,streamPrefix,repl,protected_,addFunctions;
-      list<LoadedFile> lf;
+      list<GlobalScript.LoadedFile> lf;
       AbsynDep.Depends aDep;
-      Statements istmts;
+      GlobalScript.Statements istmts;
       Absyn.Path modelpath;
       list<String> libs;
       Absyn.Class cls,refactoredClass;
@@ -1356,7 +1225,7 @@ algorithm
       list<Absyn.Exp> exp_list,exp_list2;
       Env.Cache cache;
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setComponentModifierValue");
         {Absyn.CREF(componentRef = class_),
@@ -1369,7 +1238,7 @@ algorithm
         (resstr, st);
 
     //special case for clearing modifier simple name.
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setComponentModifierValue");
         {Absyn.CREF(componentRef = class_),
@@ -1382,7 +1251,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setComponentModifierValue");
         {Absyn.CREF(componentRef = class_),
@@ -1393,7 +1262,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getParameterValue");
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident)} = getApiFunctionArgs(istmts);
@@ -1401,7 +1270,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setParameterValue");
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident),exp} = getApiFunctionArgs(istmts);
@@ -1410,7 +1279,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getParameterNames");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1418,7 +1287,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "createModel");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name))} =
@@ -1431,7 +1300,7 @@ algorithm
       then
         ("true",newst);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "createModel");
         {Absyn.CREF(componentRef = (cr as Absyn.CREF_QUAL(name = _)))} =
@@ -1448,7 +1317,7 @@ algorithm
       then
         ("true",newst);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "newModel");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
@@ -1464,7 +1333,7 @@ algorithm
         ("true",newst);
 
     // Not moving this yet as it could break things...
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "deleteClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1473,7 +1342,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "addComponent");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
@@ -1487,7 +1356,7 @@ algorithm
       then
         ("true", st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "updateComponent");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
@@ -1499,7 +1368,7 @@ algorithm
       then
         (res, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "deleteComponent");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
@@ -1512,7 +1381,7 @@ algorithm
       then
         ("true", st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getComponentCount");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1521,7 +1390,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthComponent");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
@@ -1540,7 +1409,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getComponentAnnotations");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1552,7 +1421,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthComponentAnnotation");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
@@ -1564,7 +1433,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthComponentModification");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
@@ -1572,7 +1441,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthComponentCondition");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
@@ -1580,7 +1449,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getInheritanceCount");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1598,7 +1467,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getConnectionCount");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1606,7 +1475,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthConnection");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
@@ -1615,7 +1484,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setConnectionComment");
         {Absyn.CREF(componentRef = cr),
@@ -1627,7 +1496,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "addConnection");
         {Absyn.CREF(componentRef = c1),
@@ -1639,7 +1508,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "deleteConnection");
         {Absyn.CREF(componentRef = c1),
@@ -1650,7 +1519,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "updateConnection");
         {Absyn.CREF(componentRef = c1),
@@ -1663,7 +1532,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthConnectionAnnotation");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
@@ -1676,7 +1545,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getConnectorCount");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1684,7 +1553,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthConnector");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
@@ -1693,7 +1562,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
 
       equation
         matchApiFunction(istmts, "getNthConnectorIconAnnotation");
@@ -1707,7 +1576,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getIconAnnotation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1720,7 +1589,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getDiagramAnnotation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1733,7 +1602,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthInheritedClassIconMapAnnotation");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
@@ -1746,7 +1615,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNthInheritedClassDiagramMapAnnotation");
         {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = getApiFunctionArgs(istmts);
@@ -1759,7 +1628,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getExperimentAnnotation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1770,7 +1639,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getSimulationOptions");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1786,7 +1655,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getNamedAnnotation");
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, {}))} =
@@ -1800,7 +1669,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "refactorClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1813,7 +1682,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "refactorClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1823,7 +1692,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "refactorIconAnnotation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1837,7 +1706,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "refactorDiagramAnnotation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1851,7 +1720,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getClassInformation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1859,7 +1728,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getShortDefinitionBaseClassInformation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1867,7 +1736,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getExternalFunctionSpecification");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1875,7 +1744,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getClassInformation");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1883,7 +1752,7 @@ algorithm
       then
         ("error",st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getClassRestriction");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1891,7 +1760,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isPrimitive");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1900,7 +1769,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isType");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1909,7 +1778,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isConnector");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1918,7 +1787,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isRecord");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1927,7 +1796,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isBlock");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1935,7 +1804,7 @@ algorithm
         resstr = boolString(b1);
       then
         (resstr,st);
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isOptimization");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1944,7 +1813,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isFunction");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1953,7 +1822,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -1962,7 +1831,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isParameter");
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} =
@@ -1972,7 +1841,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isProtected");
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} =
@@ -1982,7 +1851,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isConstant");
         {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} =
@@ -1992,7 +1861,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isEnumeration");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2003,7 +1872,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "isReplaceable");
         {Absyn.CREF(componentRef = class_), Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
@@ -2012,7 +1881,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getEnumerationLiterals");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2022,7 +1891,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "existClass");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2031,7 +1900,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "existModel");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2043,7 +1912,7 @@ algorithm
       then
         (resstr,st);
 
-   case (istmts, st as SYMBOLTABLE(ast = p))
+   case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "existPackage");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2054,7 +1923,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameClass");
         {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} =
@@ -2064,9 +1933,9 @@ algorithm
         (res,p_1) = renameClass(p, old_cname, new_cname);
         s_1 = SCodeUtil.translateAbsyn2SCode(p_1);
       then
-        (res,SYMBOLTABLE(p_1,aDep,SOME(s_1),{},{},{},lf));
+        (res,GlobalScript.SYMBOLTABLE(p_1,aDep,SOME(s_1),{},{},{},lf));
 
-    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameComponent");
         {Absyn.CREF(componentRef = cname),
@@ -2074,9 +1943,9 @@ algorithm
          Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
         (res_str,p_1) = renameComponent(p, cname, from_ident, to_ident);
       then
-        (res_str,SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
+        (res_str,GlobalScript.SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
 
-    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
       equation
         matchApiFunction(istmts, "renameComponentInClass");
         {Absyn.CREF(componentRef = cname),
@@ -2084,9 +1953,9 @@ algorithm
          Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
         (res_str,p_1) = renameComponentOnlyInClass(p, cname, from_ident, to_ident);
       then
-        (res_str,SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
+        (res_str,GlobalScript.SYMBOLTABLE(p_1,aDep,NONE(),{},{},{},lf));
 
-    case (istmts, st as SYMBOLTABLE(ast = p)) // adrpo added 2005-11-03
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p)) // adrpo added 2005-11-03
       equation
         matchApiFunction(istmts, "getCrefInfo");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2094,7 +1963,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p)) // added by adrpo, 2006-02-24
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p)) // added by adrpo, 2006-02-24
       equation
         matchApiFunction(istmts, "getClassAttributes");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2102,7 +1971,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setOption");
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, _)), Absyn.BOOL(value = b1)} =
@@ -2112,7 +1981,7 @@ algorithm
       then
         ("true",st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setExtendsModifierValue");
         {Absyn.CREF(componentRef = class_),
@@ -2125,7 +1994,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getExtendsModifierNames");
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2135,7 +2004,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getExtendsModifierValue");
         {Absyn.CREF(componentRef = class_),
@@ -2145,7 +2014,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getComponentModifierNames");
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} =
@@ -2154,7 +2023,7 @@ algorithm
       then
         (resstr, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getDefaultComponentName");
         {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
@@ -2162,7 +2031,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getDefaultComponentPrefixes");
         {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
@@ -2170,7 +2039,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getComponentModifierValue");
         {Absyn.CREF(componentRef = class_),
@@ -2180,7 +2049,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getComponentModifierValue");
         {Absyn.CREF(componentRef = class_),
@@ -2190,7 +2059,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getComponentComment");
         {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2199,7 +2068,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setComponentComment");
         {Absyn.CREF(componentRef = class_),
@@ -2211,7 +2080,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setComponentProperties");
         {Absyn.CREF(componentRef = class_),
@@ -2232,7 +2101,7 @@ algorithm
         (resstr,st);
 
     /* old version of setComponentProperties, without stream */
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "setComponentProperties");
         {Absyn.CREF(componentRef = class_),
@@ -2252,7 +2121,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getElementsInfo");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2260,7 +2129,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getElementsOfVisType");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2268,7 +2137,7 @@ algorithm
       then
         (resstr,st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getDefinitions");
         {Absyn.BOOL(addFunctions)} = getApiFunctionArgs(istmts);
@@ -2276,7 +2145,7 @@ algorithm
       then
         (top_names_str, st);
 
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "getLocalVariables");
         {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
@@ -2337,7 +2206,7 @@ algorithm
         ("No such reduction method!",st);
 
      //starts remove terms from DAE algorithm
-    case (istmts, st as SYMBOLTABLE(ast = p))
+    case (istmts, st as GlobalScript.SYMBOLTABLE(ast = p))
       equation
         matchApiFunction(istmts, "reduceTerms");
         {Absyn.CREF(componentRef = cr), Absyn.ARRAY(arrayExp = exp_list),Absyn.ARRAY(arrayExp = exp_list2)} = getApiFunctionArgs(istmts);
@@ -2380,13 +2249,13 @@ protected function extractAllComponentreplacements
   input Absyn.ComponentRef class_;
   input Absyn.ComponentRef cref1;
   input Absyn.ComponentRef cref2;
-  output ComponentReplacementRules comp_reps;
+  output GlobalScript.ComponentReplacementRules comp_reps;
 algorithm
   comp_reps := matchcontinue(p,class_,cref1,cref2)
     local
-      Components comps;
+      GlobalScript.Components comps;
       Absyn.Path class_path;
-      ComponentReplacementRules comp_repsrules;
+      GlobalScript.ComponentReplacementRules comp_repsrules;
 
     case(_,_,_,_)
       equation
@@ -2396,7 +2265,7 @@ algorithm
         ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
         false = isClassReadOnly(getPathedClassInProgram(Absyn.crefToPath(class_),p));
         class_path = Absyn.crefToPath(class_);
-        comp_repsrules = COMPONENTREPLACEMENTRULES({COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
+        comp_repsrules = GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
         comp_reps = getComponentreplacementsrules(comps, comp_repsrules, 0);
       then comp_reps;
 
@@ -2436,7 +2305,7 @@ algorithm
   (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
     local
       Absyn.Path class_path;
-      ComponentReplacementRules comp_reps;
+      GlobalScript.ComponentReplacementRules comp_reps;
       Absyn.Program p_1,p;
       list<String> paths;
       String paths_1,paths_2;
@@ -2525,13 +2394,13 @@ protected function extractRenamedClassesAsStringList
 "author: x02lucpo
   this iterates through the Componentreplacementrules and
   returns the string list with all the changed classes"
-  input ComponentReplacementRules inComponentReplacementRules;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
   matchcontinue (inComponentReplacementRules)
     local
-      ComponentReplacementRules comp_reps,res;
+      GlobalScript.ComponentReplacementRules comp_reps,res;
       Absyn.Path path;
       String path_str;
       list<String> res_1,res_2;
@@ -2542,7 +2411,7 @@ algorithm
         {};
     case (comp_reps)
       equation
-        COMPONENTREPLACEMENT(path,_,_) = firstComponentReplacement(comp_reps);
+        GlobalScript.COMPONENTREPLACEMENT(path,_,_) = firstComponentReplacement(comp_reps);
         path_str = Absyn.pathString(path);
         res = restComponentReplacementRules(comp_reps);
         res_1 = extractRenamedClassesAsStringList(res);
@@ -2562,15 +2431,15 @@ protected function renameComponentFromComponentreplacements
   this iterates through the Componentreplacementrules and
   renames the componentes by traversing all the classes"
   input Absyn.Program inProgram;
-  input ComponentReplacementRules inComponentReplacementRules;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
   output Absyn.Program outProgram;
 algorithm
   outProgram:=
   matchcontinue (inProgram,inComponentReplacementRules)
     local
       Absyn.Program p,p_1,p_2;
-      ComponentReplacementRules comp_reps,res;
-      ComponentReplacement comp_rep;
+      GlobalScript.ComponentReplacementRules comp_reps,res;
+      GlobalScript.ComponentReplacement comp_rep;
     case (p,comp_reps)
       equation
         true = emptyComponentReplacementRules(comp_reps);
@@ -2595,8 +2464,8 @@ end renameComponentFromComponentreplacements;
 protected function renameComponentVisitor
 "author: x02lucpo
   this is a visitor for traverse class in rename components"
-  input tuple<Absyn.Class, Option<Absyn.Path>, ComponentReplacement> inTplAbsynClassAbsynPathOptionComponentReplacement;
-  output tuple<Absyn.Class, Option<Absyn.Path>, ComponentReplacement> outTplAbsynClassAbsynPathOptionComponentReplacement;
+  input tuple<Absyn.Class, Option<Absyn.Path>, GlobalScript.ComponentReplacement> inTplAbsynClassAbsynPathOptionComponentReplacement;
+  output tuple<Absyn.Class, Option<Absyn.Path>, GlobalScript.ComponentReplacement> outTplAbsynClassAbsynPathOptionComponentReplacement;
 algorithm
   outTplAbsynClassAbsynPathOptionComponentReplacement:=
   matchcontinue (inTplAbsynClassAbsynPathOptionComponentReplacement)
@@ -2609,24 +2478,24 @@ algorithm
       Absyn.ClassDef e;
       Absyn.Info file_info;
       Absyn.ComponentRef old_comp,new_comp;
-      ComponentReplacement args;
+      GlobalScript.ComponentReplacement args;
       Option<Absyn.Path> opath;
-    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
+    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),SOME(pa),GlobalScript.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       equation
         path_1 = Absyn.joinPaths(pa, Absyn.IDENT(id));
         true = Absyn.pathEqual(class_id, path_1);
         class_1 = renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,SOME(pa),
-          COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
-    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
+          GlobalScript.COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
+    case (((class_ as Absyn.CLASS(name = id,partialPrefix = a,finalPrefix = b,encapsulatedPrefix = c,restriction = d,body = e,info = file_info)),NONE(),GlobalScript.COMPONENTREPLACEMENT(which1 = class_id,the2 = old_comp,the3 = new_comp)))
       equation
         path_1 = Absyn.IDENT(id);
         true = Absyn.pathEqual(class_id, path_1);
         class_1 = renameComponentInClass(class_, old_comp, new_comp);
       then
         ((class_1,NONE(),
-          COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
+          GlobalScript.COMPONENTREPLACEMENT(class_id,old_comp,new_comp)));
     case ((class_,opath,args)) then ((class_,opath,args));
   end matchcontinue;
 end renameComponentVisitor;
@@ -3622,16 +3491,16 @@ protected function getComponentreplacementsrules
   this extracts all the componentreplacementrules by
   searching for new rules until the list-size does not
   grow any more"
-  input Components inComponents;
-  input ComponentReplacementRules inComponentReplacementRules;
+  input GlobalScript.Components inComponents;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
   input Integer inInteger;
-  output ComponentReplacementRules outComponentReplacementRules;
+  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules := matchcontinue (inComponents,inComponentReplacementRules,inInteger)
     local
       Integer len,old_len;
-      Components comps;
-      ComponentReplacementRules comp_reps,comp_reps_1,comp_reps_2,comp_reps_res;
+      GlobalScript.Components comps;
+      GlobalScript.ComponentReplacementRules comp_reps,comp_reps_1,comp_reps_2,comp_reps_res;
     case (comps,comp_reps,old_len)
       equation
         len = lengthComponentReplacementRules(comp_reps);
@@ -3659,15 +3528,15 @@ protected function getNewComponentreplacementsrulesForEachRule
  extracts the replacement rules from the components:
  {COMP(path_1,path_2,cr1),COMP(path_3,path_2,cr2)},{REP_RULE(path_2,cr_1a,cr_1b)}
            => {REP_RULE(path_1,cr1.cr_1a,cr1.cr_1b),REP_RULE(path_3,cr2.cr_1a,cr2.cr_1b)}"
-  input Components inComponents;
-  input ComponentReplacementRules inComponentReplacementRules;
-  output ComponentReplacementRules outComponentReplacementRules;
+  input GlobalScript.Components inComponents;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
+  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   matchcontinue (inComponents,inComponentReplacementRules)
     local
-      Components comps,comps_1;
-      ComponentReplacementRules comp_reps,comp_reps_1,res,comp_reps_2,comp_reps_3;
+      GlobalScript.Components comps,comps_1;
+      GlobalScript.ComponentReplacementRules comp_reps,comp_reps_1,res,comp_reps_2,comp_reps_3;
       Absyn.Path path;
       Absyn.ComponentRef cr1,cr2;
     case (comps,comp_reps)
@@ -3677,7 +3546,7 @@ algorithm
         comp_reps;
     case (comps,comp_reps)
       equation
-        COMPONENTREPLACEMENT(path,cr1,cr2) = firstComponentReplacement(comp_reps);
+        GlobalScript.COMPONENTREPLACEMENT(path,cr1,cr2) = firstComponentReplacement(comp_reps);
         comps_1 = getComponentsWithType(comps, path);
         comp_reps_1 = makeComponentsReplacementRulesFromComponents(comps_1, cr1, cr2);
         res = restComponentReplacementRules(comp_reps);
@@ -3700,42 +3569,42 @@ protected function makeComponentsReplacementRulesFromComponents
   this makes the replacementrules from each component in the first parameter:
   {COMP(path_1,path_2,cr1),COMP(path_3,path_2,cr2)},cr_1a,cr_1b
             => {REP_RULE(path_1,cr1.cr_1a,cr1.cr_1b),REP_RULE(path_3,cr2.cr_1a,cr2.cr_1b)}"
-  input Components inComponents1;
+  input GlobalScript.Components inComponents1;
   input Absyn.ComponentRef inComponentRef2;
   input Absyn.ComponentRef inComponentRef3;
-  output ComponentReplacementRules outComponentReplacementRules;
+  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   matchcontinue (inComponents1,inComponentRef2,inComponentRef3)
     local
-      Components comps,res;
+      GlobalScript.Components comps,res;
       Absyn.ComponentRef cr_from,cr_to,cr,cr_from_1,cr_to_1;
       Absyn.Path path_class,path_type;
-      ComponentReplacement comp_rep;
-      ComponentReplacementRules comps_1,comp_reps_res;
+      GlobalScript.ComponentReplacement comp_rep;
+      GlobalScript.ComponentReplacementRules comps_1,comp_reps_res;
     case (comps,cr_from,cr_to)
       equation
         true = emptyComponents(comps);
       then
-        COMPONENTREPLACEMENTRULES({},0);
+        GlobalScript.COMPONENTREPLACEMENTRULES({},0);
     case (comps,cr_from,cr_to)
       equation
-        COMPONENTITEM(path_class,path_type,cr) = firstComponent(comps);
+        GlobalScript.COMPONENTITEM(path_class,path_type,cr) = firstComponent(comps);
         cr_from_1 = Absyn.joinCrefs(cr, cr_from);
         cr_to_1 = Absyn.joinCrefs(cr, cr_to);
-        comp_rep = COMPONENTREPLACEMENT(path_class,cr_from_1,cr_to_1);
+        comp_rep = GlobalScript.COMPONENTREPLACEMENT(path_class,cr_from_1,cr_to_1);
         res = restComponents(comps);
         comps_1 = makeComponentsReplacementRulesFromComponents(res, cr_from, cr_to);
-        comp_reps_res = joinComponentReplacementRules(comps_1, COMPONENTREPLACEMENTRULES({comp_rep},1));
+        comp_reps_res = joinComponentReplacementRules(comps_1, GlobalScript.COMPONENTREPLACEMENTRULES({comp_rep},1));
       then
         comp_reps_res;
     case (comps,cr_from,cr_to)
       equation
-        EXTENDSITEM(path_class,path_type) = firstComponent(comps);
-        comp_rep = COMPONENTREPLACEMENT(path_class,cr_from,cr_to);
+        GlobalScript.EXTENDSITEM(path_class,path_type) = firstComponent(comps);
+        comp_rep = GlobalScript.COMPONENTREPLACEMENT(path_class,cr_from,cr_to);
         res = restComponents(comps);
         comps_1 = makeComponentsReplacementRulesFromComponents(res, cr_from, cr_to);
-        comp_reps_res = joinComponentReplacementRules(comps_1, COMPONENTREPLACEMENTRULES({comp_rep},1));
+        comp_reps_res = joinComponentReplacementRules(comps_1, GlobalScript.COMPONENTREPLACEMENTRULES({comp_rep},1));
       then
         comp_reps_res;
     case (_,_,_)
@@ -3749,12 +3618,12 @@ end makeComponentsReplacementRulesFromComponents;
 protected function emptyComponentReplacementRules
 "author: x02lucpo
   returns true if the componentReplacementRules are empty"
-  input ComponentReplacementRules inComponentReplacementRules;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inComponentReplacementRules)
-    case (COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then true;
+    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then true;
     case (_) then false;
   end matchcontinue;
 end emptyComponentReplacementRules;
@@ -3763,34 +3632,34 @@ protected function joinComponentReplacementRules
 "function joinComponentReplacementRules
  author: x02lucpo
  joins two componentReplacementRules lists by union"
-  input ComponentReplacementRules inComponentReplacementRules1;
-  input ComponentReplacementRules inComponentReplacementRules2;
-  output ComponentReplacementRules outComponentReplacementRules;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules1;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules2;
+  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   match (inComponentReplacementRules1,inComponentReplacementRules2)
     local
-      list<ComponentReplacement> comps,comps1,comps2;
+      list<GlobalScript.ComponentReplacement> comps,comps1,comps2;
       Integer len,len1,len2;
-    case (COMPONENTREPLACEMENTRULES(componentReplacementLst = comps1,the = len1),COMPONENTREPLACEMENTRULES(componentReplacementLst = comps2,the = len2))
+    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = comps1,the = len1),GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = comps2,the = len2))
       equation
         comps = List.union(comps1, comps2);
         len = listLength(comps);
       then
-        COMPONENTREPLACEMENTRULES(comps,len);
+        GlobalScript.COMPONENTREPLACEMENTRULES(comps,len);
   end match;
 end joinComponentReplacementRules;
 
 protected function lengthComponentReplacementRules
 "author: x02lucpo
   return the number of the componentReplacementRules"
-  input ComponentReplacementRules inComponentReplacementRules;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
   output Integer outInteger;
 algorithm
   outInteger:=
   match (inComponentReplacementRules)
     local Integer len;
-    case (COMPONENTREPLACEMENTRULES(the = len)) then len;
+    case (GlobalScript.COMPONENTREPLACEMENTRULES(the = len)) then len;
   end match;
 end lengthComponentReplacementRules;
 
@@ -3798,57 +3667,57 @@ protected function firstComponentReplacement
 "author: x02lucpo
  extract the first componentReplacement in
  the componentReplacementReplacementRules"
-  input ComponentReplacementRules inComponentReplacementRules;
-  output ComponentReplacement outComponentReplacement;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
+  output GlobalScript.ComponentReplacement outComponentReplacement;
 algorithm
   outComponentReplacement:=
   match (inComponentReplacementRules)
     local
-      ComponentReplacement comp;
-      list<ComponentReplacement> res;
-    case (COMPONENTREPLACEMENTRULES(componentReplacementLst = {}))
+      GlobalScript.ComponentReplacement comp;
+      list<GlobalScript.ComponentReplacement> res;
+    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = {}))
       equation
         print("-first_componentReplacement failed: no componentReplacementReplacementRules\n");
       then
         fail();
-    case (COMPONENTREPLACEMENTRULES(componentReplacementLst = (comp :: res))) then comp;
+    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = (comp :: res))) then comp;
   end match;
 end firstComponentReplacement;
 
 protected function restComponentReplacementRules
 "author: x02lucpo
  extract the rest componentReplacementRules from the components"
-  input ComponentReplacementRules inComponentReplacementRules;
-  output ComponentReplacementRules outComponentReplacementRules;
+  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
+  output GlobalScript.ComponentReplacementRules outComponentReplacementRules;
 algorithm
   outComponentReplacementRules:=
   match (inComponentReplacementRules)
     local
       Integer len_1,len;
-      ComponentReplacement comp;
-      list<ComponentReplacement> res;
-    case (COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then COMPONENTREPLACEMENTRULES({},0);
-    case (COMPONENTREPLACEMENTRULES(componentReplacementLst = (comp :: res),the = len))
+      GlobalScript.ComponentReplacement comp;
+      list<GlobalScript.ComponentReplacement> res;
+    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = {})) then GlobalScript.COMPONENTREPLACEMENTRULES({},0);
+    case (GlobalScript.COMPONENTREPLACEMENTRULES(componentReplacementLst = (comp :: res),the = len))
       equation
         len_1 = len - 1;
       then
-        COMPONENTREPLACEMENTRULES(res,len_1);
+        GlobalScript.COMPONENTREPLACEMENTRULES(res,len_1);
   end match;
 end restComponentReplacementRules;
 
 protected function getDependencyOnClass
 "author:x02lucpo
- returns _all_ the Components that the class depends on. It can be components or extends
+ returns _all_ the GlobalScript.Components that the class depends on. It can be components or extends
   i.e if a class b has a component of type a and this is called with (<components>,\"a\")
   the it will also return b"
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Absyn.Path inPath;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents,inPath)
     local
-      Components comps_types,comps_types2,comps2,comps;
+      GlobalScript.Components comps_types,comps_types2,comps2,comps;
       String str;
       Absyn.Path path;
     case (comps,path)
@@ -3879,16 +3748,16 @@ protected function getDependencyWithType
  helper function to get_dependency_on_class
  extracts all the components that have the
  dependency on type"
-  input Components inComponents1;
-  input Components inComponents2;
+  input GlobalScript.Components inComponents1;
+  input GlobalScript.Components inComponents2;
   input Integer inInteger3;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents1,inComponents2,inInteger3)
     local
       Integer len,old_len;
-      Components comps,in_comps,in_comps_1,comps_1,out_comps;
+      GlobalScript.Components comps,in_comps,in_comps_1,comps_1,out_comps;
     case (comps,in_comps,old_len) /* rule  dump_components_to_string(comps) => str & print \"---------comps----------\\n\" & print str & print \"===================\\n\" & dump_components_to_string(in_comps) => str & print \"---------in_comps----------\\n\" & print str & print \"===================\\n\" & int_eq(1,2) => true --------------------------- get_dependency_with_type(comps, in_comps, old_len) => in_comps */
       equation
         len = lengthComponents(in_comps);
@@ -3915,25 +3784,25 @@ protected function getComponentsWithComponentsClass
 "author x02lucpo
   extracts all the components with class == the class
   of the components in the second list from first list
-  of Components "
-  input Components inComponents1;
-  input Components inComponents2;
-  output Components outComponents;
+  of GlobalScript.Components "
+  input GlobalScript.Components inComponents1;
+  input GlobalScript.Components inComponents2;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents1,inComponents2)
     local
-      Components comps,in_comps,in_comps_1,comp1,comps_1,comps_2;
-      Component comp;
+      GlobalScript.Components comps,in_comps,in_comps_1,comp1,comps_1,comps_2;
+      GlobalScript.Component comp;
       Absyn.Path comp_path;
     case (comps,in_comps)
       equation
         true = emptyComponents(in_comps);
       then
-        COMPONENTS({},0);
+        GlobalScript.COMPONENTS({},0);
     case (comps,in_comps)
       equation
-        ((comp as COMPONENTITEM(comp_path,_,_))) = firstComponent(in_comps);
+        ((comp as GlobalScript.COMPONENTITEM(comp_path,_,_))) = firstComponent(in_comps);
         in_comps_1 = restComponents(in_comps);
         comp1 = getComponentsWithType(comps, comp_path);
         comps_1 = getComponentsWithComponentsClass(comps, in_comps_1);
@@ -3942,7 +3811,7 @@ algorithm
         comps_2;
     case (comps,in_comps)
       equation
-        ((comp as EXTENDSITEM(comp_path,_))) = firstComponent(in_comps);
+        ((comp as GlobalScript.EXTENDSITEM(comp_path,_))) = firstComponent(in_comps);
         in_comps_1 = restComponents(in_comps);
         comp1 = getComponentsWithType(comps, comp_path);
         comps_1 = getComponentsWithComponentsClass(comps, in_comps_1);
@@ -3962,24 +3831,24 @@ protected function getComponentsWithComponentsType
  extracts all the components with class == the type
  of the components in the second list from first list
  of Components"
-  input Components inComponents1;
-  input Components inComponents2;
-  output Components outComponents;
+  input GlobalScript.Components inComponents1;
+  input GlobalScript.Components inComponents2;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents1,inComponents2)
     local
-      Components comps,in_comps,in_comps_1,comp1,comps_1,comps_2;
-      Component comp;
+      GlobalScript.Components comps,in_comps,in_comps_1,comp1,comps_1,comps_2;
+      GlobalScript.Component comp;
       Absyn.Path comp_path;
     case (comps,in_comps)
       equation
         true = emptyComponents(in_comps);
       then
-        COMPONENTS({},0);
+        GlobalScript.COMPONENTS({},0);
     case (comps,in_comps)
       equation
-        ((comp as COMPONENTITEM(_,comp_path,_))) = firstComponent(in_comps);
+        ((comp as GlobalScript.COMPONENTITEM(_,comp_path,_))) = firstComponent(in_comps);
         in_comps_1 = restComponents(in_comps);
         comp1 = getComponentsWithType(comps, comp_path);
         comps_1 = getComponentsWithComponentsType(comps, in_comps_1);
@@ -3988,7 +3857,7 @@ algorithm
         comps_2;
     case (comps,in_comps)
       equation
-        ((comp as EXTENDSITEM(_,comp_path))) = firstComponent(in_comps);
+        ((comp as GlobalScript.EXTENDSITEM(_,comp_path))) = firstComponent(in_comps);
         in_comps_1 = restComponents(in_comps);
         comp1 = getComponentsWithType(comps, comp_path);
         comps_1 = getComponentsWithComponentsType(comps, in_comps_1);
@@ -4006,24 +3875,24 @@ end getComponentsWithComponentsType;
 protected function getComponentsFromClass
 "author: x02lucpo
  extracts all the components that are in the class"
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Absyn.Path inPath;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents,inPath)
     local
-      Components comps,res,comps_1,comps_2;
-      Component comp;
+      GlobalScript.Components comps,res,comps_1,comps_2;
+      GlobalScript.Component comp;
       Absyn.Path comp_path,path;
     case (comps,_) /* rule  Absyn.path_string(path) => comp_path & print \"extracting comps for: \" & print comp_path & print \"\\n\" & int_eq(1,2) => true --------------------------- get_components_from_class(comps,path) => comps */
       equation
         true = emptyComponents(comps);
       then
-        COMPONENTS({},0);
+        GlobalScript.COMPONENTS({},0);
     case (comps,path)
       equation
-        ((comp as COMPONENTITEM(comp_path,_,_))) = firstComponent(comps);
+        ((comp as GlobalScript.COMPONENTITEM(comp_path,_,_))) = firstComponent(comps);
         true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsFromClass(res, path);
@@ -4032,7 +3901,7 @@ algorithm
         comps_2;
     case (comps,path)
       equation
-        ((comp as EXTENDSITEM(comp_path,_))) = firstComponent(comps);
+        ((comp as GlobalScript.EXTENDSITEM(comp_path,_))) = firstComponent(comps);
         true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsFromClass(res, path);
@@ -4049,31 +3918,31 @@ algorithm
       equation
         print("-get_components_from_class failed\n");
       then
-        COMPONENTS({},0);
+        GlobalScript.COMPONENTS({},0);
   end matchcontinue;
 end getComponentsFromClass;
 
 protected function getComponentsWithType
 "author: x02lucpo
  extracts all the components that have the type"
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Absyn.Path inPath;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents,inPath)
     local
-      Components comps,res,comps_1,comps_2;
-      Component comp;
+      GlobalScript.Components comps,res,comps_1,comps_2;
+      GlobalScript.Component comp;
       Absyn.Path comp_path,path;
     case (comps,_) /* rule  Absyn.path_string(path) => comp_path & print \"extracting comps for: \" & print comp_path & print \"\\n\" & int_eq(1,2) => true --------------------------- get_components_with_type(comps,path) => comps */
       equation
         true = emptyComponents(comps);
       then
-        COMPONENTS({},0);
+        GlobalScript.COMPONENTS({},0);
     case (comps,path)
       equation
-        ((comp as COMPONENTITEM(_,comp_path,_))) = firstComponent(comps);
+        ((comp as GlobalScript.COMPONENTITEM(_,comp_path,_))) = firstComponent(comps);
         true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsWithType(res, path);
@@ -4082,7 +3951,7 @@ algorithm
         comps_2;
     case (comps,path)
       equation
-        ((comp as EXTENDSITEM(_,comp_path))) = firstComponent(comps);
+        ((comp as GlobalScript.EXTENDSITEM(_,comp_path))) = firstComponent(comps);
         true = Absyn.pathEqual(comp_path, path);
         res = restComponents(comps);
         comps_1 = getComponentsWithType(res, path);
@@ -4099,7 +3968,7 @@ algorithm
       equation
         print("-get_components_with_type failed\n");
       then
-        COMPONENTS({},0);
+        GlobalScript.COMPONENTS({},0);
   end matchcontinue;
 end getComponentsWithType;
 
@@ -4109,7 +3978,7 @@ protected function extractAllComponents
  extracts all the components and \"extends\""
   input Absyn.Program p;
   input Absyn.Path path;
-  output Components comps;
+  output GlobalScript.Components comps;
 algorithm
   comps := match(p, path)
     local
@@ -4123,7 +3992,7 @@ algorithm
         p = Dependency.getTotalProgramFromPath(path, p);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(COMPONENTS({},0),p,env), true) "traverse protected";
+        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
     */
@@ -4132,7 +4001,7 @@ algorithm
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(COMPONENTS({},0),p,env), true) "traverse protected";
+        ((_,_,(comps,_,_))) = traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
   end match;
@@ -4142,8 +4011,8 @@ protected function extractAllComponentsVisitor
 "author: x02lucpo
   the visitor for traverse-classes that extracts all
   the components and extends from all classes"
-  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<Components, Absyn.Program, Env.Env>> inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
-  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Components, Absyn.Program, Env.Env>> outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
+  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, Env.Env>> inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
+  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<GlobalScript.Components, Absyn.Program, Env.Env>> outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv;
 algorithm
   outTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv:=
   matchcontinue (inTplAbsynClassAbsynPathOptionTplComponentsAbsynProgramEnvEnv)
@@ -4151,7 +4020,7 @@ algorithm
       Absyn.Path path_1,pa_1,pa;
       Option<Absyn.Path> paOpt;
       list<Env.Frame> cenv,env;
-      Components comps_1,comps;
+      GlobalScript.Components comps_1,comps;
       Absyn.Class class_;
       String id;
       Boolean a,b,c;
@@ -4196,14 +4065,14 @@ protected function extractComponentsFromClass
   help function to extractAllComponentsVisitor"
   input Absyn.Class inClass;
   input Absyn.Path inPath;
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Env.Env inEnv;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inClass,inPath,inComponents,inEnv)
     local
-      Components comps_1,comps;
+      GlobalScript.Components comps_1,comps;
       String id;
       Absyn.ClassDef classdef;
       Absyn.Info info;
@@ -4227,13 +4096,13 @@ protected function extractComponentsFromClassdef
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input Absyn.ClassDef inClassDef;
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Env.Env inEnv;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:= matchcontinue (inPath,inClassDef,inComponents,inEnv)
     local
-      Components comps_1,comps;
+      GlobalScript.Components comps_1,comps;
       Absyn.Path pa,path;
       list<Absyn.ClassPart> parts;
       list<Env.Frame> env;
@@ -4264,13 +4133,13 @@ protected function extractComponentsFromClassparts
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Env.Env inEnv;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:= matchcontinue (inPath,inAbsynClassPartLst,inComponents,inEnv)
     local
-      Components comps,comps_1,comps_2;
+      GlobalScript.Components comps,comps_1,comps_2;
       list<Env.Frame> env;
       Absyn.Path pa;
       list<Absyn.ElementItem> elements;
@@ -4297,14 +4166,14 @@ protected function extractComponentsFromElements
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Env.Env inEnv;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inAbsynElementItemLst,inComponents,inEnv)
     local
-      Components comps,comps_1,comps_2;
+      GlobalScript.Components comps,comps_1,comps_2;
       list<Env.Frame> env;
       Absyn.Path pa;
       Absyn.ElementSpec elementspec;
@@ -4330,9 +4199,9 @@ protected function extractComponentsFromElementspec
   help function to extractAllComponentsVisitor"
   input Absyn.Path inPath;
   input Absyn.ElementSpec inElementSpec;
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Env.Env inEnv;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inElementSpec,inComponents,inEnv)
@@ -4340,9 +4209,9 @@ algorithm
       String id;
       list<Env.Frame> cenv,env;
       Absyn.Path path_1,path,pa;
-      Components comps_1,comps,comps_2;
+      GlobalScript.Components comps_1,comps,comps_2;
       list<Absyn.ComponentItem> comp_items;
-      Component comp;
+      GlobalScript.Component comp;
       list<Absyn.ElementArg> elementargs;
       Env.Cache cache;
 
@@ -4359,7 +4228,7 @@ algorithm
         (cache,_,cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false)
         "print \"extract_components_from_elementspec Absyn.EXTENDS(path,_) not implemented yet\"" ;
         (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        comp = EXTENDSITEM(pa,path);
+        comp = GlobalScript.EXTENDSITEM(pa,path);
         comps_1 = addComponentToComponents(comp, comps);
         comps_2 = extractComponentsFromElementargs(pa, elementargs, comps_1, env);
       then
@@ -4377,14 +4246,14 @@ protected function extractComponentsFromComponentitems
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
   input list<Absyn.ComponentItem> inAbsynComponentItemLst3;
-  input Components inComponents4;
+  input GlobalScript.Components inComponents4;
   input Env.Env inEnv5;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath1,inPath2,inAbsynComponentItemLst3,inComponents4,inEnv5)
     local
-      Components comps,comps_1,comps_2,comps_3;
+      GlobalScript.Components comps,comps_1,comps_2,comps_3;
       list<Env.Frame> env;
       Absyn.ComponentRef comp;
       Absyn.Path pa,path;
@@ -4396,7 +4265,7 @@ algorithm
       equation
         comps_1 = extractComponentsFromComponentitems(pa, path, res, comps, env);
         comp = Absyn.CREF_IDENT(id,{});
-        comps_2 = addComponentToComponents(COMPONENTITEM(pa,path,comp), comps_1);
+        comps_2 = addComponentToComponents(GlobalScript.COMPONENTITEM(pa,path,comp), comps_1);
         comps_3 = extractComponentsFromModificationOption(pa, mod_opt, comps_2, env);
       then
         comps_3;
@@ -4411,15 +4280,15 @@ end extractComponentsFromComponentitems;
 protected function extractComponentsFromElementargs
   input Absyn.Path inPath;
   input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Env.Env inEnv;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inPath,inAbsynElementArgLst,inComponents,inEnv)
     local
       Absyn.Path pa;
-      Components comps,comps_1,comps_2,comps_3;
+      GlobalScript.Components comps,comps_1,comps_2,comps_3;
       list<Env.Frame> env;
       Absyn.ElementSpec elementspec,elementspec2;
       list<Absyn.ElementArg> res;
@@ -4457,15 +4326,15 @@ end extractComponentsFromElementargs;
 protected function extractComponentsFromModificationOption
   input Absyn.Path inPath;
   input Option<Absyn.Modification> inAbsynModificationOption;
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   input Env.Env inEnv;
-  output Components outComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   match (inPath,inAbsynModificationOption,inComponents,inEnv)
     local
       Absyn.Path pa;
-      Components comps,comps_1;
+      GlobalScript.Components comps,comps_1;
       list<Env.Frame> env;
       list<Absyn.ElementArg> elementargs;
     case (pa,NONE(),comps,env) then comps;  /* the QUALIFIED path for the class */
@@ -4480,51 +4349,51 @@ end extractComponentsFromModificationOption;
 protected function joinComponents
 "author: x02lucpo
  joins two components lists by union"
-  input Components inComponents1;
-  input Components inComponents2;
-  output Components outComponents;
+  input GlobalScript.Components inComponents1;
+  input GlobalScript.Components inComponents2;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   matchcontinue (inComponents1,inComponents2)
     local
-      list<Component> comps,comps1,comps2;
+      list<GlobalScript.Component> comps,comps1,comps2;
       Integer len,len1,len2;
-    case (COMPONENTS(componentLst = comps1,the = len1),COMPONENTS(componentLst = comps2,the = len2))
+    case (GlobalScript.COMPONENTS(componentLst = comps1,the = len1),GlobalScript.COMPONENTS(componentLst = comps2,the = len2))
       equation
         comps = List.union(comps1, comps2);
         len = listLength(comps);
       then
-        COMPONENTS(comps,len);
+        GlobalScript.COMPONENTS(comps,len);
   end matchcontinue;
 end joinComponents;
 
 protected function existsComponentInComponents
 "author: x02lucpo
  checks if a component exists in the components"
-  input Components inComponents;
-  input Component inComponent;
+  input GlobalScript.Components inComponents;
+  input GlobalScript.Component inComponent;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inComponents,inComponent)
     local
-      Component comp;
+      GlobalScript.Component comp;
       Absyn.Path a,b,ap,bp;
       Absyn.ComponentRef c,cr;
-      Components comps;
+      GlobalScript.Components comps;
       Boolean res;
-    case (COMPONENTS(componentLst = {}),comp) then false;
-    case (comps,COMPONENTITEM(the1 = ap,the2 = bp,the3 = cr))
+    case (GlobalScript.COMPONENTS(componentLst = {}),comp) then false;
+    case (comps,GlobalScript.COMPONENTITEM(the1 = ap,the2 = bp,the3 = cr))
       equation
-        COMPONENTITEM(a,b,c) = firstComponent(comps);
+        GlobalScript.COMPONENTITEM(a,b,c) = firstComponent(comps);
         true = Absyn.pathEqual(a, ap);
         true = Absyn.pathEqual(b, bp);
         true = Absyn.crefEqual(c, cr);
       then
         true;
-    case (comps,EXTENDSITEM(the1 = ap,the2 = bp))
+    case (comps,GlobalScript.EXTENDSITEM(the1 = ap,the2 = bp))
       equation
-        EXTENDSITEM(a,b) = firstComponent(comps);
+        GlobalScript.EXTENDSITEM(a,b) = firstComponent(comps);
         true = Absyn.pathEqual(a, ap);
         true = Absyn.pathEqual(b, bp);
       then
@@ -4540,12 +4409,12 @@ end existsComponentInComponents;
 protected function emptyComponents
 "author: x02lucpo
   returns true if the components are empty"
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
   matchcontinue (inComponents)
-    case (COMPONENTS(componentLst = {})) then true;
+    case (GlobalScript.COMPONENTS(componentLst = {})) then true;
     case (_) then false;
   end matchcontinue;
 end emptyComponents;
@@ -4553,93 +4422,93 @@ end emptyComponents;
 protected function firstComponent
 "author: x02lucpo
  extract the first component in the components"
-  input Components inComponents;
-  output Component outComponent;
+  input GlobalScript.Components inComponents;
+  output GlobalScript.Component outComponent;
 algorithm
   outComponent:=
   match (inComponents)
     local
-      Component comp;
-      list<Component> res;
-    case (COMPONENTS(componentLst = {}))
+      GlobalScript.Component comp;
+      list<GlobalScript.Component> res;
+    case (GlobalScript.COMPONENTS(componentLst = {}))
       equation
         print("-first_component failed: no components\n");
       then
         fail();
-    case (COMPONENTS(componentLst = (comp :: res))) then comp;
+    case (GlobalScript.COMPONENTS(componentLst = (comp :: res))) then comp;
   end match;
 end firstComponent;
 
 protected function restComponents
 "author: x02lucpo
  extract the rest components from the compoents"
-  input Components inComponents;
-  output Components outComponents;
+  input GlobalScript.Components inComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   match (inComponents)
     local
       Integer len_1,len;
-      Component comp;
-      list<Component> res;
-    case (COMPONENTS(componentLst = {})) then COMPONENTS({},0);
-    case (COMPONENTS(componentLst = (comp :: res),the = len))
+      GlobalScript.Component comp;
+      list<GlobalScript.Component> res;
+    case (GlobalScript.COMPONENTS(componentLst = {})) then GlobalScript.COMPONENTS({},0);
+    case (GlobalScript.COMPONENTS(componentLst = (comp :: res),the = len))
       equation
         len_1 = len - 1;
       then
-        COMPONENTS(res,len_1);
+        GlobalScript.COMPONENTS(res,len_1);
   end match;
 end restComponents;
 
 protected function lengthComponents
 "author: x02lucpo
   return the number of the components"
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   output Integer outInteger;
 algorithm
   outInteger:=
   matchcontinue (inComponents)
     local Integer len;
-    case (COMPONENTS(the = len)) then len;
+    case (GlobalScript.COMPONENTS(the = len)) then len;
   end matchcontinue;
 end lengthComponents;
 
 protected function addComponentToComponents
 "author: x02lucpo
   add a component to components"
-  input Component inComponent;
-  input Components inComponents;
-  output Components outComponents;
+  input GlobalScript.Component inComponent;
+  input GlobalScript.Components inComponents;
+  output GlobalScript.Components outComponents;
 algorithm
   outComponents:=
   match (inComponent,inComponents)
     local
       Integer len_1,len;
-      Component comp;
-      list<Component> comps;
-    case (comp,COMPONENTS(componentLst = comps,the = len))
+      GlobalScript.Component comp;
+      list<GlobalScript.Component> comps;
+    case (comp,GlobalScript.COMPONENTS(componentLst = comps,the = len))
       equation
         len_1 = len + 1;
       then
-        COMPONENTS((comp :: comps),len_1);
+        GlobalScript.COMPONENTS((comp :: comps),len_1);
   end match;
 end addComponentToComponents;
 
 protected function dumpComponentsToString
 "author: x02lucpo
   dumps all the components to string"
-  input Components inComponents;
+  input GlobalScript.Components inComponents;
   output String outString;
 algorithm
   outString:=
   matchcontinue (inComponents)
     local
-      Components res,comps;
+      GlobalScript.Components res,comps;
       String s1,pa_str,path_str,cr_str,res_str;
       Absyn.Path cr_pa,pa,path;
       Absyn.ComponentRef cr;
-    case (COMPONENTS(componentLst = {})) then "";
-    case ((comps as COMPONENTS(componentLst = (COMPONENTITEM(the1 = pa,the2 = path,the3 = cr) :: _))))
+    case (GlobalScript.COMPONENTS(componentLst = {})) then "";
+    case ((comps as GlobalScript.COMPONENTS(componentLst = (GlobalScript.COMPONENTITEM(the1 = pa,the2 = path,the3 = cr) :: _))))
       equation
         res = restComponents(comps);
         s1 = dumpComponentsToString(res);
@@ -4650,7 +4519,7 @@ algorithm
         res_str = stringAppendList({s1,"cl: ",pa_str,"\t type: ",path_str,"\t\t name: ",cr_str,"\n"});
       then
         res_str;
-    case ((comps as COMPONENTS(componentLst = (EXTENDSITEM(the1 = pa,the2 = path) :: _))))
+    case ((comps as GlobalScript.COMPONENTS(componentLst = (GlobalScript.EXTENDSITEM(the1 = pa,the2 = path) :: _))))
       equation
         res = restComponents(comps);
         s1 = dumpComponentsToString(res);
@@ -9292,12 +9161,12 @@ end isPrimitiveClass;
 public function removeCompiledFunctions
 " A Compiled function should be removed if its definition is updated."
   input Absyn.Program inProgram;
-  input list<CompiledCFunction> inTplAbsynPathTypesTypeLst;
-  output list<CompiledCFunction> outTplAbsynPathTypesTypeLst;
+  input list<GlobalScript.CompiledCFunction> inTplAbsynPathTypesTypeLst;
+  output list<GlobalScript.CompiledCFunction> outTplAbsynPathTypesTypeLst;
 algorithm
   outTplAbsynPathTypesTypeLst := matchcontinue (inProgram,inTplAbsynPathTypesTypeLst)
     local
-      list<CompiledCFunction> cfs_1,cfs;
+      list<GlobalScript.CompiledCFunction> cfs_1,cfs;
       String id;
     case (Absyn.PROGRAM(classes = {Absyn.CLASS(name = id,restriction = Absyn.R_FUNCTION(_))}),cfs)
       equation
@@ -9312,13 +9181,13 @@ protected function removeAnySubFunctions
 "Will remove any functions contain within the class from cflist."
   input Absyn.Path inPath;
   input Absyn.Class inClass;
-  input list<CompiledCFunction> inCompiledFunctions;
-  output list<CompiledCFunction> outCompiledFunctions;
+  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
+  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
 algorithm
   outCompiledFunctions:=
   matchcontinue (inPath,inClass,inCompiledFunctions)
     local
-      list<CompiledCFunction> cf, newCF;
+      list<GlobalScript.CompiledCFunction> cf, newCF;
       Absyn.Path p;
       list<Absyn.ClassPart> parts;
     case (p, Absyn.CLASS(restriction = Absyn.R_FUNCTION(_)), cf)
@@ -9346,15 +9215,15 @@ protected function removeAnyPartsFunctions
 "Helper function to removeAnyBodyFunctions."
   input Absyn.Path inPath;
   input list<Absyn.ClassPart> inParts;
-  input list<CompiledCFunction> inCompiledFunctions;
-  output list<CompiledCFunction> outCompiledFunctions;
+  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
+  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
 algorithm
  outCompiledFunctions:=
  matchcontinue (inPath,inParts,inCompiledFunctions)
    local
      list<Absyn.ClassPart> rest;
      list<Absyn.ElementItem> elts;
-     list<CompiledCFunction> cf, newCF, newCF_1;
+     list<GlobalScript.CompiledCFunction> cf, newCF, newCF_1;
      Absyn.Path p,p1;
      String id;
    case (_,{},cf) then cf;
@@ -9389,13 +9258,13 @@ function removeAnyEltsFunctions
 "Helper function to removeAnyPartsFunctions."
   input Absyn.Path inPath;
   input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input list<CompiledCFunction> inCompiledFunctions;
-  output list<CompiledCFunction> outCompiledFunctions;
+  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
+  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
 algorithm
   outCompiledFunctions:=
   matchcontinue (inPath, inAbsynElementItemLst, inCompiledFunctions)
     local
-      list<CompiledCFunction> cf, newCF, newCF_1;
+      list<GlobalScript.CompiledCFunction> cf, newCF, newCF_1;
       Absyn.Class class_;
       list<Absyn.ElementItem> rest;
       Absyn.Path p,p1;
@@ -9418,13 +9287,13 @@ end removeAnyEltsFunctions;
 
 public function removeCfAndDependencies
 "Helper function to removeCompiledFunctions and removeAnySubFunctions."
-  input list<CompiledCFunction> inCompiledFunctions;
+  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
   input list<Absyn.Path> functionAndDependencies "the main function path plus all dependencies!";
-  output list<CompiledCFunction> outCompiledFunctions;
+  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
 algorithm
   outCompiledFunctions := matchcontinue (inCompiledFunctions, functionAndDependencies)
     local
-      list<CompiledCFunction> cf;
+      list<GlobalScript.CompiledCFunction> cf;
       Absyn.Path functionName;
       list<Absyn.Path> functionNames;
 
@@ -9444,22 +9313,22 @@ end removeCfAndDependencies;
 
 public function removeCf
 "Helper function to removeCompiledFunctions and removeAnySubFunctions."
-  input list<CompiledCFunction> inCompiledFunctions;
+  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
   input Absyn.Path functionName "the main function path";
-  output list<CompiledCFunction> outCompiledFunctions;
+  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
 algorithm
   outCompiledFunctions := matchcontinue (inCompiledFunctions, functionName)
     local
-      list<CompiledCFunction> res,rest;
+      list<GlobalScript.CompiledCFunction> res,rest;
       Absyn.Path functionInCf;
       DAE.Type t;
       Integer funcHandle;
       String tmp;
-      CompiledCFunction item;
+      GlobalScript.CompiledCFunction item;
 
     case ({}, _) then {};
 
-    case (CFunction(functionInCf,t,funcHandle,_,_) :: rest, _)
+    case (GlobalScript.CFunction(functionInCf,t,funcHandle,_,_) :: rest, _)
       equation
         true = Absyn.pathEqual(functionInCf, functionName);
         tmp = Absyn.pathStringReplaceDot(functionName, "_");
@@ -9546,7 +9415,7 @@ public function addScope
    and IMPORT_DEFINITION so an empty class definition can be
    inserted at the correct place."
   input Absyn.Program inProgram;
-  input list<Variable> inVariableLst;
+  input list<GlobalScript.Variable> inVariableLst;
   output Absyn.Program outProgram;
 algorithm
   outProgram:=
@@ -9554,7 +9423,7 @@ algorithm
     local
       Absyn.Path path,newpath,path2;
       list<Absyn.Class> cls;
-      list<Variable> vars;
+      list<GlobalScript.Variable> vars;
       Absyn.Within w;
       Absyn.TimeStamp ts;
       Absyn.Program p;
@@ -9582,24 +9451,24 @@ end addScope;
 
 protected function getVariableValue
 "Return the value of an interactive variable
-  from a list of Variable."
+  from a list of GlobalScript.Variable."
   input Absyn.Ident inIdent;
-  input list<Variable> inVariableLst;
+  input list<GlobalScript.Variable> inVariableLst;
   output Values.Value outValue;
 algorithm
   outValue := matchcontinue (inIdent,inVariableLst)
     local
       String id1,id2;
       Values.Value v;
-      list<Variable> rest;
+      list<GlobalScript.Variable> rest;
 
-    case (id1,(IVAR(varIdent = id2,value = v) :: _))
+    case (id1,(GlobalScript.IVAR(varIdent = id2,value = v) :: _))
       equation
         true = stringEq(id1, id2);
       then
         v;
 
-    case (id1,(IVAR(varIdent = id2,value = v) :: rest))
+    case (id1,(GlobalScript.IVAR(varIdent = id2,value = v) :: rest))
       equation
         false = stringEq(id1, id2);
         v = getVariableValue(id1, rest);
@@ -9610,9 +9479,9 @@ end getVariableValue;
 
 protected function getVariableValueLst
 "Return the value of an interactive variable
-  from a list of Variable."
+  from a list of GlobalScript.Variable."
   input list<String> ids;
-  input list<Variable> vars;
+  input list<GlobalScript.Variable> vars;
   output Values.Value val;
 algorithm
   val := matchcontinue (ids,vars)
@@ -9620,28 +9489,28 @@ algorithm
       Integer ix;
       String id1,id2,id3;
       Values.Value v;
-      list<Variable> rest;
+      list<GlobalScript.Variable> rest;
       list<String> comp,srest;
       list<Values.Value> vals;
       DAE.Type t;
 
-    case (id1::_, (IVAR(varIdent = id2) :: rest))
+    case (id1::_, (GlobalScript.IVAR(varIdent = id2) :: rest))
       equation
         false = stringEq(id1, id2);
         v = getVariableValueLst(ids, rest);
       then
         v;
 
-    case (id1::id2::srest, (IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp),type_ = t) :: _))
+    case (id1::id2::srest, (GlobalScript.IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp),type_ = t) :: _))
       equation
         true = stringEq(id1, id3);
         ix = List.positionOnTrue(id2, comp, stringEq);
         v = listNth(vals, ix);
-        v = getVariableValueLst(id2::srest, {IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
+        v = getVariableValueLst(id2::srest, {GlobalScript.IVAR(id2,v,DAE.T_UNKNOWN_DEFAULT)});
       then
         v;
 
-    case ({id1}, (IVAR(varIdent = id2,value = v,type_ = t) :: _))
+    case ({id1}, (GlobalScript.IVAR(varIdent = id2,value = v,type_ = t) :: _))
       equation
         true = stringEq(id1, id2);
       then
@@ -10328,9 +10197,9 @@ protected function getNthInheritedClass
   the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
   input Integer inInteger;
-  input SymbolTable ist;
+  input GlobalScript.SymbolTable ist;
   output String outString;
-  output SymbolTable outSt;
+  output GlobalScript.SymbolTable outSt;
 algorithm
   (outString,outSt) := matchcontinue (inComponentRef,inInteger,ist)
     local
@@ -10347,9 +10216,9 @@ algorithm
       Absyn.Program p;
       list<Absyn.ElementSpec> extends_;
       Env.Cache cache;
-      SymbolTable st;
+      GlobalScript.SymbolTable st;
 
-    case (model_,n,st as SYMBOLTABLE(ast=p))
+    case (model_,n,st as GlobalScript.SYMBOLTABLE(ast=p))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -10359,7 +10228,7 @@ algorithm
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
         (str,st);
-    case (model_,n,st as SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
+    case (model_,n,st as GlobalScript.SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -10867,9 +10736,9 @@ public function getComponents
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef cr;
   input Boolean inBoolean;
-  input SymbolTable st;
+  input GlobalScript.SymbolTable st;
   output String outString;
-  output SymbolTable outSt;
+  output GlobalScript.SymbolTable outSt;
 algorithm
   (outString,outSt) := getComponents2(cr,inBoolean,st);
 end getComponents;
@@ -10879,9 +10748,9 @@ protected function getComponents2
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
-  input SymbolTable ist;
+  input GlobalScript.SymbolTable ist;
   output String outString;
-  output SymbolTable outSt;
+  output GlobalScript.SymbolTable outSt;
 algorithm
   (outString,outSt) := matchcontinue (inComponentRef,inBoolean,ist)
     local
@@ -10899,9 +10768,9 @@ algorithm
       Absyn.Program p;
       Env.Cache cache;
       Boolean b;
-      SymbolTable st;
+      GlobalScript.SymbolTable st;
 
-    case (model_,b,st as SYMBOLTABLE(ast=p))
+    case (model_,b,st as GlobalScript.SYMBOLTABLE(ast=p))
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
@@ -14695,7 +14564,7 @@ algorithm
 end getComponentsInElementitems;
 
 protected function getNthComponentInClass
-"Returns the nth Component of a class. Indexed from 1..n."
+"Returns the nth GlobalScript.Component of a class. Indexed from 1..n."
   input Absyn.Class inClass;
   input Integer inInteger;
   output Absyn.Element outElement;
@@ -16951,25 +16820,25 @@ end namedargToModification;
 public function addInstantiatedClass
 " This function adds an instantiated class to the list of instantiated
    classes. If the class path already exists, the class is replaced."
-  input list<InstantiatedClass> inInstantiatedClassLst;
-  input InstantiatedClass inInstantiatedClass;
-  output list<InstantiatedClass> outInstantiatedClassLst;
+  input list<GlobalScript.InstantiatedClass> inInstantiatedClassLst;
+  input GlobalScript.InstantiatedClass inInstantiatedClass;
+  output list<GlobalScript.InstantiatedClass> outInstantiatedClassLst;
 algorithm
   outInstantiatedClassLst:=
   matchcontinue (inInstantiatedClassLst,inInstantiatedClass)
     local
-      InstantiatedClass cl,newc,x;
+      GlobalScript.InstantiatedClass cl,newc,x;
       Absyn.Path path,path2;
       DAE.DAElist dae,dae_1;
       list<Env.Frame> env,env_1;
-      list<InstantiatedClass> xs,res;
+      list<GlobalScript.InstantiatedClass> xs,res;
     case ({},cl) then {cl};
-    case ((INSTCLASS(qualName = path,daeElementLst = dae,env = env) :: xs),(newc as INSTCLASS(qualName = path2,daeElementLst = dae_1,env = env_1)))
+    case ((GlobalScript.INSTCLASS(qualName = path,daeElementLst = dae,env = env) :: xs),(newc as GlobalScript.INSTCLASS(qualName = path2,daeElementLst = dae_1,env = env_1)))
       equation
         true = Absyn.pathEqual(path, path2);
       then
         (newc :: xs);
-    case (((x as INSTCLASS(qualName = path)) :: xs),(newc as INSTCLASS(qualName = path2)))
+    case (((x as GlobalScript.INSTCLASS(qualName = path)) :: xs),(newc as GlobalScript.INSTCLASS(qualName = path2)))
       equation
         false = Absyn.pathEqual(path, path2);
         res = addInstantiatedClass(xs, newc);
@@ -16981,24 +16850,24 @@ end addInstantiatedClass;
 public function getInstantiatedClass
 "This function get an instantiated class
   from the list of instantiated classes."
-  input list<InstantiatedClass> inInstantiatedClassLst;
+  input list<GlobalScript.InstantiatedClass> inInstantiatedClassLst;
   input Absyn.Path inPath;
-  output InstantiatedClass outInstantiatedClass;
+  output GlobalScript.InstantiatedClass outInstantiatedClass;
 algorithm
   outInstantiatedClass:=
   matchcontinue (inInstantiatedClassLst,inPath)
     local
-      InstantiatedClass x,res;
+      GlobalScript.InstantiatedClass x,res;
       Absyn.Path path,path2;
       DAE.DAElist dae;
       list<Env.Frame> env;
-      list<InstantiatedClass> xs;
-    case (((x as INSTCLASS(qualName = path,daeElementLst = dae,env = env)) :: xs),path2)
+      list<GlobalScript.InstantiatedClass> xs;
+    case (((x as GlobalScript.INSTCLASS(qualName = path,daeElementLst = dae,env = env)) :: xs),path2)
       equation
         true = Absyn.pathEqual(path, path2);
       then
         x;
-    case (((x as INSTCLASS(qualName = path)) :: xs),path2)
+    case (((x as GlobalScript.INSTCLASS(qualName = path)) :: xs),path2)
       equation
         false = Absyn.pathEqual(path, path2);
         res = getInstantiatedClass(xs, path2);
@@ -17784,24 +17653,24 @@ protected function updateLoadedFiles
  the elements that do not need update. Then put the new update
  in front of the tempList and return the list"
   input String fileName                      "Filename to load";
-  input list<LoadedFile> loadedFiles         "The already loaded files";
+  input list<GlobalScript.LoadedFile> loadedFiles         "The already loaded files";
   input list<Absyn.Path> qualifiedClasses              "The qualified classes";
-  input list<LoadedFile> tempList            "A temp list to build the new one";
-  output list<LoadedFile> updatedLoadedFiles "Update file info cache";
+  input list<GlobalScript.LoadedFile> tempList            "A temp list to build the new one";
+  output list<GlobalScript.LoadedFile> updatedLoadedFiles "Update file info cache";
 algorithm
   updatedLoadedFiles := matchcontinue (fileName, loadedFiles, qualifiedClasses, tempList)
     local
       String f,f1;
-      list<LoadedFile> rest, tmp, newTemp;
+      list<GlobalScript.LoadedFile> rest, tmp, newTemp;
       list<Absyn.Path> qc;
-      LoadedFile x;
+      GlobalScript.LoadedFile x;
       Real now;
     case (f, {}, qc, tmp) // we reached the end, put the updated element in front.
       equation
         now = System.getCurrentTime();
       then // put it as the first in the list
-        FILE(f,now,qc)::tmp;
-    case (f, FILE(f1,_,_)::rest, qc, tmp) // found it, and ignore it
+        GlobalScript.FILE(f,now,qc)::tmp;
+    case (f, GlobalScript.FILE(f1,_,_)::rest, qc, tmp) // found it, and ignore it
       equation
         true = stringEq(f, f1);
         newTemp = updateLoadedFiles(f, rest, qc, tmp);
@@ -17822,20 +17691,20 @@ protected function getLoadedFileInfo
  - if YES take the info from cache and return SOME(info)
  - if NOT report that as NONE"
   input String fileName                   "Filename to load";
-  input list<LoadedFile> loadedFiles      "The already loaded files";
+  input list<GlobalScript.LoadedFile> loadedFiles      "The already loaded files";
   output Option<list<Absyn.Path>> qualifiedClasses  "The qualified classes";
 algorithm
   (qualifiedClasses) := matchcontinue (fileName, loadedFiles)
     local
       String f,f1;
-      list<LoadedFile> rest;
+      list<GlobalScript.LoadedFile> rest;
       list<Absyn.Path> info;
       Real loadTime, modificationTime;
       Option<list<Absyn.Path>> optInfo;
     case (f, {}) // we did not find it
       then
         NONE();
-    case (f, FILE(f1,loadTime,info)::rest) // found it
+    case (f, GlobalScript.FILE(f1,loadTime,info)::rest) // found it
       equation
         true = stringEq(f,f1);
         SOME(modificationTime) = System.getFileModificationTime(f);
@@ -17843,7 +17712,7 @@ algorithm
         true = realGt(loadTime, modificationTime);
       then
         SOME(info);
-    case (f, FILE(f1,loadTime,info)::rest) // found it
+    case (f, GlobalScript.FILE(f1,loadTime,info)::rest) // found it
       equation
         true = stringEq(f,f1);
         // we could not get the modification time
@@ -17865,11 +17734,11 @@ protected function checkLoadedFiles
  - if not, load it, add the info to cache"
   input String fileName                   "Filename to load";
   input String encoding;
-  input list<LoadedFile> loadedFiles      "The already loaded files";
+  input list<GlobalScript.LoadedFile> loadedFiles      "The already loaded files";
   input Absyn.Program ast                 "The program from the symboltable";
   input Boolean shouldUpdateProgram       "Should the program be pushed into the AST?";
   output list<Absyn.Path> topClassNamesQualified    "The names of the classes from file, qualified!";
-  output list<LoadedFile> newLoadedFiles  "The new loaded files";
+  output list<GlobalScript.LoadedFile> newLoadedFiles  "The new loaded files";
   output Absyn.Program newAst             "The new program to put it in the symboltable";
 algorithm
   (topClassNamesQualified, newLoadedFiles, newAst) :=
@@ -17878,7 +17747,7 @@ algorithm
       String f;
       list<Absyn.Path> topNamesStr;
       Absyn.Program pAst,newP,parsed;
-      list<LoadedFile> lf, newLF;
+      list<GlobalScript.LoadedFile> lf, newLF;
     case (f, _, lf, pAst, _)
       equation
         // did the file was loaded since it was last saved?
@@ -17893,7 +17762,7 @@ algorithm
         parsed = Parser.parse(f,encoding);
         newP = updateProgram(parsed, pAst);
         topNamesStr = getTopQualifiedClassnames(parsed);
-        // fix the modification and topNames in the list<LoadedFile> cache
+        // fix the modification and topNames in the list<GlobalScript.LoadedFile> cache
         newLF = updateLoadedFiles(f, lf, topNamesStr, {});
       then
         (topNamesStr, newLF, newP); // loading
@@ -17904,7 +17773,7 @@ algorithm
         // fall back to basis :)
         parsed = Parser.parse(f,encoding);
         topNamesStr = getTopQualifiedClassnames(parsed);
-        // fix the modification and topNames in the list<LoadedFile> cache
+        // fix the modification and topNames in the list<GlobalScript.LoadedFile> cache
         newLF = updateLoadedFiles(f, lf, topNamesStr, {});
       then
         (topNamesStr, newLF, pAst); // loading
@@ -17921,33 +17790,33 @@ public function loadFileInteractiveQualified
  file is newer than the one already loaded."
   input  String fileName               "Filename to load";
   input  String encoding;
-  input  SymbolTable st     "The symboltable where to load the file";
+  input  GlobalScript.SymbolTable st     "The symboltable where to load the file";
   output list<Absyn.Path> topClassNamesQualified "The names of the classes from file, qualified!";
-  output SymbolTable newst  "The new interactive symboltable";
+  output GlobalScript.SymbolTable newst  "The new interactive symboltable";
 algorithm
   (topClassNamesQualified, newst) := matchcontinue (fileName, encoding, st)
     local
       String file               "Filename to load";
-      SymbolTable s  "The symboltable where to load the file";
+      GlobalScript.SymbolTable s  "The symboltable where to load the file";
       list<Absyn.Path> topNamesStr;
       Absyn.Program pAst,newP;
-      list<InstantiatedClass> ic;
-      list<Variable> iv;
-      list<LoadedFile> lf, newLF;
-      list<CompiledCFunction> cf;
+      list<GlobalScript.InstantiatedClass> ic;
+      list<GlobalScript.Variable> iv;
+      list<GlobalScript.LoadedFile> lf, newLF;
+      list<GlobalScript.CompiledCFunction> cf;
       AbsynDep.Depends aDep;
 
     // See that the file exists
-    case (file, _, s as SYMBOLTABLE(ast = _))
+    case (file, _, s as GlobalScript.SYMBOLTABLE(ast = _))
       equation
         false = System.regularFileExists(file);
       then ({},s);
     // check if we have the stuff in the loadedFiles!
-    case (file, _, s as SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
+    case (file, _, s as GlobalScript.SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
       equation
         (topNamesStr,newLF,newP) = checkLoadedFiles(file, encoding, lf, pAst, true);
       then
-        (topNamesStr, SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
+        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
   end matchcontinue;
 end loadFileInteractiveQualified;
 
@@ -18370,33 +18239,33 @@ public function parseFile
  file is newer than the one already loaded."
   input  String fileName               "Filename to load";
   input String encoding;
-  input  SymbolTable st     "The symboltable where to load the file";
+  input  GlobalScript.SymbolTable st     "The symboltable where to load the file";
   output list<Absyn.Path> topClassNamesQualified "The names of the classes from file, qualified!";
-  output SymbolTable newst  "The new interactive symboltable";
+  output GlobalScript.SymbolTable newst  "The new interactive symboltable";
 algorithm
   (topClassNamesQualified, newst) := matchcontinue (fileName, encoding, st)
     local
       String file               "Filename to load";
-      SymbolTable s  "The symboltable where to load the file";
+      GlobalScript.SymbolTable s  "The symboltable where to load the file";
       list<Absyn.Path> topNamesStr;
       Absyn.Program pAst,newP;
-      list<InstantiatedClass> ic;
-      list<Variable> iv;
-      list<LoadedFile> lf, newLF;
-      list<CompiledCFunction> cf;
+      list<GlobalScript.InstantiatedClass> ic;
+      list<GlobalScript.Variable> iv;
+      list<GlobalScript.LoadedFile> lf, newLF;
+      list<GlobalScript.CompiledCFunction> cf;
       AbsynDep.Depends aDep;
     // See that the file exists
-    case (file, _, s as SYMBOLTABLE(ast = _))
+    case (file, _, s as GlobalScript.SYMBOLTABLE(ast = _))
       equation
         false = System.regularFileExists(file);
       then ({},s);
     // check if we have the stuff in the loadedFiles!
-    case (file, _, s as SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
+    case (file, _, s as GlobalScript.SYMBOLTABLE(pAst,aDep,_,ic,iv,cf,lf))
       equation
         (topNamesStr,newLF,newP) = checkLoadedFiles(file, encoding, lf, pAst, false);
       then
         /* shouldn't newLF be used here? no; we only parse the files; not loading them */
-        (topNamesStr, SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
+        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,aDep,NONE(),ic,iv,cf,lf));
   end matchcontinue;
 end parseFile;
 
@@ -18850,46 +18719,46 @@ algorithm
 end getComponentInClass;
 
 public function setSymbolTableAST
-  input SymbolTable inSymTab;
+  input GlobalScript.SymbolTable inSymTab;
   input Absyn.Program inAST;
-  output SymbolTable outSymTab;
+  output GlobalScript.SymbolTable outSymTab;
 algorithm
   outSymTab := match(inSymTab, inAST)
     local
       AbsynDep.Depends d;
-      list<InstantiatedClass> i;
-      list<Variable> v;
-      list<CompiledCFunction> c;
-      list<LoadedFile> l;
-    case (SYMBOLTABLE(depends = d, instClsLst = i,
+      list<GlobalScript.InstantiatedClass> i;
+      list<GlobalScript.Variable> v;
+      list<GlobalScript.CompiledCFunction> c;
+      list<GlobalScript.LoadedFile> l;
+    case (GlobalScript.SYMBOLTABLE(depends = d, instClsLst = i,
                       lstVarVal = v, compiledFunctions = c, loadedFiles = l), _)
-      then SYMBOLTABLE(inAST, d, NONE(), i, v, c, l);
+      then GlobalScript.SYMBOLTABLE(inAST, d, NONE(), i, v, c, l);
   end match;
 end setSymbolTableAST;
 
 public function getSymbolTableAST
-  input SymbolTable inSymTab;
+  input GlobalScript.SymbolTable inSymTab;
   output Absyn.Program outAST;
 algorithm
   outAST := match(inSymTab)
-    case (SYMBOLTABLE(ast = outAST)) then outAST;
+    case (GlobalScript.SYMBOLTABLE(ast = outAST)) then outAST;
   end match;
 end getSymbolTableAST;
 
 protected function setSymbolTableVars
-  input list<Variable> inVars;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
+  input list<GlobalScript.Variable> inVars;
+  input GlobalScript.SymbolTable inSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 protected
   Absyn.Program ast;
   AbsynDep.Depends dep;
   Option<SCode.Program> exp_ast;
-  list<InstantiatedClass> cls;
-  list<CompiledCFunction> comp_funcs;
-  list<LoadedFile> files;
+  list<GlobalScript.InstantiatedClass> cls;
+  list<GlobalScript.CompiledCFunction> comp_funcs;
+  list<GlobalScript.LoadedFile> files;
 algorithm
-  SYMBOLTABLE(ast, dep, exp_ast, cls, _, comp_funcs, files) := inSymbolTable;
-  outSymbolTable := SYMBOLTABLE(ast, dep, exp_ast, cls, inVars, comp_funcs, files); 
+  GlobalScript.SYMBOLTABLE(ast, dep, exp_ast, cls, _, comp_funcs, files) := inSymbolTable;
+  outSymbolTable := GlobalScript.SYMBOLTABLE(ast, dep, exp_ast, cls, inVars, comp_funcs, files); 
 end setSymbolTableVars;
 
 public function getFunctionsInProgram
@@ -18939,41 +18808,41 @@ end getAllClassesInClass;
 public function symbolTableToSCode
 "Similar to SCodeUtil.translateAbsyn2SCode
   But this updates the symboltable to cache the translation."
-  input SymbolTable st;
+  input GlobalScript.SymbolTable st;
   output SCode.Program program;
-  output SymbolTable outSt;
+  output GlobalScript.SymbolTable outSt;
 algorithm
   (program,outSt) := match st
     local
       Absyn.Program ast;
       AbsynDep.Depends depends;
-      list<InstantiatedClass> instClsLst;
-      list<Variable> lstVarVal;
-      list<CompiledCFunction> compiledFunctions;
-      list<LoadedFile> loadedFiles;
+      list<GlobalScript.InstantiatedClass> instClsLst;
+      list<GlobalScript.Variable> lstVarVal;
+      list<GlobalScript.CompiledCFunction> compiledFunctions;
+      list<GlobalScript.LoadedFile> loadedFiles;
 
-    case SYMBOLTABLE(explodedAst=SOME(program)) then (program,st);
-    case SYMBOLTABLE(ast,depends,_,instClsLst,lstVarVal,compiledFunctions,loadedFiles)
+    case GlobalScript.SYMBOLTABLE(explodedAst=SOME(program)) then (program,st);
+    case GlobalScript.SYMBOLTABLE(ast,depends,_,instClsLst,lstVarVal,compiledFunctions,loadedFiles)
       equation
         program = SCodeUtil.translateAbsyn2SCode(ast);
-      then (program,SYMBOLTABLE(ast,depends,SOME(program),instClsLst,lstVarVal,compiledFunctions,loadedFiles));
+      then (program,GlobalScript.SYMBOLTABLE(ast,depends,SOME(program),instClsLst,lstVarVal,compiledFunctions,loadedFiles));
   end match;
 end symbolTableToSCode;
 
 public function getCompiledFunctions
 "function: getCompiledFunctions"
-  input SymbolTable inSymTab;
-  output list<CompiledCFunction> compiledFunctions;
+  input GlobalScript.SymbolTable inSymTab;
+  output list<GlobalScript.CompiledCFunction> compiledFunctions;
 algorithm
-  SYMBOLTABLE(compiledFunctions = compiledFunctions) := inSymTab;
+  GlobalScript.SYMBOLTABLE(compiledFunctions = compiledFunctions) := inSymTab;
 end getCompiledFunctions;
 
 public function dumpCompiledFunctions
 "function: dumpCompiledFunctions"
-  input SymbolTable inSymTab;
+  input GlobalScript.SymbolTable inSymTab;
   output String compiledFunctionsStr;
 protected
-  list<CompiledCFunction> compiledFunctions;
+  list<GlobalScript.CompiledCFunction> compiledFunctions;
 algorithm
   compiledFunctions := getCompiledFunctions(inSymTab);
   compiledFunctionsStr := "Functions:\n\t" +& stringDelimitList(List.map(compiledFunctions, dumpCompiledFunction), "\n\t");
@@ -18981,7 +18850,7 @@ end dumpCompiledFunctions;
 
 public function dumpCompiledFunction
 "function: dumpCompiledFunctions"
-  input CompiledCFunction inCompiledFunction;
+  input GlobalScript.CompiledCFunction inCompiledFunction;
   output String compiledFunctionStr;
 protected
   Absyn.Path path;
@@ -18990,7 +18859,7 @@ protected
   Real buildTime "the build time for this function";
   String loadedFromFile "the file we loaded this function from";
 algorithm
-  CFunction(path, retType, funcHandle, buildTime, loadedFromFile) := inCompiledFunction;
+  GlobalScript.CFunction(path, retType, funcHandle, buildTime, loadedFromFile) := inCompiledFunction;
   compiledFunctionStr := Absyn.pathString(path) +&
                          " ty[" +& Types.printTypeStr(retType) +&
                          "] hndl[" +& intString(funcHandle) +&
@@ -19037,40 +18906,40 @@ algorithm
 end getBaseClassNameFromExtends;
 
 protected function printIstmtStr "Prints an interactive statement to a string."
-  input Statements inStatements;
+  input GlobalScript.Statements inStatements;
   output String strIstmt;
 algorithm
   strIstmt := matchcontinue (inStatements)
     local
       Absyn.AlgorithmItem alg;
       Absyn.Exp expr;
-      list<Statement> l;
+      list<GlobalScript.Statement> l;
       Boolean sc;
       String str;
 
-    case (ISTMTS(interactiveStmtLst = {IALG(algItem = alg)}))
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = alg)}))
       equation
         str = Dump.unparseAlgorithmStr(0, alg);
       then
         str;
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = expr)}))
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = expr)}))
       equation
         str = Dump.printExpStr(expr);
       then
         str;
 
-    case (ISTMTS(interactiveStmtLst = (IALG(algItem = alg) :: l),semicolon = sc))
+    case (GlobalScript.ISTMTS(interactiveStmtLst = (GlobalScript.IALG(algItem = alg) :: l),semicolon = sc))
       equation
         str = Dump.unparseAlgorithmStr(0, alg);
-        str = str +& "; " +& printIstmtStr(ISTMTS(l,sc));
+        str = str +& "; " +& printIstmtStr(GlobalScript.ISTMTS(l,sc));
       then
         str;
 
-    case (ISTMTS(interactiveStmtLst = (IEXP(exp = expr) :: l),semicolon = sc))
+    case (GlobalScript.ISTMTS(interactiveStmtLst = (GlobalScript.IEXP(exp = expr) :: l),semicolon = sc))
       equation
         str = Dump.printExpStr(expr);
-        str = str +& "; " +& printIstmtStr(ISTMTS(l,sc));
+        str = str +& "; " +& printIstmtStr(GlobalScript.ISTMTS(l,sc));
       then
         str;
     else "unknown";

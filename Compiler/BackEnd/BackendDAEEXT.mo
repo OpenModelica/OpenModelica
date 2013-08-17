@@ -55,12 +55,13 @@ public function eMark
   external "C" BackendDAEEXT_eMark(inInteger) annotation(Library = "omcruntime");
 end eMark;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function getEMark
   input Integer inInteger;
   output Boolean outBoolean;
 
   external "C" outBoolean=BackendDAEEXT_getEMark(inInteger) annotation(Library = "omcruntime");
-end getEMark;
+end getEMark;*/
 
 public function vMark
   input Integer inInteger;
@@ -104,18 +105,6 @@ public function getMarkedVariables
   external "C" outIntegerLst=BackendDAEEXT_getMarkedVariables() annotation(Library = "omcruntime");
 end getMarkedVariables;
 
-public function dumpMarkedEquations
-  input Integer inInteger;
-
-  external "C" BackendDAEEXT_dumpMarkedEquations(inInteger) annotation(Library = "omcruntime");
-end dumpMarkedEquations;
-
-public function dumpMarkedVariables
-  input Integer inInteger;
-
-  external "C" BackendDAEEXT_dumpMarkedVariables(inInteger) annotation(Library = "omcruntime");
-end dumpMarkedVariables;
-
 public function initLowLink
   input Integer inInteger;
 
@@ -156,6 +145,19 @@ public function getNumber
   external "C" outInteger=BackendDAEEXT_getNumber(inInteger) annotation(Library = "omcruntime");
 end getNumber;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
+public function dumpMarkedEquations
+  input Integer inInteger;
+
+  external "C" BackendDAEEXT_dumpMarkedEquations(inInteger) annotation(Library = "omcruntime");
+end dumpMarkedEquations;
+
+public function dumpMarkedVariables
+  input Integer inInteger;
+
+  external "C" BackendDAEEXT_dumpMarkedVariables(inInteger) annotation(Library = "omcruntime");
+end dumpMarkedVariables;
+
 public function initV
   input Integer inInteger;
 
@@ -195,6 +197,7 @@ public function getF
 
   external "C" outInteger=BackendDAEEXT_getF(inInteger) annotation(Library = "omcruntime");
 end getF;
+*/
 
 /******************************************
  C-Implementation Stuff from
@@ -211,6 +214,7 @@ public function setIncidenceMatrix "author: Frenkel TUD 2012-04"
   external "C" BackendDAEEXT_setIncidenceMatrix(nv,ne,nz,m) annotation(Library = "omcruntime");
 end setIncidenceMatrix;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function cheapmatching
 "author: Frenkel TUD 2012-04
   calls cheapmatching algorithms
@@ -227,7 +231,7 @@ public function cheapmatching
   input Integer cheapID;
   input Integer clear_match;
   external "C" BackendDAEEXT_cheapmatching(nv,ne,cheapID,clear_match) annotation(Library = "omcruntime");
-end cheapmatching;
+end cheapmatching;*/
 
 public function matching
 "author: Frenkel TUD 2012-04

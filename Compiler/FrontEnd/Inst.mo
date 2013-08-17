@@ -85,6 +85,7 @@ public import Connect;
 public import ConnectionGraph;
 public import DAE;
 public import Env;
+public import GlobalScript;
 public import InnerOuter;
 public import InstTypes;
 public import Mod;
@@ -129,7 +130,6 @@ protected import HashTable5;
 protected import InstSection;
 protected import InstExtends;
 protected import NFInstUtil;
-protected import Interactive;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
@@ -10953,7 +10953,7 @@ protected function elabArraydimOpt
   input Option<Absyn.ArrayDim> inAbsynArrayDimOption;
   input Option<DAE.EqMod> inTypesEqModOption;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -10970,7 +10970,7 @@ algorithm
       list<Absyn.Subscript> ad;
       Option<DAE.EqMod> eq;
       Boolean impl;
-      Option<Interactive.SymbolTable> st;
+      Option<GlobalScript.SymbolTable> st;
       Env.Cache cache;
       Boolean doVect;
       Prefix.Prefix pre;
@@ -11003,7 +11003,7 @@ protected function elabArraydim
   input Absyn.ArrayDim inArrayDim;
   input Option<DAE.EqMod> inTypesEqModOption;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Boolean isFunctionInput;
   input Prefix.Prefix inPrefix;
@@ -11022,7 +11022,7 @@ algorithm
       Absyn.ComponentRef cref;
       list<Absyn.Subscript> ad;
       Boolean impl;
-      Option<Interactive.SymbolTable> st;
+      Option<GlobalScript.SymbolTable> st;
       DAE.Exp e,e_1;
       DAE.Type t;
       String e_str,t_str,dim_str;
@@ -12907,19 +12907,19 @@ protected function elabExpListExt
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Properties> outTypesPropertiesLst;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExpExpLst,outTypesPropertiesLst,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
     local
       Boolean impl;
-      Option<Interactive.SymbolTable> st,st_1,st_2;
+      Option<GlobalScript.SymbolTable> st,st_1,st_2;
       DAE.Exp exp;
       DAE.Properties p;
       list<DAE.Exp> exps;
@@ -12948,13 +12948,13 @@ protected function elabExpExt
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
@@ -12967,7 +12967,7 @@ algorithm
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
       Boolean impl;
-      Option<Interactive.SymbolTable> st;
+      Option<GlobalScript.SymbolTable> st;
       Env.Cache cache;
       Absyn.Exp absynExp;
       Prefix.Prefix pre;

@@ -385,6 +385,22 @@ extern void* ErrorImpl__getMessages()
 } // extern "C"
 
 // TODO: Use a string builder instead of creating intermediate results all the time?
+extern std::string ErrorImpl__printErrorsNoWarning()
+{
+  std::string res("");
+  while(!errorMessageQueue.empty()) {
+    //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
+    if(errorMessageQueue.top()->getSeverity() == ErrorLevel_error) {
+      res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+      numErrorMessages--;
+    }
+    delete errorMessageQueue.top();
+    errorMessageQueue.pop();
+  }
+  return res;
+}
+
+// TODO: Use a string builder instead of creating intermediate results all the time?
 extern std::string ErrorImpl__printMessagesStr()
 {
   // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue.size()); fflush(NULL);

@@ -177,16 +177,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__printErrorsNoWarning)
 {
-  std::string res("");
-  while(!errorMessageQueue.empty()) {
-    //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
-    if(errorMessageQueue.top()->getSeverity() == ErrorLevel_error) {
-      res = errorMessageQueue.top()->getMessage()+string("\n")+res;
-      numErrorMessages--;
-    }
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
-  }
+  std::string res = ErrorImpl__printErrorsNoWarning();
   rmlA0 = mk_scon((char*)res.c_str());
   RML_TAILCALLK(rmlSC);
 }

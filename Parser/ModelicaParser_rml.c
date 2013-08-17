@@ -33,7 +33,7 @@ extern "C" {
 #endif  
 #include "rml.h"
 #include "Absyn.h"
-#include "Interactive.h"
+#include "GlobalScript.h"
 #ifdef __cplusplus
 }
 #endif  

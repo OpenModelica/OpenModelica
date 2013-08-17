@@ -2786,6 +2786,17 @@ annotation(
   preferredView="text");
 end getDerivedClassModifierValue;
 
+function generateEntryPoint
+  input String fileName;
+  input TypeName entryPoint;
+  input String url = "https://trac.openmodelica.org/OpenModelica/newticket";
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Generates a main() function that calls the given MetaModelica entrypoint (assumed to have input list<String> and no outputs).</p>
+</html>"));
+end generateEntryPoint;
+
 function numProcessors
   output Integer result;
 external "builtin";
@@ -2794,6 +2805,38 @@ annotation(
 <p>Returns the number of processors (if compiled against hwloc) or hardware threads (if using sysconf) available to OpenModelica.</p>
 </html>"));
 end numProcessors;
+
+function forkAvailable
+  output Boolean result;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns true if the fork system call is available on the platform.</p>
+</html>"));
+end forkAvailable;
+
+function runScriptParallel
+  input String scripts[:];
+  input Boolean fork := false;
+  output Boolean results[:];
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>As <a href=\"modelica://OpenModelica.Scripting.runScript\">runScript</a>, but runs the commands in parallel.</p>
+<p>If useFork=false (default), the script will be run in an empty environment (same as running a new omc process) with default config flags.</p>
+<p>If useFork=true (only available on platforms that implement fork), the script will run in the same (forked) environment as previously.
+No changes made to the environment will be visible in the main process and the rest of the commands that are executed.</p>
+</html>"));
+end runScriptParallel;
+
+function exit
+  input Integer status;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Forces omc to quit with the given exit status.</p>
+</html>"));
+end exit;
 
 annotation(preferredView="text");
 end Scripting;

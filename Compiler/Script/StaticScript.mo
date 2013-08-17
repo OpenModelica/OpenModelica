@@ -4,7 +4,7 @@ encapsulated package StaticScript
 public import Absyn;
 public import DAE;
 public import Env;
-public import Interactive;
+public import GlobalScript;
 public import Prefix;
 
 protected type Ident = String;
@@ -16,7 +16,6 @@ protected import Error;
 protected import ErrorExt;
 protected import Expression;
 protected import ExpressionSimplify;
-protected import GlobalScript;
 protected import Static;
 protected import Types;
 protected import Values;
@@ -30,7 +29,7 @@ protected function calculateSimulationTimes
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   input GlobalScript.SimulationOptions inSimOpt;
@@ -45,7 +44,7 @@ algorithm
       Absyn.ComponentRef cr;
       list<Absyn.NamedArg> args;
       Boolean impl;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
       Prefix.Prefix pre;
       Absyn.Info info;
       Integer intervals;
@@ -113,7 +112,7 @@ public function getSimulationArguments
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
   output Env.Cache outCache;
@@ -125,7 +124,7 @@ algorithm
       Absyn.Exp crexp;
       list<Absyn.NamedArg> args;
       Boolean impl;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
       Prefix.Prefix pre;
       Absyn.Info info;
       String cname_str;
@@ -223,13 +222,13 @@ public function elabCallInteractive "This function elaborates the functions defi
   input list<Absyn.Exp> inExps;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
  algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info)
@@ -238,14 +237,14 @@ public function elabCallInteractive "This function elaborates the functions defi
       list<Env.Frame> env;
       Absyn.ComponentRef cr,cr2;
       Boolean impl;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
       Ident cname_str,str;
       DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> excludeList;
       DAE.Properties prop;
-      Option<Interactive.SymbolTable> st_1;
+      Option<GlobalScript.SymbolTable> st_1;
       Integer excludeListSize;
       Absyn.Exp exp;
       Env.Cache cache;
@@ -450,14 +449,14 @@ function: elabExp
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.SymbolTable> st;
+  output Option<GlobalScript.SymbolTable> st;
 algorithm
   (outCache,outExp,outProperties,st) := elabExp2(inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,Error.getNumErrorMessages());
 end elabExp;
@@ -469,7 +468,7 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   input Env.Env inEnv;
   input Absyn.Exp inExp;
   input Boolean inImplicit;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
@@ -477,13 +476,13 @@ function: Auxiliary function to elabExp that considers elabCallInteractive. If t
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inImplicit,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix,info,numErrorMessages)
     local
       Boolean impl,doVect;
-      Option<Interactive.SymbolTable> st,st_1;
+      Option<GlobalScript.SymbolTable> st,st_1;
       DAE.Exp e_1;
       DAE.Properties prop;
       list<Env.Frame> env;
@@ -519,21 +518,21 @@ function: elabCall
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   input Integer numErrorMessages;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
   (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption):=
   match (inCache,inEnv,inComponentRef,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inPrefix,info,numErrorMessages)
     local
       DAE.Exp e;
       DAE.Properties prop;
-      Option<Interactive.SymbolTable> st;
+      Option<GlobalScript.SymbolTable> st;
       list<Env.Frame> env;
       Absyn.ComponentRef fn;
       list<Absyn.Exp> args;

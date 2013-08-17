@@ -3445,10 +3445,13 @@ template functionsFile(String filePrefix,
      literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty
   %>
   #include "modelica.h"
+  <% if mainFunction then
+  <<
   void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
   void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
   void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
   void (*omc_throw)() = omc_throw_function;
+  >> %>
 
   <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
   <%functionBodies(functions)%>
@@ -4172,7 +4175,7 @@ template extType(Type type, Boolean isInput, Boolean isArray)
  "Generates type for external function argument or return value."
 ::=
   let s = match type
-  case T_INTEGER(__)         then "int"
+  case T_INTEGER(__)     then "int"
   case T_REAL(__)        then "double"
   case T_STRING(__)      then "const char*"
   case T_BOOL(__)        then "int"
@@ -4182,7 +4185,11 @@ template extType(Type type, Boolean isInput, Boolean isArray)
                       then "void *"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
                       then '<%underscorePath(rname)%>'
-  case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
+  case T_METATYPE(__)
+  case T_METABOXED(__)
+       then "modelica_metatype"
+  case T_FUNCTION_REFERENCE_VAR(__)
+       then "modelica_fnptr"
   else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
 end extType;
@@ -4696,7 +4703,11 @@ case efn as EXTERNAL_FUNCTION(__) then
 
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   let fnBody = <<
-  <%retType%> omc_<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>' ;separator=", "%>)
+  <%retType%> omc_<%fname%>(<%funArgs |> arg =>
+    match arg
+    case VARIABLE(__) then '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>'
+    case FUNCTION_PTR(__) then 'modelica_fnptr _<%name%>'
+    ;separator=", "%>)
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
@@ -9703,6 +9714,66 @@ template pathConstraint(Constraint cons)
       >>
     else error(sourceInfo(), 'Unknown Constraint List')
 end pathConstraint;
+
+template generateEntryPoint(Path entryPoint, String url)
+::=
+let name = ("omc_" + underscorePath(entryPoint))
+<<
+/* This is an automatically generated entry point to a MetaModelica function */
+
+#include <meta_modelica.h>
+#include <stdio.h>
+extern void <%name%>(modelica_metatype);
+
+void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
+void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
+void (*omc_throw)() = omc_throw_function;
+
+int rml_execution_failed(mmc_GC_local_state_type local_GC_state)
+{
+  mmc_GC_undo_roots_state(local_GC_state);
+  fflush(NULL);
+  fprintf(stderr, "Execution failed!\n");
+  return 1;
+}
+
+int main(int argc, char **argv)
+{
+  init_metamodelica_segv_handler();
+  if (!mmc_GC_state)
+  {
+    mmc_GC_init(mmc_GC_settings_default);
+  }
+  
+  {
+  mmc_GC_local_state_type local_GC_state = mmc_GC_save_roots_state("top"); /* push the first mark */
+  void *lst = mmc_mk_nil();
+  int i = 0;
+
+  for (i=argc-1; i>0; i--)
+    lst = mmc_mk_cons(mmc_mk_scon(argv[i]), lst);
+
+  mmc_GC_add_root(&lst, local_GC_state, "commandLineParameters"); /* add to roots */
+
+  MMC_TRY_TOP()
+
+  MMC_TRY_STACK()
+  <%name%>(lst);
+  MMC_ELSE()
+  rml_execution_failed(local_GC_state);
+  fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at <%url%>\n    Include the following trace:\n");
+  printStacktraceMessages();
+  return 1;
+  MMC_CATCH_STACK()
+
+  MMC_CATCH_TOP(return rml_execution_failed(local_GC_state));
+  }
+
+  return 0;
+}
+>>
+end generateEntryPoint;
 
 end CodegenC;
 

@@ -108,15 +108,17 @@ public function clearMessages
   external "C" ErrorImpl__clearMessages() annotation(Library = "omcruntime");
 end clearMessages;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function errorOff
 
   external "C" Error_errorOff() annotation(Library = "omcruntime");
-end errorOff;
+end errorOff;*/
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function errorOn
 
   external "C" Error_errorOn() annotation(Library = "omcruntime");
-end errorOn;
+end errorOn;*/
 
 public function setCheckpoint "sets a checkpoint for the error messages, so error messages can be rolled back (i.e. deleted) up to this point
 A unique identifier for this checkpoint must be provided. It is checked when doing rollback or deletion"
@@ -155,6 +157,7 @@ public function isTopCheckpoint
   external "C" isThere=ErrorImpl__isTopCheckpoint(id) annotation(Library = "omcruntime");
 end isTopCheckpoint;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function getLastDeletedCheckpoint
 "@author: adrpo
   This function returns the last deleted checkpoint id.
@@ -162,7 +165,7 @@ public function getLastDeletedCheckpoint
   error messages or not"
   output String lastCheckpoint ;
   external "C" lastCheckpoint=Error_getLastDeletedCheckpoint() annotation(Library = "omcruntime");
-end getLastDeletedCheckpoint;
+end getLastDeletedCheckpoint;*/
 
 public function setShowErrorMessages
   input Boolean inShow;

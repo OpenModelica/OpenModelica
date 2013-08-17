@@ -46,9 +46,9 @@ public import BackendDAEUtil;
 public import Ceval;
 public import DAE;
 public import Env;
+public import GlobalScript;
 public import HashTableExpToIndex;
 public import HashTableStringToPath;
-public import Interactive;
 public import Tpl;
 public import Values;
 public import SimCode;
@@ -72,7 +72,6 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import GlobalScript;
 protected import HpcOmSimCode;
 protected import Settings;
 protected import SimCodeDump;
@@ -198,13 +197,13 @@ public function translateModelFMU
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
@@ -218,13 +217,13 @@ algorithm
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
       list<String> libs;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
       Absyn.Program p;
       //DAE.Exp fileprefix;
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-    case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),filenameprefix,_, _)
+    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
@@ -267,13 +266,13 @@ public function translateModelXML
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
@@ -287,13 +286,13 @@ algorithm
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
       list<String> libs;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
       Absyn.Program p;
       //DAE.Exp fileprefix;
       Env.Cache cache;
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-    case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),filenameprefix,_, _)
+    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(ast=p),filenameprefix,_, _)
       equation
         /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
@@ -519,13 +518,13 @@ public function translateModel
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args "labels for remove terms";
   output Env.Cache outCache;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
@@ -539,13 +538,13 @@ algorithm
       list<Env.Frame> env;
       BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
       list<String> libs;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
       Absyn.Program p;
       //DAE.Exp fileprefix;
       Env.Cache cache;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       
-    case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,_, _,_)
+    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),filenameprefix,_, _,_)
       equation
         // calculate stuff that we need to create SimCode data structure
         System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);

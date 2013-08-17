@@ -46,7 +46,6 @@ public import SimCode;
 // protected imports
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
-protected import BackendDump;
 protected import Error;
 //protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;

@@ -47,11 +47,12 @@ public function setCompilePath
   external "C" SettingsImpl__setCompilePath(inString) annotation(Library = "omcruntime");
 end setCompilePath;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function getCompilePath
   output String outString;
 
   external "C" outString=Settings_getCompilePath() annotation(Library = "omcruntime");
-end getCompilePath;
+end getCompilePath;*/
 
 public function setCompileCommand
   input String inString;
@@ -109,8 +110,9 @@ public function setEcho
   external "C" Settings_setEcho(echo) annotation(Library = "omcruntime");
 end setEcho;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function dumpSettings
   external "C" Settings_dumpSettings() annotation(Library = "omcruntime");
-end dumpSettings;
+end dumpSettings;*/
 
 end Settings;

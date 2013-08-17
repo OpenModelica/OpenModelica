@@ -51,17 +51,19 @@ public function restoreBuf
   external "C" Print_restoreBuf(handle) annotation(Library = "omcruntime");
 end restoreBuf;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function setBufSize
   input Integer newSize;
 
   external "C" Print_setBufSize(newSize) annotation(Library = "omcruntime");
-end setBufSize;
+end setBufSize;*/
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function unSetBufSize
   input Integer newSize "not used, this is a debuging func";
 
   external "C" Print_unSetBufSize(newSize) annotation(Library = "omcruntime");
-end unSetBufSize;
+end unSetBufSize;*/
 
 public function printErrorBuf
   input String inString;

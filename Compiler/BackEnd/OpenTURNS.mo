@@ -53,6 +53,7 @@ import CevalScript;
 import ComponentReference;
 import Expression;
 import ExpressionDump;
+import GlobalScript;
 import Interactive;
 import List;
 import Settings;
@@ -92,7 +93,7 @@ algorithm
 
   simSettings := CevalScript.convertSimulationOptionsToSimCode(
     CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(
-      Interactive.setSymbolTableAST(Interactive.emptySymboltable,inProgram),inPath,fileNamePrefix)
+      Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,inProgram),inPath,fileNamePrefix)
   );
   // correlation matrix form (vector of records) currently not supported by OpenModelica backend, remove it .
   //print("enter dae:");

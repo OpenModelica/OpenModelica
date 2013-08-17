@@ -2192,3 +2192,24 @@ RML_BEGIN_LABEL(System__numProcessors)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__forkAvailable)
+{
+  rmlA0 = mk_icon(0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__forkCall)
+{
+  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available when OpenModelica is compiled using RML"),NULL,0);  
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__exit)
+{
+  exit(RML_UNTAGFIXNUM(rmlA0));
+  RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL

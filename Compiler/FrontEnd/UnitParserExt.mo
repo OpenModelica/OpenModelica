@@ -41,7 +41,7 @@ end str2unit;
 
 public function addBase "adds a base unit without weight"
   input String name;
-  external "C" UnitParserExt__addBase(name) annotation(Library = {"omcruntime","lpsolve55"});
+  external "C" UnitParserExtImpl__addBase(name) annotation(Library = {"omcruntime","lpsolve55"});
 end addBase;
 
 public function registerWeight "registers a weight to be multiplied with the weigth factor of a derived unit"

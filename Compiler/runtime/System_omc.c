@@ -624,6 +624,12 @@ void System_stopTimer()
   popTimerStack();
 }
 
+double System_getTimerElapsedTime()
+{
+  /* get the cummulated timer time */
+  return rt_tock(RT_CLOCK_SPECIAL_STOPWATCH) - timerStack[0];
+}
+
 double System_getTimerIntervalTime()
 {
   return timerIntervalTime;
@@ -632,6 +638,11 @@ double System_getTimerIntervalTime()
 double System_getTimerCummulatedTime()
 {
   return timerCummulatedTime;
+}
+
+int System_getTimerStackIndex()
+{
+  return timerStackIdx;
 }
 
 extern void System_uriToClassAndPath(const char *uri, const char **scheme, char **name, char **path)
@@ -692,6 +703,61 @@ extern int System_fileIsNewerThan(const char *file1, const char *file2)
   if (res == -1)
     MMC_THROW();
   return res;
+}
+
+extern int System_forkAvailable()
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return 0;
+#else
+  return 1;
+#endif
+}
+
+extern void* System_forkCall(void *dataLst, void (*fn)(void*))
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available on Windows"),NULL,0);  
+  MMC_THROW();
+#else
+  int len = listLength(dataLst);
+  pid_t pids[len];
+  int i = 0, fail = 0;
+  void *result = mmc_mk_nil();
+  while (MMC_NILHDR != MMC_GETHDR(dataLst)) {
+    pid_t id = fork();
+    if (id == -1) {
+      const char *tokens[1] = {strerror(errno)};
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("fork() failed: %s"),tokens,1);
+      MMC_THROW();
+    } else if (id == 0) {
+      int exitstatus = 1;
+      MMC_TRY()
+      fn(MMC_CAR(dataLst));
+      exitstatus = 0;
+      MMC_CATCH()
+      exit(exitstatus);
+    } else {
+      pids[i++] = id;
+    }
+    dataLst = MMC_CDR(dataLst);
+  }
+  for (i=len-1; i>=0; i--) {
+    int status = 1;
+    if (waitpid(pids[i], &status, 0) == -1) {
+      const char *tokens[1] = {strerror(errno)};
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Failed to wait for forked process to return: %s"),tokens,1);
+      fail = 1;
+    } else if (WIFEXITED(status)) {
+      status = ! WEXITSTATUS(status);
+    }
+    result = mmc_mk_cons(mmc_mk_icon(status), result);
+  }
+  if (fail) {
+    MMC_THROW();
+  }
+  return result;
+#endif
 }
 
 #ifdef __cplusplus

@@ -5,8 +5,8 @@ public import BackendDAE;
 public import BackendVarTransform;
 public import DAE;
 public import Env;
+public import GlobalScript;
 public import HashTable;
-public import Interactive;
 public import Values;
 
 protected import Algorithm;
@@ -16,7 +16,6 @@ protected import SCode;
 protected import Flags;
 protected import Error;
 protected import System;
-protected import GlobalScript;
 protected import Dependency;
 protected import SCodeUtil;
 protected import Inst;
@@ -58,12 +57,12 @@ public function modelEquationsUC
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
-  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String outputFileIn;
   input Boolean dumpSteps;
   output Env.Cache outCache;
   output Values.Value outValue;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
 
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
@@ -77,7 +76,7 @@ algorithm
       Absyn.Program p;
 
       BackendDAE.BackendDAE dlow,dlow_1;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
 
       BackendDAE.IncidenceMatrix m,mt;
 
@@ -100,7 +99,7 @@ algorithm
       String outStringA,outStringB,outString;
       list<Option<DAE.Distribution>> distributions;
 
-    case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),outputFile,_)
+    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),outputFile,_)
       equation
         //print("Initiating\n");
         Print.clearBuf();

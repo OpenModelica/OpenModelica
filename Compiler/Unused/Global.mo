@@ -57,7 +57,7 @@ import Pool;
 type Names       = Name.Names;
 type Scopes      = Scope.Scopes;
 type InstInfo    = InstInfo.Info;
-type SymbolTable = Interactive.SymbolTable;
+type SymbolTable = GlobalScript.SymbolTable;
 type Id          = Integer;
 
 constant Name.Name    rootName        = "$/";
@@ -91,7 +91,7 @@ algorithm
   na := Name.pool();
   sc := Scope.pool();
   ii := InstInfo.I();
-  st := Interactive.emptySymboltable;
+  st := GlobalScript.emptySymboltable;
   _ := set(G(na, sc, ii, st));
 end new;
 

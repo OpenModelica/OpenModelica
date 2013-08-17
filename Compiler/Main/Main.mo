@@ -79,13 +79,13 @@ protected function serverLoop
 "This function is the main loop of the server listening
   to a port which recieves modelica expressions."
   input Integer inInteger;
-  input Interactive.SymbolTable inInteractiveSymbolTable;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable := matchcontinue (inInteger,inInteractiveSymbolTable)
     local
       String str,replystr;
-      Interactive.SymbolTable newsymb,ressymb,isymb;
+      GlobalScript.SymbolTable newsymb,ressymb,isymb;
       Integer shandle;
     case (shandle,isymb)
       equation
@@ -137,15 +137,15 @@ end makeDebugResult;
 protected function parseCommand
   "Helper function to handleCommand. First tries to parse the given command as a
    list of statements, and if that fails tries to parse it as a collection of
-   classes. Returns either Interactive.Statements or Absyn.Program based on
+   classes. Returns either GlobalScript.Statements or Absyn.Program based on
    which parser succeeds, or neither if a parser error occured."
   input String inCommand;
-  output Option<Interactive.Statements> outStatements;
+  output Option<GlobalScript.Statements> outStatements;
   output Option<Absyn.Program> outProgram;
 algorithm
   (outStatements, outProgram) := matchcontinue(inCommand)
     local
-      Interactive.Statements stmts;
+      GlobalScript.Statements stmts;
       Absyn.Program prog;
       String str;
 
@@ -174,18 +174,18 @@ protected function handleCommand
    If the command is quit, the function returns false, otherwise it sends the
    string to the parse function and returns true."
   input String inCommand;
-  input Interactive.SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   output Boolean outContinue;
   output String outResult;
-  output Interactive.SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 protected
 algorithm
   (outContinue, outResult, outSymbolTable) :=
   matchcontinue(inCommand, inSymbolTable)
     local
-      Option<Interactive.Statements> stmts;
+      Option<GlobalScript.Statements> stmts;
       Option<Absyn.Program> prog;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
       String result;
 
     case (_, _)
@@ -210,21 +210,21 @@ algorithm
 end handleCommand;
 
 protected function handleCommand2
-  input Option<Interactive.Statements> inStatements;
+  input Option<GlobalScript.Statements> inStatements;
   input Option<Absyn.Program> inProgram;
   input String inCommand;
-  input Interactive.SymbolTable inSymbolTable;
+  input GlobalScript.SymbolTable inSymbolTable;
   output String outResult;
-  output Interactive.SymbolTable outSymbolTable;
+  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
   (outResult, outSymbolTable) :=
   matchcontinue(inStatements, inProgram, inCommand, inSymbolTable)
     local
-      Interactive.Statements stmts;
+      GlobalScript.Statements stmts;
       Absyn.Program prog, ast;
       String result;
-      Interactive.SymbolTable st;
-      list<Interactive.Variable> vars;
+      GlobalScript.SymbolTable st;
+      list<GlobalScript.Variable> vars;
 
     // Interactively evaluate an algorithm statement or expression.
     case (SOME(stmts), NONE(), _, _)
@@ -233,7 +233,7 @@ algorithm
       then (result, st);
 
     // Add a class or function to the interactive symbol table.
-    case (NONE(), SOME(prog), _, Interactive.SYMBOLTABLE(ast = ast, lstVarVal = vars))
+    case (NONE(), SOME(prog), _, GlobalScript.SYMBOLTABLE(ast = ast, lstVarVal = vars))
       equation
         prog = Interactive.addScope(prog, vars);
         prog = Interactive.updateProgram(prog, ast);
@@ -439,44 +439,44 @@ end parsePathFromString;
 
 protected function loadLibs
  input list<String> inLibs;
- input Interactive.SymbolTable inSymTab;
- output Interactive.SymbolTable outSymTab;
+ input GlobalScript.SymbolTable inSymTab;
+ output GlobalScript.SymbolTable outSymTab;
 algorithm
  outSymTab := matchcontinue(inLibs, inSymTab)
    local
      String lib, mp, f;
      list<String> rest;
      Absyn.Program pnew, p;
-     list<Interactive.InstantiatedClass> ic;
-     list<Interactive.Variable> iv;
-     list<Interactive.CompiledCFunction> cf;
-     list<Interactive.LoadedFile> lf;
+     list<GlobalScript.InstantiatedClass> ic;
+     list<GlobalScript.Variable> iv;
+     list<GlobalScript.CompiledCFunction> cf;
+     list<GlobalScript.LoadedFile> lf;
      AbsynDep.Depends aDep;
-     Interactive.SymbolTable st, newst;
+     GlobalScript.SymbolTable st, newst;
      Absyn.Path path;
 
    // no libs or end, return!
    case ({}, st) then st;
 
    // A .mo-file.
-   case (f :: rest, st as Interactive.SYMBOLTABLE(p, aDep, _, ic, iv, cf, lf))
+   case (f :: rest, st as GlobalScript.SYMBOLTABLE(p, aDep, _, ic, iv, cf, lf))
      equation
        isModelicaFile(f);
        pnew = Parser.parse(f,"UTF-8");
        pnew = Interactive.updateProgram(pnew, p);
-       newst = Interactive.SYMBOLTABLE(pnew, aDep, NONE(), ic, iv, cf, lf);
+       newst = GlobalScript.SYMBOLTABLE(pnew, aDep, NONE(), ic, iv, cf, lf);
        newst = loadLibs(rest, newst);
      then
       newst;
 
    // some libs present
-   case (lib::rest, st as Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf))
+   case (lib::rest, st as GlobalScript.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf))
      equation
        path = parsePathFromString(lib);
        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
        pnew = ClassLoader.loadClass(path, {"default"}, mp, NONE());
        pnew = Interactive.updateProgram(pnew, p);
-       newst = Interactive.SYMBOLTABLE(pnew,aDep,NONE(),ic,iv,cf,lf);
+       newst = GlobalScript.SYMBOLTABLE(pnew,aDep,NONE(),ic,iv,cf,lf);
        newst = loadLibs(rest, newst); // load the remaining
      then
        newst;
@@ -504,8 +504,8 @@ algorithm
       list<String>  libs;
       Absyn.Path cname;
       Boolean silent,notsilent;
-      Interactive.Statements stmts;
-      Interactive.SymbolTable newst, st;
+      GlobalScript.Statements stmts;
+      GlobalScript.SymbolTable newst, st;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -523,7 +523,7 @@ algorithm
         // Parse the first file.
         (p as Absyn.PROGRAM(classes = cls)) = Parser.parse(f,"UTF-8");
         // Parse libraries and extra mo-files that might have been given at the command line.
-        Interactive.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, Interactive.emptySymboltable);
+        GlobalScript.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, GlobalScript.emptySymboltable);
         // Show any errors that occured during parsing.
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
 
@@ -575,7 +575,7 @@ algorithm
       equation
         isModelicaScriptFile(f);
         // loading possible libraries given at the command line
-        st = loadLibs(libs, Interactive.emptySymboltable);
+        st = loadLibs(libs, GlobalScript.emptySymboltable);
 
         //System.startTimer();
         //print("\nParseExp");
@@ -652,7 +652,7 @@ algorithm
       DAE.DAElist d;
       Absyn.Path class_path;
       String class_to_instantiate;
-      Interactive.SymbolTable st;
+      GlobalScript.SymbolTable st;
     case (_)
       equation
         // If no class was explicitly specified, instantiate the last class in
@@ -660,7 +660,7 @@ algorithm
         class_to_instantiate = Config.classToInstantiate();
         true = stringEq(class_to_instantiate,"");
         class_path = Absyn.lastClassname(program);
-        st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
+        st = Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,program);
         (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
       then
         (c, e, d, class_path);
@@ -672,7 +672,7 @@ algorithm
         class_to_instantiate = Config.classToInstantiate();
         false = stringEq(class_to_instantiate,"");
         class_path = Absyn.stringPath(class_to_instantiate);
-        st = Interactive.setSymbolTableAST(Interactive.emptySymboltable,program);
+        st = Interactive.setSymbolTableAST(GlobalScript.emptySymboltable,program);
         (c, e, d, _) = CevalScript.runFrontEnd(Env.emptyCache(),Env.emptyEnv,class_path,st,true);
       then
         (c, e, d, class_path);
@@ -820,7 +820,7 @@ end simcodegen;
 
 protected function interactivemode
 "Initiate the interactive mode using socket communication."
-  input Interactive.SymbolTable symbolTable;
+  input GlobalScript.SymbolTable symbolTable;
 algorithm
   print("Opening a socket on port " +& intString(29500) +& "\n");
   _ := serverLoop(Socket.waitforconnect(29500), symbolTable);
@@ -828,12 +828,12 @@ end interactivemode;
 
 protected function interactivemodeCorba
 "Initiate the interactive mode using corba communication."
-  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
 algorithm
   _:=
   matchcontinue inInteractiveSymbolTable
    local
-     Interactive.SymbolTable symbolTable;
+     GlobalScript.SymbolTable symbolTable;
     case symbolTable
       equation
         Corba.initialize();
@@ -853,14 +853,14 @@ end interactivemodeCorba;
 
 protected function serverLoopCorba
 "This function is the main loop of the server for a CORBA impl."
-  input Interactive.SymbolTable inInteractiveSymbolTable;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
   matchcontinue (inInteractiveSymbolTable)
     local
       String str,replystr;
-      Interactive.SymbolTable newsymb,ressymb,isymb;
+      GlobalScript.SymbolTable newsymb,ressymb,isymb;
     case (isymb)
       equation
         str = Corba.waitForCommand();
@@ -889,30 +889,30 @@ protected function readSettings
  author: x02lucpo
  Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
  Checks if '-s <file>.mos' has been
- returns Interactive.SymbolTable which is used in the rest of the loop"
+ returns GlobalScript.SymbolTable which is used in the rest of the loop"
   input list<String> inStringLst;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
   outInteractiveSymbolTable:=
   matchcontinue (inStringLst)
     local
       list<String> args;
       String str;
-      Interactive.SymbolTable outSymbolTable;
+      GlobalScript.SymbolTable outSymbolTable;
     case (args)
       equation
-        outSymbolTable = Interactive.emptySymboltable;
+        outSymbolTable = GlobalScript.emptySymboltable;
          "" = Util.flagValue("-s",args);
 //         this is out-commented because automatically reading settings.mos
 //         can make a system bad
-//         outSymbolTable = readSettingsFile("settings.mos", Interactive.emptySymboltable);
+//         outSymbolTable = readSettingsFile("settings.mos", GlobalScript.emptySymboltable);
       then
        outSymbolTable;
     case (args)
       equation
         str = Util.flagValue("-s",args);
         str = System.trim(str," \"");
-        outSymbolTable = readSettingsFile(str, Interactive.emptySymboltable);
+        outSymbolTable = readSettingsFile(str, GlobalScript.emptySymboltable);
       then
        outSymbolTable;
   end matchcontinue;
@@ -921,14 +921,14 @@ end readSettings;
 
 protected function readSettingsFile
  input String filePath;
-  input Interactive.SymbolTable inInteractiveSymbolTable;
-  output Interactive.SymbolTable outInteractiveSymbolTable;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
  outInteractiveSymbolTable :=
   matchcontinue (filePath,inInteractiveSymbolTable)
     local
       String file;
-      Interactive.SymbolTable inSymbolTable, outSymbolTable;
+      GlobalScript.SymbolTable inSymbolTable, outSymbolTable;
       String str;
     case (file,inSymbolTable)
       equation
@@ -1046,7 +1046,7 @@ algorithm
     local
       String errstr;
       String omhome;
-      Interactive.SymbolTable symbolTable;
+      GlobalScript.SymbolTable symbolTable;
 
     // Version requested using --version
     case _ // try first to see if we had a version request among flags.

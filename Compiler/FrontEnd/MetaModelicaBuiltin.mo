@@ -873,6 +873,5 @@ function setStackOverflowSignal
   output Boolean outSignal;
 algorithm
   outSignal := inSignal;
-  annotation(__OpenModelica_Impure = true, __OpenModelica_EarlyInline = true);
+  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end setStackOverflowSignal;
-

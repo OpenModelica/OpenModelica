@@ -854,232 +854,215 @@ extern struct record_description Values_IntRealOp_LESSEQOP__desc;
 static const MMC_DEFSTRUCTLIT(Values__LESSEQOP__struct,1,8) {&Values_IntRealOp_LESSEQOP__desc}};
 static void *Values__LESSEQOP = MMC_REFSTRUCTLIT(Values__LESSEQOP__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_CompiledCFunction_CFunction__desc_added
-#define Interactive_CompiledCFunction_CFunction__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_CompiledCFunction_CFunction__desc__fields[5] = {"path","retType","funcHandle","buildTime","loadedFromFile"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_CompiledCFunction_CFunction__desc = {
-  "Interactive_CompiledCFunction_CFunction",
-  "Interactive.CompiledCFunction.CFunction",
-  Interactive_CompiledCFunction_CFunction__desc__fields
+#ifndef GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc_added
+#define GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc__fields[13] = {"startTime","stopTime","numberOfIntervals","stepSize","tolerance","method","fileNamePrefix","options","outputFormat","variableFilter","measureTime","cflags","simflags"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc = {
+  "GlobalScript_SimulationOptions_SIMULATION__OPTIONS",
+  "GlobalScript.SimulationOptions.SIMULATION_OPTIONS",
+  GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_CompiledCFunction_CFunction__desc;
+extern struct record_description GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc;
 #endif
-#define Interactive__CFunction_3dBOX5 3
-#define Interactive__CFunction(path,retType,funcHandle,buildTime,loadedFromFile) (mmc_mk_box6(3,&Interactive_CompiledCFunction_CFunction__desc,path,retType,funcHandle,buildTime,loadedFromFile))
+#define GlobalScript__SIMULATION_5fOPTIONS_3dBOX13 3
+#define GlobalScript__SIMULATION_5fOPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags) (mmc_mk_box(14, 3,&GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc,startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,measureTime,cflags,simflags))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_Statement_IALG__desc_added
-#define Interactive_Statement_IALG__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_Statement_IALG__desc__fields[1] = {"algItem"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_Statement_IALG__desc = {
-  "Interactive_Statement_IALG",
-  "Interactive.Statement.IALG",
-  Interactive_Statement_IALG__desc__fields
+#ifndef GlobalScript_CompiledCFunction_CFunction__desc_added
+#define GlobalScript_CompiledCFunction_CFunction__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_CompiledCFunction_CFunction__desc__fields[5] = {"path","retType","funcHandle","buildTime","loadedFromFile"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_CompiledCFunction_CFunction__desc = {
+  "GlobalScript_CompiledCFunction_CFunction",
+  "GlobalScript.CompiledCFunction.CFunction",
+  GlobalScript_CompiledCFunction_CFunction__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_Statement_IALG__desc;
+extern struct record_description GlobalScript_CompiledCFunction_CFunction__desc;
 #endif
-#define Interactive__IALG_3dBOX1 3
-#define Interactive__IALG(algItem) (mmc_mk_box2(3,&Interactive_Statement_IALG__desc,algItem))
+#define GlobalScript__CFunction_3dBOX5 3
+#define GlobalScript__CFunction(path,retType,funcHandle,buildTime,loadedFromFile) (mmc_mk_box6(3,&GlobalScript_CompiledCFunction_CFunction__desc,path,retType,funcHandle,buildTime,loadedFromFile))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_Statement_IEXP__desc_added
-#define Interactive_Statement_IEXP__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_Statement_IEXP__desc__fields[1] = {"exp"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_Statement_IEXP__desc = {
-  "Interactive_Statement_IEXP",
-  "Interactive.Statement.IEXP",
-  Interactive_Statement_IEXP__desc__fields
+#ifndef GlobalScript_Statement_IALG__desc_added
+#define GlobalScript_Statement_IALG__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_Statement_IALG__desc__fields[1] = {"algItem"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_Statement_IALG__desc = {
+  "GlobalScript_Statement_IALG",
+  "GlobalScript.Statement.IALG",
+  GlobalScript_Statement_IALG__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_Statement_IEXP__desc;
+extern struct record_description GlobalScript_Statement_IALG__desc;
 #endif
-#define Interactive__IEXP_3dBOX1 4
-#define Interactive__IEXP(exp) (mmc_mk_box2(4,&Interactive_Statement_IEXP__desc,exp))
+#define GlobalScript__IALG_3dBOX1 3
+#define GlobalScript__IALG(algItem) (mmc_mk_box2(3,&GlobalScript_Statement_IALG__desc,algItem))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_Statements_ISTMTS__desc_added
-#define Interactive_Statements_ISTMTS__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_Statements_ISTMTS__desc__fields[2] = {"interactiveStmtLst","semicolon"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_Statements_ISTMTS__desc = {
-  "Interactive_Statements_ISTMTS",
-  "Interactive.Statements.ISTMTS",
-  Interactive_Statements_ISTMTS__desc__fields
+#ifndef GlobalScript_Statement_IEXP__desc_added
+#define GlobalScript_Statement_IEXP__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_Statement_IEXP__desc__fields[1] = {"exp"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_Statement_IEXP__desc = {
+  "GlobalScript_Statement_IEXP",
+  "GlobalScript.Statement.IEXP",
+  GlobalScript_Statement_IEXP__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_Statements_ISTMTS__desc;
+extern struct record_description GlobalScript_Statement_IEXP__desc;
 #endif
-#define Interactive__ISTMTS_3dBOX2 3
-#define Interactive__ISTMTS(interactiveStmtLst,semicolon) (mmc_mk_box3(3,&Interactive_Statements_ISTMTS__desc,interactiveStmtLst,semicolon))
+#define GlobalScript__IEXP_3dBOX1 4
+#define GlobalScript__IEXP(exp) (mmc_mk_box2(4,&GlobalScript_Statement_IEXP__desc,exp))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_InstantiatedClass_INSTCLASS__desc_added
-#define Interactive_InstantiatedClass_INSTCLASS__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_InstantiatedClass_INSTCLASS__desc__fields[3] = {"qualName","daeElementLst","env"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_InstantiatedClass_INSTCLASS__desc = {
-  "Interactive_InstantiatedClass_INSTCLASS",
-  "Interactive.InstantiatedClass.INSTCLASS",
-  Interactive_InstantiatedClass_INSTCLASS__desc__fields
+#ifndef GlobalScript_Statements_ISTMTS__desc_added
+#define GlobalScript_Statements_ISTMTS__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_Statements_ISTMTS__desc__fields[2] = {"interactiveStmtLst","semicolon"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_Statements_ISTMTS__desc = {
+  "GlobalScript_Statements_ISTMTS",
+  "GlobalScript.Statements.ISTMTS",
+  GlobalScript_Statements_ISTMTS__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_InstantiatedClass_INSTCLASS__desc;
+extern struct record_description GlobalScript_Statements_ISTMTS__desc;
 #endif
-#define Interactive__INSTCLASS_3dBOX3 3
-#define Interactive__INSTCLASS(qualName,daeElementLst,env) (mmc_mk_box4(3,&Interactive_InstantiatedClass_INSTCLASS__desc,qualName,daeElementLst,env))
+#define GlobalScript__ISTMTS_3dBOX2 3
+#define GlobalScript__ISTMTS(interactiveStmtLst,semicolon) (mmc_mk_box3(3,&GlobalScript_Statements_ISTMTS__desc,interactiveStmtLst,semicolon))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_Variable_IVAR__desc_added
-#define Interactive_Variable_IVAR__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_Variable_IVAR__desc__fields[3] = {"varIdent","value","type_"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_Variable_IVAR__desc = {
-  "Interactive_Variable_IVAR",
-  "Interactive.Variable.IVAR",
-  Interactive_Variable_IVAR__desc__fields
+#ifndef GlobalScript_InstantiatedClass_INSTCLASS__desc_added
+#define GlobalScript_InstantiatedClass_INSTCLASS__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_InstantiatedClass_INSTCLASS__desc__fields[3] = {"qualName","daeElementLst","env"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_InstantiatedClass_INSTCLASS__desc = {
+  "GlobalScript_InstantiatedClass_INSTCLASS",
+  "GlobalScript.InstantiatedClass.INSTCLASS",
+  GlobalScript_InstantiatedClass_INSTCLASS__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_Variable_IVAR__desc;
+extern struct record_description GlobalScript_InstantiatedClass_INSTCLASS__desc;
 #endif
-#define Interactive__IVAR_3dBOX3 3
-#define Interactive__IVAR(varIdent,value,type_) (mmc_mk_box4(3,&Interactive_Variable_IVAR__desc,varIdent,value,type_))
+#define GlobalScript__INSTCLASS_3dBOX3 3
+#define GlobalScript__INSTCLASS(qualName,daeElementLst,env) (mmc_mk_box4(3,&GlobalScript_InstantiatedClass_INSTCLASS__desc,qualName,daeElementLst,env))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_LoadedFile_FILE__desc_added
-#define Interactive_LoadedFile_FILE__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_LoadedFile_FILE__desc__fields[3] = {"fileName","loadTime","classNamesQualified"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_LoadedFile_FILE__desc = {
-  "Interactive_LoadedFile_FILE",
-  "Interactive.LoadedFile.FILE",
-  Interactive_LoadedFile_FILE__desc__fields
+#ifndef GlobalScript_Variable_IVAR__desc_added
+#define GlobalScript_Variable_IVAR__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_Variable_IVAR__desc__fields[3] = {"varIdent","value","type_"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_Variable_IVAR__desc = {
+  "GlobalScript_Variable_IVAR",
+  "GlobalScript.Variable.IVAR",
+  GlobalScript_Variable_IVAR__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_LoadedFile_FILE__desc;
+extern struct record_description GlobalScript_Variable_IVAR__desc;
 #endif
-#define Interactive__FILE_3dBOX3 3
-#define Interactive__FILE(fileName,loadTime,classNamesQualified) (mmc_mk_box4(3,&Interactive_LoadedFile_FILE__desc,fileName,loadTime,classNamesQualified))
+#define GlobalScript__IVAR_3dBOX3 3
+#define GlobalScript__IVAR(varIdent,value,type_) (mmc_mk_box4(3,&GlobalScript_Variable_IVAR__desc,varIdent,value,type_))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_SymbolTable_SYMBOLTABLE__desc_added
-#define Interactive_SymbolTable_SYMBOLTABLE__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_SymbolTable_SYMBOLTABLE__desc__fields[7] = {"ast","depends","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_SymbolTable_SYMBOLTABLE__desc = {
-  "Interactive_SymbolTable_SYMBOLTABLE",
-  "Interactive.SymbolTable.SYMBOLTABLE",
-  Interactive_SymbolTable_SYMBOLTABLE__desc__fields
+#ifndef GlobalScript_LoadedFile_FILE__desc_added
+#define GlobalScript_LoadedFile_FILE__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_LoadedFile_FILE__desc__fields[3] = {"fileName","loadTime","classNamesQualified"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_LoadedFile_FILE__desc = {
+  "GlobalScript_LoadedFile_FILE",
+  "GlobalScript.LoadedFile.FILE",
+  GlobalScript_LoadedFile_FILE__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_SymbolTable_SYMBOLTABLE__desc;
+extern struct record_description GlobalScript_LoadedFile_FILE__desc;
 #endif
-#define Interactive__SYMBOLTABLE_3dBOX7 3
-#define Interactive__SYMBOLTABLE(ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles) (mmc_mk_box8(3,&Interactive_SymbolTable_SYMBOLTABLE__desc,ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles))
+#define GlobalScript__FILE_3dBOX3 3
+#define GlobalScript__FILE(fileName,loadTime,classNamesQualified) (mmc_mk_box4(3,&GlobalScript_LoadedFile_FILE__desc,fileName,loadTime,classNamesQualified))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_Component_COMPONENTITEM__desc_added
-#define Interactive_Component_COMPONENTITEM__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_Component_COMPONENTITEM__desc__fields[3] = {"the1","the2","the3"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_Component_COMPONENTITEM__desc = {
-  "Interactive_Component_COMPONENTITEM",
-  "Interactive.Component.COMPONENTITEM",
-  Interactive_Component_COMPONENTITEM__desc__fields
+#ifndef GlobalScript_SymbolTable_SYMBOLTABLE__desc_added
+#define GlobalScript_SymbolTable_SYMBOLTABLE__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_SymbolTable_SYMBOLTABLE__desc__fields[7] = {"ast","depends","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_SymbolTable_SYMBOLTABLE__desc = {
+  "GlobalScript_SymbolTable_SYMBOLTABLE",
+  "GlobalScript.SymbolTable.SYMBOLTABLE",
+  GlobalScript_SymbolTable_SYMBOLTABLE__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_Component_COMPONENTITEM__desc;
+extern struct record_description GlobalScript_SymbolTable_SYMBOLTABLE__desc;
 #endif
-#define Interactive__COMPONENTITEM_3dBOX3 3
-#define Interactive__COMPONENTITEM(the1,the2,the3) (mmc_mk_box4(3,&Interactive_Component_COMPONENTITEM__desc,the1,the2,the3))
+#define GlobalScript__SYMBOLTABLE_3dBOX7 3
+#define GlobalScript__SYMBOLTABLE(ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles) (mmc_mk_box8(3,&GlobalScript_SymbolTable_SYMBOLTABLE__desc,ast,depends,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_Component_EXTENDSITEM__desc_added
-#define Interactive_Component_EXTENDSITEM__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_Component_EXTENDSITEM__desc__fields[2] = {"the1","the2"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_Component_EXTENDSITEM__desc = {
-  "Interactive_Component_EXTENDSITEM",
-  "Interactive.Component.EXTENDSITEM",
-  Interactive_Component_EXTENDSITEM__desc__fields
+#ifndef GlobalScript_Component_COMPONENTITEM__desc_added
+#define GlobalScript_Component_COMPONENTITEM__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_Component_COMPONENTITEM__desc__fields[3] = {"the1","the2","the3"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_Component_COMPONENTITEM__desc = {
+  "GlobalScript_Component_COMPONENTITEM",
+  "GlobalScript.Component.COMPONENTITEM",
+  GlobalScript_Component_COMPONENTITEM__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_Component_EXTENDSITEM__desc;
+extern struct record_description GlobalScript_Component_COMPONENTITEM__desc;
 #endif
-#define Interactive__EXTENDSITEM_3dBOX2 4
-#define Interactive__EXTENDSITEM(the1,the2) (mmc_mk_box3(4,&Interactive_Component_EXTENDSITEM__desc,the1,the2))
+#define GlobalScript__COMPONENTITEM_3dBOX3 3
+#define GlobalScript__COMPONENTITEM(the1,the2,the3) (mmc_mk_box4(3,&GlobalScript_Component_COMPONENTITEM__desc,the1,the2,the3))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_Components_COMPONENTS__desc_added
-#define Interactive_Components_COMPONENTS__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_Components_COMPONENTS__desc__fields[2] = {"componentLst","the"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_Components_COMPONENTS__desc = {
-  "Interactive_Components_COMPONENTS",
-  "Interactive.Components.COMPONENTS",
-  Interactive_Components_COMPONENTS__desc__fields
+#ifndef GlobalScript_Component_EXTENDSITEM__desc_added
+#define GlobalScript_Component_EXTENDSITEM__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_Component_EXTENDSITEM__desc__fields[2] = {"the1","the2"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_Component_EXTENDSITEM__desc = {
+  "GlobalScript_Component_EXTENDSITEM",
+  "GlobalScript.Component.EXTENDSITEM",
+  GlobalScript_Component_EXTENDSITEM__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_Components_COMPONENTS__desc;
+extern struct record_description GlobalScript_Component_EXTENDSITEM__desc;
 #endif
-#define Interactive__COMPONENTS_3dBOX2 3
-#define Interactive__COMPONENTS(componentLst,the) (mmc_mk_box3(3,&Interactive_Components_COMPONENTS__desc,componentLst,the))
+#define GlobalScript__EXTENDSITEM_3dBOX2 4
+#define GlobalScript__EXTENDSITEM(the1,the2) (mmc_mk_box3(4,&GlobalScript_Component_EXTENDSITEM__desc,the1,the2))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc_added
-#define Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc__fields[3] = {"which1","the2","the3"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc = {
-  "Interactive_ComponentReplacement_COMPONENTREPLACEMENT",
-  "Interactive.ComponentReplacement.COMPONENTREPLACEMENT",
-  Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc__fields
+#ifndef GlobalScript_Components_COMPONENTS__desc_added
+#define GlobalScript_Components_COMPONENTS__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_Components_COMPONENTS__desc__fields[2] = {"componentLst","the"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_Components_COMPONENTS__desc = {
+  "GlobalScript_Components_COMPONENTS",
+  "GlobalScript.Components.COMPONENTS",
+  GlobalScript_Components_COMPONENTS__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc;
+extern struct record_description GlobalScript_Components_COMPONENTS__desc;
 #endif
-#define Interactive__COMPONENTREPLACEMENT_3dBOX3 3
-#define Interactive__COMPONENTREPLACEMENT(which1,the2,the3) (mmc_mk_box4(3,&Interactive_ComponentReplacement_COMPONENTREPLACEMENT__desc,which1,the2,the3))
+#define GlobalScript__COMPONENTS_3dBOX2 3
+#define GlobalScript__COMPONENTS(componentLst,the) (mmc_mk_box3(3,&GlobalScript_Components_COMPONENTS__desc,componentLst,the))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc_added
-#define Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc__fields[2] = {"componentReplacementLst","the"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc = {
-  "Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES",
-  "Interactive.ComponentReplacementRules.COMPONENTREPLACEMENTRULES",
-  Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc__fields
+#ifndef GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT__desc_added
+#define GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT__desc__fields[3] = {"which1","the2","the3"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT__desc = {
+  "GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT",
+  "GlobalScript.ComponentReplacement.COMPONENTREPLACEMENT",
+  GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc;
+extern struct record_description GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT__desc;
 #endif
-#define Interactive__COMPONENTREPLACEMENTRULES_3dBOX2 3
-#define Interactive__COMPONENTREPLACEMENTRULES(componentReplacementLst,the) (mmc_mk_box3(3,&Interactive_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc,componentReplacementLst,the))
+#define GlobalScript__COMPONENTREPLACEMENT_3dBOX3 3
+#define GlobalScript__COMPONENTREPLACEMENT(which1,the2,the3) (mmc_mk_box4(3,&GlobalScript_ComponentReplacement_COMPONENTREPLACEMENT__desc,which1,the2,the3))
 #ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_AnnotationType_ICON__ANNOTATION__desc_added
-#define Interactive_AnnotationType_ICON__ANNOTATION__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_AnnotationType_ICON__ANNOTATION__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc = {
-  "Interactive_AnnotationType_ICON__ANNOTATION",
-  "Interactive.AnnotationType.ICON_ANNOTATION",
-  Interactive_AnnotationType_ICON__ANNOTATION__desc__fields
+#ifndef GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc_added
+#define GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc_added
+ADD_METARECORD_DEFINTIONS const char* GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc__fields[2] = {"componentReplacementLst","the"};
+ADD_METARECORD_DEFINTIONS struct record_description GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc = {
+  "GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES",
+  "GlobalScript.ComponentReplacementRules.COMPONENTREPLACEMENTRULES",
+  GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc;
+extern struct record_description GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc;
 #endif
-#define Interactive__ICON_5fANNOTATION_3dBOX0 3
-static const MMC_DEFSTRUCTLIT(Interactive__ICON_5fANNOTATION__struct,1,3) {&Interactive_AnnotationType_ICON__ANNOTATION__desc}};
-static void *Interactive__ICON_5fANNOTATION = MMC_REFSTRUCTLIT(Interactive__ICON_5fANNOTATION__struct);
-#ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
-#define Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
-ADD_METARECORD_DEFINTIONS const char* Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINTIONS struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc = {
-  "Interactive_AnnotationType_DIAGRAM__ANNOTATION",
-  "Interactive.AnnotationType.DIAGRAM_ANNOTATION",
-  Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc;
-#endif
-#define Interactive__DIAGRAM_5fANNOTATION_3dBOX0 4
-static const MMC_DEFSTRUCTLIT(Interactive__DIAGRAM_5fANNOTATION__struct,1,4) {&Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc}};
-static void *Interactive__DIAGRAM_5fANNOTATION = MMC_REFSTRUCTLIT(Interactive__DIAGRAM_5fANNOTATION__struct);
+#define GlobalScript__COMPONENTREPLACEMENTRULES_3dBOX2 3
+#define GlobalScript__COMPONENTREPLACEMENTRULES(componentReplacementLst,the) (mmc_mk_box3(3,&GlobalScript_ComponentReplacementRules_COMPONENTREPLACEMENTRULES__desc,componentReplacementLst,the))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_ForIterator_ITERATOR__desc_added
 #define Absyn_ForIterator_ITERATOR__desc_added

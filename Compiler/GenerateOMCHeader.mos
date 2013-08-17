@@ -1,5 +1,5 @@
 loadFile("FrontEnd/Absyn.mo");
-loadFile("Script/Interactive.mo");
+loadFile("Script/GlobalScript.mo");
 loadFile("FrontEnd/Values.mo");
 loadFile("Util/Error.mo");
 loadFile("Util/Config.mo");

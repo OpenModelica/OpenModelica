@@ -56,9 +56,9 @@ encapsulated package CevalFunction
 public import Absyn;
 public import DAE;
 public import Env;
+public import GlobalScript;
 public import SCode;
 public import Values;
-public import Interactive;
 
 // protected imports
 protected import Ceval;
@@ -80,7 +80,7 @@ protected import Util;
 protected import ValuesUtil;
 
 // [TYPE]  Types
-protected type SymbolTable = Option<Interactive.SymbolTable>;
+protected type SymbolTable = Option<GlobalScript.SymbolTable>;
 protected type FunctionVar = tuple<DAE.Element, Option<Values.Value>>;
 
 // LoopControl is used to control the functions behaviour in different
@@ -101,10 +101,10 @@ public function evaluate
   input Env.Env inEnv;
   input DAE.Function inFunction;
   input list<Values.Value> inFunctionArguments;
-  input Option<Interactive.SymbolTable> inST;
+  input Option<GlobalScript.SymbolTable> inST;
   output Env.Cache outCache;
   output Values.Value outResult;
-  output Option<Interactive.SymbolTable> outST;
+  output Option<GlobalScript.SymbolTable> outST;
 algorithm
   (outCache, outResult, outST) :=
   matchcontinue(inCache, inEnv, inFunction, inFunctionArguments, inST)
@@ -2119,10 +2119,10 @@ public function assignVector
   input list<DAE.Subscript> inSubscripts;
   input Env.Cache inCache;
   input Env.Env inEnv;
-  input Option<Interactive.SymbolTable> inST;
+  input Option<GlobalScript.SymbolTable> inST;
   output Env.Cache outCache;
   output Values.Value outResult;
-  output Option<Interactive.SymbolTable> outST;
+  output Option<GlobalScript.SymbolTable> outST;
 algorithm
   (outCache, outResult, outST) :=
   matchcontinue(inNewValue, inOldValue, inSubscripts, inCache, inEnv, inST)

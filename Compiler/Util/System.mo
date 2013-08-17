@@ -39,12 +39,13 @@ encapsulated package System
   This module contain a set of system calls, for e.g. compiling and
   executing stuff, reading and writing files and so on."
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function removeFirstAndLastChar
   input String inString;
   output String outString;
 
   external "C" outString=System_removeFirstAndLastChar(inString) annotation(Library = "omcruntime");
-end removeFirstAndLastChar;
+end removeFirstAndLastChar;*/
 
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
@@ -394,12 +395,13 @@ public function removeFile "Removes a file, returns 0 if suceeds, implemented us
   external "C" res=System_removeFile(fileName) annotation(Library = "omcruntime");
 end removeFile;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function getPackageFileNames
   input String inString1;
   input String inString2;
   output String outString;
   external "C" outString=System_getPackageFileNames(inString1,inString2) annotation(Library = "omcruntime");
-end getPackageFileNames;
+end getPackageFileNames;*/
 
 public function directoryExists
   input String inString;
@@ -472,23 +474,26 @@ using the asctime() function in time.h (libc)
   external "C" timeStr=System_getCurrentTimeStr() annotation(Library = "omcruntime");
 end getCurrentTimeStr;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function isSameFile "Checks if two filenames points to the same file"
   input String fileName1;
   input String fileName2;
   external "C" System_isSameFile(fileName1,fileName2) annotation(Library = "omcruntime");
-end isSameFile;
+end isSameFile;*/
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function isIdenticalFile "Checks if two filenames points to the exact same file"
   input String fileName1;
   input String fileName2;
   output Boolean same;
   external "C" same=System_isIdenticalFile(fileName1,fileName2) annotation(Library = "omcruntime");
-end isIdenticalFile;
+end isIdenticalFile;*/
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function windowsNewline "returns /r/n, since MetaModelica has a bug for representing this as a literal"
 output String str;
 external "C" str=System_windowsNewline() annotation(Library = "omcruntime");
-end windowsNewline;
+end windowsNewline;*/
 
 public function os "Returns a string with the operating system name
 
@@ -500,10 +505,11 @@ For Windows : 'Windows_NT' (the name of env var OS )
   external "C" str = System_os() annotation(Library = "omcruntime");
 end os;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function compileCFile
   input String inString;
   external "C" System_compileCFile(inString) annotation(Library = "omcruntime");
-end compileCFile;
+end compileCFile;*/
 
 public function readFileNoNumeric
   input String inString;
@@ -1008,5 +1014,26 @@ public function numProcessors
   output Integer result;
   external "C" result = System_numProcessors() annotation(Library = {"omcruntime"});
 end numProcessors;
+
+public function forkAvailable
+  output Boolean result;
+  external "C" result = System_forkAvailable() annotation(Library = {"omcruntime"});
+end forkAvailable;
+
+public function forkCall "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by using forks. If fork is unavailable, the function fails."
+  input list<Any> inData;
+  input ForkFunction func;
+  output list<Boolean> result;
+  partial function ForkFunction
+    input Any inData;
+  end ForkFunction;
+  replaceable type Any subtypeof Any;
+external "C" result = System_forkCall(inData, func) annotation(Library = {"omcruntime"});
+end forkCall;
+
+public function exit "Exits the compiler at this point with the given exit status."
+  input Integer status;
+external "C" exit(status);
+end exit;
 
 end System;

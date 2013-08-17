@@ -1428,7 +1428,7 @@ int last_sc = 0;
   // A list of expressions or algorithms separated by semicolons and optionally ending with a semicolon
   BOM? ss=interactive_stmt_list[&last_sc] EOF
     {
-      ast = Interactive__ISTMTS(or_nil(ss), mk_bcon(last_sc));
+      ast = GlobalScript__ISTMTS(or_nil(ss), mk_bcon(last_sc));
     }
   ;
 
@@ -1438,9 +1438,9 @@ interactive_stmt_list [int *last_sc] returns [void* ast] @init {
   a=top_algorithm ((SEMICOLON ss=interactive_stmt_list[last_sc])|(SEMICOLON {*last_sc = 1;})|)
     {
       if (!a.isExp)
-        ast = mk_cons(Interactive__IALG(a.ast), or_nil(ss));
+        ast = mk_cons(GlobalScript__IALG(a.ast), or_nil(ss));
       else
-        ast = mk_cons(Interactive__IEXP(a.ast), or_nil(ss));
+        ast = mk_cons(GlobalScript__IEXP(a.ast), or_nil(ss));
     }
   ;
 

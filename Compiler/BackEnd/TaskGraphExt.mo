@@ -89,17 +89,19 @@ public function registerStartStop
   external "C" TaskGraphExt_registerStartStop(inInteger1,inInteger2) annotation(Library = {"modparomc"});
 end registerStartStop;
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function getStartTask
   output Integer outInteger;
 
   external "C" outInteger=TaskGraphExt_getStartTask() annotation(Library = {"modparomc"});
-end getStartTask;
+end getStartTask;*/
 
+/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function getStopTask
   output Integer outInteger;
 
   external "C" outInteger=TaskGraphExt_getStopTask() annotation(Library = {"modparomc"});
-end getStopTask;
+end getStopTask;*/
 
 public function mergeTasks
   input Real inReal1;
