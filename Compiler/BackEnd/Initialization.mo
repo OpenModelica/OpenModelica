@@ -1626,16 +1626,18 @@ algorithm
       DAE.ComponentRef cr, preCR;
       Boolean isFixed;
       DAE.Type ty;
+      DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
       HashSet.HashSet hs;
+      BackendDAE.VarKind varKind;
 
     // discrete
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE()), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, hs))) equation
       isFixed = BackendVariable.varFixed(var);
       startValue = BackendVariable.varStartValueOption(var);
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendVariable.copyVarNewName(preCR, var);
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
@@ -1643,17 +1645,13 @@ algorithm
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars, hs)));
 
-    // additionally used pre-calls (e.g. continuous states)
-    case((var as BackendDAE.VAR(varName=cr, varType=ty), (vars, fixvars, hs))) equation
-      true = BaseHashSet.has(cr, hs);
+   // additionally used pre-calls (e.g. continuous states)
+   case((var as BackendDAE.VAR(varName=cr, varKind=varKind, varType=ty, arryDim=arryDim), (vars, fixvars, hs))) equation
+     true = BaseHashSet.has(cr, hs);
 
-      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $pre.cr
-      preVar = BackendVariable.copyVarNewName(preCR, var);
-      preVar = BackendVariable.setVarFixed(preVar, true);
-      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
-
-      fixvars = BackendVariable.addVar(preVar, fixvars);
-    then ((var, (vars, fixvars, hs)));
+     preCR = ComponentReference.crefPrefixPre(cr);  // cr => $pre.cr
+     preVar = BackendDAE.VAR(preCR, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+   then ((var, (vars, fixvars, hs)));
 
     else then inTpl;
   end matchcontinue;
@@ -1733,23 +1731,23 @@ algorithm
 end replaceDerPreCref;
 
 protected function replaceDerPreCrefExp "author: Frenkel TUD 2011-05
-  helper for replaceDerPreCref"
+  helper for replaceDerCref"
   input tuple<DAE.Exp, Integer> inExp;
   output tuple<DAE.Exp, Integer> outExp;
 algorithm
   outExp := matchcontinue(inExp)
     local
-      DAE.ComponentRef dummy, cr;
+      DAE.ComponentRef dummyder, cr;
       DAE.Type ty;
       Integer i;
 
-    case ((DAE.CALL(path = Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}, attr=DAE.CALL_ATTR(ty=ty)), i)) equation
-      dummy = ComponentReference.crefPrefixDer(cr);
-    then ((DAE.CREF(dummy, ty), i+1));
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}, attr=DAE.CALL_ATTR(ty=ty)), i)) equation
+      dummyder = ComponentReference.crefPrefixDer(cr);
+    then ((DAE.CREF(dummyder, ty), i+1));
 
-    case ((DAE.CALL(path = Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr)}, attr=DAE.CALL_ATTR(ty=ty)), i)) equation
-      dummy = ComponentReference.crefPrefixPre(cr);
-    then ((DAE.CREF(dummy, ty), i+1));
+    case ((DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}, attr=DAE.CALL_ATTR(ty=ty)), i)) equation
+      dummyder = ComponentReference.crefPrefixPre(cr);
+    then ((DAE.CREF(dummyder, ty), i+1));
 
     else
     then inExp;
@@ -1757,13 +1755,13 @@ algorithm
 end replaceDerPreCrefExp;
 
 // protected function collectInitialStateSetVars "author: Frenkel TUD
-//   add the vars for state set to the initial system
-//   Because the statevars are calculated by
-//   set.x = set.A*dummystates we add set.A to the
-//   initial system with set.A = {{1, 0, 0}, {0, 1, 0}}"
-//   input BackendDAE.StateSet inSet;
-//   input tuple<BackendDAE.Variables, BackendDAE.EquationArray> iTpl;
-//   output tuple<BackendDAE.Variables, BackendDAE.EquationArray> oTpl;
+//    add the vars for state set to the initial system
+//    Because the statevars are calculated by
+//    set.x = set.A*dummystates we add set.A to the
+//    initial system with set.A = {{1, 0, 0}, {0, 1, 0}}"
+//    input BackendDAE.StateSet inSet;
+//    input tuple<BackendDAE.Variables, BackendDAE.EquationArray> iTpl;
+//    output tuple<BackendDAE.Variables, BackendDAE.EquationArray> oTpl;
 // protected
 //   BackendDAE.Variables vars;
 //   BackendDAE.EquationArray eqns;
