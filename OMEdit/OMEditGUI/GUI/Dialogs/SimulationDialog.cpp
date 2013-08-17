@@ -584,7 +584,7 @@ void SimulationDialog::simulate()
         loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_SOTI") : loggingFlagValues.append(",LOG_SOTI");
       if (mpLogStatsCheckBox->isChecked())
         loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_STATS") : loggingFlagValues.append(",LOG_STATS");
-      if (mpLogStatsCheckBox->isChecked())
+      if (mpLogUtilCheckBox->isChecked())
         loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_UTIL") : loggingFlagValues.append(",LOG_UTIL");
       if (mpLogZeroCrossingsCheckBox->isChecked())
         loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
@@ -691,10 +691,10 @@ bool SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     output_file = mpLibraryTreeNode->getNameStructure();
     if (!mpFileNameTextBox->text().isEmpty())
       output_file = mpFileNameTextBox->text().trimmed();
-    QFileInfo fileInfo(QString(workingDirectory).append("/").prepend(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
-    if (fileInfo.exists())
+    QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
+    if (resultFileInfo.exists())
     {
-      lastModifiedDateTime = fileInfo.lastModified();
+      lastModifiedDateTime = resultFileInfo.lastModified();
     }
   }
   if (mpMainWindow->getOMCProxy()->buildModel(mpLibraryTreeNode->getNameStructure(), simulationParameters))
@@ -793,7 +793,8 @@ bool SimulationDialog::buildModel(QString simulationParameters, QStringList simu
     if (mpProgressDialog->isHidden())
       return true;
     // read the output file
-    if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1 && fileInfo.exists() && lastModifiedDateTime < fileInfo.lastModified())
+    QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
+    if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1 && resultFileInfo.exists() && lastModifiedDateTime < resultFileInfo.lastModified())
     {
       VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
       OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
