@@ -53,7 +53,8 @@ public constant Integer SymbolicJacobianGIndex = 5;
 
 public constant String partialDerivativeNamePrefix = "$pDER";
 
-public type Type = .DAE.Type
+public
+type Type = .DAE.Type
 "Once we are in BackendDAE, the Type can be only basic types or enumeration.
  We cannot do this in DAE because functions may contain many more types.
  adrpo: yes we can, we just simplify the DAE.Type, see Types.simplifyType";
@@ -87,49 +88,50 @@ uniontype VarKind "variable kind"
   record JAC_DIFF_VAR end JAC_DIFF_VAR;
 end VarKind;
 
+public
 uniontype Var "variables"
   record VAR
-    .DAE.ComponentRef varName "varName ; variable name" ;
-    VarKind varKind "varKind ; Kind of variable" ;
-    .DAE.VarDirection varDirection "varDirection ; input, output or bidirectional" ;
+    .DAE.ComponentRef varName "variable name" ;
+    VarKind varKind "Kind of variable" ;
+    .DAE.VarDirection varDirection "input, output or bidirectional" ;
     .DAE.VarParallelism varParallelism "parallelism of the variable. parglobal, parlocal or non-parallel";
-    Type varType "varType ; builtin type or enumeration" ;
-    Option< .DAE.Exp> bindExp "bindExp ; Binding expression e.g. for parameters" ;
-    Option<Values.Value> bindValue "bindValue ; binding value for parameters" ;
-    .DAE.InstDims arryDim "arryDim ; array dimensions on nonexpanded var" ;
+    Type varType "builtin type or enumeration" ;
+    Option< .DAE.Exp> bindExp "Binding expression e.g. for parameters" ;
+    Option<Values.Value> bindValue "binding value for parameters" ;
+    .DAE.InstDims arryDim "array dimensions on nonexpanded var" ;
     .DAE.ElementSource source "origin of variable" ;
-    Option< .DAE.VariableAttributes> values "values ; values on builtin attributes" ;
-    Option<SCode.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;
+    Option< .DAE.VariableAttributes> values "values on builtin attributes" ;
+    Option<SCode.Comment> comment "this contains the comment and annotation from Absyn" ;
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   end VAR;
 end Var;
 
 public
-uniontype Equation "- Equation"
+uniontype Equation
   record EQUATION
     .DAE.Exp exp;
-    .DAE.Exp scalar "scalar" ;
+    .DAE.Exp scalar;
     .DAE.ElementSource source "origin of equation";
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end EQUATION;
 
   record ARRAY_EQUATION
-    list<Integer> dimSize "dimSize ; dimension sizes" ;
-    .DAE.Exp left "left ; lhs" ;
-    .DAE.Exp right "right ; rhs" ;
+    list<Integer> dimSize "dimension sizes" ;
+    .DAE.Exp left "lhs" ;
+    .DAE.Exp right "rhs" ;
     .DAE.ElementSource source "the element source";
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end ARRAY_EQUATION;
 
   record SOLVED_EQUATION
-    .DAE.ComponentRef componentRef "componentRef" ;
-    .DAE.Exp exp "exp" ;
+    .DAE.ComponentRef componentRef;
+    .DAE.Exp exp;
     .DAE.ElementSource source "origin of equation";
     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end SOLVED_EQUATION;
 
   record RESIDUAL_EQUATION
-    .DAE.Exp exp "exp ; not present from front end" ;
+    .DAE.Exp exp "not present from FrontEnd" ;
     .DAE.ElementSource source "origin of equation";
      Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end RESIDUAL_EQUATION;
@@ -141,20 +143,20 @@ uniontype Equation "- Equation"
   end ALGORITHM;
 
   record WHEN_EQUATION
-    Integer size              "size of equation";
-    WhenEquation whenEquation "whenEquation" ;
+    Integer size "size of equation";
+    WhenEquation whenEquation;
     .DAE.ElementSource source "origin of equation";
   end WHEN_EQUATION;
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
      Integer size "size of equation" ;
-    .DAE.Exp left "left ; lhs" ;
-    .DAE.Exp right "right ; rhs" ;
+    .DAE.Exp left "lhs" ;
+    .DAE.Exp right "rhs" ;
     .DAE.ElementSource source "the element source";
      Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end COMPLEX_EQUATION;
 
-  record IF_EQUATION " an if-equation"
+  record IF_EQUATION "an if-equation"
     list< .DAE.Exp> conditions "Condition";
     list<list<Equation>> eqnstrue "Equations of true branch";
     list<Equation> eqnsfalse "Equations of false branch";
@@ -173,8 +175,8 @@ uniontype WhenEquation
 end WhenEquation;
 
 public
-uniontype WhenOperator "- Reinit Statement"
-  record REINIT
+uniontype WhenOperator
+  record REINIT "Reinit Statement"
     .DAE.ComponentRef stateVar "State variable to reinit" ;
     .DAE.Exp value             "Value after reinit" ;
     .DAE.ElementSource source  "origin of equation";
@@ -187,7 +189,7 @@ uniontype WhenOperator "- Reinit Statement"
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end ASSERT;
 
-  record TERMINATE " The Modelica builtin terminate(msg)"
+  record TERMINATE "The Modelica builtin terminate(msg)"
     .DAE.Exp message;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end TERMINATE;
@@ -202,11 +204,11 @@ uniontype WhenOperator "- Reinit Statement"
 end WhenOperator;
 
 public
-uniontype WhenClause "- When Clause"
+uniontype WhenClause
   record WHEN_CLAUSE
-    .DAE.Exp condition                  "the when-condition" ;
-    list<WhenOperator> reinitStmtLst    "list of reinit statements associated to the when clause." ;
-    Option<Integer> elseClause          "index of elsewhen clause" ;
+    .DAE.Exp condition               "the when-condition" ;
+    list<WhenOperator> reinitStmtLst "list of reinit statements associated to the when clause." ;
+    Option<Integer> elseClause       "index of elsewhen clause" ;
 
     // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
 
@@ -216,7 +218,7 @@ uniontype WhenClause "- When Clause"
 end WhenClause;
 
 public
-uniontype ZeroCrossing "- Zero Crossing"
+uniontype ZeroCrossing
   record ZERO_CROSSING
     .DAE.Exp relation_         "function" ;
     list<Integer> occurEquLst  "list of equations where the function occurs" ;
@@ -227,13 +229,13 @@ end ZeroCrossing;
 public
 uniontype SampleLookup
   record SAMPLE_LOOKUP
-    Integer nSamples                                "total number of different sample calls" ;
+    Integer nSamples "total number of different sample calls" ;
     list<tuple<Integer, .DAE.Exp, .DAE.Exp>> lookup "sample arguments (index, start, interval)" ;
   end SAMPLE_LOOKUP;
 end SampleLookup;
 
 public
-uniontype EventInfo "- EventInfo"
+uniontype EventInfo
   record EVENT_INFO
     SampleLookup sampleLookup          "stores all information regarding sample-calls" ;
     list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
@@ -251,18 +253,17 @@ uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The va
   two lists, one for unknown variables states and algebraic and one for known variables
   constants and parameters.
   The equations are also split into two lists, one with simple equations, a=b, a-b=0, etc., that
-   are removed from  the set of equations to speed up calculations.
-
-  - BackendDAE"
+  are removed from  the set of equations to speed up calculations."
   record DAE
     EqSystems eqs;
     Shared shared;
   end DAE;
 end BackendDAE;
 
+public
 uniontype Shared "Data shared for all equation-systems"
   record SHARED
-    Variables knownVars                     "knownVars ; Known variables, i.e. constants and parameters" ;
+    Variables knownVars                     "Known variables, i.e. constants and parameters" ;
     Variables externalObjects               "External object variables";
     Variables aliasVars                     "Data originating from removed simple equations needed to build
                                              variables' lookup table (in C output).
@@ -271,7 +272,7 @@ uniontype Shared "Data shared for all equation-systems"
                                              buffer and results caching, etc., is avoided, but in C-code output all the
                                              data about variables' names, comments, units, etc. is preserved as well as
                                              pinter to their values (trajectories).";
-    EquationArray initialEqs                "initialEqs ; Initial equations" ;
+    EquationArray initialEqs                "Initial equations" ;
     EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array< .DAE.Constraint> constraints     "constraints (Optimica extension)";
     array< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
@@ -285,12 +286,15 @@ uniontype Shared "Data shared for all equation-systems"
   end SHARED;
 end Shared;
 
-type EqSystems = list<EqSystem> "NOTE: BackEnd does not yet support lists with different size than 1 everywhere (anywhere)";
+public
+type EqSystems = list<EqSystem>
+"NOTE: BackEnd does not yet support lists with different size than 1 everywhere (anywhere)";
 
+public
 uniontype EqSystem "An independent system of equations (and their corresponding variables)"
   record EQSYSTEM
-    Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
-    EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+    Variables orderedVars "ordered Variables, only states and alg. vars" ;
+    EquationArray orderedEqs "ordered Equations" ;
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
     Matching matching;
@@ -298,6 +302,7 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
   end EQSYSTEM;
 end EqSystem;
 
+public
 uniontype Matching
   record NO_MATCHING "matching has not yet been performed" end NO_MATCHING;
   record MATCHING "not yet used"
@@ -307,8 +312,11 @@ uniontype Matching
   end MATCHING;
 end Matching;
 
-type ExternalObjectClasses = list<ExternalObjectClass> "classes of external objects stored in list";
+public
+type ExternalObjectClasses = list<ExternalObjectClass>
+"classes of external objects stored in list";
 
+public
 uniontype ExternalObjectClass "class of external objects"
   record EXTOBJCLASS
     Absyn.Path path "className of external object";
@@ -317,59 +325,57 @@ uniontype ExternalObjectClass "class of external objects"
 end ExternalObjectClass;
 
 public
-uniontype Variables "- Variables"
+uniontype Variables
   record VARIABLES
-    array<list<CrefIndex>> crefIdxLstArr "crefIdxLstArr ; HashTB, cref->indx";
-    VariableArray varArr "varArr ; Array of variables";
-    Integer bucketSize "bucketSize ; bucket size";
-    Integer numberOfVars "numberOfVars ; no. of vars";
+    array<list<CrefIndex>> crefIdxLstArr "HashTB, cref->indx";
+    VariableArray varArr "Array of variables";
+    Integer bucketSize "bucket size";
+    Integer numberOfVars "no. of vars";
   end VARIABLES;
 end Variables;
 
+public
 uniontype AliasVariableType
-  record NOALIAS end NOALIAS;
-  record ALIAS end ALIAS;
+  record NOALIAS      end NOALIAS;
+  record ALIAS        end ALIAS;
   record NEGATEDALIAS end NEGATEDALIAS;
 end AliasVariableType;
 
 public
-uniontype CrefIndex "- Component Reference Index"
+uniontype CrefIndex "Component Reference Index"
   record CREFINDEX
-    .DAE.ComponentRef cref "cref" ;
-    Integer index "index" ;
+    .DAE.ComponentRef cref;
+    Integer index;
   end CREFINDEX;
 end CrefIndex;
 
 public
 uniontype VariableArray "array of Equations are expandable, to amortize the cost of adding
-   equations in a more efficient manner
-
-  - Variable Array"
+  equations in a more efficient manner"
   record VARIABLE_ARRAY
-    Integer numberOfElements "numberOfElements ; no. elements" ;
-    Integer arrSize "arrSize ; array size" ;
-    array<Option<Var>> varOptArr "varOptArr" ;
+    Integer numberOfElements "no. elements" ;
+    Integer arrSize "array size" ;
+    array<Option<Var>> varOptArr;
   end VARIABLE_ARRAY;
 end VariableArray;
 
 public
-uniontype EquationArray "- Equation Array"
+uniontype EquationArray
   record EQUATION_ARRAY
     Integer size "size of the Equations in scalar form";
-    Integer numberOfElement "numberOfElement ; no. elements" ;
-    Integer arrSize "arrSize ; array size" ;
-    array<Option<Equation>> equOptArr "equOptArr" ;
+    Integer numberOfElement "no. elements" ;
+    Integer arrSize "array size" ;
+    array<Option<Equation>> equOptArr;
   end EQUATION_ARRAY;
 end EquationArray;
 
 public
 uniontype Assignments "Assignments of variables to equations and vice versa are implemented by a
-   expandable array to amortize addition of array elements more efficient
-  - Assignments"
+   expandable array to amortize addition of array elements more efficient"
   record ASSIGNMENTS
-    Integer actualSize "actualSize ; actual size" ;
-    Integer allocatedSize "allocatedSize ; allocated size >= actual size" ;
-    array<Integer> arrOfIndices "arrOfIndices ; array of indices" ;
+    Integer actualSize "actual size" ;
+    Integer allocatedSize "allocated size >= actual size" ;
+    array<Integer> arrOfIndices "array of indices" ;
   end ASSIGNMENTS;
 end Assignments;
 
@@ -391,11 +397,9 @@ public
 type IncidenceMatrix = array<IncidenceMatrixElement>;
 
 public
-type IncidenceMatrixT = IncidenceMatrix "IncidenceMatrixT : a list of equation indexes (1..n),
-     one for each variable. Equations that -only-
-     contain the state variable and not the derivative
-     has a negative index.
-- Incidence Matrix T" ;
+type IncidenceMatrixT = IncidenceMatrix
+"a list of equation indices (1..n), one for each variable. Equations that -only-
+ contain the state variable and not the derivative have a negative index.";
 
 public
 uniontype Solvability
@@ -426,7 +430,7 @@ public
 type AdjacencyMatrixTEnhanced = AdjacencyMatrixEnhanced;
 
 public
-uniontype JacobianType "- Jacobian Type"
+uniontype JacobianType
   record JAC_CONSTANT "If jacobian has only constant values, for system
                of equations this means that it can be solved statically." end JAC_CONSTANT;
 
@@ -441,14 +445,13 @@ uniontype JacobianType "- Jacobian Type"
 end JacobianType;
 
 public
-uniontype IndexReduction "- Index Reduction"
+uniontype IndexReduction
   record INDEX_REDUCTION "Use index reduction during matching" end INDEX_REDUCTION;
-
   record NO_INDEX_REDUCTION "do not use index reduction during matching" end NO_INDEX_REDUCTION;
 end IndexReduction;
 
 public
-uniontype EquationConstraints "- Equation Constraints"
+uniontype EquationConstraints
   record ALLOW_UNDERCONSTRAINED "for e.g. initial eqns.
                   where not all variables
                   have a solution" end ALLOW_UNDERCONSTRAINED;
@@ -458,10 +461,11 @@ uniontype EquationConstraints "- Equation Constraints"
 end EquationConstraints;
 
 public
-type MatchingOptions = tuple<IndexReduction, EquationConstraints> "- Matching Options" ;
+type MatchingOptions = tuple<IndexReduction, EquationConstraints>;
 
 public
-type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>,Integer> "StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
+type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>,Integer>
+"StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
 
 public
 type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
@@ -547,7 +551,7 @@ uniontype StrongComponent
 end StrongComponent;
 
 public
-type StrongComponents = list<StrongComponent> "- Order of the equations the have to be solved" ;
+type StrongComponents = list<StrongComponent> "Order of the equations the have to be solved" ;
 
 public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;

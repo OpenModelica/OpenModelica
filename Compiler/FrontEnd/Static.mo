@@ -9973,7 +9973,7 @@ algorithm
       SCode.Element cl;
       DAE.FunctionBuiltin isBuiltin;
       DAE.Attributes attr;
-      DAE.Binding binding "binding ; equation modification";
+      DAE.Binding binding "equation modification";
       Env.Frame frame;
 
     // wildcard

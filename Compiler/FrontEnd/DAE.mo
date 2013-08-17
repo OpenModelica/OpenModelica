@@ -733,7 +733,7 @@ uniontype Var "- Variables"
     Ident name "name";
     Attributes attributes "attributes";
     Type ty "type" ;
-    Binding binding "binding ; equation modification";
+    Binding binding "equation modification";
     Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
   end TYPES_VAR;
 end Var;
@@ -861,14 +861,14 @@ public uniontype Type "models the different front-end and back-end types"
   end T_UNKNOWN;
 
   record T_COMPLEX
-    ClassInf.State complexClassType "complexClassType ; The type of a class" ;
-    list<Var> varLst "complexVarLst ; The variables of a complex type" ;
+    ClassInf.State complexClassType "The type of a class" ;
+    list<Var> varLst "The variables of a complex type" ;
     EqualityConstraint equalityConstraint;
     TypeSource source;
   end T_COMPLEX;
 
   record T_SUBTYPE_BASIC
-    ClassInf.State complexClassType "complexClassType ; The type of a class" ;
+    ClassInf.State complexClassType "The type of a class" ;
     list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
     Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
     EqualityConstraint equalityConstraint;
@@ -877,7 +877,7 @@ public uniontype Type "models the different front-end and back-end types"
 
   record T_FUNCTION
     list<FuncArg> funcArg "funcArg" ;
-    Type funcResultType "funcResultType ; Only single-result" ;
+    Type funcResultType "Only single-result" ;
     FunctionAttributes functionAttributes;
     TypeSource source;
   end T_FUNCTION;
@@ -894,7 +894,7 @@ public uniontype Type "models the different front-end and back-end types"
   end T_FUNCTION_REFERENCE_FUNC;
 
   record T_TUPLE
-    list<Type> tupleType "tupleType ; For functions returning multiple values.";
+    list<Type> tupleType "For functions returning multiple values.";
     TypeSource source;
   end T_TUPLE;
 
@@ -1120,8 +1120,8 @@ uniontype EqMod "To generate the correct set of equations, the translator has to
   type, and whether a variable is of one of these types.
   - Modification datatype, was originally in Mod"
   record TYPED
-    Exp modifierAsExp "modifierAsExp ; modifier as expression" ;
-    Option<Values.Value> modifierAsValue "modifierAsValue ; modifier as Value option" ;
+    Exp modifierAsExp "modifier as expression" ;
+    Option<Values.Value> modifierAsValue "modifier as Value option" ;
     Properties properties "properties" ;
     Option<Absyn.Exp> modifierAsAbsynExp "keep the untyped modifier as an absyn expression for modification comparison";
     Absyn.Info info;

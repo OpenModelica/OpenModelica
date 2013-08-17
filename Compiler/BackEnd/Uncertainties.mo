@@ -2014,16 +2014,16 @@ algorithm
     list<BackendDAE.EqSystem> systList;
     BackendDAE.Shared shared;
 
-    BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
-    BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars" ;
+    BackendDAE.EquationArray orderedEqs "ordered Equations" ;
     Option<BackendDAE.IncidenceMatrix> m;
     Option<BackendDAE.IncidenceMatrixT> mT;
     BackendDAE.Matching matching;
 
-    BackendDAE.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
+    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters" ;
     BackendDAE.Variables externalObjects "External object variables";
     BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
+    BackendDAE.EquationArray initialEqs "Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
     array<DAE.ClassAttributes> classAttrs;
@@ -2076,16 +2076,16 @@ algorithm
     list<BackendDAE.EqSystem> systList;
     BackendDAE.Shared shared;
 
-    BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
-    BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+    BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars" ;
+    BackendDAE.EquationArray orderedEqs "ordered Equations" ;
     Option<BackendDAE.IncidenceMatrix> m;
     Option<BackendDAE.IncidenceMatrixT> mT;
     BackendDAE.Matching matching;
 
-    BackendDAE.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
+    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters" ;
     BackendDAE.Variables externalObjects "External object variables";
     BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
+    BackendDAE.EquationArray initialEqs "Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
     array<DAE.ClassAttributes> classAttrs;
@@ -2345,10 +2345,10 @@ algorithm
     BackendDAE.Shared shared;
 
 
-    BackendDAE.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
+    BackendDAE.Variables knownVars "Known variables, i.e. constants and parameters" ;
     BackendDAE.Variables externalObjects "External object variables";
     BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
-    BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
+    BackendDAE.EquationArray initialEqs "Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
     array<DAE.ClassAttributes> classAttrs;

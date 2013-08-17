@@ -3792,7 +3792,7 @@ algorithm
       String name;
       DAE.Attributes attributes;
       Type ty "type";
-      DAE.Binding binding "binding ; equation modification";
+      DAE.Binding binding "equation modification";
       Option<DAE.Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE() if is NOT a for iterator";
       list<DAE.Var> rest;
 

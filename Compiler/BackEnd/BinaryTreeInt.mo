@@ -54,9 +54,9 @@ public
 uniontype BinTree "Generic Binary tree implementation
   - Binary Tree"
   record TREENODE
-    Option<TreeValue> value "value ; Value" ;
-    Option<BinTree> leftSubTree "leftSubTree ; left subtree" ;
-    Option<BinTree> rightSubTree "rightSubTree ; right subtree" ;
+    Option<TreeValue> value "Value" ;
+    Option<BinTree> leftSubTree "left subtree" ;
+    Option<BinTree> rightSubTree "right subtree" ;
   end TREENODE;
 
 end BinTree;

@@ -314,7 +314,7 @@ uniontype Element "Elements
     InnerOuter                innerOuter "inner/outer" ;
     ElementSpec               specification "Actual element specification" ;
     Info                      info  "File name the class is defined in + line no + column no" ;
-    Option<ConstrainClass> constrainClass "constrainClass ; only valid for classdef and component" ;
+    Option<ConstrainClass> constrainClass "only valid for classdef and component" ;
   end ELEMENT;
 
   record DEFINEUNIT
@@ -334,7 +334,7 @@ end Element;
 public
 uniontype ConstrainClass "Constraining type, must be extends"
   record CONSTRAINCLASS
-    ElementSpec elementSpec "elementSpec ; must be extends" ;
+    ElementSpec elementSpec "must be extends" ;
     Option<Comment> comment "comment" ;
   end CONSTRAINCLASS;
 
@@ -440,8 +440,8 @@ public
 uniontype Component "Some kind of Modelica entity (object or variable)"
   record COMPONENT
     Ident name "name" ;
-    ArrayDim arrayDim "arrayDim ; Array dimensions, if any" ;
-    Option<Modification> modification "modification ; Optional modification" ;
+    ArrayDim arrayDim "Array dimensions, if any" ;
+    Option<Modification> modification "Optional modification" ;
   end COMPONENT;
 
 end Component;
@@ -480,8 +480,8 @@ public
 uniontype Equation "Information on one (kind) of equation, different constructors for different
      kinds of equations"
   record EQ_IF
-    Exp ifExp "ifExp ; Conditional expression" ;
-    list<EquationItem> equationTrueItems "equationTrueItems ; true branch" ;
+    Exp ifExp "Conditional expression" ;
+    list<EquationItem> equationTrueItems "true branch" ;
     list<tuple<Exp, list<EquationItem>>> elseIfBranches "elseIfBranches" ;
     list<EquationItem> equationElseItems "equationElseItems Standard 2-side eqn" ;
   end EQ_IF;
@@ -657,7 +657,7 @@ uniontype ElementAttributes "- Component attributes"
 //    Boolean inner_ "inner";
 //    Boolean outer_ "outer";
     Parallelism parallelism "for OpenCL/CUDA parglobal, parlocal ...";
-    Variability variability "variability ; parameter, constant etc." ;
+    Variability variability "parameter, constant etc." ;
     Direction direction "direction" ;
     ArrayDim arrayDim "arrayDim" ;
   end ATTR;

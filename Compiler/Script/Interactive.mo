@@ -145,9 +145,9 @@ end Statements;
 public
 uniontype InstantiatedClass "- Instantiated Class"
   record INSTCLASS
-    Absyn.Path qualName "qualName ;  The F.Q.name of the inst:ed class" ;
-    DAE.DAElist daeElementLst "daeElementLst ; The list of DAE elements" ;
-    Env.Env env "env ; The env of the inst:ed class" ;
+    Absyn.Path qualName " The F.Q.name of the inst:ed class" ;
+    DAE.DAElist daeElementLst "The list of DAE elements" ;
+    Env.Env env "The env of the inst:ed class" ;
   end INSTCLASS;
 
 end InstantiatedClass;
@@ -155,9 +155,9 @@ end InstantiatedClass;
 public
 uniontype Variable "- Interactive Variable"
   record IVAR
-    Absyn.Ident varIdent "varIdent ; The variable identifier" ;
-    Values.Value value "value ; The value" ;
-    DAE.Type type_ "type ; The type of the expression" ;
+    Absyn.Ident varIdent "The variable identifier" ;
+    Values.Value value "The value" ;
+    DAE.Type type_ "The type of the expression" ;
   end IVAR;
 
 end Variable;
@@ -177,12 +177,12 @@ end LoadedFile;
 public
 uniontype SymbolTable "- Interactive Symbol Table"
   record SYMBOLTABLE
-    Absyn.Program ast "ast ; The ast" ;
+    Absyn.Program ast "The ast" ;
     AbsynDep.Depends depends "the dependency information";
     Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
-    list<InstantiatedClass> instClsLst "instClsLst ;  List of instantiated classes" ;
-    list<Variable> lstVarVal "lstVarVal ; List of variables with values" ;
-    list<CompiledCFunction> compiledFunctions "compiledFunctions ; List of compiled functions, F.Q name + type + functionhandler" ;
+    list<InstantiatedClass> instClsLst " List of instantiated classes" ;
+    list<Variable> lstVarVal "List of variables with values" ;
+    list<CompiledCFunction> compiledFunctions "List of compiled functions, F.Q name + type + functionhandler" ;
     list<LoadedFile> loadedFiles "The list of the loaded files with their load time." ;
   end SYMBOLTABLE;
 

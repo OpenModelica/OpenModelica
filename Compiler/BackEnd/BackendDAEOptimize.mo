@@ -7202,8 +7202,8 @@ algorithm
   (osyst,osharedChanged) :=
     matchcontinue(isyst,sharedChanged)
     local
-      BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
-      BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+      BackendDAE.Variables orderedVars "ordered Variables, only states and alg. vars" ;
+      BackendDAE.EquationArray orderedEqs "ordered Equations" ;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;

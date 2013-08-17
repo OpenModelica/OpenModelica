@@ -1482,14 +1482,14 @@ package DAE
     end T_UNKNOWN;
   
     record T_COMPLEX
-      ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
-      list<Var> varLst "complexVarLst ; The variables of a complex type" ;
+      ClassInf.State complexClassType "The type of. a class" ;
+      list<Var> varLst "The variables of a complex type" ;
       EqualityConstraint equalityConstraint;
       TypeSource source;
     end T_COMPLEX;
     
     record T_SUBTYPE_BASIC
-      ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
+      ClassInf.State complexClassType "The type of. a class" ;
       list<Var> varLst "complexVarLst; The variables of a complex type! Should be empty, kept here to verify!";
       Type complexType "complexType; A complex type can be a subtype of another (primitive) type (through extends)";
       EqualityConstraint equalityConstraint;
@@ -1498,7 +1498,7 @@ package DAE
   
     record T_FUNCTION
       list<FuncArg> funcArg "funcArg" ;
-      Type funcResultType "funcResultType ; Only single-result" ;
+      Type funcResultType "Only single-result" ;
       FunctionAttributes functionAttributes;
       TypeSource source;
     end T_FUNCTION;
@@ -1515,7 +1515,7 @@ package DAE
     end T_FUNCTION_REFERENCE_FUNC;
     
     record T_TUPLE
-      list<Type> tupleType "tupleType ; For functions returning multiple values.";
+      list<Type> tupleType "For functions returning multiple values.";
       TypeSource source;
     end T_TUPLE;
   
