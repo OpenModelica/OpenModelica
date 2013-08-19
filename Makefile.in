@@ -90,11 +90,7 @@ endif
 
 # configure --without-rml works using this target
 bootstrap-from-tarball:
-	$(MAKE) omc-diff interactive docs fmi fmil opencl_rt
-	$(MAKE) -C Compiler/runtime install
-	$(MAKE) -C Compiler builtin install_scripts
-	$(MAKE) -C Parser install
-	$(MAKE) -C Compiler/modpar install
+	$(MAKE) bootstrap-dependencies
 	time $(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-tarball
 	OPENMODELICAHOME=`pwd`/build time $(MAKE) bootstrap-from-compiled
 	$(MAKE) omlibrary
@@ -102,13 +98,15 @@ bootstrap-from-tarball:
 # configure --without-rml works using this target, but requires a compiled omc (either from bootstrap or regular one)
 bootstrap-from-compiled:
 	test -f build/bin/omc
-	$(MAKE) omc-diff interactive docs fmi fmil opencl_rt
+	$(MAKE) bootstrap-dependencies
+	$(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-compiled
+	$(MAKE) omlibrary
+
+bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt runtimeCPPinstall
 	$(MAKE) -C Compiler/runtime install
 	$(MAKE) -C Compiler builtin install_scripts
 	$(MAKE) -C Parser install
 	$(MAKE) -C Compiler/modpar install
-	$(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-compiled
-	$(MAKE) omlibrary
 
 modelica3d:
 ifeq (@MODELICA3D@,)
