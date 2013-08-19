@@ -65,7 +65,7 @@ algorithm
   DAE.DAE(lst) := inDAELst;
   hs := HashSet.emptyHashSet();
   (varSize, eqnSize, eqns, hs) := countVarEqnSize(lst, 0, 0, {}, hs);
-  simpleEqnSize := countSympleEqnSize(eqns, 0, hs);
+  simpleEqnSize := countSimpleEqnSize(eqns, 0, hs);
 end checkModel;
 
 protected function countVarEqnSize
@@ -585,68 +585,55 @@ algorithm
   end matchcontinue;
 end statementOutputsCrefFinder;
 
-protected function countSympleEqnSize
+protected function countSimpleEqnSize
   input list<DAE.Element> inEqns;
   input Integer isimpleEqnSize;
   input HashSet.HashSet ihs;
   output Integer osimpleEqnSize;
 algorithm
-  osimpleEqnSize := matchcontinue(inEqns, isimpleEqnSize, ihs)
+  osimpleEqnSize := List.fold(List.map1(inEqns, countSimpleEqnSizeWork, ihs), intAdd, 0);
+end countSimpleEqnSize;
+
+protected function countSimpleEqnSizeWork
+  input DAE.Element inEqns;
+  input HashSet.HashSet ihs;
+  output Integer osimpleEqnSize;
+algorithm
+  osimpleEqnSize := matchcontinue(inEqns, ihs)
     local
-      DAE.Element elem;
-      list<DAE.Element>  rest;
       DAE.Exp e1, e2;
       DAE.ComponentRef cr;
       DAE.Type tp;
       Integer size;
       DAE.Dimensions dims;
 
-    case ({}, _, _) then isimpleEqnSize;
-
     // equations
-    case((elem as DAE.EQUATION(exp=e1, scalar=e2))::rest, _, _)
-      equation
-        size = simpleEquation(e1, e2, ihs);
-      then
-        countSympleEqnSize(rest, isimpleEqnSize+size, ihs);
+    case(DAE.EQUATION(exp=e1, scalar=e2), _)
+      then simpleEquation(e1, e2, ihs);
 
     // effort variable equality equations
-    case ((elem as DAE.EQUEQUATION(cr1 = cr))::rest, _, _)
+    case (DAE.EQUEQUATION(cr1 = cr), _)
       equation
         tp = ComponentReference.crefTypeConsiderSubs(cr);
-        size = Expression.sizeOf(tp);
-      then
-        countSympleEqnSize(rest, isimpleEqnSize+size, ihs);
+      then Expression.sizeOf(tp);
 
     // a solved equation
-    case ((elem as DAE.DEFINE(componentRef = cr, exp=e2))::rest, _, _)
+    case (DAE.DEFINE(componentRef = cr, exp=e2), _)
       equation
-        //tp = ComponentReference.crefLastType(cr);
-        //size = Expression.sizeOf(tp);
         e1 = Expression.crefExp(cr);
-        size = simpleEquation(e1, e2, ihs);
-      then
-        countSympleEqnSize(rest, isimpleEqnSize+size, ihs);
+      then simpleEquation(e1, e2, ihs);
 
     // complex equations
-    case ((elem as DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2))::rest, _, _)
-      equation
-        size = simpleEquation(e1, e2, ihs);
-      then
-        countSympleEqnSize(rest, isimpleEqnSize+size, ihs);
+    case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2), _)
+      then simpleEquation(e1, e2, ihs);
 
     // array equations
-    case ((elem as DAE.ARRAY_EQUATION(dimension=dims, exp = e1, array = e2))::rest, _, _)
-      equation
-        size = simpleEquation(e1, e2, ihs);
-      then
-        countSympleEqnSize(rest, isimpleEqnSize+size, ihs);
+    case (DAE.ARRAY_EQUATION(dimension=dims, exp = e1, array = e2), _)
+      then simpleEquation(e1, e2, ihs);
 
-    case (_::rest, _, _)
-      then
-        countSympleEqnSize(rest, isimpleEqnSize, ihs);
+    else 0;
   end matchcontinue;
-end countSympleEqnSize;
+end countSimpleEqnSizeWork;
 
 protected function simpleEquation
   input DAE.Exp e1;

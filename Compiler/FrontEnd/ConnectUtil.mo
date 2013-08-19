@@ -399,7 +399,7 @@ protected function daeHasExpandableConnectors
 algorithm
   hasExpandable := matchcontinue(inDAE)
     local
-      list<DAE.Element> rest_vars;
+      list<DAE.Element> vars;
       DAE.ComponentRef name;
       Boolean b;
 
@@ -407,25 +407,24 @@ algorithm
     case (_)
       equation
         false = System.getHasExpandableConnectors();
-      then
-        false;
+      then false;
 
-    case (DAE.DAE({})) then false;
-
-    case (DAE.DAE(DAE.VAR(componentRef = name) :: rest_vars))
-      equation
-        true = isExpandable(name);
-      then
-        true;
-
-    case (DAE.DAE(_::rest_vars))
-      equation
-        b = daeHasExpandableConnectors(DAE.DAE(rest_vars));
-      then
-        b;
+    case (DAE.DAE(vars)) then List.exist(vars, isVarExpandable);
 
   end matchcontinue;
 end daeHasExpandableConnectors;
+
+protected function isVarExpandable
+  input DAE.Element var;
+  output Boolean b;
+algorithm
+  b := match var
+    local
+      DAE.ComponentRef name;
+    case DAE.VAR(componentRef = name) then isExpandable(name);
+    else false;
+  end match;
+end isVarExpandable;
 
 protected function getExpandableVariables
 "Goes through a list of variables and returns their crefs"
