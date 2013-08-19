@@ -35,11 +35,11 @@
 #endif
 
 #include "meta_modelica.h"
-#include "ModelicaUtilities.h"
 
 extern "C" {
 
 #include "settingsimpl.c"
+#include "ModelicaUtilities.h"
 
 extern const char* Settings_getInstallationDirectoryPath()
 {
