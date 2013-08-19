@@ -6081,15 +6081,15 @@ case STMT_TUPLE_ASSIGN(exp=MATCHEXPRESSION(__)) then
 else error(sourceInfo(), 'algStmtTupleAssign failed')
 end algStmtTupleAssign;
 
-template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BUFP*/,
+template writeLhsCref(Exp inExp, String rhsStr, Context context, Text &preExp /*BUFP*/,
               Text &varDecls /*BUFP*/)
  "Generates code for writing a returnStructur to var."
 ::=
-match exp
+match inExp
 case ecr as CREF(componentRef=WILD(__)) then
   ''
 case CREF(ty= t as DAE.T_ARRAY(__)) then
-  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let lhsStr = scalarLhsCref(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match context
   case SIMULATION_CONTEXT(__) then
     <<
@@ -6108,7 +6108,7 @@ case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
   else
     '<%lhsStr%> = -<%rhsStr%>;'
 case CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
-  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let lhsStr = scalarLhsCref(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <%preExp%>
   <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
@@ -6145,7 +6145,7 @@ case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty= T_COMPLEX(varLst = varLst, 
   %>
   >>
 case CREF(__) then
-  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let lhsStr = scalarLhsCref(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <%lhsStr%> = <%rhsStr%>;
   >>
@@ -6163,7 +6163,7 @@ case ARRAY(array = {}) then
   <<
   >>
 case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
-  let typeShort = expTypeFromExpShort(exp)
+  let typeShort = expTypeFromExpShort(inExp)
   let fcallsuf = match listLength(dims) case 1 then "" case i then '_<%i%>D'
   let body = (threadTuple(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
                  let lhsstr = scalarLhsCref(lhs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -6173,8 +6173,10 @@ case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   <<
   <%body%>
   >>
+case ASUB(__) then
+  error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDump.printExpStr(inExp)%> = <%rhsStr%>')
 else
-  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
+  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(inExp)%> = <%rhsStr%>')
 end writeLhsCref;
 
 template algStmtIf(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
