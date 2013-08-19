@@ -94,7 +94,6 @@ public:
        iter = factories.find(solver_key);
         if (iter ==factories.end())
         {
-                cout << "error " << factories.size() <<  std::endl;
                 throw std::invalid_argument("No such Solver");
         }
         
