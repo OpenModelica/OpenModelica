@@ -3992,7 +3992,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
                }
         catch(std::exception &ex)
            {
-                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(time) + " with error: " + ex.what()); 
+                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
             } 
     >>
     else
@@ -4007,7 +4007,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
       }
       catch(std::exception &ex)
        {
-             throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(time) + " with error: " + ex.what()); 
+             throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
        } 
 
     }
