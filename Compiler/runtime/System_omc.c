@@ -676,7 +676,7 @@ extern void System_getLoadModelPath(const char *className, void *prios, void *mp
 {
   *name = NULL;
   if (SystemImpl__getLoadModelPath(className,prios,mps,dir,name,isDir)) MMC_THROW();
-  char *res = strcpy(ModelicaAllocateString(strlen(name)),name);
+  char *res = strcpy(ModelicaAllocateString(strlen(*name)),*name);
   free(*name);
   *name = res;
 }
