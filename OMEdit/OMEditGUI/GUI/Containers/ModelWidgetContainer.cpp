@@ -2146,6 +2146,9 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
       i++;
       continue;
     }
+    // just to be on safe-side.
+    if (componentsAnnotationsList.size() <= i)
+      continue;
     QString transformation = "";
     if (!componentsAnnotationsList.at(i).toLower().contains("error"))
       transformation =  StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i));
