@@ -33,6 +33,7 @@
 #include "meta_modelica.h"
 
 #include "printimpl.c"
+#include "ModelicaUtilities.h"
 
 extern int Print_saveAndClearBuf()
 {
@@ -76,7 +77,7 @@ extern const char* Print_getString(void)
   if (res == NULL)
     MMC_THROW();
   // fprintf(stderr, "Print_getString: %s##\n", res);fflush(NULL);
-  return res; // strdup(res);
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 extern const char* Print_getErrorString(void)
@@ -84,7 +85,7 @@ extern const char* Print_getErrorString(void)
   const char* res = PrintImpl__getErrorString();
   if (res == NULL)
     MMC_THROW();
-  return res; // strdup(res);
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 extern void Print_clearErrorBuf(void)

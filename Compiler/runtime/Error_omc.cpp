@@ -68,13 +68,13 @@ extern void* Error_getMessages()
 extern const char* Error_printErrorsNoWarning()
 {
   std::string res = ErrorImpl__printErrorsNoWarning();
-  return MMC_STRINGDATA(mmc_mk_scon(res.c_str()));
+  return strcpy(ModelicaAllocateString(res.size()), res.c_str());
 }
 
 extern const char* Error_printMessagesStr()
 {
   std::string res = ErrorImpl__printMessagesStr();
-  return MMC_STRINGDATA(mmc_mk_scon(res.c_str()));
+  return strcpy(ModelicaAllocateString(res.size()), res.c_str());
 }
 
 extern void Error_addSourceMessage(int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)

@@ -1,6 +1,7 @@
 /* External interface for UnitParserExt module */
 #include "unitparser.h"
 #include "unitparserext.cpp"
+#include "ModelicaUtilities.h"
 
 extern "C"
 {
@@ -34,7 +35,7 @@ const char* UnitParserExt_unit2str(void *nums, void *denoms, void *tpnoms, void 
   //string res = unitParser->unit2str(unit);
   string res = unitParser->prettyPrintUnit2str(unit);
 
-  return strdup(res.c_str());
+  return strcpy(ModelicaAllocateString(res.size()), res.c_str());
 }
 
 void UnitParserExt_str2unit(const char *inStr, void **nums, void **denoms, void **tpnoms, void **tpdenoms, void **tpstrs)

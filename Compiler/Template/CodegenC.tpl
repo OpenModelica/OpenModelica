@@ -9740,6 +9740,7 @@ int rml_execution_failed(mmc_GC_local_state_type local_GC_state)
 
 int main(int argc, char **argv)
 {
+  OpenModelica_ExternalC_allocation_function = mmc_mk_scon_len_ret_ptr;
   init_metamodelica_segv_handler();
   if (!mmc_GC_state)
   {

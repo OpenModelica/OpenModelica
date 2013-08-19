@@ -141,10 +141,13 @@ modelica_string_t alloc_modelica_string(int length)
 {
     /* Reserve place for null terminator too.*/
     modelica_string_t dest = (modelica_string_t) char_alloc(length+1);
-    dest[length]=0;
+    if (dest != 0) {
+      dest[length]=0;
+    }
     return dest;
 }
 
+extern char*(*OpenModelica_ExternalC_allocation_function)(size_t) = alloc_modelica_string;
 
 void free_modelica_string(modelica_string_t* a)
 {

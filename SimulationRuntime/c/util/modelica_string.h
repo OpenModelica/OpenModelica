@@ -49,6 +49,8 @@ extern int modelica_string_length(modelica_string_const a);
 extern modelica_string_const init_modelica_string(modelica_string_const str);
 
 extern modelica_string_t alloc_modelica_string(int length);
+/* In case we do not use the memory pool in the runtime */
+extern char* (*OpenModelica_ExternalC_allocation_function)(size_t length);
 
 /* formatting String functions */
 extern modelica_string_const modelica_real_to_modelica_string_format(modelica_real r, modelica_string_const format);

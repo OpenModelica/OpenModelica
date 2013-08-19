@@ -34,6 +34,7 @@
 extern "C" {
 
 #include "meta_modelica.h"
+#include "ModelicaUtilities.h"
 
 extern int Corba_haveCorba()
 {
@@ -52,7 +53,8 @@ extern void Corba_setSessionName(const char* _inSessionName)
 
 extern const char* Corba_waitForCommand()
 {
-  return strdup(CorbaImpl__waitForCommand());
+  const char *res = CorbaImpl__waitForCommand();
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 extern void Corba_initialize()

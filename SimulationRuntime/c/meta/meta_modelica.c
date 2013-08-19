@@ -87,6 +87,18 @@ void *mmc_mk_box_no_assign(int slots, unsigned ctor)
     return MMC_TAGPTR(p);
 }
 
+char* mmc_mk_scon_len_ret_ptr(size_t nbytes)
+{
+    unsigned header = MMC_STRINGHDR(nbytes);
+    unsigned nwords = MMC_HDRSLOTS(header) + 1;
+    struct mmc_string *p;
+    void *res;
+    p = (struct mmc_string *) mmc_alloc_words(nwords);
+    p->header = header;
+    res = MMC_TAGPTR(p);
+    return MMC_STRINGDATA(res);
+}
+
 modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
 {
   mmc_uint_t h_lhs;

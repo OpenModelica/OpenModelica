@@ -303,6 +303,8 @@ static inline void* mmc_mk_scon_len(unsigned nbytes)
     return res;
 }
 
+char* mmc_mk_scon_len_ret_ptr(size_t nbytes);
+
 static inline void *mmc_mk_box0(unsigned ctor)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);

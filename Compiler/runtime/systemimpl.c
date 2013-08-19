@@ -43,6 +43,7 @@ extern "C" {
 
 #include "meta_modelica.h"
 #include <limits.h>
+#include "ModelicaUtilities.h"
 
 #include <stdio.h>
 #include <stdlib.h>

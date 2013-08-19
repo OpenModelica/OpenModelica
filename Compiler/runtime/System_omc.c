@@ -44,6 +44,7 @@ extern "C"
 #include "openmodelica.h"
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
+#include "ModelicaUtilities.h"
 #define ADD_METARECORD_DEFINTIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 #include "systemimpl.c"
@@ -93,7 +94,7 @@ extern const char* System_stringFindString(const char* str, const char* searchSt
   const char *found = strstr(str, searchStr);
   if (found == NULL)
     MMC_THROW();
-  return strdup(found);
+  return strcpy(ModelicaAllocateString(strlen(found)), found);
 }
 
 extern void System_realtimeTick(int ix)
@@ -127,27 +128,27 @@ extern const char* System_getRTLibs()
 
 extern const char* System_getCCompiler()
 {
-  return strdup(cc);
+  return strcpy(ModelicaAllocateString(strlen(cc)), cc);
 }
 
 extern const char* System_getCXXCompiler()
 {
-  return strdup(cxx);
+  return strcpy(ModelicaAllocateString(strlen(cxx)), cxx);
 }
 
 extern const char* System_getLinker()
 {
-  return strdup(linker);
+  return strcpy(ModelicaAllocateString(strlen(linker)), linker);
 }
 
 extern const char* System_getLDFlags()
 {
-  return strdup(ldflags);
+  return strcpy(ModelicaAllocateString(strlen(ldflags)), ldflags);
 }
 
 extern const char* System_getCFlags()
 {
-  return strdup(cflags);
+  return strcpy(ModelicaAllocateString(strlen(cflags)), cflags);
 }
 
 extern const char* System_getExeExt()
@@ -184,7 +185,8 @@ extern const char* System_trimChar(const char* str, const char* char_to_remove)
 
 extern const char* System_basename(const char* str)
 {
-  return strdup(SystemImpl__basename(str));
+  char *res = SystemImpl__basename(str);
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 extern const char* System_dirname(const char* str)
@@ -195,10 +197,11 @@ extern const char* System_dirname(const char* str)
   char drive[_MAX_DRIVE], dir[_MAX_DIR], filename[_MAX_FNAME], extension[_MAX_EXT];
   _splitpath(str, drive, dir, filename, extension);
   sprintf(cpy, "%s/%s/",drive,dir);
-  res = strdup(cpy);
+  res = cpy;
 #else
-  res = strdup(dirname(cpy));
+  res = dirname(cpy);
 #endif
+  res = strcpy(ModelicaAllocateString(strlen(res)), res);
   free(cpy);
   return res;
 }
@@ -347,7 +350,7 @@ extern char* System_substring(const char *str, int start, int stop)
 extern char* System_toupper(const char *str)
 {
   int i;
-  char* strToUpper = strdup(str);
+  char* strToUpper = strcpy(ModelicaAllocateString(strlen(str)),str);
   for (i = 0; i < strlen(strToUpper); i++)
   {
     strToUpper[i] = toupper(strToUpper[i]);
@@ -358,7 +361,7 @@ extern char* System_toupper(const char *str)
 extern char* System_tolower(const char *str)
 {
   int i;
-  char* strToLower = strdup(str);
+  char* strToLower = strcpy(ModelicaAllocateString(strlen(str)),str);
   for (i = 0; i < strlen(strToLower); i++)
   {
     strToLower[i] = tolower(strToLower[i]);
@@ -369,7 +372,7 @@ extern char* System_tolower(const char *str)
 const char* System_getClassnamesForSimulation()
 {
   if(class_names_for_simulation)
-    return strdup(class_names_for_simulation);
+    return strcpy(ModelicaAllocateString(strlen(class_names_for_simulation)),class_names_for_simulation);
   else
     return "{}";
 }
@@ -469,7 +472,7 @@ extern const char* System_readEnv(const char *envname)
 {
   char *envvalue = getenv(envname);
   if (envvalue == NULL) MMC_THROW();
-  return strdup(envvalue);
+  return strcpy(ModelicaAllocateString(strlen(envvalue)),envvalue);
 }
 
 extern void System_getCurrentDateTime(int* sec, int* min, int* hour, int* mday, int* mon, int* year)
@@ -488,7 +491,8 @@ extern void System_getCurrentDateTime(int* sec, int* min, int* hour, int* mday, 
 
 extern const char* System_getUUIDStr()
 {
-  return strdup(SystemImpl__getUUIDStr());
+  char *res =  SystemImpl__getUUIDStr();
+  return strcpy(ModelicaAllocateString(strlen(res)),res);
 }
 
 extern int System_loadLibrary(const char *name, int printDebug)
@@ -672,7 +676,9 @@ extern void System_getLoadModelPath(const char *className, void *prios, void *mp
 {
   *name = NULL;
   if (SystemImpl__getLoadModelPath(className,prios,mps,dir,name,isDir)) MMC_THROW();
-  /* TODO: Do not strdup in parent... */
+  char *res = strcpy(ModelicaAllocateString(strlen(name)),name);
+  free(*name);
+  *name = res;
 }
 
 extern const char* System_getMakeCommand()

@@ -35,6 +35,7 @@
 #endif
 
 #include "meta_modelica.h"
+#include "ModelicaUtilities.h"
 
 extern "C" {
 
@@ -45,7 +46,7 @@ extern const char* Settings_getInstallationDirectoryPath()
   const char *path = SettingsImpl__getInstallationDirectoryPath();
   if (path == NULL)
     MMC_THROW();
-  return strdup(path);
+  return strcpy(ModelicaAllocateString(strlen(path)), path);
 }
 
 extern const char* Settings_getModelicaPath(int runningTestsuite)
@@ -58,7 +59,8 @@ extern const char* Settings_getModelicaPath(int runningTestsuite)
 
 extern const char* Settings_getCompileCommand()
 {
-  return strdup(SettingsImpl__getCompileCommand());
+  const char *res = SettingsImpl__getCompileCommand();
+  return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
 extern void Settings_setPlotCommand(const char* _inString);
