@@ -13857,7 +13857,6 @@ algorithm
             SOME(Absyn.ANNOTATION(annotations)),
             _))) :: rest),env,_,_,_)
       equation
-
         res = getComponentitemsAnnotationsElArgs(annotations,env,inClass,inFullProgram,inModelPath);
         gexpstr = stringDelimitList(res, ", ");
 
@@ -13865,6 +13864,12 @@ algorithm
         res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
       then
         (gexpstr_1 :: res);
+        
+    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(_,_))) :: rest),env,_,_,_)
+      equation
+        res = getComponentitemsAnnotationsFromItems(rest, env, inClass,inFullProgram,inModelPath);
+      then
+        ("{}" :: res);
 
     case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),env, _,_,_)
       equation
