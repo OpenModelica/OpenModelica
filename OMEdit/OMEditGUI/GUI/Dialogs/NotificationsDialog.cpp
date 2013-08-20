@@ -162,6 +162,9 @@ QString NotificationsDialog::getNotificationTitleString()
 QString NotificationsDialog::getNotificationLabelString()
 {
   QString OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile;
+#ifndef WIN32
+  char *user;
+#endif
   switch (mNotificationType)
   {
     case NotificationsDialog::QuitApplication:
@@ -183,7 +186,7 @@ QString NotificationsDialog::getNotificationLabelString()
 #ifdef WIN32 // Win32
        OMCOutputFile = QString(QDir::tempPath()).append("/openmodelica.omc.output.").append(Helper::OMCServerName);
 #else // UNIX environment
-      char *user = getenv("USER");
+      user = getenv("USER");
       if (!user) { user = "nobody"; }
       OMCOutputFile = QString(QDir::tempPath()).append("/openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::OMCServerName);
 #endif
