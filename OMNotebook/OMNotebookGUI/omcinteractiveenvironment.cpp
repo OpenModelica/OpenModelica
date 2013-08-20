@@ -114,7 +114,7 @@ namespace IAEX
    * \author Ingemar Axelsson and Anders FernstrÃ¶m
    * \date 2006-02-02 (update)
    *
-   *\brief Method for evaluationg expressions
+   * \brief Method for evaluationg expressions
    *
    * 2006-02-02 AF, Added try-catch statement
    */
