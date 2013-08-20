@@ -295,14 +295,10 @@ int getlinearSolverMethod(int argc, char**argv)
   if(*method == string("lapack"))
     return LS_LAPACK;
 
-  if(*method == string("lis"))
-    return LS_LIS;
-
   WARNING1(LOG_STDOUT, "unrecognized option -ls %s", method->c_str());
   WARNING(LOG_STDOUT, "current options are:");
   INDENT(LOG_STDOUT);
   WARNING2(LOG_STDOUT, "%-18s [%s]", "lapack", "default method");
-  WARNING2(LOG_STDOUT, "%-18s [%s]", "lis", "Lis");
   THROW("see last warning");
   return LS_NONE;
 }
