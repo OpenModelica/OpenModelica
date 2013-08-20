@@ -54,6 +54,7 @@ enum LINEAR_SOLVER
 {
   LS_NONE = 0,
   LS_LAPACK,
+  LS_LIS,
   LS_MAX
 };
 
@@ -64,4 +65,6 @@ int freelinearSystem(DATA *data);
 int solve_linear_system(DATA *data, int sysNumber);
 int check_linear_solutions(DATA *data, int printFailingSystems);
 
+void setAElementLAPACK(int row, int col, double value, int nth, void *data );
+void setAElementLis(int row, int col, double value, int nth, void *data );
 #endif

@@ -948,9 +948,11 @@ template functionInitialLinearSystemsTemp(list<SimEqSystem> allEquations)
      case eq as SES_MIXED(__) then functionInitialLinearSystemsTemp(fill(eq.cont,1))
      case eq as SES_LINEAR(__) then
      let size = listLength(vars)
+     let nnz = listLength(simJac)
      <<
      linearSystemData[<%indexLinearSystem%>].equationIndex = <%index%>;
      linearSystemData[<%indexLinearSystem%>].size = <%size%>;
+     linearSystemData[<%indexLinearSystem%>].nnz = <%nnz%>;
      linearSystemData[<%indexLinearSystem%>].setA = setLinearMatrixA<%index%>;
      linearSystemData[<%indexLinearSystem%>].setb = setLinearVectorb<%index%>;
      >>
@@ -987,10 +989,10 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations)
      case eq as SES_MIXED(__) then functionSetupLinearSystemsTemp(fill(eq.cont,1))
      case eq as SES_LINEAR(__) then
        let &varDecls = buffer "" /*BUFD*/
-       let MatrixA = (simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
+       let MatrixA = (simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 =>
             let &preExp = buffer "" /*BUFD*/
             let expPart = daeExp(eq.exp, contextSimulationDiscrete, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
-           '<%preExp%>linearSystemData->A[<%row%> + <%col%> * linearSystemData->size] = <%expPart%>;'
+           '<%preExp%>linearSystemData->setAElement(<%row%>, <%col%>, <%expPart%>, <%i0%>, linearSystemData);'
         ;separator="\n")
        let &varDecls2 = buffer "" /*BUFD*/
        let vectorb = (beqs |> exp hasindex i0 =>
@@ -3231,7 +3233,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD /link /STACK:0x2000000 /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib
+  LDFLAGS=/MD /link /STACK:0x2000000 /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib lis.lib
 
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/msvc/debug
@@ -3274,7 +3276,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%> -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME
   LIBSIMULATIONRUNTIMEC=<% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-Wl,-whole-archive "%>-lSimulationRuntimeC <% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then " -Wl,-no-whole-archive"%> <% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,'<%makefileParams.omhome%>/lib/omc' $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,'<%makefileParams.omhome%>/lib/omc' $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis"%>
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=$(FILEPREFIX)<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
