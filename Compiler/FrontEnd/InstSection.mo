@@ -3686,8 +3686,7 @@ algorithm
                       currentBinding,
                       currentCnstForRange,
                       currentEnv);
-      then
-        updatedEnv;
+      then updatedEnv;
   end match;
 end updateEnvComponentsOnQualPath;
 
