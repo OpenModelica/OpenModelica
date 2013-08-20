@@ -148,6 +148,7 @@ extern modelica_real realMaxLit(void);
 extern modelica_integer intMaxLit(void);
 
 extern modelica_boolean setStackOverflowSignal(modelica_boolean);
+extern metamodelica_string referenceDebugString(modelica_metatype fnptr);
 
 #if defined(__cplusplus)
 }

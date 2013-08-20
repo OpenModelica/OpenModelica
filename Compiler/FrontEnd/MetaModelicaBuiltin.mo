@@ -875,3 +875,12 @@ algorithm
   outSignal := inSignal;
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end setStackOverflowSignal;
+
+function referenceDebugString<A>
+  input A functionSymbol;
+  output String name;
+  external "builtin" annotation(Documentation(info="<html>
+<p>Takes any function pointer as input and returns its symbol name in the C-code (for debugging function pointers).</p>
+<p>Is only useful on good operating systems.</p>
+</html>"));
+end referenceDebugString;

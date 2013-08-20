@@ -826,3 +826,22 @@ modelica_boolean setStackOverflowSignal(modelica_boolean inSignal)
   return inSignal;
 }
 
+#if defined(linux) || defined(__APPLE_CC__)
+#include <execinfo.h>
+metamodelica_string referenceDebugString(modelica_metatype fnptr)
+{
+  void *res;
+  char **str = backtrace_symbols(&fnptr, 1);
+  if (str == 0) {
+    return mmc_mk_scon("Unknown symbol");
+  }
+  res = mmc_mk_scon(*str);
+  free(str);
+  return res;
+}
+#else
+metamodelica_string referenceDebugString(modelica_metatype fnptr)
+{
+  return mmc_mk_scon("Unknown symbol");
+}
+#endif

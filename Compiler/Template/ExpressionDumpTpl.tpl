@@ -80,7 +80,7 @@ match exp
     let rparen = if needs_paren then ")"
     let exp_str = dumpExp(exp, stringDelimiter)
     let sub_str = dumpExpList(sub, stringDelimiter, ", ")
-    '<%lparen%><%exp_str%><%rparen%>[<%sub_str%>]'
+    '<%lparen%><%exp_str%><%rparen%><%if typeinfo() then "/*ASUB*/"%>[<%sub_str%>]'
   case TSUB(__) then
     let needs_paren = parenthesizeSubExp(exp)
     let lparen = if needs_paren then "("

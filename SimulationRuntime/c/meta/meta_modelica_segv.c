@@ -30,6 +30,7 @@
 
 /* Stack overflow handling */
 
+#include <meta_modelica.h>
 #if defined(linux) || defined(__APPLE_CC__)
 #include <stdlib.h>
 #include <stdio.h>
@@ -145,6 +146,7 @@ void init_metamodelica_segv_handler()
   sigaction(SIGSEGV, &sa, &default_segv_action);
   sigfillset(&segvset);
 }
+
 #else
 #include <setjmp.h>
 jmp_buf *mmc_stack_overflow_jumper;
