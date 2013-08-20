@@ -65,6 +65,9 @@ NotificationsDialog::NotificationsDialog(NotificationType notificationType, Noti
   pPixmapLabel->setPixmap(pixmap);
   // Notificaiton Label
   mpNotificationLabel = new Label(getNotificationLabelString());
+  mpNotificationLabel->setTextFormat(Qt::RichText);
+  mpNotificationLabel->setTextInteractionFlags(mpNotificationLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+  mpNotificationLabel->setOpenExternalLinks(true);
   // Notificaiton Checkbox
   mpNotificationCheckBox = new QCheckBox(getNotificationCheckBoxString());
   // Notificaiton buttons
@@ -144,6 +147,8 @@ QString NotificationsDialog::getNotificationTitleString()
     case NotificationsDialog::SaveModelForBitmapInsertion:
     case NotificationsDialog::ReleaseInformation:
       return Helper::information;
+    case NotificationsDialog::CrashReport:
+      return Helper::error;
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationTitleString()";
@@ -156,6 +161,7 @@ QString NotificationsDialog::getNotificationTitleString()
   */
 QString NotificationsDialog::getNotificationLabelString()
 {
+  QString OMCCommandsLogFilePath, OMCOutputFile, stackTraceFile;
   switch (mNotificationType)
   {
     case NotificationsDialog::QuitApplication:
@@ -169,9 +175,25 @@ QString NotificationsDialog::getNotificationLabelString()
       return tr("You must save the class before referencing a bitmap from local directory.");
     case NotificationsDialog::ReleaseInformation:
       return tr("Welcome to new enhanced OMEdit - OpenModelica Connection Editor.\n"
-                "This version includes a lot of improvements and bug fixes. Check release notes for more details.\n\n"
-                "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.\n"
+                "This version includes a lot of improvements and bug fixes. Check release notes for more details.<br /><br />"
+                "It is highly recommended to delete the old OMEdit settings file. Click \"OK\" to delete.<br />"
                 "Contact us [OpenModelica@ida.liu.se] or Adeel Asghar [adeel.asghar@liu.se] with any comments, suggestions or problems.");
+    case NotificationsDialog::CrashReport:
+       OMCCommandsLogFilePath = QString(QDir::tempPath()).append("/OpenModelica/OMEdit/omeditcommands.log");
+#ifdef WIN32 // Win32
+       OMCOutputFile = QString(QDir::tempPath()).append("/openmodelica.omc.output.").append(Helper::OMCServerName);
+#else // UNIX environment
+      char *user = getenv("USER");
+      if (!user) { user = "nobody"; }
+      OMCOutputFile = QString(QDir::tempPath()).append("/openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::OMCServerName);
+#endif
+      stackTraceFile = QString(QDir::tempPath()).append("/openmodelica.stacktrace.").append(Helper::OMCServerName);
+      return QString(tr("Opps! Something went wrong. Click \"OK\" to send the crash report.<br /><br />")
+                     .append(tr("Please attach the following files alongwith your bug description in your crash report,")).append("<br /><br />")
+                     .append("1. " + OMCCommandsLogFilePath + "<br />")
+                     .append("2. " + OMCOutputFile));
+                     /*.append("2. " + OMCOutputFile + "<br />")
+                     .append("3. " + stackTraceFile));*/
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
@@ -201,8 +223,9 @@ QString NotificationsDialog::getNotificationCheckBoxString()
     case NotificationsDialog::ReplaceableIfPartial:
     case NotificationsDialog::InnerModelNameChanged:
     case NotificationsDialog::SaveModelForBitmapInsertion:
-    case NotificationsDialog::ReleaseInformation:
       return Helper::dontShowThisMessageAgain;
+    case NotificationsDialog::ReleaseInformation:
+    case NotificationsDialog::CrashReport:
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationCheckBoxString()";
@@ -273,6 +296,15 @@ void NotificationsDialog::saveReleaseInformationNotificationSettings()
 }
 
 /*!
+  Sends the crash report.
+  */
+void NotificationsDialog::sendCrashReport()
+{
+  QUrl mailToUrl ("mailto:openmodelicadevelopers@ida.liu.se?CC=adeel.asghar@liu.se&subject=OpenModelica Crash Report");
+  QDesktopServices::openUrl(mailToUrl);
+}
+
+/*!
   Slot activated when mpOkButton clicked signal is raised.\n
   Checks the notification type and calls the appropriate method.
   */
@@ -300,6 +332,9 @@ void NotificationsDialog::saveNotification()
       case NotificationsDialog::ReleaseInformation:
         saveReleaseInformationNotificationSettings();
         break;
+      case NotificationsDialog::CrashReport:
+        sendCrashReport();
+        break;
       default:
         // should never be reached
         break;
@@ -311,6 +346,9 @@ void NotificationsDialog::saveNotification()
     {
       case NotificationsDialog::ReleaseInformation:
         saveReleaseInformationNotificationSettings();
+        break;
+      case NotificationsDialog::CrashReport:
+        sendCrashReport();
         break;
       default:
         // should never be reached

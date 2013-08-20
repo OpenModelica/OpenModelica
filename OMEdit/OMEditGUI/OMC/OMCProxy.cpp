@@ -292,11 +292,11 @@ bool OMCProxy::startServer()
     QString fileIdentifier;
     fileIdentifier = qApp->sessionId().append(QTime::currentTime().toString("hh:mm:ss:zzz").remove(":"));
 #ifdef WIN32 // Win32
-    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(Helper::omcServerName).append(fileIdentifier));
+    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.objid.").append(Helper::OMCServerName).append(fileIdentifier));
 #else // UNIX environment
     char *user = getenv("USER");
     if (!user) { user = "nobody"; }
-    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".objid.").append(Helper::omcServerName).append(fileIdentifier));
+    objectRefFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".objid.").append(Helper::OMCServerName).append(fileIdentifier));
 #endif
     if (objectRefFile.exists())
       objectRefFile.remove();
@@ -307,7 +307,7 @@ bool OMCProxy::startServer()
     settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
     // Start the omc.exe
     QStringList parameters;
-    parameters << QString("+c=").append(Helper::omcServerName).append(fileIdentifier)
+    parameters << QString("+c=").append(Helper::OMCServerName).append(fileIdentifier)
                << QString("+d=interactiveCorba")
                << QString("+corbaObjectReferenceFilePath=").append(QDir::tempPath())
                << QString("+locale=").append(settingsLocale.name());
@@ -315,9 +315,9 @@ bool OMCProxy::startServer()
     connect(omcProcess, SIGNAL(finished(int)), omcProcess, SLOT(deleteLater()));
     QFile omcOutputFile;
 #ifdef WIN32 // Win32
-    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.omc.output.").append(Helper::omcServerName));
+    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.omc.output.").append(Helper::OMCServerName));
 #else // UNIX environment
-    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::omcServerName));
+    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::OMCServerName));
 #endif
     omcProcess->setProcessChannelMode(QProcess::MergedChannels);
     omcProcess->setStandardOutputFile(omcOutputFile.fileName());

@@ -61,7 +61,6 @@
 #include "ImportFMUDialog.h"
 #include "NotificationsDialog.h"
 
-
 class OMCProxy;
 class OptionsDialog;
 class MessagesWidget;

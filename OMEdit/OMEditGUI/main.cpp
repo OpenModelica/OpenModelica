@@ -62,9 +62,46 @@
   - Sonia Tariq
   */
 
+#include <signal.h>
+
 #include "MainWindow.h"
 #include "Helper.h"
 #include "../../Compiler/runtime/config.h"
+
+void signalHandler(int signum)
+{
+  // associate each signal with a signal name string.
+  const char* name = NULL;
+  switch(signum)
+  {
+    case SIGABRT: name = "SIGABRT";  break;
+    case SIGSEGV: name = "SIGSEGV";  break;
+    case SIGILL:  name = "SIGILL";   break;
+    case SIGFPE:  name = "SIGFPE";   break;
+    default:  break;
+  }
+  /*
+    Notify the user which signal was caught. We use printf, because this is the
+    most basic output function. Once you get a crash, it is possible that more
+    complex output systems like streams and the like may be corrupted. So we
+    make the most basic call possible to the lowest level, most
+    standard print function.
+    */
+  if (name)
+    fprintf(stderr, "Caught signal %d (%s)\n", signum, name);
+  else
+    fprintf(stderr, "Caught signal %d\n", signum);
+  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport,
+                                                                      NotificationsDialog::CriticalIcon, 0);
+  pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
+  pNotificationsDialog->exec();
+  // Dump a stack trace.
+  // This is the function we will be implementing next.
+  //printStackTrace();
+  // If you caught one of the above signals, it is likely you just
+  // want to quit your program right now.
+  exit(signum);
+}
 
 void printOMEditUsage()
 {
@@ -76,6 +113,14 @@ void printOMEditUsage()
 
 int main(int argc, char *argv[])
 {
+  /* Abnormal termination (abort) */
+  signal(SIGABRT, signalHandler);
+  /* Segmentation violation */
+  signal(SIGSEGV, signalHandler);
+  /* Illegal instruction */
+  signal(SIGILL, signalHandler);
+  /* Floating point error */
+  signal(SIGFPE, signalHandler);
   // if user asks for --help
   for(int i = 1; i < argc; i++)
   {

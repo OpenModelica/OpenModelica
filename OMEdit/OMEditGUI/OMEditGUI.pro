@@ -154,12 +154,12 @@ INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
 INCLUDEPATH += . \
                 Annotations \
                 Component \
-                OMC \
-                Util \
                 GUI \
                 GUI/Containers \
                 GUI/Widgets \
                 GUI/Dialogs \
+                OMC \
+                Util
 
 OTHER_FILES += Resources/css/stylesheet.qss
 

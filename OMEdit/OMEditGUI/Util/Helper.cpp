@@ -45,7 +45,7 @@ QString Helper::application = "omedit"; /* case-sensitive string. Don't change i
 // these two variables are set once we are connected to OMC......in OMCProxy::startServer().
 QString Helper::OpenModelicaHome = "";
 QString Helper::OpenModelicaLibrary = "";
-QString Helper::omcServerName = "OMEdit";
+QString Helper::OMCServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;JPEG (*.jpg *.jpeg)";

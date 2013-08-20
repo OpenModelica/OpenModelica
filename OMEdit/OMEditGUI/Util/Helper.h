@@ -56,7 +56,7 @@ public:
   static QString application;
   static QString OpenModelicaHome;
   static QString OpenModelicaLibrary;
-  static QString omcServerName;
+  static QString OMCServerName;
   static QString omFileTypes;
   static QString omnotebookFileTypes;
   static QString imageFileTypes;
