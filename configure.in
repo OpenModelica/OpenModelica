@@ -347,7 +347,7 @@ AC_MSG_CHECKING([LAPACK flags])
 AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR([failed using $LD_LAPACK])])
 
 AC_CHECK_HEADERS(kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
-SUNDIALS_LDFLAGS="-lsundials_kinsol -lsundials_nvecserial -llapack"
+SUNDIALS_LDFLAGS="-lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"
 LIBS="$SUNDIALS_LDFLAGS -lm"
 AC_MSG_CHECKING([Sundials linking])
 AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
@@ -361,7 +361,7 @@ else
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: No"
   WITH_SUNDIALS="/* Without Sundials */"
 # We need -llapack regardless if we use Sundials or not
-  SUNDIALS_LDFLAGS="-llapack"
+  SUNDIALS_LDFLAGS="$LD_LAPACK"
 fi
 
 AC_CHECK_HEADERS(locale.h libintl.h,[],[AC_MSG_ERROR([gettext headers not found])])
