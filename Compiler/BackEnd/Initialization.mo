@@ -160,6 +160,7 @@ algorithm
       // split it in independend subsystems
       (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
       initdae = BackendDAE.DAE(systs, shared);
+      // initdae = BackendDAE.DAE({initsyst}, shared);
       
       // analzye initial system
       (initdae, dumpVars2) = analyzeInitialSystem(initdae, dae, initVars);
@@ -1489,7 +1490,7 @@ algorithm
       HashSet.HashSet hs;
 
     // state
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_)), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, hs))) equation
       isFixed = BackendVariable.varFixed(var);
       startValue = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
@@ -1507,13 +1508,13 @@ algorithm
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
       preVar = BackendVariable.setBindValue(preVar, NONE());
-      preVar = BackendVariable.setVarFixed(preVar, isFixed);
-      preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
+      preVar = BackendVariable.setVarFixed(preVar, true);
+      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
       vars = BackendVariable.addVar(derVar, vars);
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
-      vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
+      fixvars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars, hs)));
 
     // discrete
