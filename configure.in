@@ -42,7 +42,7 @@ AC_SUBST(LIBF2C)
 AC_SUBST(OMSHELL_TERMINAL)
 AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
-AC_SUBST(SQLITE3_LIBS)
+AC_SUBST(OMC_LIBS)
 AC_SUBST(OPENMP)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
@@ -324,17 +324,23 @@ AC_CHECK_FUNC(gethostbyname,
   AC_CHECK_LIB(nsl,gethostbyname, [AC_MSG_RESULT([yes]); LIBNSL="-lnsl"],[AC_MSG_ERROR([neither gethostbyname nor libnsl.a found])])
 ])
 
+
+# Sqlite is not used
+if false; then
+
 AC_ARG_WITH(static-sqlite,  [  --with-static-sqlite=FILE        (default to dynamic linking)],[WANT_STATIC_SQLITE="$withval"],[WANT_STATIC_SQLITE="no"])
 
 LIBS=""
 AC_CHECK_LIB(sqlite3,sqlite3_libversion,[],[AC_MSG_ERROR([sqlite3 not found])])
 
 if test "$WANT_STATIC_SQLITE" = "no"; then
-  SQLITE3_LIBS=$LIBS
+  OMC_LIBS=$LIBS
 elif test ! -f "$WANT_STATIC_SQLITE" ; then
   AC_ERROR([File not found: $WANT_STATIC_SQLITE])
 else
-  SQLITE3_LIBS=$WANT_STATIC_SQLITE
+  OMC_LIBS=$WANT_STATIC_SQLITE
+fi
+
 fi
 
 # Cannot use AX_LAPACK since it assumes a Fortran compiler is used
@@ -387,7 +393,7 @@ AC_TRY_LINK([
 LIBS=""
 AC_CHECK_HEADERS(hwloc.h,
   [AC_CHECK_LIB(hwloc,hwloc_get_nbobjs_by_depth,
-    [WITH_HWLOC="#define WITH_HWLOC 1";RT_LDFLAGS="$RT_LDFLAGS -lhwloc"],
+    [WITH_HWLOC="#define WITH_HWLOC 1";OMC_LIBS="$OMC_LIBS -lhwloc"],
     [WITH_HWLOC="/* Without hwloc */"])],
   [WITH_HWLOC="/* Without hwloc */"]
 )
