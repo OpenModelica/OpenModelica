@@ -101,7 +101,7 @@ algorithm
       list<BackendDAE.Var> dumpVars, dumpVars2;
 
     case(_) equation
-      // inline all when equations, if active with body if inactive with var=pre(var)
+      // inline all when equations, if active with body else with lhs=pre(lhs)
       dae = inlineWhenForInitialization(inDAE);
       // Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
       
@@ -123,8 +123,8 @@ algorithm
       eqns = BackendEquation.emptyEqns();
       reeqns = BackendEquation.emptyEqns();
 
-      ((vars, fixvars, _)) = BackendVariable.traverseBackendDAEVars(avars, collectPreVars, (vars, fixvars, hs));
-      ((vars, fixvars, _)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars, hs));
+      ((vars, fixvars, eqns, _)) = BackendVariable.traverseBackendDAEVars(avars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
+      ((vars, fixvars, eqns, _)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars, eqns, hs));
       ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (eqns, reeqns));
 
       // Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpEquationArray, eqns, "initial equations");
@@ -157,10 +157,10 @@ algorithm
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
       (initsyst, dumpVars) = preBalanceInitialSystem(initsyst);
       
-      // split it in independend subsystems
-      (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
-      initdae = BackendDAE.DAE(systs, shared);
-      // initdae = BackendDAE.DAE({initsyst}, shared);
+      // split the initial system into independend subsystems
+      // (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
+      // initdae = BackendDAE.DAE(systs, shared);
+      initdae = BackendDAE.DAE({initsyst}, shared);
       
       // analzye initial system
       (initdae, dumpVars2) = analyzeInitialSystem(initdae, dae, initVars);
@@ -1463,7 +1463,7 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := isyst;
   (vars, fixvars, eqns, reqns, hs) := iTpl;
 
-  ((vars, fixvars, hs)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars, hs));
+  ((vars, fixvars, eqns, hs)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars, eqns, hs));
   ((eqns, reqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, collectInitialEqns, (eqns, reqns));
   //((fixvars, eqns)) := List.fold(stateSets, collectInitialStateSetVars, (fixvars, eqns));
 
@@ -1471,26 +1471,30 @@ algorithm
 end collectInitialVarsEqnsSystem;
 
 protected function collectInitialVars "author: lochel
-  This function collects all the vars for the initial system."
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> outTpl;
+  This function collects all the vars for the initial system.
+  TODO: return additional equations for pre-variables"
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local
       BackendDAE.Var var, preVar, derVar;
       BackendDAE.Variables vars, fixvars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Equation eqn;
       DAE.ComponentRef cr, preCR, derCR;
       Boolean isFixed, isInput, b, preUsed;
       DAE.Type ty;
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
+      DAE.Exp startValue_;
       DAE.Exp startExp, bindExp;
       String errorMessage;
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
 
     // state
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(index=_), varType=ty), (vars, fixvars, eqns, hs))) equation
       isFixed = BackendVariable.varFixed(var);
       startValue = BackendVariable.varStartValueOption(var);
       preUsed = BaseHashSet.has(cr, hs);
@@ -1510,18 +1514,21 @@ algorithm
       preVar = BackendVariable.setBindValue(preVar, NONE());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
+      
+      eqn = BackendDAE.EQUATION(DAE.CREF(cr, ty), DAE.CREF(preCR, ty), DAE.emptyElementSource, false);
 
       vars = BackendVariable.addVar(derVar, vars);
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
-      fixvars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
-    then ((var, (vars, fixvars, hs)));
+      vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
+      eqns = Debug.bcallret2(preUsed, BackendEquation.equationAdd, eqn, eqns, eqns);
+    then ((var, (vars, fixvars, eqns, hs)));
 
     // discrete
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE()), (vars, fixvars, hs))) equation
-      isFixed = BackendVariable.varFixed(var);
-      startValue = BackendVariable.varStartValueOption(var);
-      preUsed = BaseHashSet.has(cr, hs);
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty), (vars, fixvars, eqns, hs))) equation
+      true = BaseHashSet.has(cr, hs);
+      true = BackendVariable.varFixed(var);
+      startValue_ = BackendVariable.varStartValue(var);
 
       var = BackendVariable.setVarFixed(var, false);
 
@@ -1530,41 +1537,64 @@ algorithm
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
       preVar = BackendVariable.setBindValue(preVar, NONE());
-      preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      preVar = BackendVariable.setVarFixed(preVar, false);
+      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue_));
+
+      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue_, DAE.emptyElementSource, false);
+
+      vars = BackendVariable.addVar(var, vars);
+      vars = BackendVariable.addVar(preVar, vars);
+      eqns = BackendEquation.equationAdd(eqn, eqns);
+    then ((var, (vars, fixvars, eqns, hs)));
+    
+    // discrete
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE()), (vars, fixvars, eqns, hs))) equation
+      preUsed = BaseHashSet.has(cr, hs);
+      isFixed = BackendVariable.varFixed(var);
+      startValue = BackendVariable.varStartValueOption(var);
+
+      var = BackendVariable.setVarFixed(var, false);
+
+      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preVar = BackendVariable.copyVarNewName(preCR, var);
+      preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+      preVar = BackendVariable.setBindExp(preVar, NONE());
+      preVar = BackendVariable.setBindValue(preVar, NONE());
+      preVar = BackendVariable.setVarFixed(preVar, false);
       preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
 
       vars = BackendVariable.addVar(var, vars);
-      vars = Debug.bcallret2((not isFixed) and preUsed, BackendVariable.addVar, preVar, vars, vars);
-    then ((var, (vars, fixvars, hs)));
+      vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
+    then ((var, (vars, fixvars, eqns, hs)));
 
     // parameter without binding
-    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars, eqns, hs))) equation
       true = BackendVariable.varFixed(var);
       startExp = BackendVariable.varStartValueType(var);
       var = BackendVariable.setBindExp(var, SOME(startExp));
 
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
-    then ((var, (vars, fixvars, hs)));
+    then ((var, (vars, fixvars, eqns, hs)));
 
     // parameter with constant binding
-    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars, eqns, hs))) equation
       true = Expression.isConst(bindExp);
       fixvars = BackendVariable.addVar(var, fixvars);
-    then ((var, (vars, fixvars, hs)));
+    then ((var, (vars, fixvars, eqns, hs)));
 
     // parameter
-    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars, eqns, hs))) equation
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
-    then ((var, (vars, fixvars, hs)));
+    then ((var, (vars, fixvars, eqns, hs)));
 
     // skip constant
-    case((var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (vars, fixvars, hs))) // equation
+    case((var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (vars, fixvars, eqns, hs))) // equation
       // fixvars = BackendVariable.addVar(var, fixvars);
-    then ((var, (vars, fixvars, hs)));
+    then ((var, (vars, fixvars, eqns, hs)));
 
-    case((var as BackendDAE.VAR(varName=cr, bindExp=NONE()), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, bindExp=NONE(), varType=ty), (vars, fixvars, eqns, hs))) equation
       isFixed = BackendVariable.varFixed(var);
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       startValue = BackendVariable.varStartValueOption(var);
@@ -1576,15 +1606,15 @@ algorithm
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
       preVar = BackendVariable.setBindValue(preVar, NONE());
-      preVar = BackendVariable.setVarFixed(preVar, isFixed);
-      preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
+      preVar = BackendVariable.setVarFixed(preVar, true);
+      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
       vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
-    then ((var, (vars, fixvars, hs)));
+    then ((var, (vars, fixvars, eqns, hs)));
 
-    case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp)), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty), (vars, fixvars, eqns, hs))) equation
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
       isFixed = Expression.isConst(bindExp);
       startValue = BackendVariable.varStartValueOption(var);
@@ -1596,13 +1626,13 @@ algorithm
       preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
       preVar = BackendVariable.setBindExp(preVar, NONE());
       preVar = BackendVariable.setBindValue(preVar, NONE());
-      preVar = BackendVariable.setVarFixed(preVar, isFixed);
-      preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
+      preVar = BackendVariable.setVarFixed(preVar, true);
+      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
 
       vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
       vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
-    then ((var, (vars, fixvars, hs)));
+    then ((var, (vars, fixvars, eqns, hs)));
 
     case ((var, _)) equation
       errorMessage = "./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " +& BackendDump.varString(var);
@@ -1615,52 +1645,82 @@ algorithm
   end matchcontinue;
 end collectInitialVars;
 
-protected function collectPreVars "author: lochel
-  This function collects all the pre-vars for the initial system."
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, HashSet.HashSet>> outTpl;
+protected function introducePreVarsForAliasVariables "author: lochel
+  This function introduces all the pre-vars for the initial system that belong to alias vars."
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> outTpl;
 algorithm
-  outTpl := match(inTpl)
+  outTpl := matchcontinue(inTpl)
     local
       BackendDAE.Var var;
       DAE.ComponentRef cr;
       DAE.Type ty;
       DAE.InstDims arryDim;
       BackendDAE.Variables vars, fixvars;
+      BackendDAE.EquationArray eqns;
       HashSet.HashSet hs;
       
-      Boolean isFixed;
-      Option<DAE.Exp> startValue;
+      Boolean preUsed, isFixed;
+      DAE.Exp startValue;
+      Option<DAE.Exp> startValueOpt;
       DAE.ComponentRef preCR;
       BackendDAE.Var preVar;
+      BackendDAE.Equation eqn;
 
     // discrete-time
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
+      preUsed = BaseHashSet.has(cr, hs);
       isFixed = BackendVariable.varFixed(var);
-      startValue = BackendVariable.varStartValueOption(var);
+      startValue = BackendVariable.varStartValue(var);
+
+      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.setVarFixed(preVar, false);
+      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue));
+      
+      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      // preVar = BackendVariable.copyVarNewName(preCR, var);
+      // preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+      // preVar = BackendVariable.setBindExp(preVar, NONE());
+      // preVar = BackendVariable.setBindValue(preVar, NONE());
+      // preVar = BackendVariable.setVarFixed(preVar, true);
+      // preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
+      
+      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, false);
+
+      vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
+      eqns = Debug.bcallret2(preUsed and isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
+    then ((var, (vars, fixvars, eqns, hs)));
+    
+    // discrete-time
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
+      isFixed = BackendVariable.varFixed(var);
+      startValueOpt = BackendVariable.varStartValueOption(var);
 
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       preVar = BackendVariable.setVarFixed(preVar, isFixed);
-      preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
+      preVar = BackendVariable.setVarStartValueOption(preVar, startValueOpt);
 
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, preVar, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
-    then ((var, (vars, fixvars, hs)));
+    then ((var, (vars, fixvars, eqns, hs)));
     
     // continuous-time
-    case((var as BackendDAE.VAR(varName=cr, varType=ty, arryDim=arryDim), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
+      preUsed = BaseHashSet.has(cr, hs);
+      
       preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
       preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       preVar = BackendVariable.setVarFixed(preVar, true);
       preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
     
-      fixvars = BackendVariable.addVar(preVar, fixvars);
-    then ((var, (vars, fixvars, hs)));
+      fixvars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
+    then ((var, (vars, fixvars, eqns, hs)));
 
     else then inTpl;
-  end match;
-end collectPreVars;
+  end matchcontinue;
+end introducePreVarsForAliasVariables;
 
 protected function collectInitialBindings "author: lochel
   This function collects all the vars for the initial system."
