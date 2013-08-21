@@ -4882,30 +4882,42 @@ algorithm
   (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,inSource,initial_,inBoolean,unrollForLoops,numError)
     local
       DAE.ComponentRef ce,ce_1;
-      DAE.Type t;
       DAE.Properties cprop,eprop,prop,prop1,prop2;
-      DAE.Exp e_1,e_2,cre,cre2;
+      DAE.Exp e_1, e_2, cre, cre2, e2_2, e2_2_2, lhs, rhs;
       DAE.Statement stmt;
       list<Env.Frame> env;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,e1,e2;
+      Absyn.Exp e,e1,e2, left;
       Boolean impl;
       list<Absyn.Exp> expl;
       list<DAE.Exp> expl_1,expl_2;
       list<DAE.Properties> cprops, eprops;
       list<DAE.Attributes> attrs;
-      DAE.Type lt,rt;
+      DAE.Type lt,rt,ty,t;
       String s,lhs_str,rhs_str,lt_str,rt_str,s1,s2;
       Env.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
-      DAE.Type ty;
-      DAE.Exp e2_2,e2_2_2;
-      Absyn.Exp left;
       DAE.Pattern pattern;
       DAE.Attributes attr;
       DAE.ElementSource source;
+      DAE.Dimension dim, lhs_dim, rhs_dim;
+      list<DAE.Exp> lhs_idxs, rhs_idxs;
 
+    // v := expr; where v or expr are size 0
+    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
+      equation
+        (cache,SOME((lhs as DAE.CREF(ce,t),cprop,attr))) = Static.elabCrefNoEval(cache, env, cr, impl, false, pre, info);
+        DAE.T_ARRAY(ty = ty, dims = {dim}) = t;
+        rhs = e_1;
+        Static.checkAssignmentToInput(var, attr, env, false, info);
+        DAE.T_ARRAY(dims = lhs_dim :: _) = Expression.typeof(lhs);
+        DAE.T_ARRAY(dims = rhs_dim :: _) = Expression.typeof(rhs);
+        {} = expandArrayDimension(lhs_dim, lhs);
+        {} = expandArrayDimension(rhs_dim, rhs);
+      then
+        (cache,{});
+    
     // v := expr;
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
       equation
