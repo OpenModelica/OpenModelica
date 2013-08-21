@@ -158,9 +158,9 @@ algorithm
       (initsyst, dumpVars) = preBalanceInitialSystem(initsyst);
       
       // split the initial system into independend subsystems
-      // (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
-      // initdae = BackendDAE.DAE(systs, shared);
-      initdae = BackendDAE.DAE({initsyst}, shared);
+      (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);
+      initdae = BackendDAE.DAE(systs, shared);
+      // initdae = BackendDAE.DAE({initsyst}, shared);
       
       // analzye initial system
       (initdae, dumpVars2) = analyzeInitialSystem(initdae, dae, initVars);
