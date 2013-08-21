@@ -194,9 +194,12 @@ QString NotificationsDialog::getNotificationLabelString()
       return QString(tr("Opps! Something went wrong. Click \"OK\" to send the crash report.<br /><br />")
                      .append(tr("Please attach the following files alongwith your bug description in your crash report,")).append("<br /><br />")
                      .append("1. " + OMCCommandsLogFilePath + "<br />")
+#ifdef WIN32
                      .append("2. " + OMCOutputFile));
-                     /*.append("2. " + OMCOutputFile + "<br />")
-                     .append("3. " + stackTraceFile));*/
+#else
+                     .append("2. " + OMCOutputFile + "<br />")
+                     .append("3. " + stackTraceFile));
+#endif
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";

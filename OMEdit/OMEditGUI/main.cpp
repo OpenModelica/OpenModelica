@@ -68,6 +68,40 @@
 #include "Helper.h"
 #include "../../Compiler/runtime/config.h"
 
+#ifndef WIN32
+#include <execinfo.h>
+static inline void printStackTrace(QFile *pFile, int signalNumber, const char* signalName, unsigned int max_frames = 50)
+{
+    QTextStream out(pFile);
+    if (signalName)
+        out << QString("Caught signal %1 (%2)\n").arg(QString::number(signalNumber)).arg(signalName);
+    else
+        out << QString("Caught signal %1\n").arg(QString::number(signalNumber));
+    out.flush();
+    // storage array for stack trace address data
+    void* addrlist[max_frames+1];
+    // retrieve current stack addresses
+    int addrlen = backtrace(addrlist, sizeof(addrlist) / sizeof(void*));
+    if (addrlen == 0)
+    {
+        out << "Stack address length is empty.\n";
+        return;
+    }
+    // create readable strings to each frame.
+    backtrace_symbols_fd(addrlist, addrlen, pFile->handle());
+    /*
+     backtrace_symbols uses malloc. Its better to use backtrace_symbols_fd.
+     */
+    /*char** symbollist = backtrace_symbols(addrlist, addrlen);
+    // print the stack trace.
+    for (int i = 4; i < addrlen; i++)
+    {
+        out << QString("%1\n").arg(symbollist[i]);
+    }
+    free(symbollist);*/
+}
+#endif
+
 void signalHandler(int signum)
 {
   // associate each signal with a signal name string.
@@ -80,24 +114,21 @@ void signalHandler(int signum)
     case SIGFPE:  name = "SIGFPE";   break;
     default:  break;
   }
-  /*
-    Notify the user which signal was caught. We use printf, because this is the
-    most basic output function. Once you get a crash, it is possible that more
-    complex output systems like streams and the like may be corrupted. So we
-    make the most basic call possible to the lowest level, most
-    standard print function.
-    */
-  if (name)
-    fprintf(stderr, "Caught signal %d (%s)\n", signum, name);
-  else
-    fprintf(stderr, "Caught signal %d\n", signum);
+#ifndef WIN32
+  // Dump a stack trace to a file.
+  // This is the function we will be implementing next.
+  QFile stackTraceFile;
+  stackTraceFile.setFileName(QDir::tempPath() + QDir::separator() + "openmodelica.stacktrace." + Helper::OMCServerName);
+  if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
+  {
+      printStackTrace(&stackTraceFile, signum, name);
+      stackTraceFile.close();
+  }
+#endif
   NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport,
                                                                       NotificationsDialog::CriticalIcon, 0);
   pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
   pNotificationsDialog->exec();
-  // Dump a stack trace.
-  // This is the function we will be implementing next.
-  //printStackTrace();
   // If you caught one of the above signals, it is likely you just
   // want to quit your program right now.
   exit(signum);
