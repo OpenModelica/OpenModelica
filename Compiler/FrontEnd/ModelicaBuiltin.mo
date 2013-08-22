@@ -1000,6 +1000,7 @@ end generateHeader;
 
 function generateSeparateCode
   input TypeName className[:] := fill($TypeName(AllLoadedClasses),0);
+  input String stampSuffix := "" "Suffix to add to dependencies (usually .stamp)";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>
@@ -1007,6 +1008,7 @@ annotation(Documentation(info="<html><p>Under construction.</p>
 end generateSeparateCode;
 
 function generateSeparateCodeDependencies
+  input String stampSuffix := ".c" "Suffix to add to dependencies (often .c.stamp)";
   output String [:] dependencies;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>

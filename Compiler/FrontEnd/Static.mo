@@ -7488,6 +7488,7 @@ algorithm
   (fn_1,functype) := deoverloadFuncname(fn, functype);
   tuple_ := isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
+  inlineType := inlineBuiltin(isBuiltin,inlineType);
 
   //check the env to see if a call to a parallel or kernle function is a valid one.
   true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
@@ -7519,13 +7520,25 @@ algorithm
   /* Instantiate any implicit record constructors needed and add them to the dae function tree */
   cache := instantiateImplicitRecordConstructors(cache, inEnv, args_1, st);
   functionTree := Env.getFunctionTree(cache);
-  ((call_exp,(_,didInline))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
+  ((call_exp,(_,didInline))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),false)));
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
   prop_1 := Debug.bcallret2(didInline, Types.setTypeInProps, restype, prop_1, prop_1);
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
   outCache := cache;
 end elabCallArgs3;
+
+protected function inlineBuiltin
+  input DAE.FunctionBuiltin isBuiltin;
+  input DAE.InlineType inlineType;
+  output DAE.InlineType outInlineType;
+algorithm
+  outInlineType := match (isBuiltin,inlineType)
+    case (DAE.FUNCTION_BUILTIN_PTR(),_)
+      then DAE.BUILTIN_EARLY_INLINE();
+    else inlineType;
+  end match;
+end inlineBuiltin;
 
 protected function isValidWRTParallelScope
   input Absyn.Path inFn;

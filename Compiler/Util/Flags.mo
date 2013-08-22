@@ -357,7 +357,9 @@ constant DebugFlag HPCOM = DEBUG_FLAG(95, "hpcom", false,
   Util.gettext("Enables parallel calculation based on task-graphs."));
 constant DebugFlag INITIALIZATION = DEBUG_FLAG(96, "initialization", false,
   Util.gettext("Shows additional information from the initialization process."));
-constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(97, "dumpSCCGraphML", false,
+constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(97, "inlineFunctions", true,
+  Util.gettext("Controls if function inlining should be performed."));
+constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(98, "dumpSCCGraphML", false,
   Util.gettext("Dumps graphml files with the strongly connected components."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -461,6 +463,7 @@ constant list<DebugFlag> allDebugFlags = {
   GEN_GRAPH,
   HPCOM,
   INITIALIZATION,
+  INLINE_FUNCTIONS,
   DUMP_SCC_GRAPHML
 };
 

@@ -1402,6 +1402,13 @@ algorithm
       Boolean generateEvents;
       Option<SCode.Comment> comment;
 
+      /* If we disable inlining by use of flags, we still inline builtin functions */
+    case ((DAE.CALL(attr=DAE.CALL_ATTR(inlineType=inlineType)),_))
+      equation
+        false = Flags.isSet(Flags.INLINE_FUNCTIONS);
+        failure(DAE.BUILTIN_EARLY_INLINE() = inlineType);
+      then inTuple;
+
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2057,6 +2064,7 @@ algorithm
     case(DAE.NO_INLINE()) then "No inline";
     case(DAE.AFTER_INDEX_RED_INLINE()) then "Inline after index reduction";
     case(DAE.EARLY_INLINE()) then "Inline as soon as possible";
+    case(DAE.BUILTIN_EARLY_INLINE()) then "Inline as soon as possible, even if inlining is globally disabled";
     case(DAE.NORM_INLINE()) then "Inline before index reduction";
   end matchcontinue;
 end printInlineTypeStr;

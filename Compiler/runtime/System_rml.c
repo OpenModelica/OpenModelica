@@ -533,12 +533,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__removeFile)
 {
-  char* str = RML_STRINGDATA(rmlA0);
-  int ret_val;
-  ret_val = remove(str);
+  rmlA0 = (void*) mk_icon(SystemImpl__removeFile(RML_STRINGDATA(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
-  rmlA0 = (void*) mk_icon(ret_val);
-
+RML_BEGIN_LABEL(System__renameFile)
+{
+  rmlA0 = (void*) mk_icon(rename(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

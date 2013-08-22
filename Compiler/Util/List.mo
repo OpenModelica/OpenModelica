@@ -7278,6 +7278,57 @@ algorithm
   end matchcontinue;
 end filterMap_tail;
 
+public function filterMap1
+  "Applies a function to each element in the given list, but also filters out
+   all elements for which the function fails."
+  input list<ElementInType> inList;
+  input FilterMapFunc inFilterMapFunc;
+  input ElementType1 inExtraArg;
+  output list<ElementOutType> outList;
+
+  partial function FilterMapFunc
+    input ElementInType inElement;
+    input ElementType1 inExtraArg;
+    output ElementOutType outElement;
+  end FilterMapFunc;
+algorithm
+  outList := listReverse(filterMap1_tail(inList, inFilterMapFunc, inExtraArg, {}));
+end filterMap1;
+
+protected function filterMap1_tail
+  "Tail recursive implementation of filterMap."
+  input list<ElementInType> inList;
+  input FilterMapFunc inFilterMapFunc;
+  input ElementType1 inExtraArg;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+
+  partial function FilterMapFunc
+    input ElementInType inElement;
+    input ElementType1 inExtraArg;
+    output ElementOutType outElement;
+  end FilterMapFunc;
+algorithm
+  outList := matchcontinue(inList, inFilterMapFunc, inExtraArg, inAccumList)
+    local
+      ElementInType ie;
+      list<ElementInType> rest;
+      ElementOutType oe;
+
+    case (ie :: rest, _, _, _)
+      equation
+        oe = inFilterMapFunc(ie,inExtraArg);
+      then
+        filterMap1_tail(rest, inFilterMapFunc, inExtraArg, oe :: inAccumList);
+
+    case (_ :: rest, _, _, _)
+      then filterMap1_tail(rest, inFilterMapFunc, inExtraArg, inAccumList);
+
+    case ({}, _, _, _) then inAccumList;
+
+  end matchcontinue;
+end filterMap1_tail;
+
 public function filterOnTrue
   "Takes a list of values and a filter function over the values and returns a
    sub list of values for which the matching function returns true.

@@ -392,8 +392,15 @@ end regularFileExists;
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
   input String fileName;
   output Integer res;
-  external "C" res=System_removeFile(fileName) annotation(Library = "omcruntime");
+  external "C" res=SystemImpl__removeFile(fileName) annotation(Library = "omcruntime");
 end removeFile;
+
+public function renameFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
+  input String fileName1;
+  input String fileName2;
+  output Integer res;
+  external "C" res=rename(fileName1,fileName2) annotation(Include="#include <stdio.h>");
+end renameFile;
 
 /* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
 public function getPackageFileNames

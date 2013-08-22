@@ -824,7 +824,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime, direction;
+             systemPath, gccVersion, gd, strlinearizeTime, direction, suffix;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
@@ -1876,14 +1876,14 @@ algorithm
     case (cache,env,"generateEntryPoint",_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
       then (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateSeparateCodeDependencies",{},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCodeDependencies",{Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode2(p,false);
         names = List.filterMap(sp,SCode.getElementName);
         
         deps = Graph.buildGraph(names,buildDependencyGraph,sp);
         namesPublic = List.map(List.select(sp, containsPublicInterface), SCode.getElementName);
-        namesChanged = List.filterMap(sp,getChangedClass);
+        namesChanged = List.filterMap1(sp,getChangedClass,suffix);
         hashSetString = HashSetString.emptyHashSet();
         hashSetString = List.fold(namesChanged,BaseHashSet.add,hashSetString);
         // print("namesChanged: " +& stringDelimitList(namesChanged, ",") +& "\n");
@@ -1907,26 +1907,29 @@ algorithm
         depschanged = List.select1(depsmerged,isChanged,hashSetString);
         names = List.map(depschanged, Util.tuple21);
         // print("Files to recompile (" +& intString(listLength(depschanged)) +& "): " +& stringDelimitList(names, ",") +& "\n");
-        fileNames = List.map1(names, stringAppend, ".c");
+        fileNames = List.map1(names, stringAppend, suffix);
         _ = List.map(fileNames, System.removeFile);
         v = ValuesUtil.makeArray(List.map(names,ValuesUtil.makeString));
       then (cache,v,st);
 
-    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={})},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCodeDependencies",_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+      then (cache,Values.META_FAIL(),st);
+
+    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={}),Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
-        deps = generateFunctions(cache,env,p,sp,{});
+        deps = generateFunctions(cache,env,p,sp,suffix,{});
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
-    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst=vals)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst=vals),Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         names = List.map(vals,getTypeNameIdent);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
         cls = List.map2(names,List.getMemberOnTrue, sp, SCode.isClassNamed);
-        deps = generateFunctions(cache,env,p,cls,{});
+        deps = generateFunctions(cache,env,p,cls,suffix,{});
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
@@ -4657,13 +4660,14 @@ protected function generateFunctions
   input Env.Env ienv;
   input Absyn.Program p;
   input list<SCode.Element> isp;
+  input String stamp;
   input list<tuple<String,list<String>>> iacc;
   output list<tuple<String,list<String>>> deps;
 algorithm
-  deps := matchcontinue (icache,ienv,p,isp,iacc)
+  deps := matchcontinue (icache,ienv,p,isp,stamp,iacc)
     local
       String name;
-      list<String> names,dependencies;
+      list<String> names,dependencies,dependenciesStamp;
       list<Absyn.Path> paths;
       list<SCode.Element> elementLst;
       DAE.FunctionTree funcs;
@@ -4677,8 +4681,8 @@ algorithm
       Absyn.Info info;
       SCode.Element cl;
 
-    case (cache,env,_,{},acc) then acc;
-    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst),info=info as Absyn.INFO(fileName=file)))::sp,acc)
+    case (cache,env,_,{},_,acc) then acc;
+    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst),info=info as Absyn.INFO(fileName=file)))::sp,_,acc)
       equation
         (0,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
         names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
@@ -4690,17 +4694,18 @@ algorithm
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
         // print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
         acc = (name,dependencies)::acc;
+        dependencies = List.sort(dependencies,Util.strcmpBool);
         dependencies = List.map1(dependencies,stringAppend,".h");
         nameHeader = name +& ".h";
-        System.writeFile(name +& ".deps", name +& ".o: " +& name +& ".c " +& stringDelimitList(nameHeader::dependencies," "));
+        System.writeFile(name +& ".deps", name +& ".o: " +& name +& ".c" +& " " +& stringDelimitList(nameHeader::dependencies," "));
         dependencies = List.map1(dependencies,stringAppend,"\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
         str = Tpl.tplString(Unparsing.programExternalHeader, {cl});
         System.writeFile(name +& "_records.c","#include <meta_modelica.h>\n" +& str);
-        acc = generateFunctions(cache,env,p,sp,acc);
+        acc = generateFunctions(cache,env,p,sp,stamp,acc);
       then acc;
-    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as Absyn.INFO(fileName=file))::sp,acc)
+    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as Absyn.INFO(fileName=file))::sp,_,acc)
       equation
         (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
         Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " +& name, info);
@@ -7060,18 +7065,19 @@ end printInterfaceString;
 
 protected function getChangedClass
   input SCode.Element elt;
+  input String suffix;
   output String name;
 algorithm
-  name := matchcontinue elt
+  name := matchcontinue (elt,suffix)
     local
       String fileName;
-    case SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName))
+    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
       equation
-        false = System.regularFileExists(name +& ".c");
+        false = System.regularFileExists(name +& suffix);
       then name;
-    case SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName))
+    case (SCode.CLASS(name=name,info=Absyn.INFO(fileName=fileName)),_)
       equation
-        true = System.fileIsNewerThan(fileName, name +& ".c");
+        true = System.fileIsNewerThan(fileName, name +& suffix);
       then name;
   end matchcontinue;
 end getChangedClass;

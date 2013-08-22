@@ -4602,12 +4602,13 @@ Function for converting a InlineType to a bool.
 Whether the inline takes place before or after index reduction does not mather.
 Any kind of inline will result in true.
 "
-input DAE.InlineType it;
-output Boolean b;
-algorithm b := matchcontinue(it)
-  case(DAE.NO_INLINE()) then false;
-  case(_) then true;
-  end matchcontinue;
+  input DAE.InlineType it;
+  output Boolean b;
+algorithm
+  b := match (it)
+    case DAE.NO_INLINE() then false;
+    else true;
+  end match;
 end convertInlineTypeToBool;
 
 public function daeElements "Retrieve the elements from a DAEList"

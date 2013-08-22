@@ -349,6 +349,9 @@ public uniontype InlineType
   record NORM_INLINE "Normal inline, inline as soon as possible"
   end NORM_INLINE;
 
+  record BUILTIN_EARLY_INLINE "Inline even if inlining is globally disabled by flags."
+  end BUILTIN_EARLY_INLINE;
+
   record EARLY_INLINE "Inline even earlier than NORM_INLINE. This will display the inlined code in the flattened model and also works for functions calling other functions that should be inlined."
   end EARLY_INLINE;
 

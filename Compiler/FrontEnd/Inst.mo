@@ -127,6 +127,7 @@ protected import Global;
 protected import Graph;
 protected import HashTable;
 protected import HashTable5;
+protected import Inline;
 protected import InstSection;
 protected import InstExtends;
 protected import NFInstUtil;
@@ -2782,7 +2783,7 @@ algorithm
         print(intString(dimension));
         print("\n");*/
         // adrpo: get the inline type of the function
-        inlineType = isInlineFunc2(el);
+        inlineType = isInlineFunc(el);
       then
         SOME((path, dimension, inlineType));
 
@@ -11643,7 +11644,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        inlineType = isInlineFunc2(c);
+        inlineType = isInlineFunc(c);
         partialPrefixBool = SCode.partialBool(partialPrefix);
 
         daeElts = optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
@@ -12135,83 +12136,33 @@ algorithm
   end matchcontinue;
 end setFullyQualifiedTypename;
 
-public function isInlineFunc "
-Author: stefan
-function: isInlineFunc
-  looks up a function and returns whether or not it is an inline function"
-  input Absyn.Path inPath;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  output DAE.InlineType outBoolean;
-algorithm
-  outBoolean := matchcontinue(inPath,inCache,inEnv)
-    local
-      Absyn.Path p;
-      Env.Cache c;
-      Env.Env env;
-      SCode.Element cl;
-    case(p,c,env)
-      equation
-        (c,cl,env) = Lookup.lookupClass(c,env,p,true);
-      then
-        isInlineFunc2(cl);
-    case(_,_,_) then DAE.NO_INLINE();
-  end matchcontinue;
-end isInlineFunc;
-
-public function isInlineFunc2 "
-Author: bjozac 2009-12
-  helper function to isInlineFunc"
+protected function isInlineFunc
   input SCode.Element inClass;
   output DAE.InlineType outInlineType;
 algorithm
   outInlineType := matchcontinue(inClass)
     local
-      SCode.Annotation ann;
+      list<SCode.SubMod> smlst;
 
-    case SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(ann)))
-      then isInlineFunc3(ann);
+    case SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst)))))
+      then isInlineFunc2(smlst);
 
     else DAE.NO_INLINE();
   end matchcontinue;
-end isInlineFunc2;
+end isInlineFunc;
 
-protected function isInlineFunc3 "
-Author Stefan
-  helper function to isInlineFunc2"
-  input SCode.Annotation ann;
-  output DAE.InlineType outBoolean;
-algorithm
-  outBoolean := matchcontinue(ann)
-    local
-      list<SCode.Annotation> cdr;
-      list<SCode.SubMod> smlst;
-      DAE.InlineType res;
-
-    case (SCode.ANNOTATION(SCode.MOD(subModLst = smlst)))
-      equation
-        res = isInlineFunc4(smlst);
-        true = DAEUtil.convertInlineTypeToBool(res);
-      then res;
-
-  end matchcontinue;
-end isInlineFunc3;
-
-protected function isInlineFunc4 "
-Author: stefan
-function: isInlineFunc4
-  helper function to isInlineFunc3"
+protected function isInlineFunc2
   input list<SCode.SubMod> inSubModList;
   output DAE.InlineType res;
 algorithm
-  res := matchcontinue(inSubModList)
+  res := match (inSubModList)
     local
       list<SCode.SubMod> cdr;
     case ({}) then DAE.NO_INLINE();
 
     case (SCode.NAMEMOD("Inline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: cdr)
       equation
-        failure(DAE.AFTER_INDEX_RED_INLINE() = isInlineFunc4(cdr));
+        failure(DAE.AFTER_INDEX_RED_INLINE() = isInlineFunc2(cdr));
       then DAE.NORM_INLINE();
 
     case(SCode.NAMEMOD("LateInline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
@@ -12227,13 +12178,11 @@ algorithm
       then DAE.AFTER_INDEX_RED_INLINE();
 
     case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: cdr)
-      equation
-        DAE.NO_INLINE() = isInlineFunc4(cdr);
       then DAE.EARLY_INLINE();
 
-    case(_ :: cdr) then isInlineFunc4(cdr);
-  end matchcontinue;
-end isInlineFunc4;
+    case(_ :: cdr) then isInlineFunc2(cdr);
+  end match;
+end isInlineFunc2;
 
 protected function stripFuncOutputsMod "strips the assignment modification of the component declared as output"
   input SCode.Element elem;
@@ -17485,7 +17434,7 @@ algorithm
         inVars = List.filter(vl,Types.isInputVar);
         outVars = List.filter(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
-        inlineType = isInlineFunc2(cl);
+        inlineType = isInlineFunc(cl);
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
 
@@ -17495,14 +17444,14 @@ algorithm
         inVars = List.filter(vl,Types.isInputVar);
         outVars = List.filter(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
-        inlineType = isInlineFunc2(cl);
+        inlineType = isInlineFunc(cl);
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
       equation
-        inlineType = isInlineFunc2(cl);
+        inlineType = isInlineFunc(cl);
         isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
@@ -17511,9 +17460,9 @@ algorithm
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())),_)
       then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(),true,false,DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
 
-    case (SCode.CLASS(restriction=restriction),_)
+    case (SCode.CLASS(name=name,restriction=restriction),_)
       equation
-        inlineType = isInlineFunc2(cl);
+        inlineType = isInlineFunc(cl);
         isBuiltin = Util.if_(SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr"), DAE.FUNCTION_BUILTIN_PTR(), DAE.FUNCTION_NOT_BUILTIN());
         isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
         isImpure = SCode.isRestrictionImpure(restriction);

@@ -590,6 +590,19 @@ algorithm
   end matchcontinue;
 end getCalledFunctionReferences;
 
+protected function orderRecordDecls
+  input SimCode.RecordDeclaration decl1;
+  input SimCode.RecordDeclaration decl2;
+  output Boolean b;
+algorithm
+  b := match (decl1,decl2)
+    local
+      Absyn.Path path1,path2;
+    case (SimCode.RECORD_DECL_DEF(path=path1),SimCode.RECORD_DECL_DEF(path=path2)) then Absyn.pathGe(path1,path2);
+    else true;
+  end match;
+end orderRecordDecls;
+
 public function elaborateFunctions
   input Absyn.Program program;
   input list<DAE.Function> daeElements;
@@ -608,6 +621,7 @@ algorithm
   (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {});
   (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {});
   (extraRecordDecls, _) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes);
+  extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
 end elaborateFunctions;
 
 protected function elaborateFunctions2
