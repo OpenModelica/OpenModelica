@@ -615,7 +615,11 @@ void* SystemImpl__systemCallParallel(void *lst)
 #pragma omp parallel for private(i) schedule(dynamic)
   for (i=0; i<sz; i++) {
     /* fprintf(stderr, "Starting call %s\n", calls[i]); */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    results[i] = system(calls[i]);
+#else
     results[i] = WEXITSTATUS(system(calls[i]));
+#endif
     /* fprintf(stderr, "Finished call %s=%d\n", calls[i], results[i]); */
   }
   free(calls);
