@@ -101,6 +101,10 @@ template dumpVars(list<SimVar> vars, Boolean withOperations)
     <%dumpAlias(v.aliasvar)%>
     <%dumpElementSource(v.source,withOperations)%>
   </variable><%\n%>
+  <variable name="$PRE._<%Util.escapeModelicaStringToXmlString(crefStr(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>">
+    <%dumpAlias(v.aliasvar)%>
+    <%dumpElementSource(v.source,withOperations)%>
+  </variable><%\n%>
   >>
 end dumpVars;
 
