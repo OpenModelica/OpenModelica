@@ -515,6 +515,7 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     <<
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
+    #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define _<%cref(name)%>(i) <%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
@@ -524,6 +525,7 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define _<%cref(name)%>(i) <%cref(name)%>
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
+    #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
     >>
   end match
@@ -543,6 +545,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
+    #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
@@ -550,9 +553,11 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
   let tmp = System.tmpTick()
     <<
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
+    #define _$P$PRE<%cref(name)%>(i) $P$PRE<%cref(name)%>
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
+    #define $P$ATTRIBUTE$P$PRE<%cref(name)%> $P$ATTRIBUTE<%cref(name)%>
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
