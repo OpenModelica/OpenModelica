@@ -8117,7 +8117,7 @@ algorithm
         funcs = getFunctions(ishared);
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);
-//        IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"Comps" +& intString(systemSize(syst)) +& ".graphml",false);
+        dumpStrongComponents(syst,ishared);
         Debug.execStat("transformDAE -> sort components",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);
     else
@@ -8127,6 +8127,23 @@ algorithm
       then fail();
   end matchcontinue;
 end sortEqnsDAEWork;
+
+function dumpStrongComponents
+"dump the strongly connected components on a flag"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+algorithm
+  _ := matchcontinue(isyst, ishared)
+    case (_, _)
+      equation
+        false = Flags.isSet(Flags.DUMP_SCC_GRAPHML);
+      then ();
+    case (_, _)
+      equation
+        IndexReduction.dumpSystemGraphML(isyst,ishared,NONE(),"Comps" +& intString(systemSize(isyst)) +& ".graphml",false);
+      then ();
+  end matchcontinue;
+end dumpStrongComponents;
 
 public function pastoptimiseDAE
 "Run the optimisation modules"
