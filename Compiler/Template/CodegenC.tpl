@@ -3307,7 +3307,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   >>
 end match
 else
-  error(sourceInfo(), 'target <%target%> is not handled!')
+  error(sourceInfo(), 'Target <%target%> is not handled!')
 end simulationMakefile;
 
 template xsdateTime(DateTime dt)
