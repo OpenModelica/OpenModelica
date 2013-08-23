@@ -652,6 +652,8 @@ public constant Message EVAL_EXTERNAL_OBJECT_CONSTRUCTOR = MESSAGE(534, TRANSLAT
   Util.gettext("OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but %s is a variable."));
 public constant Message CLASS_ANNOTATION_DOES_NOT_EXIST = MESSAGE(535, SCRIPTING(), ERROR(),
   Util.gettext("Could not find class annotation %s in class %s."));
+public constant Message SEPARATE_COMPILATION_PACKAGE_FAILED = MESSAGE(536, SCRIPTING(), ERROR(),
+  Util.gettext("Failed to compile all functions in package %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

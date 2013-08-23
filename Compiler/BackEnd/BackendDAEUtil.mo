@@ -7234,23 +7234,56 @@ public function traverseBackendDAEArrayNoCopyWithUpdate "
     end FuncExpTypeWithUpdate;
   end FuncArrayTypeWithUpdate;
 algorithm
-  (outArray,outTypeB) := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
+  (outArray,outTypeB) := traverseBackendDAEArrayNoCopyWithUpdateWork(pos>len,inArray,func,arrayfunc,pos,len,inTypeB);
+end traverseBackendDAEArrayNoCopyWithUpdate;
+
+protected function traverseBackendDAEArrayNoCopyWithUpdateWork "
+ help function to traverseBackendDAEExps
+ author: Frenkel TUD"
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  input Boolean inStop;
+  input array<Type_a> inArray;
+  input FuncExpType func;
+  input FuncArrayTypeWithUpdate arrayfunc;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_b inTypeB;
+  output array<Type_a> outArray;
+  output Type_b outTypeB;
+  partial function FuncExpType
+    input tuple<Type_c, Type_b> inTpl;
+    output tuple<Type_c, Type_b> outTpl;
+  end FuncExpType;
+  partial function FuncArrayTypeWithUpdate
+    input Type_a inTypeA;
+    input FuncExpType func;
+    input Type_b inTypeB;
+    output Type_a outTypeA;
+    output Type_b outTypeB;
+    partial function FuncExpTypeWithUpdate
+     input tuple<Type_c, Type_b> inTpl;
+     output tuple<Type_c, Type_b> outTpl;
+    end FuncExpTypeWithUpdate;
+  end FuncArrayTypeWithUpdate;
+algorithm
+  (outArray,outTypeB) := match (inStop,inArray,func,arrayfunc,pos,len,inTypeB)
     local
       array<Type_a> newarray;
       Type_a a,new_a;
       Type_b ext_arg_1,ext_arg_2;
-    case(_,_,_,_,_,_) equation
-      true = pos > len;
-    then (inArray,inTypeB);
+    case (true,_,_,_,_,_,_) then (inArray,inTypeB);
 
-    case(_,_,_,_,_,_) equation
-      a = inArray[pos];
-      (new_a,ext_arg_1) = arrayfunc(a,func,inTypeB);
-      newarray = arrayUpdateCond(referenceEq(a,new_a),inArray,pos,new_a);
-      (newarray,ext_arg_2) = traverseBackendDAEArrayNoCopyWithUpdate(newarray,func,arrayfunc,pos+1,len,ext_arg_1);
-    then (newarray,ext_arg_2);
-  end matchcontinue;
-end traverseBackendDAEArrayNoCopyWithUpdate;
+    else
+      equation
+        a = inArray[pos];
+        (new_a,ext_arg_1) = arrayfunc(a,func,inTypeB);
+        newarray = arrayUpdateCond(referenceEq(a,new_a),inArray,pos,new_a);
+        (newarray,ext_arg_2) = traverseBackendDAEArrayNoCopyWithUpdateWork(pos+1>len,newarray,func,arrayfunc,pos+1,len,ext_arg_1);
+      then (newarray,ext_arg_2);
+  end match;
+end traverseBackendDAEArrayNoCopyWithUpdateWork;
 
 protected function arrayUpdateCond
   input Boolean b;

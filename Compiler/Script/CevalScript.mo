@@ -1919,7 +1919,7 @@ algorithm
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
-        deps = generateFunctions(cache,env,p,sp,suffix,{});
+        (cache,env) = generateFunctions(cache,env,p,sp,suffix);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
@@ -1929,7 +1929,7 @@ algorithm
         names = List.map(vals,getTypeNameIdent);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
         cls = List.map2(names,List.getMemberOnTrue, sp, SCode.isClassNamed);
-        deps = generateFunctions(cache,env,p,cls,suffix,{});
+        (cache,env) = generateFunctions(cache,env,p,cls,suffix);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
@@ -4661,10 +4661,10 @@ protected function generateFunctions
   input Absyn.Program p;
   input list<SCode.Element> isp;
   input String stamp;
-  input list<tuple<String,list<String>>> iacc;
-  output list<tuple<String,list<String>>> deps;
+  output Env.Cache cache;
+  output Env.Env env;
 algorithm
-  deps := matchcontinue (icache,ienv,p,isp,stamp,iacc)
+  (cache,env) := match (icache,ienv,p,isp,stamp)
     local
       String name;
       list<String> names,dependencies,dependenciesStamp;
@@ -4674,17 +4674,55 @@ algorithm
       list<DAE.Function> d;
       list<tuple<String,list<String>>> acc;
       list<SCode.Element> sp;
-      Env.Cache cache;
-      Env.Env env;
       String file,nameHeader,str;
       Integer n;
       Absyn.Info info;
       SCode.Element cl;
 
-    case (cache,env,_,{},_,acc) then acc;
-    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst),info=info as Absyn.INFO(fileName=file)))::sp,_,acc)
+    case (cache,env,_,{},_) then (cache,env);
+    case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst),info=info))::sp,_)
       equation
-        (0,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
+        (cache,env) = generateFunctions2(cache,env,p,cl,name,elementLst,info,stamp);
+        (cache,env) = generateFunctions(cache,env,p,sp,stamp);
+      then (cache,env);
+    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as Absyn.INFO(fileName=file))::sp,_)
+      equation
+        (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
+        Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " +& name, info);
+      then fail();
+  end match;
+end generateFunctions;
+
+protected function generateFunctions2
+  input Env.Cache icache;
+  input Env.Env ienv;
+  input Absyn.Program p;
+  input SCode.Element cl;
+  input String name;
+  input list<SCode.Element> elementLst;
+  input Absyn.Info info;
+  input String stamp;
+  output Env.Cache cache;
+  output Env.Env env;
+algorithm
+  (cache,env) := matchcontinue (icache,ienv,p,cl,name,elementLst,info,stamp)
+    local
+      list<String> names,dependencies,dependenciesStamp;
+      list<Absyn.Path> paths;
+      DAE.FunctionTree funcs;
+      list<DAE.Function> d;
+      list<tuple<String,list<String>>> acc;
+      list<SCode.Element> sp;
+      String file,nameHeader,str;
+      Integer n;
+
+    case (cache,env,_,_,_,_,Absyn.INFO(fileName=file),_)
+      equation
+        (1,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
+      then (cache,env);
+
+    case (cache,env,_,_,_,_,_,_)
+      equation
         names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
         paths = List.map1r(names,Absyn.makeQualifiedPathFromStrings,name);
         // print("paths to generate:" +& stringDelimitList(List.map(paths,Absyn.pathString),",") +& "\n");
@@ -4693,7 +4731,6 @@ algorithm
         d = List.map1(paths, DAEUtil.getNamedFunction, funcs);
         (_,(_,dependencies)) = DAEUtil.traverseDAEFunctions(d,Expression.traverseSubexpressionsHelper,(matchQualifiedCalls,{}),{});
         // print(name +& " has dependencies: " +& stringDelimitList(dependencies,",") +& "\n");
-        acc = (name,dependencies)::acc;
         dependencies = List.sort(dependencies,Util.strcmpBool);
         dependencies = List.map1(dependencies,stringAppend,".h");
         nameHeader = name +& ".h";
@@ -4703,15 +4740,13 @@ algorithm
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
         str = Tpl.tplString(Unparsing.programExternalHeader, {cl});
         System.writeFile(name +& "_records.c","#include <meta_modelica.h>\n" +& str);
-        acc = generateFunctions(cache,env,p,sp,stamp,acc);
-      then acc;
-    case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as Absyn.INFO(fileName=file))::sp,_,acc)
+      then (cache,env);
+    else
       equation
-        (n,_) = System.regex(file, "ModelicaBuiltin.mo$", 1, false, false);
-        Error.assertion(n > 0, "Not an encapsulated class (required for separate compilation): " +& name, info);
+        Error.addSourceMessage(Error.SEPARATE_COMPILATION_PACKAGE_FAILED,{name},info);
       then fail();
   end matchcontinue;
-end generateFunctions;
+end generateFunctions2;
 
 protected function matchQualifiedCalls
 "Collects the packages used by the functions"
