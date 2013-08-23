@@ -68,6 +68,7 @@
 #include "Helper.h"
 #include "../../Compiler/runtime/config.h"
 
+#ifndef QT_DEBUG
 #ifndef WIN32
 #include <execinfo.h>
 static inline void printStackTrace(QFile *pFile, int signalNumber, const char* signalName, unsigned int max_frames = 50)
@@ -100,7 +101,7 @@ static inline void printStackTrace(QFile *pFile, int signalNumber, const char* s
     }
     free(symbollist);*/
 }
-#endif
+#endif // WIN32
 
 void signalHandler(int signum)
 {
@@ -124,7 +125,7 @@ void signalHandler(int signum)
       printStackTrace(&stackTraceFile, signum, name);
       stackTraceFile.close();
   }
-#endif
+#endif // WIN32
   NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport,
                                                                       NotificationsDialog::CriticalIcon, 0);
   pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
@@ -133,6 +134,7 @@ void signalHandler(int signum)
   // want to quit your program right now.
   exit(signum);
 }
+#endif // QT_DEBUG
 
 void printOMEditUsage()
 {
@@ -144,6 +146,10 @@ void printOMEditUsage()
 
 int main(int argc, char *argv[])
 {
+  /*
+    Signal handling corrupts the gdb symbols. So if we are building the debug version then don't register the signals.
+    */
+#ifndef QT_DEBUG
   /* Abnormal termination (abort) */
   signal(SIGABRT, signalHandler);
   /* Segmentation violation */
@@ -152,6 +158,7 @@ int main(int argc, char *argv[])
   signal(SIGILL, signalHandler);
   /* Floating point error */
   signal(SIGFPE, signalHandler);
+#endif // QT_DEBUG
   // if user asks for --help
   for(int i = 1; i < argc; i++)
   {
