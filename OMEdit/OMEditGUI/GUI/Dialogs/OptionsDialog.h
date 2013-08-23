@@ -137,6 +137,10 @@ public:
   QString getPlottingViewMode();
   void setDefaultView(QString value);
   QString getDefaultView();
+  QGroupBox* getEnableAutoSaveGroupBox();
+  QSpinBox* getAutoSaveIntervalSpinBox();
+  QCheckBox* getEnableAutoSaveForSingleClassesCheckBox();
+  QCheckBox* getEnableAutoSaveForOneFilePackagesCheckBox();
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -159,8 +163,15 @@ private:
   QRadioButton *mpDiagramViewRadioButton;
   QRadioButton *mpTextViewRadioButton;
   QRadioButton *mpDocumentationViewRadioButton;
+  QGroupBox *mpEnableAutoSaveGroupBox;
+  Label *mpAutoSaveIntervalLabel;
+  QSpinBox *mpAutoSaveIntervalSpinBox;
+  Label *mpAutoSaveSecondsLabel;
+  QCheckBox *mpEnableAutoSaveForSingleClassesCheckBox;
+  QCheckBox *mpEnableAutoSaveForOneFilePackagesCheckBox;
 public slots:
   void selectWorkingDirectory();
+  void autoSaveIntervalValueChanged(int value);
 };
 
 class LibrariesPage : public QWidget

@@ -218,6 +218,14 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   // read last Open Directory location
   if (settings.contains("lastOpenDirectory"))
     StringHandler::setLastOpenDirectory(settings.value("lastOpenDirectory").toString());
+  // create the auto save timer
+  mpAutoSaveTimer = new QTimer(this);
+  connect(mpAutoSaveTimer, SIGNAL(timeout()), SLOT(autoSave()));
+  // read auto save settings
+  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked())
+  {
+    mpAutoSaveTimer->start(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value());
+  }
 }
 
 //! Returns the instance of OMCProxy.
@@ -1427,6 +1435,18 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
     mpModelSwitcherActions[j]->setVisible(false);
 }
 
+void MainWindow::toggleAutoSave()
+{
+  if (mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveGroupBox()->isChecked())
+  {
+    mpAutoSaveTimer->start(mpOptionsDialog->getGeneralSettingsPage()->getAutoSaveIntervalSpinBox()->value());
+  }
+  else
+  {
+    mpAutoSaveTimer->stop();
+  }
+}
+
 void MainWindow::perspectiveTabChanged(int tabIndex)
 {
   switch (tabIndex)
@@ -1446,6 +1466,47 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
     default:
       switchToWelcomePerspective();
       break;
+  }
+}
+
+void MainWindow::autoSave()
+{
+  qDebug() << "auto save";
+  bool autoSaveForSingleClasses = mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveForSingleClassesCheckBox()->isChecked();
+  bool autoSaveForOneFilePackages = mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked();
+  bool autoSaveForFolderPackages = false;
+  // if auto save for any class type is enabled.
+  if (autoSaveForSingleClasses || autoSaveForOneFilePackages || autoSaveForFolderPackages)
+  {
+    foreach (LibraryTreeNode* pLibraryTreeNode, mpLibraryTreeWidget->getLibraryTreeNodesList())
+    {
+      if (!pLibraryTreeNode->isSaved() && !pLibraryTreeNode->getFileName().isEmpty())
+      {
+        // if auto save for single file class is enabled.
+        if (pLibraryTreeNode->getParentName().isEmpty() && pLibraryTreeNode->childCount() == 0 && autoSaveForSingleClasses)
+        {
+          mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode);
+        }
+        // if auto save for one file package is enabled.
+        else if (pLibraryTreeNode->getParentName().isEmpty() && pLibraryTreeNode->childCount() > 0 && autoSaveForOneFilePackages)
+        {
+          mpLibraryTreeWidget->saveLibraryTreeNode(pLibraryTreeNode);
+        }
+        // if auto save for folder package is enabled.
+        else if (autoSaveForFolderPackages)
+        {
+          LibraryTreeNode *pParentLibraryTreeNode = mpLibraryTreeWidget->getLibraryTreeNode(StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()));
+          if (pParentLibraryTreeNode)
+          {
+            QFileInfo fileInfo(pParentLibraryTreeNode->getFileName());
+            if ((pParentLibraryTreeNode->getSaveContentsType() == LibraryTreeNode::SaveFolderStructure) || (fileInfo.fileName().compare("package.mo") == 0))
+            {
+              mpLibraryTreeWidget->saveLibraryTreeNode(pParentLibraryTreeNode);
+            }
+          }
+        }
+      }
+    }
   }
 }
 

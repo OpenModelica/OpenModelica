@@ -120,6 +120,15 @@ void OptionsDialog::readGeneralSettings()
   // read the default view
   if (mSettings.contains("defaultView"))
     mpGeneralSettingsPage->setDefaultView(mSettings.value("defaultView").toString());
+  // read auto save
+  if (mSettings.contains("autoSave/enable"))
+    mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mSettings.value("autoSave/enable").toBool());
+  if (mSettings.contains("autoSave/interval"))
+    mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->setValue(mSettings.value("autoSave/interval").toInt());
+  if (mSettings.contains("autoSave/enableSingleClasses"))
+    mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->setChecked(mSettings.value("autoSave/enableSingleClasses").toBool());
+  if (mSettings.contains("autoSave/enableOneFilePackages"))
+    mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->setChecked(mSettings.value("autoSave/enableOneFilePackages").toBool());
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -373,6 +382,12 @@ void OptionsDialog::saveGeneralSettings()
   }
   // save default view
   mSettings.setValue("defaultView", mpGeneralSettingsPage->getDefaultView());
+  // save auto save
+  mSettings.setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
+  mSettings.setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
+  mSettings.setValue("autoSave/enableSingleClasses", mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->isChecked());
+  mSettings.setValue("autoSave/enableOneFilePackages", mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked());
+  mpMainWindow->toggleAutoSave();
 }
 
 //! Saves the Libraries section settings to omedit.ini
@@ -793,16 +808,42 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   pDefautlViewLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pDefautlViewLayout->addLayout(pDefaultViewRadioButtonsLayout, 0, 0);
   mpDefaultViewGroupBox->setLayout(pDefautlViewLayout);
+  // Auto Save
+  mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
+  mpEnableAutoSaveGroupBox->setToolTip("Auto save feature is experimental. If you encounter unexpected crashes then disable it.");
+  mpEnableAutoSaveGroupBox->setCheckable(true);
+  mpEnableAutoSaveGroupBox->setChecked(false);
+  mpAutoSaveIntervalLabel = new Label(tr("Auto Save Interval:"));
+  mpAutoSaveIntervalSpinBox = new QSpinBox;
+  mpAutoSaveIntervalSpinBox->setSuffix(" milliseconds");
+  mpAutoSaveIntervalSpinBox->setRange(30000, std::numeric_limits<int>::max());
+  mpAutoSaveIntervalSpinBox->setSingleStep(1000);
+  mpAutoSaveSecondsLabel = new Label;
+  connect(mpAutoSaveIntervalSpinBox, SIGNAL(valueChanged(int)), SLOT(autoSaveIntervalValueChanged(int)));
+  mpEnableAutoSaveForSingleClassesCheckBox = new QCheckBox(tr("Enable Auto Save for single classes"));
+  mpEnableAutoSaveForOneFilePackagesCheckBox = new QCheckBox(tr("Enable Auto Save for one file packages (Experimental)"));
+  // calculate the auto save interval seconds.
+  autoSaveIntervalValueChanged(mpAutoSaveIntervalSpinBox->value());
+  // Auto Save layout
+  QGridLayout *pAutoSaveGridLayout = new QGridLayout;
+  pAutoSaveGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pAutoSaveGridLayout->addWidget(mpAutoSaveIntervalLabel, 0, 0);
+  pAutoSaveGridLayout->addWidget(mpAutoSaveIntervalSpinBox, 0, 1);
+  pAutoSaveGridLayout->addWidget(mpAutoSaveSecondsLabel, 0, 2);
+  pAutoSaveGridLayout->addWidget(mpEnableAutoSaveForSingleClassesCheckBox, 1, 0, 1, 3);
+  pAutoSaveGridLayout->addWidget(mpEnableAutoSaveForOneFilePackagesCheckBox, 2, 0, 1, 3);
+  mpEnableAutoSaveGroupBox->setLayout(pAutoSaveGridLayout);
   // set the layout
-  QVBoxLayout *layout = new QVBoxLayout;
-  layout->setContentsMargins(0, 0, 0, 0);
-  layout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  layout->addWidget(mpGeneralSettingsGroupBox);
-  layout->addWidget(mpLibrariesBrowserGroupBox);
-  layout->addWidget(mpModelingViewModeGroupBox);
-  layout->addWidget(mpPlottingViewModeGroupBox);
-  layout->addWidget(mpDefaultViewGroupBox);
-  setLayout(layout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addWidget(mpGeneralSettingsGroupBox);
+  pMainLayout->addWidget(mpLibrariesBrowserGroupBox);
+  pMainLayout->addWidget(mpModelingViewModeGroupBox);
+  pMainLayout->addWidget(mpPlottingViewModeGroupBox);
+  pMainLayout->addWidget(mpDefaultViewGroupBox);
+  pMainLayout->addWidget(mpEnableAutoSaveGroupBox);
+  setLayout(pMainLayout);
 }
 
 QComboBox* GeneralSettingsPage::getLanguageComboBox()
@@ -902,11 +943,36 @@ QString GeneralSettingsPage::getDefaultView()
     return Helper::diagramView;
 }
 
+QGroupBox* GeneralSettingsPage::getEnableAutoSaveGroupBox()
+{
+  return mpEnableAutoSaveGroupBox;
+}
+
+QSpinBox* GeneralSettingsPage::getAutoSaveIntervalSpinBox()
+{
+  return mpAutoSaveIntervalSpinBox;
+}
+
+QCheckBox* GeneralSettingsPage::getEnableAutoSaveForSingleClassesCheckBox()
+{
+  return mpEnableAutoSaveForSingleClassesCheckBox;
+}
+
+QCheckBox* GeneralSettingsPage::getEnableAutoSaveForOneFilePackagesCheckBox()
+{
+  return mpEnableAutoSaveForOneFilePackagesCheckBox;
+}
+
 //! Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.
 //! Allows user to choose a new working directory.
 void GeneralSettingsPage::selectWorkingDirectory()
 {
   mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL));
+}
+
+void GeneralSettingsPage::autoSaveIntervalValueChanged(int value)
+{
+  mpAutoSaveSecondsLabel->setText(QString("(%1 seconds)").arg(value/1000));
 }
 
 //! @class LibrariesPage

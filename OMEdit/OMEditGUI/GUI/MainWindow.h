@@ -174,6 +174,7 @@ private:
   Label *mpPointerXPositionLabel;
   Label *mpPointerYPositionLabel;
   QTabBar *mpPerspectiveTabbar;
+  QTimer *mpAutoSaveTimer;
   // File Menu
   QAction *mpNewModelicaClassAction;
   QAction *mpOpenModelicaFileAction;
@@ -284,8 +285,10 @@ public slots:
   void showProgressBar();
   void hideProgressBar();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
+  void toggleAutoSave();
 private slots:
   void perspectiveTabChanged(int tabIndex);
+  void autoSave();
 private:
   void createActions();
   void createToolbars();
