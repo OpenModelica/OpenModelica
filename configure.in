@@ -63,6 +63,7 @@ AC_SUBST(LINK)
 AC_SUBST(RPATH)
 AC_SUBST(MSL_EXTRA_ARGS)
 AC_SUBST(WITH_HWLOC)
+AC_SUBST(OS_TARGET)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -674,6 +675,7 @@ if test "Darwin" = `uname`; then
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/omc'"
   MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
+  OS_TARGET="osx"
 else
   EXE=""
   SHREXT=".so"
@@ -684,6 +686,7 @@ else
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc $OPENMP"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
+  OS_TARGET="linux"
 fi
 
 dnl should we compile modpar
