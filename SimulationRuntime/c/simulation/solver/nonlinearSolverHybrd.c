@@ -322,55 +322,53 @@ static int getAnalyticalJacobian(DATA* data, double* jac, int sysNumber)
  *
  *
  */
-static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data, int sysNumber){
-
-  int i, currentSys = sysNumber;
+static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data, int sysNumber)
+{
+  int i;
   char buf[256];
-  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
+  NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = ((DATA*)data)->simulationInfo.solveContinuous;
 
   switch(*iflag)
   {
-    case 1:
-      /* re-scaling x vector */
-      if(solverData->useXScaling)
-        for(i=0; i<*n; i++)
-          x[i] = x[i]*solverData->xScalefactors[i];
+  case 1:
+    /* re-scaling x vector */
+    if(solverData->useXScaling)
+      for(i=0; i<*n; i++)
+        x[i] = x[i]*solverData->xScalefactors[i];
 
-      /* call residual function */
-      (systemData->residualFunc)(data, x, f, iflag);
+    /* call residual function */
+    (systemData->residualFunc)(data, x, f, iflag);
 
-      /* Scaling x vector */
-      if(solverData->useXScaling)
-        for(i=0; i<*n; i++)
-          x[i] = (1.0/solverData->xScalefactors[i]) * x[i];
-      break;
+    /* Scaling x vector */
+    if(solverData->useXScaling)
+      for(i=0; i<*n; i++)
+        x[i] = (1.0/solverData->xScalefactors[i]) * x[i];
+    break;
 
-    case 2:
+  case 2:
+    /* set residual function continuous for jacobian calculation */
+    if(continuous)
+      ((DATA*)data)->simulationInfo.solveContinuous = 0;
 
-      /* set residual function continuous for jacobian calculation */
-      if(continuous)
-        ((DATA*)data)->simulationInfo.solveContinuous = 0;
+    /* call apropreated jacobain function */
+    if(systemData->jacobianIndex != -1)
+      getAnalyticalJacobian(data, fjac, sysNumber);
+    else
+      getNumericalJacobian(data, fjac, x, f, sysNumber);
 
-      /* call apropreated jacobain function */
-      if(systemData->jacobianIndex != -1)
-        getAnalyticalJacobian(data, fjac, sysNumber);
-      else
-        getNumericalJacobian(data, fjac, x, f, sysNumber);
+    /* reset residual function again */
+    if(continuous)
+      ((DATA*)data)->simulationInfo.solveContinuous = 1;
+    break;
 
-      /* reset residual function again */
-      if(continuous)
-        ((DATA*)data)->simulationInfo.solveContinuous = 1;
-
-
-      break;
-
-    default:
-      snprintf(buf, sizeof buf, "%s%d", "Well, this is embarrassing. The non-linear solver should never called this case.", *iflag);
-      THROW(buf);
-      break;
+  default:
+    snprintf(buf, sizeof buf, "%s%d", "Well, this is embarrassing. The non-linear solver should never called this case.", *iflag);
+    THROW(buf);
+    break;
   }
+  
   return 0;
 }
 

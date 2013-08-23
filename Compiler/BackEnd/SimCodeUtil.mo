@@ -1845,32 +1845,31 @@ protected function addNumEqnsandNumofSystems
 algorithm
   omodelInfo := match(modelInfo, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys)
     local
-      Absyn.Path name;
-      String directory;
-      SimCode.VarInfo varInfo;
-      SimCode.SimVars vars;
-      list<SimCode.Function> functions;
-      list<String> labels;
-      Integer numZeroCrossings, numTimeEvents, numRelations, numMathEvents;
-      Integer numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
-      Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
-      Integer numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars;
-      Integer numStringParamVars, numStringAliasVars, numStateSets;
-      Option<Integer> dimODE1stOrder, dimODE2ndOrder;
-    case(SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels), _, _, _, _)
-      equation
-        SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
-          numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
-          numStringParamVars, numStringAliasVars, _, _, _, _, numStateSets, dimODE1stOrder, dimODE2ndOrder) = varInfo;
-        varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
-          numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
-          numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, dimODE1stOrder, dimODE2ndOrder);
-        then SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
+    Absyn.Path name;
+    String directory;
+    SimCode.VarInfo varInfo;
+    SimCode.SimVars vars;
+    list<SimCode.Function> functions;
+    list<String> labels;
+    Integer numZeroCrossings, numTimeEvents, numRelations, numMathEvents;
+    Integer numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars;
+    Integer numParams, numIntParams, numBoolParams, numOutVars, numInVars;
+    Integer numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars;
+    Integer numStringParamVars, numStringAliasVars, numStateSets;
+    Option<Integer> dimODE1stOrder, dimODE2ndOrder;
+    
+    case(SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels), _, _, _, _) equation
+      SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
+      numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
+      numStringParamVars, numStringAliasVars, _, _, _, _, numStateSets, dimODE1stOrder, dimODE2ndOrder) = varInfo;
+      varInfo = SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEvents, numStateVars, numInlineVars, numAlgVars, numDiscreteReal, numIntAlgVars, numBoolAlgVars, numAlgAliasVars, numIntAliasVars, numBoolAliasVars, numParams, 
+      numIntParams, numBoolParams, numOutVars, numInVars, numInitialEquations, numInitialAlgorithms, numInitialResiduals, numExternalObjects, numStringAlgVars, 
+      numStringParamVars, numStringAliasVars, numEqns, numLinearSys, numNonLinearSys, numMixedLinearSys, numStateSets, dimODE1stOrder, dimODE2ndOrder);
+    then SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
   end match;
 end addNumEqnsandNumofSystems;
 
 protected function getSystemIndexMap
-
   input SimCode.SimEqSystem inEqn;
   input array<Integer> inSysIndexMap;
   output array<Integer> outSysIndexMap;
@@ -1880,27 +1879,28 @@ algorithm
       Integer index, systemIndex;
       array<Integer> sysIndexMap;
       SimCode.SimEqSystem cont;
-    case(SimCode.SES_LINEAR(index=index, indexLinearSystem = systemIndex), _)
-      equation
-        sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
-      then sysIndexMap;
-    case(SimCode.SES_NONLINEAR(index=index, indexNonLinearSystem = systemIndex), _)
-      equation
-        sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
-      then sysIndexMap;
-    case(SimCode.SES_MIXED(cont=cont, index=index, indexMixedSystem = systemIndex), _)
-      equation
-        sysIndexMap = getSystemIndexMap(cont, inSysIndexMap);
-        sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
-      then sysIndexMap;
+      list<SimCode.SimEqSystem> eqs;
+    
+    case(SimCode.SES_LINEAR(index=index, indexLinearSystem=systemIndex), _) equation
+      sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
+    then sysIndexMap;
+    
+    case(SimCode.SES_NONLINEAR(index=index, eqs=eqs, indexNonLinearSystem=systemIndex), _) equation
+      sysIndexMap = List.fold(eqs, getSystemIndexMap, inSysIndexMap);
+      sysIndexMap = arrayUpdate(sysIndexMap, index, systemIndex);
+    then sysIndexMap;
+    
+    case(SimCode.SES_MIXED(cont=cont, index=index, indexMixedSystem=systemIndex), _) equation
+      sysIndexMap = getSystemIndexMap(cont, inSysIndexMap);
+      sysIndexMap = arrayUpdate(inSysIndexMap, index, systemIndex);
+    then sysIndexMap;
+    
     else then inSysIndexMap;
   end match;
 end getSystemIndexMap;
 
-
-protected function setSystemIndexMap
-" function setSystemIndexMap
-  function updates index of strong components systems"
+protected function setSystemIndexMap "
+  updates index of strong components systems"
   input SimCode.SimEqSystem inEqn;
   input array<Integer> inSysIndexMap;
   output SimCode.SimEqSystem outEqn;
@@ -1919,32 +1919,30 @@ algorithm
       list<DAE.Exp> beqs;
       Boolean linearTearing;
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-    case(SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, _), _)
-      equation
-        sysIndex = inSysIndexMap[index];
-      then SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, sysIndex);
-     
-    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac, linearTearing), _)
-      equation
-        sysIndex = inSysIndexMap[index];
-      then SimCode.SES_NONLINEAR(index, eqs, crefs, sysIndex, optSymJac, linearTearing);
-        
-    case(SimCode.SES_MIXED(index, cont, discVars, discEqs, _), _)
-      equation
-        sysIndex = inSysIndexMap[index];
-        cont = setSystemIndexMap(cont, inSysIndexMap);
-      then SimCode.SES_MIXED(index, cont, discVars, discEqs, sysIndex);
-                  
-    else then inEqn;
+    
+    case(SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, _), _) equation
+      sysIndex = inSysIndexMap[index];
+    then SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, sysIndex);
+
+    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac, linearTearing), _) equation
+      eqs = List.map1(eqs, setSystemIndexMap, inSysIndexMap);
+      sysIndex = inSysIndexMap[index];
+    then SimCode.SES_NONLINEAR(index, eqs, crefs, sysIndex, optSymJac, linearTearing);
+
+    case(SimCode.SES_MIXED(index, cont, discVars, discEqs, _), _) equation
+      sysIndex = inSysIndexMap[index];
+      cont = setSystemIndexMap(cont, inSysIndexMap);
+    then SimCode.SES_MIXED(index, cont, discVars, discEqs, sysIndex);
+
+    else
+    then inEqn;
   end match;
 end setSystemIndexMap;
 
-protected function countandIndexAlgebraicLoops
-" function countandIndexAlgebraicLoops
- function counts algebraic loops
- and updates index of the systems, 
- further all symbolic jacobians are collected and
- therefore we also need to seek for algebraic loops."
+protected function countandIndexAlgebraicLoops "
+  counts algebraic loops and updates index of the systems, further all 
+  symbolic jacobians are collected and therefore we also need to seek 
+  for algebraic loops."
   input list<SimCode.SimEqSystem> inEqns;
   input Integer inLinearSysIndex;
   input Integer inNonLinSysIndex;
@@ -1958,69 +1956,63 @@ protected function countandIndexAlgebraicLoops
 algorithm
   (outEqns, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex, outSymJacs) := match(inEqns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inSymJacs)
     local
-      Integer index, countLinearSys, countNonLinSys, countMixedSys;
-      list<SimCode.SimEqSystem> eqs, rest, res;
-      list<DAE.ComponentRef> crefs;
-      SimCode.SimEqSystem eq, cont;
-      list<SimCode.SimVar> discVars;
-      list<SimCode.SimEqSystem> discEqs;
-      list<SimCode.JacobianMatrix> symjacs, restSymJacs;
-      Option<SimCode.JacobianMatrix> optSymJac;
-      SimCode.JacobianMatrix symJac;
-      Boolean partOfMixed;
-      list<SimCode.SimVar> vars;
-      list<DAE.Exp> beqs;
-      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-      Boolean linearTearing;
+    Integer index, countLinearSys, countNonLinSys, countMixedSys;
+    list<SimCode.SimEqSystem> eqs, rest, res;
+    list<DAE.ComponentRef> crefs;
+    SimCode.SimEqSystem eq, cont;
+    list<SimCode.SimVar> discVars;
+    list<SimCode.SimEqSystem> discEqs;
+    list<SimCode.JacobianMatrix> symjacs, restSymJacs;
+    Option<SimCode.JacobianMatrix> optSymJac;
+    SimCode.JacobianMatrix symJac;
+    Boolean partOfMixed;
+    list<SimCode.SimVar> vars;
+    list<DAE.Exp> beqs;
+    list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+    Boolean linearTearing;
 
     case ({}, _, _, _, {})
     then ({}, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, {});
-      
-    case ({}, _, _, _, symJac::restSymJacs)
-      equation
-        (symJac, countLinearSys, countNonLinSys, countMixedSys) = countandIndexAlgebraicLoopsSymJac(symJac, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex);
-        (_, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops({}, countLinearSys, countNonLinSys, countMixedSys, restSymJacs);
-        symjacs = listAppend({symJac},symjacs);
+
+    case ({}, _, _, _, symJac::restSymJacs) equation
+      (symJac, countLinearSys, countNonLinSys, countMixedSys) = countandIndexAlgebraicLoopsSymJac(symJac, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex);
+      (_, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops({}, countLinearSys, countNonLinSys, countMixedSys, restSymJacs);
+      symjacs = listAppend({symJac},symjacs);
     then ({}, countLinearSys, countNonLinSys, countMixedSys, symjacs);
-      
-    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as NONE(), linearTearing)::rest, _, _, _, _)
-      equation
-        (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inSymJacs);
-        res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac, linearTearing)}, res);
-      then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
-        
-    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as SOME(symJac), linearTearing)::rest, _, _, _, _)
-      equation
-        symjacs = symJac::inSymJacs;
-        (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, symjacs);
-        res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac, linearTearing)}, res);
-      then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
-        
-    case(SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, _)::rest, _, _, _, _)
-      equation
-        (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inSymJacs);
-        res = listAppend({SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, inLinearSysIndex)}, res);
-      then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
-        
-    case(SimCode.SES_MIXED(index, cont, discVars, discEqs, _)::rest, _, _, _, _)
-      equation
-        ({cont}, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops({cont}, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inSymJacs);  
-        (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, countLinearSys, countNonLinSys, countMixedSys+1, symjacs);
-        res = listAppend({SimCode.SES_MIXED(index, cont, discVars, discEqs, inMixedSysIndex)}, res);
-      then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);   
-               
-    case(eq::rest, _, _, _, _)
-      equation
-        (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inSymJacs);
-        res = listAppend({eq}, res);
-      then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
-        
+
+    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as NONE(), linearTearing)::rest, _, _, _, _) equation
+      (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, inSymJacs);
+      (eqs, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(eqs, countLinearSys, countNonLinSys, countMixedSys, symjacs);
+      res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac, linearTearing)}, res);
+    then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
+
+    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac as SOME(symJac), linearTearing)::rest, _, _, _, _) equation
+      symjacs = symJac::inSymJacs;
+      (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex, inNonLinSysIndex+1, inMixedSysIndex, symjacs);
+      (eqs, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(eqs, countLinearSys, countNonLinSys, countMixedSys, symjacs);
+      res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex, optSymJac, linearTearing)}, res);
+    then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
+
+    case (SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, _)::rest, _, _, _, _) equation
+      (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex+1, inNonLinSysIndex, inMixedSysIndex, inSymJacs);
+      res = listAppend({SimCode.SES_LINEAR(index, partOfMixed, vars, beqs, simJac, inLinearSysIndex)}, res);
+    then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
+
+    case(SimCode.SES_MIXED(index, cont, discVars, discEqs, _)::rest, _, _, _, _) equation
+      ({cont}, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops({cont}, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inSymJacs);  
+      (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, countLinearSys, countNonLinSys, countMixedSys+1, symjacs);
+      res = listAppend({SimCode.SES_MIXED(index, cont, discVars, discEqs, inMixedSysIndex)}, res);
+    then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);   
+
+    case (eq::rest, _, _, _, _) equation
+      (res, countLinearSys, countNonLinSys, countMixedSys, symjacs) = countandIndexAlgebraicLoops(rest, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, inSymJacs);
+      res = listAppend({eq}, res);
+    then (res, countLinearSys, countNonLinSys, countMixedSys, symjacs);
   end match;
 end countandIndexAlgebraicLoops;
 
-protected function countandIndexAlgebraicLoopsSymJac
-" function countandIndexAlgebraicLoopsSymJac
- helper function to countandIndexAlgebraicLoops"
+protected function countandIndexAlgebraicLoopsSymJac "
+  helper function to countandIndexAlgebraicLoops"
   input SimCode.JacobianMatrix inSymjac;
   input Integer inLinearSysIndex;
   input Integer inNonLinSysIndex;
@@ -2029,27 +2021,21 @@ protected function countandIndexAlgebraicLoopsSymJac
   output Integer outLinearSysIndex;
   output Integer outNonLinSysIndex;
   output Integer outMixedSysIndex;
+protected
+  list<SimCode.JacobianColumn> columns;
+  list<SimCode.SimVar> vars;
+  String str;
+  tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> tpl;
+  list<list<DAE.ComponentRef>> colors;
+  Integer int;
 algorithm
-  (outSymjac, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex) := match(inSymjac, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex)
-    local
-      list<SimCode.JacobianColumn> columns;
-      list<SimCode.SimVar> vars;
-      String str;
-      tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimCode.SimVar>,list<SimCode.SimVar>>> tpl;
-      list<list<DAE.ComponentRef>> colors;
-      Integer int;
-      Integer countLinearSys, countNonLinSys, countMixedSys;
-    case ((columns, vars, str, tpl, colors, int), _, _, _)
-      equation
-        (columns, countLinearSys, countNonLinSys, countMixedSys) = countandIndexAlgebraicLoopsSymJacColumn(columns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex);
-    then ((columns, vars, str, tpl, colors, int), countLinearSys, countNonLinSys, countMixedSys);
-
-  end match;
+  (columns, vars, str, tpl, colors, int) := inSymjac;
+  (columns, outLinearSysIndex, outNonLinSysIndex, outMixedSysIndex) := countandIndexAlgebraicLoopsSymJacColumn(columns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex);
+  outSymjac := (columns, vars, str, tpl, colors, int);
 end countandIndexAlgebraicLoopsSymJac;
 
-protected function countandIndexAlgebraicLoopsSymJacColumn
-" function countandIndexAlgebraicLoopsSymJacColumn
- helper function to countandIndexAlgebraicLoops"
+protected function countandIndexAlgebraicLoopsSymJacColumn "
+  helper function to countandIndexAlgebraicLoops"
   input list<SimCode.JacobianColumn> inSymColumn;
   input Integer inLinearSysIndex;
   input Integer inNonLinSysIndex;
@@ -2066,16 +2052,15 @@ algorithm
     list<SimCode.SimVar> vars;
     String str;
     Integer countLinearSys, countNonLinSys, countMixedSys;
+    
     case ({}, _, _, _)
-      then ({}, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex);
-        
-    case ((eqns,vars,str)::rest, _, _, _)
-      equation
-        (eqns, countLinearSys, countNonLinSys, countMixedSys, _) = countandIndexAlgebraicLoops(eqns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, {});
-        (res1, countLinearSys, countNonLinSys, countMixedSys) = countandIndexAlgebraicLoopsSymJacColumn(rest, countLinearSys, countNonLinSys, countMixedSys);
-        result = listAppend({(eqns, vars, str)},res1);
-    then (result, countLinearSys, countNonLinSys, countMixedSys);
+    then ({}, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex);
 
+    case ((eqns, vars, str)::rest, _, _, _) equation
+      (eqns, countLinearSys, countNonLinSys, countMixedSys, _) = countandIndexAlgebraicLoops(eqns, inLinearSysIndex, inNonLinSysIndex, inMixedSysIndex, {});
+      (res1, countLinearSys, countNonLinSys, countMixedSys) = countandIndexAlgebraicLoopsSymJacColumn(rest, countLinearSys, countNonLinSys, countMixedSys);
+      result = listAppend({(eqns, vars, str)},res1);
+    then (result, countLinearSys, countNonLinSys, countMixedSys);
   end match;
 end countandIndexAlgebraicLoopsSymJacColumn;
 

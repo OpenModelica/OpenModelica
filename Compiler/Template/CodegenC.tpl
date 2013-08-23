@@ -1054,7 +1054,9 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
      let generatedJac = match jacobianMatrix case SOME(__) then 'functionJacNLSJac<%eq.index%>_column' case NONE() then 'NULL'
      let initialJac = match jacobianMatrix case SOME(__) then 'initialAnalyticJacobianNLSJac<%eq.index%>' case NONE() then 'NULL'
      let jacIndex = match jacobianMatrix case SOME(__) then 'INDEX_JAC_NLSJac<%eq.index%>' case NONE() then '-1'
+     let innerEqs = functionInitialNonLinearSystemsTemp(eqs)
      <<
+     <%innerEqs%>
      nonLinearSystemData[<%indexNonLinearSystem%>].equationIndex = <%index%>;
      nonLinearSystemData[<%indexNonLinearSystem%>].size = <%size%>;
      nonLinearSystemData[<%indexNonLinearSystem%>].method = <%newtonStep%>;
@@ -1099,6 +1101,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations)
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let &tmp = buffer ""
+     let innerEqs = functionNonLinearResiduals(eqs)
      let xlocs = (crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n")
      let body_initializeStaticNLSData = (crefs |> cr hasindex i0 =>
       <<
@@ -1117,6 +1120,7 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations)
          '<%preExp%>res[<%i0%>] = <%expPart%>;'
        ;separator="\n")
      <<
+     <%innerEqs%>
      <%&tmp%>
      void initializeStaticNLSData<%index%>(void *inData, void *inNlsData)
      {
