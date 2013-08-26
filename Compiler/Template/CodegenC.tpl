@@ -2878,6 +2878,10 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
   match eq
     case SES_NONLINEAR(__) then
       let size = listLength(crefs)
+      let &tmp = buffer ""
+      let innerBody = (eqs |> eq2 =>
+         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
+       ;separator="\n")
       let nonlinindx = indexNonLinearSystem
       <<
       #ifdef _OMC_MEASURE_TIME
@@ -2897,6 +2901,8 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
       /* write solution */
       <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinearSystem%>].nlsx[<%i0%>];' ;separator="\n"%>
       <%inlineCrefs(context,crefs)%>
+      /* update inner equations */
+      <%innerBody%>
       #ifdef _OMC_MEASURE_TIME
       SIM_PROF_ACC_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex);
       #endif<%\n%>
