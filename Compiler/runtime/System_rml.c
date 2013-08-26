@@ -45,6 +45,7 @@
 #include "rml.h"
 #include "Config.h"
 #include "systemimpl.c"
+#include "getMemorySize.c"
 #include <float.h>
 #include <ctype.h>
 #include <limits.h>
@@ -2213,5 +2214,12 @@ RML_BEGIN_LABEL(System__exit)
 {
   exit(RML_UNTAGFIXNUM(rmlA0));
   RML_TAILCALLK(rmlFC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getMemorySize)
+{
+  rmlA0 = mk_rcon(System_getMemorySize());
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

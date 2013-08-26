@@ -591,6 +591,32 @@ int SystemImpl__systemCall(const char* str)
   return ret_val;
 }
 
+#ifdef WITH_HWLOC
+#include <hwloc.h>
+#endif
+
+int System_numProcessors()
+{
+#ifdef WITH_HWLOC
+  hwloc_topology_t topology;
+  hwloc_topology_init(&topology);
+  hwloc_topology_load(topology);
+  int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_CORE);
+  if(depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
+    int res = hwloc_get_nbobjs_by_depth(topology, depth);
+    hwloc_topology_destroy(topology);
+    return res;
+  }
+#endif
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  SYSTEM_INFO sysinfo;
+  GetSystemInfo( &sysinfo );
+  return sysinfo.dwNumberOfProcessors;
+#else
+  return max(sysconf(_SC_NPROCESSORS_ONLN), 1);
+#endif
+}
+
 void* SystemImpl__systemCallParallel(void *lst)
 {
   void *tmp = lst;
@@ -615,12 +641,7 @@ void* SystemImpl__systemCallParallel(void *lst)
 #pragma omp parallel for private(i) schedule(dynamic)
   for (i=0; i<sz; i++) {
      /* fprintf(stderr, "Starting call %s\n", calls[i]); */
-#if defined(__MINGW32__) || defined(_MSC_VER)
-    results[i] = system(calls[i]);
-#else
-    results[i] = system(calls[i]);
-    results[i] = WEXITSTATUS(results[i]);
-#endif
+    results[i] = SystemImpl__systemCall(calls[i]);
      /* fprintf(stderr, "Finished call %d %s=%d\n", i, calls[i], results[i]); */
   }
   tmp = mk_nil();
@@ -2191,32 +2212,6 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
     return -1;
   }
   return difftime(buf1.st_mtime, buf2.st_mtime) > 0 ? 1 : 0;
-#endif
-}
-
-#ifdef WITH_HWLOC
-#include <hwloc.h>
-#endif
-
-int System_numProcessors()
-{
-#ifdef WITH_HWLOC
-  hwloc_topology_t topology;
-  hwloc_topology_init(&topology);
-  hwloc_topology_load(topology);
-  int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_CORE);
-  if(depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
-    int res = hwloc_get_nbobjs_by_depth(topology, depth);
-    hwloc_topology_destroy(topology);
-    return res;
-  }
-#endif
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  SYSTEM_INFO sysinfo;
-  GetSystemInfo( &sysinfo );
-  return sysinfo.dwNumberOfProcessors;
-#else
-  return max(sysconf(_SC_NPROCESSORS_ONLN), 1);
 #endif
 }
 

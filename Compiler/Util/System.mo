@@ -1043,4 +1043,9 @@ public function exit "Exits the compiler at this point with the given exit statu
 external "C" exit(status);
 end exit;
 
+public function getMemorySize
+  output Real memory(unit="MB");
+external "C" memory=System_getMemorySize() annotation(Library = {"omcruntime"});
+end getMemorySize;
+
 end System;

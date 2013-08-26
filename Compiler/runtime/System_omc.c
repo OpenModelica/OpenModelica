@@ -707,7 +707,8 @@ extern int System_fileIsNewerThan(const char *file1, const char *file2)
 
 extern int System_forkAvailable()
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+  /* On OSX, we fail with thread_suspend error if we fork() omc */
+#if defined(__MINGW32__) || defined(_MSC_VER) || defined(__APPLE_CC__)
   return 0;
 #else
   return 1;
@@ -718,6 +719,9 @@ extern void* System_forkCall(void *dataLst, void (*fn)(void*))
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available on Windows"),NULL,0);  
+  MMC_THROW();
+#elif defined(__APPLE_CC__)
+  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not safe to use on OSX"),NULL,0);  
   MMC_THROW();
 #else
   int len = listLength(dataLst);

@@ -2840,6 +2840,15 @@ annotation(
 </html>"));
 end exit;
 
+function getMemorySize
+  output Real memory(unit="MiB");
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Retrieves the physical memory size available on the system in megabytes.</p>
+</html>"));
+end getMemorySize;
+
 annotation(preferredView="text");
 end Scripting;
 

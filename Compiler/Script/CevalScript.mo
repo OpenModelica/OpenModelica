@@ -849,6 +849,7 @@ algorithm
       Absyn.ComponentRef cr_1;
       Integer size,resI,i,n, curveStyle;
       Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel;
+      list<Integer> is;
       list<FMI.ModelVariables> fmiModelVariablesList, fmiModelVariablesList1;
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
@@ -2983,7 +2984,8 @@ algorithm
       equation
         strs = List.map(vals,ValuesUtil.extractValueString);
         strs = List.map1r(strs, stringAppend, stringAppend(Settings.getInstallationDirectoryPath(),"/bin/omc "));
-        v = ValuesUtil.makeArray(List.map(List.map1(System.systemCallParallel(strs),intEq,0), ValuesUtil.makeBoolean));
+        is = System.systemCallParallel(strs);
+        v = ValuesUtil.makeArray(List.map(List.map1(is,intEq,0), ValuesUtil.makeBoolean));
       then (cache,v,st);
 
     case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),_},st,_)
@@ -2996,6 +2998,12 @@ algorithm
         System.exit(i);
         /* Cannot reach here */
       then fail();
+
+    case (cache,env,"getMemorySize",{},st,_)
+      equation
+        r = System.getMemorySize();
+        v = Values.REAL(r);
+      then (cache,v,st);
 
  end matchcontinue;
 end cevalInteractiveFunctions2;
