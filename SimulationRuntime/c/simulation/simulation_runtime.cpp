@@ -85,39 +85,21 @@
   #include "../../interactive/omi_ServiceInterface.h"
 #endif
 
-
 using namespace std;
 
 static int interactiveSimulation = 0; /* This variable signals if an simulation session is interactive or non-interactive (by default) */
 
 /* This variable is used to get the step size value during the simulation. */
-static double stepSize = 0.0;
-static double currentTime = 0.0;
-static int initTime = 0;
+double stepSize = 0.0;
 
-double getSimulationStepSize(double time, int *takeStep)
+double getSimulationStepSize()
 {
-  /* if the function is called first time during the simulation. */
-  if (!initTime) {
-    initTime = 1;
-    currentTime = time;
-    *takeStep = 1;
-  }
-  else {
-    if (currentTime != time) {
-      currentTime = time;
-      *takeStep = 1;
-    }
-    else {
-      *takeStep = 0;
-    }
-  }
   return stepSize;
 }
 
-void printSimulationStepSize(double in_stepSize, double time, int takeStep)
+void printSimulationStepSize(double in_stepSize, double time)
 {
-  fprintf(stderr, "in_stepSize=%f, time=%f, takeStep=%d\n", in_stepSize, time, takeStep);
+  fprintf(stderr, "in_stepSize=%f, time=%f\n", in_stepSize, time);
 }
 
 /* const char* version = "20110520_1120"; */
@@ -810,10 +792,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   function_initMemoryState();
   read_input_xml(&(data->modelData), &(data->simulationInfo));
   initializeOutputFilter(&(data->modelData), data->simulationInfo.variableFilter);
-  /* set the global stepsize, currentTime & initTime variable */
+  /* set the global stepsize variable */
   stepSize = data->simulationInfo.stepSize;
-  currentTime = 0.0;
-  initTime = 0;
 
   /* allocate memory for mixed system solvers */
   allocatemixedSystem(data);
