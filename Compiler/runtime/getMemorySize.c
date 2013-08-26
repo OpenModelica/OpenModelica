@@ -29,21 +29,13 @@
  */
 static size_t getMemorySizeBytes( )
 {
-#if defined(_WIN32) && (defined(__CYGWIN__) || defined(__CYGWIN32__))
+#if (defined(_WIN32) && (defined(__CYGWIN__) || defined(__CYGWIN32__))) || defined(_WIN32)
   /* Cygwin under Windows. ------------------------------------ */
   /* New 64-bit MEMORYSTATUSEX isn't available.  Use old 32.bit */
   MEMORYSTATUS status;
   status.dwLength = sizeof(status);
   GlobalMemoryStatus( &status );
   return (size_t)status.dwTotalPhys;
-
-#elif defined(_WIN32)
-  /* Windows. ------------------------------------------------- */
-  /* Use new 64-bit MEMORYSTATUSEX, not old 32-bit MEMORYSTATUS */
-  MEMORYSTATUSEX status;
-  status.dwLength = sizeof(status);
-  GlobalMemoryStatusEx( &status );
-  return (size_t)status.ullTotalPhys;
 
 #elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
   /* UNIX variants. ------------------------------------------- */
