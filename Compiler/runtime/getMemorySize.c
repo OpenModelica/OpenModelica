@@ -29,7 +29,7 @@
  */
 static size_t getMemorySizeBytes( )
 {
-#if (defined(_WIN32) && (defined(__CYGWIN__) || defined(__CYGWIN32__))) || defined(_WIN32)
+#if defined(_WIN32) || (defined(__CYGWIN__) || defined(__CYGWIN32__))
   /* Cygwin under Windows. ------------------------------------ */
   /* New 64-bit MEMORYSTATUSEX isn't available.  Use old 32.bit */
   MEMORYSTATUS status;
