@@ -1471,7 +1471,6 @@ void MainWindow::perspectiveTabChanged(int tabIndex)
 
 void MainWindow::autoSave()
 {
-  qDebug() << "auto save";
   bool autoSaveForSingleClasses = mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveForSingleClassesCheckBox()->isChecked();
   bool autoSaveForOneFilePackages = mpOptionsDialog->getGeneralSettingsPage()->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked();
   bool autoSaveForFolderPackages = false;
