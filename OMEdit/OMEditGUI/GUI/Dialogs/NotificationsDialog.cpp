@@ -195,12 +195,8 @@ QString NotificationsDialog::getNotificationLabelString()
       return QString(tr("Opps! Something went wrong. Click \"OK\" to send the crash report.<br /><br />")
                      .append(tr("Please attach the following files alongwith your bug description in your crash report,")).append("<br /><br />")
                      .append("1. " + OMCCommandsLogFilePath + "<br />")
-#ifdef WIN32
-                     .append("2. " + OMCOutputFile));
-#else
                      .append("2. " + OMCOutputFile + "<br />")
                      .append("3. " + stackTraceFile));
-#endif
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationLabelString()";
@@ -319,13 +315,9 @@ void NotificationsDialog::sendCrashReport()
   stackTraceFile = QString(QDir::tempPath()).append("/openmodelica.stacktrace.").append(Helper::OMCServerName);
   QString body = QString("Please attach the following files alongwith your bug description in your crash report,\n\n")
       .append("1. " + OMCCommandsLogFilePath + "\n")
-    #ifdef WIN32
-      .append("2. " + OMCOutputFile);
-#else
       .append("2. " + OMCOutputFile + "\n")
       .append("3. " + stackTraceFile);
-#endif
-  QUrl mailToUrl ("mailto:openmodelicadevelopers@ida.liu.se?CC=adeel.asghar@liu.se&subject=OpenModelica Crash Report&body=" + body);
+  QUrl mailToUrl ("mailto:openmodelica@ida.liu.se?CC=adeel.asghar@liu.se&subject=OpenModelica Crash Report&body=" + body);
   QDesktopServices::openUrl(mailToUrl);
 }
 

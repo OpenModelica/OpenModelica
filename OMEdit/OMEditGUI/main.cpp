@@ -62,38 +62,37 @@
   - Sonia Tariq
   */
 
-#include <signal.h>
-
 #include "MainWindow.h"
 #include "Helper.h"
 #include "../../Compiler/runtime/config.h"
 
-#ifndef QT_DEBUG
+#ifdef QT_NO_DEBUG
 #ifndef WIN32
+#include <signal.h>
 #include <execinfo.h>
 static inline void printStackTrace(QFile *pFile, int signalNumber, const char* signalName, unsigned int max_frames = 50)
 {
-    QTextStream out(pFile);
-    if (signalName)
-        out << QString("Caught signal %1 (%2)\n").arg(QString::number(signalNumber)).arg(signalName);
-    else
-        out << QString("Caught signal %1\n").arg(QString::number(signalNumber));
-    out.flush();
-    // storage array for stack trace address data
-    void* addrlist[max_frames+1];
-    // retrieve current stack addresses
-    int addrlen = backtrace(addrlist, sizeof(addrlist) / sizeof(void*));
-    if (addrlen == 0)
-    {
-        out << "Stack address length is empty.\n";
-        return;
-    }
-    // create readable strings to each frame.
-    backtrace_symbols_fd(addrlist, addrlen, pFile->handle());
-    /*
+  QTextStream out(pFile);
+  if (signalName)
+    out << QString("Caught signal %1 (%2)\n").arg(QString::number(signalNumber)).arg(signalName);
+  else
+    out << QString("Caught signal %1\n").arg(QString::number(signalNumber));
+  out.flush();
+  // storage array for stack trace address data
+  void* addrlist[max_frames+1];
+  // retrieve current stack addresses
+  int addrlen = backtrace(addrlist, sizeof(addrlist) / sizeof(void*));
+  if (addrlen == 0)
+  {
+    out << "Stack address length is empty.\n";
+    return;
+  }
+  // create readable strings to each frame.
+  backtrace_symbols_fd(addrlist, addrlen, pFile->handle());
+  /*
      backtrace_symbols uses malloc. Its better to use backtrace_symbols_fd.
      */
-    /*char** symbollist = backtrace_symbols(addrlist, addrlen);
+  /*char** symbollist = backtrace_symbols(addrlist, addrlen);
     // print the stack trace.
     for (int i = 4; i < addrlen; i++)
     {
@@ -101,7 +100,6 @@ static inline void printStackTrace(QFile *pFile, int signalNumber, const char* s
     }
     free(symbollist);*/
 }
-#endif // WIN32
 
 void signalHandler(int signum)
 {
@@ -115,26 +113,70 @@ void signalHandler(int signum)
     case SIGFPE:  name = "SIGFPE";   break;
     default:  break;
   }
-#ifndef WIN32
   // Dump a stack trace to a file.
-  // This is the function we will be implementing next.
   QFile stackTraceFile;
   stackTraceFile.setFileName(QDir::tempPath() + QDir::separator() + "openmodelica.stacktrace." + Helper::OMCServerName);
   if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
   {
-      printStackTrace(&stackTraceFile, signum, name);
-      stackTraceFile.close();
+    printStackTrace(&stackTraceFile, signum, name);
+    stackTraceFile.close();
   }
-#endif // WIN32
-  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport,
-                                                                      NotificationsDialog::CriticalIcon, 0);
+  if (name)
+    fprintf(stderr, "Caught signal %d", signum);
+  else
+    fprintf(stderr, "Caught signal %d (%s)", signum, name);
+  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport, NotificationsDialog::CriticalIcon, 0);
   pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
   pNotificationsDialog->exec();
+
   // If you caught one of the above signals, it is likely you just
   // want to quit your program right now.
   exit(signum);
 }
-#endif // QT_DEBUG
+#endif // #ifndef WIN32
+#endif // #ifdef QT_NO_DEBUG
+
+#ifdef QT_NO_DEBUG
+#ifdef WIN32
+#include "backtrace.h"
+static char *g_output = NULL;
+LONG WINAPI exceptionFilter(LPEXCEPTION_POINTERS info)
+{
+  if (g_output == NULL)
+  {
+    g_output = (char*) malloc(BUFFER_MAX);
+  }
+  struct output_buffer ob;
+  output_init(&ob, g_output, BUFFER_MAX);
+  if (!SymInitialize(GetCurrentProcess(), 0, TRUE))
+  {
+    output_print(&ob,"Failed to init symbol context\n");
+  }
+  else
+  {
+    bfd_init();
+    struct bfd_set *set = (bfd_set*)calloc(1,sizeof(*set));
+    _backtrace(&ob , set , 128 , info->ContextRecord);
+    release_set(set);
+    SymCleanup(GetCurrentProcess());
+  }
+  // Dump a stack trace to a file.
+  QFile stackTraceFile;
+  stackTraceFile.setFileName(QDir::tempPath() + QDir::separator() + "openmodelica.stacktrace." + Helper::OMCServerName);
+  if (stackTraceFile.open(QIODevice::WriteOnly | QIODevice::Text))
+  {
+    QTextStream out(&stackTraceFile);
+    out << g_output;
+    out.flush();
+    stackTraceFile.close();
+  }
+  NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::CrashReport, NotificationsDialog::CriticalIcon, 0);
+  pNotificationsDialog->getNotificationCheckBox()->setHidden(true);
+  pNotificationsDialog->exec();
+  exit(1);
+}
+#endif // #ifdef WIN32
+#endif // #ifdef QT_NO_DEBUG
 
 void printOMEditUsage()
 {
@@ -146,10 +188,11 @@ void printOMEditUsage()
 
 int main(int argc, char *argv[])
 {
-  /*
-    Signal handling corrupts the gdb symbols. So if we are building the debug version then don't register the signals.
-    */
-#ifndef QT_DEBUG
+  /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
+#ifdef QT_NO_DEBUG
+#ifdef WIN32
+  SetUnhandledExceptionFilter(exceptionFilter);
+#else
   /* Abnormal termination (abort) */
   signal(SIGABRT, signalHandler);
   /* Segmentation violation */
@@ -158,7 +201,8 @@ int main(int argc, char *argv[])
   signal(SIGILL, signalHandler);
   /* Floating point error */
   signal(SIGFPE, signalHandler);
-#endif // QT_DEBUG
+#endif // #ifdef WIN32
+#endif // #ifdef QT_NO_DEBUG
   // if user asks for --help
   for(int i = 1; i < argc; i++)
   {

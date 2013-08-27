@@ -56,6 +56,7 @@ evil_hack_to_fool_lupdate {
 }
 
 SOURCES += main.cpp\
+    backtrace.c \
     Util/Helper.cpp \
     GUI/MainWindow.cpp \
     omc_communication.cc \
@@ -87,7 +88,8 @@ SOURCES += main.cpp\
     GUI/Dialogs/ShapePropertiesDialog.cpp \
     Util/Utilities.cpp
 
-HEADERS  += Util/Helper.h \
+HEADERS  += backtrace.h \
+    Util/Helper.h \
     GUI/MainWindow.h \
     omc_communication.h \
     OMC/OMCProxy.h \
@@ -120,28 +122,37 @@ HEADERS  += Util/Helper.h \
 
 # Windows libraries and includes
 win32 {
-QMAKE_LFLAGS += -enable-auto-import
+    QMAKE_LFLAGS += -enable-auto-import
 
-DEFINES += __x86__ \
-    __NT__ \
-    __OSVERSION__=4 \
-    __WIN32__
-CONFIG(debug, debug|release){
-LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 \
-    -lomniORB416_rtd \
-    -lomnithread34_rtd \
-    -L../../OMPlot/bin \
-    -lOMPlot \
-    -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
-    -lqwtd
+    DEFINES += __x86__ \
+        __NT__ \
+        __OSVERSION__=4 \
+        __WIN32__
+    CONFIG(debug, debug|release){
+    LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 \
+        -lomniORB416_rtd \
+        -lomnithread34_rtd \
+        -L../../OMPlot/bin \
+        -lOMPlot \
+        -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
+        -lqwtd
 } else {
-LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 \
-    -lomniORB416_rt \
-    -lomnithread34_rt \
-    -L../../OMPlot/bin \
-    -lOMPlot \
-    -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
-    -lqwt
+# In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
+# We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
+# -s will remove all symbol table and relocation information from the executable.
+    QMAKE_CXXFLAGS += -g
+    QMAKE_LFLAGS_RELEASE =
+    LIBS += -L$$(OMDEV)/lib/omniORB-4.1.6-mingw/lib/x86_win32 \
+        -lomniORB416_rt \
+        -lomnithread34_rt \
+        -L../../OMPlot/bin \
+        -lOMPlot \
+        -L$$(OMDEV)/lib/qwt-6.1.0-mingw/lib \
+        -lqwt \
+        # required for backtrace
+        -L$$(OMDEV)/tools/mingw/bin \
+        -lintl-8 \
+        -lbfd -liberty -limagehlp
 }
 INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
                $$(OMDEV)/lib/qwt-6.1.0-mingw/include \
@@ -149,6 +160,14 @@ INCLUDEPATH += $$(OMDEV)/lib/omniORB-4.1.6-mingw/include \
                ../../
 } else { # Unix libraries and includes
     include(OMEdit.config)
+# On unix we use backtrace of execinfo.h which requires -rdynamic
+# The symbol names may be unavailable without the use of special linker
+# options.  For systems using the GNU linker, it is necessary to use
+# the -rdynamic linker option.  Note that names of "static" functions
+# are not exposed, and won't be available in the backtrace.
+    CONFIG(release, debug|release){
+        QMAKE_LFLAGS_RELEASE += -rdynamic
+    }
 }
 
 INCLUDEPATH += . \
