@@ -160,7 +160,7 @@ algorithm
     case ((comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_,_,_,_)
       equation
         equality(jacType = BackendDAE.JAC_TIME_VARYING());
-        true = Flags.isSet(Flags.LINEAR_TEARING);
+        true = Flags.getConfigBool(Flags.LINEAR_TEARING);
         (comp1,true) = method(isyst,ishared,eindex,vindx,ojac,jacType);
         (acc,b1) = traverseComponents(comps,isyst,ishared,method,comp1::iAcc,true);
       then

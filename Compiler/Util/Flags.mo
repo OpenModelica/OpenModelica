@@ -329,37 +329,35 @@ constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(81, "showStartOrigin", false,
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
 constant DebugFlag MIXED_TEARING = DEBUG_FLAG(82, "MixedTearing", true,
   Util.gettext("Disables tearing of mixed system."));
-constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(83, "doLinearTearing", false,
-  Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
-constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(84, "dumpinitialsystem", false,
+constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(83, "dumpinitialsystem", false,
   Util.gettext("Dumps the initial equation system."));
-constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(85, "scodeInstShortcut", false,
+constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(84, "scodeInstShortcut", false,
   Util.gettext("Enables experimental SCode instantiation shortcut phase."));
-constant DebugFlag SHOW_SCODE = DEBUG_FLAG(86, "showSCode", false,
+constant DebugFlag SHOW_SCODE = DEBUG_FLAG(85, "showSCode", false,
   Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
-constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(87, "dumpConstrepl", false,
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(86, "dumpConstrepl", false,
   Util.gettext("Dump the found replacements for constants."));
-constant DebugFlag PEDANTIC = DEBUG_FLAG(88, "pedantic", false,
+constant DebugFlag PEDANTIC = DEBUG_FLAG(87, "pedantic", false,
   Util.gettext("Switch into pedantic debug-mode, to get much more feedback."));
-constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(89, "showRedeclareAnalysis", false,
+constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(88, "showRedeclareAnalysis", false,
   Util.gettext("Prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)."));
-constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(90, "showProgramChanges", false,
+constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(89, "showProgramChanges", false,
   Util.gettext("Prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)."));
-constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(91, "showEquationSource", false,
+constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(90, "showEquationSource", false,
   Util.gettext("Display the element source information in the dumped DAE for easier debugging."));
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(92, "NLSanalyticJacobian", false,
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(91, "NLSanalyticJacobian", false,
   Util.gettext("Generates analytical jacobian for non-linear algebraic loops."));
-constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(93, "inlineSolver", false,
+constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(92, "inlineSolver", false,
   Util.gettext("Generates code for inline solver."));
-constant DebugFlag GEN_GRAPH = DEBUG_FLAG(94, "genGraph", false,
+constant DebugFlag GEN_GRAPH = DEBUG_FLAG(93, "genGraph", false,
   Util.gettext("Dumps a graph of the program."));
-constant DebugFlag HPCOM = DEBUG_FLAG(95, "hpcom", false,
+constant DebugFlag HPCOM = DEBUG_FLAG(94, "hpcom", false,
   Util.gettext("Enables parallel calculation based on task-graphs."));
-constant DebugFlag INITIALIZATION = DEBUG_FLAG(96, "initialization", false,
+constant DebugFlag INITIALIZATION = DEBUG_FLAG(95, "initialization", false,
   Util.gettext("Shows additional information from the initialization process."));
-constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(97, "inlineFunctions", true,
+constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(96, "inlineFunctions", true,
   Util.gettext("Controls if function inlining should be performed."));
-constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(98, "dumpSCCGraphML", false,
+constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(97, "dumpSCCGraphML", false,
   Util.gettext("Dumps graphml files with the strongly connected components."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -449,7 +447,6 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_DAE,
   SHOW_START_ORIGIN,
   MIXED_TEARING,
-  LINEAR_TEARING,
   DUMP_INITIAL_SYSTEM,
   SCODE_INST_SHORTCUT,
   SHOW_SCODE,
@@ -789,6 +786,10 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObj
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the path for corba object reference file if +d=interactiveCorba is used."));
 
+constant ConfigFlag LINEAR_TEARING = CONFIG_FLAG(51, "linearTearing",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -842,7 +843,8 @@ constant list<ConfigFlag> allConfigFlags = {
   RUNNING_WSM_TESTSUITE,
   CORRECT_CREF_TYPES,
   SCALARIZE_BINDINGS,
-  CORBA_OBJECT_REFERENCE_FILE_PATH
+  CORBA_OBJECT_REFERENCE_FILE_PATH,
+  LINEAR_TEARING
 };
 
 public function new
