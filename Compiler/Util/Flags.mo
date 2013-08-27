@@ -1687,7 +1687,7 @@ algorithm
 
     case {"debug"}
       equation
-        str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging. Flags prefixed with \"-\" or \"no\" will be disabled.\n");
+        str1 = System.gettext("The debug flag takes a comma-separated list of flags which are used by the\ncompiler for debugging or experimental purposes.\nFlags prefixed with \"-\" or \"no\" will be disabled.\n");
         str2 = System.gettext("The available flags are (+ are enabled by default, - are disabled):\n\n");
         strs = List.map(List.sort(allDebugFlags,compareDebugFlags), printDebugFlag);
         help = stringAppendList(str1 :: str2 :: strs);
