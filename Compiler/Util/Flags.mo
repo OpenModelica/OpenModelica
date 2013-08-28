@@ -361,6 +361,8 @@ constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(97, "inlineFunctions", true,
   Util.gettext("Controls if function inlining should be performed."));
 constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(98, "dumpSCCGraphML", false,
   Util.gettext("Dumps graphml files with the strongly connected components."));
+constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(99, "tearingdumpV", false,
+  Util.gettext("Dumps verbose tearing information."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -464,7 +466,8 @@ constant list<DebugFlag> allDebugFlags = {
   HPCOM,
   INITIALIZATION,
   INLINE_FUNCTIONS,
-  DUMP_SCC_GRAPHML
+  DUMP_SCC_GRAPHML,
+  TEARING_DUMPVERBOSE
 };
 
 // CONFIGURATION FLAGS
