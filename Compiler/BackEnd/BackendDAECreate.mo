@@ -708,8 +708,7 @@ algorithm
 end lowerKnownVar;
 
 protected function inlineExpOpt
-"function inlineExpOpt
-author Frenkel TUD 2013-02"
+"author Frenkel TUD 2013-02"
   input Option<DAE.Exp> iOptExp;
   input Functiontuple fnstpl;
   input DAE.ElementSource iSource;
@@ -732,8 +731,7 @@ algorithm
 end inlineExpOpt;
 
 protected function inlineExpOpt1
-"function inlineExpOpt
-author Frenkel TUD 2013-02"
+"author Frenkel TUD 2013-02"
   input DAE.Exp iExp;
   input Functiontuple fnstpl;
   input DAE.ElementSource iSource;

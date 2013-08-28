@@ -4416,8 +4416,7 @@ algorithm
 end cheapmatchingalgorithm;
 
 protected function cheapmatchingalgorithm1
-"function cheapmatchingalgorithm
- author: Frenkel TUD 2012-07"
+" author: Frenkel TUD 2012-07"
   input Integer algorithmid;
   input Integer nv;
   input Integer ne;

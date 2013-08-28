@@ -3629,8 +3629,7 @@ algorithm
 end emptyComponentReplacementRules;
 
 protected function joinComponentReplacementRules
-"function joinComponentReplacementRules
- author: x02lucpo
+" author: x02lucpo
  joins two componentReplacementRules lists by union"
   input GlobalScript.ComponentReplacementRules inComponentReplacementRules1;
   input GlobalScript.ComponentReplacementRules inComponentReplacementRules2;

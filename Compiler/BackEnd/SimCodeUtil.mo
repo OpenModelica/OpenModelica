@@ -4717,8 +4717,7 @@ algorithm
 end createResidualSetEquations;
 
 protected function indexStateSets
-" function indexStateSets
- function to collect jacobians for statesets"
+" function to collect jacobians for statesets"
   input list<SimCode.StateSet> inSets;
   input list<SimCode.JacobianMatrix> inSymJacs;
   output list<SimCode.JacobianMatrix> outSymJacs;
@@ -5404,8 +5403,7 @@ algorithm
 end elaborateRecordDeclarationsFromTypes;
 
 protected function elaborateRecordDeclarations
-"function elaborateRecordDeclarations
-Translate all records used by varlist to structs."
+"Translate all records used by varlist to structs."
   input list<DAE.Element> inVars;
   input list<SimCode.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
@@ -5451,8 +5449,7 @@ algorithm
 end elaborateRecordDeclarations;
 
 protected function elaborateRecordDeclarationsForRecord
-"function generateRecordDeclarations
-Helper function to generateStructsForRecords."
+"Helper function to generateStructsForRecords."
   input DAE.Type inRecordType;
   input list<SimCode.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;
@@ -5519,8 +5516,7 @@ algorithm
 end generateVarName;
 
 protected function elaborateNestedRecordDeclarations
-"function elaborateNestedRecordDeclarations
-Helper function to elaborateRecordDeclarations."
+"Helper function to elaborateRecordDeclarations."
   input list<DAE.Var> inRecordTypes;
   input list<SimCode.RecordDeclaration> inAccRecordDecls;
   input list<String> inReturnTypes;

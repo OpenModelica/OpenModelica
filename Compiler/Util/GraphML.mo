@@ -151,8 +151,7 @@ end Graph;
  ************************************************/
 
 public function getGraph
-"function getGraph
- author: Frenkel TUD 2011-08
+" author: Frenkel TUD 2011-08
  get a empty graph"
   input String id;
   input Boolean directed;
@@ -178,8 +177,7 @@ algorithm
 end addGraphAttributeValue; 
 
 public function addNode
-"function addNode
- author: Frenkel TUD 2011-08
+" author: Frenkel TUD 2011-08
  add a node"
   input String id;
   input String text;
@@ -202,8 +200,7 @@ algorithm
 end addNode;
 
 public function addEgde
-"function addEgde
- author: Frenkel TUD 2011-08
+" author: Frenkel TUD 2011-08
  add a edge"
   input String id;
   input String target;
@@ -253,8 +250,7 @@ algorithm
 end addAttribute;
 
 public function dumpGraph
-"function dumpGraph
- author: Frenkel TUD 2011-08
+" author: Frenkel TUD 2011-08
  print the graph"
   input Graph inGraph;
   input String name;
@@ -271,8 +267,7 @@ algorithm
 end dumpGraph;
 
 public function printGraph
-"function printGraph
- author: Frenkel TUD 2011-08
+" author: Frenkel TUD 2011-08
  print the graph"
   input Graph inGraph;
   input String name;

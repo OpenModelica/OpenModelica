@@ -1855,8 +1855,7 @@ algorithm
   end matchcontinue;
 end stringSplitAtChar2;
 
-public function modelicaStringToCStr "function modelicaStringToCStr
- this replaces symbols that are illegal in C to legal symbols
+public function modelicaStringToCStr " this replaces symbols that are illegal in C to legal symbols
  see replaceStringPatterns to see the format. (example: \".\" becomes \"$P\")
   author: x02lucpo
 
@@ -1938,8 +1937,7 @@ algorithm
   end matchcontinue;
 end modelicaStringToCStr1;
 
-public function cStrToModelicaString "function cStrToModelicaString
- this replaces symbols that have been replace to correct value for modelica string
+public function cStrToModelicaString " this replaces symbols that have been replace to correct value for modelica string
  see replaceStringPatterns to see the format. (example: \"$p\" becomes \".\")
   author: x02lucpo
 

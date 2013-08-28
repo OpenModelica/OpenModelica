@@ -308,8 +308,7 @@ algorithm
 end EqSolvedEq;
 
 protected function isDerEq
-"function isDereq
-author: vitalij
+"author: vitalij
 true if left site is only a call of der(...)
 else false"
 input DAE.Exp e1;

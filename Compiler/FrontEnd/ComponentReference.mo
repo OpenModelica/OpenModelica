@@ -282,8 +282,7 @@ algorithm
 end pathToCref;
 
 public function creffromVar
-" function creffromVar
-  author: Frenkel TUD
+"  author: Frenkel TUD
   generates a cref from DAE.Var"
   input DAE.Var inVar;
   output DAE.ComponentRef outComponentRef;

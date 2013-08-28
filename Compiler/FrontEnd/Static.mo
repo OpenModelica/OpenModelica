@@ -11176,8 +11176,7 @@ algorithm
 end flattenSubscript2;
 
 protected function removeDoubleEmptyArrays
-"function removeDoubleArrays
- A help function, to prevent the {{}} look of empty arrays."
+" A help function, to prevent the {{}} look of empty arrays."
   input DAE.Exp inArr;
   output DAE.Exp  outArr;
 algorithm

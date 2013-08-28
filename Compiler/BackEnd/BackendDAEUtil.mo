@@ -2756,8 +2756,7 @@ end matchcontinue;
 end traversingcollateArrExpStmt;
 
 public function collateArrExpList
-"function collateArrExpList
- author Frenkel TUD:
+" author Frenkel TUD:
   replace {a[1],a[2],a[3]} for Real a[3] with a"
   input list<DAE.Exp> iexpl;
   input Option<DAE.FunctionTree> optfunc;

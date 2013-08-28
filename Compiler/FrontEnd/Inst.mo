@@ -16309,8 +16309,7 @@ algorithm
 end modifyInstantiateClass2;
 
 protected function removeSelfReferenceAndUpdate
-"function removeSelfReferenceAndUpdate
- BZ 2007-07-03
+" BZ 2007-07-03
  This function checks if there is a reference to itself.
  If it is, it removes the reference.
  But also instantiate the declared type, if any.

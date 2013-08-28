@@ -270,8 +270,7 @@ end causalFinder1;
  */
 
 public function allAcausal
-"function causal
- author: Frenkel TUD 2012-12"
+" author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -334,8 +333,7 @@ end allAcausal1;
  */
 
 public function causal
-"function causal
- author: Frenkel TUD 2012-12"
+" author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -1264,8 +1262,7 @@ algorithm
 end timeIndependentExpressionAcausal;
 
 protected function toplevelInputOrUnfixed
-" function toplevelInputOrUnfixed
-  author Frenkel TUD 2012-12
+"  author Frenkel TUD 2012-12
   return true is var on topliven and input or is unfixed parameter"
   input BackendDAE.Var inVar;
   output Boolean b;
@@ -3482,8 +3479,7 @@ end replaceEquationTraverser;
  */
 
 protected function addUnreplacableFromStateSets
-"function addUnreplacableFromStateSet
- author: Frenkel TUD 2012-12"
+" author: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
   input HashSet.HashSet inUnreplacable;
   output HashSet.HashSet outUnreplacable;
@@ -3532,8 +3528,7 @@ algorithm
 end addUnreplacableFromStateSet;
 
 protected function addUnreplacableFromWhens
-"function addUnreplacableFromWhens
- author: Frenkel TUD 2012-12
+" author: Frenkel TUD 2012-12
   collect all lhs of whens and array assign statement because these are not
   replaceable or if they are replaced the initial system get in trouble"
   input BackendDAE.BackendDAE inDAE;

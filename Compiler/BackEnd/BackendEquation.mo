@@ -1094,8 +1094,7 @@ algorithm
 end traverseBackendDAEExpsEqnOutEqnIfEqns;
 
 public function traverseBackendDAEExpList
-"function traverseBackendDAEExps
- author Frenkel TUD:
+" author Frenkel TUD:
  Calls user function for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
@@ -1122,8 +1121,7 @@ algorithm
 end traverseBackendDAEExpList;
 
 public function traverseBackendDAEExpListWithStop
-"function traverseBackendDAEExpListWithStop
- author Frenkel TUD:
+" author Frenkel TUD:
  Calls user function for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
@@ -1151,8 +1149,7 @@ algorithm
 end traverseBackendDAEExpListWithStop;
 
 public function traverseBackendDAEEqnsList
-"function traverseBackendDAEEqnsList
- author Frenkel TUD:
+" author Frenkel TUD:
  Calls user function for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEqns;
@@ -2329,8 +2326,7 @@ algorithm
 end aliasEquation2;
 
 // protected function aliasArray
-// "function aliasArray
-//   author Frenkel TUD 2011-04
+// "//   author Frenkel TUD 2011-04
 //   helper for aliasEquation"
 //   input DAE.ComponentRef cr;
 //   input Boolean negate;

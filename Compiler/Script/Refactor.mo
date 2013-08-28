@@ -1289,8 +1289,7 @@ algorithm
   end matchcontinue;
 end transformConnectAnnList;
 
-protected function transformClassAnnList " function transformClassAnnList
-
+protected function transformClassAnnList "
   This function transforms old graphical class annotations (i.e Icon/Diagram layers)
   to new ones.
 "

@@ -511,10 +511,9 @@ algorithm
   Tpl.tplNoret(CodegenXML.translateModel, simCode);
 end callTargetTemplatesXML;
 
-public function translateModel
-"Entry point to translate a Modelica model for simulation.
-
- Called from other places in the compiler."
+public function translateModel "
+  Entry point to translate a Modelica model for simulation.
+  Called from other places in the compiler."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
@@ -528,15 +527,15 @@ public function translateModel
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
+  output list<tuple<String, Values.Value>> resultValues;
 algorithm
-  (outCache,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt, args)
+  (outCache, outInteractiveSymbolTable, outBackendDAE, outStringLst, outFileDir, resultValues) :=
+  matchcontinue (inCache, inEnv, className, inInteractiveSymbolTable, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
-      String filenameprefix,file_dir,resstr;
+      String filenameprefix, file_dir, resstr;
       DAE.DAElist dae;
       list<Env.Frame> env;
-      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
+      BackendDAE.BackendDAE dlow, dlow_1, indexed_dlow_1;
       list<String> libs;
       GlobalScript.SymbolTable st;
       Absyn.Program p;
@@ -544,40 +543,35 @@ algorithm
       Env.Cache cache;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       
-    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),filenameprefix,_, _,_)
-      equation
-        // calculate stuff that we need to create SimCode data structure
-        System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
-        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
-        timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
-        System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env);
-        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
-          generateModelCode(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt, args);
-        resultValues =
-        {("timeTemplates",Values.REAL(timeTemplates)),
-          ("timeSimCode",  Values.REAL(timeSimCode)),
-          ("timeBackend",  Values.REAL(timeBackend)),
-          ("timeFrontend", Values.REAL(timeFrontend))
-          };
-      then
-        (cache,st,indexed_dlow_1,libs,file_dir, resultValues);
-    case (_,_,_,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
-        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
-      then fail();
+    case (cache, env, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) equation
+      // calculate stuff that we need to create SimCode data structure
+      System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
+      (cache, env, dae, st) = CevalScript.runFrontEnd(cache, env, className, st, false);
+      timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
+      System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
+      dae = DAEUtil.transformationsBeforeBackend(cache, env, dae);
+      dlow = BackendDAECreate.lower(dae, cache, env);
+      dlow_1 = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
+      (indexed_dlow_1, libs, file_dir, timeBackend, timeSimCode, timeTemplates) =
+      generateModelCode(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt, args);
+      resultValues = {("timeTemplates", Values.REAL(timeTemplates)),
+                      ("timeSimCode", Values.REAL(timeSimCode)),
+                      ("timeBackend", Values.REAL(timeBackend)),
+                      ("timeFrontend", Values.REAL(timeFrontend))};
+    then (cache, st, indexed_dlow_1, libs, file_dir, resultValues);
+    
+    case (_, _, _, _, _, _, _, _) equation
+      true = Flags.isSet(Flags.FAILTRACE);
+      resstr = Absyn.pathStringNoQual(className);
+      resstr = stringAppendList({"SimCode: The model ", resstr, " could not be translated"});
+      Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+    then fail();
   end matchcontinue;
 end translateModel;
 
-public function translateFunctions
-"Entry point to translate Modelica/MetaModelica functions to C functions.
-
- Called from other places in the compiler."
+public function translateFunctions "
+  Entry point to translate Modelica/MetaModelica functions to C functions.
+  Called from other places in the compiler."
   input Absyn.Program program;
   input String name;
   input Option<DAE.Function> optMainFunction;

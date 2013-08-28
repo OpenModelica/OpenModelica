@@ -2758,8 +2758,7 @@ algorithm
   end matchcontinue;
 end elabComponentRecursive;
 
-protected function addArrayDimensions " function addArrayDimensions
-This is the function where we add arrays representing the dimension of the type.
+protected function addArrayDimensions "This is the function where we add arrays representing the dimension of the type.
 In type {array 2[array 3 ]] Will generate 2 arrays. {1,2} and {1,2,3}"
   input DAE.Type tySub;
   input list<DAE.Subscript> ss;
@@ -2880,8 +2879,7 @@ algorithm
   end matchcontinue;
 end expandWholeDimSubScript;
 
-protected function sliceDimensionType " function sliceDimensionType
-Lifts an type to spcified dimension by type2
+protected function sliceDimensionType "Lifts an type to spcified dimension by type2
 "
   input DAE.Type inTypeD;
   input DAE.Type inTypeL;

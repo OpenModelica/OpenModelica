@@ -255,8 +255,7 @@ algorithm
 end addBodyTags;
 
 public function dumpDocument
-"function dumpDocument
- author: Frenkel TUD 2011-08
+" author: Frenkel TUD 2011-08
  print the dokument to file"
   input Document inDoc;
   input String name;

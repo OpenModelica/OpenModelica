@@ -3036,8 +3036,7 @@ algorithm
   end match;
 end setEcho;
 
-public function getIncidenceMatrix "function getIncidenceMatrix
- author: adrpo
+public function getIncidenceMatrix " author: adrpo
  translates a model and returns the incidence matrix"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3239,8 +3238,7 @@ algorithm
   end matchcontinue;
 end runFrontEndWork;
 
-protected function translateModel "function translateModel
- author: x02lucpo
+protected function translateModel " author: x02lucpo
  translates a model into cpp code and writes also a makefile"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3277,8 +3275,7 @@ algorithm
   end match;
 end translateModel;
 
-/*protected function translateModelCPP "function translateModel
- author: x02lucpo
+/*protected function translateModelCPP " author: x02lucpo
  translates a model into cpp code and writes also a makefile"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3315,8 +3312,7 @@ algorithm
   end match;
 end translateModelCPP;*/
 
-protected function translateModelFMU "function translateModelFMU
- author: Frenkel TUD
+protected function translateModelFMU " author: Frenkel TUD
  translates a model into cpp code and writes also a makefile"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3359,8 +3355,7 @@ algorithm
 end translateModelFMU;
 
 
-protected function translateModelXML "function translateModelXML
- author: Alachew
+protected function translateModelXML " author: Alachew
  translates a model into XML code "
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3450,8 +3445,7 @@ algorithm
 end translateGraphics;
 
 
-protected function calculateSimulationSettings "function calculateSimulationSettings
- author: x02lucpo
+protected function calculateSimulationSettings " author: x02lucpo
  calculates the start,end,interval,stepsize, method and initFileName"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -3600,8 +3594,7 @@ algorithm
   outCls := inCls;
 end moveClassInList;
 
-protected function buildModel "function buildModel
- author: x02lucpo
+protected function buildModel " author: x02lucpo
  translates and builds the model by running compiler script on the generated makefile"
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4130,8 +4123,7 @@ algorithm
   end matchcontinue;
 end setBuildTimeVisitor;
 
-protected function getWithinStatement " function getWithinStatement
-To get a correct Within-path with unknown input-path."
+protected function getWithinStatement "To get a correct Within-path with unknown input-path."
   input Absyn.Path ip;
   output Absyn.Within op;
 algorithm op :=  matchcontinue(ip)
@@ -4141,8 +4133,7 @@ algorithm op :=  matchcontinue(ip)
 end matchcontinue;
 end getWithinStatement;
 
-protected function compileOrNot " function compileOrNot
-This function compares last-build-time vs last-edit-time, and if we have edited since we built last time
+protected function compileOrNot "This function compares last-build-time vs last-edit-time, and if we have edited since we built last time
 it fails."
 input Absyn.Class classIn;
 algorithm _:= matchcontinue(classIn)
@@ -4175,8 +4166,7 @@ algorithm
   end matchcontinue;
 end subtractDummy;
 
-protected function dumpXMLDAE "function dumpXMLDAE
- author: fildo
+protected function dumpXMLDAE " author: fildo
  This function outputs the DAE system corresponding to a specific model."
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -4489,8 +4479,7 @@ algorithm
   end matchcontinue;
 end checkAll;
 
-public function buildModelBeast "function buildModelBeast
- copy & pasted by: Otto
+public function buildModelBeast " copy & pasted by: Otto
  translates and builds the model by running compiler script on the generated makefile"
   input Env.Cache inCache;
   input Env.Env inEnv;

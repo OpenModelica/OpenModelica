@@ -85,8 +85,7 @@ end tearingMethodFunction;
 //
 // =============================================================================
 
-public function tearingSystem "function tearingSystem
-  author: Frenkel TUD 2012-05"
+public function tearingSystem "  author: Frenkel TUD 2012-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -118,8 +117,7 @@ end tearingSystem;
 //
 // =============================================================================
 
-protected function tearingSystemWork "function tearingSystemWork
-  author: Frenkel TUD 2012-05"
+protected function tearingSystemWork "  author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared,tearingMethodFunction> sharedChanged;
   output BackendDAE.EqSystem osyst;
@@ -140,8 +138,7 @@ algorithm
   osharedChanged := sharedChanged;
 end tearingSystemWork;
 
-protected function traverseComponents "function traverseComponents
-  author: Frenkel TUD 2012-05"
+protected function traverseComponents "  author: Frenkel TUD 2012-05"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -259,8 +256,7 @@ end selectTearingMethods;
 //
 // =============================================================================
 
-protected function omcTearing "function omcTearing
-  author: Frenkel TUD 2012-05"
+protected function omcTearing "  author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input list<Integer> eindex;
@@ -365,8 +361,7 @@ algorithm
 end omcTearing;
 
 protected function incidenceMatrixfromEnhanced
-"function incidenceMatrixfromEnhanced
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixEnhanced me;
   output BackendDAE.IncidenceMatrix m;
 algorithm
@@ -374,8 +369,7 @@ algorithm
 end incidenceMatrixfromEnhanced;
 
 protected function incidenceMatrixElementfromEnhanced
-"function incidenceMatrixElementfromEnhanced
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
   output BackendDAE.IncidenceMatrixElement oRow;
 algorithm
@@ -383,8 +377,7 @@ algorithm
 end incidenceMatrixElementfromEnhanced;
 
 protected function AdjacencyMatrixElementEnhancedCMP
-"function AdjacencyMatrixElementEnhancedCMP
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input tuple<Integer, BackendDAE.Solvability> inTplA;
   input tuple<Integer, BackendDAE.Solvability> inTplB;
   output Boolean b;
@@ -393,8 +386,7 @@ algorithm
 end AdjacencyMatrixElementEnhancedCMP;
 
 protected function incidenceMatrixElementElementfromEnhanced
-"function incidenceMatrixElementElementfromEnhanced
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input tuple<Integer, BackendDAE.Solvability> inTpl;
   output Integer oI;
 algorithm
@@ -425,8 +417,7 @@ algorithm
 end incidenceMatrixElementElementfromEnhanced;
 
 protected function getUnsolvableVars
-"function getUnsolvableVars
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input Integer index;
   input Integer size;
   input BackendDAE.AdjacencyMatrixTEnhanced meT;
@@ -453,8 +444,7 @@ algorithm
 end getUnsolvableVars;
 
 protected function unsolvable
-"function unsolvable
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
   output Boolean b;
 algorithm
@@ -506,8 +496,7 @@ algorithm
   end match;
 end unsolvable;
 
-protected function unassignTVars "function unassignTVars
-  author: Frenkel TUD 2012-05"
+protected function unassignTVars "  author: Frenkel TUD 2012-05"
   input Integer v;
   input array<Integer> inAss;
   output array<Integer> outAss;
@@ -515,8 +504,7 @@ algorithm
   outAss := arrayUpdate(inAss,v,-1);
 end unassignTVars;
 
-protected function isAssigned "function isAssigned
-  author: Frenkel TUD 2012-05"
+protected function isAssigned "  author: Frenkel TUD 2012-05"
   input array<Integer> ass;
   input Integer i;
   output Boolean b;
@@ -524,8 +512,7 @@ algorithm
   b := intGt(ass[i],0);
 end isAssigned;
 
-protected function isUnAssigned "function isUnAssigned
-  author: Frenkel TUD 2012-05"
+protected function isUnAssigned "  author: Frenkel TUD 2012-05"
   input array<Integer> ass;
   input Integer i;
   output Boolean b;
@@ -533,8 +520,7 @@ algorithm
   b := intLt(ass[i],1);
 end isUnAssigned;
 
-protected function isMarked "function isMarked
-  author: Frenkel TUD 2012-05"
+protected function isMarked "  author: Frenkel TUD 2012-05"
   input tuple<array<Integer>,Integer> inTpl;
   input Integer v;
   output Boolean b;
@@ -546,8 +532,7 @@ algorithm
   b := intEq(markarray[v],mark);
 end isMarked;
 
-protected function getOtherEqSysIncidenceMatrix "function getOtherEqSysIncidenceMatrix
-  author: Frenkel TUD 2012-05"
+protected function getOtherEqSysIncidenceMatrix "  author: Frenkel TUD 2012-05"
   input BackendDAE.IncidenceMatrix m;
   input Integer size;
   input Integer index;
@@ -581,8 +566,7 @@ algorithm
 end getOtherEqSysIncidenceMatrix;
 
 protected function setIntArray
-"function setIntArray
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input list<Integer> inLst;
   input array<Integer> arr;
   input Integer value;
@@ -822,8 +806,7 @@ algorithm
   end match;
 end getTVarResiduals;
 
-protected function omcTearing2 "function omcTearing2
-  author: Frenkel TUD 2012-05"
+protected function omcTearing2 "  author: Frenkel TUD 2012-05"
   input list<Integer> unsolvables;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
@@ -902,8 +885,7 @@ algorithm
   end matchcontinue;
 end omcTearing2;
 
-protected function omcTearingSelectTearingVar "function omcTearingSelectTearingVar
-  author: Frenkel TUD 2012-05"
+protected function omcTearingSelectTearingVar "  author: Frenkel TUD 2012-05"
   input BackendDAE.Variables vars;
   input array<Integer> ass1;
   input array<Integer> ass2;
@@ -971,8 +953,7 @@ algorithm
 end omcTearingSelectTearingVar;
 
 protected function getUnsolvableVarsConsiderMatching
-"function getUnsolvableVarsConsiderMatching
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input Integer index;
   input Integer size;
   input BackendDAE.AdjacencyMatrixTEnhanced meT;
@@ -1003,8 +984,7 @@ algorithm
 end getUnsolvableVarsConsiderMatching;
 
 protected function removeMatched
-"function removeMatched
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input BackendDAE.AdjacencyMatrixElementEnhanced elem;
   input array<Integer> ass2;
   input BackendDAE.AdjacencyMatrixElementEnhanced iAcc;
@@ -1114,8 +1094,7 @@ algorithm
 end addEqnWights;
 
 protected function isAssignedSaveEnhanced
-"function isAssigned
-  author: Frenkel TUD 2012-05"
+"  author: Frenkel TUD 2012-05"
   input array<Integer> ass;
   input tuple<Integer,BackendDAE.Solvability> inTpl;
   output Boolean outB;
@@ -1134,8 +1113,7 @@ algorithm
 end isAssignedSaveEnhanced;
 
 protected function discriminateDiscrete
-"function discriminateDiscrete
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
  input Integer v;
  input BackendDAE.Variables vars;
  input array<Integer> iPoints;
@@ -1152,8 +1130,7 @@ algorithm
   oPoints := arrayUpdate(iPoints,v,p);
 end discriminateDiscrete;
 
-protected function selectVarWithMostPoints "function selectVarWithMostPoints
-  author: Frenkel TUD 2012-05"
+protected function selectVarWithMostPoints "  author: Frenkel TUD 2012-05"
   input list<Integer> vars;
   input array<Integer> points;
   input Integer iVar;
@@ -1180,8 +1157,7 @@ algorithm
   end matchcontinue;
 end selectVarWithMostPoints;
 
-protected function tearingBFS "function tearingBFS
-  author: Frenkel TUD 2012-05"
+protected function tearingBFS "  author: Frenkel TUD 2012-05"
   input BackendDAE.AdjacencyMatrixElementEnhanced queue;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
@@ -1224,8 +1200,7 @@ algorithm
 end tearingBFS;
 
 protected function sortEqnsSolvabel
-"function sortEqnsSolvabel
-  author: Frenkel TUD 2012-10
+"  author: Frenkel TUD 2012-10
   moves equations with nonlinear or unsolvable parts on the end"
   input BackendDAE.AdjacencyMatrixElementEnhanced queue;
   input BackendDAE.AdjacencyMatrixEnhanced m;
@@ -1267,8 +1242,7 @@ algorithm
   end match;
 end hasnonlinearVars1;
 
-protected function tearingBFS1 "function tearingBFS1
-  author: Frenkel TUD 2012-05"
+protected function tearingBFS1 "  author: Frenkel TUD 2012-05"
   input BackendDAE.AdjacencyMatrixElementEnhanced rows;
   input Integer size;
   input list<Integer> c;
@@ -1333,8 +1307,7 @@ algorithm
   end match;
 end solvable;
 
-protected function tearingBFS2 "function tearingBFS1
-  author: Frenkel TUD 2012-05"
+protected function tearingBFS2 "  author: Frenkel TUD 2012-05"
   input BackendDAE.AdjacencyMatrixElementEnhanced rows;
   input list<Integer> clst;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
@@ -1394,8 +1367,7 @@ algorithm
 end addOneEdgeEqnWights;
 
 protected function selectVarWithMostEqnsOneEdge
-"function selectVarWithMostEqnsOneEdge
-  author: Frenkel TUD 2012-08"
+"  author: Frenkel TUD 2012-08"
   input list<Integer> vars;
   input array<Integer> ass1;
   input BackendDAE.AdjacencyMatrixEnhanced m;
@@ -1448,8 +1420,7 @@ algorithm
   end matchcontinue;
 end eqnsWithOneUnassignedVar;
 
-protected function selectVarsWithMostEqns "function selectVarWithMostEqns
-  author: Frenkel TUD 2012-05"
+protected function selectVarsWithMostEqns "  author: Frenkel TUD 2012-05"
   input list<Integer> vars;
   input array<Integer> ass2;
   input BackendDAE.AdjacencyMatrixTEnhanced mt;
@@ -1479,8 +1450,7 @@ algorithm
   end matchcontinue;
 end selectVarsWithMostEqns;
 
-protected function markEqns "function markEqns
-  author: Frenkel TUD 2012-05"
+protected function markEqns "  author: Frenkel TUD 2012-05"
   input list<Integer> eqns;
   input array<Integer> columark;
   input Integer mark;
@@ -1536,8 +1506,7 @@ algorithm
   end matchcontinue;
 end getUnnassignedFromArray;
 
-protected function omcTearing3 "function omcTearing3
-  author: Frenkel TUD 2012-05"
+protected function omcTearing3 "  author: Frenkel TUD 2012-05"
   input list<Integer> unassigend;
   input list<Integer> unsolvables;
   input BackendDAE.AdjacencyMatrixEnhanced m;
@@ -1566,8 +1535,7 @@ algorithm
   end match;
 end omcTearing3;
 
-protected function omcTearing4 "function omcTearing4
-  author: Frenkel TUD 2012-09"
+protected function omcTearing4 "  author: Frenkel TUD 2012-09"
   input BackendDAE.JacobianType jacType;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -1613,8 +1581,7 @@ algorithm
   end matchcontinue;
 end omcTearing4;
 
-protected function omcTearing4_1 "function omcTearing4_1
-  author: Frenkel TUD 2012-09"
+protected function omcTearing4_1 "  author: Frenkel TUD 2012-09"
   input list<list<Integer>> othercomps;
   input array<Integer> ass2;
   input array<Integer> mapIncRowEqn;
@@ -1653,8 +1620,7 @@ algorithm
   end match;
 end omcTearing4_1;
 
-protected function getLinearfromJacType "function getLinearfromJacType
-  author: Frenkel TUD 2012-09"
+protected function getLinearfromJacType "  author: Frenkel TUD 2012-09"
   input BackendDAE.JacobianType jacType;
   output Boolean linear;
 algorithm
@@ -1672,8 +1638,7 @@ end getLinearfromJacType;
  *
  */
 
-protected function tearingSystem1_1 "function tearingSystem1_1
-  author: Waurich TUD 2012-10"
+protected function tearingSystem1_1 "  author: Waurich TUD 2012-10"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input list<Integer> eindex;

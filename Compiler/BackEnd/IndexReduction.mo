@@ -1752,8 +1752,7 @@ algorithm
 end highestOrderDerivatives;
 
 protected function traversinghighestOrderDerivativesFinder
-" function traversinghighestOrderDerivativesFinder
-  author: Frenkel TUD 2012-05
+"  author: Frenkel TUD 2012-05
   helper for highestOrderDerivatives"
  input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>>> outTpl;
@@ -1791,8 +1790,7 @@ algorithm
 end lowerOrderDerivatives;
 
 protected function traversinglowerOrderDerivativesFinder
-" function traversinglowerOrderDerivativesFinder
-  author: Frenkel TUD 2012-05
+"  author: Frenkel TUD 2012-05
   helpber for lowerOrderDerivatives"
  input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
@@ -1841,8 +1839,7 @@ algorithm
 end higerOrderDerivatives;
 
 protected function traversinghigerOrderDerivativesFinder
-" function traversinghigerOrderDerivativesFinder
-  author: Frenkel TUD 2012-06
+"  author: Frenkel TUD 2012-06
   helpber for higerOrderDerivatives"
  input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables,list<DAE.ComponentRef>>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables,list<DAE.ComponentRef>>> outTpl;
@@ -5107,8 +5104,7 @@ algorithm
 end generateSelectEquationsMulti;
 
 protected function makeder
-"function makeder
-Author: Frenkel TUD 2012-09"
+"Author: Frenkel TUD 2012-09"
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 protected

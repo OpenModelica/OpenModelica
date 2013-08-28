@@ -4043,8 +4043,7 @@ algorithm
   end match;
 end cevalBuiltinInteger;
 
-protected function cevalBuiltinBoolean "function cevalBuiltinBoolean
- @author: adrpo
+protected function cevalBuiltinBoolean " @author: adrpo
   Evaluates the builtin boolean operator"
   input Env.Cache inCache;
   input Env.Env inEnv;

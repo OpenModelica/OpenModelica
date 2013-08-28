@@ -2065,8 +2065,7 @@ end varSortFunc;
 
 
 public function getAlias
-" function getAlias
-  author: Frenkel TUD 2012-11
+"  author: Frenkel TUD 2012-11
   returns the original Varname of an AliasVar"
   input BackendDAE.Var inVar;
   output DAE.ComponentRef outCr;

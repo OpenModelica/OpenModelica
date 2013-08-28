@@ -179,8 +179,7 @@ algorithm
 end getConstList;
 
 
-public function propertiesListToConst " function propertiesListToConst
-this function elaborates on a DAE.Properties and return the DAE.Const value."
+public function propertiesListToConst "this function elaborates on a DAE.Properties and return the DAE.Const value."
   input list<DAE.Properties> p;
   output DAE.Const c;
 algorithm
@@ -1282,8 +1281,7 @@ algorithm
   end match;
 end setVarType;
 
-public function semiEquivTypes " function semiEquivTypes
-This function checks whether two types are semi-equal...
+public function semiEquivTypes "This function checks whether two types are semi-equal...
 With 'semi' we mean that they have the same base type,
 and if both are arrays the numbers of dimensions are equal, not necessarily equal dimension-sizes."
   input DAE.Type inType1;

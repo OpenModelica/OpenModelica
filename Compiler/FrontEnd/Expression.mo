@@ -4295,8 +4295,7 @@ algorithm
 end traverseExpMatrix;
 
 public function traverseExpList
-"function traverseExpList
- author PA:
+" author PA:
  Calls traverseExp for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
@@ -4695,8 +4694,7 @@ algorithm
 end traverseExpWithoutRelationsMatrix;
 
 public function traverseExpWithoutRelationsList
-"function traverseExpWithoutRelationsList
- author Frenkel TUD:
+" author Frenkel TUD:
  Calls traverseExpWithoutRelations for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
@@ -5030,8 +5028,7 @@ algorithm
 end traverseExpMatrixTopDown;
 
 public function traverseExpListTopDown
-"function traverseExpList
- author PA:
+" author PA:
  Calls traverseExp for each element of list."
   replaceable type Type_a subtypeof Any;
   input list<DAE.Exp> inExpl;
