@@ -586,7 +586,7 @@ algorithm
 end getMappingForComp;
 
 
-//protected function fillCalcTimeArray "//  author: marcusw
+//protected function fillCalcTimeArray "author: marcusw
 //  Fills the calculation-time-array."
 //  input Graph igraph;
 //  input array<Integer> calcTimes;
