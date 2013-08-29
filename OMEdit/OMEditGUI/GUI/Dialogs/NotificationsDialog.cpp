@@ -317,7 +317,7 @@ void NotificationsDialog::sendCrashReport()
       .append("1. " + OMCCommandsLogFilePath + "\n")
       .append("2. " + OMCOutputFile + "\n")
       .append("3. " + stackTraceFile);
-  QUrl mailToUrl ("mailto:openmodelica@ida.liu.se?CC=adeel.asghar@liu.se&subject=OpenModelica Crash Report&body=" + body);
+  QUrl mailToUrl ("mailto:openmodelicacrashreports@ida.liu.se?CC=adeel.asghar@liu.se&subject=OpenModelica Crash Report&body=" + body);
   QDesktopServices::openUrl(mailToUrl);
 }
 
