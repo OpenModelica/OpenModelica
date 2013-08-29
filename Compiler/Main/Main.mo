@@ -78,42 +78,33 @@ protected import Util;
 protected function serverLoop
 "This function is the main loop of the server listening
   to a port which recieves modelica expressions."
+  input Boolean continue;
   input Integer inInteger;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
-  outInteractiveSymbolTable := matchcontinue (inInteger,inInteractiveSymbolTable)
+  outInteractiveSymbolTable := match (continue,inInteger,inInteractiveSymbolTable)
     local
+      Boolean b;
       String str,replystr;
       GlobalScript.SymbolTable newsymb,ressymb,isymb;
       Integer shandle;
-    case (shandle,isymb)
+    case (false,_,isymb) then isymb;
+    case (_,-1,isymb) then fail();
+    case (_,shandle,isymb)
       equation
         str = Socket.handlerequest(shandle);
         Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
         Debug.fprint(Flags.INTERACTIVE_DUMP, str);
         Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
         Print.clearBuf();
-        (true,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
+        (b,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
+        replystr = Util.if_(b, replystr, "quit requested, shutting server down\n");
         Socket.sendreply(shandle, replystr);
-        ressymb = serverLoop(shandle, newsymb);
-      then
-        ressymb;
-    case (shandle,isymb)
-      equation
-        str = Socket.handlerequest(shandle) "2004-11-27 - adrpo added this part to make the loop deterministic" ;
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- Recieved Data from client -----\n");
-        Debug.fprint(Flags.INTERACTIVE_DUMP, str);
-        Debug.fprint(Flags.INTERACTIVE_DUMP, "------- End recieved Data-----\n");
-        Print.clearBuf() "Print.clearErrorBuf &" ;
-        (false,replystr,newsymb) = handleCommand(str, isymb);
-        Print.printBuf("Exiting\n") "2004-11-27 - adrpo added part ends here" ;
-        Socket.sendreply(shandle, "quit requested, shutting server down\n");
-        Socket.close(shandle);
-        Socket.cleanup();
-      then
-        isymb;
-  end matchcontinue;
+        Debug.bcall1(not b, Socket.close, shandle);
+        Debug.bcall0(not b, Socket.cleanup);
+      then serverLoop(b, shandle, newsymb);
+  end match;
 end serverLoop;
 
 protected function makeDebugResult
@@ -823,7 +814,7 @@ protected function interactivemode
   input GlobalScript.SymbolTable symbolTable;
 algorithm
   print("Opening a socket on port " +& intString(29500) +& "\n");
-  _ := serverLoop(Socket.waitforconnect(29500), symbolTable);
+  _ := serverLoop(true, Socket.waitforconnect(29500), symbolTable);
 end interactivemode;
 
 protected function interactivemodeCorba

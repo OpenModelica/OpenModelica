@@ -715,7 +715,33 @@ extern int System_forkAvailable()
 #endif
 }
 
-extern void* System_forkCall(void *dataLst, void (*fn)(void*))
+static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *working)
+{
+  while (1) {
+    int status = 1, id, i;
+    id = wait(&status);
+    if (id == -1) {
+      const char *tokens[1] = {strerror(errno)};
+      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Failed to wait for forked process to return: %s"),tokens,1);
+      MMC_THROW();
+    }
+    if (WIFEXITED(status)) {
+      status = ! WEXITSTATUS(status);
+    } else {
+      status = 0;
+    }
+    for (i=0; i<numWorking; i++) {
+      int idw = working[i];
+      if (ids[idw] == id) {
+        statuses[idw] = status;
+        return i;
+      }
+    }
+    /* Keep on waiting for processes as long as we get them... */
+  }
+}
+
+extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available on Windows"),NULL,0);  
@@ -725,10 +751,22 @@ extern void* System_forkCall(void *dataLst, void (*fn)(void*))
   MMC_THROW();
 #else
   int len = listLength(dataLst);
-  pid_t pids[len];
-  int i = 0, fail = 0;
+  void *commands[len];
+  int status[len], ids[len];
+  int i = 0, numWorking = 0, fail = 0;
+  int working[numThreads];
   void *result = mmc_mk_nil();
-  while (MMC_NILHDR != MMC_GETHDR(dataLst)) {
+  for (i=0; i<len; i++, dataLst = MMC_CDR(dataLst)) {
+    commands[i] = MMC_CAR(dataLst);
+  }
+  for (i=0; i<len; i++) {
+    int thisNum;
+    /* Dynamic workload. Once we reach max number of threads, wait for one to finish. Else spawn new ones and join all at the end. */
+    if (numWorking == numThreads) {
+      thisNum = System_forkCallJoin(status, ids, &numWorking, working);
+    } else {
+      thisNum = numWorking++;
+    }
     pid_t id = fork();
     if (id == -1) {
       const char *tokens[1] = {strerror(errno)};
@@ -737,28 +775,22 @@ extern void* System_forkCall(void *dataLst, void (*fn)(void*))
     } else if (id == 0) {
       int exitstatus = 1;
       MMC_TRY()
-      fn(MMC_CAR(dataLst));
+      fn(commands[i]);
       exitstatus = 0;
       MMC_CATCH()
       exit(exitstatus);
     } else {
-      pids[i++] = id;
+      working[thisNum] = i;
+      ids[i] = id;
+      status[i] = 0;
     }
-    dataLst = MMC_CDR(dataLst);
+  }
+  while (numWorking) {
+    System_forkCallJoin(status, ids, &numWorking, working);
+    numWorking--;
   }
   for (i=len-1; i>=0; i--) {
-    int status = 1;
-    if (waitpid(pids[i], &status, 0) == -1) {
-      const char *tokens[1] = {strerror(errno)};
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Failed to wait for forked process to return: %s"),tokens,1);
-      fail = 1;
-    } else if (WIFEXITED(status)) {
-      status = ! WEXITSTATUS(status);
-    }
-    result = mmc_mk_cons(mmc_mk_icon(status), result);
-  }
-  if (fail) {
-    MMC_THROW();
+    result = mmc_mk_cons(mmc_mk_icon(status[i]), result);
   }
   return result;
 #endif

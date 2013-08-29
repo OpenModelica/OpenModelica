@@ -961,6 +961,7 @@ end system;
 
 function system_parallel "Similar to system(3). Executes the given commands in the system shell, in parallel if omc was compiled using OpenMP."
   input String callStr[:] "String to call: bash -c $callStr";
+  input Integer numThreads := numProcessors();
   output Integer retval[:] "Return value of the system call; usually 0 on success";
 external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
@@ -1000,7 +1001,7 @@ end generateHeader;
 
 function generateSeparateCode
   input TypeName className[:] := fill($TypeName(AllLoadedClasses),0);
-  input String stampSuffix := "" "Suffix to add to dependencies (usually .stamp)";
+  input Boolean cleanCache := false "If true, the cache is reset between each generated package. This conserves memory at the cost of speed.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html><p>Under construction.</p>
@@ -2819,6 +2820,7 @@ end forkAvailable;
 
 function runScriptParallel
   input String scripts[:];
+  input Integer numThreads := numProcessors();
   input Boolean fork := false;
   output Boolean results[:];
 external "builtin";

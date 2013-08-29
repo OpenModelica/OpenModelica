@@ -1722,10 +1722,10 @@ algorithm
       then
         (cache,Values.INTEGER(resI),st);
 
-    case (cache,env,"system_parallel",{Values.ARRAY(valueLst=vals)},st,_)
+    case (cache,env,"system_parallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i)},st,_)
       equation
         strs = List.map(vals, ValuesUtil.extractValueString);
-        v = ValuesUtil.makeIntArray(System.systemCallParallel(strs));
+        v = ValuesUtil.makeIntArray(System.systemCallParallel(strs,i));
       then
         (cache,v,st);
 
@@ -1916,21 +1916,21 @@ algorithm
     case (cache,env,"generateSeparateCodeDependencies",_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       then (cache,Values.META_FAIL(),st);
 
-    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={}),Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst={}),Values.BOOL(b)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
-        (cache,env) = generateFunctions(cache,env,p,sp,suffix);
+        (cache,env) = generateFunctions(cache,env,p,sp,b);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
-    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst=vals),Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateSeparateCode",{Values.ARRAY(valueLst=vals),Values.BOOL(b)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         names = List.map(vals,getTypeNameIdent);
         setGlobalRoot(Global.instOnlyForcedFunctions,SOME(true));
         cls = List.map2(names,List.getMemberOnTrue, sp, SCode.isClassNamed);
-        (cache,env) = generateFunctions(cache,env,p,cls,suffix);
+        (cache,env) = generateFunctions(cache,env,p,cls,b);
         setGlobalRoot(Global.instOnlyForcedFunctions,NONE());
       then (cache,Values.BOOL(true),st);
 
@@ -2973,22 +2973,22 @@ algorithm
     case (cache,env,"runScript",_,st,_)
       then (cache,Values.STRING("Failed"),st);
 
-    case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),Values.BOOL(true)},st,_)
+    case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i),Values.BOOL(true)},st,_)
       equation
         strs = List.map(vals,ValuesUtil.extractValueString);
-        blst = System.forkCall(List.map1(strs, Util.makeTuple, st), Interactive.evaluateFork);
+        blst = System.forkCall(i, List.map1(strs, Util.makeTuple, st), Interactive.evaluateFork);
         v = ValuesUtil.makeArray(List.map(blst, ValuesUtil.makeBoolean));
       then (cache,v,st);
 
-    case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),Values.BOOL(false)},st,_)
+    case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i),Values.BOOL(false)},st,_)
       equation
         strs = List.map(vals,ValuesUtil.extractValueString);
         strs = List.map1r(strs, stringAppend, stringAppend(Settings.getInstallationDirectoryPath(),"/bin/omc "));
-        is = System.systemCallParallel(strs);
+        is = System.systemCallParallel(strs,i);
         v = ValuesUtil.makeArray(List.map(List.map1(is,intEq,0), ValuesUtil.makeBoolean));
       then (cache,v,st);
 
-    case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),_},st,_)
+    case (cache,env,"runScriptParallel",{Values.ARRAY(valueLst=vals),_,_},st,_)
       equation
         v = ValuesUtil.makeArray(List.fill(Values.BOOL(false), listLength(vals)));
       then (cache,v,st);
@@ -4656,14 +4656,14 @@ protected function generateFunctions
   input Env.Env ienv;
   input Absyn.Program p;
   input list<SCode.Element> isp;
-  input String stamp;
+  input Boolean cleanCache;
   output Env.Cache cache;
   output Env.Env env;
 algorithm
-  (cache,env) := match (icache,ienv,p,isp,stamp)
+  (cache,env) := match (icache,ienv,p,isp,cleanCache)
     local
       String name;
-      list<String> names,dependencies,dependenciesStamp;
+      list<String> names,dependencies;
       list<Absyn.Path> paths;
       list<SCode.Element> elementLst;
       DAE.FunctionTree funcs;
@@ -4678,8 +4678,8 @@ algorithm
     case (cache,env,_,{},_) then (cache,env);
     case (cache,env,_,(cl as SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst),info=info))::sp,_)
       equation
-        (cache,env) = generateFunctions2(cache,env,p,cl,name,elementLst,info,stamp);
-        (cache,env) = generateFunctions(cache,env,p,sp,stamp);
+        (cache,env) = generateFunctions2(cache,env,p,cl,name,elementLst,info,cleanCache);
+        (cache,env) = generateFunctions(cache,env,p,sp,cleanCache);
       then (cache,env);
     case (cache,env,_,SCode.CLASS(encapsulatedPrefix=SCode.NOT_ENCAPSULATED(),name=name,info=info as Absyn.INFO(fileName=file))::sp,_)
       equation
@@ -4697,13 +4697,13 @@ protected function generateFunctions2
   input String name;
   input list<SCode.Element> elementLst;
   input Absyn.Info info;
-  input String stamp;
+  input Boolean cleanCache;
   output Env.Cache cache;
   output Env.Env env;
 algorithm
-  (cache,env) := matchcontinue (icache,ienv,p,cl,name,elementLst,info,stamp)
+  (cache,env) := matchcontinue (icache,ienv,p,cl,name,elementLst,info,cleanCache)
     local
-      list<String> names,dependencies,dependenciesStamp;
+      list<String> names,dependencies;
       list<Absyn.Path> paths;
       DAE.FunctionTree funcs;
       list<DAE.Function> d;
@@ -4719,6 +4719,7 @@ algorithm
 
     case (cache,env,_,_,_,_,_,_)
       equation
+        cache = Util.if_(cleanCache, Env.emptyCache(), cache);
         names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
         paths = List.map1r(names,Absyn.makeQualifiedPathFromStrings,name);
         // print("paths to generate:" +& stringDelimitList(List.map(paths,Absyn.pathString),",") +& "\n");
@@ -4736,6 +4737,7 @@ algorithm
         SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
         str = Tpl.tplString(Unparsing.programExternalHeader, {cl});
         System.writeFile(name +& "_records.c","#include <meta_modelica.h>\n" +& str);
+        cache = Util.if_(cleanCache, icache, cache);
       then (cache,env);
     else
       equation

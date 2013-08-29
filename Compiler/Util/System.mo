@@ -310,8 +310,9 @@ end systemCall;
 
 public function systemCallParallel
   input list<String> inStrings;
+  input Integer numThreads;
   output list<Integer> outIntegers;
-  external "C" outIntegers=SystemImpl__systemCallParallel(inStrings) annotation(Library = "omcruntime");
+  external "C" outIntegers=SystemImpl__systemCallParallel(inStrings,numThreads) annotation(Library = "omcruntime");
 end systemCallParallel;
 
 public function spawnCall
@@ -1028,6 +1029,7 @@ public function forkAvailable
 end forkAvailable;
 
 public function forkCall "Takes a list of inputs and produces a list of Boolean (true if the function call was successful). The function is called by using forks. If fork is unavailable, the function fails."
+  input Integer numThreads;
   input list<Any> inData;
   input ForkFunction func;
   output list<Boolean> result;
@@ -1035,7 +1037,7 @@ public function forkCall "Takes a list of inputs and produces a list of Boolean 
     input Any inData;
   end ForkFunction;
   replaceable type Any subtypeof Any;
-external "C" result = System_forkCall(inData, func) annotation(Library = {"omcruntime"});
+external "C" result = System_forkCall(numThreads, inData, func) annotation(Library = {"omcruntime"});
 end forkCall;
 
 public function exit "Exits the compiler at this point with the given exit status."

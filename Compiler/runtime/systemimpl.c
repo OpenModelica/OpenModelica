@@ -617,7 +617,7 @@ int System_numProcessors()
 #endif
 }
 
-void* SystemImpl__systemCallParallel(void *lst)
+void* SystemImpl__systemCallParallel(void *lst, int numThreads)
 {
   void *tmp = lst;
   int sz = 0, i;
@@ -638,7 +638,7 @@ void* SystemImpl__systemCallParallel(void *lst)
     calls[sz++] = RML_STRINGDATA(RML_CAR(tmp));
     tmp = RML_CDR(tmp);
   }
-#pragma omp parallel for private(i) schedule(dynamic)
+#pragma omp parallel for private(i) schedule(dynamic) num_threads(numThreads)
   for (i=0; i<sz; i++) {
      /* fprintf(stderr, "Starting call %s\n", calls[i]); */
     results[i] = SystemImpl__systemCall(calls[i]);

@@ -28,12 +28,7 @@
  *
  */
 
-#include "socketimpl.c"
-#include "meta_modelica.h"
-
-/* TODO: Add the Unix implementation */
-
-extern "C" {
+#if defined(__MINGW32__) || defined(_MSC_VER)
 
 extern int Socket_waitforconnect(int _inInteger)
 {
@@ -65,4 +60,17 @@ extern void Socket_sendreply(int _inInteger, const char* _inString)
   MMC_THROW();
 }
 
+#else
+
+#include "socketimpl.c"
+#include "meta_modelica.h"
+#include "ModelicaUtilities.h"
+
+extern const char* Socket_handlerequest(int sock)
+{
+  char *str = Socket_handlerequest(sock);
+  char *res = strcpy(ModelicaAllocateString(strlen(str)),str);
+  free(str);
+  return res;
 }
+#endif

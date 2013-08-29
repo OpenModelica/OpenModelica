@@ -807,7 +807,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__systemCallParallel)
 {
-  rmlA0 = SystemImpl__systemCallParallel(rmlA0);
+  rmlA0 = SystemImpl__systemCallParallel(rmlA0,RML_UNTAGFIXNUM(rmlA1));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
