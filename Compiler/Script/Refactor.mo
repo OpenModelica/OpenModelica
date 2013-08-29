@@ -368,8 +368,7 @@ algorithm
 
 end refactorGraphAnnInAlgItem;
 
-protected function refactorGraphAnnInElement"function: refactorGraphAnnInElement
-
+protected function refactorGraphAnnInElement"
   Helper function to refactorGraphAnnInElItem. Part of the AST traverse.
 
 "
@@ -410,8 +409,7 @@ algorithm
 
 end refactorGraphAnnInElement;
 
-protected function refactorConstrainClass "function: refactorGraphAnnInElement
-
+protected function refactorConstrainClass "
   Helper function to refactorGraphAnnInElItem. Part of the AST traverse.
 
 "
@@ -443,8 +441,7 @@ algorithm
   end match;
 end refactorConstrainClass;
 
-protected function refactorGraphAnnInElSpec"function: refactorGraphAnnInElSpec
-
+protected function refactorGraphAnnInElSpec"
   Helper function to refactorGraphAnnInElement Part of the AST traverse.
 
 "
@@ -502,8 +499,7 @@ end refactorGraphAnnInElSpec;
 
 
 
-protected function refactorGraphAnnInComponentItem"function: refactorGraphAnnInComponentItem
-
+protected function refactorGraphAnnInComponentItem"
   Helper function to refactorGraphAnnInElSpec Part of the AST traverse.
 
 "
@@ -546,8 +542,7 @@ algorithm
 end refactorGraphAnnInComponentItem;
 
 
-protected function transformComponentAnnList "function: transformComponentAnnList
-
+protected function transformComponentAnnList "
   This function transforms old component annotations to new ones
 "
 
@@ -617,8 +612,7 @@ algorithm
 
 end transformComponentAnnList;
 
-protected function getRestrictionFromPath"function: getRestrictionFromPath
-
+protected function getRestrictionFromPath"
   Helper function to transformComponentAnnList. This function takes a path and a program
   as arguments and then returns the class restriction to that path.
 "
@@ -661,8 +655,7 @@ algorithm
   end matchcontinue;
 end getRestrictionFromPath;
 
-protected function getRestrictionInClass"function: getRestrictionFromClass
-
+protected function getRestrictionInClass"
   Helper function to getRestrictionInPath. This function takes a class as
   argument and then returns the restriction to that class.
 "
@@ -677,8 +670,7 @@ algorithm
   end match;
 end getRestrictionInClass;
 
-protected function getRotationDegree"function: getRotationDegree
-
+protected function getRotationDegree"
   Helper function to transformComponentAnnList. This function checks if there's a rotation
   annotation in the ElementArg list and then returns the degree of rotation.
 "
@@ -709,8 +701,7 @@ algorithm
   end matchcontinue;
 end getRotationDegree;
 
-protected function getIconTransformation"function: getIconTransformation
-
+protected function getIconTransformation"
   Helper function to transformComponentAnnList. This function calculates and returns the iconTransformation
   annotation.
 "
@@ -783,8 +774,7 @@ algorithm
   end match;
 end getIconTransformation;
 
-protected function getDiagramTransformation"function: getDiagramTransformation
-
+protected function getDiagramTransformation"
   Helper function to transformComponentAnnList. This function calculates and returns the transformation
   annotation.
 "
@@ -865,8 +855,7 @@ algorithm
   end match;
 end getDiagramTransformation;
 
-protected function getAspectRatioAnn"function: getAspectRatioAnn
-
+protected function getAspectRatioAnn"
   Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the aspect ratio
   annotation.
 "
@@ -894,8 +883,7 @@ algorithm
   end match;
 end getAspectRatioAnn;
 
-protected function getXYAnn "function: getXYAnn
-
+protected function getXYAnn "
   Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the X or Y
   annotation.
 "
@@ -918,8 +906,7 @@ algorithm
   end match;
 end getXYAnn;
 
-protected function getScaleAnn "function: getScaleAnn
-
+protected function getScaleAnn "
   Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the scale
   annotation.
 "
@@ -942,8 +929,7 @@ algorithm
   end match;
 end getScaleAnn;
 
-protected function getFlipAnn"function: getFlipAnn
-
+protected function getFlipAnn"
   Helper function to getIconTransformation and getDiagramTransformation. This function calculates and returns the flip
   annotations.
 "
@@ -1034,8 +1020,7 @@ algorithm
 
 end getCoordsInPath;
 
-protected function getCoordsInClass "function: getCoordsInClass
-
+protected function getCoordsInClass "
   Helper function to getCoordsInPath. This function takes a class and a program
   as arguments and then returns the diagram or icon coordinates in that class.
 "
@@ -1068,8 +1053,7 @@ algorithm
   end match;
 end getCoordsInClass;
 
-protected function getCoordsInAnnList"function: getCoordsInAnnList
-
+protected function getCoordsInAnnList"
   Helper function to getCoordsFromEqns,elts,algs.
 "
   input list<Absyn.ElementArg> inAnns;
@@ -1111,8 +1095,7 @@ algorithm
   end matchcontinue;
 end getCoordsInAnnList;
 
-protected function getCoordsFromCoordSysArgs"function: getCoordsFromCoordSysArgs
-
+protected function getCoordsFromCoordSysArgs"
   Helper function to getCoordsInAnnList.
 "
   input list<Absyn.ElementArg> inAnns;
@@ -1187,8 +1170,7 @@ algorithm
   end matchcontinue;
 end getCoordsFromLayerArgs;
 
-protected function transformConnectAnnList "function: transformConnectAnnList
-
+protected function transformConnectAnnList "
   This function transforms old connect annotations to new ones
 "
 
@@ -1387,8 +1369,7 @@ algorithm
   end matchcontinue;
 end transformClassAnnList;
 
-protected function isLayerAnnInList"function: isLayerAnnInList
-
+protected function isLayerAnnInList"
   Helper function to transformClassAnnList. Returns true if a icon or diagram annotation
   is in the list, false otherwise.
 "
@@ -1429,8 +1410,7 @@ algorithm
 
 end isLayerAnnInList;
 
-protected function  getCoordSysAnn "function: getCoordSysAnn
-
+protected function  getCoordSysAnn "
   Helper function to transformClassAnnList. Fetches an old coordinate system
   annotations and returns it. If none it returns the default system for the old
   standard ([{-100,-100}{100,100}]).
@@ -1472,8 +1452,7 @@ algorithm
 end getCoordSysAnn;
 
 
-protected function transAnnLstToCalls " function: transAnnLstToCalls
-
+protected function transAnnLstToCalls "
   Helper function to transformClassAnnList. Some graphical annotations
   have abstract syntax as CALLS in the new standard
 "
@@ -1557,8 +1536,7 @@ algorithm
   end match;
 end nameArgWithName;
 
-protected function transAnnLstToNamedArgs " function: transAnnLstToNamedArgs
-
+protected function transAnnLstToNamedArgs "
   Helper function to transformClassAnnList. Some graphical annotations
   have abstract syntax as Absyn.NamedArg in the new standard
 "
@@ -1701,8 +1679,7 @@ algorithm
   end matchcontinue;
 end transAnnLstToNamedArgs;
 
-protected function cleanStyleAttrs "function: cleanStyleAttrs
-
+protected function cleanStyleAttrs "
   Helperfunction to the transform functions. The old style attribute and it's
   contents needs to be adjusted according to priorities before beeing transformed.
   See also cleanStyleAttrs2.
@@ -1790,8 +1767,7 @@ algorithm
 end isLineGraphic;
 
 
-protected function cleanStyleAttrs2 "function: cleanStyleAttrs
-
+protected function cleanStyleAttrs2 "
   Helperfunction to the transform functions. The old style attribute and it's
   contents needs to be adjusted according to priorities before beeing transformed."
   input list<Absyn.ElementArg> inArgs;
@@ -2015,8 +1991,7 @@ algorithm
   end match;
 end insertFillPatternInList;
 
-protected function isGradientInList " function: isGradientInList
-
+protected function isGradientInList "
   Helperfunction to cleanStyle attrs. Returns true if a Gradient is found in a list
   of Absyn.ElementArg.
 "
@@ -2044,8 +2019,7 @@ algorithm
   end matchcontinue;
 end isGradientInList;
 
-protected function isFillPatternInList "function: isFillPatternInList
-
+protected function isFillPatternInList "
   Helperfunction to cleanStyleAttrs. Returns true if a fillPattern attribute is
   found in a list of Absyn.ElementArg.
 "
@@ -2074,8 +2048,7 @@ algorithm
   end matchcontinue;
 end isFillPatternInList;
 
-protected function removeFillPatternInList "function: removeFillPatternInList
-
+protected function removeFillPatternInList "
   Helperfunction to cleanStyleAttrs. Removes a fillPattern attribute if present in a list
   of Absyn.ElementArg.
 "
@@ -2104,8 +2077,7 @@ algorithm
   end matchcontinue;
 end removeFillPatternInList;
 
-protected function setDefaultFillColor "function: setDefaultFillColor
-
+protected function setDefaultFillColor "
   Helperfunction to cleanStyleAttrs. Sets a fillColor default value according to dymola
   standard. Used in case of gradient beeing specified but no fillColor.
 "
@@ -2130,8 +2102,7 @@ algorithm
   end matchcontinue;
 end setDefaultFillColor;
 
-protected function isFillColorInList "function: isFillColorInList
-
+protected function isFillColorInList "
   Helperfunction to setDefaultFillColor. Returns true if a fillColor attribute is found
   in a list of Absyn.ElementArg.
 "
@@ -2188,8 +2159,7 @@ algorithm
   end matchcontinue;
 end setDefaultLineInList;
 
-protected function getMappedColor "function: getMappedColor
-
+protected function getMappedColor "
   Helperfunction during the transformation. Takes a old color representation as input
   and returns the three RGB representations for that color.
 "
@@ -2213,8 +2183,7 @@ algorithm
   end match;
 end getMappedColor;
 
-protected function matrixToArray "function: matrixToArray
-"
+protected function matrixToArray ""
   input list<Absyn.Exp> inLst;
   output Absyn.Exp  outExp;
 algorithm
@@ -2273,8 +2242,7 @@ algorithm
   end match;
 end getValueFromExp;
 
-protected function addContext "function: addContext
-"
+protected function addContext ""
   input list<String> inList;
   input String newCon;
   output list<String> outList;

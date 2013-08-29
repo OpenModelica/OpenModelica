@@ -1315,8 +1315,7 @@ algorithm
   end matchcontinue;
 end containWholeDim2;
 
-protected function containWholeDim3 "function: containWholeDim3
-Verify that a slice adresses all dimensions"
+protected function containWholeDim3 "Verify that a slice adresses all dimensions"
   input DAE.Exp inExp;
   input DAE.Dimensions ad;
   output Boolean ob;

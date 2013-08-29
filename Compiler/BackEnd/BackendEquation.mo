@@ -1738,8 +1738,7 @@ algorithm
 end equationRemove;
 
 public function compressEquations
-" function: compressEquations
-  author: Frenkel TUD 2012-11
+"  author: Frenkel TUD 2012-11
   Closes the gabs "
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
@@ -1762,8 +1761,7 @@ algorithm
 end compressEquations;
 
 protected function compressEquations1
-" function: compressEquations1
-  author: Frenkel TUD 2012-09"
+"  author: Frenkel TUD 2012-09"
   input Integer index;
   input Integer nEqns;
   input array<Option<BackendDAE.Equation>> equOptArr;

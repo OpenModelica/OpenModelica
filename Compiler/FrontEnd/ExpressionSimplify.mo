@@ -2470,8 +2470,7 @@ algorithm
 end simplifyMul2;
 
 protected function simplifyMulJoinFactors
-"function: simplifyMulJoinFactors
- author: PA
+" author: PA
   Helper function to simplifyMul.
   Joins expressions that have the same base.
   E.g. {(a,2), (a,4), (b,2)} => {(a,6), (b,2)}"

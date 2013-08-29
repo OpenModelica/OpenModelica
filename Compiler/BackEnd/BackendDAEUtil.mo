@@ -486,8 +486,7 @@ algorithm
 end copyBackendDAE;
 
 public  function copyBackendDAEEqSystem
-" function: copyBackendDAE
-  author: Frenkel TUD, wbraun
+"  author: Frenkel TUD, wbraun
   Copy the dae to avoid changes in
   vectors."
   input BackendDAE.EqSystem inSysts;
@@ -519,8 +518,7 @@ algorithm
 end copyBackendDAEEqSystem;
 
 public  function copyBackendDAEShared
-" function: copyBackendDAEShared
-  author: Frenkel TUD, wbraun
+"  author: Frenkel TUD, wbraun
   Copy the shared part of an BackendDAE to avoid changes in
   vectors."
   input BackendDAE.Shared inShared;
@@ -577,8 +575,7 @@ algorithm
 end copyMatching;
 
 public function addBackendDAESharedJacobian
-" function: addBackendDAESharedJacobian
-  author:  wbraun"
+"  author:  wbraun"
   input BackendDAE.SymbolicJacobian inSymJac;
   input BackendDAE.SparsePattern inSparsePattern;
   input BackendDAE.SparseColoring inSparseColoring;
@@ -608,8 +605,7 @@ algorithm
 end addBackendDAESharedJacobian;
 
 public function addBackendDAESharedJacobians
-" function: addBackendDAESharedJacobians
-  author:  wbraun"
+"  author:  wbraun"
   input BackendDAE.SymbolicJacobians inSymJac;
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
@@ -635,8 +631,7 @@ algorithm
 end addBackendDAESharedJacobians;
 
 public function addBackendDAESharedJacobianSparsePattern
-" function: addBackendDAESharedJacobianSparsePattern
-  author:  wbraun"
+"  author:  wbraun"
   input BackendDAE.SparsePattern inSparsePattern;
   input BackendDAE.SparseColoring inSparseColoring;
   input Integer inIndex;
@@ -668,8 +663,7 @@ algorithm
 end addBackendDAESharedJacobianSparsePattern;
 
 public function addBackendDAEKnVars
-" function: addBackendDAEKnVars
-  That function replace the KnownVars in BackendDAE.
+"  That function replace the KnownVars in BackendDAE.
   author:  wbraun"
   input BackendDAE.Variables inKnVars;
   input BackendDAE.BackendDAE inBDAE;
@@ -695,8 +689,7 @@ algorithm
 end addBackendDAEKnVars;
 
 public function addBackendDAEFunctionTree
-" function: addBackendDAEFunctionTree
-  That function replace the FunctionTree in BackendDAE.
+"  That function replace the FunctionTree in BackendDAE.
   author:  wbraun"
   input DAE.FunctionTree inFunctionTree;
   input BackendDAE.BackendDAE inBDAE;
@@ -1297,8 +1290,7 @@ algorithm
   end matchcontinue;
 end isDiscreteEquation;
 
-public function isDiscreteExp "function: isDiscreteExp
- Returns true if expression is a discrete expression."
+public function isDiscreteExp " Returns true if expression is a discrete expression."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input BackendDAE.Variables knvars;
@@ -1318,8 +1310,7 @@ algorithm
   end match;
 end isDiscreteExp;
 
-protected function isDiscreteExp1 "function: isDiscreteExp1
- Returns true if expression is a discrete expression."
+protected function isDiscreteExp1 " Returns true if expression is a discrete expression."
   input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> inExp;
   output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> outExp;
 algorithm
@@ -6517,8 +6508,7 @@ algorithm
   end matchcontinue;
 end rhsConstant2;
 
-// protected function freeFromAnyVar "function: freeFromAnyVar
-//   author: PA
+// protected function freeFromAnyVar "//   author: PA
 //   Helper function to rhsConstant2
 //   returns true if expression does not contain
 //   anyof the variables passed as argument."
@@ -7476,8 +7466,7 @@ algorithm
  end match;
 end traverseBackendDAEAttrDistribution;
 
-// protected function traverseBackendDAEExpsSubscript "function: traverseBackendDAEExpsSubscript
-//   author: Frenkel TUD
+// protected function traverseBackendDAEExpsSubscript "//   author: Frenkel TUD
 //   helper for traverseBackendDAEExpsSubscript"
 //   replaceable type Type_a subtypeof Any;
 //   input DAE.Subscript inSubscript;
@@ -7690,8 +7679,7 @@ algorithm
   end match;
 end traverseBackendDAEExpsOptEqnWithUpdate;
 
-public function traverseAlgorithmExps "function: traverseAlgorithmExps
-
+public function traverseAlgorithmExps "
   This function goes through the Algorithm structure and finds all the
   expressions and performs the function on them
 "
@@ -7717,8 +7705,7 @@ algorithm
   end match;
 end traverseAlgorithmExps;
 
-public function traverseAlgorithmExpsWithUpdate "function: traverseAlgorithmExpsWithUpdate
-
+public function traverseAlgorithmExpsWithUpdate "
   This function goes through the Algorithm structure and finds all the
   expressions and performs the function on them
 "
@@ -7833,8 +7820,7 @@ partial function stateDeselectionFunc
 end stateDeselectionFunc;
 
 public function getSolvedSystem
-" function: getSolvedSystem
-  Run the equation system pipeline."
+"  Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;
@@ -8301,8 +8287,7 @@ end pastoptimiseDAE;
 // end countComponents;
 
 public function getSolvedSystemforJacobians
-" function: getSolvedSystemforJacobians
-  Run the equation system pipeline."
+"  Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;

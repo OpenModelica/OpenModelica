@@ -789,8 +789,7 @@ algorithm
   end match;
 end elabSubmod;
 
-protected function elabUntypedSubmods "function: elabUntypedSubmods
-
+protected function elabUntypedSubmods "
   This function helps `elab_untyped_mod\' by recusively elaborating on a list
   of submodifications.
 "
@@ -818,8 +817,7 @@ algorithm
   end match;
 end elabUntypedSubmods;
 
-protected function elabUntypedSubmod "function: elabUntypedSubmod
-
+protected function elabUntypedSubmod "
   This function elaborates on a submodification, turning an
   `SCode.SubMod\' into one or more `DAE.SubMod\'s, wihtout type information.
 "
@@ -1092,8 +1090,7 @@ algorithm
   end match;
 end selectEqMod;
 
-public function lookupCompModification12 "function: lookupCompModification
-Author: BZ, 2009-07
+public function lookupCompModification12 "Author: BZ, 2009-07
 Function for looking up modifiers on specific component.
 And put it in a DAE.Mod(Types.NAMEDMOD(comp,mod)) format."
   input DAE.Mod inMod;

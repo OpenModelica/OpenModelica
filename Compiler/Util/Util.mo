@@ -172,8 +172,7 @@ algorithm
    end matchcontinue;
 end flagValue;
 
-public function isEqual "function: isEqual
-this function does equal(e1,e2) and returns true if it succedes."
+public function isEqual "this function does equal(e1,e2) and returns true if it succedes."
   input Type_a input1;
   input Type_a input2;
   output Boolean isequal;
@@ -1301,8 +1300,7 @@ algorithm
 end arraySet;
 
 public function compareTuple2IntGt
-" function: comparePosTupleList
-  Function could used with List.sort to sort a
+"  Function could used with List.sort to sort a
   List as list< tuple<Type_a,Integer> > by second argument.
   "
   input tuple<Type_a,Integer> inTplA;
@@ -1318,8 +1316,7 @@ algorithm
 end compareTuple2IntGt;
 
 public function compareTuple2IntLt
-" function: comparePosTupleList
-  Function could used with List.sort to sort a
+"  Function could used with List.sort to sort a
   List as list< tuple<Type_a,Integer> > by second argument.
   "
   input tuple<Type_a,Integer> inTplA;
@@ -2635,8 +2632,7 @@ end stringAppendNonEmpty;
 
 // moved from Inst.
 public function selectList
-"function: select
-Author BZ, 2008-09
+"Author BZ, 2008-09
   This utility function selects one of two objects depending on a list of boolean variables.
   Used to constant evaluate if-equations."
   input list<Boolean> inBools;

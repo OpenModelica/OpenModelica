@@ -2285,8 +2285,7 @@ algorithm
 end vararraySetnth;
 
 protected function vararrayNth
-"function: vararrayNth
- author: PA
+" author: PA
  Retrieve the n:th BackendDAE.Var from BackendDAE.VariableArray, index from 0..n-1.
  inputs:  (BackendDAE.VariableArray, int /* n */)
  outputs: Var"
@@ -2549,8 +2548,7 @@ algorithm
 end resizeVars3;
 
 public function isVariable
-"function: isVariable
-
+"
   This function takes a DAE.ComponentRef and two Variables. It searches
   the two sets of variables and succeed if the variable is STATE or
   VARIABLE. Otherwise it fails.
@@ -2886,8 +2884,7 @@ algorithm
 end removeVar2;
 
 public function compressVariables
-" function: compressVariables
-  author: Frenkel TUD 2012-09
+"  author: Frenkel TUD 2012-09
   Closes the gabs "
   input BackendDAE.Variables iVars;
   output BackendDAE.Variables oVars;
@@ -2910,8 +2907,7 @@ algorithm
 end compressVariables;
 
 protected function compressVariables1
-" function: compressVariables1
-  author: Frenkel TUD 2012-09"
+"  author: Frenkel TUD 2012-09"
   input Integer index;
   input Integer nVars;
   input array<Option<BackendDAE.Var>> varOptArr;

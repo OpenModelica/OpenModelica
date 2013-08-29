@@ -394,8 +394,7 @@ algorithm
 end causal1;
 
 protected function traverseComponents
-" function: traverseComponents
-  author: Frenkel TUD 2010-12"
+"  author: Frenkel TUD 2010-12"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EquationArray iEqns;
@@ -3555,8 +3554,7 @@ algorithm
   outTpl := Expression.traverseExp(e, addUnreplacableFromEqnsExp, hs);
 end addUnreplacableFromEqns;
 
-protected function addUnreplacableFromEqnsExp "function: addUnreplacableFromEqnsExp
-author: Frenkel TUD 2010-12"
+protected function addUnreplacableFromEqnsExp "author: Frenkel TUD 2010-12"
   input tuple<DAE.Exp, HashSet.HashSet> inExp;
   output tuple<DAE.Exp, HashSet.HashSet> outExp;
 algorithm

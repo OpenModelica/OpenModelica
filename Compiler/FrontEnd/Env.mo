@@ -441,8 +441,7 @@ algorithm
   end matchcontinue;
 end stripForLoopScope;
 
-public function getScopeName "function: getScopeName
- Returns the name of a scope, if no name exist, the function fails."
+public function getScopeName " Returns the name of a scope, if no name exist, the function fails."
   input Env inEnv;
   output Ident name;
 algorithm
@@ -451,8 +450,7 @@ algorithm
   end match;
 end getScopeName;
 
-public function getScopeNames "function: getScopeName
- Returns the name of a scope, if no name exist, the function fails."
+public function getScopeNames " Returns the name of a scope, if no name exist, the function fails."
   input Env inEnv;
   output list<String> names;
 algorithm
@@ -975,8 +973,7 @@ algorithm
 end extendFrameI;
 
 public function addFrameItem 
-"function: addFrameItem
- This function replaces an item in the environment!"
+" This function replaces an item in the environment!"
   input Env inEnv;
   input Ident inName;
   input Item inNewItem;
@@ -1015,8 +1012,7 @@ algorithm
 end addFrameItem;
 
 public function replaceFrameItem 
-"function: replaceFrameItem
- This function replaces an item in the environment!"
+" This function replaces an item in the environment!"
   input Env inEnv;
   input Ident inName;
   input Item inNewItem;
@@ -1057,8 +1053,7 @@ algorithm
 end replaceFrameItem;
 
 public function pushFrameItem 
-"function: pushFrameItem
- This function adds an item to the environment or updates it if is already there!"
+" This function adds an item to the environment or updates it if is already there!"
   input Env inEnv;
   input Ident inName;
   input Item inNewItem;
@@ -1715,8 +1710,7 @@ algorithm
   end matchcontinue;
 end getEnvNameStr;
 
-public function printEnvPathStr "function: printEnvPathStr
- Retrive the environment path as a string, see getEnvPath."
+public function printEnvPathStr " Retrive the environment path as a string, see getEnvPath."
   input Env inEnv;
   output String outString;
 algorithm

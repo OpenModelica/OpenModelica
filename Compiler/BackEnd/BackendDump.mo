@@ -550,8 +550,7 @@ algorithm
 end dumpEquation;
 
 public function dumpTearing
-" function: dumpTearing
-  author: Frenkel TUD
+"  author: Frenkel TUD
   Dump tearing vars and residual equations."
   input list<list<Integer>> inResEqn;
   input list<list<Integer>> inTearVar;
@@ -1723,8 +1722,7 @@ algorithm
   end matchcontinue;
 end printCallFunction2StrDIVISION;
 
-// protected function printVarsStatistics "function: printVarsStatistics
-//   author: PA
+// protected function printVarsStatistics "//   author: PA
 // 
 //   Prints statistics on variables, etc.
 // "

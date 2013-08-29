@@ -503,8 +503,7 @@ algorithm
   end matchcontinue;
 end applyReplacements;
 
-public function applyReplacementList "function: applyReplacements
- Author: BZ, 2008-11
+public function applyReplacementList " Author: BZ, 2008-11
 
   This function takes a VariableReplacements and a list of component references.
   It applies the replacements to each component reference.
@@ -579,8 +578,7 @@ algorithm
   end matchcontinue;
 end emptyReplacementsArray2;
 
-public function emptyReplacements "function: emptyReplacements
-
+public function emptyReplacements "
   Returns an empty set of replacement rules
 "
   output VariableReplacements outVariableReplacements;
@@ -598,8 +596,7 @@ algorithm
   end match;
 end emptyReplacements;
 
-public function emptyReplacementsSized "function: emptyReplacements
-
+public function emptyReplacementsSized "
   Returns an empty set of replacement rules, giving a size of hashtables to allocate
 "
   input Integer size;
@@ -618,8 +615,7 @@ algorithm
   end match;
 end emptyReplacementsSized;
 
-public function replaceEquationsStmts "function: replaceEquationsStmts
-
+public function replaceEquationsStmts "
   Helper function to replace_equations,
   Handles the replacement of DAE.Statement.
 "
@@ -963,8 +959,7 @@ algorithm
   end match;
 end addReplacementLst;
 
-public function addReplacement "function: addReplacement
-
+public function addReplacement "
   Adds a replacement rule to the set of replacement rules given as argument.
   If a replacement rule a->b already exists and we add a new rule b->c then
   the rule a->b is updated to a->c. This is done using the make_transitive
@@ -1056,8 +1051,7 @@ algorithm
   end matchcontinue;
 end addReplacementNoTransitive;
 
-protected function addReplacementInv "function: addReplacementInv
-
+protected function addReplacementInv "
   Helper function to addReplacement
   Adds the inverse rule of a replacement to the second binary tree
   of VariableReplacements.
@@ -1080,8 +1074,7 @@ algorithm
   end match;
 end addReplacementInv;
 
-protected function addReplacementInv2 "function: addReplacementInv2
-
+protected function addReplacementInv2 "
   Helper function to addReplacementInv
   Adds the inverse rule for one of the variables of a replacement to the second binary tree
   of VariableReplacements.
@@ -1152,8 +1145,7 @@ algorithm
   end matchcontinue;
 end addReplacementIfNot;
 
-protected function makeTransitive "function: makeTransitive
-
+protected function makeTransitive "
   This function takes a set of replacement rules and a new replacement rule
   in the form of two ComponentRef:s and makes sure the new replacement rule
   is replaced with the transitive value.
@@ -1189,8 +1181,7 @@ algorithm
   end match;
 end makeTransitive;
 
-protected function makeTransitive1 "function: makeTransitive1
-
+protected function makeTransitive1 "
   helper function to makeTransitive
 "
   input VariableReplacements repl;
@@ -1246,8 +1237,7 @@ algorithm
   end match;
 end makeTransitive12;
 
-protected function makeTransitive2 "function: makeTransitive2
-
+protected function makeTransitive2 "
   Helper function to makeTransitive
 "
   input VariableReplacements repl;
@@ -1272,8 +1262,7 @@ algorithm
   end matchcontinue;
 end makeTransitive2;
 
-protected function addReplacements "function: addReplacements
-
+protected function addReplacements "
   Adding of several replacements at once with common destination.
   Uses add_replacement
 "
@@ -1302,8 +1291,7 @@ algorithm
   end matchcontinue;
 end addReplacements;
 
-public function getReplacement "function: getReplacement
-
+public function getReplacement "
   Retrives a replacement variable given a set of replacement rules and a
   source variable.
 "
@@ -1412,8 +1400,7 @@ algorithm
   end matchcontinue;
 end replaceExpRepeated2;
 
-public function replaceExp "function: replaceExp
-
+public function replaceExp "
   Takes a set of replacement rules and an expression and a function
   giving a boolean value for an expression.
   The function replaces all variables in the expression using
@@ -1806,8 +1793,7 @@ algorithm
   end matchcontinue;
 end bintreeToExplistOpt;
 
-protected function treeGet "function: treeGet
-
+protected function treeGet "
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string can not be uniquely mapped to an int. Therefore we need to
   compare two strings to get a unique ordering.
@@ -1852,8 +1838,7 @@ algorithm
   end matchcontinue;
 end treeGet;
 
-protected function treeAdd "function: treeAdd
-
+protected function treeAdd "
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string (ComponentRef) can not be uniquely mapped to an int.
   Therefore we need to compare two strings to get a unique ordering.
@@ -1924,8 +1909,7 @@ algorithm
   end matchcontinue;
 end treeAdd;
 
-protected function treeGet2 "function: treeGet2
-
+protected function treeGet2 "
   Copied from generic implementation. Changed that no hashfunction is passed
   since a string can not be uniquely mapped to an int. Therefore we need
   to compare two strings to get a unique ordering.

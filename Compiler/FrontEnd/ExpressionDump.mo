@@ -416,8 +416,7 @@ algorithm
 end printSubscriptStr;
 
 public function printExpListStr
-"function: printExpListStr
- prints a list of expressions with commas between expressions."
+" prints a list of expressions with commas between expressions."
   input list<DAE.Exp> expl;
   output String res;
 algorithm
@@ -946,8 +945,7 @@ algorithm
 end printCase2Str;
 
 public function expPriority
-"function: expPriority
- Returns a priority number for an expression.
+" Returns a priority number for an expression.
  This function is used to output parenthesis
  when needed, e.g., 3(1+2) should output 3(1+2)
  and not 31+2."

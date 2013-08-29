@@ -493,8 +493,7 @@ algorithm
   end match;
 end safeLessEq;
 
-protected function unparseDescription "function: unparseDescription
-
+protected function unparseDescription "
   Helper function to unparse_values. Creates a description string
   for the type of the value.
 "
@@ -539,8 +538,7 @@ algorithm
   end match;
 end unparseDescription;
 
-protected function unparseArrayDescription "function: unparseArrayDescription
-
+protected function unparseArrayDescription "
   Helper function to unparse_description.
 "
   input list<Values.Value> lst;
@@ -560,8 +558,7 @@ algorithm
   str := stringAppend(s5, s6);
 end unparseArrayDescription;
 
-protected function unparsePrimType "function: unparsePrimType
-
+protected function unparsePrimType "
   Helper function to unparse_array_description.
 "
   input list<Values.Value> inValueLst;
@@ -586,8 +583,7 @@ algorithm
   end matchcontinue;
 end unparsePrimType;
 
-protected function unparseNumDims "function: unparseNumDims
-
+protected function unparseNumDims "
   Helper function to unparse_array_description.
 "
   input list<Values.Value> inValueLst;
@@ -607,8 +603,7 @@ algorithm
   end matchcontinue;
 end unparseNumDims;
 
-protected function unparseDimSizes "function: unparseDimSizes
-
+protected function unparseDimSizes "
   Helper function to unparse_array_description.
 "
   input list<Values.Value> inValueLst;
@@ -638,8 +633,7 @@ algorithm
   end matchcontinue;
 end unparseDimSizes;
 
-public function writeToFileAsArgs "function: writeToFileAsArgs
-
+public function writeToFileAsArgs "
   Write a list of Values to a file. This function is used when
   writing the formal input arguments of a function call to a file before
   executing the function.
@@ -653,8 +647,7 @@ algorithm
   System.writeFile(filename, str);
 end writeToFileAsArgs;
 
-public function addElementwiseArrayelt "function: addElementwiseArrayelt
-
+public function addElementwiseArrayelt "
   Perform elementwise addition of two arrays.
 "
   input list<Values.Value> inValueLst1;
@@ -697,8 +690,7 @@ algorithm
   end match;
 end addElementwiseArrayelt;
 
-public function subElementwiseArrayelt "function: subElementwiseArrayelt
-
+public function subElementwiseArrayelt "
   Perform element subtraction of two arrays of values
 "
   input list<Values.Value> inValueLst1;
@@ -734,8 +726,7 @@ algorithm
   end match;
 end subElementwiseArrayelt;
 
-public function mulElementwiseArrayelt "function: mulElementwiseArrayelt
-
+public function mulElementwiseArrayelt "
   Perform elementwise multiplication of two arrays of values
 "
   input list<Values.Value> inValueLst1;
@@ -771,8 +762,7 @@ algorithm
   end match;
 end mulElementwiseArrayelt;
 
-public function divElementwiseArrayelt "function: divElementwiseArrayelt
-
+public function divElementwiseArrayelt "
   Perform elementwise division of two arrays of values
 "
   input list<Values.Value> inValueLst1;
@@ -810,8 +800,7 @@ algorithm
   end match;
 end divElementwiseArrayelt;
 
-public function powElementwiseArrayelt "function: powElementwiseArrayelt
-
+public function powElementwiseArrayelt "
   Computes elementwise powers of two arrays of values
 "
   input list<Values.Value> inValueLst1;
@@ -1029,8 +1018,7 @@ algorithm
 end valueExp;
 
 
-public function valueReal "function: valueReal
-
+public function valueReal "
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
@@ -1063,8 +1051,7 @@ algorithm
   end match;
 end valueIntegerMinusOne;
 
-public function valueBool "function: valueReal
-Author: BZ, 2008-09
+public function valueBool "Author: BZ, 2008-09
   Return the bool value of a Value.
 "
   input Values.Value inValue;
@@ -1075,8 +1062,7 @@ algorithm
   end match;
 end valueBool;
 
-public function valueReals "function: valueReals
-
+public function valueReals "
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
@@ -1121,8 +1107,7 @@ algorithm
   outReal := List.map(vals, valueInteger);
 end arrayValueInts;
 
-public function arrayValueReals "function: valueReals
-
+public function arrayValueReals "
   Return the real value of a Value. If the value is an integer,
   it is cast to a real.
 "
@@ -1191,8 +1176,7 @@ algorithm
   end match;
 end valueNeg;
 
-public function sumArrayelt "function: sumArrayelt
-
+public function sumArrayelt "
   Calculate the sum of a list of Values.
 "
   input list<Values.Value> inValueLst;
@@ -1230,8 +1214,7 @@ algorithm
   end matchcontinue;
 end sumArrayelt;
 
-public function multScalarArrayelt "function: multScalarArrayelt
-
+public function multScalarArrayelt "
   Multiply a scalar with an list of Values, i.e. array.
 "
   input Values.Value inValue;
@@ -1282,8 +1265,7 @@ algorithm
   end match;
 end multScalarArrayelt;
 
-public function addScalarArrayelt "function: addScalarArrayelt
-
+public function addScalarArrayelt "
   Adds a scalar to an list of Values, i.e. array.
 "
   input Values.Value inValue;
@@ -1341,8 +1323,7 @@ algorithm
   end match;
 end addScalarArrayelt;
 
-public function divScalarArrayelt "function: divScalarArrayelt
-
+public function divScalarArrayelt "
   Divide a scalar with an list of Values, i.e. array.
 "
   input Values.Value inValue;
@@ -1410,8 +1391,7 @@ algorithm
   end matchcontinue;
 end divScalarArrayelt;
 
-public function subScalarArrayelt "function: subScalarArrayelt
-
+public function subScalarArrayelt "
   subtracts a list of Values, i.e. array, from a scalar.
 "
   input Values.Value inValue;
@@ -1462,8 +1442,7 @@ algorithm
   end match;
 end subScalarArrayelt;
 
-public function powScalarArrayelt "function: powScalarArrayelt
-
+public function powScalarArrayelt "
   Takes a power of a scalar with an list of Values, i.e. array.
 "
   input Values.Value inValue;
@@ -1516,8 +1495,7 @@ algorithm
   end match;
 end powScalarArrayelt;
 
-public function subArrayeltScalar "function: subArrayeltScalar
-
+public function subArrayeltScalar "
   subtracts a scalar from a list of Values, i.e. array.
 "
   input Values.Value inValue;
@@ -1568,8 +1546,7 @@ algorithm
   end match;
 end subArrayeltScalar;
 
-public function powArrayeltScalar "function: powArrayeltScalar
-
+public function powArrayeltScalar "
   Takes a power of a list of Values, i.e. array, with a scalar.
 "
   input Values.Value inValue;
@@ -1622,8 +1599,7 @@ algorithm
   end match;
 end powArrayeltScalar;
 
-public function multScalarProduct "function: multScalarProduct
-
+public function multScalarProduct "
   Calculate the scalar product of two vectors / arrays.
 "
   input list<Values.Value> inValueLst1;
@@ -1750,8 +1726,7 @@ algorithm
   end matchcontinue;
 end crossProduct;
 
-public function multMatrix "function: multMatrix
-
+public function multMatrix "
   Calculate a matrix multiplication of two matrices, i.e. two dimensional
   arrays.
 "
@@ -1864,8 +1839,7 @@ algorithm
   end match;
 end matrixStripFirstColumn;
 
-public function intlistToValue "function: intlistToValue
-
+public function intlistToValue "
   Takes a list of integers and builds a Value from it, i.e. an
   array of integers.
 "
@@ -1888,8 +1862,7 @@ algorithm
   end match;
 end intlistToValue;
 
-public function arrayValues "function: arrayValues
-
+public function arrayValues "
   Return the values of an array.
 "
   input Values.Value inValue;
@@ -1938,8 +1911,7 @@ algorithm
   v := Values.STRING(s);
 end makeString;
 
-public function makeArray "function: makeArray
-
+public function makeArray "
   Construct an array of a list of Values.
 "
   input list<Values.Value> inValueLst;
@@ -2258,8 +2230,7 @@ algorithm
   end matchcontinue;
 end valRecordString;
 
-protected function valListString "function: valListString
-
+protected function valListString "
   This function returns a textual representation of a list of
   values, separating each value with a comman.
 "
@@ -2291,8 +2262,7 @@ algorithm
   end matchcontinue;
 end valListString;
 
-public function writePtolemyplotDataset "function: writePtolemyplotDataset
-
+public function writePtolemyplotDataset "
   This function writes a data set in the pltolemy plot format to a file.
   The first column of the dataset matrix should be the time variable.
   The message string will be displayed in the plot window of ptplot.

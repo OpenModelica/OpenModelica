@@ -1168,8 +1168,7 @@ algorithm
   end matchcontinue;
 end hasStartAttr;
 
-public function getStartAttrString "function: getStartAttrString
-
+public function getStartAttrString "
   Return the start attribute as a string.
 "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
@@ -1606,8 +1605,7 @@ algorithm
   end match;
 end isFunctionInlineFalse;
 
-public function findElement "function: findElement
-
+public function findElement "
   Search for an element for which the function passed as second
   argument succeds. If no element is found return NONE.
 "
@@ -1640,8 +1638,7 @@ algorithm
   end matchcontinue;
 end findElement;
 
-public function getVariableBindingsStr "function: getVariableBindingsStr
-
+public function getVariableBindingsStr "
   This function takes a `DAE.Element\' list and returns a comma separated
   string of variable bindings.
   E.g. model A Real x=1; Real y=2; end A; => \"1,2\"
@@ -1655,8 +1652,7 @@ algorithm
   str := getBindingsStr(varlst);
 end getVariableBindingsStr;
 
-protected function getVariableList "function: getVariableList
-
+protected function getVariableList "
   Return all variables from an Element list.
 "
   input list<DAE.Element> inElementLst;
@@ -1688,8 +1684,7 @@ algorithm
   end matchcontinue;
 end getVariableList;
 
-protected function getBindingsStr "function: getBindingsStr
-
+protected function getBindingsStr "
   Retrive the bindings from a list of Elements and output to a string.
 "
   input list<DAE.Element> inElementLst;
@@ -1727,8 +1722,7 @@ algorithm
   end match;
 end getBindingsStr;
 
-public function getBindings "function: getBindingsStr
-Author: BZ, 2008-11
+public function getBindings "Author: BZ, 2008-11
 Get variable-bindings from element list.
 "
   input list<DAE.Element> inElementLst;
@@ -1871,8 +1865,7 @@ algorithm
   end matchcontinue;
 end getFlowVariables;
 
-protected function getFlowVariables2 "function: getFlowVariables2
-
+protected function getFlowVariables2 "
   Helper function to get_flow_variables.
 "
   input list<DAE.ComponentRef> inExpComponentRefLst;
@@ -1928,8 +1921,7 @@ algorithm
   end matchcontinue;
 end getStreamVariables;
 
-protected function getStreamVariables2 "function: getStreamVariables2
-
+protected function getStreamVariables2 "
   Helper function to get_flow_variables.
 "
   input list<DAE.ComponentRef> inExpComponentRefLst;
@@ -2422,8 +2414,7 @@ algorithm
   end match;
 end getFunctionElements;
 
-protected function crefToExp "function: crefToExp
-
+protected function crefToExp "
   Makes an expression from a ComponentRef.
 "
   input DAE.ComponentRef inComponentRef;

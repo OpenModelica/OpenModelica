@@ -649,8 +649,7 @@ algorithm
   end matchcontinue;
 end makeWhenA;
 
-public function makeReinit "function: makeReinit
- creates a reinit statement in an algorithm
+public function makeReinit " creates a reinit statement in an algorithm
  statement, only valid in when algorithm sections."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -735,8 +734,7 @@ algorithm
 end getCrefFromAlg;
 
 
-public function getAllExps "function: getAllExps
-
+public function getAllExps "
   This function goes through the Algorithm structure and finds all the
   expressions and returns them in a list
 "
@@ -756,8 +754,7 @@ algorithm
   end match;
 end getAllExps;
 
-public function getAllExpsStmts "function: getAllExpsStmts
-
+public function getAllExpsStmts "
   This function takes a list of statements and returns all expressions and subexpressions
   in all statements.
 "

@@ -81,8 +81,7 @@ algorithm
 end writeIncidenceMatrix;
 
 public function getEquations
-"function: getEquations
- @author adrpo
+" @author adrpo
   This function returns the equations"
   input BackendDAE.BackendDAE inBackendDAE;
   output String strEqs;
@@ -535,8 +534,7 @@ algorithm
   end matchcontinue;
 end incidenceRow;
 
-// protected function incidenceRowStmts "function: incidenceRowStmts
-//   author: PA
+// protected function incidenceRowStmts "//   author: PA
 //   Helper function to incidenceRow, investigates statements for
 //   variables, returning variable indexes."
 //   input list<DAE.Statement> inAlgorithmStatementLst;

@@ -416,8 +416,7 @@ algorithm
   end match;
 end start;
 
-public function trans "function: trans
-
+public function trans "
   This is the state machine transition function.  It describes the
   transitions between states at different events.
 "
@@ -510,8 +509,7 @@ algorithm
   end match;
 end trans;
 
-public function valid "function: valid
-
+public function valid "
   This is the validity function which determines if a state is valid
   according to one of the restrictions.  This means, that if a class
   definition is to be used as, say, a connector, the state of the
@@ -624,8 +622,7 @@ algorithm
   end matchcontinue;
 end assertTrans;
 
-public function matchingState "function: matchingState
-
+public function matchingState "
   Finds a State in the list that matches the state given as first argument.
   NOTE: Currently not used anywhere.
 "
@@ -684,8 +681,7 @@ algorithm
   end match;
 end isFunctionOrRecord;
 
-public function isConnector "function: isConnector
-
+public function isConnector "
   Fails for states that are not CONNECTOR.
 "
   input State inState;

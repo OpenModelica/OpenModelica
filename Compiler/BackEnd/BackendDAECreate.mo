@@ -3509,8 +3509,7 @@ algorithm
   end match;
 end findZeroCrossings1;
 
-protected function findZeroCrossings2 "function: findZeroCrossings2
-
+protected function findZeroCrossings2 "
   Helper function to find_zero_crossing.
   modified: 2011-01 by wbraun
 "
@@ -3923,8 +3922,7 @@ algorithm
   end matchcontinue;
 end collectZC;
 
-protected function collectZCAlgs "function: collectZeroCrossings
-
+protected function collectZCAlgs "
   Collects zero crossings in algorithms stamts, beside for loops those are
   processed by collectZCAlgsFor
 
@@ -4398,8 +4396,7 @@ algorithm
   end matchcontinue;
 end mergeZeroCrossings;
 
-protected function mergeZeroCrossing "function: mergeZeroCrossing
-
+protected function mergeZeroCrossing "
   Merges two zero crossings into one by makeing the union of the lists of
   equaions and when clauses they appear in.
   modified: 2011-01 by wbraun
@@ -4436,8 +4433,7 @@ algorithm
   end matchcontinue;
 end mergeZeroCrossing;
 
-protected function sameZeroCrossing "function: sameZeroCrossing
-
+protected function sameZeroCrossing "
   Returns true if both zero crossings have the same function expression
 "
   input BackendDAE.ZeroCrossing inZeroCrossing1;
@@ -4472,8 +4468,7 @@ algorithm
   end match;
 end sameZeroCrossing;
 
-protected function differentZeroCrossing "function: differentZeroCrossing
-
+protected function differentZeroCrossing "
   Return true if the realation expressions differ.
 "
   input BackendDAE.ZeroCrossing zc1;

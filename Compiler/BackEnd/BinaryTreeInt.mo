@@ -239,8 +239,7 @@ algorithm
   end matchcontinue;
 end treeAdd;
 
-// protected function treeDelete2 "function: treeDelete
-//   author: PA
+// protected function treeDelete2 "//   author: PA
 //   This function deletes an entry from the BinTree."
 //   input BinTree inBinTree;
 //   input Integer inKey;
@@ -303,8 +302,7 @@ end treeAdd;
 //   end matchcontinue;
 // end treeDelete2;
 
-// protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
-//   author: PA
+// protected function treeDeleteRightmostValue "//   author: PA
 //   This function takes a BinTree and deletes the rightmost value of the tree.
 //   Tt returns this value and the updated BinTree. This function is used in
 //   the binary tree deletion function \'tree_delete\'.
@@ -351,8 +349,7 @@ end treeAdd;
 //   end matchcontinue;
 // end treeDeleteRightmostValue;
 
-// protected function treePruneEmptyNodes "function: treePruneEmtpyNodes
-//   author: PA
+// protected function treePruneEmptyNodes "//   author: PA
 //   This function is a helper function to tree_delete
 //   It is used to delete empty nodes of the BinTree
 //   representation, that might be introduced when deleting nodes."
@@ -366,8 +363,7 @@ end treeAdd;
 //   end matchcontinue;
 // end treePruneEmptyNodes;
 
-// protected function bintreeDepth "function: bintreeDepth
-//   author: PA
+// protected function bintreeDepth "//   author: PA
 //   This function calculates the depth of the Binary Tree given
 //   as input. It can be used for debugging purposes to investigate
 //   how balanced binary trees are."

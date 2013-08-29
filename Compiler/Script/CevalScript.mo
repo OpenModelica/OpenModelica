@@ -3982,8 +3982,7 @@ algorithm
   end matchcontinue;
 end winCitation;
 
-public function checkModel "function: checkModel
- checks a model and returns number of variables and equations"
+public function checkModel " checks a model and returns number of variables and equations"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className;

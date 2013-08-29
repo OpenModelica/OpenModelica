@@ -3004,8 +3004,7 @@ algorithm
   outExp := makePositiveMaxCall(flow_exp);
 end sumInside2;
 
-public function faceEqual "function: sameFace
-Test for face equality."
+public function faceEqual "Test for face equality."
   input Connect.Face inFace1;
   input Connect.Face inFace2;
   output Boolean sameFaces;

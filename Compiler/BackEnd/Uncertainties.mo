@@ -2157,8 +2157,7 @@ algorithm
   end match;
 end replaceVars;
 
-public function varBindingOpt "function: varBindingOpt
-author: PA
+public function varBindingOpt "author: PA
 
 returns the binding expression option of a variable"
 input BackendDAE.Var v;
@@ -2264,8 +2263,7 @@ algorithm
   end match;
 end setVarBindingOpt;
 
-public function moveVariables "function: moveVariables
-
+public function moveVariables "
   This function takes the two variable lists of a dae (states+alg) and
   known vars and moves a set of variables from the first to the second set.
   This function is needed to manage this in complexity O(n) by only
@@ -2298,8 +2296,7 @@ algorithm
   end match;
 end moveVariables;
 
-protected function moveVariables2 "function: moveVariables2
-
+protected function moveVariables2 "
   helper function to move_variables.
 "
   input list<BackendDAE.Var> inVarLst1;

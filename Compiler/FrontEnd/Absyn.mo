@@ -1141,8 +1141,7 @@ public constant Info dummyInfo = INFO("",false,0,0,0,0,dummyTimeStamp);
 public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0);
 
 public function getNewTimeStamp
-"function: getNewTimeStamp
-generate a new timestamp with edittime>buildtime."
+"generate a new timestamp with edittime>buildtime."
 output TimeStamp ts;
 algorithm
   ts := newTimeStamp;
@@ -4311,8 +4310,7 @@ algorithm
   end matchcontinue;
 end setClassName;
 
-public function crefEqual "function: crefEqual
- Checks if the name of a ComponentRef is
+public function crefEqual " Checks if the name of a ComponentRef is
  equal to the name of another ComponentRef, including subscripts.
  See also crefEqualNoSubs."
   input ComponentRef iCr1;

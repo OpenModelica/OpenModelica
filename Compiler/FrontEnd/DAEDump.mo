@@ -2155,8 +2155,7 @@ algorithm
   end matchcontinue;
 end ppStmtStr;
 
-protected function ppStmtList "function: ppStmtList
-
+protected function ppStmtList "
   Helper function to pp_stmt
 "
   input list<DAE.Statement> inAlgorithmStatementLst;
@@ -2178,8 +2177,7 @@ algorithm
   end match;
 end ppStmtList;
 
-protected function ppStmtListStr "function: ppStmtListStr
-
+protected function ppStmtListStr "
   Helper function to pp_stmt_str
 "
   input list<DAE.Statement> inAlgorithmStatementLst;
@@ -2204,8 +2202,7 @@ algorithm
   end match;
 end ppStmtListStr;
 
-protected function ppElse "function: ppElse
-
+protected function ppElse "
   Helper function to pp_stmt
 "
   input DAE.Else inElse;
@@ -2241,8 +2238,7 @@ algorithm
   end match;
 end ppElse;
 
-protected function ppElseStr "function: pp_else
-
+protected function ppElseStr "
   Helper function to ppElseStr
 "
   input DAE.Else inElse;
@@ -2284,8 +2280,7 @@ algorithm
   end match;
 end ppElseStr;
 
-protected function indent "function: indent
-
+protected function indent "
   Print an indentation, given an indent level.
 "
   input Integer inInteger;
@@ -2304,8 +2299,7 @@ algorithm
   end matchcontinue;
 end indent;
 
-protected function indentStr "function: indentStr
-
+protected function indentStr "
   Print an indentation to a string, given an indent level.
 "
   input Integer inInteger;
@@ -2348,8 +2342,7 @@ algorithm
   end match;
 end dumpDebug;
 
-protected function dumpDebugElist "function: dumpDebugElist
-
+protected function dumpDebugElist "
   Helper function to dump_debug.
 "
   input list<DAE.Element> inElementLst;
@@ -2387,8 +2380,7 @@ algorithm
   end match;
 end dumpDebugDAE;
 
-public function dumpDebugElement "function: dumpDebugElement
-
+public function dumpDebugElement "
   Dump element using parenthesis.
 "
   input DAE.Element inElement;
@@ -2634,8 +2626,7 @@ algorithm
   Graphviz.dump(r);
 end dumpGraphviz;
 
-protected function buildGraphviz "function: buildGraphviz
-
+protected function buildGraphviz "
   Builds the graphviz node from a dae list.
 "
   input DAE.DAElist inDAElist;
@@ -2764,8 +2755,7 @@ algorithm
   end match;
 end buildGrVarStr;
 
-protected function printExpStrSpecial "function: printExpStrSpecial
-
+protected function printExpStrSpecial "
   Prints an expression to a string suitable for graphviz.
 "
   input DAE.Exp inExp;
@@ -2790,8 +2780,7 @@ algorithm
   end matchcontinue;
 end printExpStrSpecial;
 
-protected function buildGrElement "function: buildGrElement
-
+protected function buildGrElement "
   Builds a Graphviz.Node from an element.
 "
   input DAE.Element inElement;

@@ -975,8 +975,7 @@ algorithm
   end matchcontinue;
 end getMessagesStrSeverity;
 
-public function messageTypeStr "function: messageTypeStr
-
+public function messageTypeStr "
   Converts a MessageType to a string.
 "
   input MessageType inMessageType;
@@ -993,8 +992,7 @@ algorithm
   end match;
 end messageTypeStr;
 
-public function severityStr "function: severityStr
-
+public function severityStr "
   Converts a Severity to a string.
 "
   input Severity inSeverity;

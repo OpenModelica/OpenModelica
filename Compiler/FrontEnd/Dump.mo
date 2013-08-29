@@ -1423,8 +1423,7 @@ algorithm
   end match;
 end unparseAnnotationOption;
 
-protected function printElement "function: printElement
-
+protected function printElement "
   Prints an Element to the Print buffer.
   changed by adrpo, 2006-02-06 to use print_info and dump Absyn.TEXT also
 "
@@ -1494,8 +1493,7 @@ algorithm
   end match;
 end printElement;
 
-public function unparseElementStr "function: unparseElementStr
-
+public function unparseElementStr "
   Prettyprints and Element to a string.
   changed by adrpo 2006-02-05 to print also Absyn.TEXT as a comment
   TODO?? - should we also dump info as a comment for an element??
@@ -1644,8 +1642,7 @@ algorithm
   end match;
 end printInnerouter;
 
-public function unparseInnerouterStr "function: unparseInnerouterStr
-
+public function unparseInnerouterStr "
   Prettyprints the inner or outer keyword to a string.
 "
   input Absyn.InnerOuter inInnerOuter;
@@ -1978,8 +1975,7 @@ algorithm
   end matchcontinue;
 end printElementattr;
 
-protected function unparseElementattrStr "function: unparseElementattrStr
-
+protected function unparseElementattrStr "
   Prettyprints ElementAttributes to a string.
 "
   input Absyn.ElementAttributes inElementAttributes;
@@ -2010,8 +2006,7 @@ algorithm
   end matchcontinue;
 end unparseElementattrStr;
 
-protected function unparseArraydimInAttr "function: unparseArraydimInAttr
-
+protected function unparseArraydimInAttr "
   Prettyprints the arraydimension in ElementAttributes to a string.
 "
   input Absyn.ElementAttributes inElementAttributes;
@@ -2031,8 +2026,7 @@ algorithm
   end matchcontinue;
 end unparseArraydimInAttr;
 
-public function variabilitySymbol "function: variabilitySymbol
-
+public function variabilitySymbol "
   Returns a string for the Variability.
 "
   input Absyn.Variability inVariability;
@@ -2047,8 +2041,7 @@ algorithm
   end match;
 end variabilitySymbol;
 
-public function directionSymbol "function: directionSymbol
-
+public function directionSymbol "
   Returns a string for the direction.
 "
   input Absyn.Direction inDirection;
@@ -2062,8 +2055,7 @@ algorithm
   end match;
 end directionSymbol;
 
-protected function unparseVariabilitySymbolStr "function: unparseVariabilitySymbolStr
-
+protected function unparseVariabilitySymbolStr "
   Returns a prettyprinted string of variability.
 "
   input Absyn.Variability inVariability;
@@ -2144,8 +2136,7 @@ algorithm
   end match;
 end printComponentitem;
 
-protected function unparseComponentStr "function: unparseComponentStr
-
+protected function unparseComponentStr "
   Prettyprints a Component to a string.
 "
   input Absyn.Component inComponent;
@@ -2207,8 +2198,7 @@ algorithm
   end match;
 end unparseComponentCondition;
 
-protected function printArraydimOpt "function: printArraydimOpt
-
+protected function printArraydimOpt "
   Prints an ArrayDim option to the Print buffer.
 "
   input Option<Absyn.ArrayDim> inAbsynArrayDimOption;
@@ -2231,8 +2221,7 @@ algorithm
   end matchcontinue;
 end printArraydimOpt;
 
-public function printArraydim "function: printArraydim
-
+public function printArraydim "
   Prints an ArrayDim to the Print buffer.
 "
   input Absyn.ArrayDim s;
@@ -2240,8 +2229,7 @@ algorithm
   printSubscripts(s);
 end printArraydim;
 
-public function printArraydimStr "function: printArraydimStr
-
+public function printArraydimStr "
   Prettyprints an ArrayDim to a string.
 "
   input Absyn.ArrayDim s;
@@ -2250,8 +2238,7 @@ algorithm
   str := printSubscriptsStr(s);
 end printArraydimStr;
 
-protected function printSubscript "function: printSubscript
-
+protected function printSubscript "
   Prints an Subscript to the Print buffer.
 "
   input Absyn.Subscript inSubscript;
@@ -2274,8 +2261,7 @@ algorithm
   end match;
 end printSubscript;
 
-public function printSubscriptStr "function: printSubscriptStr
-
+public function printSubscriptStr "
   Prettyprints an Subscript to a string.
 "
   input Absyn.Subscript inSubscript;
@@ -2295,8 +2281,7 @@ algorithm
   end match;
 end printSubscriptStr;
 
-protected function printOptModification "function: printOptModification
-
+protected function printOptModification "
   Prints a Modification option to the Print buffer.
 "
   input Option<Absyn.Modification> inAbsynModificationOption;
@@ -2315,8 +2300,7 @@ algorithm
   end match;
 end printOptModification;
 
-protected function printModification "function: printModification
-
+protected function printModification "
   Prints a Modification to the Print buffer.
 "
   input Absyn.Modification inModification;
@@ -2343,8 +2327,7 @@ algorithm
   end matchcontinue;
 end printModification;
 
-protected function printMod1 "function: printMod1
-
+protected function printMod1 "
   Helper relaton to print_modification.
 "
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -2363,8 +2346,7 @@ algorithm
   end matchcontinue;
 end printMod1;
 
-protected function printMod2 "function: printMod2
-
+protected function printMod2 "
   Helper relaton to print_mod1
 "
   input Absyn.EqMod inAbsynExpOption;
@@ -2387,8 +2369,7 @@ algorithm
   end match;
 end printMod2;
 
-public function unparseOptModificationStr "function: unparseOptModificationStr
-
+public function unparseOptModificationStr "
   Prettyprints a Modification option to a string.
 "
   input Option<Absyn.Modification> inAbsynModificationOption;
@@ -2408,8 +2389,7 @@ algorithm
   end match;
 end unparseOptModificationStr;
 
-public function unparseModificationStr "function: unparseModificationStr
-
+public function unparseModificationStr "
   Prettyprints a Modification to a string.
 "
   input Absyn.Modification inModification;
@@ -2437,8 +2417,7 @@ algorithm
   end matchcontinue;
 end unparseModificationStr;
 
-public function unparseMod1Str "function: unparseMod1Str
-
+public function unparseMod1Str "
   Helper function to unparse_modification_str
 "
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -2460,8 +2439,7 @@ algorithm
   end matchcontinue;
 end unparseMod1Str;
 
-protected function unparseMod2Str "function: unparseMod2Str
-
+protected function unparseMod2Str "
   Helper function to unparse_mod1_str
 "
   input Absyn.EqMod eqMod;
@@ -3898,8 +3876,7 @@ algorithm
   end match;
 end printCase;
 
-protected function printFunctionArgs "function: printFunctionArgs
-
+protected function printFunctionArgs "
   Prints FunctionArgs to Print buffer.
 "
   input Absyn.FunctionArgs inFunctionArgs;
@@ -3959,8 +3936,7 @@ algorithm
 end printIterator;
 
 
-public function printFunctionArgsStr "function: printFunctionArgsStr
-
+public function printFunctionArgsStr "
   Prettyprint FunctionArgs to a string.
 "
   input Absyn.FunctionArgs inFunctionArgs;
@@ -4077,8 +4053,7 @@ algorithm
 end printNamedArgStr;
 
 
-protected function printRow "function: printRow
-
+protected function printRow "
   Print an Expression list to the Print buffer.
 "
   input list<Absyn.Exp> es;
@@ -4210,8 +4185,7 @@ algorithm
   outString := stringDelimitList(List.map(expl,printExpStr),", ");
 end printExpLstStr;
 
-public function printExpStr "function: print_exp
-
+public function printExpStr "
   This function prints a complete expression.
 "
   input Absyn.Exp inExp;
@@ -4785,8 +4759,7 @@ algorithm
   end match;
 end selectString;
 
-public function printSelect "function: printSelect
-
+public function printSelect "
   Select one of the two string depending on boolean value
   and print it on the Print buffer.
 "
@@ -4800,8 +4773,7 @@ algorithm
   Print.printBuf(res);
 end printSelect;
 
-public function printOption "function: printOption
-
+public function printOption "
   Prints an option value given a print function.
 "
   input Option<Type_a> inTypeAOption;
@@ -4831,8 +4803,7 @@ algorithm
   end match;
 end printOption;
 
-public function printListDebug "function: printListDebug
-
+public function printListDebug "
   Prints a list of values given a print function and a caller string.
 "
   input String inString1;
@@ -4867,8 +4838,7 @@ algorithm
   end match;
 end printListDebug;
 
-public function printList "function: printList
-
+public function printList "
   Prints a list of values given a print function.
 "
   input list<Type_a> inTypeALst;
@@ -4938,8 +4908,7 @@ algorithm
   end matchcontinue;
 end getStringList;
 
-public function printBool "function: printBool
-
+public function printBool "
   Print a bool value to the Print buffer
 "
   input Boolean b;
@@ -5002,8 +4971,7 @@ algorithm
   end matchcontinue;
 end getOptionStrDefault;
 
-public function getOptionWithConcatStr "function: getOptionWithConcatStr
-
+public function getOptionWithConcatStr "
   Get option string value using a function translating the value to a string
   and concatenate with an additional suffix string.
 "
@@ -5033,8 +5001,7 @@ algorithm
   end match;
 end getOptionWithConcatStr;
 
-protected function unparseStringCommentOption "function: unparseStringCommentOption
-
+protected function unparseStringCommentOption "
   Prettyprint a string comment option, which is a string option.
 "
   input Option<String> inStringOption;
@@ -5052,8 +5019,7 @@ algorithm
   end match;
 end unparseStringCommentOption;
 
-protected function printStringCommentOption "function: printStringCommentOption
-
+protected function printStringCommentOption "
   Print a string comment option on the Print buffer
 "
   input Option<String> inStringOption;
@@ -5075,8 +5041,7 @@ algorithm
   end match;
 end printStringCommentOption;
 
-public function printBoolStr "function: printBoolStr
-
+public function printBoolStr "
  Prints a bool to a string.
 "
   input Boolean b;
@@ -5085,8 +5050,7 @@ algorithm
   s := selectString(b, "true", "false");
 end printBoolStr;
 
-public function indentStr "function: indentStr
-
+public function indentStr "
   Creates an indentation string, i.e. whitespaces, given and indentation
   level.
 "
@@ -5175,8 +5139,7 @@ algorithm
   print(str);
 end printTypeSpec;
 
-public function stdout "function: stdout
-
+public function stdout "
   Prints the text sent to the print buffer (Print.mo) to stdout (i.e.
   using MetaModelica Compiler (MMC) standard print). After printing, the print buffer is cleared.
 "

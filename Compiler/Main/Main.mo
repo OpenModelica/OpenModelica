@@ -713,8 +713,7 @@ algorithm
 end optimizeDae;
 
 // protected function modpar
-// "function: modpar
-//   The automatic paralellzation module."
+// "//   The automatic paralellzation module."
 //   input BackendDAE.BackendDAE inBackendDAE;
 // algorithm
 //   _ := matchcontinue inBackendDAE
@@ -887,8 +886,7 @@ end serverLoopCorba;
 
 
 protected function readSettings
-"function: readSettings
- author: x02lucpo
+" author: x02lucpo
  Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
  Checks if '-s <file>.mos' has been
  returns GlobalScript.SymbolTable which is used in the rest of the loop"

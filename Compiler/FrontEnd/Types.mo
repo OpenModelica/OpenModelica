@@ -406,8 +406,7 @@ algorithm
 end isExternalObject;
 
 public function expTypetoTypesType
-"function: expTypetoTypesType
- Converts a DAE.Type to a DAE.Type
+" Converts a DAE.Type to a DAE.Type
  NOTE: This function should not be used in general, since it is not recommended to translate DAE.Type into DAE.Type."
   input DAE.Type inType;
   output DAE.Type oType;
@@ -3547,8 +3546,7 @@ algorithm
   end matchcontinue;
 end propTupleAllConst;
 
-public function isPropTupleArray "function: isPropTupleArray
-This function will check all elements in the tuple if anyone is an array, return true.
+public function isPropTupleArray "This function will check all elements in the tuple if anyone is an array, return true.
 As for now it will not check tuple of tuples ie. no recursion."
   input DAE.Properties p;
   output Boolean ob;
@@ -3575,8 +3573,7 @@ algorithm
   end matchcontinue;
 end isPropTuple;
 
-public function isPropArray "function: isPropArray
- Return true if properties contain an array type."
+public function isPropArray " Return true if properties contain an array type."
   input DAE.Properties p;
   output Boolean b;
 protected
@@ -4732,8 +4729,7 @@ algorithm
   end match;
 end typeConvertArray;
 
-protected function typeConvertMatrix "function: typeConvertMatrix
-
+protected function typeConvertMatrix "
   Helper function to type_convert. Handles matrix expressions.
 "
   input list<list<DAE.Exp>> inTplExpExpBooleanLstLst1;
@@ -4757,8 +4753,7 @@ algorithm
   end match;
 end typeConvertMatrix;
 
-protected function typeConvertList "function: typeConvertList
-
+protected function typeConvertList "
   Helper function to type_convert.
 "
   input list<DAE.Exp> inExpExpLst1;
@@ -6612,8 +6607,7 @@ algorithm
   end match;
 end boxVarLst;
 
-public function liftArraySubscript "function: liftArraySubscript
-Lifts a type to an array using DAE.Subscript for dimension in the case of non-expanded arrays"
+public function liftArraySubscript "Lifts a type to an array using DAE.Subscript for dimension in the case of non-expanded arrays"
   input DAE.Type inType;
   input DAE.Subscript inSubscript;
   output DAE.Type outType;

@@ -1958,8 +1958,7 @@ algorithm
 end buildRecordType;
 
 public function buildRecordConstructorClass
-"function: buildRecordConstructorClass
-
+"
   Creates the record constructor class, i.e. a function, from the record
   class given as argument."
   input Env.Cache inCache;

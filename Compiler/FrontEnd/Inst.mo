@@ -173,8 +173,7 @@ algorithm
 end isNotFunction;
 
 protected function instantiateClass_dispatch
-"function: instantiateClass_dispatch
- instantiate a class.
+" instantiate a class.
  if this function fails with stack overflow, it will be caught in the caller"
   input Env.Cache inCache;
   input InnerOuter.InstHierarchy inIH;
@@ -15160,8 +15159,7 @@ algorithm
 end instBoschClassInProgram;
 
 protected function extractCurrentName
-"function: extractCurrentName
- Extracts SCode.Element name."
+" Extracts SCode.Element name."
   input SCode.Element sele;
   output String ostring;
   output Absyn.Info oinfo;
@@ -15714,8 +15712,7 @@ algorithm
 end addClassdefsToEnv3;
 
 protected function extractCorrectClassMod2
-"function: extractCorrectClassMod2
- This function extracts a modifier on a specific component.
+" This function extracts a modifier on a specific component.
  Referenced by the name."
   input list<DAE.SubMod> smod;
   input String name;
@@ -16242,8 +16239,7 @@ algorithm
 end wrapIntoForLst;
 
 protected function modifyInstantiateClass
-"function: modifyInstantiateClass
- Here we check a modifier and a path,
+" Here we check a modifier and a path,
  if we have a redeclaration of the class
  pointed by the path, we add this to a
  special reclaration modifier.

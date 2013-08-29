@@ -322,9 +322,7 @@ end lateInlineFunction;
 // remove simply equations stuff
 //
 // =============================================================================
-// protected function updateEquationSystemMatching
-// " function: updateEquationSystemMatching
-//   author: Frenkel TUD 2012-09"
+// protected function updateEquationSystemMatching "author: Frenkel TUD 2012-09"
 //   input BackendDAE.Variables ordvars;
 //   input BackendDAE.EquationArray eqns;
 //   input array<Integer> ass1 "ass[varindx]=eqnindx";
@@ -373,8 +371,7 @@ end lateInlineFunction;
 // end updateEquationSystemMatching;
 
 // protected function updateStrongComponent
-// " function: updateStrongComponent
-//   author: Frenkel TUD 2012-09"
+// "//   author: Frenkel TUD 2012-09"
 //   input BackendDAE.StrongComponent iComp;
 //   input array<Integer> varindxs;
 //   input array<Integer> eqnindxs;
@@ -529,8 +526,7 @@ algorithm
 end updateTornSystemComp;
 
 // protected function updateVarArray
-// " function: updateVarArray
-//   author: Frenkel TUD 2012-09"
+// "//   author: Frenkel TUD 2012-09"
 //   input Integer index;
 //   input Integer numberOfElement;
 //   input Integer insertindex;
@@ -590,8 +586,7 @@ end updateTornSystemComp;
 // end updateVarArray;
 
 // protected function updateEquationArray
-// " function: updateEquationArray
-//   author: Frenkel TUD 2012-09"
+// "//   author: Frenkel TUD 2012-09"
 //   input Integer index;
 //   input Integer numberOfElement;
 //   input Integer insertindex;
@@ -642,8 +637,7 @@ end updateTornSystemComp;
 // end updateEquationArray;
 
 protected function traverseIncidenceMatrix
-" function: traverseIncidenceMatrix
-  author: Frenkel TUD 2010-12"
+"  author: Frenkel TUD 2010-12"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.IncidenceMatrix inM;
   input FuncType func;
@@ -659,8 +653,7 @@ algorithm
 end traverseIncidenceMatrix;
 
 protected function traverseIncidenceMatrix1
-" function: traverseIncidenceMatrix1
-  author: Frenkel TUD 2010-12"
+"  author: Frenkel TUD 2010-12"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.IncidenceMatrix inM;
   input FuncType func;
@@ -678,8 +671,7 @@ algorithm
 end traverseIncidenceMatrix1;
 
 protected function traverseIncidenceMatrix2
-" function: traverseIncidenceMatrix1
-  author: Frenkel TUD 2010-12"
+"  author: Frenkel TUD 2010-12"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.IncidenceMatrix inM;
   input FuncType func;
@@ -716,8 +708,7 @@ algorithm
 end traverseIncidenceMatrix2;
 
 protected function traverseIncidenceMatrixList
-" function: traverseIncidenceMatrixList
-  author: Frenkel TUD 2011-04"
+"  author: Frenkel TUD 2011-04"
   replaceable type Type_a subtypeof Any;
   input list<Integer> inLst "elements to traverse";
   input BackendDAE.IncidenceMatrix inM;
@@ -869,8 +860,7 @@ algorithm
 end countSimpleEquationsFinder;
 
 protected function countsimpleEquation
-" function: countsimpleEquation
-  author: Frenkel TUD 2011-05"
+"  author: Frenkel TUD 2011-05"
   input BackendDAE.IncidenceMatrixElement elem;
   input Integer length;
   input Integer pos;
@@ -1045,8 +1035,7 @@ algorithm
 end removeParametersFinder;
 
 protected function replaceFinalVars
-" function: replaceFinalVars
-  author: Frenkel TUD 2011-04"
+"  author: Frenkel TUD 2011-04"
   input Integer inNumRepl;
   input BackendDAE.Variables inVars;
   input BackendVarTransform.VariableReplacements inRepl;

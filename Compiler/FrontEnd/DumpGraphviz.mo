@@ -353,8 +353,7 @@ algorithm
 end printEquations;
 
 protected function printEquation
-"function: printEquation
- Create a Node from an Equation."
+" Create a Node from an Equation."
   input Absyn.Equation inEquation;
   output Graphviz.Node outNode;
 algorithm

@@ -888,8 +888,7 @@ algorithm
 end elabIfExp;
 
 // Part of MetaModelica extension
-public function elabListExp "function: elabListExp
-Function that elaborates the MetaModelica list type,
+public function elabListExp "Function that elaborates the MetaModelica list type,
 for instance list<Integer>.
 This is used by Inst.mo when handling a var := {...} statement"
   input Env.Cache inCache;
@@ -943,8 +942,7 @@ algorithm
 end elabListExp;
 /* ------------------------------- */
 
-public function fromEquationsToAlgAssignments "function: fromEquationsToAlgAssignments
- Converts equations to algorithm assignments.
+public function fromEquationsToAlgAssignments " Converts equations to algorithm assignments.
  Matchcontinue expressions may contain statements that you won't find
  in a normal equation section. For instance:
 
@@ -4210,8 +4208,7 @@ algorithm
 end makePreLst;
 
 protected function elabBuiltinPreMatrix
-"function: elabBuiltinPreMatrix
- Help function for elabBuiltinPreMatrix, when type is matrix, send it here."
+" Help function for elabBuiltinPreMatrix, when type is matrix, send it here."
   input DAE.Exp inExp;
   input DAE.Type t;
   output DAE.Exp outExp;
@@ -4232,8 +4229,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinPreMatrix;
 
-protected function elabBuiltinArray "function: elabBuiltinArray
-
+protected function elabBuiltinArray "
   This function elaborates the builtin operator \'array\'. For instance,
   array(1,4,6) which is the same as {1,4,6}.
   Input is the list of arguments to the operator, as Absyn.Exp list.
@@ -4321,8 +4317,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinArray2;
 
-protected function elabBuiltinArray3 "function: elab_bultin_array3
-
+protected function elabBuiltinArray3 "
   Helper function to elab_builtin_array.
 "
   input list<DAE.Exp> inExpExpLst;
@@ -4948,8 +4943,7 @@ algorithm
   end match;
 end elabBuiltinSimplify;
 
-protected function absynCrefListToInteractiveVarList "function: absynCrefListToInteractiveVarList
-
+protected function absynCrefListToInteractiveVarList "
   Creates Interactive variables from the list of component references. Each
   variable will get a value that is the AST code for the variable itself.
   This is used when calling differentiate, etc., to be able to evaluate
@@ -4989,8 +4983,7 @@ algorithm
   end matchcontinue;
 end absynCrefListToInteractiveVarList;
 
-protected function elabBuiltinNoevent "function: elabBuiltinNoevent
-
+protected function elabBuiltinNoevent "
   The builtin operator noevent makes sure that events are not generated
   for the expression.
 "
@@ -5024,8 +5017,7 @@ algorithm
   end match;
 end elabBuiltinNoevent;
 
-protected function elabBuiltinEdge "function: elabBuiltinEdge
-
+protected function elabBuiltinEdge "
   This function handles the built in edge operator. If the operand is
   constant edge is always false.
 "
@@ -6123,8 +6115,7 @@ algorithm
   end match;
 end arrayScalar;
 
-public function elabBuiltinHandlerGeneric "function: elabBuiltinHandlerGeneric
-
+public function elabBuiltinHandlerGeneric "
   This function dispatches the elaboration of special builtin operators by
   returning the appropriate function, see also elab_builtin_handler.
   These special builtin operators can not be represented in the
@@ -6152,8 +6143,7 @@ algorithm
   end match;
 end elabBuiltinHandlerGeneric;
 
-public function elabBuiltinHandler "function: elabBuiltinHandler
-
+public function elabBuiltinHandler "
   This function dispatches the elaboration of builtin operators by
   returning the appropriate function. When a new builtin operator is
   added, a new rule has to be added to this function.
@@ -6212,8 +6202,7 @@ algorithm
   end match;
 end elabBuiltinHandler;
 
-public function elabBuiltinHandlerInternal "function: elabBuiltinHandlerInternal
-
+public function elabBuiltinHandlerInternal "
   This function dispatches the elaboration of builtin operators by
   returning the appropriate function. When a new builtin operator is
   added, a new rule has to be added to this function.
@@ -12339,8 +12328,7 @@ algorithm
   end match;
 end eqCref;
 
-protected function eqSubscripts "function: eqSubscripts
-
+protected function eqSubscripts "
   Two list of subscripts are equal if they are of equal length and
   all their elements are pairwise equal according to the function
   `eq_subscript\'.

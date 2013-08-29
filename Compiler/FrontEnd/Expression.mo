@@ -7058,8 +7058,7 @@ algorithm
   end matchcontinue;
 end expIntOrder;
 
-public function isArray " function: isArray
-returns true if expression is an array.
+public function isArray "returns true if expression is an array.
 "
   input DAE.Exp inExp;
   output Boolean outB;
@@ -7071,8 +7070,7 @@ algorithm
   end match;
 end isArray;
 
-public function isMatrix " function: isMatrix
-returns true if expression is an matrix.
+public function isMatrix "returns true if expression is an matrix.
 "
   input DAE.Exp inExp;
   output Boolean outB;
@@ -7099,8 +7097,7 @@ algorithm
   end match;
 end isVector;
 
-public function isUnary " function: isUnary
-returns true if expression is an unary.
+public function isUnary "returns true if expression is an unary.
 "
   input DAE.Exp inExp;
   output Boolean outB;

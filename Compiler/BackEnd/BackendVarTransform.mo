@@ -79,8 +79,7 @@ uniontype VariableReplacements
 
 end VariableReplacements;
 
-public function emptyReplacements "function: emptyReplacements
-
+public function emptyReplacements "
   Returns an empty set of replacement rules
 "
   output VariableReplacements outVariableReplacements;
@@ -143,8 +142,7 @@ algorithm
    end match;
 end addReplacements;
 
-public function addReplacement "function: addReplacement
-
+public function addReplacement "
   Adds a replacement rule to the set of replacement rules given as argument.
   If a replacement rule a->b already exists and we add a new rule b->c then
   the rule a->b is updated to a->c. This is done using the make_transitive
@@ -241,8 +239,7 @@ algorithm
   end matchcontinue;
 end addReplacementNoTransitive;
 
-protected function addReplacementInv "function: addReplacementInv
-
+protected function addReplacementInv "
   Helper function to addReplacement
   Adds the inverse rule of a replacement to the second binary tree
   of VariableReplacements.
@@ -288,8 +285,7 @@ algorithm
 end traversingCrefFinder;
 
 
-protected function addReplacementInv2 "function: addReplacementInv2
-
+protected function addReplacementInv2 "
   Helper function to addReplacementInv
   Adds the inverse rule for one of the variables of a replacement to the second binary tree
   of VariableReplacements.
@@ -323,8 +319,7 @@ algorithm
   end matchcontinue;
 end addReplacementInv2;
 
-protected function makeTransitive "function: makeTransitive
-
+protected function makeTransitive "
   This function takes a set of replacement rules and a new replacement rule
   in the form of two ComponentRef:s and makes sure the new replacement rule
   is replaced with the transitive value.
@@ -365,8 +360,7 @@ algorithm
   end match;
 end makeTransitive;
 
-protected function makeTransitive1 "function: makeTransitive1
-
+protected function makeTransitive1 "
   helper function to makeTransitive
 "
   input VariableReplacements repl;
@@ -438,8 +432,7 @@ algorithm
   end matchcontinue;
 end makeTransitive12;
 
-protected function makeTransitive2 "function: makeTransitive2
-
+protected function makeTransitive2 "
   Helper function to makeTransitive
 "
   input VariableReplacements repl;
@@ -697,8 +690,7 @@ algorithm
   end match;
 end addDerConstRepl;
 
-public function getReplacement "function: getReplacement
-
+public function getReplacement "
   Retrives a replacement variable given a set of replacement rules and a
   source variable.
 "
@@ -741,8 +733,7 @@ algorithm (crefs,dsts) := match (inVariableReplacements)
   end match;
 end getAllReplacements;
 
-public function getExtendReplacement "function: getExtendReplacement
-
+public function getExtendReplacement "
   Retrives a replacement variable given a set of replacement rules and a
   source variable.
 "
@@ -2137,8 +2128,7 @@ algorithm
  end validLhsAssignSTMT;
 
 
-protected function replaceElse "function: replaceElse
-
+protected function replaceElse "
   Helper for replaceStatementLst.
 "
   input DAE.Else inElse;
@@ -2175,8 +2165,7 @@ algorithm
   end matchcontinue;
 end replaceElse;
 
-protected function replaceElse1 "function: replaceElse1
-
+protected function replaceElse1 "
   Helper for replaceStatementLst.
 "
   input DAE.Exp inExp;

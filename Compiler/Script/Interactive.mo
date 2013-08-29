@@ -10611,8 +10611,7 @@ algorithm
   end matchcontinue;
 end countComponentsInElts;
 
-protected function getNthComponent "function: getNthComponent
-
+protected function getNthComponent "
    This function takes a `ComponentRef\', a `Program\' and an int and
    returns a comma separated string of names containing the name, type
    and comment of that component.
@@ -10827,8 +10826,7 @@ algorithm
   end matchcontinue;
 end getComponentAnnotations;
 
-protected function getNthComponentAnnotation "function: getNthComponentAnnotation
-
+protected function getNthComponentAnnotation "
    This function takes a `ComponentRef\', a `Program\' and an int and
    returns a comma separated string of values corresponding to the flat
    record for component annotations.
@@ -10860,8 +10858,7 @@ algorithm
   end matchcontinue;
 end getNthComponentAnnotation;
 
-protected function getNthComponentModification "function: getNthComponentModification
-
+protected function getNthComponentModification "
   This function takes a `ComponentRef\', a `Program\' and an int and
   returns a comma separated string of values corresponding to the
   flat record for component annotations.
@@ -10963,8 +10960,7 @@ algorithm
   end match;
 end getComponentitemsCondition;
 
-protected function getConnectionCount "function: getConnectionCount
-
+protected function getConnectionCount "
   This function takes a `ComponentRef\' and a `Program\' and returns a
   string containing the number of connections in the model identified by
   the `ComponentRef\'.
@@ -10994,8 +10990,7 @@ algorithm
   end matchcontinue;
 end getConnectionCount;
 
-protected function getNthConnection "function: getNthConnection
-
+protected function getNthConnection "
   This function takes a `ComponentRef\' and a `Program\' and an int and
   returns a comma separated string for the nth connection, e.g. \"R1.n,C.p\".
 "
@@ -11029,8 +11024,7 @@ algorithm
   end matchcontinue;
 end getNthConnection;
 
-protected function getStringComment "function: getStringComment
-
+protected function getStringComment "
   Returns the string comment or empty string from a Comment option.
 "
   input Option<Absyn.Comment> cmt;
@@ -11054,8 +11048,7 @@ algorithm
   end matchcontinue;
 end getStringComment2;
 
-protected function addConnection "function: addConnection
-
+protected function addConnection "
   Adds a connect equation to the model, i..e connect(c1,c2)
 
   inputs: (Absyn.ComponentRef, /* model name */
@@ -11125,8 +11118,7 @@ algorithm
   end matchcontinue;
 end addConnection;
 
-protected function deleteConnection "function: deleteConnection
-
+protected function deleteConnection "
   Delete the connection connect(c1,c2) from a model.
 
   inputs:  (Absyn.ComponentRef, /* model name */
@@ -15649,8 +15641,7 @@ algorithm
   end matchcontinue;
 end insertClassInProgram;
 
-protected function insertClassInClass "function: insertClassInClass
-
+protected function insertClassInClass "
    This function takes a class to update (the first argument)  and an inner
    class (which is either replacing
    an earlier class or is a new inner definition) and a within statement
@@ -15689,8 +15680,7 @@ algorithm
   end matchcontinue;
 end insertClassInClass;
 
-protected function getFirstIdentFromPath "function: getFirstIdentFromPath
-
+protected function getFirstIdentFromPath "
    This function takes a `Path` as argument and returns the first `Ident\'
    of the path.
 "
@@ -15707,8 +15697,7 @@ algorithm
   end match;
 end getFirstIdentFromPath;
 
-protected function removeInnerClass "function: removeInnerClass
-
+protected function removeInnerClass "
    This function takes two class definitions. The first one is the local
    class that should be removed from the second one.
 "
@@ -15954,8 +15943,7 @@ algorithm
   end matchcontinue;
 end replacePublicList;
 
-protected function replaceProtectedList "function: replaceProtectedList
-
+protected function replaceProtectedList "
   This function replaces the `ElementItem\' list in the `ClassPart\' list,
   and returns the updated list.
   If no protected list is available, one is created.
@@ -15984,8 +15972,7 @@ algorithm
   end matchcontinue;
 end replaceProtectedList;
 
-protected function replaceEquationList "function: replaceEquationList
-
+protected function replaceEquationList "
    This function replaces the `EquationItem\' list in the `ClassPart\' list,
    and returns the updated list.
 "
@@ -16009,8 +15996,7 @@ algorithm
   end matchcontinue;
 end replaceEquationList;
 
-protected function replaceInitialEquationList "function: replaceInitialEquationList
-
+protected function replaceInitialEquationList "
    This function replaces the `EquationItem\' list in the `ClassPart\' list,
    and returns the updated list.
 "
@@ -16034,8 +16020,7 @@ algorithm
   end matchcontinue;
 end replaceInitialEquationList;
 
-protected function replaceAlgorithmList "function: replaceAlgorithmList
-
+protected function replaceAlgorithmList "
    This function replaces the `AlgorithmItem\' list in the `ClassPart\' list,
    and returns the updated list.
 "
@@ -16059,8 +16044,7 @@ algorithm
   end matchcontinue;
 end replaceAlgorithmList;
 
-protected function replaceInitialAlgorithmList "function: replaceInitialAlgorithmList
-
+protected function replaceInitialAlgorithmList "
    This function replaces the `AlgorithmItem\' list in the `ClassPart\' list,
    and returns the updated list.
 "
@@ -16084,8 +16068,7 @@ algorithm
   end matchcontinue;
 end replaceInitialAlgorithmList;
 
-protected function deletePublicList "function: deletePublicList
-
+protected function deletePublicList "
   Deletes all PULIC classparts from the list.
 "
   input list<Absyn.ClassPart> inAbsynClassPartLst;
@@ -16110,8 +16093,7 @@ algorithm
   end matchcontinue;
 end deletePublicList;
 
-protected function deleteProtectedList "function: deleteProtectedList
-
+protected function deleteProtectedList "
   Deletes all PROTECTED classparts from the list.
 "
   input list<Absyn.ClassPart> inAbsynClassPartLst;
@@ -16136,8 +16118,7 @@ algorithm
   end matchcontinue;
 end deleteProtectedList;
 
-protected function getPublicList "function: getPublicList
-
+protected function getPublicList "
   This function takes a ClassPart List and returns an appended list of
   all public lists.
 "
@@ -16272,8 +16253,7 @@ algorithm
   end matchcontinue;
 end getInitialAlgorithmList;
 
-protected function getClassFromElementitemlist "function: getClassFromElementitemlist
-
+protected function getClassFromElementitemlist "
   This function takes an ElementItem list and an Ident and returns the
   class definition among the element list having that identifier.
 "

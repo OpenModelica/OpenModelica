@@ -1028,8 +1028,7 @@ algorithm
   w := List.fold1(inRow,solvabilityWightsnoStates,ass2,0);
 end calcSolvabilityWight;
 
-protected function solvabilityWightsnoStates "function: solvabilityWights
-  author: Frenkel TUD 2012-05"
+protected function solvabilityWightsnoStates "  author: Frenkel TUD 2012-05"
   input tuple<Integer,BackendDAE.Solvability> inTpl;
   input array<Integer> ass;
   input Integer iW;
@@ -1050,8 +1049,7 @@ algorithm
   end matchcontinue;
 end solvabilityWightsnoStates;
 
-protected function solvabilityWights "function: solvabilityWights
-  author: Frenkel TUD 2012-05,
+protected function solvabilityWights "  author: Frenkel TUD 2012-05,
   return a integer for the solvability, this function is used
   to calculade wights for variables to select the tearing variable."
   input BackendDAE.Solvability solva;
@@ -1395,8 +1393,7 @@ algorithm
   end matchcontinue;
 end selectVarWithMostEqnsOneEdge;
 
-protected function eqnsWithOneUnassignedVar "function: eqnsWithOneUnassignedVar
-  author: Frenkel TUD 2012-05"
+protected function eqnsWithOneUnassignedVar "  author: Frenkel TUD 2012-05"
   input tuple<Integer,BackendDAE.Solvability> inTpl;
   input BackendDAE.AdjacencyMatrixEnhanced m;
   input array<Integer> ass;
