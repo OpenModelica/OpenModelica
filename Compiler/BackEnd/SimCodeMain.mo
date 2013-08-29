@@ -104,9 +104,9 @@ algorithm
 end createSimulationSettings;
 
 
-public function generateModelCodeFMU
-  "Generates code for a model by creating a SimCode structure and calling the
-   template-based code generator on it."
+protected function generateModelCodeFMU "
+  Generates code for a model by creating a SimCode structure and calling the
+  template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
   input DAE.DAElist dae;
@@ -116,13 +116,11 @@ public function generateModelCodeFMU
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
-  output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
 protected
   list<String> includes,includeDirs;
   list<SimCode.Function> functions;
-  // DAE.DAElist dae2;
   String filename, funcfilename;
   SimCode.SimCode simCode;
   list<SimCode.RecordDeclaration> recordDecls;
@@ -130,12 +128,11 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
-  timeBackend := System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-  SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
+    SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
@@ -147,9 +144,9 @@ algorithm
 end generateModelCodeFMU;
 
 
-public function generateModelCodeXML
-  "Generates code for a model by creating a SimCode structure and calling the
-   template-based code generator on it."
+protected function generateModelCodeXML "
+  Generates code for a model by creating a SimCode structure and calling the
+  template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
   input DAE.DAElist dae;
@@ -159,13 +156,11 @@ public function generateModelCodeXML
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
-  output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
 protected
   list<String> includes,includeDirs;
   list<SimCode.Function> functions;
-  // DAE.DAElist dae2;
   String filename, funcfilename;
   SimCode.SimCode simCode;
   list<SimCode.RecordDeclaration> recordDecls;
@@ -173,12 +168,11 @@ protected
   Absyn.ComponentRef a_cref;
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
-  timeBackend := System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-  SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
+    SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   (simCode,_) := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
@@ -230,14 +224,18 @@ algorithm
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
+        
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
+        timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+        
+        (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
           generateModelCodeFMU(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
+          
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -305,7 +303,9 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
-        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) =
+        timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+        
+        (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
           generateModelCodeXML(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
@@ -329,10 +329,9 @@ end translateModelXML;
 
 
 
-public function generateModelCode
-  "Generates code for a model by creating a SimCode structure and calling the
-   template-based code generator on it."
-
+public function generateModelCode "
+  Generates code for a model by creating a SimCode structure and calling the
+  template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
   input DAE.DAElist dae;
@@ -343,14 +342,11 @@ public function generateModelCode
   output BackendDAE.BackendDAE outIndexedBackendDAE;
   output list<String> libs;
   output String fileDir;
-  output Real timeBackend;
   output Real timeSimCode;
   output Real timeTemplates;
 protected
-
   list<String> includes,includeDirs;
   list<SimCode.Function> functions;
-  // DAE.DAElist dae2;
   String filename, funcfilename;
   SimCode.SimCode simCode;
   list<SimCode.RecordDeclaration> recordDecls;
@@ -360,15 +356,13 @@ protected
   tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
   list<SimCode.JacobianMatrix> LinearMatrices;
 algorithm
-  timeBackend := System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-  SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := createSimCode(outIndexedBackendDAE,
+    SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
+  simCode := createSimCode(outIndexedBackendDAE, 
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
-
   timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode",GlobalScript.RT_CLOCK_SIMCODE);
 
@@ -548,12 +542,16 @@ algorithm
       System.realtimeTick(GlobalScript.RT_CLOCK_FRONTEND);
       (cache, env, dae, st) = CevalScript.runFrontEnd(cache, env, className, st, false);
       timeFrontend = System.realtimeTock(GlobalScript.RT_CLOCK_FRONTEND);
+      
       System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, env, dae);
       dlow = BackendDAECreate.lower(dae, cache, env);
       dlow_1 = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
-      (indexed_dlow_1, libs, file_dir, timeBackend, timeSimCode, timeTemplates) =
-      generateModelCode(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt, args);
+      timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
+      
+      (indexed_dlow_1, libs, file_dir, timeSimCode, timeTemplates) = 
+        generateModelCode(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt, args);
+        
       resultValues = {("timeTemplates", Values.REAL(timeTemplates)),
                       ("timeSimCode", Values.REAL(timeSimCode)),
                       ("timeBackend", Values.REAL(timeBackend)),

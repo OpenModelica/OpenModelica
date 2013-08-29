@@ -763,8 +763,8 @@ end optimizeDae;
 //   end matchcontinue;
 // end modpar;
 
-protected function simcodegen
-"Genereates simulation code using the SimCode module"
+protected function simcodegen "
+  Genereates simulation code using the SimCode module"
   input BackendDAE.BackendDAE inBackendDAE5;
   input Absyn.Path inPath;
   input Absyn.Program inProgram3;
@@ -788,7 +788,8 @@ algorithm
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
-        (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+        _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
+        (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
@@ -804,7 +805,8 @@ algorithm
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
         simSettings = SimCodeMain.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
-        (_,_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+        _ = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND); // Is this necessary?
+        (_,_,_,_,_) = SimCodeMain.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
