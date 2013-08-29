@@ -28,6 +28,9 @@
  *
  */
 
+#include <stdio.h>
+#include <meta_modelica.h>
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
 extern int Socket_waitforconnect(int _inInteger)
