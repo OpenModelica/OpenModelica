@@ -5192,8 +5192,7 @@ algorithm
   end match;
 end generateSelectEquations;
 
-// protected function generateCondition
-// "//   author: Frenkel TUD 2012-08"
+// protected function generateCondition "author: Frenkel TUD 2012-08"
 //   input Integer indx;
 //   input Integer size;
 //   input array<DAE.Exp> inExps;
@@ -8021,8 +8020,7 @@ algorithm
   end matchcontinue;
 end addStateOrder;
 
-// protected function addAliasStateOrder
-// "//   author: Frenkel TUD 2012-06
+// protected function addAliasStateOrder "author: Frenkel TUD 2012-06
 //   add state and replace alias state in the
 //   stateorder."
 //   input DAE.ComponentRef cr;
@@ -8095,8 +8093,7 @@ end addStateOrder;
 //   end matchcontinue;
 // end addAliasStateOrder;
 
-// protected function replaceDerStateOrder
-// "//   author: Frenkel TUD 2012-06
+// protected function replaceDerStateOrder "author: Frenkel TUD 2012-06
 //   replace a state  in the
 //   stateorder."
 //   input DAE.ComponentRef cr;

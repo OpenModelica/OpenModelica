@@ -1722,7 +1722,7 @@ algorithm
   end matchcontinue;
 end printCallFunction2StrDIVISION;
 
-// protected function printVarsStatistics "//   author: PA
+// protected function printVarsStatistics "author: PA
 // 
 //   Prints statistics on variables, etc.
 // "

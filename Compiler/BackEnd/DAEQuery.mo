@@ -534,7 +534,7 @@ algorithm
   end matchcontinue;
 end incidenceRow;
 
-// protected function incidenceRowStmts "//   author: PA
+// protected function incidenceRowStmts "author: PA
 //   Helper function to incidenceRow, investigates statements for
 //   variables, returning variable indexes."
 //   input list<DAE.Statement> inAlgorithmStatementLst;

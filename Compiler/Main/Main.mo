@@ -712,8 +712,7 @@ algorithm
   end matchcontinue;
 end optimizeDae;
 
-// protected function modpar
-// "//   The automatic paralellzation module."
+// protected function modpar "The automatic paralellzation module."
 //   input BackendDAE.BackendDAE inBackendDAE;
 // algorithm
 //   _ := matchcontinue inBackendDAE

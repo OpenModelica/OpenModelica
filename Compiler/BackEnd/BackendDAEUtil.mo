@@ -6508,7 +6508,7 @@ algorithm
   end matchcontinue;
 end rhsConstant2;
 
-// protected function freeFromAnyVar "//   author: PA
+// protected function freeFromAnyVar "author: PA
 //   Helper function to rhsConstant2
 //   returns true if expression does not contain
 //   anyof the variables passed as argument."
@@ -7466,7 +7466,7 @@ algorithm
  end match;
 end traverseBackendDAEAttrDistribution;
 
-// protected function traverseBackendDAEExpsSubscript "//   author: Frenkel TUD
+// protected function traverseBackendDAEExpsSubscript "author: Frenkel TUD
 //   helper for traverseBackendDAEExpsSubscript"
 //   replaceable type Type_a subtypeof Any;
 //   input DAE.Subscript inSubscript;
