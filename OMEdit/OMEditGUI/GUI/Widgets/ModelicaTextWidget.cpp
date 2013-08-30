@@ -760,14 +760,22 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
   while (index < text.length())
   {
     switch (blockState) {
+      /* if the block already has single line comment then don't check for multi line comment and quotes. */
       case 1:
+        if (text[index] == '/' && index+1<text.length() && text[index+1] == '/') {
+          index++;
+          setFormat(startIndex, index-startIndex+1, mSingleLineCommentFormat);
+          blockState = 1; /* don't change the blockstate. */
+        }
+        break;
+      case 2:
         if (text[index] == '*' && index+1<text.length() && text[index+1] == '/') {
           index++;
           setFormat(startIndex, index-startIndex+1, mMultiLineCommentFormat);
           blockState = 0;
         }
         break;
-      case 2:
+      case 3:
         if (text[index] == '\\') {
           index++;
         } else if (text[index] == '"') {
@@ -776,24 +784,28 @@ void ModelicaTextHighlighter::highlightMultiLine(const QString &text)
         }
         break;
       default:
-        if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
+        /* check if single line comment then set the blockstate to 1. */
+        if (text[index] == '/' && index+1<text.length() && text[index+1] == '/') {
           startIndex = index++;
           blockState = 1;
+        } else if (text[index] == '/' && index+1<text.length() && text[index+1] == '*') {
+          startIndex = index++;
+          blockState = 2;
         } else if (text[index] == '"') {
           startIndex = index;
-          blockState = 2;
+          blockState = 3;
         }
     }
     index++;
   }
   switch (blockState) {
-    case 1:
-      setFormat(startIndex, text.length()-startIndex, mMultiLineCommentFormat);
-      setCurrentBlockState(1);
-      break;
     case 2:
-      setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
+      setFormat(startIndex, text.length()-startIndex, mMultiLineCommentFormat);
       setCurrentBlockState(2);
+      break;
+    case 3:
+      setFormat(startIndex, text.length()-startIndex, mQuotationFormat);
+      setCurrentBlockState(3);
       break;
   }
 }
