@@ -864,6 +864,46 @@ algorithm
 end selectInitializationVariables2;
 
 // =============================================================================
+// section for simplifying initial functions
+//
+// =============================================================================
+
+protected function simplifyInitialFunctions "author: Frenkel TUD 2012-12
+  simplify initial() with true and sample with false"
+  input tuple<DAE.Exp, Boolean /* homotopy used? */> inTpl;
+  output tuple<DAE.Exp, Boolean /* homotopy used? */> outTpl;
+protected
+  DAE.Exp exp;
+  Boolean useHomotopy;
+algorithm
+  (exp, useHomotopy) := inTpl;
+  outTpl := Expression.traverseExp(exp, simplifyInitialFunctionsExp, useHomotopy);
+end simplifyInitialFunctions;
+
+protected function simplifyInitialFunctionsExp "author: Frenkel TUD 2012-12
+  helper for simplifyInitialFunctions"
+  input tuple<DAE.Exp, Boolean /* homotopy used? */> inExp;
+  output tuple<DAE.Exp, Boolean /* homotopy used? */> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    local
+      DAE.Exp e1, e2, e3, actual, simplified;
+      Boolean useHomotopy;
+    case ((DAE.CALL(path = Absyn.IDENT(name="initial")), useHomotopy)) then ((DAE.BCONST(true), useHomotopy));
+    case ((DAE.CALL(path = Absyn.IDENT(name="sample")), useHomotopy)) then ((DAE.BCONST(false), useHomotopy));
+    case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ), useHomotopy)) then ((e1, useHomotopy));
+    case ((DAE.CALL(path = Absyn.IDENT(name="homotopy"), expLst = actual::simplified::_ ), _)) equation
+      e1 = Expression.makeBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
+      e2 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), actual);
+      e3 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), e1);
+      e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
+      e3 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL_DEFAULT), e1);
+    then ((e3, true));
+    else then inExp;
+  end matchcontinue;
+end simplifyInitialFunctionsExp;
+
+// =============================================================================
 // section for pre-balancing the initial system
 //
 // This section removes unused pre variables and auto-fixes non-pre variables, 
@@ -957,41 +997,6 @@ algorithm
     then fail();
   end matchcontinue;
 end preBalanceInitialSystem1;
-
-protected function simplifyInitialFunctions "author: Frenkel TUD 2012-12
-  simplify initial() with true and sample with false"
-  input tuple<DAE.Exp, Boolean /* homotopy used? */> inTpl;
-  output tuple<DAE.Exp, Boolean /* homotopy used? */> outTpl;
-protected
-  DAE.Exp exp;
-  Boolean useHomotopy;
-algorithm
-  (exp, useHomotopy) := inTpl;
-  outTpl := Expression.traverseExp(exp, simplifyInitialFunctionsExp, useHomotopy);
-end simplifyInitialFunctions;
-
-protected function simplifyInitialFunctionsExp "author: Frenkel TUD 2012-12
-  helper for simplifyInitialFunctions"
-  input tuple<DAE.Exp, Boolean /* homotopy used? */> inExp;
-  output tuple<DAE.Exp, Boolean /* homotopy used? */> outExp;
-algorithm
-  outExp := matchcontinue(inExp)
-    local
-      DAE.Exp e1, e2, e3, actual, simplified;
-      Boolean useHomotopy;
-    case ((DAE.CALL(path = Absyn.IDENT(name="initial")), useHomotopy)) then ((DAE.BCONST(true), useHomotopy));
-    case ((DAE.CALL(path = Absyn.IDENT(name="sample")), useHomotopy)) then ((DAE.BCONST(false), useHomotopy));
-    case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ), useHomotopy)) then ((e1, useHomotopy));
-    case ((DAE.CALL(path = Absyn.IDENT(name="homotopy"), expLst = actual::simplified::_ ), _)) equation
-      e1 = Expression.makeBuiltinCall("homotopyParameter", {}, DAE.T_REAL_DEFAULT);
-      e2 = DAE.BINARY(e1, DAE.MUL(DAE.T_REAL_DEFAULT), actual);
-      e3 = DAE.BINARY(DAE.RCONST(1.0), DAE.SUB(DAE.T_REAL_DEFAULT), e1);
-      e1 = DAE.BINARY(e3, DAE.MUL(DAE.T_REAL_DEFAULT), simplified);
-      e3 = DAE.BINARY(e2, DAE.ADD(DAE.T_REAL_DEFAULT), e1);
-    then ((e3, true));
-    else then inExp;
-  end matchcontinue;
-end simplifyInitialFunctionsExp;
 
 protected function analyzeInitialSystem "author: lochel
   This function fixes discrete and state variables to balance the initial equation system."
@@ -1144,6 +1149,72 @@ algorithm
   (eqns, outDumpVars) := addStartValueEquations(initVarList, inEqns, {});
   outEqns := eqns;
 end fixUnderDeterminedInitialSystem;
+
+protected function addStartValueEquations "author: lochel"
+  input list<BackendDAE.Var> inVarLst;
+  input BackendDAE.EquationArray inEqns;
+  input list<BackendDAE.Var> inDumpVars;
+  output BackendDAE.EquationArray outEqns;
+  output list<BackendDAE.Var> outDumpVars "this are the variables that get fixed (not the same as inVarLst!)" ;
+algorithm
+  (outEqns, outDumpVars) := matchcontinue(inVarLst, inEqns, inDumpVars)
+    local
+      BackendDAE.Var var, dumpVar;
+      list<BackendDAE.Var> vars, dumpVars;
+      BackendDAE.Equation eqn;
+      BackendDAE.EquationArray eqns;
+      DAE.Exp e, crefExp, startExp;
+      DAE.ComponentRef cref, preCref;
+      DAE.Type tp;
+
+    case ({}, _, _) then (inEqns, inDumpVars);
+
+    case (var::vars, _, _) equation
+      preCref = BackendVariable.varCref(var);
+      true = ComponentReference.isPreCref(preCref);
+      cref = ComponentReference.popPreCref(preCref);
+      tp = BackendVariable.varType(var);
+
+      crefExp = DAE.CREF(preCref, tp);
+
+      e = Expression.crefExp(cref);
+      tp = Expression.typeof(e);
+      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
+      eqns = BackendEquation.equationAdd(eqn, inEqns);
+
+      dumpVar = BackendVariable.copyVarNewName(cref, var);
+      // crStr = BackendDump.varString(dumpVar);
+      // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
+
+      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
+    then (eqns, dumpVar::dumpVars);
+
+    case (var::vars, _, _) equation
+      cref = BackendVariable.varCref(var);
+      tp = BackendVariable.varType(var);
+
+      crefExp = DAE.CREF(cref, tp);
+
+      e = Expression.crefExp(cref);
+      tp = Expression.typeof(e);
+      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
+      eqns = BackendEquation.equationAdd(eqn, inEqns);
+
+      // crStr = BackendDump.varString(var);
+      // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
+
+      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
+    then (eqns, var::dumpVars);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed"});
+    then fail();
+  end matchcontinue;
+end addStartValueEquations;
 
 protected function replaceFixedCandidates "author: Frenkel TUD 2012-12
   try to switch to more appropriate candidates for fixed variables"
@@ -1383,71 +1454,92 @@ algorithm
   end match;
 end reasign;
 
-protected function addStartValueEquations "author: lochel"
-  input list<BackendDAE.Var> inVarLst;
-  input BackendDAE.EquationArray inEqns;
-  input list<BackendDAE.Var> inDumpVars;
-  output BackendDAE.EquationArray outEqns;
-  output list<BackendDAE.Var> outDumpVars "this are the variables that get fixed (not the same as inVarLst!)" ;
+// =============================================================================
+// section for introducing pre-variables for alias variables
+//
+// =============================================================================
+
+protected function introducePreVarsForAliasVariables "author: lochel
+  This function introduces all the pre-vars for the initial system that belong to alias vars."
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> outTpl;
 algorithm
-  (outEqns, outDumpVars) := matchcontinue(inVarLst, inEqns, inDumpVars)
+  outTpl := matchcontinue(inTpl)
     local
-      BackendDAE.Var var, dumpVar;
-      list<BackendDAE.Var> vars, dumpVars;
-      BackendDAE.Equation eqn;
+      BackendDAE.Var var;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      DAE.InstDims arryDim;
+      BackendDAE.Variables vars, fixvars;
       BackendDAE.EquationArray eqns;
-      DAE.Exp e, crefExp, startExp;
-      DAE.ComponentRef cref, preCref;
-      DAE.Type tp;
+      HashSet.HashSet hs;
+      
+      Boolean preUsed, isFixed;
+      DAE.Exp startValue;
+      Option<DAE.Exp> startValueOpt;
+      DAE.ComponentRef preCR;
+      BackendDAE.Var preVar;
+      BackendDAE.Equation eqn;
 
-    case ({}, _, _) then (inEqns, inDumpVars);
+    // discrete-time
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
+      preUsed = BaseHashSet.has(cr, hs);
+      isFixed = BackendVariable.varFixed(var);
+      startValue = BackendVariable.varStartValue(var);
 
-    case (var::vars, _, _) equation
-      preCref = BackendVariable.varCref(var);
-      true = ComponentReference.isPreCref(preCref);
-      cref = ComponentReference.popPreCref(preCref);
-      tp = BackendVariable.varType(var);
+      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.setVarFixed(preVar, false);
+      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue));
+      
+      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      // preVar = BackendVariable.copyVarNewName(preCR, var);
+      // preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
+      // preVar = BackendVariable.setBindExp(preVar, NONE());
+      // preVar = BackendVariable.setBindValue(preVar, NONE());
+      // preVar = BackendVariable.setVarFixed(preVar, true);
+      // preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
+      
+      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, false);
 
-      crefExp = DAE.CREF(preCref, tp);
+      vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
+      eqns = Debug.bcallret2(preUsed and isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
+    then ((var, (vars, fixvars, eqns, hs)));
+    
+    // discrete-time
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
+      isFixed = BackendVariable.varFixed(var);
+      startValueOpt = BackendVariable.varStartValueOption(var);
 
-      e = Expression.crefExp(cref);
-      tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      preVar = BackendVariable.setVarStartValueOption(preVar, startValueOpt);
 
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
-      eqns = BackendEquation.equationAdd(eqn, inEqns);
+      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, preVar, vars, vars);
+      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
+    then ((var, (vars, fixvars, eqns, hs)));
+    
+    // continuous-time
+    case((var as BackendDAE.VAR(varName=cr, varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
+      preUsed = BaseHashSet.has(cr, hs);
+      
+      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.setVarFixed(preVar, true);
+      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
+    
+      fixvars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
+    then ((var, (vars, fixvars, eqns, hs)));
 
-      dumpVar = BackendVariable.copyVarNewName(cref, var);
-      // crStr = BackendDump.varString(dumpVar);
-      // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
-
-      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
-    then (eqns, dumpVar::dumpVars);
-
-    case (var::vars, _, _) equation
-      cref = BackendVariable.varCref(var);
-      tp = BackendVariable.varType(var);
-
-      crefExp = DAE.CREF(cref, tp);
-
-      e = Expression.crefExp(cref);
-      tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
-
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
-      eqns = BackendEquation.equationAdd(eqn, inEqns);
-
-      // crStr = BackendDump.varString(var);
-      // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "  " +& crStr);
-
-      (eqns, dumpVars) = addStartValueEquations(vars, eqns, inDumpVars);
-    then (eqns, var::dumpVars);
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed"});
-    then fail();
+    else then inTpl;
   end matchcontinue;
-end addStartValueEquations;
+end introducePreVarsForAliasVariables;
+
+// =============================================================================
+// section for collecting initial vars/eqns
+//
+// =============================================================================
 
 protected function collectInitialVarsEqnsSystem "author: lochel
   This function collects variables and equations for the initial system out of an given EqSystem."
@@ -1645,121 +1737,6 @@ algorithm
   end matchcontinue;
 end collectInitialVars;
 
-protected function introducePreVarsForAliasVariables "author: lochel
-  This function introduces all the pre-vars for the initial system that belong to alias vars."
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet>> outTpl;
-algorithm
-  outTpl := matchcontinue(inTpl)
-    local
-      BackendDAE.Var var;
-      DAE.ComponentRef cr;
-      DAE.Type ty;
-      DAE.InstDims arryDim;
-      BackendDAE.Variables vars, fixvars;
-      BackendDAE.EquationArray eqns;
-      HashSet.HashSet hs;
-      
-      Boolean preUsed, isFixed;
-      DAE.Exp startValue;
-      Option<DAE.Exp> startValueOpt;
-      DAE.ComponentRef preCR;
-      BackendDAE.Var preVar;
-      BackendDAE.Equation eqn;
-
-    // discrete-time
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
-      preUsed = BaseHashSet.has(cr, hs);
-      isFixed = BackendVariable.varFixed(var);
-      startValue = BackendVariable.varStartValue(var);
-
-      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      preVar = BackendVariable.setVarFixed(preVar, false);
-      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(startValue));
-      
-      // preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      // preVar = BackendVariable.copyVarNewName(preCR, var);
-      // preVar = BackendVariable.setVarDirection(preVar, DAE.BIDIR());
-      // preVar = BackendVariable.setBindExp(preVar, NONE());
-      // preVar = BackendVariable.setBindValue(preVar, NONE());
-      // preVar = BackendVariable.setVarFixed(preVar, true);
-      // preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
-      
-      eqn = BackendDAE.EQUATION(DAE.CREF(preCR, ty), startValue, DAE.emptyElementSource, false);
-
-      vars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, vars, vars);
-      eqns = Debug.bcallret2(preUsed and isFixed, BackendEquation.equationAdd, eqn, eqns, eqns);
-    then ((var, (vars, fixvars, eqns, hs)));
-    
-    // discrete-time
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
-      isFixed = BackendVariable.varFixed(var);
-      startValueOpt = BackendVariable.varStartValueOption(var);
-
-      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      preVar = BackendVariable.setVarFixed(preVar, isFixed);
-      preVar = BackendVariable.setVarStartValueOption(preVar, startValueOpt);
-
-      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, preVar, vars, vars);
-      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
-    then ((var, (vars, fixvars, eqns, hs)));
-    
-    // continuous-time
-    case((var as BackendDAE.VAR(varName=cr, varType=ty, arryDim=arryDim), (vars, fixvars, eqns, hs))) equation
-      preUsed = BaseHashSet.has(cr, hs);
-      
-      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
-      preVar = BackendDAE.VAR(preCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      preVar = BackendVariable.setVarFixed(preVar, true);
-      preVar = BackendVariable.setVarStartValueOption(preVar, SOME(DAE.CREF(cr, ty)));
-    
-      fixvars = Debug.bcallret2(preUsed, BackendVariable.addVar, preVar, fixvars, fixvars);
-    then ((var, (vars, fixvars, eqns, hs)));
-
-    else then inTpl;
-  end matchcontinue;
-end introducePreVarsForAliasVariables;
-
-protected function collectInitialBindings "author: lochel
-  This function collects all the vars for the initial system."
-  input tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> outTpl;
-algorithm
-  outTpl := match(inTpl)
-    local
-      BackendDAE.Var var;
-      DAE.ComponentRef cr;
-      DAE.Type ty;
-      String errorMessage;
-      BackendDAE.EquationArray eqns, reeqns;
-      DAE.Exp bindExp, crefExp;
-      DAE.ElementSource source;
-      BackendDAE.Equation eqn;
-
-    // no binding
-    case((var as BackendDAE.VAR(bindExp=NONE()), (eqns, reeqns))) equation
-    then ((var, (eqns, reeqns)));
-
-    // binding
-    case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns))) equation
-      crefExp = DAE.CREF(cr, ty);
-      eqn = BackendDAE.EQUATION(crefExp, bindExp, source, false);
-      eqns = BackendEquation.equationAdd(eqn, eqns);
-    then ((var, (eqns, reeqns)));
-
-    case ((var, _)) equation
-      errorMessage = "./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " +& BackendDump.varString(var);
-      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
-    then fail();
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed"});
-    then fail();
-  end match;
-end collectInitialBindings;
-
 protected function collectInitialEqns "author: lochel"
   input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> outTpl;
@@ -1818,6 +1795,49 @@ algorithm
     then inExp;
   end matchcontinue;
 end replaceDerPreCrefExp;
+
+// =============================================================================
+// section for bindings
+//
+// =============================================================================
+
+protected function collectInitialBindings "author: lochel
+  This function collects all the vars for the initial system."
+  input tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray, BackendDAE.EquationArray>> outTpl;
+algorithm
+  outTpl := match(inTpl)
+    local
+      BackendDAE.Var var;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+      String errorMessage;
+      BackendDAE.EquationArray eqns, reeqns;
+      DAE.Exp bindExp, crefExp;
+      DAE.ElementSource source;
+      BackendDAE.Equation eqn;
+
+    // no binding
+    case((var as BackendDAE.VAR(bindExp=NONE()), (eqns, reeqns))) equation
+    then ((var, (eqns, reeqns)));
+
+    // binding
+    case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns))) equation
+      crefExp = DAE.CREF(cr, ty);
+      eqn = BackendDAE.EQUATION(crefExp, bindExp, source, false);
+      eqns = BackendEquation.equationAdd(eqn, eqns);
+    then ((var, (eqns, reeqns)));
+
+    case ((var, _)) equation
+      errorMessage = "./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " +& BackendDump.varString(var);
+      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+    then fail();
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed"});
+    then fail();
+  end match;
+end collectInitialBindings;
 
 // protected function collectInitialStateSetVars "author: Frenkel TUD
 //    add the vars for state set to the initial system
