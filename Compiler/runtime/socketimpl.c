@@ -29,9 +29,16 @@
  */
 
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <stdio.h>
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
 #include <netinet/in.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -102,7 +109,7 @@ extern int Socket_waitforconnect(int port)
   return ns;
 }
 
-extern const char* SocketImpl_handlerequest(int sock)
+extern char* SocketImpl_handlerequest(int sock)
 {
   int bufSize=4000;
   char *tmpBuf,*buf;

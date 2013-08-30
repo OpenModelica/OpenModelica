@@ -31,49 +31,14 @@
 #include <stdio.h>
 #include <meta_modelica.h>
 
-#if defined(__MINGW32__) || defined(_MSC_VER)
-
-extern int Socket_waitforconnect(int _inInteger)
-{
-  fprintf(stderr, "Socket NYI\n");
-  MMC_THROW();
-}
-
-extern const char* Socket_handlerequest(int _inInteger)
-{
-  fprintf(stderr, "Socket NYI\n");
-  MMC_THROW();
-}
-
-extern void Socket_cleanup()
-{
-  fprintf(stderr, "Socket NYI\n");
-  MMC_THROW();
-}
-
-extern void Socket_close(int _inInteger)
-{
-  fprintf(stderr, "Socket NYI\n");
-  MMC_THROW();
-}
-
-extern void Socket_sendreply(int _inInteger, const char* _inString)
-{
-  fprintf(stderr, "Socket NYI\n");
-  MMC_THROW();
-}
-
-#else
-
 #include "socketimpl.c"
 #include "meta_modelica.h"
 #include "ModelicaUtilities.h"
 
 extern const char* Socket_handlerequest(int sock)
 {
-  char *str = Socket_handlerequest(sock);
+  char *str = SocketImpl_handlerequest(sock);
   char *res = strcpy(ModelicaAllocateString(strlen(str)),str);
   free(str);
   return res;
 }
-#endif
