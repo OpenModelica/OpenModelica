@@ -1002,3 +1002,12 @@ void (*omc_assert)(FILE_INFO info, const char *msg, ...) = omc_assert_simulation
 void (*omc_assert_warning)(FILE_INFO info, const char *msg, ...) = omc_assert_warning_simulation;
 void (*omc_terminate)(FILE_INFO info, const char *msg, ...) = omc_terminate_simulation;
 void (*omc_throw)() = omc_throw_simulation;
+
+/* simulation JumpBuffer */
+jmp_buf simulationJmpbuf;
+
+/* integrator JumpBuffer */
+jmp_buf integratorJmpbuf;
+
+/* indicates the current possible jump place */
+int currectJumpState;

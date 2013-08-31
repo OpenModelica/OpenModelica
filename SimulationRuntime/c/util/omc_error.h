@@ -64,18 +64,6 @@ void omc_throw_function();
 /* global JumpBuffer */
 extern jmp_buf globalJmpbuf;
 
-/* simulation JumpBuffer */
-extern jmp_buf simulationJmpbuf;
-
-/* integrator JumpBuffer */
-extern jmp_buf integratorJmpbuf;
-
-/* nonlinear JumpBuffer */
-extern jmp_buf nonlinearJmpbuf;
-
-/* indicates the current possible jump place */
-extern int currectJumpState;
-
 enum ERROR_HANDLE
 {
   ERROR_UNKOWN = 0,

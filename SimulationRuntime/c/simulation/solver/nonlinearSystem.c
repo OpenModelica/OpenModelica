@@ -43,6 +43,10 @@
 #include "simulation_info_xml.h"
 #include "blaswrap.h"
 #include "f2c.h"
+#include "simulation_runtime.h"
+
+/* nonlinear JumpBuffer */
+jmp_buf nonlinearJmpbuf;
 
 extern doublereal enorm_(integer *n, doublereal *x);
 

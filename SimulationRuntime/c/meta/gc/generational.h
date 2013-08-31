@@ -47,6 +47,7 @@ extern "C" {
 #endif
 
 #include "modelica.h"
+#include "mmc_gc.h"
 
 /* the allocated from C region */
 typedef struct mmc_c_heap_region

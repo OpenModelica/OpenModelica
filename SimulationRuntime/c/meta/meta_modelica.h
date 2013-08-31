@@ -235,7 +235,7 @@ struct mmc_string {
 #define MMC_TRUE (mmc_mk_icon(1))
 #define mmc_mk_bcon(X) ((X) != 0 ? MMC_TRUE : MMC_FALSE)
 
-static inline void* mmc_mk_icon(mmc_sint_t i)
+static void* mmc_mk_icon(mmc_sint_t i)
 {
     return MMC_IMMEDIATE(MMC_TAGFIXNUM(i));
 }
@@ -246,7 +246,7 @@ union mmc_double_as_words {
     double d;
     mmc_uint_t data[2];
 };
-static inline double mmc_prim_get_real(void *p)
+static double mmc_prim_get_real(void *p)
 {
   union mmc_double_as_words u;
   mmc_uint_t *data = &(MMC_REALDATA(p)[0]);
@@ -256,7 +256,7 @@ static inline double mmc_prim_get_real(void *p)
   return u.d;
 }
 
-static inline void mmc_prim_set_real(struct mmc_real *p, double d)
+static void mmc_prim_set_real(struct mmc_real *p, double d)
 {
   union mmc_double_as_words u;
   mmc_uint_t *data;
@@ -267,7 +267,7 @@ static inline void mmc_prim_set_real(struct mmc_real *p, double d)
   *(data + 1) = u.data[1];
 }
 
-static inline void* mmc_mk_scon(const char *s)
+static void* mmc_mk_scon(const char *s)
 {
     unsigned nbytes = strlen(s);
     unsigned header = MMC_STRINGHDR(nbytes);
@@ -290,7 +290,7 @@ static inline void* mmc_mk_scon(const char *s)
     return res;
 }
 
-static inline void* mmc_mk_scon_len(unsigned nbytes)
+static void* mmc_mk_scon_len(unsigned nbytes)
 {
     unsigned header = MMC_STRINGHDR(nbytes);
     unsigned nwords = MMC_HDRSLOTS(header) + 1;
@@ -304,7 +304,7 @@ static inline void* mmc_mk_scon_len(unsigned nbytes)
 
 char* mmc_mk_scon_len_ret_ptr(size_t nbytes);
 
-static inline void *mmc_mk_box0(unsigned ctor)
+static void *mmc_mk_box0(unsigned ctor)
 {
     struct mmc_struct *p = (struct mmc_struct *) mmc_alloc_words(1);
     p->header = MMC_STRUCTHDR(0, ctor);
@@ -314,7 +314,7 @@ static inline void *mmc_mk_box0(unsigned ctor)
     return MMC_TAGPTR(p);
 }
 
-static inline void *mmc_mk_box1(unsigned ctor, void *x0)
+static void *mmc_mk_box1(unsigned ctor, void *x0)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   {
@@ -330,7 +330,7 @@ static inline void *mmc_mk_box1(unsigned ctor, void *x0)
 
 void printAny(void* any);
 
-static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
+static void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -349,7 +349,7 @@ static inline void *mmc_mk_box2(unsigned ctor, void *x0, void *x1)
   }
 }
 
-static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
+static void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -370,7 +370,7 @@ static inline void *mmc_mk_box3(unsigned ctor, void *x0, void *x1, void *x2)
   }
 }
 
-static inline void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, void *x3)
+static void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, void *x3)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -392,7 +392,7 @@ static inline void *mmc_mk_box4(unsigned ctor, void *x0, void *x1, void *x2, voi
   }
 }
 
-static inline void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
+static void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -416,7 +416,7 @@ static inline void *mmc_mk_box5(unsigned ctor, void *x0, void *x1, void *x2, voi
   }
 }
 
-static inline void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5)
+static void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -442,7 +442,7 @@ static inline void *mmc_mk_box6(unsigned ctor, void *x0, void *x1, void *x2, voi
   }
 }
 
-static inline void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6)
+static void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -470,7 +470,7 @@ static inline void *mmc_mk_box7(unsigned ctor, void *x0, void *x1, void *x2, voi
   }
 }
 
-static inline void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7)
+static void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -500,7 +500,7 @@ static inline void *mmc_mk_box8(unsigned ctor, void *x0, void *x1, void *x2, voi
   }
 }
 
-static inline void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7, void *x8)
+static void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, void *x3, void *x4, void *x5, void *x6, void *x7, void *x8)
 {
   mmc_GC_add_roots(&x0, 1, 0, "");
   mmc_GC_add_roots(&x1, 1, 0, "");
@@ -532,7 +532,7 @@ static inline void *mmc_mk_box9(unsigned ctor, void *x0, void *x1, void *x2, voi
   }
 }
 
-static inline void *mmc_mk_box(int slots, unsigned ctor, ...)
+static void *mmc_mk_box(int slots, unsigned ctor, ...)
 {
     int i;
     va_list argp;
@@ -569,12 +569,12 @@ static const MMC_DEFSTRUCT0LIT(mmc_none,1);
 
 #define MMC_CONS_CTOR 1
 
-static inline void *mmc_mk_cons(void *car, void *cdr)
+static void *mmc_mk_cons(void *car, void *cdr)
 {
     return mmc_mk_box2(MMC_CONS_CTOR, car, cdr);
 }
 
-static inline void *mmc_mk_some(void *x)
+static void *mmc_mk_some(void *x)
 {
     return mmc_mk_box1(1, x);
 }

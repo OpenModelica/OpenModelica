@@ -62,21 +62,21 @@ typedef jint (*CreateJavaVMFunc)(JavaVM**,void**,void*);
 
 #endif
 
-const char* JAVA_MODELICA_ARRAY   = "org/openmodelica/ModelicaArray";
-const char* JAVA_MODELICA_INTEGER = "org/openmodelica/ModelicaInteger";
-const char* JAVA_MODELICA_REAL    = "org/openmodelica/ModelicaReal";
-const char* JAVA_MODELICA_BOOLEAN = "org/openmodelica/ModelicaBoolean";
-const char* JAVA_MODELICA_STRING  = "org/openmodelica/ModelicaString";
-const char* JAVA_MODELICA_RECORD  = "org/openmodelica/ModelicaRecord";
-const char* JAVA_MODELICA_OMCRECORD  = "org/openmodelica/OMCModelicaRecord";
-const char* JAVA_MODELICA_TUPLE   = "org/openmodelica/ModelicaTuple";
-const char* JAVA_MODELICA_OPTION  = "org/openmodelica/ModelicaOption";
-char* classPath;
+static const char* JAVA_MODELICA_ARRAY   = "org/openmodelica/ModelicaArray";
+static const char* JAVA_MODELICA_INTEGER = "org/openmodelica/ModelicaInteger";
+static const char* JAVA_MODELICA_REAL    = "org/openmodelica/ModelicaReal";
+static const char* JAVA_MODELICA_BOOLEAN = "org/openmodelica/ModelicaBoolean";
+static const char* JAVA_MODELICA_STRING  = "org/openmodelica/ModelicaString";
+static const char* JAVA_MODELICA_RECORD  = "org/openmodelica/ModelicaRecord";
+static const char* JAVA_MODELICA_OMCRECORD  = "org/openmodelica/OMCModelicaRecord";
+static const char* JAVA_MODELICA_TUPLE   = "org/openmodelica/ModelicaTuple";
+static const char* JAVA_MODELICA_OPTION  = "org/openmodelica/ModelicaOption";
+static char* classPath;
 
-int inside_exception = 0;
+static int inside_exception = 0;
 
-GetCreatedJavaVMsFunc OMC_GetCreatedJavaVMs = NULL;
-CreateJavaVMFunc OMC_CreateJavaVM = NULL;
+static GetCreatedJavaVMsFunc OMC_GetCreatedJavaVMs = NULL;
+static CreateJavaVMFunc OMC_CreateJavaVM = NULL;
 
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows/MinGW */

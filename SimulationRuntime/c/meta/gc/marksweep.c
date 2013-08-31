@@ -40,6 +40,7 @@
  */
 
 #include "modelica.h"
+#include "mmc_gc.h"
 
 #if defined(_MMC_GC_)
 
@@ -592,7 +593,6 @@ void *mmc_alloc_words(unsigned nwords)
 
 static mmc_GC_state_type x_mmc_GC_state;
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
-mmc_GC_local_state_type dummy_local_GC_state = 0;
 
 /* primary allocation routine for MetaModelica */
 void *mmc_alloc_words(unsigned nwords)
@@ -604,7 +604,6 @@ void *mmc_alloc_words(unsigned nwords)
 
 static mmc_GC_state_type x_mmc_GC_state;
 mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
-mmc_GC_local_state_type dummy_local_GC_state = 0;
 
 void *mmc_alloc_bytes(unsigned nbytes)
 {
@@ -654,4 +653,3 @@ int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes)
 
   return 0;
 }
-

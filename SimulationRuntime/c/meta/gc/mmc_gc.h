@@ -120,8 +120,6 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
 
 #if defined(_MMC_USE_BOEHM_GC_) /* use the BOEHM Garbage collector */
 
-extern mmc_GC_local_state_type dummy_local_GC_state;
-
 #define LARGE_CONFIG
 #include <gc.h>
 
@@ -131,8 +129,6 @@ extern mmc_GC_local_state_type dummy_local_GC_state;
 #define mmc_GC_collect(local_GC_state)
 
 #else /* NO_GC */
-
-extern mmc_GC_local_state_type dummy_local_GC_state;
 
 #define mmc_GC_init(settings)
 #define mmc_GC_init_default(void)

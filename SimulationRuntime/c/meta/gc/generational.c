@@ -81,6 +81,8 @@
 
 #include "generational.h"
 
+#ifdef _MMC_GC_
+
 /*#undef NDEBUG*/
 #include <assert.h>
 
@@ -1037,5 +1039,4 @@ void *mmc_prim_alloc(mmc_uint_t nwords)
   return p;
 }
 
-
-
+#endif
