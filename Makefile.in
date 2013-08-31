@@ -24,7 +24,7 @@ CPPFLAGS=@CPPFLAGS@
 CXXFLAGS=@CXXFLAGS@
 LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
-GC_THREADS=--enable-threds=posix
+GC_THREADS=--enable-threads=posix
 
 include Makefile.common
 
