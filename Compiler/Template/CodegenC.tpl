@@ -9752,6 +9752,7 @@ int rml_execution_failed(mmc_GC_local_state_type local_GC_state)
   mmc_GC_undo_roots_state(local_GC_state);
   fflush(NULL);
   fprintf(stderr, "Execution failed!\n");
+  fflush(NULL);
   return 1;
 }
 
@@ -9779,12 +9780,14 @@ int main(int argc, char **argv)
   rml_execution_failed(local_GC_state);
   fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at <%url%>\n    Include the following trace:\n");
   printStacktraceMessages();
+  fflush(NULL);
   return 1;
   MMC_CATCH_STACK()
 
   MMC_CATCH_TOP(return rml_execution_failed(local_GC_state));
   }
 
+  fflush(NULL);
   return 0;
 }
 >>
