@@ -37,6 +37,11 @@ typedef struct {
   FILE *csvReader;
 } SimulationResult_Globals;
 
+static SimulationResult_Globals simresglob = {
+  UNKNOWN_PLOT,
+  0
+};
+
 static void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
 {
   switch (simresglob->curFormat) {
@@ -56,7 +61,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   int len = strlen(filename);
   const char *msg[] = {"",""};
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
-  struct stat buf;
+  struct stat buf = {0} /* Zero this or valgrind complains */;
 #endif
   if (simresglob->curFileName && 0==strcmp(filename,simresglob->curFileName)) {
 #if defined(__MINGW32__) || defined(_MSC_VER)

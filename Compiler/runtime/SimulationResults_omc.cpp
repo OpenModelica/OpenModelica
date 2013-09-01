@@ -41,8 +41,6 @@ extern "C" {
 #include "SimulationResults.c"
 #include "SimulationResultsCmp.c"
 
-static SimulationResult_Globals simresglob = {UNKNOWN_PLOT,0};
-
 void* SimulationResults_readVariables(const char *filename, const char *visvars)
 {
   return SimulationResultsImpl__readVars(filename,&simresglob);
