@@ -13,6 +13,7 @@ SET(solver_sources  dassl.c
                     kinsolSolver.c
                     linearSystem.c
                     linearSolverLapack.c
+                    linearSolverLis.c
                     nonlinearSystem.c
                     nonlinearSolverHybrd.c
                     nonlinearSolverNewton.c
@@ -28,6 +29,7 @@ SET(solver_headers  dassl.h
                     kinsolSolver.h
                     linearSystem.h
                     linearSolverLapack.h
+                    linearSolverLis.h
                     model_help.h
                     nonlinearSolverHybrd.h
                     nonlinearSolverNewton.h

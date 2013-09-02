@@ -214,7 +214,7 @@ fmil-clean:
 gc-clean:
 	if test -f 3rdParty/gc-7.2/Makefile; then make -C 3rdParty/gc-7.2 clean; fi
 	rm -f 3rdParty/gc-7.2/Makefile
-clean: qtclean fmil-clean opencl_rt_clean gc-clean
+clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)

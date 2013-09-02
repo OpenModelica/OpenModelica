@@ -37,6 +37,7 @@
 #include "omc_error.h"
 #include "linearSystem.h"
 #include "linearSolverLapack.h"
+#include "linearSolverLis.h"
 #include "simulation_info_xml.h"
 #include "blaswrap.h"
 #include "f2c.h"
@@ -49,24 +50,30 @@
  */
 int allocatelinearSystem(DATA *data)
 {
-  int i;
+  int i,nnz;
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo.linearSystemData;
 
   for(i=0; i<data->modelData.nLinearSystems; ++i)
   {
     size = linsys[i].size;
+    nnz = linsys[i].nnz;
 
     /* allocate system data */
     linsys[i].x = (double*) malloc(size*sizeof(double));
     linsys[i].b = (double*) malloc(size*sizeof(double));
-    linsys[i].A = (double*) malloc(size*size*sizeof(double));
 
     /* allocate solver data */
-    switch(data->simulationInfo.lsMethod)
-    {
+    /* the implementation of matrix A is solver-specific */
+    switch(data->simulationInfo.lsMethod){
     case LS_LAPACK:
+      linsys[i].A = (double*) malloc(size*size*sizeof(double));
+      linsys[i].setAElement = setAElementLAPACK;
       allocateLapackData(size, &linsys[i].solverData);
+      break;
+    case LS_LIS:
+      linsys[i].setAElement = setAElementLis;
+      allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
     default:
       THROW("unrecognized linear solver");
@@ -88,15 +95,17 @@ int freelinearSystem(DATA *data)
 
   for(i=0;i<data->modelData.nLinearSystems;++i)
   {
+    /* free system and solver data */
     free(linsys[i].x);
     free(linsys[i].b);
-    free(linsys[i].A);
 
-    /* allocate solver data */
-    switch(data->simulationInfo.lsMethod)
-    {
+    switch(data->simulationInfo.lsMethod){
     case LS_LAPACK:
       freeLapackData(&linsys[i].solverData);
+      free(linsys[i].A);
+      break;
+    case LS_LIS:
+      freeLisData(&linsys[i].solverData);
       break;
     default:
       THROW("unrecognized linear solver");
@@ -117,16 +126,15 @@ int freelinearSystem(DATA *data)
  */
 int solve_linear_system(DATA *data, int sysNumber)
 {
-  /* NONLINEAR_SYSTEM_DATA
-   * system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
   int success;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo.linearSystemData;
 
-  /* for now just use lapack solver as before */
-  switch(data->simulationInfo.lsMethod)
-  {
+  switch(data->simulationInfo.lsMethod){
   case LS_LAPACK:
     success = solveLapack(data, sysNumber);
+    break;
+  case LS_LIS:
+    success = solveLis(data, sysNumber);
     break;
   default:
     THROW("unrecognized linear solver");
@@ -165,4 +173,17 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
     }
 
   return retVal;
+}
+
+void setAElementLAPACK(int row, int col, double value, int nth, void *data )
+{
+  LINEAR_SYSTEM_DATA* linsys = (LINEAR_SYSTEM_DATA*) data;
+  linsys->A[row + col * linsys->size] = value;
+}
+
+void setAElementLis(int row, int col, double value, int nth, void *data )
+{
+  LINEAR_SYSTEM_DATA* linSys = (LINEAR_SYSTEM_DATA*) data;
+  DATA_LIS* sData = (DATA_LIS*) linSys->solverData;
+  lis_matrix_set_value(LIS_INS_VALUE, row, col, value, sData->A);
 }

@@ -32,10 +32,10 @@ include Makefile.common
 .testvariables:
 settings:
 
-omc: omc-diff interactive docs fmi fmil opencl_rt
+omc: omc-diff interactive docs fmi fmil opencl_rt lis
 	(cd Compiler && $(MAKE) -f Makefile release)
 	$(MAKE) omlibrary
-omcd: omc-diff interactive docs fmi fmil opencl_rt
+omcd: omc-diff interactive docs fmi fmil opencl_rt lis
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 boehm-gc-lib: @LIBGC@
@@ -124,6 +124,27 @@ else
 	cp -p 3rdParty/modelica3d/backends/blender2.59/dbus-server.py build/lib/omlibrary-modelica3d/blender2.59/
 	cp -p 3rdParty/modelica3d/backends/osg-gtk/python/dbus-server.py build/lib/omlibrary-modelica3d/osg-gtk/
 endif
+
+lis: lis-configure
+	@echo Building Lis from sources
+	$(MAKE) -C 3rdParty/lis-1.4.12
+	# Create a SO from the statically linked library, lis provides
+	cd 3rdParty/lis-1.4.12/src/.libs/ && $(CC) ${LDFLAGS} -fPIC -shared -Wl,-soname="liblis.so.1" -Wl,--whole-archive "liblis.a" -Wl,--no-whole-archive -o liblis.so.1
+	if ! test -d build/include/; then mkdir -p build/include/; fi
+	if ! test -d build/lib/; then mkdir -p build/lib/; fi
+	if test -h build/lib/liblis.so; then rm build/lib/liblis.so; fi
+	# Copy headers and the library
+	cp -p 3rdParty/lis-1.4.12/include/lis.h 3rdParty/lis-1.4.12/include/lisf.h 3rdParty/lis-1.4.12/include/lis_config.h build/include/
+	cp -p 3rdParty/lis-1.4.12/src/.libs/liblis.so.1 build/lib/
+	ln -s liblis.so.1 build/lib/liblis.so
+
+lis-configure: 
+	# Configure and build lis
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && CFLAGS="$(CFLAGS)" ./configure; fi
+
+lis-clean:
+	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
+	rm -f 3rdParty/lis-1.4.12/Makefile
 
 fix-svn-props:
 	tools/apply_autoprops.py --config .svnprops .
