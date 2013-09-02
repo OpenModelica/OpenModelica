@@ -1910,24 +1910,25 @@ protected function getExpandableEquSetsAsCrefs
   input list<list<DAE.ComponentRef>> inSetsAcc;
   output list<list<DAE.ComponentRef>> outSets;
 algorithm
-  outSets := matchcontinue(inSets, inSetsAcc)
+  outSets := match (inSets, inSetsAcc)
     local
       list<Set> rest;
       list<DAE.ComponentRef> crefSet;
       Set set;
+      Boolean b;
 
     case ({}, _) then inSetsAcc;
 
     case ((set as Connect.SET(ty = Connect.EQU()))::rest, _)
       equation
         crefSet = getAllEquCrefs({set}, {});
-        true = List.applyAndFold(crefSet, boolOr, isExpandable, false);
+        b = List.applyAndFold(crefSet, boolOr, isExpandable, false);
       then
-        getExpandableEquSetsAsCrefs(rest, crefSet::inSetsAcc);
+        getExpandableEquSetsAsCrefs(rest, List.consOnTrue(b,crefSet,inSetsAcc));
 
     case (_::rest, _)
       then getExpandableEquSetsAsCrefs(rest, inSetsAcc);
-  end matchcontinue;
+  end match;
 end getExpandableEquSetsAsCrefs;
 
 protected function removeNonRequiredExpandableConnections
