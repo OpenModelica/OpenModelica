@@ -46,7 +46,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs
+interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)

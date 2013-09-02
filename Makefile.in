@@ -125,23 +125,15 @@ else
 	cp -p 3rdParty/modelica3d/backends/osg-gtk/python/dbus-server.py build/lib/omlibrary-modelica3d/osg-gtk/
 endif
 
-lis: lis-configure
+lis: lis-configure mkbuilddirs
 	@echo Building Lis from sources
 	$(MAKE) -C 3rdParty/lis-1.4.12
-	# Create a SO from the statically linked library, lis provides
-	cd 3rdParty/lis-1.4.12/src/.libs/ && $(CC) ${LDFLAGS} -fPIC -shared -Wl,-soname="liblis.so.1" -Wl,--whole-archive "liblis.a" -Wl,--no-whole-archive -o liblis.so.1
-	if ! test -d build/include/; then mkdir -p build/include/; fi
-	if ! test -d build/lib/; then mkdir -p build/lib/; fi
-	if test -h build/lib/liblis.so; then rm build/lib/liblis.so; fi
-	# Copy headers and the library
-	cp -p 3rdParty/lis-1.4.12/include/lis.h 3rdParty/lis-1.4.12/include/lisf.h 3rdParty/lis-1.4.12/include/lis_config.h build/include/
-	cp -p 3rdParty/lis-1.4.12/src/.libs/liblis.so.1 build/lib/
-	ln -s liblis.so.1 build/lib/liblis.so
+	# Copy the library; not headers (as they are not used by the runtime system)
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* build/lib/omc/
 
 lis-configure: 
 	# Configure and build lis
-	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && CFLAGS="$(CFLAGS)" ./configure; fi
-
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure --enable-shared --disable-static CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean; fi
 lis-clean:
 	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
 	rm -f 3rdParty/lis-1.4.12/Makefile
