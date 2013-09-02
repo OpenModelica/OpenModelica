@@ -1223,14 +1223,7 @@ algorithm
   end matchcontinue;
 end reachableNodes;
 
-protected function iterateReachableNodes "author: PA
-
-  Helper function to strong_connect.
-
-  inputs:  (int list, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, int vector, int vector,
-              int /* i */, int /* v */, int list /* stack */, int list list /* components */)
-  outputs: (int /* i */, int list /* stack */, int list list /* components */)
-"
+protected function iterateReachableNodes
   input list<Integer> eqns;
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> a2;
@@ -1245,8 +1238,7 @@ protected function iterateReachableNodes "author: PA
   output list<Integer> outStack;
   output list<list<Integer>> outComps;
 algorithm
-  (outI,outStack,outComps):=
-  matchcontinue (eqns,mt,a2,number,lowlink,stackflag,i,v,istack,icomps)
+  (outI,outStack,outComps) := match (eqns,mt,a2,number,lowlink,stackflag,i,v,istack,icomps)
     local
       Integer i1,lv,lw,minv,w,nw,nv;
       list<Integer> stack,ws;
@@ -1255,8 +1247,37 @@ algorithm
     // empty case
     case ({},_,_,_,_,_,_,_,_,_) then (i,istack,icomps);
 
+    case (w :: ws,_,_,_,_,_,i1,_,stack,comps)
+      equation
+        (i1,stack,comps) = iterateReachableNodes2(w, mt, a2, number, lowlink, stackflag, i1, v, stack, comps);
+        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i1, v, stack, comps);
+      then (i1,stack,comps);
+  end match;
+end iterateReachableNodes;
+
+protected function iterateReachableNodes2
+  input Integer eqn;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> a2;
+  input array<Integer> number;
+  input array<Integer> lowlink;
+  input array<Boolean> stackflag;
+  input Integer i;
+  input Integer v;
+  input list<Integer> istack;
+  input list<list<Integer>> icomps;
+  output Integer outI;
+  output list<Integer> outStack;
+  output list<list<Integer>> outComps;
+algorithm
+  (outI,outStack,outComps):= matchcontinue (eqn,mt,a2,number,lowlink,stackflag,i,v,istack,icomps)
+    local
+      Integer i1,lv,lw,minv,w,nw,nv;
+      list<Integer> stack,ws;
+      list<list<Integer>> comps_1,comps_2,comps;
+
     // nw is 0
-    case ((w :: ws),_,_,_,_,_,_,_,_,_)
+    case (w,_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(number[w],0);
         (i1,stack,comps_1) = strongConnect(mt, a2, number, lowlink, stackflag, i, w, istack, icomps);
@@ -1264,30 +1285,22 @@ algorithm
         lw = lowlink[w];
         minv = intMin(lv, lw);
         _ = arrayUpdate(lowlink,v,minv);
-        (i1,stack,comps_2) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i1, v, stack, comps_1);
-      then
-        (i1,stack,comps_2);
+      then (i1,stack,comps_1);
 
     // nw
-    case ((w :: ws),_,_,_,_,_,_,_,_,_)
+    case (w,_,_,_,_,_,_,_,_,_)
       equation
         nw = number[w];
         nv = lowlink[v];
         (nw < nv) = true;
         true = stackflag[w];
         _ = arrayUpdate(lowlink,v,nw);
-        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i, v, istack, icomps);
-      then
-        (i1,stack,comps);
+      then (i,istack,icomps);
 
-    case ((_ :: ws),_,_,_,_,_,_,_,_,_)
-      equation
-        (i1,stack,comps) = iterateReachableNodes(ws, mt, a2, number, lowlink, stackflag, i, v, istack, icomps);
-      then
-        (i1,stack,comps);
+    else (i,istack,icomps);
 
   end matchcontinue;
-end iterateReachableNodes;
+end iterateReachableNodes2;
 
 protected function checkRoot "author: PA
 
