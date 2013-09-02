@@ -133,7 +133,7 @@ lis: lis-configure mkbuilddirs
 
 lis-configure: 
 	# Configure and build lis
-	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure --enable-shared --disable-static CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean; fi
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure --enable-shared --disable-static CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
 lis-clean:
 	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
 	rm -f 3rdParty/lis-1.4.12/Makefile

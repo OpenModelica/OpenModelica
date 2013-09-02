@@ -64,6 +64,7 @@ AC_SUBST(RPATH)
 AC_SUBST(MSL_EXTRA_ARGS)
 AC_SUBST(WITH_HWLOC)
 AC_SUBST(OS_TARGET)
+AC_SUBST(LIS_LDFLAGS)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -676,6 +677,7 @@ if test "Darwin" = `uname`; then
   RPATH="-Wl,-rpath,'@loader_path/../lib/omc'"
   MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
   OS_TARGET="osx"
+  LIS_LDFLAGS="-Wl,-install_name,@rpath/liblis.dylib"
 else
   EXE=""
   SHREXT=".so"
