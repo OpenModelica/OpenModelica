@@ -29,10 +29,16 @@ String(size(allClasses,1)) + " number of classes";
 
 min(OpenModelica.Scripting.writeFile(fixName(typeNameString(cl))+".mos","
 OpenModelica.Scripting.writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\"><error type=\\\"killed\\\"/></testcase>\");
+
 loadModel(ModelicaCompliance);getErrorString();
-deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps);getErrorString();
-deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed);getErrorString();
-deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName);getErrorString();
+// delete classes that generate errors all the time
+deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationComps); getErrorString();
+deleteClass(ModelicaCompliance.Components.Declarations.DoubleDeclarationMixed); getErrorString();
+deleteClass(ModelicaCompliance.Components.Declarations.TypeNameAsComponentName); getErrorString();
+deleteClass(ModelicaCompliance.Classes.Enumeration.EnumDuplicateLiteral); getErrorString();
+deleteClass(ModelicaCompliance.Scoping.NameLookup.Imports.QualifiedImportConflict); getErrorString();
+deleteClass(ModelicaCompliance.Redeclare.ClassExtends.ClassExtendsNonReplaceable); getErrorString();
+
 rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");getErrorString();
 loadString(\"
 function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
