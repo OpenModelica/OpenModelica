@@ -341,7 +341,7 @@ public function takeLineOrString
   output list<String> outRestChars;
   output Boolean outIsLine;
 algorithm
-  (outTillNewLineChars, outRestChars, outIsLine) := matchcontinue (inChars)
+  (outTillNewLineChars, outRestChars, outIsLine) := match (inChars)
     local
       String  char;
       list<String> tnlchars, restchars, chars;
@@ -361,13 +361,7 @@ algorithm
       then
         (char ::  tnlchars, restchars, isline);
 
-    //should not ever happen
-    case (_ )
-      equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.takeLineOrString failed.\n");
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end takeLineOrString;
 
 
