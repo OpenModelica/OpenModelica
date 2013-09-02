@@ -73,9 +73,9 @@
 #endif
 #if defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  #define DEFAULT_LINKER "g++ -shared -export-dynamic -fPIC"
+  #define DEFAULT_LINKER "g++ -shared --export-all-symbols -fPIC"
 #else
-  #define DEFAULT_LINKER "g++ -shared -export-dynamic"
+  #define DEFAULT_LINKER "g++ -shared --export-all-symbols"
 #endif
 
 #define CONFIG_PATH_DELIMITER "/"
