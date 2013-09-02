@@ -2222,7 +2222,7 @@ algorithm
   // Add the connections to the graph.
   graph := List.fold(inConnections, addConnectionToGraph, graph);
   // Add the connections to the array with help from the graph.
-  outSets := setArrayAddConnections2(1, graph, inSets);
+  outSets := setArrayAddConnections2(1 <= arrayLength(graph), 1, graph, inSets);
 end setArrayAddConnections;
 
 protected function addConnectionToGraph
@@ -2243,34 +2243,26 @@ end addConnectionToGraph;
 
 protected function setArrayAddConnections2
   "Adds pointers to the set array."
+  input Boolean stop;
   input Integer inIndex;
   input SetGraph inGraph;
   input array<Set> inSets;
   output array<Set> outSets;
 algorithm
-  outSets := matchcontinue(inIndex, inGraph, inSets)
+  outSets := match (stop, inIndex, inGraph, inSets)
     local
       list<Integer> edges;
       array<Set> sets;
       SetGraph graph;
 
-    case (_, _, _)
-      equation
-        true = inIndex > arrayLength(inGraph);
-      then
-        inSets;
-
-    case (_, _, _)
-      equation
-        (edges as _ :: _) = arrayGet(inGraph, inIndex);
-        (sets, graph) = setArrayAddConnection(inIndex, edges, inSets, inGraph);
-      then
-        setArrayAddConnections2(inIndex + 1, graph, sets);
-
+    case (false, _, _, _) then inSets;
     else
-      setArrayAddConnections2(inIndex + 1, inGraph, inSets);
+      equation
+        edges = arrayGet(inGraph, inIndex);
+        (sets, graph) = setArrayAddConnection(inIndex, edges, inSets, inGraph);
+      then setArrayAddConnections2(inIndex+1 <= arrayLength(graph), inIndex + 1, graph, sets);
 
-  end matchcontinue;
+  end match;
 end setArrayAddConnections2;
 
 protected function setArrayAddConnection
