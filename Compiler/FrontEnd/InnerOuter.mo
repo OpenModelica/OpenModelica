@@ -1598,7 +1598,7 @@ algorithm
     // we have some outer references, search for our prefix + cref in them
     case ({TOP_INSTANCE(_, _, outerPrefixes as _::_)}, _, _)
       equation
-        (_,fullCref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, inOuterComponentRef);
+        (_,fullCref) = PrefixUtil.prefixCref(Env.emptyCache(), {}, emptyInstHierarchy, inPrefix, inOuterComponentRef);
 
         // this will fail if we don't find it so prefixing can happen in the calling function
         (outerCrefPrefix, innerCrefPrefix) = searchForInnerPrefix(fullCref, outerPrefixes);

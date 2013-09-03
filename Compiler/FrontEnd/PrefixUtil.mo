@@ -663,7 +663,11 @@ algorithm
       DAE.CallAttributes attr;
 
     // no prefix, return the input expression
-    case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
+    case (cache,_,_,e,Prefix.NOPRE())
+      equation
+         false = System.getHasInnerOuterDefinitions();
+      then 
+        (cache,e);
 
     // handle literal constants
     case (cache,_,_,(e as DAE.ICONST(integer = _)),_) then (cache,e);
@@ -862,6 +866,9 @@ algorithm
       equation
       then (cache,DAE.META_OPTION(NONE()));
         // ------------------------
+
+    // no prefix, return the input expression
+    case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
 
     case (_,_,_,e,_)
       equation
