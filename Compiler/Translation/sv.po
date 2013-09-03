@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
-"POT-Creation-Date: 2013-08-23 16:20+0200\n"
+"POT-Creation-Date: 2013-09-03 15:05+0200\n"
 "PO-Revision-Date: 2012-08-28 16:55+0200\n"
 "Last-Translator: Martin Sjölund <martin.sjolund at liu.se>\n"
 "Language-Team: Swedish <openmodelica at ida.liu.se>\n"
@@ -912,7 +912,7 @@ msgstr "Ignorerar extern sektion i den ärvda klassen: %s."
 #: ../Util/Error.mo:413
 #, c-format
 msgid "An element with name %s is already declared in this scope."
-msgstr "Ett element med namn %s är redan deklarerad i denna omfattning."
+msgstr "Ett element med namn %s är redan deklarerat i denna omfattning."
 
 #: ../Util/Error.mo:415
 #, c-format
@@ -2051,52 +2051,48 @@ msgid "Displays the connection graph with the GraphViz lefty tool."
 msgstr "Visar kopplingsgrafen med GraphViz-verktyget lefty."
 
 #: ../Util/Flags.mo:194
-msgid "Does a very simple inlining of der(name) using explicit euler."
-msgstr "Utför en mycket enkel inlining av der(name)."
-
-#: ../Util/Flags.mo:196
 msgid "Turns on/off dependency analysis for getTotalProgram."
 msgstr "Slår på/av beroendeanalysen för getTotalProgram."
 
-#: ../Util/Flags.mo:198
+#: ../Util/Flags.mo:196
 msgid "Enables extra type checking for cref expressions."
 msgstr "Slår på extra typkontrol för cref-uttryck."
 
-#: ../Util/Flags.mo:200
+#: ../Util/Flags.mo:198
 msgid "Prints out a warning if an ASUB is created from a CREF expression."
 msgstr "Skriver ut en varning om en ASUB skapas från ett CREF-uttryck."
 
-#: ../Util/Flags.mo:202
+#: ../Util/Flags.mo:200
 msgid "Prints extra failtrace from InstanceHierarchy."
 msgstr "Skriver ut extra failtrace från InstanceHierarchy."
 
-#: ../Util/Flags.mo:204
+#: ../Util/Flags.mo:202
 msgid "Turns off the instantiation cache."
 msgstr "Slå av instansieringscachen."
 
-#: ../Util/Flags.mo:206
+#: ../Util/Flags.mo:204
 msgid "Turns on extra RML checks."
 msgstr "Slår på extra RML-test."
 
-#: ../Util/Flags.mo:208
+#: ../Util/Flags.mo:206
 msgid ""
 "Prints out a notification if tail recursion optimization has been applied."
 msgstr "Skriver ut en notis då optimeringen svansrekursion används."
 
-#: ../Util/Flags.mo:210
+#: ../Util/Flags.mo:208
 msgid "Print extra failtrace from lookup."
 msgstr "Skriver ut extra failtrace från lookup."
 
-#: ../Util/Flags.mo:214
+#: ../Util/Flags.mo:212
 msgid ""
 "Adds notifications of all pattern-matching optimizations that are performed."
 msgstr "Visar meddelanden för alla mönstermatchningsoptimeringar som utförs."
 
-#: ../Util/Flags.mo:216
+#: ../Util/Flags.mo:214
 msgid "Performs dead code elimination in match-expressions."
 msgstr "Utför eliminering av död kod i match-uttryck."
 
-#: ../Util/Flags.mo:218
+#: ../Util/Flags.mo:216
 msgid ""
 "Optimization that moves the last assignment(s) into the result of a "
 "match-expression. For example: equation c = fn(b); then c; => then fn(b);"
@@ -2104,37 +2100,37 @@ msgstr ""
 "Optimering som flyttar den sista tilldelningen till resultatet av "
 "match-uttrycket. Till exempel:equation c = fn(b); then c; => then fn(b);"
 
-#: ../Util/Flags.mo:220
+#: ../Util/Flags.mo:218
 msgid "Turns on custom reduction functions (OpenModelica extension)."
 msgstr "Slår på egna reduktionsfunktioner (OpenModelica-tillägg)."
 
-#: ../Util/Flags.mo:222
+#: ../Util/Flags.mo:220
 msgid "Constant evaluates parameters if set."
 msgstr "Slår på konstantevaluering av parametrar."
 
-#: ../Util/Flags.mo:224
+#: ../Util/Flags.mo:222
 msgid "Prints extra failtrace from Types."
 msgstr "Skriver ut extra failtrace från Types."
 
-#: ../Util/Flags.mo:226
+#: ../Util/Flags.mo:224
 msgid ""
 "Shows the statement that is currently being evaluated when evaluating a "
 "script."
 msgstr "Visar den sats som håller på att evalueras då ett script körs."
 
-#: ../Util/Flags.mo:228
+#: ../Util/Flags.mo:226
 msgid "Dumps the absyn representation of a program."
 msgstr "Skriver ut absyn-representationen av ett program."
 
-#: ../Util/Flags.mo:230
+#: ../Util/Flags.mo:228
 msgid "Dumps the absyn representation of a program in graphviz format."
 msgstr "Skriver ut absyn-representationen av ett program i graphviz-format."
 
-#: ../Util/Flags.mo:232
+#: ../Util/Flags.mo:230
 msgid "Prints out execution statistics for the compiler."
 msgstr "Skriver ut exekveringsstatistik för kompilatorn."
 
-#: ../Util/Flags.mo:234
+#: ../Util/Flags.mo:232
 msgid ""
 "Applies transformations required for code generation before dumping flat "
 "code."
@@ -2142,39 +2138,39 @@ msgstr ""
 "Tillämpar transformationer som krävs för kodgenerering före utskrift av "
 "utplattat kod."
 
-#: ../Util/Flags.mo:236
+#: ../Util/Flags.mo:234
 msgid "Dumps the DAE in graphviz format."
 msgstr "Skriver ut DAEn i graphviz-format."
 
-#: ../Util/Flags.mo:238
+#: ../Util/Flags.mo:236
 msgid "Starts omc as a server listening on the socket interface."
 msgstr "Startar omc som en server som lyssnar på socket-gränssnittet."
 
-#: ../Util/Flags.mo:240
+#: ../Util/Flags.mo:238
 msgid "Starts omc as a server listening on the Corba interface."
 msgstr "Startar omc som en server som lyssnar på Corba-gränssnittet."
 
-#: ../Util/Flags.mo:242
+#: ../Util/Flags.mo:240
 msgid "Prints out debug information for the interactive server."
 msgstr "Skriver ut debug-information för den interaktiva servern."
 
-#: ../Util/Flags.mo:246
+#: ../Util/Flags.mo:244
 msgid "Dump the found replacements for simple equation removal."
 msgstr "Skriver ut funna ersättningar för remove simple equation."
 
-#: ../Util/Flags.mo:248
+#: ../Util/Flags.mo:246
 msgid "Dump the found replacements for final parameters."
 msgstr "Skriver ut funna ersättningar för final-parametrar."
 
-#: ../Util/Flags.mo:250
+#: ../Util/Flags.mo:248
 msgid "Dump the found replacements for remove parameters."
 msgstr "Skriver ut funna ersättningar för bortplockade parametrar."
 
-#: ../Util/Flags.mo:252
+#: ../Util/Flags.mo:250
 msgid "Dump the found replacements for protected parameters."
 msgstr "Skriver ut funna ersättningar för skyddade parametrar."
 
-#: ../Util/Flags.mo:254
+#: ../Util/Flags.mo:252
 msgid ""
 "Dump the found replacements for evaluate annotations (evaluate=true) "
 "parameters."
@@ -2182,15 +2178,15 @@ msgstr ""
 "Skriver ut funna ersättningar för evalueringsannotationer (evaluate=true) "
 "parametrar."
 
-#: ../Util/Flags.mo:256
+#: ../Util/Flags.mo:254
 msgid "Dump the found alias variables."
 msgstr "Skriver ut funna aliasvariabler."
 
-#: ../Util/Flags.mo:258
+#: ../Util/Flags.mo:256
 msgid "Dumps tearing information."
 msgstr "Skriver ut information från tearing."
 
-#: ../Util/Flags.mo:260
+#: ../Util/Flags.mo:258
 msgid ""
 "Dumps information about symbolic jacobians. Can be used only with "
 "postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."
@@ -2198,7 +2194,7 @@ msgstr ""
 "Skriver ut information om symboliska jacobianer. Kan endast användas med "
 "postOptModules: generateSymbolicJacobian, generateSymbolicLinerization."
 
-#: ../Util/Flags.mo:262
+#: ../Util/Flags.mo:260
 msgid ""
 "Dumps information in verbose mode about symbolic jacobians. Can be used only "
 "with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."
@@ -2207,63 +2203,63 @@ msgstr ""
 "användas med postOptModules: generateSymbolicJacobian, "
 "generateSymbolLinearization."
 
-#: ../Util/Flags.mo:264
+#: ../Util/Flags.mo:262
 msgid "Dump for debug purpose of symbolic jacobians. (deactivated now)."
 msgstr "Slår på debugutskrift för symboliska jacobianer (inaktiverad)."
 
-#: ../Util/Flags.mo:266
+#: ../Util/Flags.mo:264
 msgid "Prints warnings regarding symoblic jacbians."
 msgstr "Skriver ut varnings angående symboliska jacobianer."
 
-#: ../Util/Flags.mo:268
+#: ../Util/Flags.mo:266
 msgid "Dumps sparse pattern with coloring used for simulation."
 msgstr "Skriver ut glest mönster med färgning som används för simulering."
 
-#: ../Util/Flags.mo:270
+#: ../Util/Flags.mo:268
 msgid "Dumps in verbose mode sparse pattern with coloring used for simulation."
 msgstr ""
 "Skriver utförligt ut glest mönster med färgning som används för simulering."
 
-#: ../Util/Flags.mo:272
+#: ../Util/Flags.mo:270
 msgid "Dumps information from index reduction."
 msgstr "Skriver ut information från indexreduktion."
 
-#: ../Util/Flags.mo:274
+#: ../Util/Flags.mo:272
 msgid "Dumps information from dummy state selection heuristic."
 msgstr "Skriver ut information från heuristiken dummy state selection."
 
-#: ../Util/Flags.mo:276
+#: ../Util/Flags.mo:274
 msgid "Dumps the equation system at the beginning of the back end."
 msgstr "Skriver ut ekvationssystemet vid början av bakändan."
 
-#: ../Util/Flags.mo:278
+#: ../Util/Flags.mo:276
 msgid "Dumps the equation system after index reduction and optimization."
 msgstr "Skriver ut ekvationssystemet efter indexreduktion och optimering."
 
-#: ../Util/Flags.mo:280
+#: ../Util/Flags.mo:278
 msgid "Dumps information from the optimization modules."
 msgstr "Skriver ut information från optimeringsmodulerna."
 
-#: ../Util/Flags.mo:282
+#: ../Util/Flags.mo:280
 msgid ""
 "Measures the time it takes to hash all simcode variables before code "
 "generation."
 msgstr ""
 "Mäter tiden det tar att hasha alla simcode-variabler före kodgenerering."
 
-#: ../Util/Flags.mo:284
+#: ../Util/Flags.mo:282
 msgid "Enables dumping of the parameters in the order they are calculated."
 msgstr "Slår på utskrift av parametrar i den ordning de beräknas."
 
-#: ../Util/Flags.mo:286
+#: ../Util/Flags.mo:284
 msgid "Dumps the results of the preOptModule encapsulateWhenConditions."
 msgstr "Skriver ut resultatet från preOptModule encapsulateWhenConditions."
 
-#: ../Util/Flags.mo:288
+#: ../Util/Flags.mo:286
 msgid "Perform O(n) relaxation."
 msgstr "Utför O(n) relaxation."
 
-#: ../Util/Flags.mo:290
+#: ../Util/Flags.mo:288
 msgid ""
 "Enables short output of the simulate() command. Useful for tools like "
 "OMNotebook."
@@ -2271,28 +2267,28 @@ msgstr ""
 "Slår på förkortad utskrift från simulate()-kommandot. Användbart för verktyg "
 "som OMNotebook."
 
-#: ../Util/Flags.mo:292
+#: ../Util/Flags.mo:290
 msgid "Count operations."
 msgstr "Räkna operationer."
 
-#: ../Util/Flags.mo:294
+#: ../Util/Flags.mo:292
 msgid "Prints out connection graph information."
 msgstr "Skriver ut information från kopplingsgrafen."
 
-#: ../Util/Flags.mo:296
+#: ../Util/Flags.mo:294
 msgid "Prints information about modification updates."
 msgstr "Skriver ut information om modifieringsuppdateringar."
 
-#: ../Util/Flags.mo:298
+#: ../Util/Flags.mo:296
 msgid "Enables extra debug output from the static elaboration."
 msgstr "Slår på extra debugutskrift från den statiska utvecklingen."
 
-#: ../Util/Flags.mo:300
+#: ../Util/Flags.mo:298
 msgid "Enables output of template performance data for rendering text to file."
 msgstr ""
 "Slår på utskrift av prestandadata för rendering av template-text till fil."
 
-#: ../Util/Flags.mo:302
+#: ../Util/Flags.mo:300
 msgid ""
 "Enables checks for expression simplification and prints a notification "
 "whenever an undesirable transformation has been performed."
@@ -2300,15 +2296,15 @@ msgstr ""
 "Slår på kontroller för uttrycksförenkling och skriver ut en notis då "
 "oönskade omvandlingar har utförts."
 
-#: ../Util/Flags.mo:304
+#: ../Util/Flags.mo:302
 msgid "Enables experimental SCode instantiation phase."
 msgstr "Slår på experimentell SCode instansieringsfas."
 
-#: ../Util/Flags.mo:306
+#: ../Util/Flags.mo:304
 msgid "Enables writing simulation results to buffer."
 msgstr "Skriv ut simuleringsresultat till buffer."
 
-#: ../Util/Flags.mo:308
+#: ../Util/Flags.mo:306
 msgid ""
 "Enables dumping of backend information about system (Number of equations "
 "before backend,...)."
@@ -2316,11 +2312,11 @@ msgstr ""
 "Skriver ut information bakändan har om systemet (antal ekvationer före "
 "bakända, ...)."
 
-#: ../Util/Flags.mo:310
+#: ../Util/Flags.mo:308
 msgid "Generate code with debugging symbols."
 msgstr "Genererar kod med debugsymboler."
 
-#: ../Util/Flags.mo:312 ../Util/Flags.mo:314
+#: ../Util/Flags.mo:310 ../Util/Flags.mo:312
 msgid ""
 "Enables dumping of selected states. Works only in combination with "
 "backenddaeinfo."
@@ -2328,44 +2324,44 @@ msgstr ""
 "Skriv ut valda tillståndsvariabler. Fungerar endast tillsammans med "
 "backenddaeinfo."
 
-#: ../Util/Flags.mo:316
+#: ../Util/Flags.mo:314
 msgid "Enables dumping of the equations in the order they are calculated."
 msgstr "Skriv ut ekvationer i den ordning de beräknas."
 
-#: ../Util/Flags.mo:318
+#: ../Util/Flags.mo:316
 msgid "Enables using of symbolic matrices for initialization (ipopt only)."
 msgstr ""
 "Slår på användandet av symboliska matriser för initiering (endast ipopt)."
 
-#: ../Util/Flags.mo:320
+#: ../Util/Flags.mo:318
 msgid ""
 "Enables dumping of the optimization information when optimizing the initial "
 "system."
 msgstr "Slår på utskrift av optimeringsinformation för initialsystem."
 
-#: ../Util/Flags.mo:322
+#: ../Util/Flags.mo:320
 msgid ""
 "Enables dumping of the optimization information when optimizing calls to "
 "semiLinear."
 msgstr "Slår på utskrift av optimeringsinformation för semiLinear-anrop."
 
-#: ../Util/Flags.mo:324
+#: ../Util/Flags.mo:322
 msgid "Enables dumping of status when calling modelEquationsUC."
 msgstr "Slår på statusutskrift när modelEquationsUC anropas."
 
-#: ../Util/Flags.mo:326
+#: ../Util/Flags.mo:324
 msgid "Enables dumping of the DAE."
 msgstr "Slår på utskrift av DAEn."
 
-#: ../Util/Flags.mo:328
+#: ../Util/Flags.mo:326
 msgid "Enables dumping of the DAE startOrigin attribute of the variables."
 msgstr "Slår på utskrift av startOrigin-attributet för variabler i DAEn."
 
-#: ../Util/Flags.mo:331
+#: ../Util/Flags.mo:329
 msgid "Disables tearing of mixed system."
 msgstr "Stänger av tearing av mixade system."
 
-#: ../Util/Flags.mo:333
+#: ../Util/Flags.mo:331
 msgid ""
 "Enables tearing of linear systems, but for now they aren't handled efficent "
 "in the runtime."
@@ -2373,27 +2369,27 @@ msgstr ""
 "Slår på tearing för linjära system, men för tillfället hanteras de ej "
 "effektivt under körning."
 
-#: ../Util/Flags.mo:335
+#: ../Util/Flags.mo:333
 msgid "Dumps the initial equation system."
 msgstr "Förenklar tidsinitiala system."
 
-#: ../Util/Flags.mo:337
+#: ../Util/Flags.mo:335
 msgid "Enables experimental SCode instantiation shortcut phase."
 msgstr "Slår på experimentell SCode instansierings-fas."
 
-#: ../Util/Flags.mo:339
+#: ../Util/Flags.mo:337
 msgid "Shows the SCode result of +d=scodeInstShortcut."
 msgstr "Skriver ut SCode-resultatet av +d=scodeInstShortcut."
 
-#: ../Util/Flags.mo:341
+#: ../Util/Flags.mo:339
 msgid "Dump the found replacements for constants."
 msgstr "Skriver ut funna ersättningar för konstanter."
 
-#: ../Util/Flags.mo:343
+#: ../Util/Flags.mo:341
 msgid "Switch into pedantic debug-mode, to get much more feedback."
 msgstr "Slår på pedantiskt debugläge för mer feedback."
 
-#: ../Util/Flags.mo:345
+#: ../Util/Flags.mo:343
 msgid ""
 "Prints the result of the redeclare analysis (only works with "
 "+d=scodeInstShortcut)."
@@ -2401,7 +2397,7 @@ msgstr ""
 "Skriver ut resultatet av omdeklarerings-analysen (fungerar endast med "
 "+d=scodeInstShortcut)."
 
-#: ../Util/Flags.mo:347
+#: ../Util/Flags.mo:345
 msgid ""
 "Prints the replacements to be done on program to remove redeclares (only "
 "works with +d=scodeInstShortcut)."
@@ -2409,40 +2405,44 @@ msgstr ""
 "Skriver ut omdeklareringarna som behövs för att ta bort redeclares (fungerar "
 "endast med +d=scodeInstShortcut)."
 
-#: ../Util/Flags.mo:349
+#: ../Util/Flags.mo:347
 msgid ""
 "Display the element source information in the dumped DAE for easier "
 "debugging."
 msgstr ""
 "Visar källinformation för element vid utskrift av DAEn för enklare debugging."
 
-#: ../Util/Flags.mo:351
+#: ../Util/Flags.mo:349
 msgid "Generates analytical jacobian for non-linear algebraic loops."
 msgstr "Genererar analytisk jacobian för icke-linjära algebraiska loopar."
 
-#: ../Util/Flags.mo:353
+#: ../Util/Flags.mo:351
 msgid "Generates code for inline solver."
 msgstr "Genererar kod för inline-lösare."
 
-#: ../Util/Flags.mo:355
+#: ../Util/Flags.mo:353
 msgid "Dumps a graph of the program."
 msgstr "Skriver ut en graf av programmet."
 
-#: ../Util/Flags.mo:357
+#: ../Util/Flags.mo:355
 msgid "Enables parallel calculation based on task-graphs."
 msgstr "Slår på parallell beräkning baserad på uppgiftsgrafer."
 
-#: ../Util/Flags.mo:359
+#: ../Util/Flags.mo:357
 msgid "Shows additional information from the initialization process."
 msgstr "Visar extra information från initieringen."
 
-#: ../Util/Flags.mo:361
+#: ../Util/Flags.mo:359
 msgid "Controls if function inlining should be performed."
 msgstr "Kontrollerar om inlining av funktioner ska utföras."
 
-#: ../Util/Flags.mo:363
+#: ../Util/Flags.mo:361
 msgid "Dumps graphml files with the strongly connected components."
 msgstr "Dumpar graphml-filer med de starkt kopplade komponenterna."
+
+#: ../Util/Flags.mo:363
+msgid "Dumps verbose tearing information."
+msgstr "Skriver ut utförlig information från tearing."
 
 #: ../Util/Flags.mo:473
 msgid "Sets debug flags. Use +help=debug to see available flags."
@@ -2990,12 +2990,12 @@ msgstr "Simuleringsprogram tar följande flaggor:\n"
 #: ../Util/Flags.mo:1688
 msgid ""
 "The debug flag takes a comma-separated list of flags which are used by the\n"
-"compiler for debugging. Flags prefixed with \"-\" or \"no\" will be "
-"disabled.\n"
+"compiler for debugging or experimental purposes.\n"
+"Flags prefixed with \"-\" or \"no\" will be disabled.\n"
 msgstr ""
-"Debug-flaggan tar en komma-separerad lista av flaggor som används av\n"
-"kompilatorn för debuggning. Flaggor med \"-\" eller \"no\" som prefix slås "
-"av.\n"
+"debug-flaggan tar en komma-separerad lista av flaggor som används av\n"
+"kompilatorn för debuggning och experimentella funktioner.\n"
+"Flaggor med \"-\" eller \"no\" som prefix slås av.\n"
 
 #: ../Util/Flags.mo:1689
 msgid ""
@@ -3187,11 +3187,11 @@ msgstr ""
 msgid "Valid options:"
 msgstr "Giltiga alternativ:"
 
-#: ../Main/Main.mo:605
+#: ../Main/Main.mo:596
 msgid "File does not exist: "
 msgstr "Filen finns inte: "
 
-#: ../Main/Main.mo:1127
+#: ../Main/Main.mo:1117
 msgid "You are trying to run OpenModelica as root.\n"
 msgstr "Du försöker köra OpenModelica som root.\n"
 
@@ -3213,69 +3213,69 @@ msgstr "Kunde inte tolka modelDescription.xml."
 msgid "Could not create the DLL loading mechanism(C-API)."
 msgstr "Kunda inte skapa laddningsmekanismen för DLLer (C-API)."
 
-#: ../runtime/SimulationResults.c:80
+#: ../runtime/SimulationResults.c:85
 #, c-format
 msgid "Unknown result-file suffix of file '%s'"
 msgstr "Okänd resultatfil med ändelse '%s'"
 
-#: ../runtime/SimulationResults.c:87 ../runtime/SimulationResults.c:95
-#: ../runtime/SimulationResults.c:103
+#: ../runtime/SimulationResults.c:92 ../runtime/SimulationResults.c:100
+#: ../runtime/SimulationResults.c:108
 #, c-format
 msgid "Failed to open simulation result %s: %s"
 msgstr "Misslyckades öppna simuleringsresultat %s: %s"
 
-#: ../runtime/SimulationResults.c:109
+#: ../runtime/SimulationResults.c:114
 #, c-format
 msgid "Failed to open simulation result %s"
 msgstr "Misslyckades öppna simuleringsresultat %s"
 
-#: ../runtime/SimulationResults.c:135 ../runtime/SimulationResults.c:163
+#: ../runtime/SimulationResults.c:140 ../runtime/SimulationResults.c:168
 #, c-format
 msgid "%s not found in %s\n"
 msgstr "%s hittades inte i %s\n"
 
-#: ../runtime/SimulationResults.c:147
+#: ../runtime/SimulationResults.c:152
 #, c-format
 msgid "%s not defined at time %s (startTime=%s, stopTime=%s)."
 msgstr "%s är inte definierad vid tidpunkt %s (start=%s, stopp=%s)."
 
-#: ../runtime/SimulationResults.c:178
+#: ../runtime/SimulationResults.c:183
 #, c-format
 msgid "%s not defined at time %s\n"
 msgstr "%s är ej definierad vid tidpunkt %s\n"
 
-#: ../runtime/SimulationResults.c:190
+#: ../runtime/SimulationResults.c:195
 #, c-format
 msgid "val() not implemented for plot format: %s\n"
 msgstr "val() stödjer ej data-format: %s\n"
 
-#: ../runtime/SimulationResults.c:209 ../runtime/SimulationResults.c:215
+#: ../runtime/SimulationResults.c:214 ../runtime/SimulationResults.c:220
 #, c-format
 msgid "Failed to read readSimulationResultSize from file: %s\n"
 msgstr "Misslyckades läsa storlek av simuleringsresultat från fil: %s\n"
 
-#: ../runtime/SimulationResults.c:220
+#: ../runtime/SimulationResults.c:225
 #, c-format
 msgid "readSimulationResultSize() not implemented for plot format: %s\n"
 msgstr "readSimulationResultSize() stödjer ej dataformat: %s\n"
 
-#: ../runtime/SimulationResults.c:259
+#: ../runtime/SimulationResults.c:264
 #, c-format
 msgid "readSimulationResultSize() not implemented for plot format: %s"
 msgstr "readSimulationResultSize() stödjer ej dataformat: %s"
 
-#: ../runtime/SimulationResults.c:282
+#: ../runtime/SimulationResults.c:287
 msgid "readDataset(...): Expected and actual dimension sizes do not match."
 msgstr ""
 "readDataset(...): Förväntade och faktiska dimensionsstorlekar stämmer ej "
 "överens."
 
-#: ../runtime/SimulationResults.c:292 ../runtime/SimulationResults.c:318
+#: ../runtime/SimulationResults.c:297 ../runtime/SimulationResults.c:323
 #, c-format
 msgid "Could not read variable %s in file %s."
 msgstr "Kunde inte läsa variabel %s i fil %s."
 
-#: ../runtime/SimulationResults.c:330
+#: ../runtime/SimulationResults.c:335
 #, c-format
 msgid "readDataSet() not implemented for plot format: %s\n"
 msgstr "readDataSet() stödjer ej data-format: %s\n"
@@ -3309,52 +3309,52 @@ msgid "Error appending to file %s."
 msgstr "Fel vid tillägg till fil %s."
 
 #: ../runtime/systemimpl.c:562 ../runtime/systemimpl.c:568
-#: ../runtime/systemimpl.c:657
+#: ../runtime/systemimpl.c:678
 #, c-format
 msgid "system(%s) failed: %s"
 msgstr "system(%s) misslyckades: %s"
 
-#: ../runtime/systemimpl.c:712
+#: ../runtime/systemimpl.c:733
 #, c-format
 msgid "Error opening file %s."
 msgstr "Fel vid öppning av fil %s."
 
-#: ../runtime/systemimpl.c:861
+#: ../runtime/systemimpl.c:882
 #, c-format
 msgid "OMC unable to load `%s': %s.\n"
 msgstr "OMC kunde inte ladda `%s': %s.\n"
 
-#: ../runtime/systemimpl.c:1282
+#: ../runtime/systemimpl.c:1303
 #, c-format
 msgid "Modelica URI lacks classname: %s"
 msgstr "Modelica URI saknar klassnamn: %s"
 
-#: ../runtime/systemimpl.c:1291
+#: ../runtime/systemimpl.c:1312
 #, c-format
 msgid "File URI has no path: %s"
 msgstr "File URI saknar sökväg: %s"
 
-#: ../runtime/systemimpl.c:1295
+#: ../runtime/systemimpl.c:1316
 #, c-format
 msgid "File URI using hostnames is not supported: %s"
 msgstr "File URI med värdnamn stöds inte: %s"
 
-#: ../runtime/systemimpl.c:1300
+#: ../runtime/systemimpl.c:1321
 #, c-format
 msgid "Unknown uri: %s"
 msgstr "Okänd uri: %s"
 
-#: ../runtime/systemimpl.c:1727
+#: ../runtime/systemimpl.c:1748
 #, c-format
 msgid "freopen(%s,%s,%s) failed: %s"
 msgstr "freopen(%s,%s,%s) misslyckades: %s"
 
-#: ../runtime/systemimpl.c:1781 ../runtime/systemimpl.c:1792
+#: ../runtime/systemimpl.c:1802 ../runtime/systemimpl.c:1813
 #, c-format
 msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
 msgstr "iconv(\"%s\",to=\"%s\",from=\"%s\") misslyckades: %s"
 
-#: ../runtime/systemimpl.c:1797
+#: ../runtime/systemimpl.c:1818
 #, c-format
 msgid ""
 "iconv(to=%s) failed because the character set output null bytes in the "
@@ -3363,12 +3363,12 @@ msgstr ""
 "iconv(to=%s) misslyckades eftersom teckenuppsättningen använde en noll-byte "
 "mitt i strängen."
 
-#: ../runtime/systemimpl.c:1884
+#: ../runtime/systemimpl.c:1905
 #, c-format
 msgid "Warning: Failed to set locale: '%s'\n"
 msgstr "Varning: Misslyckades sätta nationella inställningar: '%s'\n"
 
-#: ../runtime/systemimpl.c:1906
+#: ../runtime/systemimpl.c:1927
 #, c-format
 msgid ""
 "Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and "
@@ -3379,28 +3379,35 @@ msgstr ""
 "inställningarna och C.UTF-8. OpenModelica antar att all in- och utdata är "
 "kodad som UTF-8 så du kan få smärre problem.\n"
 
-#: ../runtime/systemimpl.c:2178 ../runtime/systemimpl.c:2188
+#: ../runtime/systemimpl.c:2199 ../runtime/systemimpl.c:2209
 #, c-format
 msgid "Could not access file %s: %s."
 msgstr "Kunde inte få åtkomst till filen %s: %s."
 
-#: ../runtime/System_omc.c:720
-msgid "Fork is not available on Windows"
-msgstr "Fork är inte tillgänglig på Windows"
-
-#: ../runtime/System_omc.c:731
-#, c-format
-msgid "fork() failed: %s"
-msgstr "fork() misslyckades: %s"
-
-#: ../runtime/System_omc.c:749
+#: ../runtime/System_omc.c:725
 #, c-format
 msgid "Failed to wait for forked process to return: %s"
 msgstr "Misslyckades med att vänta på retur från den forkade processen: %s"
 
-#: ../runtime/System_rml.c:2207
+#: ../runtime/System_omc.c:747
+msgid "Fork is not available on Windows"
+msgstr "Fork är inte tillgänglig på Windows"
+
+#: ../runtime/System_omc.c:750
+msgid "Fork is not safe to use on OSX"
+msgstr "Fork är inte säkert att använda på OSX"
+
+#: ../runtime/System_omc.c:773
+#, c-format
+msgid "fork() failed: %s"
+msgstr "fork() misslyckades: %s"
+
+#: ../runtime/System_rml.c:2208
 msgid "Fork is not available when OpenModelica is compiled using RML"
 msgstr "Fork är inte tillgänglig när OpenModelica kompilerats med RML"
+
+#~ msgid "Does a very simple inlining of der(name) using explicit euler."
+#~ msgstr "Utför en mycket enkel inlining av der(name)."
 
 #~ msgid "Displays the help text."
 #~ msgstr "Visar hjälptexten."
