@@ -1469,15 +1469,12 @@ algorithm
       then
         ();
 
-    // The corba session name needs to be sent to the C runtime, and if the name
-    // is mdt it also enables the MetaModelica grammar.
+    // The corba session name needs to be sent to the C runtime.
     case (_, _)
       equation
         true = configFlagsIsEqualIndex(inFlag, CORBA_SESSION);
         STRING_FLAG(data = corba_name) = inValue;
         Corba.setSessionName(corba_name);
-        value = stringEqual(corba_name, "mdt");
-        Debug.bcall2(value, setConfigEnum, GRAMMAR, METAMODELICA);
       then
         ();
 
