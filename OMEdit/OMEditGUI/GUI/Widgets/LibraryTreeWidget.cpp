@@ -89,10 +89,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     else
     {
       text = value.toString();
-      const QChar nl = QLatin1Char('\n');
-      for (int i = 0; i < text.count(); ++i)
-        if (text.at(i) == nl)
-          text[i] = QChar::Nbsp;
+      text.replace("\n", "<br />");
     }
     displayRect = textRectangle(painter, option.rect, opt.font, text);
   }
@@ -150,9 +147,26 @@ void ItemDelegate::drawHover(QPainter *painter, const QStyleOptionViewItem &opti
 //! Reimplementation of sizeHint function. Defines the minimum height.
 QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
+  int count = 0;
+  /* Only calculate the height of the item based on the text for MessagesTreeWidget items. Fix for multi line messages. Ticket #2269. */
+  if (parent() && qobject_cast<MessagesTreeWidget*>(parent()))
+  {
+    QVariant value = index.data(Qt::DisplayRole);
+    QString text;
+    if (value.isValid())
+    {
+      if (value.type() == QVariant::Double)
+        text = QLocale().toString(value.toDouble());
+      else
+      {
+        text = value.toString();
+      }
+    }
+    count = text.count("\n");
+  }
   QSize size = QItemDelegate::sizeHint(option, index);
   //Set very small height. A minimum apperantly stops at reasonable size.
-  size.rheight() = 22; //pixels
+  size.rheight() = qMax(option.fontMetrics.height(), 22) * qMax(count, 1); //pixels
   return size;
 }
 
