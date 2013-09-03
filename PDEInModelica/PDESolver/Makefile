@@ -12,5 +12,8 @@ cmakeM:
 
 cmakeE:
 	mkdir -p ./_Eclipse
-	cd _Eclipse && cmake ../ -G "Eclipse CDT4 - Unix Makefiless"
-	 
+	cd _Eclipse && cmake ../ -DCMAKE_BUILD_TYPE=Debug -G "Eclipse CDT4 - Unix Makefiles"
+
+cmakeCB:
+	mkdir -p ./_CodeBlocks
+	cd _CodeBlocks && cmake ../ -G "CodeBlocks - Unix Makefiles"

@@ -23,6 +23,7 @@ struct MODEL_DATA {
     double* stateFieldsDerTime;//[iState*M + iNode];
     double* stateFieldsDerSpace;//[iState*M + iNode];
     double* algebraicFields;//[iAlgebraic*M + iNode];
+    double* algebraicFieldsDerSpace;//[iAlgebraic*M + iNode];
     double* parameterFields;//[iParameter*M + iNode];
     double* spaceField;//[iNode];  space independent variable (x)
     int*    isBc;//[iState*2 + (0 = left) or (1 = right)]; Is there a BC?

@@ -195,7 +195,7 @@ Flat model
 \begin_layout Paragraph
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "C:/Users/janeks/Documents/PDEInModelica/languageExtension/advection_flat.mo"
+filename "../languageExtension/advection_flat.mo"
 lstparams "breaklines=true,caption={Advection equation -- flat model},captionpos=b,frame=tb,label={advection_flat.mo}"
 
 \end_inset
@@ -224,6 +224,13 @@ String equation (1D)
 \begin_inset CommandInset citation
 LatexCommand cite
 key "string"
+
+\end_inset
+
+
+\begin_inset CommandInset label
+LatexCommand label
+name "String-equation-(1D)"
 
 \end_inset
 
@@ -274,9 +281,10 @@ initial conditions
 
 \begin_layout Standard
 \begin_inset Formula 
-\[
-u(x,0)=\sin\left(\frac{4\pi}{L}x\right)
-\]
+\begin{eqnarray*}
+u(x,0) & = & \sin\left(\frac{4\pi}{L}x\right)\\
+\dot{u}(x,0) & = & 0
+\end{eqnarray*}
 
 \end_inset
 
@@ -432,7 +440,7 @@ equation
 \begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
-\frac{\partial T}{\partial t}+c\left(\frac{\partial^{2}T}{\partial x^{2}}+\frac{\partial^{2}T}{\partial y^{2}}\right) & = & W
+\frac{\partial T}{\partial t}-c\left(\frac{\partial^{2}T}{\partial x^{2}}+\frac{\partial^{2}T}{\partial y^{2}}\right) & = & W
 \end{eqnarray*}
 
 \end_inset
@@ -485,6 +493,353 @@ fixed temperature (right)
 \[
 T(a,y,t)=0
 \]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+3D heat transfer with source and PID controller 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "KristiansSlides"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+new problems: 
+\end_layout
+
+\begin_layout Itemize
+system of ODE and PDE
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+in
+\family default
+ operator used to acces field value in a concrete point (PID controler equation
+ defining 
+\begin_inset Formula $T_{s}$
+\end_inset
+
+).
+\end_layout
+
+\begin_layout Itemize
+vector field
+\end_layout
+
+\begin_layout Itemize
+differential operators 
+\family typewriter
+grad
+\family default
+ and 
+\family typewriter
+diverg
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename img/heatPID.png
+	lyxscale 30
+	width 80text%
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Heat transfer with source and PID controller
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $l_{x}$
+\end_inset
+
+, 
+\begin_inset Formula $l_{y}$
+\end_inset
+
+, 
+\begin_inset Formula $l_{z}$
+\end_inset
+
+ ..
+ room dimensions (
+\begin_inset Formula $6m,\,4m,\,3.2m$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $T$
+\end_inset
+
+ ..
+ temperature (scalar field)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $W$
+\end_inset
+
+ ..
+ thermal flux (vector field)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $c$
+\end_inset
+
+ ..
+ specific heat capacity (
+\begin_inset Formula $1012\, J\cdot kg^{-1}\cdot K^{-1}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\varrho$
+\end_inset
+
+ ..
+ density of air (
+\begin_inset Formula $1.2041\, kg\cdot m^{-3}$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\lambda$
+\end_inset
+
+ ..
+ thermal conductivity (
+\begin_inset Formula $0.0257\, W\cdot m^{-1}K$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $T_{out}$
+\end_inset
+
+ ..
+ outside temperature (
+\begin_inset Formula $0\,\text{°C})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\kappa$
+\end_inset
+
+ ..
+ right wall heat transfer coefficient (
+\begin_inset Formula $0.2\, W\cdot m^{-2}\cdot K^{-1}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $T_{s}$
+\end_inset
+
+ ..
+ temperature of the sensor placed in middle of the right wall
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $P$
+\end_inset
+
+ ..
+ power of heating
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $k_{p},\, k_{i},\, k_{d}$
+\end_inset
+
+ ..
+ coefficients of the PID controller (
+\begin_inset Formula $100,\,200,\,100$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $T_{d}$
+\end_inset
+
+ ..
+ desired temperature (
+\begin_inset Formula $20\text{°C}$
+\end_inset
+
+)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $e$
+\end_inset
+
+ ..
+ difference between temperature of the sensor and desired temperature
+\end_layout
+
+\begin_layout Paragraph
+heat equation
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{1}{c\varrho}\nabla\cdot W & = & -\frac{\partial T}{\partial t}\\
+W & = & -\lambda\nabla T
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+boundary conditions
+\end_layout
+
+\begin_layout Standard
+left wall (
+\begin_inset Formula $x=0)$
+\end_inset
+
+ - heat flux given by heating power
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+W_{x}=\frac{P}{l_{y}l_{z}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+rare (
+\begin_inset Formula $y=0)$
+\end_inset
+
+ and front (
+\begin_inset Formula $y=l_{y}$
+\end_inset
+
+), resp.
+ bottom (
+\begin_inset Formula $y=0)$
+\end_inset
+
+ and top (
+\begin_inset Formula $z=l_{z})$
+\end_inset
+
+ insulated walls
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+W_{y}=0,\;\text{resp.}\; W=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+right wall (
+\begin_inset Formula $x=l_{x})$
+\end_inset
+
+ - not fully insulated
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+W_{x}=\kappa(T-T_{out})
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+PID controler
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+T_{s} & = & T(l_{x},\frac{l_{y}}{2},\frac{l_{z}}{2})\\
+e & = & T_{d}-T_{s}\\
+P & = & k_{p}e+k_{i}\intop_{0}^{t}e(\tau)d\tau+k_{d}\frac{d}{dt}e
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph
+Modelica code:
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "../languageExtension/heatPID.mo"
+lstparams "breaklines=true,caption={heat equation with PID controller},captionpos=b,frame=tb,label={heatPID.mo}"
 
 \end_inset
 

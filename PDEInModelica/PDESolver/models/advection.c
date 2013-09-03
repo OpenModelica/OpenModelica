@@ -21,16 +21,15 @@ int setupArrayDimensions(struct MODEL_DATA* mData) {
 
 int setupModelParameters(struct MODEL_DATA* mData)
 {
-    int i;
     /*interior:*/
     mData->domainRange[0].v0 = 0; 
-    mData->domainRange[0].v1 = 5;
+    mData->domainRange[0].v1 = 1;
     /*left*/
     mData->domainRange[1].v0 = 0;
     mData->domainRange[1].v1 = 0;
     /*right*/
-    mData->domainRange[2].v0 = 5;
-    mData->domainRange[2].v1 = 5;
+    mData->domainRange[2].v0 = 1;
+    mData->domainRange[2].v1 = 1;
     /*advection.L*/mData->parameters[0] = 1;
     /*advection.c*/mData->parameters[1] = 1;
     /*DomainLineSegment1D.l*/mData->parameters[2] = 1;
@@ -43,11 +42,10 @@ int setupModelParameters(struct MODEL_DATA* mData)
 int setupInitialState(struct MODEL_DATA* mData){
     int i;
     for (i=0; i<mData->M; i++){
-        //TODO: should be done generaly, with some kind of stateInitial(x) function called from static code.(
+        //TODO: should be done generally, with some kind of stateInitial(x) function called from static code.(
         mData->stateFields[mData->M*0 + i] = 1;
     }
     return 0;
-
 }
 
 double shapeFunction(struct MODEL_DATA *mData, double v)
@@ -56,21 +54,23 @@ double shapeFunction(struct MODEL_DATA *mData, double v)
 }
 
 
-int functionPDE(struct MODEL_DATA *mData)
+int functionPDE(struct MODEL_DATA *mData, int dScheme)
 {
+    int M = mData->M;
     int i;
-    for (i = 0; i<mData->M; i++)
-        /*u_t*/mData->stateFieldsDerTime[mData->M*0 + i] = - /*c*/mData->parameters[1] * /*u_x*/mData->stateFieldsDerSpace[mData->M*0 + i];
+    for (i = 0; i<M; i++)
+        /*u_t*/mData->stateFieldsDerTime[M*0 + i] = - /*c*/mData->parameters[1] * /*u_x*/mData->stateFieldsDerSpace[mData->M*0 + i];
     return 0;
 }
 
 int functionBC(struct MODEL_DATA *mData)
 {
     //should be writen generaly -- independent on particular grid
-    mData->stateFields[mData->M*0 + 0] = cos(2*pi*mData->time);
+    int M = mData->M;
+    mData->stateFields[M*0 + 0] = cos(2*pi*mData->time);
     return 0;
 }
 
-double eqSystemMaxEigenVal(struct MODEL_DATA* mData){
-    return /*c*/mData->parameters[1];
-}
+/*double eqSystemMaxEigenVal(struct MODEL_DATA* mData){
+    return cmData->parameters[1];
+}*/

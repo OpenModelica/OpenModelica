@@ -7,9 +7,9 @@ package PDEDomains
       input Real v;
       output Real x = l*v + a;
     end shapeFunc;
-    Domain1DInterior interior(shape = shapeFunc, range = {0,1});
-    Domain1DBoundary left(shape = shapeFunc, range = {0,0});
-    Domain1DBoundary right(shape = shapeFunc, range = {1,1});
+    Region1D interior(shape = shapeFunc, range = {0,1});
+    Region0D left(shape = shapeFunc, range = 0);
+    Region0D right(shape = shapeFunc, range = 1);
   end DomainLineSegment1D;
 
   record DomainRectangle2D
@@ -21,11 +21,11 @@ package PDEDomains
       input Real v1, v2;
       output Real x = ax + Lx * v1, y = ay + Ly * v2;
     end shapeFunc;
-    Domain2DInterior interior(shape = shapeFunc, range = {{-1,1},{-1,1}});
-    Domain2DBoundary right(shape = shapeFunc, range = {{1,1},{-1,1}});
-    Domain2DBoundary bottom(shape = shapeFunc, range = {{-1,1},{-1,-1}});
-    Domain2DBoundary left(shape = shapeFunc, range = {{-1,-1},{-1,1}});
-    Domain2DBoundary top(shape = shapeFunc, range = {{-1,1},{1,1}});
+    Region2D interior(shape = shapeFunc, range = {{0,1},{0,1}});
+    Region1D right(shape = shapeFunc, range = {1,{0,1}});
+    Region1D bottom(shape = shapeFunc, range = {{0,1},0});
+    Region1D left(shape = shapeFunc, range = {0,{0,1}});
+    Region1D top(shape = shapeFunc, range = {{0,1},1});
   end DomainRectangle2D;
 
   record DomainCircular2D
@@ -39,8 +39,8 @@ package PDEDomains
       x:=cx + radius * r * cos(2 * C.pi * v);
       y:=cy + radius * r * sin(2 * C.pi * v);
     end shapeFunc;
-    Domain2DInterior interior(shape = shapeFunc, range = {{O,1},{O,1}});
-    Domain2DBoundary boundary(shape = shapeFunc, range = {{1,1},{0,1}});
+    Region2D interior(shape = shapeFunc, range = {{O,1},{O,1}});
+    Region1D boundary(shape = shapeFunc, range = {1,{0,1}});
   end DomainCircular2D;
 
   record DomainBlock3D
@@ -50,13 +50,13 @@ package PDEDomains
       input Real vx, vy, vz;
       output Real x = ax + Lx * vx, y = ay + Ly * vy, z = az + Lz * vz;
     end shapeFunc;
-    Domain3DInterior interior(shape = shapeFunc, range = {{-1,1},{-1,1},{-1,1}});
-    Domain3DBoundary right(shape = shapeFunc, range = {{1,1},{-1,1},{-1,1}});
-    Domain3DBoundary bottom(shape = shapeFunc, range = {{-1,1},{-1,y},{1,1}});
-    Domain3DBoundary left(shape = shapeFunc, range = {{-1,-1},{-1,1},{-1,1}});
-    Domain3DBoundary top(shape = shapeFunc, range = {{-1,1},{-1,1},{1,1}});
-    Domain3DBoundary front(shape = shapeFunc, range = {{-1,1},{-1,-1},{-1,1}});
-    Domain3DBoundary rear(shape = shapeFunc, range = {{-1,1},{1,1},{-1,1}});
+    Region3D interior(shape = shapeFunc, range = {{0,1},{0,1},{0,1}});
+    Region2D right(shape = shapeFunc, range = {1,{0,1},{0,1}});
+    Region2D bottom(shape = shapeFunc, range = {{0,1},{0,1},1});
+    Region2D left(shape = shapeFunc, range = {0,{0,1},{0,1}});
+    Region2D top(shape = shapeFunc, range = {{0,1},{0,1},1});
+    Region2D front(shape = shapeFunc, range = {{0,1},0,{0,1}});
+    Region2D rear(shape = shapeFunc, range = {{0,1},1,{0,1}});
   end DomainBlock3D;
   //and others ...
 end PDEDomains;

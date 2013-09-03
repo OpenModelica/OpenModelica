@@ -504,8 +504,12 @@ record DomainCircular2D
 
 \begin_layout Plain Layout
 
-	Domain2DInterior interior(shape = shapeFunc, range = {{O,1},{O,1}});  
-   	Domain2DBoundary boundary(shape = shapeFunc, range = {{1,1},{0,1}});
+	Region2D interior(shape = shapeFunc, range = {{O,1},{O,1}});     	
+\end_layout
+
+\begin_layout Plain Layout
+
+	Region1D boundary(shape = shapeFunc, range = {{1,1},{0,1}});
 \end_layout
 
 \begin_layout Plain Layout
@@ -711,6 +715,147 @@ But what about IC
 \end_inset
 
 
+\end_layout
+
+\begin_layout Section
+List of new language elements and concepts
+\end_layout
+
+\begin_layout Description
+domain
+\begin_inset space ~
+\end_inset
+
+records 
+\family typewriter
+DomainLineSegment1D
+\family default
+, 
+\family typewriter
+DomainRectangle2D
+\family default
+, 
+\family typewriter
+DomainCircular2D
+\family default
+, 
+\family typewriter
+DomainBlock3D
+\family default
+ ...
+\end_layout
+
+\begin_layout Description
+ranges to define parameter ranges for a shape-function (e.g.
+ 
+\family typewriter
+range={{0,1},0})
+\end_layout
+
+\begin_layout Description
+region
+\begin_inset space ~
+\end_inset
+
+types 
+\family typewriter
+Region0D
+\family default
+, 
+\family typewriter
+Region1D
+\family default
+, 
+\family typewriter
+Region2D
+\family default
+, 
+\family typewriter
+Region3D
+\family default
+ used in domain records 
+\end_layout
+
+\begin_layout Description
+normal
+\begin_inset space ~
+\end_inset
+
+vector to N-1 dimensional region in N dimensional domain.
+ (e.g.
+ 
+\family typewriter
+room.left.n
+\family default
+)
+\end_layout
+
+\begin_layout Description
+field
+\begin_inset space ~
+\end_inset
+
+type
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+pder()
+\family default
+
+\begin_inset space ~
+\end_inset
+
+operator for partial and directional derivative
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+in
+\family default
+
+\begin_inset space ~
+\end_inset
+
+operator to define where PDE, boundary conditions and other equations hold
+\end_layout
+
+\begin_layout Description
++
+\begin_inset space ~
+\end_inset
+
+operator region addition
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+grad,
+\begin_inset space ~
+\end_inset
+
+div,
+\begin_inset space ~
+\end_inset
+
+rot
+\family default
+ differential operators
+\end_layout
+
+\begin_layout Description
+operations
+\begin_inset space ~
+\end_inset
+
+on
+\begin_inset space ~
+\end_inset
+
+fields all standard operations and functions, also on vector fields
 \end_layout
 
 \end_body

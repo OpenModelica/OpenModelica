@@ -350,10 +350,10 @@ space difference from Crank-Nicolson
 
 \begin_layout Standard
 \begin_inset Formula 
-\begin{eqnarray}
-D_{x}(u_{m-1}^{n},u_{m}^{n},u_{m+1}^{n},u_{m-1}^{n+1},u_{m}^{n+1},u_{m+1}^{n+1}) & = & \frac{1}{2}\left(\frac{u_{m+1}^{n+1}-u_{m-1}^{n+1}}{2\Delta x}+\frac{u_{m+1}^{n}-u_{m-1}^{n}}{2\Delta x}\right)\label{eq:space_implicit_difference}\\
-D_{xx}(u_{m-1}^{n},u_{m}^{n},u_{m+1}^{n},u_{m-1}^{n+1},u_{m}^{n+1},u_{m+1}^{n+1}) & = & \frac{1}{2}\left(\frac{u_{m+1}^{n+1}-2u_{m}^{n+1}+u_{m-1}^{n+1}}{2(\Delta x)^{2}}+\frac{u_{m+1}^{n}-2u_{m}^{n}+u_{m-1}^{n}}{2(\Delta x)^{2}}\right)
-\end{eqnarray}
+\begin{multline}
+D_{x}(u_{m-1}^{n},u_{m}^{n},u_{m+1}^{n},u_{m-1}^{n+1},u_{m}^{n+1},u_{m+1}^{n+1})=\frac{1}{2}\left(\frac{u_{m+1}^{n+1}-u_{m-1}^{n+1}}{2\Delta x}+\frac{u_{m+1}^{n}-u_{m-1}^{n}}{2\Delta x}\right)\label{eq:space_implicit_difference}\\
+D_{xx}(u_{m-1}^{n},u_{m}^{n},u_{m+1}^{n},u_{m-1}^{n+1},u_{m}^{n+1},u_{m+1}^{n+1})=\frac{1}{2}\left(\frac{u_{m+1}^{n+1}-2u_{m}^{n+1}+u_{m-1}^{n+1}}{2(\Delta x)^{2}}+\frac{u_{m+1}^{n}-2u_{m}^{n}+u_{m-1}^{n}}{2(\Delta x)^{2}}\right)
+\end{multline}
 
 \end_inset
 

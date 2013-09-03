@@ -116,38 +116,203 @@ key "leveque2007finite"
 
 \end_layout
 
+\begin_layout Standard
+
+\lang british
+On the Role of Mathematical Abstractions for Scientific Computing
+\begin_inset CommandInset citation
+LatexCommand cite
+key "raey"
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Paragraph
 
 \lang british
-Questions:
+Questions & problems:
+\end_layout
+
+\begin_layout Subparagraph
+
+\lang british
+Modelica language extension
+\end_layout
+
+\begin_layout Itemize
+ How to set initial condition for field derivative in similar way as using
+ 
+\family typewriter
+start
+\family default
+ atribute (i.e.
+ not using equation in 
+\family typewriter
+initial
+\family default
+ section)? See 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "String-equation-(1D)"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+How to call divergence operator (standard 
+\family typewriter
+div
+\family default
+ is is already used for integer division)
 \end_layout
 
 \begin_layout Itemize
 
-\lang british
-Shall we support higher derivatives in solver?
+\series bold
+How to name space coordinates?
+\series default
+ Should it be fixed or defined within the domain deffinition?
 \end_layout
 
 \begin_layout Itemize
-
-\lang british
-What about multi step mothods (RK, P-K)?
+Should it be possible to override initial and boundary conditions given
+ in model with some different values from external configuration file?
 \end_layout
 
 \begin_layout Itemize
+How should the shape, geometrical structure, mesh structure, etc.
+ be described by an external file?
+\end_layout
 
-\lang british
-How to generate even (or arbitrary) meshes with nonlinea shape functions?
+\begin_layout Standard
+\begin_inset CommandInset line
+LatexCommand rule
+offset "0.5ex"
+width "45col%"
+height "1pt"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Itemize
+Domain description where some parameters are in range and others are fixed:
+ {{1,1}, {0.5,0.5}} or {{1,1}, 0.5}? 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+allow both
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to deal with vector fields? How to acces its elements -- using an index
+ or scalar product with standard base vectors? 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+both
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to distinguish the main domain (now called 
+\family typewriter
+DomainLineSegment1D
+\family default
+, 
+\family typewriter
+DomainRectangle2D
+\family default
+ ...) and its 
+\begin_inset Quotes eld
+\end_inset
+
+subsets
+\begin_inset Quotes erd
+\end_inset
+
+ where some equations hold (now called 
+\family typewriter
+Domain0D
+\family default
+, 
+\family typewriter
+Domain1D
+\family default
+ ...).
+ I think only one of them should be called domain.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+\begin_inset Quotes eld
+\end_inset
+
+subsets
+\begin_inset Quotes erd
+\end_inset
+
+ renaimed to regions -- 
+\family typewriter
+(Region0D, Region1D, Region 2D, Region3D)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Notation for normal vector to domain boundaries.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+e.g.
+ 
+\family typewriter
+omega.left.n
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+directional derivative
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\family typewriter
+der(u,v)
+\family default
+ (
+\begin_inset Formula $u$
+\end_inset
+
+ is scalar or vector field in 
+\begin_inset Formula $\mathrm{R}^{n}$
+\end_inset
+
+, 
+\begin_inset Formula $v$
+\end_inset
+
+ is vector in 
+\begin_inset Formula $\mathrm{R}^{n}$
+\end_inset
+
+)
+\end_layout
+
+\end_deeper
+\begin_layout Subparagraph
 
 \lang british
-How to generate mesh points just on the boundary? 1D -- simple -- just two
- points.
- 2D -- We can go through the boundary curve and detect crossings of grid
- lines.
- 3D -- who knows?!
+Generated code
 \end_layout
 
 \begin_layout Itemize
@@ -155,30 +320,20 @@ How to generate mesh points just on the boundary? 1D -- simple -- just two
 \lang british
 How to represent on which particular boundary an boundary condition hold
  in generated code (or even on which interior domain hold which PDE equation
- system, if we support various interiors)?
-\end_layout
-
-\begin_deeper
-\begin_layout Itemize
-
-\lang british
-some domain struct could hold both shapeFunction parameter ranges and pointer
- (or some index) to function with the corresponding equations.
-\end_layout
-
-\begin_layout Itemize
-
-\lang british
-boundary condition function knows on which elements (indexes) of variable
+ system, if we support various interiors)? -- Some domain struct could hold
+ both shapeFunction parameter ranges and pointer (or some index) to function
+ with the corresponding equations.
+ Or boundary condition function knows on which elements (indexes) of variable
  arrays should be applied.
- 
 \end_layout
 
-\end_deeper
 \begin_layout Itemize
 
+\series bold
 \lang british
 Should be generated functions independent on grid? It means either
+\series default
+
 \begin_inset Newline newline
 \end_inset
 
@@ -229,10 +384,91 @@ for (int i ...)
 \end_inset
 
 u_t[i] = ...
-\begin_inset Newline newline
-\end_inset
+\end_layout
 
+\begin_layout Subparagraph
 
+\lang british
+Numerics and solver
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\lang british
+Shall we support higher derivatives in solver?
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\lang british
+What about space derivatives? -- All state and algebraics have corresponding
+ array for its space derivative, not all of them are used.
+ -- Or all space derivatives of states and algebraics are stored as different
+ algebraic fields.
+ -- Or there is array for space derivatives that is utilised by both states
+ and algebraics that need it.
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+What about multi step mothods (RK, P-K)?
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to generate even (or arbitrary) meshes with nonlinea shape functions?
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to generate mesh points just on the boundary? 1D -- simple -- just two
+ points.
+ 2D -- We can go through the boundary curve and detect crossings of grid
+ lines.
+ 3D -- who knows?!
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to plugin an already existing solver?
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+How to determine causality of boundary conditions and other equations that
+ hold on less dimensional manifolds.
+\end_layout
+
+\begin_layout Itemize
+
+\lang british
+Build whole solver in some PDE framework, perhaps Overture (http://www.overturefr
+amework.org/)
+\end_layout
+
+\begin_layout Paragraph
+TODO:
+\end_layout
+
+\begin_layout Itemize
+Write a list of new concepts, key words etc in the language extension.
+ How are they going to be translated and handled by the solver?
+\end_layout
+
+\begin_layout Itemize
+Write a library for vector fields defining scalar and vector product, divergence
+, gradient, rotation...
+\end_layout
+
+\begin_layout Itemize
+Write model in coordinates different from cartesian
 \end_layout
 
 \end_body
