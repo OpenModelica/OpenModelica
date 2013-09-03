@@ -1971,35 +1971,20 @@ protected function removeCrefsFromSets
   input list<DAE.ComponentRef> inNonUsefulExpandable;
   output list<Set> outSets;
 algorithm
-  outSets := matchcontinue(inSets, inNonUsefulExpandable)
-    local
-      list<Set> rest, sets;
-      Set set;
-      list<DAE.ComponentRef> setCrefs;
-
-    case ({}, _) then {};
-
-    case (set::rest, _)
-      equation
-        setCrefs = getAllEquCrefs({set}, {});
-        {} = List.intersectionOnTrue(setCrefs, inNonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
-        sets = removeCrefsFromSets(rest, inNonUsefulExpandable);
-      then
-        set::sets;
-
-    case (set::rest, _)
-      equation
-        setCrefs = getAllEquCrefs({set}, {});
-        _::_ = List.intersectionOnTrue(setCrefs, inNonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
-        // b = allCrefsAreExpandable(setCrefs);
-        // print("AllExpandable: " +& boolString(b) +& "\n");
-        // print("removingSet:\n\t" +& stringDelimitList(List.map(setCrefs, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        sets = removeCrefsFromSets(rest, inNonUsefulExpandable);
-      then
-        sets;
-
-  end matchcontinue;
+  outSets := List.select1(inSets, removeCrefsFromSets2, inNonUsefulExpandable);
 end removeCrefsFromSets;
+
+protected function removeCrefsFromSets2
+  input Set inSet;
+  input list<DAE.ComponentRef> inNonUsefulExpandable;
+  output Boolean isInSet;
+protected
+  list<DAE.ComponentRef> setCrefs, lst;
+algorithm
+  setCrefs := getAllEquCrefs({inSet}, {});
+  lst := List.intersectionOnTrue(setCrefs, inNonUsefulExpandable, ComponentReference.crefEqualNoStringCompare);
+  isInSet := List.isEmpty(lst);
+end removeCrefsFromSets2;
 
 function mergeEquSetsAsCrefs
   input list<list<DAE.ComponentRef>> inSetsAsCrefs;
