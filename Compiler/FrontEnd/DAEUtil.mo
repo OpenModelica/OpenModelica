@@ -5424,55 +5424,55 @@ algorithm
   end matchcontinue;
 end getDAEDeclsFromValueblocks;
 
-public function transformDerInline
-"Simple euler inline of the equation system; only does explicit euler, and only der(cref)"
-  input DAE.DAElist dae;
-  output DAE.DAElist d;
-algorithm
-  d := matchcontinue (dae)
-    local
-      HashTable.HashTable ht;
-    case _
-      equation
-        false = Flags.isSet(Flags.FRONTEND_INLINE_EULER);
-      then dae;
-    case _
-      equation
-        ht = HashTable.emptyHashTable();
-        (d,_,ht) = traverseDAE(dae,DAE.emptyFuncTree,simpleInlineDerEuler,ht);
-      then d;
-  end matchcontinue;
-end transformDerInline;
-
-public function simpleInlineDerEuler
-"Simple euler inline of the equation system; only does explicit euler, and only der(cref)"
-  input tuple<DAE.Exp,HashTable.HashTable> itpl;
-  output tuple<DAE.Exp,HashTable.HashTable> otpl;
-algorithm
-  otpl := matchcontinue (itpl)
-    local
-      DAE.ComponentRef cr,cref_1,cref_2;
-      HashTable.HashTable crs0,crs1;
-      DAE.Exp exp,e1,e2;
-
-    case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.T_REAL(varLst = _))}),crs0))
-      equation
-        cref_1 = ComponentReference.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
-        cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.T_REAL_DEFAULT,{});
-        e1 = Expression.makeCrefExp(cref_1,DAE.T_REAL_DEFAULT);
-        e2 = Expression.makeCrefExp(cref_2,DAE.T_REAL_DEFAULT);
-        exp = DAE.BINARY(
-                DAE.BINARY(exp, DAE.SUB(DAE.T_REAL_DEFAULT), e1),
-                DAE.DIV(DAE.T_REAL_DEFAULT),
-                e2);
-        crs1 = BaseHashTable.add((cr,0),crs0);
-      then
-        ((exp,crs1));
-
-    case ((exp,crs0)) then ((exp,crs0));
-
-  end matchcontinue;
-end simpleInlineDerEuler;
+// protected function transformDerInline "This is not used.
+//   Simple euler inline of the equation system; only does explicit euler, and only der(cref)"
+//   input DAE.DAElist dae;
+//   output DAE.DAElist d;
+// algorithm
+//   d := matchcontinue (dae)
+//     local
+//       HashTable.HashTable ht;
+//     case _
+//       equation
+//         false = Flags.isSet(Flags.FRONTEND_INLINE_EULER);
+//       then dae;
+//     case _
+//       equation
+//         ht = HashTable.emptyHashTable();
+//         (d,_,ht) = traverseDAE(dae,DAE.emptyFuncTree,simpleInlineDerEuler,ht);
+//       then d;
+//   end matchcontinue;
+// end transformDerInline;
+// 
+// protected function simpleInlineDerEuler "This is not used.
+//   Helper function of transformDerInline."
+//   input tuple<DAE.Exp,HashTable.HashTable> itpl;
+//   output tuple<DAE.Exp,HashTable.HashTable> otpl;
+// algorithm
+//   otpl := matchcontinue (itpl)
+//     local
+//       DAE.ComponentRef cr,cref_1,cref_2;
+//       HashTable.HashTable crs0,crs1;
+//       DAE.Exp exp,e1,e2;
+// 
+//     case ((DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.T_REAL(varLst = _))}),crs0))
+//       equation
+//         cref_1 = ComponentReference.makeCrefQual("$old",DAE.T_REAL_DEFAULT,{},cr);
+//         cref_2 = ComponentReference.makeCrefIdent("$current_step_size",DAE.T_REAL_DEFAULT,{});
+//         e1 = Expression.makeCrefExp(cref_1,DAE.T_REAL_DEFAULT);
+//         e2 = Expression.makeCrefExp(cref_2,DAE.T_REAL_DEFAULT);
+//         exp = DAE.BINARY(
+//                 DAE.BINARY(exp, DAE.SUB(DAE.T_REAL_DEFAULT), e1),
+//                 DAE.DIV(DAE.T_REAL_DEFAULT),
+//                 e2);
+//         crs1 = BaseHashTable.add((cr,0),crs0);
+//       then
+//         ((exp,crs1));
+// 
+//     case ((exp,crs0)) then ((exp,crs0));
+// 
+//   end matchcontinue;
+// end simpleInlineDerEuler;
 
 public function transformationsBeforeBackend
   input Env.Cache cache;
@@ -5485,9 +5485,6 @@ algorithm
   DAE.DAE(elts) := dae;
   elts := List.map1(elts,makeEvaluatedParamFinal,Env.getEvaluatedParams(cache));
   d := DAE.DAE(elts);
-  // Transform if equations to if expression before going into code generation.
-  //d := evaluateAnnotation(cache,env,d);
-  //d := transformIfEqToExpr(d,false);
   // Don't even run the function to try and do this; it doesn't work very well
   // d := transformDerInline(d);
 end transformationsBeforeBackend;
