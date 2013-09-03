@@ -2583,8 +2583,8 @@ algorithm (outrefs,matching) := matchcontinue(inCrefs)
   end matchcontinue;
 end compareCrefList;
 
-public function evaluateAnnotation
-"evaluates the annotation Evaluate"
+public function evaluateAnnotation "lochel: This is not used. 
+  evaluates the annotation Evaluate"
   input Env.Cache inCache;
   input list<Env.Frame> env;
   input DAE.DAElist inDAElist;
@@ -2608,8 +2608,7 @@ algorithm
   end matchcontinue;
 end evaluateAnnotation;
 
-protected function evaluateAnnotationVisitor "
-Author: Frenkel TUD, 2010-12"
+protected function evaluateAnnotationVisitor "author: Frenkel TUD, 2010-12"
   input tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer,Integer>> itpl;
   output tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer,Integer>> otpl;
 algorithm
@@ -2621,8 +2620,7 @@ algorithm
   end match;
 end evaluateAnnotationVisitor;
 
-protected function evaluateAnnotationTraverse "
-Author: Frenkel TUD, 2010-12"
+protected function evaluateAnnotationTraverse "author: Frenkel TUD, 2010-12"
   input tuple<DAE.Exp, tuple<HashTable2.HashTable,Integer,Integer>> itpl;
   output tuple<DAE.Exp, tuple<HashTable2.HashTable,Integer,Integer>> otpl;
 algorithm
@@ -2686,7 +2684,6 @@ algorithm
 end replaceCrefInAnnotation;
 
 public function getParameterVars
-"function: getParameterVars"
   input DAE.DAElist dae;
   input HashTable2.HashTable ht;
   output HashTable2.HashTable oht;
@@ -2769,7 +2766,6 @@ algorithm
 end evaluateAnnotation1Fold;
 
 protected function evaluateParameter
-"function: evaluateParameter"
   input DAE.Exp inExp;
   input HashTable2.HashTable inPV;
   output DAE.Exp outExp;
@@ -2954,18 +2950,16 @@ algorithm
   end matchcontinue;
 end evaluateAnnotation4;
 
-public function renameTimeToDollarTime "
-Author: BZ, 2009-1
-rename the keyword time to globalData->timeValue, this is a special case for functions since they do not get translated in to c_crefs."
+public function renameTimeToDollarTime "author: BZ, 2009-1
+  rename the keyword time to globalData->timeValue, this is a special case for functions since they do not get translated in to c_crefs."
   input list<DAE.Element> dae;
   output list<DAE.Element> odae;
 algorithm
   (odae,_) := traverseDAE2(dae, renameTimeToDollarTimeVisitor, 0);
 end renameTimeToDollarTime;
 
-protected function renameTimeToDollarTimeVisitor "
-Author: BZ, 2009-01
-The visitor function for traverseDAE.calls Expression.traverseExp on the expression."
+protected function renameTimeToDollarTimeVisitor "author: BZ, 2009-01
+  The visitor function for traverseDAE.calls Expression.traverseExp on the expression."
   input tuple<DAE.Exp,Integer> itpl;
   output tuple<DAE.Exp,Integer> otpl;
 algorithm
@@ -2977,9 +2971,8 @@ algorithm
   end matchcontinue;
 end renameTimeToDollarTimeVisitor;
 
-protected function renameTimeToDollarTimeFromCref "
-Author: BZ, 2008-12
-Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
+protected function renameTimeToDollarTimeFromCref "author: BZ, 2008-12
+  Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
 algorithm
@@ -3004,21 +2997,19 @@ algorithm
 end renameTimeToDollarTimeFromCref;
 
 
-public function renameUniqueOuterVars "
-Author: BZ, 2008-12
-Rename innerouter(the inner part of innerouter) variables that have been renamed to a.b.$unique$var
-Just remove the $unique$ from the var name.
-This function traverses the entire dae."
+public function renameUniqueOuterVars "author: BZ, 2008-12
+  Rename innerouter(the inner part of innerouter) variables that have been renamed to a.b.$unique$var
+  Just remove the $unique$ from the var name.
+  This function traverses the entire dae."
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
   (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, renameUniqueVisitor, 0);
 end renameUniqueOuterVars;
 
-protected function renameUniqueVisitor "
-Author: BZ, 2008-12
-The visitor function for traverseDAE.
-calls Expression.traverseExp on the expression."
+protected function renameUniqueVisitor "author: BZ, 2008-12
+  The visitor function for traverseDAE.
+  calls Expression.traverseExp on the expression."
   input tuple<DAE.Exp,Integer> itpl;
   output tuple<DAE.Exp,Integer> otpl;
 algorithm
@@ -3030,9 +3021,8 @@ algorithm
   end matchcontinue;
 end renameUniqueVisitor;
 
-protected function removeUniqieIdentifierFromCref "
-Author: BZ, 2008-12
-Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
+protected function removeUniqieIdentifierFromCref "author: BZ, 2008-12
+  Function for Expression.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
 algorithm
@@ -3052,20 +3042,18 @@ algorithm
   end matchcontinue;
 end removeUniqieIdentifierFromCref;
 
-public function nameUniqueOuterVars "
-Author: BZ, 2008-12
-Rename all variables to the form a.b.$unique$var, call
-This function traverses the entire dae."
+public function nameUniqueOuterVars "author: BZ, 2008-12
+  Rename all variables to the form a.b.$unique$var, call
+  This function traverses the entire dae."
   input DAE.DAElist dae;
   output DAE.DAElist odae;
 algorithm
   (odae,_,_) := traverseDAE(dae, DAE.emptyFuncTree, nameUniqueVisitor, 0);
 end nameUniqueOuterVars;
 
-protected function nameUniqueVisitor "
-Author: BZ, 2008-12
-The visitor function for traverseDAE.
-calls Expression.traverseExp on the expression."
+protected function nameUniqueVisitor "author: BZ, 2008-12
+  The visitor function for traverseDAE.
+  calls Expression.traverseExp on the expression."
   input tuple<DAE.Exp,Integer> itpl;
   output tuple<DAE.Exp,Integer> otpl;
 algorithm
@@ -3079,9 +3067,8 @@ algorithm
   end match;
 end nameUniqueVisitor;
 
-protected function addUniqueIdentifierToCref "
-Author: BZ, 2008-12
-Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref."
+protected function addUniqueIdentifierToCref "author: BZ, 2008-12
+  Function for Expression.traverseExp, adds the constant 'UNIQUEIO' to the CREF_IDENT() part of the cref."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
 algorithm
@@ -3102,9 +3089,8 @@ algorithm
 end addUniqueIdentifierToCref;
 
 // helper functions for traverseDAE
-protected function traverseDAEOptExp "
-Author: BZ, 2008-12
-Traverse an optional expression, helper function for traverseDAE"
+protected function traverseDAEOptExp "author: BZ, 2008-12
+  Traverse an optional expression, helper function for traverseDAE"
   input Option<DAE.Exp> oexp;
   input FuncExpType func;
   input Type_a iextraArg;
@@ -3131,9 +3117,8 @@ algorithm
   end match;
 end traverseDAEOptExp;
 
-protected function traverseDAEExpList "
-Author: BZ, 2008-12
-Traverse an list of expressions, helper function for traverseDAE"
+protected function traverseDAEExpList "author: BZ, 2008-12
+  Traverse an list of expressions, helper function for traverseDAE"
   input list<DAE.Exp> iexps;
   input FuncExpType func;
   input Type_a iextraArg;
@@ -3162,9 +3147,8 @@ algorithm
   end match;
 end traverseDAEExpList;
 
-protected function traverseDAEList "
-Author: BZ, 2008-12
-Helper function for traverseDAE, traverses a list of dae element list."
+protected function traverseDAEList "author: BZ, 2008-12
+  Helper function for traverseDAE, traverses a list of dae element list."
   input list<list<DAE.Element>> idaeList;
   input FuncExpType func;
   input Type_a iextraArg;
@@ -3242,8 +3226,9 @@ algorithm
   b := not isInvalidFunctionEntry(tpl);
 end isValidFunctionEntry;
 
-public function traverseDAE " This function traverses all dae exps.
-NOTE, it also traverses DAE.VAR(componenname) as an expression."
+public function traverseDAE "
+  This function traverses all dae exps.
+  NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input DAE.DAElist dae;
   input DAE.FunctionTree functionTree;
   input FuncExpType func;
@@ -3299,9 +3284,10 @@ algorithm
   end match;
 end traverseDAEFuncLst;
 
-public function traverseDAEFunctions "Traverses the functions.
-Note: Only calls the top-most expressions If you need to also traverse the
-expression, use an extra helper function."
+public function traverseDAEFunctions "
+  Traverses the functions.
+  Note: Only calls the top-most expressions If you need to also traverse the
+  expression, use an extra helper function."
   input list<DAE.Function> ifuncLst;
   input FuncExpType func;
   input Type_a iextraArg;
@@ -3364,8 +3350,7 @@ algorithm
 end traverseDAEFunc;
 
 
-public function traverseDAE2
-"@author: BZ, 2008-12, adrpo, 2010-12
+public function traverseDAE2 "author: BZ, 2008-12, adrpo, 2010-12
   This function traverses all dae exps.
   NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input list<DAE.Element> daeList;
@@ -3379,8 +3364,7 @@ algorithm
   (traversedDaeList,oextraArg) := traverseDAE2_tail(daeList,func,extraArg,{});
 end traverseDAE2;
 
-protected function traverseDAE2_tail
-"@uthor: adrpo, 2010-12
+protected function traverseDAE2_tail "author: adrpo, 2010-12
   This function is a tail recursive function that traverses all dae exps.
   NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input list<DAE.Element> daeList;
@@ -3413,8 +3397,7 @@ algorithm
   end match;
 end traverseDAE2_tail;
 
-protected function traverseDAE2_tail2
-"@uthor: adrpo, 2010-12
+protected function traverseDAE2_tail2 "author: adrpo, 2010-12
   This function is a tail recursive function that traverses all dae exps.
   NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input DAE.Element ielt;
