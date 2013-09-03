@@ -923,7 +923,7 @@ algorithm
     case (_, SCode.ENUMERATION(enumLst = enums), _, _, _)
       equation
         path = Absyn.IDENT(inClassName);
-        env = extendEnvWithEnumLiterals(enums, path, 1, inEnv);
+        env = extendEnvWithEnumLiterals(enums, path, 1, inEnv, inInfo);
       then
         env;
 
@@ -1044,21 +1044,22 @@ protected function extendEnvWithEnumLiterals
   input Absyn.Path inEnumPath;
   input Integer inNextValue;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Env outEnv;
 algorithm
-  outEnv := match(inEnum, inEnumPath, inNextValue, inEnv)
+  outEnv := match(inEnum, inEnumPath, inNextValue, inEnv, inInfo)
     local
       SCode.Enum lit;
       list<SCode.Enum> rest_lits;
       Env env;
 
-    case (lit :: rest_lits, _, _, _)
+    case (lit :: rest_lits, _, _, _, _)
       equation
-        env = extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv);
+        env = extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv, inInfo);
       then
-        extendEnvWithEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
+        extendEnvWithEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env, inInfo);
 
-    case ({}, _, _, _) then inEnv;
+    case ({}, _, _, _, _) then inEnv;
 
   end match;
 end extendEnvWithEnumLiterals;
@@ -1069,6 +1070,7 @@ protected function extendEnvWithEnum
   input Absyn.Path inEnumPath;
   input Integer inValue;
   input Env inEnv;
+  input Absyn.Info inInfo;
   output Env outEnv;
 protected
   SCode.Element enum_lit;
@@ -1082,7 +1084,7 @@ algorithm
     Absyn.QUALIFIED(index, inEnumPath)), NONE());
   enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes, SCode.ATTR({},
     SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()), ty,
-    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+    SCode.NOMOD(), SCode.noComment, NONE(), inInfo);
   outEnv := extendEnvWithElement(enum_lit, inEnv);
 end extendEnvWithEnum;
 
