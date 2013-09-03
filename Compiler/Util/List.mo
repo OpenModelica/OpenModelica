@@ -7077,20 +7077,36 @@ public function exist
     output Boolean out;
   end FindFunc;
 algorithm
-  outList := match (inList,inFindFunc)
+  outList := exist_work(false,inList,inFindFunc);
+end exist;
+
+protected function exist_work
+  "Returns true if the and element is found on the list using a function. Example
+       filter({1,2}, isEven) => true
+       filter({1,3,5,7}, isEven) => false"
+  input Boolean found;
+  input list<ElementType> inList;
+  input FindFunc inFindFunc;
+  output Boolean outList;
+
+  partial function FindFunc
+    input ElementType inElement;
+    output Boolean out;
+  end FindFunc;
+algorithm
+  outList := match (found,inList,inFindFunc)
     local
       list<ElementType> t;
       ElementType h;
       Boolean ret,b;
-    case({},_)
-      then false;
-    case(h::t,_)
+    case(true,_,_) then true;
+    case(_,{},_) then false;
+    case(_,h::t,_)
       equation
         b = inFindFunc(h);
-        b = Debug.bcallret2(not b, exist, t, inFindFunc, true);
-      then b;
+      then exist_work(b, t, inFindFunc);
   end match;
-end exist;
+end exist_work;
 
 public function exist1
   "Returns true if the and element is found on the list using a function and an extra argument."
@@ -7105,19 +7121,84 @@ public function exist1
     output Boolean out;
   end FindFunc;
 algorithm
-  outList := match (inList,inFindFunc,inExtraArg)
+  outList := exist1_work(false,inList,inFindFunc,inExtraArg);
+end exist1;
+
+protected function exist1_work
+  "Returns true if the and element is found on the list using a function and an extra argument."
+  input Boolean found;
+  input list<ElementType1> inList;
+  input FindFunc inFindFunc;
+  input ElementType2 inExtraArg;
+  output Boolean outList;
+
+  partial function FindFunc
+    input ElementType1 inElement;
+    input ElementType2 inExtraArg;
+    output Boolean out;
+  end FindFunc;
+algorithm
+  outList := match (found,inList,inFindFunc,inExtraArg)
     local
       list<ElementType1> t;
       ElementType1 h;
       Boolean ret,b;
-    case ({},_,_) then false;
-    case (h::t,_,_)
+    case(true,_,_,_) then true;
+    case(_,{},_,_) then false;
+    case(_,h::t,_,_)
       equation
-        b = inFindFunc(h,inExtraArg);
-        b = Debug.bcallret3(not b, exist1, t, inFindFunc, inExtraArg, true);
-      then b;
+        b = inFindFunc(h, inExtraArg);
+      then exist1_work(b, t, inFindFunc, inExtraArg);
   end match;
-end exist1;
+end exist1_work;
+
+public function exist2
+  "Returns true if the and element is found on the list using a function and an extra argument."
+  input list<ElementType1> inList;
+  input FindFunc inFindFunc;
+  input ElementType2 inExtraArg1;
+  input ElementType3 inExtraArg2;
+  output Boolean outList;
+
+  partial function FindFunc
+    input ElementType1 inElement;
+    input ElementType2 inExtraArg1;
+    input ElementType3 inExtraArg2;
+    output Boolean out;
+  end FindFunc;
+algorithm
+  outList := exist2_work(false,inList,inFindFunc,inExtraArg1,inExtraArg2);
+end exist2;
+
+protected function exist2_work
+  "Returns true if the and element is found on the list using a function and an extra argument."
+  input Boolean found;
+  input list<ElementType1> inList;
+  input FindFunc inFindFunc;
+  input ElementType2 inExtraArg1;
+  input ElementType3 inExtraArg2;
+  output Boolean outList;
+
+  partial function FindFunc
+    input ElementType1 inElement;
+    input ElementType2 inExtraArg1;
+    input ElementType3 inExtraArg2;
+    output Boolean out;
+  end FindFunc;
+algorithm
+  outList := match (found,inList,inFindFunc,inExtraArg1,inExtraArg2)
+    local
+      list<ElementType1> t;
+      ElementType1 h;
+      Boolean ret,b;
+    case(true,_,_,_,_) then true;
+    case(_,{},_,_,_) then false;
+    case(_,h::t,_,_,_)
+      equation
+        b = inFindFunc(h, inExtraArg1, inExtraArg2);
+      then exist2_work(b, t, inFindFunc, inExtraArg1, inExtraArg2);
+  end match;
+end exist2_work;
 
 public function extractOnTrue
   "Takes a list of values and a filter function over the values and returns a

@@ -1999,47 +1999,35 @@ algorithm
     case ({set}) then {set};
     case (set::rest)
       equation
-        (set, rest) = mergeWithRest(set, rest);
+        (set, rest) = mergeWithRest(set, rest, {});
         sets = mergeEquSetsAsCrefs(rest);
       then
         set::sets;
   end matchcontinue;
 end mergeEquSetsAsCrefs;
 
-function mergeWithRest
+protected function mergeWithRest
   input list<DAE.ComponentRef> inSet;
   input list<list<DAE.ComponentRef>> inSets;
+  input list<list<DAE.ComponentRef>> inAcc;
   output list<DAE.ComponentRef> outSet;
   output list<list<DAE.ComponentRef>> outSets;
 algorithm
-  (outSet, outSets) := matchcontinue(inSet, inSets)
+  (outSet, outSets) := match (inSet, inSets, inAcc)
     local
       list<DAE.ComponentRef> set, set1, set2;
-      list<list<DAE.ComponentRef>> rest;
-
-    case (_, {}) then (inSet, inSets);
-    // we can't merge it
-    case (set1, set2::rest)
+      list<list<DAE.ComponentRef>> rest, acc;
+      Boolean b;
+    case (_, {}, _) then (inSet, listReverse(inAcc));
+    case (set1, set2::rest, acc)
       equation
-         {} = List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare);
-         //print("NotMerge Set1:\n\t" +& stringDelimitList(List.map(set1, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-         //print("NotMerge Set2:\n\t" +& stringDelimitList(List.map(set2, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-         (set, rest) = mergeWithRest(set1, rest);
-      then
-        (set, set2::rest);
-
-    // we can merge it
-    case (set1, set2::rest)
-      equation
-         _::_ = List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare);
-         set = List.unionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare);
-         // print("Merge Set1:\n\t" +& stringDelimitList(List.map(set1, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-         // print("Merge Set2:\n\t" +& stringDelimitList(List.map(set2, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-         // print("Resulting Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-         (set, rest) = mergeWithRest(set, rest);
-      then
-        (set, rest);
-  end matchcontinue;
+         // Could be faster if we had a function for intersectionExist in a set
+         b = List.isEmpty(List.intersectionOnTrue(set1, set2, ComponentReference.crefEqualNoStringCompare));
+         set = Debug.bcallret3(not b, List.unionOnTrue, set1, set2, ComponentReference.crefEqualNoStringCompare, set1);
+         acc = List.consOnTrue(b, set2, acc);
+         (set, rest) = mergeWithRest(set, rest, acc);
+      then (set, rest);
+  end match;
 end mergeWithRest;
 
 protected function getOnlyExpandableConnectedCrefs

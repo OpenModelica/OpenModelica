@@ -103,7 +103,7 @@ bootstrap-from-compiled:
 	$(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-compiled
 	$(MAKE) omlibrary
 
-bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt
+bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis
 	$(MAKE) -C Compiler/runtime install
 	$(MAKE) -C Compiler builtin install_scripts
 	$(MAKE) -C Parser install
