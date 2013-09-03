@@ -102,7 +102,7 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
     dest->ndims = nridx;
     dest->dim_size = size_alloc(nridx);
     dest->index = index_alloc(nridx);
-    dest->index_type = char_alloc(nridx);
+    dest->index_type = GC_malloc(nridx+1);
     for(i = 0; i < nridx; ++i) {
         dest->dim_size[i] = va_arg(ap, _index_t);
         dest->index[i] = va_arg(ap, _index_t*);

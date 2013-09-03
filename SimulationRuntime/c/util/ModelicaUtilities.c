@@ -32,6 +32,9 @@
 #include "ModelicaUtilities.h"
 #include "modelica_string.h"
 
+#define THREAD_LOCAL_ALLOC
+#include "gc.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "omc_error.h"
@@ -79,5 +82,5 @@ char* ModelicaAllocateString(size_t len) {
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len) {
-  return OpenModelica_ExternalC_allocation_function(len);
+  return GC_malloc(len+1);
 }

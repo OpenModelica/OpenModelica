@@ -53,7 +53,6 @@ extern m_string* string_alloc(int n);
 extern m_boolean* boolean_alloc(int n);
 extern _index_t* size_alloc(int n);
 extern _index_t** index_alloc(int n);
-extern char* char_alloc(int n);
 
 extern void* push_memory_states(int maxThreads);
 extern void pop_memory_states(void* new_states);
