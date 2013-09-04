@@ -56,11 +56,11 @@ VariableTreeItem::VariableTreeItem(QString text, QString parentName, QString nam
 QIcon VariableTreeItem::getVariableTreeItemIcon(QString name)
 {
   if (name.endsWith(".mat"))
-    return QIcon(":/Resources/icons/mat.png");
+    return QIcon(":/Resources/icons/mat.svg");
   else if (name.endsWith(".plt"))
-    return QIcon(":/Resources/icons/plt.png");
+    return QIcon(":/Resources/icons/plt.svg");
   else if (name.endsWith(".csv"))
-    return QIcon(":/Resources/icons/csv.png");
+    return QIcon(":/Resources/icons/csv.svg");
   else
     return QIcon();
 }
