@@ -53,6 +53,18 @@ VariableTreeItem::VariableTreeItem(QString text, QString parentName, QString nam
   setToolTip(0, tooltip);
 }
 
+QIcon VariableTreeItem::getVariableTreeItemIcon(QString name)
+{
+  if (name.endsWith(".mat"))
+    return QIcon(":/Resources/icons/mat.png");
+  else if (name.endsWith(".plt"))
+    return QIcon(":/Resources/icons/plt.png");
+  else if (name.endsWith(".csv"))
+    return QIcon(":/Resources/icons/csv.png");
+  else
+    return QIcon();
+}
+
 void VariableTreeItem::setName(QString name)
 {
   mName = name;
@@ -117,6 +129,7 @@ VariablesTreeWidget::VariablesTreeWidget(VariablesWidget *pParent)
   setHeaderLabel(tr("Variables"));
   setColumnCount(1);
   setIndentation(Helper::treeIndentation);
+  setIconSize(Helper::iconSize);
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
 }
@@ -198,8 +211,10 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
   // insert the top level item in tree
   QString toolTip = tr("Simulation Result File: ").append(fileName).append("\n")
       .append(Helper::fileLocation).append(": ").append(filePath).append(fileName);
-  VariableTreeItem *newTreePost = new VariableTreeItem(fileName, "", fileName, fileName, filePath, toolTip, (QTreeWidget*)0);
-  mpVariablesTreeWidget->insertTopLevelItem(0, newTreePost);
+  QString text = QString(fileName).remove(QRegExp("(_res.mat|_res.plt|_res.csv)"));
+  VariableTreeItem *pVariableTreeItem = new VariableTreeItem(text, "", fileName, fileName, filePath, toolTip, (QTreeWidget*)0);
+  pVariableTreeItem->setIcon(0, pVariableTreeItem->getVariableTreeItemIcon(fileName));
+  mpVariablesTreeWidget->insertTopLevelItem(0, pVariableTreeItem);
   // create two lists from plotVariablesList one contains der's
   QStringList derPlotVariables;
   QStringList derContainer;
@@ -222,7 +237,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
   foreach(QString plotVariable, derPlotVariables)
   {
     QStringList variables = plotVariable.split(".");
-    parentStructure = newTreePost->getNameStructure();
+    parentStructure = pVariableTreeItem->getNameStructure();
     for (int i = 0 ; i < variables.size() ; i++)
     {
       // if its the last variable in the list make it der
@@ -232,7 +247,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
         int size = derPrependString.count("der(");
         QString derAppendString;
         derAppendString = QString(derAppendString.toStdString().append(size, ')').c_str());
-        QString structure = QString(newTreePost->getNameStructure()).append(".")
+        QString structure = QString(pVariableTreeItem->getNameStructure()).append(".")
             .append(derPrependString).append(variables.join(".")).append(derAppendString);
         variables[i].prepend(derPrependString).append(derAppendString);
         // make sure you dont add any node twice
@@ -253,7 +268,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
   foreach(QString plotVariable, plotVariables)
   {
     QStringList variables = plotVariable.split(".");
-    parentStructure = newTreePost->getNameStructure();
+    parentStructure = pVariableTreeItem->getNameStructure();
     for (int i = 0 ; i < variables.size() ; i++)
     {
       // make sure you dont add any node twice
@@ -269,7 +284,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
   mpVariablesTreeWidget->setSortingEnabled(true);
   mpVariablesTreeWidget->sortItems(0, Qt::AscendingOrder);
   mpVariablesTreeWidget->collapseAll();
-  newTreePost->setExpanded(true);
+  pVariableTreeItem->setExpanded(true);
 }
 
 void VariablesWidget::addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName,

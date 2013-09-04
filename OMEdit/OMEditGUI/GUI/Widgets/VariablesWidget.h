@@ -48,6 +48,7 @@ class VariableTreeItem : public QTreeWidgetItem
 public:
   VariableTreeItem(QString text, QString parentName, QString nameStructure, QString fileName, QString filePath, QString tooltip,
                    QTreeWidget *parent = 0);
+  QIcon getVariableTreeItemIcon(QString name);
   void setName(QString name);
   QString getName();
   void setParentName(QString parentName);

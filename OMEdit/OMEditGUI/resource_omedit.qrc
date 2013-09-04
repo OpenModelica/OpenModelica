@@ -119,5 +119,8 @@
         <file>Resources/icons/up.png</file>
         <file>Resources/icons/print.png</file>
         <file>Resources/icons/duplicate.png</file>
+        <file>Resources/icons/mat.png</file>
+        <file>Resources/icons/plt.png</file>
+        <file>Resources/icons/csv.png</file>
     </qresource>
 </RCC>
