@@ -156,7 +156,7 @@ public function evaluateToStdOut
   input Boolean inBoolean;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable := matchcontinue (inStatements,inSymbolTable,inBoolean)
+  outSymbolTable := match (inStatements,inSymbolTable,inBoolean)
     local
       String res,res_1;
       GlobalScript.SymbolTable newst,st,newst_1;
@@ -187,7 +187,7 @@ algorithm
         newst_1 = evaluateToStdOut(GlobalScript.ISTMTS(xs,semicolon), newst, verbose);
       then
         newst_1;
-  end matchcontinue;
+  end match;
 end evaluateToStdOut;
 
 public function evaluateFork
