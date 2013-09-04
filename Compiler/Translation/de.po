@@ -221,7 +221,7 @@ msgstr ""
 #: ../Util/Error.mo:203
 #, c-format
 msgid "Base class %s not found in scope %s."
-msgstr "Basis Klasse %s wurde im Geltungsbereich %s nicht gefunden".
+msgstr "Basis Klasse %s wurde im Geltungsbereich %s nicht gefunden."
 
 #: ../Util/Error.mo:205
 #, c-format
