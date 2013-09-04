@@ -306,31 +306,28 @@ QIcon LibraryTreeNode::getModelicaNodeIcon(int type)
   switch (type)
   {
     case StringHandler::Model:
-      return QIcon(":/Resources/icons/model-icon.png");
+      return QIcon(":/Resources/icons/model-icon.svg");
     case StringHandler::Class:
-      return QIcon(":/Resources/icons/class-icon.png");
+      return QIcon(":/Resources/icons/class-icon.svg");
     case StringHandler::Connector:
-      return QIcon(":/Resources/icons/connector-icon.png");
+      return QIcon(":/Resources/icons/connector-icon.svg");
     case StringHandler::Record:
-      return QIcon(":/Resources/icons/record-icon.png");
+      return QIcon(":/Resources/icons/record-icon.svg");
     case StringHandler::Block:
-      return QIcon(":/Resources/icons/block-icon.png");
+      return QIcon(":/Resources/icons/block-icon.svg");
     case StringHandler::Function:
-      return QIcon(":/Resources/icons/function-icon.png");
+      return QIcon(":/Resources/icons/function-icon.svg");
     case StringHandler::Package:
-      return QIcon(":/Resources/icons/package-icon.png");
+      return QIcon(":/Resources/icons/package-icon.svg");
     case StringHandler::Type:
-      return QIcon(":/Resources/icons/type-icon.png");
     case StringHandler::Operator:
-      return QIcon(":/Resources/icons/type-icon.png");
     case StringHandler::OperatorRecord:
-      return QIcon(":/Resources/icons/type-icon.png");
     case StringHandler::OperatorFunction:
-      return QIcon(":/Resources/icons/type-icon.png");
+      return QIcon(":/Resources/icons/type-icon.svg");
     case StringHandler::Optimization:
-      return QIcon(":/Resources/icons/optimization-icon.png");
+      return QIcon(":/Resources/icons/optimization-icon.svg");
     default:
-      return QIcon(":/Resources/icons/model-icon.png");
+      return QIcon(":/Resources/icons/type-icon.svg");
   }
 }
 

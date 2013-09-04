@@ -109,6 +109,10 @@ StringHandler::ModelicaClasses StringHandler::getModelicaClassType(QString type)
     return StringHandler::Class;
   else if (type.toLower().contains("connector"))
     return StringHandler::Connector;
+  else if (type.toLower().contains("operator record"))
+    return StringHandler::OperatorRecord;
+  else if (type.toLower().contains("operator function"))
+    return StringHandler::OperatorFunction;
   else if (type.toLower().contains("record"))
     return StringHandler::Record;
   else if (type.toLower().contains("block"))
@@ -121,10 +125,6 @@ StringHandler::ModelicaClasses StringHandler::getModelicaClassType(QString type)
     return StringHandler::Type;
   else if (type.toLower().contains("operator"))
     return StringHandler::Operator;
-  else if (type.toLower().contains("operator record"))
-    return StringHandler::OperatorRecord;
-  else if (type.toLower().contains("operator function"))
-    return StringHandler::OperatorFunction;
   else if (type.toLower().contains("optimization"))
     return StringHandler::Optimization;
   else if (type.toLower().contains("primitive"))
