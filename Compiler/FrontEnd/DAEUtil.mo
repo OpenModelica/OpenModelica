@@ -5344,7 +5344,7 @@ algorithm
     case (_, _)
       equation
         paths1 = getUniontypePathsFunctions(funcs);
-        paths2 = getUniontypePathsElements(els);
+        paths2 = getUniontypePathsElements(els,{});
         // Use accumulators? Small gain as T_METAUNIONTYPE has lists of paths anyway?
         outPaths = listAppend(paths1, paths2);
       then outPaths;
@@ -5364,7 +5364,7 @@ algorithm
         (_,(_,els1)) = traverseDAEFunctions(elements, Expression.traverseSubexpressionsHelper, (collectLocalDecls,{}), {});
         els2 = getFunctionsElements(elements);
         els = listAppend(els1, els2);
-        outPaths = getUniontypePathsElements(els);
+        outPaths = getUniontypePathsElements(els,{});
       then outPaths;
   end match;
 end getUniontypePathsFunctions;
@@ -5372,21 +5372,21 @@ end getUniontypePathsFunctions;
 protected function getUniontypePathsElements
 "May contain duplicates."
   input list<DAE.Element> elements;
+  input list<DAE.Type> acc;
   output list<Absyn.Path> outPaths;
 algorithm
-  outPaths := match elements
+  outPaths := match (elements,acc)
     local
       list<Absyn.Path> paths1;
       list<DAE.Element> rest;
       list<DAE.Type> tys;
       DAE.Type ft;
-    case {} then {};
-    case DAE.VAR(ty = ft)::rest
+    case ({},_) then List.applyAndFold(acc, listAppend, Types.getUniontypePaths, {});
+    case (DAE.VAR(ty = ft)::rest,_)
       equation
-        paths1 = getUniontypePathsElements(rest);
         tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
-      then List.applyAndFold(tys, listAppend, Types.getUniontypePaths, paths1);
-    case _::rest then getUniontypePathsElements(rest);
+      then getUniontypePathsElements(rest,listAppend(tys,acc));
+    case (_::rest,_) then getUniontypePathsElements(rest,acc);
   end match;
 end getUniontypePathsElements;
 
