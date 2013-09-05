@@ -7134,19 +7134,50 @@ public function traverseBackendDAEArrayNoCopy "
     end FuncExpType;
   end FuncArrayType;
 algorithm
-  outTypeB := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
+  outTypeB := traverseBackendDAEArrayNoCopy_work(pos>len,inArray,func,arrayfunc,pos,len,inTypeB);
+end traverseBackendDAEArrayNoCopy;
+
+protected function traverseBackendDAEArrayNoCopy_work "
+ help function to traverseBackendDAEExps
+ author: Frenkel TUD"
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  input Boolean stop;
+  input array<Type_a> inArray;
+  input FuncExpType func;
+  input FuncArrayType arrayfunc;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_b inTypeB;
+  output Type_b outTypeB;
+  partial function FuncExpType
+    input tuple<Type_c, Type_b> inTpl;
+    output tuple<Type_c, Type_b> outTpl;
+  end FuncExpType;
+  partial function FuncArrayType
+    input Type_a inTypeA;
+    input FuncExpType func;
+    input Type_b inTypeB;
+    output Type_b outTypeB;
+    partial function FuncExpType
+     input tuple<Type_c, Type_b> inTpl;
+     output tuple<Type_c, Type_b> outTpl;
+    end FuncExpType;
+  end FuncArrayType;
+algorithm
+  outTypeB := match (stop,inArray,func,arrayfunc,pos,len,inTypeB)
     local
       Type_b ext_arg_1,ext_arg_2;
-    case(_,_,_,_,_,_) equation
-      true = pos > len;
-    then inTypeB;
+    case (true,_,_,_,_,_,_) then inTypeB;
 
-    case(_,_,_,_,_,_) equation
-      ext_arg_1 = arrayfunc(inArray[pos],func,inTypeB);
-      ext_arg_2 = traverseBackendDAEArrayNoCopy(inArray,func,arrayfunc,pos+1,len,ext_arg_1);
-    then ext_arg_2;
-  end matchcontinue;
-end traverseBackendDAEArrayNoCopy;
+    else
+      equation
+        ext_arg_1 = arrayfunc(inArray[pos],func,inTypeB);
+        ext_arg_2 = traverseBackendDAEArrayNoCopy_work(pos+1>len,inArray,func,arrayfunc,pos+1,len,ext_arg_1);
+      then ext_arg_2;
+  end match;
+end traverseBackendDAEArrayNoCopy_work;
 
 public function traverseBackendDAEArrayNoCopyWithStop "
  help function to traverseBackendDAEArrayNoCopyWithStop
