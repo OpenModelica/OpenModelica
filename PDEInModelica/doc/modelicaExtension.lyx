@@ -66,6 +66,10 @@
 Modelica extension for PDE
 \end_layout
 
+\begin_layout Section
+Requests on language extension and possible approaches
+\end_layout
+
 \begin_layout Section*
 Space & coordinates
 \end_layout
@@ -704,21 +708,8 @@ in
  operator to express where equations hold.
 \end_layout
 
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-But what about IC
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
 \begin_layout Section
-List of new language elements and concepts
+New concepts and language elements
 \end_layout
 
 \begin_layout Description
@@ -743,13 +734,33 @@ DomainCircular2D
 DomainBlock3D
 \family default
  ...
+ defined within 
+\family typewriter
+PDE
+\family default
+ package, user can define his own domain records.
+ Domain record contains at least one region member.
+ During translation is treated in different way than usual records.
+\begin_inset Newline newline
+\end_inset
+
+Needs OMC modification.
 \end_layout
 
 \begin_layout Description
-ranges to define parameter ranges for a shape-function (e.g.
+ranges to define parameter ranges for a shape-function.
+ E.g.
  
 \family typewriter
-range={{0,1},0})
+range={{0,1},0}.
+ 
+\family default
+Used in domain records.
+ 
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description
@@ -757,7 +768,15 @@ region
 \begin_inset space ~
 \end_inset
 
-types 
+types
+\begin_inset space ~
+\end_inset
+
+and
+\begin_inset space ~
+\end_inset
+
+regions 
 \family typewriter
 Region0D
 \family default
@@ -773,7 +792,29 @@ Region2D
 \family typewriter
 Region3D
 \family default
- used in domain records 
+ used in domain records to define interior, boundaries and othere regions
+ where certain equations hold (e.g.
+ connection of PDE and ODE).
+ Two mandatory attributes are 
+\family typewriter
+shape
+\family default
+ and 
+\family typewriter
+range
+\family default
+.
+ E.g.
+ 
+\family typewriter
+Region2D left (shape = shapeFunc, range = {0,{0,1}}).
+
+\family default
+ 
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description
@@ -781,21 +822,155 @@ normal
 \begin_inset space ~
 \end_inset
 
-vector to N-1 dimensional region in N dimensional domain.
+vector implicitly defined for all N-1 dimensional regions in N dimensional
+ domain.
  (e.g.
  
 \family typewriter
-room.left.n
+omega.left.n
 \family default
-)
+) Used in boundary condition equations.
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description
+fields A variable, its value depends on space position, is called field.
+ It is defined by keyword 
+\family typewriter
 field
+\family default
+.
+ Field can be of any type.
+ It can be defined also as a parameter.
+ Field may be an array to represent vector field.
+ Mandatory attribute is 
+\family typewriter
+domain
+\family default
+.
+ Other attributes are same as for corresponding regular type (e.g.
+ for 
+\family typewriter
+Real:
+\family default
+ 
+\family typewriter
+start
+\family default
+, 
+\family typewriter
+fixed
+\family default
+, 
+\family typewriter
+nominal
+\family default
+, 
+\family typewriter
+min
+\family default
+, 
+\family typewriter
+max
+\family default
+, 
+\family typewriter
+unit
+\family default
+, 
+\family typewriter
+displayUnit
+\family default
+, 
+\family typewriter
+quantity
+\family default
+, 
+\family typewriter
+stateSelect
+\family default
+.
+ (Not shure about 
+\family typewriter
+fixed
+\family default
+ and 
+\family typewriter
+stateSelect
+\family default
+.) Attribute 
+\family typewriter
+start
+\family default
+ can be assigned constant or function of type (Real×Real×...)
+\begin_inset Formula $\rightarrow$
+\end_inset
+
+typeOfField, number of arguments is same as dimension of fields domain.
+ Start attribute can be treated as scalar or as array to assign initial
+ values also to derivatives.
+ E.g.
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+field Real x(domain = omega, start[0] = xInit, start[1] = 0)
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+see 
+\family typewriter
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "String-equation-(1D)"
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+New language element.
+\end_layout
+
+\begin_layout Description
+operations
 \begin_inset space ~
 \end_inset
 
-type
+and
+\begin_inset space ~
+\end_inset
+
+functions
+\begin_inset space ~
+\end_inset
+
+on
+\begin_inset space ~
+\end_inset
+
+fields All operators (= , :=, +, -, *, /, ^, <, <= ,> ,>= ,== , <>) and
+ functions can be applied on fields.
+ The result is also a field.
+ If a binary operator or function of more arguments is applied on two (or
+ more) fields, these fields must be defined within the same domain.
+\begin_inset Newline newline
+\end_inset
+
+If some binary operator or function with more arguments is performed on
+ field and regular variable (it means a variable that is not a field), the
+ operation is performed as if the regular variable is field that is constant
+ in space.
 \end_layout
 
 \begin_layout Description
@@ -807,7 +982,34 @@ pder()
 \begin_inset space ~
 \end_inset
 
-operator for partial and directional derivative
+operator for partial and directional derivative of real field.
+ Higher derivatives are allowed.
+ E.g.
+ 
+\family typewriter
+pder(u,x,x,y)
+\family default
+ means
+\begin_inset Formula $\frac{\partial^{3}u}{\partial x^{2}y}$
+\end_inset
+
+
+\family typewriter
+.
+
+\family default
+ Directional derivative: 
+\family typewriter
+pder(u,omega.left.n)
+\family default
+.
+ Time derivative of field must be written also using 
+\family typewriter
+pder
+\family default
+ operator not 
+\family typewriter
+der.
 \end_layout
 
 \begin_layout Description
@@ -819,21 +1021,76 @@ in
 \begin_inset space ~
 \end_inset
 
-operator to define where PDE, boundary conditions and other equations hold
+operator to define where PDE, boundary conditions and other equations hold.
+ On left is an equation on right is a region where the equation hold.
+ 
+\begin_inset Newline newline
+\end_inset
+
+E.g.
+ 
+\family typewriter
+x=0
+\begin_inset space \quad{}
+\end_inset
+
+in omega.left
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description
-+
+region
 \begin_inset space ~
 \end_inset
 
-operator region addition
+addition + operator can be used to add regions.
+ Can be used in domain record to form a new region, e.g.
+ 
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+boundaries = left + right;
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+or on right side of 
+\family typewriter
+in
+\family default
+ operator, e.g.
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+x = 0
+\begin_inset space \quad{}
+\end_inset
+
+in omega.left + omega.right;
 \end_layout
 
 \begin_layout Description
+vector
+\begin_inset space ~
+\end_inset
 
+differential
+\begin_inset space ~
+\end_inset
+
+operators
 \family typewriter
-grad,
+ grad,
 \begin_inset space ~
 \end_inset
 
@@ -842,20 +1099,6 @@ div,
 \end_inset
 
 rot
-\family default
- differential operators
-\end_layout
-
-\begin_layout Description
-operations
-\begin_inset space ~
-\end_inset
-
-on
-\begin_inset space ~
-\end_inset
-
-fields all standard operations and functions, also on vector fields
 \end_layout
 
 \end_body

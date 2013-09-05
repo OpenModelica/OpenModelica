@@ -116,19 +116,6 @@ key "leveque2007finite"
 
 \end_layout
 
-\begin_layout Standard
-
-\lang british
-On the Role of Mathematical Abstractions for Scientific Computing
-\begin_inset CommandInset citation
-LatexCommand cite
-key "raey"
-
-\end_inset
-
-
-\end_layout
-
 \begin_layout Paragraph
 
 \lang british
@@ -142,24 +129,152 @@ Modelica language extension
 \end_layout
 
 \begin_layout Itemize
- How to set initial condition for field derivative in similar way as using
+
+\series bold
+How to name coordinate (space) 
+\series default
+variables, so that it doesn't meddle with other variables (ODE)? Should
+ it be fixed or defined within the domain deffinition?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+NO.
+
+\family typewriter
+ domain_name.variable_name
+\family default
+ (
+\family typewriter
+e.g.
+ omega.x
+\family default
+).
+ This makes equation domain dependent.
+\end_layout
+
+\begin_layout Itemize
+NO.
+ Fixed names 
+\family typewriter
+x, y, z
+\family default
+.
+ If they meddle with other variable, infere which one is it from tha fact
+ that we differentiate with respect to this variable and from the actual
+ domain (indicated with 
+\family typewriter
+in
+\family default
+ op.).
+ Makes model confusing.
+\end_layout
+
+\begin_layout Itemize
+name by user
+\end_layout
+
+\begin_layout Itemize
+fixed names and approach ODE variables from PDE in some special way.
+\end_layout
+
+\begin_layout Itemize
+avoid coordinate variables at all
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+use operators 
+\family typewriter
+pderx(u)
+\family default
+, 
+\family typewriter
+pdert(u)
+\end_layout
+
+\begin_layout Itemize
+write equations coordinate-free, using only 
+\family typewriter
+pdert, grad, div,
+\family default
+ ...
+ operators.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+use longer name for coordinate variables (e.g.
  
 \family typewriter
-start
+spaceX
 \family default
- atribute (i.e.
- not using equation in 
+ ...)
+\end_layout
+
+\begin_layout Itemize
+
 \family typewriter
-initial
+in domain_name.region_name
 \family default
- section)? See 
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "String-equation-(1D)"
+ opens scope, use somthink like 
+\family typewriter
+this
+\family default
+ in oop, perhaps keyword 
+\family typewriter
+domain
+\family default
+.
+\begin_inset Newline newline
+\end_inset
+
+e.g.
+ 
+\family typewriter
+pder(u, domain.x)=0
+\begin_inset space \quad{}
+\end_inset
+
+in omega.left
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+Allow writing equations independent on particular domain and also coordinate
+ system.
+\end_layout
+
+\begin_layout Itemize
+How to use (define) new coordinate system besides cartesian?
+\end_layout
+
+\begin_layout Itemize
+Initialization.
+\end_layout
+
+\begin_layout Itemize
+Rename 
+\emph on
+region
+\emph default
+ to 
+\emph on
+manifold
+\emph default
+\lang british
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "raey"
 
 \end_inset
 
 
+\lang english
+?
 \end_layout
 
 \begin_layout Itemize
@@ -168,19 +283,6 @@ How to call divergence operator (standard
 div
 \family default
  is is already used for integer division)
-\end_layout
-
-\begin_layout Itemize
-
-\series bold
-How to name space coordinates?
-\series default
- Should it be fixed or defined within the domain deffinition?
-\end_layout
-
-\begin_layout Itemize
-Should it be possible to override initial and boundary conditions given
- in model with some different values from external configuration file?
 \end_layout
 
 \begin_layout Itemize
@@ -200,6 +302,19 @@ height "1pt"
 
 \end_layout
 
+\begin_layout Itemize
+
+\series bold
+How to write boundary conditions that combine field variables from different
+ domains?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+allow some connection of regions of different domains
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 Domain description where some parameters are in range and others are fixed:
  {{1,1}, {0.5,0.5}} or {{1,1}, 0.5}? 
@@ -306,6 +421,56 @@ der(u,v)
 \end_inset
 
 )
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Should it be possible to override initial and boundary conditions given
+ in model with some different values from external configuration file?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+yes
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to set initial condition for field derivative in similar way as using
+ 
+\family typewriter
+start
+\family default
+ atribute (i.e.
+ not using equation in 
+\family typewriter
+initial
+\family default
+ section)? See 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "String-equation-(1D)"
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\family typewriter
+start
+\family default
+ atribut is array where index denotes the derivative 
+\family typewriter
+start[0]
+\family default
+ - actual value, 
+\family typewriter
+start[1]
+\family default
+ - first derivative
 \end_layout
 
 \end_deeper

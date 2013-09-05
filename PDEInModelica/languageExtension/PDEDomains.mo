@@ -7,6 +7,10 @@ package PDEDomains
       input Real v;
       output Real x = l*v + a;
     end shapeFunc;
+TODO: find a way to define coordinates
+    class cartesian
+      coordinate x;
+    end cartesian;
     Region1D interior(shape = shapeFunc, range = {0,1});
     Region0D left(shape = shapeFunc, range = 0);
     Region0D right(shape = shapeFunc, range = 1);

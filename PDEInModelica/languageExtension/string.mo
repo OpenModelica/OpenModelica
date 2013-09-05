@@ -7,9 +7,7 @@ model string "model of a vibrating string with fixed ends"
     input Real x;
     output Real u0 := sin(4*C.pi/L*x);
   end u0;
-  field Real u(domain = omega, start = u0);
-initial
-  pder(u,time) = 0;
+  field Real u(domain = omega, start[0] = u0, start[1] = 0);
 equation
   pder(u,time,time) - c*pder(u,x,x) = 0   in omega.interior;
   u = 0;                                  in omega.left + omega.right;
