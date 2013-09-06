@@ -4813,22 +4813,10 @@ algorithm
         e = DAE.BINARY(inExp1, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("cos"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    //sinh(x)
-    case (_,_,DAE.CALL(path=Absyn.IDENT("sinh")))
-      equation
-        e = DAE.BINARY(inExp1, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("cosh"),{inExp2},DAE.callAttrBuiltinReal));
-        (e,_) = ExpressionSimplify.simplify(e);
-      then e;
     // cos(x)
     case (_,_,DAE.CALL(path=Absyn.IDENT("cos")))
       equation
         e = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), DAE.BINARY(inExp1,DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("sin"),{inExp2},DAE.callAttrBuiltinReal)));
-        (e,_) = ExpressionSimplify.simplify(e);
-      then e;
-     //cosh(x)
-    case (_,_,DAE.CALL(path=Absyn.IDENT("cosh")))
-      equation
-        e = DAE.BINARY(inExp1, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("sinh"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // ln(x)
@@ -4861,17 +4849,10 @@ algorithm
    // abs(x)
     case (_,_,DAE.CALL(path=Absyn.IDENT("abs")))
       equation
-         e = DAE.BINARY(DAE.CALL(Absyn.IDENT("sign"),{inExp2},DAE.callAttrBuiltinReal),DAE.MUL(DAE.T_REAL_DEFAULT),inExp1);
+        e = DAE.IFEXP(DAE.RELATION(inExp2,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()), inExp1, DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),inExp1));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-     // sign(x)
-    case (_,_,DAE.CALL(path=Absyn.IDENT("sign")))
-      then DAE.RCONST(0.0); 
-    // noEvent(x)
-    case (_,_,DAE.CALL(path=Absyn.IDENT("noEvent")))
-      equation
-        (e,_) = ExpressionSimplify.simplify(inExp1);
-      then e;
+
     // openmodelica build call $_start(x)
     case (_,_,DAE.CALL(path=Absyn.IDENT("$_start")))
       equation

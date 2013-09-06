@@ -507,7 +507,7 @@ algorithm
     local
       DAE.Exp z;
       DAE.Type tp;
-      String estr,se1,se2,sa;
+      String estr,se1,se2,se3,sa;
     case (_,_,_,_,_)
       equation
         // zero check already done
@@ -520,10 +520,11 @@ algorithm
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         se1 = ExpressionDump.printExpStr(inExp2);
         se2 = ExpressionDump.printExpStr(inExp1);
+        se3 = ExpressionDump.printExpStr(inExp3);
         sa = ExpressionDump.printExpStr(a);
-        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
+        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero! When solving for exp: ", se3, "."});
       then
-        DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
+        DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_WARNING,DAE.emptyElementSource)::inAsserts;
   end matchcontinue;
 end generateAssertZero;
 

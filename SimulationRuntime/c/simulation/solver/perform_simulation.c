@@ -159,9 +159,8 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
        */
       INDENT(LOG_SOLVER);
       communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
-      retValIntegrator = solver_main_step(data, solverInfo);  
-      if(solverInfo->solverMethod == S_OPTIMIZATION) 
-        return 0;
+      retValIntegrator = solver_main_step(data, solverInfo);
+
       updateContinuousSystem(data);
       saveZeroCrossings(data);
       RELEASE(LOG_SOLVER);

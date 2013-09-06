@@ -4000,7 +4000,7 @@ algorithm
     case(DAE.MUL(ty),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("exp"),expLst={e2}))
   equation
    false = Expression.isConst(e1) or Expression.isConst(e2);
-         e = DAE.BINARY(e1, DAE.ADD(ty),e2);
+         e = DAE.BINARY(e1, DAE.ADD(ty),e1);
    res = Expression.makeBuiltinCall("exp",{e},ty);
   then
    res;
