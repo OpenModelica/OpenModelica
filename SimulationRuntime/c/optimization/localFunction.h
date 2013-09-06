@@ -46,6 +46,8 @@ extern "C"
 {
 #endif
 
+#ifdef WITH_IPOPT
+
 #ifndef Bool
   #define Bool char
 #endif
@@ -57,6 +59,7 @@ extern "C"
 #ifndef Index
   #define Index int
 #endif
+
 
 Bool evalfF(Index n, double * x, Bool new_x, Number *objValue, void * useData);
 Bool evalfDiffF(Index n, double * x, Bool new_x, Number *gradF, void * useData);
@@ -104,6 +107,7 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x);
 /*initial*/
 int move_grid(IPOPT_DATA_ *iData);
 
+#endif /*WITH_IPOPT*/
 /*ADOL-C*/
 //extern int functionODE_ADOLC(DATA*); //jacobian(0, data->modelData.nStates, data->modelData.nStates + data->modelData.nInputVars, indvars, jac_states);
 
