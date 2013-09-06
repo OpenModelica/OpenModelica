@@ -30,7 +30,7 @@ inline static int sgn (const double &c)
 }
 
 /// Definition of Signum function
-OMC_API double division (const double &a,const double &b,std::string text);
+double division (const double &a,const double &b,std::string text);
 
 
 

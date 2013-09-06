@@ -23,7 +23,9 @@ public:
         LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(systemfactory_path.string(),*_system_type_map);
         if (result != LOADER_SUCCESS)
         {
-            throw std::runtime_error("Failed loading System library!");
+            std::stringstream tmp;
+            tmp << "Failed loading System library!" << std::endl << systemfactory_path.string();
+            throw std::runtime_error(tmp.str());
         }
         
         PATH dataexchange_path = ObjectFactory<CreationPolicy>::_library_path;
@@ -66,7 +68,9 @@ public:
         LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(modelica_path.string(),*_system_type_map);
         if (result != LOADER_SUCCESS)
         {
-            throw std::runtime_error("Failed loading System library!");
+            std::stringstream tmp;
+            tmp << "Failed loading System library!" << std::endl << modelica_path.string();
+            throw std::runtime_error(tmp.str());
         }
         
         std::map<std::string, factory<IMixedSystem,IGlobalSettings*,boost::shared_ptr<IAlgLoopSolverFactory>, boost::shared_ptr<ISimData> > >::iterator system_iter;

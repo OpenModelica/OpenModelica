@@ -857,7 +857,7 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r, linearizeTime, curveWidth;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, sort, builtin, showProtected, inputConnectors, outputConnectors;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
       Env.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -1380,8 +1380,11 @@ algorithm
 
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
+        ifmsvc = Util.equal(Config.simulationCodeTarget(),"msvc");
         exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);
-        libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc/cpp" ;
+        libDir= Settings.getInstallationDirectoryPath();
+        libDir = Util.if_(ifmsvc, libDir +& "/lib/omc/cpp/msvc",libDir+& "/lib/omc/cpp");
+        
         configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);
