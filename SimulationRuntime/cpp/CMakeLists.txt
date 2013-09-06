@@ -8,6 +8,12 @@ SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE F
 SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
 SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
+# Disable Optimization for RelWithDebInfo on Windows
+if (MSVC)
+    STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})
+endif()    
+
+
 #set mico paths
 SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
 SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)

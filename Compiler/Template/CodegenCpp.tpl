@@ -1683,7 +1683,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
   void <%modelname%>Algloop<%index%>::getRHS(double* residuals)
     {
-     AlgLoopDefaultImplementation::getRHS(residuals);
+        for(size_t i=0; i<_dimAEq; ++i)
+        	residuals[i] = __b[i]; 
     }
   >>
 
