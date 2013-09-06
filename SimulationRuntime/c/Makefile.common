@@ -166,7 +166,7 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica
 
 clean:
-	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a
+	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a optimization/*/*.o
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean

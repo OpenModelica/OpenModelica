@@ -51,7 +51,7 @@
   #define CONFIGURE_COMMANDLINE "Manually created Makefiles for Visual Studio"
 #endif
 
-#define LDFLAGS_RT " -static-libgcc -luuid -lole32 -lws2_32 -lsundials_kinsol -lsundials_nvecserial -llapack-mingw -ltmglib-mingw -lblas-mingw"
+#define LDFLAGS_RT " -static-libgcc -luuid -lole32 -lws2_32 -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lcoinmetis -lpthread -lm -lgfortranbegin -lgfortran -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -llapack-mingw -ltmglib-mingw -lblas-mingw -lf2c"
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"
@@ -85,7 +85,12 @@
 #define CONFIG_IPOPT_LIB /* Without IPOPT */
 
 #define WITH_SUNDIALS
-/* Without IPOPT */
+
+#if defined(__MINGW32__)
+#define WITH_IPOPT
+#else
+/* Without IPOPT for MSVC */
+#endif
 
 #include "revision.h"
 
