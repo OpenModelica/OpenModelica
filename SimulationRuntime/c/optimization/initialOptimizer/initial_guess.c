@@ -65,10 +65,10 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
   for(ii=iData->nx,j=0; j < iData->nu; ++j, ++ii)
   {
-	  u0[j] = data->modelData.realVarsData[iData->index_u+j].attribute.start;
-	  u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
-	  u[j] = u0[j];
-	  v[ii] = u0[j]*iData->scalVar[j + iData->nx];
+    u0[j] = data->modelData.realVarsData[iData->index_u+j].attribute.start;
+    u0[j] = fmin(fmax(u0[j],iData->umin[j]),iData->umax[j]);
+    u[j] = u0[j];
+    v[ii] = u0[j]*iData->scalVar[j + iData->nx];
   }
 
   solverInfo->solverData = calloc(1, sizeof(KINODE));
@@ -78,8 +78,8 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
   if(ACTIVE_STREAM(LOG_IPOPT))
   {
-	  printf("\n****initial guess****");
-  	  printf("\n #####done time[%i] = %f",0,iData->time[0]);
+    printf("\n****initial guess****");
+      printf("\n #####done time[%i] = %f",0,iData->time[0]);
   }
 
   for(i =0, k= 1, v = iData->v + iData->nv; i<iData->nsi;++i)
@@ -89,33 +89,33 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
         solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
         iData->data->localData[1]->timeValue = iData->time[k];
         do{
-			err = kinsolOde(solverInfo->solverData);
+      err = kinsolOde(solverInfo->solverData);
 
-			if(err < 0)
-			{
-				solverInfo->currentStepSize *= 0.99;
+      if(err < 0)
+      {
+        solverInfo->currentStepSize *= 0.99;
 
-				kinOde->kData->fnormtol *=10.0;
-				kinOde->kData->scsteptol *=10.0;
-				if(ACTIVE_STREAM(LOG_SOLVER))
-				{
-					printf("\n #####try time[%i] = %f",k,iData->time[k]);
-				}
-			}
-			else
-			{
-				if(ACTIVE_STREAM(LOG_IPOPT))
-					printf("\n #####done time[%i] = %f",k,iData->time[k]);
-			}
+        kinOde->kData->fnormtol *=10.0;
+        kinOde->kData->scsteptol *=10.0;
+        if(ACTIVE_STREAM(LOG_SOLVER))
+        {
+          printf("\n #####try time[%i] = %f",k,iData->time[k]);
+        }
+      }
+      else
+      {
+        if(ACTIVE_STREAM(LOG_IPOPT))
+          printf("\n #####done time[%i] = %f",k,iData->time[k]);
+      }
         }while(err <0);
-		kinOde->kData->fnormtol =iData->data->simulationInfo.tolerance;
-		kinOde->kData->scsteptol =iData->data->simulationInfo.tolerance;
+    kinOde->kData->fnormtol =iData->data->simulationInfo.tolerance;
+    kinOde->kData->scsteptol =iData->data->simulationInfo.tolerance;
 
 
-		for(j=0; j< iData->nx; ++j)
-		  {
-			v[j] = sData->realVars[j] * iData->scalVar[j];
-		  }
+    for(j=0; j< iData->nx; ++j)
+      {
+      v[j] = sData->realVars[j] * iData->scalVar[j];
+      }
 
         for(ii=iData->index_u; j< iData->nv; ++j, ++ii)
           {
@@ -133,16 +133,16 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
           if(id >=iData->nv) id = 0;
           if(id <iData->nx)
           {
-        	  iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+            iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
           }
           else if(id< iData->nv)
           {
-        	  iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+            iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
           }
   }
 
   if(ACTIVE_STREAM(LOG_IPOPT))
-	  printf("\n*****initial guess done*****");
+    printf("\n*****initial guess done*****");
   freeKinOde(data, solverInfo, 8, 1);
   solverInfo->solverData = (void*)iData;
 

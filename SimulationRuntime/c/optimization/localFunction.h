@@ -55,10 +55,10 @@ Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iD
 
 Bool evalfG(Index n, double * x, Bool new_x, int m, Number *g, void * useData);
 Bool evalfDiffG(Index n, double * x, Bool new_x,
-			 Index m, Index njac, Index *iRow, Index *iCol, Number* values, void * useData);
+       Index m, Index njac, Index *iRow, Index *iCol, Number* values, void * useData);
 
 Bool ipopt_h(int n, double *x, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
-				 int nele_hess, int *iRow, int *jCol, double *values, void* user_data);
+         int nele_hess, int *iRow, int *jCol, double *values, void* user_data);
 
  #ifdef __cplusplus
  }

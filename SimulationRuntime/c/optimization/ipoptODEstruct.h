@@ -55,147 +55,147 @@
 
 
 typedef struct{
-	/*#*/
-	long int nx; /*Point*/
-	long int nu;
-	long int nv;
-	long int nX; /*horizon*/
-	long int nU;
-	long int nV;
-	long int nRes;
-	long int NX; /*all*/
-	long int NU;
-	long int NV;
-	long int NRes;
-	/* ODE */
-	double * x0;
-	double * xmin;
-	double * xmax;
-	double * umin;
-	double * umax;
-	double * vmin;
-	double * vmax;
-	double * Vmin;
-	double * Vmax;
+  /*#*/
+  long int nx; /*Point*/
+  long int nu;
+  long int nv;
+  long int nX; /*horizon*/
+  long int nU;
+  long int nV;
+  long int nRes;
+  long int NX; /*all*/
+  long int NU;
+  long int NV;
+  long int NRes;
+  /* ODE */
+  double * x0;
+  double * xmin;
+  double * xmax;
+  double * umin;
+  double * umax;
+  double * vmin;
+  double * vmax;
+  double * Vmin;
+  double * Vmax;
 
-	double * vnom;
+  double * vnom;
 
-	double *scalVar;
-	double *scalRes;
-	double *scalJac;
-	double *scalf;
+  double *scalVar;
+  double *scalRes;
+  double *scalJac;
+  double *scalf;
 
-	/*time*/
-	double t0;
-	double tf;
-	//double dt;
-	double t;
-	double dt_min;
-	double dt_max;
-	double dt_default;
-	double *dt;
+  /*time*/
+  double t0;
+  double tf;
+  //double dt;
+  double t;
+  double dt_min;
+  double dt_max;
+  double dt_default;
+  double *dt;
 
 
-	double *lhs;
-	double *rhs;
-	double *sh;
-	double *sv;
-	double *v;
-	double *w;
-	double *dotx0;
-	double *dotx1;
-	double *dotx2;
-	double *dotx3;
+  double *lhs;
+  double *rhs;
+  double *sh;
+  double *sv;
+  double *v;
+  double *w;
+  double *dotx0;
+  double *dotx1;
+  double *dotx2;
+  double *dotx3;
 
-	double *x1;
-	double *x2;
-	double *x3;
+  double *x1;
+  double *x2;
+  double *x3;
 
-	double *u1;
-	double *u2;
-	double *u3;
+  double *u1;
+  double *u2;
+  double *u3;
 
-	double c1;
-	double c2;
-	double c3;
+  double c1;
+  double c2;
+  double c3;
 
-	double *a1;
-	double *a2;
-	double *a3;
+  double *a1;
+  double *a2;
+  double *a3;
 
-	double **a1_;
-	double **a2_;
-	double **a3_;
+  double **a1_;
+  double **a2_;
+  double **a3_;
 
-	double *d1;
-	double *d2;
-	double *d3;
+  double *d1;
+  double *d2;
+  double *d3;
 
-	double **d1_;
-	double **d2_;
-	double **d3_;
+  double **d1_;
+  double **d2_;
+  double **d3_;
 
-	double e1;
-	double e2;
-	double e3;
+  double e1;
+  double e2;
+  double e3;
 
-	double bl[4];
-	double br[3];
+  double bl[4];
+  double br[3];
 
-	int deg;
+  int deg;
 
-	double *gmin;
-	double *gmax;
+  double *gmin;
+  double *gmax;
 
-	long int njac;
-	long int nhess;
-	long int nsi;
-	long int np;
-	int nlocalJac;
+  long int njac;
+  long int nhess;
+  long int nsi;
+  long int np;
+  int nlocalJac;
 
-	long int endN;
-	double **J0;
-	double **J;
-	int **knowedJ;
-	double **numJ;
-	long double ***H;
-	long double **oH;
-	long double **mH;
+  long int endN;
+  double **J0;
+  double **J;
+  int **knowedJ;
+  double **numJ;
+  long double ***H;
+  long double **oH;
+  long double **mH;
 
-	int * iRow;
-	int * iCol;
+  int * iRow;
+  int * iCol;
 
-	double *mult_g;
-	double *mult_x_L;
-	double *mult_x_U;
+  double *mult_g;
+  double *mult_x_L;
+  double *mult_x_U;
 
-	long int current_var;
-	long int current_time;
-	double *time;
-	short mayer;
-	short lagrange;
-	DATA * data;
-	long int index_u;
+  long int current_var;
+  long int current_time;
+  double *time;
+  short mayer;
+  short lagrange;
+  DATA * data;
+  long int index_u;
 
-	int matrixA;
-	int matrixB;
-	int matrixC;
-	int matrixD;
+  int matrixA;
+  int matrixB;
+  int matrixC;
+  int matrixD;
 
-	int numObject;
+  int numObject;
 
-	/*Debuger*/
-	FILE **pFile;
-	long index_debug_iter;
-	int degub_step;
-	long index_debug_next;
+  /*Debuger*/
+  FILE **pFile;
+  long index_debug_iter;
+  int degub_step;
+  long index_debug_next;
 
 }IPOPT_DATA_;
 
 #else
 
 typedef struct{
-	void * empty_data;
+  void * empty_data;
 }IPOPT_DATA_;
 
 
