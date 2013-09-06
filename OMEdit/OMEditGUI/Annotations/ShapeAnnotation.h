@@ -41,7 +41,6 @@
 #include <QGraphicsItem>
 #include <QSettings>
 #include <QGroupBox>
-#include <QDoubleSpinBox>
 #include <QDialog>
 #include <QComboBox>
 #include <QCheckBox>

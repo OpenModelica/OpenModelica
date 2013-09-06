@@ -84,14 +84,18 @@ void SimulationDialog::setUpForm()
   // Simulation Interval
   mpSimulationIntervalGroupBox = new QGroupBox(tr("Simulation Interval"));
   mpStartTimeLabel = new Label(tr("Start Time:"));
-  mpStartTimeSpinBox = new QDoubleSpinBox;
+  mpStartTimeSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
+          mpStartTimeSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
   mpStartTimeSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpStartTimeSpinBox->setValue(0);
   mpStartTimeSpinBox->setSingleStep(0.1);
   mpStopTimeLabel = new Label(tr("Stop Time:"));
-  mpStopTimeSpinBox = new QDoubleSpinBox;
-  mpStopTimeSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
+  mpStopTimeSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
+          mpStopTimeSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
   mpStopTimeSpinBox->setValue(1);
+  mpStopTimeSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpStopTimeSpinBox->setSingleStep(0.1);
   // set the layout for simulation interval groupbox
   QGridLayout *pSimulationIntervalGridLayout = new QGridLayout;
@@ -107,8 +111,9 @@ void SimulationDialog::setUpForm()
   mpMethodComboBox = new QComboBox;
   mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.split(","));
   mpToleranceLabel = new Label(tr("Tolerance:"));
-  mpToleranceSpinBox = new QDoubleSpinBox;
-  mpToleranceSpinBox->setDecimals(6);
+  mpToleranceSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
+          mpToleranceSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
   mpToleranceSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpToleranceSpinBox->setValue(0.000001);
   mpToleranceSpinBox->setSingleStep(0.000001);
@@ -137,7 +142,9 @@ void SimulationDialog::setUpForm()
   mpOutputTab = new QWidget;
   // Output Interval
   mpNumberofIntervalLabel = new Label(tr("Number of Intervals:"));
-  mpNumberofIntervalsSpinBox = new QDoubleSpinBox;
+  mpNumberofIntervalsSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
+          mpNumberofIntervalsSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
   mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpNumberofIntervalsSpinBox->setValue(500);
   mpNumberofIntervalsSpinBox->setSingleStep(100);

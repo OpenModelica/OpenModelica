@@ -38,6 +38,7 @@
 #include <QMdiArea>
 #include <QThread>
 #include <QLabel>
+#include <QDoubleSpinBox>
 #include <QVariant>
 
 #ifndef UTILITIES_H
@@ -73,6 +74,21 @@ public:
   Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags f = 0) : QLabel(text, parent, f) {init();}
 private:
   void init() {setTextInteractionFlags(Qt::TextSelectableByMouse);}
+};
+
+//! @class DoubleSpinBox
+/*! \brief It creates a double spinbox with a specified precision value.
+ * If you want the precision value to be changed based on the global precision value defined in omedit.ini then connect this object with
+ * the object of GeneralSettingsPage object right after creating this object. e.g,\n
+ * connect(GeneralSettingsPage, SIGNAL(globalPrecisionValueChanged(int)), DoubleSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+ */
+class DoubleSpinBox : public QDoubleSpinBox
+{
+  Q_OBJECT
+public:
+  DoubleSpinBox(int precision = 2, QWidget *parent = 0) : QDoubleSpinBox(parent) {setDecimals(precision);}
+public slots:
+  void handleGlobalPrecisionValueChange(int value) {setDecimals(value);}
 };
 
 //! @struct RecentFile

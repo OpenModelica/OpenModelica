@@ -129,6 +129,8 @@ public:
   QString getWorkingDirectory();
   void setPreserveUserCustomizations(bool value);
   bool getPreserveUserCustomizations();
+  void setGlobalPrecision(int value);
+  int getGlobalPrecision();
   void setShowProtectedClasses(bool value);
   bool getShowProtectedClasses();
   void setModelingViewMode(QString value);
@@ -150,6 +152,8 @@ private:
   QLineEdit *mpWorkingDirectoryTextBox;
   QPushButton *mpWorkingDirectoryBrowseButton;
   QCheckBox *mpPreserveUserCustomizations;
+  Label *mpGlobalPrecisionLabel;
+  QSpinBox *mpGlobalPrecisionSpinBox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   QCheckBox *mpShowProtectedClasses;
   QGroupBox *mpModelingViewModeGroupBox;
@@ -172,6 +176,8 @@ private:
 public slots:
   void selectWorkingDirectory();
   void autoSaveIntervalValueChanged(int value);
+signals:
+  void globalPrecisionValueChanged(int value);
 };
 
 class LibrariesPage : public QWidget
@@ -300,7 +306,7 @@ private:
   Label *mpFontFamilyLabel;
   QFontComboBox *mpFontFamilyComboBox;
   Label *mpFontSizeLabel;
-  QDoubleSpinBox *mpFontSizeSpinBox;
+  DoubleSpinBox *mpFontSizeSpinBox;
   Label *mpItemsLabel;
   QListWidget *mpItemsList;
   Label *mpItemColorLabel;
@@ -365,40 +371,40 @@ private:
   QWidget *mpIconViewWidget;
   QGroupBox *mpIconViewExtentGroupBox;
   Label *mpIconViewLeftLabel;
-  QDoubleSpinBox *mpIconViewLeftSpinBox;
+  DoubleSpinBox *mpIconViewLeftSpinBox;
   Label *mpIconViewBottomLabel;
-  QDoubleSpinBox *mpIconViewBottomSpinBox;
+  DoubleSpinBox *mpIconViewBottomSpinBox;
   Label *mpIconViewRightLabel;
-  QDoubleSpinBox *mpIconViewRightSpinBox;
+  DoubleSpinBox *mpIconViewRightSpinBox;
   Label *mpIconViewTopLabel;
-  QDoubleSpinBox *mpIconViewTopSpinBox;
+  DoubleSpinBox *mpIconViewTopSpinBox;
   QGroupBox *mpIconViewGridGroupBox;
   Label *mpIconViewGridHorizontalLabel;
-  QDoubleSpinBox *mpIconViewGridHorizontalSpinBox;
+  DoubleSpinBox *mpIconViewGridHorizontalSpinBox;
   Label *mpIconViewGridVerticalLabel;
-  QDoubleSpinBox *mpIconViewGridVerticalSpinBox;
+  DoubleSpinBox *mpIconViewGridVerticalSpinBox;
   QGroupBox *mpIconViewComponentGroupBox;
   Label *mpIconViewScaleFactorLabel;
-  QDoubleSpinBox *mpIconViewScaleFactorSpinBox;
+  DoubleSpinBox *mpIconViewScaleFactorSpinBox;
   QCheckBox *mpIconViewPreserveAspectRatioCheckBox;
   QWidget *mpDiagramViewWidget;
   QGroupBox *mpDiagramViewExtentGroupBox;
   Label *mpDiagramViewLeftLabel;
-  QDoubleSpinBox *mpDiagramViewLeftSpinBox;
+  DoubleSpinBox *mpDiagramViewLeftSpinBox;
   Label *mpDiagramViewBottomLabel;
-  QDoubleSpinBox *mpDiagramViewBottomSpinBox;
+  DoubleSpinBox *mpDiagramViewBottomSpinBox;
   Label *mpDiagramViewRightLabel;
-  QDoubleSpinBox *mpDiagramViewRightSpinBox;
+  DoubleSpinBox *mpDiagramViewRightSpinBox;
   Label *mpDiagramViewTopLabel;
-  QDoubleSpinBox *mpDiagramViewTopSpinBox;
+  DoubleSpinBox *mpDiagramViewTopSpinBox;
   QGroupBox *mpDiagramViewGridGroupBox;
   Label *mpDiagramViewGridHorizontalLabel;
-  QDoubleSpinBox *mpDiagramViewGridHorizontalSpinBox;
+  DoubleSpinBox *mpDiagramViewGridHorizontalSpinBox;
   Label *mpDiagramViewGridVerticalLabel;
-  QDoubleSpinBox *mpDiagramViewGridVerticalSpinBox;
+  DoubleSpinBox *mpDiagramViewGridVerticalSpinBox;
   QGroupBox *mpDiagramViewComponentGroupBox;
   Label *mpDiagramViewScaleFactorLabel;
-  QDoubleSpinBox *mpDiagramViewScaleFactorSpinBox;
+  DoubleSpinBox *mpDiagramViewScaleFactorSpinBox;
   QCheckBox *mpDiagramViewPreserveAspectRatioCheckBox;
 };
 
@@ -470,13 +476,13 @@ private:
   Label *mpLinePatternLabel;
   QComboBox *mpLinePatternComboBox;
   Label *mpLineThicknessLabel;
-  QDoubleSpinBox *mpLineThicknessSpinBox;
+  DoubleSpinBox *mpLineThicknessSpinBox;
   Label *mpLineStartArrowLabel;
   QComboBox *mpLineStartArrowComboBox;
   Label *mpLineEndArrowLabel;
   QComboBox *mpLineEndArrowComboBox;
   Label *mpLineArrowSizeLabel;
-  QDoubleSpinBox *mpLineArrowSizeSpinBox;
+  DoubleSpinBox *mpLineArrowSizeSpinBox;
   Label *mpLineSmoothLabel;
   QCheckBox *mpLineSmoothCheckBox;
 public slots:
@@ -520,7 +526,7 @@ private:
   Label *mpCurvePatternLabel;
   QComboBox *mpCurvePatternComboBox;
   Label *mpCurveThicknessLabel;
-  QDoubleSpinBox *mpCurveThicknessSpinBox;
+  DoubleSpinBox *mpCurveThicknessSpinBox;
 };
 
 #endif // OPTIONSDIALOG_H

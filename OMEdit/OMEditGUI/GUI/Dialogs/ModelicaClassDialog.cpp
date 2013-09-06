@@ -922,22 +922,23 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   // create extent points group box
   mpExtentGroupBox = new QGroupBox(Helper::extent);
   mpLeftLabel = new Label(QString(Helper::left).append(":"));
-  mpLeftSpinBox = new QDoubleSpinBox;
+  OptionsDialog *pOptionsDialog = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getMainWindow()->getOptionsDialog();
+  mpLeftSpinBox = new DoubleSpinBox(pOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
   mpLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpLeftSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).x());
   mpLeftSpinBox->setSingleStep(10);
   mpBottomLabel = new Label(Helper::bottom);
-  mpBottomSpinBox = new QDoubleSpinBox;
+  mpBottomSpinBox = new DoubleSpinBox(pOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
   mpBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpBottomSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(0).y());
   mpBottomSpinBox->setSingleStep(10);
   mpRightLabel = new Label(QString(Helper::right).append(":"));
-  mpRightSpinBox = new QDoubleSpinBox;
+  mpRightSpinBox = new DoubleSpinBox(pOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
   mpRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpRightSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).x());
   mpRightSpinBox->setSingleStep(10);
   mpTopLabel = new Label(Helper::top);
-  mpTopSpinBox = new QDoubleSpinBox;
+  mpTopSpinBox = new DoubleSpinBox(pOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
   mpTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpTopSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getExtent().at(1).y());
   mpTopSpinBox->setSingleStep(10);
@@ -957,12 +958,12 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   // create the grid group box
   mpGridGroupBox = new QGroupBox(Helper::grid);
   mpHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
-  mpHorizontalSpinBox = new QDoubleSpinBox;
+  mpHorizontalSpinBox = new DoubleSpinBox(pOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
   mpHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpHorizontalSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getGrid().x());
   mpHorizontalSpinBox->setSingleStep(1);
   mpVerticalLabel = new Label(QString(Helper::vertical).append(":"));
-  mpVerticalSpinBox = new QDoubleSpinBox;
+  mpVerticalSpinBox = new DoubleSpinBox(pOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
   mpVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpVerticalSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getGrid().y());
   mpVerticalSpinBox->setSingleStep(1);
@@ -977,7 +978,7 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   // create the Component group box
   mpComponentGroupBox = new QGroupBox(Helper::component);
   mpScaleFactorLabel = new Label(Helper::scaleFactor);
-  mpScaleFactorSpinBox = new QDoubleSpinBox;
+  mpScaleFactorSpinBox = new DoubleSpinBox(pOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
   mpScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpScaleFactorSpinBox->setValue(mpGraphicsView->getCoOrdinateSystem()->getInitialScale());
   mpScaleFactorSpinBox->setSingleStep(0.1);
