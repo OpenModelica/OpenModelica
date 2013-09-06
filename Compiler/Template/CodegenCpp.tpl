@@ -1684,7 +1684,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   void <%modelname%>Algloop<%index%>::getRHS(double* residuals)
     {
         for(size_t i=0; i<_dimAEq; ++i)
-        	residuals[i] = __b[i]; 
+          residuals[i] = __b[i]; 
     }
   >>
 
