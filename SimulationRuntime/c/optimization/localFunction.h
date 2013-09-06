@@ -46,6 +46,18 @@ extern "C"
 {
 #endif
 
+#ifndef Bool
+  #define Bool char
+#endif
+
+#ifndef Number
+  #define Number double
+#endif
+
+#ifndef Index
+  #define Index int
+#endif
+
 Bool evalfF(Index n, double * x, Bool new_x, Number *objValue, void * useData);
 Bool evalfDiffF(Index n, double * x, Bool new_x, Number *gradF, void * useData);
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData);
