@@ -149,7 +149,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 
   if(solverInfo->solverMethod != S_OPTIMIZATION)
   {
-  	sim_result.emit(&sim_result,data);
+    sim_result.emit(&sim_result,data);
     overwriteOldSimulationData(data);
   }
 
@@ -659,11 +659,11 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
 static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-	int cJ = currectJumpState;
-	currectJumpState = ERROR_OPTIMIZE;
-	startIpopt(data, solverInfo,5);
-	currectJumpState = cJ;
-	return 0;
+  int cJ = currectJumpState;
+  currectJumpState = ERROR_OPTIMIZE;
+  startIpopt(data, solverInfo,5);
+  currectJumpState = cJ;
+  return 0;
 }
 #endif
 
