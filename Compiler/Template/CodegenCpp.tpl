@@ -1664,7 +1664,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
      void <%modelname%>Algloop<%index%>::getSystemMatrix(double* A_matrix)
      {
-          memcpy(A_matrix,__A.data(),_dim[0]*_dim[0]*sizeof(double));
+          memcpy(A_matrix,__A.data(),_dimAEq*_dimAEq*sizeof(double));
      }
    >>
 
@@ -1700,20 +1700,18 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 match eq
  case SES_LINEAR(__) then
    <<
-    int <%modelname%>Algloop<%index%>::giveDimResiduals(int index)
+    int <%modelname%>Algloop<%index%>::getDimRHS()
     {
-      if(index == 0) return _dim[0];
-      else if(index == 1) return _dim[1];
-      else if(index == 2) return _dim[2];
+      return _dimAEq;
     }
 
     void <%modelname%>Algloop<%index%>::getRHS(double* vars)
     {
-        ublas::matrix<double> A=toMatrix(_dim[0],_dim[0],__A.data());
+        ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A.data());
         double* doubleUnknowns = new double[_dimAEq];
         getReal(doubleUnknowns);
-        ublas::vector<double> x=toVector(_dim[0],doubleUnknowns);
-        ublas::vector<double> b=toVector(_dim[0],__b.data());
+        ublas::vector<double> x=toVector(_dimAEq,doubleUnknowns);
+        ublas::vector<double> b=toVector(_dimAEq,__b.data());
         b=ublas::prod(ublas::trans(A),x)-b;
         if(vars) std::copy(b.data().begin(), b.data().end(), vars);
     }
