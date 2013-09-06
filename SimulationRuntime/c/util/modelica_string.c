@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include "gc.h"
 
 int modelica_string_ok(const modelica_string_t* a)
 {
