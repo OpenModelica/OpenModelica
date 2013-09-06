@@ -55,11 +55,6 @@
 int startIpopt(DATA * data,SOLVER_INFO * solverInfo, int flag);
 int destroyIpopt(SOLVER_INFO* solverInfo);
 
-#else
-
-int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag){return -1;}
-int destroyIpopt(SOLVER_INFO* solverInfo){return -1;}
-
 #endif
 
 
