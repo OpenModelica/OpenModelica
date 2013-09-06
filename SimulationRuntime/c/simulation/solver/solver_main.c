@@ -45,6 +45,9 @@
 #include "stateset.h"
 #include "radau.h"
 
+#include "interfaceOptimization.h"
+
+
 /*
  * #include "dopri45.h"
  */
@@ -172,7 +175,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
   else if(solverInfo->solverMethod == 5)
   {
-    solverInfo->solverData = NULL;
+    solverInfo->solverData = malloc(1*sizeof(IPOPT_DATA_));
   }
 #endif
 #ifdef WITH_SUNDIALS
@@ -366,6 +369,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
     retValue =  -1;
     INFO(LOG_STDOUT, "model terminate | Simulation terminated by an assert at initialization");
   }
+
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result.writeParameterData(&sim_result,data);
   INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
@@ -379,9 +383,6 @@ int initializeModel(DATA* data, const char* init_initMethod,
   storeRelations(data);
   updateHysteresis(data);
   saveZeroCrossings(data);
-
-  sim_result.emit(&sim_result,data);
-  overwriteOldSimulationData(data);
 
   /* Initialization complete */
   if(measure_time_flag)
@@ -423,7 +424,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
 
   /* Last step with terminal()=true */
-  if(solverInfo->currentTime >= simInfo->stopTime)
+  if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION)
   {
     data->simulationInfo.terminal = 1;
     updateDiscreteSystem(data);
@@ -571,6 +572,13 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* starts the simulation main loop */
   if (0 == retVal)
   {
+
+    if(solverInfo.solverMethod != S_OPTIMIZATION)
+    {
+      sim_result.emit(&sim_result,data);
+      overwriteOldSimulationData(data);
+    }
+
     INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
     retVal = performSimulation(data, &solverInfo);
     
@@ -652,8 +660,11 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 #ifdef WITH_IPOPT
 static int ipopt_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  WARNING(LOG_STDOUT, "optimization is not supported yet");
-  return -1;
+  int cJ = currectJumpState;
+  currectJumpState = ERROR_OPTIMIZE;
+  startIpopt(data, solverInfo,5);
+  currectJumpState = cJ;
+  return 0;
 }
 #endif
 
