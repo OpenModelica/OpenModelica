@@ -217,7 +217,7 @@ algorithm
     local
       Integer nVars, nEqns;
 
-    // over-determined system
+    // over-determined system: nEqns > nVars
     case(_, _) equation
       nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
       nEqns = BackendDAEUtil.systemSize(isyst);
@@ -226,14 +226,14 @@ algorithm
       Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "It was not possible to solve the over-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
     then fail();
 
-    // equal
+    // determined system: nEqns = nVars
     case( _, _) equation
       nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
       nEqns = BackendDAEUtil.systemSize(isyst);
       true = intEq(nEqns, nVars);
     then (isyst, sharedOptimized);
 
-    // under-determined system
+    // under-determined system: nEqns < nVars
     case( _, _) equation
       nVars = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
       nEqns = BackendDAEUtil.systemSize(isyst);

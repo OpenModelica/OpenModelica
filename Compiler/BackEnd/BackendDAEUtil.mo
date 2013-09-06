@@ -7859,15 +7859,15 @@ public function getSolvedSystem
   input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
 protected
-  BackendDAE.BackendDAE dae,optdae,sode,sode1,sode2,optsode;
-  Option<BackendDAE.IncidenceMatrix> om,omT;
-  BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
-  array<Integer> v1,v2,v1_1,v2_1;
+  BackendDAE.BackendDAE dae, optdae, sode, sode1, sode2, optsode;
+  Option<BackendDAE.IncidenceMatrix> om, omT;
+  BackendDAE.IncidenceMatrix m, mT, m_1, mT_1;
+  array<Integer> v1, v2, v1_1, v2_1;
   BackendDAE.StrongComponents comps;
-  list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
-  list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
-  tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
-  tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
+  list<tuple<preoptimiseDAEModule, String, Boolean>> preOptModules;
+  list<tuple<pastoptimiseDAEModule, String, Boolean>> pastOptModules;
+  tuple<StructurallySingularSystemHandlerFunc, String, stateDeselectionFunc, String> daeHandler;
+  tuple<matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.EqSystem syst;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
@@ -7879,24 +7879,24 @@ algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
-  _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  Debug.execStat("preOpt SimplifyAllExp",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
+  _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
+  Debug.execStat("preOpt SimplifyAllExp", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  (optdae, Util.SUCCESS()) := preoptimiseDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  sode := causalizeDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
-  Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
+  sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
+  Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump", sode));
 
   // past optimisation phase
-  (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
+  (optsode, Util.SUCCESS()) := pastoptimiseDAE(sode, pastOptModules, matchingAlgorithm, daeHandler);
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
-  Debug.execStat("findZeroCrossings",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
+  Debug.execStat("findZeroCrossings", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
   outSODE := calculateValues(sode1);
   // moved to SimCodeUtil because of initial system
-  //Debug.execStat("calculateValue",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  //Debug.execStat("calculateValue", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   //outSODE := expandAlgorithmsbyInitStmts(sode2);
-  Debug.execStat("expandAlgorithmsbyInitStmts",GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("expandAlgorithmsbyInitStmts", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "indxdae: eqns in order");
