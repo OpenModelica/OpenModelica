@@ -410,18 +410,20 @@ dnl should we use ipopt?
 
 AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use ipopt for initialization], 
 [
-  WANT_IPOPT="yes"
-
-  if test "$withval" = "yes"; then
-    AC_CHECK_HEADERS(coin/IpStdCInterface.h, [IPOPT_LDFLAGS="-lipopt -lcoinmumps"; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
-  else
-    IPOPT_DIR="$withval"
-    AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS="-L'"$IPOPT_DIR"/lib' -lipopt -lcoinmumps"; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
-  fi
+  WANT_IPOPT="$withval"
 ], [
-  WANT_IPOPT="no"
-  NO_IPOPT="yes"
+  WANT_IPOPT="yes"
 ])
+
+if test "$WANT_IPOPT" = "yes"; then
+  AC_CHECK_HEADERS(coin/IpStdCInterface.h, [IPOPT_LDFLAGS="-lipopt"; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
+elif test "$WANT_IPOPT" = "no"; then
+  NO_IPOPT="yes"
+else
+  IPOPT_DIR="$withval"
+  AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS="-L'"$IPOPT_DIR"/lib' -lipopt"; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
+fi
+  
 
 if ! test "$NO_IPOPT" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
