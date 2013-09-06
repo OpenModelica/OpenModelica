@@ -83,6 +83,9 @@ void AlgLoopDefaultImplementation::initialize()
             ++_dimAEq;
         }
     }
+    else
+        throw std::invalid_argument("AlgLoopDefaultImplementation::initialize(): Unknown _constraintType.");
+
     //nach default algloop verschieben
     // Prüfen ob min. eine Bindungsgleichung vorhanden
     if ( _dimAEq == 0 )

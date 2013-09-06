@@ -1636,7 +1636,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      {
 
          <%initAlgloopEquation(eq,varDecls,simCode)%>
-          AlgLoopDefaultImplementation::initialize();
         // Update the equations once before start of simulation
         evaluate(IContinuous::ALL);
      }
