@@ -25,6 +25,7 @@ CXXFLAGS=@CXXFLAGS@
 LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 GC_THREADS=--enable-threads=posix
+LIBFMILIB=@LIBFMILIB@
 
 include Makefile.common
 
