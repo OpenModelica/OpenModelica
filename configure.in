@@ -689,7 +689,7 @@ else
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
-  LIBFMILIB=libfmilib.so
+  LIBFMILIB=libfmilib.a
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc -lexpat $OPENMP"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
