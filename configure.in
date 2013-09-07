@@ -416,12 +416,12 @@ AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use ipopt for initializat
 ])
 
 if test "$WANT_IPOPT" = "yes"; then
-  AC_CHECK_HEADERS(coin/IpStdCInterface.h, [IPOPT_LDFLAGS="-lipopt -lcoinmumps -lcoinmetis"; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
+  AC_CHECK_HEADERS(coin/IpStdCInterface.h, [IPOPT_LDFLAGS="-lipopt"; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
 elif test "$WANT_IPOPT" = "no"; then
   NO_IPOPT="yes"
 else
   IPOPT_DIR="$withval"
-  AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS="-L'"$IPOPT_DIR"/lib' -lipopt -lcoinmumps -lcoinmetis"; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
+  AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS="-L'"$IPOPT_DIR"/lib' -lipopt"; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
 fi
   
 
