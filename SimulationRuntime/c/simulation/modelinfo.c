@@ -90,8 +90,8 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set ylabel\n");
   fprintf(plt, "set log y\n");
 
-  if(i>=0
-) {
+  if(i>=0)
+  {
     fprintf(plt, "set yrange [*:%g]\n", ygraphmax);
   }
   else
