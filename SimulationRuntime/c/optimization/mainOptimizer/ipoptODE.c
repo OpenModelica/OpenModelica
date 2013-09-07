@@ -113,7 +113,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
       AddIpoptIntOption(nlp, "file_print_level", 5);
     }
     else{
-      AddIpoptIntOption(nlp, "print_level", 3);
+      AddIpoptIntOption(nlp, "print_level", 0);
       AddIpoptIntOption(nlp, "file_print_level", 0);
     }
 
