@@ -78,7 +78,7 @@ int checkCommandLineArguments(int argc, char **argv)
 
     for(j=1; j<FLAG_MAX; ++j)
     {
-      if ((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j], 1, argv+i))
+      if((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j], 1, argv+i))
       {
         if(omc_flag[j])
         {

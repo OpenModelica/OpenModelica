@@ -65,7 +65,7 @@ void csv_emit(simulation_result *self, DATA *data)
   rt_tick(SIM_TIMER_TOTAL);
 
   fprintf(fout, format, data->localData[0]->timeValue);
-  if (self->cpuTime)
+  if(self->cpuTime)
     fprintf(fout, format, cpuTimeValue);
   for(i = 0; i < data->modelData.nVariablesReal; i++) if(!data->modelData.realVarsData[i].filterOutput)
     fprintf(fout, format, (data->localData[0])->realVars[i]);
@@ -117,7 +117,7 @@ void csv_init(simulation_result *self, DATA *data)
   ASSERT2(fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
 
   fprintf(fout, format, "time");
-  if (self->cpuTime)
+  if(self->cpuTime)
     fprintf(fout, format, "$cpuTime");
   for(i = 0; i < mData->nVariablesReal; i++) if(!mData->realVarsData[i].filterOutput)
     fprintf(fout, format, mData->realVarsData[i].info.name);

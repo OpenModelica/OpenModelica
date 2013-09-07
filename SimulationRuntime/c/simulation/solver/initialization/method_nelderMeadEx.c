@@ -123,7 +123,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
   ASSERT(xbar, "out of memory");
 
   /* initialize simplex */
-  if (initData->nominal)
+  if(initData->nominal)
   {
     for(i=0; i<N; i++)
     {

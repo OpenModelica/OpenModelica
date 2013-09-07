@@ -93,7 +93,8 @@ int allocateNonlinearSystem(DATA *data)
     /* check if analytical jacobian is created */
     if(nonlinsys[i].jacobianIndex != -1){
       ASSERT(nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
-      if (nonlinsys[i].initialAnalyticalJacobian(data)){
+      if(nonlinsys[i].initialAnalyticalJacobian(data))
+      {
         nonlinsys[i].jacobianIndex = -1;
       }
     }
@@ -110,7 +111,7 @@ int allocateNonlinearSystem(DATA *data)
     nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
 
     /* allocate solver data */
-    if (nonlinsys[i].method == 1)
+    if(nonlinsys[i].method == 1)
     {
       allocateNewtonData(size, &nonlinsys[i].solverData);
     }
@@ -158,7 +159,7 @@ int freeNonlinearSystem(DATA *data)
     free(nonlinsys[i].max);
 
     /* free solver data */
-    if (nonlinsys[i].method == 1)
+    if(nonlinsys[i].method == 1)
     {
       freeNewtonData(&nonlinsys[i].solverData);
     }
@@ -210,7 +211,7 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
    */
 
   /* for now just use hybrd solver as before */
-  if (nonlinsys[sysNumber].method == 1)
+  if(nonlinsys[sysNumber].method == 1)
   {
     success = solveNewton(data, sysNumber);
   }
@@ -312,7 +313,7 @@ double extraPolate(DATA *data, double old1, double old2)
 {
   double retValue;
 
-  if (data->localData[1]->timeValue == data->localData[2]->timeValue)
+  if(data->localData[1]->timeValue == data->localData[2]->timeValue)
   {
     retValue = old1;
   }

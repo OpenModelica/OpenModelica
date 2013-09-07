@@ -216,16 +216,16 @@ int solveMixedSearch(DATA *data, int sysNumber)
     DEBUG1(LOG_NLS, "####  continuous system solution status = %d", found_solution);
 
     /* restart if any relation has changed */
-    if (checkRelations(data))
+    if(checkRelations(data))
     {
       storeRelations(data);
       systemData->updateIterationExps(data);
       DEBUG(LOG_NLS, "#### System relation changed restart iteration");
-      if (mixedIterations++ > 200)
+      if(mixedIterations++ > 200)
         found_solution = -4; /* mixedIterations++ > 200 */
     }
 
-    if (found_solution == -1)
+    if(found_solution == -1)
     {
       /* system of equations failed */
       found_solution = -2;
@@ -234,10 +234,10 @@ int solveMixedSearch(DATA *data, int sysNumber)
     else
     {
       found_solution = 1;
-      for (i = 0; i < systemData->size; i++)
+      for(i = 0; i < systemData->size; i++)
       {
         DEBUG3(LOG_NLS, " check iterationVar[%d] = %d <-> %d", i, solverData->iterationVars[i], solverData->iterationVars2[i]);
-        if (solverData->iterationVars[i] != solverData->iterationVars2[i])
+        if(solverData->iterationVars[i] != solverData->iterationVars2[i])
         {
           found_solution  = 0;
           break;
@@ -246,20 +246,20 @@ int solveMixedSearch(DATA *data, int sysNumber)
       DEBUG1(LOG_NLS, "#### SOLUTION = %c", found_solution  ? 'T' : 'F');
     }
 
-    if (!found_solution )
+    if(!found_solution )
     {
       /* try next set of values*/
-      if (nextVar(solverData->stateofSearch, systemData->size))
+      if(nextVar(solverData->stateofSearch, systemData->size))
       {
         DEBUG(LOG_NLS, "#### set next STATE ");
-        for (i = 0; i < systemData->size; i++)
+        for(i = 0; i < systemData->size; i++)
           *(systemData->iterationVarsPtr[i]) = *(systemData->iterationPreVarsPtr[i]) != solverData->stateofSearch[i];
 
         /* debug output */
-        if (ACTIVE_STREAM(LOG_NLS))
+        if(ACTIVE_STREAM(LOG_NLS))
         {
           const char * __name;
-          for (i = 0; i < systemData->size; i++)
+          for(i = 0; i < systemData->size; i++)
           {
             ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
             __name = data->modelData.booleanVarsData[ix].info.name;
@@ -270,7 +270,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
       else
       {
         /* while the initialization it's okay not a solution */
-        if (!data->simulationInfo.initial)
+        if(!data->simulationInfo.initial)
         {
           WARNING2(LOG_STDOUT,
               "Error solving mixed equation system with index %d at time %e",
@@ -282,14 +282,14 @@ int solveMixedSearch(DATA *data, int sysNumber)
       }
     }
     /* we found a solution*/
-    if (found_solution  == 1)
+    if(found_solution  == 1)
     {
       success = 1;
-      if (ACTIVE_STREAM(LOG_NLS))
+      if(ACTIVE_STREAM(LOG_NLS))
       {
         const char * __name;
         DEBUG1(LOG_NLS, "#### SOLUTION FOUND! (system %d)", eqSystemNumber);
-        for (i = 0; i < systemData->size; i++)
+        for(i = 0; i < systemData->size; i++)
         {
           ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
           __name = data->modelData.booleanVarsData[ix].info.name;

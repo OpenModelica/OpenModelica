@@ -90,9 +90,12 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set ylabel\n");
   fprintf(plt, "set log y\n");
 
-  if (i>=0) {
+  if(i>=0
+) {
     fprintf(plt, "set yrange [*:%g]\n", ygraphmax);
-  } else {
+  }
+  else
+  {
     fprintf(plt, "set yrange [*:*]\n");
   }
   /* time */
@@ -101,9 +104,12 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   /* count */
   if(i >= 0) {
     fprintf(plt, "unset ytics\n");
-    if (nmin == nmax) {
+    if(nmin == nmax)
+    {
       fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
-    } else {
+    }
+    else
+    {
       fprintf(plt, "set yrange [*:*]\n");
     }
     fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.svg\"\n", prefix, idPrefix, id);
@@ -121,18 +127,25 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set ylabel \"Execution time [s]\"\n");
   fprintf(plt, "set output \"%s_prof.%s%d.%s\"\n", prefix, idPrefix, id, plotFormat);
   fprintf(plt, "set log y\n");
-  if (i>=0) {
+  if(i>=0)
+  {
     fprintf(plt, "set yrange [*:%g]\n", ygraphmax);
-  } else {
+  }
+  else
+  {
     fprintf(plt, "set yrange [*:*]\n");
   }
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i, 2);
   /* count */
   fprintf(plt, "set nolog xy\n");
-  if(i >= 0) {
-    if (nmin == nmax) {
+  if(i >= 0)
+  {
+    if(nmin == nmax)
+    {
       fprintf(plt, "set yrange [%g:%g]\n", ymin, ymax);
-    } else {
+    }
+    else
+    {
       fprintf(plt, "set yrange [*:*]\n");
     }
     fprintf(plt, "set xlabel \"Global step number\"\n");
@@ -400,7 +413,8 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
       WARNING(LOG_UTIL, "Warning: Plot command failed\n");
     }
 #endif
-    if (omhome) {
+    if(omhome)
+    {
 #if defined(__MINGW32__) || defined(_MSC_VER)
       char *xsltproc;
       sprintf(buf, "%s/lib/omc/libexec/xsltproc/xsltproc.exe", omhome);
@@ -413,11 +427,14 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
       free(xsltproc);
 #endif
       genHtmlRes = system(buf);
-    } else {
+    }
+    else
+    {
       strcpy(buf, "OPENMODELICAHOME missing");
       genHtmlRes = 1;
     }
-    if (genHtmlRes) {
+    if(genHtmlRes)
+    {
       WARNING1(LOG_STDOUT, "Failed to generate html version of profiling results: %s\n", buf);
     }
     INFO2(LOG_STDOUT, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);

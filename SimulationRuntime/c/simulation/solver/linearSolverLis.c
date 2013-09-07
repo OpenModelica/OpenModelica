@@ -106,7 +106,8 @@ solveLis(DATA *data, int sysNumber)
 
   /* fill b with values */
   systemData->setb(data, systemData);
-  for (i=0; i<sData->n_row; i++){
+  for(i=0; i<sData->n_row; i++)
+  {
     lis_vector_set_value(LIS_INS_VALUE, i, systemData->b[i], sData->b);
   }
 

@@ -72,49 +72,72 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   /* long curProfileIndex = (long) ((void**)userData)[2]; */
   long curFunctionIndex = (long) ((void**)userData)[3];
 
-  if (0==strcmp("var", name)) {
+  if(0==strcmp("var", name))
+  {
     ASSERT(((0==strcmp(attr[0], "name")) && attr[2] == NULL), "<var> needs to have exactly one attribute: name");
-    if (varsBuffer == 0 || maxVarsBuffer == 0) {
+    if(varsBuffer == 0 || maxVarsBuffer == 0)
+    {
       maxVarsBuffer = 32;
       varsBuffer = (VAR_INFO*) malloc(sizeof(VAR_INFO)*maxVarsBuffer);
-    } else if (xml->equationInfo[curIndex].numVar+2 >= maxVarsBuffer) {
+    }
+    else if(xml->equationInfo[curIndex].numVar+2 >= maxVarsBuffer)
+    {
       maxVarsBuffer *= 2;
       varsBuffer = realloc(varsBuffer, sizeof(VAR_INFO)*maxVarsBuffer);
     }
     varsBuffer[xml->equationInfo[curIndex].numVar++] = *findVariable(attr[1]);
     return;
   }
-  if (0==strcmp("info", name)) {
-    while (attr[0]) {
-      if (0==strcmp("file", attr[0])) {
+  if(0==strcmp("info", name))
+  {
+    while(attr[0])
+    {
+      if(0 == strcmp("file", attr[0]))
+      {
         file_info.filename = strdup(attr[1]);
-      } else if (0==strcmp("lineStart", attr[0])) {
+      }
+      else if(0 == strcmp("lineStart", attr[0]))
+      {
         file_info.lineStart = strtol(attr[1], NULL, 10);
-      } else if (0==strcmp("lineEnd", attr[0])) {
+      }
+      else if(0 == strcmp("lineEnd", attr[0]))
+      {
         file_info.lineEnd = strtol(attr[1], NULL, 10);
-      } else if (0==strcmp("colStart", attr[0])) {
+      }
+      else if(0 == strcmp("colStart", attr[0]))
+      {
         file_info.colStart = strtol(attr[1], NULL, 10);
-      } else if (0==strcmp("colEnd", attr[0])) {
+      }
+      else if(0 == strcmp("colEnd", attr[0]))
+      {
         file_info.colEnd = strtol(attr[1], NULL, 10);
-      } else if (0==strcmp("readonly", attr[0])) {
+      }
+      else if(0 == strcmp("readonly", attr[0]))
+      {
         file_info.readonly = 0==strcmp(attr[1], "true");
-      } else {
+      }
+      else
+      {
         THROW1("%s: Unknown attribute in <info>", xml->fileName);
       }
       attr += 2;
     }
     return;
   }
-  if (0==strcmp("equation", name)) {
+  if(0 == strcmp("equation", name))
+  {
     long ix;
-    if (curIndex > xml->nEquations) {
+    if(curIndex > xml->nEquations)
+    {
       THROW3("%s: Info XML %s contained more equations than expected (%ld)", __FILE__, xml->fileName, xml->nEquations);
     }
-    if (strcmp("index", attr[0])) {
+    if(strcmp("index", attr[0]))
+    {
       THROW2("%s: Info XML %s contained equation without index", __FILE__, xml->fileName);
     }
     ix = strtol(attr[1], NULL, 10);
-    if (curIndex != ix) {
+    if(curIndex != ix)
+    {
       THROW4("%s: Info XML %s got equation with index %ld, expected %ld", __FILE__, xml->fileName, ix, curIndex);
     }
     xml->equationInfo[curIndex].id = curIndex;
@@ -124,13 +147,17 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     xml->equationInfo[curIndex].vars = NULL; /* Set when parsing other tags (on close). */
     return;
   }
-  if (0==strcmp("variable", name)) {
+  if(0 == strcmp("variable", name))
+  {
     var_info.name = NULL;
     var_info.comment = NULL;
     while (attr[0]) {
-      if (0==strcmp(attr[0], "name")) {
+      if(0 == strcmp(attr[0], "name"))
+      {
         var_info.name = strdup(attr[1]);
-      } else if (0==strcmp(attr[0], "comment")) {
+      }
+      else if(0 == strcmp(attr[0], "comment"))
+      {
         var_info.comment = strdup(attr[1]);
       }
       attr+=2;
@@ -140,7 +167,8 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     var_info.info = file_info;
     return;
   }
-  if (0==strcmp("function", name)) {
+  if(0 == strcmp("function", name))
+  {
     xml->functionNames[curFunctionIndex].id = curFunctionIndex;
     xml->functionNames[curFunctionIndex].name = "#FIXME#";
     xml->functionNames[curFunctionIndex].name = strdup(attr[1]);
@@ -155,14 +183,17 @@ static void XMLCALL endElement(void *userData, const char *name)
   long curProfileIndex = (long) ((void**)userData)[2];
   long curFunctionIndex = (long) ((void**)userData)[3];
 
-  if (0==strcmp("variable", name)) {
+  if(0 == strcmp("variable", name))
+  {
     add_variable(var_info);
     return;
   }
-  if (0==strcmp("equation", name)) {
+  if(0 == strcmp("equation", name))
+  {
     int i;
     xml->equationInfo[curIndex].vars = malloc(sizeof(VAR_INFO)*xml->equationInfo[curIndex].numVar);
-    for (i=0; i<xml->equationInfo[curIndex].numVar; i++) {
+    for(i=0; i<xml->equationInfo[curIndex].numVar; i++)
+    {
       VAR_INFO *var = (VAR_INFO*) malloc(sizeof(VAR_INFO));
       *var = varsBuffer[i];
       xml->equationInfo[curIndex].vars[i] = var;
@@ -171,13 +202,15 @@ static void XMLCALL endElement(void *userData, const char *name)
     
     return;
   }
-  if (0==strcmp("nonlinear", name)) {
+  if(0 == strcmp("nonlinear", name))
+  {
     asprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
     xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
     ((void**)userData)[2] = (void*) (curProfileIndex+1);
     return;
   }
-  if (0==strcmp("function", name)) {
+  if(0 == strcmp("function", name))
+  {
     ((void**)userData)[3] = (void*) (curFunctionIndex+1);
     return;
   }
@@ -185,7 +218,8 @@ static void XMLCALL endElement(void *userData, const char *name)
 
 FUNCTION_INFO modelInfoXmlGetFunction(MODEL_DATA_XML* xml, size_t ix)
 {
-  if (xml->equationInfo == NULL) {
+  if(xml->equationInfo == NULL)
+  {
     modelInfoXmlInit(xml);
   }
   return xml->functionNames[ix];
@@ -198,15 +232,18 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   FILE* file;
   XML_Parser parser = NULL;
   void* userData[4] = {xml, (void*)1, (void*)0, (void*)0};
-  if (!xml->infoXMLData) {
+  if(!xml->infoXMLData)
+  {
     file = fopen(xml->fileName, "r");
-    if (!file) {
+    if(!file)
+    {
       const char *str = strerror(errno);
       THROW2("Failed to open file %s: %s\n", xml->fileName, str);
     }
   }
   parser = XML_ParserCreate(NULL);
-  if (!parser) {
+  if(!parser)
+  {
     THROW("Failed to create expat object");
   }
   xml->functionNames = (FUNCTION_INFO*) calloc(xml->nFunctions, sizeof(FUNCTION_INFO));
@@ -218,7 +255,8 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   xml->equationInfo[0].vars = NULL;
   XML_SetUserData(parser, userData);
   XML_SetElementHandler(parser, startElement, endElement);
-  if (!xml->infoXMLData) {
+  if(!xml->infoXMLData)
+  {
     do {
       size_t len = fread(buf, 1, sizeof(buf), file);
       done = len < sizeof(buf);
@@ -232,7 +270,7 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
     } while(!done);
     fclose(file);
   } else {
-    if (XML_Parse(parser, xml->infoXMLData, strlen(xml->infoXMLData), 1) == XML_STATUS_ERROR) {
+    if(XML_Parse(parser, xml->infoXMLData, strlen(xml->infoXMLData), 1) == XML_STATUS_ERROR) {
       const char *err = XML_ErrorString(XML_GetErrorCode(parser));
       unsigned long line = XML_GetCurrentLineNumber(parser);
       XML_ParserFree(parser);
@@ -246,7 +284,8 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
 
 EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
-  if (xml->equationInfo == NULL) {
+  if(xml->equationInfo == NULL)
+  {
     modelInfoXmlInit(xml);
   }
   return xml->equationInfo[ix];
@@ -255,14 +294,18 @@ EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
 EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix)
 {
   int i;
-  if (xml->equationInfo == NULL) {
+  if(xml->equationInfo == NULL)
+  {
     modelInfoXmlInit(xml);
   }
-  if (ix > xml->nProfileBlocks) {
+  if(ix > xml->nProfileBlocks)
+  {
     THROW2("Requested equation with profiler index %ld, but we only have %ld such blocks", (long int)ix, xml->nProfileBlocks);
   }
-  for (i=0; i<xml->nEquations; i++) {
-    if (xml->equationInfo[i].profileBlockIndex == ix) {
+  for(i=0; i<xml->nEquations; i++)
+  {
+    if(xml->equationInfo[i].profileBlockIndex == ix)
+    {
       return xml->equationInfo[i];
     }
   }
@@ -272,11 +315,13 @@ EQUATION_INFO modelInfoXmlGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, si
 void freeModelInfoXml(MODEL_DATA_XML* xml)
 {
   int i;
-  if (xml->functionNames) {
+  if(xml->functionNames)
+  {
     free(xml->functionNames);
     xml->functionNames = 0;
   }
-  if (xml->equationInfo) {
+  if(xml->equationInfo)
+  {
     for(i=0;i<xml->nEquations;++i) {
       free(xml->equationInfo[i].vars);
       xml->equationInfo[i].vars = 0;

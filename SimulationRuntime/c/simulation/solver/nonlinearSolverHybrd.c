@@ -446,7 +446,8 @@ int solveHybrd(DATA *data, int sysNumber)
 
     mem_state = get_memory_state();
     /* try */
-    if (!setjmp(nonlinearJmpbuf)) {
+    if(!setjmp(nonlinearJmpbuf))
+    {
       wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
       restore_memory_state(mem_state);
     } else { /* catch */
@@ -479,7 +480,8 @@ int solveHybrd(DATA *data, int sysNumber)
     }
 
     /* debug output */
-    if (ACTIVE_STREAM(LOG_NLS_V)) {
+    if(ACTIVE_STREAM(LOG_NLS_V))
+    {
       printVector(solverData->x, &solverData->n, LOG_NLS_V, "Iteration variable values (scaled)");
     }
 
@@ -495,7 +497,8 @@ int solveHybrd(DATA *data, int sysNumber)
 
     mem_state = get_memory_state();
     /* try */
-    if (!setjmp(nonlinearJmpbuf)) {
+    if(!setjmp(nonlinearJmpbuf))
+    {
       _omc_hybrj_(wrapper_fvec_hybrj, &solverData->n, solverData->x,
           solverData->fvec, solverData->fjac, &solverData->ldfjac, &solverData->xtol,
           &solverData->maxfev, solverData->diag, &solverData->mode,
@@ -504,15 +507,19 @@ int solveHybrd(DATA *data, int sysNumber)
           &solverData->lr, solverData->qtf, solverData->wa1,
           solverData->wa2, solverData->wa3, solverData->wa4, data, sysNumber);
       restore_memory_state(mem_state);
-      if (assertCalled){
+      if(assertCalled)
+      {
         INFO(LOG_NLS, "After asserts was called, values reached which avoided assert call.");
         memcpy(systemData->nlsxOld, solverData->x, solverData->n*(sizeof(double)));
       }
       assertRetries = 0;
       assertCalled = 0;
-    } else { /* catch */
+    }
+    else
+    { /* catch */
       restore_memory_state(mem_state);
-      if (!assertMessage){
+      if(!assertMessage)
+      {
         INDENT(LOG_STDOUT);
         WARNING(LOG_STDOUT, "While solving non-linear system an assert was called.");
         WARNING(LOG_STDOUT, "The non-linear solver tries to solve the problem that could take some time.");
@@ -529,9 +536,12 @@ int solveHybrd(DATA *data, int sysNumber)
     }
 
     /* set residual function continuous */
-    if (continuous) {
+    if(continuous)
+    {
       ((DATA*)data)->simulationInfo.solveContinuous = 0;
-    } else {
+    }
+    else
+    {
       ((DATA*)data)->simulationInfo.solveContinuous = 1;
     }
 
@@ -546,7 +556,8 @@ int solveHybrd(DATA *data, int sysNumber)
           data->localData[0]->timeValue);
     }
 
-    if (solverData->info != -1){
+    if(solverData->info != -1)
+    {
       /* evaluate with discontinuities */
       if(data->simulationInfo.discreteCall){
         int scaling = solverData->useXScaling;
@@ -557,7 +568,7 @@ int solveHybrd(DATA *data, int sysNumber)
 
         mem_state = get_memory_state();
         /* try */
-        if (!setjmp(nonlinearJmpbuf))
+        if(!setjmp(nonlinearJmpbuf))
         {
           wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
           restore_memory_state(mem_state);
@@ -578,8 +589,8 @@ int solveHybrd(DATA *data, int sysNumber)
       }
     }
 
-    if (solverData->info != -1){
-
+    if(solverData->info != -1)
+    {
       /* scaling residual vector */
       {
         int l=0;
@@ -631,13 +642,13 @@ int solveHybrd(DATA *data, int sysNumber)
     }
 
     /* reset non-contunuousCase */
-    if (nonContinuousCase && xerror > local_tol && xerror_scaled > local_tol){
-
+    if(nonContinuousCase && xerror > local_tol && xerror_scaled > local_tol)
+    {
       memcpy(data->simulationInfo.relationsPre, relationsPreBackup, sizeof(modelica_boolean)*data->modelData.nRelations);
       nonContinuousCase = 0;
     }
 
-    if (solverData->info < 4 && xerror > local_tol && xerror_scaled > local_tol)
+    if(solverData->info < 4 && xerror > local_tol && xerror_scaled > local_tol)
       solverData->info = 4;
 
     /* solution found */
@@ -666,11 +677,13 @@ int solveHybrd(DATA *data, int sysNumber)
  
       mem_state = get_memory_state();
       /* try */
-      if (!setjmp(nonlinearJmpbuf))
+      if(!setjmp(nonlinearJmpbuf))
       {
         wrapper_fvec_hybrj(&solverData->n, solverData->x, solverData->fvec, solverData->fjac, &solverData->ldfjac, &iflag, data, sysNumber);
         restore_memory_state(mem_state);
-      } else { /* catch */
+      }
+      else
+      { /* catch */
         restore_memory_state(mem_state);
         WARNING(LOG_STDOUT, "Non-Linear Solver try to handle a problem with a called assert.");
 
@@ -693,17 +706,19 @@ int solveHybrd(DATA *data, int sysNumber)
       memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
 
       /* set all zero values to nominal values */
-      if (assertRetries < 1)
+      if(assertRetries < 1)
       {
-        for(i=0; i<solverData->n; i++){
-          if (systemData->nlsx[i] == 0){
+        for(i=0; i<solverData->n; i++)
+        {
+          if(systemData->nlsx[i] == 0)
+          {
             systemData->nlsx[i] = systemData->nominal[i];
             solverData->x[i] = systemData->nominal[i];
           }
         }
       }
       /* change initial guess values one by one */
-      else if (assertRetries < solverData->n+1)
+      else if(assertRetries < solverData->n+1)
       {
         i = assertRetries-1;
         solverData->x[i] += 0.01*systemData->nominal[i];

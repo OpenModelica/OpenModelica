@@ -63,7 +63,8 @@ static void printPltLine(FILE* f, double time, double val);
 static int calcDataSize(simulation_result *self,const MODEL_DATA *modelData)
 {
   int sz = 1, i; /* time */
-  if (self->cpuTime) sz++; /* $cpuTime */
+  if(self->cpuTime)
+    sz++; /* $cpuTime */
   for(i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) sz++;
   for(i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) sz++;
   for(i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) sz++;
@@ -217,7 +218,8 @@ void plt_init(simulation_result *self,DATA *data)
  */
 static void deallocResult(plt_data *pltData)
 {
-  if (pltData->simulationResultData) {
+  if(pltData->simulationResultData)
+  {
     free(pltData->simulationResultData);
     pltData->simulationResultData = 0;
   }

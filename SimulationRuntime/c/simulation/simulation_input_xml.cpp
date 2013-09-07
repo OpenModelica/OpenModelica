@@ -219,7 +219,8 @@ void read_input_xml(MODEL_DATA* modelData,
   std::map<std::string, long> mapAlias, mapAliasParam;
   std::map<std::string, long>::iterator it, itParam;
 
-  if (modelData->initXMLData==NULL) {
+  if(NULL == modelData->initXMLData)
+  {
     /* read the filename from the command line (if any) */
     if(omc_flag[FLAG_F]) {
       filename = omc_flagValue[FLAG_F];
@@ -246,12 +247,13 @@ void read_input_xml(MODEL_DATA* modelData,
   XML_SetUserData(parser, &mi);
   /* set the handlers for start/end of element. */
   XML_SetElementHandler(parser, startElement, endElement);
-  if (modelData->initXMLData==NULL) {
+  if(NULL == modelData->initXMLData)
+  {
     do
     {
       size_t len = fread(buf, 1, sizeof(buf), file);
       done = len < sizeof(buf);
-      if(XML_Parse(parser, buf, len, done) == XML_STATUS_ERROR)
+      if(XML_STATUS_ERROR == XML_Parse(parser, buf, len, done))
       {
         fclose(file);
         WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
@@ -261,9 +263,11 @@ void read_input_xml(MODEL_DATA* modelData,
         XML_ParserFree(parser);
         THROW("see last warning");
       }
-    } while(!done);
+    }while(!done);
     fclose(file);
-  } else if (XML_Parse(parser, modelData->initXMLData, strlen(modelData->initXMLData), 1) == XML_STATUS_ERROR) { /* Got the full string already */
+  }
+  else if(XML_STATUS_ERROR == XML_Parse(parser, modelData->initXMLData, strlen(modelData->initXMLData), 1))
+  { /* Got the full string already */
     fprintf(stderr, "%s, %s %lu\n", modelData->initXMLData, XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
     WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML data %s: %s at line %lu\n",
              modelData->initXMLData,
@@ -278,12 +282,13 @@ void read_input_xml(MODEL_DATA* modelData,
   /* first, check the modelGUID!
      TODO! FIXME! THIS SEEMS TO FAIL!
      ARE WE READING THE OLD XML FILE?? */
-  if (mi.md.find("guid") == mi.md.end())
+  if(mi.md.find("guid") == mi.md.end())
   {
      WARNING2(LOG_STDOUT, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
         filename.c_str());
-  } else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
+  }
+  else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
   {
     XML_ParserFree(parser);
     WARNING3(LOG_STDOUT, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",

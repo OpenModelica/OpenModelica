@@ -225,7 +225,7 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
   modelica_integer *A = &(data->localData[0]->integerVars[aid]);
   memset(A, 0, nCandidates*nStates*sizeof(modelica_integer));
 
-  for (col=0; col<nCandidates; col++)
+  for(col=0; col<nCandidates; col++)
   {
     if(newEnable[col]==2)
     {
@@ -266,18 +266,19 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
   modelica_integer* oldEnable = (modelica_integer*) calloc(nCandidates, sizeof(modelica_integer));
   modelica_integer* newEnable = (modelica_integer*) calloc(nCandidates, sizeof(modelica_integer));
 
-  for (i=0; i<nCandidates; i++)
+  for(i=0; i<nCandidates; i++)
   {
     modelica_integer entry = (i < nDummyStates) ? 1: 2;
     newEnable[ newPivot[i] ] = entry;
     oldEnable[ oldPivot[i] ] = entry;
  }
 
-  for (i=0; i<nCandidates; i++)
+  for(i=0; i<nCandidates; i++)
   {
     if(newEnable[i] != oldEnable[i])
     {
-      if (switchStates){
+      if(switchStates)
+      {
         INFO1(LOG_DSS, "select new states at time %f", data->localData[0]->timeValue);
         INDENT(LOG_DSS);
         setAMatrix(newEnable, nCandidates, nStates, A, states, statecandidates, data);
@@ -312,7 +313,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
   int globalres=0;
 
   /* go troug all state sets*/
-  for (i=0; i<data->modelData.nStateSets; i++)
+  for(i=0; i<data->modelData.nStateSets; i++)
   {
     int res=0;
     STATE_SET_DATA *set = &(data->simulationInfo.stateSetData[i]);
@@ -338,7 +339,7 @@ int stateSelection(DATA *data, char reportError, int switchStates)
         WARNING1(LOG_DSS, "%s", buffer);
       }
 
-      for (i=0; i<set->nCandidates; i++)
+      for(i=0; i<set->nCandidates; i++)
         WARNING1(LOG_DSS, "%s", set->statescandidates[i]->name);
       RELEASE(LOG_DSS);
 
@@ -347,7 +348,8 @@ int stateSelection(DATA *data, char reportError, int switchStates)
     /* if we have a new set throw event for reinitialization
        and set the A matrix for set.x=A*(states) */
     res = comparePivot(oldColPivot, set->colPivot, set->nCandidates, set->nDummyStates, set->nStates, set->A, set->states, set->statescandidates, data, switchStates);
-    if (!switchStates){
+    if(!switchStates)
+    {
       memcpy(set->colPivot, oldColPivot, set->nCandidates*sizeof(modelica_integer));
       memcpy(set->rowPivot, oldRowPivot, set->nDummyStates*sizeof(modelica_integer));
     }

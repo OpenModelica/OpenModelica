@@ -117,10 +117,12 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     mem_state = get_memory_state();
     currectJumpState = ERROR_SIMULATION;
     /* try */
-    if (!setjmp(simulationJmpbuf)) {
-
-      if (measure_time_flag) {
-        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
+    if(!setjmp(simulationJmpbuf))
+    {
+      if(measure_time_flag)
+      {
+        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
+        {
           rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
         }
         rt_clear(SIM_TIMER_STEP);
@@ -207,7 +209,8 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       restore_memory_state(mem_state);
 
-      if (retry){
+      if(retry)
+      {
         solverInfo->offset = simInfo->stepSize - oldStepSize;
         simInfo->stepSize = oldStepSize;
         retry = 0;
@@ -309,10 +312,10 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         break;
       }
     }
-    /* catch */
     else
-    {
-      if (!retry){
+    { /* catch */
+      if(!retry)
+      {
         restore_memory_state(mem_state);
 
         /* reduce step size by a half and try again */

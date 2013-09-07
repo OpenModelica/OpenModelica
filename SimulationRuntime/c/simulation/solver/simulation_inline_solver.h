@@ -74,7 +74,7 @@ extern const char* _omc_force_solver;
 
 #define inline_integrate(derx) { long _omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); work_states[0][_omc_index] = data->localData[0]->realVars[_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates] * stepSize; }
 #define inline_integrate_array(sz,derx) { long _omc_size = sz; long _omc_index; \
-  for (_omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); _omc_index < &derx-(data->localData[0]->realVars + data->modelData.nStates)+_omc_size; _omc_index++) \
+  for(_omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); _omc_index < &derx-(data->localData[0]->realVars + data->modelData.nStates)+_omc_size; _omc_index++) \
     work_states[0][_omc_index] = data->localData[0]->realVars[_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates] * stepSize; \
 }
 
@@ -116,16 +116,16 @@ const double _omc_rk_c[1] = {1.0};
   double _omc_rk_time_backup = data->localData[1]->timeValue; \
   static int initial = 1; \
   int _omc_rk_ix; \
-  if (initial) { \
+  if(initial) { \
     int i; \
     memcpy(work_states[_OMC_RK_RESULT_DIM],data->localData[1]->realVars,data->modelData.nStates*sizeof(double)); \
     memcpy(work_states[_OMC_RK_X_BACKUP_DIM],data->localData[1]->realVars,data->modelData.nStates*sizeof(double)); \
-    for (i=0; i<data->modelData.nStates; i++) { \
+    for(i=0; i<data->modelData.nStates; i++) { \
       work_states[_OMC_RK_RESULT_DIM][i] += data->localData[1]->realVars[i + data->modelData.nStates]*_omc_rk_b[_omc_rk_s-1]* stepSize; \
     } \
     initial = 0; \
   } \
-  for (_omc_rk_ix = 0; _omc_rk_ix < _omc_rk_s; _omc_rk_ix++) { /* begin for */ \
+  for(_omc_rk_ix = 0; _omc_rk_ix < _omc_rk_s; _omc_rk_ix++) { /* begin for */ \
     double _omc_rk_cur_step = _omc_rk_c[_omc_rk_ix] *  stepSize; \
     data->localData[0]->timeValue = _omc_rk_time_backup + _omc_rk_cur_step;
 
@@ -137,7 +137,7 @@ const double _omc_rk_c[1] = {1.0};
 
 #define inline_integrate_array(sz,derx) { \
   long _omc_size = sz; long _omc_index; \
-  for (_omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); _omc_index < &derx-(data->localData[0]->realVars + data->modelData.nStates)+_omc_size; _omc_index++) { \
+  for(_omc_index = &derx-(data->localData[0]->realVars + data->modelData.nStates); _omc_index < &derx-(data->localData[0]->realVars + data->modelData.nStates)+_omc_size; _omc_index++) { \
     work_states[_OMC_RK_NEXT_RESULT_DIM][_omc_index] = work_states[_OMC_RK_RESULT_DIM][_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates]*_omc_rk_b[_omc_rk_ix]* stepSize; \
     work_states[_OMC_RK_NEXT_X_VECTOR_DIM][_omc_index] = work_states[_OMC_RK_X_BACKUP_DIM][_omc_index] + data->localData[0]->realVars[_omc_index + data->modelData.nStates]*_omc_rk_cur_step; \
   } \
@@ -146,7 +146,7 @@ const double _omc_rk_c[1] = {1.0};
 #define end_inline(void) \
     copy_double_arr(work_states[_OMC_RK_RESULT_DIM],work_states[_OMC_RK_NEXT_RESULT_DIM],data->modelData.nStates); \
     copy_double_arr(data->localData[0]->realVars,work_states[_OMC_RK_NEXT_X_VECTOR_DIM],data->modelData.nStates); \
-    if (_omc_rk_ix == _omc_rk_s-2) { /* s-2 is the "last" step; s-1 is step 0, but we calculate the steps in the order 1,2,..,s-1,0  */ \
+    if(_omc_rk_ix == _omc_rk_s-2) { /* s-2 is the "last" step; s-1 is step 0, but we calculate the steps in the order 1,2,..,s-1,0  */ \
       copy_double_arr(data->localData[0]->realVars,work_states[_OMC_RK_RESULT_DIM],data->modelData.nStates); \
       memcpy(work_states[_OMC_RK_RESULT_DIM],data->localData[0]->realVars,data->modelData.nStates*sizeof(double)); \
       memcpy(work_states[_OMC_RK_X_BACKUP_DIM],data->localData[0]->realVars,data->modelData.nStates*sizeof(double)); \

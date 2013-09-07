@@ -129,7 +129,7 @@ int solveLapack(DATA *data, int sysNumber)
         (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
     /* debug output */
-    if (ACTIVE_STREAM(LOG_LS))
+    if(ACTIVE_STREAM(LOG_LS))
     {
       long int l = 0;
       long int k = 0;

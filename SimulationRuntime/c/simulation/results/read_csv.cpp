@@ -72,13 +72,15 @@ char** read_csv_variables(FILE *fin)
 
   do {
     p = (char)fgetc(fin);
-    if (p == ',') numVar++;
+    if(p == ',')
+      numVar++;
     length++;
   } while(p != EOF && p != '\n');
   fseek(fin,0,SEEK_SET);
   buf = (char*) malloc((length+1)*sizeof(char));
   res = (char**)malloc((2+numVar)*sizeof(char*));
-  if (!fgets(buf,length,fin)) {
+  if(!fgets(buf,length,fin))
+  {
     free(buf);
     free(res);
     return NULL;
@@ -88,22 +90,26 @@ char** read_csv_variables(FILE *fin)
   tmp = res;
   tmp[0] = buf;
   tmp = tmp+1;
-  if (*buf == '\"')
+  if(*buf == '\"')
     buf++;
   tmp[0] = buf;
   do {
-    if (*buf == ',') {
+    if(*buf == ',')
+    {
       *buf = '\0';
       tmp++;
-      if (buf[-1] == '"')
+      if(buf[-1] == '"')
         buf[-1] = '\0';
-      if (buf[1] == '"') buf++;
-      if (buf[1] != '\0' && buf[1] != '\r')
+      if(buf[1] == '"')
+        buf++;
+      if(buf[1] != '\0' && buf[1] != '\r')
         *tmp = ++buf;
-    } else {
+    }
+    else
+    {
       ++buf;
     }
-  } while(*buf != '\0');
+  }while(*buf != '\0');
 
   return res;
 }

@@ -129,12 +129,14 @@ static void setTermMsg(const char *msg, va_list ap)
 {
   size_t i;
   static size_t termMsgSize = 0;
-  if (TermMsg==NULL) {
+  if(NULL == TermMsg)
+  {
     termMsgSize = max(strlen(msg)*2+1,(size_t)2048);
     TermMsg = (char*) malloc(termMsgSize);
   }
   i = vsnprintf(TermMsg,termMsgSize,msg,ap);
-  if (i >= termMsgSize) {
+  if(i >= termMsgSize)
+  {
     free(TermMsg);
     termMsgSize = 2*i+1;
     TermMsg = (char*)malloc(termMsgSize);
@@ -482,18 +484,27 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   { /* Setup the clock */
     enum omc_rt_clock_t clock = OMC_CLOCK_REALTIME;
     const char *clockName;
-    if ((clockName = omc_flagValue[FLAG_CLOCK]) != NULL) {
-      if (0==strcmp(clockName, "CPU")) {
+    if((clockName = omc_flagValue[FLAG_CLOCK]) != NULL)
+    {
+      if(0 == strcmp(clockName, "CPU"))
+      {
         clock = OMC_CLOCK_CPUTIME;
-      } else if (0==strcmp(clockName, "RT")) {
+      }
+      else if(0 == strcmp(clockName, "RT"))
+      {
         clock = OMC_CLOCK_REALTIME;
-      } else if(0==strcmp(clockName, "CYC")) {
-      clock = OMC_CPU_CYCLES;
-      } else {
+      }
+      else if(0 == strcmp(clockName, "CYC"))
+      {
+        clock = OMC_CPU_CYCLES;
+      }
+      else
+      {
         WARNING1(LOG_STDOUT, "[unknown clock-type] got %s, expected CPU|RT|CYC. Defaulting to RT.", clockName);
       }
     }
-    if (rt_set_clock(clock)) {
+    if(rt_set_clock(clock))
+    {
       WARNING1(LOG_STDOUT, "Chosen clock-type: %s not available for the current platform. Defaulting to real-time.", clockName);
     }
   }
@@ -551,24 +562,29 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   {
     init_initMethod = omc_flagValue[FLAG_IIM];
   }
+  
   if(omc_flag[FLAG_IOM])
   {
     init_optiMethod = omc_flagValue[FLAG_IOM];
   }
+  
   if(omc_flag[FLAG_IIF])
   {
     init_file = omc_flagValue[FLAG_IIF];
   }
+  
   if(omc_flag[FLAG_IIT])
   {
     init_time_string = omc_flagValue[FLAG_IIT];
     init_time = atof(init_time_string.c_str());
   }
+  
   if(omc_flag[FLAG_ILS])
   {
     init_lambda_steps_string = omc_flagValue[FLAG_ILS];
     init_lambda_steps = atoi(init_lambda_steps_string.c_str());
   }
+  
   if(omc_flag[FLAG_OUTPUT])
   {
     outputVariablesAtEnd = omc_flagValue[FLAG_OUTPUT];
@@ -663,7 +679,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   long solverID = S_UNKNOWN;
   const char* outVars = (outputVariablesAtEnd.size() == 0) ? NULL : outputVariablesAtEnd.c_str();
 
-  if (initializeResultData(simData, result_file_cstr, cpuTime))
+  if(initializeResultData(simData, result_file_cstr, cpuTime))
     return -1;
 
   if(std::string("") == simData->simulationInfo.solverMethod)
@@ -671,8 +687,10 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   else
   {
     for(i=1; i<S_MAX; ++i)
+    {
       if(std::string(SOLVER_METHOD_NAME[i]) == simData->simulationInfo.solverMethod)
         solverID = i;
+    }
   }
 
   if(S_UNKNOWN == solverID)
@@ -921,10 +939,12 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   }
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  if(sim_communication_port_open) {
+  if(sim_communication_port_open)
+  {
     sim_communication_port.close();
   }
 #endif
+
   EXIT(retVal);
 }
 

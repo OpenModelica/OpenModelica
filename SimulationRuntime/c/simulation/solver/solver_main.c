@@ -179,37 +179,37 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   }
 #endif
 #ifdef WITH_SUNDIALS
-  else if (solverInfo->solverMethod == 6)
+  else if(solverInfo->solverMethod == 6)
   {
     /* Allocate Radau5 IIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 6, 3);
   }
-  else if (solverInfo->solverMethod == 7)
+  else if(solverInfo->solverMethod == 7)
   {
     /* Allocate Radau3 IIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 7, 2);
   }
-  else if (solverInfo->solverMethod == 8)
+  else if(solverInfo->solverMethod == 8)
   {
     /* Allocate Radau1 IIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 8, 1);
   }
-  else if (solverInfo->solverMethod == 9)
+  else if(solverInfo->solverMethod == 9)
   {
     /* Allocate Lobatto2 IIIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 9, 1);
   }
-  else if (solverInfo->solverMethod == 10)
+  else if(solverInfo->solverMethod == 10)
   {
     /* Allocate Lobatto4 IIIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
     allocateKinOde(data, solverInfo, 10, 2);
   }
-  else if (solverInfo->solverMethod == 11)
+  else if(solverInfo->solverMethod == 11)
   {
     /* Allocate Lobatto6 IIIA work arrays */
     solverInfo->solverData = calloc(1, sizeof(KINODE));
@@ -352,7 +352,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
   currectJumpState = ERROR_SIMULATION;
   mem_state = get_memory_state();
   /* try */
-  if (!setjmp(simulationJmpbuf))
+  if(!setjmp(simulationJmpbuf))
   {
     if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps))
     {
@@ -566,11 +566,11 @@ int solver_main(DATA* data, const char* init_initMethod,
   retVal = initializeSolverData(data, &solverInfo);
 
   /* initialize all parts of the model */
-  if (0 == retVal)
+  if(0 == retVal)
     retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);
 
   /* starts the simulation main loop */
-  if (0 == retVal)
+  if(0 == retVal)
   {
 
     if(solverInfo.solverMethod != S_OPTIMIZATION)
