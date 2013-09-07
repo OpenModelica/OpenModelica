@@ -37,6 +37,8 @@
  */
 
 #ifndef INTERFACEOPTIMIZATION_H_
+#define INTERFACEOPTIMIZATION_H_
+
 #include "../../../../Compiler/runtime/config.h"
 #include "simulation_data.h"
 #include "../simulation/solver/solver_main.h"
@@ -55,12 +57,5 @@
 int startIpopt(DATA * data,SOLVER_INFO * solverInfo, int flag);
 int destroyIpopt(SOLVER_INFO* solverInfo);
 
-#endif
-
-
-
-#define INTERFACEOPTIMIZATION_H_
-
-
-
+#endif /* WITH_IPOPT */
 #endif /* INTERFACEOPTIMIZATION_H_ */

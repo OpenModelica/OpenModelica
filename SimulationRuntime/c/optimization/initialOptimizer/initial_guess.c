@@ -82,63 +82,67 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
       printf("\n #####done time[%i] = %f",0,iData->time[0]);
   }
 
-  for(i =0, k= 1, v = iData->v + iData->nv; i<iData->nsi;++i)
+  for(i=0, k=1, v=iData->v + iData->nv; i<iData->nsi; ++i)
+  {
+    for(jj=0; jj<iData->deg; ++jj, ++k)
     {
-      for(jj=0;jj<iData->deg; ++jj, ++k)
+      solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
+      iData->data->localData[1]->timeValue = iData->time[k];
+      
+      do
+      {
+        err = kinsolOde(solverInfo->solverData);
+
+        if(err < 0)
         {
-        solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
-        iData->data->localData[1]->timeValue = iData->time[k];
-        do{
-      err = kinsolOde(solverInfo->solverData);
-
-      if(err < 0)
-      {
-        solverInfo->currentStepSize *= 0.99;
-
-        kinOde->kData->fnormtol *=10.0;
-        kinOde->kData->scsteptol *=10.0;
-        if(ACTIVE_STREAM(LOG_SOLVER))
-        {
-          printf("\n #####try time[%i] = %f",k,iData->time[k]);
-        }
-      }
-      else
-      {
-        if(ACTIVE_STREAM(LOG_IPOPT))
-          printf("\n #####done time[%i] = %f",k,iData->time[k]);
-      }
-        }while(err <0);
-    kinOde->kData->fnormtol =iData->data->simulationInfo.tolerance;
-    kinOde->kData->scsteptol =iData->data->simulationInfo.tolerance;
-
-
-    for(j=0; j< iData->nx; ++j)
-      {
-      v[j] = sData->realVars[j] * iData->scalVar[j];
-      }
-
-        for(ii=iData->index_u; j< iData->nv; ++j, ++ii)
+          solverInfo->currentStepSize *= 0.99;
+          kinOde->kData->fnormtol *=10.0;
+          kinOde->kData->scsteptol *=10.0;
+          
+          if(ACTIVE_STREAM(LOG_SOLVER))
           {
-          v[j] = sData->realVars[ii] * iData->scalVar[j];
+            printf("\n #####try time[%i] = %f",k,iData->time[k]);
           }
-
-        v += iData->nv;
-        //updateContinuousSystem(iData->data);
-        rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
         }
+        else
+        {
+          if(ACTIVE_STREAM(LOG_IPOPT))
+            printf("\n #####done time[%i] = %f",k,iData->time[k]);
+        }
+      }while(err <0);
+      
+      kinOde->kData->fnormtol =iData->data->simulationInfo.tolerance;
+      kinOde->kData->scsteptol =iData->data->simulationInfo.tolerance;
+
+      for(j=0; j< iData->nx; ++j)
+      {
+        v[j] = sData->realVars[j] * iData->scalVar[j];
+      }
+
+      for(ii=iData->index_u; j< iData->nv; ++j, ++ii)
+      {
+        v[j] = sData->realVars[ii] * iData->scalVar[j];
+      }
+
+      v += iData->nv;
+      /* updateContinuousSystem(iData->data); */
+      rotateRingBuffer(iData->data->simulationData, 1, (void**) iData->data->localData);
     }
+  }
 
   for(i = 0, id=0; i<iData->NV;i++,++id)
   {
-          if(id >=iData->nv) id = 0;
-          if(id <iData->nx)
-          {
-            iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
-          }
-          else if(id< iData->nv)
-          {
-            iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
-          }
+    if(id >=iData->nv)
+      id = 0;
+      
+    if(id <iData->nx)
+    {
+      iData->v[i] =fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+    }
+    else if(id< iData->nv)
+    {
+      iData->v[i] = fmin(fmax(iData->vmin[id],iData->v[i]),iData->vmax[id]);
+    }
   }
 
   if(ACTIVE_STREAM(LOG_IPOPT))

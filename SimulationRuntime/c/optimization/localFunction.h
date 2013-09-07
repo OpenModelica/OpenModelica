@@ -38,6 +38,7 @@
 
 #ifndef LOCALFUNCTION_H_
 #define LOCALFUNCTION_H_
+
 #include "interfaceOptimization.h"
 #include "ipoptODEstruct.h"
 
@@ -60,9 +61,9 @@ Bool evalfDiffG(Index n, double * x, Bool new_x,
 Bool ipopt_h(int n, double *x, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
          int nele_hess, int *iRow, int *jCol, double *values, void* user_data);
 
- #ifdef __cplusplus
- }
- #endif
+#ifdef __cplusplus
+}
+#endif
 
 
 /*JAC*/
@@ -95,7 +96,8 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x);
 int move_grid(IPOPT_DATA_ *iData);
 
 #endif /*WITH_IPOPT*/
+
 /*ADOL-C*/
-//extern int functionODE_ADOLC(DATA*); //jacobian(0, data->modelData.nStates, data->modelData.nStates + data->modelData.nInputVars, indvars, jac_states);
+/* extern int functionODE_ADOLC(DATA*); /* jacobian(0, data->modelData.nStates, data->modelData.nStates + data->modelData.nInputVars, indvars, jac_states); */
 
 #endif /* LOCALFUNCTION_H_ */

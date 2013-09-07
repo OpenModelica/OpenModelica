@@ -54,7 +54,8 @@
 #include <float.h>
 
 
-typedef struct{
+typedef struct IPOPT_DATA_
+{
   /*#*/
   long int nx; /*Point*/
   long int nu;
@@ -88,13 +89,12 @@ typedef struct{
   /*time*/
   double t0;
   double tf;
-  //double dt;
+  /* double dt; */
   double t;
   double dt_min;
   double dt_max;
   double dt_default;
   double *dt;
-
 
   double *lhs;
   double *rhs;
@@ -192,13 +192,12 @@ typedef struct{
 
 }IPOPT_DATA_;
 
-#else
+#else /* WITH_IPOPT */
 
-typedef struct{
+typedef struct IPOPT_DATA_
+{
   void * empty_data;
 }IPOPT_DATA_;
 
-
-#endif
-
-#endif
+#endif /* WITH_IPOPT */
+#endif /* IPOPTODESTRUCT_H */

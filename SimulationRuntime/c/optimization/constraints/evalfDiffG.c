@@ -37,8 +37,10 @@
  */
 
 #include "../ipoptODEstruct.h"
+
 #ifdef WITH_IPOPT
-//static  int jac_struc(Index *iRow, Index *iCol, long int nx, long int nv, int nsi);
+
+/* static  int jac_struc(Index *iRow, Index *iCol, long int nx, long int nv, int nsi); */
 static inline int radauJac1(double **a, double *J, double dt, double scalRes, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
 static inline int lobattoJac1(double **a, double *J, double *J0, double dt, double scalRes, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
 static inline int radauJac2(double **a, double *J, double dt, double scalRes, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData);
@@ -47,13 +49,11 @@ static inline int radauJac3(double **a, double *J, double dt, double scalRes, do
 static inline int lobattoJac3(double **a, double *J, double *J0, double dt, double scalRes, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData);
 static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol);
 
-
 /*!
  *  eval derivation of s.t.
  *  autor: Vitalij Ruge
  **/
-Bool evalfDiffG(Index n, double * x, Bool new_x,
-         Index m, Index njac, Index *iRow, Index *iCol, Number *values, void * useData)
+Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRow, Index *iCol, Number *values, void * useData)
 {
   int i,j,k,l;
   IPOPT_DATA_ *iData;
@@ -62,7 +62,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x,
   iData = (IPOPT_DATA_ *) useData;
   if(values == NULL)
   {
-    //jac_struc(iRow, iCol, iData->nx, iData->nv, iData->nsi);
+    /* jac_struc(iRow, iCol, iData->nx, iData->nv, iData->nsi); */
     jac_struc(iData, iRow, iCol);
 
 /*
@@ -73,12 +73,10 @@ Bool evalfDiffG(Index n, double * x, Bool new_x,
 
     assert(0);
 */
-
-
   }
   else
   {
-      ipoptDebuge(iData,x);
+    ipoptDebuge(iData,x);
     long double tmp[3];
     int id;
     double **a1, **a2, **a3;
@@ -92,7 +90,6 @@ Bool evalfDiffG(Index n, double * x, Bool new_x,
     d2 = iData->d2_;
     d3 = iData->d3_;
 
-
     tmp[0] = iData->dt[0]*iData->d1[4];
     tmp[1] = iData->dt[0]*iData->d2[4];
     tmp[2] = iData->dt[0]*iData->d3[4];
@@ -100,10 +97,10 @@ Bool evalfDiffG(Index n, double * x, Bool new_x,
     for(i = 0, id = iData->nv; i<1; ++i)
     {
       diff_functionODE0(x, iData->t0 , iData);
-      for(l = 0; l< iData->deg; ++l,id += iData->nv)
+      for(l=0; l<iData->deg; ++l, id += iData->nv)
       {
         diff_functionODE(x+id , iData->time[i*iData->deg + l] , iData, iData->J);
-        for(j = 0; j< iData->nx; ++j)
+        for(j=0; j<iData->nx; ++j)
         {
           switch(l)
           {
@@ -119,15 +116,15 @@ Bool evalfDiffG(Index n, double * x, Bool new_x,
           }
         }
       }
-      //printf("\nk = %i , %i" ,k ,njac);
+      /* printf("\nk = %i , %i" ,k ,njac); */
     }
 
     for(; i<iData->nsi; ++i)
     {
-      for(l = 0; l< iData->deg; ++l,id += iData->nv)
+      for(l=0; l<iData->deg; ++l, id += iData->nv)
       {
-        diff_functionODE(x+id , iData->time[i*iData->deg + l] , iData, iData->J);
-        for(j = 0; j< iData->nx; ++j)
+        diff_functionODE(x+id, iData->time[i*iData->deg + l], iData, iData->J);
+        for(j=0; j<iData->nx; ++j)
         {
           switch(l)
           {
@@ -145,11 +142,12 @@ Bool evalfDiffG(Index n, double * x, Bool new_x,
       }
     }
   }
-  //assert(k == njac);
+  
+  /* assert(k == njac); */
   return TRUE;
 }
 
-//static  int jac_struc(Index *iRow, Index *iCol, long int nx, long int nv, int nsi)
+/* static  int jac_struc(Index *iRow, Index *iCol, long int nx, long int nv, int nsi) */
 
 /*!
  *  special jacobian struct
@@ -161,10 +159,11 @@ static inline int radauJac1(double **a, double *J, double dt, double scalRes, do
   values[(*k)++] = a[0][j];
   values[(*k)-1] *= scalRes;
   /*1*/
-  for(l = 0; l< nv; ++l)
+  for(l=0; l<nv; ++l)
   {
-    if(iData->knowedJ[j][l] == 1){
-      values[(*k)++] = ((j == l)? dt*J[l]-a[1][j] : dt*J[l]);
+    if(iData->knowedJ[j][l] == 1)
+    {
+      values[(*k)++] = (j == l) ? dt*J[l]-a[1][j] : dt*J[l];
       values[(*k)-1] *= scalRes;
     }
   }
@@ -189,9 +188,10 @@ static inline int lobattoJac1(double **a, double *J, double *J0, double dt, doub
   /*0*/
   for(l = 0; l< nv; ++l)
   {
-    if( j == l)
+    if(j == l)
       values[(*k)++] = tmp*J0[l] + a[0][j];
-    else if(iData->knowedJ[j][l] == 1){
+    else if(iData->knowedJ[j][l] == 1)
+    {
       values[(*k)++] = tmp*J0[l];
       values[(*k)-1] *= scalRes;
     }
@@ -199,7 +199,8 @@ static inline int lobattoJac1(double **a, double *J, double *J0, double dt, doub
   /*1*/
   for(l = 0; l< nv; ++l)
   {
-    if(iData->knowedJ[j][l] == 1){
+    if(iData->knowedJ[j][l] == 1)
+    {
       values[(*k)++] = ((j == l)? dt*J[l] - a[1][j] : dt*J[l]);
       values[(*k)-1] *= scalRes;
     }
@@ -233,8 +234,9 @@ static inline int radauJac2(double **a, double *J, double dt, double scalRes, do
   /*2*/
   for(l = 0; l< nv; ++l)
   {
-    if(iData->knowedJ[j][l] == 1){
-      values[(*k)++] = ((j == l)? dt*J[l] - a[2][j] : dt*J[l]) ;
+    if(iData->knowedJ[j][l] == 1)
+    {
+      values[(*k)++] = ((j == l)? dt*J[l] - a[2][j] : dt*J[l]);
       values[(*k)-1] *= scalRes;
     }
   }
@@ -257,7 +259,8 @@ static inline int lobattoJac2(double **a, double *J, double *J0, double dt, doub
   {
     if( j==l)
       values[(*k)++] = -(tmp*J0[l] + a[0][j]);
-    else if(iData->knowedJ[j][l] == 1){
+    else if(iData->knowedJ[j][l] == 1)
+    {
       values[(*k)++] = -tmp*J0[l];
       values[(*k)-1] *= scalRes;
     }
@@ -267,8 +270,10 @@ static inline int lobattoJac2(double **a, double *J, double *J0, double dt, doub
   values[(*k)-1] *= scalRes;
 
   /*2*/
-  for(l = 0; l< nv; ++l){
-    if(iData->knowedJ[j][l] == 1){
+  for(l = 0; l< nv; ++l)
+  {
+    if(iData->knowedJ[j][l] == 1)
+    {
       values[(*k)++] = ((j == l)? dt*J[l]-a[2][j] : dt*J[l]);
       values[(*k)-1] *= scalRes;
     }
@@ -298,7 +303,8 @@ static inline int radauJac3(double **a, double *J, double dt, double scalRes, do
   /*3*/
   for(l = 0; l< nv; ++l)
   {
-    if(iData->knowedJ[j][l] == 1){
+    if(iData->knowedJ[j][l] == 1)
+    {
       values[(*k)++] = ((j == l)? dt*J[l] - a[3][j] : dt*J[l]);
       values[(*k)-1] *= scalRes;
     }
@@ -314,11 +320,12 @@ static inline int lobattoJac3(double **a, double *J, double *J0, double dt, doub
 {
   int l;
   /*0*/
-  for(l = 0; l< nv; ++l)
+  for(l=0; l<nv; ++l)
   {
-    if( j==l)
+    if(j==l)
       values[(*k)++] = tmp*J0[l] + a[0][j];
-    else if(iData->knowedJ[j][l] == 1){
+    else if(iData->knowedJ[j][l] == 1)
+    {
       values[(*k)++] = tmp*J0[l];
       values[(*k)-1] *= scalRes;
     }
@@ -330,9 +337,10 @@ static inline int lobattoJac3(double **a, double *J, double *J0, double dt, doub
   values[(*k)++] = a[2][j];
   values[(*k)-1] *= scalRes;
   /*3*/
-  for(l = 0; l< nv; ++l)
+  for(l=0; l<nv; ++l)
   {
-    if(iData->knowedJ[j][l] == 1){
+    if(iData->knowedJ[j][l] == 1)
+    {
       values[(*k)++] = ((j == l)? dt*J[l] - a[3][j] : dt*J[l]);
       values[(*k)-1] *= scalRes;
     }
@@ -344,9 +352,8 @@ static inline int lobattoJac3(double **a, double *J, double *J0, double dt, doub
  *  special jacobian struct
  *  autor: Vitalij Ruge
  **/
-static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol)
+static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 {
-
   int nr, nc,r,c, nv,nsi,nx;
   int i,j,k=0,l;
 
@@ -358,25 +365,28 @@ static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol)
   for(i=0; i<nsi; ++i)
   {
     /*1*/
-    for(j = 0; j< nx; ++j)
+    for(j=0; j<nx; ++j)
     {
       /*0*/
-      if(i > 0){
+      if(i > 0)
+      {
         iRow[k] = r + j;
         iCol[k++] = c - nv + j;
-      }else{
-        for(l =0; l<nv; ++l)
+      }
+      else
+      {
+        for(l=0; l<nv; ++l)
+        {
+          if(iData->knowedJ[j][l] == 1)
           {
-              if(iData->knowedJ[j][l] == 1)
-              {
-                iRow[k] = j;
-              iCol[k++] = l;
-              }
+            iRow[k] = j;
+            iCol[k++] = l;
           }
+        }
       }
 
       /*1*/
-      for(l = 0; l< nv; ++l)
+      for(l=0; l<nv; ++l)
       {
         if(iData->knowedJ[j][l] == 1)
         {
@@ -397,22 +407,24 @@ static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol)
     r += nx;
     c += nv;
 
-    for(j = 0; j< nx; ++j)
+    for(j=0; j<nx; ++j)
     {
-
       /*0*/
-      if(i > 0){
+      if(i > 0)
+      {
         iRow[k] = r + j;
         iCol[k++] = c - 2*nv + j;
-      }else{
-        for(l = 0; l<nv; ++l)
+      }
+      else
+      {
+        for(l=0; l<nv; ++l)
+        {
+          if(iData->knowedJ[j][l] == 1)
           {
-            if(iData->knowedJ[j][l] == 1)
-            {
-              iRow[k] = r + j;
-              iCol[k++] = l;
-            }
+            iRow[k] = r + j;
+            iCol[k++] = l;
           }
+        }
       }
 
       /*1*/
@@ -420,7 +432,7 @@ static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol)
       iCol[k++] =  c - nv + j;
 
       /*2*/
-      for(l = 0; l< nv; ++l)
+      for(l=0; l<nv; ++l)
       {
         if(iData->knowedJ[j][l] == 1)
         {
@@ -438,20 +450,24 @@ static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol)
     r += nx;
     c += nv;
 
-    for(j = 0; j< nx; ++j)
+    for(j=0; j<nx; ++j)
     {
       /*0*/
-      if(i > 0){
+      if(i > 0)
+      {
         iRow[k] = r + j;
         iCol[k++] = c - 3*nv + j;
-      }else{
-        for(l = 0; l<nv; ++l)
+      }
+      else
+      {
+        for(l=0; l<nv; ++l)
+        {
+          if(iData->knowedJ[j][l] == 1)
           {
-            if(iData->knowedJ[j][l] == 1){
-              iRow[k] = r + j;
-              iCol[k++] = l;
-            }
+            iRow[k] = r + j;
+            iCol[k++] = l;
           }
+        }
       }
 
       /*1*/
@@ -463,7 +479,7 @@ static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol)
       iCol[k++] = c - nv + j;
 
       /*3*/
-      for(l = 0; l< nv; ++l)
+      for(l=0; l<nv; ++l)
       {
         if(iData->knowedJ[j][l] == 1)
         {

@@ -345,15 +345,15 @@ public function generateModelCode "
   output Real timeSimCode;
   output Real timeTemplates;
 protected
-  list<String> includes,includeDirs;
+  list<String> includes, includeDirs;
   list<SimCode.Function> functions;
   String filename, funcfilename;
   SimCode.SimCode simCode;
   list<SimCode.RecordDeclaration> recordDecls;
-  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
+  BackendDAE.BackendDAE indexed_dlow, indexed_dlow_1;
   Absyn.ComponentRef a_cref;
   BackendQSS.QSSinfo qssInfo;
-  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   list<SimCode.JacobianMatrix> LinearMatrices;
 algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
@@ -361,18 +361,18 @@ algorithm
   fileDir := CevalScript.getFileDir(a_cref, p);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
     SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := createSimCode(outIndexedBackendDAE, 
+  simCode := createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
-  Debug.execStat("SimCode",GlobalScript.RT_CLOCK_SIMCODE);
+  Debug.execStat("SimCode", GlobalScript.RT_CLOCK_SIMCODE);
 
   System.realtimeTick(GlobalScript.RT_CLOCK_TEMPLATES);
-  callTargetTemplates(simCode,inBackendDAE,Config.simCodeTarget());
+  callTargetTemplates(simCode, inBackendDAE, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(GlobalScript.RT_CLOCK_TEMPLATES);
 end generateModelCode;
 
-protected function createSimCode
-  "SimCode generator switch - if the NUMPROC-Flag is set, the simcode will be extended with parallel informations."
+protected function createSimCode "
+  SimCode generator switch - if the NUMPROC-Flag is set, the simcode will be extended with parallel informations."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Path inClassName;
   input String filenamePrefix;
@@ -386,87 +386,84 @@ protected function createSimCode
   input tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
   input Absyn.FunctionArgs args;
   output SimCode.SimCode simCode;
-  
 algorithm
-  simCode := matchcontinue (inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
+  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
       Integer numProc;
       SimCode.SimCode tmpSimCode;
-    case(_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.HPCOM);
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
-        true = (numProc > 0);
-    then
-      HpcOmSimCode.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
-    else
-      equation
-        (tmpSimCode,_) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
-      then tmpSimCode;
+    case(_, _, _, _, _, _, _, _, _, _, _, _) equation
+      true = Flags.isSet(Flags.HPCOM);
+      numProc = Flags.getConfigInt(Flags.NUM_PROC);
+      true = (numProc > 0);
+    then HpcOmSimCode.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+    
+    else equation
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+    then tmpSimCode;
   end matchcontinue;
 end createSimCode;
 
 // TODO: use another switch ... later make it first class option like -target or so
 // Update: inQSSrequiredData passed in order to call BackendQSS and generate the extra structures needed for QSS simulation.
-protected function callTargetTemplates
-"Generate target code by passing the SimCode data structure to templates."
+protected function callTargetTemplates "
+  Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
   input BackendDAE.BackendDAE inQSSrequiredData;
   input String target;
 algorithm
-  _ := match (simCode,inQSSrequiredData,target)
+  _ := match(simCode, inQSSrequiredData, target)
     local
-      BackendDAE.BackendDAE outIndexedBackendDAE;
-      BackendQSS.QSSinfo qssInfo;
-      String str;
-      SimCode.SimCode sc;
+    BackendDAE.BackendDAE outIndexedBackendDAE;
+    BackendQSS.QSSinfo qssInfo;
+    String str;
+    SimCode.SimCode sc;
 
-    case (_,_,"CSharp")
-      equation
-        Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
-      then ();
-   case (_,_,"Cpp")
-      equation
-        Tpl.tplNoret(CodegenCpp.translateModel, simCode);
-      then ();
-   case (_,_,"Adevs")
-      equation
-        Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
-      then ();
-    case (_,outIndexedBackendDAE,"QSS")
-/* as BackendDAE.DAE(eqs={ BackendDAE.EQSYSTEM( m=SOME(incidenceMatrix) ,mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices,strongComponents)*/
-      equation
-        Debug.trace("Generating code for QSS solver\n");
-        (qssInfo,sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE,simCode); //, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents,simCode);
-        Tpl.tplNoret2(CodegenQSS.translateModel, sc,qssInfo);
-      then ();
-    case (_,_,"C")
-      equation
-        Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
-        Tpl.tplNoret(CodegenC.translateModel, simCode);
-      then ();
-    case (_,_,"Dump")
-      equation
-        // Yes, do this better later on...
-        str = Tpl.tplString2(SimCodeDump.dumpSimCode, simCode, true);
-        0 = System.systemCall("saxonb-xslt -o '" +& str +& ".html' '" +& str +& ".xml' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl'");
-        print("User-friendly html output to " +& str +& ".html - please enable javascript\n");
-      then ();
-    case (_,_,"XML")
-      equation
-        Tpl.tplNoret(CodegenXML.translateModel, simCode);
-      then ();
-    case (_,_,"Java")
-      equation
-        Tpl.tplNoret(CodegenJava.translateModel, simCode);
-      then ();
-    case (_,_,"None")
-      then ();
-    case (_,_,_)
-      equation
-        str = "Unknown template target: " +& target;
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
+    case (_, _, "CSharp") equation
+      Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
+    then ();
+    
+    case (_, _, "Cpp") equation
+      Tpl.tplNoret(CodegenCpp.translateModel, simCode);
+    then ();
+    
+    case (_, _, "Adevs") equation
+      Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
+    then ();
+    
+    case (_, outIndexedBackendDAE, "QSS") equation
+      /* as BackendDAE.DAE(eqs={ BackendDAE.EQSYSTEM( m=SOME(incidenceMatrix) , mT=SOME(incidenceMatrixT), matching=BackendDAE.MATCHING(equationIndices, variableIndices, strongComponents)*/
+      Debug.trace("Generating code for QSS solver\n");
+      (qssInfo, sc) = BackendQSS.generateStructureCodeQSS(outIndexedBackendDAE, simCode); //, equationIndices, variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, simCode);
+      Tpl.tplNoret2(CodegenQSS.translateModel, sc, qssInfo);
+    then ();
+    
+    case (_, _, "C") equation
+      Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
+      Tpl.tplNoret(CodegenC.translateModel, simCode);
+    then ();
+    
+    case (_, _, "Dump") equation
+      // Yes, do this better later on...
+      str = Tpl.tplString2(SimCodeDump.dumpSimCode, simCode, true);
+      0 = System.systemCall("saxonb-xslt -o '" +& str +& ".html' '" +& str +& ".xml' '" +& Settings.getInstallationDirectoryPath() +& "/share/omc/scripts/simcodedump.xsl'");
+      print("User-friendly html output to " +& str +& ".html - please enable javascript\n");
+    then ();
+    
+    case (_, _, "XML") equation
+      Tpl.tplNoret(CodegenXML.translateModel, simCode);
+    then ();
+    
+    case (_, _, "Java") equation
+      Tpl.tplNoret(CodegenJava.translateModel, simCode);
+    then ();
+    
+    case (_, _, "None")
+    then ();
+    
+    case (_, _, _) equation
+      str = "Unknown template target: " +& target;
+      Error.addMessage(Error.INTERNAL_ERROR, {str});
+    then fail();
   end match;
 end callTargetTemplates;
 

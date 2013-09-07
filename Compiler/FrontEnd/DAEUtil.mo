@@ -2608,7 +2608,8 @@ algorithm
   end matchcontinue;
 end evaluateAnnotation;
 
-protected function evaluateAnnotationVisitor "author: Frenkel TUD, 2010-12"
+protected function evaluateAnnotationVisitor "author: Frenkel TUD, 2010-12
+  helper of evaluateAnnotation"
   input tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer,Integer>> itpl;
   output tuple<DAE.Exp,tuple<HashTable2.HashTable,Integer,Integer>> otpl;
 algorithm
@@ -2663,7 +2664,8 @@ algorithm
   end matchcontinue;
 end evaluateAnnotationTraverse;
 
-protected function replaceCrefInAnnotation
+protected function replaceCrefInAnnotation "
+  helper of evaluateAnnotationTraverse"
   input DAE.Exp inExp;
   input HashTable2.HashTable inTable;
   output DAE.Exp outExp;
@@ -5460,24 +5462,25 @@ end getDAEDeclsFromValueblocks;
 public function transformationsBeforeBackend
   input Env.Cache cache;
   input list<Env.Frame> env;
-  input DAE.DAElist dae;
-  output DAE.DAElist d;
+  input DAE.DAElist inDAElist;
+  output DAE.DAElist outDAElist;
 protected
   list<DAE.Element> elts;
 algorithm
-  DAE.DAE(elts) := dae;
-  elts := List.map1(elts,makeEvaluatedParamFinal,Env.getEvaluatedParams(cache));
-  d := DAE.DAE(elts);
+  DAE.DAE(elts) := inDAElist;
+  elts := List.map1(elts, makeEvaluatedParamFinal, Env.getEvaluatedParams(cache));
+  outDAElist := DAE.DAE(elts);
   // Don't even run the function to try and do this; it doesn't work very well
-  // d := transformDerInline(d);
+  // outDAElist := transformDerInline(outDAElist);
 end transformationsBeforeBackend;
 
-protected function makeEvaluatedParamFinal
-  input DAE.Element ielt;
-  input HashTable.HashTable ht;
-  output DAE.Element oelt;
+protected function makeEvaluatedParamFinal "
+  This function makes all evaluated parameters final."
+  input DAE.Element inElement;
+  input HashTable.HashTable ht "evaluated parameters";
+  output DAE.Element outElement;
 algorithm
-  oelt := matchcontinue (ielt,ht)
+  outElement := matchcontinue(inElement, ht)
     local
       DAE.ComponentRef cr;
       Option<DAE.VariableAttributes> varOpt;
@@ -5486,26 +5489,26 @@ algorithm
       DAE.ElementSource source;
       Option<SCode.Comment> cmt;
       DAE.Element elt;
-    case (DAE.VAR(componentRef=cr,kind=DAE.PARAM(),variableAttributesOption=varOpt),_)
-      equation
-        _ = BaseHashTable.get(cr,ht);
-        // print("Make cr final " +& ComponentReference.printComponentRefStr(cr) +& "\n");
-        elt = setVariableAttributes(ielt,setFinalAttr(varOpt,true));
-      then elt;
-    case (DAE.COMP(id,elts,source,cmt),_)
-      equation
-        elts = List.map1(elts,makeEvaluatedParamFinal,ht);
-      then DAE.COMP(id,elts,source,cmt);
-    else ielt;
+      
+    case (DAE.VAR(componentRef=cr, kind=DAE.PARAM(), variableAttributesOption=varOpt), _) equation
+      _ = BaseHashTable.get(cr, ht);
+      // print("Make cr final " +& ComponentReference.printComponentRefStr(cr) +& "\n");
+      elt = setVariableAttributes(inElement, setFinalAttr(varOpt, true));
+    then elt;
+    
+    case (DAE.COMP(id, elts, source, cmt), _) equation
+      elts = List.map1(elts, makeEvaluatedParamFinal, ht);
+    then DAE.COMP(id, elts, source, cmt);
+    
+    else inElement;
   end matchcontinue;
 end makeEvaluatedParamFinal;
 
-public function setBindingSource
-"@author: adrpo
+public function setBindingSource "author: adrpo
   This function will set the source of the binding"
- input DAE.Binding inBinding;
- input DAE.BindingSource bindingSource;
- output DAE.Binding outBinding;
+  input DAE.Binding inBinding;
+  input DAE.BindingSource bindingSource;
+  output DAE.Binding outBinding;
 algorithm
   outBinding := match(inBinding, bindingSource)
     local
@@ -5515,9 +5518,9 @@ algorithm
       Values.Value valBound;
 
     case (DAE.UNBOUND(), _) then inBinding;
-    case (DAE.EQBOUND(exp, evaluatedExp, cnst, _),_) then DAE.EQBOUND(exp, evaluatedExp, cnst, bindingSource);
-    case (DAE.VALBOUND(valBound, _),_) then DAE.VALBOUND(valBound, bindingSource);
- end match;
+    case (DAE.EQBOUND(exp, evaluatedExp, cnst, _), _) then DAE.EQBOUND(exp, evaluatedExp, cnst, bindingSource);
+    case (DAE.VALBOUND(valBound, _), _) then DAE.VALBOUND(valBound, bindingSource);
+  end match;
 end setBindingSource;
 
 public function printBindingExpStr "prints a binding"
@@ -5606,9 +5609,10 @@ algorithm
   end match;
 end addDaeFunction;
 
-public function addDaeExtFunction "add extermal functions present in the element list to the function tree
-Note: normal functions are skipped.
-See also addDaeFunction"
+public function addDaeExtFunction "
+  add extermal functions present in the element list to the function tree
+  Note: normal functions are skipped.
+  See also addDaeFunction"
   input list<DAE.Function> ifuncs;
   input DAE.FunctionTree itree;
   output DAE.FunctionTree outTree;
@@ -5632,8 +5636,8 @@ algorithm
   end matchcontinue;
 end addDaeExtFunction;
 
-public function setAttrVariability
-  "Sets the variability attribute in an Attributes record."
+public function setAttrVariability "
+  Sets the variability attribute in an Attributes record."
   input DAE.Attributes inAttr;
   input SCode.Variability inVar;
   output DAE.Attributes outAttr;
@@ -5648,8 +5652,8 @@ algorithm
   outAttr := DAE.ATTR(ct, prl, inVar, dir, io, vis);
 end setAttrVariability;
 
-public function getAttrVariability
-  "Get the variability attribute in an Attributes record."
+public function getAttrVariability "
+  Get the variability attribute in an Attributes record."
   input DAE.Attributes inAttr;
   output SCode.Variability outVar;
 algorithm
@@ -5848,8 +5852,8 @@ algorithm
   DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name)) := var;
 end varName;
 
-public function bindingExp
-"help function to instBinding, returns the expression of a binding"
+public function bindingExp "
+  help function to instBinding, returns the expression of a binding"
   input DAE.Binding bind;
   output Option<DAE.Exp> exp;
 algorithm
@@ -5880,13 +5884,12 @@ algorithm
   end match;
 end isBound;
 
-public function isCompleteFunction
-"@author: adrpo
- this function returns true if the given function is complete:
- - has inputs
- - has outputs
- - has an algorithm section
- note that record constructors are always considered complete"
+public function isCompleteFunction "author: adrpo
+  this function returns true if the given function is complete:
+  - has inputs
+  - has outputs
+  - has an algorithm section
+  note that record constructors are always considered complete"
  input DAE.Function f;
  output Boolean isComplete;
 algorithm
@@ -5909,11 +5912,10 @@ algorithm
   end matchcontinue;
 end isCompleteFunction;
 
-public function isCompleteFunctionBody
-"@author: adrpo
- this function returns true if the given function body is complete"
- input list<DAE.FunctionDefinition> functions;
- output Boolean isComplete;
+public function isCompleteFunctionBody "author: adrpo
+  this function returns true if the given function body is complete"
+  input list<DAE.FunctionDefinition> functions;
+  output Boolean isComplete;
 algorithm
   isComplete := matchcontinue(functions)
     local

@@ -43,7 +43,6 @@
 
 static int local_jac_struct(IPOPT_DATA_ *iData);
 
-
 /*!
  *  allocate
  *  autor: Vitalij Ruge
@@ -246,7 +245,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   iData->endN = iData->NV - iData->nv - 1;
 
-  //iData->njac =  iData->nX*iData->nsi*(iData->nv + iData->deg) + iData->nX*(iData->nv-1);
+  /* iData->njac =  iData->nX*iData->nsi*(iData->nv + iData->deg) + iData->nX*(iData->nv-1); */
   local_jac_struct(iData);
   iData->njac = iData->deg*(iData->nlocalJac-iData->nx+iData->nsi*iData->nlocalJac+iData->deg*iData->nsi*iData->nx);
   iData->nhess = 0.5*iData->nv*(iData->nv + 1)*(1+iData->deg*iData->nsi);
@@ -317,7 +316,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
         iData->vnom[i] = fabs(iData->x0[i]);
       iData->vnom[i] = fmax(iData->vnom[i],1e-16);
     }
-    //printf("\nvnom[%i] = %g",i,iData->vnom[i]);
+    /* printf("\nvnom[%i] = %g",i,iData->vnom[i]); */
     iData->scalVar[i] = 1.0 / iData->vnom[i];
     iData->scalf[i] = iData->scalVar[i];
 
@@ -387,7 +386,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   if(ACTIVE_STREAM(LOG_IPOPT))
   {
     iData->pFile = (FILE**) calloc(iData->nv, sizeof(FILE*));
-    for(i =0,j=0; i<iData->nv;i++,++j)
+    for(i=0, j=0; i<iData->nv; i++, ++j)
     {
       if(j <iData->nx)
       {
@@ -403,8 +402,9 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
 
     for(i=0 ,k=0,j =0; i<iData->NV; ++i,++j)
+    {
+      if(j >= iData->nv)
       {
-      if(j >= iData->nv){
         j = 0;
         ++k;
       }
@@ -417,7 +417,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
       {
         fprintf(iData->pFile[j], "%s(%g),", iData->data->modelData.realVarsData[iData->index_u + j-iData->nx].info.name, iData->time[k]);
       }
-      }
+    }
   }
 
 /*
@@ -450,7 +450,6 @@ int move_grid(IPOPT_DATA_ *iData)
     iData->dt[i] = iData->dt_default;
     t += iData->dt[i];
   }
-
 
   for(; i< 0.4*iData->nsi;++i)
   {
@@ -490,7 +489,6 @@ int move_grid(IPOPT_DATA_ *iData)
   return 0;
 }
 
-
 /*
  *  function calculates a jacobian matrix struct
  *  autor: Willi
@@ -506,7 +504,7 @@ int local_jac_struct(IPOPT_DATA_ *iData)
   int i,j,l,ii,nx,k;
   int *cC,*lindex;
 
-    iData->nlocalJac = 0;
+  iData->nlocalJac = 0;
   iData->knowedJ = (int**) malloc(iData->nx * sizeof(int*));
   for(i = 0; i < iData->nx; i++)
     iData->knowedJ[i] = (int*) calloc(iData->nv, sizeof(int));
@@ -523,30 +521,38 @@ int local_jac_struct(IPOPT_DATA_ *iData)
 
     for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
     {
-     for(ii = 0; ii<nx; ++ii)
-       if(cC[ii] == i)
-       {
-         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
-       }
+      for(ii = 0; ii<nx; ++ii)
+      {
+        if(cC[ii] == i)
+        {
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
+        }
+      }
 
       for(ii = 0; ii < nx; ii++)
       {
         if(cC[ii] == i)
         {
-        if(ii == 0) j = 0; else j = lindex[ii-1];
-          for(;j < lindex[ii];++j)
+          if(0 == ii)
+            j = 0;
+          else
+            j = lindex[ii-1];
+
+          for(; j<lindex[ii]; ++j)
           {
-            l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
             J[l][ii + k] = 1;
             ++iData->nlocalJac;
           }
         }
       }
 
-    for(ii = 0; ii<nx; ++ii)
-      if(cC[ii] == i)
+      for(ii = 0; ii<nx; ++ii)
       {
-        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+        if(cC[ii] == i)
+        {
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+        }
       }
     }
   }
@@ -558,7 +564,8 @@ int local_jac_struct(IPOPT_DATA_ *iData)
     J[ii][ii] = 1.0;
   }
 
-  if(ACTIVE_STREAM(LOG_IPOPT)){
+  if(ACTIVE_STREAM(LOG_IPOPT))
+  {
     for(ii = 0; ii < iData->nx; ++ii)
     {
       printf("\n");

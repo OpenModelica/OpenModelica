@@ -41,12 +41,12 @@
 
 #include "../ipoptODEstruct.h"
 #include "../OptimizationFlags.h"
+
 #ifdef WITH_IPOPT
 
 static int functionJacASym_ode(IPOPT_DATA_* data, double** jac);
 static int functionJacBSym_ode(IPOPT_DATA_* data, double** jac);
 int diff_functionODE_debug(double* v, double t, IPOPT_DATA_ *iData);
-
 
 /*!
  *  eval s.t.
@@ -71,7 +71,8 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
   a2 = iData->a2_;
   a3 = iData->a3_;
   dt = iData->dt;
-  for(i = 0,k=0 , x0 = v; i<iData->nsi; ++i, x0 = x3)
+  
+  for(i=0, k=0, x0=v; i<iData->nsi; ++i, x0=x3)
   {
     x1 = x0 + iData->nv; /* 0 + 3 = 3;2*/
     x2 = x1 + iData->nv; /*3 + 3 = 6;5*/
@@ -81,57 +82,56 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
     iData->u2 = x2 + iData->nx; /*6 + 2 = 8*/
     iData->u3 = x3 + iData->nx;
 
-        if(i > 0){
-        functionODE_(x1, iData->u1, iData->time[i*iData->deg + 1], dotx1, iData);
-        functionODE_(x2, iData->u2, iData->time[i*iData->deg + 2], dotx2, iData);
-        functionODE_(x3, iData->u3, iData->time[i*iData->deg + 3], dotx3, iData);
-      for(j = 0; j< iData->nx; ++j)
+    if(i > 0)
+    {
+      functionODE_(x1, iData->u1, iData->time[i*iData->deg + 1], dotx1, iData);
+      functionODE_(x2, iData->u2, iData->time[i*iData->deg + 2], dotx2, iData);
+      functionODE_(x3, iData->u3, iData->time[i*iData->deg + 3], dotx3, iData);
+      
+      for(j=0; j<iData->nx; ++j)
       {
-        g[k++] = (a1[0][j]*x0[j] + a1[3][j]*x3[j] + scaldf[j]*dt[i]*dotx1[j]) -
-             (a1[1][j]*x1[j] + a1[2][j]*x2[j]);
+        g[k++] = (a1[0][j]*x0[j] + a1[3][j]*x3[j] + scaldf[j]*dt[i]*dotx1[j]) - (a1[1][j]*x1[j] + a1[2][j]*x2[j]);
       }
 
-      for(j = 0; j< iData->nx; ++j)
+      for(j=0; j<iData->nx; ++j)
       {
-        g[k++] = (a2[1][j]*x1[j] + scaldf[j]*dt[i]*dotx2[j]) -
-            (a2[0][j]*x0[j] + a2[2][j]*x2[j] + a2[3][j]*x3[j]);
+        g[k++] = (a2[1][j]*x1[j] + scaldf[j]*dt[i]*dotx2[j]) - (a2[0][j]*x0[j] + a2[2][j]*x2[j] + a2[3][j]*x3[j]);
       }
 
-      for(j = 0; j< iData->nx; ++j)
+      for(j=0; j<iData->nx; ++j)
       {
-        g[k++] = (a3[0][j]*x0[j] + a3[2][j]*x2[j] + scaldf[j]*dt[i]*dotx3[j]) -
-             (a3[1][j]*x1[j] + a3[3][j]*x3[j]);
+        g[k++] = (a3[0][j]*x0[j] + a3[2][j]*x2[j] + scaldf[j]*dt[i]*dotx3[j]) - (a3[1][j]*x1[j] + a3[3][j]*x3[j]);
       }
-        }else{
-          double **d1,**d2,**d3;
+    }
+    else
+    {
+      double **d1, **d2, **d3;
 
-          functionODE_(x0, x0 + iData->nx, iData->time[0], dotx0, iData);
-        functionODE_(x1, iData->u1, iData->time[1], dotx1, iData);
-        functionODE_(x2, iData->u2, iData->time[2], dotx2, iData);
-        functionODE_(x3, iData->u3, iData->time[3], dotx3, iData);
+      functionODE_(x0, x0 + iData->nx, iData->time[0], dotx0, iData);
+      functionODE_(x1, iData->u1, iData->time[1], dotx1, iData);
+      functionODE_(x2, iData->u2, iData->time[2], dotx2, iData);
+      functionODE_(x3, iData->u3, iData->time[3], dotx3, iData);
 
-        d1 = iData->d1_;
-        d2 = iData->d2_;
-        d3 = iData->d3_;
+      d1 = iData->d1_;
+      d2 = iData->d2_;
+      d3 = iData->d3_;
 
 
-      for(j = 0; j< iData->nx; ++j)
+      for(j=0; j<iData->nx; ++j)
       {
-        g[k++] = (scaldf[j]*dt[i]*(dotx1[j] + d1[4][j]*dotx0[j]) + d1[0][j]*x0[j] + d1[3][j]*x3[j])
-          - (d1[1][j]*x1[j] + d1[2][j]*x2[j]);
+        g[k++] = (scaldf[j]*dt[i]*(dotx1[j] + d1[4][j]*dotx0[j]) + d1[0][j]*x0[j] + d1[3][j]*x3[j]) - (d1[1][j]*x1[j] + d1[2][j]*x2[j]);
       }
 
-      for(j = 0; j< iData->nx; ++j)
+      for(j=0; j<iData->nx; ++j)
       {
-        g[k++] = (scaldf[j]*dt[i]*dotx2[j] + d2[1][j]*x1[j])
-                 - (scaldf[j]*dt[i]*d2[4][j]*dotx0[j] + d2[0][j]*x0[j] + d2[2][j]*x2[j] + d2[3][j]*x3[j]);
+        g[k++] = (scaldf[j]*dt[i]*dotx2[j] + d2[1][j]*x1[j]) - (scaldf[j]*dt[i]*d2[4][j]*dotx0[j] + d2[0][j]*x0[j] + d2[2][j]*x2[j] + d2[3][j]*x3[j]);
       }
-      for(j = 0; j< iData->nx; ++j)
+      
+      for(j=0; j<iData->nx; ++j)
       {
-        g[k++] = (scaldf[j]*dt[i]*(d3[4][j]*dotx0[j] + dotx3[j]) + d3[0][j]*x0[j] + d3[2][j]*x2[j])
-          - (d3[1][j]*x1[j] + d3[3][j]*x3[j]);
+        g[k++] = (scaldf[j]*dt[i]*(d3[4][j]*dotx0[j] + dotx3[j]) + d3[0][j]*x0[j] + d3[2][j]*x2[j]) - (d3[1][j]*x1[j] + d3[3][j]*x3[j]);
       }
-        }
+    }
   }
   return TRUE;
 }
@@ -140,7 +140,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
  *  eval modell ODE
  *  autor: Vitalij Ruge
  **/
-int functionODE_(double * x, double *u, double t, double * dotx,IPOPT_DATA_ *iData)
+int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)iData->data->localData[0];
   refreshSimData(x, u,  t, iData);
@@ -154,9 +154,8 @@ int functionODE_(double * x, double *u, double t, double * dotx,IPOPT_DATA_ *iDa
  **/
 int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
 {
-
   double h;
-  int i,j,k;
+  int i, j, k;
   double vsave;
   double tmp;
   double *x, *u;
@@ -169,7 +168,6 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
   for(i = 0;i<iData->nv;++i)
     for(j = 0; j <iData->nx; ++j)
       J[j][i] *= iData->scalf[j]*iData->vnom[i];
-
 
   /*
   #ifdef JAC_ADOLC
@@ -196,8 +194,6 @@ int diff_functionODE0(double* v, double t, IPOPT_DATA_ *iData)
   return 0;
 }
 
-
-
 /*
  *  function calculates a symbolic colored jacobian matrix by
  *  autor: Willi Braun
@@ -222,45 +218,50 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
     cC =  data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
     lindex = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
 
-    k = (index == index1) ? 0: iData->nx;
+    k = (index == index1) ? 0 : iData->nx;
 
     for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
     {
-     for(ii = 0; ii<nx; ++ii)
-       if(cC[ii] == i)
-       {
-         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
-       }
+      for(ii = 0; ii<nx; ++ii)
+      {
+        if(cC[ii] == i)
+        {
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
+        }
+      }
 
-    if(index == index1)
-      functionJacA_column(data);
-    else
-      functionJacB_column(data);
+      if(index == index1)
+        functionJacA_column(data);
+      else
+        functionJacB_column(data);
 
       for(ii = 0; ii < nx; ii++)
       {
         if(cC[ii] == i)
         {
-        if(ii == 0) j = 0; else j = lindex[ii-1];
-          for(;j < lindex[ii];++j)
+          if(ii == 0)
+            j = 0;
+          else j = lindex[ii-1];
+          
+          for(; j<lindex[ii]; ++j)
           {
-            l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
             J[l][ii + k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
           }
         }
       }
 
-    for(ii = 0; ii<nx; ++ii)
-      if(cC[ii] == i)
+      for(ii = 0; ii<nx; ++ii)
       {
-        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+        if(cC[ii] == i)
+        {
+          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+        }
       }
     }
   }
 
   return 0;
 }
-
-
 
 #endif
