@@ -428,7 +428,7 @@ else
 fi
 
 if ! test "$NO_IPOPT" = "yes"; then
-  LIBS=""
+  LIBS=`pkg-config --libs ipopt`
   AC_SEARCH_LIBS(CreateIpoptProblem,ipopt,,[NO_IPOPT="yes"])
   LIBS=""
 fi
