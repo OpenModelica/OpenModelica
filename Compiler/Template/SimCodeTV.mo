@@ -2899,34 +2899,34 @@ package HpcOmSimCode
 end HpcOmSimCode;
 
 package HpcOmScheduler
-	uniontype Task
-	  record CALCTASK //Task which calculates something
-	    Integer weighting;
-	    Integer index;
-	    Real calcTime;
-	    Real timeFinished;
-	    Integer threadIdx;
-	    list<Integer> eqIdc;
-	  end CALCTASK;
-	  record ASSIGNLOCKTASK //Task which assignes a lock
-	    String lockId;
-	  end ASSIGNLOCKTASK;
-	  record RELEASELOCKTASK //Task which releases a lock
-	    String lockId;
-	  end RELEASELOCKTASK;
-	  record TASKEMPTY //Dummy Task
-	  end TASKEMPTY;
-	end Task;
-	
-	uniontype ScheduleSimCode
-	  record LEVELSCHEDULESC
-	    list<list<Integer>> eqsOfLevels;
-	  end LEVELSCHEDULESC;
-	  record THREADSCHEDULESC
-	    list<list<Task>> threadTasks;
-	    list<String> lockIdc;
-	  end THREADSCHEDULESC;
-	end ScheduleSimCode;
+  uniontype Task
+    record CALCTASK //Task which calculates something
+      Integer weighting;
+      Integer index;
+      Real calcTime;
+      Real timeFinished;
+      Integer threadIdx;
+      list<Integer> eqIdc;
+    end CALCTASK;
+    record ASSIGNLOCKTASK //Task which assignes a lock
+      String lockId;
+    end ASSIGNLOCKTASK;
+    record RELEASELOCKTASK //Task which releases a lock
+      String lockId;
+    end RELEASELOCKTASK;
+    record TASKEMPTY //Dummy Task
+    end TASKEMPTY;
+  end Task;
+  
+  uniontype ScheduleSimCode
+    record LEVELSCHEDULESC
+      list<list<Integer>> eqsOfLevels;
+    end LEVELSCHEDULESC;
+    record THREADSCHEDULESC
+      list<list<Task>> threadTasks;
+      list<String> lockIdc;
+    end THREADSCHEDULESC;
+  end ScheduleSimCode;
 end HpcOmScheduler;
 
 end SimCodeTV;
