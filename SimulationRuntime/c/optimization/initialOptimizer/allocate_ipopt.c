@@ -45,7 +45,7 @@ static int local_jac_struct(IPOPT_DATA_ *iData);
 
 /*!
  *  allocate
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int allocateIpoptData(IPOPT_DATA_ *iData)
 {
@@ -142,7 +142,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
 
 /*!
  *  free
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int freeIpoptData(IPOPT_DATA_ *iData)
 {
@@ -201,7 +201,7 @@ int freeIpoptData(IPOPT_DATA_ *iData)
 /*!
  *  free
  *  intarface to simulation
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int destroyIpopt(SOLVER_INFO* solverInfo)
 {
@@ -210,7 +210,7 @@ int destroyIpopt(SOLVER_INFO* solverInfo)
 
 /*!
  *  set data from model
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 {
@@ -430,7 +430,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
 /*!
  *  time grid for optimization
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int move_grid(IPOPT_DATA_ *iData)
 {
@@ -491,7 +491,7 @@ int move_grid(IPOPT_DATA_ *iData)
 
 /*
  *  function calculates a jacobian matrix struct
- *  autor: Willi
+ *  author: Willi
  */
 int local_jac_struct(IPOPT_DATA_ *iData)
 {

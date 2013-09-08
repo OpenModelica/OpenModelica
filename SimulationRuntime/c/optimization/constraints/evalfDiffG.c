@@ -51,7 +51,7 @@ static int jac_struc(IPOPT_DATA_ *iData,int *iRow, int *iCol);
 
 /*!
  *  eval derivation of s.t.
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRow, Index *iCol, Number *values, void * useData)
 {
@@ -151,7 +151,7 @@ Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRo
 
 /*!
  *  special jacobian struct
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static inline int radauJac1(double **a, double *J, double dt, double scalRes, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
 {
@@ -180,7 +180,7 @@ static inline int radauJac1(double **a, double *J, double dt, double scalRes, do
 
 /*!
  *  special jacobian struct
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static inline int lobattoJac1(double **a, double *J, double *J0, double dt, double scalRes, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
 {
@@ -218,7 +218,7 @@ static inline int lobattoJac1(double **a, double *J, double *J0, double dt, doub
 
 /*!
  *  special jacobian struct
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static inline int radauJac2(double **a, double *J, double dt, double scalRes, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
 {
@@ -249,7 +249,7 @@ static inline int radauJac2(double **a, double *J, double dt, double scalRes, do
 
 /*!
  *  special jacobian struct
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static inline int lobattoJac2(double **a, double *J, double *J0, double dt, double scalRes, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
 {
@@ -286,7 +286,7 @@ static inline int lobattoJac2(double **a, double *J, double *J0, double dt, doub
 
 /*!
  *  special jacobian struct
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static inline int radauJac3(double **a, double *J, double dt, double scalRes, double * values, int nv, int *k, int j,IPOPT_DATA_ *iData)
 {
@@ -314,7 +314,7 @@ static inline int radauJac3(double **a, double *J, double dt, double scalRes, do
 
 /*!
  *  special jacobian struct
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static inline int lobattoJac3(double **a, double *J, double *J0, double dt, double scalRes, double * values, int nv, int *k, int j, long double tmp,IPOPT_DATA_ *iData)
 {
@@ -350,7 +350,7 @@ static inline int lobattoJac3(double **a, double *J, double *J0, double dt, doub
 
 /*!
  *  special jacobian struct
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
 {

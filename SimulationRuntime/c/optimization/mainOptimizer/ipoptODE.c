@@ -51,7 +51,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
 /*!
  *  start main optimization step
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 {
@@ -145,7 +145,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
 /*!
  *  eval model DAE
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
 {
@@ -173,7 +173,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
 
 /*!
  *  function write results in the cvs
- *  autor: Lennart Ochel
+ *  author: Lennart Ochel
  **/
 int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 {
@@ -210,7 +210,7 @@ int ipoptDebuge(IPOPT_DATA_ *iData, double *x)
 
 /*!
  *  write results in result file
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {

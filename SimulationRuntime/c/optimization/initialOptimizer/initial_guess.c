@@ -45,7 +45,7 @@
 
 /*!
  *  create initial guess
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 {

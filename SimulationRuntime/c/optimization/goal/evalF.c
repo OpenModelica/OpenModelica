@@ -47,7 +47,7 @@ static int eval_diff_lagrange2(IPOPT_DATA_ *iData, double *x, int *id_, double* 
 
 /*!
  *  eval object function
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
 {
@@ -100,7 +100,7 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
 
 /*!
  *  eval mayer term
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 {
@@ -116,7 +116,7 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
 
 /*!
  *  eval lagrange term
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iData)
 {
@@ -132,7 +132,7 @@ Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iD
 
 /*!
  *  eval derivation (object func)
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
 {

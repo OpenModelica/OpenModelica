@@ -50,7 +50,7 @@ int diff_functionODE_debug(double* v, double t, IPOPT_DATA_ *iData);
 
 /*!
  *  eval s.t.
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 {
@@ -138,7 +138,7 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
 
 /*!
  *  eval modell ODE
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData)
 {
@@ -150,7 +150,7 @@ int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iD
 
 /*!
  *  eval a part from the derivate of s.t.
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
 {
@@ -186,7 +186,7 @@ int diff_functionODE(double* v, double t, IPOPT_DATA_ *iData, double **J)
 
 /*!
  *  eval a part from the derivate of s.t.
- *  autor: Vitalij Ruge
+ *  author: Vitalij Ruge
  **/
 int diff_functionODE0(double* v, double t, IPOPT_DATA_ *iData)
 {
@@ -196,7 +196,7 @@ int diff_functionODE0(double* v, double t, IPOPT_DATA_ *iData)
 
 /*
  *  function calculates a symbolic colored jacobian matrix by
- *  autor: Willi Braun
+ *  author: Willi Braun
  */
 int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 {

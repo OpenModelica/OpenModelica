@@ -1714,11 +1714,9 @@ end checkUnusedVariablesExp;
 // remove unused functions
 //
 // =============================================================================
-public function removeUnusedFunctions
-"author: Frenkel TUD 2012-03
-  This function remove unused functions
-  from DAE.FunctionTree to get speed up for compilation of
-  target code"
+public function removeUnusedFunctions "author: Frenkel TUD 2012-03
+  This function remove unused functions from DAE.FunctionTree to get speed up 
+  for compilation of target code."
   input BackendDAE.BackendDAE inDlow;
   output BackendDAE.BackendDAE outDlow;
 algorithm
@@ -1929,7 +1927,6 @@ end getFunctionAndBody;
  */
 
 public function constantLinearSystem
-"function constantLinearSystem"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -1937,7 +1934,6 @@ algorithm
 end constantLinearSystem;
 
 protected function constantLinearSystem0
-"function constantLinearSystem"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Shared,Boolean> sharedChanged;
   output BackendDAE.EqSystem osyst;
@@ -1961,7 +1957,6 @@ algorithm
 end constantLinearSystem0;
 
 protected function constantLinearSystem2
-"function constantLinearSystem"
   input Boolean b;
   input BackendDAE.EqSystem isyst;
   output BackendDAE.EqSystem osyst;
@@ -1987,7 +1982,6 @@ algorithm
 end constantLinearSystem2;
 
 protected function constantLinearSystem1
-"function constantLinearSystem1"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponents inComps;
@@ -2219,15 +2213,17 @@ protected
   BackendDAE.Variables v;
 algorithm
   BackendDAE.DAE(eqs = eqs) := inBackendDAE;
+  
   // prepare a DAE
   DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
   DAE := BackendDAEUtil.addDummyStateIfNeeded(DAE);
   DAE := collapseIndependentBlocks(DAE);
   DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
-  //get states for DAE
+  // get states for DAE
   BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
   states := BackendVariable.getAllStateVarFromVariables(v);
+  
   // generate sparse pattern
   (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
   shared := BackendDAEUtil.addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
@@ -2235,9 +2231,7 @@ algorithm
   outBackendDAE := BackendDAE.DAE(eqs,shared);
 end detectSparsePatternODE;
 
-public function generateSparsePattern
-"
-function: generateSparsePattern
+public function generateSparsePattern "author: wbraun
   Function generated for a given set of variables and
   equations the sparsity pattern and a coloring of d jacobian matrix A^(NxM).
   col: N = size(diffVars)
@@ -2246,10 +2240,7 @@ function: generateSparsePattern
   represents the non-zero elements of a row.
 
   The coloring is saved as a list of lists, every list contains the
-  cols with the same color.
-
-Author: wbraun
-"
+  cols with the same color."
   input BackendDAE.BackendDAE inBackendDAE;
   input list<BackendDAE.Var> inDiffVars;    // "vars"
   input list<BackendDAE.Var> inDiffedVars;  // "eqns"
@@ -5675,14 +5666,10 @@ algorithm
 end traverseZeroCrossingExps;
 
 // =============================================================================
-// section for tearing
-//
-// =============================================================================
-
-// =============================================================================
 // countOperations
 //
 // =============================================================================
+
 public function countOperations "author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -6732,8 +6719,7 @@ end makeEquationsFromResiduals;
 //
 // =============================================================================
 
-public function simplifysemiLinear
-"author: Frenkel TUD 2012-08
+public function simplifysemiLinear "author: Frenkel TUD 2012-08
   This function traveres all equations and tries to simplify calls to semiLinear"
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
@@ -7193,8 +7179,8 @@ end simplifysemiLinearFinder;
 // check for derivatives of inputs
 //
 // =============================================================================
-public function inputDerivativesUsed "checks if der(input) is used and report a warning/error.
-  author: Frenkel TUD 2012-10"
+public function inputDerivativesUsed "author: Frenkel TUD 2012-10
+  checks if der(input) is used and report a warning/error."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -7275,8 +7261,8 @@ end traverserExpinputDerivativesUsed;
 // remove constants stuff
 //
 // =============================================================================
-public function removeConstants
-"author Frenkel TUD"
+
+public function removeConstants "author: Frenkel TUD"
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
@@ -7315,8 +7301,7 @@ algorithm
   end match;
 end removeConstants;
 
-protected function removeConstantsWork
-"author Frenkel TUD"
+protected function removeConstantsWork "author: Frenkel TUD"
   input BackendDAE.EqSystem isyst;
   input BackendVarTransform.VariableReplacements repl;
   output BackendDAE.EqSystem osyst;
@@ -7341,8 +7326,7 @@ algorithm
   end match;
 end removeConstantsWork;
 
-protected function removeConstantsFinder
-"author: Frenkel TUD 2012-10"
+protected function removeConstantsFinder "author: Frenkel TUD 2012-10"
  input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
  output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
 algorithm
@@ -7366,9 +7350,9 @@ end removeConstantsFinder;
 // reaplace edge and change with (b and not pre(b)) and (v <> pre(v)
 //
 // =============================================================================
-public function replaceEdgeChange "edge(b) = b and not pre(b)
-  change(b) = v <> pre(v)
-  author: Frenkel TUD 2012-11"
+public function replaceEdgeChange "author: Frenkel TUD 2012-11
+  edge(b) = b and not pre(b)
+  change(b) = v <> pre(v)"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -7493,7 +7477,7 @@ algorithm
   end matchcontinue;
 end optimizeInitialSystem;
 
-protected function optimizeInitialSystemWork "author Frenkel TUD 2012-08"
+protected function optimizeInitialSystemWork "author: Frenkel TUD 2012-08"
   input Boolean optimizationfound;
   input BackendDAE.BackendDAE inDAE;
   input list<BackendDAE.Equation> eqnlst;
@@ -7594,7 +7578,7 @@ algorithm
   end matchcontinue;
 end addInitialAlias;
 
-protected function optimizeInitialAliases "author Frenkel TUD 2012-08"
+protected function optimizeInitialAliases "author: Frenkel TUD 2012-08"
   input BackendDAE.EqSystem isyst;
   input HashTable2.HashTable initalAliases;
   output BackendDAE.EqSystem osyst;
@@ -7843,7 +7827,7 @@ algorithm
   Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpBackendDAE, outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
 end encapsulateWhenConditions;
 
-protected function encapsulateWhenConditionsFromWhenClause
+protected function encapsulateWhenConditionsFromWhenClause "author: lochel"
   input list<BackendDAE.WhenClause> inWhenClause;
   input list<BackendDAE.WhenClause> inWhenClause_done;
   input list<BackendDAE.Var> inVars;
