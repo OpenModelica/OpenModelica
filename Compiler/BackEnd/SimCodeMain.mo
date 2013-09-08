@@ -347,22 +347,16 @@ public function generateModelCode "
 protected
   list<String> includes, includeDirs;
   list<SimCode.Function> functions;
-  String filename, funcfilename;
   SimCode.SimCode simCode;
   list<SimCode.RecordDeclaration> recordDecls;
-  BackendDAE.BackendDAE indexed_dlow, indexed_dlow_1;
   Absyn.ComponentRef a_cref;
-  BackendQSS.QSSinfo qssInfo;
   tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
-  list<SimCode.JacobianMatrix> LinearMatrices;
 algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_SIMCODE);
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-    SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
-  simCode := createSimCode(outIndexedBackendDAE,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) := SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
+  simCode := createSimCode(outIndexedBackendDAE, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(GlobalScript.RT_CLOCK_SIMCODE);
   Debug.execStat("SimCode", GlobalScript.RT_CLOCK_SIMCODE);
 

@@ -5579,19 +5579,16 @@ end elaborateRecordDeclarationsForMetarecords;
 public function createExtObjInfo
   input BackendDAE.Shared shared;
   output SimCode.ExtObjInfo extObjInfo;
+protected
+  BackendDAE.Variables evars;
+  list<BackendDAE.Var> evarLst;
+  list<SimCode.ExtAlias> aliases;
+  list<SimCode.SimVar> simvars;
 algorithm
-  extObjInfo := match shared
-    local
-      BackendDAE.Variables evars;
-      list<BackendDAE.Var> evarLst;
-      list<SimCode.ExtAlias> aliases;
-      list<SimCode.SimVar> simvars;
-    case BackendDAE.SHARED(externalObjects=evars)
-      equation
-        evarLst = BackendVariable.varList(evars);
-        (simvars, aliases) = extractExtObjInfo2(evarLst, evars, {}, {});
-      then SimCode.EXTOBJINFO(simvars, aliases);
-  end match;
+  BackendDAE.SHARED(externalObjects=evars) := shared;
+  evarLst := BackendVariable.varList(evars);
+  (simvars, aliases) := extractExtObjInfo2(evarLst, evars, {}, {});
+  extObjInfo := SimCode.EXTOBJINFO(simvars, aliases);
 end createExtObjInfo;
 
 protected function extractExtObjInfo2

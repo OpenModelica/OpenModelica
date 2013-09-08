@@ -112,29 +112,31 @@ public function checkBackendDAEWithErrorMsg "author: Frenkel TUD
   run checkDEALow and prints all errors"
   input BackendDAE.BackendDAE inBackendDAE;
 protected
-  list<tuple<DAE.Exp,list<DAE.ComponentRef>>> expCrefs;
+  list<tuple<DAE.Exp, list<DAE.ComponentRef>>> expCrefs;
   list<BackendDAE.Equation> wrongEqns;
 algorithm
   _ := matchcontinue (inBackendDAE)
     local
-      Integer i1,i2;
+      Integer nVars, nEqns;
       Boolean samesize;
-    case (_)
-      equation
-        false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
-      then
-        ();
-    case (BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = i1),orderedEqs = BackendDAE.EQUATION_ARRAY(size = i2))::{}))
-      equation
-        //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
-        //Check for correct size
-        samesize = i1 == i2;
-        Debug.fcall(Flags.CHECK_BACKEND_DAE,print,"No. of Equations: " +& intString(i1) +& " No. of BackendDAE.Variables: " +& intString(i2) +& " Samesize: " +& boolString(samesize) +& "\n");
-        (expCrefs,wrongEqns) = checkBackendDAE(inBackendDAE);
-        printcheckBackendDAEWithErrorMsg(expCrefs,wrongEqns);
-      then
-        ();
-     end matchcontinue;
+      
+    case (_) equation
+      false = Flags.isSet(Flags.CHECK_BACKEND_DAE);
+    then ();
+    
+    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars=BackendDAE.VARIABLES(numberOfVars=nVars), orderedEqs=BackendDAE.EQUATION_ARRAY(size=nEqns))::{})) equation
+      //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
+      //Check for correct size
+      samesize = nVars == nEqns;
+      Debug.fcall(Flags.CHECK_BACKEND_DAE, print, "No. of Equations: " +& intString(nVars) +& " No. of BackendDAE.Variables: " +& intString(nEqns) +& " Samesize: " +& boolString(samesize) +& "\n");
+      (expCrefs, wrongEqns) = checkBackendDAE(inBackendDAE);
+      printcheckBackendDAEWithErrorMsg(expCrefs, wrongEqns);
+    then ();
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function checkBackendDAEWithErrorMsg failed"});
+    then fail();
+  end matchcontinue;
 end checkBackendDAEWithErrorMsg;
 
 public function printcheckBackendDAEWithErrorMsg"author: Frenkel TUD
@@ -7850,8 +7852,8 @@ partial function stateDeselectionFunc
   output BackendDAE.BackendDAE outDAE;
 end stateDeselectionFunc;
 
-public function getSolvedSystem
-"  Run the equation system pipeline."
+public function getSolvedSystem "
+  Run the equation system pipeline."
   input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;
@@ -7859,16 +7861,11 @@ public function getSolvedSystem
   input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
 protected
-  BackendDAE.BackendDAE dae, optdae, sode, sode1, sode2, optsode;
-  Option<BackendDAE.IncidenceMatrix> om, omT;
-  BackendDAE.IncidenceMatrix m, mT, m_1, mT_1;
-  array<Integer> v1, v2, v1_1, v2_1;
-  BackendDAE.StrongComponents comps;
+  BackendDAE.BackendDAE optdae, sode, sode1, optsode;
   list<tuple<preoptimiseDAEModule, String, Boolean>> preOptModules;
   list<tuple<pastoptimiseDAEModule, String, Boolean>> pastOptModules;
   tuple<StructurallySingularSystemHandlerFunc, String, stateDeselectionFunc, String> daeHandler;
   tuple<matchingAlgorithmFunc, String> matchingAlgorithm;
-  BackendDAE.EqSystem syst;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
   pastOptModules := getPastOptModules(strPastOptModules);
@@ -7877,34 +7874,38 @@ algorithm
 
   Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  // pre optimisation phase
+  
+  // pre-optimization phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
   _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
   Debug.execStat("preOpt SimplifyAllExp", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   (optdae, Util.SUCCESS()) := preoptimiseDAE(inDAE, preOptModules);
 
-  // transformation phase (matching and sorting using a index reduction method
+  // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
   Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump", sode));
 
-  // past optimisation phase
+  // post-optimization phase
   (optsode, Util.SUCCESS()) := pastoptimiseDAE(sode, pastOptModules, matchingAlgorithm, daeHandler);
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
   outSODE := calculateValues(sode1);
+  
   // moved to SimCodeUtil because of initial system
-  //Debug.execStat("calculateValue", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  //outSODE := expandAlgorithmsbyInitStmts(sode2);
+  // Debug.execStat("calculateValue", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  // outSODE := expandAlgorithmsbyInitStmts(sode2);
+  
   Debug.execStat("expandAlgorithmsbyInitStmts", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE, "indxdae: eqns in order");
+  
   checkBackendDAEWithErrorMsg(outSODE);
 end getSolvedSystem;
 
-public function preOptimiseBackendDAE
-"Run the optimisation modules"
+public function preOptimiseBackendDAE "
+  This function runs the pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   output BackendDAE.BackendDAE outDAE;
@@ -7915,44 +7916,43 @@ algorithm
   (outDAE,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 end preOptimiseBackendDAE;
 
-protected function preoptimiseDAE
-"Run the optimisation modules"
+protected function preoptimiseDAE "
+  This function runs the pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
-  input list<tuple<preoptimiseDAEModule,String,Boolean>> optModules;
+  input list<tuple<preoptimiseDAEModule, String, Boolean>> optModules;
   output BackendDAE.BackendDAE outDAE;
   output Util.Status status;
 algorithm
-  (outDAE,status) := matchcontinue (inDAE,optModules)
+  (outDAE, status) := matchcontinue (inDAE, optModules)
     local
-      BackendDAE.BackendDAE dae,dae1;
+      BackendDAE.BackendDAE dae, dae1;
       preoptimiseDAEModule optModule;
       list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
-      String str,moduleStr;
+      String str, moduleStr;
       Boolean b;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-    case (_,{})
-      equation
-        Debug.fcall(Flags.OPT_DAE_DUMP, print, "Pre optimisation done.\n");
-      then
-        (inDAE,Util.SUCCESS());
-    case (_,(optModule,moduleStr,_)::rest)
-      equation
-        BackendDAE.DAE(systs,shared) = optModule(inDAE);
-        systs = filterEmptySystems(systs);
-        dae = BackendDAE.DAE(systs,shared);
-        Debug.execStat("preOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
-        (dae1,status) = preoptimiseDAE(dae,rest);
-      then (dae1,status);
-    case (_,(optModule,moduleStr,b)::rest)
-      equation
-        Debug.execStat("<failed> preOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
-        Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
-        (dae,status) = preoptimiseDAE(inDAE,rest);
-      then (dae,Util.if_(b,Util.FAILURE(),status));
+      
+    case (_, {}) equation
+      Debug.fcall(Flags.OPT_DAE_DUMP, print, "pre-optimization done.\n");
+    then (inDAE,Util.SUCCESS());
+    
+    case (_, (optModule, moduleStr, _)::rest) equation
+      BackendDAE.DAE(systs, shared) = optModule(inDAE);
+      systs = filterEmptySystems(systs);
+      dae = BackendDAE.DAE(systs,shared);
+      Debug.execStat("preOpt " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
+      Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
+      (dae1,status) = preoptimiseDAE(dae, rest);
+    then (dae1, status);
+    
+    case (_, (optModule, moduleStr, b)::rest) equation
+      Debug.execStat("<failed> preOpt " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
+      Debug.bcall2(not b, Error.addMessage, Error.INTERNAL_ERROR, {str});
+      (dae,status) = preoptimiseDAE(inDAE,rest);
+    then (dae, Util.if_(b, Util.FAILURE(), status));
   end matchcontinue;
 end preoptimiseDAE;
 
@@ -7972,10 +7972,9 @@ algorithm
   outDAE := causalizeDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod,true);
 end transformBackendDAE;
 
-protected function causalizeDAE
-"Run the matching Algorithm.
-  In case of an DAE an DAE-Handler is used to reduce
-  the index of the dae."
+protected function causalizeDAE "
+  Run the matching Algorithm.
+  In case of a DAE a DAE handler is used to reduce the index of the DAE."
   input BackendDAE.BackendDAE inDAE;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
@@ -7986,8 +7985,6 @@ protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
   list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
-  String methodstr;
-  stateDeselectionFunc sDfunc;
   Boolean causalized;
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
@@ -8002,10 +7999,9 @@ algorithm
   outDAE := BackendDAE.DAE(systs,shared);
 end causalizeDAE;
 
-protected function mapCausalizeDAE
-"Run the matching Algorithm.
-  In case of an DAE an DAE-Handler is used to reduce
-  the index of the dae."
+protected function mapCausalizeDAE "
+  Run the matching Algorithm.
+  In case of a DAE a DAE handler is used to reduce the index of the DAE."
   input list<BackendDAE.EqSystem> isysts;
   input BackendDAE.Shared ishared;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
@@ -8027,12 +8023,14 @@ algorithm
       Option<BackendDAE.StructurallySingularSystemHandlerArg> arg;
       list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
       Boolean causalized;
-    case ({},_,_,_,_,_,_,_) then (listReverse(acc),ishared,listReverse(acc1),iCausalized);
-    case (syst::systs,_,_,_,_,_,_,_)
-      equation
-        (syst,shared,arg,causalized) = causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized);
-        (systs,shared,args,causalized) = mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1,causalized);
-      then (systs,shared,args,causalized);
+      
+    case ({},_,_,_,_,_,_,_)
+    then (listReverse(acc),ishared,listReverse(acc1),iCausalized);
+    
+    case (syst::systs,_,_,_,_,_,_,_) equation
+      (syst,shared,arg,causalized) = causalizeDAEWork(syst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,iCausalized);
+      (systs,shared,args,causalized) = mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,syst::acc,arg::acc1,causalized);
+    then (systs,shared,args,causalized);
   end match;
 end mapCausalizeDAE;
 

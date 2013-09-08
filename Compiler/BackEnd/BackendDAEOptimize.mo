@@ -5419,11 +5419,11 @@ end residualForm2;
 // simplify time independent function calls
 //
 // =============================================================================
-public function simplifyTimeIndepFuncCalls "pre(param) -> param
+public function simplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06
+  pre(param) -> param
   der(param) -> 0.0
   change(param) -> false
-  edge(param) -> false
-  author: Frenkel TUD 2012-06"
+  edge(param) -> false"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
@@ -7650,7 +7650,8 @@ end optimizeInitialAliasesFinder;
 //                        a[1] := 1.0;
 // =============================================================================
 
-public function addInitialStmtsToAlgorithms "section are executed in the order of appearance. Whenever an algorithm section is invoked, all variables appearing
+public function addInitialStmtsToAlgorithms "
+  section are executed in the order of appearance. Whenever an algorithm section is invoked, all variables appearing
   on the left hand side of the assignment operator := are initialized (at least conceptually):
     - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute).
     - A discrete variable v is initialized with pre(v)."
