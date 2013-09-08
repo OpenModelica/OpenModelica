@@ -132,14 +132,19 @@ double rt_total(int ix) {
 static enum omc_rt_clock_t selectedClock = OMC_CLOCK_REALTIME;
 
 #if defined(__MINGW32__)
-inline volatile long long RDTSC() {
+inline long long RDTSC() {
    register long long TSC asm("eax");
    asm volatile (".byte 15, 49" : : : "eax", "edx");
    return TSC;
+//    unsigned int hi, lo;
+//    asm volatile("rdtscp" : "=a"(lo), "=d"(hi));
+//    return (unsigned long long)lo | ((unsigned long long)hi << 32);
 }
 #else
 long long RDTSC() {
-  return __rdtsc();
+//	unsigned int ui;
+//	return __rdtscp(&ui);
+   return __rdtsc();
 }
 #endif
 

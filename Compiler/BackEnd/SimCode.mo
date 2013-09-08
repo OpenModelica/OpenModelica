@@ -55,6 +55,7 @@ encapsulated package SimCode
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+public import HpcOmScheduler;
 
 public
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
@@ -108,7 +109,7 @@ uniontype SimCode
     String fileNamePrefix;
     //*** a protected section *** not exported to SimCodeTV
     HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
-    Option<HpcOmParInformation> hpcOmParInformationOpt; 
+    Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule; 
   end SIMCODE;
 end SimCode;
 
@@ -589,11 +590,4 @@ efficient manner"
     array<Option<tuple<Key,Value>>> valueArray "array of values";
   end VALUE_ARRAY;
 end ValueArray;
-
-
-public uniontype HpcOmParInformation "informations for the taskgraph parallelization"
-  record HPCOMPARINFORMATION
-    list<list<Integer>> eqsOfLevels "The equations of the level <%listindex%>";
-  end HPCOMPARINFORMATION;
-end HpcOmParInformation;
 end SimCode;

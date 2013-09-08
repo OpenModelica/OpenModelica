@@ -149,7 +149,7 @@ package SimCode
       list<JacobianMatrix> jacobianMatrixes;  
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
-      Option<HpcOmParInformation> hpcOmParInformationOpt; 
+      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule; 
     end SIMCODE;
 
   end SimCode;
@@ -226,12 +226,6 @@ package SimCode
     record OPTIMIZATION_CONTEXT
     end OPTIMIZATION_CONTEXT;
   end Context;
-  
-  uniontype HpcOmParInformation
-    record HPCOMPARINFORMATION
-      list<list<Integer>> eqsOfLevels;
-    end HPCOMPARINFORMATION;
-  end HpcOmParInformation;
   
   uniontype Variable
     record VARIABLE
@@ -2513,11 +2507,17 @@ package Flags
   constant DebugFlag HPCOM;
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
+  constant ConfigFlag NUM_PROC;
 
   function isSet
     input DebugFlag inFlag;
     output Boolean outValue;
   end isSet;
+  
+  function getConfigInt
+    input ConfigFlag inFlag;
+    output Integer outValue;
+  end getConfigInt;
 end Flags;
 
 package Settings
@@ -2897,5 +2897,36 @@ package HpcOmSimCode
     input list<list<SimCode.SimEqSystem>> systems;
   end analyzeOdeEquations;
 end HpcOmSimCode;
+
+package HpcOmScheduler
+	uniontype Task
+	  record CALCTASK //Task which calculates something
+	    Integer weighting;
+	    Integer index;
+	    Real calcTime;
+	    Real timeFinished;
+	    Integer threadIdx;
+	    list<Integer> eqIdc;
+	  end CALCTASK;
+	  record ASSIGNLOCKTASK //Task which assignes a lock
+	    String lockId;
+	  end ASSIGNLOCKTASK;
+	  record RELEASELOCKTASK //Task which releases a lock
+	    String lockId;
+	  end RELEASELOCKTASK;
+	  record TASKEMPTY //Dummy Task
+	  end TASKEMPTY;
+	end Task;
+	
+	uniontype ScheduleSimCode
+	  record LEVELSCHEDULESC
+	    list<list<Integer>> eqsOfLevels;
+	  end LEVELSCHEDULESC;
+	  record THREADSCHEDULESC
+	    list<list<Task>> threadTasks;
+	    list<String> lockIdc;
+	  end THREADSCHEDULESC;
+	end ScheduleSimCode;
+end HpcOmScheduler;
 
 end SimCodeTV;

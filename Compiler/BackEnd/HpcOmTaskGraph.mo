@@ -38,7 +38,6 @@ encapsulated package HpcOmTaskGraph
 "
 public import BackendDAE;
 public import DAE;
-public import SimCode;
 
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
@@ -72,7 +71,7 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
     array<list<tuple<Integer,Integer,Integer>>> commCosts;  // the communication cost tuple(_,numberOfVars,requiredCycles) for an edge from array[parentNode] to tuple(childNode,_) 
     array<Integer> nodeMark;  // put some additional stuff in here -> this is currently not a nodeMark, its a componentMark
   end TASKGRAPHMETA;
-end TaskGraphMeta;  
+end TaskGraphMeta; //TODO: Remove rootNodes from structure
   
   
 //functions to build the task graph from the BLT structure
@@ -1767,7 +1766,7 @@ algorithm
     case(_,_,_,_)
       equation
         // remove the algebraic branches
-        noChildren = getBranchEnds(graphIn,{},1);
+        noChildren = getLeaves(graphIn,{},1);
         (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(stateNodes,deleteNodes),intEq);
         deleteNodesTmp = listAppend(cutNodes,deleteNodes);
         false = List.isEmpty(cutNodes);
@@ -1781,7 +1780,7 @@ algorithm
            (graphTmp,deleteNodesTmp);
     case(_,_,_,_)
       equation       
-        noChildren = getBranchEnds(graphIn,{},1);
+        noChildren = getLeaves(graphIn,{},1);
         (_,cutNodes,_) = List.intersection1OnTrue(noChildren,listAppend(stateNodes,deleteNodes),intEq);
         true = List.isEmpty(cutNodes);
         //print("pre cut\n");
@@ -2180,7 +2179,7 @@ algorithm
 end arrayCopyRows;
 
 
-protected function getBranchEnds "gets the end of the branches i.e. a node with no successors(no entries in the adjacencyList)
+protected function getLeaves "gets the end of the branches i.e. a node with no successors(no entries in the adjacencyList)
 author:Waurich TUD 2013-06"
   input array<list<Integer>> adjacencyLstIn;
   input list<Integer> noChildrenIn;
@@ -2196,7 +2195,7 @@ algorithm
         true = arrayLength(adjacencyLstIn) >= rowIdx;
         row = arrayGet(adjacencyLstIn,rowIdx);
         true = List.isEmpty(row);
-        noChildren = getBranchEnds(adjacencyLstIn,rowIdx::noChildrenIn,rowIdx+1);
+        noChildren = getLeaves(adjacencyLstIn,rowIdx::noChildrenIn,rowIdx+1);
         then
           noChildren;
     case(_,_,_)
@@ -2207,7 +2206,7 @@ algorithm
         row = arrayGet(adjacencyLstIn,rowIdx);
         true = listLength(row) == 1;  
         true = listGet(row,1) == rowIdx;
-        noChildren = getBranchEnds(adjacencyLstIn,rowIdx::noChildrenIn,rowIdx+1);
+        noChildren = getLeaves(adjacencyLstIn,rowIdx::noChildrenIn,rowIdx+1);
         then
           noChildren;    
     case(_,_,_)
@@ -2215,7 +2214,7 @@ algorithm
         true = arrayLength(adjacencyLstIn) >= rowIdx;
         row = arrayGet(adjacencyLstIn,rowIdx);
         false = List.isEmpty(row);
-        noChildren = getBranchEnds(adjacencyLstIn,noChildrenIn,rowIdx+1);
+        noChildren = getLeaves(adjacencyLstIn,noChildrenIn,rowIdx+1);
         then
           noChildren;          
     case(_,_,_)
@@ -2224,7 +2223,7 @@ algorithm
       then
         noChildrenIn;
   end matchcontinue;
-end getBranchEnds;                 
+end getLeaves;                 
  
 
 //protected function getSCCByVar0
@@ -2340,13 +2339,14 @@ public function dumpAsGraphMLSccLevel "author: marcusw, waurich
   input String fileName;
   input String criticalPathInfo;
   input array<list<Integer>> sccSimEqMapping; //maps each scc to simEqSystems
+  input array<tuple<Integer,Integer>> schedulerInfo; //maps each Task to <threadId, orderId>
 protected
   GraphML.Graph graph;
-  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx, commCostAttIdx, critPathAttIdx, simCodeEqAttIdx;
+  Integer calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, compIdcAttIdx, commCostAttIdx, critPathAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
   list<Integer> compIdc;
 algorithm
-  _ := match(iGraph, iGraphData, fileName, criticalPathInfo, sccSimEqMapping)
-    case(_,_,_,_,_)
+  _ := match(iGraph, iGraphData, fileName, criticalPathInfo, sccSimEqMapping, schedulerInfo)
+    case(_,_,_,_,_,_)
       equation 
         graph = GraphML.getGraph("TaskGraph", true);
         (opCountAttIdx,graph) = GraphML.addAttribute("-1", "Operations", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
@@ -2354,11 +2354,13 @@ algorithm
         (compIdcAttIdx,graph) = GraphML.addAttribute("", "Components", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
         (yCoordAttIdx,graph) = GraphML.addAttribute("17", "yCoord", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
         (simCodeEqAttIdx,graph) = GraphML.addAttribute("", "SimCodeEqs", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
+        (threadIdAttIdx,graph) = GraphML.addAttribute("", "ThreadId", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
+        (taskNumberAttIdx,graph) = GraphML.addAttribute("-1", "TaskNumber", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
         (commCostAttIdx,graph) = GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graph);
         (critPathAttIdx,graph) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graph);
         graph = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), graph);
         compIdc = List.intRange(arrayLength(iGraph));
-        graph = List.fold4(compIdc, addNodeToGraphML, iGraph, iGraphData, (opCountAttIdx,calcTimeAttIdx,compIdcAttIdx,yCoordAttIdx,commCostAttIdx, simCodeEqAttIdx), sccSimEqMapping, graph);
+        graph = List.fold4(compIdc, addNodeToGraphML, (iGraph, iGraphData), (opCountAttIdx,calcTimeAttIdx,compIdcAttIdx,yCoordAttIdx,commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx), sccSimEqMapping, schedulerInfo, graph);
         GraphML.dumpGraph(graph, fileName);
       then ();
   end match;
@@ -2368,18 +2370,20 @@ end dumpAsGraphMLSccLevel;
 protected function addNodeToGraphML "author: marcusw, waurich
   Adds the given node to the given graph."
   input Integer nodeIdx;
-  input TaskGraph tGraphIn;
-  input TaskGraphMeta tGraphDataIn;
-  input tuple<Integer,Integer,Integer,Integer,Integer,Integer> attIdc; 
-  //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx>
+  input tuple<TaskGraph, TaskGraphMeta> tGraphDataTuple;
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> attIdc; 
+  //Attribute index for <opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx>
   input array<list<Integer>> sccSimEqMapping;
+  input array<tuple<Integer,Integer>> schedulerInfo;
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 algorithm
-  oGraph := matchcontinue(nodeIdx,tGraphIn,tGraphDataIn,attIdc,sccSimEqMapping,iGraph)
+  oGraph := matchcontinue(nodeIdx,tGraphDataTuple,attIdc,sccSimEqMapping,schedulerInfo,iGraph)
     local
+      TaskGraph tGraphIn;
+      TaskGraphMeta tGraphDataIn;
       GraphML.Graph tmpGraph;
-      Integer opCount, calcTimeAttIdx, opCountAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, yCoord, simCodeEqAttIdx;
+      Integer opCount, calcTimeAttIdx, opCountAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, yCoord, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
       Real calcTime;
       Integer primalComp;
       list<Integer> childNodes;
@@ -2400,10 +2404,12 @@ algorithm
       String nodeDesc;
       String componentsString;
       String simCodeEqString;
-    case(_,_,_,_,_,_)
+      String threadIdxString, taskNumberString;
+      Integer schedulerThreadId, schedulerTaskNumber;
+    case(_,(tGraphIn,tGraphDataIn),_,_,_,_)
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
-        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx) = attIdc;
+        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         true = listLength(components)==1; 
@@ -2425,15 +2431,20 @@ algorithm
         simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
         //componentsString = List.fold(components, addNodeToGraphML2, " ");
         componentsString = (" "+&intString(nodeIdx)+&" ");
-        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString))}, iGraph);
+        
+        ((schedulerThreadId,schedulerTaskNumber)) = arrayGet(schedulerInfo,nodeIdx);
+        threadIdxString = "Th " +& intString(schedulerThreadId);
+        taskNumberString = intString(schedulerTaskNumber);
+        
+        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, iGraph);
         tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
         tmpGraph;
-    case(_,_,_,_,_,_)
+    case(_,(tGraphIn,tGraphDataIn),_,_,_,_)
       equation
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
-        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx) = attIdc;
+        (opCountAttIdx, calcTimeAttIdx, compIdcAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
@@ -2448,7 +2459,11 @@ algorithm
         componentsString = (" "+&intString(nodeIdx)+&" ");
         simCodeEqs = arrayGet(sccSimEqMapping,primalComp);
         simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
-        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString))}, iGraph);
+        
+        ((schedulerThreadId,schedulerTaskNumber)) = arrayGet(schedulerInfo,nodeIdx);
+        threadIdxString = "Th " +& intString(schedulerThreadId);
+        taskNumberString = intString(schedulerTaskNumber);
+        tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), compText, GraphML.COLOR_GREEN, GraphML.RECTANGLE(), SOME(nodeDesc), {((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((compIdcAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, iGraph);
         tmpGraph = List.fold3(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, tmpGraph);
       then 
         tmpGraph;
@@ -2510,7 +2525,8 @@ algorithm
   components := arrayGet(inComps,childIdx);
   primalCompChild := List.last(components);
   components := arrayGet(inComps,parentIdx);
-  primalCompParent := List.last(components);
+  primalCompParent := List.first(components);
+  //print("Try to get comm costs from " +& intString(parentIdx) +& " to " +& intString(childIdx) +& "\n");
   (numOfCommVars,commCost) := getCommunicationCost(primalCompParent,primalCompChild,commCosts);
   numOfCommVarsString := intString(numOfCommVars);
   commCostString := intString(commCost);
@@ -3027,48 +3043,6 @@ algorithm
 end printCriticalPathInfo1;
 
 
-// testfunctions
-//------------------------------------------
-//------------------------------------------
-
-public function checkOdeSystemSize " compares the size of the ode-taskgraph with the number of ode-equations in the simCode.
-author:Waurich TUD 2013-07"
-  input TaskGraph taskGraphOdeIn;
-  input list<list<SimCode.SimEqSystem>> odeEqsIn;
-algorithm
-  _ := matchcontinue(taskGraphOdeIn,odeEqsIn)
-    local
-      Integer actualSize;
-      Integer targetSize;
-    case(_,_)
-      equation
-        targetSize = listLength(List.flatten(odeEqsIn));
-        actualSize = arrayLength(taskGraphOdeIn);
-        true = intEq(targetSize,actualSize);
-        print("the ODE-system size is correct\n");
-        then
-          ();
-    case(_,_)
-      equation
-        targetSize = listLength(List.flatten(odeEqsIn));
-        actualSize = arrayLength(taskGraphOdeIn);
-        true = intEq(targetSize,1) and intEq(actualSize,0);
-        // there is a dummyDER in the simcode
-        print("the ODE-system size is correct\n");
-        then
-          ();
-    else
-      equation
-        targetSize = listLength(List.flatten(odeEqsIn));
-        actualSize = arrayLength(taskGraphOdeIn);
-        print("the size should be "+&intString(targetSize)+&" but it is "+&intString(actualSize)+&" !\n");
-        print("the ODE-system is NOT correct\n");
-      then
-        ();
-  end matchcontinue;    
-end checkOdeSystemSize;
-
-
 // functions to merge simple nodes
 //------------------------------------------
 //------------------------------------------
@@ -3079,7 +3053,6 @@ author:Waurich TUD 2013-07"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
   input BackendDAE.BackendDAE daeIn;
-  input String filenamePrefix;
   output TaskGraph graphOut;
   output TaskGraphMeta graphDataOut;
 protected 
@@ -4052,6 +4025,7 @@ author: Waurich TUD 2013-07"
 algorithm
   (criticalPathOut,cpCostsOut,parallelSetsOut) := matchcontinue(graphIn,graphDataIn)
     local
+      TaskGraph graphInT;
       Real cpCostsTmp;
       Integer rootParent;
       list<Integer> rootNodes;
@@ -4064,14 +4038,16 @@ algorithm
     case(_,_)
       equation    
         true = arrayLength(graphIn) <> 0;
-        TASKGRAPHMETA(inComps = inComps, rootNodes = rootNodes, nodeMark=nodeMark) = graphDataIn;
+        TASKGRAPHMETA(inComps = inComps, nodeMark=nodeMark) = graphDataIn;
+        graphInT = transposeTaskGraph(graphIn);
+        rootNodes = getRootNodes(graphInT);
         nodeInfo = arrayCreate(arrayLength(graphIn),(-1,-1.0,0));
         nodeInfo = List.fold1(List.intRange(arrayLength(graphIn)),setParentCount,graphIn,nodeInfo);
         nodeInfo = longestPathMethod1(graphIn,graphDataIn,rootNodes,List.fill(0,listLength(rootNodes)),nodeInfo);
         parallelSets = gatherParallelSets(nodeInfo);
         nodeCoords = getNodeCoords(parallelSets,graphIn);
         nodeMark = List.fold2(List.intRange(arrayLength(graphIn)),setLevelInNodeMark,inComps,nodeCoords,nodeMark);
-        (criticalPathTmp,cpCostsTmp) = getCriticalPath(graphIn,graphDataIn,nodeInfo);
+        (criticalPathTmp,cpCostsTmp) = getCriticalPath(graphIn,graphDataIn,rootNodes);
         //print("the critical paths: "+&stringDelimitList(List.map(criticalPathTmp,intLstString)," ; ")+&" with the costs "+&realString(cpCostsTmp)+&"\n");
       then
         (criticalPathTmp,cpCostsTmp,parallelSets);
@@ -4244,7 +4220,11 @@ algorithm
         foldTmp;
     else
       equation
-        print("longestPathMEthod2-failed\n");
+        (childNodesIn,nodeInfoIn) = foldIn;
+        (rootNodes,rootParents) = rootNodeInfo;
+        rootNode = listGet(rootNodes,rootIdx);
+        rootParent = listGet(rootParents,rootIdx);
+        print("longestPathMethod2-failed! RootIdx: " +& intString(rootNode) +& " RootParent: " +& intString(rootParent) +& "\n");
         then
           fail();
   end matchcontinue;
@@ -4281,192 +4261,315 @@ algorithm
   nodeInfoOut := arrayUpdate(nodeInfoIn,childNode,(levelValue,costValue,parentCount+1));
 end setParentCount1;
 
-
-protected function getCriticalPath " computes the criticalPath
-auhtor: Waurich TUD 2013-07"
-  input TaskGraph graphIn;
-  input TaskGraphMeta graphDataIn;
-  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
-  output list<list<Integer>> criticalPathsOut;
-  output Real cpCosts;
+protected function getCriticalPath "function getCriticalPath
+  author: marcusw
+  Get the critical path of the graph."
+  input TaskGraph iGraph;
+  input TaskGraphMeta iGraphData;
+  input list<Integer> iRootNodes;
+  output list<list<Integer>> oCriticalPathsOut; //The list of critical paths -> has only one element
+  output Real oCpCosts;
 protected
-  list<Integer> endNodes;
+  array<tuple<Real,list<Integer>>> nodeCriticalPaths; //<criticalPath,criticalPathSuccessor> for each node <%idx%>
+  list<tuple<Real,list<Integer>>> criticalPaths;
+  Integer criticalPathIdx;
+  list<Integer> criticalPath;
 algorithm
-  endNodes := getBranchEnds(graphIn,{},1);
-  endNodes := getCriticalPathEndNodes(endNodes,nodeInfoIn,1,{});
-  ((_,cpCosts,_)) := arrayGet(nodeInfoIn,listGet(endNodes,1));
-  criticalPathsOut := List.map4(endNodes,getCriticalPath1,graphIn,graphDataIn,nodeInfoIn,{});
+  nodeCriticalPaths := arrayCreate(arrayLength(iGraph), (-1.0,{}));
+  criticalPaths := List.map3(iRootNodes, getCriticalPath1, iGraph, iGraphData, nodeCriticalPaths);
+  criticalPathIdx := getCriticalPath2(criticalPaths, 1, -1.0, -1);
+  ((oCpCosts, criticalPath)) := listGet(criticalPaths, criticalPathIdx);
+  oCriticalPathsOut := {criticalPath};
 end getCriticalPath;
 
-
-protected function getCriticalPath1 "finds the criticalPath based on the endNodes with highest costs. TODO: avoid getParentLst
-auhtor: Waurich TUD 2013 .07"
-  input Integer childNode;
-  input TaskGraph graphIn;
-  input TaskGraphMeta graphDataIn;
-  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
-  input list<Integer> criticalPathIn;
-  output list<Integer> criticalPathOut;
+protected function getCriticalPath1 "function getCriticalPath1
+  author: marcusw
+  Get the critical path of the given node (iNode). If the node was already visited, the result will be read from the iNodeCriticalPaths. 
+  If the node is visited the first time, then the critical path is calculated and stored into the iNodeCriticalPaths-array."
+  input Integer iNode;
+  input TaskGraph iGraph;
+  input TaskGraphMeta iGraphData;
+  input array<tuple<Real,list<Integer>>> iNodeCriticalPaths;
+  output tuple<Real,list<Integer>> criticalPathOut;
+protected
+  Real cpCalcTime, calcTime;
+  Integer criticalPathIdx;
+  list<Integer> childNodes, criticalPathChild, criticalPath, nodeComps;
+  list<tuple<Real,list<Integer>>> criticalPaths;
+  array<tuple<Integer,Real>> exeCosts;
+  array<list<Integer>> inComps;
+  list<tuple<Real,list<Integer>>> criticalPaths;
+  
 algorithm
-  criticalPathOut := matchcontinue(childNode,graphIn,graphDataIn,nodeInfoIn,criticalPathIn)
-    local
-      Integer parentNode;
-      Real childCosts;
-      list<Integer> parentNodes;
-      list<Integer> criticalPathTmp;
-      array<list<Integer>> inComps;
-      array<tuple<Integer,Real>> exeCosts;
-      array<list<tuple<Integer,Integer,Integer>>> commCosts;
-  case(_,_,_,_,_)
-    equation
-      criticalPathTmp = childNode::criticalPathIn;
-      parentNodes = getParentNodes(childNode,graphIn);
-      false = List.isEmpty(parentNodes);
-      ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
-      TASKGRAPHMETA(inComps = inComps, exeCosts=exeCosts, commCosts=commCosts) = graphDataIn;
-      parentNode = getCriticalPath2(parentNodes,childNode,(inComps,exeCosts,commCosts),nodeInfoIn,1);
-      criticalPathTmp = getCriticalPath1(parentNode,graphIn,graphDataIn,nodeInfoIn,criticalPathTmp);
-    then
-      criticalPathTmp;
-  case(_,_,_,_,_)
-    equation
-      criticalPathTmp = childNode::criticalPathIn;
-      parentNodes = getParentNodes(childNode,graphIn);
-      true = List.isEmpty(parentNodes);
-    then
-      criticalPathTmp;
-  end matchcontinue;   
-end getCriticalPath1; 
+  criticalPathOut := matchcontinue(iNode, iGraph, iGraphData, iNodeCriticalPaths)
+    case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_)
+      equation //In this case, the node was already visited
+        ((cpCalcTime,criticalPath)) = arrayGet(iNodeCriticalPaths, iNode);
+        true = realGe(cpCalcTime, 0.0);
+      then ((cpCalcTime, criticalPath));
+    case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_)
+      equation //critical path of node is currently unknown -> calculate it
+        childNodes = arrayGet(iGraph, iNode);
+        true = intGt(listLength(childNodes),0); //has children
+        criticalPaths = List.map3(childNodes, getCriticalPath1, iGraph, iGraphData, iNodeCriticalPaths);
+        criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
+        ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
+        criticalPath = iNode :: criticalPathChild;
+        nodeComps = arrayGet(inComps, iNode);
+        calcTime = sumUpExeCosts(nodeComps, exeCosts, 0.0); //sum up calc times of all components
+        calcTime = realAdd(cpCalcTime,calcTime);
+        _ = arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
+      then ((calcTime, criticalPath));
+    case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_)
+      equation //critical path of node is currently unknown -> calculate it
+        childNodes = arrayGet(iGraph, iNode);
+        false = intGt(listLength(childNodes),0); //has no children
+        criticalPath = iNode :: {};
+        nodeComps = arrayGet(inComps, iNode);
+        calcTime = sumUpExeCosts(nodeComps, exeCosts, 0.0); //sum up calc times of all components
+        _ = arrayUpdate(iNodeCriticalPaths, iNode, (calcTime, criticalPath));
+      then ((calcTime, criticalPath));
+    else
+      equation
+        print("HpcOmTaskGraph.getCriticalPath_1 failed\n");
+      then fail();
+  end matchcontinue;
+end getCriticalPath1;
 
-
-protected function getCriticalPath2 " checks which predecessor node is the next.
-author: Waurich TUD 2013-07"
-  input list<Integer> parentNodeLst;
-  input Integer childNode;
-  input tuple<array<list<Integer>>,array<tuple<Integer,Real>>,array<list<tuple<Integer,Integer,Integer>>>> graphInfo;
-  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
-  input Integer idx;
-  output Integer parentOut;
+protected function getCriticalPath2 "function getCriticalPath2
+  author: marcusw
+  Find the list-index of the longest path. The paths which should be compared have to be stored in the iCriticalPaths-list."
+  input list<tuple<Real,list<Integer>>> iCriticalPaths;
+  input Integer iListIdx;
+  input Real iLongestPath;
+  input Integer iLongestPathIndex;
+  output Integer oLongestPathIndex;
+protected
+  Real cpCost;
+  list<Integer> criticalPath;
+  list<tuple<Real,list<Integer>>> rest;
 algorithm
-  parentOut := matchcontinue(parentNodeLst,childNode,graphInfo,nodeInfoIn,idx)
-    local
-      Integer parentNode;
-      Real subCosts;
-      Real childCosts;
-      Real difference;
-      Real parentCostsExpected;
-      Real parentCostsGot;
-      array<list<Integer>> inComps;
-      array<tuple<Integer,Real>> exeCosts;
-      array<list<tuple<Integer,Integer,Integer>>> commCosts;
-    case(_,_,(inComps,exeCosts,commCosts),_,_)
+  oLongestPathIndex := matchcontinue(iCriticalPaths, iListIdx, iLongestPath, iLongestPathIndex)
+    case((cpCost, criticalPath)::rest,_,_,_)
       equation
-        true = listLength(parentNodeLst) >= idx;
-        parentNode = listGet(parentNodeLst,idx);
-        ((_,parentCostsGot,_)) = arrayGet(nodeInfoIn,parentNode);
-        subCosts = getCostsForNode(parentNode,childNode,inComps,exeCosts,commCosts);
-        ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
-        parentCostsExpected = childCosts -. subCosts;
-        difference = parentCostsExpected -. parentCostsGot;
-        false = difference <. 0.00000000001 and difference >. -0.00000000001 ;
-        parentNode = getCriticalPath2(parentNodeLst,childNode,(inComps,exeCosts,commCosts),nodeInfoIn,idx+1);
-      then
-        parentNode;
-    case(_,_,(inComps,exeCosts,commCosts),_,_)
-      equation
-        true = listLength(parentNodeLst) >= idx;
-        parentNode = listGet(parentNodeLst,idx);
-        ((_,parentCostsGot,_)) = arrayGet(nodeInfoIn,parentNode);
-        subCosts = getCostsForNode(parentNode,childNode,inComps,exeCosts,commCosts);
-        ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
-        parentCostsExpected = childCosts -. subCosts;
-        difference = parentCostsExpected -. parentCostsGot;
-        true = difference <. 0.00000000001 and difference >. -0.00000000001 ;
-      then
-        parentNode;
-    case(_,_,(inComps,exeCosts,commCosts),_,_)
-      equation
-        true = List.isEmpty(parentNodeLst);
-      then
-        0;
-    case(_,_,(inComps,exeCosts,commCosts),_,_)
-      equation
-        true = listLength(parentNodeLst) < idx;
-        print("getCriticalPath2 failed!\n");
-      then
-        fail();        
-  end matchcontinue;     
+        true = realGt(cpCost, iLongestPath);
+      then getCriticalPath2(rest, iListIdx+1, cpCost, iListIdx);
+    case((cpCost, criticalPath)::rest,_,_,_)
+      then getCriticalPath2(rest, iListIdx+1, iLongestPath, iLongestPathIndex);
+    else then iLongestPathIndex;
+  end matchcontinue;
 end getCriticalPath2;
 
-
-protected function getCriticalPathEndNodes "gets the nodes with the highest costs
-author: Waurich TUD 2013-07"
-  input list<Integer> endNodesIn;
-  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
-  input Integer idx;
-  input list<Integer> maxCostNodes;
-  output list<Integer> endNodesOut; 
+protected function sumUpExeCosts "function sumUpExeCosts
+  author: marcusw
+  This function adds up all execution costs of the given component list (iNodeComps)."
+  input list<Integer> iNodeComps;
+  input array<tuple<Integer,Real>> iExeCosts;
+  input Real iExeCost;
+  output Real oExeCost;
 protected
-  Integer endNode;
-  Integer maxEndNode;
-  Real nodeCosts;
-  Real maxCosts;
-  list<Integer> endNodesTmp;
+  Integer head;
+  list<Integer> rest;
+  Real cost;
 algorithm
-  endNodesOut := matchcontinue(endNodesIn,nodeInfoIn,idx,maxCostNodes)
-    local
-  case(_,_,_,_)
-    equation
-      true = listLength(endNodesIn) >= idx;
-      false = List.isEmpty(maxCostNodes);
-      maxEndNode = listGet(maxCostNodes,1);
-      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
-      endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
-      true = nodeCosts <. maxCosts;
-      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,maxCostNodes);
-    then
-      endNodesTmp;
-  case(_,_,_,_)
-    equation
-      true = listLength(endNodesIn) >= idx;
-      false = List.isEmpty(maxCostNodes);
-      maxEndNode = listGet(maxCostNodes,1);
-      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
-      endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
-      true = nodeCosts ==. maxCosts;
-      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,endNode::maxCostNodes);
-    then
-      endNodesTmp;
-  case(_,_,_,_)
-    equation
-      true = listLength(endNodesIn) >= idx;
-      false = List.isEmpty(maxCostNodes);
-      maxEndNode = listGet(maxCostNodes,1);
-      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
-      endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
-      true = nodeCosts >. maxCosts;
-      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,{endNode});
-    then
-      endNodesTmp;
-  case(_,_,_,_)
-    equation
-      true = listLength(endNodesIn) < idx;
-    then
-      maxCostNodes;
-  case(_,_,_,_)
-    equation
-      true = listLength(endNodesIn) >= idx;
-      true = List.isEmpty(maxCostNodes);
-      endNode = listGet(endNodesIn,idx);
-      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
-      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,{endNode});
-    then
-      endNodesTmp;
-  end matchcontinue;  
-end getCriticalPathEndNodes;
+  oExeCost := match(iNodeComps, iExeCosts, iExeCost)
+    case(head::rest,_,_)
+      equation
+        ((_,cost)) = arrayGet(iExeCosts, head);
+        cost = realAdd(cost, iExeCost);
+        cost = sumUpExeCosts(rest, iExeCosts, cost);
+      then cost;
+    else then iExeCost;
+  end match;
+end sumUpExeCosts;
+
+//protected function getCriticalPath " computes the criticalPath
+//auhtor: Waurich TUD 2013-07"
+//  input TaskGraph graphIn;
+//  input TaskGraphMeta graphDataIn;
+//  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
+//  output list<list<Integer>> criticalPathsOut;
+//  output Real cpCosts;
+//protected
+//  list<Integer> leaves;
+//algorithm
+//  leaves := getLeaves(graphIn,{},1);
+//  print("Leaves " +& stringDelimitList(List.map(leaves, intString), " , ") +& "\n");
+//  leaves := getCriticalPathEndNodes(leaves,nodeInfoIn,1,{});
+//  ((_,cpCosts,_)) := arrayGet(nodeInfoIn,listGet(leaves,1));
+//  criticalPathsOut := List.map4(leaves,getCriticalPath1,graphIn,graphDataIn,nodeInfoIn,{});
+//end getCriticalPath;
+//
+//
+//protected function getCriticalPath1 "finds the criticalPath based on the leave nodes with highest costs. TODO: avoid getParentLst, use transposed TG instead
+//auhtor: Waurich TUD 2013 .07"
+//  input Integer childNode;
+//  input TaskGraph graphIn;
+//  input TaskGraphMeta graphDataIn;
+//  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
+//  input list<Integer> criticalPathIn;
+//  output list<Integer> criticalPathOut;
+//algorithm
+//  criticalPathOut := matchcontinue(childNode,graphIn,graphDataIn,nodeInfoIn,criticalPathIn)
+//    local
+//      Integer parentNode;
+//      Real childCosts;
+//      list<Integer> parentNodes;
+//      list<Integer> criticalPathTmp;
+//      array<list<Integer>> inComps;
+//      array<tuple<Integer,Real>> exeCosts;
+//      array<list<tuple<Integer,Integer,Integer>>> commCosts;
+//  case(_,_,_,_,_)
+//    equation
+//      criticalPathTmp = childNode::criticalPathIn;
+//      parentNodes = getParentNodes(childNode,graphIn);
+//      print("Parent nodes: " +& stringDelimitList(List.map(parentNodes, intString), ",") +& " of node " +& intString(childNode) +& "\n");
+//      false = List.isEmpty(parentNodes);
+//      ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
+//      TASKGRAPHMETA(inComps = inComps, exeCosts=exeCosts, commCosts=commCosts) = graphDataIn;
+//      parentNode = getCriticalPath2(parentNodes,childNode,(inComps,exeCosts,commCosts),nodeInfoIn,1);
+//      criticalPathTmp = getCriticalPath1(parentNode,graphIn,graphDataIn,nodeInfoIn,criticalPathTmp);
+//    then
+//      criticalPathTmp;
+//  case(_,_,_,_,_)
+//    equation
+//      criticalPathTmp = childNode::criticalPathIn;
+//      parentNodes = getParentNodes(childNode,graphIn);
+//      true = List.isEmpty(parentNodes);
+//    then
+//      criticalPathTmp;
+//  end matchcontinue;   
+//end getCriticalPath1; 
+//
+//
+//protected function getCriticalPath2 " checks which predecessor node is the next.
+//author: Waurich TUD 2013-07"
+//  input list<Integer> parentNodeLst;
+//  input Integer childNode;
+//  input tuple<array<list<Integer>>,array<tuple<Integer,Real>>,array<list<tuple<Integer,Integer,Integer>>>> graphInfo;
+//  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
+//  input Integer idx;
+//  output Integer parentOut;
+//algorithm
+//  parentOut := matchcontinue(parentNodeLst,childNode,graphInfo,nodeInfoIn,idx)
+//    local
+//      Integer parentNode;
+//      Real subCosts;
+//      Real childCosts;
+//      Real difference;
+//      Real parentCostsExpected;
+//      Real parentCostsGot;
+//      array<list<Integer>> inComps;
+//      array<tuple<Integer,Real>> exeCosts;
+//      array<list<tuple<Integer,Integer,Integer>>> commCosts;
+//    case(_,_,(inComps,exeCosts,commCosts),_,_)
+//      equation
+//        true = listLength(parentNodeLst) >= idx;
+//        parentNode = listGet(parentNodeLst,idx);
+//        ((_,parentCostsGot,_)) = arrayGet(nodeInfoIn,parentNode);
+//        subCosts = getCostsForNode(parentNode,childNode,inComps,exeCosts,commCosts);
+//        ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
+//        parentCostsExpected = childCosts -. subCosts;
+//        difference = parentCostsExpected -. parentCostsGot;
+//        false = difference <. 0.00000000001 and difference >. -0.00000000001 ;
+//        parentNode = getCriticalPath2(parentNodeLst,childNode,(inComps,exeCosts,commCosts),nodeInfoIn,idx+1);
+//      then
+//        parentNode;
+//    case(_,_,(inComps,exeCosts,commCosts),_,_)
+//      equation
+//        true = listLength(parentNodeLst) >= idx;
+//        parentNode = listGet(parentNodeLst,idx);
+//        ((_,parentCostsGot,_)) = arrayGet(nodeInfoIn,parentNode);
+//        subCosts = getCostsForNode(parentNode,childNode,inComps,exeCosts,commCosts);
+//        ((_,childCosts,_)) = arrayGet(nodeInfoIn,childNode);
+//        parentCostsExpected = childCosts -. subCosts;
+//        difference = parentCostsExpected -. parentCostsGot;
+//        true = difference <. 0.00000000001 and difference >. -0.00000000001 ;
+//      then
+//        parentNode;
+//    case(_,_,(inComps,exeCosts,commCosts),_,_)
+//      equation
+//        true = List.isEmpty(parentNodeLst);
+//      then
+//        0;
+//    case(_,_,(inComps,exeCosts,commCosts),_,_)
+//      equation
+//        true = listLength(parentNodeLst) < idx;
+//        print("getCriticalPath2 failed! ListLength: " +& intString(listLength(parentNodeLst)) +& " idx: " +& intString(idx) +& "\n");
+//      then
+//        fail();        
+//  end matchcontinue;     
+//end getCriticalPath2;
+
+
+//protected function getCriticalPathEndNodes "gets the nodes with the highest costs
+//author: Waurich TUD 2013-07"
+//  input list<Integer> endNodesIn;
+//  input array<tuple<Integer,Real,Integer>> nodeInfoIn;
+//  input Integer idx;
+//  input list<Integer> maxCostNodes;
+//  output list<Integer> endNodesOut; 
+//protected
+//  Integer endNode;
+//  Integer maxEndNode;
+//  Real nodeCosts;
+//  Real maxCosts;
+//  list<Integer> endNodesTmp;
+//algorithm
+//  endNodesOut := matchcontinue(endNodesIn,nodeInfoIn,idx,maxCostNodes)
+//    local
+//  case(_,_,_,_)
+//    equation
+//      true = listLength(endNodesIn) >= idx;
+//      false = List.isEmpty(maxCostNodes);
+//      maxEndNode = listGet(maxCostNodes,1);
+//      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
+//      endNode = listGet(endNodesIn,idx);
+//      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
+//      true = nodeCosts <. maxCosts;
+//      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,maxCostNodes);
+//    then
+//      endNodesTmp;
+//  case(_,_,_,_)
+//    equation
+//      true = listLength(endNodesIn) >= idx;
+//      false = List.isEmpty(maxCostNodes);
+//      maxEndNode = listGet(maxCostNodes,1);
+//      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
+//      endNode = listGet(endNodesIn,idx);
+//      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
+//      true = nodeCosts ==. maxCosts;
+//      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,endNode::maxCostNodes);
+//    then
+//      endNodesTmp;
+//  case(_,_,_,_)
+//    equation
+//      true = listLength(endNodesIn) >= idx;
+//      false = List.isEmpty(maxCostNodes);
+//      maxEndNode = listGet(maxCostNodes,1);
+//      ((_,maxCosts,_)) = arrayGet(nodeInfoIn,maxEndNode);
+//      endNode = listGet(endNodesIn,idx);
+//      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
+//      true = nodeCosts >. maxCosts;
+//      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,{endNode});
+//    then
+//      endNodesTmp;
+//  case(_,_,_,_)
+//    equation
+//      true = listLength(endNodesIn) < idx;
+//    then
+//      maxCostNodes;
+//  case(_,_,_,_)
+//    equation
+//      true = listLength(endNodesIn) >= idx;
+//      true = List.isEmpty(maxCostNodes);
+//      endNode = listGet(endNodesIn,idx);
+//      ((_,nodeCosts,_)) = arrayGet(nodeInfoIn, endNode);
+//      endNodesTmp = getCriticalPathEndNodes(endNodesIn,nodeInfoIn,idx+1,{endNode});
+//    then
+//      endNodesTmp;
+//  end matchcontinue;  
+//end getCriticalPathEndNodes;
 
 
 protected function gatherParallelSets " gathers all nodes of the same level in a list
@@ -4854,6 +4957,34 @@ algorithm
   tmpList := iChildIdx::tmpList;
   oTaskGraph := arrayUpdate(iTaskGraph,iParentIdx,tmpList);
 end transposeTaskGraph1;
+
+public function getRootNodes "function getRootNodes
+  author: marcusw
+  Get all root nodes of the graph."
+  input TaskGraph iTaskGraphT; //The transposed graph
+  output list<Integer> rootsOut;
+algorithm
+  ((rootsOut,_)) := Util.arrayFold(iTaskGraphT, getRootNodes0, ({},1));
+end getRootNodes;
+ 
+protected function getRootNodes0 "function getRootNodes0
+  author: marcusw
+  Helper function of getRootNodes to handle one entry of the adjacence-list-array."
+  input list<Integer> iChildren;
+  input tuple<list<Integer>,Integer> iRoots; //<rootNodes, nodeIdx>
+  output tuple<list<Integer>,Integer> oRoots;
+protected
+  list<Integer> tmpRoots;
+  Integer nodeIdx;
+algorithm
+  oRoots := match(iChildren,iRoots)
+    case({},(tmpRoots,nodeIdx))
+      equation
+        tmpRoots = nodeIdx::tmpRoots;
+      then ((tmpRoots,nodeIdx+1));
+    case(_,(tmpRoots,nodeIdx)) then ((tmpRoots,nodeIdx+1));
+  end match;
+end getRootNodes0;
     
 // public function arrangeGraphInLevels "
 // author: Waurich TUD 2013-07"
@@ -4986,28 +5117,4 @@ end transposeTaskGraph1;
 // end isOrphan;
 //      
 // 
-// protected function getRootNodes "fold function to compute the rootNodes of a taskGraph. //TODO: revise this brute function
-//   author:Waurich TUD 2013-07."
-//   input Integer nodeIdx;
-//   input list<Integer> allChildren;
-//   input list<Integer> rootsIn;
-//   output list<Integer> rootsOut;
-// algorithm
-//   rootsOut := matchcontinue(nodeIdx,allChildren,rootsIn)
-//     local
-//       list<Integer> rootsTmp;
-//     case(_,_,_)
-//       equation
-//         true = List.isMemberOnTrue(nodeIdx,allChildren,intEq);
-//       then
-//         rootsIn; 
-//     else
-//       equation
-//         rootsTmp = nodeIdx::rootsIn;
-//       then
-//         rootsTmp;
-//   end matchcontinue;
-// end getRootNodes;
-
-
 end HpcOmTaskGraph;

@@ -48,6 +48,7 @@ public import Util;
 public import ExpressionDump;
 public import Expression;
 public import BackendDAEUtil;
+public import HpcOmScheduler;
 
 
 protected import BackendVariable;
@@ -1012,13 +1013,13 @@ algorithm
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<SimCode.SimEqSystem> eqs;
       BackendDAE.SampleLookup sampleLookup;
-      Option<SimCode.HpcOmParInformation> hpcOmParInformationOpt;
+      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
       
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,useHomotopy,initialEquations,startValueEquations,
           parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,
           sampleLookup,whenClauses,discreteModelVars,extObjInfo,makefileParams,
-          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmParInformationOpt),_)
+          delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT,hpcOmSchedule),_)
     equation
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
@@ -1029,7 +1030,7 @@ algorithm
                          zeroCrossings, relations, sampleLookup,
                          whenClauses, discreteModelVars, extObjInfo,
                          makefileParams, delayedExps, jacobianMatrixes,
-                         simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmParInformationOpt);
+                         simulationSettingsOpt, fileNamePrefix, crefToSimVarHT,hpcOmSchedule);
 
   end match;
 end replaceDiscontsInOde;

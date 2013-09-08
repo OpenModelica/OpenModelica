@@ -789,6 +789,10 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObj
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the path for corba object reference file if +d=interactiveCorba is used."));
 
+constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(51, "hpcomScheduler",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Util.gettext("Sets the scheduler for task graph scheduling. Default: list scheduling."));
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -842,7 +846,8 @@ constant list<ConfigFlag> allConfigFlags = {
   RUNNING_WSM_TESTSUITE,
   CORRECT_CREF_TYPES,
   SCALARIZE_BINDINGS,
-  CORBA_OBJECT_REFERENCE_FILE_PATH
+  CORBA_OBJECT_REFERENCE_FILE_PATH,
+  HPCOM_SCHEDULER
 };
 
 public function new

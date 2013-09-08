@@ -82,6 +82,7 @@ protected import ExpressionSolve;
 protected import Flags;
 protected import GlobalScript;
 protected import HashSet;
+protected import HpcOmScheduler;
 protected import IndexReduction;
 protected import Initialization;
 protected import Inline;
@@ -11698,7 +11699,7 @@ algorithm
       SimCode.SimVars vars;
       list<SimCode.Function> functions;
       SimCode.Files files "all the files from Absyn.Info and DAE.ELementSource";      
-      Option<SimCode.HpcOmParInformation> hpcOmParInformationOpt;
+      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule;
       
     case _
       equation
@@ -11707,7 +11708,7 @@ algorithm
     
     case SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
-                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt)
+                 discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule)
       equation
         SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels) = modelInfo;
         files = {};
@@ -11724,7 +11725,7 @@ algorithm
       then
         SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                   parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 
-                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt);
+                  discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule);
                   
     case _
       equation
@@ -12005,7 +12006,7 @@ algorithm
       // *** a protected section *** not exported to SimCodeTV
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       A a;
-      Option<SimCode.HpcOmParInformation> hpcOmParInformationOpt; 
+      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule; 
 
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
@@ -12014,7 +12015,7 @@ algorithm
                           constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                           whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix,
-                          crefToSimVarHT, hpcOmParInformationOpt), _, a)
+                          crefToSimVarHT, hpcOmSchedule), _, a)
       equation
         (literals, a) = List.mapFoldTuple(literals, func, a);
         (allEquations, a) = traverseExpsEqSystems(allEquations, func, a, {});
@@ -12039,7 +12040,7 @@ algorithm
                             constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                             whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
-                            crefToSimVarHT, hpcOmParInformationOpt), a);
+                            crefToSimVarHT, hpcOmSchedule), a);
   end match;
 end traverseExpsSimCode;
 
@@ -12207,7 +12208,7 @@ algorithm
       String fileNamePrefix;
       // *** a protected section *** not exported to SimCodeTV
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
-      Option<SimCode.HpcOmParInformation> hpcOmParInformationOpt; 
+      Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule; 
       
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes, 
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
@@ -12215,14 +12216,14 @@ algorithm
                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                           constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                           whenClauses, discreteModelVars, extObjInfo, makefileParams, 
-                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt), _)
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule), _)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                            allEquations, odeEquations, algebraicEquations, residualEquations, 
                            useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                            parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, 
                            constraints, classAttributes, zeroCrossings, relations, sampleLookup, 
                            whenClauses, discreteModelVars, extObjInfo, makefileParams, 
-                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmParInformationOpt);
+                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT, hpcOmSchedule);
   end match;
 end setSimCodeLiterals;
 

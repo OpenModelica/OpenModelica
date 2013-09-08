@@ -211,7 +211,7 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionDAE(allEquations, whenClauses)%>
 
-    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""),hpcOmParInformationOpt)%>
+    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""),hpcOmSchedule)%>
 
     <%functionAlgebraic(algebraicEquations)%>
 
@@ -1552,72 +1552,205 @@ end functionWhenReinitStatementThen;
 // Begin: Modified functions for HpcOm
 //------------------------------------
 
-template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<HpcOmParInformation> hpcOmParInformationOpt)
+template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Text &loop, Text &varDecls, Option<ScheduleSimCode> hpcOmScheduleOpt)
 ::=
-  match hpcOmParInformationOpt 
-    case SOME(info as HPCOMPARINFORMATION(__)) then
-      let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,info.eqsOfLevels) ; separator="\n")
-      match listLength(eqs)
-          case 0 then //empty case
-            let &loop += 
-                <<
-                /* no <%name%> systems */
-                >> 
-            ""    
-          case 1 then //1 function
-            let &loop += 
-                <<
-                function<%name%>_system0(data);
-                >>
-            funcs //just the one function
-          case nFuncs then //2 and more
-            let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
-            let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
-            let &varDecls += 'int id;<%\n%>'
-          
-            let &loop +=
-              /* Text for the loop body that calls the equations */
-              <<
-              <%head%>
-              for(id=0; id<<%nFuncs%>; id++) {
-                function<%name%>_systems[id](data);
-              }
-              >>
-            /* Text before the function head */
-            <<
-            <%funcs%>
-            static void (*function<%name%>_systems[<%nFuncs%>])(DATA *) = {
-              <%funcNames%>
-            };
-            >>
-     else (error(sourceInfo(), ' MISSING PARALLEL INFORMATIONS FOR HPCOM '))
+ let funcs = (eqs |> eq hasindex i0 fromindex 0 => functionXXX_system_HPCOM(eq,name,i0,hpcOmScheduleOpt) ; separator="\n")
+ match listLength(eqs)
+     case 0 then //empty case
+       let &loop += 
+           <<
+           /* no <%name%> systems */
+           >> 
+       ""    
+     case 1 then //1 function
+       let &loop += 
+           <<
+           function<%name%>_system0(data);
+           >>
+       funcs //just the one function
+     case nFuncs then //2 and more
+       let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
+       let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
+       let &varDecls += 'int id;<%\n%>'
+     
+       let &loop +=
+         /* Text for the loop body that calls the equations */
+         <<
+         <%head%>
+         for(id=0; id<<%nFuncs%>; id++) {
+           function<%name%>_systems[id](data);
+         }
+         >>
+       /* Text before the function head */
+       <<
+       <%funcs%>
+       static void (*function<%name%>_systems[<%nFuncs%>])(DATA *) = {
+         <%funcNames%>
+       };
+       >>
 end functionXXX_systems_HPCOM;
 
-template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, list<list<Integer>> eqsOfLevel)
+template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String name, Integer n, Option<ScheduleSimCode> hpcOmScheduleOpt)
 ::=
-  let odeEqs = eqsOfLevel |> eqs => functionXXX_system0_HPCOM(derivativEquations,name,eqs); separator="\n"
-  <<
-  static void function<%name%>_system<%n%>(DATA *data)
-  {
-    state mem_state;
-    mem_state = get_memory_state();
-    <%odeEqs%>
-    restore_memory_state(mem_state);
-  }
-  >>
+  match hpcOmScheduleOpt 
+    case SOME(hpcOmSchedule as LEVELSCHEDULESC(__)) then
+      let odeEqs = hpcOmSchedule.eqsOfLevels |> eqs => functionXXX_system0_HPCOM_Level(derivativEquations,name,eqs); separator="\n"
+      <<
+      static void function<%name%>_system<%n%>(DATA *data)
+      {
+        state mem_state;
+        mem_state = get_memory_state();
+        <%odeEqs%>
+        restore_memory_state(mem_state);
+      }
+      >>
+   case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
+      let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks)
+      let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx); separator="\n"
+      let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx); separator="\n"
+      let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx); separator="\n"
+      <<
+      static int initialized = 0;
+      static void function<%name%>_system<%n%>(DATA *data)
+      {
+        state mem_state;
+        mem_state = get_memory_state();
+        omp_set_dynamic(0);
+        //create locks
+        <%locks%>
+        if(!initialized)
+        {
+            <%initlocks%>
+            
+            //set locks
+            <%assignLocks%>
+            
+            initialized = 1;
+        }
+        
+        <%taskEqs%>
+        restore_memory_state(mem_state);
+      }
+      >>      
 end functionXXX_system_HPCOM;
 
-template functionXXX_system0_HPCOM(list<SimEqSystem> derivativEquations, String name, list<Integer> eqsOfLevel)
+template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Integer> eqsOfLevel)
 ::=
   //let odeEqs = "#pragma omp parallel sections\n{"
   let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete); separator="\n"
   <<
-  #pragma omp parallel sections num_threads(4)
+  #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
   {
      <%odeEqs%>
   }
   >>
-end functionXXX_system0_HPCOM;
+end functionXXX_system0_HPCOM_Level;
+
+template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks)
+::=
+  let odeEqs = threadTasks |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt); separator="\n"
+  <<
+  #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
+  {
+     <%odeEqs%>
+  }
+  >>
+end functionXXX_system0_HPCOM_Thread;
+
+template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations, String name, list<Task> threadTaskList)
+::=
+  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(derivativEquations,name,tt); separator="\n"
+  <<
+  #pragma omp section
+  {
+    <%threadTasks%>
+  }
+  >>
+end functionXXX_system0_HPCOM_Thread0;
+
+template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, Task iTask)
+::=
+  match iTask 
+    case (task as CALCTASK(__)) then
+      let odeEqs = task.eqIdc |> eq => equationNamesHPCOM_Thread_(eq,derivativEquations,contextSimulationNonDiscrete); separator="\n"
+      <<
+      // Task <%task.index%>
+      <%odeEqs%>
+      // End Task <%task.index%>
+      >>
+    case (task as ASSIGNLOCKTASK(__)) then
+      <<
+      //Assign lock <%task.lockId%>
+      omp_set_lock(&lock_<%task.lockId%>);
+      >>
+    case (task as RELEASELOCKTASK(__)) then
+      <<
+      //Release lock <%task.lockId%>
+      omp_unset_lock(&lock_<%task.lockId%>);
+      >>
+end function_HPCOM_Task;
+
+template function_HPCOM_initializeLock(String lockIdx)
+::=
+  <<
+  omp_init_lock(&lock_<%lockIdx%>);
+  >>
+end function_HPCOM_initializeLock;
+
+template function_HPCOM_createLock(String lockIdx)
+::=
+  <<
+  static omp_lock_t lock_<%lockIdx%>;
+  >>
+end function_HPCOM_createLock;
+
+template function_HPCOM_assignLock(String lockIdx)
+::=
+  <<
+  omp_set_lock(&lock_<%lockIdx%>);
+  >>
+end function_HPCOM_assignLock;
+
+template equationNamesHPCOM_Thread_(Integer idx, list<SimEqSystem> derivativEquations, Context context)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+match context
+case SIMULATION_CONTEXT(genDiscrete=true) then
+ match getSimCodeEqByIndex(derivativEquations, idx)
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
+  <<
+  #pragma omp section
+  {
+  #ifdef _OMC_MEASURE_TIME
+   SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
+  eqFunction_<%ix%>(data);
+  #ifdef _OMC_MEASURE_TIME
+   SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
+  }
+  >>
+else
+ match getSimCodeEqByIndex(derivativEquations, idx)
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
+  <<
+  #ifdef _OMC_MEASURE_TIME
+   SIM_PROF_TICK_EQEXT(<%ix%>);
+  #endif
+  eqFunction_<%ix%>(data);
+  #ifdef _OMC_MEASURE_TIME
+   SIM_PROF_ACC_EQEXT(<%ix%>);
+  #endif
+  >>
+end equationNamesHPCOM_Thread_;
 
 template equationNamesHPCOM_(Integer idx, list<SimEqSystem> derivativEquations, Context context)
  "Generates an equation.
@@ -1719,14 +1852,14 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     >>
 end functionXXX_systems;
 
-template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmParInformation> hpcOmParInformationOpt)
+template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
   let &varDecls2 = buffer "" /*BUFD*/
   let &varDecls = buffer ""
   let &loop = buffer ""
-  let systems = if Flags.isSet(Flags.HPCOM) then (functionXXX_systems_HPCOM(derivativEquations, "ODE", &loop, &varDecls, hpcOmParInformationOpt)) else (functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls))
+  let systems = if Flags.isSet(Flags.HPCOM) then (functionXXX_systems_HPCOM(derivativEquations, "ODE", &loop, &varDecls, hpcOmSchedule)) else (functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls))
   /* let systems = functionXXX_systems(derivativEquations, "ODE", &loop, &varDecls) */
   let &tmp = buffer ""
   let stateContPartInline = (derivativEquations |> eqs => (eqs |> eq =>
