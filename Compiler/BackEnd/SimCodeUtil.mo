@@ -5353,12 +5353,29 @@ algorithm
   end match;
 end extractIdAndExpFromDelayExp;
 
+protected function getFOpenMPFlag
+"@author: adrpo
+ add -fopenmp flag ONLY if compiler is not clang"
+  output String flag;
+algorithm
+  flag := matchcontinue()
+   local
+     String ccompiler, fopenmp;
+   case ()
+     equation
+       ccompiler = System.getCCompiler();
+       -1 = System.stringFind(ccompiler, "clang");
+     then " -fopenmp";
+   else ""; 
+  end matchcontinue;
+end getFOpenMPFlag;
+
 public function createMakefileParams
   input list<String> includes;
   input list<String> libs;
   output SimCode.MakefileParams makefileParams;
 protected
-  String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform;
+  String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp;
 algorithm
   ccompiler := System.getCCompiler();
   cxxcompiler := System.getCXXCompiler();
@@ -5368,7 +5385,11 @@ algorithm
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags();
-  cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM), stringAppend, cflags, " -fopenmp", cflags);
+  fopenmp := getFOpenMPFlag();
+  cflags := Debug.bcallret2(
+              Flags.isSet(Flags.OPENMP) or 
+              Flags.isSet(Flags.HPCOM), 
+              stringAppend, cflags, fopenmp, cflags);
   ldflags := System.getLDFlags();
   rtlibs := System.getRTLibs();
   platform := System.modelicaPlatform();
@@ -9064,7 +9085,7 @@ Note: Normally only outputs a single string, but Lapack on MinGW is special."
 algorithm
   strs := matchcontinue exp
     local
-      String str;
+      String str, fopenmp;
       
     // seems lapack can show on Lapack form or lapack (different case) (MLS revision 6155)
     case Absyn.STRING("lapack")
@@ -9082,7 +9103,8 @@ algorithm
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
         strs = getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
-        strs = str :: "-fopenmp" :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
+        fopenmp = getFOpenMPFlag();
+        strs = str :: fopenmp :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
       then 
         strs;
         
