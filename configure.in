@@ -424,7 +424,12 @@ else
   IPOPT_DIR="$withval"
   AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS="-L'"$IPOPT_DIR"/lib' -lipopt"; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
 fi
-  
+
+if ! test "$NO_IPOPT" = "yes"; then
+  LIBS=""
+  AC_SEARCH_LIBS(CreateIpoptProblem,ipopt,,[NO_IPOPT="yes"])
+  LIBS=""
+fi
 
 if ! test "$NO_IPOPT" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
