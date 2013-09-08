@@ -419,7 +419,7 @@ AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use ipopt for initializat
 if test "$NO_SUNDIALS" = "yes"; then
   NO_IPOPT="yes"
 elif test "$WANT_IPOPT" = "yes"; then
-  AC_CHECK_HEADERS(coin/IpStdCInterface.h, [IPOPT_LDFLAGS="-lipopt"; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
+  AC_CHECK_HEADERS(coin/IpStdCInterface.h, [IPOPT_LDFLAGS=`pkg-config --libs ipopt`; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
 elif test "$WANT_IPOPT" = "no"; then
   NO_IPOPT="yes"
 else
