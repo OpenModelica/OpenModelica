@@ -156,11 +156,13 @@ template simulationFile(SimCode simCode, String guid)
     #else
      #ifndef HPCOM
       #include <perform_simulation.c>
+      /* dummy omp defines */
       #define omp_get_max_threads() 1
       #define omp_set_dynamic(X) /* NO omp_set_dynamic */ 
       #define omp_init_lock(X)   /* NO omp_init_lock */
       #define omp_set_lock(X)    /* NO omp_set_lock */
       #define omp_unset_lock(X)  /* NO omp_unset_lock */
+      #define omp_lock_t int
      #else
       #include <perform_simulation.c>
      #endif
