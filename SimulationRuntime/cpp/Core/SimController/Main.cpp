@@ -30,9 +30,9 @@ int main(int argc, const char* argv[])
             ("Modelica-system-library,m",  po::value<string>(), "path to Modelica library")
             ("results-file,R", po::value<string>(),"name of results file")
             ("config-path,c", po::value< string >(),  "path to xml files")
-			 ("start-time,s", po::value< double >()->default_value(0.0),  "simulation start time")
-			  ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
-			  ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
+       ("start-time,s", po::value< double >()->default_value(0.0),  "simulation start time")
+        ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
+        ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
            ;
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -42,9 +42,9 @@ int main(int argc, const char* argv[])
             return 1;
         }
         string runtime_lib_path;
-		double starttime =  vm["start-time"].as<double>();
-		double stoptime = vm["stop-time"].as<double>();
-		double stepsize =  vm["step-size"].as<double>();
+    double starttime =  vm["start-time"].as<double>();
+    double stoptime = vm["stop-time"].as<double>();
+    double stepsize =  vm["step-size"].as<double>();
         if (vm.count("runtime-libray"))
         {
             //cout << "runtime library path set to " << vm["runtime-libray"].as<string>() << std::endl;

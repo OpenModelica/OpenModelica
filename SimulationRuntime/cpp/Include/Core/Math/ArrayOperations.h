@@ -315,7 +315,7 @@ void
 template < typename T, size_t NumDims >
 void assign_array(boost::multi_array<T, NumDims>& A,boost::multi_array_ref<T, NumDims> B) {
    
-	std::vector<size_t> ex;
+  std::vector<size_t> ex;
     const size_t* shape = B.shape();
     ex.assign( shape, shape+B.num_dimensions() );
     A.resize( ex );
