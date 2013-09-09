@@ -1935,8 +1935,8 @@ algorithm
        ccompiler = System.getCCompiler();
        -1 = System.stringFind(ccompiler, "clang");
       then
-        true;
-    else false;
+        false;
+    else true;
   end matchcontinue;
 end configuredWithClang;
 
