@@ -5359,12 +5359,9 @@ protected function getFOpenMPFlag
   output String flag;
 algorithm
   flag := matchcontinue()
-   local
-     String ccompiler, fopenmp;
    case ()
      equation
-       ccompiler = System.getCCompiler();
-       -1 = System.stringFind(ccompiler, "clang");
+       false = Flags.configuredWithClang();
      then " -fopenmp";
    else ""; 
   end matchcontinue;

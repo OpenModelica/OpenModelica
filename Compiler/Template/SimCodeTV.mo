@@ -2518,6 +2518,10 @@ package Flags
     input ConfigFlag inFlag;
     output Integer outValue;
   end getConfigInt;
+  
+  function configuredWithClang
+    output Boolean yes;
+  end configuredWithClang;
 end Flags;
 
 package Settings

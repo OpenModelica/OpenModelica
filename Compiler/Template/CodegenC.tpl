@@ -140,7 +140,7 @@ template simulationFile(SimCode simCode, String guid)
     int measure_time_flag = 0;
     #endif
 
-    <%if Flags.isSet(HPCOM) then "#define HPCOM"%>
+    <%if boolAnd(Flags.isSet(HPCOM), boolNot(Flags.configuredWithClang())) then "#define HPCOM"%>
 
     #ifdef HPCOM
      #include <omp.h>

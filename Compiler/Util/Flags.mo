@@ -1925,4 +1925,19 @@ algorithm
     descriptionIndent), "\n") +& "\n";
 end printDebugFlag;
 
+public function configuredWithClang
+  output Boolean yes;
+algorithm
+  yes := matchcontinue()
+    local String ccompiler;
+    case ()
+      equation
+       ccompiler = System.getCCompiler();
+       -1 = System.stringFind(ccompiler, "clang");
+      then
+        true;
+    else false;
+  end matchcontinue;
+end configuredWithClang;
+
 end Flags;
