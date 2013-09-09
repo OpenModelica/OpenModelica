@@ -882,7 +882,11 @@ algorithm
       list<String> names, namesPublic, namesChanged, fileNames;
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
-
+   
+    Real stoptime,starttime,tol,stepsize;
+    Integer interval;
+    String stoptime_str,stepsize_str,starttime_str,tol_str;
+  
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -1384,10 +1388,16 @@ algorithm
         exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);
         libDir= Settings.getInstallationDirectoryPath();
         libDir = Util.if_(ifmsvc, libDir +& "/lib/omc/cpp/msvc",libDir+& "/lib/omc/cpp");
-        
+         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
+        SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,numberOfIntervals=interval,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str)
+           = simSettings;
         configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);
+        starttime_str = realString(starttime);
+        stoptime_str = realString(stoptime);
+        stepsize_str = realString(stepsize);
+        
+        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir," ","-s ",starttime_str," ","-e ",stoptime_str," ","-f ", stepsize_str }), simflags);
         executable1=Util.if_(ifcpp,"OMCppSimulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         logFile = stringAppend(executable1,".log");

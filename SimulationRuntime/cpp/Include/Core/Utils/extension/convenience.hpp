@@ -83,8 +83,7 @@ inline bool load_single_library(type_map& current_type_map,
       lib.shared_library::get<void, type_map&>
       ("boost_extension_exported_type_map_function");
     if (!func) {
-	  cout<< "func not found" << std::endl;
-      return false;
+         return false;
     }
 	(*func)(current_type_map);
 	

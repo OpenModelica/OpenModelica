@@ -4552,7 +4552,7 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,S
 ::=
   match eq
     case SES_WHEN(__) then
-      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref(e)%>"))')
+      let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref1(e, simCode, context)%>"))')
       let &preExp = buffer ""
       let rightExp = daeExp(right, context, &preExp,&varDecls,simCode)
       <<
@@ -4667,17 +4667,163 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-  case e as RANGE(__)           then "Range not supported yet"
+  case e as RANGE(__)           then daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ASUB(__)            then "Asub not supported yet"
   case e as TSUB(__)            then "Tsub not supported yet"
-  case e as REDUCTION(__)       then "Reduction not supported yet"
+  case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   else "ErrorExp"
 end daeExp;
 
+template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
+                      Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for a range expression."
+::=
+  match exp
+  case RANGE(__) then
+    let ty_str = expTypeArray(ty)
+    let start_exp = daeExp(start, context, &preExp, &varDecls,simCode)
+    let stop_exp = daeExp(stop, context, &preExp, &varDecls,simCode)
+    let tmp = tempDecl('multi_array<<%ty_str%>,1>', &varDecls /*BUFD*/)
+    let step_exp = match step case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls,simCode) else "1"
+    let &preExp += 'int num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
+    <%tmp%>.reindex(1);
+    <%tmp%>.resize((boost::extents[num_elems])); 
+    for(int i= 1;i<=num_elems;i++)
+        <%tmp%>[i] =<%start_exp%>+(i-1)*<%step_exp%>;
+    '
+    '<%tmp%>'
+end daeExpRange;
 
+template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
+                         Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for a reduction expression. The code is quite messy because it handles all
+  special reduction functions (list, listReverse, array) and handles both list and array as input"
+::=
+  match exp
+  case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(__),iterators={iter as REDUCTIONITER(__)}) then
+  let &tmpVarDecls = buffer ""
+  let &tmpExpPre = buffer ""
+  let &bodyExpPre = buffer ""
+  let &guardExpPre = buffer ""
+  let &rangeExpPre = buffer ""
+ 
+  let identType = expTypeFromExpModelica(iter.exp)
+  let arrayType ="Test"
+  let loopVar = expTypeFromExpArrayIf(iter.exp,context,rangeExpPre,tmpVarDecls,simCode)
+  let arrayTypeResult = expTypeFromExpArray(r)
+  /*let loopVar = match identType
+    case "modelica_metatype" then tempDecl(identType,&tmpVarDecls)
+    else tempDecl(arrayType,&tmpVarDecls)*/
+  let firstIndex = match identType case "modelica_metatype" then "" else tempDecl("int",&tmpVarDecls)
+  let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
+  let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
+  let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls,simCode)
+  let resType = expTypeArrayIf(typeof(exp))
+  let res = contextCref(makeUntypedCrefIdent("$reductionFoldTmpB"), context,simCode)
+  let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
+  let resTmp = tempDecl(resType,&varDecls)
+  let &preDefault = buffer ""
+  let resTail = match ri.path case IDENT(name="list") then tempDecl("modelica_metatype*",&tmpVarDecls)
+  let defaultValue = match ri.path case IDENT(name="array") then "" else match ri.defaultValue
+    case SOME(v) then daeExp(valueExp(v),context,&preDefault,&tmpVarDecls,simCode)
+    end match
+  let guardCond = match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls,simCode) else "1"
+  let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == <%loopVar%>.shape()[0]'
+  let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else '<%loopVar%>.shape()[0]'
+  let reductionBodyExpr = contextCref(makeUntypedCrefIdent("$reductionFoldTmpA"), context,simCode)
+  let bodyExprType = expTypeArrayIf(typeof(r.expr))
+  let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls,simCode)
+  let &tmpVarDecls += '<%bodyExprType%> <%reductionBodyExpr%>;<%\n%>'
+  let &bodyExpPre += '<%reductionBodyExpr%> = <%reductionBodyExprWork%>//Test;<%\n%>'
+  let foldExp = match ri.path
+    case IDENT(name="list") then
+    <<
+    *<%resTail%> = mmc_mk_cons(<%reductionBodyExpr%>,0);
+    <%resTail%> = &MMC_CDR(*<%resTail%>);
+    >>
+    case IDENT(name="listReverse") then // This is too easy; the damn list is already in the correct order
+      '<%res%> = mmc_mk_cons(<%reductionBodyExpr%>,<%res%>);'
+    case IDENT(name="array") then
+      '<%res%>[<%arrIndex%>++] = <%reductionBodyExpr%>;'
+    else match ri.foldExp case SOME(fExp) then
+      let &foldExpPre = buffer ""
+      let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls,simCode)
+      if not ri.defaultValue then
+      <<
+      if(<%foundFirst%>)
+      {
+        <%res%> = <%fExpStr%>;
+      }
+      else
+      {
+        <%res%> = <%reductionBodyExpr%>;
+        <%foundFirst%> = 1;
+      }
+      >>
+      else '<%res%> = <%fExpStr%>;'
+  let firstValue = match ri.path
+     case IDENT(name="array") then
+     <<
+     <%arrIndex%> = 1;
+     simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);
+     >>
+     else if ri.defaultValue then
+     <<
+     <%&preDefault%>
+     <%res%> = <%defaultValue%>; /* defaultValue */
+     >>
+     else
+     <<
+     <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
+     >>
+  let iteratorName = contextIteratorName(iter.id, context)
+  let loopHead = match identType
+    case "modelica_metatype" then
+    <<
+    while(!<%empty%>)
+    {
+      <%identType%> <%iteratorName%>;
+      <%iteratorName%> = MMC_CAR(<%loopVar%>);
+      <%loopVar%> = MMC_CDR(<%loopVar%>);
+    >>
+    else
+    <<
+    while(<%firstIndex%> <= <%loopVar%>.shape()[0])
+    {
+      <%identType%> <%iteratorName%>;
+      <%iteratorName%> = <%loopVar%>[<%firstIndex%>++];
+    
+    >>
+  let loopTail = match identType
+     case "modelica_metatype" then "}"
+    
+  let &preExp += <<
+  {
+    <%&tmpVarDecls%>
+    <%&rangeExpPre%>
+    <%loopVar%> = <%rangeExp%>;
+    <% if firstIndex then '<%firstIndex%> = 1;' %>
+    <%firstValue%>
+    <% if resTail then '<%resTail%> = &<%res%>;' %>
+    <%loopHead%>
+      <%&guardExpPre%>
+      if(<%guardCond%>)
+      {
+        <%&bodyExpPre%>
+        <%foldExp%>
+      }
+    <%loopTail%>
+    <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW();' %>
+    <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
+    <% resTmp %> = <% res %>;
+  }<%\n%>
+  >>
+  resTmp
+  else error(sourceInfo(), 'Code generation does not support multiple iterators: <%printExpStr(exp)%>')
+end daeExpReduction;
 
 template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/,SimCode simCode)
@@ -4830,7 +4976,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
       assert(NULL == "index out of bounds");
     }
     >>
-    res
+   '<%res%>'
 
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
     error(sourceInfo(),'ASUB_EASY_CASE <%printExpStr(exp)%>')
@@ -4841,7 +4987,8 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
     match context case FUNCTION_CONTEXT(__)  then
       arrName
     else
-      arrayScalarRhs(ecr, subs, arrName, context, &preExp, &varDecls,simCode)
+    
+      '<%arrayScalarRhs(ecr.ty, subs, arrName, context, &preExp, &varDecls,simCode)%>'
 
 
   case ASUB(exp=e, sub=indexes) then
@@ -4863,13 +5010,13 @@ match exp
 end daeExpASubIndex;
 
 
-template arrayScalarRhs(Exp exp, list<Exp> subs, String arrName, Context context,
+template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context,
                Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode)
  "Helper to daeExpAsub."
 ::=
-   match exp
-   case ASUB(exp=ecr as CREF(__)) then
-  let arrayType = expTypeArray(exp.ty)
+  /* match exp
+   case ASUB(exp=ecr as CREF(__)) then*/
+  let arrayType = expTypeArray(ty)
   let dimsLenStr = listLength(subs)
   let dimsValuesStr = (subs |> exp =>
       daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -4879,9 +5026,8 @@ template arrayScalarRhs(Exp exp, list<Exp> subs, String arrName, Context context
     case "metatype_array" then
       'arrayGet(<%arrName%>,<%dimsValuesStr%>) /*arrayScalarRhs*/'
     else
-      <<
-      <%arrayCrefCStr(ecr.componentRef)%>[<%dimsValuesStr%>]
-      >>
+      //ToDo before used <%arrayCrefCStr(ecr.componentRef)%>[<%dimsValuesStr%>]
+      << <%arrName%>[<%dimsValuesStr%>] >>
 end arrayScalarRhs;
 
 template daeExpCast(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -6108,18 +6254,18 @@ end contextIteratorName;
 
 
 
-template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*/,SimCode simCode)
+template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls /*BUFP*/,SimCode simCode,Context context)
  "Helper to algStmtWhen."
 ::=
 match stmt
 case SOME(when as STMT_WHEN(__)) then
-  let elseCondStr = (when.conditions |> e => ' || (<cref(cref1(e, simCode, context))> && !$P$PRE<cref1(e, simCode, context)> /* edge */)')
+  let elseCondStr = (when.conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref1(e, simCode, context)%>"))')
   <<
   else if (0<%elseCondStr%>) {
     <% when.statementLst |> stmt =>  algStatement(stmt, contextSimulationDiscrete,&varDecls,simCode)
        ;separator="\n"%>
   }
-  <%algStatementWhenElse(when.elseWhen, &varDecls,simCode)%>
+  <%algStatementWhenElse(when.elseWhen, &varDecls,simCode,context)%>
   >>
 end algStatementWhenElse;
 
@@ -7385,7 +7531,7 @@ case SIMULATION_CONTEXT(__) then
     let statements = (statementLst |> stmt =>
         algStatement(stmt, context, &varDecls /*BUFD*/,simCode)
       ;separator="\n")
-    let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/,simCode)
+    let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/,simCode,context)
     <<
     if (0<%helpIf%>) {
       <%statements%>

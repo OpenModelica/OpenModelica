@@ -1,6 +1,6 @@
 #pragma once
 /*
-Policy class to create a Simster-,  Modelica- system or AlgLoopSolver
+Policy class to create a OMC-,  Modelica- system or AlgLoopSolver
 */
 template <class CreationPolicy>
 struct SystemOMCFactory : public  ObjectFactory<CreationPolicy>

@@ -313,8 +313,9 @@ void
    std::fill( x.data(), x.data() + x.num_elements(), val);
 }
 template < typename T, size_t NumDims >
-void assign_array(boost::multi_array<T, NumDims> &A,boost::multi_array_ref<T, NumDims> B) {
-    std::vector<size_t> ex;
+void assign_array(boost::multi_array<T, NumDims>& A,boost::multi_array_ref<T, NumDims> B) {
+   
+	std::vector<size_t> ex;
     const size_t* shape = B.shape();
     ex.assign( shape, shape+B.num_dimensions() );
     A.resize( ex );
@@ -378,3 +379,5 @@ toVector(const size_t size, T * data)
     v(size,ublas::shallow_array_adaptor<T>(size,data));
     return v;
 }
+
+
