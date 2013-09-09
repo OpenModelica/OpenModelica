@@ -235,6 +235,8 @@ public uniontype Modifier
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
     SCode.Element element;
+    NFEnv.Env env;
+    Modifier mod;
   end REDECLARE;
 
   record NOMOD end NOMOD;

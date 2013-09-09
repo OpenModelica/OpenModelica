@@ -95,6 +95,7 @@ NFInstTypesOld.mo \
 NFInstUtil.mo \
 NFLookup.mo \
 NFMod.mo \
+NFRedeclare.mo \
 NFSCodeApplyRedeclare.mo \
 NFSCodeAnalyseRedeclare.mo \
 NFSCodeCheck.mo \

@@ -41,12 +41,19 @@ encapsulated package NFLookup
 public import Absyn;
 public import Error;
 public import NFEnv;
+public import NFInstTypes;
+public import NFMod;
 public import SCode;
 
+protected import List;
 protected import NFBuiltin;
+protected import NFRedeclare;
 
 public type Env = NFEnv.Env;
 public type Entry = NFEnv.Entry;
+public type EntryOrigin = NFEnv.EntryOrigin;
+public type Modifier = NFInstTypes.Modifier;
+public type ModTable = NFMod.ModTable;
 
 protected constant Entry REAL_TYPE_ENTRY = NFEnv.ENTRY(
     "Real", NFBuiltin.BUILTIN_REAL, 0, {NFEnv.BUILTIN_ORIGIN()});
@@ -463,7 +470,7 @@ algorithm
 
     case (_, _, _)
       equation
-        env = NFEnv.enterEntryScope(inEntry, inEnv);
+        env = enterEntryScope(inEntry, NFMod.emptyModTable, inEnv);
         (entry, env) = lookupNameInPackage(inName, env);
       then
         (entry, env);
@@ -491,5 +498,496 @@ algorithm
   outEnv := NFEnv.entryEnv(outEntry, outEnv);
   outIsGlobal := not is_local and is_class;
 end isNameGlobal;
+
+public function enterEntryScope
+  input Entry inEntry;
+  input ModTable inMods;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inEntry, inMods, inEnv)
+    local
+      Env env;
+      SCode.ClassDef cdef;
+      Absyn.Info info;
+      Absyn.TypeSpec ty;
+      Entry entry;
+
+    case (NFEnv.ENTRY(element = SCode.CLASS(classDef = cdef, info = info)), _, _)
+      equation
+        env = openClassEntryScope(inEntry, inEnv);
+        env = populateEnvWithClassDef(cdef, inMods, SCode.PUBLIC(), {}, env,
+          elementSplitterRegular, info, env);
+      then
+        env;
+
+    case (NFEnv.ENTRY(element = SCode.COMPONENT(typeSpec = ty, info = info)), _, _)
+      equation
+        (entry, env) = lookupTypeSpec(ty, inEnv, info);
+        env = enterEntryScope(entry, NFMod.emptyModTable, env);
+      then
+        env;
+
+  end match;
+end enterEntryScope;
+
+protected function openClassEntryScope
+  input Entry inClass;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  String name;
+  SCode.Encapsulated ep;
+algorithm
+  SCode.CLASS(name = name, encapsulatedPrefix = ep) := NFEnv.entryElement(inClass);
+  outEnv := NFEnv.openScope(SOME(name), ep, inEnv);
+end openClassEntryScope;
+
+protected function elementSplitterRegular
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElement, inClsAndVars, inExtends, inImports)
+    case (SCode.COMPONENT(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.CLASS(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.EXTENDS(baseClassPath = _), _, _, _)
+      then (inClsAndVars, inElement :: inExtends, inImports);
+
+    case (SCode.IMPORT(imp = _), _, _, _)
+      then (inClsAndVars, inExtends, inElement :: inImports);
+
+    else (inClsAndVars, inExtends, inImports);
+
+  end match;
+end elementSplitterRegular;
+
+partial function SplitFunc
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+end SplitFunc;
+
+protected function populateEnvWithClassDef
+  input SCode.ClassDef inClassDef;
+  input ModTable inMods;
+  input SCode.Visibility inVisibility;
+  input list<EntryOrigin> inOrigins;
+  input Env inEnv;
+  input SplitFunc inSplitFunc;
+  input Absyn.Info inInfo;
+  input Env inAccumEnv;
+  output Env outAccumEnv;
+algorithm
+  outAccumEnv := match(inClassDef, inMods, inVisibility, inOrigins, inEnv,
+      inSplitFunc, inInfo, inAccumEnv)
+    local
+      list<SCode.Element> elems, cls_vars, exts, imps;
+      Env env;
+      list<EntryOrigin> origin;
+      Entry entry;
+      list<SCode.Enum> enums;
+      Absyn.Path path;
+      SCode.ClassDef cdef;
+      Absyn.TypeSpec ty;
+
+    case (SCode.PARTS(elementLst = elems), _, _, _, _, _, _, env)
+      equation
+        (cls_vars, exts, imps) =
+          populateEnvWithClassDef2(elems, inSplitFunc, {}, {}, {});
+        cls_vars = applyVisibilityToElements(cls_vars, inVisibility);
+        exts = applyVisibilityToElements(exts, inVisibility);
+
+        origin = NFEnv.collapseInheritedOrigins(inOrigins);
+        // Add classes, component and imports first, so that extends can be found.
+        env = populateEnvWithElements(cls_vars, origin, env);
+        env = NFRedeclare.applyRedeclares(inMods, env);
+        env = populateEnvWithImports(imps, env, false);
+        env = populateEnvWithExtends(exts, inOrigins, inMods, inEnv, env);
+      then
+        env;
+
+    case (SCode.CLASS_EXTENDS(composition = cdef), _, _, _, _, _, _, _)
+      then populateEnvWithClassDef(cdef, inMods, inVisibility, inOrigins, inEnv,
+        inSplitFunc, inInfo, inAccumEnv);
+
+    case (SCode.DERIVED(typeSpec = ty), _, _, _, _, _, _, _)
+      equation
+        (entry, env) = lookupTypeSpec(ty, inEnv, inInfo);
+        SCode.CLASS(classDef = cdef) = NFEnv.entryElement(entry);
+        // TODO: Only create this environment if needed, i.e. if the cdef
+        // contains extends.
+        env = openClassEntryScope(entry, env);
+        env = populateEnvWithClassDef(cdef, NFMod.emptyModTable, inVisibility, inOrigins, env,
+          elementSplitterExtends, inInfo, inAccumEnv);
+        env = populateEnvWithClassDef(cdef, NFMod.emptyModTable, inVisibility, inOrigins, env,
+          inSplitFunc, inInfo, inAccumEnv);
+      then
+        env;
+
+    case (SCode.ENUMERATION(enumLst = enums), _, _, _, _, _, _, env)
+      equation
+        path = NFEnv.envPath(inEnv);
+        env = insertEnumLiterals(enums, path, 1, env);
+      then
+        env;
+
+  end match;
+end populateEnvWithClassDef;
+
+protected function applyVisibilityToElements
+  input list<SCode.Element> inElements;
+  input SCode.Visibility inVisibility;
+  output list<SCode.Element> outElements;
+algorithm
+  outElements := match(inElements, inVisibility)
+    case (_, SCode.PUBLIC()) then inElements;
+    else List.map1(inElements, SCode.setElementVisibility, inVisibility);
+  end match;
+end applyVisibilityToElements;
+
+protected function populateEnvWithClassDef2
+  input list<SCode.Element> inElements;
+  input SplitFunc inSplitFunc;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElements, inSplitFunc, inClsAndVars, inExtends, inImports)
+    local
+      SCode.Element el;
+      list<SCode.Element> rest_el, cls_vars, exts, imps;
+
+    case (el :: rest_el, _, cls_vars, exts, imps)
+      equation
+        (cls_vars, exts, imps) = inSplitFunc(el, cls_vars, exts, imps);
+        (cls_vars, exts, imps) =
+          populateEnvWithClassDef2(rest_el, inSplitFunc, cls_vars, exts, imps);
+      then
+        (cls_vars, exts, imps);
+
+    case ({}, _, _, _, _) then (inClsAndVars, inExtends, inImports);
+
+  end match;
+end populateEnvWithClassDef2;
+
+protected function insertEnumLiterals
+  input list<SCode.Enum> inEnum;
+  input Absyn.Path inEnumPath;
+  input Integer inNextValue;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inEnum, inEnumPath, inNextValue, inEnv)
+    local
+      SCode.Enum lit;
+      list<SCode.Enum> rest_lits;
+      Env env;
+
+    case (lit :: rest_lits, _, _, _)
+      equation
+        env = insertEnumLiteral(lit, inEnumPath, inNextValue, inEnv);
+      then
+        insertEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
+
+    case ({}, _, _, _) then inEnv;
+
+  end match;
+end insertEnumLiterals;
+
+protected function insertEnumLiteral
+  "Extends the environment with an enumeration."
+  input SCode.Enum inEnum;
+  input Absyn.Path inEnumPath;
+  input Integer inValue;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  SCode.Element enum_lit;
+  SCode.Ident lit_name;
+  Absyn.TypeSpec ty;
+  String index;
+algorithm
+  SCode.ENUM(literal = lit_name) := inEnum;
+  index := intString(inValue);
+  ty := Absyn.TPATH(Absyn.QUALIFIED("$EnumType",
+    Absyn.QUALIFIED(index, inEnumPath)), NONE());
+  enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes, SCode.ATTR({},
+    SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()), ty,
+    SCode.NOMOD(), SCode.noComment, NONE(), Absyn.dummyInfo);
+  outEnv := NFEnv.insertElement(enum_lit, inEnv);
+end insertEnumLiteral;
+
+protected function populateEnvWithElements
+  input list<SCode.Element> inElements;
+  input list<EntryOrigin> inOrigin;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := List.fold1(inElements, NFEnv.insertElementWithOrigin, inOrigin, inEnv);
+end populateEnvWithElements;
+
+protected function populateEnvWithImports
+  input list<SCode.Element> inImports;
+  input Env inEnv;
+  input Boolean inIsExtended;
+  output Env outEnv;
+algorithm
+  outEnv := match(inImports, inEnv, inIsExtended)
+    local
+      Env top_env, env;
+
+    case (_, _, true) then inEnv;
+    case ({}, _, _) then inEnv;
+
+    else
+      equation
+        top_env = NFEnv.topScope(inEnv);
+        env = List.fold1(inImports, populateEnvWithImport, top_env, inEnv);
+      then
+        env;
+
+  end match;
+end populateEnvWithImports;
+
+protected function populateEnvWithImport
+  input SCode.Element inImport;
+  input Env inTopScope;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inImport, inTopScope, inEnv)
+    local
+      Absyn.Import imp;
+      Absyn.Info info;
+      Absyn.Path path;
+      Entry entry;
+      Env env;
+      EntryOrigin origin;
+
+    case (SCode.IMPORT(imp = imp, info = info), _, _)
+      equation
+        // Look up the import name.
+        path = Absyn.importPath(imp);
+        (entry, env) = lookupImportPath(path, inTopScope, info);
+        // Convert the entry to an entry imported into the given environment.
+        origin = NFEnv.makeImportedOrigin(inImport, env);
+        entry = NFEnv.changeEntryOrigin(entry, {origin}, inEnv);
+        // Add the imported entry to the environment.
+        env = populateEnvWithImport2(imp, entry, env, info, inEnv);
+      then
+        env;
+
+  end match;
+end populateEnvWithImport;
+
+protected function populateEnvWithImport2
+  input Absyn.Import inImport;
+  input Entry inEntry;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  input Env inAccumEnv;
+  output Env outAccumEnv;
+algorithm
+  outAccumEnv := match(inImport, inEntry, inEnv, inInfo, inAccumEnv)
+    local
+      String name;
+      Env env;
+      Entry entry;
+      SCode.ClassDef cdef;
+      list<EntryOrigin> origins;
+
+    // A renaming import, 'import D = A.B.C'.
+    case (Absyn.NAMED_IMPORT(name = name), _, _, _, _)
+      equation
+        entry = NFEnv.renameEntry(inEntry, name);
+        env = NFEnv.insertEntry(entry, inAccumEnv);
+      then
+        env;
+
+    // A qualified import, 'import A.B.C'.
+    case (Absyn.QUAL_IMPORT(path = _), _, _, _, _)
+      equation
+        env = NFEnv.insertEntry(inEntry, inAccumEnv);
+      then
+        env;
+
+    // An unqualified import, 'import A.B.*'.
+    case (Absyn.UNQUAL_IMPORT(path = _),
+        NFEnv.ENTRY(element = SCode.CLASS(classDef = cdef), origins = origins), _, _, _)
+      equation
+        env = populateEnvWithClassDef(cdef, NFMod.emptyModTable, SCode.PUBLIC(),
+          origins, inEnv, elementSplitterRegular, inInfo, inAccumEnv);
+      then
+        env;
+
+    // This should not happen, group imports are split into separate imports by
+    // SCodeUtil.translateImports.
+    case (Absyn.GROUP_IMPORT(prefix = _), _, _, _, _)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR,
+          {"NFEnv.populateEnvWithImport2 got unhandled group import!\n"}, inInfo);
+      then
+        inEnv;
+
+  end match;
+end populateEnvWithImport2;
+
+protected function populateEnvWithExtends
+  input list<SCode.Element> inExtends;
+  input list<EntryOrigin> inOrigins;
+  input ModTable inMods;
+  input Env inEnv;
+  input Env inAccumEnv;
+  output Env outAccumEnv;
+algorithm
+  outAccumEnv := List.fold3(inExtends, populateEnvWithExtend, inOrigins, inMods,
+    inEnv, inAccumEnv);
+end populateEnvWithExtends;
+
+protected function populateEnvWithExtend
+  input SCode.Element inExtends;
+  input list<EntryOrigin> inOrigins;
+  input ModTable inMods;
+  input Env inEnv;
+  input Env inAccumEnv;
+  output Env outAccumEnv;
+algorithm
+  outAccumEnv := match(inExtends, inOrigins, inMods, inEnv, inAccumEnv)
+    local
+      Entry entry;
+      Env env, accum_env;
+      SCode.ClassDef cdef;
+      EntryOrigin origin;
+      list<EntryOrigin> origins;
+      Absyn.Path bc;
+      Absyn.Info info;
+      SCode.Visibility vis;
+      SCode.Mod smod;
+      Modifier mod;
+      ModTable mods;
+
+    case (SCode.EXTENDS(baseClassPath = bc, visibility = vis,
+        modifications = smod, info = info), _, _, _, _)
+      equation
+        // Look up the base class and check that it's a valid base class.
+        (entry, env) = lookupBaseClassName(bc, inEnv, info);
+        checkRecursiveExtends(bc, env, inEnv, info);
+
+        // Check entry: not var, not replaceable
+        // Create an environment for the base class if needed.
+        SCode.CLASS(classDef = cdef) = NFEnv.entryElement(entry);
+        mod = NFMod.translateMod(smod, "", 0, NFInstTypes.emptyPrefix, inEnv);
+        mods = NFMod.addClassModToTable(mod, inMods);
+
+        env = openClassEntryScope(entry, env);
+        env = populateEnvWithClassDef(cdef, mods, SCode.PUBLIC(), {}, env,
+          elementSplitterExtends, info, env);
+        // Populate the accumulated environment with the inherited elements.
+        origin = NFEnv.makeInheritedOrigin(inExtends, env);
+        origins = origin :: inOrigins;
+        accum_env = populateEnvWithClassDef(cdef, mods, vis, origins, env,
+          elementSplitterInherited, info, inAccumEnv);
+      then
+        accum_env;
+
+  end match;
+end populateEnvWithExtend;
+
+protected function checkRecursiveExtends
+  input Absyn.Path inExtendedClass;
+  input Env inFoundEnv;
+  input Env inOriginEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inExtendedClass, inFoundEnv, inOriginEnv, inInfo)
+    local
+      String bc_name, path_str;
+      Env env;
+
+    case (_, _, _, _)
+      equation
+        bc_name = Absyn.pathLastIdent(inExtendedClass);
+        env = NFEnv.openScope(SOME(bc_name), SCode.NOT_ENCAPSULATED(), inFoundEnv);
+        false = NFEnv.isPrefix(env, inOriginEnv);
+      then
+        ();
+
+    else
+      equation
+        path_str = Absyn.pathString(inExtendedClass);
+        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkRecursiveExtends;
+
+protected function elementSplitterExtends
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElement, inClsAndVars, inExtends, inImports)
+    case (SCode.COMPONENT(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.CLASS(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.IMPORT(imp = _), _, _, _)
+      then (inClsAndVars, inExtends, inElement :: inImports);
+
+    else (inClsAndVars, inExtends, inImports);
+
+  end match;
+end elementSplitterExtends;
+
+protected function elementSplitterInherited
+  input SCode.Element inElement;
+  input list<SCode.Element> inClsAndVars;
+  input list<SCode.Element> inExtends;
+  input list<SCode.Element> inImports;
+  output list<SCode.Element> outClsAndVars;
+  output list<SCode.Element> outExtends;
+  output list<SCode.Element> outImports;
+algorithm
+  (outClsAndVars, outExtends, outImports) :=
+  match(inElement, inClsAndVars, inExtends, inImports)
+    case (SCode.COMPONENT(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.CLASS(name = _), _, _, _)
+      then (inElement :: inClsAndVars, inExtends, inImports);
+
+    case (SCode.EXTENDS(baseClassPath = _), _, _, _)
+      then (inClsAndVars, inElement :: inExtends, inImports);
+
+    else (inClsAndVars, inExtends, inImports);
+
+  end match;
+end elementSplitterInherited;
 
 end NFLookup;

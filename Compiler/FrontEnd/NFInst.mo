@@ -291,10 +291,11 @@ algorithm
         _, _, _, ip, globals)
       equation
         // Enter the class scope.
-        env = NFEnv.enterEntryScope(inEntry, inEnv);
+        mods = NFMod.addClassModToTable(inClassMod, inOuterMods);
+        env = NFLookup.enterEntryScope(inEntry, mods, inEnv);
+
 
         // Instantiate the class' elements.
-        mods = NFMod.addClassModToTable(inClassMod, inPrefix, env, inOuterMods);
         (elems, es, globals) = instElementList(el, mods, inPrefixes, env,
             inTypePath, inPrefix, ip, globals);
 
@@ -702,6 +703,11 @@ algorithm
 
     case (elem :: rest_el, mods, _, env, _, _, accum_el, es, globals)
       equation
+
+
+
+
+        (elem, env) = resolveRedeclaredElement(elem, env);
         (accum_el, es, globals) = instElement(elem, mods, inPrefixes, env,
           inPrefix, inInstPolicy, accum_el, es, globals);
         (accum_el, es, globals) = instElementList2(rest_el, mods, inPrefixes,
@@ -709,23 +715,38 @@ algorithm
       then
         (accum_el, es, globals);
 
-//    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, globals)
-//      equation
-//        (elem, orig_mod, env, _) = resolveRedeclaredElement(elem, inEnv, inPrefix);
-//        (accum_el, exts, cse, globals) = instElement_dispatch(elem, orig_mod,
-//          inPrefixes, exts, env, inPrefix, inInstPolicy, accum_el, cse, globals);
-//        (accum_el, cse, globals) = instElementList2(rest_el, inPrefixes, exts,
-//          inEnv, inPrefix, inInstPolicy, accum_el, cse, globals);
-//      then
-//        (accum_el, cse, globals);
-//
-
     case ({}, _, _, _, _, _, _, es, globals)
       then (listReverse(inAccumEl), es, globals);
 
   end match;
 end instElementList2;
 
+protected function resolveRedeclaredElement
+  input SCode.Element inElement;
+  input Env inEnv;
+  output SCode.Element outElement;
+  output Env outEnv;
+algorithm
+  (outElement, outEnv) := match(inElement, inEnv)
+    local
+      String name;
+      SCode.Element elem;
+      Env env;
+
+
+
+    case (SCode.COMPONENT(name = name), _)
+      equation
+        (NFEnv.ENTRY(element = elem), env) =
+          NFLookup.lookupInLocalScope(name, inEnv);
+      then
+        (elem, env);
+
+    else (inElement, inEnv);
+
+  end match;
+end resolveRedeclaredElement;
+        
 //public function resolveRedeclaredElement
 //  "This function makes sure that an element is up-to-date in case it has been
 //   redeclared. This is achieved by looking the element up in the environment. In
@@ -948,7 +969,7 @@ algorithm
 
         // Translate the component's modification.
         dim_count = listLength(ad);
-        mod = NFMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+        mod = NFMod.translateMod(smod, name, dim_count, prefix, inEnv);
 
         // Merge the modifier from the class with this element's modifications.
         cmod = NFMod.getModFromTable(name, inModifiers);
@@ -974,7 +995,7 @@ algorithm
 
         // Instantiate the binding.
         mod = NFMod.propagateMod(mod, dim_count);
-        binding = NFMod.getModifierBinding(mod);
+        binding = NFMod.modifierBinding(mod);
         (binding, globals) = instBinding(binding, dim_count, globals);
 
         // Create the component and add it to the program.

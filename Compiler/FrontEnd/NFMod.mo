@@ -51,6 +51,7 @@ protected import Error;
 protected import Flags;
 protected import List;
 protected import NFInstDump;
+protected import NFInstUtil;
 protected import NFLookup;
 protected import SCodeDump;
 protected import Util;
@@ -71,6 +72,32 @@ public function translateMod
   input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
+protected
+  Prefix prefix;
+algorithm
+  prefix := getElementModPrefix(inElementName, inPrefix);
+  outMod := translateMod2(inMod, inElementName, inDimensions, prefix, inEnv);
+  outMod := compactMod(outMod, inPrefix);
+end translateMod;
+  
+protected function getElementModPrefix
+  input String inElementName;
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := match(inElementName, inPrefix)
+    case ("", _) then inPrefix;
+    else NFInstUtil.restPrefix(inPrefix);
+  end match;
+end getElementModPrefix;
+
+public function translateMod2
+  input SCode.Mod inMod;
+  input String inElementName;
+  input Integer inDimensions;
+  input Prefix inPrefix;
+  input Env inEnv;
+  output Modifier outMod;
 algorithm
   outMod := match(inMod, inElementName, inDimensions, inPrefix, inEnv)
     local
@@ -82,24 +109,44 @@ algorithm
       list<Modifier> mods;
       Binding binding;
       SCode.Element el;
-      Integer pd;
+      SCode.Mod smod;
+      Modifier mod;
 
     case (SCode.NOMOD(), _, _, _, _) then NFInstTypes.NOMOD();
 
     case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _, _)
       equation
-        pd = Util.if_(SCode.eachBool(ep), 0, inDimensions);
-        mods = List.map3(submods, translateSubMod, pd, inPrefix, inEnv);
-        binding = translateBinding(binding_exp, ep, pd, inPrefix, inEnv, info);
+        binding = translateBinding(binding_exp, ep, inDimensions, inPrefix, inEnv, info);
+        mods = translateSubMods(submods, ep, inDimensions, inPrefix, inEnv);
       then
         NFInstTypes.MODIFIER(inElementName, fp, ep, binding, mods, info);
 
     case (SCode.REDECL(fp, ep, el), _, _, _, _)
-      then NFInstTypes.REDECLARE(fp, ep, el);
+      equation
+        smod = SCode.elementMod(el);
+        mod = translateMod2(smod, "", inDimensions, inPrefix, inEnv);
+      then
+        NFInstTypes.REDECLARE(fp, ep, el, inEnv, mod);
 
   end match;
-end translateMod;
+end translateMod2;
 
+protected function translateSubMods
+
+
+  input list<SCode.SubMod> inSubMods;
+  input SCode.Each inEach;
+  input Integer inDimensions;
+  input Prefix inPrefix;
+  input Env inEnv;
+  output list<Modifier> outSubMods;
+protected
+  Integer pd;
+algorithm
+  pd := Util.if_(SCode.eachBool(inEach), 0, inDimensions);
+  outSubMods := List.map3(inSubMods, translateSubMod, pd, inPrefix, inEnv);
+end translateSubMods;
+  
 protected function translateSubMod
   input SCode.SubMod inSubMod;
   input Integer inDimensions;
@@ -111,7 +158,7 @@ protected
   SCode.Mod mod;
 algorithm
   SCode.NAMEMOD(name, mod) := inSubMod;
-  outMod := translateMod(mod, name, inDimensions, inPrefix, inEnv);
+  outMod := translateMod2(mod, name, inDimensions, inPrefix, inEnv);
 end translateSubMod;
 
 protected function translateBinding
@@ -142,22 +189,20 @@ end translateBinding;
 
 public function addClassModToTable
   input Modifier inMod;
-  input Prefix inPrefix;
-  input Env inEnv;
   input ModTable inTable;
   output ModTable outTable;
 algorithm
-  outTable := matchcontinue(inMod, inPrefix, inEnv, inTable)
+  outTable := matchcontinue(inMod, inTable)
     local
       list<tuple<String, Modifier>> mods;
       ModTable table;
 
-    case (NFInstTypes.NOMOD(), _, _, _) then emptyModTable;
+    case (NFInstTypes.NOMOD(), _) then emptyModTable;
 
-    case (_, _, _, _)
+    case (_, _)
       equation
-        mods = splitMod(inMod, inPrefix);
-        List.map2_0(mods, checkModifier, inEnv, inPrefix);
+        mods = splitMod(inMod);
+        
         table = List.fold(mods, addModToTable, inTable);
       then
         table;
@@ -238,6 +283,7 @@ algorithm
     case (_, (name, mod) :: _)
       equation
         true = stringEq(name, inName);
+        mod = getModFromTable2(mod);
       then
         mod;
 
@@ -248,100 +294,157 @@ algorithm
   end matchcontinue;
 end getModFromTable;
 
-protected function checkModifier
-  input tuple<String, Modifier> inMod;
-  input Env inEnv;
-  input Prefix inPrefix;
-protected
-  String name;
-  Modifier mod;
-  Entry mod_entry;
-algorithm
-  (name, mod) := inMod;
-  mod_entry := lookupMod(name, inEnv, mod);
-  checkClassModifier(mod_entry, inMod, inPrefix);
-end checkModifier;
-
-protected function lookupMod
-  input String inName;
-  input Env inEnv;
+protected function getModFromTable2
   input Modifier inMod;
-  output Entry outEntry;
+  output Modifier outMod;
 algorithm
-  outEntry := matchcontinue(inName, inEnv, inMod)
-    local
-      Entry entry;
-      Absyn.Info info;
-      String cls_name;
-
-    case (_, _, _)
-      equation
-        (entry, _) = NFLookup.lookupInLocalScope(inName, inEnv);
-      then
-        entry;
-
-    // The modified element couldn't be found, show an error.
-    else
-      equation
-        cls_name = NFEnv.scopeName(inEnv);
-        info = getModifierInfo(inMod);
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {inName, cls_name}, info);
-      then
-        fail();
-
-  end matchcontinue;
-end lookupMod;
-
-protected function checkClassModifier
-  "This function checks that a modifier isn't trying to replace a class, i.e.
-   c(A = B), where A and B are classes. This should only be allowed if the
-   modification is an actual redeclaration."
-  input Entry inEntry;
-  input tuple<String, Modifier> inMod;
-  input Prefix inPrefix;
-algorithm
-  _ := match(inEntry, inMod, inPrefix)
-    local
-      String name, pre_str;
-      Modifier mod;
-      Absyn.Info info;
-
-    // The modified element is a class but the modifier has no binding, e.g.
-    // c(A(x = 3)). This is ok.
-    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)),
-        (_, NFInstTypes.MODIFIER(binding = NFInstTypes.UNBOUND())), _)
-      then ();
-
-    // The modified element is a class but the modifier has a binding. This is
-    // not ok, tell the user that the redeclare keyword is missing.
-    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)), (name, mod), _)
-      equation
-        info = getModifierInfo(mod);
-        pre_str = NFInstDump.prefixStr(inPrefix);
-        Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
-          {name, pre_str}, info);
-      then
-        fail();
-
-    else ();
-
+  outMod := match(inMod)
+    case NFInstTypes.MODIFIER(name = _) then inMod;
+    else NFInstTypes.NOMOD();
   end match;
-end checkClassModifier;
+end getModFromTable2;
 
-protected function getModifierInfo
+public function getRedeclaresFromTable
+  input ModTable inMods;
+  output list<Modifier> outRedeclares;
+algorithm
+  outRedeclares := List.filterMap(inMods, getRedeclaresFromTable2);
+end getRedeclaresFromTable;
+
+protected function getRedeclaresFromTable2
+  input tuple<String, Modifier> inMod;
+  output Modifier outRedeclare;
+algorithm
+  (_, outRedeclare as NFInstTypes.REDECLARE(element = _)) := inMod;
+end getRedeclaresFromTable2;
+
+//protected function checkModifier
+//  input tuple<String, Modifier> inMod;
+//  input Env inEnv;
+//  input Prefix inPrefix;
+//protected
+//  String name;
+//  Modifier mod;
+//  Entry mod_entry;
+//algorithm
+//  (name, mod) := inMod;
+//  mod_entry := lookupMod(name, inEnv, mod);
+//  checkClassModifier(mod_entry, inMod, inPrefix);
+//end checkModifier;
+//
+//protected function lookupMod
+//  input String inName;
+//  input Env inEnv;
+//  input Modifier inMod;
+//  output Entry outEntry;
+//algorithm
+//  outEntry := matchcontinue(inName, inEnv, inMod)
+//    local
+//      Entry entry;
+//      Absyn.Info info;
+//      String cls_name;
+//
+//    case (_, _, _)
+//      equation
+//        (entry, _) = NFLookup.lookupInLocalScope(inName, inEnv);
+//      then
+//        entry;
+//
+//    // The modified element couldn't be found, show an error.
+//    else
+//      equation
+//        cls_name = NFEnv.scopeName(inEnv);
+//        info = modifierInfo(inMod);
+//        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+//          {inName, cls_name}, info);
+//      then
+//        fail();
+//
+//  end matchcontinue;
+//end lookupMod;
+//
+//protected function checkClassModifier
+//  "This function checks that a modifier isn't trying to replace a class, i.e.
+//   c(A = B), where A and B are classes. This should only be allowed if the
+//   modification is an actual redeclaration."
+//  input Entry inEntry;
+//  input tuple<String, Modifier> inMod;
+//  input Prefix inPrefix;
+//algorithm
+//  _ := match(inEntry, inMod, inPrefix)
+//    local
+//      String name, pre_str;
+//      Modifier mod;
+//      Absyn.Info info;
+//
+//    // The modified element is a class but the modifier has no binding, e.g.
+//    // c(A(x = 3)). This is ok.
+//    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)),
+//        (_, NFInstTypes.MODIFIER(binding = NFInstTypes.UNBOUND())), _)
+//      then ();
+//
+//    // The modified element is a class but the modifier has a binding. This is
+//    // not ok, tell the user that the redeclare keyword is missing.
+//    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)), (name, mod), _)
+//      equation
+//        info = modifierInfo(mod);
+//        pre_str = NFInstDump.prefixStr(inPrefix);
+//        Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
+//          {name, pre_str}, info);
+//      then
+//        fail();
+//
+//    else ();
+//
+//  end match;
+//end checkClassModifier;
+//
+//
+//
+
+protected function modifierName
+  input Modifier inMod;
+  output String outName;
+algorithm
+  outName := match(inMod)
+    local
+      String name;
+      SCode.Element elem;
+
+    case NFInstTypes.MODIFIER(name = name) then name;
+    case NFInstTypes.REDECLARE(element = elem)
+      then SCode.elementName(elem);
+  end match;
+end modifierName;
+
+protected function modifierInfo
   input Modifier inMod;
   output Absyn.Info outInfo;
 algorithm
   outInfo := match(inMod)
     local
       Absyn.Info info;
+      SCode.Element elem;
 
     case NFInstTypes.MODIFIER(info = info) then info;
+    case NFInstTypes.REDECLARE(element = elem) then SCode.elementInfo(elem);
     else Absyn.dummyInfo;
+  end match;
+end modifierInfo;
+
+public function modifierBinding
+  input Modifier inModifier;
+  output Binding outBinding;
+algorithm
+  outBinding := match(inModifier)
+    local
+      Binding binding;
+
+    case NFInstTypes.MODIFIER(binding = binding) then binding;
+    else NFInstTypes.UNBOUND();
 
   end match;
-end getModifierInfo;
+end modifierBinding;
 
 public function mergeMod
   "Merges two modifiers, where the outer modifier has higher priority than the
@@ -358,6 +461,9 @@ algorithm
       Binding binding;
       Absyn.Info info1, info2;
       String name;
+      SCode.Element el;
+      Env env;
+      Modifier mod;
 
     // One of the modifiers is NOMOD, return the other.
     case (NFInstTypes.NOMOD(), _) then inInnerMod;
@@ -423,7 +529,7 @@ algorithm
 
     case (_, _, _, NFInstTypes.MODIFIER(finalPrefix = SCode.FINAL()), _)
       equation
-        NFInstTypes.RAW_BINDING(bindingExp = oexp) = getModifierBinding(inOuterMod);
+        NFInstTypes.RAW_BINDING(bindingExp = oexp) = modifierBinding(inOuterMod);
         oexp_str = Dump.printExpStr(oexp);
         Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
           {inName, oexp_str}, {inOuterInfo, inInnerInfo});
@@ -435,7 +541,7 @@ algorithm
 end checkModifierFinalOverride;
 
 protected function mergeSubMod
-  "Merges a sub modifier into a list of sub modifier."
+  "Merges a sub modifier into a list of sub modifiers."
   input Modifier inSubMod;
   input list<Modifier> inSubMods;
   output list<Modifier> outSubMods;
@@ -444,8 +550,11 @@ algorithm
     local
       String id;
 
-    case (NFInstTypes.MODIFIER(name = id), _)
-      then mergeSubMod_tail(id, inSubMod, inSubMods, {});
+    case (_, _)
+      equation
+        id = modifierName(inSubMod);
+      then
+        mergeSubMod_tail(id, inSubMod, inSubMods, {});
 
     else inSubMods;
 
@@ -467,8 +576,10 @@ algorithm
       list<Modifier> rest_mods, accum;
       Boolean is_equal;
 
-    case (_, _, (mod as NFInstTypes.MODIFIER(name = id)) :: rest_mods, _)
+
+    case (_, _, mod :: rest_mods, _)
       equation
+        id = modifierName(mod);
         is_equal = stringEq(inSubModId, id);
       then
         mergeSubMod_tail2(inSubModId, inSubMod, mod, is_equal, rest_mods, inAccumMods);
@@ -516,92 +627,133 @@ algorithm
   end match;
 end mergeSubMod_tail2;
 
-protected function splitMod
-  "Splits a modifier that contains sub modifiers info a list of tuples of
-   element names with their corresponding modifiers. Ex:
-     MOD(x(w = 2), y = 3, x(z = 4) = 5) =>
-      {('x', MOD(w = 2, z = 4) = 5), ('y', MOD() = 3)}"
-  input Modifier inMod;
+protected function compactMod
+  input Modifier inModifier;
   input Prefix inPrefix;
-  output list<tuple<String, Modifier>> outMods;
+  output Modifier outModifier;
 algorithm
-  outMods := match(inMod, inPrefix)
+  outModifier := match(inModifier, inPrefix)
+    local
+      String name;
+      SCode.Final fp;
+      SCode.Each ep;
+      Binding binding;
+      list<Modifier> submods;
+      Absyn.Info info;
+
+    case (NFInstTypes.MODIFIER(name, fp, ep, binding, submods, info), _)
+      equation
+        submods = compactSubMods(submods, inPrefix);
+      then
+        NFInstTypes.MODIFIER(name, fp, ep, binding, submods, info);
+
+    else inModifier;
+
+  end match;
+end compactMod;
+
+protected function compactSubMods
+
+
+
+
+
+
+
+
+  input list<Modifier> inSubMods;
+  input Prefix inPrefix;
+  output list<Modifier> outSubMods;
+protected
+  list<tuple<String, Modifier>> mods;
+algorithm
+  mods := List.fold1(inSubMods, compactSubMod, inPrefix, {});
+  outSubMods := List.map(mods, Util.tuple22);
+end compactSubMods;
+
+protected function compactSubMod
+
+  input Modifier inSubMod;
+  input Prefix inPrefix;
+  input list<tuple<String, Modifier>> inAccumMods;
+  output list<tuple<String, Modifier>> outSubMods;
+algorithm
+  outSubMods := match(inSubMod, inPrefix, inAccumMods)
+    local
+      String name;
+      list<tuple<String, Modifier>> mods;
+      Boolean found;
+
+
+    case (NFInstTypes.NOMOD(), _, _) then inAccumMods;
+
+    else
+      equation
+        name = modifierName(inSubMod);
+
+        (mods, found) = List.findMap3(inAccumMods, compactSubMod2, name, inSubMod, inPrefix);
+      then
+        List.consOnTrue(not found, (name, inSubMod), mods);
+
+
+
+  end match;
+end compactSubMod;
+        
+
+
+protected function compactSubMod2
+  input tuple<String, Modifier> inExistingMod;
+  input String inName;
+  input Modifier inNewMod;
+  input Prefix inPrefix;
+  output tuple<String, Modifier> outMod;
+  output Boolean outFound;
+algorithm
+  (outMod, outFound) := matchcontinue(inExistingMod, inName, inNewMod, inPrefix)
+    local
+      String name;
+      Modifier mod;
+
+    case ((name, _), _, _, _)
+      equation
+        false = stringEqual(name, inName);
+      then
+        (inExistingMod, false);
+
+    case ((name, mod), _, _, _)
+      equation
+        mod = mergeModsInSameScope(mod, inNewMod, name, inPrefix);
+      then
+        ((name, mod), true);
+
+  end matchcontinue;
+end compactSubMod2;
+
+protected function splitMod
+  input Modifier inMod;
+  output list<tuple<String, Modifier>> outSubMods;
+algorithm
+  outSubMods := match(inMod)
     local
       list<Modifier> submods;
-      list<tuple<String, Modifier>> mods;
 
-    // TOOD: print an error if this modifier has a binding?
-    case (NFInstTypes.MODIFIER(subModifiers = submods), _)
-      equation
-        mods = List.fold1(submods, splitSubMod, inPrefix, {});
-      then
-        mods;
+    case NFInstTypes.MODIFIER(subModifiers = submods)
+      then List.filterMap(submods, splitMod2);
 
     else {};
 
   end match;
 end splitMod;
 
-protected function splitSubMod
-  "Adds the given sub modifier to the list of modifiers, merging it with an
-   already existing modifier with the same name if such a modifier exists."
-  input Modifier inSubMod;
-  input Prefix inPrefix;
-  input list<tuple<String, Modifier>> inMods;
-  output list<tuple<String, Modifier>> outMods;
-algorithm
-  outMods := match(inSubMod, inPrefix, inMods)
-    local
-      SCode.Ident id;
-      list<tuple<String, Modifier>> mods;
-      Boolean found;
-
-    // Filter out redeclarations, they have already been applied.
-    case (NFInstTypes.REDECLARE(element = _), _, _)
-      then inMods;
-
-    case (NFInstTypes.MODIFIER(name = id), _, _)
-      equation
-        // Use splitMod2 to try and find a matching modifier to merge with.
-        (mods, found) = List.findMap3(inMods, splitMod2, id, inSubMod, inPrefix);
-        // Add the sub modifier to the list if it wasn't merged by splitMod2.
-        mods = List.consOnTrue(not found, (id, inSubMod), mods);
-      then
-        mods;
-
-    case (NFInstTypes.NOMOD(), _, _) then inMods;
-
-  end match;
-end splitSubMod;
-
 protected function splitMod2
-  "Helper function to splitSubMod. Merges the given modifiers if they have the
-   same name, i.e. if they modify the same element."
-  input tuple<String, Modifier> inExistingMod;
-  input String inId;
-  input Modifier inNewMod;
-  input Prefix inPrefix;
+  input Modifier inMod;
   output tuple<String, Modifier> outMod;
-  output Boolean outFound;
+protected
+  String name;
 algorithm
-  (outMod, outFound) := matchcontinue(inExistingMod, inId, inNewMod, inPrefix)
-    local
-      String id;
-      Modifier mod;
-
-    case ((id, _), _, _, _)
-      equation
-        false = stringEq(id, inId);
-      then
-        (inExistingMod, false);
-
-    case ((id, mod), _, _, _)
-      equation
-        mod = mergeModsInSameScope(mod, inNewMod, id, inPrefix);
-      then
-        ((id, mod), true);
-
-  end matchcontinue;
+  name := modifierName(inMod);
+  outMod := (name, inMod);
 end splitMod2;
 
 protected function mergeModsInSameScope
@@ -641,9 +793,11 @@ algorithm
         NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info2);
 
     // Both modifiers have bindings, show duplicate modification error.
-    case (NFInstTypes.MODIFIER(binding = NFInstTypes.RAW_BINDING(bindingExp = _), info = info1),
-          NFInstTypes.MODIFIER(binding = NFInstTypes.RAW_BINDING(bindingExp = _), info = info2), _, _)
+
+    else
       equation
+        info1 = modifierInfo(inMod1);
+        info2 = modifierInfo(inMod2);
         comp_str = NFInstDump.prefixStr(inPrefix);
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {inElementName, comp_str}, {info2, info1});
@@ -699,20 +853,6 @@ algorithm
 
   end matchcontinue;
 end mergeSubModInSameScope2;
-
-public function getModifierBinding
-  input Modifier inModifier;
-  output Binding outBinding;
-algorithm
-  outBinding := match(inModifier)
-    local
-      Binding binding;
-
-    case NFInstTypes.MODIFIER(binding = binding) then binding;
-    else NFInstTypes.UNBOUND();
-
-  end match;
-end getModifierBinding;
 
 public function propagateMod
   "Saves information about how a modifier has been propagated. Since arrays are
@@ -820,7 +960,7 @@ algorithm
       then
         "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
 
-    case NFInstTypes.REDECLARE(fp, ep, el)
+    case NFInstTypes.REDECLARE(fp, ep, el, _, _)
       equation
         fstr = SCodeDump.finalStr(fp);
         estr = SCodeDump.eachStr(ep);
