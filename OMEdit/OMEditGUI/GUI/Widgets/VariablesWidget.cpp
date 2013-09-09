@@ -252,7 +252,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
         variables[i].prepend(derPrependString).append(derAppendString);
         // make sure you dont add any node twice
         if (!mpVariablesTreeWidget->getVariableTreeItem(structure))
-          addPlotVariableToTree(fileName, filePath, parentStructure, variables[i], structure, true);
+          addPlotVariableToTree(fileName, filePath, parentStructure, variables[i], false, structure, true);
       }
       else
       {
@@ -264,16 +264,37 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
     }
     j++;
   }
+  bool isArray = false;
   // add plotVariables to tree
   foreach(QString plotVariable, plotVariables)
   {
-    QStringList variables = plotVariable.split(".");
+    QStringList variables = plotVariable.split("[");
+    if (variables.isEmpty())
+    {
+      isArray = false;
+      variables = plotVariable.split(".");
+    }
+    else
+    {
+      isArray = true;
+      if (variables.size() > 1)
+      {
+        QString var = variables.at(1);
+        variables.replace(1, var.prepend("["));
+      }
+    }
     parentStructure = pVariableTreeItem->getNameStructure();
     for (int i = 0 ; i < variables.size() ; i++)
     {
       // make sure you dont add any node twice
       if (!mpVariablesTreeWidget->getVariableTreeItem(QString(parentStructure).append(".").append(variables[i])))
-        addPlotVariableToTree(fileName, filePath, parentStructure, variables[i]);
+      {
+        /* Don't add the first item as array. So that we get the correct name structure. */
+        if (isArray && i == 0)
+          addPlotVariableToTree(fileName, filePath, parentStructure, variables[i], false);
+        else
+          addPlotVariableToTree(fileName, filePath, parentStructure, variables[i], isArray);
+      }
       parentStructure.append(".").append(variables[i]);
     }
   }
@@ -287,12 +308,14 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
   pVariableTreeItem->setExpanded(true);
 }
 
-void VariablesWidget::addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName,
+void VariablesWidget::addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName, bool isArray,
                                             QString fullStructure, bool derivative)
 {
   QString nameStructure;
   if (derivative)
     nameStructure = fullStructure;
+  else if (isArray)
+    nameStructure = QString(parentStructure).append(childName);
   else
     nameStructure = QString(parentStructure).append(".").append(childName);
 
