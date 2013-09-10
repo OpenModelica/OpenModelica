@@ -885,7 +885,7 @@ type FileType = enumeration(NoFile, RegularFile, Directory, SpecialFile);
 function stat
   input String name;
   output FileType fileType;
-external "C" fileType=ModelicaInternal_stat(name) annotation(Library="ModelicaExternalC");
+external "C" fileType = ModelicaInternal_stat(name) annotation(Library="ModelicaExternalC");
 end stat;
 
 end Internal;
@@ -1621,6 +1621,14 @@ function cd "change directory to the given path (which may be either relative or
 external "builtin";
 annotation(preferredView="text");
 end cd;
+
+function mkdir "create directory of given path (which may be either relative or absolute)
+  returns true if directory was created or already exists."
+  input String newDirectory;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end mkdir;
 
 function checkModel "Checks a model and returns number of variables and equations."
   input TypeName className;
@@ -3903,11 +3911,11 @@ div.system-message p.system-message-title { font-weight: bold; }
 <div id=\"wikipage\">
 <div style=\"float: right; margin: 0 1em\" class=\"wikipage\">
 <blockquote>
-<p>← <a class=\"wiki\" href=
+<p>&larr; <a class=\"wiki\" href=
 \"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.8.1\">
 1.8.1</a> | <a class=\"missing wiki\" href=
 \"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/Future\"
-rel=\"nofollow\">Future?</a> →</p>
+rel=\"nofollow\">Future?</a> &rarr;</p>
 </blockquote>
 </div>
 <div style=

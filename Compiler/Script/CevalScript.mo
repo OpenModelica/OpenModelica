@@ -1711,6 +1711,18 @@ algorithm
       then
         (cache,Values.STRING(res),st);
 
+    case (cache,env,"mkdir",{Values.STRING(str)},st,_)
+      equation
+        true = System.directoryExists(str);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,"mkdir",{Values.STRING(str)},st,_)
+      equation
+        b = System.createDirectory(str);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("OpenModelica")))},st,_)
       equation
         str_1 = Settings.getVersionNr();

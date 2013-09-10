@@ -328,6 +328,12 @@ public function cd
   external "C" outInteger=chdir(inString) annotation(Library = "omcruntime");
 end cd;
 
+public function createDirectory
+  input String inString;
+  output Boolean outBool;
+  external "C" outBool=SystemImpl__createDirectory(inString) annotation(Library = "omcruntime");
+end createDirectory;
+
 public function pwd
   output String outString;
   external "C" outString=SystemImpl__pwd() annotation(Library = "omcruntime");

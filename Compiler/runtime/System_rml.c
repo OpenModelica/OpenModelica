@@ -1863,6 +1863,14 @@ RML_BEGIN_LABEL(System__directoryExists)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__createDirectory)
+{
+  const char* str = RML_STRINGDATA(rmlA0);
+  rmlA0 = (void*) mk_icon(SystemImpl__createDirectory(str));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__userIsRoot)
 {
   rmlA0 = mk_icon(CONFIG_USER_IS_ROOT);
@@ -2205,7 +2213,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__forkCall)
 {
-  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available when OpenModelica is compiled using RML"),NULL,0);  
+  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available when OpenModelica is compiled using RML"),NULL,0);
   RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL

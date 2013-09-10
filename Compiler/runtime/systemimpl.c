@@ -717,6 +717,25 @@ extern int SystemImpl__directoryExists(const char *str)
 #endif
 }
 
+extern int SystemImpl__createDirectory(const char *str)
+{
+  int rv;
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  rv = mkdir(str);
+#else
+  rv = mkdir(str, S_IRWXU);
+#endif
+  if (rv == -1)
+  {
+    return 0;
+  }
+  else
+  {
+    return 1;
+  }
+}
+
 char* SystemImpl__readFileNoNumeric(const char* filename)
 {
   char* buf, *bufRes;
