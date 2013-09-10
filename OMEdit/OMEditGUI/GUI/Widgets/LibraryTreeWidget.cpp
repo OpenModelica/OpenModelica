@@ -147,7 +147,8 @@ void ItemDelegate::drawHover(QPainter *painter, const QStyleOptionViewItem &opti
 //! Reimplementation of sizeHint function. Defines the minimum height.
 QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-  int count = 0;
+  int count = 1;
+  int height = 22;
   /* Only calculate the height of the item based on the text for MessagesTreeWidget items. Fix for multi line messages. Ticket #2269. */
   if (parent() && qobject_cast<MessagesTreeWidget*>(parent()))
   {
@@ -162,11 +163,12 @@ QSize ItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelInd
         text = value.toString();
       }
     }
-    count = text.count("\n");
+    count = text.count("\n") + 1;
+    height = option.fontMetrics.height() * count + 7; /* 7 is added to add the padding space to the item. */
   }
   QSize size = QItemDelegate::sizeHint(option, index);
   //Set very small height. A minimum apperantly stops at reasonable size.
-  size.rheight() = qMax(option.fontMetrics.height(), 22) * qMax(count, 1); //pixels
+  size.rheight() = qMax(height, 22); //pixels
   return size;
 }
 

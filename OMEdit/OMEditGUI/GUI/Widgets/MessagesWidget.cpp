@@ -696,7 +696,7 @@ void MessagesTreeItem::setColumnsText()
   setToolTip(3, line);
   if (getMessage().length() > 500)
   {
-    setText(4, getMessage().left(500));
+    setText(4, getMessage().left(500).append("..."));
     setToolTip(4, qApp->tr("The error message is very long. Copy & paste it to some text editor in order to view it."));
   }
   else
