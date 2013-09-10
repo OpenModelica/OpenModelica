@@ -88,7 +88,7 @@ public:
   VariablesWidget(MainWindow *pParent);
   void createActions();
   void addPlotVariablestoTree(QString fileName, QString filePath, QStringList plotVariablesList);
-  void addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName, bool isArray = false,
+  void addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName,
                              QString fullStructure = QString(), bool derivative = false);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   void unHideChildItems(QTreeWidgetItem *pItem);
