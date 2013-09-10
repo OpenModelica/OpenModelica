@@ -1227,20 +1227,18 @@ end protectedParametersFinder;
 // remove equal function calls equations stuff
 //
 // =============================================================================
-public function removeEqualFunctionCalls
-"author: Frenkel TUD 2011-04
-  This function detect equal function call on the form a=f(b) and c=f(b)
-  in BackendDAE.BackendDAE to get speed up"
+public function removeEqualFunctionCalls "author: Frenkel TUD 2011-04
+  This function detects equal function calls of the form a=f(b) and c=f(b) in 
+  BackendDAE.BackendDAE to get speed up."
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
   odae := BackendDAEUtil.mapEqSystem(dae,removeEqualFunctionCallsWork);
 end removeEqualFunctionCalls;
 
-protected function removeEqualFunctionCallsWork
-"author: Frenkel TUD 2011-04
-  This function detect equal function call on the form a=f(b) and c=f(b)
-  in BackendDAE.BackendDAE to get speed up"
+protected function removeEqualFunctionCallsWork "author: Frenkel TUD 2011-04
+  This function detects equal function calls of the form a=f(b) and c=f(b) in 
+  BackendDAE.BackendDAE to get speed up."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
@@ -1273,8 +1271,7 @@ algorithm
   end match;
 end removeEqualFunctionCallsWork;
 
-protected function removeEqualFunctionCallFinder
-"author: Frenkel TUD 2010-12"
+protected function removeEqualFunctionCallFinder "author: Frenkel TUD 2010-12"
  input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>>> inTpl;
  output tuple<list<Integer>,BackendDAE.IncidenceMatrix, tuple<BackendDAE.IncidenceMatrixT,BackendDAE.Variables,BackendDAE.EquationArray,list<Integer>>> outTpl;
 algorithm
@@ -6026,20 +6023,18 @@ end countOperator;
 //
 // =============================================================================
 
-public function simplifyIfEquations
-"author: Frenkel TUD 2012-07
-  This function traveres all if equations and if expressions and tries to simplify it by using the
-  information from evaluation of parameters"
+public function simplifyIfEquations "author: Frenkel TUD 2012-07
+  This function traveres all if equations and if expressions and tries to 
+  simplify it by using the information from evaluated parameters."
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
   odae := BackendDAEUtil.mapEqSystem(dae,simplifyIfEquationsWork);
 end simplifyIfEquations;
 
-protected function simplifyIfEquationsWork
-"author: Frenkel TUD 2012-07
-  This function traveres all if equations and tries to simplify it by using the
-  information from evaluation of parameters"
+protected function simplifyIfEquationsWork "author: Frenkel TUD 2012-07
+  This function traveres all if equations and if expressions and tries to 
+  simplify it by using the information from evaluated parameters."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;

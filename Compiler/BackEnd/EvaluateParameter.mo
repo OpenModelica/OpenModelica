@@ -35,7 +35,7 @@ encapsulated package EvaluateParameter
   description: EvaluateParameter contains functions to evaluated the bindexp of parameters with final=true or
                annotation(Evaluate=true) and parameters which depent only on evaluated parameters
 
-               Conzept:
+               Concept:
 
                traverse all parameter and get the parameters which must be evaluated O(N)
 
@@ -155,9 +155,8 @@ algorithm
   outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
 end evaluateReplaceEvaluateParameters;
 
-public function evaluateReplaceFinalEvaluateParameters
-"author Frenkel TUD
-  evaluate and replace parameters with final=true in variables and parameters"
+public function evaluateReplaceFinalEvaluateParameters "author: Frenkel TUD
+  Evaluates and replaces parameters with final=true in variables and parameters."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected

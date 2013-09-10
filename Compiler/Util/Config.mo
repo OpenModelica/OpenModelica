@@ -299,11 +299,11 @@ algorithm
   outStringLst := Flags.getConfigStringList(Flags.PRE_OPT_MODULES);
 end getPreOptModules;
 
-public function getPastOptModules
+public function getPostOptModules
   output list<String> outStringLst;
 algorithm
   outStringLst := Flags.getConfigStringList(Flags.POST_OPT_MODULES);
-end getPastOptModules;
+end getPostOptModules;
 
 public function setPreOptModules
   input list<String> inStringLst;
@@ -311,11 +311,11 @@ algorithm
   Flags.setConfigStringList(Flags.PRE_OPT_MODULES, inStringLst);
 end setPreOptModules;
 
-public function setPastOptModules
+public function setPostOptModules
   input list<String> inStringLst;
 algorithm
   Flags.setConfigStringList(Flags.POST_OPT_MODULES, inStringLst);
-end setPastOptModules;
+end setPostOptModules;
 
 public function getIndexReductionMethod
   output String outString;

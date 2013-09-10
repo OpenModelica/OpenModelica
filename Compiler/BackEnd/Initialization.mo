@@ -94,7 +94,7 @@ algorithm
       list<BackendDAE.Var> tempVar;
       Boolean b;
       HashSet.HashSet hs "contains all pre variables";
-      list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
+      list<tuple<BackendDAEUtil.postOptimizationDAEModule, String, Boolean>> pastOptModules;
       tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
       tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
       Boolean useHomotopy;
@@ -173,7 +173,7 @@ algorithm
       (initdae, _) = BackendDAEUtil.mapEqSystemAndFold(initdae, solveInitialSystemEqSystem, dae);
       
       // transform and optimize DAE
-      pastOptModules = BackendDAEUtil.getPastOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
+      pastOptModules = BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", /* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
       matchingAlgorithm = BackendDAEUtil.getMatchingAlgorithm(NONE());
       daeHandler = BackendDAEUtil.getIndexReductionMethod(NONE());
 
@@ -181,7 +181,7 @@ algorithm
       initdae = BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
 
       // simplify system
-     (initdae, Util.SUCCESS()) = BackendDAEUtil.pastoptimiseDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
+     (initdae, Util.SUCCESS()) = BackendDAEUtil.postOptimizeDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
       Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae, "solved initial system");
       
       // warn about selected default initial conditions

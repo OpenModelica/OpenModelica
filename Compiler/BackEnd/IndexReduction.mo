@@ -7882,11 +7882,10 @@ end solvabilityWights;
 /*****************************************
  set the derivative information to the states
  use equations der(s) = v and set s:STATE(derivativeName=v)
-
 *****************************************/
 
-public function findStateOrder
-"author Frenkel TUD 2013-01"
+public function findStateOrder "author Frenkel TUD 2013-01
+  "
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -7899,8 +7898,7 @@ algorithm
   outDAE := BackendDAE.DAE(systs,shared);
 end findStateOrder;
 
-protected function findStateOrderWork
-"author Frenkel TUD 2013-01"
+protected function findStateOrderWork "author Frenkel TUD 2013-01"
   input BackendDAE.EqSystem isyst;
   output BackendDAE.EqSystem osyst;
 protected

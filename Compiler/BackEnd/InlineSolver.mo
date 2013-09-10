@@ -110,7 +110,7 @@ protected
   BackendDAE.EquationArray orderedEqs;
 
   /*need for new matching */
-  list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
+  list<tuple<BackendDAEUtil.postOptimizationDAEModule, String, Boolean>> pastOptModules;
   tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.BackendDAE dae;
@@ -124,14 +124,14 @@ algorithm
   dae := BackendDAE.DAE(systs, shared);
   Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: befor mathching algebraic system");
   // matching options
-  pastOptModules := BackendDAEUtil.getPastOptModules(SOME({"constantLinearSystem", "simplifyTimeIndepFuncCalls", "removeSimpleEquations", "tearingSystem", "removeConstants"}));
+  pastOptModules := BackendDAEUtil.getPostOptModules(SOME({"constantLinearSystem", "simplifyTimeIndepFuncCalls", "removeSimpleEquations", "tearingSystem", "removeConstants"}));
   matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
   daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
 
   // solve system
   dae := BackendDAEUtil.transformBackendDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
   // simplify system
-  (outDAE, Util.SUCCESS()) := BackendDAEUtil.pastoptimiseDAE(dae, pastOptModules, matchingAlgorithm, daeHandler);
+  (outDAE, Util.SUCCESS()) := BackendDAEUtil.postOptimizeDAE(dae, pastOptModules, matchingAlgorithm, daeHandler);
 
   outInlineVars := BackendVariable.emptyVars();
 end dae_to_algSystem;

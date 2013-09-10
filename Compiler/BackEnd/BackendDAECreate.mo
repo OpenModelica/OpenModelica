@@ -3164,8 +3164,8 @@ end expInt;
 
 
 
-public function expandDerOperator
-"expands der(expr) using Derive.differentiteExpTime.
+public function expandDerOperator "
+  Expands der(expr) using Derive.differentiteExpTime.
   This can not be done in Static, since we need all time-
   dependent variables, which is only available in BackendDAE."
   input BackendDAE.BackendDAE dae;

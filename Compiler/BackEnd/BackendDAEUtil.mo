@@ -7804,17 +7804,17 @@ end traverseBackendDAEExpsWrapper;
  * Equation System Pipeline
  ************************************************/
 
-partial function preoptimiseDAEModule
-"This is the interface for pre optimisation modules."
+partial function preOptimizationDAEModule "
+  This is the interface for pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-end preoptimiseDAEModule;
+end preOptimizationDAEModule;
 
-partial function pastoptimiseDAEModule
-"This is the interface for past optimisation modules."
+partial function postOptimizationDAEModule "
+  This is the interface for post-optimization modules."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-end pastoptimiseDAEModule;
+end postOptimizationDAEModule;
 
 partial function StructurallySingularSystemHandlerFunc
   input list<list<Integer>> eqns;
@@ -7858,17 +7858,17 @@ public function getSolvedSystem "
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strdaeHandler;
-  input Option<list<String>> strPastOptModules;
+  input Option<list<String>> strPostOptModules;
   output BackendDAE.BackendDAE outSODE;
 protected
   BackendDAE.BackendDAE optdae, sode, sode1, optsode;
-  list<tuple<preoptimiseDAEModule, String, Boolean>> preOptModules;
-  list<tuple<pastoptimiseDAEModule, String, Boolean>> pastOptModules;
+  list<tuple<preOptimizationDAEModule, String, Boolean>> preOptModules;
+  list<tuple<postOptimizationDAEModule, String, Boolean>> postOptModules;
   tuple<StructurallySingularSystemHandlerFunc, String, stateDeselectionFunc, String> daeHandler;
   tuple<matchingAlgorithmFunc, String> matchingAlgorithm;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
-  pastOptModules := getPastOptModules(strPastOptModules);
+  postOptModules := getPostOptModules(strPostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
@@ -7879,14 +7879,14 @@ algorithm
   // Frenkel TUD: why is this neccesarray? it only consumes time!
   _ := traverseBackendDAEExpsNoCopyWithUpdate(inDAE, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
   Debug.execStat("preOpt SimplifyAllExp", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  (optdae, Util.SUCCESS()) := preoptimiseDAE(inDAE, preOptModules);
+  (optdae, Util.SUCCESS()) := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using index reduction method)
   sode := causalizeDAE(optdae, NONE(), matchingAlgorithm, daeHandler, true);
   Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump", sode));
 
   // post-optimization phase
-  (optsode, Util.SUCCESS()) := pastoptimiseDAE(sode, pastOptModules, matchingAlgorithm, daeHandler);
+  (optsode, Util.SUCCESS()) := postOptimizeDAE(sode, postOptModules, matchingAlgorithm, daeHandler);
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1, ExpressionSimplify.simplifyTraverseHelper, 0) "simplify all expressions";
@@ -7904,30 +7904,30 @@ algorithm
   checkBackendDAEWithErrorMsg(outSODE);
 end getSolvedSystem;
 
-public function preOptimiseBackendDAE "
+public function preOptimizeBackendDAE "
   This function runs the pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
   input Option<list<String>> strPreOptModules;
   output BackendDAE.BackendDAE outDAE;
 protected
-  list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
+  list<tuple<preOptimizationDAEModule,String,Boolean>> preOptModules;
 algorithm
   preOptModules := getPreOptModules(strPreOptModules);
-  (outDAE,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
-end preOptimiseBackendDAE;
+  (outDAE,Util.SUCCESS()) := preOptimizeDAE(inDAE,preOptModules);
+end preOptimizeBackendDAE;
 
-protected function preoptimiseDAE "
+protected function preOptimizeDAE "
   This function runs the pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
-  input list<tuple<preoptimiseDAEModule, String, Boolean>> optModules;
+  input list<tuple<preOptimizationDAEModule, String, Boolean>> optModules;
   output BackendDAE.BackendDAE outDAE;
   output Util.Status status;
 algorithm
   (outDAE, status) := matchcontinue (inDAE, optModules)
     local
       BackendDAE.BackendDAE dae, dae1;
-      preoptimiseDAEModule optModule;
-      list<tuple<preoptimiseDAEModule,String,Boolean>> rest;
+      preOptimizationDAEModule optModule;
+      list<tuple<preOptimizationDAEModule,String,Boolean>> rest;
       String str, moduleStr;
       Boolean b;
       BackendDAE.EqSystems systs;
@@ -7944,20 +7944,20 @@ algorithm
       Debug.execStat("preOpt " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npre-optimization module ", moduleStr, ":\n\n"}));
       Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
-      (dae1,status) = preoptimiseDAE(dae, rest);
+      (dae1,status) = preOptimizeDAE(dae, rest);
     then (dae1, status);
     
     case (_, (optModule, moduleStr, b)::rest) equation
       Debug.execStat("<failed> preOpt " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       str = stringAppendList({"pre-optimization module ", moduleStr, " failed."});
       Debug.bcall2(not b, Error.addMessage, Error.INTERNAL_ERROR, {str});
-      (dae,status) = preoptimiseDAE(inDAE,rest);
+      (dae,status) = preOptimizeDAE(inDAE,rest);
     then (dae, Util.if_(b, Util.FAILURE(), status));
   end matchcontinue;
-end preoptimiseDAE;
+end preOptimizeDAE;
 
-public function transformBackendDAE
-"Run the matching and index reduction algorithm"
+public function transformBackendDAE "
+  Run the matching and index reduction algorithm"
   input BackendDAE.BackendDAE inDAE;
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input Option<String> strmatchingAlgorithm;
@@ -8034,8 +8034,8 @@ algorithm
   end match;
 end mapCausalizeDAE;
 
-protected function causalizeDAEWork
-"Run the matching Algorithm.
+protected function causalizeDAEWork "
+  Run the matching Algorithm.
   In case of an DAE an DAE-Handler is used to reduce
   the index of the dae."
   input BackendDAE.EqSystem isyst;
@@ -8118,8 +8118,8 @@ algorithm
   end match;
 end stateDeselectionDAE;
 
-protected function mapSortEqnsDAE
-"Run Tarjans Algorithm."
+protected function mapSortEqnsDAE "
+  Run Tarjans Algorithm."
   input list<BackendDAE.EqSystem> isysts;
   input BackendDAE.Shared ishared;
   input list<BackendDAE.EqSystem> acc;
@@ -8144,8 +8144,8 @@ algorithm
   end match;
 end mapSortEqnsDAE;
 
-protected function sortEqnsDAEWork
-"Run Tarjans Algorithm."
+protected function sortEqnsDAEWork "
+  Run Tarjans Algorithm."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;
@@ -8192,52 +8192,48 @@ algorithm
   end matchcontinue;
 end dumpStrongComponents;
 
-public function pastoptimiseDAE
-"Run the optimisation modules"
+public function postOptimizeDAE "
+  Run the post-optimization modules."
   input BackendDAE.BackendDAE inDAE;
-  input list<tuple<pastoptimiseDAEModule,String,Boolean>> optModules;
-  input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
-  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
+  input list<tuple<postOptimizationDAEModule, String, Boolean>> optModules;
+  input tuple<matchingAlgorithmFunc, String> matchingAlgorithm;
+  input tuple<StructurallySingularSystemHandlerFunc, String, stateDeselectionFunc, String> daeHandler;
   output BackendDAE.BackendDAE outDAE;
   output Util.Status status;
 algorithm
-  (outDAE,status):=
-  matchcontinue (inDAE,optModules,matchingAlgorithm,daeHandler)
+  (outDAE, status) := matchcontinue (inDAE, optModules, matchingAlgorithm, daeHandler)
     local
-      BackendDAE.BackendDAE dae,dae1,dae2;
-      pastoptimiseDAEModule optModule;
-      list<tuple<pastoptimiseDAEModule,String,Boolean>> rest;
+      BackendDAE.BackendDAE dae, dae1, dae2;
+      postOptimizationDAEModule optModule;
+      list<tuple<postOptimizationDAEModule, String, Boolean>> rest;
       String str,moduleStr;
       Boolean b;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
-    case (_,{},_,_)
-      equation
-        Debug.fcall(Flags.OPT_DAE_DUMP, print, "Post optimisation done.\n");
-      then
-        (inDAE,Util.SUCCESS());
-    case (_,(optModule,moduleStr,_)::rest,_,_)
-      equation
-        BackendDAE.DAE(systs,shared) = optModule(inDAE);
-        systs = filterEmptySystems(systs);
-        dae = BackendDAE.DAE(systs,shared);
-        Debug.execStat("pastOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
-        dae1 = causalizeDAE(dae,NONE(),matchingAlgorithm,daeHandler,false);
-        (dae2,status) = pastoptimiseDAE(dae1,rest,matchingAlgorithm,daeHandler);
-      then
-        (dae2,status);
-    case (_,(optModule,moduleStr,b)::rest,_,_)
-      equation
-        Debug.execStat("pastOpt <failed> " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-        str = stringAppendList({"Optimisation Module ",moduleStr," failed."});
-        Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
-        (dae,status) = pastoptimiseDAE(inDAE,rest,matchingAlgorithm,daeHandler);
-      then
-        (dae,Util.if_(b,Util.FAILURE(),status));
+      
+    case (_, {}, _, _) equation
+      Debug.fcall(Flags.OPT_DAE_DUMP, print, "Post-optimization done.\n");
+    then (inDAE,Util.SUCCESS());
+    
+    case (_, (optModule, moduleStr, _)::rest, _, _) equation
+      BackendDAE.DAE(systs, shared) = optModule(inDAE);
+      systs = filterEmptySystems(systs);
+      dae = BackendDAE.DAE(systs, shared);
+      Debug.execStat("postOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nPost-optimization module ", moduleStr, ":\n\n"}));
+      Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
+      dae1 = causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, false);
+      (dae2, status) = postOptimizeDAE(dae1, rest, matchingAlgorithm, daeHandler);
+    then (dae2, status);
+    
+    case (_, (optModule, moduleStr, b)::rest, _, _) equation
+      Debug.execStat("postOpt <failed> " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+      str = stringAppendList({"Post-optimization module ", moduleStr, " failed."});
+      Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
+      (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
+    then (dae, Util.if_(b, Util.FAILURE(), status));
   end matchcontinue;
-end pastoptimiseDAE;
+end postOptimizeDAE;
 
 // protected function checkCompsMatching
 // "Function check if comps are complete, they are not complete
@@ -8321,32 +8317,32 @@ public function getSolvedSystemforJacobians
   input Option<list<String>> strPreOptModules;
   input Option<String> strmatchingAlgorithm;
   input Option<String> strdaeHandler;
-  input Option<list<String>> strPastOptModules;
+  input Option<list<String>> strpostOptModules;
   output BackendDAE.BackendDAE outSODE;
 protected
   BackendDAE.BackendDAE dae,optdae,sode;
-  list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
-  list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
+  list<tuple<preOptimizationDAEModule,String,Boolean>> preOptModules;
+  list<tuple<postOptimizationDAEModule,String,Boolean>> postOptModules;
   tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
   tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
 algorithm
 
   preOptModules := getPreOptModules(strPreOptModules);
-  pastOptModules := getPastOptModules(strPastOptModules);
+  postOptModules := getPostOptModules(strpostOptModules);
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
 
   Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   // pre optimisation phase
   _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
+  (optdae,Util.SUCCESS()) := preOptimizeDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
   sode := causalizeDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
-  // past optimisation phase
-  (outSODE,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
+  // post-optimization phase
+  (outSODE,Util.SUCCESS()) := postOptimizeDAE(sode,postOptModules,matchingAlgorithm,daeHandler);
   _ := traverseBackendDAEExps(outSODE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
 
   Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
@@ -8501,9 +8497,9 @@ end getPreOptModulesString;
 protected function getPreOptModules
 " function: getPreOptModules"
   input Option<list<String>> ostrPreOptModules;
-  output list<tuple<preoptimiseDAEModule,String,Boolean>> preOptModules;
+  output list<tuple<preOptimizationDAEModule,String,Boolean>> preOptModules;
 protected
-  list<tuple<preoptimiseDAEModule,String,Boolean>> allPreOptModules;
+  list<tuple<preOptimizationDAEModule,String,Boolean>> allPreOptModules;
   list<String> strPreOptModules;
 algorithm
   allPreOptModules := {(RemoveSimpleEquations.fastAcausal, "removeSimpleEquations", false),
@@ -8532,22 +8528,20 @@ algorithm
   preOptModules := listReverse(preOptModules);
 end getPreOptModules;
 
-public function getPastOptModulesString
-" function: getPreOptModulesString"
-  output list<String> strPastOptModules;
+public function getPostOptModulesString
+  output list<String> strpostOptModules;
 algorithm
-  strPastOptModules := Config.getPastOptModules();
-end getPastOptModulesString;
+  strpostOptModules := Config.getPostOptModules();
+end getPostOptModulesString;
 
-public function getPastOptModules
-" function: getPastOptModules"
-  input Option<list<String>> ostrPastOptModules;
-  output list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
+public function getPostOptModules
+  input Option<list<String>> ostrpostOptModules;
+  output list<tuple<postOptimizationDAEModule,String,Boolean>> postOptModules;
 protected
-  list<tuple<pastoptimiseDAEModule,String,Boolean>> allPastOptModules;
-  list<String> strPastOptModules;
+  list<tuple<postOptimizationDAEModule,String,Boolean>> allpostOptModules;
+  list<String> strpostOptModules;
 algorithm
-  allPastOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", false),
+  allpostOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", false),
                         (BackendDAEOptimize.lateInlineFunction,"lateInlineFunction",false),
                         (RemoveSimpleEquations.causal,"removeSimpleEquations",false),
                         (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
@@ -8579,14 +8573,13 @@ algorithm
                         (Tearing.tearingSystem, "tearingSystem", false),
                         (BackendDAEOptimize.addInitialStmtsToAlgorithms, "addInitialStmtsToAlgorithms", false)};
 
-  strPastOptModules := getPastOptModulesString();
-  strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
-  pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{});
-  pastOptModules := listReverse(pastOptModules);
-end getPastOptModules;
+  strpostOptModules := getPostOptModulesString();
+  strpostOptModules := Util.getOptionOrDefault(ostrpostOptModules,strpostOptModules);
+  postOptModules := selectOptModules(strpostOptModules,allpostOptModules,{});
+  postOptModules := listReverse(postOptModules);
+end getPostOptModules;
 
 protected function selectOptModules
-" function: selectPreOptModules"
   input list<String> strOptModules;
   input list<tuple<Type_a,String,Boolean>> inOptModules;
   input list<tuple<Type_a,String,Boolean>> accumulator;
@@ -8624,8 +8617,7 @@ algorithm
   end matchcontinue;
 end selectOptModules;
 
-public function selectOptModules1 "
-Author Frenkel TUD 2011-02"
+public function selectOptModules1 "author: Frenkel TUD 2011-02"
   input String strOptModule;
   input list<tuple<Type_a,String,Boolean>> inOptModules;
   output tuple<Type_a,String,Boolean> outOptModule;

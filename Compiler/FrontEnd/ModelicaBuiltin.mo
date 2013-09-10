@@ -1270,13 +1270,13 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setIndexReductionMethod;
 
-function setPastOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations."
+function setPostOptModules "example input: lateInline,inlineArrayEqn,removeSimpleEquations."
   input String modules;
   output Boolean success;
 algorithm
   success := setCommandLineOptions("+postOptModules=" + modules);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
-end setPastOptModules;
+end setPostOptModules;
 
 function getTearingMethod
   output String selected;

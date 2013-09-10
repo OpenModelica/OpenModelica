@@ -1122,7 +1122,7 @@ algorithm
         dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(path,dae,env));
         daelow = BackendDAECreate.lower(dae,cache,env);
-        (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimiseBackendDAE(daelow,NONE());
+        (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
         (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
@@ -4227,7 +4227,7 @@ algorithm
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         dlow = BackendDAECreate.lower(dae,cache,env); //Verificare cosa fa
-        dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,NONE());
+        dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
@@ -4249,7 +4249,7 @@ algorithm
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
         dlow = BackendDAECreate.lower(dae,cache,env); //Verificare cosa fa
-        dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,NONE());
+        dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
