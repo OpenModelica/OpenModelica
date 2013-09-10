@@ -8212,7 +8212,7 @@ algorithm
       BackendDAE.Shared shared;
       
     case (_, {}, _, _) equation
-      Debug.fcall(Flags.OPT_DAE_DUMP, print, "Post-optimization done.\n");
+      Debug.fcall(Flags.OPT_DAE_DUMP, print, "post-optimization done.\n");
     then (inDAE,Util.SUCCESS());
     
     case (_, (optModule, moduleStr, _)::rest, _, _) equation
@@ -8220,7 +8220,7 @@ algorithm
       systs = filterEmptySystems(systs);
       dae = BackendDAE.DAE(systs, shared);
       Debug.execStat("postOpt " +& moduleStr,GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nPost-optimization module ", moduleStr, ":\n\n"}));
+      Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\npost-optimization module ", moduleStr, ":\n\n"}));
       Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
       dae1 = causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, false);
       (dae2, status) = postOptimizeDAE(dae1, rest, matchingAlgorithm, daeHandler);
@@ -8228,7 +8228,7 @@ algorithm
     
     case (_, (optModule, moduleStr, b)::rest, _, _) equation
       Debug.execStat("postOpt <failed> " +& moduleStr, GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      str = stringAppendList({"Post-optimization module ", moduleStr, " failed."});
+      str = stringAppendList({"post-optimization module ", moduleStr, " failed."});
       Debug.bcall2(not b,Error.addMessage, Error.INTERNAL_ERROR, {str});
       (dae,status) = postOptimizeDAE(inDAE,rest,matchingAlgorithm,daeHandler);
     then (dae, Util.if_(b, Util.FAILURE(), status));
