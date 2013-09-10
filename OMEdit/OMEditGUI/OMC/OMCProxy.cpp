@@ -315,9 +315,9 @@ bool OMCProxy::startServer()
     connect(omcProcess, SIGNAL(finished(int)), omcProcess, SLOT(deleteLater()));
     QFile omcOutputFile;
 #ifdef WIN32 // Win32
-    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.omc.output.").append(Helper::OMCServerName));
+    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("OpenModelica/OMEdit/openmodelica.omc.output.").append(Helper::OMCServerName));
 #else // UNIX environment
-    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::OMCServerName));
+    omcOutputFile.setFileName(QString(QDir::tempPath()).append(QDir::separator()).append("OpenModelica/OMEdit/openmodelica.").append(*(new QString(user))).append(".omc.output.").append(Helper::OMCServerName));
 #endif
     omcProcess->setProcessChannelMode(QProcess::MergedChannels);
     omcProcess->setStandardOutputFile(omcOutputFile.fileName());
