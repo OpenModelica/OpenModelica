@@ -236,7 +236,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
   int j = 0;
   foreach(QString plotVariable, derPlotVariables)
   {
-    QStringList variables = plotVariable.split(".");
+    QStringList variables = plotVariable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
     parentStructure = pVariableTreeItem->getNameStructure();
     for (int i = 0 ; i < variables.size() ; i++)
     {
@@ -267,7 +267,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
   // add plotVariables to tree
   foreach(QString plotVariable, plotVariables)
   {
-    QStringList variables = plotVariable.split(".");
+    QStringList variables = plotVariable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
     parentStructure = pVariableTreeItem->getNameStructure();
     for (int i = 0 ; i < variables.size() ; i++)
     {
