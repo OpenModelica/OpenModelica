@@ -133,7 +133,7 @@ algorithm
         Debug.fprintln(Flags.CGRAPH, "Allowed connections: " +& stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", "));
 
         elts = evalIsRoot(roots, elts);
-        elts = evalrooted(roots, graph, elts);
+        elts = evalRooted(roots, graph, elts);
       then
         (DAE.DAE(elts), connected, broken);
 
@@ -318,8 +318,6 @@ algorithm
       equation
         canon1 = canonical(partition,ref1);
         canon2 = canonical(partition,ref2);
-        //print("canon1: " +& ComponentReference.printComponentRefStr(canon1));
-        //print("\tcanon2: " +& ComponentReference.printComponentRefStr(canon2) +& "\n");
         true = ComponentReference.crefEqualNoStringCompare(canon1, canon2);
       then true;
     case(_,_,_) then false;
@@ -403,208 +401,6 @@ algorithm
       then (partition, {}, {inDaeEdge});
   end matchcontinue;
 end connectComponents;
-
-protected function originInConnect
-"@author: adrpo
- this function returns true if the given element came from
- the connect of the component references given as input"
-  input DAE.Element inElement;
-  input DAE.ComponentRef left;
-  input DAE.ComponentRef right;
-  output Boolean hasOriginInConnect;
-algorithm
-  hasOriginInConnect := matchcontinue(inElement, left, right)
-    local
-      list<Option<Edge>> connectOptLst;
-      Boolean b;
-
-     // var
-    case (DAE.VAR(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-     // define
-    case (DAE.DEFINE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-     // initial define
-    case (DAE.INITIALDEFINE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // equation
-    case (DAE.EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // initial equation
-    case (DAE.INITIALEQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // equequation
-    case (DAE.EQUEQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // array equation
-    case (DAE.ARRAY_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // initial array equation
-    case (DAE.INITIAL_ARRAY_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // complex equation
-    case (DAE.COMPLEX_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // initial complex equation
-    case (DAE.INITIAL_COMPLEX_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // when equation
-    case (DAE.WHEN_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // if equation
-    case (DAE.IF_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // initial if equation
-    case (DAE.INITIAL_IF_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // algorithm
-    case (DAE.ALGORITHM(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // initial algorithm
-    case (DAE.INITIALALGORITHM(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // a component
-    case (DAE.COMP(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // external object
-    case (DAE.EXTOBJECTCLASS(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // assert
-    case (DAE.ASSERT(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // terminate
-    case (DAE.TERMINATE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // reinit
-    case (DAE.REINIT(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // no return call
-    case (DAE.NORETCALL(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // TODO! FIXME! CHECK THIS! anything else could not have come from a connect, ignore!
-    case (_, _, _)
-      equation
-         //debug_print("element", inElement);
-         //debug_print("left", left);
-         //debug_print("right", right);
-      then false;
-  end matchcontinue;
-end originInConnect;
-
-protected function isInConnectionList
-"@author: adrpo
- searches the given connect list for the matching connect given as component refence inputs"
-  input list<Option<Edge>> inConnectEquationOptLst;
-  input DAE.ComponentRef left;
-  input DAE.ComponentRef right;
-  output Boolean isPresent;
-algorithm
-  isPresent := matchcontinue(inConnectEquationOptLst, left, right)
-    local
-      list<Option<Edge>> rest;
-      DAE.ComponentRef crLeft, crRight;
-      Boolean b, b1, b2;
-
-    // handle empty case
-    case ({},_,_) then false;
-
-    // try direct match
-    case (SOME((crLeft, crRight))::rest, _, _)
-      equation
-        b1 = ComponentReference.crefPrefixOf(left, crLeft);
-        b2 = ComponentReference.crefPrefixOf(right, crRight);
-        true = boolAnd(b1, b2);
-        // print("connect: " +& ComponentReference.printComponentRefStr(left) +& ", " +& ComponentReference.printComponentRefStr(right) +& "\n");
-        // print("origin: " +& ComponentReference.printComponentRefStr(crLeft) +& ", " +& ComponentReference.printComponentRefStr(crRight) +& "\n");
-      then
-        true;
-    // try inverse match
-    case (SOME((crLeft, crRight))::rest, _, _)
-      equation
-        b1 = ComponentReference.crefPrefixOf(right, crLeft);
-        b2 = ComponentReference.crefPrefixOf(left, crRight);
-        true = boolAnd(b1, b2);
-        // print("connect: " +& ComponentReference.printComponentRefStr(left) +& ", " +& ComponentReference.printComponentRefStr(right) +& "\n");
-        // print("origin: " +& ComponentReference.printComponentRefStr(crRight) +& ", " +& ComponentReference.printComponentRefStr(crLeft) +& "\n");
-      then
-        true;
-    // try the rest
-    case (_::rest, _, _)
-      equation
-        b = isInConnectionList(rest, left, right);
-      then
-        b;
-    // failure
-    case (_, _, _)
-      equation
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGrap.isInConnectionList failed!");
-      then
-        fail();
-  end matchcontinue;
-end isInConnectionList;
 
 protected function connectCanonicalComponents
 "Tries to connect two components whose canonical elements are given.
@@ -1113,7 +909,7 @@ algorithm
   end matchcontinue;
 end addConnectionRooted;
 
-protected function evalrooted
+protected function evalRooted
 "Replaces all rooted calls by true or false depending on wheter branche frame_a or frame_b is closer to root"
   input list<DAE.ComponentRef> inRoots;
   input ConnectionGraph graph;
@@ -1142,12 +938,12 @@ algorithm
         //  BaseHashTable.dumpHashTable(table);
         rooted = setRootDistance(inRoots,table,0,{},HashTable.emptyHashTable());
         //  BaseHashTable.dumpHashTable(rooted);
-        (outDae, _) = DAEUtil.traverseDAE2(inDae, evalrootedHelper, (rooted,graph));
+        (outDae, _) = DAEUtil.traverseDAE2(inDae, evalRootedHelper, (rooted,graph));
       then outDae;
   end matchcontinue;
-end evalrooted;
+end evalRooted;
 
-protected function evalrootedHelper
+protected function evalRootedHelper
 "Helper function for evalIsRoot."
   input tuple<DAE.Exp,tuple<HashTable.HashTable,ConnectionGraph>> inRoots;
   output tuple<DAE.Exp,tuple<HashTable.HashTable,ConnectionGraph>> outRoots;
@@ -1168,14 +964,14 @@ algorithm
         // find partner in branches
         branches = getBranches(graph);
         cref1 = getEdge(cref,branches);
-        //print("- ConnectionGraph.evalrootedHelper: Found Branche Partner " +&
-        //   ComponentReference.printComponentRefStr(cref) +& " , " +& ComponentReference.printComponentRefStr(cref1) +& "\n");
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalrootedHelper: Found Branche Partner " +&
-           ComponentReference.printComponentRefStr(cref) +& " , " +& ComponentReference.printComponentRefStr(cref1));
+        //print("- ConnectionGraph.evalRootedHelper: Found Branche Partner " +&
+        //   ComponentReference.printComponentRefStr(cref) +& ", " +& ComponentReference.printComponentRefStr(cref1) +& "\n");
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalRootedHelper: Found Branche Partner " +&
+           ComponentReference.printComponentRefStr(cref) +& ", " +& ComponentReference.printComponentRefStr(cref1));
         result = getRooted(cref,cref1,rooted);
-        //print("- ConnectionGraph.evalrootedHelper: " +&
+        //print("- ConnectionGraph.evalRootedHelper: " +&
         //   ComponentReference.printComponentRefStr(cref) +& " is " +& boolString(result) +& " rooted\n");
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalrootedHelper: " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalRootedHelper: " +&
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then ((DAE.BCONST(result), (rooted,graph)));
     // no replacement needed
@@ -1184,7 +980,7 @@ algorithm
         // Debug.fprintln(Flags.CGRAPH, ExpressionDump.printExpStr(exp) +& " not found in roots!");
       then ((exp, (rooted,graph)));
   end matchcontinue;
-end evalrootedHelper;
+end evalRootedHelper;
 
 protected function getRooted
   input DAE.ComponentRef cref1;
@@ -1640,20 +1436,19 @@ algorithm
         graphVizStream = IOStream.appendList(graphVizStream, {"graph \"", modelNameQualified, "\"\n{\n\n"});
 
         // output global settings
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "ovelap=false;\n"});
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "overlap=false;\n"});
         graphVizStream = IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});
 
         // output settings for nodes
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "node [\n", i,
-           "fillcolor = \"lightsteelblue1\"\n",i,
-           "shape = box\n",i,
-           "style = \"bold, filled\"\n",i,
-           "rank = \"max\"",
-           i, "]\n\n"});
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "node [",
+           "fillcolor = \"lightsteelblue1\", ",
+           "shape = box, ",
+           "style = \"bold, filled\", ",
+           "rank = \"max\"","]\n\n"});
         // output settings for edges
-        graphVizStream = IOStream.appendList(graphVizStream, {i, "edge [\n", i,
-           "color = \"black\"\n", i,
-           "style = bold\n", i,
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "edge [", 
+           "color = \"black\", ",
+           "style = bold",
            "]\n\n"});
 
         // output summary node
@@ -1753,24 +1548,25 @@ algorithm
     // if we have nothing toRemove then we don't care!
     case (_, _, _)
       equation
-        {} = removeBroken(inConnects, inBroken, {});
+        {} = filterFromSet(inConnects, inBroken, {});
       then inConnects;
 
     case (_, _, _)
       equation
-        toRemove = removeBroken(inConnects, inBroken, {});
-        // remove from toRemove the allowed connections
-        toKeep = List.unique(List.flatten(List.map(inConnected, List.first2FromTuple3)));
+        toRemove = filterFromSet(inConnects, inBroken, {});
+        toKeep = filterFromSet(inConnects, inConnected, {});
         intersect = List.intersectionOnTrue(toRemove, toKeep, ComponentReference.crefEqualNoStringCompare);
 
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: deleted references: " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: keep: " +&
+          stringDelimitList(List.map(toKeep, ComponentReference.printComponentRefStr), ", "));
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: delete: " +&
           stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allowed references: " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow = remove - keep: " +&
           stringDelimitList(List.map(intersect, ComponentReference.printComponentRefStr), ", "));
 
         toRemove = List.setDifference(toRemove, intersect);
 
-        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: final reference removal: " +&
+        Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: allow - delete: " +&
           stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));
 
         cset = removeFromConnects(inConnects, toRemove);
@@ -1779,28 +1575,23 @@ algorithm
   end matchcontinue;
 end removeBrokenConnects;
 
-protected function removeBroken
+protected function filterFromSet
 "@author: adrpo
- given an EQU set build a list of crefs to remove
- from the given broken DAE."
+ given an EQU set filter the given DaeEdges"
   input list<Connect.ConnectorElement> inConnects;
-  input DaeEdges inBroken;
+  input DaeEdges inFilter;
   input list<DAE.ComponentRef> inAcc;
-  output list<DAE.ComponentRef> toRemove;
+  output list<DAE.ComponentRef> filteredCrefs;
 algorithm
-  toRemove := matchcontinue(inConnects, inBroken, inAcc)
+  filteredCrefs := matchcontinue(inConnects, inFilter, inAcc)
     local
       DAE.ComponentRef c1, c2;
       DaeEdges rest;
-      list<DAE.ComponentRef> tr;
+      list<DAE.ComponentRef> filtered;
 
     case (_, {}, _) then List.unique(inAcc);
 
-    // both are there and append crefs to the toRemove list!
-    // TODO, FIXME! actually if one is in the set the other MUST BE THERE!
-    //              because they SHOULD belog to the same coonection set
-    //              do some checks like that here!
-    // maybe we can even speed it up further but checking only one cref
+    // both are there and append crefs to the filter list!
     case (_, (c1, c2, _)::rest, _)
       equation
         true = ConnectUtil.isReferenceInConnects(inConnects, c1);
@@ -1808,18 +1599,18 @@ algorithm
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBroken: removed connect(" +&
           ComponentReference.printComponentRefStr(c1) +& ", " +&
           ComponentReference.printComponentRefStr(c2) +& ")");
-        tr = removeBroken(inConnects, rest, c1::c2::inAcc);
+        filtered = filterFromSet(inConnects, rest, c1::c2::inAcc);
       then
-        tr;
+        filtered;
 
     // some are not there, move forward ...
     case (_, _::rest, _)
       equation
-        tr = removeBroken(inConnects, rest, inAcc);
+        filtered = filterFromSet(inConnects, rest, inAcc);
       then
-        tr;
+        filtered;
   end matchcontinue;
-end removeBroken;
+end filterFromSet;
 
 protected function removeFromConnects
   input list<Connect.ConnectorElement> inConnects;

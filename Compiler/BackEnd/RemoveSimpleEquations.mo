@@ -1603,12 +1603,28 @@ algorithm
   end matchcontinue;
 end getAlias1;
 
-protected function circularEqualityMsg "author: Frenkel TUD 2013-05"
+protected function circularEqualityMsg "author: Frenkel TUD 2013-05, adrpo"
   input list<Integer> stack;
   input Integer iR;
   input array<SimpleContainer> simpleeqnsarr;
   input String iMsg;
   output String oMsg;
+protected 
+  list<String> lst;
+  String msg;
+algorithm
+  lst := circularEqualityMsg_dispatch(stack, iR, simpleeqnsarr, {});
+  msg := stringDelimitList(lst, "\n");
+  msg := stringAppendList({iMsg, msg, "\n"});
+  oMsg := msg;
+end circularEqualityMsg;
+
+protected function circularEqualityMsg_dispatch "author: Frenkel TUD 2013-05, adrpo"
+  input list<Integer> stack;
+  input Integer iR;
+  input array<SimpleContainer> simpleeqnsarr;
+  input list<String> iMsg;
+  output list<String> oMsg;
 algorithm
   oMsg := matchcontinue(stack, iR, simpleeqnsarr, iMsg)
     local
@@ -1622,18 +1638,18 @@ algorithm
       equation
         false = intEq(r, iR);
         names = getVarsNames(simpleeqnsarr[r]);
-        slst = List.map(names, ComponentReference.crefStr);
-        msg = stringDelimitList(slst, "\n");
-        msg = stringAppendList({iMsg, msg, "\n"});
+        slst = List.map(names, ComponentReference.printComponentRefStr);
+        slst = listAppend(slst, {"----------------------------------"});
+        slst = listAppend(iMsg, slst);
       then
-        circularEqualityMsg(rest, iR, simpleeqnsarr, msg);
+        circularEqualityMsg_dispatch(rest, iR, simpleeqnsarr, slst);
     case (r::rest, _, _, _)
       equation
         true = intEq(r, iR);
       then
         iMsg;
   end matchcontinue;
-end circularEqualityMsg;
+end circularEqualityMsg_dispatch;
 
 protected function getVarsNames "author: Frenkel TUD 2013-05"
   input SimpleContainer iS;
