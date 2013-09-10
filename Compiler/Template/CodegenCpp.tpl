@@ -3928,7 +3928,7 @@ case CREF_QUAL(ident = "$PRE") then
    '_event_handling.pre(<%contextCref(componentRef,context,simCode)%>,"<%cref(componentRef)%>")'
  else
   match context
-  case FUNCTION_CONTEXT(__) then crefStr(cr)
+  case FUNCTION_CONTEXT(__) then '<%crefToCStr(cr)%>'
   else cref1(cr,simCode,context)
 end contextCref;
 
@@ -4697,6 +4697,8 @@ template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
     '<%tmp%>'
 end daeExpRange;
 
+
+
 template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
                          Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates code for a reduction expression. The code is quite messy because it handles all
@@ -4737,7 +4739,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let bodyExprType = expTypeArrayIf(typeof(r.expr))
   let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls,simCode)
   let &tmpVarDecls += '<%bodyExprType%> <%reductionBodyExpr%>;<%\n%>'
-  let &bodyExpPre += '<%reductionBodyExpr%> = <%reductionBodyExprWork%>//Test;<%\n%>'
+  let &bodyExpPre += '<%reductionBodyExpr%> = <%reductionBodyExprWork%>;<%\n%>'
   let foldExp = match ri.path
     case IDENT(name="list") then
     <<
@@ -4795,10 +4797,9 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     {
       <%identType%> <%iteratorName%>;
       <%iteratorName%> = <%loopVar%>[<%firstIndex%>++];
-    
+  
     >>
-  let loopTail = match identType
-     case "modelica_metatype" then "}"
+   let loopTail = '}'
     
   let &preExp += <<
   {
@@ -4815,7 +4816,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
         <%&bodyExpPre%>
         <%foldExp%>
       }
-    <%loopTail%>
+      <%loopTail%>
     <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW();' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
     <% resTmp %> = <% res %>;
@@ -5725,7 +5726,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
   case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context case FUNCTION_CONTEXT(__) then
-      daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode)
+      '<%daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode)%>'
     else
       daeExpRecordCrefRhs(t, cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
       
@@ -5733,7 +5734,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
     '((modelica_fnptr)boxptr_<%crefFunctionName(cr)%>)'
   case CREF(componentRef = cr, ty = T_FUNCTION_REFERENCE_VAR(__)) then
     '((modelica_fnptr) _<%crefStr(cr)%>)'
-  else daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode)
+  else '<%daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode)%>'
 end daeExpCrefRhs;
 
 template daeExpRecordCrefRhs(DAE.Type ty, ComponentRef cr, Context context, Text &preExp /*BUFP*/,
@@ -5858,9 +5859,9 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
 
     case ALGLOOP_CONTEXT(genInitialisation = false) 
 
-        then  << _system-><%cref(inCref)%>>>
+        then  <<_system-><%cref(inCref)%>>>
     else
-        << <%cref(inCref)%>>>
+        <<<%cref(inCref)%>>>
 end representationCref;
 
 
@@ -6246,9 +6247,7 @@ end errorMsg;
 template contextIteratorName(Ident name, Context context)
   "Generates code for an iterator variable."
 ::=
-  match context
-  case FUNCTION_CONTEXT(__) then "_" + name
-  else name
+ name
 end contextIteratorName;
 
 
@@ -6609,7 +6608,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
      }
    
     if(iter>2*_dimZeroFunc && restart ){
-     throw std::runtime_error("Number of event iteration steps exceeded. " );}
+     throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
     return state_vars_reinitialized;
    }
   >>
@@ -7362,10 +7361,11 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_TRY(__)            then "STMT TRY"
   case s as STMT_CATCH(__)          then "STMT CATCH"
   case s as STMT_THROW(__)          then "STMT THROW"
-  case s as STMT_RETURN(__)         then "STMT RETURN"
+  case s as STMT_RETURN(__)         then "break;/*Todo stm return*/"
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/,simCode)
   else error(sourceInfo(), 'ALG_STATEMENT NYI')
+  
   <<
   <%modelicaLine(getElementSourceFileInfo(getStatementSource(stmt)))%>
   <%res%>
@@ -7560,11 +7560,13 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let &preExp = buffer "" /*BUFD*/
     let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    /*<<
+    /*
+    <<
     $P$PRE<%expPart1%> = <%expPart1%>;
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
-    >>*/
+    >>
+    */
     <<
     _event_handling.save(<%expPart1%>,"<%expPart1%>");
      <%preExp%>
