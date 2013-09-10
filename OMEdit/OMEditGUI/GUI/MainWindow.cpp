@@ -51,6 +51,12 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   QFont monospaceFont("Monospace");
   monospaceFont.setStyleHint(QFont::TypeWriter);
   Helper::monospacedFontInfo = QFontInfo(monospaceFont);
+  /*! @note register the RecentFile and FindText struct in the Qt's meta system
+   * Don't remove/move the following line.
+   * Because RecentFile struct should be registered before reading the recentFilesList section from the settings file.
+   */
+  qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
+  qRegisterMetaTypeStreamOperators<FindText>("FindText");
   // Create the OMCProxy object.
   pSplashScreen->showMessage(tr("Connecting to OpenModelica Compiler"), Qt::AlignRight, Qt::white);
   mpOMCProxy = new OMCProxy(this);
@@ -136,12 +142,6 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   //mpInteractiveSimualtionTabWidget = new InteractiveSimulationTabWidget(this);
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
-  /*! @note register the RecentFile and FindText struct in the Qt's meta system
-   * Don't remove/move the following line.
-   * Because RecentFile struct should be registered before reading the recentFilesList section from the settings file.
-   */
-  qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
-  qRegisterMetaTypeStreamOperators<FindText>("FindText");
   // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
   updateRecentFileActions();
