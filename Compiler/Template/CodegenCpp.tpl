@@ -4689,8 +4689,8 @@ template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
     let tmp = tempDecl('multi_array<<%ty_str%>,1>', &varDecls /*BUFD*/)
     let step_exp = match step case SOME(stepExp) then daeExp(stepExp, context, &preExp, &varDecls,simCode) else "1"
     let &preExp += 'int num_elems =(<%stop_exp%>-<%start_exp%>)/<%step_exp%>+1;
-    <%tmp%>.reindex(1);
-    <%tmp%>.resize((boost::extents[num_elems])); 
+    <%tmp%>.resize((boost::extents[num_elems]));
+    <%tmp%>.reindex(1); 
     for(int i= 1;i<=num_elems;i++)
         <%tmp%>[i] =<%start_exp%>+(i-1)*<%step_exp%>;
     '
@@ -4800,12 +4800,19 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   
     >>
    let loopTail = '}'
-    
+  let loopvarassign = 
+     match typeof(iter.exp)
+      case ty as T_ARRAY(__) then
+      'assign_array( <%loopVar%>,<%rangeExp%>);'
+      else 
+       '<%loopVar%> = <%rangeExp%>;'
+       end match
   let &preExp += <<
   {
     <%&tmpVarDecls%>
     <%&rangeExpPre%>
-    <%loopVar%> = <%rangeExp%>;
+    <%loopvarassign%>
+   
     <% if firstIndex then '<%firstIndex%> = 1;' %>
     <%firstValue%>
     <% if resTail then '<%resTail%> = &<%res%>;' %>
@@ -6081,9 +6088,10 @@ case ARRAY(__) then
   arrayVar
   else
     match typeof(exp)
-      case T_ARRAY(dims=dims) then
+      case ty as T_ARRAY(dims=dims) then
       let resVarType = 'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
        let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
+    
       resVar
      else
     let resVarType = expTypeFlag(typeof(exp), 2)
