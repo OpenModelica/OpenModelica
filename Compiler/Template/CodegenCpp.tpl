@@ -5002,9 +5002,9 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
   case ASUB(exp=e, sub=indexes) then
   let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
  // let typeShort = expTypeFromExpShort(e)
-  let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls,simCode)%>' ;separator="+1][")
+  let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls,simCode)%>' ;separator="][")
    //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
-  '(<%exp%>)[<%expIndexes%>+1]'
+  '(<%exp%>)[<%expIndexes%>]'
   case exp then
     error(sourceInfo(),'OTHER_ASUB <%printExpStr(exp)%>')
 end daeExpAsub;
