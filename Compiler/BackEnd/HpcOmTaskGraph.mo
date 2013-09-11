@@ -3042,14 +3042,13 @@ algorithm
   print(intString(cpIdx)+&". path: "+&intLstString(listGet(criticalPathsIn,cpIdx))+&"\n");
 end printCriticalPathInfo1;
 
-
 // functions to merge simple nodes
 //------------------------------------------
 //------------------------------------------
 
 
 public function mergeSimpleNodes " merges all nodes in the graph that have only one predecessor and one successor.
-author:Waurich TUD 2013-07"
+author: Waurich TUD 2013-07"
   input TaskGraph graphIn;
   input TaskGraphMeta graphDataIn;
   input BackendDAE.BackendDAE daeIn;
@@ -3075,9 +3074,9 @@ protected
 algorithm
   TASKGRAPHMETA(inComps = inComps, varSccMapping=varSccMapping, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) := graphDataIn;
   BackendDAE.DAE(eqs = systs) := daeIn;
-  allTheNodes := List.intRange(arrayLength(graphIn));  // to parse the node indeces
-  oneChildren := findOneChildParents(allTheNodes,graphIn,{{}},0);
-  oneChildren := listDelete(oneChildren,listLength(oneChildren)-1); // remove the empty startValue
+  allTheNodes := List.intRange(arrayLength(graphIn));  // to traverse the node indeces
+  oneChildren := findOneChildParents(allTheNodes,graphIn,{{}},0);  // paths of nodes with just one successor per node (extended: and endnodes with just one parent node)
+  oneChildren := listDelete(oneChildren,listLength(oneChildren)-1); // remove the empty startValue {} 
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
   //oneChildren := List.fold1(List.intRange(listLength(oneChildren)),checkParentNode,graphIn,oneChildren);  // deletes the lists with just one entry that have more than one parent
   (graphOut,graphDataOut) := contractNodesInGraph(oneChildren,graphIn,graphDataIn);
@@ -3344,11 +3343,12 @@ end equalLists;
 
   
 protected function findOneChildParents " fold function to find nodes or paths in the taskGraph with just one successor per node.
-author:Waurich TUD 2013-07"
+extended: adds endnodes without successor as well
+author: Waurich TUD 2013-07"
   input list<Integer> allNodes;
   input TaskGraph graphIn;
   input list<list<Integer>> lstIn;
-  input Integer inPath;  // the current nodeINdex in a path of only cildren. if no path then 0.
+  input Integer inPath;  // the current nodeIndex in a path of only cildren. if no path then 0.
   output list<list<Integer>> lstOut;
 algorithm
   lstOut := matchcontinue(allNodes,graphIn,lstIn,inPath)
@@ -3391,7 +3391,7 @@ algorithm
         false = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,inPath);
         parents = getParentNodes(inPath,graphIn);
-        true = listLength(nodeChildren) == 1 and listLength(parents) == 1;
+        true = listLength(nodeChildren) == 1 and List.isNotEmpty(nodeChildren) and listLength(parents) == 1;
         child = listGet(nodeChildren,1);
         pathLst = List.first(lstIn);
         pathLst = inPath::pathLst;
@@ -3401,14 +3401,29 @@ algorithm
       then
         lstTmp;
     case(_,_,_,_)
-      // follow path and check that there are more children or a child with more parents
+      // follow path and check that there is an endnode without successor that will be added to the path
+      equation
+        false = intEq(inPath,0);
+        nodeChildren = arrayGet(graphIn,inPath);
+        parents = getParentNodes(inPath,graphIn);
+        true = List.isEmpty(nodeChildren) and listLength(parents) == 1;
+        pathLst = List.first(lstIn);
+        pathLst = inPath::pathLst;
+        lstTmp = List.replaceAt(pathLst,0,lstIn);     
+        rest = List.deleteMember(allNodes,inPath); 
+        lstTmp = findOneChildParents(rest,graphIn,lstTmp,0);
+      then
+        lstTmp;
+    case(_,_,_,_)
+      // follow path and check that there are more children or a child with more parents. end path before this node
       equation
         false = intEq(inPath,0);
         nodeChildren = arrayGet(graphIn,inPath);
         parents = getParentNodes(inPath,graphIn);
         true = listLength(nodeChildren) <> 1 or listLength(parents) <> 1;
-        rest = List.deleteMember(allNodes,inPath); 
-        lstTmp = findOneChildParents(rest,graphIn,lstIn,0);
+        //rest = List.deleteMember(allNodes,inPath); 
+        //lstTmp = findOneChildParents(rest,graphIn,lstIn,0);
+        lstTmp = findOneChildParents(allNodes,graphIn,lstIn,0);
       then
         lstTmp;
     else

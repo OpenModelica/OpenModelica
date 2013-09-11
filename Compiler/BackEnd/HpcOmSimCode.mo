@@ -206,7 +206,6 @@ algorithm
       //Apply filters
       //-------------
       (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE);
-      
       //HpcOmTaskGraph.printTaskGraph(taskGraph1);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData1); 
       
