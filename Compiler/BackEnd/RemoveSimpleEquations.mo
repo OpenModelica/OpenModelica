@@ -3069,8 +3069,10 @@ algorithm
       BackendDAE.Variables knvars, exobj, knvars1;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns, inieqns, remeqns1;
-      array<DAE.Constraint> constrs;
+      array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constraintsLst;
+      list<DAE.ClassAttributes> clsAttrsLst;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcTree;
@@ -3086,7 +3088,7 @@ algorithm
       Boolean b1;
       BackendDAE.SampleLookup sampleLookup;
     case (false, _, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs)), _)
+    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraints, clsAttrs, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs)), _)
       equation
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
@@ -3100,11 +3102,17 @@ algorithm
         ((_, eqnslst, b1)) = BackendEquation.traverseBackendDAEEqns(remeqns, replaceEquationTraverser, (repl, {}, false));
         remeqns1 = Debug.bcallret1(b1, BackendEquation.listEquation, eqnslst, remeqns);
         (whenClauseLst1, _) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        // remove optimica contraints and classAttributes
+        constraintsLst = arrayList(constraints);
+        clsAttrsLst = arrayList(clsAttrs);
+        (constraintsLst, clsAttrsLst) = replaceOptimicaExps(constraintsLst, clsAttrsLst, repl);
+        constraints = listArray(constraintsLst);
+        clsAttrs = listArray(clsAttrsLst);
         systs1 = removeSimpleEquationsShared1(systs, {}, repl, NONE(), aliasVars);
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1), assertWithCondTrue));
       then
-        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constrs, clsAttrs, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs));
+        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraints, clsAttrs, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs));
   end match;
 end removeSimpleEquationsShared;
 
@@ -3338,6 +3346,60 @@ algorithm
   end matchcontinue;
 end replaceOtherStateSetVars;
 
+protected function replaceOptimicaExps
+" Helper function to removeSimpleEquationsShared.
+  Replaces variables in constraints and classAttributes
+  Expressions."
+  input list<DAE.Constraint> icontraints;
+  input list<DAE.ClassAttributes> iclassAttributes;
+  input BackendVarTransform.VariableReplacements irepl;
+  output list<DAE.Constraint> ocontraints;
+  output list<DAE.ClassAttributes> oclassAttributes;
+algorithm
+  (ocontraints, oclassAttributes) := matchcontinue(icontraints, iclassAttributes, irepl)
+    local
+      Option<DAE.Exp> objetiveE, objectiveIntegrandE, startTimeE, finalTimeE;
+      list<DAE.Constraint> constraintLst, rest;
+      list<DAE.Exp> constraintLstExps;
+      list<DAE.ClassAttributes> classAttributes, restClassAtr;
+    case ({}, {}, _) then ({}, {});
+    case ({}, DAE.OPTIMIZATION_ATTRS(objetiveE, objectiveIntegrandE, startTimeE, finalTimeE)::restClassAtr, _)
+      equation
+        ((_, (_, {objetiveE}, _))) = replaceOptExprTraverser((objetiveE, (irepl, {}, false)));
+        ((_, (_, {objectiveIntegrandE}, _))) = replaceOptExprTraverser((objectiveIntegrandE, (irepl, {}, false)));
+        ((_, (_, {startTimeE}, _))) = replaceOptExprTraverser((startTimeE, (irepl, {}, false)));
+        ((_, (_, {finalTimeE}, _))) = replaceOptExprTraverser((finalTimeE, (irepl, {}, false)));
+        (_, classAttributes) = replaceOptimicaExps({}, restClassAtr, irepl);
+        classAttributes = listAppend({DAE.OPTIMIZATION_ATTRS(objetiveE, objectiveIntegrandE, startTimeE, finalTimeE)}, classAttributes);
+      then ({}, classAttributes);
+    case (DAE.CONSTRAINT_EXPS(constraintLstExps)::rest, _, _)
+      equation
+        (constraintLstExps) = replaceOptimicaContraints(constraintLstExps, irepl);
+        (constraintLst, _) = replaceOptimicaExps(rest, iclassAttributes, irepl);
+        constraintLst = listAppend({DAE.CONSTRAINT_EXPS(constraintLstExps)}, constraintLst);
+      then (constraintLst, iclassAttributes);
+  end matchcontinue;
+end replaceOptimicaExps;
+
+protected function replaceOptimicaContraints
+  input list<DAE.Exp> icontraints;
+  input BackendVarTransform.VariableReplacements irepl;
+  output list<DAE.Exp> ocontraints;
+algorithm
+  (ocontraints) := matchcontinue(icontraints, irepl)
+    local
+      list<DAE.Exp> constraintLst, rest;
+      DAE.Exp e;
+    case ({}, _) then ({});
+    case (e::rest, _)
+      equation
+        ((_, (_, {e}, _))) = replaceExprTraverser((e, (irepl, {}, false)));
+        (constraintLst) = replaceOptimicaContraints(rest, irepl);
+        constraintLst = listAppend({e}, constraintLst);
+      then (constraintLst);
+  end matchcontinue;
+end replaceOptimicaContraints;
+
 protected function getAliasReplacements "author: Frenkel TUD 2012-12"
   input Option<BackendVarTransform.VariableReplacements> iStatesetrepl;
   input BackendDAE.Variables aliasVars;
@@ -3391,6 +3453,49 @@ algorithm
   end match;
 end replaceEquationTraverser;
 
+protected function replaceExprTraverser "
+  Helper function to e.g. removeSimpleEquations"
+  input tuple<DAE.Exp, tuple<BackendVarTransform.VariableReplacements, list<DAE.Exp>, Boolean>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendVarTransform.VariableReplacements, list<DAE.Exp>, Boolean>> outTpl;
+algorithm
+  outTpl:=
+  match (inTpl)
+    local
+      DAE.Exp exp, exp1;
+      BackendVarTransform.VariableReplacements repl;
+      list<DAE.Exp> exps;
+      Boolean b, b1;
+    case ((exp, (repl, exps, b)))
+      equation
+        (exp1, b1) = BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        exps = listAppend({exp1}, exps);
+      then ((exp, (repl, exps, b or b1)));
+  end match;
+end replaceExprTraverser;
+
+protected function replaceOptExprTraverser "
+  Helper function to e.g. removeSimpleEquations"
+  input tuple<Option<DAE.Exp>, tuple<BackendVarTransform.VariableReplacements, list<Option<DAE.Exp>>, Boolean>> inTpl;
+  output tuple<Option<DAE.Exp>, tuple<BackendVarTransform.VariableReplacements, list<Option<DAE.Exp>>, Boolean>> outTpl;
+algorithm
+  outTpl:=
+  match (inTpl)
+    local
+      DAE.Exp exp, exp1;
+      BackendVarTransform.VariableReplacements repl;
+      list<Option<DAE.Exp>> exps;
+      Boolean b, b1;
+    case ((NONE(), (repl, exps, b)))
+      equation
+        exps = listAppend({NONE()}, exps);
+      then ((NONE(), (repl, exps, b)));
+    case ((SOME(exp), (repl, exps, b)))
+      equation
+        (exp1, b1) = BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        exps = listAppend({SOME(exp1)}, exps);
+      then ((SOME(exp), (repl, exps, b or b1)));
+  end match;
+end replaceOptExprTraverser;
 
 /*
  * functions to find unreplacable variables
