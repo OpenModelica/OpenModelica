@@ -409,7 +409,7 @@ LIBS=""
 
 dnl should we use ipopt?
 
-AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use ipopt for initialization], 
+AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use Ipopt for optimization], 
 [
   WANT_IPOPT="$withval"
 ], [
