@@ -3856,4 +3856,47 @@ algorithm
   end match;
 end testsuiteFriendly2;
 
+protected function createDirectoryTreeH
+  input String inString;
+  input String parentDir;
+  input Boolean parentDirExists;
+  output Boolean outBool;
+algorithm
+  outBool := matchcontinue(inString,parentDir,parentDirExists)
+    local
+      Boolean b;
+
+    case (_, _, _)
+      equation
+        true = stringEqual(parentDir, System.dirname(parentDir));
+        b = System.createDirectory(inString);
+    then b;
+
+    case (_, _, true)
+      equation
+        b = System.createDirectory(inString);
+    then b;
+
+    case (_, _, false)
+      equation
+        true = createDirectoryTree(parentDir);
+        b = System.createDirectory(inString);
+    then b;
+
+    else false;
+  end matchcontinue;
+end createDirectoryTreeH;
+
+public function createDirectoryTree
+  input String inString;
+  output Boolean outBool;
+protected
+  String parentDir;
+  Boolean parentDirExists;
+algorithm
+  parentDir := System.dirname(inString);
+  parentDirExists := System.directoryExists(parentDir);
+  outBool := createDirectoryTreeH(inString,parentDir,parentDirExists);
+end createDirectoryTree;
+
 end Util;

@@ -1719,7 +1719,7 @@ algorithm
 
     case (cache,env,"mkdir",{Values.STRING(str)},st,_)
       equation
-        b = System.createDirectory(str);
+        b = Util.createDirectoryTree(str);
       then
         (cache,Values.BOOL(b),st);
 
