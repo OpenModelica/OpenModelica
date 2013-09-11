@@ -83,7 +83,14 @@ public:
         }
         else if(solvername.compare("CVode")==0)
         {
-            
+            PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH cvode_name(CVODE_LIB);
+            cvode_path/=cvode_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw std::runtime_error("Failed loading CVode solver library!");
+            }
         }
         else
             throw std::invalid_argument("Selected Solver is not available");

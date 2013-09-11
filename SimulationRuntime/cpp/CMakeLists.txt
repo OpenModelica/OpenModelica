@@ -50,7 +50,7 @@ set(DataExchangeName ${LIBPREFIX}DataExchange)
 
 SET(USE_MICO OFF)
 SET(REDUCE_DAE OFF)
-SET(USE_SUNDIALS OFF)
+SET(USE_SUNDIALS ON)
 SET(OMC_BUILD ON)
 SET(SIMSTER_BUILD OFF)
 # Boost
@@ -161,7 +161,7 @@ endif()
 if(USE_SUNDIALS)
 #add  Cvode solver project
 add_subdirectory (Solver/CVode)
-add_subdirectory (Solver/Kinsol)
+#Todo add_subdirectory (Solver/Kinsol)
 #add  Idas solver project
 #add_subdirectory (Solver/Idas/Implementation)
 #add_subdirectory (Solver/Ida/Implementation)
