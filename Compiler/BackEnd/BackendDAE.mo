@@ -45,19 +45,65 @@ public import Values;
 public import HashTable3;
 public import HashTableCG;
 
-public constant Integer SymbolicJacobianAIndex = 1;
-public constant Integer SymbolicJacobianBIndex = 2;
-public constant Integer SymbolicJacobianCIndex = 3;
-public constant Integer SymbolicJacobianDIndex = 4;
-public constant Integer SymbolicJacobianGIndex = 5;
-
-public constant String partialDerivativeNamePrefix = "$pDER";
-
 public
 type Type = .DAE.Type
 "Once we are in BackendDAE, the Type can be only basic types or enumeration.
  We cannot do this in DAE because functions may contain many more types.
  adrpo: yes we can, we just simplify the DAE.Type, see Types.simplifyType";
+
+public
+uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The variables are split into
+  two lists, one for unknown variables states and algebraic and one for known variables
+  constants and parameters.
+  The equations are also split into two lists, one with simple equations, a=b, a-b=0, etc., that
+  are removed from  the set of equations to speed up calculations."
+  record DAE
+    EqSystems eqs;
+    Shared shared;
+  end DAE;
+end BackendDAE;
+
+public
+type EqSystems = list<EqSystem>
+"NOTE: BackEnd does not yet support lists with different size than 1 everywhere (anywhere)";
+
+public
+uniontype EqSystem "An independent system of equations (and their corresponding variables)"
+  record EQSYSTEM
+    Variables orderedVars "ordered Variables, only states and alg. vars" ;
+    EquationArray orderedEqs "ordered Equations" ;
+    Option<IncidenceMatrix> m;
+    Option<IncidenceMatrixT> mT;
+    Matching matching;
+    StateSets stateSets "the statesets of the system";
+  end EQSYSTEM;
+end EqSystem;
+
+public
+uniontype Shared "Data shared for all equation-systems"
+  record SHARED
+    Variables knownVars                     "Known variables, i.e. constants and parameters" ;
+    Variables externalObjects               "External object variables";
+    Variables aliasVars                     "Data originating from removed simple equations needed to build
+                                             variables' lookup table (in C output).
+
+                                             In that way, double buffering of variables in pre()-buffer, extrapolation
+                                             buffer and results caching, etc., is avoided, but in C-code output all the
+                                             data about variables' names, comments, units, etc. is preserved as well as
+                                             pinter to their values (trajectories).";
+    EquationArray initialEqs                "Initial equations" ;
+    EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
+    array< .DAE.Constraint> constraints     "constraints (Optimica extension)";
+    array< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
+    Env.Cache cache;
+    Env.Env env;
+    .DAE.FunctionTree functionTree          "functions for Backend";
+    EventInfo eventInfo                     "eventInfo" ;
+    ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
+    BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
+    SymbolicJacobians symjacs               "Symbolic Jacobians";
+  end SHARED;
+end Shared;
 
 public
 uniontype BackendDAEType "BackendDAEType to indicate different types of BackendDAEs.
@@ -70,23 +116,47 @@ uniontype BackendDAEType "BackendDAEType to indicate different types of BackendD
   record INITIALSYSTEM   "Type for initial system BackendDAE.DAE"            end INITIALSYSTEM;
 end BackendDAEType;
 
+//
+//  variables and equations definition
+// 
+
 public
-uniontype VarKind "variable kind"
-  record VARIABLE end VARIABLE;
-  record STATE
-    Integer index "how often this states was differentiated";
-    Option< .DAE.ComponentRef> derName "the name of the derivative";
-  end STATE;
-  record STATE_DER end STATE_DER;
-  record DUMMY_DER end DUMMY_DER;
-  record DUMMY_STATE end DUMMY_STATE;
-  record DISCRETE end DISCRETE;
-  record PARAM end PARAM;
-  record CONST end CONST;
-  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
-  record JAC_VAR end JAC_VAR;
-  record JAC_DIFF_VAR end JAC_DIFF_VAR;
-end VarKind;
+uniontype Variables
+  record VARIABLES
+    array<list<CrefIndex>> crefIdxLstArr "HashTB, cref->indx";
+    VariableArray varArr "Array of variables";
+    Integer bucketSize "bucket size";
+    Integer numberOfVars "no. of vars";
+  end VARIABLES;
+end Variables;
+
+public
+uniontype CrefIndex "Component Reference Index"
+  record CREFINDEX
+    .DAE.ComponentRef cref;
+    Integer index;
+  end CREFINDEX;
+end CrefIndex;
+
+public
+uniontype VariableArray "array of Equations are expandable, to amortize the cost of adding
+  equations in a more efficient manner"
+  record VARIABLE_ARRAY
+    Integer numberOfElements "no. elements" ;
+    Integer arrSize "array size" ;
+    array<Option<Var>> varOptArr;
+  end VARIABLE_ARRAY;
+end VariableArray;
+
+public
+uniontype EquationArray
+  record EQUATION_ARRAY
+    Integer size "size of the Equations in scalar form";
+    Integer numberOfElement "no. elements" ;
+    Integer arrSize "array size" ;
+    array<Option<Equation>> equOptArr;
+  end EQUATION_ARRAY;
+end EquationArray;
 
 public
 uniontype Var "variables"
@@ -105,6 +175,24 @@ uniontype Var "variables"
     .DAE.ConnectorType connectorType "flow, stream, unspecified or not connector.";
   end VAR;
 end Var;
+
+public
+uniontype VarKind "variable kind"
+  record VARIABLE end VARIABLE;
+  record STATE
+    Integer index "how often this states was differentiated";
+    Option< .DAE.ComponentRef> derName "the name of the derivative";
+  end STATE;
+  record STATE_DER end STATE_DER;
+  record DUMMY_DER end DUMMY_DER;
+  record DUMMY_STATE end DUMMY_STATE;
+  record DISCRETE end DISCRETE;
+  record PARAM end PARAM;
+  record CONST end CONST;
+  record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+  record JAC_VAR end JAC_VAR;
+  record JAC_DIFF_VAR end JAC_DIFF_VAR;
+end VarKind;
 
 public
 uniontype Equation
@@ -175,6 +263,159 @@ uniontype WhenEquation
 end WhenEquation;
 
 public
+type ExternalObjectClasses = list<ExternalObjectClass>
+"classes of external objects stored in list";
+
+public
+uniontype ExternalObjectClass "class of external objects"
+  record EXTOBJCLASS
+    Absyn.Path path "className of external object";
+    .DAE.ElementSource source "origin of equation";
+  end EXTOBJCLASS;
+end ExternalObjectClass;
+
+//
+//  Matching, strong components and StateSets
+// 
+
+public
+uniontype Matching
+  record NO_MATCHING "matching has not yet been performed" end NO_MATCHING;
+  record MATCHING "not yet used"
+    array<Integer> ass1 "ass[varindx]=eqnindx";
+    array<Integer> ass2 "ass[eqnindx]=varindx";
+    StrongComponents comps;
+  end MATCHING;
+end Matching;
+
+public
+uniontype IndexReduction
+  record INDEX_REDUCTION "Use index reduction during matching" end INDEX_REDUCTION;
+  record NO_INDEX_REDUCTION "do not use index reduction during matching" end NO_INDEX_REDUCTION;
+end IndexReduction;
+
+public
+uniontype EquationConstraints
+  record ALLOW_UNDERCONSTRAINED "for e.g. initial eqns.
+                  where not all variables
+                  have a solution" end ALLOW_UNDERCONSTRAINED;
+
+  record EXACT "exact as many equations
+                   as variables" end EXACT;
+end EquationConstraints;
+
+public
+type MatchingOptions = tuple<IndexReduction, EquationConstraints>;
+
+public
+type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>,Integer>
+"StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
+
+public
+type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
+
+public
+uniontype StateOrder
+  record STATEORDER
+    HashTableCG.HashTable hashTable "x -> dx";
+    HashTable3.HashTable invHashTable "dx -> {x,y,z}";
+  end STATEORDER;
+end StateOrder;
+
+public
+type StrongComponents = list<StrongComponent> "Order of the equations the have to be solved" ;
+
+public
+uniontype StrongComponent
+  record SINGLEEQUATION
+    Integer eqn;
+    Integer var;
+  end SINGLEEQUATION;
+
+  record EQUATIONSYSTEM
+    list<Integer> eqns;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
+    Option<list<tuple<Integer, Integer, Equation>>> jac;
+    JacobianType jacType;
+  end EQUATIONSYSTEM;
+
+  record MIXEDEQUATIONSYSTEM
+    StrongComponent condSystem;
+    list<Integer> disc_eqns;
+    list<Integer> disc_vars;
+  end MIXEDEQUATIONSYSTEM;
+
+  record SINGLEARRAY
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
+  end SINGLEARRAY;
+
+  record SINGLEALGORITHM
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
+  end SINGLEALGORITHM;
+
+  record SINGLECOMPLEXEQUATION
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
+  end SINGLECOMPLEXEQUATION;
+
+  record SINGLEWHENEQUATION
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
+  end SINGLEWHENEQUATION;
+
+  record SINGLEIFEQUATION
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
+  end SINGLEIFEQUATION;
+
+  record TORNSYSTEM
+    list<Integer> tearingvars;
+    list<Integer> residualequations;
+    list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+    Boolean linear;
+  end TORNSYSTEM;
+end StrongComponent;
+
+public
+type StateSets = list<StateSet> "List of StateSets";
+
+public
+uniontype StateSet
+  record STATESET
+    Integer rang;
+    list< .DAE.ComponentRef> state;
+    .DAE.ComponentRef crA "set.x=A*states";
+    list< Var> varA;
+    list< Var> statescandidates;
+    list< Var> ovars;
+    list< Equation> eqns;
+    list< Equation> oeqns;
+    .DAE.ComponentRef crJ;
+    list< Var> varJ;
+  end STATESET;
+end StateSet;
+
+//
+// event info and stuff
+//
+
+public
+uniontype EventInfo
+  record EVENT_INFO
+    SampleLookup sampleLookup          "stores all information regarding sample-calls" ;
+    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
+    list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
+    list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
+    // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions
+    list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
+    Integer relationsNumber            "stores the number of relation in all zero-crossings";
+    Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+  end EVENT_INFO;
+end EventInfo;
+
+public
 uniontype WhenOperator
   record REINIT "Reinit Statement"
     .DAE.ComponentRef stateVar "State variable to reinit" ;
@@ -234,158 +475,9 @@ uniontype SampleLookup
   end SAMPLE_LOOKUP;
 end SampleLookup;
 
-public
-uniontype EventInfo
-  record EVENT_INFO
-    SampleLookup sampleLookup          "stores all information regarding sample-calls" ;
-    list<WhenClause> whenClauseLst     "list of when clauses. The WhenEquation datatype refer to this list by position" ;
-    list<ZeroCrossing> zeroCrossingLst "list of zero crossing coditions";
-    list<ZeroCrossing> sampleLst       "list of sample as before, used by cpp runtime";
-    // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions
-    list<ZeroCrossing> relationsLst    "list of zero crossing function as before, used by cpp runtime";
-    Integer relationsNumber            "stores the number of relation in all zero-crossings";
-    Integer numberMathEvents           "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
-  end EVENT_INFO;
-end EventInfo;
-
-public
-uniontype BackendDAE "THE LOWERED DAE consist of variables and equations. The variables are split into
-  two lists, one for unknown variables states and algebraic and one for known variables
-  constants and parameters.
-  The equations are also split into two lists, one with simple equations, a=b, a-b=0, etc., that
-  are removed from  the set of equations to speed up calculations."
-  record DAE
-    EqSystems eqs;
-    Shared shared;
-  end DAE;
-end BackendDAE;
-
-public
-uniontype Shared "Data shared for all equation-systems"
-  record SHARED
-    Variables knownVars                     "Known variables, i.e. constants and parameters" ;
-    Variables externalObjects               "External object variables";
-    Variables aliasVars                     "Data originating from removed simple equations needed to build
-                                             variables' lookup table (in C output).
-
-                                             In that way, double buffering of variables in pre()-buffer, extrapolation
-                                             buffer and results caching, etc., is avoided, but in C-code output all the
-                                             data about variables' names, comments, units, etc. is preserved as well as
-                                             pinter to their values (trajectories).";
-    EquationArray initialEqs                "Initial equations" ;
-    EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
-    array< .DAE.Constraint> constraints     "constraints (Optimica extension)";
-    array< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
-    Env.Cache cache;
-    Env.Env env;
-    .DAE.FunctionTree functionTree          "functions for Backend";
-    EventInfo eventInfo                     "eventInfo" ;
-    ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
-    BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
-    SymbolicJacobians symjacs               "Symbolic Jacobians";
-  end SHARED;
-end Shared;
-
-public
-type EqSystems = list<EqSystem>
-"NOTE: BackEnd does not yet support lists with different size than 1 everywhere (anywhere)";
-
-public
-uniontype EqSystem "An independent system of equations (and their corresponding variables)"
-  record EQSYSTEM
-    Variables orderedVars "ordered Variables, only states and alg. vars" ;
-    EquationArray orderedEqs "ordered Equations" ;
-    Option<IncidenceMatrix> m;
-    Option<IncidenceMatrixT> mT;
-    Matching matching;
-    StateSets stateSets "the statesets of the system";
-  end EQSYSTEM;
-end EqSystem;
-
-public
-uniontype Matching
-  record NO_MATCHING "matching has not yet been performed" end NO_MATCHING;
-  record MATCHING "not yet used"
-    array<Integer> ass1 "ass[varindx]=eqnindx";
-    array<Integer> ass2 "ass[eqnindx]=varindx";
-    StrongComponents comps;
-  end MATCHING;
-end Matching;
-
-public
-type ExternalObjectClasses = list<ExternalObjectClass>
-"classes of external objects stored in list";
-
-public
-uniontype ExternalObjectClass "class of external objects"
-  record EXTOBJCLASS
-    Absyn.Path path "className of external object";
-    .DAE.ElementSource source "origin of equation";
-  end EXTOBJCLASS;
-end ExternalObjectClass;
-
-public
-uniontype Variables
-  record VARIABLES
-    array<list<CrefIndex>> crefIdxLstArr "HashTB, cref->indx";
-    VariableArray varArr "Array of variables";
-    Integer bucketSize "bucket size";
-    Integer numberOfVars "no. of vars";
-  end VARIABLES;
-end Variables;
-
-public
-uniontype AliasVariableType
-  record NOALIAS      end NOALIAS;
-  record ALIAS        end ALIAS;
-  record NEGATEDALIAS end NEGATEDALIAS;
-end AliasVariableType;
-
-public
-uniontype CrefIndex "Component Reference Index"
-  record CREFINDEX
-    .DAE.ComponentRef cref;
-    Integer index;
-  end CREFINDEX;
-end CrefIndex;
-
-public
-uniontype VariableArray "array of Equations are expandable, to amortize the cost of adding
-  equations in a more efficient manner"
-  record VARIABLE_ARRAY
-    Integer numberOfElements "no. elements" ;
-    Integer arrSize "array size" ;
-    array<Option<Var>> varOptArr;
-  end VARIABLE_ARRAY;
-end VariableArray;
-
-public
-uniontype EquationArray
-  record EQUATION_ARRAY
-    Integer size "size of the Equations in scalar form";
-    Integer numberOfElement "no. elements" ;
-    Integer arrSize "array size" ;
-    array<Option<Equation>> equOptArr;
-  end EQUATION_ARRAY;
-end EquationArray;
-
-public
-uniontype Assignments "Assignments of variables to equations and vice versa are implemented by a
-   expandable array to amortize addition of array elements more efficient"
-  record ASSIGNMENTS
-    Integer actualSize "actual size" ;
-    Integer allocatedSize "allocated size >= actual size" ;
-    array<Integer> arrOfIndices "array of indices" ;
-  end ASSIGNMENTS;
-end Assignments;
-
-public
-uniontype IndexType
-  record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
-  record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
-  record SOLVABLE "procude incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
-  record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
-end IndexType;
+//
+// AdjacencyMatrixes
+//
 
 public
 type IncidenceMatrixElementEntry = Integer;
@@ -400,6 +492,18 @@ public
 type IncidenceMatrixT = IncidenceMatrix
 "a list of equation indices (1..n), one for each variable. Equations that -only-
  contain the state variable and not the derivative have a negative index.";
+
+public
+type AdjacencyMatrixElementEnhancedEntry = tuple<Integer,Solvability>;
+
+public
+type AdjacencyMatrixElementEnhanced = list<AdjacencyMatrixElementEnhancedEntry>;
+
+public
+type AdjacencyMatrixEnhanced = array<AdjacencyMatrixElementEnhanced>;
+
+public
+type AdjacencyMatrixTEnhanced = AdjacencyMatrixEnhanced;
 
 public
 uniontype Solvability
@@ -418,16 +522,16 @@ uniontype Solvability
 end Solvability;
 
 public
-type AdjacencyMatrixElementEnhancedEntry = tuple<Integer,Solvability>;
+uniontype IndexType
+  record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
+  record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
+  record SOLVABLE "procude incidence matrix with only solvable entries, for example {a,b,c}[d] then d is skipped" end SOLVABLE;
+  record SPARSE   "produce incidence matrix as normal, but add for Inputs also a value" end SPARSE;
+end IndexType;
 
-public
-type AdjacencyMatrixElementEnhanced = list<AdjacencyMatrixElementEnhancedEntry>;
-
-public
-type AdjacencyMatrixEnhanced = array<AdjacencyMatrixElementEnhanced>;
-
-public
-type AdjacencyMatrixTEnhanced = AdjacencyMatrixEnhanced;
+//
+// Jacobian stuff
+//
 
 public
 uniontype JacobianType
@@ -444,114 +548,13 @@ uniontype JacobianType
   record JAC_NO_ANALYTIC "No analytic jacobian available" end JAC_NO_ANALYTIC;
 end JacobianType;
 
-public
-uniontype IndexReduction
-  record INDEX_REDUCTION "Use index reduction during matching" end INDEX_REDUCTION;
-  record NO_INDEX_REDUCTION "do not use index reduction during matching" end NO_INDEX_REDUCTION;
-end IndexReduction;
+public constant Integer SymbolicJacobianAIndex = 1;
+public constant Integer SymbolicJacobianBIndex = 2;
+public constant Integer SymbolicJacobianCIndex = 3;
+public constant Integer SymbolicJacobianDIndex = 4;
+public constant Integer SymbolicJacobianGIndex = 5;
 
-public
-uniontype EquationConstraints
-  record ALLOW_UNDERCONSTRAINED "for e.g. initial eqns.
-                  where not all variables
-                  have a solution" end ALLOW_UNDERCONSTRAINED;
-
-  record EXACT "exact as many equations
-                   as variables" end EXACT;
-end EquationConstraints;
-
-public
-type MatchingOptions = tuple<IndexReduction, EquationConstraints>;
-
-public
-type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>,Integer>
-"StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
-
-public
-type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
-
-public
-uniontype StateOrder
-  record STATEORDER
-    HashTableCG.HashTable hashTable "x -> dx";
-    HashTable3.HashTable invHashTable "dx -> {x,y,z}";
-  end STATEORDER;
-end StateOrder;
-
-public
-type StateSets = list<StateSet> "List of StateSets";
-
-public
-uniontype StateSet
-  record STATESET
-    Integer rang;
-    list< .DAE.ComponentRef> state;
-    .DAE.ComponentRef crA "set.x=A*states";
-    list< Var> varA;
-    list< Var> statescandidates;
-    list< Var> ovars;
-    list< Equation> eqns;
-    list< Equation> oeqns;
-    .DAE.ComponentRef crJ;
-    list< Var> varJ;
-  end STATESET;
-end StateSet;
-
-public
-uniontype StrongComponent
-  record SINGLEEQUATION
-    Integer eqn;
-    Integer var;
-  end SINGLEEQUATION;
-
-  record EQUATIONSYSTEM
-    list<Integer> eqns;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
-    Option<list<tuple<Integer, Integer, Equation>>> jac;
-    JacobianType jacType;
-  end EQUATIONSYSTEM;
-
-  record MIXEDEQUATIONSYSTEM
-    StrongComponent condSystem;
-    list<Integer> disc_eqns;
-    list<Integer> disc_vars;
-  end MIXEDEQUATIONSYSTEM;
-
-  record SINGLEARRAY
-    Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
-  end SINGLEARRAY;
-
-  record SINGLEALGORITHM
-    Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
-  end SINGLEALGORITHM;
-
-  record SINGLECOMPLEXEQUATION
-    Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
-  end SINGLECOMPLEXEQUATION;
-
-  record SINGLEWHENEQUATION
-    Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
-  end SINGLEWHENEQUATION;
-
-  record SINGLEIFEQUATION
-    Integer eqn;
-    list<Integer> vars "be carefule with states, this are solved for der(x)";
-  end SINGLEIFEQUATION;
-
-  record TORNSYSTEM
-    list<Integer> tearingvars;
-    list<Integer> residualequations;
-    list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
-    Boolean linear;
-  end TORNSYSTEM;
-end StrongComponent;
-
-public
-type StrongComponents = list<StrongComponent> "Order of the equations the have to be solved" ;
+public constant String partialDerivativeNamePrefix = "$pDER";
 
 public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
