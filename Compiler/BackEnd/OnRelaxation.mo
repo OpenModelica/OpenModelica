@@ -29,12 +29,10 @@
  *
  */
 
-encapsulated package OnRelaxation
-" file:        OnRelaxation.mo
+encapsulated package OnRelaxation "
+  file:        OnRelaxation.mo
   package:     OnRelaxation
-  description: OnRelaxation contains functions that do some kind of
-               optimization on the BackendDAE datatype:
-               - Relaxation for MultiBody Systems
+  description: Relaxation for MultiBody Systems
 
   RCS: $Id: OnRelaxation.mo 12002 2012-06-08 07:26:09Z petar $"
 
@@ -72,14 +70,13 @@ public function relaxSystem "author: Frenkel TUD 2011-05"
   output BackendDAE.BackendDAE outDAE;
 algorithm
   outDAE := matchcontinue(inDAE)
-    case (_)
-      equation
-        true = Flags.isSet(Flags.ON_RELAXATION);
-        (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE, relaxSystem0, false);
-      then
-        outDAE;
+    case (_) equation
+      true = Flags.isSet(Flags.ON_RELAXATION);
+      (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE, relaxSystem0, false);
+    then outDAE;
+    
     else then inDAE;
-end matchcontinue;
+  end matchcontinue;
 end relaxSystem;
 
 protected function relaxSystem0 "author: Frenkel TUD 2011-05"
@@ -1792,41 +1789,37 @@ algorithm
   end matchcontinue;
 end makeGausElimination;
 
+protected function dumpMatrix "author: Frenkel TUD 2012-05"
+  input Integer row;
+  input Integer size;
+  input array<list<tuple<Integer, DAE.Exp>>> matrix;
+algorithm
+  _ := matchcontinue(row, size, matrix)
+    case (_, _, _) equation
+      true = intGt(row, size);
+    then ();
+    
+    case (_, _, _) equation
+      print(intString(row) +& ": ");
+      BackendDump.debuglst((matrix[row], dumpMatrix1, ", ", "\n"));
+      dumpMatrix(row+1, size, matrix);
+    then ();
+  end matchcontinue;
+end dumpMatrix;
+
 protected function dumpMatrix1 "author: Frenkel TUD 2012-05"
-  input tuple<Integer,DAE.Exp> inTpl;
+  input tuple<Integer, DAE.Exp> inTpl;
   output String s;
 protected
   Integer c;
   DAE.Exp e;
-  String cs,es;
+  String cs, es;
 algorithm
-  (c,e) := inTpl;
+  (c, e) := inTpl;
   cs := intString(c);
   es := ExpressionDump.printExpStr(e);
-  s := stringAppendList({cs,":",es});
+  s := stringAppendList({cs, ":", es});
 end dumpMatrix1;
-
-public function dumpMatrix "author: Frenkel TUD 2012-05"
-  input Integer row;
-  input Integer size;
-  input array<list<tuple<Integer,DAE.Exp>>> matrix;
-algorithm
-  _ := matchcontinue(row,size,matrix)
-    local
-    case (_,_,_)
-      equation
-        true = intGt(row,size);
-      then
-        ();
-    case (_,_,_)
-      equation
-        print(intString(row) +& ": ");
-        BackendDump.debuglst((matrix[row],dumpMatrix1,", ","\n"));
-        dumpMatrix(row+1,size,matrix);
-      then
-        ();
-   end matchcontinue;
-end dumpMatrix;
 
 protected function addRows "author: Frenkel TUD 2012-05"
   input list<tuple<Integer,DAE.Exp>> inA;
@@ -2180,7 +2173,7 @@ algorithm
       list<Integer> lst;
     case ({},_,_,_,_)
       then ();
-    case ((r,c,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_,_,_,_)
+    case ((r,c,BackendDAE.RESIDUAL_EQUATION(exp=e))::rest,_,_,_,_)
       equation
         b1 = intLt(ass1[c],1);
         b = func(e);
@@ -2225,140 +2218,130 @@ algorithm
    end matchcontinue;
 end transformJacToIncidenceMatrix;
 
-public function transformJacToMatrix
+protected function transformJacToMatrix
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input Integer row;
   input Integer col;
   input Integer size;
   input list<DAE.Exp> b;
-  input array<list<tuple<Integer,DAE.Exp>>> matrix;
+  input array<list<tuple<Integer, DAE.Exp>>> matrix;
 algorithm
- _ := matchcontinue(jac,row,col,size,b,matrix)
+  _ := matchcontinue(jac, row, col, size, b, matrix)
     local
-      Integer c,r;
-      DAE.Exp e,be;
+      Integer c, r;
+      DAE.Exp e, be;
       list<DAE.Exp> b1;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
-      list<tuple<Integer,DAE.Exp>> lst;
-    case (_,_,_,_,_,_)
-      equation
-        true = intGt(row,size);
-      then
-        ();
-    case (_,_,_,_,_,_)
-      equation
-        true = intGt(col,size);
-        be::b1 = b;
-        lst = matrix[row];
-        lst = List.consOnTrue(not Expression.isZero(be), (col,be), lst);
-        lst = listReverse(lst);
-        _ = arrayUpdate(matrix,row,lst);
-        transformJacToMatrix(jac,row+1,1,size,b1,matrix);
-      then
-        ();
-    case ({},_,_,_,_,_)
-      equation
-        transformJacToMatrix(jac,row,col+1,size,b,matrix);
-      then ();
-    case ((r,c,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_,_,_,_,_)
-      equation
-        true = intEq(r,row);
-        true = intEq(c,col);
-        lst = matrix[r];
-        lst = (c,e)::lst;
-        _ = arrayUpdate(matrix,row,lst);
-        transformJacToMatrix(rest,row,col+1,size,b,matrix);
-      then
-        ();
-    case ((r,c,_)::rest,_,_,_,_,_)
-      equation
-        true = intEq(r,row);
-        true = intLt(col,c);
-        transformJacToMatrix(jac,row,col+1,size,b,matrix);
-      then
-        ();
-    case ((r,c,_)::rest,_,_,_,_,_)
-      equation
-        true = intGe(r,row);
-        transformJacToMatrix(jac,row,col+1,size,b,matrix);
-      then
-        ();
-   end matchcontinue;
+      list<tuple<Integer, DAE.Exp>> lst;
+      
+    case (_, _, _, _, _, _) equation
+      true = intGt(row, size);
+    then ();
+    
+    case (_, _, _, _, _, _) equation
+      true = intGt(col, size);
+      be::b1 = b;
+      lst = matrix[row];
+      lst = List.consOnTrue(not Expression.isZero(be), (col, be), lst);
+      lst = listReverse(lst);
+      _ = arrayUpdate(matrix, row, lst);
+      transformJacToMatrix(jac, row+1, 1, size, b1, matrix);
+    then ();
+    
+    case ({}, _, _, _, _, _) equation
+      transformJacToMatrix(jac, row, col+1, size, b, matrix);
+    then ();
+    
+    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _, _) equation
+      true = intEq(r, row);
+      true = intEq(c, col);
+      lst = matrix[r];
+      lst = (c, e)::lst;
+      _ = arrayUpdate(matrix, row, lst);
+      transformJacToMatrix(rest, row, col+1, size, b, matrix);
+    then ();
+    
+    case ((r, c, _)::rest, _, _, _, _, _) equation
+      true = intEq(r, row);
+      true = intLt(col, c);
+      transformJacToMatrix(jac, row, col+1, size, b, matrix);
+    then ();
+    
+    case ((r, c, _)::rest, _, _, _, _, _) equation
+      true = intGe(r, row);
+      transformJacToMatrix(jac, row, col+1, size, b, matrix);
+    then ();
+  end matchcontinue;
 end transformJacToMatrix;
 
-public function dumpJacMatrix
+protected function dumpJacMatrix
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
   input Integer row;
   input Integer col;
   input Integer size;
   input BackendDAE.Variables vars;
 algorithm
-  _ := matchcontinue(jac,row,col,size,vars)
+  _ := matchcontinue(jac, row, col, size, vars)
     local
       String estr;
-      Integer c,r;
+      Integer c, r;
       DAE.Exp e;
       BackendDAE.Var v;
       list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
       DAE.ComponentRef cr;
-    case (_,_,_,_,_)
-      equation
-        true = intGt(row,size);
-      then
-        ();
-    case (_,_,_,_,_)
-      equation
-        true = intGt(col,size);
-        v = BackendVariable.getVarAt(vars,row);
-        cr = BackendVariable.varCref(v);
-        print(";... % ");
-        print(intString(row));
-        print(" ");
-        print(ComponentReference.printComponentRefStr(cr)); print("\n");
-        dumpJacMatrix(jac,row+1,1,size,vars);
-      then
-        ();
-    case ({},_,_,_,_)
-      equation
-        print("0,");
-        dumpJacMatrix(jac,row,col+1,size,vars);
-      then ();
-    case ((r,c,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_,_,_,_)
-      equation
-        true = intEq(r,row);
-        true = intEq(c,col);
-        estr = ExpressionDump.printExpStr(e);
-        print(estr); print(",");
-        dumpJacMatrix(rest,row,col+1,size,vars);
-      then
-        ();
-    case ((r,c,_)::rest,_,_,_,_)
-      equation
-        true = intEq(r,row);
-        true = intLt(col,c);
-        print("0,");
-        dumpJacMatrix(jac,row,col+1,size,vars);
-      then
-        ();
-    case ((r,c,_)::rest,_,_,_,_)
-      equation
-        false = intEq(r,row);
-        print("0,");
-        dumpJacMatrix(jac,row,col+1,size,vars);
-      then
-        ();
-   end matchcontinue;
+
+    case (_, _, _, _, _) equation
+      true = intGt(row, size);
+    then ();
+
+    case (_, _, _, _, _) equation
+      true = intGt(col, size);
+      v = BackendVariable.getVarAt(vars, row);
+      cr = BackendVariable.varCref(v);
+      print(";... % ");
+      print(intString(row));
+      print(" ");
+      print(ComponentReference.printComponentRefStr(cr)); print("\n");
+      dumpJacMatrix(jac, row+1, 1, size, vars);
+    then ();
+
+    case ({}, _, _, _, _) equation
+      print("0,");
+      dumpJacMatrix(jac, row, col+1, size, vars);
+    then ();
+
+    case ((r, c, BackendDAE.RESIDUAL_EQUATION(exp = e))::rest, _, _, _, _) equation
+      true = intEq(r, row);
+      true = intEq(c, col);
+      estr = ExpressionDump.printExpStr(e);
+      print(estr); print(",");
+      dumpJacMatrix(rest, row, col+1, size, vars);
+    then ();
+
+    case ((r, c, _)::rest, _, _, _, _) equation
+      true = intEq(r, row);
+      true = intLt(col, c);
+      print("0,");
+      dumpJacMatrix(jac, row, col+1, size, vars);
+    then ();
+
+    case ((r, c, _)::rest, _, _, _, _) equation
+      false = intEq(r, row);
+      print("0,");
+      dumpJacMatrix(jac, row, col+1, size, vars);
+    then ();
+  end matchcontinue;
 end dumpJacMatrix;
 
 protected function dumpOrphansPairs
-  input tuple<Integer,list<tuple<Integer,Integer>>> orphanspairs;
+  input tuple<Integer, list<tuple<Integer, Integer>>> orphanspairs;
 protected
   Integer c;
-  list<tuple<Integer,Integer>> tpl;
+  list<tuple<Integer, Integer>> tpl;
 algorithm
-  (c,tpl) := orphanspairs;
+  (c, tpl) := orphanspairs;
   print(intString(c) +& ":\n");
-  BackendDump.debuglst((tpl,dumpOrphansPairs1,", ","\n"));
+  BackendDump.debuglst((tpl, dumpOrphansPairs1, ",", "\n"));
 end dumpOrphansPairs;
 
 protected function dumpOrphansPairs1
