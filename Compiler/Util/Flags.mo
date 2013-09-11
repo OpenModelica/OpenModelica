@@ -490,7 +490,7 @@ constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
 
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
   ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA), ("Optimica", OPTIMICA)}),
-  SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica"})),
+  SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica", "Optimica"})),
   Util.gettext("Sets the grammar and semantics to accept."));
 
 constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
