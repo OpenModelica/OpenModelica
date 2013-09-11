@@ -107,25 +107,25 @@ private:
 
 
   double
-    *_z,						///< Output      - (Current) State vector
-    *_zInit,					///< Temp      - Initial state vector
+    *_z,            ///< Output      - (Current) State vector
+    *_zInit,          ///< Temp      - Initial state vector
     *_zWrite;                   ///< Temp      - Zustand den das System rausschreibt
    
   double
-    _hOut;						///< Temp      - Ouput step size for dense output
+    _hOut;            ///< Temp      - Ouput step size for dense output
    
 
 
 
   double 
-    _tOut,						///< Output      - Time for dense output
-    _tZero,						///< Temp      - Nullstelle
-    _tLastWrite;				///< Temp      - Letzter Ausgabezeitpunkt
+    _tOut,            ///< Output      - Time for dense output
+    _tZero,            ///< Temp      - Nullstelle
+    _tLastWrite;        ///< Temp      - Letzter Ausgabezeitpunkt
 
   bool
     _bWritten,                  ///< Temp      - Is output already written
     _zeroFound,
-    _cv_rt;						///< Temp		- CVode return flag
+    _cv_rt;            ///< Temp    - CVode return flag
    
    
 
