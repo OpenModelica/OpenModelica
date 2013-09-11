@@ -42,6 +42,7 @@
 #include "../OptimizationFlags.h"
 #include "../localFunction.h"
 #include "../../simulation/results/simulation_result.h"
+#include "../../simulation/options.h"
 
 #ifdef WITH_IPOPT
 
@@ -59,6 +60,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   int j,k,l;
   double obj;
   int res;
+  char *cflags;
+
   IpoptProblem nlp = NULL;
   IPOPT_DATA_ *iData = ((IPOPT_DATA_*)solverInfo->solverData);
   iData->current_var = 0;
@@ -76,9 +79,13 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   */
 
   loadDAEmodel(data, iData);
-    iData->index_debug_iter=0;
-    iData->degub_step =  10;
-    iData->index_debug_next=0;
+  iData->index_debug_iter=0;
+  iData->degub_step =  10;
+  iData->index_debug_next=0;
+
+    cflags = omc_flagValue[FLAG_LS_IPOPT];
+    if(!cflags)
+    	cflags = "mumps";
 
   /*ToDo*/
   for(i=0; i<(*iData).nx; i++)
@@ -109,17 +116,30 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
     AddIpoptNumOption(nlp, "tol", iData->data->simulationInfo.tolerance);
 
-    if(ACTIVE_STREAM(LOG_IPOPT)){
+    if(ACTIVE_STREAM(LOG_IPOPT))
+    {
       AddIpoptIntOption(nlp, "print_level", 5);
-      AddIpoptIntOption(nlp, "file_print_level", 5);
+      AddIpoptIntOption(nlp, "file_print_level", 0);
     }
-    else{
-      AddIpoptIntOption(nlp, "print_level", 0);
+    else if(ACTIVE_STREAM(LOG_STATS))
+    {
+      AddIpoptIntOption(nlp, "print_level", 3);
+      AddIpoptIntOption(nlp, "file_print_level", 0);
+    }
+    else
+    {
+      AddIpoptIntOption(nlp, "print_level", 2);
       AddIpoptIntOption(nlp, "file_print_level", 0);
     }
 
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
     AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
+
+    if(cflags)
+    	AddIpoptStrOption(nlp, "linear_solver", cflags);
+    else
+    	AddIpoptStrOption(nlp, "linear_solver", "mumps");
+
     /* AddIpoptStrOption(nlp, "derivative_test", "second-order"); */
     /* AddIpoptStrOption(nlp, "derivative_test_print_all", "yes"); */
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
