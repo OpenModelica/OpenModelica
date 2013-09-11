@@ -85,7 +85,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
     cflags = omc_flagValue[FLAG_LS_IPOPT];
     if(!cflags)
-    	cflags = "mumps";
+      cflags = "mumps";
 
   /*ToDo*/
   for(i=0; i<(*iData).nx; i++)
@@ -136,9 +136,9 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
 
     if(cflags)
-    	AddIpoptStrOption(nlp, "linear_solver", cflags);
+      AddIpoptStrOption(nlp, "linear_solver", cflags);
     else
-    	AddIpoptStrOption(nlp, "linear_solver", "mumps");
+      AddIpoptStrOption(nlp, "linear_solver", "mumps");
 
     /* AddIpoptStrOption(nlp, "derivative_test", "second-order"); */
     /* AddIpoptStrOption(nlp, "derivative_test_print_all", "yes"); */
