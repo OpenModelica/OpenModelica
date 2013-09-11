@@ -7258,85 +7258,75 @@ end traverserExpinputDerivativesUsed;
 // =============================================================================
 
 public function removeConstants "author: Frenkel TUD"
-  input BackendDAE.BackendDAE dae;
-  output BackendDAE.BackendDAE odae;
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  DAE.FunctionTree funcs;
+  BackendDAE.Variables knvars, exobj, av;
+  BackendDAE.EquationArray inieqns, remeqns;
+  array<DAE.Constraint> constrs;
+  array<DAE.ClassAttributes> clsAttrs;
+  Env.Cache cache;
+  Env.Env env;
+  BackendDAE.EventInfo einfo;
+  BackendDAE.ExternalObjectClasses eoc;
+  BackendDAE.SymbolicJacobians symjacs;
+  BackendVarTransform.VariableReplacements repl;
+  BackendDAE.BackendDAEType btp;
+  BackendDAE.EqSystems systs;
+  list<BackendDAE.Equation> lsteqns;
+  Boolean b;
 algorithm
-  odae := match (dae)
-    local
-      DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj,av;
-      BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendVarTransform.VariableReplacements repl;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.EqSystems systs;
-      list<BackendDAE.Equation> lsteqns;
-      Boolean b;
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
-      equation
-        repl = BackendVarTransform.emptyReplacements();
-        repl = BackendVariable.traverseBackendDAEVars(knvars,removeConstantsFinder,repl);
-        Debug.fcall(Flags.DUMP_CONST_REPL, BackendVarTransform.dumpReplacements, repl);
-        (knvars,(repl,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceFinalVarTraverser,(repl,0));
-        lsteqns = BackendEquation.equationList(remeqns);
-        (lsteqns,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-        remeqns = Debug.bcallret1(b,BackendEquation.listEquation,lsteqns,remeqns);
-        lsteqns = BackendEquation.equationList(inieqns);
-        (lsteqns,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-        inieqns = Debug.bcallret1(b,BackendEquation.listEquation,lsteqns,inieqns);
-        systs = List.map1(systs,removeConstantsWork,repl);
-      then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
-  end match;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs)) := inDAE;
+  repl := BackendVarTransform.emptyReplacements();
+  repl := BackendVariable.traverseBackendDAEVars(knvars, removeConstantsFinder, repl);
+  Debug.fcall(Flags.DUMP_CONST_REPL, BackendVarTransform.dumpReplacements, repl);
+  (knvars, (repl, _)) := BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, replaceFinalVarTraverser, (repl, 0));
+  lsteqns := BackendEquation.equationList(remeqns);
+  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
+  remeqns := Debug.bcallret1(b, BackendEquation.listEquation, lsteqns, remeqns);
+  lsteqns := BackendEquation.equationList(inieqns);
+  (lsteqns, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
+  inieqns := Debug.bcallret1(b, BackendEquation.listEquation, lsteqns, inieqns);
+  systs := List.map1(systs, removeConstantsWork, repl);
+  outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs));
 end removeConstants;
 
 protected function removeConstantsWork "author: Frenkel TUD"
-  input BackendDAE.EqSystem isyst;
+  input BackendDAE.EqSystem inEqSystem;
   input BackendVarTransform.VariableReplacements repl;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem outEqSystem;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns, eqns1;
+  list<BackendDAE.Equation> eqns_1, lsteqns;
+  Boolean b;
+  BackendDAE.StateSets stateSets;
 algorithm
-  osyst := match (isyst,repl)
-    local
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns,eqns1;
-      list<BackendDAE.Equation> eqns_1,lsteqns;
-      Boolean b;
-      BackendDAE.EqSystem syst;
-      BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),_)
-      equation
-        (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceFinalVarTraverser,(repl,0));
-        lsteqns = BackendEquation.equationList(eqns);
-        (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-        eqns1 = Debug.bcallret1(b,BackendEquation.listEquation,eqns_1,eqns);
-        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),isyst);
-      then
-        syst;
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, stateSets=stateSets) := inEqSystem;
+  (vars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceFinalVarTraverser, (repl, 0));
+  lsteqns := BackendEquation.equationList(eqns);
+  (eqns_1, b) := BackendVarTransform.replaceEquations(lsteqns, repl, NONE());
+  eqns1 := Debug.bcallret1(b, BackendEquation.listEquation, eqns_1, eqns);
+  outEqSystem := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets), inEqSystem);
 end removeConstantsWork;
 
 protected function removeConstantsFinder "author: Frenkel TUD 2012-10"
- input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
- output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+  input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
+  output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  outTpl := matchcontinue (inTpl)
     local
       BackendDAE.Var v;
-      BackendVarTransform.VariableReplacements repl,repl_1;
+      BackendVarTransform.VariableReplacements repl, repl_1;
       DAE.ComponentRef varName;
       DAE.Exp exp;
-    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.CONST(),bindExp=SOME(exp)),repl))
-      equation
-        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
-      then ((v,repl_1));
-    case _ then inTpl;
+      
+    case ((v as BackendDAE.VAR(varName=varName, varKind=BackendDAE.CONST(), bindExp=SOME(exp)), repl)) equation
+      repl_1 = BackendVarTransform.addReplacement(repl, varName, exp, NONE());
+    then ((v, repl_1));
+    
+    else then inTpl;
   end matchcontinue;
 end removeConstantsFinder;
 
