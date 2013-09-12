@@ -741,7 +741,7 @@ static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *wo
   }
 }
 
-#if 0
+#if 1
 extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
