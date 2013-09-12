@@ -635,7 +635,7 @@ void mmc_catch_dummy_fn();
 #if 1
 
 extern pthread_key_t mmc_jumper;
-#define MMC_INIT() pthread_key_create(&mmc_jumper,NULL);init_metamodelica_segv_handler();mmc_GC_init(mmc_GC_settings_default);
+#define MMC_INIT() pthread_key_create(&mmc_jumper,NULL);init_metamodelica_segv_handler();mmc_GC_init(mmc_GC_settings_default);MMC_INIT_STACK_OVERFLOW();
 #define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper; old_jumper = (jmp_buf*)pthread_getspecific(X); pthread_setspecific(X,&new_mmc_jumper); if (setjmp(new_mmc_jumper) == 0) {
 #define MMC_TRY() MMC_TRY_INTERNAL(mmc_jumper)
 

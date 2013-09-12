@@ -33,7 +33,9 @@
 #ifndef META_MODELICA_SEGV_H_
 #define META_MODELICA_SEGV_H_
 
-extern jmp_buf *mmc_stack_overflow_jumper;
+#include <pthread.h>
+extern pthread_key_t mmc_stack_overflow_jumper;
+#define MMC_INIT_STACK_OVERFLOW() pthread_key_create(&mmc_stack_overflow_jumper,NULL)
 #define MMC_TRY_STACK() MMC_TRY_INTERNAL(mmc_stack_overflow_jumper)
 #define MMC_CATCH_STACK() MMC_CATCH_INTERNAL(mmc_stack_overflow_jumper)
 

@@ -31,6 +31,9 @@
 /* Stack overflow handling */
 
 #include <meta_modelica.h>
+
+pthread_key_t mmc_stack_overflow_jumper;
+
 #if defined(linux) || defined(__APPLE_CC__)
 #include <stdlib.h>
 #include <stdio.h>
@@ -50,7 +53,6 @@
 /* If we find a SIGSEGV near the end of the stack, it is probably due to a stack overflow. 64kB for a function frame seems reasonable. */
 #define LIMIT_FOR_STACK_OVERFLOW 65536
 
-jmp_buf *mmc_stack_overflow_jumper;
 static void *trace[TRACE_NFRAMES];
 static int trace_size;
 static int trace_size_skip=0; /* First index we should use; that is skip handler, etc */
@@ -93,16 +95,16 @@ static sigset_t segvset;
 
 static void handler(int signo, siginfo_t *si, void *ptr)
 {
-  int isStackOverflow;
+  int isStackOverflow,unused;
   isStackOverflow = si->si_addr < stackBottom && (si->si_addr > stackBottom - LIMIT_FOR_STACK_OVERFLOW);
   if (isStackOverflow) {
     setTrace(3,0);
     sigprocmask(SIG_UNBLOCK, &segvset, NULL);
-    longjmp(*mmc_stack_overflow_jumper,1);
+    longjmp(*((jmp_buf*)pthread_getspecific(mmc_stack_overflow_jumper)),1);
   }
   /* This backtrace uses very little stack-space, and segmentation faults we always want to print... */
   setTrace(3,16);
-  write(2, "\nLimited backtrace at point of segmentation fault\n", 50);
+  unused=write(2, "\nLimited backtrace at point of segmentation fault\n", 50);
   backtrace_symbols_fd(trace+trace_size_skip, trace_size-trace_size_skip, 2);
   sigaction(SIGSEGV, &default_segv_action, 0);
 }
@@ -148,8 +150,6 @@ void init_metamodelica_segv_handler()
 }
 
 #else
-#include <setjmp.h>
-jmp_buf *mmc_stack_overflow_jumper;
 void printStacktraceMessages()
 {
 }
