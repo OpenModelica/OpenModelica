@@ -26,9 +26,9 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_cvode(boost::extens
 
     BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     types.get<std::map<std::string, factory<ISolver,IMixedSystem*, ISolverSettings*> > >()
-    ["CVodeSolver"].set<Cvode>();
+    ["cvodeSolver"].set<Cvode>();
     types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
-    ["CVodeSettings"].set<CVodeSettings>();
+    ["cvodeSettings"].set<CVodeSettings>();
     }
 
 #else

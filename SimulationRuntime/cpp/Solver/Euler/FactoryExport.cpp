@@ -38,9 +38,9 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_euler(boost::extens
 
     BOOST_EXTENSION_TYPE_MAP_FUNCTION {
     types.get<std::map<std::string, factory<ISolver,IMixedSystem*, ISolverSettings*> > >()
-    ["EulerSolver"].set<Euler>();
+    ["eulerSolver"].set<Euler>();
     types.get<std::map<std::string, factory<ISolverSettings, IGlobalSettings* > > >()
-    ["EulerSettings"].set<EulerSettings>();
+    ["eulerSettings"].set<EulerSettings>();
     }
 
 #else

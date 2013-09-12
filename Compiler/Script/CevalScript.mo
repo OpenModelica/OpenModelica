@@ -1397,7 +1397,7 @@ algorithm
         stoptime_str = realString(stoptime);
         stepsize_str = realString(stepsize);
         
-        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir," ","-s ",starttime_str," ","-e ",stoptime_str," ","-f ", stepsize_str }), simflags);
+        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir," ","-s ",starttime_str," ","-e ",stoptime_str," ","-f ", stepsize_str," ","-i ",method_str }), simflags);
         executable1=Util.if_(ifcpp,"OMCppSimulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         logFile = stringAppend(executable1,".log");

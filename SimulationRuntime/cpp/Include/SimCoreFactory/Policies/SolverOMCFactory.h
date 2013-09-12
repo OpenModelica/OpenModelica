@@ -62,7 +62,7 @@ public:
     boost::shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, boost::shared_ptr<ISolverSettings> solver_settings)
     {
         
-        if(solvername.compare("Euler")==0)
+        if(solvername.compare("euler")==0)
         {
              PATH euler_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH euler_name(EULER_LIB);
@@ -74,16 +74,17 @@ public:
             }
             
         }
-        else if(solvername.compare("Idas")==0)
+        else if(solvername.compare("idas")==0)
         {
            
         }
-        else if(solvername.compare("Ida")==0)
+        else if(solvername.compare("ida")==0)
         {
         }
-        else if(solvername.compare("CVode")==0)
+        else if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
-            PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
+            solvername = "cvode"; //workound for dassl, using cvode instead
+			PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH cvode_name(CVODE_LIB);
             cvode_path/=cvode_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
@@ -101,7 +102,7 @@ public:
        iter = factories.find(solver_key);
         if (iter ==factories.end())
         {
-                throw std::invalid_argument("No such Solver");
+                throw std::invalid_argument("No such Solver " + solver_key);
         }
         
         boost::shared_ptr<ISolver> solver = boost::shared_ptr<ISolver>(iter->second.create(system,solver_settings.get()));   ;

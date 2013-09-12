@@ -27,7 +27,7 @@ public:
     {
 
         string solver_settings_key;
-        if(solvername.compare("Euler")==0)
+        if(solvername.compare("euler")==0)
         {
              PATH euler_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH euler_name(EULER_LIB);
@@ -39,17 +39,18 @@ public:
             }
             solver_settings_key.assign("createEulerSettings");
         }
-        else if(solvername.compare("Idas")==0)
+        else if(solvername.compare("idas")==0)
         {
             solver_settings_key.assign("extension_export_idas");
         }
-        else if(solvername.compare("Ida")==0)
+        else if(solvername.compare("ida")==0)
         {
             solver_settings_key.assign("extension_export_ida");
         }
-        else if(solvername.compare("CVode")==0)
+        else if((solvername.compare("cvode")==0)||(solvername.compare("dassl")==0))
         {
-            PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
+            solvername = "cvode"; //workound for dassl, using cvode instead
+			PATH cvode_path = ObjectFactory<CreationPolicy>::_library_path;
             PATH cvode_name(CVODE_LIB);
             cvode_path/=cvode_name;
             LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(cvode_path.string(),*_solver_type_map);
@@ -58,7 +59,7 @@ public:
                 throw std::runtime_error("Failed loading CVode solver library!");
             }
             
-      solver_settings_key.assign("extension_export_cvode");
+			solver_settings_key.assign("extension_export_cvode");
         }
         else
             throw std::invalid_argument("Selected Solver is not available");
