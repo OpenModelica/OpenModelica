@@ -833,15 +833,17 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
   mpEnableAutoSaveGroupBox->setToolTip("Auto save feature is experimental. If you encounter unexpected crashes then disable it.");
   mpEnableAutoSaveGroupBox->setCheckable(true);
-  mpEnableAutoSaveGroupBox->setChecked(false);
+  mpEnableAutoSaveGroupBox->setChecked(true);
   mpAutoSaveIntervalLabel = new Label(tr("Auto Save Interval:"));
   mpAutoSaveIntervalSpinBox = new QSpinBox;
-  mpAutoSaveIntervalSpinBox->setSuffix(" milliseconds");
-  mpAutoSaveIntervalSpinBox->setRange(30000, std::numeric_limits<int>::max());
-  mpAutoSaveIntervalSpinBox->setSingleStep(1000);
+  mpAutoSaveIntervalSpinBox->setSuffix(tr(" seconds"));
+  mpAutoSaveIntervalSpinBox->setRange(60, std::numeric_limits<int>::max());
+  mpAutoSaveIntervalSpinBox->setSingleStep(30);
+  mpAutoSaveIntervalSpinBox->setValue(300);
   mpAutoSaveSecondsLabel = new Label;
   connect(mpAutoSaveIntervalSpinBox, SIGNAL(valueChanged(int)), SLOT(autoSaveIntervalValueChanged(int)));
   mpEnableAutoSaveForSingleClassesCheckBox = new QCheckBox(tr("Enable Auto Save for single classes"));
+  mpEnableAutoSaveForSingleClassesCheckBox->setChecked(true);
   mpEnableAutoSaveForOneFilePackagesCheckBox = new QCheckBox(tr("Enable Auto Save for one file packages (Experimental)"));
   // calculate the auto save interval seconds.
   autoSaveIntervalValueChanged(mpAutoSaveIntervalSpinBox->value());
@@ -1004,7 +1006,7 @@ void GeneralSettingsPage::selectWorkingDirectory()
 
 void GeneralSettingsPage::autoSaveIntervalValueChanged(int value)
 {
-  mpAutoSaveSecondsLabel->setText(QString("(%1 seconds)").arg(value/1000));
+  mpAutoSaveSecondsLabel->setText(tr("(%1 minute(s))").arg((double)value/60));
 }
 
 //! @class LibrariesPage
