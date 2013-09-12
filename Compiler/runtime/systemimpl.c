@@ -52,6 +52,8 @@ extern "C" {
 #include <sys/types.h>
 #include <time.h>
 #include <math.h>
+#include <dirent.h>
+#include <unistd.h>
 
 #include "rtclock.h"
 #include "config.h"
@@ -135,7 +137,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX]);
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
 static modelica_integer last_ptr_index = -1;
 
-static inline modelica_integer alloc_ptr();
+static inline modelica_integer alloc_ptr(void);
 static inline void free_ptr(modelica_integer index);
 static void free_library(modelica_ptr_t lib, modelica_integer printDebug);
 static void free_function(modelica_ptr_t func);
@@ -270,7 +272,7 @@ extern int SystemImpl__setLDFlags(const char *str)
   return 0;
 }
 
-extern char* SystemImpl__pwd()
+extern char* SystemImpl__pwd(void)
 {
   char buf[MAXPATHLEN];
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -595,7 +597,7 @@ int SystemImpl__systemCall(const char* str)
 #include <hwloc.h>
 #endif
 
-int System_numProcessors()
+int System_numProcessors(void)
 {
 #ifdef WITH_HWLOC
   hwloc_topology_t topology;
@@ -693,7 +695,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
   return ret_val;
 }
 
-double SystemImpl__time()
+extern double SystemImpl__time(void)
 {
   clock_t cl = clock();
   return (double)cl / (double)CLOCKS_PER_SEC;
@@ -736,7 +738,69 @@ extern int SystemImpl__createDirectory(const char *str)
   }
 }
 
-char* SystemImpl__readFileNoNumeric(const char* filename)
+extern int SystemImpl__removeDirectory(const char *path)
+{
+  int retval;
+  DIR * d = opendir(path);
+
+  if (d != NULL)
+  {
+    struct dirent * p;
+    size_t path_len = strlen(path);
+
+    retval = 0;
+    while ((retval == 0) && (p = readdir(d)))
+    {
+      int r2 = -1;
+      char * buf;
+      size_t len;
+
+      /* Do not recurse on "." and ".." */
+      if ((p->d_name[0] == '.') && ( (p->d_name[1] == 0) || ((p->d_name[1] == '.') && (p->d_name[2] == 0))))
+      {
+        continue;
+      }
+
+      len = path_len + strlen(p->d_name) + 2;
+      buf = (char *)malloc(len);
+      if (buf != NULL)
+      {
+        struct stat statbuf;
+
+        snprintf(buf, len, "%s/%s", path, p->d_name);
+        if (stat(buf, &statbuf) == 0)
+        {
+          if (S_ISDIR(statbuf.st_mode))
+          {
+            r2 = SystemImpl__removeDirectory(buf);
+          }
+          else
+          {
+            r2 = unlink(buf);
+          }
+        }
+        free(buf);
+      }
+      retval = r2;
+    }
+    closedir(d);
+
+    if (retval == 0)
+    {
+      /* if everything is ok, then dir should be empty now */
+      retval = rmdir(path);
+    }
+  }
+  else
+  {
+    /* Could not open path as dir, try to handle as file */
+    retval = unlink(path);
+  }
+
+  return retval;
+}
+
+extern char* SystemImpl__readFileNoNumeric(const char* filename)
 {
   char* buf, *bufRes;
   int res,numCount;
@@ -771,7 +835,7 @@ char* SystemImpl__readFileNoNumeric(const char* filename)
   return bufRes;
 }
 
-double SystemImpl__getCurrentTime()
+extern double SystemImpl__getCurrentTime(void)
 {
   time_t t;
   time( &t );
@@ -819,7 +883,7 @@ int setenv(const char* envname, const char* envvalue, int overwrite)
 #endif
 
 // Do not free the result
-static const char* SystemImpl__getUUIDStr()
+static const char* SystemImpl__getUUIDStr(void)
 {
   static char uuidStr[37] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
 #if defined(USE_WIN32_UUID)
@@ -928,7 +992,7 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
 }
 #endif
 
-static inline modelica_integer alloc_ptr()
+static inline modelica_integer alloc_ptr(void)
 {
   const modelica_integer start = last_ptr_index;
   modelica_integer index;
@@ -982,7 +1046,7 @@ int file_select_directories(direntry entry)
 
 #endif
 
-extern int SystemImpl__lookupFunction(int libIndex, const char *str)
+int SystemImpl__lookupFunction(int libIndex, const char *str)
 {
   modelica_ptr_t lib = NULL, func = NULL;
   function_t funcptr;
@@ -1201,7 +1265,7 @@ extern char* SystemImpl__unescapedString(const char* str)
   return res;
 }
 
-char* SystemImpl__unquoteIdentifier(const char* str)
+extern char* SystemImpl__unquoteIdentifier(const char* str)
 {
   const char lookupTbl[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
   char *res,*cur;
@@ -1231,7 +1295,7 @@ static double timerTime = 0;
 static long int timerStackIdx = 0;
 static double timerStack[TIMER_MAX_STACK] = {0};
 
-static void pushTimerStack()
+static void pushTimerStack(void)
 {
   if (timerStackIdx < TIMER_MAX_STACK)
   {
@@ -1245,7 +1309,7 @@ static void pushTimerStack()
   }
 }
 
-static void popTimerStack()
+static void popTimerStack(void)
 {
   if (timerStackIdx >= 1)
   {
@@ -1707,7 +1771,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
 static modelica_integer tmp_tick_no[MAX_TMP_TICK] = {0};
 static modelica_integer parfor_tick_no = 0;
 
-extern int SystemImpl_tmpTick()
+extern int SystemImpl_tmpTick(void)
 {
   return tmp_tick_no[0]++;
 }
@@ -1717,7 +1781,7 @@ extern void SystemImpl_tmpTickReset(int start)
   tmp_tick_no[0] = start;
 }
 
-extern int SystemImpl_parForTick()
+extern int SystemImpl_parForTick(void)
 {
   return parfor_tick_no++;
 }
@@ -1862,7 +1926,7 @@ static void seed(void)
 }
 
 /* Returns a value (0,1] */
-double SystemImpl__realRand()
+double SystemImpl__realRand(void)
 {
   seed();
   return tinymt64_generate_double(&system_random_seed);
@@ -2150,7 +2214,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 
 #endif /* mingw and msvc */
 
-int System_getTerminalWidth()
+int System_getTerminalWidth(void)
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   return 80;

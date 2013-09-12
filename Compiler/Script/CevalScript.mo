@@ -1723,6 +1723,12 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
 
+    case (cache,env,"remove",{Values.STRING(str)},st,_)
+      equation
+        b = System.removeDirectory(str);
+      then
+        (cache,Values.BOOL(b),st);
+
     case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("OpenModelica")))},st,_)
       equation
         str_1 = Settings.getVersionNr();

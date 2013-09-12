@@ -1871,6 +1871,14 @@ RML_BEGIN_LABEL(System__createDirectory)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__removeDirectory)
+{
+  const char* str = RML_STRINGDATA(rmlA0);
+  rmlA0 = (void*) mk_icon(SystemImpl__removeDirectory(str));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__userIsRoot)
 {
   rmlA0 = mk_icon(CONFIG_USER_IS_ROOT);

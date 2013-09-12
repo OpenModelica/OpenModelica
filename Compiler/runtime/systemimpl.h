@@ -75,12 +75,27 @@ struct modelica_ptr_s {
 #endif
 
 typedef struct modelica_ptr_s *modelica_ptr_t;
-modelica_ptr_t lookup_ptr(modelica_integer index);
+extern modelica_ptr_t lookup_ptr(modelica_integer index);
 
-int SystemImpl__regularFileExists(const char* str);
-int SystemImpl__regularFileWritable(const char* str);
-const char* SystemImpl__basename(const char *str);
-int SystemImpl__directoryExists(const char* str);
-char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
+extern int SystemImpl__setCCompiler(const char *str);
+extern int SystemImpl__setCXXCompiler(const char *str);
+extern int SystemImpl__setLinker(const char *str);
+extern int SystemImpl__setCFlags(const char *str);
+extern int SystemImpl__setLDFlags(const char *str);
+extern char* SystemImpl__pwd(void);
+extern int SystemImpl__regularFileExists(const char* str);
+extern int SystemImpl__removeFile(const char* filename);
+extern const char* SystemImpl__basename(const char *str);
+extern int SystemImpl__systemCall(const char* str);
+extern void* SystemImpl__systemCallParallel(void *lst, int numThreads);
+extern int SystemImpl__spawnCall(const char* path, const char* str);
+extern double SystemImpl__time(void);
+extern int SystemImpl__directoryExists(const char* str);
+extern int SystemImpl__createDirectory(const char *str);
+extern int SystemImpl__removeDirectory(const char *str);
+extern char* SystemImpl__readFileNoNumeric(const char* filename);
+extern double SystemImpl__getCurrentTime(void);
+extern int SystemImpl__unescapedStringLength(const char* str);
+extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
 
 #endif //__SYSTEMIMPL_H

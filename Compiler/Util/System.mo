@@ -402,7 +402,7 @@ public function removeFile "Removes a file, returns 0 if suceeds, implemented us
   external "C" res=SystemImpl__removeFile(fileName) annotation(Library = "omcruntime");
 end removeFile;
 
-public function renameFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
+public function renameFile "Renames a file, returns 0 if suceeds, implemented using rename() in stdio.h"
   input String fileName1;
   input String fileName2;
   output Integer res;
@@ -422,6 +422,12 @@ public function directoryExists
   output Boolean outBool;
   external "C" outBool=SystemImpl__directoryExists(inString) annotation(Library = "omcruntime");
 end directoryExists;
+
+public function removeDirectory
+  input String inString;
+  output Boolean outBool;
+  external "C" outBool=SystemImpl__removeDirectory(inString) annotation(Library = "omcruntime");
+end removeDirectory;
 
 public function platform
   output String outString;
