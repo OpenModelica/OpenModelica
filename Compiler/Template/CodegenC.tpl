@@ -8651,7 +8651,7 @@ template tempDeclTuple(DAE.Type inType, Text &varDecls)
   let &varDecls +=
   <<
   struct {
-    <%tupleType |> ty hasindex i1 fromindex 1 => '<%expTypeModelica(ty)%> c<%i1%>;\n'%>
+    <%tupleType |> ty hasindex i1 fromindex 1 => '<%expTypeModelica(ty)%> c<%i1%>;<%\n%>'%>
   } <%tmpVar%>;
   >>
   tmpVar
