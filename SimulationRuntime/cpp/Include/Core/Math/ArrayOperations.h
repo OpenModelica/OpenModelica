@@ -46,7 +46,10 @@ struct Operation
 {
   Operation( F op ): _op(op) {}
   T1 &operator()( T1 &x, const T2 &y ) const
-  { x = _op( y ); return x; }
+  {
+      x = _op( y );
+    return x;
+  }
   F _op;
 };
 
@@ -182,7 +185,7 @@ Applies array operation F  (*,/) on one dimensional array
 template<
   typename T1, typename T2, class F
 >
-boost::multi_array_ref< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op ) 
+boost::multi_array< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op ) 
 {
   typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
   for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
