@@ -19,14 +19,14 @@ Copyright (c) 2010, OSMC
 
 
 /**
-Assertion function
+Assertion function 
 */
-//void boost::assertion_failed(char const * expr, char const * function,
+//void boost::assertion_failed(char const * expr, char const * function, 
 //                             char const * file, long line);
 #include <boost/multi_array.hpp>
 #include <functional>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
-#include <boost/numeric/ublas/storage.hpp>
+#include <boost/numeric/ublas/storage.hpp> 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
@@ -69,7 +69,7 @@ Helper function for multiply_array,divide_array copies array a used as return va
 template < typename T, size_t NumDims, class F >
 boost::multi_array< T, NumDims > op_cp_array( boost::multi_array_ref< T, NumDims > a, F f )
 {
-  boost::multi_array< T, NumDims > retVal(a);
+  boost::multi_array< T, NumDims > retVal(a); 
   Operation< T, T, F > opis( f );
   return array_operation( retVal, a, opis );
 }
@@ -177,12 +177,12 @@ boost::multi_array_ref< T1, dims >  array_operation( boost::multi_array< T1, dim
 
 
 /**
-Applies array operation F  (*,/) on one dimensional array
+Applies array operation F  (*,/) on one dimensional array 
 */
 template<
   typename T1, typename T2, class F
 >
-boost::multi_array_ref< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op )
+boost::multi_array_ref< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > b, F& op ) 
 {
   typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
   for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
@@ -267,7 +267,7 @@ boost::detail::multi_array::sub_array< T1, dims > array_operation( boost::detail
   return a;
 }
 /**
-Applies array operation F (+,-) on array
+Applies array operation F (+,-) on array 
 */
 
 template<
@@ -313,9 +313,8 @@ void
    std::fill( x.data(), x.data() + x.num_elements(), val);
 }
 template < typename T, size_t NumDims >
-void assign_array(boost::multi_array<T, NumDims>& A,boost::multi_array_ref<T, NumDims> B) {
-   
-  std::vector<size_t> ex;
+void assign_array(boost::multi_array<T, NumDims> &A,boost::multi_array_ref<T, NumDims> B) {
+    std::vector<size_t> ex;
     const size_t* shape = B.shape();
     ex.assign( shape, shape+B.num_dimensions() );
     A.resize( ex );
@@ -326,14 +325,14 @@ void assign_array(boost::multi_array<T, NumDims>& A,boost::multi_array_ref<T, Nu
 
 
 /**
-finds min/max elements of an array
+finds min/max elements of an array 
 template < typename T, size_t NumDims >
 std::pair <T,T>
 min_max (boost::multi_array_ref< T, NumDims > x, T val )
 {
-
+  
   boost::minmax_element(x.data(), x.data() + x.num_elements());
-
+ 
 }
 */
 
@@ -344,9 +343,9 @@ template < typename T, size_t NumDims >
 std::pair <T,T>
 min_max (boost::multi_array_ref< int, 1 > x)
 {
-
+  
   boost::minmax_element(x.data(), x.data() + x.num_elements());
-
+ 
 }
 
 
@@ -375,9 +374,7 @@ template <class T>
 ublas::vector<T,ublas::shallow_array_adaptor<T> >
 toVector(const size_t size, T * data)
 {
-    ublas::vector<T,ublas::shallow_array_adaptor<T> >
+    ublas::vector<T,ublas::shallow_array_adaptor<T> > 
     v(size,ublas::shallow_array_adaptor<T>(size,data));
     return v;
 }
-
-
