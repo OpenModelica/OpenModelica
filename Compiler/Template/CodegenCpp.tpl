@@ -5012,8 +5012,8 @@ end daeExpAsub;
 template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls,SimCode simCode)
 ::=
 match exp
-  case ICONST(__) then incrementInt(integer,-1)
-  case ENUM_LITERAL(__) then incrementInt(index,-1)
+  case ICONST(__) then integer
+  case ENUM_LITERAL(__) then index
   else daeExp(exp,context,&preExp,&varDecls,simCode)
 end daeExpASubIndex;
 
@@ -5640,7 +5640,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else 'double'
     let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e2%>, <%e1%>));<%\n%>'
+    //let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e2%>, <%e1%>));<%\n%>'
     '<%var%>'
   case UMINUS(__) then "daeExpBinary:ERR UMINUS not supported"
   case UMINUS_ARR(__) then "daeExpBinary:ERR UMINUS_ARR not supported"
@@ -6316,12 +6316,25 @@ case UNARY(exp = e as CREF(__)) then
   <<
   <%lhsStr%> = -<%rhsStr%>;
   >>
-case _ then
+case ARRAY(array = {}) then
   <<
-  /* SimCodeC.tpl template: writeLhsCref: UNHANDLED LHwwS
-   * <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>
-   */
   >>
+case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
+  let typeShort = expTypeFromExpShort(exp)
+  let fcallsuf = match listLength(dims) case 1 then "" case i then '_<%i%>D'
+  let body = (threadTuple(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
+                 let lhsstr = scalarLhsCref(lhs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+                 let indxstr = (indxs |> i => '<%i%>' ;separator=",")
+                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);'
+              ;separator="\n")
+  <<
+  <%body%>
+  >>
+case ASUB(__) then
+  error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
+else
+  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
+
 end writeLhsCref;
 
 
