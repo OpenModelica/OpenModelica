@@ -314,6 +314,12 @@ algorithm
       then
         ((e,(true,options)));
 
+    case ((DAE.TSUB(exp = DAE.CAST(exp = DAE.TUPLE(PR = expl)), ix = i), (_, options)))
+      equation
+        e = listGet(expl, i);
+      then
+        ((e, (true,options)));
+
     case ((DAE.TSUB(exp = DAE.TUPLE(PR = expl), ix = i), (_, options)))
       equation
         e = listGet(expl, i);

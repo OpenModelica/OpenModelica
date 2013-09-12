@@ -4207,7 +4207,7 @@ case tupleVar as ((cref as CREF_IDENT(identType = T_ARRAY(__)),_)) then
   case identType as T_ARRAY(ty = T_REAL(__)) then
     '__global modelica_real* data_<%varName%>,<%\n%>__global modelica_integer* info_<%varName%>'
 
-  else 'Tempalte error in parFunArgDefinitionFromLooptupleVar'
+  else 'Template error in parFunArgDefinitionFromLooptupleVar'
 
 case tupleVar as ((cref as CREF_IDENT(__),_)) then
   let varName = contextArrayCref(cref,contextParallelFunction)
@@ -8651,7 +8651,7 @@ template tempDeclTuple(DAE.Type inType, Text &varDecls)
   let &varDecls +=
   <<
   struct {
-    <%tupleType |> ty hasindex i1 fromindex 1 => '<%expTypeModelica(ty)%> c<%i1%>;'%>
+    <%tupleType |> ty hasindex i1 fromindex 1 => '<%expTypeModelica(ty)%> c<%i1%>;\n'%>
   } <%tmpVar%>;
   >>
   tmpVar
