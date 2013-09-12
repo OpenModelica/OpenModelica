@@ -138,7 +138,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IOM */                   FLAG_TYPE_OPTION,
   /* FLAG_L */                     FLAG_TYPE_OPTION,
   /* FLAG_LS */                    FLAG_TYPE_OPTION,
-  /* FLAG_LS_IPOPT */         FLAG_TYPE_OPTION,
+  /* FLAG_LS_IPOPT */              FLAG_TYPE_OPTION,
   /* FLAG_LV */                    FLAG_TYPE_OPTION,
   /* FLAG_MEASURETIMEPLOTFORMAT */ FLAG_TYPE_OPTION,
   /* FLAG_NLS */                   FLAG_TYPE_OPTION,

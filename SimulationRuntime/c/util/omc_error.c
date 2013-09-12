@@ -80,7 +80,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "additional information during event iteration",      /* LOG_EVENTS */
   "verbose logging of event system",                    /* LOG_EVENTS_V */
   "additional information during initialization",       /* LOG_INIT */
-  "more information from Ipopt"                          /* LOG_IPOPT */
+  "more information from Ipopt",                        /* LOG_IPOPT */
   "outputs the jacobian matrix used by dassl",          /* LOG_JAC */
   "logging for linear systems",                         /* LOG_LS */
   "verbose logging of linear systems",                  /* LOG_LS_V */
