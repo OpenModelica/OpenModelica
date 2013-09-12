@@ -9834,9 +9834,7 @@ int rml_execution_failed(mmc_GC_local_state_type local_GC_state)
 
 int main(int argc, char **argv)
 {
-  init_metamodelica_segv_handler();
-  mmc_GC_init(mmc_GC_settings_default);
-  
+  MMC_INIT();
   {
   mmc_GC_local_state_type local_GC_state = mmc_GC_save_roots_state("top"); /* push the first mark */
   void *lst = mmc_mk_nil();

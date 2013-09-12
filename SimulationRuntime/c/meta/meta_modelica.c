@@ -36,7 +36,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-jmp_buf *mmc_jumper;
+pthread_key_t mmc_jumper;
 
 /*
 void* mmc_mk_rcon(double d)

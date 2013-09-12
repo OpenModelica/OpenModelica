@@ -741,6 +741,7 @@ static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *wo
   }
 }
 
+#if 0
 extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -795,6 +796,68 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
   return result;
 #endif
 }
+#else
+/* Work in progress: Threading support in OMC */
+typedef struct thread_data {
+  pthread_mutex_t mutex;
+  void (*fn)(void*);
+  int fail;
+  int current;
+  int len;
+  void **commands;
+  int *status;
+} thread_data;
+
+static void* System_forkCallThread(void *in)
+{
+  int exitstatus = 1;
+  int n;
+  thread_data *data = (thread_data*) in;
+  while (1) {
+    pthread_mutex_lock(&data->mutex);
+    n = data->current++;
+    pthread_mutex_unlock(&data->mutex);
+    if (data->fail || data->current > data->len) break;
+    MMC_TRY()
+    data->fn(data->commands[n]);
+    exitstatus = 0;
+    MMC_CATCH()
+    data->status[n] = ! exitstatus;
+  }
+  return NULL;
+}
+
+extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
+{
+  int len = listLength(dataLst), i;
+  void *commands[len];
+  int status[len], ids[len];
+  void *result = mmc_mk_nil();
+  pthread_t th[numThreads];
+  thread_data data;
+  pthread_mutex_init(&data.mutex,NULL);
+  data.fn = fn;
+  data.current = 0;
+  data.len = len;
+  data.commands = commands;
+  data.status = status;
+  data.fail = 0;
+  for (i=0; i<len; i++, dataLst = MMC_CDR(dataLst)) {
+    commands[i] = MMC_CAR(dataLst);
+  }
+  numThreads = min(numThreads,len);
+  for (i=0; i<numThreads; i++) {
+    GC_pthread_create(&th[i],NULL,System_forkCallThread,&data);
+  }
+  for (i=0; i<numThreads; i++) {
+    pthread_join(th[i], NULL);
+  }
+  for (i=len-1; i>=0; i--) {
+    result = mmc_mk_cons(mmc_mk_icon(status[i]), result);
+  }
+  return result;
+}
+#endif
 
 #ifdef __cplusplus
 }

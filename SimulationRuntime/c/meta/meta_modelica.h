@@ -629,39 +629,28 @@ struct record_description {
 #define mmc_unbox_array(X) (*((base_array_t*)X))
 
 #include <setjmp.h>
+#include <pthread.h>
 
 void mmc_catch_dummy_fn();
 #if 1
-/* Use something like this if needed...
-#define MMC_JMP_BUF_SIZE 8192
-extern jmp_buf mmc_jumper[MMC_JMP_BUF_SIZE];
-extern int jmp_buf_index;
-*/
-extern jmp_buf *mmc_jumper;
-#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper; old_jumper = X; X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+
+extern pthread_key_t mmc_jumper;
+#define MMC_INIT() pthread_key_create(&mmc_jumper,NULL);init_metamodelica_segv_handler();mmc_GC_init(mmc_GC_settings_default);
+#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper; old_jumper = (jmp_buf*)pthread_getspecific(X); pthread_setspecific(X,&new_mmc_jumper); if (setjmp(new_mmc_jumper) == 0) {
 #define MMC_TRY() MMC_TRY_INTERNAL(mmc_jumper)
 
 #if !defined(_MSC_VER)
-#define MMC_CATCH_INTERNAL(X) } X = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state); mmc_catch_dummy_fn();}
+#define MMC_CATCH_INTERNAL(X) } pthread_setspecific(X,old_jumper);mmc_catch_dummy_fn();}
 #else
-#define MMC_CATCH_INTERNAL(X) } X = old_jumper; mmc_GC_unwind_roots_state(mmc_GC_local_state);}
+#define MMC_CATCH_INTERNAL(X) } pthread_setspecific(X,old_jumper);}
 #endif
 #define MMC_CATCH() MMC_CATCH_INTERNAL(mmc_jumper)
 
-#define MMC_THROW() longjmp(*mmc_jumper,1)
+#define MMC_THROW() {longjmp(*((jmp_buf*)pthread_getspecific(mmc_jumper)),1);}
 #define MMC_ELSE() } else {
 
 #define MMC_TRY_TOP() MMC_TRY()
-#define MMC_CATCH_TOP(X) mmc_jumper = old_jumper;} else {mmc_jumper = old_jumper;mmc_GC_unwind_roots_state(mmc_GC_local_state);X;}}
-
-#else
-/* Old C++ try/catch/throw implementation */
-#define MMC_TRY() try {
-#define MMC_CATCH() } catch (...) {}
-#define MMC_THROW() throw 1
-
-#define MMC_TRY_TOP() try{
-#define MMC_CATCH_TOP(X) } catch (...) {X;}
+#define MMC_CATCH_TOP(X) pthread_setspecific(mmc_jumper,old_jumper);} else {pthread_setspecific(mmc_jumper,old_jumper);X;}}
 
 #endif
 
