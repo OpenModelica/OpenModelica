@@ -275,6 +275,17 @@ void OMCProxy::removeCachedOMCCommand(QString className)
   */
 bool OMCProxy::startServer()
 {
+  /* create the tmp path */
+  QString tmpPath = QDir::tempPath() + "/OpenModelica/OMEdit/";
+  tmpPath.remove("\"");
+  if (!QDir().exists(tmpPath))
+    QDir().mkpath(tmpPath);
+  /* create a file to write OMEdit commands log */
+  mCommandsLogFile.setFileName(tmpPath + QDir::separator() + "omeditcommands.log");
+  if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
+  {
+    mCommandsLogFileTextStream.setDevice(&mCommandsLogFile);
+  }
   try
   {
     QString msg;
@@ -365,25 +376,10 @@ bool OMCProxy::startServer()
   // set OpenModelicaHome variable
   sendCommand("getInstallationDirectoryPath()");
   Helper::OpenModelicaHome = StringHandler::removeFirstLastQuotes(getResult());
-  // set temp path variable
-  sendCommand("getTempDirectoryPath()");
-  QString tmpPath = getResult()+"/OpenModelica/OMEdit/";
-  tmpPath.remove("\"");
-  if (!QDir().exists(tmpPath))
-  {
-    if (QDir().mkpath(tmpPath))
-      changeDirectory(tmpPath);
-  }
-  else
-    changeDirectory(tmpPath);
+  /* set the tmp directory as the working directory */
+  changeDirectory(tmpPath);
   // set the OpenModelicaLibrary variable.
   Helper::OpenModelicaLibrary = getModelicaPath();
-  // create a file to write OMEdit commands log
-  mCommandsLogFile.setFileName(tmpPath + QDir::separator() + "omeditcommands.log");
-  if (mCommandsLogFile.open(QIODevice::WriteOnly | QIODevice::Text))
-  {
-    mCommandsLogFileTextStream.setDevice(&mCommandsLogFile);
-  }
   return true;
 }
 
