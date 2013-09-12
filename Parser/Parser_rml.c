@@ -49,9 +49,10 @@ void ParserExt_5finit(void)
 RML_BEGIN_LABEL(ParserExt__parse)
 {
   int flags = PARSE_MODELICA;
-  if(RML_UNTAGFIXNUM(rmlA2) == 2) flags |= PARSE_META_MODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA2) == 3) flags |= PARSE_PARMODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA2) == 4) flags |= PARSE_OPTIMICA;
+  int grammarFlag = RML_UNTAGFIXNUM(rmlA2);
+  if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
+  else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
+  else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
   
   rmlA0 = parseFile(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_STRINGDATA(rmlA3),RML_UNTAGFIXNUM(rmlA4),RML_UNTAGFIXNUM(rmlA5));
   if (rmlA0)
@@ -65,9 +66,10 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ParserExt__parseexp)
 {
   int flags = PARSE_EXPRESSION;
-  if(RML_UNTAGFIXNUM(rmlA2) == 2) flags |= PARSE_META_MODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA2) == 3) flags |= PARSE_PARMODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA2) == 4) flags |= PARSE_OPTIMICA;
+  int grammarFlag = RML_UNTAGFIXNUM(rmlA2);
+  if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
+  else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
+  else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
   
   rmlA0 = parseFile(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,"UTF-8",RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4));
   if (rmlA0)
@@ -80,9 +82,10 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ParserExt__parsestring)
 {
   int flags = PARSE_MODELICA;
-  if(RML_UNTAGFIXNUM(rmlA2) == 2) flags |= PARSE_META_MODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA2) == 3) flags |= PARSE_PARMODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA1) == 4) flags |= PARSE_OPTIMICA;
+  int grammarFlag = RML_UNTAGFIXNUM(rmlA2);
+  if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
+  else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
+  else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
   
   rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4));
   if (rmlA0) {
@@ -97,9 +100,10 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ParserExt__parsestringexp)
 {
   int flags = PARSE_EXPRESSION;
-  if(RML_UNTAGFIXNUM(rmlA2) == 2) flags |= PARSE_META_MODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA2) == 3) flags |= PARSE_PARMODELICA;
-  else if(RML_UNTAGFIXNUM(rmlA1) == 4) flags |= PARSE_OPTIMICA;
+  int grammarFlag = RML_UNTAGFIXNUM(rmlA2);
+  if(grammarFlag == 2) flags |= PARSE_META_MODELICA;
+  else if(grammarFlag == 3) flags |= PARSE_PARMODELICA;
+  else if(grammarFlag == 4) flags |= PARSE_OPTIMICA;
   
   rmlA0 = parseString(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1),flags,RML_UNTAGFIXNUM(rmlA3),RML_UNTAGFIXNUM(rmlA4));
   if (rmlA0) {

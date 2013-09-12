@@ -64,7 +64,7 @@ void* ParserExt_parsestring(const char* data, const char* filename, int accepted
   int flags = PARSE_MODELICA;
   if(acceptedGrammer == 2) flags |= PARSE_META_MODELICA;
   else if(acceptedGrammer == 3) flags |= PARSE_PARMODELICA;
-  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA; 
+  else if(acceptedGrammer == 4) flags |= PARSE_OPTIMICA;
 
   void *res = parseString(data, filename, flags, langStd, runningTestsuite);
   if (res != NULL) {
