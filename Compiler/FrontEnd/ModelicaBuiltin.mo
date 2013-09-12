@@ -1636,7 +1636,7 @@ function remove "removes a file or directory of given path (which may be either 
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
-end mkdir;
+end remove;
 
 function checkModel "Checks a model and returns number of variables and equations."
   input TypeName className;
