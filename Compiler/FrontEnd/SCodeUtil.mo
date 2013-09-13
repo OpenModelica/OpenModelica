@@ -1215,8 +1215,6 @@ algorithm
       then
         {cls};
 
-    case (_,_,_,_,_,Absyn.EXTENDS(path = Absyn.QUALIFIED("Icons", Absyn.IDENT("TestCase"))),_) then {};
-
     case (_,_,_,repl,vis,Absyn.EXTENDS(path = path,elementArg = args,annotationOpt = NONE()),info)
       equation
         // Debug.fprintln(Flags.TRANSLATE, "translating extends: " +& Absyn.pathString(n));
