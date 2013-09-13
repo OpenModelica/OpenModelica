@@ -4564,6 +4564,7 @@ case FUNCTION(__) then
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
+    MMC_INIT();
     MMC_TRY_TOP()
     <%if outVars then "out = "%>omc_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)
@@ -4894,6 +4895,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
+    MMC_INIT();
     MMC_TRY_TOP()
     <%if outVars then "out = "%>omc_<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
     MMC_CATCH_TOP(return 1)

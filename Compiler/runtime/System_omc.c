@@ -715,7 +715,8 @@ extern int System_forkAvailable()
 #endif
 }
 
-static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *working)
+#if 1
+static int System_forkCallJoin(int *statuses, int *ids, int *working)
 {
   while (1) {
     int status = 1, id, i;
@@ -730,7 +731,7 @@ static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *wo
     } else {
       status = 0;
     }
-    for (i=0; i<numWorking; i++) {
+    for (i=0; 1; i++) {
       int idw = working[i];
       if (ids[idw] == id) {
         statuses[idw] = status;
@@ -741,7 +742,6 @@ static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *wo
   }
 }
 
-#if 1
 extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -764,7 +764,7 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
     int thisNum;
     /* Dynamic workload. Once we reach max number of threads, wait for one to finish. Else spawn new ones and join all at the end. */
     if (numWorking == numThreads) {
-      thisNum = System_forkCallJoin(status, ids, &numWorking, working);
+      thisNum = System_forkCallJoin(status, ids, working);
     } else {
       thisNum = numWorking++;
     }
@@ -787,7 +787,7 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
     }
   }
   while (numWorking) {
-    System_forkCallJoin(status, ids, &numWorking, working);
+    System_forkCallJoin(status, ids, working);
     numWorking--;
   }
   for (i=len-1; i>=0; i--) {

@@ -826,3 +826,12 @@ void* boxptr_valueHashMod(void *p, void *mod)
 {
   return mmc_mk_icon(mmc_prim_hash(p) % (unsigned long) mmc_unbox_integer(mod));
 }
+
+pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;
+void mmc_init()
+{
+  pthread_key_create(&mmc_jumper,NULL);
+  init_metamodelica_segv_handler();
+  mmc_GC_init(mmc_GC_settings_default);
+  MMC_INIT_STACK_OVERFLOW();
+}
