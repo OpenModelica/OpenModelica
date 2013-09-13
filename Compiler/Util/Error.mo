@@ -313,7 +313,7 @@ public constant Message NON_CLASS_IN_COMP_FUNC_NAME = MESSAGE(94, TRANSLATION(),
   Util.gettext("Found non-class %s while looking for function via component. The only valid form is c.C1..CN.f where c is a scalar component and C1..CN are classes."));
 public constant Message DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN = MESSAGE(95, SYMBOLIC(), ERROR(),
   Util.gettext("The same variables must me solved in elsewhen clause as in the when clause."));
-public constant Message CLASS_IN_COMPOSITE_COMP_NAME = MESSAGE(96, TRANSLATION, ERROR(),
+public constant Message CLASS_IN_COMPOSITE_COMP_NAME = MESSAGE(96, TRANSLATION(), ERROR(),
   Util.gettext("Found class %s during lookup of composite component name, expected component."));
 public constant Message MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR = MESSAGE(97, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in modifier of component %s, declared type %s, got modifier %s of type %s."));
