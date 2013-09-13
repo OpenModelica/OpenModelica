@@ -106,6 +106,9 @@ set(SUNDIALS_LIBS ${SUNDIALS_NVECSERIAL_LIB}  ${SUNDIALS_CVODES_LIB}  ${SUNDIALS
 message(STATUS "Sundials Libraries:")
 message(STATUS ${SUNDIALS_LIBS})
 add_definitions(-DPMC_USE_SUNDIALS)
+
+# On Windows we need to install those libraries along with the SimManager
+INSTALL(FILES ${SUNDIALS_LIBS} DESTINATION bin)
 endif()
 
 #Mico corba
