@@ -124,12 +124,12 @@ algorithm
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         (eqns_1,unassignedStates,unassignedEqns,discEqns) = minimalStructurallySingularSystem(eqns,isyst,ishared,inAssignments1,inAssignments2,inArg);
         size = BackendDAEUtil.systemSize(isyst);
-        ErrorExt.setCheckpoint("Pantelites");
+        ErrorExt.setCheckpoint("Pantelides");
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\n");
         markarr = arrayCreate(size,-1);
         (syst,shared,ass1,ass2,arg,_) =
          pantelidesIndexReduction1(unassignedStates,unassignedEqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,1,markarr,inArg,{});
-        ErrorExt.rollBack("Pantelites");
+        ErrorExt.rollBack("Pantelides");
         // get from eqns indexes the scalar indexes
         newsize = BackendDAEUtil.systemSize(syst);
         changedeqns = Debug.bcallret2(intGt(newsize,size),List.intRange2,size+1,newsize,{});
@@ -143,7 +143,7 @@ algorithm
         fail();
     case (_,_,_,_,_,_,_)
       equation
-        ErrorExt.delCheckpoint("Pantelites");
+        ErrorExt.delCheckpoint("Pantelides");
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction failed!"});
       then
         fail();
