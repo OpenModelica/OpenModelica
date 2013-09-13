@@ -8,13 +8,30 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
-"POT-Creation-Date: 2013-09-04 07:34+0200\n"
+"POT-Creation-Date: 2013-09-13 16:45+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: ../FrontEnd/NFLookup.mo:369 ../FrontEnd/NFLookup.mo:370
+msgid "component"
+msgstr ""
+
+#: ../FrontEnd/NFLookup.mo:371 ../FrontEnd/NFLookup.mo:374
+msgid "class"
+msgstr ""
+
+#: ../FrontEnd/NFLookup.mo:372 ../FrontEnd/NFLookup.mo:375
+msgid "function"
+msgstr ""
+
+#: ../FrontEnd/NFLookup.mo:373
+msgid "package"
+msgstr ""
 
 #: ../Util/Error.mo:131
 #, c-format
@@ -64,8 +81,8 @@ msgstr ""
 #: ../Util/Error.mo:149
 #, c-format
 msgid ""
-"Type error in when conditional '%s'. Expected Boolean scalar or vector, got %"
-"s."
+"Type error in when conditional '%s'. Expected Boolean scalar or vector, got "
+"%s."
 msgstr ""
 
 #: ../Util/Error.mo:151
@@ -107,7 +124,7 @@ msgid "Class %s not found."
 msgstr ""
 
 #: ../Util/Error.mo:167 ../runtime/printimpl.c:274 ../runtime/printimpl.c:293
-#: ../runtime/systemimpl.c:418 ../runtime/systemimpl.c:436
+#: ../runtime/systemimpl.c:420 ../runtime/systemimpl.c:438
 #, c-format
 msgid "Error writing to file %s."
 msgstr ""
@@ -322,158 +339,170 @@ msgstr ""
 
 #: ../Util/Error.mo:247
 #, c-format
-msgid "Illegal modification %s (of %s)."
+msgid "%s is protected and cannot be accessed outside it's scope."
 msgstr ""
 
 #: ../Util/Error.mo:249
 #, c-format
-msgid "Internal error %s"
+msgid "Illegal modification %s (of %s)."
 msgstr ""
 
 #: ../Util/Error.mo:251
+#, c-format
+msgid "Internal error %s"
+msgstr ""
+
+#: ../Util/Error.mo:253
 #, c-format
 msgid ""
 "Type mismatch in array expression in component %s. %s is of type %s while "
 "the elements %s are of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:253
+#: ../Util/Error.mo:255
 #, c-format
 msgid ""
 "Type mismatch in matrix rows in component %s. %s is a row of %s, the rest of "
 "the matrix is of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:255
+#: ../Util/Error.mo:257
 #, c-format
 msgid ""
 "Incompatible row length in matrix expression in component %s. %s is a row of "
 "size %s, the rest of the matrix rows are of size %s."
 msgstr ""
 
-#: ../Util/Error.mo:257
+#: ../Util/Error.mo:259
 #, c-format
 msgid "Operand of %s in component %s must be builtin-type in %s."
 msgstr ""
 
-#: ../Util/Error.mo:259
+#: ../Util/Error.mo:261
 #, c-format
 msgid "Wrong type or wrong number of arguments to %s (in component %s)."
 msgstr ""
 
-#: ../Util/Error.mo:261
+#: ../Util/Error.mo:263
 #, c-format
 msgid "Different dimension sizes in arguments to %s in component %s."
 msgstr ""
 
-#: ../Util/Error.mo:263
+#: ../Util/Error.mo:265
 #, c-format
 msgid "Import %s not found in scope %s."
 msgstr ""
 
-#: ../Util/Error.mo:265
+#: ../Util/Error.mo:267
 #, c-format
 msgid "Import %s is shadowed by a local element."
 msgstr ""
 
-#: ../Util/Error.mo:267
+#: ../Util/Error.mo:269
 #, c-format
 msgid "%s argument to %s in component %s must be Integer expression."
 msgstr ""
 
-#: ../Util/Error.mo:269
+#: ../Util/Error.mo:271
 #, c-format
 msgid "%s argument to %s in component %s must be discrete variable."
 msgstr ""
 
-#: ../Util/Error.mo:271
+#: ../Util/Error.mo:273
 #, c-format
 msgid "Type in %s must be simple type in component %s."
 msgstr ""
 
-#: ../Util/Error.mo:273
+#: ../Util/Error.mo:275
 #, c-format
 msgid "%s argument to %s in component %s must be a variable."
 msgstr ""
 
-#: ../Util/Error.mo:275
+#: ../Util/Error.mo:277
 #, c-format
 msgid ""
 "No matching function found for %s in component %s\n"
 "candidates are %s"
 msgstr ""
 
-#: ../Util/Error.mo:277
+#: ../Util/Error.mo:279
 #, c-format
 msgid "No matching function found for %s."
 msgstr ""
 
-#: ../Util/Error.mo:279
+#: ../Util/Error.mo:281
 #, c-format
 msgid "Component %s in function is neither input nor output."
 msgstr ""
 
-#: ../Util/Error.mo:281
+#: ../Util/Error.mo:283
 #, c-format
 msgid "Slot %s already filled in a function call in component %s."
 msgstr ""
 
-#: ../Util/Error.mo:283
+#: ../Util/Error.mo:285
 #, c-format
 msgid "No such argument %s in component %s."
 msgstr ""
 
-#: ../Util/Error.mo:285
+#: ../Util/Error.mo:287
 #, c-format
 msgid "%s is a constant or parameter with a non-constant initializer %s."
 msgstr ""
 
-#: ../Util/Error.mo:287
+#: ../Util/Error.mo:289
 #, c-format
 msgid ""
 "Subscript is not an integer or integer array in %s which is of type %s, in "
 "component %s."
 msgstr ""
 
-#: ../Util/Error.mo:289
+#: ../Util/Error.mo:291
 #, c-format
 msgid ""
 "Type mismatch in if-expression in component %s. True branch: %s has type %s, "
 "false branch: %s has type %s."
 msgstr ""
 
-#: ../Util/Error.mo:291
+#: ../Util/Error.mo:293
 #, c-format
 msgid ""
 "Cannot resolve type of expression %s. The operands have types %s in "
 "component %s."
 msgstr ""
 
-#: ../Util/Error.mo:293
+#: ../Util/Error.mo:295
 #, c-format
 msgid ""
 "Incompatible argument types to operation %s in component %s, left type: %s, "
 "right type: %s"
 msgstr ""
 
-#: ../Util/Error.mo:295
+#: ../Util/Error.mo:297
+#, c-format
+msgid ""
+"Class %s does not satisfy the requirements for a package. Lookup is "
+"therefore restricted to encapsulated elements, but %s is not encapsulated."
+msgstr ""
+
+#: ../Util/Error.mo:299
 #, c-format
 msgid "Class %s inherits builtin type but has components."
 msgstr ""
 
-#: ../Util/Error.mo:297
+#: ../Util/Error.mo:301
 #, c-format
 msgid ""
 "Type mismatch in modifier of component %s, expected type %s, got modifier %s "
 "of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:299
+#: ../Util/Error.mo:303
 #, c-format
 msgid "Error occurred while flattening model %s"
 msgstr ""
 
-#: ../Util/Error.mo:301
+#: ../Util/Error.mo:305
 #, c-format
 msgid ""
 "Duplicate elements (due to inherited elements) not identical:\n"
@@ -481,76 +510,108 @@ msgid ""
 "  second element is: %s"
 msgstr ""
 
-#: ../Util/Error.mo:303
+#: ../Util/Error.mo:307
 #, c-format
 msgid "Variable %s in package %s is not constant."
 msgstr ""
 
-#: ../Util/Error.mo:305
+#: ../Util/Error.mo:309
 #, c-format
 msgid "Declaration of element %s causes recursive definition of class %s."
 msgstr ""
 
-#: ../Util/Error.mo:307
+#: ../Util/Error.mo:311
 #, c-format
 msgid "Expression %s in for-statement must be an array type."
 msgstr ""
 
-#: ../Util/Error.mo:309
+#: ../Util/Error.mo:313
+#, c-format
+msgid ""
+"Found non-class %s while looking for function via component. The only valid "
+"form is c.C1..CN.f where c is a scalar component and C1..CN are classes."
+msgstr ""
+
+#: ../Util/Error.mo:315
 msgid ""
 "The same variables must me solved in elsewhen clause as in the when clause."
 msgstr ""
 
-#: ../Util/Error.mo:311
+#: ../Util/Error.mo:317
+#, c-format
+msgid ""
+"Found class %s during lookup of composite component name, expected component."
+msgstr ""
+
+#: ../Util/Error.mo:319
 #, c-format
 msgid ""
 "Type mismatch in modifier of component %s, declared type %s, got modifier %s "
 "of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:313
+#: ../Util/Error.mo:321
 #, c-format
 msgid "Assertion triggered during translation: %s."
 msgstr ""
 
-#: ../Util/Error.mo:315
+#: ../Util/Error.mo:323
 #, c-format
 msgid ""
 "Index out of bounds. Addressing position: %s, while array length is: %s."
 msgstr ""
 
-#: ../Util/Error.mo:317
+#: ../Util/Error.mo:325
 #, c-format
 msgid "Component condition must be parameter or constant expression (in %s)."
 msgstr ""
 
-#: ../Util/Error.mo:319
+#: ../Util/Error.mo:327
+#, c-format
+msgid ""
+"Found class %s by name lookup via component. Only component and function "
+"call names may be looked up via a component."
+msgstr ""
+
+#: ../Util/Error.mo:329
+#, c-format
+msgid ""
+"Found function %s by name lookup via component, but this is only valid when "
+"the name is used as a function call."
+msgstr ""
+
+#: ../Util/Error.mo:331
 #, c-format
 msgid "Duplicate modification of element %s on component %s."
 msgstr ""
 
-#: ../Util/Error.mo:321
+#: ../Util/Error.mo:333
 #, c-format
 msgid "Illegal subscript %s for dimensions %s in component %s."
 msgstr ""
 
-#: ../Util/Error.mo:323
+#: ../Util/Error.mo:335
 #, c-format
 msgid ""
 "Illegal type in equation %s, only builtin types (Real, String, Integer, "
 "Boolean or enumeration) or record type allowed in equation."
 msgstr ""
 
-#: ../Util/Error.mo:325
+#: ../Util/Error.mo:337
 #, c-format
 msgid "Assertion failed in function, message: %s"
 msgstr ""
 
-#: ../Util/Error.mo:327
+#: ../Util/Error.mo:339
+#, c-format
+msgid "%s is partial, name lookup is not allowed in partial classes."
+msgstr ""
+
+#: ../Util/Error.mo:341
 #, c-format
 msgid ""
-"No corresponding 'inner' declaration found for component %s declared as '%"
-"s'.\n"
+"No corresponding 'inner' declaration found for component %s declared as "
+"'%s'.\n"
 "  The existing 'inner' components are:\n"
 "    %s\n"
 "  Check if you have not misspelled the 'outer' component name.\n"
@@ -559,19 +620,19 @@ msgid ""
 "declaration."
 msgstr ""
 
-#: ../Util/Error.mo:329
+#: ../Util/Error.mo:343
 #, c-format
 msgid "The iteration range %s is not a constant or parameter expression."
 msgstr ""
 
-#: ../Util/Error.mo:331
+#: ../Util/Error.mo:345
 #, c-format
 msgid ""
 "Identifier %s of implicit for iterator must be present as array subscript in "
 "the loop body."
 msgstr ""
 
-#: ../Util/Error.mo:333
+#: ../Util/Error.mo:347
 #, c-format
 msgid ""
 "In equation %s. If-equation with conditions that are not parameter "
@@ -579,11 +640,11 @@ msgid ""
 "count is %s for each respective branch."
 msgstr ""
 
-#: ../Util/Error.mo:335
+#: ../Util/Error.mo:349
 msgid "Missing else-clause in if-equation with non-parameter conditions."
 msgstr ""
 
-#: ../Util/Error.mo:337
+#: ../Util/Error.mo:351
 #, c-format
 msgid ""
 "Incompatible components in connect statement: connect(%s, %s)\n"
@@ -591,77 +652,77 @@ msgid ""
 "- %s has components %s"
 msgstr ""
 
-#: ../Util/Error.mo:339
+#: ../Util/Error.mo:353
 #, c-format
 msgid "Illegal connecting two outer connectors in statement connect(%s, %s)."
 msgstr ""
 
-#: ../Util/Error.mo:341
+#: ../Util/Error.mo:355
 #, c-format
 msgid "in statement %s, subscript %s is not a parameter or constant."
 msgstr ""
 
-#: ../Util/Error.mo:343
+#: ../Util/Error.mo:357
 #, c-format
 msgid "Unmatched dimension in equation connect(%s, %s), %s != %s."
 msgstr ""
 
-#: ../Util/Error.mo:345
+#: ../Util/Error.mo:359
 #, c-format
 msgid ""
 "Non-array modification '%s' for array component, possibly due to missing "
 "'each'."
 msgstr ""
 
-#: ../Util/Error.mo:347
+#: ../Util/Error.mo:361
 #, c-format
 msgid ""
 "In scope %s, in component %s: Invalid dimensions %s in %s, no more than one "
 "dimension may have size > 1."
 msgstr ""
 
-#: ../Util/Error.mo:349
+#: ../Util/Error.mo:363
 #, c-format
 msgid "Unable to unroll for loop containing when statements or equations: %s."
 msgstr ""
 
-#: ../Util/Error.mo:351
+#: ../Util/Error.mo:365
 #, c-format
 msgid "Variable '%s' has a cyclic dependency and has variability %s."
 msgstr ""
 
-#: ../Util/Error.mo:353
+#: ../Util/Error.mo:367
 msgid "Nested when statements are not allowed."
 msgstr ""
 
-#: ../Util/Error.mo:355
+#: ../Util/Error.mo:369
 #, c-format
 msgid "Invalid use of reserved attribute name %s as enumeration literal."
 msgstr ""
 
-#: ../Util/Error.mo:357
+#: ../Util/Error.mo:371
 #, c-format
 msgid "Function %s has not the expected inputs. Expected inputs are %s."
 msgstr ""
 
-#: ../Util/Error.mo:359
+#: ../Util/Error.mo:373
 #, c-format
 msgid ""
 "Duplicate class definitions (due to inheritance) not equivalent, first "
 "definition is: %s, second definition is: %s."
 msgstr ""
 
-#: ../Util/Error.mo:361
+#: ../Util/Error.mo:375
 #, c-format
 msgid "Component %s of variability %s has binding %s of higher variability %s."
 msgstr ""
 
-#: ../Util/Error.mo:363
+#: ../Util/Error.mo:377
 #, c-format
 msgid "If-equations are only partially supported. Ignoring %s."
 msgstr ""
 
-#: ../Util/Error.mo:365
+#: ../Util/Error.mo:379
 #, c-format
 msgid ""
 "If-equation with conditions that are not parameter expressions must have the "
@@ -670,29 +731,29 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:367
+#: ../Util/Error.mo:381
 #, c-format
 msgid "Failed to instantiate equation %s."
 msgstr ""
 
-#: ../Util/Error.mo:369
+#: ../Util/Error.mo:383
 #, c-format
 msgid "Forcing full instantiation of partial class %s during checkModel."
 msgstr ""
 
-#: ../Util/Error.mo:371
+#: ../Util/Error.mo:385
 #, c-format
 msgid "Type mismatch in binding %s = %s, expected subtype of %s, got type %s."
 msgstr ""
 
-#: ../Util/Error.mo:373
+#: ../Util/Error.mo:387
 #, c-format
 msgid ""
 "Component %s has the same name as its type %s.\n"
 "\tThis is forbidden by Modelica specification and may lead to lookup errors."
 msgstr ""
 
-#: ../Util/Error.mo:375
+#: ../Util/Error.mo:389
 #, c-format
 msgid ""
 "Instantiation of array component: %s failed because index modification: %s "
@@ -700,14 +761,14 @@ msgid ""
 "\tArray component: %s has more dimensions than binding %s."
 msgstr ""
 
-#: ../Util/Error.mo:377
+#: ../Util/Error.mo:391
 #, c-format
 msgid ""
 "Duplicate modifications for attribute: %s in modifier: %s.\n"
 "\tConsidering only the first modification: %s and ignoring the rest %s."
 msgstr ""
 
-#: ../Util/Error.mo:379
+#: ../Util/Error.mo:393
 #, c-format
 msgid ""
 "%s has a function pointer as input. OpenModelica does not support this "
@@ -717,12 +778,12 @@ msgid ""
 "environment instead."
 msgstr ""
 
-#: ../Util/Error.mo:381
+#: ../Util/Error.mo:395
 #, c-format
-msgid "Found a type with same name when looking for component %s."
+msgid "Expected %s to be a %s, but found %s instead."
 msgstr ""
 
-#: ../Util/Error.mo:383
+#: ../Util/Error.mo:397
 #, c-format
 msgid ""
 "Duplicate elements (due to inherited elements) not syntactically identical "
@@ -731,165 +792,165 @@ msgid ""
 "requires that elements are exactly identical."
 msgstr ""
 
-#: ../Util/Error.mo:385
+#: ../Util/Error.mo:399
 #, c-format
 msgid "Failed to instantiate function %s in scope %s."
 msgstr ""
 
-#: ../Util/Error.mo:387
+#: ../Util/Error.mo:401
 #, c-format
 msgid "Wrong number of arguments to %s."
 msgstr ""
 
-#: ../Util/Error.mo:389
-#, c-format
-msgid ""
-"Tuple assignment only allowed for tuple of component references in lhs (in %"
-"s)."
-msgstr ""
-
-#: ../Util/Error.mo:391
-#, c-format
-msgid "Looking for a function %s but found a %s."
-msgstr ""
-
-#: ../Util/Error.mo:393
-#, c-format
-msgid "Operand %s to operator %s is not a stream variable."
-msgstr ""
-
-#: ../Util/Error.mo:395
-#, c-format
-msgid "Connector %s is not balanced: %s"
-msgstr ""
-
-#: ../Util/Error.mo:397
-#, c-format
-msgid "Restriction violation: %s is a %s, not a %s."
-msgstr ""
-
-#: ../Util/Error.mo:399
-#, c-format
-msgid "Step equals 0 in array constructor %s."
-msgstr ""
-
-#: ../Util/Error.mo:401
-#, c-format
-msgid "Recursive short class definition of %s in terms of %s."
-msgstr ""
-
 #: ../Util/Error.mo:403
 #, c-format
-msgid "Element is not allowed in function context: %s"
+msgid ""
+"Tuple assignment only allowed for tuple of component references in lhs (in "
+"%s)."
 msgstr ""
 
 #: ../Util/Error.mo:405
 #, c-format
-msgid "Duplicate classes on top level is not allowed (got %s)."
+msgid "Looking for a function %s but found a %s."
 msgstr ""
 
 #: ../Util/Error.mo:407
 #, c-format
-msgid "Invalid left-hand side of when-equation: %s."
+msgid "Operand %s to operator %s is not a stream variable."
 msgstr ""
 
 #: ../Util/Error.mo:409
 #, c-format
-msgid "Failed to elaborate expression: %s."
+msgid "Connector %s is not balanced: %s"
 msgstr ""
 
 #: ../Util/Error.mo:411
 #, c-format
-msgid "Ignoring external declaration of the extended class: %s."
+msgid "Restriction violation: %s is a %s, not a %s."
 msgstr ""
 
 #: ../Util/Error.mo:413
 #, c-format
-msgid "An element with name %s is already declared in this scope."
+msgid "Step equals 0 in array constructor %s."
 msgstr ""
 
 #: ../Util/Error.mo:415
+#, c-format
+msgid "Recursive short class definition of %s in terms of %s."
+msgstr ""
+
+#: ../Util/Error.mo:417
+#, c-format
+msgid "Element is not allowed in function context: %s"
+msgstr ""
+
+#: ../Util/Error.mo:419
+#, c-format
+msgid "Duplicate classes on top level is not allowed (got %s)."
+msgstr ""
+
+#: ../Util/Error.mo:421
+#, c-format
+msgid "Invalid left-hand side of when-equation: %s."
+msgstr ""
+
+#: ../Util/Error.mo:423
+#, c-format
+msgid "Failed to elaborate expression: %s."
+msgstr ""
+
+#: ../Util/Error.mo:425
+#, c-format
+msgid "Ignoring external declaration of the extended class: %s."
+msgstr ""
+
+#: ../Util/Error.mo:427
+#, c-format
+msgid "An element with name %s is already declared in this scope."
+msgstr ""
+
+#: ../Util/Error.mo:429
 #, c-format
 msgid ""
 "Invalid redeclaration of class %s, class extends only allowed on inherited "
 "classes."
 msgstr ""
 
-#: ../Util/Error.mo:417
+#: ../Util/Error.mo:431
 #, c-format
 msgid "Qualified import name %s already exists in this scope."
 msgstr ""
 
-#: ../Util/Error.mo:419
+#: ../Util/Error.mo:433
 #, c-format
 msgid "%s was found in base class %s."
 msgstr ""
 
-#: ../Util/Error.mo:421
+#: ../Util/Error.mo:435
 #, c-format
 msgid "Function %s not found in scope %s."
 msgstr ""
 
-#: ../Util/Error.mo:423
+#: ../Util/Error.mo:437
 #, c-format
 msgid "Failed to elaborate %s as a code expression of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:425
+#: ../Util/Error.mo:439
 #, c-format
 msgid "Equations are not allowed in %s."
 msgstr ""
 
-#: ../Util/Error.mo:427
+#: ../Util/Error.mo:441
 #, c-format
 msgid ""
 "The called uniontype record (%s) contains a member (%s) that has a uniontype "
 "record as its type instead of a uniontype."
 msgstr ""
 
-#: ../Util/Error.mo:429
+#: ../Util/Error.mo:443
 #, c-format
 msgid "Invalid external object %s, %s."
 msgstr ""
 
-#: ../Util/Error.mo:431
+#: ../Util/Error.mo:445
 #, c-format
 msgid "Cyclically dependent constants or parameters found in scope %s: %s."
 msgstr ""
 
-#: ../Util/Error.mo:433
+#: ../Util/Error.mo:447
 #, c-format
 msgid ""
 "Failed to deduce dimensions of %s due to unknown dimensions of modifier %s."
 msgstr ""
 
-#: ../Util/Error.mo:435
+#: ../Util/Error.mo:449
 #, c-format
 msgid "Part %s of base class %s is replaceable."
 msgstr ""
 
-#: ../Util/Error.mo:437
+#: ../Util/Error.mo:451
 #, c-format
 msgid "Non-replaceable base class %s in class extends."
 msgstr ""
 
-#: ../Util/Error.mo:439
+#: ../Util/Error.mo:453
 msgid "From here:"
 msgstr ""
 
-#: ../Util/Error.mo:441
+#: ../Util/Error.mo:455
 #, c-format
 msgid ""
 "The lhs (result) of the external function declaration is not a component "
 "reference: %s."
 msgstr ""
 
-#: ../Util/Error.mo:443
+#: ../Util/Error.mo:457
 msgid ""
 "The lhs (result) of the external function declaration is not a variable."
 msgstr ""
 
-#: ../Util/Error.mo:445
+#: ../Util/Error.mo:459
 #, c-format
 msgid ""
 "The lhs (result) of the external function declaration has array type (%s), "
@@ -898,64 +959,64 @@ msgid ""
 "of-bounds errors in the external call)."
 msgstr ""
 
-#: ../Util/Error.mo:447
+#: ../Util/Error.mo:461
 #, c-format
 msgid "Redeclaration of %s %s %s is not allowed."
 msgstr ""
 
-#: ../Util/Error.mo:449
+#: ../Util/Error.mo:463
 #, c-format
 msgid "Invalid type prefix '%s' on %s %s, due to existing type prefix '%s'."
 msgstr ""
 
-#: ../Util/Error.mo:451
+#: ../Util/Error.mo:465
 #, c-format
 msgid "Linear solver (%s) returned invalid input for linear system %s."
 msgstr ""
 
-#: ../Util/Error.mo:453
+#: ../Util/Error.mo:467
 msgid ""
 "When solving linear system %1\n"
 "  U(%2,%2) = 0.0, which means system is singular for variable %3."
 msgstr ""
 
-#: ../Util/Error.mo:455
+#: ../Util/Error.mo:469
 msgid "Array constructor may not be empty."
 msgstr ""
 
-#: ../Util/Error.mo:457
+#: ../Util/Error.mo:471
 #, c-format
 msgid ""
 "Requested package %s of version %s, but this package was already loaded with "
 "version %s. You might experience problems if these versions are incompatible."
 msgstr ""
 
-#: ../Util/Error.mo:459
+#: ../Util/Error.mo:473
 #, c-format
 msgid "Failed to load package %s (%s) using MODELICAPATH %s."
 msgstr ""
 
-#: ../Util/Error.mo:461
+#: ../Util/Error.mo:475
 #, c-format
 msgid "Base class %s is replaceable."
 msgstr ""
 
-#: ../Util/Error.mo:463
+#: ../Util/Error.mo:477
 #, c-format
 msgid "Invalid index %s in call to size of %s, valid index interval is [1,%s]."
 msgstr ""
 
-#: ../Util/Error.mo:465
+#: ../Util/Error.mo:479
 #, c-format
 msgid "Algorithm section is not allowed in %s."
 msgstr ""
 
-#: ../Util/Error.mo:467
+#: ../Util/Error.mo:481
 #, c-format
 msgid "Failed to deduce dimensions of %s due to missing binding equation."
 msgstr ""
 
-#: ../Util/Error.mo:469
+#: ../Util/Error.mo:483
 #, c-format
 msgid ""
 "The behavior of multiple algorithm sections in function %s is not standard "
@@ -964,60 +1025,60 @@ msgid ""
 "arguments, which also are not standardized)."
 msgstr ""
 
-#: ../Util/Error.mo:471
+#: ../Util/Error.mo:485
 #, c-format
 msgid ""
 "Failed to instantiate statement:\n"
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:473
+#: ../Util/Error.mo:487
 #, c-format
 msgid ""
 "%s is an unbound output in external function %s. Either add it to the "
 "external declaration or add a default binding."
 msgstr ""
 
-#: ../Util/Error.mo:475
+#: ../Util/Error.mo:489
 #, c-format
 msgid "Unused input variable %s in function %s."
 msgstr ""
 
-#: ../Util/Error.mo:477
+#: ../Util/Error.mo:491
 #, c-format
 msgid "Array types mismatch: %s and %s."
 msgstr ""
 
-#: ../Util/Error.mo:479
+#: ../Util/Error.mo:493
 #, c-format
 msgid ""
 "Could not vectorize call with unknown dimensions due to finding two for-"
 "iterators: %s and %s."
 msgstr ""
 
-#: ../Util/Error.mo:481
+#: ../Util/Error.mo:495
 #, c-format
 msgid "Function argument %s=%s is not a %sexpression."
 msgstr ""
 
-#: ../Util/Error.mo:483
+#: ../Util/Error.mo:497
 #, c-format
 msgid ""
-"Invalid dimension %s of argument to %s, expected dimension size %s but got %"
-"s."
+"Invalid dimension %s of argument to %s, expected dimension size %s but got "
+"%s."
 msgstr ""
 
-#: ../Util/Error.mo:485
+#: ../Util/Error.mo:499
 #, c-format
 msgid "%s is already redeclared in this scope."
 msgstr ""
 
-#: ../Util/Error.mo:487
+#: ../Util/Error.mo:501
 #, c-format
 msgid "Invalid type %s for function component %s."
 msgstr ""
 
-#: ../Util/Error.mo:489
+#: ../Util/Error.mo:503
 #, c-format
 msgid ""
 "An independent subset of the model has imbalanced number of equations (%s) "
@@ -1028,109 +1089,109 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:491
+#: ../Util/Error.mo:505
 #, c-format
 msgid ""
 "Variable %s is not referenced in any equation (possibly after symbolic "
 "manipulations)."
 msgstr ""
 
-#: ../Util/Error.mo:493
+#: ../Util/Error.mo:507
 #, c-format
 msgid ""
 "Invalid public variable %s, function variables that are not input/output "
 "must be protected."
 msgstr ""
 
-#: ../Util/Error.mo:495
+#: ../Util/Error.mo:509
 #, c-format
 msgid ""
 "Invalid protected variable %s, function variables that are input/output must "
 "be public."
 msgstr ""
 
-#: ../Util/Error.mo:497
+#: ../Util/Error.mo:511
 #, c-format
 msgid ""
 "Function argument %s was not given by the function call, and does not have a "
 "default value."
 msgstr ""
 
-#: ../Util/Error.mo:499
+#: ../Util/Error.mo:513
 #, c-format
 msgid ""
 "connect(%s, %s) connects the same connector instance! The connect equation "
 "will be ignored."
 msgstr ""
 
-#: ../Util/Error.mo:501
+#: ../Util/Error.mo:515
 #, c-format
 msgid "Stack overflow occurred while evaluating %s."
 msgstr ""
 
-#: ../Util/Error.mo:503
+#: ../Util/Error.mo:517
 #, c-format
 msgid "Unknown debug flag %s."
 msgstr ""
 
-#: ../Util/Error.mo:505
+#: ../Util/Error.mo:519
 #, c-format
 msgid "Invalid type of flag %s, expected %s but got %s."
 msgstr ""
 
-#: ../Util/Error.mo:507
+#: ../Util/Error.mo:521
 #, c-format
 msgid "Modelica language version set to %s due to loading of MSL %s."
 msgstr ""
 
-#: ../Util/Error.mo:509
+#: ../Util/Error.mo:523
 #, c-format
 msgid ""
 "Expression simplification iterated to the fix-point maximum, which may be a "
 "performance bottleneck. The last two iterations were: %s, and %s."
 msgstr ""
 
-#: ../Util/Error.mo:511
+#: ../Util/Error.mo:525
 #, c-format
 msgid "Unknown option %s."
 msgstr ""
 
-#: ../Util/Error.mo:513
+#: ../Util/Error.mo:527
 msgid "Subscripted modifier is illegal."
 msgstr ""
 
-#: ../Util/Error.mo:515
+#: ../Util/Error.mo:529
 #, c-format
 msgid "Restriction violation: %s is a %s, which may not contain an %s."
 msgstr ""
 
-#: ../Util/Error.mo:517
+#: ../Util/Error.mo:531
 #, c-format
 msgid "Failed to insert class %s %s the available classes were:%s"
 msgstr ""
 
-#: ../Util/Error.mo:519
+#: ../Util/Error.mo:533
 #, c-format
 msgid "Modified element %s not found in class %s."
 msgstr ""
 
-#: ../Util/Error.mo:521
+#: ../Util/Error.mo:535
 msgid "Invalid redeclaration, attributes of basic types can not be redeclared."
 msgstr ""
 
-#: ../Util/Error.mo:523
+#: ../Util/Error.mo:537
 #, c-format
 msgid "Invalid stream connector %s: %s"
 msgstr ""
 
-#: ../Util/Error.mo:525
+#: ../Util/Error.mo:539
 #, c-format
 msgid ""
 "Type mismatch in condition '%s' of component %s. Expected a Boolean "
 "expression, but got an expression of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:527
+#: ../Util/Error.mo:541
 #, c-format
 msgid ""
 "The compiler failed to perform constant folding on expression %s. Please "
@@ -1138,106 +1199,106 @@ msgid ""
 "(using the +t compiler option if possible)."
 msgstr ""
 
-#: ../Util/Error.mo:529
+#: ../Util/Error.mo:543
 #, c-format
 msgid ""
 "In sum(%s), the expression is of type %s, but is required to be of builtin "
 "array type (of any number of dimensions)."
 msgstr ""
 
-#: ../Util/Error.mo:531
+#: ../Util/Error.mo:545
 #, c-format
 msgid "Invalid specialized class type '%s' for component %s."
 msgstr ""
 
-#: ../Util/Error.mo:533
+#: ../Util/Error.mo:547
 msgid "Connect equations are not allowed in initial equation sections."
 msgstr ""
 
-#: ../Util/Error.mo:535
+#: ../Util/Error.mo:549
 #, c-format
 msgid "Trying to override final component %s with modifier %s."
 msgstr ""
 
-#: ../Util/Error.mo:537
+#: ../Util/Error.mo:551
 #, c-format
 msgid "Automatically loaded package %s %s due to uses annotation."
 msgstr ""
 
-#: ../Util/Error.mo:539
+#: ../Util/Error.mo:553
 #, c-format
 msgid ""
 "The first argument to reinit must be a subtype of Real, but %s has type %s."
 msgstr ""
 
-#: ../Util/Error.mo:541
+#: ../Util/Error.mo:555
 #, c-format
 msgid "The first argument to reinit must be a variable, but %s is a %s."
 msgstr ""
 
-#: ../Util/Error.mo:543
+#: ../Util/Error.mo:557
 #, c-format
 msgid "Connecting two signal sources while connecting %s to %s."
 msgstr ""
 
-#: ../Util/Error.mo:545
+#: ../Util/Error.mo:559
 #, c-format
 msgid "Invalid prefix %son formal parameter %s."
 msgstr ""
 
-#: ../Util/Error.mo:547
+#: ../Util/Error.mo:561
 #, c-format
 msgid ""
 "Illegal redeclare of element %s, no inherited element with that name exists."
 msgstr ""
 
-#: ../Util/Error.mo:549
+#: ../Util/Error.mo:563
 #, c-format
 msgid "The first argument of %s must be an array expression."
 msgstr ""
 
-#: ../Util/Error.mo:551
+#: ../Util/Error.mo:565
 #, c-format
 msgid ""
 "The first argument of %s must be on the form A.R, where A is a connector and "
 "R an over-determined type/record."
 msgstr ""
 
-#: ../Util/Error.mo:553
+#: ../Util/Error.mo:567
 #, c-format
 msgid ""
 "The second argument of %s must be on the form A.R, where A is a connector "
 "and R an over-determined type/record."
 msgstr ""
 
-#: ../Util/Error.mo:555
+#: ../Util/Error.mo:569
 #, c-format
 msgid "The first argument of %s must be an over-determined type or record."
 msgstr ""
 
-#: ../Util/Error.mo:557
+#: ../Util/Error.mo:571
 #, c-format
 msgid "The second argument of %s must be an over-determined type or record."
 msgstr ""
 
-#: ../Util/Error.mo:559
+#: ../Util/Error.mo:573
 #, c-format
 msgid ""
 "Modelica library files should contain exactly one package, but found the "
 "following classes: %s."
 msgstr ""
 
-#: ../Util/Error.mo:561
+#: ../Util/Error.mo:575
 #, c-format
 msgid "Expected the package to have %s but got %s."
 msgstr ""
 
-#: ../Util/Error.mo:563
+#: ../Util/Error.mo:577
 #, c-format
 msgid "Expected the package to have name %s, but got %s."
 msgstr ""
 
-#: ../Util/Error.mo:565
+#: ../Util/Error.mo:579
 #, c-format
 msgid ""
 "Elements in the package.mo-file need to be in the same relative order as the "
@@ -1245,64 +1306,64 @@ msgid ""
 "was not the next element in the list at that time."
 msgstr ""
 
-#: ../Util/Error.mo:567
+#: ../Util/Error.mo:581
 #, c-format
 msgid ""
 "%s is a package.mo-file and needs to be based on class parts (i.e. not class "
 "extends, derived class, or enumeration)."
 msgstr ""
 
-#: ../Util/Error.mo:569
+#: ../Util/Error.mo:583
 msgid ""
 "%1 was referenced in the package.order file, but was not found in package."
 "mo, %1/package.mo or %1.mo."
 msgstr ""
 
-#: ../Util/Error.mo:571
+#: ../Util/Error.mo:585
 msgid "Got element %1 that was not referenced in the package.order file."
 msgstr ""
 
-#: ../Util/Error.mo:573
+#: ../Util/Error.mo:587
 msgid ""
 "Components referenced in the package.order file must be moved in full "
 "chunks. Either split the constants to different lines or make them "
 "subsequent in the package.order file."
 msgstr ""
 
-#: ../Util/Error.mo:575
+#: ../Util/Error.mo:589
 #, c-format
 msgid "Guard expressions need to be Boolean, got expression of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:577
+#: ../Util/Error.mo:591
 #, c-format
 msgid ""
 "User-defined function calls that return Array<...> are not supported: %s."
 msgstr ""
 
-#: ../Util/Error.mo:579
+#: ../Util/Error.mo:593
 msgid ""
 "Failed elaborate assignment for some unknown reason: %1 := %2. File a bug "
 "report and we will make sure this error gets a better message in the future."
 msgstr ""
 
-#: ../Util/Error.mo:581
+#: ../Util/Error.mo:595
 #, c-format
 msgid ""
 "%s was used before it was defined (given a value). Additional such uses may "
 "exist for the variable, but some messages were suppressed."
 msgstr ""
 
-#: ../Util/Error.mo:583
+#: ../Util/Error.mo:597
 msgid "Expression %1 has type %3, expected type %2."
 msgstr ""
 
-#: ../Util/Error.mo:585
+#: ../Util/Error.mo:599
 #, c-format
 msgid "Found duplicate names in package.order file: %s."
 msgstr ""
 
-#: ../Util/Error.mo:587
+#: ../Util/Error.mo:601
 #, c-format
 msgid ""
 "Got type mismatch error, but matching types %s.\n"
@@ -1310,159 +1371,159 @@ msgid ""
 "org/OpenModelica."
 msgstr ""
 
-#: ../Util/Error.mo:589
+#: ../Util/Error.mo:603
 msgid ""
 "The first argument to reinit must be a variable of type Real or an array of "
 "such variables."
 msgstr ""
 
-#: ../Util/Error.mo:591
+#: ../Util/Error.mo:605
 #, c-format
 msgid "Cannot assign slice to non-initialized array %s."
 msgstr ""
 
-#: ../Util/Error.mo:594
+#: ../Util/Error.mo:608
 #, c-format
 msgid ""
 "Parameter %s has no value, and is fixed during initialization (fixed=true), "
 "using available start value (start=%s) as default value."
 msgstr ""
 
-#: ../Util/Error.mo:596
+#: ../Util/Error.mo:610
 #, c-format
 msgid ""
 "Parameter %s has neither value nor start value, and is fixed during "
 "initialization (fixed=true)."
 msgstr ""
 
-#: ../Util/Error.mo:598
+#: ../Util/Error.mo:612
 #, c-format
 msgid "Function \"product\" has scalar as argument in %s in component %s."
 msgstr ""
 
-#: ../Util/Error.mo:600
+#: ../Util/Error.mo:614
 #, c-format
 msgid ""
 "Using over-determined solver for initialization. Setting fixed=false to the "
 "following variables: %s."
 msgstr ""
 
-#: ../Util/Error.mo:602
+#: ../Util/Error.mo:616
 #, c-format
 msgid "Failed to evaluate function: %s."
 msgstr ""
 
-#: ../Util/Error.mo:604
+#: ../Util/Error.mo:618
 #, c-format
 msgid ""
 "Trying to override final variable in component %s and scope %s by using "
 "modifiers: %s and %s that do not agree."
 msgstr ""
 
-#: ../Util/Error.mo:606
+#: ../Util/Error.mo:620
 #, c-format
 msgid ""
 "In component %s, in relation %s, %s on Real numbers is only allowed inside "
 "functions."
 msgstr ""
 
-#: ../Util/Error.mo:608
+#: ../Util/Error.mo:622
 #, c-format
 msgid "Ignoring the modification on outer element: %s."
 msgstr ""
 
-#: ../Util/Error.mo:610
+#: ../Util/Error.mo:624
 #, c-format
 msgid ""
 "Illegal derivative. der(%s) in component %s is of type %s, which is not a "
 "subtype of Real."
 msgstr ""
 
-#: ../Util/Error.mo:612
+#: ../Util/Error.mo:626
 #, c-format
 msgid "In modifier %s."
 msgstr ""
 
-#: ../Util/Error.mo:614
+#: ../Util/Error.mo:628
 #, c-format
 msgid "Multiple modifiers in same scope for element %s, %s."
 msgstr ""
 
-#: ../Util/Error.mo:616
+#: ../Util/Error.mo:630
 #, c-format
 msgid ""
 "The system of units is inconsistent in term %s with the units %s and %s "
 "respectively."
 msgstr ""
 
-#: ../Util/Error.mo:618
+#: ../Util/Error.mo:632
 msgid "The system of units is consistent."
 msgstr ""
 
-#: ../Util/Error.mo:620
+#: ../Util/Error.mo:634
 msgid ""
 "The system of units is incomplete. Please provide unit information to the "
 "model by e.g. using types from the SIunits package."
 msgstr ""
 
-#: ../Util/Error.mo:622
+#: ../Util/Error.mo:636
 #, c-format
 msgid "Failed to elaborate rhs of %s."
 msgstr ""
 
-#: ../Util/Error.mo:624
+#: ../Util/Error.mo:638
 #, c-format
 msgid "Could not evaluate expression: %s"
 msgstr ""
 
-#: ../Util/Error.mo:626
+#: ../Util/Error.mo:640
 #, c-format
 msgid "Jacobian equation %s could not solve proper for %s. Assume %s=0."
 msgstr ""
 
-#: ../Util/Error.mo:628
+#: ../Util/Error.mo:642
 #, c-format
 msgid ""
 "Simplification produced a higher complexity (%s) than the original (%s). The "
 "simplification was: %s => %s."
 msgstr ""
 
-#: ../Util/Error.mo:630
+#: ../Util/Error.mo:644
 #, c-format
 msgid "Iterator %s, has type %s, but expected an array expression."
 msgstr ""
 
-#: ../Util/Error.mo:632
+#: ../Util/Error.mo:646
 #, c-format
 msgid "Cannot instantiate %s due to restriction %s."
 msgstr ""
 
-#: ../Util/Error.mo:634
+#: ../Util/Error.mo:648
 #, c-format
 msgid "Library %s was not loaded but is marked as used by model %s."
 msgstr ""
 
-#: ../Util/Error.mo:636
+#: ../Util/Error.mo:650
 #, c-format
 msgid ""
 "The maximum recursion depth was reached, probably due to mutual recursion. "
 "The current scope: %s."
 msgstr ""
 
-#: ../Util/Error.mo:638
+#: ../Util/Error.mo:652
 #, c-format
 msgid ""
 "The model requires derivatives of some inputs as listed below:\n"
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:640
+#: ../Util/Error.mo:654
 msgid ""
 "The compiler was sent command-line arguments that were not UTF-8 encoded and "
 "will abort the current execution."
 msgstr ""
 
-#: ../Util/Error.mo:642
+#: ../Util/Error.mo:656
 #, c-format
 msgid ""
 "The package.order file does not list all .mo files and directories "
@@ -1471,20 +1532,20 @@ msgid ""
 "\t%s"
 msgstr ""
 
-#: ../Util/Error.mo:644
+#: ../Util/Error.mo:658
 msgid ""
 "Using reinit in when with condition initial() is not allowed. Use assignment "
 "or equality equation instead."
 msgstr ""
 
-#: ../Util/Error.mo:646
+#: ../Util/Error.mo:660
 #, c-format
 msgid ""
 "No corresponding 'inner' declaration found for class %s declared as '%s'.\n"
 " Continuing flattening by only considering the 'outer' class declaration."
 msgstr ""
 
-#: ../Util/Error.mo:648
+#: ../Util/Error.mo:662
 #, c-format
 msgid ""
 "The maximum recursion depth was reached when evaluating expression %s in "
@@ -1492,14 +1553,14 @@ msgid ""
 "problem."
 msgstr ""
 
-#: ../Util/Error.mo:650
+#: ../Util/Error.mo:664
 #, c-format
 msgid ""
 "The maximum recursion depth was reached when instantiating a derived class. "
 "Current class %s in scope %s."
 msgstr ""
 
-#: ../Util/Error.mo:652
+#: ../Util/Error.mo:666
 #, c-format
 msgid ""
 "OpenModelica requires that all external objects input arguments are possible "
@@ -1507,59 +1568,59 @@ msgid ""
 "but %s is a variable."
 msgstr ""
 
-#: ../Util/Error.mo:654
+#: ../Util/Error.mo:668
 #, c-format
 msgid "Could not find class annotation %s in class %s."
 msgstr ""
 
-#: ../Util/Error.mo:656
+#: ../Util/Error.mo:670
 #, c-format
 msgid "Failed to compile all functions in package %s."
 msgstr ""
 
-#: ../Util/Error.mo:659
+#: ../Util/Error.mo:673
 #, c-format
 msgid "Local variable '%s' shadows another variable."
 msgstr ""
 
-#: ../Util/Error.mo:661
+#: ../Util/Error.mo:675
 #, c-format
 msgid "%s uses invalid subtypeof syntax. Only subtypeof Any is supported."
 msgstr ""
 
-#: ../Util/Error.mo:663
+#: ../Util/Error.mo:677
 #, c-format
 msgid ""
 "%s is used as a function reference, but doesn't specify the partial prefix."
 msgstr ""
 
-#: ../Util/Error.mo:665
+#: ../Util/Error.mo:679
 #, c-format
 msgid "Match expression equation sections forbid the use of %s-equations."
 msgstr ""
 
-#: ../Util/Error.mo:667
+#: ../Util/Error.mo:681
 #, c-format
 msgid ""
 "Uniontype %s was not generated correctly. One possible cause is "
 "modifications, which are not allowed."
 msgstr ""
 
-#: ../Util/Error.mo:669
+#: ../Util/Error.mo:683
 msgid "MetaModelica complex types may not have modifiers."
 msgstr ""
 
-#: ../Util/Error.mo:671
+#: ../Util/Error.mo:685
 #, c-format
 msgid "Cannot evaluate function pointers (got %s)."
 msgstr ""
 
-#: ../Util/Error.mo:673
+#: ../Util/Error.mo:687
 #, c-format
 msgid "Tried to use function %s, but it was not instantiated."
 msgstr ""
 
-#: ../Util/Error.mo:675
+#: ../Util/Error.mo:689
 #, c-format
 msgid ""
 "Could not solve the polymorphism in the function call to %s\n"
@@ -1571,61 +1632,61 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:677
+#: ../Util/Error.mo:691
 #, c-format
 msgid "In record constructor %s: %s"
 msgstr ""
 
-#: ../Util/Error.mo:679
+#: ../Util/Error.mo:693
 #, c-format
 msgid "Invalid pattern: %s"
 msgstr ""
 
-#: ../Util/Error.mo:681
+#: ../Util/Error.mo:695
 #, c-format
 msgid "Failed to elaborate match expression %s"
 msgstr ""
 
-#: ../Util/Error.mo:683
+#: ../Util/Error.mo:697
 #, c-format
 msgid ""
 "Failed to match types of cons expression %s. The head has type %s and the "
 "tail %s."
 msgstr ""
 
-#: ../Util/Error.mo:685
+#: ../Util/Error.mo:699
 #, c-format
 msgid ""
 "%s. Strict RML enforces match expression input and output to be the same as "
 "the function's."
 msgstr ""
 
-#: ../Util/Error.mo:687
+#: ../Util/Error.mo:701
 msgid "NONE is not acceptable syntax. Use NONE() instead."
 msgstr ""
 
-#: ../Util/Error.mo:689
+#: ../Util/Error.mo:703
 #, c-format
 msgid "Invalid named fields: %s"
 msgstr ""
 
-#: ../Util/Error.mo:691
+#: ../Util/Error.mo:705
 #, c-format
 msgid ""
 "Only components without direction are allowed in local declarations, got: %s"
 msgstr ""
 
-#: ../Util/Error.mo:693
+#: ../Util/Error.mo:707
 #, c-format
 msgid "Invalid complex type name: %s"
 msgstr ""
 
-#: ../Util/Error.mo:695
+#: ../Util/Error.mo:709
 #, c-format
 msgid "In pattern %s: %s is not part of uniontype %s"
 msgstr ""
 
-#: ../Util/Error.mo:697
+#: ../Util/Error.mo:711
 #, c-format
 msgid ""
 "Type mismatch in pattern %s\n"
@@ -1635,77 +1696,77 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: ../Util/Error.mo:699
+#: ../Util/Error.mo:713
 #, c-format
 msgid "Call pattern is not a record constructor %s"
 msgstr ""
 
-#: ../Util/Error.mo:701
+#: ../Util/Error.mo:715
 #, c-format
 msgid "Match expression has mismatched result types:%s"
 msgstr ""
 
-#: ../Util/Error.mo:703
+#: ../Util/Error.mo:717
 msgid ""
 "This matchcontinue expression has no overlapping patterns and should be "
 "using match instead of matchcontinue."
 msgstr ""
 
-#: ../Util/Error.mo:705
+#: ../Util/Error.mo:719
 #, c-format
 msgid "Dead code elimination: %s."
 msgstr ""
 
-#: ../Util/Error.mo:707
+#: ../Util/Error.mo:721
 #, c-format
 msgid "Unused local variable: %s."
 msgstr ""
 
-#: ../Util/Error.mo:709
+#: ../Util/Error.mo:723
 #, c-format
 msgid "Removing unused as-binding: %s."
 msgstr ""
 
-#: ../Util/Error.mo:711
+#: ../Util/Error.mo:725
 #, c-format
 msgid "Converted match expression to switch of type %s."
 msgstr ""
 
-#: ../Util/Error.mo:713
+#: ../Util/Error.mo:727
 #, c-format
 msgid ""
 "Reductions require the types of the %s and %s to be %s, but got: %s and %s."
 msgstr ""
 
-#: ../Util/Error.mo:715
+#: ../Util/Error.mo:729
 #, c-format
 msgid ""
 "Expected a reduction function with type signature ('A,'B) => 'B, but got %s."
 msgstr ""
 
-#: ../Util/Error.mo:717
+#: ../Util/Error.mo:731
 #, c-format
 msgid "Operator %s expects numeric types as operands, but got '%s and %s'."
 msgstr ""
 
-#: ../Util/Error.mo:719
+#: ../Util/Error.mo:733
 #, c-format
 msgid ""
 "Could not evaluate structural parameter (or constant): %s which gives "
 "dimensions of array: %s. Array dimensions must be known at compile time."
 msgstr ""
 
-#: ../Util/Error.mo:729
+#: ../Util/Error.mo:743
 #, c-format
 msgid "Template error: %s"
 msgstr ""
 
-#: ../Util/Error.mo:731 ../Util/Error.mo:733
+#: ../Util/Error.mo:745 ../Util/Error.mo:747
 #, c-format
 msgid "Operator Overloading: %s."
 msgstr ""
 
-#: ../Util/Error.mo:741
+#: ../Util/Error.mo:755
 #, c-format
 msgid "File not Found: %s."
 msgstr ""
@@ -2564,62 +2625,66 @@ msgid ""
 "Sets the path for corba object reference file if +d=interactiveCorba is used."
 msgstr ""
 
-#: ../Util/Flags.mo:1657
+#: ../Util/Flags.mo:794
+msgid "Sets the scheduler for task graph scheduling. Default: list scheduling."
+msgstr ""
+
+#: ../Util/Flags.mo:1662
 msgid ""
 "Help on the command-line and scripting environments, including OMShell and "
 "OMNotebook."
 msgstr ""
 
-#: ../Util/Flags.mo:1658
+#: ../Util/Flags.mo:1663
 msgid "The command-line options available for omc."
 msgstr ""
 
-#: ../Util/Flags.mo:1659
+#: ../Util/Flags.mo:1664
 msgid "Flags that enable debugging, diagnostics, and research prototypes."
 msgstr ""
 
-#: ../Util/Flags.mo:1660
+#: ../Util/Flags.mo:1665
 msgid ""
 "Flags that determine which symbolic methods are used to produce the "
 "causalized equation system."
 msgstr ""
 
-#: ../Util/Flags.mo:1661
+#: ../Util/Flags.mo:1666
 msgid ""
 "The command-line options available for simulation executables generated by "
 "OpenModelica."
 msgstr ""
 
-#: ../Util/Flags.mo:1662
+#: ../Util/Flags.mo:1667
 msgid "Displays option descriptions for multi-option flag <flagname>."
 msgstr ""
 
-#: ../Util/Flags.mo:1663
+#: ../Util/Flags.mo:1668
 msgid "This help-text."
 msgstr ""
 
-#: ../Util/Flags.mo:1673
+#: ../Util/Flags.mo:1678
 msgid "The available topics (help(\"topics\")) are as follows:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1680
+#: ../Util/Flags.mo:1685
 msgid "The simulation executable takes the following flags:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1685
+#: ../Util/Flags.mo:1690
 msgid ""
 "The debug flag takes a comma-separated list of flags which are used by the\n"
 "compiler for debugging or experimental purposes.\n"
 "Flags prefixed with \"-\" or \"no\" will be disabled.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1686
+#: ../Util/Flags.mo:1691
 msgid ""
 "The available flags are (+ are enabled by default, - are disabled):\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1693
+#: ../Util/Flags.mo:1698
 msgid ""
 "The +preOptModules flag sets the optimization modules which are used before "
 "the\n"
@@ -2627,36 +2692,36 @@ msgid ""
 "a comma-separated list, where the valid modules are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1696
+#: ../Util/Flags.mo:1701
 msgid ""
 "The +matchingAlgorithm sets the method that is used for the matching "
 "algorithm, after the pre optimization modules. Valid options are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1699
+#: ../Util/Flags.mo:1704
 msgid ""
 "The +indexReductionMethod sets the method that is used for the index "
 "reduction, after the pre optimization modules. Valid options are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1702
+#: ../Util/Flags.mo:1707
 msgid ""
 "The +postOptModules then sets the optimization modules which are used after "
 "the index reduction, specified as a comma-separated list. The valid modules "
 "are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1759
+#: ../Util/Flags.mo:1764
 msgid "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1760
+#: ../Util/Flags.mo:1765
 msgid ""
 "Distributed under OMSC-PL and GPL, see www.openmodelica.org\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1762
+#: ../Util/Flags.mo:1767
 msgid ""
 "Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries "
 "| .mo-files] \n"
@@ -2667,87 +2732,87 @@ msgid ""
 "* runtimeOptions: call omc -help to see runtime options\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1763
+#: ../Util/Flags.mo:1768
 msgid ""
 "\n"
 "* +omcOptions:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1765
+#: ../Util/Flags.mo:1770
 msgid ""
 "\n"
 "For more details on a specific topic, use +help=topics or help(\"topics\")\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1766
+#: ../Util/Flags.mo:1771
 msgid "* Examples:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1767
+#: ../Util/Flags.mo:1772
 msgid ""
 "  omc Model.mo             will produce flattened Model on standard output.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1768
+#: ../Util/Flags.mo:1773
 msgid ""
 "  omc +s Model.mo          will produce simulation code for the model:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1769
+#: ../Util/Flags.mo:1774
 msgid "                            * Model.c           The model C code.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1770
+#: ../Util/Flags.mo:1775
 msgid ""
 "                            * Model_functions.c The model functions C code.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1771
+#: ../Util/Flags.mo:1776
 msgid ""
 "                            * Model.makefile    The makefile to compile the "
 "model.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1772
+#: ../Util/Flags.mo:1777
 msgid "                            * Model_init.xml    The initial values.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1774
+#: ../Util/Flags.mo:1779
 msgid "  omc Script.mos           will run the commands from Script.mos.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1775
+#: ../Util/Flags.mo:1780
 msgid ""
 "  omc Model.mo Modelica    will first load the Modelica library and then "
 "produce \n"
 "                            flattened Model on standard output.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1776
+#: ../Util/Flags.mo:1781
 msgid ""
 "  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and "
 "produce \n"
 "                            flattened Model1 on standard output.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1777
+#: ../Util/Flags.mo:1782
 msgid "  *.mo (Modelica files) \n"
 msgstr ""
 
-#: ../Util/Flags.mo:1779
+#: ../Util/Flags.mo:1784
 msgid ""
 "  *.mos (Modelica Script files)\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1780
+#: ../Util/Flags.mo:1785
 msgid ""
 "For available simulation flags, use +help=simulation.\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1781
+#: ../Util/Flags.mo:1786
 msgid ""
 "Documentation is available in the built-in package OpenModelica.Scripting "
 "or\n"
@@ -2755,7 +2820,7 @@ msgid ""
 "html>.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1856 ../Util/Flags.mo:1862
+#: ../Util/Flags.mo:1861 ../Util/Flags.mo:1867
 msgid "Valid options:"
 msgstr ""
 
@@ -2863,110 +2928,110 @@ msgstr ""
 msgid "Files not Equal\n"
 msgstr ""
 
-#: ../runtime/System_omc.c:725
-#, c-format
-msgid "Failed to wait for forked process to return: %s"
-msgstr ""
-
-#: ../runtime/System_omc.c:747
-msgid "Fork is not available on Windows"
-msgstr ""
-
-#: ../runtime/System_omc.c:750
-msgid "Fork is not safe to use on OSX"
-msgstr ""
-
-#: ../runtime/System_omc.c:773
-#, c-format
-msgid "fork() failed: %s"
-msgstr ""
-
-#: ../runtime/System_rml.c:2208
-msgid "Fork is not available when OpenModelica is compiled using RML"
-msgstr ""
-
-#: ../runtime/systemimpl.c:313 ../runtime/systemimpl.c:355
+#: ../runtime/systemimpl.c:315 ../runtime/systemimpl.c:357
 #, c-format
 msgid "Error opening file: %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:369
+#: ../runtime/systemimpl.c:371
 #, c-format
 msgid "File too large to fit into a MetaModelica string: %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:460
+#: ../runtime/systemimpl.c:462
 #, c-format
 msgid "Error appending to file %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:562 ../runtime/systemimpl.c:568
-#: ../runtime/systemimpl.c:678
+#: ../runtime/systemimpl.c:564 ../runtime/systemimpl.c:570
+#: ../runtime/systemimpl.c:680
 #, c-format
 msgid "system(%s) failed: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:733
+#: ../runtime/systemimpl.c:816
 #, c-format
 msgid "Error opening file %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:882
+#: ../runtime/systemimpl.c:965
 #, c-format
 msgid "OMC unable to load `%s': %s.\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1303
+#: ../runtime/systemimpl.c:1386
 #, c-format
 msgid "Modelica URI lacks classname: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1312
+#: ../runtime/systemimpl.c:1395
 #, c-format
 msgid "File URI has no path: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1316
+#: ../runtime/systemimpl.c:1399
 #, c-format
 msgid "File URI using hostnames is not supported: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1321
+#: ../runtime/systemimpl.c:1404
 #, c-format
 msgid "Unknown uri: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1748
+#: ../runtime/systemimpl.c:1831
 #, c-format
 msgid "freopen(%s,%s,%s) failed: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1802 ../runtime/systemimpl.c:1813
+#: ../runtime/systemimpl.c:1885 ../runtime/systemimpl.c:1896
 #, c-format
 msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1818
+#: ../runtime/systemimpl.c:1901
 #, c-format
 msgid ""
 "iconv(to=%s) failed because the character set output null bytes in the "
 "middle of the string."
 msgstr ""
 
-#: ../runtime/systemimpl.c:1905
+#: ../runtime/systemimpl.c:1988
 #, c-format
 msgid "Warning: Failed to set locale: '%s'\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1927
+#: ../runtime/systemimpl.c:2010
 #, c-format
 msgid ""
-"Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C.UTF-"
-"8. OpenModelica assumes all input and output it makes is in UTF-8 so you "
+"Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C."
+"UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you "
 "might have some issues.\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:2199 ../runtime/systemimpl.c:2209
+#: ../runtime/systemimpl.c:2282 ../runtime/systemimpl.c:2292
 #, c-format
 msgid "Could not access file %s: %s."
+msgstr ""
+
+#: ../runtime/System_omc.c:726
+#, c-format
+msgid "Failed to wait for forked process to return: %s"
+msgstr ""
+
+#: ../runtime/System_omc.c:748
+msgid "Fork is not available on Windows"
+msgstr ""
+
+#: ../runtime/System_omc.c:751
+msgid "Fork is not safe to use on OSX"
+msgstr ""
+
+#: ../runtime/System_omc.c:774
+#, c-format
+msgid "fork() failed: %s"
+msgstr ""
+
+#: ../runtime/System_rml.c:2224
+msgid "Fork is not available when OpenModelica is compiled using RML"
 msgstr ""

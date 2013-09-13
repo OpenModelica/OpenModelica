@@ -66,6 +66,8 @@ protected constant Entry STRING_TYPE_ENTRY = NFEnv.ENTRY(
     "String", NFBuiltin.BUILTIN_BOOLEAN, {NFEnv.BUILTIN_ORIGIN()});
 
 protected uniontype LookupState
+  "LookupState is used by the name lookup to keep track of what state it's in,
+   so that the rules for composite name lookup can be enforced. See nextState."
   record STATE_BEGIN "The start state." end STATE_BEGIN;
   record STATE_COMP "Found name is component." end STATE_COMP;
   record STATE_COMP_COMP "Found name is component found in component." end STATE_COMP_COMP;
@@ -337,6 +339,7 @@ algorithm
 end lookupName;
   
 protected function checkPartial
+  "Checks that a found entry isn't partial. and prints an error if it is."
   input Entry inEntry;
 algorithm
   _ := matchcontinue(inEntry)
@@ -360,7 +363,63 @@ algorithm
   end matchcontinue;
 end checkPartial;
 
+protected function validateEndState
+  "This function checks that the final state of a name lookup is valid.
+   inExpectedState is expected to be one of STATE_COMP, STATE_CLASS or
+   STATE_FUNC, and represents the kind of element we expected to find."
+  input LookupState inEndState;
+  input LookupState inExpectedState;
+  input Absyn.Path inName;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inEndState, inExpectedState, inName, inInfo)
+    local
+      String name, found_str, expected_str;
+
+    // Found the expected kind of element.
+    case (STATE_COMP(),      STATE_COMP(), _, _) then ();
+    case (STATE_COMP_COMP(), STATE_COMP(), _, _) then ();
+    case (STATE_PACKAGE(),   STATE_CLASS(), _, _) then ();
+    case (STATE_CLASS(),     STATE_CLASS(), _, _) then ();
+    case (STATE_FUNC(),      STATE_FUNC(), _, _) then ();
+    case (STATE_COMP_FUNC(), STATE_FUNC(), _, _) then ();
+    
+    // Found a class via a component, but expected a function.
+    case (STATE_COMP_CLASS(), STATE_FUNC(), _, _)
+      equation
+        printFoundWrongTypeError(inEndState, inExpectedState, inName, inInfo);
+      then
+        fail();
+
+    // Found a function via a component, but didn't expect a function.
+    case (STATE_COMP_FUNC(), _, _, _)
+      equation
+        name = Absyn.pathString(inName);
+        Error.addSourceMessage(Error.FOUND_FUNC_NAME_VIA_COMP_NONCALL, {name}, inInfo);
+      then
+        fail();
+
+    // Found a class via a component. Only component and functions are allowed
+    // to be looked up via a component.
+    case (STATE_COMP_CLASS(), _, _, _)
+      equation
+        name = Absyn.pathString(inName);
+        Error.addSourceMessage(Error.FOUND_CLASS_NAME_VIA_COMPONENT, {name}, inInfo);
+      then
+        fail();
+
+    // Found the wrong kind of element.
+    else
+      equation
+        printFoundWrongTypeError(inEndState, inExpectedState, inName, inInfo);
+      then
+        fail();
+
+  end match;
+end validateEndState;
+
 protected function lookupStateString
+  "Returns the string representation of a LookupState, with translation."
   input LookupState inState;
   output String outString;
 algorithm
@@ -376,53 +435,9 @@ algorithm
   end match;
 end lookupStateString;
 
-protected function validateEndState
-  input LookupState inEndState;
-  input LookupState inExpectedState;
-  input Absyn.Path inName;
-  input Absyn.Info inInfo;
-algorithm
-  _ := match(inEndState, inExpectedState, inName, inInfo)
-    local
-      String name, found_str, expected_str;
-
-    case (STATE_COMP(),      STATE_COMP(), _, _) then ();
-    case (STATE_COMP_COMP(), STATE_COMP(), _, _) then ();
-    case (STATE_PACKAGE(),   STATE_CLASS(), _, _) then ();
-    case (STATE_CLASS(),     STATE_CLASS(), _, _) then ();
-    case (STATE_FUNC(),      STATE_FUNC(), _, _) then ();
-    case (STATE_COMP_FUNC(), STATE_FUNC(), _, _) then ();
-    
-    case (STATE_COMP_CLASS(), STATE_FUNC(), _, _)
-      equation
-        printFoundWrongTypeError(inEndState, inExpectedState, inName, inInfo);
-      then
-        fail();
-
-    case (STATE_COMP_FUNC(), _, _, _)
-      equation
-        name = Absyn.pathString(inName);
-        Error.addSourceMessage(Error.FOUND_FUNC_NAME_VIA_COMP_NONCALL, {name}, inInfo);
-      then
-        fail();
-
-    case (STATE_COMP_CLASS(), _, _, _)
-      equation
-        name = Absyn.pathString(inName);
-        Error.addSourceMessage(Error.FOUND_CLASS_NAME_VIA_COMPONENT, {name}, inInfo);
-      then
-        fail();
-
-    else
-      equation
-        printFoundWrongTypeError(inEndState, inExpectedState, inName, inInfo);
-      then
-        fail();
-
-  end match;
-end validateEndState;
-
 protected function printFoundWrongTypeError
+  "Helper function to validateEndState, prints out an error when the wrong kind
+   of element was found."
   input LookupState inFoundState;
   input LookupState inExpectedState;
   input Absyn.Path inName;
@@ -438,6 +453,9 @@ algorithm
 end printFoundWrongTypeError;
     
 protected function nextState
+  "Checks that the found name is allowed to be looked up given the current state
+   of the name lookup, and returns the new state if it is. Otherwise it will
+   print a (hopefully relevant) error message and fail."
   input Entry inEntry;
   input LookupState inCurrentState;
   input Env inEnv;
@@ -447,9 +465,13 @@ protected
   SCode.Element el;
 algorithm
   el := NFEnv.entryElement(inEntry);
+  // Check that the element is allowed to be accessed given its visibility.
   checkProtection(el, inCurrentState);
-  entry_ty := elementState(el);
+  // Check that we're allowed to look in the current scope.
   checkPackageLikeAccess(inCurrentState, el, inEnv);
+  // Get the state for the found element, and check that the transition to the
+  // new state is valid.
+  entry_ty := elementState(el);
   outNextState := nextState2(entry_ty, inCurrentState, el);
 end nextState;
 
@@ -488,6 +510,7 @@ algorithm
 end checkProtection;
 
 protected function elementState
+  "Returns the lookup state of a given element."
   input SCode.Element inElement;
   output LookupState outState;
 algorithm
@@ -501,8 +524,8 @@ end elementState;
   
 protected function nextState2
  "This function implements the state machine that checks which transitions are
-  valid during lookup, as defined in section 5.3.2 of the specification about
-  composite name lookup. inElementState is expected to be one of STATE_COMP,
+  valid during composite name lookup, as defined in section 5.3.2 of the
+  specification. inElementState is expected to be one of STATE_COMP,
   STATE_CLASS, STATE_FUNC or STATE_PACKAGE, indicating what type the found
   element is. The state machine looks like this flow diagram (nodes in
   [brackets] are nodes with an edge to themselves):
@@ -585,6 +608,9 @@ algorithm
 end nextState2;
 
 protected function checkPackageLikeAccess
+  "Checks that the found is element is allowed to be looked up in the current
+   scope. In particular it checks that only encapsulated elements are allowed to
+   be looked up in classes which does not satisfy the requirements for a package."
   input LookupState inCurrentState;
   input SCode.Element inElement;
   input Env inEnv;
@@ -594,7 +620,7 @@ algorithm
       String name, env_str;
       Absyn.Info info;
 
-    // Nothing to check in packages or component.
+    // Nothing to check in packages or components.
     case (STATE_BEGIN(), _, _) then ();
     case (STATE_PACKAGE(), _, _) then ();
     case (STATE_COMP(), _, _) then ();
@@ -632,6 +658,8 @@ algorithm
 end checkPackageLikeAccess;
       
 protected function isValidPackageElement
+  "Helper function to checkPackageLikeAccess, checks that a given entry is a
+   valid package element (a constant or class)."
   input Entry inEntry;
   output Entry outEntry;
 protected
