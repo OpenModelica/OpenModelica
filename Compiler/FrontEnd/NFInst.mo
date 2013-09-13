@@ -2214,32 +2214,14 @@ algorithm
 
     case (_, _, _, _, _, _)
       equation
-        // Look up the first part of the cref
         name_str = ComponentReference.crefFirstIdent(inCref);
         (is_global, entry, env) = NFLookup.isNameGlobal(name_str, inEnv);
-        //entry = NFLookup.lookupUnresolvedSimpleName(name_str, inEnv);
-        //is_local = NFEnv.isLocalScopeEntry(entry, inEnv);
-        //(entry, env) = NFEnv.resolveImportedEntry(entry, inEnv);
-        //is_class = NFEnv.isClassEntry(entry);
-        //env = NFEnv.entryEnv(entry, env);
+        (_, _) = NFLookup.lookupVariableName(inCrefPath, inEnv, inInfo);
 
-        //// If it is a non-local class, consider it to be global.
-        //is_global = not is_local and is_class;
         cref = prefixCref2(inCref, inPrefix, inEnv, env, is_global);
         (cref, globals) = instPackageConstant(is_global, cref, inCrefPath, env, inInfo, inGlobals);
       then
         (cref, globals);
-
-    // If the cref couldn't be found, print an error message here instead of
-    // letting SCodeLookup do it, to get the correct scope.
-    else
-      equation
-        name_str = ComponentReference.printComponentRefStr(inCref);
-        env_str = NFEnv.printEnvPathStr(inEnv);
-        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
-          {name_str, env_str}, inInfo);
-      then
-        fail();
 
   end matchcontinue;
 end prefixCref;
@@ -2524,7 +2506,7 @@ algorithm
 
     case (_, _, _, _, _, _)
       equation
-        (entry, env) = NFLookup.lookupNameInPackage(inName, inEnv);
+        (entry, env) = NFLookup.lookupLocalName(inName, inEnv);
 
         //print("Instantiating " +& Absyn.pathString(inName) +& "\n");
         //print("Env: " +& NFEnv.printEnvPathStr(inEnv) +& "\n");

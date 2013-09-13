@@ -80,62 +80,65 @@ public uniontype Entry
   record ENTRY
     String name;
     SCode.Element element;
-    Integer scopeLevel;
     list<EntryOrigin> origins;
   end ENTRY;
 end Entry;
 
 public uniontype ScopeType
+  record BUILTIN_SCOPE end BUILTIN_SCOPE;
+  record TOP_SCOPE end TOP_SCOPE;
   record NORMAL_SCOPE end NORMAL_SCOPE;
   record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
   record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
 end ScopeType;
 
-public uniontype Env
-  record ENV
+public uniontype Frame
+  record FRAME
     Option<String> name;
     ScopeType scopeType;
-    list<Env> scopes;
-    Integer scopeCount;
     AvlTree entries;
-  end ENV;
-end Env;
+  end FRAME;
+end Frame;
 
-public constant Env emptyEnv = ENV(NONE(), NORMAL_SCOPE(), {}, 0, emptyAvlTree);
+public type Env = list<Frame>;
+public constant Env emptyEnv = {};
+
+protected function encapsulatedToScopeType
+  input SCode.Encapsulated inEncapsulated;
+  output ScopeType outScopeType;
+algorithm
+  outScopeType := match(inEncapsulated)
+    case SCode.ENCAPSULATED() then ENCAPSULATED_SCOPE();
+    else NORMAL_SCOPE();
+  end match;
+end encapsulatedToScopeType;
 
 public function openScope
   input Option<String> inScopeName;
-  input SCode.Encapsulated inEncapsulated;
+  input ScopeType inScopeType;
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inScopeName, inEncapsulated, inEnv)
-    local
-      list<Env> scopes;
-      AvlTree entries;
-      ScopeType ty;
-      Integer sc;
-
-    case (_, SCode.NOT_ENCAPSULATED(), ENV(_, ty, scopes, sc, entries))
-      equation
-        sc = sc + 1;
-      then
-        ENV(inScopeName, ty, inEnv :: scopes, sc, entries);
-
-    case (_, _, ENV(_, _, scopes, sc, _))
-      equation
-        sc = sc + 1;
-      then
-        ENV(inScopeName, ENCAPSULATED_SCOPE(), inEnv :: scopes, sc, emptyAvlTree);
-
-  end match;
+  outEnv := FRAME(inScopeName, inScopeType, emptyAvlTree) :: inEnv;
 end openScope;
+
+public function openClassScope
+  input String inClassName;
+  input SCode.Encapsulated inEncapsulated;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  ScopeType st;
+algorithm
+  st := encapsulatedToScopeType(inEncapsulated);
+  outEnv := FRAME(SOME(inClassName), st, emptyAvlTree) :: inEnv;
+end openClassScope;
 
 public function exitScope
   input Env inEnv;
   output Env outEnv;
 algorithm
-  ENV(scopes = outEnv :: _) := inEnv;
+  _ :: outEnv := inEnv;
 end exitScope;
 
 public function exitScopes
@@ -152,32 +155,29 @@ end exitScopes;
 public function topScope
   input Env inEnv;
   output Env outEnv;
+protected
+  Frame builtin_frame, top_frame;
 algorithm
-  outEnv := match(inEnv)
-    local
-      list<Env> scopes;
-
-    case ENV(scopes = {_}) then inEnv;
-    case ENV(scopes = scopes) then List.secondLast(scopes);
-  end match;
+  builtin_frame :: top_frame :: _ := listReverse(inEnv);
+  outEnv := {top_frame, builtin_frame};
 end topScope;
-
+  
 public function builtinScope
   input Env inEnv;
   output Env outEnv;
 protected
-  list<Env> scopes;
+  Frame builtin_frame;
 algorithm
-  ENV(scopes = scopes) := inEnv;
-  outEnv := List.last(scopes);
+  builtin_frame :: _ := listReverse(inEnv);
+  outEnv := {builtin_frame};
 end builtinScope;
-
+  
 public function isTopScope
   input Env inEnv;
   output Boolean outIsTopScope;
 algorithm
   outIsTopScope := match(inEnv)
-    case ENV(scopes = {_}) then true;
+    case FRAME(scopeType = TOP_SCOPE()) :: _ then true;
     else false;
   end match;
 end isTopScope;
@@ -187,7 +187,7 @@ public function isBuiltinScope
   output Boolean outIsBuiltinScope;
 algorithm
   outIsBuiltinScope := match(inEnv)
-    case ENV(scopes = {}) then true;
+    case FRAME(scopeType = BUILTIN_SCOPE()) :: _ then true;
     else false;
   end match;
 end isBuiltinScope;
@@ -218,29 +218,23 @@ end makeImportedOrigin;
   
 public function makeEntry
   input SCode.Element inElement;
-  input Env inEnv;
   output Entry outEntry;
 protected
-  Integer scope_lvl;
   String name;
 algorithm
-  scope_lvl := scopeCount(inEnv);
   name := SCode.elementName(inElement);
-  outEntry := ENTRY(name, inElement, scope_lvl, {});
+  outEntry := ENTRY(name, inElement, {});
 end makeEntry;
 
 public function makeEntryWithOrigin
   input SCode.Element inElement;
   input list<EntryOrigin> inOrigin;
-  input Env inEnv;
   output Entry outEntry;
 protected
-  Integer scope_lvl;
   String name;
 algorithm
-  scope_lvl := scopeCount(inEnv);
   name := SCode.elementName(inElement);
-  outEntry := ENTRY(name, inElement, scope_lvl, inOrigin);
+  outEntry := ENTRY(name, inElement, inOrigin);
 end makeEntryWithOrigin;
 
 public function changeEntryOrigin
@@ -249,7 +243,7 @@ public function changeEntryOrigin
   input Env inEnv;
   output Entry outEntry;
 algorithm
-  outEntry := makeEntryWithOrigin(entryElement(inEntry), inOrigin, inEnv);
+  outEntry := makeEntryWithOrigin(entryElement(inEntry), inOrigin);
 end changeEntryOrigin;
 
 public function insertEntry
@@ -259,13 +253,12 @@ public function insertEntry
 protected
   Option<String> name;
   ScopeType ty;
-  list<Env> scopes;
-  Integer sc;
   AvlTree entries;
+  Env rest_env;
 algorithm
-  ENV(name, ty, scopes, sc, entries) := inEnv;
+  FRAME(name, ty, entries) :: rest_env := inEnv;
   entries := avlTreeAdd(entries, entryName(inEntry), inEntry, mergeEntry);
-  outEnv := ENV(name, ty, scopes, sc, entries);
+  outEnv := FRAME(name, ty, entries) :: rest_env;
 end insertEntry;
 
 protected function mergeEntry
@@ -279,21 +272,12 @@ algorithm
     local
       String name;
       SCode.Element old_element, new_element, element;
-      Integer old_scope, new_scope, scope;
       list<EntryOrigin> old_origins, new_origins, origins;
       EntryOrigin origin;
 
-    // If the scope level of the new entry is larger than the old, then it will
-    // simply shadowe the old entry.
-    case (ENTRY(name = name, scopeLevel = old_scope), ENTRY(scopeLevel = new_scope))
-      equation
-        true = new_scope > old_scope;
-      then
-        inNewEntry;
-
-    // Otherwise, merge the origins to make sure that it's a valid insertion.
+    // Merge the origins to make sure that it's a valid insertion.
     // Then update the old entry with the new origins.
-    case (ENTRY(name, old_element, scope, old_origins),
+    case (ENTRY(name, old_element, old_origins),
           ENTRY(element = new_element, origins = new_origins))
       equation
         // New entries should only have one origin.
@@ -301,7 +285,7 @@ algorithm
         element = checkOrigin(origin, old_origins, old_element, new_element);
         origins = mergeOrigin(origin, old_origins);
       then
-        ENTRY(name, element, scope, origins);
+        ENTRY(name, element, origins);
 
     case (ENTRY(name = name), _)
       equation
@@ -589,7 +573,7 @@ public function insertElement
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := insertEntry(makeEntry(inElement, inEnv), inEnv);
+  outEnv := insertEntry(makeEntry(inElement), inEnv);
 end insertElement;
 
 public function insertElementWithOrigin
@@ -598,7 +582,7 @@ public function insertElementWithOrigin
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := insertEntry(makeEntryWithOrigin(inElement, inOrigin, inEnv), inEnv);
+  outEnv := insertEntry(makeEntryWithOrigin(inElement, inOrigin), inEnv);
 end insertElementWithOrigin;
 
 public function replaceElement
@@ -610,7 +594,7 @@ public function replaceElement
 protected
   Entry entry;
 algorithm
-  entry := makeEntry(inReplacement, inEnv);
+  entry := makeEntry(inReplacement);
   (outEnv, outWasReplaced) := replaceEntry(entry, inOriginEnv, inEnv);
 end replaceElement;
 
@@ -623,16 +607,15 @@ public function replaceEntry
 protected
   Option<String> name;
   ScopeType ty;
-  list<Env> scopes;
-  Integer sc;
   AvlTree entries;
+  Env rest_env;
   String entry_name;
 algorithm
-  ENV(name, ty, scopes, sc, entries) := inEnv;
+  FRAME(name, ty, entries) :: rest_env := inEnv;
   entry_name := entryName(inReplacement);
   (entries, outWasReplaced) :=
     avlTreeUpdate(entries, entry_name, replaceEntry2, (inReplacement, inOriginEnv));
-  outEnv := ENV(name, ty, scopes, sc, entries);
+  outEnv := FRAME(name, ty, entries) :: rest_env;
 end replaceEntry;
 
 protected function replaceEntry2
@@ -649,6 +632,27 @@ algorithm
   outEntry := setEntryOrigin(entry, {origin});
 end replaceEntry2;
   
+public function mapScope
+  "Maps over all entries in the current scope."
+  input Env inEnv;
+  input MapFunc inMapFunc;
+  output Env outEnv;
+
+  partial function MapFunc
+    input Entry inEntry;
+    output Entry outEntry;
+  end MapFunc;
+protected
+  Option<String> name;
+  ScopeType st;
+  AvlTree entries;
+  Env rest_env;
+algorithm
+  FRAME(name, st, entries) :: rest_env := inEnv;
+  entries := avlTreeMap(entries, inMapFunc);
+  outEnv := FRAME(name, st, entries) :: rest_env;
+end mapScope;
+
 public function insertIterators
   "Opens up a new implicit scope in the environment and adds the given
    iterators."
@@ -657,22 +661,18 @@ public function insertIterators
   input Env inEnv;
   output Env outEnv;
 protected
-  Env env;
-  list<Env> scopes;
-  Integer sc;
-  AvlTree entries;
+  AvlTree tree;
+  Frame frame;
 algorithm
-  ENV(_, _, scopes, sc, entries) := inEnv;
-  sc := sc + 1;
-  scopes := inEnv :: scopes;
-  env := ENV(SOME("$for$"), IMPLICIT_SCOPE(inIterIndex), scopes, sc, entries);
-  outEnv := List.fold(inIterators, insertIterator, env);
+  tree := List.fold(inIterators, insertIterator, emptyAvlTree);
+  frame := FRAME(SOME("$for$"), IMPLICIT_SCOPE(inIterIndex), tree);
+  outEnv := frame :: inEnv;
 end insertIterators;
 
 protected function insertIterator
   input Absyn.ForIterator inIterator;
-  input Env inEnv;
-  output Env outEnv;
+  input AvlTree inTree;
+  output AvlTree outTree;
 protected
   Absyn.Ident iter_name;
   SCode.Element iter;
@@ -682,7 +682,7 @@ algorithm
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
     SCode.noComment, NONE(), Absyn.dummyInfo);
-  outEnv := insertElement(iter, inEnv);
+  outTree := avlTreeAddUnique(inTree, iter_name, makeEntry(iter));
 end insertIterator;
 
 public function lookupEntry
@@ -692,35 +692,9 @@ public function lookupEntry
 protected
   AvlTree entries;
 algorithm
-  ENV(entries = entries) := inEnv;
+  FRAME(entries = entries) :: _ := inEnv;
   outEntry := avlTreeGet(entries, inName);
 end lookupEntry;
-
-public function entryEnv
-  input Entry inEntry;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inEntry, inEnv)
-    local
-      Integer scope_lvl, scope_count;
-      list<Env> scopes;
-
-    case (ENTRY(scopeLevel = scope_lvl), ENV(scopeCount = scope_count))
-      equation
-        true = intEq(scope_lvl, scope_count);
-      then
-        inEnv;
-
-    case (ENTRY(scopeLevel = scope_lvl),
-          ENV(scopeCount = scope_count, scopes = scopes))
-      equation
-        scope_lvl = scope_count - scope_lvl;
-      then
-        listGet(scopes, scope_lvl);
-
-  end matchcontinue;
-end entryEnv;
 
 public function resolveEntry
   input Entry inEntry;
@@ -743,9 +717,8 @@ algorithm
     case (ENTRY(origins = origin :: _), _)
       equation
         env = originEnv(origin);
-        entry = setEntryScope(inEntry, env);
       then
-        (entry, env);
+        (inEntry, env);
 
   end match;
 end resolveEntry;
@@ -772,66 +745,17 @@ protected function setEntryOrigin
 protected
   String name;
   SCode.Element element;
-  Integer scope;
 algorithm
-  ENTRY(name, element, scope, _) := inEntry;
-  outEntry := ENTRY(name, element, scope, inOrigin);
+  ENTRY(name, element, _) := inEntry;
+  outEntry := ENTRY(name, element, inOrigin);
 end setEntryOrigin;
-
-protected function setEntryScope
-  input Entry inEntry;
-  input Env inEnv;
-  output Entry outEntry;
-protected
-  String name;
-  SCode.Element element;
-  list<EntryOrigin> origins;
-  Integer scope;
-algorithm
-  ENTRY(name, element, _, origins) := inEntry;
-  scope := scopeCount(inEnv);
-  outEntry := ENTRY(name, element, scope, origins);
-end setEntryScope;
-
-protected function entryScopeLevel
-  input Entry inEntry;
-  output Integer outScopeLevel;
-algorithm
-  ENTRY(scopeLevel = outScopeLevel) := inEntry;
-end entryScopeLevel;
-
-protected function scopeCount
-  "Returns the number of scopes in the environment."
-  input Env inEnv;
-  output Integer outScopeCount;
-algorithm
-  ENV(scopeCount = outScopeCount) := inEnv;
-end scopeCount;
-
-protected function scopeExplicitCount
-  "Counts the number of explicit scopes in the environment, i.e. disregarding
-   any implicit scopes such as for-loop scopes. Assumes that implicit scopes are
-   always the most nested of the scopes."
-  input Env inEnv;
-  output Integer outScopeCount;
-algorithm
-  outScopeCount := match(inEnv)
-    local
-      Integer sc;
-
-    case ENV(scopeType = IMPLICIT_SCOPE(iterIndex = _))
-      then scopeExplicitCount(exitScope(inEnv));
-
-    case ENV(scopeCount = sc) then sc;
-  end match;
-end scopeExplicitCount;
 
 public function isScopeEncapsulated
   input Env inEnv;
   output Boolean outIsEncapsulated;
 algorithm
   outIsEncapsulated := match(inEnv)
-    case ENV(scopeType = ENCAPSULATED_SCOPE()) then true;
+    case FRAME(scopeType = ENCAPSULATED_SCOPE()) :: _ then true;
     else false;
   end match;
 end isScopeEncapsulated;
@@ -842,16 +766,8 @@ public function getImplicitScopeIndex
   input Env inEnv;
   output Integer outIndex;
 algorithm
-  ENV(scopeType = IMPLICIT_SCOPE(iterIndex = outIndex)) := inEnv;
+  FRAME(scopeType = IMPLICIT_SCOPE(iterIndex = outIndex)) :: _ := inEnv;
 end getImplicitScopeIndex;
-
-public function isLocalScopeEntry
-  input Entry inEntry;
-  input Env inEnv;
-  output Boolean outIsLocal;
-algorithm
-  outIsLocal := intGe(entryScopeLevel(inEntry), scopeExplicitCount(inEnv));
-end isLocalScopeEntry;
 
 public function entryHasBuiltinOrigin
   input Entry inEntry;
@@ -876,11 +792,10 @@ public function renameEntry
   output Entry outEntry;
 protected
   SCode.Element element;
-  Integer scope;
   list<EntryOrigin> origins;
 algorithm
-  ENTRY(_, element, scope, origins) := inEntry;
-  outEntry := ENTRY(inName, element, scope, origins);
+  ENTRY(_, element, origins) := inEntry;
+  outEntry := ENTRY(inName, element, origins);
 end renameEntry;
 
 public function entryElement
@@ -902,17 +817,9 @@ end isClassEntry;
 
 public function scopeName
   input Env inEnv;
-  output String outString;
+  output String outName;
 algorithm
-  outString := match(inEnv)
-    local
-      String name;
-
-    case ENV(name = SOME(name)) then name;
-    case ENV(scopes = {}) then "<builtin>";
-    else "<global>";
-
-  end match;
+  FRAME(name = SOME(outName)) :: _ := inEnv;
 end scopeName;
 
 public function scopeNames
@@ -932,17 +839,14 @@ algorithm
       String name;
       Env env;
 
-    case (ENV(name = SOME(name), scopes = env :: _), _)
+    case (FRAME(name = SOME(name), scopeType = NORMAL_SCOPE()) :: env, _)
       then scopeNames2(env, name :: inAccumNames);
 
-    case (ENV(scopes = env :: _), _)
-      then scopeNames2(env, inAccumNames);
+    case (FRAME(name = SOME(name), scopeType = ENCAPSULATED_SCOPE()) :: env, _)
+      then scopeNames2(env, name :: inAccumNames);
 
-    case (ENV(name = SOME(name), scopes = {}), _)
-      then name :: inAccumNames;
-
-    case (ENV(scopes = {}), _)
-      then inAccumNames;
+    case (_ :: env, _) then scopeNames2(env, inAccumNames);
+    case ({}, _) then inAccumNames;
 
   end match;
 end scopeNames2;
@@ -957,19 +861,21 @@ algorithm
       Absyn.Path path;
       Env env;
 
-    case ENV(name = SOME(name), scopes = ENV(name = NONE()) :: _)
+    case (FRAME(name = SOME(name)) :: FRAME(scopeType = TOP_SCOPE()) :: _)
       then Absyn.IDENT(name);
 
-    case ENV(name = SOME(name))
+    case (FRAME(scopeType = IMPLICIT_SCOPE(iterIndex = _)) :: env)
+      then envPath(env);
+
+    case (FRAME(name = SOME(name)) :: env)
       equation
-        env = exitScope(inEnv);
         path = envPath(env);
       then
         Absyn.QUALIFIED(name, path);
 
   end match;
 end envPath;
-
+      
 public function prefixIdentWithEnv
   input String inIdent;
   input Env inEnv;
@@ -993,20 +899,14 @@ algorithm
       String n1, n2;
       Env rest1, rest2;
 
-    case (ENV(name = SOME(n1)), ENV(name = SOME(n2)))
+    case (FRAME(name = SOME(n1)) :: _,  FRAME(name = SOME(n2)) :: _)
       equation
         false = stringEq(n1, n2);
       then
         false;
 
-    case (ENV(scopes = {}), ENV(scopes = {})) then true;
-
-    else
-      equation
-        rest1 = exitScope(inEnv1);
-        rest2 = exitScope(inEnv2);
-      then
-        isEqual(rest1, rest2);
+    case ({}, {}) then true;
+    case (_ :: rest1, _ :: rest2) then isEqual(rest1, rest2);
 
   end matchcontinue;
 end isEqual;
@@ -1016,31 +916,35 @@ public function isPrefix
   input Env inPrefixEnv;
   input Env inEnv;
   output Boolean outIsPrefix;
+protected
+  Integer sc1, sc2, sc_diff;
 algorithm
-  outIsPrefix := matchcontinue(inPrefixEnv, inEnv)
-    local
-      Env  rest2;
-      Integer sc1, sc2, sc_diff;
-
-    // If the first environment has more scopes than the second, then it can't
-    // be a prefix.
-    case (ENV(scopeCount = sc1), ENV(scopeCount = sc2))
-      equation
-        true = intGt(sc1, sc2);
-      then
-        false;
-
-    // Otherwise, remove scopes from the second environment until they are the
-    // same length, and check if they are equal or not.
-    case (ENV(scopeCount = sc1), ENV(scopeCount = sc2))
-      equation
-        sc_diff = sc2 - sc1;
-        rest2 = exitScopes(inEnv, sc_diff);
-      then
-        isEqual(inPrefixEnv, rest2);
-
-  end matchcontinue;
+  sc1 := listLength(inPrefixEnv);
+  sc2 := listLength(inEnv);
+  sc_diff := sc2 - sc1;
+  outIsPrefix := isPrefix2(inPrefixEnv, inEnv, sc_diff);
 end isPrefix;
+
+protected function isPrefix2
+  input Env inPrefixEnv;
+  input Env inEnv;
+  input Integer inScopeDiff;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := matchcontinue(inPrefixEnv, inEnv, inScopeDiff)
+    local
+      Env rest;
+
+    case (_, _, _)
+      equation
+        true = inScopeDiff >= 0;
+        rest = exitScopes(inEnv, inScopeDiff);
+      then
+        isEqual(inPrefixEnv, rest);
+
+    else false;
+  end matchcontinue;
+end isPrefix2;
 
 public function printEnvPathStr
   input Env inEnv;
@@ -1059,11 +963,11 @@ protected
   Env env;
   SCode.Program prog, builtin;
 algorithm
-  env := emptyEnv;
+  env := openScope(NONE(), BUILTIN_SCOPE(), emptyEnv);
   env := insertElement(NFBuiltin.BUILTIN_TIME, env);
   (builtin, prog) := List.splitOnTrue(inProgram, SCode.isBuiltinElement);
   env := List.fold1(builtin, insertElementWithOrigin, {BUILTIN_ORIGIN()}, env);
-  env := openScope(NONE(), SCode.NOT_ENCAPSULATED(), env);
+  env := openScope(NONE(), TOP_SCOPE(), env);
   outEnv := List.fold(prog, insertElement, env);
 end buildInitialEnv;
 
@@ -1434,6 +1338,46 @@ algorithm
 
   end match;
 end avlTreeUpdate2;
+
+protected function avlTreeMap
+  "Applies a function to all value entries in the AVL tree."
+  input AvlTree inTree;
+  input MapFunc inMapFunc;
+  output AvlTree outTree;
+
+  partial function MapFunc
+    input AvlValue inValue;
+    output AvlValue outValue;
+  end MapFunc;
+protected
+  Option<AvlTreeValue> value;
+  Integer height;
+  Option<AvlTree> left, right;
+algorithm
+  AVLTREENODE(value, height, left, right) := inTree;
+  value := Util.applyOption1(value, avlTreeMapValue, inMapFunc);
+  left := Util.applyOption1(left, avlTreeMap, inMapFunc);
+  right := Util.applyOption1(right, avlTreeMap, inMapFunc);
+  outTree := AVLTREENODE(value, height, left, right);
+end avlTreeMap;
+
+protected function avlTreeMapValue
+  input AvlTreeValue inValue;
+  input MapFunc inMapFunc;
+  output AvlTreeValue outValue;
+
+  partial function MapFunc
+    input AvlValue inValue;
+    output AvlValue outValue;
+  end MapFunc;
+protected
+  AvlKey key;
+  AvlValue value;
+algorithm
+  AVLTREEVALUE(key, value) := inValue;
+  value := inMapFunc(value);
+  outValue := AVLTREEVALUE(key, value);
+end avlTreeMapValue;
 
 protected function avlCreateEmptyIfNone
   "Help function to AvlTreeAdd"

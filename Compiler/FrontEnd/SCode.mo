@@ -3922,6 +3922,23 @@ algorithm
   end match;
 end makeElementProtected;
 
+public function isElementProtected
+  input Element inElement;
+  output Boolean outIsProtected;
+algorithm
+  outIsProtected := not visibilityBool(prefixesVisibility(elementPrefixes(inElement)));
+end isElementProtected;
+  
+public function isElementEncapsulated
+  input Element inElement;
+  output Boolean outIsEncapsulated;
+algorithm
+  outIsEncapsulated := match(inElement)
+    case CLASS(encapsulatedPrefix = ENCAPSULATED()) then true;
+    else false;
+  end match;
+end isElementEncapsulated;
+
 public function replaceOrAddElementInProgram
 "replace the element in program at the specified path (includes the element name).
  if the element does not exist at that location then it fails.
@@ -5194,6 +5211,18 @@ algorithm
   end matchcontinue;
 end isPartial;
 
+public function isValidPackageElement
+  "Return true if the given element is allowed in a package, i.e. if it's a
+   constant or non-component element. Otherwise returns false."
+  input Element inElement;
+  output Boolean outIsValid;
+algorithm
+  outIsValid := match(inElement)
+    case COMPONENT(attributes = ATTR(variability = CONST())) then true;
+    case COMPONENT(name = _) then false;
+    else true;
+  end match;
+end isValidPackageElement;
 
 end SCode;
 

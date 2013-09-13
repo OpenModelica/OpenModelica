@@ -243,6 +243,8 @@ public constant Message INHERITED_EXTENDS = MESSAGE(59, TRANSLATION(), ERROR(),
   Util.gettext("The base class name %s was found in one or more base classes:"));
 public constant Message EXTEND_THROUGH_COMPONENT = MESSAGE(60, TRANSLATION(), ERROR(),
   Util.gettext("Part %s of base class name %s is not a class."));
+public constant Message PROTECTED_ACCESS = MESSAGE(61, TRANSLATION(), ERROR(),
+  Util.gettext("%s is protected and cannot be accessed outside it's scope."));
 public constant Message ILLEGAL_MODIFICATION = MESSAGE(62, TRANSLATION(), ERROR(),
   Util.gettext("Illegal modification %s (of %s)."));
 public constant Message INTERNAL_ERROR = MESSAGE(63, TRANSLATION(), ERROR(),
@@ -291,6 +293,8 @@ public constant Message UNRESOLVABLE_TYPE = MESSAGE(84, TRANSLATION(), ERROR(),
   Util.gettext("Cannot resolve type of expression %s. The operands have types %s in component %s."));
 public constant Message INCOMPATIBLE_TYPES = MESSAGE(85, TRANSLATION(), ERROR(),
   Util.gettext("Incompatible argument types to operation %s in component %s, left type: %s, right type: %s"));
+public constant Message NON_ENCAPSULATED_CLASS_ACCESS = MESSAGE(86, TRANSLATION(), ERROR(),
+  Util.gettext("Class %s does not satisfy the requirements for a package. Lookup is therefore restricted to encapsulated elements, but %s is not encapsulated."));
 public constant Message INHERIT_BASIC_WITH_COMPS = MESSAGE(87, TRANSLATION(), ERROR(),
   Util.gettext("Class %s inherits builtin type but has components."));
 public constant Message MODIFIER_TYPE_MISMATCH_ERROR = MESSAGE(88, TRANSLATION(), ERROR(),
@@ -305,8 +309,12 @@ public constant Message RECURSIVE_DEFINITION = MESSAGE(92, TRANSLATION(), ERROR(
   Util.gettext("Declaration of element %s causes recursive definition of class %s."));
 public constant Message NOT_ARRAY_TYPE_IN_FOR_STATEMENT = MESSAGE(93, TRANSLATION(), ERROR(),
   Util.gettext("Expression %s in for-statement must be an array type."));
+public constant Message NON_CLASS_IN_COMP_FUNC_NAME = MESSAGE(94, TRANSLATION(), ERROR(),
+  Util.gettext("Found non-class %s while looking for function via component. The only valid form is c.C1..CN.f where c is a scalar component and C1..CN are classes."));
 public constant Message DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN = MESSAGE(95, SYMBOLIC(), ERROR(),
   Util.gettext("The same variables must me solved in elsewhen clause as in the when clause."));
+public constant Message CLASS_IN_COMPOSITE_COMP_NAME = MESSAGE(96, TRANSLATION, ERROR(),
+  Util.gettext("Found class %s during lookup of composite component name, expected component."));
 public constant Message MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR = MESSAGE(97, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in modifier of component %s, declared type %s, got modifier %s of type %s."));
 public constant Message ASSERT_CONSTANT_FALSE_ERROR = MESSAGE(98, SYMBOLIC(), ERROR(),
@@ -315,6 +323,10 @@ public constant Message ARRAY_INDEX_OUT_OF_BOUNDS = MESSAGE(99, TRANSLATION(), E
   Util.gettext("Index out of bounds. Addressing position: %s, while array length is: %s."));
 public constant Message COMPONENT_CONDITION_VARIABILITY = MESSAGE(100, TRANSLATION(), ERROR(),
   Util.gettext("Component condition must be parameter or constant expression (in %s)."));
+public constant Message FOUND_CLASS_NAME_VIA_COMPONENT = MESSAGE(101, TRANSLATION(), ERROR(),
+  Util.gettext("Found class %s by name lookup via component. Only component and function call names may be looked up via a component."));
+public constant Message FOUND_FUNC_NAME_VIA_COMP_NONCALL = MESSAGE(102, TRANSLATION(), ERROR(),
+  Util.gettext("Found function %s by name lookup via component, but this is only valid when the name is used as a function call."));
 public constant Message DUPLICATE_MODIFICATIONS = MESSAGE(103, TRANSLATION(), ERROR(),
   Util.gettext("Duplicate modification of element %s on component %s."));
 public constant Message ILLEGAL_SUBSCRIPT = MESSAGE(104, TRANSLATION(), ERROR(),
@@ -323,6 +335,8 @@ public constant Message ILLEGAL_EQUATION_TYPE = MESSAGE(105, TRANSLATION(), ERRO
   Util.gettext("Illegal type in equation %s, only builtin types (Real, String, Integer, Boolean or enumeration) or record type allowed in equation."));
 public constant Message ASSERT_FAILED = MESSAGE(106, TRANSLATION(), ERROR(),
   Util.gettext("Assertion failed in function, message: %s"));
+public constant Message LOOKUP_IN_PARTIAL_CLASS = MESSAGE(107, TRANSLATION(), ERROR(),
+  Util.gettext("%s is partial, name lookup is not allowed in partial classes."));
 public constant Message MISSING_INNER_PREFIX = MESSAGE(108, TRANSLATION(), WARNING(),
   Util.gettext("No corresponding 'inner' declaration found for component %s declared as '%s'.\n  The existing 'inner' components are:\n    %s\n  Check if you have not misspelled the 'outer' component name.\n  Please declare an 'inner' component with the same name in the top scope.\n  Continuing flattening by only considering the 'outer' component declaration."));
 public constant Message NON_PARAMETER_ITERATOR_RANGE = MESSAGE(109, TRANSLATION(), ERROR(),
@@ -377,8 +391,8 @@ public constant Message DUPLICATE_MODIFICATIONS_WARNING = MESSAGE(141, TRANSLATI
   Util.gettext("Duplicate modifications for attribute: %s in modifier: %s.\n\tConsidering only the first modification: %s and ignoring the rest %s."));
 public constant Message GENERATECODE_INVARS_HAS_FUNCTION_PTR = MESSAGE(142, SYMBOLIC(), ERROR(),
   Util.gettext("%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead."));
-public constant Message LOOKUP_COMP_FOUND_TYPE = MESSAGE(143, TRANSLATION(), WARNING(),
-  Util.gettext("Found a type with same name when looking for component %s."));
+public constant Message LOOKUP_FOUND_WRONG_TYPE = MESSAGE(143, TRANSLATION(), ERROR(),
+  Util.gettext("Expected %s to be a %s, but found %s instead."));
 public constant Message DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL = MESSAGE(144, TRANSLATION(), WARNING(),
   Util.gettext("Duplicate elements (due to inherited elements) not syntactically identical but semantically identical:\n\tfirst element is:  %s\tsecond element is: %s\tModelica specification requires that elements are exactly identical."));
 public constant Message GENERIC_INST_FUNCTION = MESSAGE(145, TRANSLATION(), ERROR(),

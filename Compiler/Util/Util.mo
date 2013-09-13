@@ -2001,35 +2001,38 @@ algorithm
   end match;
 end boolAndList;
 
-public function applyOption "Takes an option value and a function over the value.
-  It returns in another option value, resulting
-  from the application of the function on the value.
-  Example:
-    applyOption(SOME(1), intString) => SOME(\"1\")
-    applyOption(NONE(),    intString) => NONE"
-  input Option<Type_a> inTypeAOption;
-  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
-  output Option<Type_b> outTypeBOption;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aToType_b
-    input Type_a inTypeA;
-    output Type_b outTypeB;
-    replaceable type Type_b subtypeof Any;
-  end FuncTypeType_aToType_b;
-  replaceable type Type_b subtypeof Any;
+public function applyOption 
+  "Takes an option value and a function over the value. It returns in another
+   option value, resulting from the application of the function on the value.
+   
+   Example:
+     applyOption(SOME(1), intString) => SOME(\"1\")
+     applyOption(NONE(),  intString) => NONE()
+  "
+  input Option<InType> inOption;
+  input FuncType inFunc;
+  output Option<OutType> outOption;
+
+  partial function FuncType
+    input InType inArg;
+    output OutType outArg;
+  end FuncType;
+
+  replaceable type InType subtypeof Any;
+  replaceable type OutType subtypeof Any;
 algorithm
-  outTypeBOption:=
-  match (inTypeAOption,inFuncTypeTypeAToTypeB)
+  outOption := match(inOption, inFunc)
     local
-      Type_b b;
-      Type_a a;
-      FuncTypeType_aToType_b rel;
-    case (NONE(),_) then NONE();
-    case (SOME(a),rel)
+      InType ival;
+      OutType oval;
+
+    case (SOME(ival), _)
       equation
-        b = rel(a);
+        oval = inFunc(ival);
       then
-        SOME(b);
+        SOME(oval);
+
+    else NONE();
   end match;
 end applyOption;
 
