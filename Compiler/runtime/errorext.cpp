@@ -40,20 +40,14 @@
 
 using namespace std;
 
-
-struct absyn_info{
-  std::string fn;
+struct absyn_info {
+  std::string *fn;
   bool wr;
   int rs;
   int re;
   int cs;
   int ce;
 };
-// if error_on is true, message is added, otherwise not.
-static bool error_on = true;
-static bool pop_more_on_rollback = false;
-static int numErrorMessages = 0;
-
 const char* ErrorLevel_toStr(int ix) {
   const char* toStr[3] = {"Error","Warning","Notification"};
   if (ix<0 || ix>=3) return "#Internal Error: Unknown ErrorLevel#";
@@ -67,12 +61,60 @@ const char* ErrorType_toStr(int ix) {
 }
 
 #include "ErrorMessage.hpp"
-static std::string currVariable("");
-static absyn_info finfo;
-static bool haveInfo = false;
-static stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
-static vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
-static string lastDeletedCheckpoint = "";
+
+typedef struct errorext_struct {
+  bool pop_more_on_rollback;
+  int numErrorMessages;
+  absyn_info finfo;
+  bool haveInfo;
+  stack<ErrorMessage*> *errorMessageQueue; // Global variable of all error messages.
+  vector<pair<int,string> > *checkPoints; // a checkpoint has a message index no, and a unique identifier
+  string *currVariable;
+  string *lastDeletedCheckpoint;
+} errorext_members;
+
+errorext_members members;
+
+#include <pthread.h>
+
+pthread_once_t errorext_once_create_key = PTHREAD_ONCE_INIT;
+pthread_key_t errorExtKey;
+
+static void free_error(void *data)
+{
+  errorext_members *members = (errorext_members *) data;
+  if (data == NULL) return;
+  delete members->errorMessageQueue;
+  delete members->checkPoints;
+  delete members->currVariable;
+  delete members->lastDeletedCheckpoint;
+  delete members->finfo.fn;
+  delete members;
+}
+
+static void make_key()
+{
+  pthread_key_create(&errorExtKey,free_error);
+}
+
+static errorext_members* getMembers()
+{
+  pthread_once(&errorext_once_create_key,make_key);
+  errorext_members *res = (errorext_members*) pthread_getspecific(errorExtKey);
+  if (res != NULL) return res;
+  /* We use malloc instead of new because when we do dynamic loading of functions, C++ objects in TLS might be free'd upon return to the main process. */
+  res = (errorext_members*) malloc(sizeof(errorext_members));
+  res->pop_more_on_rollback = false;
+  res->numErrorMessages = 0;
+  res->haveInfo = false;
+  res->errorMessageQueue = new stack<ErrorMessage*>;
+  res->checkPoints = new vector<pair<int,string> >;
+  res->currVariable = new string;
+  res->lastDeletedCheckpoint = new string;
+  res->finfo.fn = new string;
+  pthread_setspecific(errorExtKey,res);
+  return res;
+}
 
 extern "C" {
 int showErrorMessages = 0;
@@ -80,24 +122,26 @@ int showErrorMessages = 0;
 
 static void push_message(ErrorMessage *msg)
 {
+  errorext_members *members = getMembers();
   if (showErrorMessages)
   {
     std::cerr << msg->getFullMessage() << std::endl;
   }
   // adrpo: ALWAYS PUSH THE ERROR MESSAGE IN THE QUEUE, even if we have showErrorMessages because otherwise the numErrorMessages is completely wrong!
-  errorMessageQueue.push(msg);
-  if (msg->getSeverity() == ErrorLevel_error) numErrorMessages++;
+  members->errorMessageQueue->push(msg);
+  if (msg->getSeverity() == ErrorLevel_error) members->numErrorMessages++;
 }
 
 /* pop the top of the message stack (and any duplicate messages that have also been added) */
 static void pop_message(bool rollback)
 {
+  errorext_members *members = getMembers();
   bool pop_more;
   do {
-    ErrorMessage *msg = errorMessageQueue.top();
-    if (msg->getSeverity() == ErrorLevel_error) numErrorMessages--;
-    errorMessageQueue.pop();
-    pop_more = (errorMessageQueue.size() > 0 && !(rollback && errorMessageQueue.size() <= checkPoints.back().first) && msg->getFullMessage() == errorMessageQueue.top()->getFullMessage());
+    ErrorMessage *msg = members->errorMessageQueue->top();
+    if (msg->getSeverity() == ErrorLevel_error) members->numErrorMessages--;
+    members->errorMessageQueue->pop();
+    pop_more = (members->errorMessageQueue->size() > 0 && !(rollback && members->errorMessageQueue->size() <= members->checkPoints->back().first) && msg->getFullMessage() == members->errorMessageQueue->top()->getFullMessage());
     delete msg;
   } while (pop_more);
 }
@@ -109,15 +153,17 @@ extern void add_message(int errorID,
      const char* message,
      ErrorMessage::TokenList tokens)
 {
+  errorext_members *members = getMembers();
   std::string tmp("");
-  if(currVariable.length()>0) {
-    tmp = "Variable "+currVariable+": " +message;
+  if (members->currVariable->length()>0) {
+    tmp = "Variable "+*members->currVariable+": " +message;
   }
   else {
     tmp=message;
   }
-  ErrorMessage *msg = haveInfo ?
-    new ErrorMessage((long)errorID, type, severity, tmp, tokens, finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr,finfo.fn) :
+  struct absyn_info *info = &members->finfo;
+  ErrorMessage *msg = members->haveInfo ?
+    new ErrorMessage((long)errorID, type, severity, tmp, tokens, info->rs,info->cs,info->re,info->ce,info->wr,*info->fn) :
     new ErrorMessage((long)errorID, type, severity, tmp, tokens);
   push_message(msg);
 }
@@ -157,31 +203,33 @@ extern "C"
 /* sets the current_variable(which is being instantiated) */
 extern void ErrorImpl__updateCurrentComponent(const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
 {
-  currVariable = std::string(newVar);
+  errorext_members *members = getMembers();
+  *members->currVariable = std::string(newVar);
   if( (rs+re+cs+ce) > 0) {
-    finfo.wr = wr;
-    finfo.fn = fn;
-    finfo.rs = rs;
-    finfo.re = re;
-    finfo.cs = cs;
-    finfo.ce = ce;
-    haveInfo = true;
+    members->finfo.wr = wr;
+    *members->finfo.fn = fn;
+    members->finfo.rs = rs;
+    members->finfo.re = re;
+    members->finfo.cs = cs;
+    members->finfo.ce = ce;
+    members->haveInfo = true;
   } else {
-    haveInfo = false;
+    members->haveInfo = false;
   }
 }
 
 static void printCheckpointStack(void)
 {
+  errorext_members *members = getMembers();
   pair<int,string> cp;
   std::string res("");
   printf("Current Stack:\n");
-  for (int i=checkPoints.size()-1; i>=0; i--)
+  for (int i=members->checkPoints->size()-1; i>=0; i--)
   {
-    cp = checkPoints[i];
+    cp = (*members->checkPoints)[i];
     printf("%5d %s   message:", i, cp.second.c_str());
-    while(errorMessageQueue.size() > cp.first && errorMessageQueue.size() > 0){
-      res = errorMessageQueue.top()->getMessage()+string(" ")+res;
+    while(members->errorMessageQueue->size() > cp.first && members->errorMessageQueue->size() > 0){
+      res = members->errorMessageQueue->top()->getMessage()+string(" ")+res;
       pop_message(false);
     }
     printf("%s\n", res.c_str());
@@ -190,20 +238,22 @@ static void printCheckpointStack(void)
 
 extern void ErrorImpl__setCheckpoint(const char* id)
 {
-  checkPoints.push_back(make_pair(errorMessageQueue.size(),string(id)));
+  errorext_members *members = getMembers();
+  members->checkPoints->push_back(make_pair(members->errorMessageQueue->size(),string(id)));
   // fprintf(stderr, "setCheckpoint(%s)\n",id); fflush(stderr);
-  //printf(" ERROREXT: setting checkpoint: (%d,%s)\n",(int)errorMessageQueue.size(),id);
+  //printf(" ERROREXT: setting checkpoint: (%d,%s)\n",(int)errorMessageQueue->size(),id);
 }
 
 extern void ErrorImpl__delCheckpoint(const char* id)
 {
+  errorext_members *members = getMembers();
   pair<int,string> cp;
   // fprintf(stderr, "delCheckpoint(%s)\n",id); fflush(stderr);
-  if(checkPoints.size() > 0){
-    //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
+  if (members->checkPoints->size() > 0){
+    //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints->size()-1]);
 
     // extract last checkpoint
-    cp = checkPoints[checkPoints.size()-1];
+    cp = (*members->checkPoints)[members->checkPoints->size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
       printf("ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
           id,
@@ -212,8 +262,8 @@ extern void ErrorImpl__delCheckpoint(const char* id)
       exit(-1);
     }
     // remember the last deleted checkpoint
-    lastDeletedCheckpoint = cp.second;
-    checkPoints.pop_back();
+    *members->lastDeletedCheckpoint = cp.second;
+    members->checkPoints->pop_back();
   }
   else{
     printf(" ERROREXT: nothing to delete when calling delCheckPoint(%s)\n",id);
@@ -223,26 +273,27 @@ extern void ErrorImpl__delCheckpoint(const char* id)
 
 extern void ErrorImpl__rollBack(const char* id)
 {
+  errorext_members *members = getMembers();
   // fprintf(stderr, "rollBack(%s)\n",id); fflush(NULL);
-  if(checkPoints.size() > 0){
-    //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
+  if (members->checkPoints->size() > 0){
+    //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints->back(),errorMessageQueue->size());
     std::string res("");
     //printf(res.c_str());
-    //printf(" rollback from: %d to: %d\n",errorMessageQueue.size(),checkPoints.back().first);
-    while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
-      //printf("*** %d deleted %d ***\n",errorMessageQueue.size(),checkPoints.back().first);
-      /*if(!errorMessageQueue.empty()){
-        res = res+errorMessageQueue.top()->getMessage()+string("\n");
+    //printf(" rollback from: %d to: %d\n",errorMessageQueue->size(),checkPoints->back().first);
+    while(members->errorMessageQueue->size() > members->checkPoints->back().first && members->errorMessageQueue->size() > 0){
+      //printf("*** %d deleted %d ***\n",errorMessageQueue->size(),checkPoints->back().first);
+      /*if(!errorMessageQueue->empty()){
+        res = res+errorMessageQueue->top()->getMessage()+string("\n");
         printf( (string("Deleted: ") + res).c_str());
       }*/
       pop_message(true);
     }
-    /*if(!errorMessageQueue.empty()){
-      res = res+errorMessageQueue.top()->getMessage()+string("\n");
-      printf("(%d)new bottom message: %s\n",checkPoints.size(),res.c_str());
+    /*if(!errorMessageQueue->empty()){
+      res = res+errorMessageQueue->top()->getMessage()+string("\n");
+      printf("(%d)new bottom message: %s\n",checkPoints->size(),res.c_str());
     }*/
     pair<int,string> cp;
-    cp = checkPoints[checkPoints.size()-1];
+    cp = (*members->checkPoints)[members->checkPoints->size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
       printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
           id,
@@ -250,7 +301,7 @@ extern void ErrorImpl__rollBack(const char* id)
       printCheckpointStack();
       exit(-1);
     }
-    checkPoints.pop_back();
+    members->checkPoints->pop_back();
   } else {
     printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
       exit(-1);
@@ -259,15 +310,16 @@ extern void ErrorImpl__rollBack(const char* id)
 
 extern char* ErrorImpl__rollBackAndPrint(const char* id)
 {
+  errorext_members *members = getMembers();
   std::string res("");
   // fprintf(stderr, "rollBackAndPrint(%s)\n",id); fflush(stderr);
-  if(checkPoints.size() > 0){
-    while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
-      res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+  if (members->checkPoints->size() > 0){
+    while(members->errorMessageQueue->size() > members->checkPoints->back().first && members->errorMessageQueue->size() > 0){
+      res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
       pop_message(true);
     }
     pair<int,string> cp;
-    cp = checkPoints[checkPoints.size()-1];
+    cp = (*members->checkPoints)[members->checkPoints->size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
       printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
           id,
@@ -275,7 +327,7 @@ extern char* ErrorImpl__rollBackAndPrint(const char* id)
       printCheckpointStack();
       exit(-1);
     }
-    checkPoints.pop_back();
+    members->checkPoints->pop_back();
   } else {
     printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
       exit(-1);
@@ -290,13 +342,14 @@ extern char* ErrorImpl__rollBackAndPrint(const char* id)
  */
 extern int ErrorImpl__isTopCheckpoint(const char* id)
 {
+  errorext_members *members = getMembers();
   pair<int,string> cp;
   //printf("existsCheckpoint(%s)\n",id);
-  if(checkPoints.size() > 0){
-    //printf(" ERROREXT: searching checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
+  if(members->checkPoints->size() > 0){
+    //printf(" ERROREXT: searching checkpoint: %d\n", checkPoints[checkPoints->size()-1]);
 
     // search
-    cp = checkPoints[checkPoints.size()-1];
+    cp = (*members->checkPoints)[members->checkPoints->size()-1];
     if (0 == strcmp(cp.second.c_str(),id))
     {
       // found our checkpoint, return true;
@@ -313,7 +366,7 @@ extern int ErrorImpl__isTopCheckpoint(const char* id)
  */
 static const char* ErrorImpl__getLastDeletedCheckpoint()
 {
-  return lastDeletedCheckpoint.c_str();
+  return getMembers()->lastDeletedCheckpoint->c_str();
 }
 
 extern void c_add_message(int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens)
@@ -335,13 +388,13 @@ extern void c_add_source_message(int errorID, ErrorType type, ErrorLevel severit
 }
 
 extern int ErrorImpl__getNumErrorMessages() {
-  return numErrorMessages;
+  return getMembers()->numErrorMessages;
 }
 
 extern void ErrorImpl__clearMessages()
 {
-  // fprintf(stderr, "-> ErrorImpl__clearMessages error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue.size()); fflush(NULL);
-  while(!errorMessageQueue.empty()) {
+  // fprintf(stderr, "-> ErrorImpl__clearMessages error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue->size()); fflush(NULL);
+  while(!getMembers()->errorMessageQueue->empty()) {
     pop_message(false);
   }
 }
@@ -349,16 +402,17 @@ extern void ErrorImpl__clearMessages()
 // TODO: Use a string builder instead of creating intermediate results all the time?
 extern void* ErrorImpl__getMessages()
 {
+  errorext_members *members = getMembers();
   void *res = mk_nil();
-  while(!errorMessageQueue.empty()) {
-    void *id = mk_icon(errorMessageQueue.top()->getID());
+  while(!members->errorMessageQueue->empty()) {
+    void *id = mk_icon(members->errorMessageQueue->top()->getID());
     void *ty,*severity;
-    switch (errorMessageQueue.top()->getSeverity()) {
+    switch (members->errorMessageQueue->top()->getSeverity()) {
     case ErrorLevel_error: severity=Error__ERROR; break;
     case ErrorLevel_warning: severity=Error__WARNING; break;
     case ErrorLevel_notification: severity=Error__NOTIFICATION; break;
     }
-    switch (errorMessageQueue.top()->getType()) {
+    switch (members->errorMessageQueue->top()->getType()) {
     case ErrorType_syntax: ty=Error__SYNTAX; break;
     case ErrorType_grammar: ty=Error__GRAMMAR; break;
     case ErrorType_translation: ty=Error__TRANSLATION; break;
@@ -366,14 +420,14 @@ extern void* ErrorImpl__getMessages()
     case ErrorType_runtime: ty=Error__SIMULATION; break;
     case ErrorType_scripting: ty=Error__SCRIPTING; break;
     }
-    void *message = Util__notrans(mk_scon(errorMessageQueue.top()->getShortMessage().c_str()));
+    void *message = Util__notrans(mk_scon(members->errorMessageQueue->top()->getShortMessage().c_str()));
     void *msg = Error__MESSAGE(id,ty,severity,message);
-    void *sl = mk_icon(errorMessageQueue.top()->getStartLineNo());
-    void *sc = mk_icon(errorMessageQueue.top()->getStartColumnNo());
-    void *el = mk_icon(errorMessageQueue.top()->getEndLineNo());
-    void *ec = mk_icon(errorMessageQueue.top()->getEndColumnNo());
-    void *filename = mk_scon(errorMessageQueue.top()->getFileName().c_str());
-    void *readonly = mk_icon(errorMessageQueue.top()->getIsFileReadOnly());
+    void *sl = mk_icon(members->errorMessageQueue->top()->getStartLineNo());
+    void *sc = mk_icon(members->errorMessageQueue->top()->getStartColumnNo());
+    void *el = mk_icon(members->errorMessageQueue->top()->getEndLineNo());
+    void *ec = mk_icon(members->errorMessageQueue->top()->getEndColumnNo());
+    void *filename = mk_scon(members->errorMessageQueue->top()->getFileName().c_str());
+    void *readonly = mk_icon(members->errorMessageQueue->top()->getIsFileReadOnly());
     void *info = Absyn__INFO(filename,readonly,sl,sc,el,ec,Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)));
     void *totmsg = Error__TOTALMESSAGE(msg,info);
     res = mk_cons(totmsg,res);
@@ -387,15 +441,16 @@ extern void* ErrorImpl__getMessages()
 // TODO: Use a string builder instead of creating intermediate results all the time?
 extern std::string ErrorImpl__printErrorsNoWarning()
 {
+  errorext_members *members = getMembers();
   std::string res("");
-  while(!errorMessageQueue.empty()) {
-    //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
-    if(errorMessageQueue.top()->getSeverity() == ErrorLevel_error) {
-      res = errorMessageQueue.top()->getMessage()+string("\n")+res;
-      numErrorMessages--;
+  while(!members->errorMessageQueue->empty()) {
+    //if(strncmp(errorMessageQueue->top()->getSeverity(),"Error")==0){
+    if(members->errorMessageQueue->top()->getSeverity() == ErrorLevel_error) {
+      res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
+      members->numErrorMessages--;
     }
-    delete errorMessageQueue.top();
-    errorMessageQueue.pop();
+    delete members->errorMessageQueue->top();
+    members->errorMessageQueue->pop();
   }
   return res;
 }
@@ -403,10 +458,11 @@ extern std::string ErrorImpl__printErrorsNoWarning()
 // TODO: Use a string builder instead of creating intermediate results all the time?
 extern std::string ErrorImpl__printMessagesStr()
 {
-  // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue.size()); fflush(NULL);
+  errorext_members *members = getMembers();
+  // fprintf(stderr, "-> ErrorImpl__printMessagesStr error messages: %d queue size: %d\n", numErrorMessages, (int)errorMessageQueue->size()); fflush(NULL);
   std::string res("");
-  while(!errorMessageQueue.empty()) {
-    res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+  while(!members->errorMessageQueue->empty()) {
+    res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
     pop_message(false);
   }
   return res;

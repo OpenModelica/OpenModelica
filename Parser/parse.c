@@ -45,7 +45,7 @@
 #include "runtime/errorext.h"
 #include "runtime/systemimpl.h"
 
-pthread_once_t once_create_key = PTHREAD_ONCE_INIT;
+pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t modelicaParserKey;
 
 static void make_key()
@@ -365,7 +365,7 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
   parser_members members;
-  pthread_once(&once_create_key,make_key);
+  pthread_once(&parser_once_create_key,make_key);
   pthread_setspecific(modelicaParserKey,&members);
 
   members.encoding = "UTF-8";
@@ -396,7 +396,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   pANTLR3_INPUT_STREAM        input;
   int len = 0;
   parser_members members;
-  pthread_once(&once_create_key,make_key);
+  pthread_once(&parser_once_create_key,make_key);
   pthread_setspecific(modelicaParserKey,&members);
   
   members.encoding = encoding;

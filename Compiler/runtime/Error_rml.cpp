@@ -42,12 +42,6 @@ extern "C" {
 
 void ErrorExt_5finit(void)
 {
-  // empty the queue.
-  while(!errorMessageQueue.empty()) {
-      delete errorMessageQueue.top();
-    errorMessageQueue.pop();
-  }
-  numErrorMessages = 0;
 }
 
 RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
@@ -85,20 +79,6 @@ RML_BEGIN_LABEL(ErrorExt__getLastDeletedCheckpoint)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(ErrorExt__errorOn)
-{
-  error_on = true;
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(ErrorExt__errorOff)
-{
-  error_on = false;
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 /* Function to give feedback to the user on which component the error is "on" */
 RML_BEGIN_LABEL(ErrorExt__updateCurrentComponent)
 {
@@ -122,14 +102,11 @@ RML_BEGIN_LABEL(ErrorExt__addMessage)
   char* message = RML_STRINGDATA(rmlA3);
   void* tokenlst = rmlA4;
   ErrorMessage::TokenList tokens;
-  if (error_on) {
-    while(RML_GETHDR(tokenlst) != RML_NILHDR) {
-tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
-tokenlst=RML_CDR(tokenlst);
-    }
-    add_message(errorID,tp,severity,message,tokens);
-    //printf(" Adding message, size: %d, %s\n",errorMessageQueue.size(),message);
+  while(RML_GETHDR(tokenlst) != RML_NILHDR) {
+    tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
+    tokenlst=RML_CDR(tokenlst);
   }
+  add_message(errorID,tp,severity,message,tokens);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -149,21 +126,18 @@ RML_BEGIN_LABEL(ErrorExt__addSourceMessage)
   void* tokenlst = rmlA10;
   ErrorMessage::TokenList tokens;
 
-  if (error_on) {
-    while(RML_GETHDR(tokenlst) != RML_NILHDR) {
-tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
-tokenlst=RML_CDR(tokenlst);
-    }
-
-    add_source_message(errorID,tp,severity,message,tokens,sline,scol,eline,ecol,isReadOnly,filename);
+  while(RML_GETHDR(tokenlst) != RML_NILHDR) {
+    tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
+    tokenlst=RML_CDR(tokenlst);
   }
+  add_source_message(errorID,tp,severity,message,tokens,sline,scol,eline,ecol,isReadOnly,filename);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(ErrorExt__getNumMessages)
 {
-  rmlA0 = mk_icon((errorMessageQueue.size()));
+  rmlA0 = mk_icon((getMembers()->errorMessageQueue->size()));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

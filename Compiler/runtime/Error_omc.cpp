@@ -47,17 +47,15 @@ extern "C" {
 void Error_addMessage(int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
 {
   ErrorMessage::TokenList tokens;
-  if (error_on) {
-    while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
-      const char* token = MMC_STRINGDATA(MMC_CAR(tokenlst));
-      tokens.push_back(string(token));
-      tokenlst=MMC_CDR(tokenlst);
-    }
-    add_message(errorID,
-                (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-                (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
-                message,tokens);
+  while (MMC_GETHDR(tokenlst) != MMC_NILHDR) {
+    const char* token = MMC_STRINGDATA(MMC_CAR(tokenlst));
+    tokens.push_back(string(token));
+    tokenlst=MMC_CDR(tokenlst);
   }
+  add_message(errorID,
+              (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
+              (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+              message,tokens);
 }
 
 extern void* Error_getMessages()
@@ -80,21 +78,19 @@ extern const char* Error_printMessagesStr()
 extern void Error_addSourceMessage(int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
 {
   ErrorMessage::TokenList tokens;
-  if (error_on) {
-    while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
-      tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));
-      tokenlst=MMC_CDR(tokenlst);
-    }
-    add_source_message(_id,
-                       (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-                       (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
-                       _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
+  while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
+    tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));
+    tokenlst=MMC_CDR(tokenlst);
   }
+  add_source_message(_id,
+                     (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
+                     (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+                     _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
 }
 
 extern int Error_getNumMessages()
 {
-  return errorMessageQueue.size();
+  return getMembers()->errorMessageQueue->size();
 }
 
 void Error_setShowErrorMessages(int *show)
