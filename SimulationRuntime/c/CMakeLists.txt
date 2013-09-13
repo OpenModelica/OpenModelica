@@ -17,7 +17,7 @@ IF(NOT OMDEV)
   SET(OMDEV $ENV{OMDEV})
 ENDIF(NOT OMDEV)
 
-INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc ${OMDEV}/include/lis)
+INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc ${OMDEV}/include/lis ${OMDEV}/include/pthread)
 link_directories(${OMDEV}/lib/expat-win32-msvc)
 link_directories(${OMDEV}/lib/lapack-win32-msvc)
 
