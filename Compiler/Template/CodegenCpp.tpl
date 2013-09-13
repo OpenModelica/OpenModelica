@@ -3425,7 +3425,23 @@ case MODELINFO(vars=SIMVARS(__)) then
       ;separator=","),
       (vars.derivativeVars |> SIMVAR(__) =>
         ' "<%crefStr(name)%>" '
-      ;separator=",")}
+      ;separator=","),
+      (vars.inputVars |> SIMVAR(__) =>
+        ' "<%crefStr(name)%>" '
+      ;separator=","),
+      (vars.outputVars |> SIMVAR(__) =>
+        ' "<%crefStr(name)%>" '
+      ;separator=","),
+      (vars.aliasVars |> SIMVAR(__) =>
+        ' "<%crefStr(name)%>" '
+      ;separator=","),
+      (vars.intAliasVars |> SIMVAR(__) =>
+        ' "<%crefStr(name)%>" '
+      ;separator=","),
+      (vars.boolAliasVars |> SIMVAR(__) =>
+        ' "<%crefStr(name)%>" '
+      ;separator=",")      
+      }
     ;separator=","%>;
   >>
 end writeoutput1;
