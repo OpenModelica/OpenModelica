@@ -3928,7 +3928,7 @@ case CREF_QUAL(ident = "$PRE") then
    '_event_handling.pre(<%contextCref(componentRef,context,simCode)%>,"<%cref(componentRef)%>")'
  else
   match context
-  case FUNCTION_CONTEXT(__) then '<%crefToCStr(cr)%>'
+  case FUNCTION_CONTEXT(__) then System.unquoteIdentifier(crefStr(cr))
   else cref1(cr,simCode,context)
 end contextCref;
 
@@ -5149,6 +5149,29 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="print"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     if acceptMetaModelicaGrammar() then 'print(<%var1%>)' else 'puts(<%var1%>)'
+  
+  
+
+ case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    '(_event_integer(<%exp%>, <%constIndex%>, data))'
+
+  case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    '((modelica_<%expTypeShort(ty)%>)_event_floor(<%exp%>, <%constIndex%>, data))'
+
+  case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    '((modelica_<%expTypeShort(ty)%>)_event_ceil(<%exp%>, <%constIndex%>, data))'
+
+  
+  case CALL(path=IDENT(name="integer"), expLst={inExp}) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    '((int)floor(<%exp%>))'
+
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
