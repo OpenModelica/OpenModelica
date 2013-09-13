@@ -37,15 +37,31 @@ extern "C" {
 #endif
 
 #include "systemimpl.h"
+#include <pthread.h>
 
-extern int ModelicaParser_flags;
-extern int ModelicaParser_readonly;
-extern void *ModelicaParser_filename_RML;
-extern const char *ModelicaParser_filename_C;
-extern const char *ModelicaParser_filename_C_testsuiteFriendly;
-extern int ModelicaParser_lexerError;
-extern int ModelicaParser_langStd;
-extern const char *ModelicaParser_encoding;
+extern pthread_key_t modelicaParserKey;
+
+#define omc_first_comment ((parser_members*)pthread_getspecific(modelicaParserKey))->first_comment
+#define ModelicaParser_filename_RML ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_RML
+#define ModelicaParser_filename_C ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_C
+#define ModelicaParser_filename_C_testsuiteFriendly ((parser_members*)pthread_getspecific(modelicaParserKey))->filename_C_testsuiteFriendly
+#define ModelicaParser_readonly ((parser_members*)pthread_getspecific(modelicaParserKey))->readonly
+#define ModelicaParser_flags ((parser_members*)pthread_getspecific(modelicaParserKey))->flags
+#define ModelicaParser_langStd ((parser_members*)pthread_getspecific(modelicaParserKey))->langStd
+#define ModelicaParser_lexerError ((parser_members*)pthread_getspecific(modelicaParserKey))->lexerError
+#define ModelicaParser_encoding ((parser_members*)pthread_getspecific(modelicaParserKey))->encoding
+
+typedef struct antlr_members_struct {
+  int lexerError;
+  const char *encoding;
+  long first_comment;
+  void* filename_RML;
+  const char* filename_C;
+  const char* filename_C_testsuiteFriendly;
+  int readonly;
+  int flags;
+  int langStd;
+} parser_members;
 
 #define PARSE_MODELICA        0
 #define PARSE_FLAT            1<<0

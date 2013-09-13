@@ -45,9 +45,13 @@
 #include "runtime/errorext.h"
 #include "runtime/systemimpl.h"
 
-static long unsigned int szMemoryUsed = 0;
-int ModelicaParser_lexerError = 0;
-const char *ModelicaParser_encoding = 0;
+pthread_once_t once_create_key = PTHREAD_ONCE_INIT;
+pthread_key_t modelicaParserKey;
+
+static void make_key()
+{
+  pthread_key_create(&modelicaParserKey,NULL);
+}
 
 static void lexNoRecover(pANTLR3_LEXER lexer)
 {
@@ -360,20 +364,23 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
+  parser_members members;
+  pthread_once(&once_create_key,make_key);
+  pthread_setspecific(modelicaParserKey,&members);
 
-  ModelicaParser_encoding = "UTF-8";
-  ModelicaParser_filename_C = interactiveFilename;
-  ModelicaParser_filename_C_testsuiteFriendly = interactiveFilename;
-  ModelicaParser_flags = flags;
-  isReadOnly = 0;
-  omc_first_comment = 0;
+  members.encoding = "UTF-8";
+  members.filename_C = interactiveFilename;
+  members.filename_C_testsuiteFriendly = interactiveFilename;
+  members.flags = flags;
+  members.readonly = 0;
+  members.first_comment = 0;
 
-  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); fflush(stderr); }
+  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", members.filename_C); fflush(stderr); }
 
-  fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
+  fName  = (pANTLR3_UINT8)members.filename_C;
   input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)data,strlen(data),fName);
   if ( input == NULL ) {
-    fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C); fflush(stderr);
+    fprintf(stderr, "Unable to open file %s\n", members.filename_C); fflush(stderr);
     return NULL;
   }
   return parseStream(input, langStd, runningTestsuite);
@@ -388,12 +395,15 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
   int len = 0;
-
-  ModelicaParser_encoding = encoding;
-  ModelicaParser_filename_C = fileName;
-  ModelicaParser_filename_C_testsuiteFriendly = infoName;
-  ModelicaParser_flags = flags;
-  isReadOnly = !SystemImpl__regularFileWritable(ModelicaParser_filename_C);
+  parser_members members;
+  pthread_once(&once_create_key,make_key);
+  pthread_setspecific(modelicaParserKey,&members);
+  
+  members.encoding = encoding;
+  members.filename_C = fileName;
+  members.filename_C_testsuiteFriendly = infoName;
+  members.flags = flags;
+  members.readonly = !SystemImpl__regularFileWritable(fileName);
   omc_first_comment = 0;
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", fileName); fflush(stderr); }
@@ -407,8 +417,8 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
    * So we pass an empty string instead :)
    */
   struct stat st;
-  stat(ModelicaParser_filename_C, &st);
-  if (0 == st.st_size) return parseString("",ModelicaParser_filename_C,ModelicaParser_flags, langStd, runningTestsuite);
+  stat(members.filename_C, &st);
+  if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)fileName;
   input  = antlr3AsciiFileStreamNew(fName);

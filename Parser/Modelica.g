@@ -95,27 +95,19 @@ goto rule ## func ## Ex; }}
 #endif
   #define token_to_scon(tok) mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
-  #define PARSER_INFO(start) ((void*) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(isReadOnly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0))))
+
+  #define PARSER_INFO(start) ((void*) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(ModelicaParser_readonly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0))))
   typedef struct fileinfo_struct {
     int line1;
     int line2;
     int offset1;
     int offset2;
   } fileinfo;
-  extern int isReadOnly;
-  extern long omc_first_comment;
 }
 
 @members
 {
-  void* ModelicaParser_filename_RML = 0;
-  const char* ModelicaParser_filename_C = 0;
-  const char* ModelicaParser_filename_C_testsuiteFriendly = 0;
-  int ModelicaParser_readonly = 0;
-  int ModelicaParser_flags = 0;
-  int ModelicaParser_langStd = 0;
-  int isReadOnly;
-  long omc_first_comment;
+  parser_members members;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
   double getCurrentTime(void) {             
     time_t t;
