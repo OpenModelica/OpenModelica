@@ -730,7 +730,7 @@ static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *wo
     } else {
       status = 0;
     }
-    for (i=0; i<*numWorking; i++) {
+    for (i=0; i<numWorking; i++) {
       int idw = working[i];
       if (ids[idw] == id) {
         statuses[idw] = status;
