@@ -179,7 +179,7 @@ extern const char* System_trimChar(const char* str, const char* char_to_remove)
 
 extern const char* System_basename(const char* str)
 {
-  char *res = SystemImpl__basename(str);
+  const char *res = SystemImpl__basename(str);
   return strcpy(ModelicaAllocateString(strlen(res)), res);
 }
 
@@ -485,7 +485,7 @@ extern void System_getCurrentDateTime(int* sec, int* min, int* hour, int* mday, 
 
 extern const char* System_getUUIDStr()
 {
-  char *res =  SystemImpl__getUUIDStr();
+  const char *res =  SystemImpl__getUUIDStr();
   return strcpy(ModelicaAllocateString(strlen(res)),res);
 }
 
@@ -730,7 +730,7 @@ static int System_forkCallJoin(int *statuses, int *ids, int *numWorking, int *wo
     } else {
       status = 0;
     }
-    for (i=0; i<numWorking; i++) {
+    for (i=0; i<*numWorking; i++) {
       int idw = working[i];
       if (ids[idw] == id) {
         statuses[idw] = status;

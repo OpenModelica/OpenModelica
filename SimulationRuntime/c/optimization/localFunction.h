@@ -98,6 +98,6 @@ int move_grid(IPOPT_DATA_ *iData);
 #endif /*WITH_IPOPT*/
 
 /*ADOL-C*/
-/* extern int functionODE_ADOLC(DATA*); /* jacobian(0, data->modelData.nStates, data->modelData.nStates + data->modelData.nInputVars, indvars, jac_states); */
+/* extern int functionODE_ADOLC(DATA*);*/ /* jacobian(0, data->modelData.nStates, data->modelData.nStates + data->modelData.nInputVars, indvars, jac_states); */
 
 #endif /* LOCALFUNCTION_H_ */

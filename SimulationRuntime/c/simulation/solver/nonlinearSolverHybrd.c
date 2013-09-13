@@ -325,7 +325,6 @@ static int getAnalyticalJacobian(DATA* data, double* jac, int sysNumber)
 static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data, int sysNumber)
 {
   int i;
-  char buf[256];
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = ((DATA*)data)->simulationInfo.solveContinuous;
@@ -364,8 +363,7 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
     break;
 
   default:
-    snprintf(buf, sizeof buf, "%s%d", "Well, this is embarrassing. The non-linear solver should never called this case.", *iflag);
-    THROW(buf);
+    THROW1("Well, this is embarrasing. The non-linear solver should never call this case.%d", *iflag);
     break;
   }
   
