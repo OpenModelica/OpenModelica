@@ -715,7 +715,7 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
       if (data.n==0)  {
         char buf[WARNINGBUFFSIZE];
         if (data.data) free(data.data);
-        msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
+        msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
         msg[1] = var;
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
         ngetfailedvars++;
