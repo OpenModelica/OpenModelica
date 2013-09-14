@@ -38,7 +38,7 @@
 extern int Print_saveAndClearBuf()
 {
   int handle = PrintImpl__saveAndClearBuf();
-  if (handle) MMC_THROW();
+  if (handle < 0) MMC_THROW();
   return handle;
 }
 

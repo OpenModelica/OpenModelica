@@ -35,20 +35,10 @@
 
 void Print_5finit(void)
 {
-  // set things to 0
-  char *buf = NULL;
-  char *errorBuf = NULL;
-
-  int nfilled=0;
-  int cursize=0;
-
-  int errorNfilled=0;
-  int errorCursize=0;
 }
 
 RML_BEGIN_LABEL(Print__saveAndClearBuf)
 {
-  if (!buf) increase_buffer();
   long handle = PrintImpl__saveAndClearBuf();
   if (handle < 0)
     RML_TAILCALLK(rmlFC);

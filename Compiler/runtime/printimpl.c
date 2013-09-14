@@ -41,29 +41,73 @@
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
 #define MAXSAVEDBUFFERS 10   /* adrpo: added this so it compiles again! MathCore can change it later */
 
-#define buf Print_var_buf
-#define errorBuf Print_var_errorBuf
-#define nfilled Print_var_nfilled
-#define cursize Print_var_cursize
-#define errorNfilled Print_var_errorNfilled
-#define errorCursize Print_var_errorCursize
+typedef struct print_members_s {
+  char *buf;
+  char *errorBuf;
+  int nfilled;
+  int cursize;
+  int errorNfilled;
+  int errorCursize;
+  char** savedBuffers;
+  long* savedCurSize;
+  long* savedNfilled;
+} print_members;
 
-static char *buf = NULL;
-static char *errorBuf = NULL;
+#include <pthread.h>
 
-static int nfilled=0;
-static int cursize=0;
+pthread_once_t printimpl_once_create_key = PTHREAD_ONCE_INIT;
+pthread_key_t printimplKey;
 
-static int errorNfilled=0;
-static int errorCursize=0;
+static void free_printimpl(void *data)
+{
+  int i;
+  print_members *members = (print_members *) data;
+  if (data == NULL) return;
+  if (members->savedBuffers) {
+    for (i=0; i<MAXSAVEDBUFFERS; i++) {
+      if (members->savedBuffers[i]) {
+        free(members->savedBuffers[i]);
+        members->savedBuffers[i] = NULL;
+      }
+    }
+    free(members->savedBuffers);
+  }
+  if (members->buf != NULL) free(members->buf);
+  if (members->errorBuf != NULL) free(members->errorBuf);
+  if (members->savedCurSize != NULL) free(members->savedCurSize);
+  if (members->savedNfilled != NULL) free(members->savedNfilled);
+  free(members);
+}
 
-static char** savedBuffers=0;
-static long* savedCurSize;
-static long* savedNfilled;
+static void make_key()
+{
+  pthread_key_create(&printimplKey,free_printimpl);
+}
+
+static print_members* getMembers()
+{
+  pthread_once(&printimpl_once_create_key,make_key);
+  print_members *res = (print_members*) pthread_getspecific(printimplKey);
+  if (res != NULL) return res;
+  res = (print_members*) calloc(1,sizeof(print_members));
+  pthread_setspecific(printimplKey,res);
+  return res;
+}
+
+
+#define buf members->buf
+#define errorBuf members->errorBuf
+#define nfilled members->nfilled
+#define cursize members->cursize
+#define errorNfilled members->errorNfilled
+#define errorCursize members->errorCursize
+#define savedBuffers members->savedBuffers
+#define savedCurSize members->savedCurSize
+#define savedNfilled members->savedNfilled
 
 static int increase_buffer(void)
 {
-
+  print_members* members = getMembers();
   char *new_buf;
   int new_size;
   if (cursize == 0) {
@@ -87,6 +131,7 @@ static int increase_buffer(void)
 
 static int increase_buffer_fixed(int increase)
 {
+  print_members* members = getMembers();
   char * new_buf;
   int new_size;
 
@@ -113,6 +158,7 @@ static int increase_buffer_fixed(int increase)
 
 static int error_increase_buffer(void)
 {
+  print_members* members = getMembers();
   char * new_buf;
   int new_size;
 
@@ -136,6 +182,7 @@ static int error_increase_buffer(void)
 
 static int print_error_buf_impl(const char *str)
 {
+  print_members* members = getMembers();
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
 
   if (str == NULL) {
@@ -155,6 +202,7 @@ static int print_error_buf_impl(const char *str)
 
 static void PrintImpl__setBufSize(long newSize)
 {
+  print_members* members = getMembers();
   if (newSize > 0) {
     printf(" setting init_size to: %ld\n",newSize);
     increase_buffer_fixed(newSize);
@@ -184,6 +232,7 @@ static int PrintImpl__printErrorBuf(const char* str)
 
 static void PrintImpl__clearErrorBuf(void)
 {
+  print_members* members = getMembers();
   errorNfilled=0;
   if (errorBuf != 0) {
     /* adrpo 2008-12-15 free the error buffer as it might have got quite big meantime */
@@ -196,6 +245,7 @@ static void PrintImpl__clearErrorBuf(void)
 /* returns NULL on failure */
 static const char* PrintImpl__getErrorString(void)
 {
+  print_members* members = getMembers();
   if (errorBuf == 0) {
     if(error_increase_buffer() != 0) {
       return NULL;
@@ -207,6 +257,7 @@ static const char* PrintImpl__getErrorString(void)
 /* returns 0 on success */
 static int PrintImpl__printBuf(const char* str)
 {
+  print_members* members = getMembers();
   long len = strlen(str);
   /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
 
@@ -230,6 +281,7 @@ static int PrintImpl__printBuf(const char* str)
 
 static void PrintImpl__clearBuf(void)
 {
+  print_members* members = getMembers();
   nfilled=0;
   if (buf != 0) {
     /* adrpo 2008-12-15 free the print buffer as it might have got quite big meantime */
@@ -242,6 +294,7 @@ static void PrintImpl__clearBuf(void)
 /* returns NULL on failure */
 static const char* PrintImpl__getString(void)
 {
+  print_members* members = getMembers();
   if(buf == NULL || buf[0]=='\0' || cursize==0){
     return "";
   }
@@ -256,6 +309,7 @@ static const char* PrintImpl__getString(void)
 /* returns 0 on success */
 static int PrintImpl__writeBuf(const char* filename)
 {
+  print_members* members = getMembers();
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
 #else
@@ -307,12 +361,14 @@ static int PrintImpl__writeBuf(const char* filename)
 
 static long PrintImpl__getBufLength(void)
 {
+  print_members* members = getMembers();
   return nfilled;
 }
 
 /* returns 0 on success */
 static int PrintImpl__printBufSpace(long nSpaces)
 {
+  print_members* members = getMembers();
   if (nSpaces > 0) {
    while (nfilled + nSpaces + 1 > cursize) {
      if(increase_buffer()!= 0) {
@@ -329,6 +385,7 @@ static int PrintImpl__printBufSpace(long nSpaces)
 /* returns 0 on success */
 static int PrintImpl__printBufNewLine(void)
 {
+  print_members* members = getMembers();
   while (nfilled + 1+1 > cursize) {
     if(increase_buffer()!= 0) {
       return 1;
@@ -342,11 +399,13 @@ static int PrintImpl__printBufNewLine(void)
 
 static int PrintImpl__hasBufNewLineAtEnd(void)
 {
+  print_members* members = getMembers();
   return (nfilled > 0 && buf[nfilled-1] == '\n') ? 1 : 0;
 }
 
 static int PrintImpl__restoreBuf(long handle)
 {
+  print_members* members = getMembers();
   if (handle < 0 || handle > MAXSAVEDBUFFERS-1) {
     fprintf(stderr,"Internal error, handle %ld out of range. Should be in [%d,%d]\n",handle,0,MAXSAVEDBUFFERS-1);
     return 1;
@@ -368,31 +427,31 @@ static int PrintImpl__restoreBuf(long handle)
 
 static long PrintImpl__saveAndClearBuf()
 {
+  print_members* members = getMembers();
   long freeHandle,foundHandle=0;
-
+  if (!buf) {
+    increase_buffer();
+  }
   if (! savedBuffers) {
-    savedBuffers = (char**)malloc(MAXSAVEDBUFFERS*sizeof(char*));
+    savedBuffers = (char**)calloc(MAXSAVEDBUFFERS,sizeof(char*));
     if (!savedBuffers) {
       fprintf(stderr, "Internal error allocating savedBuffers in Print.saveAndClearBuf\n");
       return -1;
     }
-    memset(savedBuffers,0,MAXSAVEDBUFFERS);
   }
   if (! savedCurSize) {
-    savedCurSize = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
+    savedCurSize = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long*));
     if (!savedCurSize) {
       fprintf(stderr, "Internal error allocating savedCurSize in Print.saveAndClearBuf\n");
       return -1;
     }
-    memset(savedCurSize,0,MAXSAVEDBUFFERS);
   }
   if (! savedNfilled) {
-    savedNfilled = (long*)malloc(MAXSAVEDBUFFERS*sizeof(long*));
+    savedNfilled = (long*)calloc(MAXSAVEDBUFFERS,sizeof(long*));
     if (!savedNfilled) {
       fprintf(stderr, "Internal error allocating savedNfilled in Print.saveAndClearBuf\n");
       return -1;
     }
-    memset(savedNfilled,0,MAXSAVEDBUFFERS);
   }
   for (freeHandle=0; freeHandle< MAXSAVEDBUFFERS; freeHandle++) {
     if (savedBuffers[freeHandle]==0)

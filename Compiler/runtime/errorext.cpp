@@ -89,7 +89,7 @@ static void free_error(void *data)
   delete members->currVariable;
   delete members->lastDeletedCheckpoint;
   delete members->finfo.fn;
-  delete members;
+  free(members);
 }
 
 static void make_key()

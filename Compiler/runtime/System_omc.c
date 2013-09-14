@@ -310,7 +310,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
 
 extern char* System_substring(const char *str, int start, int stop)
 {
-  static char* substring = NULL; // This function is not re-entrant... Note that the result will be overwritten at each call to substring...
+  char* substring = NULL;
   int startIndex = start;
   int stopIndex = stop;
   int len1 = strlen(str);
@@ -332,9 +332,8 @@ extern char* System_substring(const char *str, int start, int stop)
   }
 
   /* Allocate memory and copy string */
-  if (substring) free(substring);
   len2 = stopIndex - startIndex + 1;
-  substring = (char*)malloc(len2+1);
+  substring = (char*)ModelicaAllocateString(len2);
   strncpy(substring, &str[startIndex-1], len2);
   substring[len2] = '\0';
 
@@ -682,19 +681,18 @@ extern const char* System_getMakeCommand()
 
 extern const char* System_snprintff(const char *fmt, int len, double d)
 {
-  static char buf[1024] /* It's ok to keep me static because snprintf is not reentrant either */;
-  assert(1024>len);
-  snprintf(buf,len,fmt,d);
-  buf[1023] = 0;
+  char *buf = ModelicaAllocateString(len);
+  if (snprintf(buf,len,fmt,d) >= len)
+    MMC_THROW();
   return buf;
 }
 
 extern const char* System_realpath(const char *path)
 {
-  static char buf[PATH_MAX];
+  char buf[PATH_MAX];
   if (realpath(path, buf) == NULL)
     MMC_THROW();
-  return buf;
+  return init_modelica_string(buf);
 }
 
 extern int System_fileIsNewerThan(const char *file1, const char *file2)
