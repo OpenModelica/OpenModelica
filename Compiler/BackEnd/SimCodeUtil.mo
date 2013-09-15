@@ -9084,30 +9084,19 @@ algorithm
     local
       String str, fopenmp;
       
-    // seems lapack can show on Lapack form or lapack (different case) (MLS revision 6155)
-    case Absyn.STRING("lapack")
-      then getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
-      
-    // Lapack on MinGW/Windows is linked against f2c
-    case Absyn.STRING("Lapack")
-      equation
-        true = "Windows_NT" ==& System.os();
-      then {"-llapack-mingw", "-ltmglib-mingw", "-lblas-mingw", "-lf2c"};
+    // Lapack is always included
+    case Absyn.STRING("lapack") then {};
+    case Absyn.STRING("Lapack") then {};
       
     // omcruntime on windows needs linking with mico2313 and wsock and then some :)
     case Absyn.STRING(str as "omcruntime")
       equation
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
-        strs = getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
         fopenmp = getFOpenMPFlag();
-        strs = str :: fopenmp :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
+        strs = str :: fopenmp :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: {};
       then 
         strs;
-        
-    // The library is not actually named libLapack.so.
-    // Which is a problem, since MSL says it does.
-    case Absyn.STRING("Lapack") then {"-llapack"};
         
     // Wonder if there may be issues if we have duplicates in the Corba libs
     // and the other libs. Some other developer will probably swear over this

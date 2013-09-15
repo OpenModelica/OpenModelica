@@ -66,6 +66,7 @@ AC_SUBST(MSL_EXTRA_ARGS)
 AC_SUBST(WITH_HWLOC)
 AC_SUBST(OS_TARGET)
 AC_SUBST(LIS_LDFLAGS)
+AC_SUBST(LAPACK_TARGET)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -347,13 +348,16 @@ fi
 fi
 
 # Cannot use AX_LAPACK since it assumes a Fortran compiler is used
-AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]],[LD_LAPACK="$withval"],[LD_LAPACK="-llapack -lblas"])
-if test "$LD_LAPACK" = "yes"; then
-  LD_LAPACK="-llapack -lblas"
-fi
-LIBS="$LD_LAPACK"
+AC_ARG_WITH(lapack,  [  --with-lapack=[internal]    (use -llapack -lblas to use system-provided version instead of OpenBLAS)],[LD_LAPACK="$withval"],[LD_LAPACK="internal"])
 AC_MSG_CHECKING([LAPACK flags])
-AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR([failed using $LD_LAPACK])])
+if test "$LD_LAPACK" = "internal"; then
+  LD_LAPACK="-lopenblas_openmodelica"
+  LAPACK_TARGET="openblas"
+  AC_MSG_RESULT([internal OpenBLAS compiled during the build process])
+else
+  LIBS="$LD_LAPACK"
+  AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[AC_MSG_RESULT([$LD_LAPACK])],[AC_MSG_ERROR([failed using $LD_LAPACK])])
+fi
 
 AC_CHECK_HEADERS(kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
 SUNDIALS_LDFLAGS="-lsundials_kinsol -lsundials_nvecserial $LD_LAPACK"
@@ -361,7 +365,9 @@ LIBS="$SUNDIALS_LDFLAGS -lm"
 AC_MSG_CHECKING([Sundials linking])
 AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
   [AC_MSG_RESULT([ok])],
-  [AC_MSG_RESULT([failed to link KINInit]); NO_SUNDIALS="yes"])
+  [LIBS="-lsundials_kinsol -lsundials_nvecserial -lm";
+  AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
+  [AC_MSG_RESULT([ok])],[AC_MSG_RESULT([failed to link KINInit]); NO_SUNDIALS="yes"])])
 
 if ! test "$NO_SUNDIALS" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"

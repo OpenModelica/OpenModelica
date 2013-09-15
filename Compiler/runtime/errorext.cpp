@@ -73,8 +73,6 @@ typedef struct errorext_struct {
   string *lastDeletedCheckpoint;
 } errorext_members;
 
-errorext_members members;
-
 #include <pthread.h>
 
 pthread_once_t errorext_once_create_key = PTHREAD_ONCE_INIT;

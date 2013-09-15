@@ -2,6 +2,7 @@ all : release qtclients @OMSHELL_TERMINAL@
 
 autoconfGeneratedFiles = @GENERATED_AUTOCONF_FILES@
 
+abs_top_builddir=@abs_top_builddir@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
@@ -26,6 +27,7 @@ LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 GC_THREADS=--enable-threads=posix
 LIBFMILIB=@LIBFMILIB@
+LAPACK_TARGET=@LAPACK_TARGET@
 
 include Makefile.common
 
