@@ -379,9 +379,9 @@ else
   SUNDIALS_LDFLAGS="$LD_LAPACK"
 fi
 
-AC_CHECK_HEADERS(locale.h libintl.h,[],[AC_MSG_ERROR([gettext headers not found])])
-
 LIBS=""
+
+AC_CHECK_HEADERS(locale.h libintl.h,[],[AC_MSG_ERROR([gettext headers not found])])
 
 AC_MSG_CHECKING([gettext linking])
 AC_TRY_LINK([
