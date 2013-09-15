@@ -365,7 +365,7 @@ LIBS="$SUNDIALS_LDFLAGS -lm"
 AC_MSG_CHECKING([Sundials linking])
 AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
   [AC_MSG_RESULT([ok])],
-  [LIBS="-lsundials_kinsol -lsundials_nvecserial -lm";
+  [LIBS="-lsundials_kinsol -lsundials_nvecserial -llapack -lblas -lm";
   AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
   [AC_MSG_RESULT([ok])],[AC_MSG_RESULT([failed to link KINInit]); NO_SUNDIALS="yes"])])
 
