@@ -70,6 +70,7 @@ private:
     QString mYRangeMax;
     double mCurveWidth;
     int mCurveStyle;
+    QString mLegendPosition;
 public:
     PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
     ~PlotWindow();
@@ -99,6 +100,8 @@ public:
     double getCurveWidth();
     void setCurveStyle(int style);
     int getCurveStyle();
+    void setLegendPosition(QString position);
+    QString getLegendPosition();
     void checkForErrors(QStringList variables, QStringList variablesPlotted);
     Plot* getPlot();
     QToolButton* getPanButton();

@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linkoping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -42,23 +42,23 @@
 using namespace OMPlot;
 
 Legend::Legend(Plot *pParent)
-{        
-    setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(this,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(legendMenu(const QPoint&)));
-    mpPlot = pParent;
+{
+  setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(this,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(legendMenu(const QPoint&)));
+  mpPlot = pParent;
 
-    // create actions for context menu
-    mpChangeColorAction = new QAction(QString(tr("Change Color")), this);
-    connect(mpChangeColorAction, SIGNAL(triggered()), this, SLOT(selectColor()));
+  // create actions for context menu
+  mpChangeColorAction = new QAction(QString(tr("Change Color")), this);
+  connect(mpChangeColorAction, SIGNAL(triggered()), this, SLOT(selectColor()));
 
-    mpAutomaticColorAction = new QAction(QString(tr("Automatic Color")), this);
-    mpAutomaticColorAction->setCheckable(true);
-    mpAutomaticColorAction->setChecked(true);
-    connect(mpAutomaticColorAction, SIGNAL(triggered(bool)), this, SLOT(automaticColor(bool)));
+  mpAutomaticColorAction = new QAction(QString(tr("Automatic Color")), this);
+  mpAutomaticColorAction->setCheckable(true);
+  mpAutomaticColorAction->setChecked(true);
+  connect(mpAutomaticColorAction, SIGNAL(triggered(bool)), this, SLOT(automaticColor(bool)));
 
-    mpHideAction = new QAction(QString(tr("Hide")), this);
-    mpHideAction->setCheckable(true);
-    connect(mpHideAction, SIGNAL(triggered(bool)), this, SLOT(toggleHide(bool)));
+  mpHideAction = new QAction(QString(tr("Hide")), this);
+  mpHideAction->setCheckable(true);
+  connect(mpHideAction, SIGNAL(triggered(bool)), this, SLOT(toggleHide(bool)));
 }
 
 Legend::~Legend()
@@ -73,96 +73,96 @@ void Legend::legendMenu(const QPoint& pos)
 #else
   QwtLegendItem *pItem = dynamic_cast<QwtLegendItem*>(childAt(pos));
 #endif
-    if(pItem)
-    {
-        mLegendItemStr = pItem->text().text();
-        /* context menu */
-        QMenu menu(mpPlot);
-        menu.addAction(mpChangeColorAction);
-        menu.addAction(mpAutomaticColorAction);
-        menu.addSeparator();
-        menu.addAction(mpHideAction);
-        menu.exec(mapToGlobal(pos));
-    }
+  if(pItem)
+  {
+    mLegendItemStr = pItem->text().text();
+    /* context menu */
+    QMenu menu(mpPlot);
+    menu.addAction(mpChangeColorAction);
+    menu.addAction(mpAutomaticColorAction);
+    menu.addSeparator();
+    menu.addAction(mpHideAction);
+    menu.exec(mapToGlobal(pos));
+  }
 }
 
 void Legend::selectColor()
 {
-    QColor c = QColorDialog::getColor();
-    QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
+  QColor c = QColorDialog::getColor();
+  QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
 
-    if(c.isValid())
+  if(c.isValid())
+  {
+    for(int i = 0; i < list.length(); i++)
     {
-        for(int i = 0; i < list.length(); i++)
-        {
-            if(list[i]->title() == mLegendItemStr)
-            {
-                list[i]->setCustomColor(true);
-                QPen pen = list[i]->pen();
-                pen.setColor(c);
-                list[i]->setPen(pen);
-                mpAutomaticColorAction->setChecked(false);
-            }
-        }
-        mpPlot->replot();
+      if(list[i]->title() == mLegendItemStr)
+      {
+        list[i]->setCustomColor(true);
+        QPen pen = list[i]->pen();
+        pen.setColor(c);
+        list[i]->setPen(pen);
+        mpAutomaticColorAction->setChecked(false);
+      }
     }
+    mpPlot->replot();
+  }
 }
 
 void Legend::toggleHide(bool hide)
 {
-    QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
+  QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
 
-    for(int i = 0; i < list.length(); i++)
+  for(int i = 0; i < list.length(); i++)
+  {
+    if(list[i]->title().text() == mLegendItemStr)
     {
-        if(list[i]->title().text() == mLegendItemStr)
-        {
-            if (hide)
-            {
-                QwtText text = list[i]->title();
-                text.setColor(QColor(Qt::gray));
-                list[i]->setTitle(text);
-                list[i]->setVisible(false);
-            }
-            else
-            {
-                QwtText text = list[i]->title();
-                text.setColor(QColor(Qt::black));
-                list[i]->setTitle(text.text());
-                list[i]->setVisible(true);
-            }
-        }
+      if (hide)
+      {
+        QwtText text = list[i]->title();
+        text.setColor(QColor(Qt::gray));
+        list[i]->setTitle(text);
+        list[i]->setVisible(false);
+      }
+      else
+      {
+        QwtText text = list[i]->title();
+        text.setColor(QColor(Qt::black));
+        list[i]->setTitle(text.text());
+        list[i]->setVisible(true);
+      }
     }
-    mpPlot->replot();
+  }
+  mpPlot->replot();
 }
 
 void Legend::automaticColor(bool automatic)
 {
-    QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
+  QList<PlotCurve*> list = mpPlot->getPlotCurvesList();
 
-    for(int i = 0; i < list.length(); i++)
+  for(int i = 0; i < list.length(); i++)
+  {
+    if(list[i]->title().text() == mLegendItemStr)
     {
-        if(list[i]->title().text() == mLegendItemStr)
+      if (automatic)
+      {
+        list[i]->setCustomColor(false);
+      }
+      else
+      {
+        if (list[i]->hasCustomColor())
         {
-            if (automatic)
-            {
-                list[i]->setCustomColor(false);
-            }
-            else
-            {
-                if (list[i]->hasCustomColor())
-                {
-                    list[i]->setCustomColor(true);
-                }
-                else
-                {
-                    mpAutomaticColorAction->blockSignals(true);
-                    mpAutomaticColorAction->setChecked(true);
-                    mpAutomaticColorAction->blockSignals(false);
-                }
-            }
+          list[i]->setCustomColor(true);
         }
+        else
+        {
+          mpAutomaticColorAction->blockSignals(true);
+          mpAutomaticColorAction->setChecked(true);
+          mpAutomaticColorAction->blockSignals(false);
+        }
+      }
     }
-    mpPlot->replot();
+  }
+  mpPlot->replot();
 }
 
 void Legend::setLegendItemStr(QString value)
