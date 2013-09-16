@@ -557,11 +557,11 @@ void LibraryTreeWidget::createActions()
   mpRefreshAction->setStatusTip(tr("Refresh the Modelica class"));
   connect(mpRefreshAction, SIGNAL(triggered()), SLOT(refresh()));
   // Export FMU Action
-  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.png"), Helper::exportFMU, this);
+  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
   // Export XML Action
-  mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.png"), Helper::exportXML, this);
+  mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));
 }

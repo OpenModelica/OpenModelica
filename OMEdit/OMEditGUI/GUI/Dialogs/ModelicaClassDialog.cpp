@@ -450,6 +450,7 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   mpFileLabel = new Label(Helper::file);
   mpFileTextBox = new QLineEdit;
   mpFileBrowseButton = new QPushButton(Helper::browse);
+  mpFileBrowseButton->setAutoDefault(false);
   connect(mpFileBrowseButton, SIGNAL(clicked()), SLOT(browseForFile()));
   // create the encoding label, combobox and encoding note.
   mpEncodingLabel = new Label(Helper::encoding);
@@ -465,11 +466,9 @@ OpenModelicaFile::OpenModelicaFile(MainWindow *pParent)
   /* Open and convert to utf-8 button */
   mpOpenAndConvertToUTF8Button = new QPushButton(tr("Open and convert to UTF-8"));
   mpOpenAndConvertToUTF8Button->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  mpOpenAndConvertToUTF8Button->setAutoDefault(false);
   connect(mpOpenAndConvertToUTF8Button, SIGNAL(clicked()), SLOT(convertModelicaFiles()));
   /* cancel button */
   mpCancelButton = new QPushButton(Helper::cancel);
-  mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
   // create buttons box
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
@@ -901,6 +900,7 @@ InformationDialog::InformationDialog(QString windowTitle, QString informationTex
   mainLayout->addWidget(pPlainTextEdit);
   mainLayout->addLayout(buttonLayout);
   setLayout(mainLayout);
+  pOkButton->setFocus();
 }
 
 /*!

@@ -65,11 +65,13 @@ ImportFMUDialog::ImportFMUDialog(MainWindow *pParent)
   mpFmuFileLabel = new Label(tr("FMU File:"));
   mpFmuFileTextBox = new QLineEdit;
   mpBrowseFileButton = new QPushButton(Helper::browse);
+  mpBrowseFileButton->setAutoDefault(false);
   connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(setSelectedFile()));
   // create Output Directory selection controls
   mpOutputDirectoryLabel = new Label(tr("Output Directory (Optional):"));
   mpOutputDirectoryTextBox = new QLineEdit;
   mpBrowseDirectoryButton = new QPushButton(Helper::browse);
+  mpBrowseDirectoryButton->setAutoDefault(false);
   connect(mpBrowseDirectoryButton, SIGNAL(clicked()), SLOT(setSelectedDirectory()));
   // create Log Level Drop Down
   mpLogLevelLabel = new Label(tr("Log Level:"));
@@ -94,6 +96,7 @@ ImportFMUDialog::ImportFMUDialog(MainWindow *pParent)
   mpOutputDirectoryNoteLabel = new Label(tr("* If no Output Directory specified then the FMU files are generated in the current working directory."));
   // create OK button
   mpImportButton = new QPushButton(Helper::ok);
+  mpImportButton->setAutoDefault(true);
   connect(mpImportButton, SIGNAL(clicked()), SLOT(importFMU()));
   // set grid layout
   Label *pNoteLabel = new Label(tr("* This feature is experimental. Most models are not yet handled by it."));

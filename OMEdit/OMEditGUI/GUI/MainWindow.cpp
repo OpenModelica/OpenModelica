@@ -1661,7 +1661,7 @@ void MainWindow::createActions()
   connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
   // XML Menu
   // export XML action
-  mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.png"), Helper::exportXML, this);
+  mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
   mpExportXMLAction->setEnabled(false);
   connect(mpExportXMLAction, SIGNAL(triggered()), SLOT(exportModelXML()));

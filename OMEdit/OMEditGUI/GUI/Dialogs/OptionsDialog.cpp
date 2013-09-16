@@ -736,6 +736,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   mpWorkingDirectoryLabel = new Label(tr("Working Directory:"));
   mpWorkingDirectoryTextBox = new QLineEdit(mpOptionsDialog->getMainWindow()->getOMCProxy()->changeDirectory());
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
+  mpWorkingDirectoryBrowseButton->setAutoDefault(false);
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
@@ -1037,10 +1038,13 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   connect(mpSystemLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditSystemLibrary()));
   // system libraries buttons
   mpAddSystemLibraryButton = new QPushButton(tr("Add"));
+  mpAddSystemLibraryButton->setAutoDefault(false);
   connect(mpAddSystemLibraryButton, SIGNAL(clicked()), SLOT(openAddSystemLibrary()));
   mpEditSystemLibraryButton = new QPushButton(Helper::edit);
+  mpEditSystemLibraryButton->setAutoDefault(false);
   connect(mpEditSystemLibraryButton, SIGNAL(clicked()), SLOT(openEditSystemLibrary()));
   mpRemoveSystemLibraryButton = new QPushButton(Helper::remove);
+  mpRemoveSystemLibraryButton->setAutoDefault(false);
   connect(mpRemoveSystemLibraryButton, SIGNAL(clicked()), SLOT(removeSystemLibrary()));
   // system libraries button box
   mpSystemLibrariesButtonBox = new QDialogButtonBox(Qt::Vertical);
@@ -1074,10 +1078,13 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   connect(mpUserLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditUserLibrary()));
   // user libraries buttons
   mpAddUserLibraryButton = new QPushButton(tr("Add"));
+  mpAddUserLibraryButton->setAutoDefault(false);
   connect(mpAddUserLibraryButton, SIGNAL(clicked()), SLOT(openAddUserLibrary()));
   mpEditUserLibraryButton = new QPushButton(Helper::edit);
+  mpEditUserLibraryButton->setAutoDefault(false);
   connect(mpEditUserLibraryButton, SIGNAL(clicked()), SLOT(openEditUserLibrary()));
   mpRemoveUserLibraryButton = new QPushButton(Helper::remove);
+  mpRemoveUserLibraryButton->setAutoDefault(false);
   connect(mpRemoveUserLibraryButton, SIGNAL(clicked()), SLOT(removeUserLibrary()));
   // user libraries button box
   mpUserLibrariesButtonBox = new QDialogButtonBox(Qt::Vertical);
@@ -1595,6 +1602,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
   // Item color label and pick color button
   mpItemColorLabel = new Label(tr("Item Color:"));
   mpItemColorPickButton = new QPushButton(tr("Pick Color"));
+  mpItemColorPickButton->setAutoDefault(false);
   connect(mpItemColorPickButton, SIGNAL(clicked()), SLOT(pickColor()));
   // Items list
   mpItemsLabel = new Label(tr("Items:"));
@@ -2344,6 +2352,7 @@ LineStylePage::LineStylePage(OptionsDialog *pParent)
   // Line Color
   mpLineColorLabel = new Label(Helper::color);
   mpLinePickColorButton = new QPushButton(Helper::pickColor);
+  mpLinePickColorButton->setAutoDefault(false);
   connect(mpLinePickColorButton, SIGNAL(clicked()), SLOT(linePickColor()));
   setLineColor(Qt::black);
   setLinePickColorButtonIcon();
@@ -2520,6 +2529,7 @@ FillStylePage::FillStylePage(OptionsDialog *pParent)
   // Fill Color
   mpFillColorLabel = new Label(Helper::color);
   mpFillPickColorButton = new QPushButton(Helper::pickColor);
+  mpFillPickColorButton->setAutoDefault(false);
   connect(mpFillPickColorButton, SIGNAL(clicked()), SLOT(fillPickColor()));
   setFillColor(Qt::black);
   setFillPickColorButtonIcon();
