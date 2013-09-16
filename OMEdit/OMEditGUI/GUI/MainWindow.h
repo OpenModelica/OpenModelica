@@ -179,6 +179,7 @@ private:
   QAction *mpNewModelicaClassAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
+  QAction *mpLoadModelicaLibraryAction;
   QAction *mpOpenResultFileAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
@@ -251,6 +252,7 @@ public slots:
   void createNewModelicaClass();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
+  void loadModelicaLibrary();
   void showOpenResultFileDialog();
   void loadSystemLibrary();
   void focusSearchClassWidget(bool visible);

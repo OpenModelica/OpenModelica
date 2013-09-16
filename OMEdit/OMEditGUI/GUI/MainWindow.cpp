@@ -911,6 +911,16 @@ void MainWindow::showOpenModelicaFileDialog()
   pOpenModelicaFile->show();
 }
 
+void MainWindow::loadModelicaLibrary()
+{
+  QString libraryPath = StringHandler::getExistingDirectory(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseDirectory), NULL);
+  if (libraryPath.isEmpty())
+    return;
+  libraryPath = libraryPath + QDir::separator() + "package.mo";
+  libraryPath = libraryPath.replace("\\", "/");
+  mpLibraryTreeWidget->openFile(libraryPath, Helper::utf8, true, true);
+}
+
 void MainWindow::showOpenResultFileDialog()
 {
   QStringList fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
@@ -1528,6 +1538,10 @@ void MainWindow::createActions()
   mpOpenModelicaFileWithEncodingAction = new QAction(Helper::openConvertModelicaFiles, this);
   mpOpenModelicaFileWithEncodingAction->setStatusTip(tr("Opens and converts the Modelica file(s) with encoding"));
   connect(mpOpenModelicaFileWithEncodingAction, SIGNAL(triggered()), SLOT(showOpenModelicaFileDialog()));
+  // load Modelica library action
+  mpLoadModelicaLibraryAction = new QAction(tr("Load Library"), this);
+  mpLoadModelicaLibraryAction->setStatusTip(tr("Loads the Modelica library"));
+  connect(mpLoadModelicaLibraryAction, SIGNAL(triggered()), SLOT(loadModelicaLibrary()));
   // open result file action
   mpOpenResultFileAction = new QAction(tr("Open Result File(s)"), this);
   mpOpenResultFileAction->setShortcut(QKeySequence("Ctrl+shift+o"));
@@ -1764,6 +1778,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpNewModelicaClassAction);
   pFileMenu->addAction(mpOpenModelicaFileAction);
   pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
+  pFileMenu->addAction(mpLoadModelicaLibraryAction);
   pFileMenu->addAction(mpOpenResultFileAction);
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
