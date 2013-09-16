@@ -1461,7 +1461,7 @@ namespace IAEX {
       if (resLst.at(0).compare("_omc_PlotResult") == 0)
       {
         plotVariables(resLst);
-        res = tr("");
+        res = "";
       }
       else { mpPlotWindow->hide(); }
     }
