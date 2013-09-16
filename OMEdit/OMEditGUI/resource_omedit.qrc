@@ -50,8 +50,8 @@
         <file>Resources/icons/previous.png</file>
         <file>Resources/icons/type-icon.svg</file>
         <file>Resources/icons/bitmap-shape.png</file>
-        <file>Resources/icons/import-omnotebook.png</file>
-        <file>Resources/icons/export-omnotebook.png</file>
+        <file>Resources/icons/import-omnotebook.svg</file>
+        <file>Resources/icons/export-omnotebook.svg</file>
         <file>Resources/icons/interactive-simulation.png</file>
         <file>Resources/icons/pause.png</file>
         <file>Resources/icons/start.png</file>
@@ -88,8 +88,8 @@
         <file>Resources/icons/omplot.png</file>
         <file>Resources/icons/plotparametricwindow.png</file>
         <file>Resources/icons/plotwindow.png</file>
-        <file>Resources/icons/export-fmu.png</file>
-        <file>Resources/icons/import-fmu.png</file>
+        <file>Resources/icons/export-fmu.svg</file>
+        <file>Resources/icons/import-fmu.svg</file>
         <file>Resources/icons/libraries.png</file>
         <file>Resources/icons/erroricon.png</file>
         <file>Resources/icons/notificationicon.png</file>

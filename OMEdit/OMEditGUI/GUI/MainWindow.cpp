@@ -1637,12 +1637,12 @@ void MainWindow::createActions()
   connect(mpSimulationAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
   // FMI Menu
   // export FMU action
-  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.png"), Helper::exportFMU, this);
+  mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
   mpExportFMUAction->setEnabled(false);
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
   // import FMU action
-  mpImportFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.png"), Helper::importFMU, this);
+  mpImportFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::importFMU, this);
   mpImportFMUAction->setStatusTip(Helper::importFMUTip);
   connect(mpImportFMUAction, SIGNAL(triggered()), SLOT(importModelFMU()));
   // XML Menu
@@ -1657,12 +1657,12 @@ void MainWindow::createActions()
   mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OMC Logger Window"));
   connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
   // export to OMNotebook action
-  mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.png"), Helper::exportToOMNotebook, this);
+  mpExportToOMNotebookAction = new QAction(QIcon(":/Resources/icons/export-omnotebook.svg"), Helper::exportToOMNotebook, this);
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
   mpExportToOMNotebookAction->setEnabled(false);
   connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
   // import from OMNotebook action
-  mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.png"), Helper::importFromOMNotebook, this);
+  mpImportFromOMNotebookAction = new QAction(QIcon(":/Resources/icons/import-omnotebook.svg"), Helper::importFromOMNotebook, this);
   mpImportFromOMNotebookAction->setStatusTip(Helper::importFromOMNotebookTip);
   connect(mpImportFromOMNotebookAction, SIGNAL(triggered()), SLOT(importModelfromOMNotebook()));
   // open options action
