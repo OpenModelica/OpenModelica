@@ -1960,21 +1960,20 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    void <%lastIdentOfPath(modelInfo.name)%>::writeOutput(const OUTPUT command)
    {
 
-      //Write head line
+    //Write head line
     if (command & HEAD_LINE)
     {
-    vector<string> head;
-    head+= <%writeoutput1(modelInfo)%>
-    _historyImpl->write(head);
+      vector<string> head;
+      head+= <%writeoutput1(modelInfo)%>
+      _historyImpl->write(head);
     }
     //Write the current values
     else
     {
-
-    HistoryImplType::value_type_v v(<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
-    HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
-    <%writeoutput2(modelInfo)%>
-    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+      HistoryImplType::value_type_v v(<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
+      HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
+      <%writeoutput2(modelInfo)%>
+      <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
       HistoryImplType::value_type_r v3(<%numResidues(allEquations)%>);
       <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode));separator="\n")%>
@@ -2071,13 +2070,13 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   <<
   #include "ReduceDAE/Interfaces/IReduceDAE.h"
   #include "DataExchange/Policies/BufferReaderWriter.h"
-  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;
+  typedef HistoryImpl<BufferReaderWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,<%numResidues(allEquations)%>> HistoryImplType;
 
   >>
   else
   <<
   #include "DataExchange/Policies/TextfileWriter.h"
-  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
+  typedef HistoryImpl<TextFileWriter,<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>,<%numDerivativevars(modelInfo)%>,0> HistoryImplType;
 
   >>%>
   /*****************************************************************************
@@ -3420,12 +3419,6 @@ case MODELINFO(vars=SIMVARS(__)) then
       (vars.boolAlgVars |> SIMVAR(__) =>
         ' "<%crefStr(name)%>" '
       ;separator=","),
-      (vars.stateVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
-      (vars.derivativeVars |> SIMVAR(__) =>
-        ' "<%crefStr(name)%>" '
-      ;separator=","),
       (vars.inputVars |> SIMVAR(__) =>
         ' "<%crefStr(name)%>" '
       ;separator=","),
@@ -3439,6 +3432,12 @@ case MODELINFO(vars=SIMVARS(__)) then
         ' "<%crefStr(name)%>" '
       ;separator=","),
       (vars.boolAliasVars |> SIMVAR(__) =>
+        ' "<%crefStr(name)%>" '
+      ;separator=","),
+      (vars.stateVars |> SIMVAR(__) =>
+        ' "<%crefStr(name)%>" '
+      ;separator=","),
+      (vars.derivativeVars |> SIMVAR(__) =>
         ' "<%crefStr(name)%>" '
       ;separator=",")      
       }
@@ -3502,6 +3501,24 @@ case MODELINFO(varInfo=VARINFO(__)) then
 >>
 end numAlgvars;
 
+template numInOutvars(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numInVars%>+<%varInfo.numOutVars%>
+>>
+end numInOutvars;
+
+template numAliasvars(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numAlgAliasVars%>+<%varInfo.numIntAliasVars%>+<%varInfo.numBoolAliasVars%>
+>>
+end numAliasvars;
+
 template numAlgvar(ModelInfo modelInfo)
 ::=
 match modelInfo
@@ -3529,6 +3546,51 @@ case MODELINFO(varInfo=VARINFO(__)) then
 >>
 end numBoolAlgvar;
 
+template numInputvar(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numInVars%>
+>>
+end numInputvar;
+
+template numOutputvar(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numOutVars%>
+>>
+end numOutputvar;
+
+template numAliasvar(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numAlgAliasVars%>
+>>
+end numAliasvar;
+
+template numIntAliasvar(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numIntAliasVars%>
+>>
+end numIntAliasvar;
+
+template numBoolAliasvar(ModelInfo modelInfo)
+::=
+match modelInfo
+case MODELINFO(varInfo=VARINFO(__)) then
+<<
+<%varInfo.numBoolAliasVars%>
+>>
+end numBoolAliasvar;
+
 template numDerivativevars(ModelInfo modelInfo)
 ::=
 match modelInfo
@@ -3538,6 +3600,15 @@ case MODELINFO(varInfo=VARINFO(__)) then
 >>
 end numDerivativevars;
 
+template getAliasVar(AliasVariable aliasvar)
+ "Returns the alias Attribute of ScalarVariable."
+::=
+  match aliasvar
+    case NOALIAS(__) then 'noAlias'
+    case ALIAS(__) then '<%cref(varName)%>'
+    case NEGATEDALIAS(__) then '-<%cref(varName)%>'
+    else 'noAlias'
+end getAliasVar;
 
 template writeoutput2(ModelInfo modelInfo)
 
@@ -3547,13 +3618,29 @@ case MODELINFO(vars=SIMVARS(__)) then
 
 
  <<
+     const int algVarsStart = 0;
+     const int intAlgVarsStart    = algVarsStart       + <%numAlgvar(modelInfo)%>;
+     const int boolAlgVarsStart   = intAlgVarsStart    + <%numIntAlgvar(modelInfo)%>;
+     const int inputVarsStart     = boolAlgVarsStart   + <%numBoolAlgvar(modelInfo)%>;
+     const int outputVarsStart    = inputVarsStart     + <%numInputvar(modelInfo)%>;
+     const int aliasVarsStart     = outputVarsStart    + <%numOutputvar(modelInfo)%>;     
+     const int intAliasVarsStart  = aliasVarsStart     + <%numAliasvar(modelInfo)%>;
+     const int boolAliasVarsStart = intAliasVarsStart  + <%numIntAliasvar(modelInfo)%>;
+     const int stateVarsStart     = boolAliasVarsStart + <%numBoolAliasvar(modelInfo)%>;
+     
+     <%vars.algVars         |> SIMVAR(__) hasindex i0 =>'v(algVarsStart+<%i0%>)=<%cref(name)%>;'%>
+     <%vars.intAlgVars      |> SIMVAR(__) hasindex i1 =>'v(intAlgVarsStart+<%i1%>)=<%cref(name)%>;'%>
+     <%vars.boolAlgVars     |> SIMVAR(__) hasindex i2 =>'v(boolAlgVarsStart+<%i2%>)=<%cref(name)%>;'%>
+    
+     <%vars.inputVars       |> SIMVAR(__) hasindex i3 =>'v(inputVarsStart+<%i3%>)=<%cref(name)%>;'%>
+     <%vars.outputVars      |> SIMVAR(__) hasindex i4 =>'v(outputVarsStart+<%i4%>)=<%cref(name)%>;'%>
 
-     <%vars.algVars |> SIMVAR(__) hasindex i0 =>'v(<%i0%>)=<%cref(name)%>;'%>
-     <%vars.intAlgVars |> SIMVAR(__) hasindex i1 =>'v(<%i1%>+<%numAlgvar(modelInfo)%>)=<%cref(name)%>;'%>
-     <%vars.boolAlgVars |> SIMVAR(__)hasindex i2  =>'v(<%i2%>+ <%numAlgvar(modelInfo)%> +<%numIntAlgvar(modelInfo)%>)=<%cref(name)%>;'%>
-     <%(vars.stateVars  |> SIMVAR(__) hasindex i3 =>' v(<%i3%> +<%numAlgvar(modelInfo)%> +<%numIntAlgvar(modelInfo)%> +<%numBoolAlgvar(modelInfo)%>)=__z[<%index%>]; ')%>
-     <%(vars.derivativeVars  |> SIMVAR(__) hasindex i4 =>' v2(<%i4%>)=__zDot[<%index%>]; ')%>
-
+     <%vars.aliasVars       |> SIMVAR(__) hasindex i5 =>'v(aliasVarsStart+<%i5%>)=<%getAliasVar(aliasvar)%>;'%>
+     <%vars.intAliasVars    |> SIMVAR(__) hasindex i6 =>'v(intAliasVarsStart+<%i6%>)=<%getAliasVar(aliasvar)%>;'%>
+     <%vars.boolAliasVars   |> SIMVAR(__) hasindex i7 =>'v(boolAliasVarsStart+<%i7%>)=<%getAliasVar(aliasvar)%>;'%>
+     
+     <%(vars.stateVars      |> SIMVAR(__) hasindex i8 =>'v(stateVarsStart+<%i8%>)=__z[<%index%>]; ')%>
+     <%(vars.derivativeVars |> SIMVAR(__) hasindex i9 =>'v2(<%i9%>)=__zDot[<%index%>]; ')%>
  >>
 end writeoutput2;
 
