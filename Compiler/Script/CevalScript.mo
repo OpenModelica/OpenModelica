@@ -823,7 +823,7 @@ algorithm
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
-             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr,scriptFile,logFile, simflags2, outputFile,
+             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition,scriptFile,logFile, simflags2, outputFile,
              systemPath, gccVersion, gd, strlinearizeTime, direction, suffix;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -2449,7 +2449,8 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
           Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle)
+          Values.INTEGER(curveStyle),
+          Values.STRING(legendPosition)
         },
         st,
         _)
@@ -2468,9 +2469,8 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle);
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
-
         0 = System.spawnCall(str2, call);
       then
         (cache,Values.BOOL(true),st);
@@ -2490,7 +2490,8 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
           Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle)
+          Values.INTEGER(curveStyle),
+          Values.STRING(legendPosition)
         },
         st,
         _)
@@ -2513,7 +2514,7 @@ algorithm
         y2Str = realString(y2);
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
-        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotAll",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr};
+        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotAll",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition};
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then
@@ -2538,7 +2539,8 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
           Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle)
+          Values.INTEGER(curveStyle),
+          Values.STRING(legendPosition)
         },
         st,_)
       equation
@@ -2560,9 +2562,8 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plot --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " \"" +& str +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plot --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" \"" +& str +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
-
         0 = System.spawnCall(str2, call);
       then
         (cache,Values.BOOL(true),st);
@@ -2583,7 +2584,8 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
           Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle)
+          Values.INTEGER(curveStyle),
+          Values.STRING(legendPosition)
         },
         st,_)
       equation
@@ -2609,7 +2611,7 @@ algorithm
         y2Str = realString(y2);
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
-        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr};
+        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition};
         args = listAppend(args, vars_1);
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
@@ -2866,7 +2868,8 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
           Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle)
+          Values.INTEGER(curveStyle),
+          Values.STRING(legendPosition)
         },
         st,_)
       equation
@@ -2886,9 +2889,8 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " \"" +& str +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" \"" +& str +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
-
         0 = System.spawnCall(str2, call);
       then
         (cache,Values.BOOL(true),st);
@@ -2910,7 +2912,8 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)}),
           Values.REAL(curveWidth),
-          Values.INTEGER(curveStyle)
+          Values.INTEGER(curveStyle),
+          Values.STRING(legendPosition)
         },
         st,_)
       equation
@@ -2935,7 +2938,7 @@ algorithm
         y2Str = realString(y2);
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
-        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,str,str3};
+        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,str,str3};
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then
