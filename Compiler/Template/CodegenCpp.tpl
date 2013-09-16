@@ -3092,7 +3092,7 @@ template cref(ComponentRef cr)
  "Generates C equivalent name for component reference."
 ::=
   match cr
-  case CREF_IDENT(ident = "time") then "time"
+  case CREF_IDENT(ident = "time") then "_simTime"
   case WILD(__) then ''
   else "_"+crefToCStr(cr)
 end cref;
@@ -6859,7 +6859,14 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
            else
                 f[<%index1%>]=(<%e1%> - EPSILON - <%e2%>);
          >>
+      else
+        error(sourceInfo(), ' UNKNOWN RELATION for <%index1%>')
       end match
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
+    error(sourceInfo(), ' sample not supported for <%index1%> ')
+  else  
+    error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%> ')
+  end match
 end giveZeroFunc3;
 
 /*
