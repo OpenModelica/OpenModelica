@@ -373,6 +373,7 @@ void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindo
         pPlotWindow->setVariablesList(QStringList(pItem->getPlotVariable()));
         pPlotWindow->plot();
         pPlotWindow->fitInView();
+        pPlotWindow->getPlot()->updateLayout();
         pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
       }
       // if user unchecks the variable then remove it from the plot
