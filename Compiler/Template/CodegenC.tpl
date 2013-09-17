@@ -142,19 +142,19 @@ template simulationFile(SimCode simCode, String guid)
 
     <%if Flags.isSet(HPCOM) then "#define HPCOM"%>
 
-    #ifdef HPCOM
-     #include <omp.h>
-    #endif
-
-    #ifdef _OPENMP
-     #ifndef HPCOM
+    #if defined(HPCOM)
+      #if !defined(_OPENMP)
+        #error "HPCOM requires OpenMP or the results are wrong"
+      #endif
+      #include <omp.h>
+      #include <perform_simulation.c>
+    #elif defined(_OPENMP)
       #include <omp.h>
       #include <omp_perform_simulation.c>
-     #else
-      #include <perform_simulation.c>
-     #endif
     #else
-     #error "HPCOM requires OpenMP or the results are wrong"
+      #include <perform_simulation.c> 
+      /* dummy omp defines */ 
+      #define omp_get_max_threads() 1 
     #endif
   
 
