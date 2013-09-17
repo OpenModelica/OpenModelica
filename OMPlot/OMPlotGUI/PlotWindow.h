@@ -85,7 +85,6 @@ public:
     void plot();
     void plotParametric();
     void setTitle(QString title);
-    void setLegend(bool on);
     QCheckBox* getLogXCheckBox();
     QCheckBox* getLogYCheckBox();
     void setXLabel(QString label);

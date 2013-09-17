@@ -71,8 +71,6 @@ void PlotWindow::setUpWidget()
   // set the default values
   // set the plot title
   setTitle(tr("Plot by OpenModelica"));
-  // set the plot legend
-  setLegend(true);
   // set the plot grid
   setGrid(true);
   setXLabel(tr("time"));
@@ -87,49 +85,60 @@ void PlotWindow::initializePlot(QStringList arguments)
   //Set up arguments
   setTitle(QString(arguments[2]));
   if(QString(arguments[3]) == "true")
-    setLegend(true);
-  else if(QString(arguments[3]) == "false")
-    setLegend(false);
-  else
-    throw PlotException("Invalid input " + arguments[3]);
-  if(QString(arguments[4]) == "true")
     setGrid(true);
-  else if(QString(arguments[4]) == "false")
+  else if(QString(arguments[3]) == "false")
     setGrid(false);
   else
     throw PlotException("Invalid input" + arguments[4]);
-  QString plotType = arguments[5];
-  if(QString(arguments[6]) == "true")
+  QString plotType = arguments[4];
+  if(QString(arguments[5]) == "true")
     setLogX(true);
-  else if(QString(arguments[6]) == "false")
+  else if(QString(arguments[5]) == "false")
     setLogX(false);
   else
     throw PlotException("Invalid input" + arguments[6]);
-  if(QString(arguments[7]) == "true")
+  if(QString(arguments[6]) == "true")
     setLogY(true);
-  else if(QString(arguments[7]) == "false")
+  else if(QString(arguments[6]) == "false")
     setLogY(false);
   else
     throw PlotException("Invalid input" + arguments[7]);
-  setXLabel(QString(arguments[8]));
-  setYLabel(QString(arguments[9]));
-  setXRange(QString(arguments[10]).toDouble(), QString(arguments[11]).toDouble());
-  setYRange(QString(arguments[12]).toDouble(), QString(arguments[13]).toDouble());
-  setCurveWidth(QString(arguments[14]).toDouble());
-  setCurveStyle(QString(arguments[15]).toInt());
-  setLegendPosition(QString(arguments[16]));
-  QwtPlot::LegendPosition legendPosition = QwtPlot::RightLegend;
+  setXLabel(QString(arguments[7]));
+  setYLabel(QString(arguments[8]));
+  setXRange(QString(arguments[9]).toDouble(), QString(arguments[10]).toDouble());
+  setYRange(QString(arguments[11]).toDouble(), QString(arguments[12]).toDouble());
+  setCurveWidth(QString(arguments[13]).toDouble());
+  setCurveStyle(QString(arguments[14]).toInt());
+  setLegendPosition(QString(arguments[15]));
   if (getLegendPosition().toLower().compare("left") == 0)
-    legendPosition = QwtPlot::LeftLegend;
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::LeftLegend);
+  }
   else if (getLegendPosition().toLower().compare("right") == 0)
-    legendPosition = QwtPlot::RightLegend;
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::RightLegend);
+  }
   else if (getLegendPosition().toLower().compare("top") == 0)
-    legendPosition = QwtPlot::TopLegend;
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend);
+  }
   else if (getLegendPosition().toLower().compare("bottom") == 0)
-    legendPosition = QwtPlot::BottomLegend;
-  mpPlot->insertLegend(mpPlot->getLegend(), legendPosition);
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::BottomLegend);
+  }
+  else if (getLegendPosition().toLower().compare("none") == 0)
+    mpPlot->insertLegend(0);
+  /* read variables */
   QStringList variablesToRead;
-  for(int i = 17; i < arguments.length(); i++)
+  for(int i = 16; i < arguments.length(); i++)
     variablesToRead.append(QString(arguments[i]));
 
   setVariablesList(variablesToRead);
@@ -664,11 +673,6 @@ void PlotWindow::plotParametric()
 void PlotWindow::setTitle(QString title)
 {
   mpPlot->setTitle(title);
-}
-
-void PlotWindow::setLegend(bool on)
-{
-  mpPlot->getLegend()->setVisible(on);
 }
 
 QCheckBox* PlotWindow::getLogXCheckBox()

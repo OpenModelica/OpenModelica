@@ -49,7 +49,6 @@ void printUsage()
     printf("OPTIONS\n");
     printf("    --title=TITLE              Sets the TITLE of the plot window\n");
     printf("    --filename=NAME            Sets the NAME of the file to plot\n");
-    printf("    --legend=[true|false]      Display a variable legend in the window\n");
     printf("    --grid=[true|false]        Enable a grid in the window\n");
     printf("    --logx=[true|false]        Use log scale for the x-axis\n");
     printf("    --logy=[true|false]        Use log scale for the y-axis\n");
@@ -63,7 +62,7 @@ void printUsage()
     printf("    --new-window=[true|false]  Create a MDI dialog in the plot-window\n");
     printf("    --curve-width=WIDTH        Sets the WIDTH of the curve\n");
     printf("    --curve-style=STYLE        Sets the STYLE of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7\n");
-    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom\n");
+    printf("    --legend-position=POSITION Sets the POSITION of the legend i.e left, right, top, bottom, none\n");
 }
 
 int main(int argc, char *argv[])
@@ -71,8 +70,7 @@ int main(int argc, char *argv[])
     // read the arguments
     QStringList arguments;
     bool newApplication = false;
-    QString title("Plot by OpenModelica");
-    bool legend = true;
+    QString title("");
     bool grid = true;
     QString plottype("plot");
     bool logx = false;
@@ -85,7 +83,7 @@ int main(int argc, char *argv[])
     double yrange2 = 0.0;
     double curveWidth = 1.0;
     int curveStyle = 1;
-    QString legendPosition = "right";
+    QString legendPosition = "top";
     QStringList vars;
     QString filename;
     for(int i = 1; i < argc; i++)
@@ -95,10 +93,8 @@ int main(int argc, char *argv[])
         } else if (strcmp(argv[i], "--help") == 0) {
           printUsage();
           return 1;
-        } else if (strncmp(argv[i], "--title=", 7) == 0) {
+        } else if (strncmp(argv[i], "--title=", 8) == 0) {
           title = argv[i]+8;
-        } else if (strncmp(argv[i], "--legend=",9) == 0) {
-          CONSUME_BOOL_ARG(i,9,legend);
         } else if (strncmp(argv[i], "--grid=",7) == 0) {
           CONSUME_BOOL_ARG(i,7,grid);
         } else if (strncmp(argv[i], "--logx=",7) == 0) {
@@ -155,7 +151,6 @@ int main(int argc, char *argv[])
     arguments.append(argv[0]);
     arguments.append(filename);
     arguments.append(title);
-    arguments.append(legend ? "true" : "false");
     arguments.append(grid ? "true" : "false");
     arguments.append(plottype);
     arguments.append(logx ? "true" : "false");

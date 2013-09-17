@@ -68,6 +68,7 @@ public:
 
   void fillColorsList();
   PlotWindow* getParentPlotWindow();
+  void setLegend(Legend *pLegend);
   Legend* getLegend();
   QwtPlotPicker* getPlotPicker();
   PlotGrid* getPlotGrid();
