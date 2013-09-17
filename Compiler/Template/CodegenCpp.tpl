@@ -2636,8 +2636,30 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.stringConstVars |> var =>
     MemberVariableDefine("const string",var, "stringConstvariables")
   ;separator="\n"%>
+   <%vars.stateVars |> var =>
+    VariableAliasDefinition(var)
+  ;separator="\n"%>
+   <%vars.derivativeVars |> var =>
+    VariableAliasDefinition(var)
+  ;separator="\n"%>
+  
   >>
 end MemberVariable;
+
+template VariableAliasDefinition(SimVar simVar)
+"make a #define to the state vector"
+::=
+  match simVar
+    case SIMVAR(varKind=STATE(__)) then
+    <<
+    #define <%cref(name)%> __z[<%index%>];
+    >>
+    case SIMVAR(varKind=STATE_DER(__)) then
+    <<
+    #define <%cref(name)%> __zDot[<%index%>];
+    >>
+  end match
+end VariableAliasDefinition;
 
 template MemberVariableAlgloop(ModelInfo modelInfo)
  "Define membervariable in simulation file."
