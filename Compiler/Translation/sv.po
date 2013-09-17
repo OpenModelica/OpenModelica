@@ -41,17 +41,17 @@ msgstr "paket"
 #: ../Util/Error.mo:131
 #, c-format
 msgid "Class %s not found in scope %s."
-msgstr "Klass %s hittades inte i omfattning %s."
+msgstr "Klass %s hittades inte i definitionsområde %s."
 
 #: ../Util/Error.mo:133
 #, c-format
 msgid "Class %s not found in scope %s while instantiating %s."
-msgstr "Klass %s hittades inte i omfattning %s då %s instansierades."
+msgstr "Klass %s hittades inte i definitionsområde %s då %s instansierades."
 
 #: ../Util/Error.mo:135
 #, c-format
 msgid "Variable %s not found in scope %s."
-msgstr "Variabel %s hittades inte i omfattning %s."
+msgstr "Variabel %s hittades inte i definitionsområde %s."
 
 #: ../Util/Error.mo:137
 #, c-format
@@ -157,7 +157,7 @@ msgstr "Negativt värde som argument till sqrt."
 #: ../Util/Error.mo:177
 #, c-format
 msgid "No constant value for variable %s in scope %s."
-msgstr "Inget konstant värde för variabel %s i omfattning %s."
+msgstr "Inget konstant värde för variabel %s i definitionsområde %s."
 
 #: ../Util/Error.mo:179
 #, c-format
@@ -240,7 +240,7 @@ msgstr "Förbjudet att instansiera partiell klass %s."
 #: ../Util/Error.mo:203
 #, c-format
 msgid "Base class %s not found in scope %s."
-msgstr "Basklass %s hittades inte i omfattning %s."
+msgstr "Basklass %s hittades inte i definitionsområde %s."
 
 #: ../Util/Error.mo:205
 #, c-format
@@ -368,7 +368,7 @@ msgstr "Delen %s av basklass-namnet %s är inte en klass. "
 #: ../Util/Error.mo:247
 #, c-format
 msgid "%s is protected and cannot be accessed outside it's scope."
-msgstr "%s är skyddad och kan inte nås utanför sin omgivning."
+msgstr "%s är skyddad och kan inte nås utanför sin räckvidd."
 
 #: ../Util/Error.mo:249
 #, c-format
@@ -425,7 +425,7 @@ msgstr "Olika antal dimensioner i argument till %s i komponent %s."
 #: ../Util/Error.mo:265
 #, c-format
 msgid "Import %s not found in scope %s."
-msgstr "Import %s hittades inte i omfattning %s."
+msgstr "Import %s hittades inte definitionsområde %s."
 
 #: ../Util/Error.mo:267
 #, c-format
@@ -546,7 +546,7 @@ msgstr ""
 #: ../Util/Error.mo:303
 #, c-format
 msgid "Error occurred while flattening model %s"
-msgstr "Fel inträffade under utplattning av modell %s"
+msgstr "Fel inträffade under utflatning av modell %s"
 
 #: ../Util/Error.mo:305
 #, c-format
@@ -689,9 +689,9 @@ msgstr ""
 "  De existerande 'inner' komponenterna är:\n"
 "    %s\n"
 "  Kontrollera att du inte har stavat fel i namnet på din 'outer' komponent.\n"
-"  Var vänlig deklarera en 'inner' komponent med samma namn i "
-"huvudomfattningen.\n"
-"  Fortsätter utplattning genom att enbart överväga 'outer' komponenten."
+"  Var vänlig deklarera en 'inner' komponent med samma namn i det översta "
+"definitionsområdet.\n"
+"  Fortsätter utflatning genom att enbart överväga 'outer' komponenten."
 
 #: ../Util/Error.mo:343
 #, c-format
@@ -763,8 +763,8 @@ msgid ""
 "In scope %s, in component %s: Invalid dimensions %s in %s, no more than one "
 "dimension may have size > 1."
 msgstr ""
-"I omfattning %s, i komponent %s: Ogiltiga dimensioner %s i %s, högst en "
-"dimension får ha längd > 1."
+"I definitionsområde %s, i komponent %s: Ogiltiga dimensioner %s i %s, högst "
+"en dimension får ha längd > 1."
 
 #: ../Util/Error.mo:363
 #, c-format
@@ -909,7 +909,7 @@ msgstr ""
 #: ../Util/Error.mo:399
 #, c-format
 msgid "Failed to instantiate function %s in scope %s."
-msgstr "Misslyckades instansiera funktion %s i omfattning %s."
+msgstr "Misslyckades instansiera funktion %s i definitionsområde %s."
 
 #: ../Util/Error.mo:401
 #, c-format
@@ -983,7 +983,7 @@ msgstr "Ignorerar extern sektion i den ärvda klassen: %s."
 #: ../Util/Error.mo:427
 #, c-format
 msgid "An element with name %s is already declared in this scope."
-msgstr "Ett element med namn %s är redan deklarerat i denna omfattning."
+msgstr "Ett element med namn %s är redan deklarerat i detta definitionsområde."
 
 #: ../Util/Error.mo:429
 #, c-format
@@ -997,7 +997,7 @@ msgstr ""
 #: ../Util/Error.mo:431
 #, c-format
 msgid "Qualified import name %s already exists in this scope."
-msgstr "Importerat namn %s finns redan i denna omfattning."
+msgstr "Importerat namn %s finns redan i detta definitionsområde."
 
 #: ../Util/Error.mo:433
 #, c-format
@@ -1007,7 +1007,7 @@ msgstr "%s hittades ej i basklass %s."
 #: ../Util/Error.mo:435
 #, c-format
 msgid "Function %s not found in scope %s."
-msgstr "Funktion %s hittades inte i omfattning %s."
+msgstr "Funktion %s hittades inte i definitionsområde %s."
 
 #: ../Util/Error.mo:437
 #, c-format
@@ -1037,7 +1037,8 @@ msgstr "Ogiltigt externt objekt %s, %s."
 #, c-format
 msgid "Cyclically dependent constants or parameters found in scope %s: %s."
 msgstr ""
-"Cykliskt beroende konstanter eller parametrar hittades i omfattning %s: %s."
+"Cykliskt beroende konstanter eller parametrar hittades i definitionsområde "
+"%s: %s."
 
 #: ../Util/Error.mo:447
 #, c-format
@@ -1224,7 +1225,7 @@ msgstr ""
 #: ../Util/Error.mo:499
 #, c-format
 msgid "%s is already redeclared in this scope."
-msgstr "%s är redan omdeklarerad i denna omfattning."
+msgstr "%s är redan omdeklarerad i detta definitionsområde."
 
 #: ../Util/Error.mo:501
 #, c-format
@@ -1634,8 +1635,8 @@ msgid ""
 "Trying to override final variable in component %s and scope %s by using "
 "modifiers: %s and %s that do not agree."
 msgstr ""
-"Försöker överskrida slutgiltig variabel i komponent %s och omgivning %s med "
-"modifikationer: %s och %s some inte stämmer överens."
+"Försöker överskrida slutgiltig variabel i komponent %s och definitionsområde "
+"%s med modifikationer: %s och %s some inte stämmer överens."
 
 #: ../Util/Error.mo:620
 #, c-format
@@ -1668,7 +1669,7 @@ msgstr "I modifierare %s."
 #: ../Util/Error.mo:628
 #, c-format
 msgid "Multiple modifiers in same scope for element %s, %s."
-msgstr "Flera modifikationer i samma omfattning för element %s, %s."
+msgstr "Flera modifikationer i samma definitionsområde för element %s, %s."
 
 #: ../Util/Error.mo:630
 #, c-format
@@ -1741,7 +1742,7 @@ msgid ""
 "The current scope: %s."
 msgstr ""
 "Maximalt rekursiondjup uppnått, förmodligen på grund av ömsesidig rekursion. "
-"Nuvarande omfattning: %s."
+"Nuvarande definitionsområde: %s."
 
 #: ../Util/Error.mo:652
 #, c-format
@@ -1787,7 +1788,7 @@ msgid ""
 msgstr ""
 "Ingen motsvarande 'inner'-deklaration hittades för klass %s deklareras som "
 "'%s'.\n"
-"Fortsätter utplattningen genom att enbart ta hänsyn till "
+"Fortsätter utflatningen genom att enbart ta hänsyn till "
 "'outer'-deklarationen."
 
 #: ../Util/Error.mo:662
@@ -1798,8 +1799,8 @@ msgid ""
 "problem."
 msgstr ""
 "Maximalt rekursiondjup uppnåddes under evaluering av uttrycket %s i "
-"omfattning %s. Översättningen kan fortfarande lyckas men du rekommenderas "
-"fixa problemet."
+"definitionsområde %s. Översättningen kan fortfarande lyckas men du "
+"rekommenderas fixa problemet."
 
 #: ../Util/Error.mo:664
 #, c-format
@@ -1808,7 +1809,7 @@ msgid ""
 "Current class %s in scope %s."
 msgstr ""
 "Maximalt rekursiondjup uppnåddes under instansiering av en härledd klass. "
-"Nuvarande klass %s i omfattning %s."
+"Nuvarande klass %s i definitionsområde %s."
 
 #: ../Util/Error.mo:666
 #, c-format
@@ -2554,7 +2555,7 @@ msgstr "Visa felmeddelanden direkt då de inträffar."
 
 #: ../Util/Flags.mo:512
 msgid "Show annotations in the flattened code."
-msgstr "Visa annotationer i platt kod."
+msgstr "Visa annotationer i utflatat kod."
 
 #: ../Util/Flags.mo:516
 msgid "Do not simplify expressions if set."
@@ -3175,7 +3176,7 @@ msgstr "* Exempel:\n"
 #: ../Util/Flags.mo:1772
 msgid ""
 "  omc Model.mo             will produce flattened Model on standard output.\n"
-msgstr "  omc Model.mo             producerar platt Model på standard ut.\n"
+msgstr "  omc Model.mo             producerar uflatat Model på standard ut.\n"
 
 #: ../Util/Flags.mo:1773
 msgid ""
@@ -3216,7 +3217,7 @@ msgid ""
 "                            flattened Model on standard output.\n"
 msgstr ""
 "  omc Model.mo Modelica    laddar först Modelica-biblioteket och\n"
-"                            producerar sedan en utplattad Model på standard "
+"                            producerar sedan en utflatat Model på standard "
 "ut.\n"
 
 #: ../Util/Flags.mo:1781
@@ -3226,7 +3227,7 @@ msgid ""
 "                            flattened Model1 on standard output.\n"
 msgstr ""
 "  omc Model1.mo Model2.mo  laddar både Model1.mo och Model2.mo och\n"
-"                            producerar utplattad Model1 på standard ut.\n"
+"                            producerar utflatad Model1 på standard ut.\n"
 
 #: ../Util/Flags.mo:1782
 msgid "  *.mo (Modelica files) \n"
