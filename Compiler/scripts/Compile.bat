@@ -9,8 +9,8 @@ set MINGW=%OPENMODELICAHOME%\MinGW
 REM If OMDEV is set, use MinGW from there instead of OPENMODELICAHOME
 REM It is not certain that release OMC is installed
 if not %OMDEV%a==a set MINGW=%OMDEV%\tools\MinGW
-REM echo OPENMODELICAHOME = %OPENMODELICAHOME% > %1.log 2>&1
-REM echo MINGW = %MINGW% >%1.log 2>&1
+REM echo OPENMODELICAHOME = %OPENMODELICAHOME% >> %1.log 2>&1
+REM echo MINGW = %MINGW% >>%1.log 2>&1
 set CURRENT_DIR="%CD%"
 cd /D "%MINGW%\bin" >>%CURRENT_DIR%\%1.log 2>&1
 set PATH=%CD%;%CD%\..\libexec\gcc\mingw32\4.4.0\; >>%CURRENT_DIR%\%1.log 2>&1
@@ -28,15 +28,18 @@ REM echo %MSVCHOME%\vcvarsall.bat
 if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
 set PATHTMP=%PATH%
 set PATH=%OLD_PATH%
-call "%MSVCHOME%\vcvarsall.bat"
+call "%MSVCHOME%\vcvarsall.bat" >> %1.log 2>&1
 rem set PATH=%PATHTMP%
-nmake /f %1.makefile >>%1.log 2>&1
+REM Clear all environment variables that may interfere during compile and link phases.
+set MAKE=
+set MAKEFLAGS=
+nmake /a /f %1.makefile >> %1.log 2>&1
 goto :Final
 
 
 :MINGW
 REM echo "MINGW"
-%MinGW%\bin\mingw32-make -f %1.makefile >>%1.log 2>&1
+%MinGW%\bin\mingw32-make -f %1.makefile >> %1.log 2>&1
 goto :Final
 
 

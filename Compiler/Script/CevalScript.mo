@@ -1401,6 +1401,9 @@ algorithm
         executable1=Util.if_(ifcpp,"OMCppSimulation",executable);
         executableSuffixedExe = stringAppend(executable1, System.getExeExt());
         logFile = stringAppend(executable1,".log");
+        // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+        // we should really have different log files for simulation/compilation!
+        // as the buildModel log file will be deleted here and that gives less information to the user!
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > ",logFile," 2>&1"});
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
@@ -3940,7 +3943,7 @@ algorithm
         omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& System.stringReplace(omhome_1, "/", "\\") +& "\"&& ", "");
         win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",target});
         make = System.getMakeCommand();
-        make_call = stringAppendList({make," -f ",fileprefix,".makefile >",fileprefix,".log 2>&1"});
+        make_call = stringAppendList({make," -f ",fileprefix,".makefile > ",fileprefix,".log 2>&1"});
         s_call = Util.if_(isWindows, win_call, make_call);
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " +& s_call);
 
