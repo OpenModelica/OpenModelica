@@ -34,6 +34,7 @@
 #include <QtSvg/QSvgGenerator>
 #include "PlotWindow.h"
 #include "iostream"
+#include "qwt_plot_layout.h"
 #if QWT_VERSION >= 0x060000
 #include "qwt_plot_renderer.h"
 #endif
@@ -110,32 +111,6 @@ void PlotWindow::initializePlot(QStringList arguments)
   setCurveWidth(QString(arguments[13]).toDouble());
   setCurveStyle(QString(arguments[14]).toInt());
   setLegendPosition(QString(arguments[15]));
-  if (getLegendPosition().toLower().compare("left") == 0)
-  {
-    mpPlot->insertLegend(0);
-    mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::LeftLegend);
-  }
-  else if (getLegendPosition().toLower().compare("right") == 0)
-  {
-    mpPlot->insertLegend(0);
-    mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::RightLegend);
-  }
-  else if (getLegendPosition().toLower().compare("top") == 0)
-  {
-    mpPlot->insertLegend(0);
-    mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend);
-  }
-  else if (getLegendPosition().toLower().compare("bottom") == 0)
-  {
-    mpPlot->insertLegend(0);
-    mpPlot->setLegend(new Legend(mpPlot));
-    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::BottomLegend);
-  }
-  else if (getLegendPosition().toLower().compare("none") == 0)
-    mpPlot->insertLegend(0);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 16; i < arguments.length(); i++)
@@ -753,12 +728,51 @@ int PlotWindow::getCurveStyle()
 
 void PlotWindow::setLegendPosition(QString position)
 {
-  mLegendPosition = position;
+  if (position.toLower().compare("left") == 0)
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::LeftLegend);
+  }
+  else if (position.toLower().compare("right") == 0)
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::RightLegend);
+  }
+  else if (position.toLower().compare("top") == 0)
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::TopLegend);
+  }
+  else if (position.toLower().compare("bottom") == 0)
+  {
+    mpPlot->insertLegend(0);
+    mpPlot->setLegend(new Legend(mpPlot));
+    mpPlot->insertLegend(mpPlot->getLegend(), QwtPlot::BottomLegend);
+  }
+  else if (position.toLower().compare("none") == 0)
+    mpPlot->insertLegend(0);
 }
 
 QString PlotWindow::getLegendPosition()
 {
-  return mLegendPosition;
+  if (!mpPlot->legend())
+    return "none";
+  switch (mpPlot->plotLayout()->legendPosition())
+  {
+    case QwtPlot::LeftLegend:
+      return "left";
+    case QwtPlot::RightLegend:
+      return "right";
+    case QwtPlot::TopLegend:
+      return "top";
+    case QwtPlot::BottomLegend:
+      return "bottom";
+    default:
+      return "top";
+  }
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)

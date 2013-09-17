@@ -70,7 +70,6 @@ private:
     QString mYRangeMax;
     double mCurveWidth;
     int mCurveStyle;
-    QString mLegendPosition;
 public:
     PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0);
     ~PlotWindow();
