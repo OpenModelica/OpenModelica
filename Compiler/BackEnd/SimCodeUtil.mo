@@ -5353,20 +5353,6 @@ algorithm
   end match;
 end extractIdAndExpFromDelayExp;
 
-protected function getFOpenMPFlag
-"@author: adrpo
- add -fopenmp flag ONLY if compiler is not clang"
-  output String flag;
-algorithm
-  flag := matchcontinue()
-   case ()
-     equation
-       false = Flags.configuredWithClang();
-     then " -fopenmp";
-   else ""; 
-  end matchcontinue;
-end getFOpenMPFlag;
-
 public function createMakefileParams
   input list<String> includes;
   input list<String> libs;
@@ -5382,11 +5368,7 @@ algorithm
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags();
-  fopenmp := getFOpenMPFlag();
-  cflags := Debug.bcallret2(
-              Flags.isSet(Flags.OPENMP) or 
-              Flags.isSet(Flags.HPCOM), 
-              stringAppend, cflags, fopenmp, cflags);
+  cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM), stringAppend, cflags, "-fopenmp", cflags);
   ldflags := System.getLDFlags();
   rtlibs := System.getRTLibs();
   platform := System.modelicaPlatform();
@@ -9093,10 +9075,8 @@ algorithm
       equation
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
-        fopenmp = getFOpenMPFlag();
-        strs = str :: fopenmp :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: {};
-      then 
-        strs;
+        strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: {};
+      then  strs;
         
     // Wonder if there may be issues if we have duplicates in the Corba libs
     // and the other libs. Some other developer will probably swear over this

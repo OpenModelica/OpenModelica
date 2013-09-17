@@ -67,6 +67,7 @@ AC_SUBST(WITH_HWLOC)
 AC_SUBST(OS_TARGET)
 AC_SUBST(LIS_LDFLAGS)
 AC_SUBST(LAPACK_TARGET)
+AC_SUBST(CONFIG_WITH_OPENMP)
 AC_SUBST(OPENBLAS_EXTRA_ARGS)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
@@ -278,8 +279,8 @@ AC_TRY_LINK([
     printf("Thread %d\n", i);
   return 0;
 }
-], [AC_MSG_RESULT([yes]); OPENMP=-fopenmp],
-      [AC_MSG_RESULT([no])])
+], [AC_MSG_RESULT([yes]); OPENMP=-fopenmp; CONFIG_WITH_OPENMP=1],
+      [AC_MSG_RESULT([no]); CONFIG_WITH_OPENMP=0])
 CFLAGS="$CFLAGS_OLD"
 
 dnl check for lpsolve55
