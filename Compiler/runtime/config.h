@@ -37,7 +37,7 @@
 #define DEFAULT_CXX "g++"
 #define DEFAULT_MAKE "make"
 
-#define DEFAULT_LDFLAGS "-lregex -lexpat -lgc -lpthread"
+#define DEFAULT_LDFLAGS "-lregex -lexpat -lgc -lpthread -fopenmp"
 
 #define CONFIG_PLATFORM "WIN32"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"

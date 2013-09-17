@@ -293,7 +293,7 @@ int read_modelica_real(type_description **descptr, modelica_real *data)
     *data = desc->data.real;
     return 0;
   case TYPE_DESC_INT:
-    *data = desc->data.integer;
+    *data = (modelica_real)desc->data.integer;
     return 0;
   default:
     break;
@@ -341,6 +341,9 @@ int read_real_array(type_description **descptr, real_array_t *arr)
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
     *arr = desc->data.real_array;
+    return 0;
+  case TYPE_DESC_INT_ARRAY:
+    cast_integer_array_to_real(&(desc->data.int_array), arr);
     return 0;
   default:
     break;
