@@ -70,7 +70,6 @@
 
 #define XML_GRAPHCELL_OMCPLOT "OMCPlot"
 #define XML_GRAPHCELL_TITLE "Title"
-#define XML_GRAPHCELL_LEGEND "Legend"
 #define XML_GRAPHCELL_GRID "Grid"
 #define XML_GRAPHCELL_PLOTTYPE "PlotType"
 #define XML_GRAPHCELL_LOGX "LogX"
@@ -81,6 +80,9 @@
 #define XML_GRAPHCELL_XRANGE_MAX "XRangeMax"
 #define XML_GRAPHCELL_YRANGE_MIN "YRangeMin"
 #define XML_GRAPHCELL_YRANGE_MAX "YRangeMax"
+#define XML_GRAPHCELL_CURVE_WIDTH "CurveWidth"
+#define XML_GRAPHCELL_CURVE_STYLE "CurveStyle"
+#define XML_GRAPHCELL_LEGENDPOSITION "LegendPosition"
 
 #define XML_GRAPHCELL_CURVE "Curve"
 #define XML_GRAPHCELL_XDATA "XData"

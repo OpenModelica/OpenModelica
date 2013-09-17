@@ -261,7 +261,6 @@ namespace IAEX
       QDomElement omcPlotElement = domdoc_.createElement( XML_GRAPHCELL_OMCPLOT );
       // set all attributes
       omcPlotElement.setAttribute(XML_GRAPHCELL_TITLE, node->mpPlotWindow->getPlot()->title().text());
-      omcPlotElement.setAttribute(XML_GRAPHCELL_LEGEND, node->mpPlotWindow->getPlot()->legend()->isVisible() ? "true" : "false");
       omcPlotElement.setAttribute(XML_GRAPHCELL_GRID, node->mpPlotWindow->getPlot()->getPlotGrid()->isVisible() ? "true" : "false");
       omcPlotElement.setAttribute(XML_GRAPHCELL_PLOTTYPE, node->mpPlotWindow->getPlotType());
       omcPlotElement.setAttribute(XML_GRAPHCELL_LOGX, node->mpPlotWindow->getLogXCheckBox()->isChecked() ? "true" : "false");
@@ -272,6 +271,9 @@ namespace IAEX
       omcPlotElement.setAttribute(XML_GRAPHCELL_XRANGE_MAX, node->mpPlotWindow->getXRangeMax());
       omcPlotElement.setAttribute(XML_GRAPHCELL_YRANGE_MIN, node->mpPlotWindow->getYRangeMin());
       omcPlotElement.setAttribute(XML_GRAPHCELL_YRANGE_MAX, node->mpPlotWindow->getYRangeMax());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_CURVE_WIDTH, node->mpPlotWindow->getCurveWidth());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_CURVE_STYLE, node->mpPlotWindow->getCurveStyle());
+      omcPlotElement.setAttribute(XML_GRAPHCELL_LEGENDPOSITION, node->mpPlotWindow->getLegendPosition());
 
       foreach (PlotCurve *pPlotCurve, node->mpPlotWindow->getPlot()->getPlotCurvesList())
       {
