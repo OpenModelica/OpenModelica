@@ -823,7 +823,7 @@ algorithm
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
-             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition,scriptFile,logFile, simflags2, outputFile,
+             gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition,scriptFile,logFile, simflags2, outputFile,
              systemPath, gccVersion, gd, strlinearizeTime, direction, suffix;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -857,7 +857,7 @@ algorithm
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r, linearizeTime, curveWidth;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
       Env.Cache cache;
       list<GlobalScript.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -2440,7 +2440,6 @@ algorithm
           Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
-          Values.BOOL(legend),
           Values.BOOL(grid),
           Values.BOOL(logX),
           Values.BOOL(logY),
@@ -2469,7 +2468,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& boolString(grid) +& " --plotAll --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
@@ -2481,7 +2480,6 @@ algorithm
           Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
-          Values.BOOL(legend),
           Values.BOOL(grid),
           Values.BOOL(logX),
           Values.BOOL(logY),
@@ -2504,7 +2502,6 @@ algorithm
         // create absolute path of simulation result file
         str1 = System.pwd() +& pd +& filename;
         filename = Util.if_(System.regularFileExists(str1), str1, filename);
-        legendStr = boolString(legend);
         gridStr = boolString(grid);
         logXStr = boolString(logX);
         logYStr = boolString(logY);
@@ -2514,7 +2511,7 @@ algorithm
         y2Str = realString(y2);
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
-        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotAll",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition};
+        args = {"_omc_PlotResult",filename,title,gridStr,"plotAll",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition};
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then
@@ -2530,7 +2527,6 @@ algorithm
           Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
-          Values.BOOL(legend),
           Values.BOOL(grid),
           Values.BOOL(logX),
           Values.BOOL(logY),
@@ -2562,7 +2558,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plot --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" \"" +& str +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& boolString(grid) +& " --plot --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" \"" +& str +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
@@ -2575,7 +2571,6 @@ algorithm
           Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
-          Values.BOOL(legend),
           Values.BOOL(grid),
           Values.BOOL(logX),
           Values.BOOL(logY),
@@ -2601,7 +2596,6 @@ algorithm
         // create absolute path of simulation result file
         str1 = System.pwd() +& pd +& filename;
         filename = Util.if_(System.regularFileExists(str1), str1, filename);
-        legendStr = boolString(legend);
         gridStr = boolString(grid);
         logXStr = boolString(logX);
         logYStr = boolString(logY);
@@ -2611,7 +2605,7 @@ algorithm
         y2Str = realString(y2);
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
-        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition};
+        args = {"_omc_PlotResult",filename,title,gridStr,"plot",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition};
         args = listAppend(args, vars_1);
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
@@ -2859,7 +2853,6 @@ algorithm
           Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
-          Values.BOOL(legend),
           Values.BOOL(grid),
           Values.BOOL(logX),
           Values.BOOL(logY),
@@ -2889,7 +2882,7 @@ algorithm
         // create the path till OMPlot
         str2 = stringAppendList({omhome,pd,"bin",pd,"OMPlot",s1});
         // create the list of arguments for OMPlot
-        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --legend=" +& boolString(legend) +& " --grid=" +& boolString(grid) +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" \"" +& str +& "\"";
+        str3 = "--filename=\"" +& filename +& "\" --title=\"" +& title +& "\" --grid=" +& boolString(grid) +& " --plotParametric --logx=" +& boolString(logX) +& " --logy=" +& boolString(logY) +& " --xlabel=\"" +& xLabel +& "\" --ylabel=\"" +& yLabel +& "\" --xrange=" +& realString(x1) +& ":" +& realString(x2) +& " --yrange=" +& realString(y1) +& ":" +& realString(y2) +& " --new-window=" +& boolString(externalWindow) +& " --curve-width=" +& realString(curveWidth) +& " --curve-style=" +& intString(curveStyle) +& " --legend-position=\"" +& legendPosition +& "\" \"" +& str +& "\"";
         call = stringAppendList({"\"",str2,"\""," ",str3});
         0 = System.spawnCall(str2, call);
       then
@@ -2903,7 +2896,6 @@ algorithm
           Values.BOOL(externalWindow),
           Values.STRING(filename),
           Values.STRING(title),
-          Values.BOOL(legend),
           Values.BOOL(grid),
           Values.BOOL(logX),
           Values.BOOL(logY),
@@ -2928,7 +2920,6 @@ algorithm
         // create absolute path of simulation result file
         str1 = System.pwd() +& pd +& filename;
         filename = Util.if_(System.regularFileExists(str1), str1, filename);
-        legendStr = boolString(legend);
         gridStr = boolString(grid);
         logXStr = boolString(logX);
         logYStr = boolString(logY);
@@ -2938,7 +2929,7 @@ algorithm
         y2Str = realString(y2);
         curveWidthStr = realString(curveWidth);
         curveStyleStr = intString(curveStyle);
-        args = {"_omc_PlotResult",filename,title,legendStr,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,str,str3};
+        args = {"_omc_PlotResult",filename,title,gridStr,"plotParametric",logXStr,logYStr,xLabel,yLabel,x1Str,x2Str,y1Str,y2Str,curveWidthStr,curveStyleStr,legendPosition,str,str3};
         vals = List.map(args, ValuesUtil.makeString);
         v = ValuesUtil.makeArray(vals);
       then

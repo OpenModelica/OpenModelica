@@ -2174,8 +2174,7 @@ function plot "Launches a plot window using OMPlot."
   input VariableNames vars "The variables you want to plot";
   input Boolean externalWindow := false "Opens the plot in a new plot window";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
-  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input String title := "" "This text will be used as the diagram title.";
   input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
   input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
@@ -2185,7 +2184,7 @@ function plot "Launches a plot window using OMPlot."
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth := 1.0 "Sets the width of the curve.";
   input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition := "right" "Sets the POSITION of the legend i.e left, right, top, bottom.";
+  input String legendPosition := "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
 external "builtin";
@@ -2211,8 +2210,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
 
   input Boolean externalWindow := false "Opens the plot in a new plot window";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
-  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input String title := "" "This text will be used as the diagram title.";
   input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
   input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
@@ -2222,7 +2220,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth := 1.0 "Sets the width of the curve.";
   input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition := "right" "Sets the POSITION of the legend i.e left, right, top, bottom.";
+  input String legendPosition := "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
 external "builtin";
@@ -2255,8 +2253,7 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input VariableName yVariable;
   input Boolean externalWindow := false "Opens the plot in a new plot window";
   input String fileName := "<default>" "The filename containing the variables. <default> will read the last simulation result";
-  input String title := "Plot by OpenModelica" "This text will be used as the diagram title.";
-  input Boolean legend := true "Determines whether or not the variable legend is shown.";
+  input String title := "" "This text will be used as the diagram title.";
   input Boolean grid := true "Determines whether or not a grid is shown in the diagram.";
   input Boolean logX := false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY := false "Determines whether or not the vertical axis is logarithmically scaled.";
@@ -2266,7 +2263,7 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input Real yRange[2] := {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real curveWidth := 1.0 "Sets the width of the curve.";
   input Integer curveStyle := 1 "Sets the style of the curve. SolidLine=1, DashLine=2, DotLine=3, DashDotLine=4, DashDotDotLine=5, Sticks=6, Steps=7.";
-  input String legendPosition := "right" "Sets the POSITION of the legend i.e left, right, top, bottom.";
+  input String legendPosition := "top" "Sets the POSITION of the legend i.e left, right, top, bottom, none.";
   output Boolean success "Returns true on success";
   output String[:] result "Returns list i.e {\"_omc_PlotResult\",\"<fileName>\",\"<title>\",\"<legend>\",\"<grid>\",\"<PlotType>\",\"<logX>\",\"<logY>\",\"<xLabel>\",\"<yLabel>\",\"<xRange>\",\"<yRange>\",\"<curveWidth>\",\"<curveStyle>\",\"<legendPosition>\",\"<PlotVariables>\"}";
 external "builtin";
