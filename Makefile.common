@@ -197,6 +197,10 @@ testcpp:
 testfmi:
 	(cd testsuite/openmodelica/fmi && time $(MAKE) -f Makefile)
 	
+testcmsvc:
+	(cd testsuite/openmodelica/cruntime/msvc/ && time $(MAKE) -f Makefile > testsuite-c_mcvc-trace.txt 2>&1)
+	echo "log is in testsuite/openmodelica/cruntime/msvc/testsuite-c_mcvc-trace.txt" 	
+	
 testSummary:
 	(cd testsuite && time $(MAKE) -f Makefile | grep "==")
 	
