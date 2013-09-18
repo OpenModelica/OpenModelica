@@ -9560,7 +9560,7 @@ algorithm
         false = Types.isParameterOrConstant(const);
         str = ExpressionDump.printExpStr(inExp);
         Error.addSourceMessage(Error.EVAL_EXTERNAL_OBJECT_CONSTRUCTOR, {str}, info);
-      then fail();
+      then (inCache,inExp);
   end matchcontinue;
 end evalExternalObjectInput;
 
