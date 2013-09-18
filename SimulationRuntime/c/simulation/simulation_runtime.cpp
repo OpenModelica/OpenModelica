@@ -959,6 +959,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
     vfprintf(stderr,msg,ap);
     fputs("\n",stderr);
     va_end(ap);
+    fflush(NULL);
     longjmp(simulationJmpbuf,1);
     break;
   case ERROR_NONLINEARSOLVER:
@@ -968,6 +969,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
       fputs("Error: ",stderr);
       vfprintf(stderr,msg,ap);
       fputs("\n",stderr);
+      fflush(NULL);
       va_end(ap);
     }
     longjmp(nonlinearJmpbuf,1);
@@ -979,6 +981,7 @@ static void omc_assert_simulation(FILE_INFO info, const char *msg, ...)
       fputs("Error: ",stderr);
       vfprintf(stderr,msg,ap);
       fputs("\n",stderr);
+      fflush(NULL);
       va_end(ap);
     }
     longjmp(integratorJmpbuf,1);
@@ -1001,6 +1004,7 @@ static void omc_assert_warning_simulation(FILE_INFO info, const char *msg, ...)
   fputs("Warning: ",stderr);
   vfprintf(stderr,msg,ap);
   fputs("\n",stderr);
+  fflush(NULL);
   va_end(ap);
 }
 
