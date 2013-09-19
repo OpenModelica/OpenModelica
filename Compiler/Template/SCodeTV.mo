@@ -711,6 +711,7 @@ package SCode
       Partial partialPrefix;
       Restriction restriction;
       ClassDef classDef;
+      Comment cmt;
       Absyn.Info info;
     end CLASS;
 

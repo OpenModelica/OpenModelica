@@ -56,13 +56,6 @@ match classDef
   case PARTS(__) then '<%\n%>'
 end dumpClassDefSpacing;
 
-template dumpCommentSpacing(Option<SCode.Comment> comment)
-::=
-match comment
-  case SOME(COMMENT(annotation_ = NONE())) then ""
-  else '<%\n%>'
-end dumpCommentSpacing;
-
 template dumpElement(SCode.Element element, String each)
 ::=
 match element
@@ -133,24 +126,21 @@ match class
     let res_str = dumpRestriction(restriction)
     let prefixes_str = '<%prefix_str%><%enc_str%><%partial_str%><%res_str%>'
     let cdef_str = dumpClassDef(classDef)
-    let header_str = dumpClassHeader(classDef, name)
-    let footer_str = dumpClassFooter(classDef, cdef_str, name)
-    //let cmt_str = dumpClassComment(classDef)
-    //let cmt2_str = if cdef_str then
-    //    if cmt_str then
-    //      '<%\n%> <%cmt_str%>'
-    //    else ""
-    //  else cmt_str
+    let cmt_str = dumpClassComment(cmt)
+    let ann_str = dumpClassAnnotation(cmt)
+    let header_str = dumpClassHeader(classDef, name, cmt_str)
+    let footer_str = dumpClassFooter(classDef, cdef_str, name, cmt_str, ann_str)
     <<
     <%prefixes_str%> <%header_str%> <%footer_str%>
     >>
 end dumpClass;
 
-template dumpClassHeader(SCode.ClassDef classDef, String name)
+template dumpClassHeader(SCode.ClassDef classDef, String name, String cmt)
 ::=
 match classDef
-  case CLASS_EXTENDS(__) then 'extends <%name%>'
-  else name
+  case CLASS_EXTENDS(__) then 'extends <%name%> <%cmt%>'
+  case PARTS(__) then '<%name%> <%cmt%>'
+  else '<%name%>'
 end dumpClassHeader;
 
 template dumpClassDef(SCode.ClassDef classDef)
@@ -163,7 +153,6 @@ match classDef
     let nal_str = dumpAlgorithmSections(normalAlgorithmLst, "algorithm")
     let ial_str = dumpAlgorithmSections(initialAlgorithmLst, "initial algorithm")
     let extdecl_str = dumpExternalDeclOpt(externalDecl)
-    //let cmt_str = dumpClassComment(comment)
     let cdef_str =
       <<
       <%el_str%>
@@ -199,30 +188,40 @@ match classDef
   else errorMsg("SCodeDump.dumpClassDef: Unknown class definition.")
 end dumpClassDef;
 
-template dumpClassFooter(SCode.ClassDef classDef, String cdefStr, String name)
+template dumpClassFooter(SCode.ClassDef classDef, String cdefStr, String name, String cmt, String ann)
 ::=
 match classDef
-  case DERIVED(__) then cdefStr
-  case ENUMERATION(__) then cdefStr
+  case DERIVED(__) then '<%cdefStr%><%cmt%><%ann%>'
+  case ENUMERATION(__) then '<%cdefStr%><%cmt%><%ann%>'
   case PDER(__) then cdefStr
-  else
+  case _ then
+    let annstr = if ann then '<%ann%>; ' else ''
     if cdefStr then
       <<
 
       <%cdefStr%>
+       <%annstr%>
       end <%name%>
       >>
     else
       <<
-      end <%name%>
+      <%annstr%>end <%name%>
       >>
 end dumpClassFooter;
 
-template dumpClassComment(Option<SCode.Comment> comment)
+template dumpClassComment(SCode.Comment comment)
 ::=
+if Config.showAnnotations() then
   match comment
-    case SOME(cmt as COMMENT(__)) then dumpComment(cmt)
+    case COMMENT(__) then dumpCommentStr(comment)
 end dumpClassComment;
+
+template dumpClassAnnotation(SCode.Comment comment)
+::=
+if Config.showAnnotations() then
+  match comment
+    case COMMENT(__) then dumpAnnotationOpt(annotation_) 
+end dumpClassAnnotation;
 
 template dumpComponent(SCode.Element component, String each)
 ::=
@@ -773,7 +772,9 @@ if Config.showAnnotations() then
 end dumpComment;
 
 template dumpCommentStr(Option<String> comment)
-::= match comment case SOME(cmt) then ' "<%cmt%>"'
+::= match comment 
+    case SOME(cmt) then ' "<%cmt%>"'
+    else ''
 end dumpCommentStr;
 
 template errorMsg(String errMessage)
