@@ -330,30 +330,25 @@ public function addConnectorVariablesFromDAE
   output Sets outConnectionSet;
 algorithm
   outConnectionSet :=
-  matchcontinue(inIgnore, inClassState, inPrefix, inVars, inConnectionSet, info, inElementSource)
+  match(inIgnore, inClassState, inPrefix, inVars, inConnectionSet, info, inElementSource)
     local
       Absyn.Path class_path;
-      list<DAE.Var>  streams, flows;
+      list<DAE.Var> vars, streams, flows;
       Sets cs;
-
-    case (false, ClassInf.CONNECTOR(path = _), _, _, _, _, _)
-      equation
-        true = Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ);
-      then
-        inConnectionSet;
 
     // check balance of non expandable connectors!
     case (false, ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _, _)
       equation
         checkConnectorBalance(inVars, class_path, info);
-        (flows, streams) = getStreamAndFlowVariables(inVars, {}, {});
+        vars = Util.if_(Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ), {}, inVars);
+        (flows, streams) = getStreamAndFlowVariables(vars, {}, {});
         cs = List.fold2(flows, addFlowVariableFromDAE, inElementSource, inPrefix, cs);
         cs = addStreamFlowAssociations(cs, inPrefix, streams, flows);
       then
         cs;
 
     else inConnectionSet;
-  end matchcontinue;
+  end match;
 end addConnectorVariablesFromDAE;
 
 protected function addFlowVariableFromDAE
