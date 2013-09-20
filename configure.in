@@ -442,7 +442,11 @@ else
 fi
 
 if ! test "$NO_IPOPT" = "yes"; then
-  LIBS=`pkg-config --libs ipopt`
+  if test "$WANT_IPOPT" = "yes"; then
+    LIBS=`pkg-config --libs ipopt`
+  else
+    LIBS= `PKG_CONFIG_PATH=$IPOPT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs ipopt`
+  fi
   AC_SEARCH_LIBS(CreateIpoptProblem,ipopt,,[NO_IPOPT="yes"])
   LIBS=""
 fi
