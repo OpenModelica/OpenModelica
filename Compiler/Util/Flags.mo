@@ -361,6 +361,8 @@ constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(97, "dumpSCCGraphML", false,
   Util.gettext("Dumps graphml files with the strongly connected components."));
 constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(98, "tearingdumpV", false,
   Util.gettext("Dumps verbose tearing information."));
+constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(99, "disableSingleFlowEq", false,
+  Util.gettext("Disables the generation of single flow equations."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -464,7 +466,8 @@ constant list<DebugFlag> allDebugFlags = {
   INITIALIZATION,
   INLINE_FUNCTIONS,
   DUMP_SCC_GRAPHML,
-  TEARING_DUMPVERBOSE
+  TEARING_DUMPVERBOSE,
+  DISABLE_SINGLE_FLOW_EQ
 };
 
 // CONFIGURATION FLAGS

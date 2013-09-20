@@ -330,11 +330,17 @@ public function addConnectorVariablesFromDAE
   output Sets outConnectionSet;
 algorithm
   outConnectionSet :=
-  match(inIgnore, inClassState, inPrefix, inVars, inConnectionSet, info, inElementSource)
+  matchcontinue(inIgnore, inClassState, inPrefix, inVars, inConnectionSet, info, inElementSource)
     local
       Absyn.Path class_path;
       list<DAE.Var>  streams, flows;
       Sets cs;
+
+    case (false, ClassInf.CONNECTOR(path = _), _, _, _, _, _)
+      equation
+        true = Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ);
+      then
+        inConnectionSet;
 
     // check balance of non expandable connectors!
     case (false, ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _, _)
@@ -347,7 +353,7 @@ algorithm
         cs;
 
     else inConnectionSet;
-  end match;
+  end matchcontinue;
 end addConnectorVariablesFromDAE;
 
 protected function addFlowVariableFromDAE
