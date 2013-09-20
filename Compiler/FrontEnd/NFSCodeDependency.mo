@@ -323,6 +323,82 @@ algorithm
   end matchcontinue;
 end analyseItem;
 
+protected function analyseItemIfRedeclares
+"Analyses an item again if there were some redeclares applied to the environment"
+  input NFSCodeFlattenRedeclare.Replacements inRepls;
+  input Item inItem;
+  input Env inEnv;
+algorithm
+  _ := matchcontinue(inRepls, inItem, inEnv)
+    local 
+      Item i; 
+      NFSCodeEnv.Frame cls_frm;
+      Env env; 
+    // no replacements happened on the environemnt! do nothing
+    case ({}, _,  _) then ();
+    case (_, _, _)
+      equation
+        cls_frm::env = inEnv;
+        //i = NFSCodeEnv.setItemEnv(inItem, {cls_frm});
+        analyseItemNoStopOnUsed(inItem, env);
+      then ();
+  end matchcontinue;
+end analyseItemIfRedeclares;
+
+protected function analyseItemNoStopOnUsed
+  "Analyses an item."
+  input Item inItem;
+  input Env inEnv;
+algorithm
+  _ := matchcontinue(inItem, inEnv)
+    local
+      SCode.ClassDef cdef;
+      NFSCodeEnv.Frame cls_env;
+      Env env;
+      Absyn.Info info;
+      SCode.Restriction res;
+      SCode.Element cls;
+      SCode.Comment cmt;
+
+    // A component, mark it and it's environment as used.
+    case (NFSCodeEnv.VAR(var = _), env)
+      equation
+        markItemAsUsed(inItem, env);
+      then
+        ();
+
+    // A basic type, nothing to be done.
+    case (NFSCodeEnv.CLASS(classType = NFSCodeEnv.BASIC_TYPE()), _) then ();
+
+    // A normal class, mark it and it's environment as used, and recursively
+    // analyse it's contents.
+    case (NFSCodeEnv.CLASS(cls = cls as SCode.CLASS(classDef = cdef,
+        restriction = res, info = info, cmt = cmt), env = {cls_env}), env)
+      equation
+        markItemAsUsed(inItem, env);
+        env = NFSCodeEnv.enterFrame(cls_env, env);
+        analyseClassDef(cdef, res, env, false, info);
+        analyseMetaType(res, env, info);
+        analyseComment(cmt, env, info);
+        _ :: env = env;
+        analyseRedeclaredClass(cls, env);
+      then
+        ();
+
+    case (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = "time")), _) then ();
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFSCodeDependency.analyseItemNoStopOnUsed failed on " +&
+          NFSCodeEnv.getItemName(inItem) +& " in " +&
+          NFSCodeEnv.getEnvName(inEnv));
+      then
+        fail();
+
+  end matchcontinue;
+end analyseItemNoStopOnUsed;
+
 protected function markItemAsUsed
   "Marks an item and it's environment as used."
   input Item inItem;
@@ -438,6 +514,8 @@ algorithm
       Item ty_item;
       SCode.Attributes attr;
       list<Absyn.Path> paths;
+      list<NFSCodeEnv.Redeclaration> redecls;
+      NFSCodeFlattenRedeclare.Replacements repls;
 
     // A class made of parts, analyse elements, equation, algorithms, etc.
     case (SCode.PARTS(elementLst = el, normalEquationLst = nel,
@@ -481,6 +559,9 @@ algorithm
         (ty_item, _, ty_env) = NFSCodeLookup.lookupTypeSpec(ty, env, inInfo);
         (ty_item, ty_env, _) = NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
+        redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
+        (ty_item, ty_env, repls) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstTypes.EMPTY_PREFIX(NONE()));
+        analyseItemIfRedeclares(repls, ty_item, ty_env); 
         // TODO! Analyse array dimensions from attributes!
         analyseModifier(mods, inEnv, ty_env, inInfo);
       then
@@ -771,6 +852,7 @@ algorithm
       String errorMessage;
       list<Extends> exts;
       list<NFSCodeEnv.Redeclaration> redecls;
+      NFSCodeFlattenRedeclare.Replacements repls;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
@@ -805,7 +887,8 @@ algorithm
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
         NFSCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env, ty_item, inEnv);
         redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (ty_item, ty_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstTypes.EMPTY_PREFIX(NONE()));        
+        (ty_item, ty_env, repls) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstTypes.EMPTY_PREFIX(NONE()));
+        // analyseItemIfRedeclares(repls, ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
         analyseOptExp(cond_exp, inEnv, info);
         analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
@@ -1020,15 +1103,17 @@ protected function analyseRedeclareModifier
   input Env inEnv;
   input Env inTypeEnv;
 algorithm
-  _ := match(inElement, inEnv, inTypeEnv)
+  _ := matchcontinue(inElement, inEnv, inTypeEnv)
     local
       SCode.ClassDef cdef;
       Absyn.Info info;
       SCode.Restriction restr;
       SCode.Prefixes prefixes;
+      Absyn.TypeSpec ts;
+      Item item;
+      Env env;
 
-    // Class definitions are not analysed in analyseElement but are needed here
-    // in case a class is redeclared.
+    // call analyseClassDef
     case (SCode.CLASS(prefixes = prefixes, classDef = cdef,
         restriction = restr, info = info), _, _)
       equation
@@ -1043,7 +1128,7 @@ algorithm
         _ = analyseElement(inElement, inEnv, {}, SCode.R_CLASS());
       then
         ();
-  end match;
+  end matchcontinue;
 end analyseRedeclareModifier;
 
 protected function analyseConstrainClass
@@ -1724,7 +1809,7 @@ algorithm
           info = info), NFSCodeEnv.CLASS_EXTENDS(), _)
       equation
         // Look up the base class of the class extends, and check if it's used.
-        (item, _, _) = NFSCodeLookup.lookupBaseClassName(bc, inEnv, info);
+        (item, _, env) = NFSCodeLookup.lookupBaseClassName(bc, inEnv, info);
         true = NFSCodeEnv.isItemUsed(item);
         // Ok, the base is used, analyse the class extends to mark it and it's
         // dependencies as used.

@@ -1473,6 +1473,22 @@ algorithm
   end match;
 end mergeItemEnv;
 
+public function unmergeItemEnv
+  "Merges an environment item's environment with the given environment."
+  input Item inItem;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inItem, inEnv)
+    local
+      Item item;
+      Env env;
+
+    case (_, _::env) then env;
+    else inEnv;
+  end match;
+end unmergeItemEnv;
+
 public function getItemPrefixes
   input Item inItem;
   output SCode.Prefixes outPrefixes;
