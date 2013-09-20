@@ -6923,9 +6923,21 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
                 let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
                   daeExp(exp, context, &preExp, &varDecls)
                   ;separator=", ")
-                <<
-                (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
-                >>
+                match ty
+                  case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
+                  let rec_name = underscorePath(ClassInf.getStateName(record_state))
+                  <<
+                   (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
+                  >>
+                  case (T_COMPLEX(complexClassType = record_state)) then
+                  let rec_name = underscorePath(ClassInf.getStateName(record_state))
+                  <<
+                   (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>))))
+                  >>
+                  else 
+                  <<
+                   (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+                  >>
               case PARALLEL_FUNCTION_CONTEXT(__) then
                 let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
                   daeExp(exp, context, &preExp, &varDecls)

@@ -1077,11 +1077,13 @@ algorithm
       SCode.Mod mod;
       Env.Cache cache;
       Env.Env env;
-      HashTableStringToPath.HashTable ht;
+      HashTableStringToPath.HashTable ht, htParent;
       SCode.ClassDef cd;
 
-    case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed),ht)
+    case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed),htParent)
       equation
+        ht = List.fold(BaseHashTable.hashTableList(htParent), BaseHashTable.add, HashTableStringToPath.emptyHashTable());
+        ht = getLocalIdentList(elts,ht,getLocalIdentElement);
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
         (cache,ie) = fixList(cache,env,ie,ht,fixEquation);
@@ -1090,8 +1092,9 @@ algorithm
         (cache,nc) = fixList(cache,env,nc,ht,fixConstraint);
       then (cache,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed));
 
-    case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)),ht)
+    case (cache,env,SCode.CLASS_EXTENDS(name,mod,SCode.PARTS(elts,ne,ie,na,ia,nc,clats,ed)),htParent)
       equation
+        ht = List.fold(BaseHashTable.hashTableList(htParent), BaseHashTable.add, HashTableStringToPath.emptyHashTable());
         (cache,mod) = fixModifications(cache,env,mod,ht);
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
@@ -1609,7 +1612,7 @@ algorithm
         cref = Env.crefStripEnvPrefix(cref, env);
         //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
-
+    
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
