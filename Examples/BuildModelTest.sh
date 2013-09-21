@@ -35,7 +35,7 @@ if $OMC +g=MetaModelica "$SHORTNAME.mos" > log 2>&1; then
     echo "Failed to install $OLD/$SHORTNAME-`date +%Y-%m-%d`.html"
     exit 1
   fi
-  for f in *.err *.sim BuildModelRecursive.html; do mv "$f" "$PUB/$SHORTNAME/"; done
+  for f in *.err *.sim BuildModelRecursive.html; do test -f "$f" && mv "$f" "$PUB/$SHORTNAME/"; done
 else
   cat log
   echo "Subject: BuildModelTest $NAME $VERSION Failed"
@@ -94,8 +94,13 @@ for f in `grep -H "Simulation Results:" "$OLD/${SECTION}"*.html | cut -d: -f1` ;
   echo "$DATE,$TOT,$BUILD,$SIMSUC" >> "$OLD/${SECTION}-trend.csv"
   echo -n "$DATE $REV"
   echo -n " - total $TOT"
-  echo -n " - build $BUILD" "($((100 * $BUILD / $TOT))%)"
-  echo " - sim $SIMSUC" "($((100 * $SIMSUC / $TOT))%)"
+  if test "$TOT" = "0"; then
+    echo echo -n " - build $BUILD" "(0%)";
+    echo " - sim $SIMSUC" "(0%)"
+  else
+    echo -n " - build $BUILD" "($((100 * $BUILD / $TOT))%)"
+    echo " - sim $SIMSUC" "($((100 * $SIMSUC / $TOT))%)"
+  fi
 done
 (cd $OLD; gnuplot ${SECTION}-trend.gnuplot)
 CUR=`ls "$OLD/${SECTION}"*.html | tail -n1`
