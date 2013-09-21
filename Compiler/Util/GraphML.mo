@@ -53,10 +53,25 @@ public constant String COLOR_GREEN      = "339966";
 public constant String COLOR_RED      = "FF0000";
 public constant String COLOR_DARKRED  = "800000";
 public constant String COLOR_WHITE      = "FFFFFF";
-public constant String COLOR_YELLOW      = "FFCC00";
+public constant String COLOR_YELLOW      = "FFFF00";
 public constant String COLOR_GRAY      = "C0C0C0";
 public constant String COLOR_PURPLE   = "993366";
+public constant String COLOR_ORANGE   = "FFCC00";
+public constant String COLOR_DARKGRAY      = "666666";
 
+public constant Real LINEWIDTH_STANDARD   = 2.0;
+public constant Real LINEWIDTH_BOLD   = 4.0;
+
+public constant Integer FONTSIZE_STANDARD   = 12;
+public constant Integer FONTSIZE_BIG   = 20;
+public constant Integer FONTSIZE_SMALL   = 8;
+
+public uniontype FontStyle
+  record FONTPLAIN end FONTPLAIN;
+  record FONTBOLD end FONTBOLD;
+  record FONTITALIC end FONTITALIC;
+  record FONTBOLDITALIC end FONTBOLDITALIC;
+end FontStyle;
 
 public uniontype ShapeType
   record RECTANGLE end RECTANGLE;
@@ -89,13 +104,29 @@ public uniontype Node
     ShapeType shapeType;
     Option<String> optDesc;
     list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
+    list<NodeLabel> addLabels; //additional labels
   end NODE;
 end Node;
+
+public uniontype NodeLabel
+  record NODELABEL_INTERNAL
+    String text;
+    String backgroundColor;
+    FontStyle fontStyle;
+  end NODELABEL_INTERNAL;
+  record NODELABEL_CORNER
+    String text;
+    String backgroundColor;
+    FontStyle fontStyle;
+    String position; //for example "se" for south east
+  end NODELABEL_CORNER;
+end NodeLabel;
 
 public uniontype EdgeLabel
   record EDGELABEL
     String text;
     String color;
+    Integer fontSize;
   end EDGELABEL;
 end EdgeLabel;
 
@@ -106,6 +137,7 @@ public uniontype Edge
     String source;
     String color;
     LineType lineType;
+    Real lineWidth;
     Option<EdgeLabel> label;
     tuple<Option<ArrowType>,Option<ArrowType>> arrows;
     list<tuple<Integer,String>> attValues; //values of custom attributes (see GRAPH definition). <attributeIndex,attributeValue>
@@ -184,7 +216,8 @@ public function addNode
   input String color;
   input ShapeType shapeType;
   input Option<String> optDesc;
-  input List<tuple<Integer,String>> attValues;
+  input list<tuple<Integer,String>> attValues;
+  input list<NodeLabel> addLabels; //additional labels
   input Graph inG;
   output Graph outG;
 protected
@@ -196,10 +229,10 @@ protected
   list<tuple<Integer,String>> av;
 algorithm
   GRAPH(gid,d,n,e,a,av) := inG;
-  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc,attValues)::n,e,a,av);
+  outG := GRAPH(gid,d,NODE(id,text,color,shapeType,optDesc,attValues,addLabels)::n,e,a,av);
 end addNode;
 
-public function addEgde
+public function addEdge
 " author: Frenkel TUD 2011-08
  add a edge"
   input String id;
@@ -207,6 +240,7 @@ public function addEgde
   input String source;
   input String color;
   input LineType lineType;
+  input Real lineWidth;
   input Option<EdgeLabel> label;
   input tuple<Option<ArrowType>,Option<ArrowType>> arrows;
   input List<tuple<Integer,String>> attValues;
@@ -221,8 +255,8 @@ protected
   list<tuple<Integer,String>> av;
 algorithm
   GRAPH(gid,d,n,e,a,av) := inG;
-  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,label,arrows,attValues)::e,a,av);
-end addEgde;
+  outG := GRAPH(gid,d,n,EDGE(id,target,source,color,lineType,lineWidth,label,arrows,attValues)::e,a,av);
+end addEdge;
 
 public function addAttribute
   input String defaultValue;
@@ -422,15 +456,17 @@ algorithm
   oAcc := match (inNode,inString,iAcc)
     local
       String id,t,text,st_str,color,s,desc;
-      List<String> attributeStrings;
-      List<tuple<Integer,String>> nodeAttributes;
+      list<String> attributeStrings, addLabelStrings;
+      list<tuple<Integer,String>> nodeAttributes;
+      list<NodeLabel> addLabels;
       ShapeType st;
       IOStream.IOStream is;
      
-    case(NODE(id=id,text=text,color=color,shapeType=st,attValues=nodeAttributes), _, _)
+    case(NODE(id=id,text=text,color=color,shapeType=st,attValues=nodeAttributes,addLabels=addLabels), _, _)
       equation
         t = appendString(inString);
         attributeStrings = List.map1(nodeAttributes, createAttributeString, 15);
+        addLabelStrings = List.map(addLabels, getNodeLabelString);
         st_str = getShapeTypeString(st);
         desc = getNodeDesc(inNode);
         is = IOStream.appendList(iAcc, {inString, "<node id=\"", id, "\">\n"});
@@ -443,7 +479,9 @@ algorithm
           "          <y:Fill color=\"#", color, "\" transparent=\"false\"/>\n",
           "          <y:BorderStyle color=\"#000000\" type=\"line\" width=\"1.0\"/>\n",
           "          <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"18.701171875\" modelName=\"internal\" modelPosition=\"c\" textColor=\"#000000\" visible=\"true\" width=\"228.806640625\" x=\"1\" y=\"1\">", text, "</y:NodeLabel>\n",
-          "          <y:Shape type=\"", st_str, "\"/>\n",
+          "          <y:Shape type=\"", st_str, "\"/>\n"});
+        is = IOStream.appendList(is, addLabelStrings);
+        is = IOStream.appendList(is, {
           "        </y:ShapeNode>\n",
           t, "</data>\n",
           inString ,"</node>\n"});
@@ -483,6 +521,52 @@ algorithm
   end match;
 end getNodeDesc;
 
+protected function getNodeLabelString
+  input NodeLabel iLabel;
+  output String oString;
+protected
+  String text;
+  String backgroundColor;
+  String fontStyleString;
+  String position;
+  FontStyle fontStyle;
+algorithm
+  oString := match(iLabel)
+    case(NODELABEL_INTERNAL(text=text, backgroundColor=backgroundColor, fontStyle=fontStyle))
+      equation
+        fontStyleString = getFontStyleString(fontStyle);
+      then stringAppendList({"        <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" backgroundColor=\"#", backgroundColor, "\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"", fontStyleString, "\" hasLineColor=\"false\" modelName=\"internal\" textColor=\"#000000\" visible=\"true\">", text, "</y:NodeLabel>"});
+    case(NODELABEL_CORNER(text=text, backgroundColor=backgroundColor, fontStyle=fontStyle, position=position))
+      equation
+        fontStyleString = getFontStyleString(fontStyle);
+      then stringAppendList({"        <y:NodeLabel alignment=\"center\" autoSizePolicy=\"content\" backgroundColor=\"#", backgroundColor, "\" fontFamily=\"Dialog\" fontSize=\"12\" fontStyle=\"", fontStyleString, "\" hasLineColor=\"false\" modelName=\"corners\" modelPosition=\"", position,"\" textColor=\"#000000\" visible=\"true\">", text, "</y:NodeLabel>"});
+    else
+      equation
+        print("GraphML.getNodeLabelString failed, unknown NodeLabel-Type!\n");
+      then fail();
+  end match;
+end getNodeLabelString;
+
+protected function getFontStyleString
+  input FontStyle iFontStyle;
+  output String oString;
+algorithm
+  oString := match(iFontStyle)
+    case(FONTPLAIN())
+      then "plain";
+    case(FONTBOLD())
+      then "bold";
+    case(FONTITALIC())
+      then "italic";
+    case(FONTBOLDITALIC())
+      then "bolditalic";
+    else
+      equation
+        print("GraphML.getFontStyleString failed, unknown FontStyle-Type!\n");
+      then fail();
+  end match;
+end getFontStyleString;
+
 protected function getShapeTypeString
   input ShapeType st;
   output String str;
@@ -509,15 +593,16 @@ protected function dumpEdge
 algorithm
   oAcc := match (inEdge,inString,iAcc)
     local
-      String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s;
+      String id,t,target,source,color,lt_str,sa_str,ta_str,sl_str,s,s_width;
       List<String> attributeStrings;
       LineType lt;
       Option<ArrowType> sarrow,tarrow;
       Option<EdgeLabel> label;
       IOStream.IOStream is;
       List<tuple<Integer,String>> edgeAttributes;
+      Real lineWidth;
     
-    case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,label=label,arrows=(sarrow,tarrow),attValues=edgeAttributes),_,_)
+    case(EDGE(id=id,target=target,source=source,color=color,lineType=lt,lineWidth=lineWidth,label=label,arrows=(sarrow,tarrow),attValues=edgeAttributes),_,_)
       equation
         t = appendString(inString);
         attributeStrings = List.map1(edgeAttributes, createAttributeString, 15);
@@ -525,6 +610,7 @@ algorithm
         sl_str = getEdgeLabelString(label);
         sa_str = getArrowTypeString(sarrow);
         ta_str = getArrowTypeString(tarrow);
+        s_width = realString(lineWidth);
         
         is = IOStream.appendList(iAcc, {inString, "<edge id=\"", id, "\" source=\"", source, "\" target=\"", target, "\">\n"});
         is = IOStream.appendList(is, attributeStrings);
@@ -534,7 +620,7 @@ algorithm
           t, "<data key=\"d10\">\n",
           "        <y:PolyLineEdge>\n",
           "          <y:Path sx=\"0.0\" sy=\"0.0\" tx=\"0.0\" ty=\"0.0\"/>\n",
-          "          <y:LineStyle color=\"#", color, "\" type=\"", lt_str, "\" width=\"2.0\"/>\n",
+          "          <y:LineStyle color=\"#", color, "\" type=\"", lt_str, "\" width=\"", s_width, "\"/>\n",
           sl_str,
           "          <y:Arrows source=\"", sa_str, "\" target=\"", ta_str, "\"/>\n",
           "          <y:BendStyle smoothed=\"false\"/>\n",
@@ -553,11 +639,14 @@ protected function getEdgeLabelString
 algorithm
   outStr := match(label)
     local
-      String text,color;
+      String text,color,fontSizeString;
+      Integer fontSize;
     case (NONE()) then "";
-    case (SOME(EDGELABEL(text=text,color=color)))
+    case (SOME(EDGELABEL(text=text,color=color,fontSize=fontSize)))
+      equation
+        fontSizeString = intString(fontSize);
       then
-        stringAppendList({"          <y:EdgeLabel alignment=\"center\" distance=\"2.0\" fontFamily=\"Dialog\" fontSize=\"20\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"28.501953125\" modelName=\"six_pos\" modelPosition=\"tail\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"",color,"\" visible=\"true\" width=\"15.123046875\" x=\"47.36937571050203\" y=\"17.675232529529524\">",text,"</y:EdgeLabel>\n"});
+        stringAppendList({"          <y:EdgeLabel alignment=\"center\" distance=\"2.0\" fontFamily=\"Dialog\" fontSize=\"", fontSizeString, "\" fontStyle=\"plain\" hasBackgroundColor=\"false\" hasLineColor=\"false\" height=\"28.501953125\" modelName=\"six_pos\" modelPosition=\"tail\" preferredPlacement=\"anywhere\" ratio=\"0.5\" textColor=\"",color,"\" visible=\"true\" width=\"15.123046875\" x=\"47.36937571050203\" y=\"17.675232529529524\">",text,"</y:EdgeLabel>\n"});
   end match;
 end getEdgeLabelString;
 

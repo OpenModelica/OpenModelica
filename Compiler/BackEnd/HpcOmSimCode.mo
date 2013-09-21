@@ -175,7 +175,7 @@ algorithm
       
       fileName = ("taskGraph"+&filenamePrefix+&".graphml"); 
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1));   
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", sccSimEqMapping, schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, sccSimEqMapping ,schedulerInfo);
 
       //Create Costs
       //------------
@@ -198,14 +198,13 @@ algorithm
       //----------------------------------
       (criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
-      
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");  
-      schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1));        
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, sccSimEqMapping,schedulerInfo);  
+      schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1));
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), sccSimEqMapping, schedulerInfo);  
 
       //Apply filters
       //-------------
-      (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE);
+      (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true);
       //HpcOmTaskGraph.printTaskGraph(taskGraph1);
       //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData1); 
       
@@ -216,7 +215,12 @@ algorithm
       
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, sccSimEqMapping,schedulerInfo);  
+      // That's failing
+      //(criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
+      //criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
+      criticalPathInfo = "";
+      criticalPaths = {{}};
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(taskSchedule);
       
       //print("Parallel informations:\n");
@@ -244,26 +248,31 @@ protected function applyFiltersToGraph
   input HpcOmTaskGraph.TaskGraph iTaskGraph;  
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input BackendDAE.BackendDAE inBackendDAE;
+  input Boolean iApplyFilters;
   output HpcOmTaskGraph.TaskGraph oTaskGraph;  
   output HpcOmTaskGraph.TaskGraphMeta oTaskGraphMeta;
 protected
   String flagValue;
+  Boolean changed1,changed2;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
 algorithm
-  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,inBackendDAE)
-    case(_,_,_)
+  (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,inBackendDAE,iApplyFilters)
+    case(_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
       then (iTaskGraph, iTaskGraphMeta);
-    else
+    case(_,_,_,true)
       equation
         //Merge simple Nodes
         taskGraph1 = arrayCopy(iTaskGraph);
         taskGraphMeta1 = HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
-        (taskGraph1,taskGraphMeta1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1,inBackendDAE);
+        (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1,inBackendDAE);
+        (taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1);
+        (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,inBackendDAE,changed1 or changed2);
       then (taskGraph1,taskGraphMeta1);
+    else then (iTaskGraph, iTaskGraphMeta);
   end matchcontinue;
 end applyFiltersToGraph;
 
@@ -284,6 +293,13 @@ algorithm
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
       then HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "listr");
+        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+        print("Using list scheduling reverse\n");
+      then HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
     case(_,_,_)
       equation
         numProc = Flags.getConfigInt(Flags.NUM_PROC);

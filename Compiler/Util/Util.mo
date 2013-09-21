@@ -801,6 +801,85 @@ algorithm
   end matchcontinue;
 end arrayFold2_impl;
 
+public function arrayFold3
+  "Takes an array, a function, three constant parameters and a start value. The function is applied to
+   each array element, and the start value is passed to the function and
+   updated."
+  input array<ElementType> inArray;
+  input FoldFunc3 inFoldFunc;
+  input ArgType1 inExtraArg1;
+  input ArgType2 inExtraArg2;
+  input ArgType3 inExtraArg3;
+  input FoldType inStartValue;
+  output FoldType outResult;
+
+  replaceable type ElementType subtypeof Any;
+  replaceable type FoldType subtypeof Any;
+  replaceable type ArgType1 subtypeof Any;
+  replaceable type ArgType2 subtypeof Any;
+  replaceable type ArgType3 subtypeof Any;
+
+  partial function FoldFunc3
+    input ElementType inElement;
+    input ArgType1 _inExtraArg1;
+    input ArgType2 _inExtraArg2;
+    input ArgType3 _inExtraArg3;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc3;
+algorithm
+  outResult := arrayFold3_impl(inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inStartValue, 1, arrayLength(inArray));
+end arrayFold3;
+
+public function arrayFold3_impl
+  "Implementation of arrayFold3."
+  input array<ElementType> inArray;
+  input FoldFunc3 inFoldFunc;
+  input ArgType1 inExtraArg1;
+  input ArgType2 inExtraArg2;
+  input ArgType3 inExtraArg3;
+  input FoldType inFoldValue;
+  input Integer inIndex;
+  input Integer inArraySize;
+  output FoldType outResult;
+
+  replaceable type ElementType subtypeof Any;
+  replaceable type FoldType subtypeof Any;
+  replaceable type ArgType1 subtypeof Any;
+  replaceable type ArgType2 subtypeof Any;
+  replaceable type ArgType3 subtypeof Any;
+
+  partial function FoldFunc3
+    input ElementType inElement;
+    input ArgType1 _inExtraArg1;
+    input ArgType2 _inExtraArg2;
+    input ArgType3 _inExtraArg3;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc3;
+algorithm
+  outResult :=
+  matchcontinue(inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inFoldValue, inIndex, inArraySize)
+    local
+      ElementType e;
+      FoldType res;
+
+    case (_, _, _, _, _, _, _, _)
+      equation
+        true = inIndex > inArraySize;
+      then
+        inFoldValue;
+
+    else
+      equation
+        e = arrayGet(inArray, inIndex);
+        res = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inFoldValue);
+      then
+        arrayFold3_impl(inArray, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, res, inIndex + 1, inArraySize);
+
+  end matchcontinue;
+end arrayFold3_impl;
+
 public function arrayFold4
   "Takes an array, a function, four constant parameters and a start value. The function is applied to
    each array element, and the start value is passed to the function and
