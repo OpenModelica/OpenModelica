@@ -88,6 +88,7 @@ extern "C" {
 
 #include "real_array.h"
 #include "integer_array.h"
+#include "generic_array.h"
 
 #include "utility.h"
 #include "division.h"

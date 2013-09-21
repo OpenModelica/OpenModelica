@@ -8036,12 +8036,12 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
   let arrayTypeStr = expTypeArray(ty)
   let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
   let rec_name = expTypeShort(t)
-  let &preExp += 'alloc_generic_array(&<%arrayVar%>, sizeof(<%rec_name%>), 1, <%listLength(array)%>);<%\n%>'
+  let &preExp += '<%\n%>alloc_generic_array(&<%arrayVar%>, sizeof(<%rec_name%>), 1, <%listLength(array)%>);<%\n%>'
   let params = (array |> e hasindex i1 fromindex 1 =>
       let prefix = if scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
       '(*((<%rec_name%>*)generic_array_element_addr(&<%arrayVar%>, sizeof(<%rec_name%>), 1, <%i1%>))) = <%prefix%><%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>;'
       ;separator="\n")
-  let &preExp += '<%params%>' 
+  let &preExp += '<%params%><%\n%>' 
   arrayVar
 case ARRAY(array={}) then
   let arrayTypeStr = expTypeArray(ty)
