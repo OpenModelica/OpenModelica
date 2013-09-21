@@ -293,10 +293,10 @@ protected function addSuccessorLocksToSchedule
   output Schedule oSchedule;
   
   partial function FuncType
-	  input tuple<Task,Integer> iSuccessorTask;
-	  input Integer iTaskIdx;
-	  input list<Task> iReleaseTasks;
-	  output list<Task> oReleaseTasks;
+    input tuple<Task,Integer> iSuccessorTask;
+    input Integer iTaskIdx;
+    input list<Task> iReleaseTasks;
+    output list<Task> oReleaseTasks;
   end FuncType;
 protected
   array<list<Task>> allThreadTasks;
@@ -631,9 +631,9 @@ protected function convertTaskGraphToTasks1 "function convertTaskGraphToTasks1
   input array<tuple<Task,Integer>> iTasks; 
   output array<tuple<Task,Integer>> oTasks;
   partial function FuncType
-	  input Integer iNodeIdx;
-	  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
-	  output Task oTask;
+    input Integer iNodeIdx;
+    input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+    output Task oTask;
   end FuncType;
 protected
   array<list<Integer>> inComps;
@@ -647,12 +647,12 @@ algorithm
     case(_,_,_,_,_)
       equation
         true = intLe(iIndex, arrayLength(iTaskGraphT));
-			  refCount = listLength(arrayGet(iTaskGraphT, iIndex));
-			  //newTask := convertNodeToTask(iIndex, iTaskGraphMeta);
-			  newTask = iConverterFunc(iIndex, iTaskGraphMeta);
-			  tmpTasks = arrayUpdate(iTasks, iIndex, (newTask,refCount));
-			  tmpTasks = convertTaskGraphToTasks1(iTaskGraphMeta,iTaskGraphT,iIndex+1,iConverterFunc,tmpTasks);
-			then tmpTasks;
+        refCount = listLength(arrayGet(iTaskGraphT, iIndex));
+        //newTask := convertNodeToTask(iIndex, iTaskGraphMeta);
+        newTask = iConverterFunc(iIndex, iTaskGraphMeta);
+        tmpTasks = arrayUpdate(iTasks, iIndex, (newTask,refCount));
+        tmpTasks = convertTaskGraphToTasks1(iTaskGraphMeta,iTaskGraphT,iIndex+1,iConverterFunc,tmpTasks);
+      then tmpTasks;
     else then iTasks;
   end matchcontinue;
 end convertTaskGraphToTasks1;

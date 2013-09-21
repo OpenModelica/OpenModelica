@@ -2551,17 +2551,17 @@ algorithm
       equation
         true = List.exist1(criticalPathEdges, compareIntTuple2, (parentIdx, childIdx));
         //Edge is part of critical path
-			  //components = arrayGet(inComps,childIdx);
-			  //primalCompChild = List.last(components);
-			  //components = arrayGet(inComps,parentIdx);
-			  //primalCompParent = List.first(components);
-			  //print("Try to get comm costs from " +& intString(parentIdx) +& " to " +& intString(childIdx) +& "\n");
-			  //(numOfCommVars,commCost) = getCommunicationCost(primalCompParent,primalCompChild,commCosts);
-			  ((_,numOfCommVars,commCost)) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
-			  numOfCommVarsString = intString(numOfCommVars);
-			  commCostString = intString(commCost);
-			  tmpGraph = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), "Node" +& intString(childIdx), "Node" +& intString(parentIdx), GraphML.COLOR_BLACK, GraphML.LINE(), GraphML.LINEWIDTH_BOLD, SOME(GraphML.EDGELABEL(numOfCommVarsString,GraphML.COLOR_BLACK, GraphML.FONTSIZE_STANDARD)), (NONE(),SOME(GraphML.ARROWSTANDART())), {(commCostAttIdx, commCostString)}, iGraph);
-			then tmpGraph;
+        //components = arrayGet(inComps,childIdx);
+        //primalCompChild = List.last(components);
+        //components = arrayGet(inComps,parentIdx);
+        //primalCompParent = List.first(components);
+        //print("Try to get comm costs from " +& intString(parentIdx) +& " to " +& intString(childIdx) +& "\n");
+        //(numOfCommVars,commCost) = getCommunicationCost(primalCompParent,primalCompChild,commCosts);
+        ((_,numOfCommVars,commCost)) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
+        numOfCommVarsString = intString(numOfCommVars);
+        commCostString = intString(commCost);
+        tmpGraph = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), "Node" +& intString(childIdx), "Node" +& intString(parentIdx), GraphML.COLOR_BLACK, GraphML.LINE(), GraphML.LINEWIDTH_BOLD, SOME(GraphML.EDGELABEL(numOfCommVarsString,GraphML.COLOR_BLACK, GraphML.FONTSIZE_STANDARD)), (NONE(),SOME(GraphML.ARROWSTANDART())), {(commCostAttIdx, commCostString)}, iGraph);
+      then tmpGraph;
     case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),_,_,_)
       equation
         //components = arrayGet(inComps,childIdx);
@@ -5262,10 +5262,10 @@ algorithm
     case((nodeIdx, numOfVars, reqCycles),_,_)
       equation
         true = intLe(nodeIdx, arrayLength(iCommCosts));
-			  costs = arrayGet(iCommCosts, nodeIdx);
-			  costs = (iParentCompIdx, numOfVars, reqCycles) :: costs;
-			  tmpCommCosts = arrayUpdate(iCommCosts, nodeIdx, costs);
-			then tmpCommCosts;
+        costs = arrayGet(iCommCosts, nodeIdx);
+        costs = (iParentCompIdx, numOfVars, reqCycles) :: costs;
+        tmpCommCosts = arrayUpdate(iCommCosts, nodeIdx, costs);
+      then tmpCommCosts;
     else then iCommCosts;
   end matchcontinue;
 end transposeCommCosts1;
