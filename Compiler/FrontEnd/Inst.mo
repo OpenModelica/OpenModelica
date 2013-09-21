@@ -18369,20 +18369,48 @@ protected function addRecordConstructorFunction "Add record constructor whenever
 algorithm
   outCache := matchcontinue (inCache,inEnv,inType)
     local
-      Absyn.Path p1;
-      list<DAE.Var> vars;
-      DAE.Type ty;
+      list<DAE.Var> vars, inputs, locals;
+      DAE.Type ty,recType,fixedTy,funcTy;
       DAE.EqualityConstraint eqCo;
       DAE.TypeSource src;
       Env.Cache cache;
+      Absyn.Path path;
+      SCode.Element recordCl;
+      Env.Env recordEnv;
+      DAE.Function func;
+      list<DAE.FuncArg> fargs;
 
-    case (_, _, ty as DAE.T_COMPLEX(ClassInf.RECORD(p1), vars, eqCo, src))
+    // try to instantiate class
+    case (cache, _, ty as DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
       equation
-        p1 = Absyn.makeFullyQualified(p1);
-        (cache, _) = getRecordConstructorFunction(inCache, inEnv, p1);
+        path = Absyn.makeFullyQualified(path);
+        (cache, _) = getRecordConstructorFunction(cache, inEnv, path);
+      then
+        cache;
+    
+    // if previous stuff didn't work, try to use the ty directly
+    case (cache, _, ty as DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src))
+      equation
+        path = Absyn.makeFullyQualified(path);
+        //(cache, _) = getRecordConstructorFunction(cache, inEnv, path);
+        
+        (inputs,locals) = List.extractOnTrue(vars, Types.isModifiableTypesVar);
+        inputs = List.map(inputs,Types.setVarDefaultInput);
+        locals = List.map(locals,Types.setVarProtected);
+        vars = listAppend(inputs,locals);
+        
+        // path = Env.joinEnvPath(recordEnv, path);
+        path = Absyn.makeFullyQualified(path);
+        
+        fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo, src);
+        fargs = Types.makeFargsList(inputs);
+        funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, {path});
+        func = DAE.RECORD_CONSTRUCTOR(path,funcTy,DAE.emptyElementSource);
+        
+        cache = addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
       then
         (cache);
-
+    
     else inCache;
 
   end matchcontinue;
