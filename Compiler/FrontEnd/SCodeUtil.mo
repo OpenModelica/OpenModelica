@@ -2687,4 +2687,16 @@ algorithm
   end match;
 end removeSelfReferenceFromSubMod;
 
+public function getConstrainedByModifiers
+  input SCode.Prefixes inPrefixes;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match(inPrefixes)
+    local SCode.Mod m;
+    case (SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(SOME(SCode.CONSTRAINCLASS(modifier = m)))))
+      then m;
+    else SCode.NOMOD();
+  end match;
+end getConstrainedByModifiers;
+
 end SCodeUtil;

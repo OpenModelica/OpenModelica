@@ -2314,9 +2314,13 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        str = "BackendDAECreate.lowerAlgorithm failed for " +& DAEDump.dumpElementsStr({inElement});
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
+        // only report error if no other error is in the queue!
+        0 = Error.getNumErrorMessages();
+        str = "BackendDAECreate.lowerAlgorithm failed for:\n" +& DAEDump.dumpElementsStr({inElement});
+        Error.addSourceMessage(
+          Error.INTERNAL_ERROR, 
+          {str}, 
+          DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
       then fail();
 
   end matchcontinue;

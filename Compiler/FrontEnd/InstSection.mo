@@ -2099,7 +2099,7 @@ algorithm
     // one iterator
     case (cache,env,ih,pre,_,i,SOME(e),sl,_,source,initial_,impl,_)
       equation
-        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
         t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
@@ -2117,7 +2117,7 @@ algorithm
         tpl=List.first(lst);
         // e = Absyn.RANGE(1,NONE(),Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
-        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        (cache,e_1,(prop as DAE.PROP(t,cnst)),_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
         t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -4843,6 +4843,7 @@ algorithm
       Absyn.Exp value;
       Absyn.Info info;
       String str;
+      DAE.Type t;
 
     case (cache,env,_,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),_,_,_,_,_)
       equation
@@ -4859,8 +4860,6 @@ algorithm
       then fail();
   end matchcontinue;
 end instAssignment;
-
-
 
 protected function instAssignment2
   input Env.Cache inCache;
@@ -4925,8 +4924,20 @@ algorithm
         Static.checkAssignmentToInput(var, attr, env, false, info);
         (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
+        
+        (cache, t) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, t);
+        
+        lt = Types.getPropType(cprop);
+        (cache, lt) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, lt);
+        cprop = Types.setPropType(cprop, lt);
+        
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        (cache, e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
+        
+        rt = Types.getPropType(eprop);
+        (cache, rt) = PrefixUtil.prefixExpressionsInType(cache, env, ih, pre, rt);
+        eprop = Types.setPropType(eprop, rt);
+        
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = makeAssignment(Expression.makeCrefExp(ce_1,t), cprop, e_2, eprop, attr, initial_, source);
       then

@@ -3779,7 +3779,7 @@ algorithm
       equation
         str = Util.assoc(str,{("List","list"),("Tuple","tuple"),("Array","array")});
         (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph)
-        =instClassdef2(cache,env,ih,store,mods,pre,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA),re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,inCallingScope,graph,inSets,instSingleCref,info,stopInst);
+        = instClassdef2(cache,env,ih,store,mods,pre,ci_state,className,SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(str),tSpecs,NONE()),mod,DA),re,vis,partialPrefix,encapsulatedPrefix,inst_dims,impl,inCallingScope,graph,inSets,instSingleCref,info,stopInst);
       then (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph);
 
     case (cache,env,ih,store,mods,pre,ci_state,_,
@@ -7208,6 +7208,9 @@ algorithm
         //print("Env:\n" +& Env.printEnvStr(env) +& "\n");
 
         true = Util.if_(Config.acceptParModelicaGrammar(), checkParallelismWRTEnv(env,name,attr,info), true);
+        
+        // merge modifers from the component to the modifers from the constrained by 
+        m = SCode.mergeModifiers(m, SCodeUtil.getConstrainedByModifiers(prefixes));
 
         m = traverseModAddFinal(m, final_prefix);
         comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
@@ -11616,7 +11619,7 @@ algorithm
       SCode.Comment cmt;
       SCode.FunctionRestriction funcRest;
 
-    /* normal functions */
+    // normal functions
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info,cmt=cmt)),inst_dims,_)
       equation
         false = SCode.isExternalFunctionRestriction(funcRest);
@@ -11653,7 +11656,7 @@ algorithm
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefixBool,isImpure,inlineType,source,SOME(cmt))});
 
-    /* External functions should also have their type in env, but no dae. */
+    // External functions should also have their type in env, but no dae.
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
         classDef = cd as (parts as SCode.PARTS(elementLst = els)), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
@@ -11688,7 +11691,7 @@ algorithm
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_EXT(daeElts,extdecl)::derFuncs,ty1,partialPrefixBool,isImpure,DAE.NO_INLINE(),source,SOME(cmt))});
 
-    /* Instantiate overloaded functions */
+    // Instantiate overloaded functions
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure))),
           classDef = SCode.OVERLOAD(pathLst = funcnames),cmt=cmt)),inst_dims,_)
       equation

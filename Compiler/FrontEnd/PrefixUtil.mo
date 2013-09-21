@@ -56,6 +56,7 @@ public import ClassInf;
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import ComponentReference;
+protected import Config;
 protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
@@ -64,6 +65,7 @@ protected import List;
 protected import Print;
 //protected import Util;
 protected import System;
+protected import Types;
 
 public function printPrefixStr "Prints a Prefix to a string."
   input Prefix.Prefix inPrefix;
@@ -681,6 +683,7 @@ algorithm
       equation
         true = System.getHasInnerOuterDefinitions();
         cr_1 = InnerOuter.prefixOuterCrefWithTheInnerPrefix(ih, cr, pre);
+        (cache, t) = prefixExpressionsInType(cache, env, ih, pre, t);
         crefExp = Expression.makeCrefExp(cr_1, t);
       then
         (cache,crefExp);
@@ -691,6 +694,7 @@ algorithm
         //        this is a for iterator and WE SHOULD NOT PREFIX IT!
         (cache,_,_,_,NONE(),_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr);
         (cache,cr_1) = prefixCref(cache,env,ih,pre,cr);
+        (cache, t) = prefixExpressionsInType(cache, env, ih, pre, t);
         crefExp = Expression.makeCrefExp(cr_1, t);
       then
         (cache,crefExp);
@@ -706,6 +710,7 @@ algorithm
       equation
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, cr));
         (cache, cr_1) = prefixSubscriptsInCref(cache, env, ih, pre, cr);
+        (cache, t) = prefixExpressionsInType(cache, env, ih, pre, t);
         crefExp = Expression.makeCrefExp(cr_1, t);
       then
         (cache,crefExp);
@@ -1205,5 +1210,90 @@ algorithm
       then str;
   end matchcontinue;
 end makePrefixString;
+
+public function prefixExpressionsInType
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix inPre;
+  input DAE.Type inTy;
+  output Env.Cache outCache;
+  output DAE.Type outTy;
+algorithm
+  (outCache, outTy) := matchcontinue(inCache, inEnv, inIH, inPre, inTy)
+    // don't do this for MetaModelica!
+    case (_, _, _, _, _)
+      equation
+        true = Config.acceptMetaModelicaGrammar();
+      then
+       (inCache, inTy);
+    
+    case (_, _, _, _, _)
+      equation
+        ((outTy, (outCache, _, _, _))) = Types.traverseType((inTy, (inCache, inEnv, inIH, inPre)), prefixArrayDimensions); 
+      then
+        (outCache, outTy);
+  end matchcontinue;
+end prefixExpressionsInType;
+
+protected function prefixArrayDimensions
+"@author: adrpo
+ this function prefixes all the expressions in types to be found by the back-end or code generation!"
+  input tuple<DAE.Type,tuple<Env.Cache,Env.Env,InnerOuter.InstHierarchy,Prefix.Prefix>> tpl;
+  output tuple<DAE.Type,tuple<Env.Cache,Env.Env,InnerOuter.InstHierarchy,Prefix.Prefix>> otpl;
+algorithm
+  otpl := match tpl
+    local
+      DAE.Type ty;
+      DAE.TypeSource ts;
+      Env.Cache cache;
+      Env.Env env;
+      InnerOuter.InstHierarchy ih;
+      Prefix.Prefix pre;
+      DAE.Dimensions dims;
+
+    case ((DAE.T_ARRAY(ty,dims,ts),(cache, env, ih, pre)))
+      equation
+        (cache, dims) = prefixDimensions(cache, env, ih, pre, dims);
+      then 
+        ((DAE.T_ARRAY(ty,dims,ts),(cache, env, ih, pre)));
+
+    else tpl;
+
+  end match;
+end prefixArrayDimensions;
+
+protected function prefixDimensions
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix inPre;
+  input DAE.Dimensions inDims;
+  output Env.Cache outCache;
+  output DAE.Dimensions outDims;
+algorithm
+  (outCache,outDims) := matchcontinue(inCache, inEnv, inIH, inPre, inDims)
+    local
+      DAE.Exp e;
+      DAE.Dimensions rest, new;
+      DAE.Dimension d;
+      Env.Cache cache;
+    
+    case (_, _, _, _, {}) then (inCache, {});
+    
+    case (_, _, _, _, DAE.DIM_EXP(exp=e)::rest)
+      equation
+        (cache, e) = prefixExp(inCache, inEnv, inIH, e, inPre);
+        (cache, new) = prefixDimensions(cache, inEnv, inIH, inPre, rest); 
+      then
+        (cache, DAE.DIM_EXP(e)::new);
+    
+    case (_, _, _, _, d::rest)
+      equation
+        (cache, new) = prefixDimensions(inCache, inEnv, inIH, inPre, rest); 
+      then
+        (cache, d::new);
+  end matchcontinue;
+end prefixDimensions;
 
 end PrefixUtil;

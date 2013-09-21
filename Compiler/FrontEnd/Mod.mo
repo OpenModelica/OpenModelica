@@ -76,6 +76,7 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeDump;
 protected import Lookup;
+protected import SCodeUtil;
 
 protected
 uniontype FullMod "used for error reporting"
@@ -268,7 +269,7 @@ algorithm
       Absyn.TypeSpec tp,tp1;
       DAE.Mod emod;
       SCode.Attributes attr;
-      SCode.Mod mod;
+      SCode.Mod mod, modOriginal;
       Option<Absyn.Exp> cond;
       Absyn.Info i;
       InstanceHierarchy ih;
@@ -276,12 +277,17 @@ algorithm
       list<SCode.Enum> enumLst;
       SCode.Comment cmt,comment;
       SCode.Element element, c;
+      SCode.Prefixes prefixes;
 
     // search for it locally in the freaking env as it might have been redeclared
-    case(cache,env,ih,pre,f,SCode.CLASS(name = cn),_,_)
+    case(cache,env,ih,pre,f,SCode.CLASS(name = cn,prefixes = prefixes),_,_)
       equation
+        modOriginal = SCodeUtil.getConstrainedByModifiers(prefixes);
         (c, _) = Lookup.lookupClassLocal(env, cn);
-        SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
+        SCode.CLASS(cn,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i) = c;
+        // merge modifers from the component to the modifers from the constrained by 
+        mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
+        mod = SCode.mergeModifiers(mod, modOriginal);
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
         // unelab mod so we get constant evaluation of parameters
@@ -295,8 +301,10 @@ algorithm
     //       replacing entire functions with PARTS and everything, so i added the case below
     case(cache,env,ih,pre,f,
       SCode.CLASS(cn,
-        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i),_,_)
+        prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.DERIVED(tp,mod,attr1),cmt,i),_,_)
       equation
+        // merge modifers from the component to the modifers from the constrained by 
+        mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
         // unelab mod so we get constant evaluation of parameters
@@ -307,13 +315,15 @@ algorithm
     // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
     case(cache,env,ih,pre,f,
       SCode.CLASS(cn,
-        SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),_,_)
+        prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),_,_)
       then
         ((SCode.CLASS(cn,SCode.PREFIXES(vis,redecl,fi,io,repl),enc,p,restr,SCode.ENUMERATION(enumLst),cmt,i),DAE.NOMOD()));
 
     // redeclare of component declaration
-    case(cache,env,ih,pre,f,SCode.COMPONENT(compname,SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),_,_)
+    case(cache,env,ih,pre,f,SCode.COMPONENT(compname,prefixes as SCode.PREFIXES(vis,redecl,fi,io,repl),attr,tp,mod,cmt,cond,i),_,_)
       equation
+        // merge modifers from the component to the modifers from the constrained by 
+        mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
         (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
         // unelab mod so we get constant evaluation of parameters
@@ -1704,7 +1714,7 @@ algorithm
       String id1,id2;
       SCode.Attributes attr1, attr2, attr;
       Absyn.TypeSpec tp;
-      SCode.Mod m1,m2,sm;
+      SCode.Mod m1,m2,sm,cm1,cm2;
       SCode.Comment comment,comment2;
       Option<SCode.Annotation> ann;
       list<Env.Frame> env;
@@ -1754,6 +1764,8 @@ algorithm
                 emod2)}),env,pre)
       equation
         true = stringEq(id1, id2);
+        m1 = SCode.mergeModifiers(m1, SCodeUtil.getConstrainedByModifiers(pf1));
+        m2 = SCode.mergeModifiers(m1, SCodeUtil.getConstrainedByModifiers(pf2));
         m1_1 = elabUntypedMod(m1, env, pre);
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
@@ -1790,6 +1802,8 @@ algorithm
                 m2_1)}), env, pre)
       equation
         true = stringEq(id1, id2);
+        m1_1 = merge(m1_1, elabUntypedMod(SCodeUtil.getConstrainedByModifiers(pf1), env, pre), env, pre);
+        m2_1 = merge(m2_1, elabUntypedMod(SCodeUtil.getConstrainedByModifiers(pf2), env, pre), env, pre);
         m = merge(m1_1, m2_1, env, pre);
         pf = SCode.propagatePrefixes(pf2, pf1);
         (res, info) = Env.checkSameRestriction(res1, res2, info1, info2);

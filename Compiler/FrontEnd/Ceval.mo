@@ -5204,7 +5204,8 @@ public function cevalSubscripts "This function relates a list of subscripts to t
   forms, which is when all expressions are evaluated to constant
   values. For instance
   the subscript list {1,p,q} (as in x[1,p,q]) where p and q have constant values 2,3 respectively will become
-  {1,2,3} (resulting in x[1,2,3])."
+  {1,2,3} (resulting in x[1,2,3]).
+  adrpo: do not fail if you cannot evaluate one, just move to the next one!"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Subscript> inExpSubscriptLst;
@@ -5216,7 +5217,7 @@ public function cevalSubscripts "This function relates a list of subscripts to t
   output list<DAE.Subscript> outExpSubscriptLst;
 algorithm
   (outCache,outExpSubscriptLst) :=
-  match (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg,numIter)
+  matchcontinue (inCache,inEnv,inExpSubscriptLst,inIntegerLst,inBoolean,inMsg,numIter)
     local
       DAE.Subscript sub_1,sub;
       list<DAE.Subscript> subs_1,subs;
@@ -5230,14 +5231,22 @@ algorithm
     // empty case
     case (cache,_,{},_,_,_,_) then (cache,{});
 
-    // we have subscripts
+    // we have subscripts and we can evaluate the first
     case (cache,env,(sub :: subs),(dim :: dims),impl,msg,_)
       equation
         (cache,sub_1) = cevalSubscript(cache, env, sub, dim, impl,msg,numIter+1);
         (cache,subs_1) = cevalSubscripts(cache, env, subs, dims, impl,msg,numIter);
       then
         (cache,sub_1 :: subs_1);
-  end match;
+    
+    // we have subscripts and we CANNOT evaluate the first, move to next
+    case (cache,env,(sub :: subs),(dim :: dims),impl,msg,_)
+      equation
+        failure((_,_) = cevalSubscript(cache, env, sub, dim, impl,msg,numIter+1));
+        (cache,subs_1) = cevalSubscripts(cache, env, subs, dims, impl,msg,numIter);
+      then
+        (cache,sub :: subs_1);
+  end matchcontinue;
 end cevalSubscripts;
 
 public function cevalSubscript "This function relates a subscript to its canonical forms, which

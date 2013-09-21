@@ -135,23 +135,6 @@ algorithm outProperties := matchcontinue (inProperties)
 end makePropsNotConst;
 
 // stefan
-public function setTypeInProps
-"sets the Type in a Properties record"
-  input DAE.Type inType;
-  input DAE.Properties inProperties;
-  output DAE.Properties outProperties;
-algorithm
-  outProperties := match(inType,inProperties)
-    local
-      DAE.Const cf;
-      DAE.TupleConst tc;
-      DAE.Type ty;
-    case(ty,DAE.PROP(_,cf)) then DAE.PROP(ty,cf);
-    case(ty,DAE.PROP_TUPLE(_,tc)) then DAE.PROP_TUPLE(ty,tc);
-  end match;
-end setTypeInProps;
-
-// stefan
 public function getConstList
 "retrieves a list of Consts from a list of Properties"
   input list<DAE.Properties> inPropertiesList;
@@ -6736,7 +6719,7 @@ algorithm
       ClassInf.State state;
       list<DAE.FuncArg> farg;
       DAE.FunctionAttributes functionAttributes;
-      Boolean singleton;
+      Boolean singleton, b;
       tuple<Type,A> tpl;
 
     case ((DAE.T_INTEGER(source = _),_),_) equation tpl = fn(itpl); then tpl;
@@ -6833,6 +6816,20 @@ algorithm
     case (tpl as (DAE.T_CODE(source = _),_),_)
       equation
         tpl = fn(tpl);
+      then tpl;
+
+    case (tpl as (DAE.T_FUNCTION_REFERENCE_VAR(ty,ts),a),_)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = DAE.T_FUNCTION_REFERENCE_VAR(ty,ts);
+        tpl = fn((ty,a));
+      then tpl;
+
+    case (tpl as (DAE.T_FUNCTION_REFERENCE_FUNC(b,ty,ts),a),_)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = DAE.T_FUNCTION_REFERENCE_FUNC(b,ty,ts);
+        tpl = fn((ty,a));
       then tpl;
 
     case ((ty,_),_)
