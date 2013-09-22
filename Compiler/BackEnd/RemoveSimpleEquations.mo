@@ -2757,7 +2757,7 @@ algorithm
         // get all nonzero values
         zerofreevalues = List.fold(values, getZeroFreeValues, {});
       then
-        selectFreeValue1(zerofreevalues, NONE(), "fixed Aliasset with several free start values\n", v);
+        selectFreeValue1(zerofreevalues, NONE(), "fixed Alias set with several free start values\n", v);
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)
       then
@@ -2898,13 +2898,17 @@ protected function getZeroFreeValues "author: Frenkel TUD 2012-12"
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iAcc;
   output list<tuple<DAE.Exp, DAE.ComponentRef>> oAcc;
 algorithm
-  oAcc := match(inTpl, iAcc)
+  oAcc := matchcontinue(inTpl, iAcc)
     local
       DAE.Exp e;
       DAE.ComponentRef cr;
     case((NONE(), _), _) then iAcc;
+    case ((SOME(e), cr), _)
+      equation
+        true = Expression.isZero(e);
+      then iAcc;
     case ((SOME(e), cr), _) then (e, cr)::iAcc;
-  end match;
+  end matchcontinue;
 end getZeroFreeValues;
 
 protected function selectFreeValue "author: Frenkel TUD 2012-12"
@@ -2917,7 +2921,7 @@ algorithm
     case ({}, _) then inVar;
     case (_, _)
       then
-        selectFreeValue1(iZeroFreeValues, NONE(), "Aliasset with several free start values\n", inVar);
+        selectFreeValue1(iZeroFreeValues, NONE(), "Alias set with several free start values\n", inVar);
   end match;
 end selectFreeValue;
 
