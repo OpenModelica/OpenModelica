@@ -5414,7 +5414,10 @@ algorithm
   //Debug.fprintln(Flags.IDEP, "After: " +& stringDelimitList(List.map(List.map(el, Util.tuple21), SCode.elementName), ", "));
   (cache, outEnv, outIH, outStore, outDae, outSets, outState, outTypesVarLst, outGraph) :=
     instElementList2(cache, inEnv, inIH, store, inMod, inPrefix,
-      inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError, {}, {});
+      inState, el, inInstDims, inImplInst, inCallingScope, inGraph, inSets, inStopOnError, {}, {}); 
+  
+  // sort in program order!
+  outDae := DAEUtil.sortDAEInModelicaCodeOrder(isTopCall(inCallingScope), inElements, outDae);
   // i2 := numStructuralParameterScopes(cache);
   // assert(i1 == i2) ;)
   // print("pop " +& PrefixUtil.printPrefixStr(inPrefix) +& "\n");
@@ -5717,7 +5720,7 @@ algorithm
       list<Absyn.Exp> exps, sexps, bexps;
       SCode.Mod mod;
       String name;
-      Boolean hasUnknownDims;
+      Boolean hasUnknownDims, isFunctionScope;
       Absyn.Direction direction;
       list<tuple<SCode.Element, DAE.Mod>> inAllElements;
       SCode.Replaceable rp;
@@ -5756,19 +5759,21 @@ algorithm
     case ((SCode.COMPONENT(name = name, condition = cExpOpt,
                            prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
                            attributes = SCode.ATTR(arrayDims = ad),
-                           modifications = mod), daeMod), (inAllElements, _))
+                           modifications = mod), daeMod), (inAllElements, isFunctionScope))
       equation
         (hasUnknownDims, exps) = Absyn.getExpsFromArrayDim(ad);
         (bexps, sexps) = getExpsFromMod(mod);
         exps = listAppend(sexps, exps);
-        // ignore the binding for variables if array dims does not have unknown dimensions
-        exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps);
+        // ignore the bindings in function scope so we keep the order!
+        exps = Util.if_(isFunctionScope, exps, listAppend(bexps, exps));
+        // exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps);
         (bexps, sexps) = getExpsFromConstrainClass(rp);
         exps = listAppend(bexps, listAppend(sexps, exps));
         (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
-        exps = listAppend(sexps, exps);        
-        // ignore the binding for variables if array dims does not have unknown dimensions
-        exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps);
+        exps = listAppend(sexps, exps);
+        // ignore the bindings in function scope so we keep the order!
+        exps = Util.if_(isFunctionScope, exps, listAppend(bexps, exps));
+        // exps = Util.if_(hasUnknownDims, listAppend(bexps, exps), exps);
         deps = getDepsFromExps(exps, inAllElements, {});
         // remove the current element from the deps as it is usally Real A[size(A,1)];
         deps = removeCurrentElementFromArrayDimDeps(name, deps);
@@ -5787,10 +5792,8 @@ algorithm
         exps = listAppend(sexps, exps);
         (bexps, sexps) = getExpsFromConstrainClass(rp);
         exps = listAppend(bexps, listAppend(sexps, exps));
-        // ignore the binding for variables if array dims does not have unknown dimensions
         (_, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(sexps, exps);
-        // ignore the binding for variables if array dims does not have unknown dimensions
         deps = getDepsFromExps(exps, inAllElements, {});
       then
         deps;

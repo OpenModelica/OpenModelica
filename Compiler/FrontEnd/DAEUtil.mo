@@ -6132,4 +6132,98 @@ algorithm
   end match;
 end getStatementSource;
 
+public function sortDAEInModelicaCodeOrder
+"@author: adrpo
+ sort the DAE back in the order they are in the file"
+  input Boolean inShouldSort;
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
+  input DAE.DAElist inDae;
+  output DAE.DAElist outDae;
+algorithm
+  outDae := matchcontinue(inShouldSort, inElements, inDae)
+    local 
+      list<DAE.Element> els;
+    
+    case (false, _, _) then inDae;
+    
+    case (true, {}, _) then inDae;
+    
+    case (true, _, DAE.DAE(els))
+      equation
+        els = sortDAEElementsInModelicaCodeOrder(inElements, els, {});
+      then DAE.DAE(els);
+  
+  end matchcontinue;
+end sortDAEInModelicaCodeOrder;
+
+protected function sortDAEElementsInModelicaCodeOrder
+"@author: adrpo
+ sort the DAE elements back in the order they are in the file"
+  input list<tuple<SCode.Element, DAE.Mod>> inElements;
+  input list<DAE.Element> inDaeEls;
+  input list<DAE.Element> inAcc;
+  output list<DAE.Element> outDaeEls;
+algorithm
+  outDaeEls := matchcontinue(inElements, inDaeEls, inAcc)
+    local 
+      list<DAE.Element> dae, named, rest, els, acc;
+      Absyn.Ident name;
+      list<tuple<SCode.Element, DAE.Mod>> restEl;
+      
+    case ({}, _, _) then listAppend(inAcc, inDaeEls);
+      
+    case (((SCode.COMPONENT(name = name),_))::restEl, dae, acc)
+      equation
+        (named, rest) = splitVariableNamed(dae, name, {}, {});
+        acc = listAppend(acc, named); 
+        els = sortDAEElementsInModelicaCodeOrder(restEl, rest, acc); 
+      then 
+        els;
+  
+    case (((_,_))::restEl, dae, acc)
+      equation
+        els = sortDAEElementsInModelicaCodeOrder(restEl, dae, acc);
+      then 
+        els;
+  
+  end matchcontinue;
+end sortDAEElementsInModelicaCodeOrder;
+
+protected function splitVariableNamed 
+"@author: adrpo
+  Splits into a list with all variables with the given name and the rest"
+  input list<DAE.Element> inElementLst;
+  input Absyn.Ident inName;
+  input list<DAE.Element> inAccNamed;
+  input list<DAE.Element> inAccRest;
+  output list<DAE.Element> outNamed;
+  output list<DAE.Element> outRest;
+algorithm
+  (outNamed, outRest) := matchcontinue (inElementLst, inName, inAccNamed, inAccRest)
+    local
+      list<DAE.Element> res,lst, accNamed, accRest;
+      DAE.Element x;
+      Boolean equal;
+      DAE.ComponentRef cr;
+
+    case ({}, _, _, _) then (listReverse(inAccNamed), listReverse(inAccRest));
+
+    case ((x as DAE.VAR(componentRef = cr))::lst, _, accNamed, accRest)
+      equation
+        equal = stringEq(ComponentReference.crefFirstIdent(cr), inName);
+        accNamed = List.consOnTrue(equal, x, accNamed);
+        accRest = List.consOnTrue(boolNot(equal), x, accRest);
+        (accNamed, accRest) = splitVariableNamed(lst, inName, accNamed, accRest);
+      then
+        (accNamed, accRest);
+
+    case (x::lst, _, accNamed, accRest)
+      equation
+        (accNamed, accRest) = splitVariableNamed(lst, inName, accNamed, x::accRest);
+      then
+        (accNamed, accRest);
+  
+  end matchcontinue;
+end splitVariableNamed;
+
 end DAEUtil;
