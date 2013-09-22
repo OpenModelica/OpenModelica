@@ -2898,17 +2898,13 @@ protected function getZeroFreeValues "author: Frenkel TUD 2012-12"
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iAcc;
   output list<tuple<DAE.Exp, DAE.ComponentRef>> oAcc;
 algorithm
-  oAcc := matchcontinue(inTpl, iAcc)
+  oAcc := match(inTpl, iAcc)
     local
       DAE.Exp e;
       DAE.ComponentRef cr;
     case((NONE(), _), _) then iAcc;
-    case ((SOME(e), cr), _)
-      equation
-        true = Expression.isZero(e);
-      then iAcc;
     case ((SOME(e), cr), _) then (e, cr)::iAcc;
-  end matchcontinue;
+  end match;
 end getZeroFreeValues;
 
 protected function selectFreeValue "author: Frenkel TUD 2012-12"
@@ -2925,45 +2921,130 @@ algorithm
   end match;
 end selectFreeValue;
 
-protected function selectFreeValue1 "author: Frenkel TUD 2012-12"
+protected function selectNonZeroExpression 
+"adrpo: select one that is non zero if possible"
+  input list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> iFavorit;
+  output tuple<DAE.Exp, DAE.ComponentRef, Integer> selected;
+algorithm
+  selected := matchcontinue(iFavorit)
+    local
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      Integer i;
+      list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
+    
+    case ({(e, cr, i)}) then ((e, cr, i)); 
+    
+    case ((e, cr, i)::rest)
+      equation
+        false = Expression.isZero(e);
+      then
+        ((e, cr, i));
+    
+    case ((e, cr, i)::rest)
+      equation
+        true = Expression.isZero(e);
+        ((e, cr, i)) = selectNonZeroExpression(rest);
+      then
+        ((e, cr, i));
+  end matchcontinue;
+end selectNonZeroExpression;
+
+protected function selectFreeValue1 
+"@author: Frenkel TUD 2012-12
+ adrpo: the value is selected as follows:
+ - if the exp is a cref with less depth
+ - for the ones with the minimum depth equal, select one that is non-zero 
+ "
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iZeroFreeValues;
-  input Option<tuple<DAE.Exp, DAE.ComponentRef, Integer>> iFavorit;
+  input Option<list<tuple<DAE.Exp, DAE.ComponentRef, Integer>>> iFavorit;
   input String iStr;
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := match(iZeroFreeValues, iFavorit, iStr, inVar)
+  outVar := matchcontinue(iZeroFreeValues, iFavorit, iStr, inVar)
     local
-      DAE.Exp e;
-      DAE.ComponentRef cr;
+      DAE.Exp e, es;
+      DAE.ComponentRef cr, crs;
       BackendDAE.Var v;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
-      Integer i, i1;
-      Option<tuple<DAE.Exp, DAE.ComponentRef, Integer>> favorit;
+      Integer i, is;
+      Option<list<tuple<DAE.Exp, DAE.ComponentRef, Integer>>> favorit;
+      list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
       String s;
+    
     case ({}, NONE(), _, _) then inVar;
-    case ({}, SOME((e, cr, _)), _, _)
+      
+    case ({}, SOME({}), _, _) then inVar;
+    
+    // end of list analyse what we got
+    case ({}, SOME(rest), _, _)
       equation
-        s = iStr +& "         Select value from " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")";
+        ((e, cr, i)) = selectNonZeroExpression(rest);
+        s = iStr +& "         Selected value from " +& 
+            ComponentReference.printComponentRefStr(cr) +& 
+            "(start = " +& ExpressionDump.printExpStr(e) +& ")\n" +& 
+            "         because its component reference (or its binding component reference) is closer to the top level scope with depth: " +& 
+                    intString(i) +& ".\n" +&
+            "         If we have equal component reference depth for several components choose the one with non zero binding.";
         Error.addMessage(Error.COMPILER_WARNING, {s});
         v = BackendVariable.setVarStartValue(inVar, e);
       then
         v;
+    
+    // none, push it in
     case ((e, cr)::zerofreevalues, NONE(), _, _)
       equation
         s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
-        i = ComponentReference.crefDepth(cr);
+        i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       then
-        selectFreeValue1(zerofreevalues, SOME((e, cr, i)), s, inVar);
-    case ((e, cr)::zerofreevalues, SOME((_, _, i1)), _, _)
+        selectFreeValue1(zerofreevalues, SOME({(e, cr, i)}), s, inVar);
+    
+    // equal, put it in
+    case ((e, cr)::zerofreevalues, SOME((es, crs, is)::rest), _, _)
       equation
         s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
-        i = ComponentReference.crefDepth(cr);
-        favorit = Util.if_(intLt(i, i1), SOME((e, cr, i)), iFavorit);
+        i = selectMinDepth(ComponentReference.crefDepth(cr), e);
+        true = intEq(i, is);
+        favorit = SOME((e, cr, i)::(es, crs, is)::rest);
       then
         selectFreeValue1(zerofreevalues, favorit, s, inVar);
-  end match;
+    
+    // less than, remove all from list, return just this one
+    case ((e, cr)::zerofreevalues, SOME((es, crs, is)::rest), _, _)
+      equation
+        s = iStr +& "         Candidate " +& ComponentReference.printComponentRefStr(cr) +& "(start = " +& ExpressionDump.printExpStr(e) +& ")\n";
+        i = selectMinDepth(ComponentReference.crefDepth(cr), e);
+        favorit = Util.if_(intLt(i, is), SOME({(e, cr, i)}), iFavorit);
+      then
+        selectFreeValue1(zerofreevalues, favorit, s, inVar);
+        
+  end matchcontinue;
 end selectFreeValue1;
+
+protected function selectMinDepth
+"@author: adrpo
+ if the start expression is a cref
+ with less depth than the one given
+ return the minimum depth between the 
+ two. Maybe we should o min of all the 
+ cref in the expression!"
+  input Integer d;
+  input DAE.Exp e;
+  output Integer m;
+algorithm
+  m := match(d, e)
+    local 
+      Integer i;
+      DAE.ComponentRef cr;
+    case (_, DAE.CREF(cr, _))
+      equation
+        i = ComponentReference.crefDepth(cr);
+      then
+        intMin(i, d);
+    else d;
+  end match;
+end selectMinDepth;
 
 protected function mergeNominalAttribute "author: Frenkel TUD 2012-12"
   input Option<DAE.Exp> nominal;
