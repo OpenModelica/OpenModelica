@@ -5548,13 +5548,16 @@ algorithm
       Env.Env env;
       Env.Cache cache;
       Absyn.Exp aexp;
+      DAE.Dimensions dims;
 
     case (cache, env, {aexp}, _, _, _, _)
       equation
         (cache, e, DAE.PROP(tp, c), _) =
           elabExp(cache, env, aexp, inImpl, NONE(), true, inPrefix, inInfo);
-        e = arrayScalar(e, 1, "scalar", inInfo);
-        scalar_tp = Types.arrayElementType(tp);
+        (scalar_tp,dims) = Types.flattenArrayTypeOpt(tp);
+        List.map2_0(dims,checkTypeScalar,tp,inInfo);
+        e = Util.if_(List.isEmpty(dims), e, Expression.makeBuiltinCall("scalar", {e}, scalar_tp));
+        (e,_) = ExpressionSimplify.simplify1(e);
       then
         (cache, e, DAE.PROP(scalar_tp, c));
 
@@ -6114,6 +6117,29 @@ algorithm
     else inExp;
   end match;
 end arrayScalar;
+
+protected function checkTypeScalar
+  "Returns the scalar value of an array, or prints an error message and fails if
+  any dimension of the array isn't of size 1."
+  input DAE.Dimension inDim;
+  input DAE.Type ty;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inDim, ty, inInfo)
+    local
+      String ty_str;
+    // An array with one element.
+    case (DAE.DIM_INTEGER(1),_,_) then ();
+    case (DAE.DIM_EXP(_),_,_) then ();
+    case (DAE.DIM_UNKNOWN(),_,_) then ();
+    // Any other dimension
+    else
+      equation
+        ty_str = Types.unparseType(ty);
+        Error.addSourceMessage(Error.INVALID_ARRAY_DIM_IN_SCALAR_OP, {ty_str}, inInfo);
+      then fail();
+  end match;
+end checkTypeScalar;
 
 public function elabBuiltinHandlerGeneric "
   This function dispatches the elaboration of special builtin operators by

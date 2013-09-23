@@ -1134,8 +1134,34 @@ algorithm
         e = Expression.makeArray(es, tp, false);
       then e;
 
+    case DAE.CALL(path=Absyn.IDENT("scalar"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        e = simplifyScalar(e,tp);
+      then e;
+
   end matchcontinue;
 end simplifyBuiltinCalls;
+
+protected function simplifyScalar "Handle the scalar() operator"
+  input DAE.Exp inExp;
+  input DAE.Type tp;
+  output DAE.Exp exp;
+algorithm
+  exp := match (inExp,tp)
+    case (DAE.ARRAY(array={exp}),_)
+      then Expression.makeBuiltinCall("scalar", {exp}, tp);
+    case (DAE.MATRIX(matrix={{exp}}),_)
+      then Expression.makeBuiltinCall("scalar", {exp}, tp);
+    case (DAE.SIZE(exp=exp,sz=NONE()),_)
+      equation
+        (_,{_}) = Types.flattenArrayTypeOpt(Expression.typeof(inExp));
+      then DAE.SIZE(exp,SOME(DAE.ICONST(1)));
+    case (_,_)
+      equation
+        (_,{}) = Types.flattenArrayTypeOpt(Expression.typeof(inExp));
+      then inExp;
+  end match;
+end simplifyScalar;
 
 protected function makeNestedReduction
   input DAE.Exp inExp;

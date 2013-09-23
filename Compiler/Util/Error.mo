@@ -668,6 +668,8 @@ public constant Message CLASS_ANNOTATION_DOES_NOT_EXIST = MESSAGE(535, SCRIPTING
   Util.gettext("Could not find class annotation %s in class %s."));
 public constant Message SEPARATE_COMPILATION_PACKAGE_FAILED = MESSAGE(536, SCRIPTING(), ERROR(),
   Util.gettext("Failed to compile all functions in package %s."));
+public constant Message INVALID_ARRAY_DIM_IN_SCALAR_OP = MESSAGE(537, TRANSLATION(), ERROR(),
+  Util.gettext("The operator scalar requires all dimension size to be 1, but the input has type %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
