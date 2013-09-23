@@ -3,7 +3,7 @@
 library:=$TypeName(Modelica);
 libraryVersion:="default";
 
-setCommandLineOptions({"+g=Modelica","+d=nogen"});
+setCommandLineOptions({"+g=Modelica","+d=nogen,"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
@@ -37,7 +37,7 @@ writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
 "+loadModelCommand+"
-setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
+setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
 res:=buildModel("+s+");
 greenColor := \"#00FF00\";
 if res[1] == \"\" then
@@ -111,7 +111,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Tested Library: "+libraryString+" "+libraryVersionRevision+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
-<p>Flags: setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
+<p>Flags: setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
 <p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
