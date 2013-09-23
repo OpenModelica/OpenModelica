@@ -6140,7 +6140,7 @@ public function sortDAEInModelicaCodeOrder
   input DAE.DAElist inDae;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(inShouldSort, inElements, inDae)
+  outDae := match(inShouldSort, inElements, inDae)
     local 
       list<DAE.Element> els;
     
@@ -6153,7 +6153,7 @@ algorithm
         els = sortDAEElementsInModelicaCodeOrder(inElements, els, {});
       then DAE.DAE(els);
   
-  end matchcontinue;
+  end match;
 end sortDAEInModelicaCodeOrder;
 
 protected function sortDAEElementsInModelicaCodeOrder
@@ -6164,7 +6164,7 @@ protected function sortDAEElementsInModelicaCodeOrder
   input list<DAE.Element> inAcc;
   output list<DAE.Element> outDaeEls;
 algorithm
-  outDaeEls := matchcontinue(inElements, inDaeEls, inAcc)
+  outDaeEls := match(inElements, inDaeEls, inAcc)
     local 
       list<DAE.Element> dae, named, rest, els, acc;
       Absyn.Ident name;
@@ -6186,7 +6186,7 @@ algorithm
       then 
         els;
   
-  end matchcontinue;
+  end match;
 end sortDAEElementsInModelicaCodeOrder;
 
 protected function splitVariableNamed 
@@ -6199,7 +6199,7 @@ protected function splitVariableNamed
   output list<DAE.Element> outNamed;
   output list<DAE.Element> outRest;
 algorithm
-  (outNamed, outRest) := matchcontinue (inElementLst, inName, inAccNamed, inAccRest)
+  (outNamed, outRest) := match(inElementLst, inName, inAccNamed, inAccRest)
     local
       list<DAE.Element> res,lst, accNamed, accRest;
       DAE.Element x;
@@ -6223,7 +6223,7 @@ algorithm
       then
         (accNamed, accRest);
   
-  end matchcontinue;
+  end match;
 end splitVariableNamed;
 
 end DAEUtil;
