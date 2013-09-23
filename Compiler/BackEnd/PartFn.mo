@@ -960,9 +960,12 @@ algorithm
       Ident i;
       DAE.Type ty;
       DAE.Var res;
-    case(DAE.VAR(componentRef = cref,ty = ty))
+      DAE.InstDims dims;
+    case(DAE.VAR(componentRef = cref,ty = ty,dims = dims))
       equation
         i = ComponentReference.printComponentRefStr(cref);
+        // The full type needs the dimensions
+        ty = Types.makeArraySubscripts(ty,dims);
         // TODO: FIXME: binding?
         res = DAE.TYPES_VAR(i,DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(), SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(),SCode.PUBLIC()),ty,DAE.UNBOUND(),NONE());
       then
