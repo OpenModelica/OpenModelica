@@ -294,7 +294,7 @@ void Cvode::CVodeCore()
         }
         
         // A root is found
-        if(_idid == 2)
+        if(_cv_rt == 2)
         {
             _zeroFound = true;
             _time_system->setTime(_tCurrent);
@@ -308,11 +308,13 @@ void Cvode::CVodeCore()
         if(_zeroFound)
         {
             _idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
-            for(int i=0;i<_dimZeroFunc;i++)
+           /* for(int i=0;i<_dimZeroFunc;i++)
                 _events[i] = bool(_zeroSign[i]);
+                */
             //Event Iteration starten
-            _event_system->getZeroFunc(_zeroVal);
+            
             _mixed_system->handleSystemEvents(_events);
+            _event_system->getZeroFunc(_zeroVal);
             
         }//EVENT Iteration beendet
         

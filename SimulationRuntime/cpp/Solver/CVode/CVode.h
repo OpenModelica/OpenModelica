@@ -99,7 +99,8 @@ private:
   long int
     _dimSys,                  ///< Input       - (total) Dimension of system (=number of ODE)
     _idid,                    ///< Input, Output  - Status Flag
-    _locStps;                  ///< Output      - Number of Steps between two events
+    _locStps,                  ///< Output      - Number of Steps between two events
+     _cv_rt;            ///< Temp    - CVode return flag
 
   int
     _outStps,                  ///< Output      - Total number of output-steps
@@ -124,8 +125,8 @@ private:
 
   bool
     _bWritten,                  ///< Temp      - Is output already written
-    _zeroFound,
-    _cv_rt;            ///< Temp    - CVode return flag
+    _zeroFound;
+   
    
    
 
