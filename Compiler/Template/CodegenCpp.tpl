@@ -4284,7 +4284,7 @@ then
           let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
           <<
           <%preExp%>
-           time_events.push_back(std::make_pair(<%e1%>, <%e2%>));	   
+           time_events.push_back(std::make_pair(<%e1%>, <%e2%>));     
          >>)%>
       
           
