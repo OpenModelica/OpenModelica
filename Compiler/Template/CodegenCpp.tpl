@@ -242,6 +242,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Number of equations
     <%dimension1(simCode)%>
     _dimZeroFunc= <%zerocrosslength(simCode)%>;
+    _dimTimeEvent = <%timeeventlength(simCode)%>;
     //Number of residues
     <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
@@ -277,9 +278,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%setConditions(simCode)%>
    <%giveConditions(simCode)%>
    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode)%>
-   <%generatehandleTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
+   <%generatehandleTimeEvent(sampleLookup,simCode)%>
    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
-   <%generateTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
+   <%generateTimeEvent(sampleLookup,simCode)%>
    
    
    <%isODE(simCode)%>
@@ -4225,7 +4226,7 @@ then
 end generateStepCompleted;
 
 
-template generatehandleTimeEvent(list<SimEqSystem> allEquations,SimCode simCode)
+template generatehandleTimeEvent(BackendDAE.SampleLookup sampleLookup,SimCode simCode)
 ::=
   
   match simCode
@@ -4233,8 +4234,18 @@ case SIMCODE(modelInfo = MODELINFO(__))
 then
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::handleTimeEvent(int* time_events)
+  { 
+  for(int i = 0;i<_dimTimeEvent;i++)
   {
-  
+    
+    if(time_events[i]!=_time_event_counter[i])
+         _time_conditions[i] = true; 
+     else
+       _time_conditions[i] = false;
+
+    
+   }
+    memcpy(_time_event_counter,time_events,(int)_dimTimeEvent*sizeof(int));
    }
   >>
 
@@ -4248,23 +4259,35 @@ then
   <<
   int <%lastIdentOfPath(modelInfo.name)%>::getDimTimeEvent() const
   {
-    return 0;
+    return _dimTimeEvent;
    }
   >>
 
 end generateDimTimeEvent;
 
 
-template generateTimeEvent(list<SimEqSystem> allEquations,SimCode simCode)
+template generateTimeEvent(BackendDAE.SampleLookup sampleLookup,SimCode simCode)
 ::=
   
   match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
+  let &varDecls = buffer "" /*BUFD*/
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::getTimeEvent(time_event_type& time_events)
   {
-   
+    <%match sampleLookup
+      case BackendDAE.SAMPLE_LOOKUP(__) then
+        (lookup |> (index, start, interval)  =>
+          let &preExp = buffer "" /*BUFD*/
+          let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+          let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+          <<
+          <%preExp%>
+           time_events.push_back(std::make_pair(<%e1%>, <%e2%>));	   
+         >>)%>
+      
+          
    }
   >>
 
@@ -5208,7 +5231,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp = buffer "" /*BUFD*/
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
-     '_conditions[<%intSub(index, 1)%>]'
+     '_time_conditions[<%intSub(index, 1)%>]'
   case CALL(path=IDENT(name="initial") ) then
      match context
 
@@ -6045,12 +6068,24 @@ end helpvarlength;
 template zerocrosslength(SimCode simCode)
 ::=
 match simCode
-case SIMCODE(__) then
-  let size = listLength(zeroCrossings)
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+   let size = listLength(zeroCrossings)
   <<
-  <%size%>
+   <%intSub(listLength(zeroCrossings), vi.numTimeEvents)%>
   >>
 end zerocrosslength;
+
+
+template timeeventlength(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
+  
+  <<
+  <%vi.numTimeEvents%>
+  >>
+end timeeventlength;
+
 
 
 template DimZeroFunc(SimCode simCode)
@@ -6885,7 +6920,8 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
         error(sourceInfo(), ' UNKNOWN RELATION for <%index1%>')
       end match
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
-    error(sourceInfo(), ' sample not supported for <%index1%> ')
+    //error(sourceInfo(), ' sample not supported for <%index1%> ')
+    '//sample for <%index1%>'
   else  
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%> ')
   end match

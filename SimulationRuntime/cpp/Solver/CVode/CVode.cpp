@@ -207,6 +207,12 @@ void Cvode::solve(const SOLVERCALL action)
 
         }
 
+        if(action & RECORDCALL)
+        {
+            writeToFile(_accStps, _tCurrent, _h);
+            return;
+        }
+
         // Nach einem TimeEvent wird der neue Zustand recorded
         if(action & RECALL)
         {
@@ -326,6 +332,10 @@ void Cvode::CVodeCore()
             _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
             if(_idid < 0)
                 throw std::runtime_error("CVode::ReInit()");
+
+            // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
+            if(_tCurrent == _tEnd)
+                _cv_rt = CV_TSTOP_RETURN;
         }
 
         // ZÃ¤hler fÃ¼r die Anzahl der ausgegebenen Schritte erhÃ¶hen

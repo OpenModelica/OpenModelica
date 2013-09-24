@@ -10,6 +10,8 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& global
 , __z        (NULL)
 , __zDot       (NULL)
 ,_conditions(NULL)
+,_time_conditions(NULL)
+,_time_event_counter(NULL)
 
 {
 
@@ -90,6 +92,19 @@ void SystemDefaultImplementation::initialize()
     memset(_conditions,false,(_dimZeroFunc)*sizeof(bool));
   
   }
+  if(_dimTimeEvent > 0)
+  {
+    if(_time_conditions) delete [] _time_conditions ; 
+    if(_time_event_counter) delete [] _time_event_counter;
+    _time_conditions = new bool[_dimTimeEvent];
+   
+   
+   _time_event_counter = new int[_dimTimeEvent];
+   
+   memset(_time_conditions,false,(_dimTimeEvent)*sizeof(bool));
+    memset(_time_event_counter,0,(_dimTimeEvent)*sizeof(int));
+  }
+  
 };
 
 

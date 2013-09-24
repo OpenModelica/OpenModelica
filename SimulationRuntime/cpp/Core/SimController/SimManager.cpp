@@ -478,9 +478,8 @@ void SimManager::runSingleProcess()
                   {
                         if(_writeFinalState)
                         {      
-                              _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
+                              _solverTask = ISolver::SOLVERCALL(ISolver::RECORDCALL);
                               _solver->solve(_solverTask);
-                              _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
                         }
                   }
 

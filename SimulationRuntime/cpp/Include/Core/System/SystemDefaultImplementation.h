@@ -125,7 +125,8 @@ protected:
         *__z,        ///< "Extended state vector", containing all states and algebraic variables of all types
         *__zDot;       ///< "Extended vector of derivatives", containing all right hand sides of differential and algebraic equations
     bool   
-        * _conditions;    ///< External conditions changed by the solver
+        * _conditions,    ///< External conditions changed by the solver
+        * _time_conditions;
     
     int
          _dimContinuousStates,
@@ -138,6 +139,8 @@ protected:
          _dimTimeEvent,          ///< Dimension (=Anzahl) Time event (start zeit und frequenz)
          _dimAE;        ///< Number (dimension) of algebraic equations (e.g. constraints from an algebraic loop)
     
+    int
+       * _time_event_counter;
     ostream
         *_outputStream;        ///< Output stream for results
 
