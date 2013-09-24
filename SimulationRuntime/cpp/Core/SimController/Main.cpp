@@ -34,7 +34,7 @@ int main(int argc, const char* argv[])
         ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
         ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
-		   ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
+       ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
            ;
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
