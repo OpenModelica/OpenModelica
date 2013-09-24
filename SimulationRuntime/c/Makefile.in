@@ -19,7 +19,6 @@ FPMATHFORTRAN = @FPMATHFORTRAN@
 LIBMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"
 INTERACTIVECLIENT = "../interactive/SampleClient/interactiveclient"
-LIBSENDDATA = @LIBSENDDATA@
 QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
 # Use f2c from the OS itself... If so, don't include the f2c headers from OpenModelica
@@ -32,6 +31,7 @@ endif
 LIBSIMULATION=@LIBSIMULATION@
 LIBRUNTIME=@LIBRUNTIME@
 LIBFMIRUNTIME=@LIBFMIRUNTIME@
+OBJ_EXT = .o
 
 REGEN = Makefile.in
 
@@ -39,3 +39,10 @@ include Makefile.common
 
 Makefile: Makefile.in
 	cd $(top_builddir); ./config.status
+
+emcc: Makefile
+	cp -u /usr/include/expat*.h
+	emmake $(MAKE) OBJ_EXT=.bc CC=emcc CXX=emcc CFLAGS="$(CFLAGS) -DOMC_EMCC -DNO_INTERACTIVE_DEPENDENCY -I./simulation/libf2c/" libSimulationRuntimeC.bc
+	emmake $(MAKE) -C simulation/libf2c OBJ_EXT=.bc CC=emcc CXX=emcc libf2c.bc
+emcc-clean: Makefile
+	$(MAKE) OBJ_EXT=.bc clean

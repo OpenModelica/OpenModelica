@@ -78,6 +78,7 @@ RUNTIME_HEADERS_FMU = \
 
 all : install
 
+all_objs : $(ALL_OBJS)
 
 #recompile all if a header changes!
 $(ALL_OBJS) : $(ALL_HEADERS)
@@ -92,6 +93,10 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 libSimulationRuntimeC.so: $(ALL_OBJS)
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS)
+
+libSimulationRuntimeC.bc: $(ALL_OBJS)
+	@rm -f $@
+	$(CC) -o $@ $(ALL_OBJS)
 
 libOpenModelicaRuntimeC.a: $(BASE_OBJS)
 	@# You have to remove the old archive first or it may contain old objects
@@ -112,32 +117,36 @@ libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH)
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH)
 
-$(METAOBJSPATH):%.o: %.c $(METAHFILESPATH) $(COMMON_HEADERS)
+$(METAOBJSPATH):%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH) -I$(UTILPATH)
 
-meta/meta_modelica_catch.o: meta/meta_modelica_catch.c
+meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
 	$(CC) -c $(CFLAGS) -o $@ $< -g
 
-$(UTILOBJSPATH):%.o: %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
+$(UTILOBJSPATH):%$(OBJ_EXT): %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(UTILPATH) -I$(METAPATH)
 
-$(MATHOBJSPATH):%.o: %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
+$(MATHOBJSPATH):%$(OBJ_EXT): %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) $(FPMATHFORTRAN) -o $@ $< -I$(MATHPATH) -I$(UTILPATH)
 
-$(SOLVEROBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
+$(SOLVEROBJSPATH):%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(OPTIMIZATIONPATH) -I$(RESULTSPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
 
-$(INITIALIZATIONOBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
+$(INITIALIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
 
-$(RESULTSOBJSPATH):%.o: $(RESULTSFILESPATH) $(COMMON_HEADERS)
+$(RESULTSOBJSPATH):%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_HEADERS)
+	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(SIMOBJSPATH):%.o: %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
+$(SIMOBJSPATH):%$(OBJ_EXT): %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
 
-$(SIMOBJSPATHC):%.o: %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
+$(SIMOBJSPATHC):%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 	@echo Deps: $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
+
+$(OPTIMIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
+	$(CC) -c $(CFLAGS) -o $@ $<
 
 ifeq ($(LIBF2C),)
 simulation/libf2c/libf2c.a:
@@ -151,6 +160,8 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
+	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
+	test ! -f simulation/libf2c/libf2c.bc || cp simulation/libf2c/libf2c.bc $(builddir_lib)/emcc/libf2c.so
 	# copy interactive sample client
 	cp $(INTERACTIVECLIENT) $(builddir_bin)
 	# copy header files
@@ -166,7 +177,7 @@ install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2
 	$(MAKE) -C util/java_interface -f $(LIBMAKEFILE) install-nomodelica
 
 clean:
-	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a optimization/*/*.o
+	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a optimization/*/*.o $(TARGET)/*/*.o
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE} clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean

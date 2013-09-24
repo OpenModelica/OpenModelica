@@ -535,7 +535,7 @@ BCinfo { int dp0, dp1, dplen, dsign, e0, inexact, nd, nd0, rounding, scale, uflc
 
 #define Kmax 7
 
-static char *dtoa(double d, int mode, int ndigits,
+static char *omc_dtoa(double d, int mode, int ndigits,
       int *decpt, int *sign, char **rve);
 
  struct
@@ -1547,7 +1547,7 @@ freedtoa(char *s)
  */
 
 static char *
-dtoa
+omc_dtoa
 #ifdef KR_headers
   (dd, mode, ndigits, decpt, sign, rve)
   double dd; int mode, ndigits, *decpt, *sign; char **rve;

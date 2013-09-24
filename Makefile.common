@@ -29,7 +29,7 @@ FMILIB_SHARED = ON
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
 	mkdir -p $(builddir_bin)
-	mkdir -p $(builddir_lib)/omc
+	mkdir -p $(builddir_lib)/omc/emcc
 	mkdir -p $(builddir_lib)/python
 	mkdir -p $(builddir_lib)/python/omniORB
 	mkdir -p $(builddir_inc)

@@ -47,6 +47,8 @@
 #include <string.h>
 #include <time.h>
 
+extern "C" {
+
 typedef struct plt_data {
   double* simulationResultData;
   long currentPos;
@@ -349,4 +351,6 @@ void plt_free(simulation_result *self,DATA *data)
   free(self->storage);
   self->storage = NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
+}
+
 }

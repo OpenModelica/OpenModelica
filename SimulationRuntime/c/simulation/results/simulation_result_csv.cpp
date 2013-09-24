@@ -47,6 +47,7 @@
 #include <string.h>
 #include <time.h>
 
+extern "C" {
 
 void csv_emit(simulation_result *self, DATA *data)
 {
@@ -146,4 +147,6 @@ void csv_free(simulation_result *self, DATA *data)
   rt_tick(SIM_TIMER_OUTPUT);
   fclose(fout);
   rt_accumulate(SIM_TIMER_OUTPUT);
+}
+
 }

@@ -344,6 +344,10 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   if(0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
     return;
 
+#if defined(OMC_EMCC)
+  /* We do not have libregex in javascript */
+    return;
+#endif
   rc = regcomp(&myregex, filter, flags);
   if(rc)
   {

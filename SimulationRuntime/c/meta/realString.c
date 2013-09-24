@@ -96,7 +96,7 @@ static void* dtostr(double d)
     return "NaN";
 #endif
   *expbuf = 0;
-  cporig = dtoa(d,1,prec,&expt,&signflag,&dtoaend);
+  cporig = omc_dtoa(d,1,prec,&expt,&signflag,&dtoaend);
   cp = cporig;
   ndig = dtoaend - cp;
   /*

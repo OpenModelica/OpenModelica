@@ -30,6 +30,8 @@
 
 #include "simulation_result.h"
 
+extern "C" {
+
 static void sim_result_doNothing(simulation_result* self, DATA *data)
 {
   /* Do nothing */
@@ -45,3 +47,5 @@ simulation_result sim_result = {
   sim_result_doNothing, /* writeParam */
   sim_result_doNothing, /* free */
 };
+
+}
