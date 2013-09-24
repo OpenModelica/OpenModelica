@@ -75,12 +75,12 @@ goal(x) = $GOAL
 currentC(x) = $CURC
 currentS(x) = $CURS
 set key right bottom Left title 'Legend'
-set style line 1 linecolor rgb "red" pt 1 ps 1
+set style line 1 linecolor rgb "red"   pt 1 ps 1
 set style line 2 linecolor rgb "green" pt 1 ps 1
-set style line 3 linecolor rgb "blue" pt 1 ps 1
-plot "${SECTION}-trend.csv" using 1:2 title 'Target: $GOAL'   with lp ls 1, \
-     "${SECTION}-trend.csv" using 1:3 title 'Compile: $CURC'  with lp ls 2, \
-     "${SECTION}-trend.csv" using 1:4 title 'Simulate: $CURS' with lp ls 3
+set style line 3 linecolor rgb "blue"  pt 1 ps 1
+plot "${SECTION}-trend.csv" using 1:2 title 'Target: $GOAL'   with lines ls 1, \
+     "${SECTION}-trend.csv" using 1:3 title 'Compile: $CURC'  with lines ls 2, \
+     "${SECTION}-trend.csv" using 1:4 title 'Simulate: $CURS' with lines ls 3
 EOF
 rm -f $OLD/${SECTION}-trend.csv
 for f in `grep -H "Simulation Results:" "$OLD/${SECTION}"*.html | cut -d: -f1` ; do
@@ -116,6 +116,6 @@ done > "$PUB/MSL_old/history.txt"
 for lib in "$@"; do
   SHORTNAME=`echo $lib | cut -d, -f1`
   rsvg-convert --format=png -o "$OLD/$SHORTNAME-trend.png" "$OLD/$SHORTNAME-trend.svg"
-  echo "<p><img src=\"MSL_old/$SHORTNAME-trend.svg\" /></p>"
+  echo "<p><a href="$SHORTNAME/BuildModelRecursive.html"><img src=\"MSL_old/$SHORTNAME-trend.svg\" /></a></p>"
 done;
 echo "</body></html>") > "$PUB/trend.html"
