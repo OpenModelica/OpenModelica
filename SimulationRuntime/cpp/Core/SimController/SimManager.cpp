@@ -384,15 +384,16 @@ void SimManager::runSingleProcess()
 
   
 
-      if (_dimtimeevent)
-      {
             memset(_timeeventcounter,0,_dimtimeevent*sizeof(int));
             computeEndTimes(tStopsSub);
             _tStops.push_back(tStopsSub);
             dimZeroF = event_system->getDimZeroFunc();
             zeroVal_new = new double[dimZeroF];
             timeevent_system->setTime(_tStart);
-            timeevent_system->handleTimeEvent(_timeeventcounter);
+          if (_dimtimeevent)
+          {
+             timeevent_system->handleTimeEvent(_timeeventcounter);
+          }
             cont_system->evaluate(IContinuous::ALL);      // vxworksupdate
             event_system->getZeroFunc(zeroVal_new);
 
@@ -522,5 +523,4 @@ void SimManager::runSingleProcess()
             if(zeroVal_new)
                   delete [] zeroVal_new;
 
-      }
 } // end singleprocess

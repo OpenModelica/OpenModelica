@@ -34,6 +34,7 @@ int main(int argc, const char* argv[])
         ("stop-time,e", po::value< double >()->default_value(1.0),  "simulation stop time")
         ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
+		   ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
            ;
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -45,7 +46,7 @@ int main(int argc, const char* argv[])
         string runtime_lib_path;
     double starttime =  vm["start-time"].as<double>();
     double stoptime = vm["stop-time"].as<double>();
-    double stepsize =  vm["step-size"].as<double>();
+    double stepsize =  stoptime/vm["number-of-intervalls"].as<int>();
     string solver =  vm["solver"].as<string>();
         if (vm.count("runtime-libray"))
         {

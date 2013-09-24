@@ -10,8 +10,8 @@ SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
   , _hUpperLimit  (1e-3)
   , _hLowerLimit  (10*UROUND)
   , _endTimeTol  (1e-7)
-  ,_dRtol(1e-8)
-  ,_dAtol(1e-8)
+  ,_dRtol(1e-6)
+  ,_dAtol(1e-6)
 
 {
     _globalSettings = globalSettings ;
