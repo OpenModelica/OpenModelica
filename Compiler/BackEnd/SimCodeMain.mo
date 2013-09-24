@@ -67,6 +67,7 @@ protected import CodegenCSharp;
 protected import CodegenCpp;
 protected import CodegenXML;
 protected import CodegenJava;
+protected import CodegenJS;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
@@ -435,7 +436,12 @@ algorithm
       Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
       Tpl.tplNoret(CodegenC.translateModel, simCode);
     then ();
-    
+
+    case (_, _, "JavaScript") equation
+      callTargetTemplates(simCode,inQSSrequiredData,"C");
+      Tpl.tplNoret(CodegenJS.markdownFile, simCode);
+    then ();
+
     case (_, _, "Dump") equation
       // Yes, do this better later on...
       str = Tpl.tplString2(SimCodeDump.dumpSimCode, simCode, true);

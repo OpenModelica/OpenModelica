@@ -3738,6 +3738,7 @@ algorithm
         st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
         timeCompile = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
         resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
+        filenameprefix = Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"), filenameprefix +& ".js", filenameprefix);
       then
         (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);
 

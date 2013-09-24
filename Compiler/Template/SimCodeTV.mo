@@ -97,7 +97,13 @@ package builtin
     input list<TypeVar> lst;
     input list<TypeVar> lst1;
     output list<TypeVar> result;
-  end listAppend; 
+  end listAppend;
+
+  function realDiv
+    input Real x;
+    input Real y;
+    output Real z;
+  end realDiv;
  
 end builtin;
 
@@ -2490,6 +2496,10 @@ package Config
   "Returns the id for the default OpenCL device to be used."
     output Integer defdevid;
   end getDefaultOpenCLDevice;
+
+  function simCodeTarget
+    output String target;
+  end simCodeTarget;
   
   function simulationCodeTarget
   "@author: adrpo

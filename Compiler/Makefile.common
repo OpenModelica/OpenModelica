@@ -182,6 +182,7 @@ CodegenCSharp.mo \
 CodegenFMU.mo \
 CodegenFMUCpp.mo \
 CodegenJava.mo \
+CodegenJS.mo \
 CodegenQSS.mo \
 CodegenUtil.mo \
 CodegenXML.mo \

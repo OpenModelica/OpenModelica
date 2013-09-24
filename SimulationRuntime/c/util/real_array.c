@@ -806,7 +806,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
         }
         new_k_dim_size += elts[i]->dim_size[k-1];
         for(j = k; j < elts[0]->ndims; j++) {
-            assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
+          assert(elts[0]->dim_size[j] == elts[i]->dim_size[j]);
         }
     }
 

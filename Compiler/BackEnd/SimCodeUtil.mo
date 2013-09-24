@@ -5360,15 +5360,16 @@ public function createMakefileParams
 protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp;
 algorithm
-  ccompiler := System.getCCompiler();
-  cxxcompiler := System.getCXXCompiler();
-  linker := System.getLinker();
-  exeext := System.getExeExt();
+  ccompiler   := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getCCompiler());
+  cxxcompiler := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getCXXCompiler());
+  linker := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"emcc",System.getLinker());
+  exeext := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),".js",System.getExeExt());
   dllext := System.getDllExt();
   omhome := Settings.getInstallationDirectoryPath();
   omhome := System.trim(omhome, "\""); // Remove any quotation marks from omhome.
   cflags := System.getCFlags();
   cflags := Debug.bcallret2(Flags.isSet(Flags.OPENMP) or Flags.isSet(Flags.HPCOM), stringAppend, cflags, "-fopenmp", cflags);
+  cflags := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"-Os -Wno-warn-absolute-paths",cflags);
   ldflags := System.getLDFlags();
   rtlibs := System.getRTLibs();
   platform := System.modelicaPlatform();
