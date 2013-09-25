@@ -649,7 +649,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
 
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"C", "CSharp", "Cpp", "Adevs", "QSS", "Dump", "XML", "Java","ResidualCMP", "None"})),
+  SOME(STRING_OPTION({"C", "CSharp", "Cpp", "Adevs", "QSS", "Dump", "XML", "Java","ResidualCMP", "JavaScript", "None"})),
   Util.gettext("Sets the target language for the code generation."));
 
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections",
