@@ -16480,44 +16480,28 @@ protected function getClassInProgram
    If that class does not exist, the function fails"
   input String inString;
   input Absyn.Program inProgram;
-  output Absyn.Class outClass;
+  output Absyn.Class cl;
+protected
+  list<Absyn.Class> classes;
 algorithm
-  outClass:=
-  matchcontinue (inString,inProgram)
-    local
-      String str,c1,c1name;
-      Absyn.Class res,cl;
-      list<Absyn.Class> p;
-      Absyn.Within w;
-      Absyn.TimeStamp ts;
-
-    case (str,Absyn.PROGRAM(classes = {})) then fail();
-    /* adrpo: handle also the case: model extends X end X; */
-    case (str,Absyn.PROGRAM(classes = (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = c1)) :: p),within_ = w, globalBuildTimes=ts))
-      equation
-        false = stringEq(str, c1);
-        res = getClassInProgram(str, Absyn.PROGRAM(p,w,ts));
-      then
-        res;
-    /* adrpo: handle also the case: model extends X end X; */
-    case (str,Absyn.PROGRAM(classes = ((cl as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = c1name))) :: p),within_ = w,globalBuildTimes=ts))
-      equation
-        true = stringEq(str, c1name);
-      then
-        cl;
-    case (str,Absyn.PROGRAM(classes = (Absyn.CLASS(name = c1) :: p),within_ = w,globalBuildTimes=ts))
-      equation
-        false = stringEq(str, c1);
-        res = getClassInProgram(str, Absyn.PROGRAM(p,w,ts));
-      then
-        res;
-    case (str,Absyn.PROGRAM(classes = ((cl as Absyn.CLASS(name = c1name)) :: p),within_ = w, globalBuildTimes=ts))
-      equation
-        true = stringEq(str, c1name);
-      then
-        cl;
-  end matchcontinue;
+  Absyn.PROGRAM(classes=classes) := inProgram;
+  cl := List.selectFirst1(classes,getClassInProgramWork,inString);
 end getClassInProgram;
+
+protected function getClassInProgramWork
+  input Absyn.Class cl;
+  input String str;
+  output Boolean b;
+algorithm
+  b := match (cl,str)
+    local
+      String c1name;
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = c1name)),str)
+      then stringEq(str, c1name);
+    case (Absyn.CLASS(name = c1name),str)
+      then stringEq(str, c1name);
+  end match;
+end getClassInProgramWork;
 
 protected function modificationToAbsyn
 " This function takes a list of NamedArg and returns an Absyn.Modification option.
