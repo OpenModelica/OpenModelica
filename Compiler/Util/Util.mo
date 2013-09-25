@@ -3939,8 +3939,9 @@ algorithm
 end testsuiteFriendly2;
 
 public function testsuiteFriendlyPath
-  "Adds ../ in front of a relative file path if we're running the testsuite, to
-   compensate for tests being sandboxed."
+"Adds ../ in front of a relative file path if we're running 
+ the testsuite, to compensate for tests being sandboxed.
+ adrpo: only when running with partest the tests are sandboxed!"
   input String inPath;
   output String outPath;
 algorithm
@@ -3950,8 +3951,13 @@ algorithm
 
     case _
       equation
+        // we're running the testsuite
         true = Config.getRunningTestsuite();
+        // directory does not exist in this directory
+        false = System.directoryExists(inPath);
+        // prefix the path 
         path = "../" +& inPath;
+        true = System.directoryExists(path);
       then
         path;
 
