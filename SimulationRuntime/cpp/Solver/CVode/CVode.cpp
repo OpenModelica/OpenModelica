@@ -293,7 +293,7 @@ void Cvode::CVodeCore()
         _zeroFound = false;
 
         // Check, ob Schritt erfolgreich
-        if(check_flag(&_idid, "CVode", 1))
+        if(check_flag(&_cv_rt, "CVode", 1))
         {
             _solverStatus = ISolver::SOLVERERROR;
             break;
