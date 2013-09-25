@@ -3421,7 +3421,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   LIBSIMULATIONRUNTIMEC=<% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-Wl,-whole-archive "%>-lSimulationRuntimeC <% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then " -Wl,-no-whole-archive"%> <% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%>
   LDFLAGS=<%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/omc/emcc' -lexpat -lSimulationRuntimeC -lf2c -s TOTAL_MEMORY=536870912 -s MAX_SETJMPS=20000 -s OUTLINING_LIMIT=20000>>
-  else <<-L'<%makefileParams.omhome%>/lib/omc' -L'<%makefileParams.omhome%>/lib' -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,'<%makefileParams.omhome%>/lib/omc' -Wl,-rpath,'<%makefileParams.omhome%>/lib' $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%match System.os() case "OSX" then "-lf2c -llis" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis"%>>>
+  else <<-L"<%makefileParams.omhome%>/lib/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%match System.os() case "OSX" then "-lf2c -llis" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis"%>>>
   %>
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
