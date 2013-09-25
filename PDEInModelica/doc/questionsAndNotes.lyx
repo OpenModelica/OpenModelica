@@ -131,10 +131,11 @@ Modelica language extension
 \begin_layout Itemize
 
 \series bold
-How to name coordinate (space) 
+How to name coordinate (independent) 
 \series default
 variables, so that it doesn't meddle with other variables (ODE)? Should
- it be fixed or defined within the domain deffinition?
+ it be fixed or defined within the domain deffinition? Some approaches (possibly
+ good ideas underlined):
 \end_layout
 
 \begin_deeper
@@ -150,7 +151,7 @@ e.g.
  omega.x
 \family default
 ).
- This makes equation domain dependent.
+ -- This makes equation domain dependent.
 \end_layout
 
 \begin_layout Itemize
@@ -159,7 +160,7 @@ NO.
 \family typewriter
 x, y, z
 \family default
-.
+ used stand-alone.
  If they meddle with other variable, infere which one is it from tha fact
  that we differentiate with respect to this variable and from the actual
  domain (indicated with 
@@ -167,13 +168,38 @@ x, y, z
 in
 \family default
  op.).
- Makes model confusing.
+ -- Makes model confusing.
 \end_layout
 
 \begin_layout Itemize
-name by user
+
+\bar under
+name by user (use some special data type (
+\family typewriter
+Coordinate
+\family default
+ or 
+\family typewriter
+Independent
+\family default
+) to define independent variables within domain record (or class) -- see
+ DomainLineSegment1D and DomainRectangle2D in 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "domainDeffinitions"
+
+\end_inset
+
+
 \end_layout
 
+\begin_deeper
+\begin_layout Itemize
+in this case shall we have nerertheless some coordinates defined by default
+ (cartesian)?
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 fixed names and approach ODE variables from PDE in some special way.
 \end_layout
@@ -190,13 +216,15 @@ pderx(u)
 \family default
 , 
 \family typewriter
-pdert(u)
+pdert(u) or
 \end_layout
 
 \begin_layout Itemize
-write equations coordinate-free, using only 
+
+\bar under
+allow writing equations coordinate-free, using only 
 \family typewriter
-pdert, grad, div,
+pder(u,time), grad, div,
 \family default
  ...
  operators.
@@ -204,7 +232,8 @@ pdert, grad, div,
 
 \end_deeper
 \begin_layout Itemize
-use longer name for coordinate variables (e.g.
+NO.
+ use longer name for coordinate variables (e.g.
  
 \family typewriter
 spaceX
@@ -215,17 +244,23 @@ spaceX
 \begin_layout Itemize
 
 \family typewriter
+\bar under
 in domain_name.region_name
 \family default
- opens scope, use somthink like 
+ opens scope.
+ Fixe coordinate names (
 \family typewriter
-this
+x, y, z
 \family default
- in oop, perhaps keyword 
+) and use keyword 
 \family typewriter
 domain
 \family default
-.
+ (similarly as 
+\family typewriter
+this
+\family default
+ in oop) to address them
 \begin_inset Newline newline
 \end_inset
 
@@ -237,18 +272,75 @@ pder(u, domain.x)=0
 \end_inset
 
 in omega.left
+\begin_inset Newline newline
+\end_inset
+
+can be used in combination with fixed or user-defined coordinate names
 \end_layout
 
 \end_deeper
 \begin_layout Itemize
 
 \series bold
-Allow writing equations independent on particular domain and also coordinate
- system.
+Allow other independent variables than space variables?
 \end_layout
 
 \begin_layout Itemize
-How to use (define) new coordinate system besides cartesian?
+How to map shape function return values on particular space variables (e.g.
+ 
+\family typewriter
+x, y, z
+\family default
+) when they are not ordered? And what if there are more coordinate systems
+ defined (e.g.
+ cartesian and polar)?
+\end_layout
+
+\begin_layout Itemize
+How to define general differential operators (as 
+\family typewriter
+grad, div
+\family default
+ ...) , if we use user defined coordinates?
+\end_layout
+
+\begin_layout Itemize
+How to call atribute of Coordinate variable saying the tipe of the coordinate
+ (now called 
+\family typewriter
+name
+\family default
+) should be the value assigned to this attribut written in quotes? It is
+ also related with the previous question.
+ 
+\begin_inset Newline newline
+\end_inset
+
+e.g.
+ somethink like 
+\family typewriter
+Coordinate x (name = 
+\begin_inset Quotes eld
+\end_inset
+
+cartesian
+\begin_inset Quotes erd
+\end_inset
+
+);
+\end_layout
+
+\begin_layout Itemize
+Rename ranges to intervals?
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+How to write boundary conditions that combine field variables from different
+ domains?
+\series default
+ Allow some connection of regions of different domains.
 \end_layout
 
 \begin_layout Itemize
@@ -275,6 +367,10 @@ key "raey"
 
 \lang english
 ?
+\end_layout
+
+\begin_layout Itemize
+unify somehow concept of region and domain?
 \end_layout
 
 \begin_layout Itemize
@@ -305,13 +401,29 @@ height "1pt"
 \begin_layout Itemize
 
 \series bold
-How to write boundary conditions that combine field variables from different
- domains?
+Allow writing equations independent on particular domain and also coordinate
+ system.
 \end_layout
 
 \begin_deeper
 \begin_layout Itemize
-allow some connection of regions of different domains
+yes - using coordinate free differential operators 
+\family typewriter
+(grad, div
+\family default
+ etc.) or 
+\family typewriter
+domain
+\family default
+ (as 
+\family typewriter
+this
+\family default
+ in oop
+\family typewriter
+)
+\family default
+ to addres domain generaly
 \end_layout
 
 \end_deeper

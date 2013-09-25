@@ -20,8 +20,8 @@ model heatPID
   parameter Real Td = 20;
   Real eInt;
  equation
-  1/(c*rho)*diverg(W) = - pder(T,t)    in room;
-  W = -lambda*grad(T)                  in room;
+  1/(c*rho)*diverg(W) = - pder(T,t)    in room.interior;
+  W = -lambda*grad(T)                  in room.interior;
 //TODO: use normal vector:
   W[1] = P/(lx*ly)                     in room.left;
   W[2] = 0                             in room.front + room.rare;

@@ -7,16 +7,13 @@ package PDEDomains
       input Real v;
       output Real x = l*v + a;
     end shapeFunc;
-TODO: find a way to define coordinates
-    class cartesian
-      coordinate x;
-    end cartesian;
+    Coordinate (name = "cartesian") x;
     Region1D interior(shape = shapeFunc, range = {0,1});
     Region0D left(shape = shapeFunc, range = 0);
     Region0D right(shape = shapeFunc, range = 1);
   end DomainLineSegment1D;
 
-  record DomainRectangle2D
+  class DomainRectangle2D
     parameter Real Lx = 1;
     parameter Real Ly = 1;
     parameter Real ax = 0;
@@ -25,6 +22,17 @@ TODO: find a way to define coordinates
       input Real v1, v2;
       output Real x = ax + Lx * v1, y = ay + Ly * v2;
     end shapeFunc;
+
+    Coordinate (name = "cartesian") x;
+    Coordinate (name = "cartesian") y;
+
+    Coordinate (name = "polar") r;
+    Coordinate (name = "polar") theta;
+
+    equation
+      r = sqrt(x^2 + y^2);
+      theta = arctg(y/x);
+
     Region2D interior(shape = shapeFunc, range = {{0,1},{0,1}});
     Region1D right(shape = shapeFunc, range = {1,{0,1}});
     Region1D bottom(shape = shapeFunc, range = {{0,1},0});
@@ -43,6 +51,20 @@ TODO: find a way to define coordinates
       x:=cx + radius * r * cos(2 * C.pi * v);
       y:=cy + radius * r * sin(2 * C.pi * v);
     end shapeFunc;
+
+    class cartesian
+      Coordinate x;
+      Coordinate y;
+    end cartesian;
+
+    class polar
+      Coordinate r;
+      Coordinate theta;
+    equation
+      r = sqrt(cartesian.x^2 + cartesian.y^2);
+      theta = arctg(cartesian.y/cartesian.x);
+    end polar;
+
     Region2D interior(shape = shapeFunc, range = {{O,1},{O,1}});
     Region1D boundary(shape = shapeFunc, range = {1,{0,1}});
   end DomainCircular2D;

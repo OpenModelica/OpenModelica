@@ -193,8 +193,8 @@ the
 \begin_inset space ~
 \end_inset
 
-domain with shape function and ranges -- from The Book (Principles of ...),
- section 8.5.2
+domain with shape function and intervals -- from The Book (Principles of
+ ...), section 8.5.2
 \end_layout
 
 \begin_layout Standard
@@ -282,13 +282,13 @@ record DomainCircular2DGrid "Domain being a circular region"
 
 \begin_layout Plain Layout
 
-	DomainGe2D interior(shape=shapeFunc,range={{O,radius},{O,l}},geom= ...
+	DomainGe2D interior(shape=shapeFunc,interval={{O,radius},{O,l}},geom= ...
  );
 \end_layout
 
 \begin_layout Plain Layout
 
-	DomainGe2D boundary (shape=shapeFunc, range={{radius, radius), { 0,1}}
+	DomainGe2D boundary (shape=shapeFunc, interval={{radius, radius), { 0,1}}
  ,geom=);
 \end_layout
 
@@ -308,7 +308,7 @@ end DomainCircular2DGrid;
 
 \begin_layout Plain Layout
 
-function circular2Dfunc "Spanned circular region for v in range 0..1" 
+function circular2Dfunc "Spanned circular region for v in interval 0..1" 
 \end_layout
 
 \begin_layout Plain Layout
@@ -508,12 +508,12 @@ record DomainCircular2D
 
 \begin_layout Plain Layout
 
-	Region2D interior(shape = shapeFunc, range = {{O,1},{O,1}});     	
+	Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});     	
 \end_layout
 
 \begin_layout Plain Layout
 
-	Region1D boundary(shape = shapeFunc, range = {{1,1},{0,1}});
+	Region1D boundary(shape = shapeFunc, interval = {{1,1},{0,1}});
 \end_layout
 
 \begin_layout Plain Layout
@@ -717,7 +717,15 @@ domain
 \begin_inset space ~
 \end_inset
 
-records 
+records
+\begin_inset space ~
+\end_inset
+
+(or
+\begin_inset space ~
+\end_inset
+
+class) 
 \family typewriter
 DomainLineSegment1D
 \family default
@@ -738,7 +746,7 @@ DomainBlock3D
 \family typewriter
 PDE
 \family default
- package, user can define his own domain records.
+ package, user can define his/her own domain records.
  Domain record contains at least one region member.
  During translation is treated in different way than usual records.
 \begin_inset Newline newline
@@ -748,19 +756,30 @@ Needs OMC modification.
 \end_layout
 
 \begin_layout Description
-ranges to define parameter ranges for a shape-function.
+interval to define parameter interval for a shape-function.
  E.g.
  
 \family typewriter
-range={{0,1},0}.
+interval={{0,1},0}.
  
 \family default
 Used in domain records.
- 
+ (Previously called range.)
 \begin_inset Newline newline
 \end_inset
 
 New language element.
+\end_layout
+
+\begin_layout Description
+shape
+\begin_inset space ~
+\end_inset
+
+function one-to-one map of points in k-dimensional interval (usualy cartesian
+ product of intervals) to points in n-dimensional domain and thus deffine
+ a coordinate system in domain.
+ 
 \end_layout
 
 \begin_layout Description
@@ -801,13 +820,13 @@ shape
 \family default
  and 
 \family typewriter
-range
+interval
 \family default
 .
  E.g.
  
 \family typewriter
-Region2D left (shape = shapeFunc, range = {0,{0,1}}).
+Region2D left (shape = shapeFunc, interval = {0,{0,1}}).
 
 \family default
  
@@ -837,8 +856,8 @@ New language element.
 \end_layout
 
 \begin_layout Description
-fields A variable, its value depends on space position, is called field.
- It is defined by keyword 
+fields A variable whose value depends on space position, is called field.
+ It is defined with keyword 
 \family typewriter
 field
 \family default
@@ -905,7 +924,7 @@ stateSelect
 \family typewriter
 start
 \family default
- can be assigned constant or function of type (Real×Real×...)
+ can be assigned constant value or function of type (Real×Real×...)
 \begin_inset Formula $\rightarrow$
 \end_inset
 
@@ -987,7 +1006,7 @@ operator for partial and directional derivative of real field.
  E.g.
  
 \family typewriter
-pder(u,x,x,y)
+pder(u,omega.x,omega.x,omega.y)
 \family default
  means
 \begin_inset Formula $\frac{\partial^{3}u}{\partial x^{2}y}$
@@ -1077,6 +1096,10 @@ x = 0
 \end_inset
 
 in omega.left + omega.right;
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description
@@ -1099,6 +1122,19 @@ div,
 \end_inset
 
 rot
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Coordinate
+\family default
+ type to define new coordinates - design of concept unfinished.
+ 
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \end_body

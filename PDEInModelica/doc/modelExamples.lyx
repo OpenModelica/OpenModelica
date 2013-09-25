@@ -68,6 +68,13 @@ Example models
 
 \begin_layout Section
 Package PDEDomains
+\begin_inset CommandInset label
+LatexCommand label
+name "domainDeffinitions"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1358,6 +1365,36 @@ key "PeripheralArterial,gosling2003terminology,gao2006stress"
 \begin_inset Formula $f=0$
 \end_inset
 
+, or 
+\begin_inset Formula $f=-AQ8\mu/(\pi r^{4})=-8\pi\mu Q/A$
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "hagen-poiseuille"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mu$
+\end_inset
+
+..
+ dynamic viscosity of blood 
+\begin_inset Formula $(3~4)\cdot10^{-3}\textrm{Pa\cdot s}$
+\end_inset
+
+
+\begin_inset CommandInset citation
+LatexCommand cite
+key "blood-viscosity"
+
+\end_inset
+
 
 \end_layout
 
@@ -1366,7 +1403,8 @@ key "PeripheralArterial,gosling2003terminology,gao2006stress"
 \begin{eqnarray*}
 \frac{\partial A}{\partial t}+\frac{\partial Q}{\partial x} & = & 0\\
 \frac{\partial Q}{\partial t}+\frac{\partial}{\partial x}\left(\alpha\frac{Q^{2}}{A}\right)+\frac{A}{\varrho}\frac{\partial P}{\partial x} & = & \,\\
-=\frac{\partial Q}{\partial t}+\alpha\left(2\frac{Q}{A}\frac{\partial Q}{\partial x}-\frac{Q^{2}}{A^{2}}\frac{\partial A}{\partial x}\right)+\frac{A}{\varrho}\frac{\partial P}{\partial x} & = & \frac{f}{\varrho}\\
+=\frac{\partial Q}{\partial t}+\alpha\left(2\frac{Q}{A}\frac{\partial Q}{\partial x}-\frac{Q^{2}}{A^{2}}\frac{\partial A}{\partial x}\right)+\frac{A}{\varrho}\frac{\partial P}{\partial x} & = & \,\\
+\frac{\partial Q}{\partial t}+2\alpha\frac{Q}{A}\frac{\partial Q}{\partial x}+\left(\frac{\beta}{2\varrho}\sqrt{A}-\alpha\frac{Q^{2}}{A^{2}}\right)\frac{\partial A}{\partial x} & = & \frac{f}{\varrho}\\
 P_{ext}+\beta\left(\sqrt{A}-\sqrt{A_{0}}\right) & = & P
 \end{eqnarray*}
 
@@ -1384,10 +1422,6 @@ Three segment geometry -- splitting arteria
 wide false
 sideways false
 status open
-
-\begin_layout Plain Layout
-
-\end_layout
 
 \begin_layout Plain Layout
 \align center
