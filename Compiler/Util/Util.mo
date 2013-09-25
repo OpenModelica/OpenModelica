@@ -3938,6 +3938,27 @@ algorithm
   end match;
 end testsuiteFriendly2;
 
+public function testsuiteFriendlyPath
+  "Adds ../ in front of a relative file path if we're running the testsuite, to
+   compensate for tests being sandboxed."
+  input String inPath;
+  output String outPath;
+algorithm
+  outPath := matchcontinue(inPath)
+    local
+      String path;
+
+    case _
+      equation
+        true = Config.getRunningTestsuite();
+        path = "../" +& inPath;
+      then
+        path;
+
+    else inPath;
+  end matchcontinue;
+end testsuiteFriendlyPath;
+        
 protected function createDirectoryTreeH
   input String inString;
   input String parentDir;

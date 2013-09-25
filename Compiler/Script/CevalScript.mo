@@ -2405,6 +2405,7 @@ algorithm
         pwd = System.pwd();
         pd = System.pathDelimiter();
         filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = Util.testsuiteFriendlyPath(filename_1);
         filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
         filename2 = Util.if_(System.substring(filename2,1,1) ==& "/",filename2,stringAppendList({pwd,pd,filename2}));
         vars_1 = List.map(cvars, ValuesUtil.valString);
