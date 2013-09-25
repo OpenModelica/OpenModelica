@@ -7,7 +7,7 @@ package PDEDomains
       input Real v;
       output Real x = l*v + a;
     end shapeFunc;
-    Coordinate (name = "cartesian") x;
+    Coordinate x (name = "cartesian");
     Region1D interior(shape = shapeFunc, range = {0,1});
     Region0D left(shape = shapeFunc, range = 0);
     Region0D right(shape = shapeFunc, range = 1);
@@ -23,11 +23,11 @@ package PDEDomains
       output Real x = ax + Lx * v1, y = ay + Ly * v2;
     end shapeFunc;
 
-    Coordinate (name = "cartesian") x;
-    Coordinate (name = "cartesian") y;
+    Coordinate x (name = "cartesian");
+    Coordinate y (name = "cartesian");
 
-    Coordinate (name = "polar") r;
-    Coordinate (name = "polar") theta;
+    Coordinate r (name = "polar");
+    Coordinate theta (name = "polar");
 
     equation
       r = sqrt(x^2 + y^2);
@@ -40,7 +40,7 @@ package PDEDomains
     Region1D top(shape = shapeFunc, range = {{0,1},1});
   end DomainRectangle2D;
 
-  record DomainCircular2D
+  class DomainCircular2D
     parameter Real radius = 1;
     parameter Real cx = 0;
     parameter Real cy = 0;
@@ -52,17 +52,15 @@ package PDEDomains
       y:=cy + radius * r * sin(2 * C.pi * v);
     end shapeFunc;
 
-    class cartesian
-      Coordinate x;
-      Coordinate y;
-    end cartesian;
+    Coordinate x (name="cartesian");
+    Coordinate y (name="cartesian";
 
-    class polar
-      Coordinate r;
-      Coordinate theta;
+    Coordinate r (name="polar");
+    Coordinate theta (name="polar");
+
     equation
-      r = sqrt(cartesian.x^2 + cartesian.y^2);
-      theta = arctg(cartesian.y/cartesian.x);
+      r = sqrt(x^2 + y^2);
+      theta = arctg(y/x);
     end polar;
 
     Region2D interior(shape = shapeFunc, range = {{O,1},{O,1}});
@@ -76,6 +74,9 @@ package PDEDomains
       input Real vx, vy, vz;
       output Real x = ax + Lx * vx, y = ay + Ly * vy, z = az + Lz * vz;
     end shapeFunc;
+    Coordinate x (name="cartesian");
+    Coordinate y (name="cartesian");
+    Coordinate z (name="cartesian");
     Region3D interior(shape = shapeFunc, range = {{0,1},{0,1},{0,1}});
     Region2D right(shape = shapeFunc, range = {1,{0,1},{0,1}});
     Region2D bottom(shape = shapeFunc, range = {{0,1},{0,1},1});

@@ -60,7 +60,8 @@
 
 \begin_body
 
-\begin_layout Paragraph
+\begin_layout Chapter
+\start_of_appendix
 
 \lang british
 Articles and books
@@ -116,13 +117,19 @@ key "leveque2007finite"
 
 \end_layout
 
-\begin_layout Paragraph
+\begin_layout Chapter
 
 \lang british
-Questions & problems:
+Questions & problems: 
 \end_layout
 
-\begin_layout Subparagraph
+\begin_layout Standard
+
+\lang british
+important topics are written in bold
+\end_layout
+
+\begin_layout Section
 
 \lang british
 Modelica language extension
@@ -183,7 +190,7 @@ Coordinate
 Independent
 \family default
 ) to define independent variables within domain record (or class) -- see
- DomainLineSegment1D and DomainRectangle2D in 
+ 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "domainDeffinitions"
@@ -305,7 +312,7 @@ grad, div
 \end_layout
 
 \begin_layout Itemize
-How to call atribute of Coordinate variable saying the tipe of the coordinate
+How to call atribute of Coordinate variable saying the type of the coordinate
  (now called 
 \family typewriter
 name
@@ -331,10 +338,6 @@ cartesian
 \end_layout
 
 \begin_layout Itemize
-Rename ranges to intervals?
-\end_layout
-
-\begin_layout Itemize
 
 \series bold
 How to write boundary conditions that combine field variables from different
@@ -343,6 +346,49 @@ How to write boundary conditions that combine field variables from different
  Allow some connection of regions of different domains.
 \end_layout
 
+\begin_layout Itemize
+
+\series bold
+Allow writing equations independent on particular domain and also coordinate
+ system?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+yes 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+using coordinate free differential operators 
+\family typewriter
+(grad, div
+\family default
+ etc.) or 
+\family typewriter
+domain
+\family default
+ (as 
+\family typewriter
+this
+\family default
+ in oop
+\family typewriter
+)
+\family default
+ to addres domain generaly in differentiation
+\end_layout
+
+\begin_layout Itemize
+how to define fields in a domain independent way?
+\end_layout
+
+\begin_layout Itemize
+how to applay domain independetly written equations on particular domain?
+\end_layout
+
+\end_deeper
+\end_deeper
 \begin_layout Itemize
 Initialization.
 \end_layout
@@ -398,32 +444,17 @@ height "1pt"
 
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Subsection*
+Solved problems:
+\end_layout
 
-\series bold
-Allow writing equations independent on particular domain and also coordinate
- system.
+\begin_layout Itemize
+Rename ranges to intervals?
 \end_layout
 
 \begin_deeper
 \begin_layout Itemize
-yes - using coordinate free differential operators 
-\family typewriter
-(grad, div
-\family default
- etc.) or 
-\family typewriter
-domain
-\family default
- (as 
-\family typewriter
-this
-\family default
- in oop
-\family typewriter
-)
-\family default
- to addres domain generaly
+yes
 \end_layout
 
 \end_deeper
@@ -586,7 +617,7 @@ start[1]
 \end_layout
 
 \end_deeper
-\begin_layout Subparagraph
+\begin_layout Section
 
 \lang british
 Generated code
@@ -663,7 +694,7 @@ for (int i ...)
 u_t[i] = ...
 \end_layout
 
-\begin_layout Subparagraph
+\begin_layout Section
 
 \lang british
 Numerics and solver
@@ -730,13 +761,8 @@ Build whole solver in some PDE framework, perhaps Overture (http://www.overturef
 amework.org/)
 \end_layout
 
-\begin_layout Paragraph
-TODO:
-\end_layout
-
-\begin_layout Itemize
-Write a list of new concepts, key words etc in the language extension.
- How are they going to be translated and handled by the solver?
+\begin_layout Section
+TODO
 \end_layout
 
 \begin_layout Itemize
