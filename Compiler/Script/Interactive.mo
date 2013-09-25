@@ -16496,9 +16496,9 @@ algorithm
   b := match (cl,str)
     local
       String c1name;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = c1name)),str)
+    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = c1name)),_)
       then stringEq(str, c1name);
-    case (Absyn.CLASS(name = c1name),str)
+    case (Absyn.CLASS(name = c1name),_)
       then stringEq(str, c1name);
   end match;
 end getClassInProgramWork;
