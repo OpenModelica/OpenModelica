@@ -1,9 +1,7 @@
 
 #pragma once
 
-#include <System/IAlgLoop.h>       // Interface to AlgLoop
-#include <Solver/IAlgLoopSolver.h>   // Export function from dll
-#include <Solver/INonLinSolverSettings.h>
+#include "FactoryExport.h"
 #include<kinsol.h>
 #include<nvector_serial.h>
 #include<kinsol_dense.h>
@@ -21,21 +19,21 @@ public:
   virtual ~Kinsol();
 
   /// (Re-) initialize the solver
-  virtual void init();
+  virtual void initialize();
 
   /// Solution of a (non-)linear system of equations
-  virtual void solve(const IContinuous::UPDATE command = IContinuous::UNDEF_UPDATE);
+  virtual void solve(const IContinuous::UPDATETYPE command = IContinuous::UNDEF_UPDATE);
 
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus();
-
+   virtual void stepCompleted(double time);
 
 private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
 
   /// Encapsulation of determination of Jacobian
-  void calcJacobian();
+  void calcJacobian(); 
   int check_flag(void *flagvalue, char *funcname, int opt);
   static int kin_fCallback(N_Vector y, N_Vector fval, void *user_data);
 

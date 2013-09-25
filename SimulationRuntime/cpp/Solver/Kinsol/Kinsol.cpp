@@ -2,8 +2,7 @@
 #include "Kinsol.h"
 #include "KinsolSettings.h"
 
-#include <Math/ILapack.h>        // needed for solution of linear system with Lapack
-#include <Math/Constants.h>    // definition of constants like uround
+
 
 Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 : _algLoop      (algLoop)
@@ -21,11 +20,11 @@ Kinsol::Kinsol(IAlgLoop* algLoop, INonLinSolverSettings* settings)
 }
 
 Kinsol::~Kinsol()
-{
+{  
   if(_y)     delete []  _y;
   if(_yHelp)  delete []  _yHelp;
-  if(_f)    delete []  _f;
-  if(_fHelp)  delete []  _fHelp;
+  if(_f)    delete []  _f;  
+  if(_fHelp)  delete []  _fHelp;  
   if(_jac)  delete []  _jac;
 
   N_VDestroy_Serial(_Kin_y);
@@ -35,20 +34,20 @@ Kinsol::~Kinsol()
   KINFree(&_kinMem);
 }
 
-void Kinsol::init()
+void Kinsol::initialize()
 {
   int idid;
 
   _firstCall = false;
 
   //(Re-) Initialization of algebraic loop
-  _algLoop->init();
+  _algLoop->initialize();
 
   // Dimension of the system (number of variables)
-  int
-    dimDouble  = _algLoop->getDimVars(),
+  int 
+    dimDouble  = _algLoop->getDimReal(),
     dimInt    = 0,
-    dimBool    = 0;
+    dimBool    = 0; 
    double fnormtol  = 1.e-12;     /* function tolerance */
    double scsteptol = 1.e-12;     /* step tolerance */
   // Check system dimension
@@ -60,18 +59,18 @@ void Kinsol::init()
     {
       // Initialization of vector of unknowns
       if(_y)     delete []  _y;
-      if(_f)    delete []  _f;
+      if(_f)    delete []  _f;  
       if(_yHelp)  delete []  _yHelp;
-      if(_fHelp)  delete []  _fHelp;
+      if(_fHelp)  delete []  _fHelp;  
       if(_jac)  delete []  _jac;
-
+      
       _y      = new double[_dimSys];
-      _f      = new double[_dimSys];
+      _f      = new double[_dimSys];  
       _yHelp    = new double[_dimSys];
       _fHelp    = new double[_dimSys];
       _jac    = new double[_dimSys*_dimSys];
 
-      _algLoop->giveVars(_y);
+      _algLoop->getReal(_y);
       memset(_f,0,_dimSys*sizeof(double));
       memset(_yHelp,0,_dimSys*sizeof(double));
       memset(_fHelp,0,_dimSys*sizeof(double));
@@ -87,24 +86,22 @@ void Kinsol::init()
       //Set Options
       idid = KINSetNumMaxIters(_kinMem, _kinsolSettings->getNewtMax());
       idid = KINInit(_kinMem, kin_fCallback, _Kin_y);
-       if (check_flag(&idid, "KINInit", 1))
-        throw std::invalid_argument("Kinsol::init()");
+       if (check_flag(&idid, "KINInit", 1)) 
+        throw std::invalid_argument("Kinsol::initialize()");
       idid = KINSetUserData(_kinMem, _data);
-      if (check_flag(&idid, "KINSetUserData", 1))
-         throw std::invalid_argument("Kinsol::init()");
-
+      if (check_flag(&idid, "KINSetUserData", 1)) 
+         throw std::invalid_argument("Kinsol::initialize()");
       //idid = KINDense(_kinMem, _dimSys);
       int maxl = 15; 
        int maxlrst = 2;
        int mset = 2;
       idid = KINSpgmr(_kinMem,maxl);
       if (check_flag(&idid, "KINSpgmr", 1)) 
-
-        throw std::invalid_argument("Kinsol::init()");
+        throw std::invalid_argument("Kinsol::initialize()");
 
        //idid = KINSpilsSetMaxRestarts(_kinMem, maxlrst);
        if (check_flag(&idid, "KINSpilsSetMaxRestarts", 1)) 
-         throw std::invalid_argument("Kinsol::init()");
+         throw std::invalid_argument("Kinsol::initialize()");
         //KINSetMaxSetupCalls(_kinMem, mset);
         KINSetFuncNormTol(_kinMem, fnormtol);
         KINSetScaledStepTol(_kinMem, scsteptol);
@@ -116,35 +113,35 @@ void Kinsol::init()
     }
   }
 
-
+  
 }
 
-void Kinsol::solve(const IContinuous::UPDATE command)
+void Kinsol::solve(const IContinuous::UPDATETYPE command)
 {
   long int
     dimRHS  = 1,          // Dimension of right hand side of linear system (=b)
     irtrn  = 0;          // Retrun-flag of Fortran code
   int idid;
     if (_firstCall)
-        init();    
+        initialize();    
   if(_algLoop->isLinear())
   {
     //calcFunction(_yHelp,_fHelp);
-    _algLoop->giveAMatrix(_jac);
+    _algLoop->getSystemMatrix(_jac);
     dgesv_(&_dimSys,&dimRHS,_jac,&_dimSys,_fHelp,_f,&_dimSys,&irtrn);
     memcpy(_y,_f,_dimSys*sizeof(double));
-    _algLoop->setVars(_y);
+    _algLoop->setReal(_y);
     _iterationStatus = DONE;
   }
   else
   {
 
 
-    idid = KINSol(_kinMem, _Kin_y, KIN_NONE, _Kin_yScale, _Kin_yScale);
-    if (check_flag(&idid, "KINSol", 1))
+    idid = KINSol(_kinMem, _Kin_y, KIN_LINESEARCH, _Kin_yScale, _Kin_yScale);
+    if (check_flag(&idid, "KINSol", 1)) 
       throw std::invalid_argument("Kinsol::solve()");
   }
-
+  
 }
 
 IAlgLoopSolver::ITERATIONSTATUS Kinsol::getIterationStatus()
@@ -155,9 +152,9 @@ IAlgLoopSolver::ITERATIONSTATUS Kinsol::getIterationStatus()
 
 void Kinsol::calcFunction(const double *y, double *residual)
 {
-  _algLoop->setVars(y);
-  _algLoop->update(IContinuous::CONTINOUS);
-  _algLoop->giveRHS(residual);
+  _algLoop->setReal(y);
+  _algLoop->evaluate();
+  _algLoop->getRHS(residual);
 }
 
 int Kinsol::kin_fCallback(N_Vector y,N_Vector fval, void *user_data)
@@ -187,15 +184,16 @@ void Kinsol::calcJacobian()
   }
 
 }
-
-
+ void Kinsol::stepCompleted(double time)
+ {
+ }
  int Kinsol::check_flag(void *flagvalue, char *funcname, int opt)
 {
   int *errflag;
 
   /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
   if (opt == 0 && flagvalue == NULL) {
-    fprintf(stderr,
+    fprintf(stderr, 
             "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
       funcname);
     return(1);
@@ -208,7 +206,7 @@ void Kinsol::calcJacobian()
       fprintf(stderr,
               "\nSUNDIALS_ERROR: %s() failed with flag = %d\n\n",
         funcname, *errflag);
-      return(1);
+      return(1); 
     }
   }
 
@@ -223,11 +221,4 @@ void Kinsol::calcJacobian()
   return(0);
 }
 
-using boost::extensions::factory;
 
-BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> > >()
-    ["Kinsol"].set<Kinsol>();
-  types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
-    ["KinsolSettings"].set<KinsolSettings>();
- }
