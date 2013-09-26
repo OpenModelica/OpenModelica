@@ -2007,6 +2007,7 @@ algorithm
             lstVarVal = iv,compiledFunctions = cf,
             loadedFiles = lf)),_)
       equation
+        name = Util.testsuiteFriendlyPath(name);
         newp = ClassLoader.loadFile(name,encoding);
         newp = Interactive.updateProgram(newp, p);
       then
@@ -2994,6 +2995,7 @@ algorithm
 
     case (cache,env,"runScript",{Values.STRING(str)},st,_)
       equation
+        str = Util.testsuiteFriendlyPath(str);
         istmts = Parser.parseexp(str);
         (res,newst) = Interactive.evaluate(istmts, st, true);
       then
