@@ -400,6 +400,11 @@ void SimManager::runSingleProcess()
             for(int i=0;i<_dimZeroFunc;i++)
                   _events[i] = bool(zeroVal_new[i]);
             _mixed_system->handleSystemEvents(_events);
+			// Reset the time-events
+		  if (_dimtimeevent)
+          {
+             timeevent_system->handleTimeEvent(_timeeventcounter);
+          }
 
 
             std::vector<std::pair<double,int> >::iterator iter;
@@ -426,6 +431,8 @@ void SimManager::runSingleProcess()
                               for(int i=0;i<_dimZeroFunc;i++)
                                     _events[i] = bool(zeroVal_new[i]);
                               _mixed_system->handleSystemEvents(_events);
+							  //reset time-events
+							  timeevent_system->handleTimeEvent(_timeeventcounter);
                         }
                         else
                         {
@@ -450,6 +457,8 @@ void SimManager::runSingleProcess()
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);
                                     _mixed_system->handleSystemEvents(_events);
+									//reset time-events
+								    timeevent_system->handleTimeEvent(_timeeventcounter);
                               }
 
                         }
@@ -511,6 +520,8 @@ void SimManager::runSingleProcess()
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);
                                     _mixed_system->handleSystemEvents(_events);
+									//reset time-events
+									timeevent_system->handleTimeEvent(_timeeventcounter);
                               }
                         }
 

@@ -14,9 +14,9 @@
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
   types.get<std::map<std::string, factory<IAlgLoopSolver,IAlgLoop*, INonLinSolverSettings*> > >()
-    ["Newton"].set<Newton>();
+    ["newton"].set<Newton>();
   types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
-    ["NewtonSettings"].set<NewtonSettings>();
+    ["newtonSettings"].set<NewtonSettings>();
  }
 
 #else

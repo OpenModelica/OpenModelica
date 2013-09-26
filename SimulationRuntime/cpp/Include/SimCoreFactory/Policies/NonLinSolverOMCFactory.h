@@ -24,7 +24,7 @@ public:
    {
        string nonlin_solver_key;
       
-        if(nonlin_solver.compare("Newton")==0)
+        if(nonlin_solver.compare("newton")==0)
         {
             
              PATH newton_path = ObjectFactory<CreationPolicy>::_library_path;
@@ -38,9 +38,20 @@ public:
             }
             nonlin_solver_key.assign("extension_export_newton");
         }
-        else if(nonlin_solver.compare("Kinsol")==0)
+        else if(nonlin_solver.compare("kinsol")==0)
+        {
+              PATH kinsol_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH kinsol_name(KINSOL_LIB);
+            kinsol_path/=kinsol_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(kinsol_path.string(),_non_linsolver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+            
+                throw std::runtime_error("Failed loading Kinsol solver library!");
+            }
             nonlin_solver_key.assign("extension_export_kinsol");
-        else if(nonlin_solver.compare("Hybrj")==0)
+        }
+        else if(nonlin_solver.compare("hybrj")==0)
             nonlin_solver_key.assign("extension_export_hybrj");
         else
             throw std::invalid_argument("Selected nonlinear solver is not available");

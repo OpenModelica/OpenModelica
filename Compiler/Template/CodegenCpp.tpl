@@ -260,7 +260,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     <%arrayReindex(modelInfo)%>
     //Initialize array elements
     <%initializeArrayElements(simCode)%>
-    <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode)%>
+   
    
 
     }
@@ -1566,12 +1566,13 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::initialize()
    {
+      <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode)%>
       _simTime = 0.0;
      _historyImpl->init();
     <%varDecls%>
     <%initVariables%>
    <%initFunctions%>
-    checkConditions(NULL,true);
+     checkConditions(NULL,true);
     <%initEventHandling%>
     _event_handling.initialize(this,<%helpvarlength(simCode)%>);
       map<unsigned int,string> var_ouputs_idx;
@@ -5303,22 +5304,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
  case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    '(_event_integer(<%exp%>, <%constIndex%>, data))'
+    'boost::numeric_cast<int>(<%exp%>)'
 
   case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    '((modelica_<%expTypeShort(ty)%>)_event_floor(<%exp%>, <%constIndex%>, data))'
+    'std::floor(<%exp%>)'
 
   case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    '((modelica_<%expTypeShort(ty)%>)_event_ceil(<%exp%>, <%constIndex%>, data))'
+    'std::ceil(<%exp%>)'
 
   
   case CALL(path=IDENT(name="integer"), expLst={inExp}) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    '((int)floor(<%exp%>))'
+   'boost::numeric_cast<int>(<%exp%>)'
 
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
@@ -6021,8 +6022,13 @@ end daeExpCrefRhsArrayBox;
 template cref1(ComponentRef cr, SimCode simCode, Context context) ::=
   match cr
   case CREF_IDENT(ident = "xloc") then '<%representationCref(cr, simCode,context) %>'
-  case CREF_IDENT(ident = "time") then "_simTime"
-
+  case CREF_IDENT(ident = "time") then
+   match context
+    case  ALGLOOP_CONTEXT(genInitialisation=false)
+    then "_system->_simTime"
+    else
+    "_simTime"
+    end match
   else '<%representationCref(cr, simCode,context) %>'
 end cref1;
 
