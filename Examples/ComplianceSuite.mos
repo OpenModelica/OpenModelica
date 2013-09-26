@@ -39,7 +39,7 @@ deleteClass(ModelicaCompliance.Classes.Enumeration.EnumDuplicateLiteral); getErr
 deleteClass(ModelicaCompliance.Scoping.NameLookup.Imports.QualifiedImportConflict); getErrorString();
 deleteClass(ModelicaCompliance.Redeclare.ClassExtends.ClassExtendsNonReplaceable); getErrorString();
 
-rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");getErrorString();
+rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");err:=getErrorString();
 loadString(\"
 function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
 function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
@@ -53,6 +53,7 @@ end fixName;
 \");
 resultFile := rec.resultFile;
 messages := rec.messages;
+messages := messages + err;
 messages := OpenModelica.Scripting.escapeXML(firstPart(messages));
 success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then"<>"else"==")+" \"\";
 writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\");
