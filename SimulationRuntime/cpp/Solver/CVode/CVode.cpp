@@ -283,7 +283,7 @@ void Cvode::CVodeCore()
         _idid = CVodeGetLastStep(_cvodeMem,&_h);
         //Ausgabe
         if(_cv_rt == CV_SUCCESS)
-			writeCVodeOutput(_tCurrent,_h,_locStps);
+      writeCVodeOutput(_tCurrent,_h,_locStps);
 
        /*ToDo 
        if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
@@ -333,8 +333,8 @@ void Cvode::CVodeCore()
             _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
             if(_idid < 0)
                 throw std::runtime_error("CVode::ReInit()");
-			//Zustände nach der Ereignisbehandlung aufnehmen
-			if (_cvodesettings->getEventOutput())
+      //Zustände nach der Ereignisbehandlung aufnehmen
+      if (_cvodesettings->getEventOutput())
                 writeToFile(0, _tCurrent, _h);
 
             // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
