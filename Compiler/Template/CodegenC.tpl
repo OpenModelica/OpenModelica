@@ -8053,11 +8053,8 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
   let &preExp += '<%params%><%\n%>' 
   arrayVar
 case ARRAY(array={}) then
-  let arrayTypeStr = expTypeArray(ty)
-  let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
-  let scalarPrefix = if scalar then "scalar_" else ""
-  let scalarRef = if scalar then "&" else ""
-  let &preExp += 'array_alloc_<%scalarPrefix%><%arrayTypeStr%>(&<%arrayVar%>, <%listLength(array)%>,0);<%\n%>'
+  let arrayVar = tempDecl("base_array_t", &varDecls /*BUFD*/)
+  let &preExp += 'simple_alloc_1d_base_array(&<%arrayVar%>, 0, NULL);<%\n%>'
   arrayVar
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
