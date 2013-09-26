@@ -3953,11 +3953,12 @@ algorithm
       equation
         // we're running the testsuite
         true = Config.getRunningTestsuite();
-        // directory does not exist in this directory
+        // directory or file does not exist in this directory
         false = System.directoryExists(inPath);
+        false = System.regularFileExists(inPath);
         // prefix the path 
         path = "../" +& inPath;
-        true = System.directoryExists(path);
+        true = System.directoryExists(path) or System.regularFileExists(path);
       then
         path;
 
