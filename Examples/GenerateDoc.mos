@@ -41,7 +41,7 @@
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
 
-loadModel(Modelica,{"3.2"});
+loadModel(Modelica);
 
 writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries()));
 getErrorString();
@@ -61,6 +61,15 @@ if genMetaModelica then
 end if;
 
 echo(false);
+self:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/GenerateDoc.mos";getErrorString();
+py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py";getErrorString();
+commands:={"python "+py+" --output-dir . "+typeNameString(cl) for cl in getClassNames()};getErrorString();
+res:=system_parallel(commands);getErrorString();
+system("rm -f *.json");getErrorString();
+if max(res) <> 0 then
+  exit(1);
+end if;
+
 allClassNames:=getClassNames(builtin=genBuiltin,recursive=true,sort=true);
 system("date -u +%FT%TZ > tmp");
 genTimeStamp := readFile("tmp");
@@ -98,8 +107,17 @@ function preSuffixIfNotEmpty
   output String out := if str <> \"\" then prefix + str + suffix else \"\";
 end preSuffixIfNotEmpty;
 
+function svgIcon
+  input String file;
+  input String cssClass;
+  output String tag;
+algorithm
+  tag := if OpenModelica.Scripting.regularFileExists(file) then \"<img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ file +\"\\\" /> \" else \"\";
+end svgIcon;
+
 function head
   input String strs[:];
+  input String svgFile;
   output String head;
 protected
   String compound := \"\", file;
@@ -111,13 +129,13 @@ algorithm
   <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
   </head>
   <body>
-  <h1><a href = \\\"index.html\\\">.</a>\";
+  <h1>\" + svgIcon(svgFile,\"svgiconhead\") + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
   for ident in strs[1:end-1] loop
     compound := if compound == \"\" then ident else compound+\".\"+ident;
     file := filename(compound+\".html\");
-    head := head + \"<a href = \\\"\"+file+\"\\\">\"+ident+\"</a>.\";
+    head := head + \"<a class=\\\"omc-h1-a\\\" href = \\\"\"+file+\"\\\">\"+ident+\"</a>.\";
   end for;
-  head := head + strs[end] + \"</h1>\";
+  head := head + \"<span class=\\\"omc-h1\\\">\" + strs[end] + \"</span></h1>\";
 end head;
 
 function itemString
@@ -161,11 +179,11 @@ end Item;
 echo(false);
 items:={Item(
       filename(OpenModelica.Scripting.typeNameString(c))+".html",
-      head(OpenModelica.Scripting.typeNameStrings(c)),
+      head(OpenModelica.Scripting.typeNameStrings(c),filename(OpenModelica.Scripting.typeNameString(c))+".svg"),
       OpenModelica.Scripting.getDocumentationAnnotation(c),
       preSuffixIfNotEmpty(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
-        sum("<tr><td><a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
+        sum("<tr><td>"+ svgIcon(filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg","svgiconsmall") +"<a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
              last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
              toHtml(OpenModelica.Scripting.getClassComment(cl)) +
              "</td></tr>\n"
@@ -188,7 +206,7 @@ replaceCommands := "";
 filetmp := "index.html";
 writeFile(filetmp, "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /><title>Modelica Documentation</title><link href=\"style.css\" rel=\"stylesheet\" type=\"text/css\" /></head><body><h1>Modelica Documentation</h1>\n");
 writeFile(filetmp, "<p>This is a listing of builtin Modelica functions, miscellaneous Modelica libraries stored in a <a href=\"https://openmodelica.org/git/OpenModelicaLibraries.git\">git</a> repository. There is also documentation for OpenModelica-specific <a href=\"OpenModelica.Scripting.html\">scripting</a>.</p>\n", append = true);
-writeFile(filetmp, "<p>Note that not all libraries are supported or have been tested. Feel free to add bug reports either to <a href=\"https://trac.openmodelica.org/OpenModelica/newticket\">OpenModelica</a> (for compiler bugs) or to the <a href=\"https://github.com/modelica-3rdparty\">GitHub projects</a> for enhancements or bugs in the libraries. Older libraries may contain broken links and images (only libraries with modelica:// links produce good documentation). The Modelica Standard Library is best supported package in OpenModelica.</p>\n", append = true);
+writeFile(filetmp, "<p>Note that not all libraries are supported or have been tested. Feel free to add bug reports either to <a href=\"https://trac.openmodelica.org/OpenModelica/newticket\">OpenModelica</a> (for compiler bugs) or to the <a href=\"https://github.com/modelica-3rdparty\">GitHub projects</a> for enhancements or bugs in the libraries. Older libraries may contain broken links and images (only libraries with modelica:// links produce good documentation). The Modelica Standard Library is the best supported package in OpenModelica.</p>\n", append = true);
 writeFile(filetmp, "<h2>Libraries</h2>\n", append = true);
 writeFile(filetmp, "<table><tr><th>Name</th><th>Description</th><th>Version</th></tr>", append = true);
 for cl in classNames loop
@@ -306,15 +324,20 @@ done
 rm -f tmp
 ");
 
-writeFile("style.css","
-h1
+writeFile("style.css",".omc-h1
 {
     font-family: mono;
     font-size: x-large;
     color:rgb(153,0,0);
+    vertical-align: middle;
 }
 
-h1 a {font-size:large;}
+.omc-h1-a
+{
+    font-family: mono;
+    font-size: large;
+    vertical-align: middle;
+}
 
 table
 {
@@ -337,6 +360,19 @@ table td,th
 pre
 {
     white-space: pre-wrap; /* CSS 3 */
+}
+
+.svgiconhead {
+  height: 32px;
+  width: 32px;
+  vertical-align: top;
+  -o-object-fit: contain;
+}
+.svgiconsmall {
+  height: 20px;
+  width: 20px;
+  vertical-align: top;
+  -o-object-fit: contain;
 }
 ");
 
@@ -362,8 +398,9 @@ system("bash FilterTidy.sh");
 system("bash FindFiles.sh");
 system("rm -f ModelicaDocumentation.tar.xz");
 system("mkdir -p " + dirs);
+system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html " + dirs + " GenerateDoc.mos FindFiles.log tidy.filtered tidy.links";
+cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html " + dirs + " GenerateDoc.mos generate_icons.py FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
