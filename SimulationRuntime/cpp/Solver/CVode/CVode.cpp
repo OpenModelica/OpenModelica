@@ -282,7 +282,8 @@ void Cvode::CVodeCore()
         _accStps +=_locStps;
         _idid = CVodeGetLastStep(_cvodeMem,&_h);
         //Ausgabe
-        writeCVodeOutput(_tCurrent,_h,_locStps);
+        if(_cv_rt == CV_SUCCESS)
+			writeCVodeOutput(_tCurrent,_h,_locStps);
 
        /*ToDo 
        if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
@@ -300,14 +301,14 @@ void Cvode::CVodeCore()
         }
         
         // A root is found
-        if(_cv_rt == 2)
+        if(_cv_rt == CV_ROOT_RETURN)
         {
             _zeroFound = true;
             _time_system->setTime(_tCurrent);
             _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
             _continuous_system->evaluate(IContinuous::ALL );
             // ZustÃ¤nde recorden bis hierher
-            SolverDefaultImplementation::writeToFile(-99, _tCurrent, _h);
+            //SolverDefaultImplementation::writeToFile(-99, _tCurrent, _h);
         }
 
         // Eventiteration starten
@@ -332,6 +333,9 @@ void Cvode::CVodeCore()
             _idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
             if(_idid < 0)
                 throw std::runtime_error("CVode::ReInit()");
+			//Zustände nach der Ereignisbehandlung aufnehmen
+			if (_cvodesettings->getEventOutput())
+                writeToFile(0, _tCurrent, _h);
 
             // Der Eventzeitpunkt kann auf der Endzeit liegen (Time-Events). In diesem Fall wird der Solver beendet, da CVode sonst eine interne Warnung schmeißt
             if(_tCurrent == _tEnd)
@@ -348,7 +352,7 @@ void Cvode::CVodeCore()
             _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
             _continuous_system->evaluate(IContinuous::ALL);
             _solverStatus = DONE;
-             writeCVodeOutput(_tEnd,_h,_locStps);
+             //writeCVodeOutput(_tEnd,_h,_locStps);
         }
     }
 }
@@ -404,7 +408,6 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
     catch(std::exception& ex)
     {
         std::string error = ex.what();
-        ISolver::SOLVERERROR;
         cerr << "CVode integration error: "<<  error ;
         return -1;
     }

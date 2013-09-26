@@ -5,7 +5,7 @@
 CVodeSettings::CVodeSettings(IGlobalSettings* globalSettings)
   : SolverSettings    (globalSettings)
   ,_denseOutput(true)
-
+  ,_eventOutput(true)
 {
 };
 

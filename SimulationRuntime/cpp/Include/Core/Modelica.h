@@ -54,6 +54,7 @@ using namespace std;
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
+#include <boost/math/special_functions/trunc.hpp>
 namespace uBlas = boost::numeric::ublas;
 using namespace boost::extensions;
 using namespace boost::assign;
