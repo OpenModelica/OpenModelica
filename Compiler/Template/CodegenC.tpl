@@ -7664,7 +7664,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
             expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    '/* smooth(<%var1%>, <%var2%>) */ <%var2%>'
+    '<%var2%>'
   
   case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2, DAE.SCONST(string=string)}) then
