@@ -41,16 +41,16 @@
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
 
-loadModel(Modelica);
+loadModel(Complex);
 
 writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries()));
 getErrorString();
-runScript("loadModel.mos");
+// runScript("loadModel.mos");
 getErrorString();
 getClassNames();
 
 // should we generate documentation for OM built-in functions?
-genBuiltin := true;
+genBuiltin := false;
 // should we generate MetaModelica documentation?
 genMetaModelica := true and genBuiltin;
 
@@ -109,10 +109,11 @@ end preSuffixIfNotEmpty;
 
 function svgIcon
   input String file;
+  input String link;
   input String cssClass;
   output String tag;
 algorithm
-  tag := if OpenModelica.Scripting.regularFileExists(file) then \"<img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ file +\"\\\" /> \" else \"\";
+  tag := if OpenModelica.Scripting.regularFileExists(file) then \"<a href=\\\"\" + link + \"\\\"><img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ file +\"\\\" /></a> \" else \"\";
 end svgIcon;
 
 function head
@@ -129,7 +130,7 @@ algorithm
   <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
   </head>
   <body>
-  <h1>\" + svgIcon(svgFile,\"svgiconhead\") + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
+  <h1>\" + svgIcon(svgFile,svgFile,\"svgiconhead\") + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
   for ident in strs[1:end-1] loop
     compound := if compound == \"\" then ident else compound+\".\"+ident;
     file := filename(compound+\".html\");
@@ -183,7 +184,7 @@ items:={Item(
       OpenModelica.Scripting.getDocumentationAnnotation(c),
       preSuffixIfNotEmpty(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
-        sum("<tr><td>"+ svgIcon(filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg","svgiconsmall") +"<a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
+        sum("<tr><td>"+ svgIcon(filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameString(cl)) + ".html","svgiconsmall") +"<a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
              last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
              toHtml(OpenModelica.Scripting.getClassComment(cl)) +
              "</td></tr>\n"
