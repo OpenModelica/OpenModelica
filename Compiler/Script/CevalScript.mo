@@ -4840,15 +4840,25 @@ protected function getBasePathFromUri "Handle modelica:// URIs"
 algorithm
   basePath := matchcontinue (scheme,iname,program,modelicaPath,printError)
     local
+      Boolean isDir;
       list<String> mps,names;
-      String gd,mp,bp,str,name,version;
+      String gd,mp,bp,str,name,version,fileName;
     case ("modelica://",name,_,mp,_)
       equation
-        (names as name::_) = System.strtok(name,".");
-        version = getPackageVersion(Absyn.IDENT(name),program);
+        (name::names) = System.strtok(name,".");
+        Absyn.CLASS(info=Absyn.INFO(fileName=fileName)) = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program);
+        mp = System.dirname(fileName);
+        bp = findModelicaPath2(mp,names,"",true);
+      then bp;
+    case ("modelica://",name,_,mp,_)
+      equation
+        (name::names) = System.strtok(name,".");
+        failure(_ = Interactive.getPathedClassInProgram(Absyn.IDENT(name),program));
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        bp = findModelicaPath(mps,names,version);
+        (mp,name,isDir) = System.getLoadModelPath(name,{"default"},mps);
+        mp = Util.if_(isDir,mp +& name,mp);
+        bp = findModelicaPath2(mp,names,"",true);
       then bp;
     case ("file://",_,_,_,_) then "";
     case ("modelica://",name,_,mp,true)
