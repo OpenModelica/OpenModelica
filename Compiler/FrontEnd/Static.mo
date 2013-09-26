@@ -3072,17 +3072,20 @@ algorithm
       Integer pInt;
       Prefix.Prefix pre;
 
+    // adrpo: according to #2363: https://trac.openmodelica.org/OpenModelica/ticket/2363
+    //        smooth(0, e) should not be removed!
+    /*
     case (cache,env,{Absyn.INTEGER(pInt),expr},_,impl,pre,_) // if p is 0 just return the expression!
       equation
         true = pInt == 0;
-        (cache,expr_1,DAE.PROP(tp,c),_) = elabExp(cache,env, expr, impl,NONE(), true,pre,info);
+        (cache,expr_1,DAE.PROP(tp,c),_) = elabExp(cache,env, expr, impl,NONE(),true,pre,info);
         b1 = Types.isReal(tp);
         b2 = Types.isRecordWithOnlyReals(tp);
         true = Util.boolOrList({b1,b2});
         etp = Types.simplifyType(tp);
         exp = expr_1;
       then
-        (cache,exp,DAE.PROP(tp,c));
+        (cache,exp,DAE.PROP(tp,c));*/
 
     case (cache,env,{p,expr},_,impl,pre,_)
       equation

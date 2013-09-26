@@ -348,6 +348,14 @@ algorithm
         (cache,v,stOpt) = cevalBuiltin(cache,env, expExp, impl, stOpt,msg,numIter+1);
       then
         (cache,v,stOpt);
+    
+    // ceval smooth(0, expr) -> expr
+    case (cache, env, (e as DAE.CALL(path=funcpath, expLst={DAE.ICONST(0), expExp}, attr=DAE.CALL_ATTR(isImpure=false))), impl, stOpt, msg,_)
+      equation
+        Absyn.IDENT("smooth") = Absyn.makeNotFullyQualified(funcpath);
+        (cache,value,stOpt) = ceval(cache,env,expExp,impl,stOpt,msg,numIter+1);
+      then
+        (cache,value,stOpt);
 
     // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem 
     // lochel: do not evaluate impure function calls
