@@ -283,8 +283,7 @@ void Cvode::CVodeCore()
 		_accStps +=_locStps;
 		_idid = CVodeGetLastStep(_cvodeMem,&_h);
 		//Ausgabe
-		if(_cv_rt == CV_SUCCESS)
-			writeCVodeOutput(_tCurrent,_h,_locStps);
+		writeCVodeOutput(_tCurrent,_h,_locStps);
 
 	   /*ToDo 
 	   if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
@@ -313,9 +312,10 @@ void Cvode::CVodeCore()
 				writeToFile(0, _tCurrent, _h);
 		
 			_idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
-		   for(int i=0;i<_dimZeroFunc;i++)
+		   /*
+			for(int i=0;i<_dimZeroFunc;i++)
 				_events[i] = bool(_zeroSign[i]);
-		   
+		   */
 			//Event Iteration starten
 			_mixed_system->handleSystemEvents(_events);
 			_event_system->getZeroFunc(_zeroVal);            
@@ -329,7 +329,6 @@ void Cvode::CVodeCore()
 			if (_cvodesettings->getEventOutput())
 				writeToFile(0, _tCurrent, _h);
 			
-			writeCVodeOutput(_tCurrent,_h,_locStps);
 			_idid = CVodeReInit(_cvodeMem, _tCurrent, _CV_y);
 			if(_idid < 0)
 				throw std::runtime_error("CVode::ReInit()");
@@ -349,8 +348,7 @@ void Cvode::CVodeCore()
 			_continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
 			_continuous_system->evaluate(IContinuous::ALL);
 			_solverStatus = DONE;
-			if (_cvodesettings->getEventOutput())
-				writeToFile(0, _tCurrent, _h);
+			writeToFile(0, _tEnd, _h);
 		}
 	}
 }
