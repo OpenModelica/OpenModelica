@@ -48,6 +48,7 @@ encapsulated package Dump
 public import Absyn;
 
 // protected imports
+protected import Config;
 protected import Error;
 protected import List;
 protected import Print;
@@ -3483,7 +3484,7 @@ algorithm
 
     case Absyn.ALLWILD() then "__";
 
-    case Absyn.WILD() then "_";
+    case Absyn.WILD() then Util.if_(Config.acceptMetaModelicaGrammar(),"_","");
 
     case Absyn.CREF_INVALID(componentRef = cr)
       then printComponentRefStr(cr);
