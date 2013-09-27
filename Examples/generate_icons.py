@@ -1148,62 +1148,63 @@ def main():
         logger.info('Loading package: {0}'.format(package))
         package_load = OMPython.execute('loadModel(' + package + ')')
         if not package_load:
-          logger.error('Load failed: %s' % OMPython.omc.sendExpression('getErrorString()'))
-        success = success and package_load
-
+          success = False
+          break
     for package in PACKAGES_TO_LOAD_FROM_FILE:
         logger.info('Loading package from file: {0}'.format(package))
         package_load = OMPython.execute('loadFile("' + package + '")')
         logger.info('Load success: {0}'.format(package_load))
-        success = success and package_load
+        if not package_load:
+          success = False
+          break
+    if not success:
+      logger.critical('Failed to load packages in %.1f seconds: %s' % (time.time()-t,OMPython.omc.sendExpression('getErrorString()')))
+      return 1
+    dwgs = []
 
-    if success:
-        dwgs = []
+    for package in PACKAGES_TO_GENERATE:
+      try:
+        # create file handler which logs even debug messages
+        fh = logging.FileHandler(package + '.log')
+        fh.setLevel(logging.DEBUG)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
 
-        for package in PACKAGES_TO_GENERATE:
-          try:
-            # create file handler which logs even debug messages
-            fh = logging.FileHandler(package + '.log')
-            fh.setLevel(logging.DEBUG)
-            fh.setFormatter(formatter)
-            logger.addHandler(fh)
+        modelica_classes = ask_omc('getClassNames', package + ', recursive=true, qualified=true, sort=true')['SET1']['Set1']
+        for modelica_class in modelica_classes:
+            logger.info('Exporting: ' + modelica_class)
 
-            modelica_classes = ask_omc('getClassNames', package + ', recursive=true, qualified=true, sort=true')['SET1']['Set1']
-            for modelica_class in modelica_classes:
-                logger.info('Exporting: ' + modelica_class)
+            # try:
+            base_classes = []
+            getBaseClasses(modelica_class, base_classes)
+            dwg = exportIcon(modelica_class, base_classes)
+            dwgs.append(dwg)
 
-                # try:
-                base_classes = []
-                getBaseClasses(modelica_class, base_classes)
-                dwg = exportIcon(modelica_class, base_classes)
-                dwgs.append(dwg)
+            logger.info('Done: ' + modelica_class)
+            # except:
+            #     print 'FAILED: ' + modelica_class
+        logger.removeHandler(fh)
+      except Exception as e:
+        logger.critical('Failed to generate icons for %s after %.1f seconds: %s' % (package,time.time()-t,sys.exc_info()[1]))
+        raise
+    if with_html:
+      logger.info('Generating HTML file ...')
+      with open(os.path.join(output_dir, 'index.html'), 'w') as f_p:
+          f_p.write('<html>\n')
+          f_p.write('<head>\n')
+          f_p.write('</head>\n')
 
-                logger.info('Done: ' + modelica_class)
-                # except:
-                #     print 'FAILED: ' + modelica_class
-            logger.removeHandler(fh)
-          except Exception as e:
-            logger.critical('Failed to generate icons for %s after %.1f seconds: %s' % (package,time.time()-t,sys.exc_info()[1]))
-            raise
-        if with_html:
-          logger.info('Generating HTML file ...')
-          with open(os.path.join(output_dir, 'index.html'), 'w') as f_p:
-              f_p.write('<html>\n')
-              f_p.write('<head>\n')
-              f_p.write('</head>\n')
+          f_p.write('<body>\n')
 
-              f_p.write('<body>\n')
+          for dwg in dwgs:
+              dwg.write(f_p)
 
-              for dwg in dwgs:
-                  dwg.write(f_p)
+          f_p.write('</body>\n')
+          f_p.write('</html>\n')
 
-              f_p.write('</body>\n')
-              f_p.write('</html>\n')
+      logger.info('HTML file is ready.')
+    print "Generated svg's for %d models in packages %s in %.1f seconds" % (len(dwgs),PACKAGES_TO_GENERATE,time.time()-t)
 
-          logger.info('HTML file is ready.')
-        print "Generated svg's for %d models in packages %s in %.1f seconds" % (len(dwgs),PACKAGES_TO_GENERATE,time.time()-t)
-
-    logger.info('quit OMC')
     logger.info('End of application')
     return 0 if success else 1
 
