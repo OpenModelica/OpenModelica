@@ -104,9 +104,9 @@
 #endif
 
 #ifdef CONFIG_REVISION
-#define CONFIG_VERSION "1.9.0 beta4+dev (r" CONFIG_REVISION ")"
+#define CONFIG_VERSION "1.9.0 RC1+dev (r" CONFIG_REVISION ")"
 #else
-#define CONFIG_VERSION "1.9.0 beta4+dev"
+#define CONFIG_VERSION "1.9.0 RC1+dev"
 #endif
 
 
