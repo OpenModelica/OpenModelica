@@ -28,7 +28,7 @@ echo(true);
 String(size(allClasses,1)) + " number of classes";
 
 min(OpenModelica.Scripting.writeFile(fixName(typeNameString(cl))+".mos","
-OpenModelica.Scripting.writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\"><error type=\\\"killed\\\"/></testcase>\");
+OpenModelica.Scripting.writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\"><error type=\\\"killed\\\" message=\\\"killed or crashed\\\"/></testcase>\");
 
 loadModel(ModelicaCompliance);getErrorString();
 // delete classes that generate errors all the time
@@ -52,11 +52,11 @@ algorithm
 end fixName;
 \");
 resultFile := rec.resultFile;
+success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then"<>"else"==")+" \"\";
 messages := rec.messages;
 messages := messages + err;
 messages := messages + (if not success and OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then \"\nSucceeded, but expected failure\" else \"\");
 messages := OpenModelica.Scripting.escapeXML(firstPart(messages));
-success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then"<>"else"==")+" \"\";
 writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\");
 ") for cl in allClasses);
 getErrorString();
