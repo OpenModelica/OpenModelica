@@ -35,6 +35,7 @@ import uuid
 import json
 import logging
 import sys
+import time
 from optparse import OptionParser
 
 import svgwrite
@@ -1095,6 +1096,7 @@ def getBaseClasses(modelica_class, base_classes):
 
 
 def main():
+    t = time.time()
     parser = OptionParser()
     parser.add_option("--with-html", help="Generate an HTML report with all SVG-files", action="store_true", dest="with_html", default=False)
     parser.add_option("--output-dir", help="Directory to generate SVG-files in", type="string", dest="output_dir", default=os.path.abspath('ModelicaIcons'))
@@ -1181,7 +1183,7 @@ def main():
                 #     print 'FAILED: ' + modelica_class
             logger.removeHandler(fh)
           except Exception as e:
-            logger.critical('Failed to generate icons for %s: %s' % (package,sys.exc_info()[1]))
+            logger.critical('Failed to generate icons for %s after %.1f seconds: %s' % (package,time.time()-t,sys.exc_info()[1]))
             raise
         if with_html:
           logger.info('Generating HTML file ...')
@@ -1199,7 +1201,7 @@ def main():
               f_p.write('</html>\n')
 
           logger.info('HTML file is ready.')
-        print "Generated svg's for %d models in packages %s" % (len(dwgs),PACKAGES_TO_GENERATE)
+        print "Generated svg's for %d models in packages %s in %.1f seconds" % (len(dwgs),PACKAGES_TO_GENERATE,time.time()-t)
 
     logger.info('quit OMC')
     logger.info('End of application')
