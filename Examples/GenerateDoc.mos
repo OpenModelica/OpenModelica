@@ -63,7 +63,7 @@ end if;
 echo(false);
 self:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/GenerateDoc.mos";getErrorString();
 py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py";getErrorString();
-commands:={"(ulimit -t 600 ; python "+py+" --quiet --output-dir . )"+typeNameString(cl) for cl in getClassNames()};getErrorString();
+commands:={"(ulimit -t 600 ; python "+py+" --quiet --output-dir . "+typeNameString(cl)+" )" for cl in getClassNames()};getErrorString();
 res:=system_parallel(commands);getErrorString();
 system("rm -f *.json");getErrorString();
 /* if max(res) <> 0 then

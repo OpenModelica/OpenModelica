@@ -109,7 +109,7 @@ def ask_omc(question, opt=None, parsed=True):
             res = OMPython.omc.sendExpression(expression)
     except Exception as e:
         logger.error("OMC failed: {0}, {1}, parsed={2}".format(question, opt, parsed))
-        raise e
+        raise
 
     omc_cache[p] = res
 
