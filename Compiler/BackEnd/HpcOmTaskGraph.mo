@@ -3874,6 +3874,7 @@ algorithm
       equation
         ((costAdd,costMul,costTrig)) = countOperations(compIn, eqSysIn, sharedIn);
         numOps = costAdd+costMul+costTrig;
+        print("compIN "+&BackendDump.printComponent(compIn)+&" with operations: "+&intString(numOps)+&"\n");
         costs = realAdd(realMul(intReal(numOps),25.0),70.0); // feel free to change this
       then
         ((numOps,costs));
@@ -3897,6 +3898,7 @@ algorithm
   commCostsOut := createCommCosts(commCostsIn,1,reqTimeCom);
 end getCommCostsOnly;
 
+
 protected function checkForExecutionCosts "checks if every entry in exeCosts is > 0.0"
   input TaskGraphMeta dataIn;
   output Boolean isFine;
@@ -3905,10 +3907,11 @@ protected
 algorithm
   TASKGRAPHMETA(exeCosts=exeCosts) := dataIn;
   isFine := Util.arrayFold(exeCosts,checkTplForZero2,true);   
+  Debug.bcall(not isFine,print,"there are execution costs with value 0.0!\n ");
 end checkForExecutionCosts;
 
 
-protected function checkTplForZero2 "returns true if the second number(real) in the tuple is zero
+protected function checkTplForZero2 "returns false if the second number(real) in the tuple is zero
 author: Waurich TUD 2013-09"
   input tuple<Integer,Real> inTpl;
   input Boolean bIn;
@@ -3923,6 +3926,7 @@ algorithm
       then
         true;
     else
+      equation
       then
         false;
   end matchcontinue;
@@ -4238,7 +4242,7 @@ algorithm
         //Check if no component was connected twice
         true = checkForDuplicates(graphComps);
         //Check if nodeNames,nodeDescs and exeCosts-array have the right size
-        true = checkForExecutionCosts(iTaskGraph);
+        //true = checkForExecutionCosts(iTaskGraph);
         // Check if every node has an execution cost > 0.
       then true;
     else then false;
