@@ -314,7 +314,7 @@ algorithm
   end matchcontinue;
 end strongComponents;
 
-protected function analyseStrongComponents"author: Frenkel TUD 2011-05
+public function analyseStrongComponents"author: Frenkel TUD 2011-05
   analyse the type of the strong connect components and
   calculate the jacobian."
   input list<list<Integer>> inComps;

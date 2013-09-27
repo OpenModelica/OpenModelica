@@ -385,15 +385,18 @@ algorithm
   simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args)
     local
       Integer numProc;
+      BackendDAE.BackendDAE backendDAE2;
       SimCode.SimCode tmpSimCode;
     case(_, _, _, _, _, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
-    then HpcOmSimCode.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      backendDAE2 = Debug.fcallret2(Flags.PARTLINTORNSYSTEM, BackendDAEUtil.mapEqSystem, inBackendDAE, HpcOmSimCode.reduceLinearTornSystem, inBackendDAE);  // searches for linear torn systems and disassembles them into SingleEquations and a reduced linear EquationSystem   
+    then HpcOmSimCode.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      backendDAE2 = Debug.fcallret2(Flags.PARTLINTORNSYSTEM, BackendDAEUtil.mapEqSystem, inBackendDAE, HpcOmSimCode.reduceLinearTornSystem, inBackendDAE);  // searches for linear torn systems and disassembles them into SingleEquations and a reduced linear EquationSystem
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;

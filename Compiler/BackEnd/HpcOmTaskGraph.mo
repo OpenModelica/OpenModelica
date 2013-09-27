@@ -73,7 +73,6 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
   end TASKGRAPHMETA;
 end TaskGraphMeta; //TODO: Remove rootNodes from structure
   
-  
 //functions to build the task graph from the BLT structure
 //------------------------------------------
 //------------------------------------------
@@ -3800,10 +3799,135 @@ algorithm
       then tmpTaskGraphMeta;
     else
       equation
-        print("Warning: Create costs failed. Maybe the _prof.xml-file is missing.\n");
-      then iTaskGraphMeta;
+        tmpTaskGraphMeta = estimateCosts(iDae,iTaskGraphMeta);
+        print("Warning: The costs have been estimated. Maybe the _prof.xml-file is missing.\n");
+      then tmpTaskGraphMeta;
   end matchcontinue;  
 end createCosts;
+
+// functions to generate dummy costs
+//----------------------------------
+
+protected function estimateCosts "estimates the communication and execution costs very roughly so hpcom can work with something when there is no prof_xml
+author: Waurich TUD 09-2013"
+  input BackendDAE.BackendDAE daeIn;
+  input TaskGraphMeta taskGraphMetaIn;
+  output TaskGraphMeta taskGraphMetaOut;
+protected
+  array<list<Integer>> inComps; 
+  array<Integer> varSccMapping;  
+  array<Integer> eqSccMapping; 
+  list<Integer> rootNodes;  
+  array<String> nodeNames; 
+  array<String> nodeDescs;  
+  array<tuple<Integer,Real>> exeCosts;  
+  array<list<tuple<Integer,Integer,Integer>>> commCosts; 
+  array<Integer> nodeMark;
+  list<Integer> comNumLst;
+  list<tuple<Integer,Real>> exeCostsLst;  
+  BackendDAE.EqSystems eqSystems;
+  BackendDAE.Shared shared;
+  list<BackendDAE.StrongComponents> compsLst;
+algorithm
+  BackendDAE.DAE(eqs=eqSystems, shared=shared) := daeIn;
+  compsLst := List.map(eqSystems,BackendDAEUtil.getStrongComponents);
+  comNumLst := List.map(compsLst,listLength);
+  TASKGRAPHMETA(inComps=inComps,varSccMapping=varSccMapping,eqSccMapping=eqSccMapping,rootNodes=rootNodes,nodeNames = nodeNames,nodeDescs=nodeDescs,exeCosts=exeCosts, commCosts=commCosts,nodeMark=nodeMark) := taskGraphMetaIn;
+  // get the communication costs
+  commCosts := getCommCostsOnly(commCosts);
+  // estimate the executionCosts
+  exeCostsLst := List.flatten(List.map3(List.intRange(listLength(compsLst)),estimateCosts0,compsLst,eqSystems,shared));
+  exeCosts := listArray(exeCostsLst);
+  taskGraphMetaOut := TASKGRAPHMETA(inComps,varSccMapping,eqSccMapping,rootNodes,nodeNames,nodeDescs,exeCosts,commCosts,nodeMark); 
+end estimateCosts;
+
+
+protected function estimateCosts0 "estimates the exeCosts for StrongComponents
+author: Waurich TUD 2013-09"
+  input Integer systIdx;
+  input list<BackendDAE.StrongComponents> compsLstIn;
+  input BackendDAE.EqSystems eqSystemsIn;
+  input BackendDAE.Shared sharedIn;
+  output list<tuple<Integer,Real>> exeCostsOut;
+protected
+  BackendDAE.StrongComponents comps;
+  BackendDAE.EqSystem eqSys;
+algorithm
+  comps := listGet(compsLstIn,systIdx);
+  eqSys := listGet(eqSystemsIn,systIdx);
+  exeCostsOut := List.map2(comps,estimateCosts1,eqSys,sharedIn);
+end estimateCosts0;
+
+
+protected function estimateCosts1 " estimates the exeCost for 1 StrongComponent
+author: Waurich TUD 2013-09"
+  input BackendDAE.StrongComponent compIn;
+  input BackendDAE.EqSystem eqSysIn;
+  input BackendDAE.Shared sharedIn;
+  output tuple<Integer,Real> exeCostOut;
+algorithm
+  exeCostOut := matchcontinue(compIn,eqSysIn,sharedIn)
+    local
+      Integer costAdd, costMul, costTrig, numOps;
+      Real costs;
+    case(_,_,_)
+      equation
+        ((costAdd,costMul,costTrig)) = countOperations(compIn, eqSysIn, sharedIn);
+        numOps = costAdd+costMul+costTrig;
+        costs = realAdd(realMul(intReal(numOps),25.0),70.0); // feel free to change this
+      then
+        ((numOps,costs));
+    else
+      equation
+        print("estimateCosts1 failed1\n");
+      then
+        fail();  
+  end matchcontinue;
+end estimateCosts1;
+
+
+protected function getCommCostsOnly "function to compute the communicationCosts
+author: Waurich TUD 2013-09"
+  input array<list<tuple<Integer,Integer,Integer>>> commCostsIn;
+  output array<list<tuple<Integer,Integer,Integer>>> commCostsOut;
+protected
+  tuple<Integer,Integer> reqTimeCom;
+algorithm
+  ((_,reqTimeCom)) := HpcOmBenchmark.benchSystem();
+  commCostsOut := createCommCosts(commCostsIn,1,reqTimeCom);
+end getCommCostsOnly;
+
+protected function checkForExecutionCosts "checks if every entry in exeCosts is > 0.0"
+  input TaskGraphMeta dataIn;
+  output Boolean isFine;
+protected
+  array<tuple<Integer,Real>> exeCosts;
+algorithm
+  TASKGRAPHMETA(exeCosts=exeCosts) := dataIn;
+  isFine := Util.arrayFold(exeCosts,checkTplForZero2,true);   
+end checkForExecutionCosts;
+
+
+protected function checkTplForZero2 "returns true if the second number(real) in the tuple is zero
+author: Waurich TUD 2013-09"
+  input tuple<Integer,Real> inTpl;
+  input Boolean bIn;
+  output Boolean bOut;
+algorithm
+  bOut := matchcontinue(inTpl,bIn)
+    local
+      Real value;
+    case((_,value),true)
+      equation
+        false = realEq(value,0.0);
+      then
+        true;
+    else
+      then
+        false;
+  end matchcontinue;
+end checkTplForZero2;
+   
 
 public function convertNodeListToEdgeTuples "author: marcusw
   Convert a list of nodes to a list of edged. E.g. {1,2,5} -> {(1,2),(2,5)}"
@@ -3812,6 +3936,7 @@ public function convertNodeListToEdgeTuples "author: marcusw
 algorithm
   oEdgeList := convertNodeListToEdgeTuples0(iNodeList, listLength(iNodeList), {});
 end convertNodeListToEdgeTuples;
+
 
 protected function convertNodeListToEdgeTuples0 "author: marcusw
   Helper function of convertNodeListToEdgeTuples"
@@ -4113,6 +4238,8 @@ algorithm
         //Check if no component was connected twice
         true = checkForDuplicates(graphComps);
         //Check if nodeNames,nodeDescs and exeCosts-array have the right size
+        true = checkForExecutionCosts(iTaskGraph);
+        // Check if every node has an execution cost > 0.
       then true;
     else then false;
   end matchcontinue;

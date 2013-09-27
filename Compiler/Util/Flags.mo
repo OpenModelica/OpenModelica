@@ -363,7 +363,9 @@ constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(98, "tearingdumpV", false,
   Util.gettext("Dumps verbose tearing information."));
 constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(99, "disableSingleFlowEq", false,
   Util.gettext("Disables the generation of single flow equations."));
-
+constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(100, "partlintornsystem", false,
+  Util.gettext("disassembles linear torn systems to various singleEquations and a reduced tornSystem"));
+  
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
 // initialization so that all flags are sorted by index (and thus have unique
@@ -467,7 +469,8 @@ constant list<DebugFlag> allDebugFlags = {
   INLINE_FUNCTIONS,
   DUMP_SCC_GRAPHML,
   TEARING_DUMPVERBOSE,
-  DISABLE_SINGLE_FLOW_EQ
+  DISABLE_SINGLE_FLOW_EQ,
+  PARTLINTORNSYSTEM
 };
 
 // CONFIGURATION FLAGS

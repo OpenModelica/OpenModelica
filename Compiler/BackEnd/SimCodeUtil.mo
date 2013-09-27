@@ -3820,7 +3820,7 @@ algorithm
   ouniqueEqIndex := iuniqueEqIndex+1;
 end generateSolvedEquation;
 
-protected function replaceDerOpInEquationList
+public function replaceDerOpInEquationList
   "Replaces all der(cref) with $DER.cref in a list of equations."
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
@@ -8327,7 +8327,7 @@ algorithm
   end match;
 end getVectorizedCrefFromExp;
 
-protected function transformXToXd "author: PA
+public function transformXToXd "author: PA
   this function transforms x variables (in the state vector)
   to corresponding xd variable (in the derivatives vector)"
   input BackendDAE.Var inVar;
