@@ -3859,7 +3859,7 @@ algorithm
 end estimateCosts0;
 
 
-protected function estimateCosts1 " estimates the exeCost for 1 StrongComponent
+protected function estimateCosts1 " estimates the exeCost for one StrongComponent
 author: Waurich TUD 2013-09"
   input BackendDAE.StrongComponent compIn;
   input BackendDAE.EqSystem eqSysIn;
@@ -3874,7 +3874,6 @@ algorithm
       equation
         ((costAdd,costMul,costTrig)) = countOperations(compIn, eqSysIn, sharedIn);
         numOps = costAdd+costMul+costTrig;
-        print("compIN "+&BackendDump.printComponent(compIn)+&" with operations: "+&intString(numOps)+&"\n");
         costs = realAdd(realMul(intReal(numOps),25.0),70.0); // feel free to change this
       then
         ((numOps,costs));
@@ -3903,35 +3902,67 @@ protected function checkForExecutionCosts "checks if every entry in exeCosts is 
   input TaskGraphMeta dataIn;
   output Boolean isFine;
 protected
+  array<list<Integer>> inComps;
   array<tuple<Integer,Real>> exeCosts;
 algorithm
-  TASKGRAPHMETA(exeCosts=exeCosts) := dataIn;
-  isFine := Util.arrayFold(exeCosts,checkTplForZero2,true);   
-  Debug.bcall(not isFine,print,"there are execution costs with value 0.0!\n ");
+  TASKGRAPHMETA(inComps=inComps, exeCosts=exeCosts) := dataIn;
+  isFine := checkForExecutionCosts1(exeCosts,inComps,1);
+  Debug.bcall(not isFine,print,"There are execution costs with value 0.0!\n ");
 end checkForExecutionCosts;
 
 
-protected function checkTplForZero2 "returns false if the second number(real) in the tuple is zero
+protected function checkForExecutionCosts1 "checks if the comp for the given node has an executionCost > 0.0
 author: Waurich TUD 2013-09"
-  input tuple<Integer,Real> inTpl;
-  input Boolean bIn;
+  input array<tuple<Integer,Real>> exeCosts;
+  input array<list<Integer>> inComps;
+  input Integer nodeIdx;
   output Boolean bOut;
 algorithm
-  bOut := matchcontinue(inTpl,bIn)
+  bOut := matchcontinue(exeCosts,inComps,nodeIdx)
     local
+      Boolean b, isZero;
+      list<Integer> comps;
       Real value;
-    case((_,value),true)
+      tuple<Integer,Real> tpl;
+    case(_,_,_)
       equation
-        false = realEq(value,0.0);
+        true = arrayLength(inComps) >= nodeIdx;
+        comps = arrayGet(inComps,nodeIdx);
+        isZero = List.fold1(comps,checkTpl2ForZero,exeCosts,false);
+        false = isZero;
+        b = checkForExecutionCosts1(exeCosts,inComps,nodeIdx+1);
       then
-        true;
+        b;
+    case(_,_,_)
+      equation
+        true = arrayLength(inComps) < nodeIdx;
+        then
+          true;
     else
       equation
       then
         false;
   end matchcontinue;
-end checkTplForZero2;
-   
+end checkForExecutionCosts1;
+
+
+protected function checkTpl2ForZero "folding function for checkForExecutionCosts1
+author:Waurich TUD 2013-09"
+  input Integer comp;
+  input array<tuple<Integer,Real>> exeCosts;
+  input Boolean bIn;
+  output Boolean bOut;
+protected
+  Boolean b;
+  Real value;
+  tuple<Integer,Real> tpl;
+algorithm
+  tpl := arrayGet(exeCosts,comp);
+  (_,value) := tpl;
+  b := realEq(value,0.0);
+  bOut := b or bIn;
+end checkTpl2ForZero;
+
 
 public function convertNodeListToEdgeTuples "author: marcusw
   Convert a list of nodes to a list of edged. E.g. {1,2,5} -> {(1,2),(2,5)}"
