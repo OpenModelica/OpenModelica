@@ -41,11 +41,11 @@
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
 
-loadModel(Modelica);
+loadModel(Complex);
 
 writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries()));
 getErrorString();
-runScript("loadModel.mos");
+// runScript("loadModel.mos");
 getErrorString();
 getClassNames();
 
@@ -54,21 +54,21 @@ genBuiltin := true;
 // should we generate MetaModelica documentation?
 genMetaModelica := true and genBuiltin;
 
-if genMetaModelica then
-  setCommandLineOptions("+g=MetaModelica");
-  loadString("package MetaModelica \"MetaModelica Language Extensions\"\n" + readFile(getInstallationDirectoryPath()+"/lib/omc/MetaModelicaBuiltin.mo") + "\nend MetaModelica;","MetaModelicaBuiltin.mo");
-  setCommandLineOptions("+g=Modelica");
-end if;
-
 echo(false);
 self:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/GenerateDoc.mos";getErrorString();
 py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py";getErrorString();
-commands:={"(ulimit -t 600 ; python "+py+" --quiet --output-dir . "+typeNameString(cl)+" )" for cl in getClassNames()};getErrorString();
+commands:={"(ulimit -t 600 ; python "+py+" --quiet --output-dir . "+typeNameString(cl)+" )" for cl in getClassNames(builtin=false)};getErrorString();
 res:=system_parallel(commands);getErrorString();
 system("rm -f *.json");getErrorString();
 /* if max(res) <> 0 then
   exit(1);
 end if; */
+
+if genMetaModelica then
+  setCommandLineOptions("+g=MetaModelica");
+  loadString("package MetaModelica \"MetaModelica Language Extensions\"\n" + readFile(getInstallationDirectoryPath()+"/lib/omc/MetaModelicaBuiltin.mo") + "\nend MetaModelica;","MetaModelicaBuiltin.mo");
+  setCommandLineOptions("+g=Modelica");
+end if;
 
 allClassNames:=getClassNames(builtin=genBuiltin,recursive=true,sort=true);
 system("date -u +%FT%TZ > tmp");
@@ -215,18 +215,17 @@ for cl in classNames loop
   base := basename(file);
   if base <> "ModelicaBuiltin.mo" and base <> "MetaModelicaBuiltin.mo" then
     base := basename(file);
-    contentStrToks := typeNameStrings(cl);
     modelVersion := getVersion(cl);
+    contentStr := typeNameString(cl);
     if base == "package.mo" then
       /* The replaceCommands are used in the Python script generated later. These are sed-style replacements with & as delimiter to avoid escaping slashes. */
-      replaceCommands := replaceCommands + "\n (re.compile('^[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://"+contentStrToks[end]+"/'),'"+dirname(file)+"/'),";
+      replaceCommands := replaceCommands + "\n (re.compile('^[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://"+contentStr+"/'),'"+dirname(file)+"/'),";
       dirpaths := strtok(dirname(file),"/");
       dirs := dirs + " \"" + dirpaths[end] + "\" ";
     end if;
-    comment := OpenModelica.Scripting.stringReplace(getClassComment(cl),"&","&amp;"); // lets escape "&" on the fly
-    contentStr := typeNameString(cl);
+    comment := OpenModelica.Scripting.stringReplace(getClassComment(cl),"&","&amp;"); // let's escape "&" on the fly
     fileName := filename(contentStr);
-    writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+    writeFile(filetmp, "<tr><td>" + svgIcon(fileName + ".svg",fileName + ".html","svgiconsmall") + "<a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
   end if;
 end for;
 writeFile(filetmp, "</table>\n", append = true);
@@ -239,11 +238,10 @@ if genBuiltin then
     base := basename(file);
     if base == "ModelicaBuiltin.mo" or base == "MetaModelicaBuiltin.mo" then
       contentStr := typeNameString(cl);
-      contentStrToks := typeNameStrings(cl);
       modelVersion := getVersion(cl);
       comment := OpenModelica.Scripting.stringReplace(getClassComment(cl),"&","&amp;"); // lets escape "&" on the fly
       fileName := filename(contentStr);
-      writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStrToks[end] + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+      writeFile(filetmp, "<tr><td><a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
     end if;
   end for;
   writeFile(filetmp, "</table>\n", append = true);
