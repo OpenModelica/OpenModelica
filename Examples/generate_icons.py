@@ -40,27 +40,6 @@ from optparse import OptionParser
 import svgwrite
 import OMPython
 
-# create logger with 'spam_application'
-logger = logging.getLogger(os.path.basename(__file__))
-logger.setLevel(logging.DEBUG)
-
-# create file handler which logs even debug messages
-fh = logging.FileHandler(os.path.basename(__file__) + '.log')
-fh.setLevel(logging.DEBUG)
-
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-ch.setFormatter(formatter)
-
-# add the handlers to the logger
-logger.addHandler(fh)
-logger.addHandler(ch)
-
 # OpenModelica setup commands
 OMC_SETUP_COMMANDS = ['setCommandLineOptions("+d=nogen,noevalfunc")']
 
@@ -262,7 +241,7 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['fillPattern'] = g[11]
             graphicsObj['lineThickness'] = float(g[12])
             graphicsObj['extent'] = [[float(g[13]), float(g[14])], [float(g[15]), float(g[16])]]
-            graphicsObj['textString'] = g[17].strip('"')
+            graphicsObj['textString'] = g[17].strip('"').decode('utf-8')
             graphicsObj['fontSize'] = float(g[18])
             graphicsObj['fontName'] = g[19]
             if graphicsObj['fontName']:
@@ -1082,7 +1061,6 @@ def generateSvg(filename, iconGraphics):
             group.add(port_info)
 
             dwg.add(group)
-
     dwg.save()
 
     return dwg
@@ -1120,6 +1098,7 @@ def main():
     parser = OptionParser()
     parser.add_option("--with-html", help="Generate an HTML report with all SVG-files", action="store_true", dest="with_html", default=False)
     parser.add_option("--output-dir", help="Directory to generate SVG-files in", type="string", dest="output_dir", default=os.path.abspath('ModelicaIcons'))
+    parser.add_option("--quiet", help="Do not output to the console", action="store_true", dest="quiet", default=False)
     (options, args) = parser.parse_args()
     if len(args) == 0:
       parser.print_help()
@@ -1128,6 +1107,25 @@ def main():
     output_dir = options.output_dir
     with_html = options.with_html
     
+    # create logger with 'spam_application'
+    global logger
+    logger = logging.getLogger(os.path.basename(__file__))
+    logger.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    if not options.quiet:
+      ch.setLevel(logging.INFO)
+    else:
+      ch.setLevel(logging.CRITICAL)
+
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(ch)
+
     # Inputs
     PACKAGES_TO_LOAD = args
     PACKAGES_TO_LOAD_FROM_FILE = []
@@ -1143,11 +1141,12 @@ def main():
     success = True
 
     for command in OMC_SETUP_COMMANDS:
-        print command,":",OMPython.omc.sendExpression(command)
+        OMPython.omc.sendExpression(command)
     for package in PACKAGES_TO_LOAD:
         logger.info('Loading package: {0}'.format(package))
         package_load = OMPython.execute('loadModel(' + package + ')')
-        logger.info('Load success: {0}'.format(package_load))
+        if not package_load:
+          logger.error('Load failed: %s' % OMPython.omc.sendExpression('getErrorString()'))
         success = success and package_load
 
     for package in PACKAGES_TO_LOAD_FROM_FILE:
@@ -1160,8 +1159,14 @@ def main():
         dwgs = []
 
         for package in PACKAGES_TO_GENERATE:
-            modelica_classes = ask_omc('getClassNames', package + ', recursive=true, qualified=true, sort=true')['SET1']['Set1']
+          try:
+            # create file handler which logs even debug messages
+            fh = logging.FileHandler(package + '.log')
+            fh.setLevel(logging.DEBUG)
+            fh.setFormatter(formatter)
+            logger.addHandler(fh)
 
+            modelica_classes = ask_omc('getClassNames', package + ', recursive=true, qualified=true, sort=true')['SET1']['Set1']
             for modelica_class in modelica_classes:
                 logger.info('Exporting: ' + modelica_class)
 
@@ -1174,6 +1179,10 @@ def main():
                 logger.info('Done: ' + modelica_class)
                 # except:
                 #     print 'FAILED: ' + modelica_class
+            logger.removeHandler(fh)
+          except Exception as e:
+            logger.critical('Failed to generate icons for %s: %s' % (package,sys.exc_info()[1]))
+            raise
         if with_html:
           logger.info('Generating HTML file ...')
           with open(os.path.join(output_dir, 'index.html'), 'w') as f_p:
@@ -1190,10 +1199,11 @@ def main():
               f_p.write('</html>\n')
 
           logger.info('HTML file is ready.')
-        print "Generated svg's for %d models" % len(dwgs)
+        print "Generated svg's for %d models in packages %s" % (len(dwgs),PACKAGES_TO_GENERATE)
 
     logger.info('quit OMC')
     logger.info('End of application')
+    return 0 if success else 1
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
