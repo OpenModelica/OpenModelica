@@ -402,6 +402,6 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html " + dirs + " GenerateDoc.mos generate_icons.py FindFiles.log tidy.filtered tidy.links";
+cmd := "tar cJf ModelicaDocumentation.tar.xz --dereference style.css *.html *.svg " + dirs + " GenerateDoc.mos generate_icons.py FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
