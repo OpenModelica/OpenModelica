@@ -294,7 +294,7 @@ def getGraphicsWithPortsForClass(modelicaClass):
         class_name = answer[0:answer.find(',')]
         component_name = answer[answer.find(',') + 1:][0:answer[answer.find(',') + 1:].find(',')]
 
-        if ask_omc('isConnector', class_name):
+        if OMPython.sendExpression('isConnector(' + class_name + ')'):
             try:
                 comp_annotation = ask_omc('getNthComponentAnnotation', modelicaClass + ', ' + str(comp_id))['SET2']['Set1']
             except KeyError as ex:
@@ -1146,19 +1146,19 @@ def main():
         OMPython.omc.sendExpression(command)
     for package in PACKAGES_TO_LOAD:
         logger.info('Loading package: {0}'.format(package))
-        package_load = OMPython.execute('loadModel(' + package + ')')
+        package_load = OMPython.sendExpression('loadModel(' + package + ')')
         if not package_load:
           success = False
           break
     for package in PACKAGES_TO_LOAD_FROM_FILE:
         logger.info('Loading package from file: {0}'.format(package))
-        package_load = OMPython.execute('loadFile("' + package + '")')
+        package_load = OMPython.sendExpression('loadFile("' + package + '")')
         logger.info('Load success: {0}'.format(package_load))
         if not package_load:
           success = False
           break
     if not success:
-      logger.critical('Failed to load packages in %.1f seconds: %s' % (time.time()-t,OMPython.omc.sendExpression('getErrorString()')))
+      logger.critical('Failed to load packages in %.1f seconds: %s' % (time.time()-t,OMPython.sendExpression('getErrorString()')))
       return 1
     dwgs = []
 
@@ -1170,7 +1170,7 @@ def main():
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
-        modelica_classes = ask_omc('getClassNames', package + ', recursive=true, qualified=true, sort=true')['SET1']['Set1']
+        modelica_classes = OMPython.sendExpression('getClassNames(' + package + ', recursive=true, qualified=true, sort=true)')
         for modelica_class in modelica_classes:
             logger.info('Exporting: ' + modelica_class)
 
