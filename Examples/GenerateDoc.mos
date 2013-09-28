@@ -130,7 +130,7 @@ algorithm
   <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
   </head>
   <body>
-  <h1>\" + svgIcon("Icons/" + svgFile,"Icons/" + svgFile,\"svgiconhead\") + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
+  <h1>\" + svgIcon(\"Icons/\" + svgFile,\"Icons/\" + svgFile,\"svgiconhead\") + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
   for ident in strs[1:end-1] loop
     compound := if compound == \"\" then ident else compound+\".\"+ident;
     file := filename(compound+\".html\");
