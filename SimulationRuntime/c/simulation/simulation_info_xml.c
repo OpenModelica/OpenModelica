@@ -202,6 +202,13 @@ static void XMLCALL endElement(void *userData, const char *name)
     
     return;
   }
+  if(0 == strcmp("linear", name))
+  {
+    asprintf(&xml->equationInfo[curIndex].name, "Linear function (index %ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
+    xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
+    ((void**)userData)[2] = (void*) (curProfileIndex+1);
+    return;
+  }
   if(0 == strcmp("nonlinear", name))
   {
     asprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
@@ -281,7 +288,6 @@ void modelInfoXmlInit(MODEL_DATA_XML* xml)
   xml->nProfileBlocks = (long) userData[2];
   assert(xml->nFunctions == (long) userData[3]);
 }
-
 EQUATION_INFO modelInfoXmlGetEquation(MODEL_DATA_XML* xml, size_t ix)
 {
   if(xml->equationInfo == NULL)
