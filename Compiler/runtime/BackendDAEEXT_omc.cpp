@@ -168,8 +168,6 @@ extern int BackendDAEEXT_setAssignment(int lenass1, int lenass2, modelica_metaty
   int i=0;
 
   nelts = MMC_HDRSLOTS(MMC_GETHDR(ass1));
-  if (lenass1 > nelts)
-    return 0;
   if (nelts > 0) {
     n = lenass1;
     if(match) {
@@ -182,8 +180,6 @@ extern int BackendDAEEXT_setAssignment(int lenass1, int lenass2, modelica_metaty
     }
   }
   nelts = MMC_HDRSLOTS(MMC_GETHDR(ass2));
-  if (lenass2 > nelts)
-    return 0;
   if (nelts > 0) {
     m = lenass2;
     if(row_match) {
