@@ -2671,6 +2671,14 @@ algorithm
       Function func;
       list<Element> inputs;
       Globals globals;
+      DAE.Exp exp;
+
+    case (Absyn.CREF_IDENT(name = "size"), _, _, _, _, _, globals)
+      equation
+        (pos_args, globals) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, globals);
+        exp = instBuiltinSize(pos_args, inNamedArgs, inInfo);
+      then
+        (exp, globals);
 
     case (_, _, _, _, _, _, globals)
       equation
@@ -2685,6 +2693,38 @@ algorithm
   end match;
 end instFunctionCall;
 
+protected function instBuiltinSize
+  input list<DAE.Exp> inPositionalArgs;
+  input list<Absyn.NamedArg> inNamedArgs;
+  input Absyn.Info inInfo;
+  output DAE.Exp outSizeExp;
+algorithm
+  outSizeExp := match(inPositionalArgs, inNamedArgs, inInfo)
+    local
+      String name;
+      DAE.Exp array_exp, idx_exp;
+
+    case (_, Absyn.NAMEDARG(argName = name) :: _, _)
+      equation
+        Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {"size", name}, inInfo);
+      then
+        fail();
+
+    case ({array_exp}, _, _)
+      then DAE.SIZE(array_exp, NONE());
+
+    case ({array_exp, idx_exp}, _, _)
+      then DAE.SIZE(array_exp, SOME(idx_exp));
+
+    else
+      equation
+        Error.addSourceMessage(Error.WRONG_NO_OF_ARGS, {"size"}, inInfo);
+      then
+        fail();
+
+  end match;
+end instBuiltinSize;
+    
 protected function instFunction
   input Absyn.ComponentRef inName;
   input Env inEnv;
@@ -2695,14 +2735,14 @@ protected function instFunction
   output Function outFunction;
   output Globals outGlobals;
 algorithm
-  (outName, outFunction, outGlobals) := matchcontinue (inName, inEnv, inPrefix, inInfo, inGlobals)
+  (outName, outFunction, outGlobals) := matchcontinue(inName, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.Path path;
       Entry entry;
       Env env;
       Class cls;
       Function func;
-      Boolean is_record;
+      Boolean is_record, is_builtin;
       DAE.Type ty;
       FunctionHashTable functions;
       SymbolTable consts;
@@ -2719,10 +2759,10 @@ algorithm
       equation
         path = Absyn.crefToPath(inName);
         (entry, env) = NFLookup.lookupFunctionName(path, inEnv, inInfo);
-        path = instFunctionName(path, entry, inEnv, inPrefix);
-        (cls, ty, _, (consts, functions)) = instClassEntry(path, entry,
-          NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(),
-          env, NFInstTypes.functionPrefix, INST_ALL(), inGlobals);
+        is_builtin = NFEnv.entryHasBuiltinOrigin(entry);
+        path = instFunctionName(path, is_builtin, inEnv, inPrefix);
+        (cls, ty, (consts, functions)) =
+          instFunctionEntry(path, entry, is_builtin, env, inGlobals);
         is_record = Types.isRecord(ty);
         func = instFunction2(path, cls, is_record);
         functions = BaseHashTable.add((path, func), functions);
@@ -2741,24 +2781,80 @@ end instFunction;
 
 protected function instFunctionName
   input Absyn.Path inPath;
-  input Entry inEntry;
+  input Boolean inBuiltin;
   input Env inEnv;
   input Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inPath, inEntry, inEnv, inPrefix)
-
-    // Don't prefix builtin functions.
-    case (_, _, _, _)
-      equation
-        true = NFEnv.entryHasBuiltinOrigin(inEntry);
-      then
-        inPath;
-
+  outPath := match(inPath, inBuiltin, inEnv, inPrefix)
+    case (_, true, _, _) then inPath; // Don't prefix builtin functions.
     else prefixPath(inPath, inPrefix, inEnv);
-
-  end matchcontinue;
+  end match;
 end instFunctionName;
+
+protected function instFunctionEntry
+  input Absyn.Path inPath;
+  input Entry inEntry;
+  input Boolean inIsBuiltin;
+  input Env inEnv;
+  input Globals inGlobals;
+  output Class outClass;
+  output DAE.Type outType;
+  output Globals outGlobals;
+algorithm
+  (outClass, outType, outGlobals) := match(inPath, inEntry, inIsBuiltin, inEnv, inGlobals)
+    local
+      Class cls;
+      DAE.Type ty;
+      Globals globals;
+
+    //case (_, _, false, _, _)
+    case (_, _, _, _, _)
+      equation
+        (cls, ty, _, globals) = instClassEntry(inPath, inEntry,
+          NFInstTypes.NOMOD(), NFMod.emptyModTable, NFInstTypes.NO_PREFIXES(),
+          inEnv, NFInstTypes.functionPrefix, INST_ALL(), inGlobals);
+      then
+        (cls, ty, globals);
+
+    //else
+    //  equation
+    //    (cls, ty, globals) = instBuiltinFunction(inPath, inEntry, inEnv, inGlobals);
+    //  then
+    //    (cls, ty, globals);
+
+  end match;
+end instFunctionEntry;
+
+//protected function instBuiltinFunction
+//  input Absyn.Path inPath;
+//  input Entry inEntry;
+//  input Env inEnv;
+//  input Globals inGlobals;
+//  output Class outClass;
+//  output DAE.Type outType;
+//  output Globals outGlobals;
+//algorithm
+//  (outClass, outType, outGlobals) := matchcontinue(inPath, inEntry, inEnv, inGlobals)
+//    local
+//      Class cls;
+//      DAE.Type ty;
+//      Globals globals;
+//
+//    case (_, _, _, _)
+//      equation
+//        (cls, ty) = instBuiltinSpecialFunction(inPath, inEntry, inEnv);
+//      then
+//        (cls, ty, inGlobals);
+//
+//    else
+//      equation
+//        (cls, ty, globals) = instFunctionEntry(inPath, inEntry, false, inEnv, inGlobals);
+//      then
+//        (cls, ty, globals);
+//
+//  end matchcontinue;
+//end instBuiltinFunction;
 
 protected function instFunction2
   input Absyn.Path inName;

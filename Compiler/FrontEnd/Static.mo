@@ -9923,8 +9923,7 @@ algorithm
     // failure
     case ((fa,_,_,_),_,_,{},_,pre,_)
       equation
-        ps = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {fa,ps}, info);
+        Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {"",fa}, info);
       then
         fail();
   end matchcontinue;

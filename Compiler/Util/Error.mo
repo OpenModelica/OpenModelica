@@ -282,7 +282,7 @@ public constant Message FUNCTION_COMPS_MUST_HAVE_DIRECTION = MESSAGE(78, TRANSLA
 public constant Message FUNCTION_SLOT_ALLREADY_FILLED = MESSAGE(79, TRANSLATION(), ERROR(),
   Util.gettext("Slot %s already filled in a function call in component %s."));
 public constant Message NO_SUCH_ARGUMENT = MESSAGE(80, TRANSLATION(), ERROR(),
-  Util.gettext("No such argument %s in component %s."));
+  Util.gettext("Function %s has no argument named %s."));
 public constant Message CONSTANT_OR_PARAM_WITH_NONCONST_BINDING = MESSAGE(81, TRANSLATION(), ERROR(),
   Util.gettext("%s is a constant or parameter with a non-constant initializer %s."));
 public constant Message SUBSCRIPT_NOT_INT_OR_INT_ARRAY = MESSAGE(82, TRANSLATION(), ERROR(),
