@@ -4161,14 +4161,14 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   case e as SES_MIXED(__)
     then
     <<
-     <%equationMixed(e, context, &varDecls, simCode)%>
+        throw std::runtime_error("Mixed systems are not supported yet");
      >>
   else
     "NOT IMPLEMENTED EQUATION"
 end equation_;
 
 
-
+ /*<%equationMixed(e, context, &varDecls, simCode)%>*/
 
 
 
@@ -5476,6 +5476,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
     'modelica_mod_<%expTypeShort(attr.ty)%>(<%var1%>,<%var2%>)'
+    
+   case CALL(path=IDENT(name="semiLinear"), expLst={e1,e2,e3}, attr=attr as CALL_ATTR(__)) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
+    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
+    let var3 = daeExp(e2, context, &preExp, &varDecls,simCode)
+    'semiLinear(<%var1%>,<%var2%>,<%var3%>)'
 
   case CALL(path=IDENT(name="max"), expLst={array}) then
     let &tmpVar = buffer "" /*BUFD*/
@@ -6063,7 +6069,7 @@ template representationCref(ComponentRef inCref, SimCode simCode, Context contex
             case ALGLOOP_CONTEXT(genInitialisation = false) 
                 then  <<_system-><%cref(inCref)%>>>
         else
-            <<<%cref(inCref)%> /*testvar*/>>
+            <<<%cref(inCref)%>>>
   else  
     match context
     case ALGLOOP_CONTEXT(genInitialisation = false) 

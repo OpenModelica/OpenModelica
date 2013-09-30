@@ -37,6 +37,13 @@ inline static int modelica_mod_int(int v1, int v2)
     return v1 % v2;
 }
 
+inline static double semiLinear(double x,double positiveSlope,double negativeSlope) 
+{
+ if(x>=0)
+    return positiveSlope*x;
+ else
+    return negativeSlope*x;
+}
 /// Provides the maximum Norm
 inline static double maxNorm(const int& length, const double* vector)
 {
