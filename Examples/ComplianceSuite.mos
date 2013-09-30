@@ -22,7 +22,7 @@ end fixName;
 system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 echo(false);
-allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
+allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(ModelicaCompliance.Operators.Overloading.OverloadedAdditionValid,recursive=true)};getErrorString();
 commands:={"ulimit -t 120 && (omc +d=nogen \"" + fixName(OpenModelica.Scripting.typeNameString(cl)) + ".mos\"  > /dev/null 2>&1)" for cl in allClasses};
 echo(true);
 String(size(allClasses,1)) + " number of classes";
@@ -52,12 +52,14 @@ algorithm
 end fixName;
 \");
 resultFile := rec.resultFile;
-success := resultFile "+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then"<>"else"==")+" \"\";
+shouldPass := OpenModelica.Scripting.getBooleanClassAnnotation("+OpenModelica.Scripting.typeNameString(cl)+",__ModelicaAssociation.TestCase.shouldPass);
+success := if shouldPass then resultFile<>\"\" else resultFile==\"\";
 messages := rec.messages;
 messages := messages + err;
-messages := messages + (if not success and OpenModelica.Scripting.getBooleanClassAnnotation("+OpenModelica.Scripting.typeNameString(cl)+",__ModelicaAssociation.TestCase.shouldPass) then \"\nSucceeded, but expected failure\" else \"\");
+messages := messages + (if success and not shouldPass then \"\nSucceeded, but expected failure\" else \"\");
 messages := OpenModelica.Scripting.escapeXML(firstPart(messages));
-writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\""+(if OpenModelica.Scripting.getBooleanClassAnnotation(cl,__ModelicaAssociation.TestCase.shouldPass) then "expected failure" else "failed")+"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\n\");
+errorType := if shouldPass then \"failed\" else \"expected failure\";
+writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\"\"+errorType+\"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\n\");
 ") for cl in allClasses);
 getErrorString();
 system_parallel(commands);getErrorString();
