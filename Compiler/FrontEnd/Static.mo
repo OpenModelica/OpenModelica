@@ -13070,6 +13070,15 @@ algorithm
         (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,arraytypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
     then (cache, daeExp, prop);
 
+    // adrpo: v1 = n12 * v2; v1,v2 is array complex, n12 is real.
+    //        see Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
+    case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
+      equation
+        false = isOpElemWise(inOper);
+        (arraytypes, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
+        (cache,SOME((daeExp,prop))) = elabCallArgs3(inCache,inEnv,scalartypes,inPath,inFuncArgs,{},inImpl,inSyTabOpt,inPre,inInfo);
+    then (cache, daeExp, prop);
+
     // the first one array the second a scalar with ELEMWISE operation
     // this should be expanded.
     case (_, _, _ ,true, false, types, _, _, _, _, _, _, _)
