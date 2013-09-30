@@ -294,7 +294,7 @@ def getGraphicsWithPortsForClass(modelicaClass):
         class_name = answer[0:answer.find(',')]
         component_name = answer[answer.find(',') + 1:][0:answer[answer.find(',') + 1:].find(',')]
 
-        if OMPython.sendExpression('isConnector(' + class_name + ')'):
+        if ask_omc('isConnector', class_name):
             try:
                 comp_annotation = ask_omc('getNthComponentAnnotation', modelicaClass + ', ' + str(comp_id))['SET2']['Set1']
             except KeyError as ex:
