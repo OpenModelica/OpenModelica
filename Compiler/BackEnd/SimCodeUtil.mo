@@ -5477,7 +5477,7 @@ algorithm
         vars = List.map(varlst, typesVarNoBinding);
         rt_1 = sname :: rt;
         (accRecDecls, rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
-        recDecl = SimCode.RECORD_DECL_FULL(sname, path, vars);
+        recDecl = SimCode.RECORD_DECL_FULL(sname, name, vars);
         accRecDecls = List.appendElt(recDecl, accRecDecls);
       then (accRecDecls, rt_2);
         
@@ -6097,6 +6097,21 @@ algorithm
       Integer uniqueEqIndex;
       list<DAE.Var> varLst;
       HashSet.HashSet ht;
+      
+    case (_, DAE.CAST(exp = e1), _, _, _, _)
+      equation
+        (equations_, ouniqueEqIndex, otempvars) = 
+          createSingleComplexEqnCode2(crefs, e1, inExp4, iuniqueEqIndex, itempvars, source);
+      then
+        (equations_, ouniqueEqIndex, otempvars);
+      
+    case (_, _, DAE.CAST(exp = e1), _, _, _)
+      equation
+        (equations_, ouniqueEqIndex, otempvars) =
+          createSingleComplexEqnCode2(crefs, inExp3, e1, iuniqueEqIndex, itempvars, source);
+      then
+        (equations_, ouniqueEqIndex, otempvars);
+      
     case (_, e1 as DAE.CREF(componentRef = cr2), e2, _, _, _)
       equation
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, cr2);

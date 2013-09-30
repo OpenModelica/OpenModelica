@@ -299,6 +299,14 @@ algorithm
         true = Config.acceptMetaModelicaGrammar();
       then ((simplifyMetaModelica(e),(true,options)));
 
+    // ASUB(CAST(e)) -> CAST(liftArray(t), ASUB(e))
+    case ((DAE.ASUB(exp = DAE.CAST(tp,e), sub = subs),(_,options)))
+      equation
+        tp = Expression.unliftArray(tp);
+        e = DAE.CAST(tp, DAE.ASUB(e, subs));
+      then
+        ((e, (true, options)));
+
     // Simplify asubs where some of the subscripts are slices.
     case ((DAE.ASUB(exp = e, sub = subs), (_, options)))
       equation
