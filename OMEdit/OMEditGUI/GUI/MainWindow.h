@@ -98,6 +98,7 @@ public:
   PlotWindowContainer* getPlotWindowContainer();
   //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
   ModelWidgetContainer* getModelWidgetContainer();
+  WelcomePageWidget* getWelcomePageWidget();
   InfoBar* getInfoBar();
   QStatusBar* getStatusBar();
   QProgressBar* getProgressBar();

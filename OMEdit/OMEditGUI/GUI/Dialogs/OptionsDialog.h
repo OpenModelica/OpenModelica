@@ -143,6 +143,9 @@ public:
   QSpinBox* getAutoSaveIntervalSpinBox();
   QCheckBox* getEnableAutoSaveForSingleClassesCheckBox();
   QCheckBox* getEnableAutoSaveForOneFilePackagesCheckBox();
+  int getWelcomePageView();
+  void setWelcomePageView(int view);
+  QCheckBox* getShowLatestNewsCheckBox();
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -173,6 +176,10 @@ private:
   Label *mpAutoSaveSecondsLabel;
   QCheckBox *mpEnableAutoSaveForSingleClassesCheckBox;
   QCheckBox *mpEnableAutoSaveForOneFilePackagesCheckBox;
+  QGroupBox *mpWelcomePageGroupBox;
+  QRadioButton *mpHorizontalViewRadioButton;
+  QRadioButton *mpVerticalViewRadioButton;
+  QCheckBox *mpShowLatestNewsCheckBox;
 public slots:
   void selectWorkingDirectory();
   void autoSaveIntervalValueChanged(int value);

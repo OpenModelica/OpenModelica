@@ -307,6 +307,11 @@ ModelWidgetContainer* MainWindow::getModelWidgetContainer()
   return mpModelWidgetContainer;
 }
 
+WelcomePageWidget* MainWindow::getWelcomePageWidget()
+{
+  return mpWelcomePageWidget;
+}
+
 InfoBar* MainWindow::getInfoBar()
 {
   return mpInfoBar;

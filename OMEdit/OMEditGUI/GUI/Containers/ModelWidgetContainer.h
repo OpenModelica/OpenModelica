@@ -243,6 +243,8 @@ class WelcomePageWidget : public QWidget
 public:
   WelcomePageWidget(MainWindow *parent = 0);
   void addRecentFilesListItems();
+  QFrame* getLatestNewsFrame();
+  QSplitter* getSplitter();
 private:
   MainWindow *mpMainWindow;
   QFrame *mpMainFrame;

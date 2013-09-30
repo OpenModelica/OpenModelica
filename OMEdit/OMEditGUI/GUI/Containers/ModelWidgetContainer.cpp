@@ -1696,6 +1696,9 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   mpLatestNewsFrame = new QFrame;
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
   mpLatestNewsFrame->setStyleSheet("QFrame{background-color: white;}");
+  /* Read the show latest news settings */
+  if (!mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getShowLatestNewsCheckBox()->isChecked())
+    mpLatestNewsFrame->setVisible(false);
   // latest news
   mpLatestNewsLabel = new Label(tr("Latest News"));
   mpLatestNewsLabel->setFont(QFont(Helper::systemFontInfo.family(), Helper::headingFontSize));
@@ -1733,6 +1736,17 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   addLatestNewsListItems();
   // splitter
   mpSplitter = new QSplitter;
+  /* Read the welcome page view settings */
+  switch (mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getWelcomePageView())
+  {
+    case 2:
+      mpSplitter->setOrientation(Qt::Vertical);
+      break;
+    case 1:
+    default:
+      mpSplitter->setOrientation(Qt::Horizontal);
+      break;
+  }
   mpSplitter->setChildrenCollapsible(false);
   mpSplitter->setHandleWidth(4);
   mpSplitter->setContentsMargins(0, 0, 0, 0);
@@ -1788,6 +1802,16 @@ void WelcomePageWidget::addRecentFilesListItems()
     mpNoRecentFileLabel->setVisible(false);
   else
     mpNoRecentFileLabel->setVisible(true);
+}
+
+QFrame* WelcomePageWidget::getLatestNewsFrame()
+{
+  return mpLatestNewsFrame;
+}
+
+QSplitter* WelcomePageWidget::getSplitter()
+{
+  return mpSplitter;
 }
 
 void WelcomePageWidget::addLatestNewsListItems()

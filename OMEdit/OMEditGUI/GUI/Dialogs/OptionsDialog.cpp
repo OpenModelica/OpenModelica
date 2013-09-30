@@ -132,6 +132,11 @@ void OptionsDialog::readGeneralSettings()
     mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->setChecked(mSettings.value("autoSave/enableSingleClasses").toBool());
   if (mSettings.contains("autoSave/enableOneFilePackages"))
     mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->setChecked(mSettings.value("autoSave/enableOneFilePackages").toBool());
+  // read welcome page
+  if (mSettings.contains("welcomePage/view"))
+    mpGeneralSettingsPage->setWelcomePageView(mSettings.value("welcomePage/view").toInt());
+  if (mSettings.contains("welcomePage/showLatestNews"))
+    mpGeneralSettingsPage->getShowLatestNewsCheckBox()->setChecked(mSettings.value("welcomePage/showLatestNews").toBool());
 }
 
 //! Reads the Libraries section settings from omedit.ini
@@ -395,6 +400,23 @@ void OptionsDialog::saveGeneralSettings()
   mSettings.setValue("autoSave/enableSingleClasses", mpGeneralSettingsPage->getEnableAutoSaveForSingleClassesCheckBox()->isChecked());
   mSettings.setValue("autoSave/enableOneFilePackages", mpGeneralSettingsPage->getEnableAutoSaveForOneFilePackagesCheckBox()->isChecked());
   mpMainWindow->toggleAutoSave();
+  // save welcome page
+  switch (mpGeneralSettingsPage->getWelcomePageView())
+  {
+    case 2:
+      mpMainWindow->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Vertical);
+      break;
+    case 1:
+    default:
+      mpMainWindow->getWelcomePageWidget()->getSplitter()->setOrientation(Qt::Horizontal);
+      break;
+  }
+  mSettings.setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
+  if (mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked())
+    mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->show();
+  else
+    mpMainWindow->getWelcomePageWidget()->getLatestNewsFrame()->hide();
+  mSettings.setValue("welcomePage/showLatestNews", mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked());
 }
 
 //! Saves the Libraries section settings to omedit.ini
@@ -857,6 +879,27 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   pAutoSaveGridLayout->addWidget(mpEnableAutoSaveForSingleClassesCheckBox, 1, 0, 1, 3);
   pAutoSaveGridLayout->addWidget(mpEnableAutoSaveForOneFilePackagesCheckBox, 2, 0, 1, 3);
   mpEnableAutoSaveGroupBox->setLayout(pAutoSaveGridLayout);
+  // Welcome Page
+  mpWelcomePageGroupBox = new QGroupBox(tr("Welcome Page"));
+  mpHorizontalViewRadioButton = new QRadioButton(tr("Horizontal View"));
+  mpHorizontalViewRadioButton->setChecked(true);
+  mpVerticalViewRadioButton = new QRadioButton(tr("Vertical View"));
+  QButtonGroup *pWelcomePageViewButtons = new QButtonGroup;
+  pWelcomePageViewButtons->addButton(mpHorizontalViewRadioButton);
+  pWelcomePageViewButtons->addButton(mpVerticalViewRadioButton);
+  // plotting view radio buttons layout
+  QHBoxLayout *pWelcomePageViewButtonsLayout = new QHBoxLayout;
+  pWelcomePageViewButtonsLayout->addWidget(mpHorizontalViewRadioButton);
+  pWelcomePageViewButtonsLayout->addWidget(mpVerticalViewRadioButton);
+  // Show/hide latest news checkbox
+  mpShowLatestNewsCheckBox = new QCheckBox(tr("Show Latest News"));
+  mpShowLatestNewsCheckBox->setChecked(true);
+  // Welcome Page layout
+  QGridLayout *pWelcomePageGridLayout = new QGridLayout;
+  pWelcomePageGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pWelcomePageGridLayout->addLayout(pWelcomePageViewButtonsLayout, 0, 0);
+  pWelcomePageGridLayout->addWidget(mpShowLatestNewsCheckBox, 1, 0);
+  mpWelcomePageGroupBox->setLayout(pWelcomePageGridLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -867,6 +910,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   pMainLayout->addWidget(mpPlottingViewModeGroupBox);
   pMainLayout->addWidget(mpDefaultViewGroupBox);
   pMainLayout->addWidget(mpEnableAutoSaveGroupBox);
+  pMainLayout->addWidget(mpWelcomePageGroupBox);
   setLayout(pMainLayout);
 }
 
@@ -996,6 +1040,35 @@ QCheckBox* GeneralSettingsPage::getEnableAutoSaveForSingleClassesCheckBox()
 QCheckBox* GeneralSettingsPage::getEnableAutoSaveForOneFilePackagesCheckBox()
 {
   return mpEnableAutoSaveForOneFilePackagesCheckBox;
+}
+
+int GeneralSettingsPage::getWelcomePageView()
+{
+  if (mpHorizontalViewRadioButton->isChecked())
+    return 1;
+  else if (mpVerticalViewRadioButton->isChecked())
+    return 2;
+  else
+    return 0;
+}
+
+void GeneralSettingsPage::setWelcomePageView(int view)
+{
+  switch (view)
+  {
+    case 2:
+      mpVerticalViewRadioButton->setChecked(true);
+      break;
+    case 1:
+    default:
+      mpHorizontalViewRadioButton->setChecked(true);
+      break;
+  }
+}
+
+QCheckBox* GeneralSettingsPage::getShowLatestNewsCheckBox()
+{
+  return mpShowLatestNewsCheckBox;
 }
 
 //! Slot activated when mpWorkingDirectoryBrowseButton clicked signal is raised.
