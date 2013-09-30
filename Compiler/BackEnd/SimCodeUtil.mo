@@ -249,9 +249,10 @@ algorithm
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed", DAE.T_REAL_DEFAULT, {});
         errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
-        Error.addMessage(Error.INTERNAL_ERROR, {errstr});
+        /*Todo: This also generates an error for example itearation variables, so i commented  out 
+        Error.addMessage(Error.INTERNAL_ERROR, {errstr});*/
       then
-        SimCode.SIMVAR(badcref, BackendDAE.STATE(1,NONE()), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.INTERNAL(), NONE(), {});
+         SimCode.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.INTERNAL(), NONE(), {});
   end matchcontinue;
 end cref2simvar;
 

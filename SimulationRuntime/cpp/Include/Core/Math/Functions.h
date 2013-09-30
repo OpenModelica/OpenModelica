@@ -32,7 +32,10 @@ inline static int sgn (const double &c)
 /// Definition of Signum function
 double division (const double &a,const double &b,std::string text);
 
-
+inline static int modelica_mod_int(int v1, int v2)
+{
+    return v1 % v2;
+}
 
 /// Provides the maximum Norm
 inline static double maxNorm(const int& length, const double* vector)

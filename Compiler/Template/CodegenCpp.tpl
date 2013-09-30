@@ -3103,6 +3103,7 @@ template variableType(DAE.Type type)
   case T_STRING(__)      then "string"
   case T_INTEGER(__)         then "int"
   case T_BOOL(__)        then "bool"
+  case T_ENUMERATION(__) then "int"
 end variableType;
 
 template lastIdentOfPath(Path modelName) ::=
@@ -3120,6 +3121,15 @@ template cref(ComponentRef cr)
   case WILD(__) then ''
   else "_"+crefToCStr(cr)
 end cref;
+
+template localcref(ComponentRef cr)
+ "Generates C equivalent name for component reference."
+::=
+  match cr
+  case CREF_IDENT(ident = "time") then "_simTime"
+  case WILD(__) then ''
+  else crefToCStr(cr)
+end localcref;
 
 template cref2(ComponentRef cr)
  "Generates C equivalent name for component reference."
@@ -3851,6 +3861,7 @@ template startValue(DAE.Type ty)
   case ty as T_REAL(__) then '0.0'
   case ty as T_BOOL(__) then 'false'
   case ty as T_STRING(__) then 'empty'
+   case ty as T_ENUMERATION(__) then '0'
   else ""
 end startValue;
 
@@ -4056,7 +4067,7 @@ case CREF_QUAL(ident = "$PRE") then
  else
   match context
   case FUNCTION_CONTEXT(__) then System.unquoteIdentifier(crefStr(cr))
-  else cref1(cr,simCode,context)
+  else '<%cref1(cr,simCode,context)%>'
 end contextCref;
 
 template contextCref2(ComponentRef cr, Context context)
@@ -5286,7 +5297,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
 
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
-    representationCref2(arg.componentRef,simCode,context)
+    representationCrefDerVar(arg.componentRef,simCode,context)
   case CALL(path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     let retType = '<%expTypeArrayIf(arg.ty)%>'
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
@@ -5320,7 +5331,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="integer"), expLst={inExp}) then
     let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
    'boost::numeric_cast<int>(<%exp%>)'
-
+  
+   case CALL(path=IDENT(name="modelica_mod_int"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
+    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
+    '<%var1%>%<%var2%>)'
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
@@ -6033,33 +6048,52 @@ template cref1(ComponentRef cr, SimCode simCode, Context context) ::=
 end cref1;
 
 template representationCref(ComponentRef inCref, SimCode simCode, Context context) ::=
-  cref2simvar(inCref, simCode) |> SIMVAR(__) =>
-     match varKind
-  case STATE(__)        then
-    << <%representationCref1(inCref,simCode,context)%> >>
-  case STATE_DER(__)   then
-    << <%representationCref2(inCref,simCode,context)%> >>
-  else  match context
-
+  cref2simvar(inCref, simCode) |> var as SIMVAR(__) =>
+  match varKind
+    case STATE(__)        then
+        << <%representationCref1(inCref,var,simCode,context)%> >>
+    case STATE_DER(__)   then
+        << <%representationCref2(inCref,var,simCode,context)%> >>
+    case VARIABLE(__) then
+     match var 
+        case SIMVAR(index=-2) then
+         <<<%localcref(inCref)%> >>
+    else  
+        match context
+            case ALGLOOP_CONTEXT(genInitialisation = false) 
+                then  <<_system-><%cref(inCref)%>>>
+        else
+            <<<%cref(inCref)%> /*testvar*/>>
+  else  
+    match context
     case ALGLOOP_CONTEXT(genInitialisation = false) 
-
         then  <<_system-><%cref(inCref)%>>>
     else
         <<<%cref(inCref)%>>>
 end representationCref;
 
+template representationCrefDerVar(ComponentRef inCref, SimCode simCode, Context context) ::=
+  cref2simvar(inCref, simCode) |> SIMVAR(__) =>'__zDot[<%index%>]'
+end representationCrefDerVar;
 
-template representationCref1(ComponentRef inCref, SimCode simCode, Context context) ::=
-  cref2simvar(inCref, simCode) |> SIMVAR(__) =>
-    match index
+
+
+template representationCref1(ComponentRef inCref,SimVar var, SimCode simCode, Context context) ::=
+  /*cref2simvar(inCref, simCode) |> SIMVAR(__) =>*/
+    match var
+    case SIMVAR(index=i) then
+    match i
    case -1 then
    << <%cref2(inCref)%> >>
    case _  then
-   << __z[<%index%>] >>
+   << __z[<%i%>] >>
 end representationCref1;
 
-template representationCref2(ComponentRef inCref, SimCode simCode, Context context) ::=
-  cref2simvar(inCref, simCode) |> SIMVAR(__) =>'__zDot[<%index%>]'
+template representationCref2(ComponentRef inCref, SimVar var,SimCode simCode, Context context) ::=
+ /* cref2simvar(inCref, simCode) |> SIMVAR(__) =>'__zDot[<%index%>]'*/
+match var
+case(SIMVAR(index=i)) then
+ '__zDot[<%i%>]'
 end representationCref2;
 
 template helpvarlength(SimCode simCode)
@@ -6804,7 +6838,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     
     checkConditions(events,false);
     
-    while(restart && !(iter++ > 2*_dimZeroFunc))
+    while(restart && !(iter++ > 100))
     {
             bool st_vars_reinit = false; 
             //iterate and handle all events inside the eventqueue
@@ -6817,7 +6851,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
             
      }
    
-    if(iter>2*_dimZeroFunc && restart ){
+    if(iter>100 && restart ){
      throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
     return state_vars_reinitialized;
    }
@@ -7910,14 +7944,14 @@ case RANGE(__) then
     let stepValue = daeExp(eo, context, &preExp,&varDecls,simCode)
     <<
     <%preExp%>
-    for(<%type%> <%iterName%> = <%startValue%>;(<%stepValue%> > 0? <%iterName%><=<%stopValue%> : <%stopValue%><=<%iterName%>); <%iterName%> += <%stepValue%>) {
+    for(<%type%> <%iterName%> = <%startValue%>;(<%stepValue%> > 0? <%iterName%><=<%stopValue%> : <%stopValue%><=<%iterName%>); <%iterName%> += <%stepValue%>){
       <%body%>
     }
     >>
   else //optimization for 1 step
     <<
     <%preExp%>
-    for(<%type%> <%iterName%> = <%startValue%>; <%iterName%><=<%stopValue%>; <%iterName%> += 1) {
+    for(<%type%> <%iterName%> = <%startValue%>; <%iterName%><=<%stopValue%>; <%iterName%> += 1){
       <%body%>
     }
     >>
