@@ -82,7 +82,7 @@ public:
   void setUpDialog();
   void createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString componentClassName);
   void createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName, QString componentClassName,
-                        QString componentName, bool inheritedComponent, QString inheritedClassName, int layoutIndex);
+                        QString componentName, bool inheritedComponent, QString inheritedClassName);
   QList<Parameter*> getParametersList();
 private:
   bool mParametersOnly;

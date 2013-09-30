@@ -322,7 +322,7 @@ void ComponentParameters::setUpDialog()
   // create the parameters controls
   createParameters(mpComponent->getOMCProxy(), mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeNode()->getNameStructure(),
                    "", mpComponent->getClassName(), mpComponent->getName(), mpComponent->isInheritedComponent(),
-                   mpComponent->getInheritedClassName(), 0);
+                   mpComponent->getInheritedClassName());
   /* if component doesn't have any parameters then hide the parameters Group Box */
   if (mParametersList.isEmpty())
   {
@@ -448,7 +448,7 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
   */
 void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
                                            QString componentClassName, QString componentName, bool inheritedComponent,
-                                           QString inheritedClassName, int layoutIndex)
+                                           QString inheritedClassName)
 {
   int i = -1;
   QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(componentClassName);
@@ -475,6 +475,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
       if (pParametersScrollArea)
       {
         QGridLayout *pGroupBoxLayout = pParametersScrollArea->getGroupBoxLayout(groupBox);
+        int layoutIndex = pGroupBoxLayout->rowCount();
         if (pGroupBoxLayout)
         {
           Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
@@ -488,7 +489,6 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
           pGroupBoxLayout->addWidget(pParameter->getValueTextBox(), layoutIndex, 1);
           pGroupBoxLayout->addWidget(pParameter->getUnitLabel(), layoutIndex, 2);
           pGroupBoxLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, 3);
-          layoutIndex++;
           mParametersList.append(pParameter);
         }
       }
@@ -501,7 +501,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     if (!pOMCProxy->isBuiltinType(inheritedClass) && inheritedClass.compare(componentClassName) != 0)
     {
       createParameters(pOMCProxy, className, componentClassName, inheritedClass, componentName, inheritedComponent,
-                       inheritedClassName, layoutIndex);
+                       inheritedClassName);
     }
   }
 }
