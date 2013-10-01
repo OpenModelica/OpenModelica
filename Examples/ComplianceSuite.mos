@@ -56,7 +56,7 @@ shouldPass := OpenModelica.Scripting.getBooleanClassAnnotation("+OpenModelica.Sc
 success := if shouldPass then resultFile<>\"\" else resultFile==\"\";
 messages := rec.messages;
 messages := messages + err;
-messages := messages + (if not success and not shouldPass then \"\nSucceeded, but expected failure\" else \"\");
+messages := messages + (if not success and not shouldPass /* This is correct; try to figure out why (hint: success is a poor name) */ then \"\nSucceeded, but expected failure\" else \"\");
 messages := OpenModelica.Scripting.escapeXML(firstPart(messages));
 errorType := if shouldPass then \"failed\" else \"expected failure\";
 writeFile(\""+fixName(typeNameString(cl))+".res\",\"<testcase name=\\\""+fixName(last(OpenModelica.Scripting.typeNameStrings(cl)))+"\\\">\"+(if not success then \"<error type=\\\"\"+errorType+\"\\\" message=\\\"\"+messages+\"\\\"/>\" else \"\")+\"</testcase>\n\");
