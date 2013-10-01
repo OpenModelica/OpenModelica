@@ -214,6 +214,7 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
     restoreState(settings.value("application/windowState").toByteArray());
     if (restoreMessagesWidget) mpMessagesDockWidget->show();
     mpPerspectiveTabbar->setCurrentIndex(0);
+    switchToWelcomePerspective();
   }
   // read last Open Directory location
   if (settings.contains("lastOpenDirectory"))
