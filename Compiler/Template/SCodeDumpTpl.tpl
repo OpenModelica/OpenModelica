@@ -128,8 +128,9 @@ match class
     let cdef_str = dumpClassDef(classDef)
     let cmt_str = dumpClassComment(cmt)
     let ann_str = dumpClassAnnotation(cmt)
+    let cc_str = dumpReplaceableConstrainClass(prefixes)
     let header_str = dumpClassHeader(classDef, name, cmt_str)
-    let footer_str = dumpClassFooter(classDef, cdef_str, name, cmt_str, ann_str)
+    let footer_str = dumpClassFooter(classDef, cdef_str, name, cmt_str, ann_str, cc_str)
     <<
     <%prefixes_str%> <%header_str%> <%footer_str%>
     >>
@@ -188,11 +189,11 @@ match classDef
   else errorMsg("SCodeDump.dumpClassDef: Unknown class definition.")
 end dumpClassDef;
 
-template dumpClassFooter(SCode.ClassDef classDef, String cdefStr, String name, String cmt, String ann)
+template dumpClassFooter(SCode.ClassDef classDef, String cdefStr, String name, String cmt, String ann, String cc_str)
 ::=
 match classDef
-  case DERIVED(__) then '<%cdefStr%><%cmt%><%ann%>'
-  case ENUMERATION(__) then '<%cdefStr%><%cmt%><%ann%>'
+  case DERIVED(__) then '<%cdefStr%><%cmt%><%ann%><%cc_str%>'
+  case ENUMERATION(__) then '<%cdefStr%><%cmt%><%ann%><%cc_str%>'
   case PDER(__) then cdefStr
   case _ then
     let annstr = if ann then '<%ann%>; ' else ''
@@ -201,11 +202,11 @@ match classDef
 
       <%cdefStr%>
        <%annstr%>
-      end <%name%>
+      end <%name%><%cc_str%>
       >>
     else
       <<
-      <%annstr%>end <%name%>
+      <%annstr%>end <%name%><%cc_str%>
       >>
 end dumpClassFooter;
 
