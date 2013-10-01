@@ -3,8 +3,8 @@
  */
 
 QMainWindow::separator {
-    width: 4px;
-    height: 4px;
+    width: 4px; /* when vertical */
+    height: 4px; /* when horizontal */
 }
 
 /* Library Widget Styles */

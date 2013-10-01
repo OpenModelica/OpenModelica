@@ -448,7 +448,7 @@ void ComponentParameters::createTabsAndGroupBoxes(OMCProxy *pOMCProxy, QString c
   */
 void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString className, QString componentBaseClassName,
                                            QString componentClassName, QString componentName, bool inheritedComponent,
-                                           QString inheritedClassName)
+                                           QString inheritedClassName, bool isInheritedCycle)
 {
   int i = -1;
   QList<ComponentInfo*> componentInfoList = pOMCProxy->getComponents(componentClassName);
@@ -480,6 +480,17 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
         {
           Parameter *pParameter = new Parameter(pComponentInfo, pOMCProxy, className, componentBaseClassName, componentClassName,
                                                 componentName, mParametersOnly, inheritedComponent, inheritedClassName);
+          /*
+            Show a line under the inherited parameter and display the name of the
+            */
+          if (isInheritedCycle)
+          {
+            /*
+              border-bottom doesn't work correctly. So set th border on all sides and then remove it from left, top and right.
+              */
+            pParameter->getNameLabel()->setStyleSheet("QLabel{border:1px dotted #000; border-left:none; border-top:none; border-right:none;}");
+            pParameter->getNameLabel()->setToolTip(tr("Inherited from <b>%1</b>").arg(componentClassName));
+          }
           pGroupBoxLayout->addWidget(pParameter->getNameLabel(), layoutIndex, 0);
           if (dialogAnnotation.size() > 3)
           {
@@ -501,7 +512,7 @@ void ComponentParameters::createParameters(OMCProxy *pOMCProxy, QString classNam
     if (!pOMCProxy->isBuiltinType(inheritedClass) && inheritedClass.compare(componentClassName) != 0)
     {
       createParameters(pOMCProxy, className, componentClassName, inheritedClass, componentName, inheritedComponent,
-                       inheritedClassName);
+                       inheritedClassName, true);
     }
   }
 }
