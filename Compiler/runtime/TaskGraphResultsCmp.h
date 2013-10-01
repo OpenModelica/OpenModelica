@@ -104,51 +104,51 @@ public:
 class GraphMLParser
 {
 private:
-	struct ParserUserData
-	{
-		Graph* currentGraph;
-		Node* currentNode;
-		Edge* currentEdge;
+  struct ParserUserData
+  {
+    Graph* currentGraph;
+    Node* currentNode;
+    Edge* currentEdge;
 
-		bool readStringValue;
-		bool readDoubleValue;
-		bool readIntValue;
-		double* doubleValue;
-		std::string* stringValue;
-		int* intValue;
+    bool readStringValue;
+    bool readDoubleValue;
+    bool readIntValue;
+    double* doubleValue;
+    std::string* stringValue;
+    int* intValue;
 
-		std::string* errorMsg;
-		int level;
-		std::set<Node*, bool (*)(Node*, Node*)> *nodeSet;
-		std::string calcTimeAttributeId;
-		std::string commCostAttributeId;
-		std::string criticalPathAttributeId;
-		std::string nameAttributeId;
-		std::string threadIdAttributeId;
-		std::string taskNumberAttributeId;
-		std::string taskIdAttributeId;
-	};
+    std::string* errorMsg;
+    int level;
+    std::set<Node*, bool (*)(Node*, Node*)> *nodeSet;
+    std::string calcTimeAttributeId;
+    std::string commCostAttributeId;
+    std::string criticalPathAttributeId;
+    std::string nameAttributeId;
+    std::string threadIdAttributeId;
+    std::string taskNumberAttributeId;
+    std::string taskIdAttributeId;
+  };
 
-	GraphMLParser(void);
-	~GraphMLParser(void);
+  GraphMLParser(void);
+  ~GraphMLParser(void);
 
 protected:
-	//Handler for the expat-startElement-event.
-	static void StartElement(void *data, const XML_Char *name, const XML_Char **attribute);
+  //Handler for the expat-startElement-event.
+  static void StartElement(void *data, const XML_Char *name, const XML_Char **attribute);
 
-	//Handler for the expat-endElement-event. This method just decreases the level.
-	static void EndElement(void *data, const XML_Char *name);
+  //Handler for the expat-endElement-event. This method just decreases the level.
+  static void EndElement(void *data, const XML_Char *name);
 
-	//Handler for the expat-dataElement-event
-	static void DataElement(void* data, const XML_Char* text, int textLength);
+  //Handler for the expat-dataElement-event
+  static void DataElement(void* data, const XML_Char* text, int textLength);
 
-	//Removes the namespace of the given name
-	static std::string RemoveNamespace(const char* name);
+  //Removes the namespace of the given name
+  static std::string RemoveNamespace(const char* name);
 
 public:
-	static void ParseGraph(Graph *currentGraph, const char* fileName, bool (*nodeComparator)(Node*, Node*), std::string *_errorMsg);
+  static void ParseGraph(Graph *currentGraph, const char* fileName, bool (*nodeComparator)(Node*, Node*), std::string *_errorMsg);
 
-	static bool CheckIfFileExists(const char* fileName);
+  static bool CheckIfFileExists(const char* fileName);
 };
 #endif //TGRC_GRAPHMLPARSER
 
@@ -157,25 +157,25 @@ public:
 class GraphComparator
 {
 private:
-	GraphComparator(void);
+  GraphComparator(void);
 public:
-	//Compares the two given graphs and adds every error-message to the given string.
-	static bool CompareGraphs(Graph *g1, Graph *g2, std::string *errorMsg);
+  //Compares the two given graphs and adds every error-message to the given string.
+  static bool CompareGraphs(Graph *g1, Graph *g2, std::string *errorMsg);
 
-	~GraphComparator(void);
+  ~GraphComparator(void);
 
-	static bool CompareNodeNamesBool(Node *n1, Node *n2);
-	static int CompareNodeNamesInt(Node *n1, Node *n2);
-	static bool CompareNodeIdsBool(Node *n1, Node *n2);
-	static int CompareNodeIdsInt(Node *n1, Node *n2);
-	static bool CompareNodeTaskIdsBool(Node *n1, Node *n2);
-	static int CompareNodeTaskIdsInt(Node *n1, Node *n2);
-	static bool CompareEdgesBool(Edge *e1, Edge *e2);
-	static int CompareEdgesInt(Edge *e1, Edge *e2);
+  static bool CompareNodeNamesBool(Node *n1, Node *n2);
+  static int CompareNodeNamesInt(Node *n1, Node *n2);
+  static bool CompareNodeIdsBool(Node *n1, Node *n2);
+  static int CompareNodeIdsInt(Node *n1, Node *n2);
+  static bool CompareNodeTaskIdsBool(Node *n1, Node *n2);
+  static int CompareNodeTaskIdsInt(Node *n1, Node *n2);
+  static bool CompareEdgesBool(Edge *e1, Edge *e2);
+  static int CompareEdgesInt(Edge *e1, Edge *e2);
 
-	static bool IsNodePartOfGraph(Node *node, Graph *graph);
-	static bool IsEdgePartOfGraph(Edge *edge, Graph *graph);
+  static bool IsNodePartOfGraph(Node *node, Graph *graph);
+  static bool IsEdgePartOfGraph(Edge *edge, Graph *graph);
 protected:
-	static bool FillEdgesWithNodeNames(std::list<Edge*> edges, std::map<std::string, Node*> *nodeIdNodeMap);
+  static bool FillEdgesWithNodeNames(std::list<Edge*> edges, std::map<std::string, Node*> *nodeIdNodeMap);
 };
 #endif //TGRC_GRAPHCOMPARATOR

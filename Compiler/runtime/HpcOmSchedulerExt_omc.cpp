@@ -8,6 +8,6 @@ extern "C" {
 
 extern void* HpcOmSchedulerExt_readScheduleFromGraphMl(const char *filename)
 {
-	return HpcOmSchedulerExtImpl__readScheduleFromGraphMl(filename);
+  return HpcOmSchedulerExtImpl__readScheduleFromGraphMl(filename);
 }
 }
