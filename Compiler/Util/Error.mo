@@ -644,33 +644,33 @@ public constant Message ITERATOR_NON_ARRAY = MESSAGE(524, TRANSLATION(), ERROR()
   Util.gettext("Iterator %s, has type %s, but expected an array expression."));
 public constant Message INST_INVALID_RESTRICTION = MESSAGE(525, TRANSLATION(), ERROR(),
   Util.gettext("Cannot instantiate %s due to restriction %s."));
-public constant Message INST_NON_LOADED = MESSAGE(525, TRANSLATION(), WARNING(),
+public constant Message INST_NON_LOADED = MESSAGE(526, TRANSLATION(), WARNING(),
   Util.gettext("Library %s was not loaded but is marked as used by model %s."));
-public constant Message RECURSION_DEPTH_REACHED = MESSAGE(526, TRANSLATION(), ERROR(),
+public constant Message RECURSION_DEPTH_REACHED = MESSAGE(527, TRANSLATION(), ERROR(),
   Util.gettext("The maximum recursion depth was reached, probably due to mutual recursion. The current scope: %s."));
-public constant Message DERIVATIVE_INPUT = MESSAGE(527, TRANSLATION(), ERROR(),
+public constant Message DERIVATIVE_INPUT = MESSAGE(528, TRANSLATION(), ERROR(),
   Util.gettext("The model requires derivatives of some inputs as listed below:\n%s"));
-public constant Message UTF8_COMMAND_LINE_ARGS = MESSAGE(528, TRANSLATION(), ERROR(),
+public constant Message UTF8_COMMAND_LINE_ARGS = MESSAGE(529, TRANSLATION(), ERROR(),
   Util.gettext("The compiler was sent command-line arguments that were not UTF-8 encoded and will abort the current execution."));
-public constant Message PACKAGE_ORDER_FILE_NOT_COMPLETE = MESSAGE(529, GRAMMAR(), WARNING(),
+public constant Message PACKAGE_ORDER_FILE_NOT_COMPLETE = MESSAGE(530, GRAMMAR(), WARNING(),
   Util.gettext("The package.order file does not list all .mo files and directories (containing package.mo) present in its directory.\nMissing names are:\n\t%s"));
-public constant Message REINIT_IN_WHEN_INITIAL = MESSAGE(530, TRANSLATION(), ERROR(),
+public constant Message REINIT_IN_WHEN_INITIAL = MESSAGE(531, TRANSLATION(), ERROR(),
   Util.gettext("Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead."));
-public constant Message MISSING_INNER_CLASS = MESSAGE(531, TRANSLATION(), WARNING(),
+public constant Message MISSING_INNER_CLASS = MESSAGE(532, TRANSLATION(), WARNING(),
   Util.gettext("No corresponding 'inner' declaration found for class %s declared as '%s'.\n Continuing flattening by only considering the 'outer' class declaration."));
-public constant Message RECURSION_DEPTH_WARNING = MESSAGE(532, TRANSLATION(), ERROR(),
+public constant Message RECURSION_DEPTH_WARNING = MESSAGE(533, TRANSLATION(), ERROR(),
   Util.gettext("The maximum recursion depth was reached when evaluating expression %s in scope %s. Translation may still succeed but you are recommended to fix the problem."));
-public constant Message RECURSION_DEPTH_DERIVED = MESSAGE(533, TRANSLATION(), ERROR(),
+public constant Message RECURSION_DEPTH_DERIVED = MESSAGE(534, TRANSLATION(), ERROR(),
   Util.gettext("The maximum recursion depth was reached when instantiating a derived class. Current class %s in scope %s."));
-public constant Message EVAL_EXTERNAL_OBJECT_CONSTRUCTOR = MESSAGE(534, TRANSLATION(), WARNING(),
+public constant Message EVAL_EXTERNAL_OBJECT_CONSTRUCTOR = MESSAGE(535, TRANSLATION(), WARNING(),
   Util.gettext("OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but %s is a variable."));
-public constant Message CLASS_ANNOTATION_DOES_NOT_EXIST = MESSAGE(535, SCRIPTING(), ERROR(),
+public constant Message CLASS_ANNOTATION_DOES_NOT_EXIST = MESSAGE(536, SCRIPTING(), ERROR(),
   Util.gettext("Could not find class annotation %s in class %s."));
-public constant Message SEPARATE_COMPILATION_PACKAGE_FAILED = MESSAGE(536, SCRIPTING(), ERROR(),
+public constant Message SEPARATE_COMPILATION_PACKAGE_FAILED = MESSAGE(537, SCRIPTING(), ERROR(),
   Util.gettext("Failed to compile all functions in package %s."));
-public constant Message INVALID_ARRAY_DIM_IN_SCALAR_OP = MESSAGE(537, TRANSLATION(), ERROR(),
+public constant Message INVALID_ARRAY_DIM_IN_SCALAR_OP = MESSAGE(538, TRANSLATION(), ERROR(),
   Util.gettext("The operator scalar requires all dimension size to be 1, but the input has type %s."));
-public constant Message NON_STANDARD_OPERATOR_CLASS_DIRECTORY = MESSAGE(538, TRANSLATION(), WARNING(),
+public constant Message NON_STANDARD_OPERATOR_CLASS_DIRECTORY = MESSAGE(539, TRANSLATION(), WARNING(),
   Util.gettext("classDirectory() is a non-standard operator that was replaced by Modelica.Utilities.Files.loadResource(uri) before it was added to the language specification."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
