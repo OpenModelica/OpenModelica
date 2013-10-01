@@ -3648,7 +3648,7 @@ algorithm
         str = System.dirname(fileName);
         Error.addSourceMessage(Error.NON_STANDARD_OPERATOR_CLASS_DIRECTORY, {}, info);
       then
-        (inCache,DAE.SCONST(str),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST));
+        (inCache,DAE.SCONST(str),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST()));
   end match;
 end elabBuiltinClassDirectory;
 
