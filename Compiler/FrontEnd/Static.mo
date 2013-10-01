@@ -3627,6 +3627,31 @@ algorithm
   end match;
 end elabBuiltinSymmetric;
 
+protected function elabBuiltinClassDirectory
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+    local
+      String str,fileName;
+
+    case (_,_,_,_,_,_,Absyn.INFO(fileName=fileName))
+      equation
+        str = System.dirname(fileName);
+        Error.addSourceMessage(Error.NON_STANDARD_OPERATOR_CLASS_DIRECTORY, {}, info);
+      then
+        (inCache,DAE.SCONST(str),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST));
+  end match;
+end elabBuiltinClassDirectory;
+
 protected function elabBuiltinTranspose "This function elaborates the builtin operator transpose
   The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
   input Env.Cache inCache;
@@ -6228,6 +6253,7 @@ algorithm
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
     case "getInstanceName" then elabBuiltinGetInstanceName;
+    case "classDirectory" then elabBuiltinClassDirectory;
   end match;
 end elabBuiltinHandler;
 

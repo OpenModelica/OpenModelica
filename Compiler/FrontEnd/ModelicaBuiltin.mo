@@ -646,10 +646,13 @@ external "builtin";
 annotation(__OpenModelica_Impure = true, version="OpenModelica extension");
 end print;
 
-function classDirectory "No clue what it does as it's not standardized"
+function classDirectory "Non-standard operator"
   output String str;
 external "builtin";
-annotation(version="Dymola / MSL 2.2.1");
+annotation(Documentation(info="<html>
+<p>classDirectory() is a <b>non-standard operator</b> that was replaced by <a href=\"modelica://Modelica.Utilities.Files.loadResource\">Modelica.Utilities.Files.loadResource(uri)</a> before it was added to the language specification.</p>
+<p>Returns the directory of the file where the classDirectory() call came from.</p>
+</html>"),version="Dymola / MSL 2.2.1");
 end classDirectory;
 
 function getInstanceName
