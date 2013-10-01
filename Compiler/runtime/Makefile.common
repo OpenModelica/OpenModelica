@@ -27,14 +27,14 @@ SRC	= Print_rml.c System_rml.c Settings_rml.c \
 
 CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
   BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp \
-  TaskGraphResults_rml.cpp HpcOmBenchmarkExt_rml.cpp systemimplmisc.cpp Dynload_rml.cpp
+  TaskGraphResults_rml.cpp HpcOmBenchmarkExt_rml.cpp HpcOmSchedulerExt_rml.cpp systemimplmisc.cpp Dynload_rml.cpp
 
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CORBAOBJ)
 
 OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
   IOStreamExt_omc.o ErrorMessage.o FMI_omc.o systemimplmisc.o \
   UnitParserExt_omc.o unitparser.o BackendDAEEXT_omc.o Socket_omc.o matching.o matching_cheap.o \
-  Database_omc.o Dynload_omc.o SimulationResults_omc.o TaskGraphResults_omc.o HpcOmBenchmarkExt_omc.o ptolemyio_omc.o \
+  Database_omc.o Dynload_omc.o SimulationResults_omc.o TaskGraphResults_omc.o HpcOmSchedulerExt_omc.o HpcOmBenchmarkExt_omc.o ptolemyio_omc.o \
   Lapack_omc.o getMemorySize.o $(OMCCORBASRC)
 
 all: runtime.a install
@@ -81,10 +81,12 @@ Socket_rml.o : socketimpl.c
 Socket_omc.o : socketimpl.c
 SimulationResults_rml.o : SimulationResults.c SimulationResultsCmp.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
 SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
-TaskGraphResults_rml.o : TaskGraphResultsCmp.cpp
-TaskGraphResults_omc.o : TaskGraphResultsCmp.cpp
+TaskGraphResults_rml.o : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp
+TaskGraphResults_omc.o : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp
 HpcOmBenchmarkExt_rml.o : HpcOmBenchmarkExt.cpp
 HpcOmBenchmarkExt_omc.o : HpcOmBenchmarkExt.cpp
+HpcOmSchedulerExt_rml.o : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp
+HpcOmSchedulerExt_omc.o : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp
 ptolemyio_rml.o : ptolemyio.cpp errorext.h
 ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h

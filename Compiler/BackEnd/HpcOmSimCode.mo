@@ -147,8 +147,8 @@ algorithm
       String fileName, fileNamePrefix;
       HpcOmTaskGraph.TaskGraphMeta taskGraphData1;
       list<list<Integer>> parallelSets;
-      list<list<Integer>> criticalPaths;
-      Real cpCosts;
+      list<list<Integer>> criticalPaths, criticalPathsWoC;
+      Real cpCosts, cpCostsWoC;
       
       //Additional informations to append SimCode
       list<DAE.Exp> simCodeLiterals;
@@ -186,7 +186,7 @@ algorithm
       
       fileName = ("taskGraph"+&filenamePrefix+&".graphml"); 
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1));   
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, sccSimEqMapping ,schedulerInfo);
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
 
       //Create Costs
       //------------
@@ -207,11 +207,11 @@ algorithm
       
       //Assign levels and get critcal path
       //----------------------------------
-      (criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
-      criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
+      ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
+      criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");  
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1));
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), sccSimEqMapping, schedulerInfo);  
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);  
 
       //Apply filters
       //-------------
@@ -221,17 +221,18 @@ algorithm
       
       //Create schedule
       //---------------
-      schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping);
+      schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix);
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
       
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
       // That's failing
-      //(criticalPaths,cpCosts,parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
-      //criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo(criticalPaths,cpCosts);
+      //((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
+      //criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       criticalPathInfo = "";
       criticalPaths = {{}};
-      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), sccSimEqMapping, schedulerInfo);
+      criticalPathsWoC = {{}};
+      HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(taskSchedule);
       
       //print("Parallel informations:\n");
@@ -291,6 +292,7 @@ protected function createSchedule
   input HpcOmTaskGraph.TaskGraph iTaskGraph;  
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping;
+  input String iFilenamePrefix;
   output HpcOmScheduler.Schedule oSchedule;
 protected
   String flagValue;
@@ -298,20 +300,25 @@ protected
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
 algorithm
-  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping)
-    case(_,_,_)
+  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix)
+    case(_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
       then HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_)
+    case(_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "ext");
+        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+      then HpcOmScheduler.createExtSchedule(iTaskGraphMeta, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
+    case(_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "listr");
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
-        print("Using list scheduling reverse\n");
       then HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_)
+    case(_,_,_,_)
       equation
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);

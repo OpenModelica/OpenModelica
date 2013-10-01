@@ -38,6 +38,7 @@ encapsulated package HpcOmScheduler
 
 public import HpcOmTaskGraph;
 
+protected import HpcOmSchedulerExt;
 protected import List;
 protected import Util;
 
@@ -1216,6 +1217,37 @@ algorithm
   print("\t Equation " +& intString(iEquation) +& "\n");
   oLevel := iLevel + 1;
 end printLevelSchedule1;
+
+//--------------------
+// External Scheduling
+//--------------------
+public function createExtSchedule "function createExtSchedule
+  author: marcusw
+  Creates a scheduling by reading the required informations from a graphml-file."
+  input HpcOmTaskGraph.TaskGraphMeta iMeta;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  input String iGraphMLFile; //the file containing schedule-informations
+  output Schedule oSchedule;
+protected
+  list<Integer> extInfo;
+  array<Integer> extInfoArr;
+  
+algorithm
+  oSchedule := match(iMeta,iSccSimEqMapping,iGraphMLFile)
+    case(_,_,_)
+      equation
+        extInfo = HpcOmSchedulerExt.readScheduleFromGraphMl(iGraphMLFile);
+        extInfoArr = listArray(extInfo);
+        true = intEq(arrayLength(iSccSimEqMapping),arrayLength(extInfoArr));
+        print("External scheduling info: " +& stringDelimitList(List.map(extInfo, intString), ",") +& "\n");
+        print("HpcOmScheduler.createExtSchedule not implemented\n");
+      then fail();
+    else
+      equation
+        print("HpcOmScheduler.createExtSchedule not every node has a schduler-info.\n");
+      then fail();
+  end match;
+end createExtSchedule;
 
 //-----
 // Util
