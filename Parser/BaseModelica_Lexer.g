@@ -318,35 +318,38 @@ STRING : '"' STRING_GUTS '"'
            res = SystemImpl__iconv((const char*)text->chars,ModelicaParser_encoding,"UTF-8",0);
            if (!*res) {
              const char *strs[2];
-             signed char *buf  = (signed char*) strdup((char*)text->chars);
+             signed char buf[76];
              int len = strlen((const char*)buf), i;
+             res = SystemImpl__iconv__ascii((const char*)text->chars);
              /* Avoid printing huge strings */
              if (len > 75) {
-               len = 75;
-               buf[len] = 0;
-               buf[len-1] = '.';
-               buf[len-2] = '.';
-               buf[len-3] = '.';
+               len = 72;
+               buf[len+0] = '.';
+               buf[len+1] = '.';
+               buf[len+2] = '.';
+               buf[len+3] = '0';
              }
-             for (i=0;i<len;i++) {
-               if (buf[i] < 0)
-                 buf[i] = '?';
+             for (i=0;i<=len;i++) {
                /* Don't break lines in the printed error-message */
-               if (buf[i] == '\n' || buf[i] == '\r')
+               if (res[i] == '\n' || res[i] == '\r') {
                  buf[i] = ' ';
+               } else {
+                 buf[i] = res[i];
+               }
              }
              strs[0] = (const char*) buf;
              strs[1] = ModelicaParser_encoding;
-             c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "The file was not encoded in \%s:\n  \"\%s\".\n"
+             c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "The file was not encoded in \%s:\n  \"\%s\".\n"
+  "  Defaulting to 7-bit ASCII with unknown characters replaced by '?'.\n"
   "  To change encoding when loading a file: loadFile(encoding=\"ISO-XXXX-YY\").\n"
   "  To change it in a package: add a file package.encoding at the top-level.\n"
   "  Note: The Modelica Language Specification only allows files encoded in UTF-8.",
                   strs, 2, $line, $pos+1, $line, $pos+len+1,
                   ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
-             free(buf);
-             ModelicaParser_lexerError = ANTLR3_TRUE;
-           }
-           if (strcmp(ModelicaParser_encoding,"UTF-8")!=0) {
+             text->set8(text,res);
+             free(res);
+             /* ModelicaParser_lexerError = ANTLR3_TRUE; */
+           } else if (strcmp(ModelicaParser_encoding,"UTF-8")!=0) {
              text->set8(text,res);
            }
          }
