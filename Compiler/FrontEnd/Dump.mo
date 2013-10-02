@@ -1944,18 +1944,22 @@ protected function printElementattr "Prints ElementAttributes to the Print buffe
 algorithm
   _ := matchcontinue (inElementAttributes)
     local
-      String vs,ds;
+      String vs,ds,ps;
       Boolean fl,st;
+      Absyn.Parallelism par;
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
 
-    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism= par,variability = var,direction = dir,arrayDim = adim))
       equation
         Print.printBuf("Absyn.ATTR(");
         printBool(fl);
         Print.printBuf(", ");
         printBool(st);
+        Print.printBuf(", ");
+        ps =parallelSymbol(par);
+        Print.printBuf(vs);
         Print.printBuf(", ");
         vs = variabilitySymbol(var);
         Print.printBuf(vs);
@@ -1985,18 +1989,20 @@ algorithm
   outString:=
   matchcontinue (inElementAttributes)
     local
-      String fs,ss,vs,ds,str;
+      String fs,ss,vs,ds,str,ps;
       Boolean fl,st;
+      Absyn.Parallelism par;
       Absyn.Variability var;
       Absyn.Direction dir;
       list<Absyn.Subscript> adim;
-    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,variability = var,direction = dir,arrayDim = adim))
+    case (Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=par,variability = var,direction = dir,arrayDim = adim))
       equation
         fs = selectString(fl, "flow ", "");
         ss = selectString(st, "stream ", "");
+        ps = unparseParallelismSymbolStr(par);
         vs = unparseVariabilitySymbolStr(var);
         ds = unparseDirectionSymbolStr(dir);
-        str = stringAppendList({fs,ss,vs,ds});
+        str = stringAppendList({fs,ss,ps,vs,ds});
       then
         str;
     case (_)
@@ -2026,6 +2032,21 @@ algorithm
     case (_) then "";
   end matchcontinue;
 end unparseArraydimInAttr;
+
+public function parallelSymbol "
+  Returns a string for the Variability.
+"
+  input Absyn.Parallelism inparallel;
+  output String outString;
+algorithm
+  outString:=
+  match (inparallel)
+    case (Absyn.NON_PARALLEL()) then "Absyn.NON_PARALLEL";
+    case (Absyn.PARGLOBAL()) then "Absyn.PARGLOBAL";
+    case (Absyn.PARLOCAL()) then "Absyn.PARLOCAL";
+  end match;
+end parallelSymbol;
+
 
 public function variabilitySymbol "
   Returns a string for the Variability.
