@@ -13,6 +13,7 @@ docdir = @docdir@
 CMAKE = CC=$(CC) CXX=$(CXX) cmake
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
+AR = @AR@
 
 defaultMakefileTarget = Makefile
 QMAKE=@QMAKE@

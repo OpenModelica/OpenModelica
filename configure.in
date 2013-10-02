@@ -69,8 +69,13 @@ AC_SUBST(LIS_LDFLAGS)
 AC_SUBST(LAPACK_TARGET)
 AC_SUBST(CONFIG_WITH_OPENMP)
 AC_SUBST(OPENBLAS_EXTRA_ARGS)
+AC_SUBST(AR)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
+
+if test -z "$AR"; then
+  AR=ar
+fi
 
 if test -z "$MAKE"; then
   MAKE=make
