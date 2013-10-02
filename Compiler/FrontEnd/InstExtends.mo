@@ -104,7 +104,7 @@ algorithm
       SCode.Element c;
       String cn,s,scope_str,className;
       SCode.Encapsulated encf;
-      Boolean impl,notConst;
+      Boolean impl,notConst,eq_name;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
       DAE.Mod outermod,mods,mods_1,emod_1,mod;
@@ -143,20 +143,6 @@ algorithm
     // instantiate a base class
     case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
-        // Debug.fprintln(Flags.INST_TRACE, "EXTENDS: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(elt) +& " mods: " +& Mod.printModStr(mod));
-        //print("EXTENDS: " +& Env.printEnvPathStr(env) +& "/" +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ") outemod: " +& Mod.printModStr(mod) +& "\n");
-        // adrpo - here we need to check if we don't have recursive extends of the form:
-        // package Icons
-        //   extends Icons.BaseLibrary;
-        //        model BaseLibrary "Icon for base library"
-        //        end BaseLibrary;
-        // end Icons;
-        // if we don't check that, then the compiler enters an infinite loop!
-        // what we do is removing Icons from extends Icons.BaseLibrary;
-        tp = Inst.removeSelfReference(className, tp);
-        //print(className +& "\n");
-        //print("Type: " +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ")\n");
-
         emod = Inst.chainRedeclares(mod, emod);
         
         // build a ht with the constant elements from the extends scope
@@ -164,9 +150,9 @@ algorithm
         // fully qualify modifiers in extends in the extends environment!
         (cache, emod) = fixModifications(cache, env, emod, ht);
 
-        // Debug.fprintln(Flags.INST_TRACE, "EXTENDS (FULLY QUAL): " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.printModStr(emod));
-
-        (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache, env, tp, false);
+        eq_name = stringEq(className, Absyn.pathFirstIdent(tp));
+        (cache, (c as SCode.CLASS(name = cn, encapsulatedPrefix = encf,
+        restriction = r)), cenv) = lookupBaseClass(tp, eq_name, className, env, cache);
 
         //print("Found " +& cn +& "\n");
         // outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
@@ -285,6 +271,56 @@ algorithm
   end matchcontinue;
 end instExtendsList;
 
+protected function lookupBaseClass
+  "Looks up a base class used in an extends clause."
+  input Absyn.Path inPath;
+  input Boolean inSelfReference;
+  input String inClassName;
+  input Env.Env inEnv;
+  input Env.Cache inCache;
+  output Env.Cache outCache;
+  output SCode.Element outElement;
+  output Env.Env outEnv;
+algorithm
+  (outCache, outElement, outEnv) :=
+  match(inPath, inSelfReference, inClassName, inEnv, inCache)
+    local
+      String name;
+      SCode.Element elem;
+      Env.Env env;
+      Env.Cache cache;
+      Absyn.Path path;
+
+    // We have a simple identifier with a self reference, i.e. a class which
+    // extends a base class with the same name. The only legal situation in this
+    // case is when extending a local class with the same name, e.g.:
+    //
+    //   class A
+    //     extends A;
+    //     class A end A;
+    //   end A;
+    case (Absyn.IDENT(name), true, _, _, _)
+      equation
+        // Only look the name up locally, otherwise we might get an infinite
+        // loop if the class extends itself.
+        (elem, env) = Lookup.lookupClassLocal(inEnv, name);
+      then
+        (inCache, elem, env);
+
+    // Otherwise, remove the first identifier if it's the same as the class name
+    // and look it up as normal.
+    else
+      equation
+        path = Absyn.removePartialPrefix(Absyn.IDENT(inClassName), inPath);
+        (cache, elem, env) = Lookup.lookupClass(inCache, inEnv, path, false);
+      then
+        (cache, elem, env);
+
+  end match;
+end lookupBaseClass;
+
+
+        
 protected function updateElementListVisibility
   input list<SCode.Element> inElements;
   input SCode.Visibility inVisibility;

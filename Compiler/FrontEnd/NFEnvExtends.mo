@@ -914,8 +914,6 @@ algorithm
       Option<Item> opt_item;
       Option<Env> opt_env;
 
-    case (_, NONE(), _, _) then (NONE(), NONE());
-
     case (_, SOME(NFSCodeEnv.EXTENDS(baseClass = Absyn.FULLYQUALIFIED(bc))), _, _)
       equation
         (item, env) = lookupFullyQualified(bc, inEnv, inExtendsTable);
