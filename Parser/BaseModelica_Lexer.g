@@ -327,9 +327,11 @@ STRING : '"' STRING_GUTS '"'
                buf[len+0] = '.';
                buf[len+1] = '.';
                buf[len+2] = '.';
-               buf[len+3] = '0';
+               buf[len+3] = '\0';
+             } else {
+               buf[len] = '\0';
              }
-             for (i=0;i<=len;i++) {
+             for (i=0;i<len;i++) {
                /* Don't break lines in the printed error-message */
                if (res[i] == '\n' || res[i] == '\r') {
                  buf[i] = ' ';
