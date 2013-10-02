@@ -720,7 +720,7 @@ algorithm
     case ((path,str1::_),_,false,_)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
-        ostr2 = Interactive.getNamedAnnotationInClass(cdef,Absyn.IDENT("version"),Interactive.getAnnotationStringValueOrFail);
+        ostr2 = Absyn.getNamedAnnotationInClass(cdef,Absyn.IDENT("version"),Interactive.getAnnotationStringValueOrFail);
         checkValidVersion(path,str1,ostr2);
       then true;
     case (_,_,_,NONE()) then false;

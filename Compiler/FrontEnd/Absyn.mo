@@ -31,7 +31,7 @@
 
 encapsulated package Absyn
 "
-  file:        Absyn.mo
+  file:        mo
   package:     Absyn
   description: Abstract syntax
 
@@ -54,7 +54,7 @@ encapsulated package Absyn
        - etc.
 
 
-  Absyn.mo\'s constructors are primarily used by (Parser/Modelica.g).
+  mo\'s constructors are primarily used by (Parser/Modelica.g).
 
   When the AST has been built, it is normally used by SCode.mo in order to
   build the SCode (See SCode.mo). It is also possile to send the AST do
@@ -389,7 +389,7 @@ end InnerOuter;
 public
 uniontype Import "Import statements, different kinds"
   // A named import is a import statement to a variable ex;
-  // NAMED_IMPORT("SI",Absyn.QUALIFIED("Modelica",Absyn.IDENT("SIunits")));
+  // NAMED_IMPORT("SI",QUALIFIED("Modelica",IDENT("SIunits")));
   record NAMED_IMPORT
     Ident name "name" ;
     Path path "path" ;
@@ -2046,7 +2046,7 @@ algorithm
 
     else
       equation
-        error_msg = "in Absyn.traverseExpBidirSubExps - Unknown expression: ";
+        error_msg = "in traverseExpBidirSubExps - Unknown expression: ";
         error_msg = error_msg +& Dump.printExpStr(inExp);
         Error.addMessage(Error.INTERNAL_ERROR, {error_msg});
       then
@@ -2517,14 +2517,14 @@ algorithm
     case COMPONENTS(components = {COMPONENTITEM(component = COMPONENT(name = n))}) then n;
     case EXTENDS(path = _)
       equation
-        print("#- Absyn.elementSpecName EXTENDS\n");
+        print("#- elementSpecName EXTENDS\n");
       then
         fail();
   end match;
 end elementSpecName;
 
 public function printImportString "Function: printImportString
-This function takes a Absyn.Import and prints it as a flat-string.
+This function takes a Import and prints it as a flat-string.
 "
   input Import imp;
   output String ostring;
@@ -3292,7 +3292,7 @@ end crefRemovePrefix;
 
 public function pathContains "
 Author BZ,
-checks if one Absyn.IDENT(..) is contained in path."
+checks if one IDENT(..) is contained in path."
   input Path fullPath;
   input Path pathId;
   output Boolean b;
@@ -3570,7 +3570,7 @@ algorithm
 
     case (e1,_,_)
       equation
-        print("Internal error: Absyn.getCrefFromExp failed " +& Dump.printExpStr(e1) +& "\n");
+        print("Internal error: getCrefFromExp failed " +& Dump.printExpStr(e1) +& "\n");
       then fail();
   end matchcontinue;
 end getCrefFromExp;
@@ -3957,7 +3957,7 @@ algorithm
 end pathToCrefWithSubs;
 
 public function crefFirstIdent "
-Returns the base-name of the Absyn.componentReference"
+Returns the base-name of the componentReference"
   input ComponentRef inComponentRef;
   output String str;
 algorithm str := match(inComponentRef)
@@ -4009,7 +4009,7 @@ algorithm
   end match;
 end crefIsQual;
 
-public function crefLastSubs "Return the last subscripts of an Absyn.ComponentRef"
+public function crefLastSubs "Return the last subscripts of an ComponentRef"
   input ComponentRef inComponentRef;
   output list<Subscript> outSubscriptLst;
 algorithm
@@ -4975,8 +4975,8 @@ end getFileNameFromInfo;
 
 public function isOuter
 "@author: adrpo
-  this function returns true if the given Absyn.InnerOuter
-  is one of Absyn.INNER_OUTER() or Absyn.OUTER()"
+  this function returns true if the given InnerOuter
+  is one of INNER_OUTER() or OUTER()"
   input InnerOuter io;
   output Boolean isItAnOuter;
 algorithm
@@ -4989,8 +4989,8 @@ end isOuter;
 
 public function isInner
 "@author: adrpo
-  this function returns true if the given Absyn.InnerOuter
-  is one of Absyn.INNER_OUTER() or Absyn.INNER()"
+  this function returns true if the given InnerOuter
+  is one of INNER_OUTER() or INNER()"
   input InnerOuter io;
   output Boolean isItAnInner;
 algorithm
@@ -5202,7 +5202,7 @@ end onlyLiteralsInEqMod;
 
 protected function onlyLiteralsInExp
 "@author: adrpo
- Visitor function for checking if Absyn.Exp contains only literals, NO CREFS!
+ Visitor function for checking if Exp contains only literals, NO CREFS!
  It returns an empty list if it doesn't contain any crefs!"
   input tuple<Exp, list<Exp>> tpl;
   output tuple<Exp, list<Exp>> outTpl;
@@ -5654,7 +5654,7 @@ end filterAnnotationItem;
 
 public function getExternalDecl
 "@author: adrpo
- returns the Absyn.EXTERNAL form parts if there is any.
+ returns the EXTERNAL form parts if there is any.
  if there is none, it fails!"
  input Class inCls;
  output ClassPart outExternal;
@@ -6089,5 +6089,98 @@ algorithm
         (cr1 :: rest_1);
   end matchcontinue;
 end removeCrefFromCrefs;
+
+public function getNamedAnnotationInClass
+  "Retrieve e.g. the documentation annotation as a string from the class passed as argument."
+  input Class inClass;
+  input Path id;
+  input ModFunc f;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
+  partial function ModFunc
+    input Option<Modification> mod;
+    output TypeA docStr;
+  end ModFunc;
+algorithm
+  outString := matchcontinue (inClass,id,f)
+    local
+      TypeA str,res;
+      list<ClassPart> parts;
+      list<ElementArg> annlst;
+      list<Annotation> ann;
+
+    case (CLASS(body = PARTS(ann = ann)),_,_)
+      equation
+        annlst = List.flatten(List.map(ann,annotationToElementArgs));
+        SOME(str) = getNamedAnnotationStr(annlst,id,f);
+      then
+        SOME(str);
+
+    case (CLASS(body = CLASS_EXTENDS(ann = ann)),_,_)
+      equation
+        annlst = List.flatten(List.map(ann,annotationToElementArgs));
+        SOME(str) = getNamedAnnotationStr(annlst,id,f);
+      then
+        SOME(str);
+
+    case (CLASS(body = DERIVED(comment = SOME(COMMENT(SOME(ANNOTATION(annlst)),_)))),_,_)
+      equation
+        SOME(res) = getNamedAnnotationStr(annlst,id,f);
+      then
+        SOME(res);
+
+    case (CLASS(body = ENUMERATION(comment = SOME(COMMENT(SOME(ANNOTATION(annlst)),_)))),_,_)
+      equation
+        SOME(res) = getNamedAnnotationStr(annlst,id,f);
+      then
+        SOME(res);
+
+    case (CLASS(body = OVERLOAD(comment = SOME(COMMENT(SOME(ANNOTATION(annlst)),_)))),_,_)
+      equation
+        SOME(res) = getNamedAnnotationStr(annlst,id,f);
+      then
+        SOME(res);
+
+    else NONE();
+
+  end matchcontinue;
+end getNamedAnnotationInClass;
+
+protected function getNamedAnnotationStr
+"Helper function to getNamedAnnotationInElementitemlist."
+  input list<ElementArg> inAbsynElementArgLst;
+  input Path id;
+  input ModFunc f;
+  output Option<TypeA> outString;
+  replaceable type TypeA subtypeof Any;
+  partial function ModFunc
+    input Option<Modification> mod;
+    output TypeA docStr;
+  end ModFunc;
+algorithm
+  outString := matchcontinue (inAbsynElementArgLst,id,f)
+    local
+      TypeA str;
+      ElementArg ann;
+      Option<Modification> mod;
+      list<ElementArg> xs;
+      Ident id1,id2;
+      Path rest;
+
+    case (((ann as MODIFICATION(path = IDENT(name = id1),modification = mod)) :: _),IDENT(id2),_)
+      equation
+        true = stringEq(id1, id2);
+        str = f(mod);
+      then
+        SOME(str);
+
+    case (((ann as MODIFICATION(path = IDENT(name = id1),modification = SOME(CLASSMOD(elementArgLst=xs)))) :: _),QUALIFIED(name=id2,path=rest),_)
+      equation
+        true = stringEq(id1, id2);
+      then getNamedAnnotationStr(xs,rest,f);
+
+    case ((_ :: xs),_,_) then getNamedAnnotationStr(xs,id,f);
+  end matchcontinue;
+end getNamedAnnotationStr;
 
 end Absyn;

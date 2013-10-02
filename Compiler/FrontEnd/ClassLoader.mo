@@ -88,6 +88,7 @@ algorithm
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
         p = loadClassFromMps(classname, priorityList, mps, encoding);
+        checkOnLoadMessage(p);
       then
         p;
     /* Qualified names: First check if it is defined in a file pack.mo */
@@ -96,6 +97,7 @@ algorithm
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
         p = loadClassFromMps(pack, priorityList, mps, encoding);
+        checkOnLoadMessage(p);
       then
         p;
     /* failure */
@@ -331,6 +333,7 @@ algorithm
         (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
         false = stringEq(filename,"package.mo");
         p1 = Parser.parse(name,encoding);
+        checkOnLoadMessage(p1);
       then p1;
 
     // faliling
@@ -628,6 +631,32 @@ algorithm
     else "#";
   end match;
 end packageOrderName;
+
+protected function checkOnLoadMessage
+  "Checks annotation __OpenModelica_messageOnLoad for a message to display"
+  input Absyn.Program p1;
+protected
+  list<Absyn.Class> classes;
+algorithm
+  Absyn.PROGRAM(classes=classes) := p1;
+  _ := List.map2(classes,Absyn.getNamedAnnotationInClass,Absyn.IDENT("__OpenModelica_messageOnLoad"),checkOnLoadMessageWork);
+end checkOnLoadMessage;
+
+protected function checkOnLoadMessageWork
+  "Checks annotation __OpenModelica_messageOnLoad for a message to display"
+  input Option<Absyn.Modification> mod;
+  output Integer dummy;
+algorithm
+  dummy := match mod
+    local
+      String str;
+      Absyn.Info info;
+    case SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(info=info,exp=Absyn.STRING(str))))
+      equation
+        Error.addSourceMessage(Error.COMPILER_NOTIFICATION_SCRIPTING,{str},info);
+      then 1;
+  end match;
+end checkOnLoadMessageWork;
 
 end ClassLoader;
 

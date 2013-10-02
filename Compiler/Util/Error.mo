@@ -741,6 +741,8 @@ public constant Message COMPILER_WARNING = MESSAGE(6000, TRANSLATION(), WARNING(
   Util.notrans("%s"));
 public constant Message COMPILER_NOTIFICATION = MESSAGE(6001, TRANSLATION(), NOTIFICATION(),
   Util.notrans("%s"));
+public constant Message COMPILER_NOTIFICATION_SCRIPTING = MESSAGE(6002, SCRIPTING(), NOTIFICATION(),
+  Util.notrans("%s"));
 public constant Message SUSAN_ERROR = MESSAGE(7000, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message TEMPLATE_ERROR = MESSAGE(7001, TRANSLATION(), ERROR(),

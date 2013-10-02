@@ -11959,7 +11959,7 @@ algorithm
     case (modelpath,p,_,_,_)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        SOME(str) = getNamedAnnotationInClass(cdef,id,f);
+        SOME(str) = Absyn.getNamedAnnotationInClass(cdef,id,f);
       then
         str;
 
@@ -11980,7 +11980,7 @@ algorithm
 
     case (Absyn.PROGRAM(classes={cdef}))
       equation
-        SOME(usesStr) = getNamedAnnotationInClass(cdef,Absyn.IDENT("uses"),getUsesAnnotationString);
+        SOME(usesStr) = Absyn.getNamedAnnotationInClass(cdef,Absyn.IDENT("uses"),getUsesAnnotationString);
       then
         usesStr;
 
@@ -12765,63 +12765,6 @@ algorithm
   end matchcontinue;
 end getAnnotationStr;
 
-public function getNamedAnnotationInClass
-"Retrieve the documentation annotation as a
-  string from the class passed as argument."
-  input Absyn.Class inClass;
-  input Absyn.Path id;
-  input ModFunc f;
-  output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
-  partial function ModFunc
-    input Option<Absyn.Modification> mod;
-    output TypeA docStr;
-  end ModFunc;
-algorithm
-  outString := matchcontinue (inClass,id,f)
-    local
-      TypeA str,res;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementArg> annlst;
-      list<Absyn.Annotation> ann;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(ann = ann)),_,_)
-      equation
-        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
-        SOME(str) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(str);
-
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(ann = ann)),_,_)
-      equation
-        annlst = List.flatten(List.map(ann,Absyn.annotationToElementArgs));
-        SOME(str) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(str);
-
-    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),_,_)
-      equation
-        SOME(res) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(res);
-
-    case (Absyn.CLASS(body = Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),_,_)
-      equation
-        SOME(res) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(res);
-
-    case (Absyn.CLASS(body = Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))),_,_)
-      equation
-        SOME(res) = getNamedAnnotationStr(annlst,id,f);
-      then
-        SOME(res);
-
-    else NONE();
-
-  end matchcontinue;
-end getNamedAnnotationInClass;
-
 protected function getDefaultComponentName
 "Returns the default component name of a class.
   This is annotated with the annotation:
@@ -12875,43 +12818,6 @@ algorithm
         compName;
   end match;
 end getDefaultComponentPrefixes;
-
-protected function getNamedAnnotationStr
-"Helper function to getNamedAnnotationInElementitemlist."
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input Absyn.Path id;
-  input ModFunc f;
-  output Option<TypeA> outString;
-  replaceable type TypeA subtypeof Any;
-  partial function ModFunc
-    input Option<Absyn.Modification> mod;
-    output TypeA docStr;
-  end ModFunc;
-algorithm
-  outString := matchcontinue (inAbsynElementArgLst,id,f)
-    local
-      TypeA str;
-      Absyn.ElementArg ann;
-      Option<Absyn.Modification> mod;
-      list<Absyn.ElementArg> xs;
-      Absyn.Ident id1,id2;
-      Absyn.Path rest;
-
-    case (((ann as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = mod)) :: _),Absyn.IDENT(id2),_)
-      equation
-        true = stringEq(id1, id2);
-        str = f(mod);
-      then
-        SOME(str);
-
-    case (((ann as Absyn.MODIFICATION(path = Absyn.IDENT(name = id1),modification = SOME(Absyn.CLASSMOD(elementArgLst=xs)))) :: _),Absyn.QUALIFIED(name=id2,path=rest),_)
-      equation
-        true = stringEq(id1, id2);
-      then getNamedAnnotationStr(xs,rest,f);
-
-    case ((_ :: xs),_,_) then getNamedAnnotationStr(xs,id,f);
-  end matchcontinue;
-end getNamedAnnotationStr;
 
 public function getAnnotationValue
   input Option<Absyn.Modification> mod;
