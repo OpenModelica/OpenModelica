@@ -319,8 +319,9 @@ STRING : '"' STRING_GUTS '"'
            if (!*res) {
              const char *strs[2];
              signed char buf[76];
-             int len = strlen((const char*)buf), i;
+             int len, i;
              res = SystemImpl__iconv__ascii((const char*)text->chars);
+             len = strlen((const char*)res);
              /* Avoid printing huge strings */
              if (len > 75) {
                len = 72;
