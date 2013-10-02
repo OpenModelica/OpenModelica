@@ -84,7 +84,7 @@ Modelica code of domain definitions:
 \begin_layout Standard
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "../languageExtension/PDEDomains.mo"
+filename "../models/PDEDomains.mo"
 lstparams "breaklines=true,caption={Standard domains deffinitions: 1D -- Line segment, 2D -- Rectangle, Circle, 3D -- Block},captionpos=b,frame=tb,label={PDEDomains.mo}"
 
 \end_inset
@@ -187,7 +187,7 @@ Modelica code
 
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "../languageExtension/advection.mo"
+filename "../models/advection.mo"
 lstparams "breaklines=true,caption={Advection equation in Modelica},captionpos=b,frame=tb,label={advection.mo}"
 
 \end_inset
@@ -202,7 +202,7 @@ Flat model
 \begin_layout Paragraph
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "../languageExtension/advection_flat.mo"
+filename "../models/advection_flat.mo"
 lstparams "breaklines=true,caption={Advection equation -- flat model},captionpos=b,frame=tb,label={advection_flat.mo}"
 
 \end_inset
@@ -320,7 +320,7 @@ Modelica code
 \begin_layout Standard
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "../languageExtension/string.mo"
+filename "../models/string.mo"
 lstparams "breaklines=true,caption={String model in Modelica},captionpos=b,frame=tb,label={string.mo}"
 
 \end_inset
@@ -845,7 +845,7 @@ Modelica code:
 \begin_layout Standard
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "../languageExtension/heatPID.mo"
+filename "../models/heatPID.mo"
 lstparams "breaklines=true,caption={heat equation with PID controller},captionpos=b,frame=tb,label={heatPID.mo}"
 
 \end_inset
@@ -1178,7 +1178,7 @@ T(x,y,0)=T_{0}(x,y)
 Pulse waves in arteries caused by heart beats 
 \begin_inset CommandInset citation
 LatexCommand cite
-key "alastrueyarterial,sherwin2003one"
+key "alastrueyarterial,sherwin2003one,voges2012normal"
 
 \end_inset
 
@@ -1585,6 +1585,205 @@ Q(L,t)=\frac{P(L,t)}{R_{out}},\text{ for }B\text{ and }C
 
 \begin_layout Standard
 For check: the result should be in agreement with Moens–Korteweg equation.
+\end_layout
+
+\begin_layout Subsection
+Vibrating membrane (drum) in air
+\end_layout
+
+\begin_layout Subsubsection*
+Membrane 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "membrane"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\Omega_{m}=\left\{ (x,y)\vert x^{2}+y^{2}<r^{2}\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $u(x,y,t)$
+\end_inset
+
+ ..
+ membrane displacement, 
+\begin_inset Formula $u:\,\Omega_{m}\times\langle0,T\rangle\rightarrow\mathbb{R}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $r$
+\end_inset
+
+ ..
+ membrane radius
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $c_{m}$
+\end_inset
+
+ ..
+ membrane wave speed
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\frac{\partial^{2}u}{\partial t^{2}} & = & c^{2}\nabla^{2}u
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph*
+Initial and boundary conditions
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+u(x,y,0) & = & u_{0}(x,y)\\
+u(x,y,t) & = & 0\;(x,y)\in\partial\Omega_{m}
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection*
+Air
+\begin_inset CommandInset citation
+LatexCommand cite
+key "acoustic"
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\Omega_{a}=\langle0,l_{x}\rangle\times\langle0,l_{y}\rangle\times\langle0,l_{z}\rangle$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mathbf{v}(x,y,z,t)$
+\end_inset
+
+ ..
+ air speed, 
+\begin_inset Formula $\mathbf{v}:\,\Omega_{a}\times\langle0,T\rangle\rightarrow\mathbb{R}^{3}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $p(x,y,t)$
+\end_inset
+
+ ..
+ air pressure, 
+\begin_inset Formula $p:\,\,\Omega_{a}\times\langle0,T\rangle\rightarrow\mathbb{R}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\rho_{0}$
+\end_inset
+
+ ..
+ density
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $c_{a}$
+\end_inset
+
+ ..
+ speed of sound
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\rho_{0}\frac{\partial\mathbf{v}}{\partial t}+\nabla p & = & 0\\
+\frac{\partial p}{\partial t} & +\rho_{0}c_{0}^{2}\nabla\cdot\mathbf{v}= & 0
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph*
+Initial and boundary conditions
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{eqnarray*}
+\mathbf{v}(x,y,z,0) & = & \mathbf{0}\\
+p(x,y,z,0) & = & p_{0}\\
+\mathbf{v}(x,y,z,t)\cdot\mathbf{n}(\partial\Omega_{a}) & \text{=} & 0\:(x,y,z)\in\partial\Omega
+\end{eqnarray*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Paragraph*
+Equation connecting membrane and air
+\end_layout
+
+\begin_layout Paragraph*
+Position of membrane centre in room
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\mathbf{a}=(a_{x},a_{y},a_{z})$
+\end_inset
+
+ ..
+ position vector of membrane centre in room
+\end_layout
+
+\begin_layout Standard
+membrane lies in 
+\begin_inset Formula $\tilde{\Omega}_{m}=\left\{ (a_{x}+x,\, a_{y}+y,\, a_{z})\vert x^{2}+y^{2}<r^{2}\right\} $
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\mathbf{v}(x,y,z,t)\cdot(0,0,1)\text{ in }\tilde{\Omega}_{m}\approx u(x,y,t)\text{ in }\Omega_{m}
+\]
+
+\end_inset
+
+ 
 \end_layout
 
 \end_body

@@ -778,7 +778,17 @@ shape
 
 function one-to-one map of points in k-dimensional interval (usualy cartesian
  product of intervals) to points in n-dimensional domain and thus deffine
- a coordinate system in domain.
+ a coordinate system in domain
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+How is the last sentence meant?
+\end_layout
+
+\end_inset
+
+.
  
 \end_layout
 
