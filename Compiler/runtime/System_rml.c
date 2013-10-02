@@ -43,7 +43,7 @@
 #endif
 
 #include "rml.h"
-#include "Config.h"
+#include "config.h"
 #include "systemimpl.c"
 #include "getMemorySize.c"
 #include <float.h>

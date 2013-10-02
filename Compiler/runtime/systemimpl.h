@@ -50,7 +50,7 @@ typedef int (*function_t)(type_description*, type_description*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define NOMINMAX
-#include <Windows.h>
+#include <windows.h>
 struct modelica_ptr_s {
   union {
     struct {

@@ -61,7 +61,7 @@ extern "C" {
  #define WIN32_LEAN_AND_MEAN
 #if !defined(NOMINMAX)
  #define NOMINMAX
- #include <Windows.h>
+ #include <windows.h>
 #endif
 #endif
 

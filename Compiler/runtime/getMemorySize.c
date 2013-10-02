@@ -8,7 +8,7 @@
  */
 
 #if defined(_WIN32) || defined(__MINGW32__) || defined(_MSC_VER)
-#include <Windows.h>
+#include <windows.h>
 
 #elif defined(__unix__) || defined(__unix) || defined(unix) || (defined(__APPLE__) && defined(__MACH__))
 #include <unistd.h>
