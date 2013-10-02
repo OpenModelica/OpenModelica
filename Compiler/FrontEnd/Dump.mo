@@ -1959,7 +1959,7 @@ algorithm
         printBool(st);
         Print.printBuf(", ");
         ps =parallelSymbol(par);
-        Print.printBuf(vs);
+        Print.printBuf(ps);
         Print.printBuf(", ");
         vs = variabilitySymbol(var);
         Print.printBuf(vs);
