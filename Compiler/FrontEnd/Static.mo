@@ -12987,14 +12987,8 @@ protected function getRecordPath
   input DAE.Type inType1;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inType1)
-  local
-    Absyn.Path path;
-    case (DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,{path})) then path;
-    case (DAE.T_ARRAY(DAE.T_COMPLEX(ClassInf.RECORD(_),_, _,{path}),_,_)) then path;
-    else fail();
-  end match;
-
+  DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), source = outPath :: _) :=
+    Types.arrayElementType(inType1);
 end getRecordPath;
 
 protected function getCallPath

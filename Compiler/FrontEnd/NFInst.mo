@@ -349,13 +349,13 @@ algorithm
       then
         (cls, ty, prefs, globals);
 
-    //case (_, NFSCodeEnv.CLASS(cls = scls, classType = NFSCodeEnv.CLASS_EXTENDS(), env = env),
-    //    _, _, _, _, ip, globals)
-    //  equation
-    //    (cls, ty, globals) =
-    //      instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix, ip, globals);
-    //  then
-    //    (cls, ty, NFInstTypes.NO_PREFIXES(), globals);
+    case (_, NFEnv.ENTRY(element = scls as SCode.CLASS(
+        classDef = SCode.CLASS_EXTENDS(baseClassName = _))), _, _, _, _, _, ip, globals)
+      equation
+        (cls, ty, globals) =
+          instClassExtends(scls, inClassMod, inPrefixes, inEnv, inPrefix, ip, globals);
+      then
+        (cls, ty, NFInstTypes.NO_PREFIXES(), globals);
 
     case (_, NFEnv.ENTRY(element = SCode.CLASS(classDef =
         SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _, _, globals)
@@ -373,6 +373,45 @@ algorithm
 
   end match;
 end instClassEntry;
+
+protected function instClassExtends
+  input SCode.Element inClassExtends;
+  input Modifier inMod;
+  input Prefixes inPrefixes;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input InstPolicy inInstPolicy;
+  input Globals inGlobals;
+  output Class outClass;
+  output DAE.Type outType;
+  output Globals outGlobals;
+algorithm
+  (outClass, outType, outGlobals) := matchcontinue(inClassExtends, inMod,
+      inPrefixes, inEnv, inPrefix, inInstPolicy, inGlobals)
+    local
+      SCode.ClassDef cdef;
+      SCode.Mod mod;
+      InstPolicy ip;
+      Globals globals;
+      String name;
+
+    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod,
+        composition = cdef)), _, _, _, _, ip, globals)
+      equation
+        print("instClassExtends");
+      then
+        (NFInstTypes.BASIC_TYPE(Absyn.IDENT("test")), DAE.T_INTEGER_DEFAULT, inGlobals);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        name = SCode.elementName(inClassExtends);
+        Debug.traceln("NFInst.instClassExtends failed on " +& name);
+      then
+        fail();
+
+  end matchcontinue;
+end instClassExtends;
 
 //protected function instClassExtends
 //  input SCode.Element inClassExtends;
