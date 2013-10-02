@@ -67,6 +67,11 @@ class Component : public QObject, public QGraphicsItem
   Q_OBJECT
   Q_INTERFACES(QGraphicsItem)
 public:
+  enum ComponentType {
+    Root,  /* Root Component. */
+    Extend,  /* Inherited Component. */
+    Port  /* Port Component. */
+  };
   Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
             QPointF position, bool inheritedComponent, QString inheritedClassName, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView,
             Component *pParent = 0);
@@ -130,6 +135,7 @@ private:
   bool mIsLibraryComponent;
   bool mIsInheritedComponent;
   QString mInheritedClassName;
+  ComponentType mComponentType;
   CoOrdinateSystem *mpCoOrdinateSystem;
   Transformation *mpTransformation;
   QGraphicsRectItem *mpResizerRectangle;

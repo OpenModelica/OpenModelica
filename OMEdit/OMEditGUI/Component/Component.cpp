@@ -48,6 +48,7 @@ Component::Component(QString annotation, QString name, QString className, String
   mIsLibraryComponent = false;
   mIsInheritedComponent = inheritedComponent;
   mInheritedClassName = inheritedClassName;
+  mComponentType = Component::Root;
   initialize();
   mpComponentInfo = 0;
   setComponentFlags();
@@ -91,6 +92,7 @@ Component::Component(QString annotation, QString className, StringHandler::Model
 {
   mIsLibraryComponent = mpParentComponent->isLibraryComponent() ? true : false;
   mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
+  mComponentType = Component::Extend;
   mpComponentInfo = 0;
   mpTransformation = 0;
   mpOMCProxy = pParent->getOMCProxy();
@@ -114,6 +116,7 @@ Component::Component(QString annotation, QString transformationString, Component
   mClassName = mpComponentInfo->getClassName();
   mIsLibraryComponent = mpParentComponent->isLibraryComponent() ? true : false;
   mIsInheritedComponent = mpParentComponent->isInheritedComponent() ? true : false;
+  mComponentType = Component::Port;
   mpOMCProxy = pParent->getOMCProxy();
   mpGraphicsView = isLibraryComponent() ? 0 : pParent->getGraphicsView();
   initialize();
@@ -137,6 +140,7 @@ Component::Component(QString annotation, QString className, OMCProxy *pOMCProxy,
   mIsLibraryComponent = true;
   mIsInheritedComponent = false;
   mInheritedClassName = "";
+  mComponentType = Component::Root;
   mpGraphicsView = 0;
   initialize();
   mpParentComponent = pParent;
@@ -1301,8 +1305,10 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
     If a user has a connector with components that are also connectors then we need to consume the event and don't propogate it.
     So we can get the correct clicked component.
     */
+  /* Do not consume the event for inherited/extends component as they don't have connection to componentClicked SIGNAL. */
   bool eventConsumed = false;
-  if (event->button() == Qt::LeftButton && pMainWindow->getConnectModeAction()->isChecked() && mType == StringHandler::Connector)
+  if (event->button() == Qt::LeftButton && pMainWindow->getConnectModeAction()->isChecked() && mType == StringHandler::Connector &&
+      mComponentType != Component::Extend)
   {
     emit componentClicked(this);
     eventConsumed = true;
