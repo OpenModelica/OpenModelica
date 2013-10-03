@@ -4625,9 +4625,13 @@ public function isBuiltinElement
   output Boolean outIsBuiltin;
 algorithm
   outIsBuiltin := match(inElement)
+    local
+      Annotation ann;
+
     case CLASS(classDef = PARTS(externalDecl =
       SOME(EXTERNALDECL(lang = SOME("builtin"))))) then true;
-
+    case CLASS(cmt = COMMENT(annotation_ = SOME(ann)))
+      then hasBooleanNamedAnnotation({ann}, "__OpenModelica_builtin");
     else false;
   end match;
 end isBuiltinElement;

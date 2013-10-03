@@ -54,14 +54,13 @@ annotation(__OpenModelica_Impure = true, Documentation(info="<html>
 </html>"));
 end terminal;
 
-type AssertionLevel = enumeration(error, warning) annotation(Documentation(info="<html>
-  Used by <a href=\"modelica://assert\">assert()</a>
-</html>"));
+type AssertionLevel = enumeration(error, warning) annotation(__OpenModelica_builtin=true,
+  Documentation(info="<html>Used by <a href=\"modelica://assert\">assert()</a></html>"));
 
 function assert
   input Boolean condition;
   input String message;
-  input AssertionLevel level;
+  input AssertionLevel level = AssertionLevel.error;
 external "builtin";
 annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'assert()'\">assert()</a>

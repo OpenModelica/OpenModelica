@@ -864,6 +864,9 @@ algorithm
     case (FRAME(name = SOME(name)) :: FRAME(scopeType = TOP_SCOPE()) :: _)
       then Absyn.IDENT(name);
 
+    case (FRAME(name = SOME(name)) :: FRAME(scopeType = BUILTIN_SCOPE()) :: _)
+      then Absyn.IDENT(name);
+
     case (FRAME(scopeType = IMPLICIT_SCOPE(iterIndex = _)) :: env)
       then envPath(env);
 

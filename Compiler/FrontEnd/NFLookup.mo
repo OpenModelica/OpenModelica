@@ -63,7 +63,7 @@ protected constant Entry INT_TYPE_ENTRY = NFEnv.ENTRY(
 protected constant Entry BOOL_TYPE_ENTRY = NFEnv.ENTRY(
     "Boolean", NFBuiltin.BUILTIN_BOOLEAN, {NFEnv.BUILTIN_ORIGIN()});
 protected constant Entry STRING_TYPE_ENTRY = NFEnv.ENTRY(
-    "String", NFBuiltin.BUILTIN_BOOLEAN, {NFEnv.BUILTIN_ORIGIN()});
+    "String", NFBuiltin.BUILTIN_STRING, {NFEnv.BUILTIN_ORIGIN()});
 
 protected uniontype LookupState
   "LookupState is used by the name lookup to keep track of what state it's in,
