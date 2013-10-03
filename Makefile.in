@@ -32,7 +32,7 @@ LAPACK_TARGET=@LAPACK_TARGET@
 OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@
 # We don't want the shared version, but symbols are not exported if we use the static version
 # This compiles the shared and static versions, but we only copy the static version...
-FMILIB_SHARED = ON
+FMILIB_SHARED = OFF
 
 include Makefile.common
 
