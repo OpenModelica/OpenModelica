@@ -3923,6 +3923,8 @@ template functionHeader(Function fn, Boolean inFunc)
           (funArgs |> var => funArgBoxedDefinition(var) ;separator=", ")
       let boxedHeader = if acceptMetaModelicaGrammar() then
         <<
+        
+        DLLExport
         modelica_metatype boxptr_<%fname%>(<%funArgsBoxedStr%>);
         >>
       <<
@@ -3930,6 +3932,7 @@ template functionHeader(Function fn, Boolean inFunc)
         <%fname%> c1;
       } <%fname%>_rettype;
 
+      DLLExport
       <%fname%>_rettype omc_<%fname%>(<%funArgsStr%>);
 
       <%boxedHeader%>
@@ -4512,6 +4515,7 @@ case FUNCTION(__) then
 
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
+  DLLExport
   <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
     /* functionBodyRegularFunction: GC: save roots mark when you enter the function */
@@ -4549,6 +4553,7 @@ case FUNCTION(__) then
   }
   <% if inFunc then
   <<
+  DLLExport
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
     void* states = push_memory_states(1);
@@ -4880,6 +4885,7 @@ case efn as EXTERNAL_FUNCTION(__) then
   <%fnBody%>
   <% if inFunc then
   <<
+  DLLExport
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
     void* states = push_memory_states(1);
@@ -5010,6 +5016,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     '<%retVar%>.c<%i1%> = <%funArgBox(arg, ty, &varUnbox, &varDecls)%>;'
     ;separator="\n")
   <<
+  
   <%retTypeBoxed%> boxptr_<%fname%>(<%funargs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
   {
     /* GC: save roots mark when you enter the function */

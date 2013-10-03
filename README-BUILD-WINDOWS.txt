@@ -71,7 +71,7 @@ STEPS
 -M Install all (important) windows updates until there is no update
 -M Create a directory c:\dev\OpenModelica_releases	
 -M Get buildNightly.bat file and put it into c:\dev\OpenModelica_releases	
-	Direct link: https://test.openmodelica.org/hudson/job/OpenModelica_WINDOWS_NIGHTLY_BUILD/ws/buildNightly.bat
+	Direct link: https://test.openmodelica.org/hudson/job/OM_Win_NIGHTLY_BUILD/ws/buildNightly.bat
 -O Download console2
 	http://sourceforge.net/projects/console/
 	Direct link: http://sourceforge.net/projects/console/files/latest/download
