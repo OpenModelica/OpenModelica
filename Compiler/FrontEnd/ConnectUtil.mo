@@ -427,8 +427,10 @@ algorithm
   end match;
 end isVarExpandable;
 
-protected function getExpandableVariables
-"Goes through a list of variables and returns their crefs"
+protected function getExpandableVariablesWithNoBinding
+"@author: adrpo
+ Goes through a list of expandable variables 
+ THAT HAVE NO BINDING and returns their crefs"
   input list<DAE.Element> inVariables;
   input list<DAE.ComponentRef> inAccPotential;
   output list<DAE.ComponentRef> outPotential;
@@ -438,23 +440,30 @@ algorithm
       list<DAE.Element> rest_vars;
       DAE.ComponentRef name;
       list<DAE.ComponentRef> potential;
+      Option<DAE.Exp> bnd;
 
     case ({}, _) then (inAccPotential);
 
-    case (DAE.VAR(componentRef = name) :: rest_vars, _)
+    // do not return the ones that have a binding as they are used
+    // TODO: actually only if their binding is not another expandable??!!
+    case (DAE.VAR(componentRef = name, binding = bnd) :: rest_vars, _)
       equation
-        potential = getExpandableVariables(rest_vars, List.consOnTrue(isExpandable(name), name, inAccPotential));
+        potential = 
+          Util.if_(Util.isSome(bnd), 
+            inAccPotential, 
+            List.consOnTrue(isExpandable(name), name, inAccPotential));
+        potential = getExpandableVariablesWithNoBinding(rest_vars, potential);
       then
         potential;
 
     case (_::rest_vars, _)
       equation
-        potential = getExpandableVariables(rest_vars, inAccPotential);
+        potential = getExpandableVariablesWithNoBinding(rest_vars, inAccPotential);
       then
         potential;
 
   end match;
-end getExpandableVariables;
+end getExpandableVariablesWithNoBinding;
 
 protected function getStreamAndFlowVariables
   "Goes through a list of variables and filters out all flow and stream
@@ -1881,11 +1890,11 @@ algorithm
         //print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
 
         has_expandable = daeHasExpandableConnectors(inDae);
-        sets = removeNonRequiredExpandableConnections(sets, has_expandable);
+        (sets, dae) = removeUnusedExpandableVariablesAndConnections(sets, inDae, has_expandable);
 
         // send in the connection graph and build the connected/broken connects
         // we do this here so we do it once and not for every EQU set.
-        (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, inDae);
+        (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, dae);
 
         // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
         dae = List.fold2(sets, equationsDispatch, connected, broken, dae);
@@ -1894,8 +1903,6 @@ algorithm
 
         // add the equality constraint equations to the dae.
         dae = ConnectionGraph.addBrokenEqualityConstraintEquations(dae, broken);
-
-        dae = removeUnusedExpandablePotentials(dae, sets, has_expandable);
       then
         dae;
 
@@ -1932,40 +1939,6 @@ algorithm
   end match;
 end getExpandableEquSetsAsCrefs;
 
-protected function removeNonRequiredExpandableConnections
-"@author: adrpo
- this function will remove all the sets that contain ONLY
- expadable variables as they are not needed if they do not
- connect to *ACTUAL EXISTING* variables"
-  input list<Set> inSets;
-  input Boolean hasExpandable;
-  output list<Set> outSets;
-algorithm
-  outSets := matchcontinue(inSets, hasExpandable)
-    local
-      list<Set> sets;
-      list<list<DAE.ComponentRef>> setsAsCrefs;
-      list<DAE.ComponentRef> crefs;
-
-    case (_, false) then inSets;
-
-    case (_, _)
-      equation
-        setsAsCrefs = getExpandableEquSetsAsCrefs(inSets, {});
-        // print("Exp Sets: " +& intString(listLength(setsAsCrefs)) +& "\n");
-        setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
-        // print("Exp Sets Merged: " +& intString(listLength(setsAsCrefs)) +& "\n");
-        // TODO! FIXME! maybe we should do fixpoint here??
-        setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
-        // print("Exp Sets Merged Again: " +& intString(listLength(setsAsCrefs)) +& "\n");
-        crefs = getOnlyExpandableConnectedCrefs(setsAsCrefs, {});
-        // print("Removing crefs:\n\t" +& stringDelimitList(List.map(crefs, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        sets = removeCrefsFromSets(inSets, crefs);
-      then
-        sets;
-
-  end matchcontinue;
-end removeNonRequiredExpandableConnections;
 
 protected function removeCrefsFromSets
   input list<Set> inSets;
@@ -2073,84 +2046,6 @@ algorithm
 
   end match;
 end allCrefsAreExpandable;
-
-protected function removeUnusedExpandablePotentials
-"@author: adrpo
- this function will remove all unconnected/unused expandable variables from the DAE"
-  input DAE.DAElist inDAE;
-  input list<Set> inSets;
-  input Boolean hasExpandable;
-  output DAE.DAElist outDAE;
-algorithm
-  outDAE := matchcontinue(inDAE, inSets, hasExpandable)
-    local
-      list<DAE.Element> elems;
-      list<DAE.ComponentRef> equVars, potentialVars, unconnected, usedInDAE, used;
-      DAE.DAElist dae;
-
-    case (_, _, false) then inDAE;
-
-    case (DAE.DAE(elems), _, _)
-      equation
-        //print("EquVars: " +& intString(listLength(equVars)) +& "\n");
-        potentialVars = getExpandableVariables(elems, {});
-        // remove the potential vars from the dae
-        dae = DAEUtil.removeVariables(inDAE, potentialVars);
-        // get all crefs used in the dae (without the expandable vars)
-        usedInDAE = DAEUtil.getAllCrefsFromDAE(dae);
-        //print("Expandable: " +& intString(listLength(potentialVars)) +& "\n\t");
-        //print(stringDelimitList(List.map(potentialVars, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        unconnected = List.setDifferenceOnTrue(potentialVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
-        //print("Unconnected: " +& intString(listLength(unconnected)) +& "\n\t");
-        //print(stringDelimitList(List.map(unconnected, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        dae = DAEUtil.removeVariables(inDAE, unconnected);
-      then
-        dae;
-
-    else
-      equation
-        print("ConnectUtil.removeUnconnectedExpandablePotentials: internal error!\n");
-      then
-        inDAE;
-  end matchcontinue;
-end removeUnusedExpandablePotentials;
-
-protected function getAllEquCrefs
-  input list<Set> inSets;
-  input list<DAE.ComponentRef> inAcc;
-  output list<DAE.ComponentRef> outCrefs;
-algorithm
-  outCrefs := match (inSets, inAcc)
-    local
-      list<Set> rest;
-      list<ConnectorElement> elms;
-      DAE.ComponentRef name;
-      list<DAE.ComponentRef> acc;
-
-    case ({}, _) then inAcc;
-
-    case (Connect.SET(ty = Connect.EQU(), elements = {})::rest, _)
-      then getAllEquCrefs(rest, inAcc);
-
-    case (Connect.SET(ty = Connect.EQU(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
-      equation
-        acc = getAllEquCrefs(Connect.SET(Connect.EQU(), elms)::rest, name::inAcc);
-      then
-        acc;
-    /* TODO! FIXME! check if flow can be here or not, in an expandable connector
-    case (Connect.SET(ty = Connect.FLOW(), elements = {})::rest, _)
-      then getAllEquCrefs(rest, inAcc);
-
-    case (Connect.SET(ty = Connect.FLOW(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
-      equation
-        acc = getAllEquCrefs(Connect.SET(Connect.FLOW(), elms)::rest, name::inAcc);
-      then
-        acc;
-    */
-    case (_::rest, _)
-      then getAllEquCrefs(rest, inAcc);
-  end match;
-end getAllEquCrefs;
 
 protected function generateSetArray
   "Generates an array of sets from a connection set."
@@ -3894,6 +3789,115 @@ algorithm
 
   end match;
 end printSetStr;
+
+protected function getAllEquCrefs
+"@author: adrpo
+ return all crefs present in EQU sets"
+  input list<Set> inSets;
+  input list<DAE.ComponentRef> inAcc;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  outCrefs := match (inSets, inAcc)
+    local
+      list<Set> rest;
+      list<ConnectorElement> elms;
+      DAE.ComponentRef name;
+      list<DAE.ComponentRef> acc;
+
+    case ({}, _) then inAcc;
+
+    case (Connect.SET(ty = Connect.EQU(), elements = {})::rest, _)
+      then getAllEquCrefs(rest, inAcc);
+
+    case (Connect.SET(ty = Connect.EQU(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
+      equation
+        acc = getAllEquCrefs(Connect.SET(Connect.EQU(), elms)::rest, name::inAcc);
+      then
+        acc;
+    /* TODO! FIXME! check if flow can be here or not, in an expandable connector
+    case (Connect.SET(ty = Connect.FLOW(), elements = {})::rest, _)
+      then getAllEquCrefs(rest, inAcc);
+
+    case (Connect.SET(ty = Connect.FLOW(), elements = Connect.CONNECTOR_ELEMENT(name = name)::elms)::rest, _)
+      equation
+        acc = getAllEquCrefs(Connect.SET(Connect.FLOW(), elms)::rest, name::inAcc);
+      then
+        acc;
+    */
+    case (_::rest, _)
+      then getAllEquCrefs(rest, inAcc);
+  end match;
+end getAllEquCrefs;
+
+protected function removeUnusedExpandableVariablesAndConnections
+"@author: adrpo
+ this function will remove all unconnected/unused/unnecessary expandable variables and connections from the DAE.
+ NOTE that this is not so obvious:
+ 1. collect all expandable variables crefs 
+ 2. collect all expandable crefs used in the DAE (with the expandable variables THAT HAVE NO BINDING removed)
+ 3. get all expandable crefs that are connected ONLY with expandable
+ 4. substract: (3)-(2)
+ 5. remove (4) from the DAE and connection sets
+ 6. get all the connected potential variables
+ 7. substract (2) from (1)
+ 8. substract (6) from (7)
+ 9. remove (8) from the DAE (5)"
+  input list<Set> inSets;
+  input DAE.DAElist inDAE;
+  input Boolean hasExpandable;
+  output list<Set> outSets;
+  output DAE.DAElist outDAE;
+algorithm
+  (outSets, outDAE) := matchcontinue(inSets, inDAE, hasExpandable)
+    local
+      list<DAE.Element> elems;
+      list<DAE.ComponentRef> expandableVars, unnecessary, usedInDAE, onlyExpandableConnected, equVars;
+      DAE.DAElist dae;
+      list<Set> sets;
+      list<list<DAE.ComponentRef>> setsAsCrefs;
+
+    case (_, _, false) then (inSets, inDAE);
+
+    case (_, DAE.DAE(elems), true)
+      equation
+        // 1 - get all expandable crefs
+        expandableVars = getExpandableVariablesWithNoBinding(elems, {});
+        // print("All expandable (1):\n  " +& stringDelimitList(List.map(expandableVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        
+        // 2 - remove all expandable without binding from the dae
+        dae = DAEUtil.removeVariables(inDAE, expandableVars);
+        // 2 - get all expandable crefs used in the dae (without the expandable vars)
+        usedInDAE = DAEUtil.getAllExpandableCrefsFromDAE(dae);
+        // print("Used in the DAE (2):\n  " +& stringDelimitList(List.map(usedInDAE, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        
+        // 3 - get all expandable crefs that are connected ONLY with expandable
+        setsAsCrefs = getExpandableEquSetsAsCrefs(inSets, {});
+        setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
+        // TODO! FIXME! maybe we should do fixpoint here??
+        setsAsCrefs = mergeEquSetsAsCrefs(setsAsCrefs);
+        onlyExpandableConnected = getOnlyExpandableConnectedCrefs(setsAsCrefs, {});
+        // print("All expandable - expandable connected (3):\n  " +& stringDelimitList(List.map(onlyExpandableConnected, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+
+        // 4 - subtract (2) from (3)
+        unnecessary = List.setDifferenceOnTrue(onlyExpandableConnected, usedInDAE, ComponentReference.crefEqualWithoutSubs);
+        // print("REMOVE: (3)-(2):\n  " +& stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+                
+        // 5 - remove unnecessary variables form the DAE 
+        dae = DAEUtil.removeVariables(inDAE, unnecessary);
+        // 5 - remove unnecessary variables form the connection sets
+        sets = removeCrefsFromSets(inSets, unnecessary);
+        
+        equVars = getAllEquCrefs(sets, {});
+        // print("(6):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");        
+        expandableVars = List.setDifferenceOnTrue(expandableVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
+        // print("(1)-(2)=(7):\n  " +& stringDelimitList(List.map(equVars, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        unnecessary = List.setDifferenceOnTrue(expandableVars, equVars, ComponentReference.crefEqualWithoutSubs);
+        // print("REMOVE: (7)-(6):\n  " +& stringDelimitList(List.map(unnecessary, ComponentReference.printComponentRefStr), "\n  ") +& "\n");
+        dae = DAEUtil.removeVariables(inDAE, unnecessary);
+      then
+        (sets, dae);
+  end matchcontinue;
+end removeUnusedExpandableVariablesAndConnections; 
 
 end ConnectUtil;
 

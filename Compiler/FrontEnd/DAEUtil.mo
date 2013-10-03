@@ -48,6 +48,7 @@ public import ValuesUtil;
 public import HashTable;
 public import HashTable2;
 
+protected import ConnectUtil;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging."
@@ -403,11 +404,15 @@ algorithm
   outDae := match(dae, vars)
     local
       list<DAE.Element> elements;
+    
+    case (_, {}) then dae; 
+    
     case (DAE.DAE(elements), _)
       equation
         elements = removeVariablesFromElements(elements, vars, {});
       then
         DAE.DAE(elements);
+  
   end match;
 end removeVariables;
 
@@ -429,7 +434,10 @@ algorithm
       Option<SCode.Comment> cmt;
       Boolean isEmpty;
 
-    // empty case
+    // empty case for vars
+    case(_,{},_) then inElements;
+
+    // empty case for elements
     case({},_,_) then listReverse(inAcc);
 
     // variable present, remove it
@@ -6226,7 +6234,7 @@ algorithm
   end match;
 end splitVariableNamed;
 
-public function getAllCrefsFromDAE
+public function getAllExpandableCrefsFromDAE
 "@author: adrpo
  collect all crefs from the DAE"
   input DAE.DAElist inDAE;
@@ -6235,10 +6243,10 @@ protected
   list<DAE.Element> elts;
 algorithm
   DAE.DAE(elts) := inDAE;
-  (_, outCrefs) := traverseDAE2(elts, collectAllCrefs, {});
-end getAllCrefsFromDAE;
+  (_, outCrefs) := traverseDAE2(elts, collectAllExpandableCrefs, {});
+end getAllExpandableCrefsFromDAE;
 
-protected function collectAllCrefs
+protected function collectAllExpandableCrefs
 "@author: adrpo
  collect all crefs"
   input tuple<DAE.Exp, list<DAE.ComponentRef>> itpl;
@@ -6250,13 +6258,13 @@ algorithm
       list<DAE.ComponentRef> extra_arg;
     case ((exp,extra_arg))
       equation
-        ((exp,extra_arg)) = Expression.traverseExp(exp,collectAllCrefsInExp,extra_arg); 
+        ((exp,extra_arg)) = Expression.traverseExp(exp,collectAllExpandableCrefsInExp,extra_arg); 
       then
         ((exp,extra_arg)); 
   end match;
-end collectAllCrefs;
+end collectAllExpandableCrefs;
 
-protected function collectAllCrefsInExp
+protected function collectAllExpandableCrefsInExp
 "@author: adrpo
  collect all crefs from expression"
   input tuple<DAE.Exp, list<DAE.ComponentRef>> itpl;
@@ -6269,12 +6277,14 @@ algorithm
       list<DAE.ComponentRef> acc;
 
     case ((exp as DAE.CREF(componentRef = cr),acc))
+      equation
+        true = ConnectUtil.isExpandable(cr);
       then
         ((exp,(cr::acc)));
 
     else itpl;
   
   end matchcontinue;
-end collectAllCrefsInExp;
+end collectAllExpandableCrefsInExp;
 
 end DAEUtil;
