@@ -1895,7 +1895,7 @@ algorithm
         // add the equality constraint equations to the dae.
         dae = ConnectionGraph.addBrokenEqualityConstraintEquations(dae, broken);
 
-        dae = removeUnconnectedExpandablePotentials(dae, sets, has_expandable);
+        dae = removeUnusedExpandablePotentials(dae, sets, has_expandable);
       then
         dae;
 
@@ -2074,9 +2074,9 @@ algorithm
   end match;
 end allCrefsAreExpandable;
 
-protected function removeUnconnectedExpandablePotentials
+protected function removeUnusedExpandablePotentials
 "@author: adrpo
- this function will remove all unconnected expandable variables from the DAE"
+ this function will remove all unconnected/unused expandable variables from the DAE"
   input DAE.DAElist inDAE;
   input list<Set> inSets;
   input Boolean hasExpandable;
@@ -2084,20 +2084,23 @@ protected function removeUnconnectedExpandablePotentials
 algorithm
   outDAE := matchcontinue(inDAE, inSets, hasExpandable)
     local
-      list<DAE.Element>  elems;
-      list<DAE.ComponentRef> equVars, potentialVars, unconnected;
+      list<DAE.Element> elems;
+      list<DAE.ComponentRef> equVars, potentialVars, unconnected, usedInDAE, used;
       DAE.DAElist dae;
 
     case (_, _, false) then inDAE;
 
     case (DAE.DAE(elems), _, _)
       equation
-        equVars = getAllEquCrefs(inSets, {});
         //print("EquVars: " +& intString(listLength(equVars)) +& "\n");
         potentialVars = getExpandableVariables(elems, {});
+        // remove the potential vars from the dae
+        dae = DAEUtil.removeVariables(inDAE, potentialVars);
+        // get all crefs used in the dae (without the expandable vars)
+        usedInDAE = DAEUtil.getAllCrefsFromDAE(dae);
         //print("Expandable: " +& intString(listLength(potentialVars)) +& "\n\t");
         //print(stringDelimitList(List.map(potentialVars, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        unconnected = List.setDifferenceOnTrue(potentialVars, equVars, ComponentReference.crefEqualNoStringCompare);
+        unconnected = List.setDifferenceOnTrue(potentialVars, usedInDAE, ComponentReference.crefEqualWithoutSubs);
         //print("Unconnected: " +& intString(listLength(unconnected)) +& "\n\t");
         //print(stringDelimitList(List.map(unconnected, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
         dae = DAEUtil.removeVariables(inDAE, unconnected);
@@ -2110,7 +2113,7 @@ algorithm
       then
         inDAE;
   end matchcontinue;
-end removeUnconnectedExpandablePotentials;
+end removeUnusedExpandablePotentials;
 
 protected function getAllEquCrefs
   input list<Set> inSets;

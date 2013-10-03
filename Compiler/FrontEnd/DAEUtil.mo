@@ -6226,4 +6226,55 @@ algorithm
   end match;
 end splitVariableNamed;
 
+public function getAllCrefsFromDAE
+"@author: adrpo
+ collect all crefs from the DAE"
+  input DAE.DAElist inDAE;
+  output list<DAE.ComponentRef> outCrefs;
+protected
+  list<DAE.Element> elts;
+algorithm
+  DAE.DAE(elts) := inDAE;
+  (_, outCrefs) := traverseDAE2(elts, collectAllCrefs, {});
+end getAllCrefsFromDAE;
+
+protected function collectAllCrefs
+"@author: adrpo
+ collect all crefs"
+  input tuple<DAE.Exp, list<DAE.ComponentRef>> itpl;
+  output tuple<DAE.Exp, list<DAE.ComponentRef>> otpl;
+algorithm
+  otpl := match itpl
+    local
+      DAE.Exp exp;
+      list<DAE.ComponentRef> extra_arg;
+    case ((exp,extra_arg))
+      equation
+        ((exp,extra_arg)) = Expression.traverseExp(exp,collectAllCrefsInExp,extra_arg); 
+      then
+        ((exp,extra_arg)); 
+  end match;
+end collectAllCrefs;
+
+protected function collectAllCrefsInExp
+"@author: adrpo
+ collect all crefs from expression"
+  input tuple<DAE.Exp, list<DAE.ComponentRef>> itpl;
+  output tuple<DAE.Exp, list<DAE.ComponentRef>> otpl;
+algorithm
+  otpl := matchcontinue (itpl)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp exp;
+      list<DAE.ComponentRef> acc;
+
+    case ((exp as DAE.CREF(componentRef = cr),acc))
+      then
+        ((exp,(cr::acc)));
+
+    else itpl;
+  
+  end matchcontinue;
+end collectAllCrefsInExp;
+
 end DAEUtil;
