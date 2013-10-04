@@ -174,7 +174,7 @@ static void printVector(const double *vector, integer *size, const int logLevel,
   INFO1(logLevel, "%s", name);
   INDENT(logLevel);
   for(i=0; i<*size; i++)
-    INFO2(logLevel, "[%d] %10g", i, vector[i]);
+    INFO2(logLevel, "[%2d] %20.12g", i, vector[i]);
   RELEASE(logLevel);
 }
 
@@ -324,7 +324,7 @@ static int getAnalyticalJacobian(DATA* data, double* jac, int sysNumber)
  */
 static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, integer* ldjac, integer* iflag, void* data, int sysNumber)
 {
-  int i;
+  int i,j;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(systemData->solverData);
   int continuous = ((DATA*)data)->simulationInfo.solveContinuous;
@@ -363,12 +363,33 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
     if(continuous)
       ((DATA*)data)->simulationInfo.solveContinuous = 0;
 
+    if(ACTIVE_STREAM(LOG_NLS_RES))
+      INFO(LOG_NLS_RES, "-- begin calculating jacobian --");
+      
     /* call apropreated jacobain function */
     if(systemData->jacobianIndex != -1)
       getAnalyticalJacobian(data, fjac, sysNumber);
     else
       getNumericalJacobian(data, fjac, x, f, sysNumber);
 
+    if(ACTIVE_STREAM(LOG_NLS_RES)) {
+      INFO(LOG_NLS_RES, "-- end calculating jacobian --");
+      
+      if(ACTIVE_STREAM(LOG_NLS_JAC))
+      {
+        char buffer[16384];
+        INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", *n, *n);
+        INDENT(LOG_NLS_JAC);
+        for(i=0; i<*n; i++)
+        {
+          buffer[0] = 0;
+          for(j=0; j<*n; j++)
+            sprintf(buffer, "%s%20.12g ", buffer, fjac[i*solverData->n+j]);
+          INFO1(LOG_NLS_JAC, "%s", buffer);
+        }
+        RELEASE(LOG_NLS_JAC);
+      }
+    }
     /* reset residual function again */
     if(continuous)
       ((DATA*)data)->simulationInfo.solveContinuous = 1;
