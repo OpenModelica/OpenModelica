@@ -14,10 +14,11 @@ CMAKE = CC=$(CC) CXX=$(CXX) cmake
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
 AR = @AR@
+host = @host@
 
 defaultMakefileTarget = Makefile
 QMAKE=@QMAKE@
-EXE=@EXE@
+APP=@APP@
 
 CC=@CC@
 CXX=@CXX@
@@ -141,7 +142,7 @@ lis: lis-configure mkbuilddirs
 
 lis-configure: 
 	# Configure and build lis
-	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
+	if ! test -f 3rdParty/lis-1.4.12/Makefile; then cd 3rdParty/lis-1.4.12 && ./configure "--host=$(host)" --enable-shared --disable-static MPICC="false" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) @LIS_LDFLAGS@" && $(MAKE) clean; fi
 lis-clean:
 	if test -f 3rdParty/lis-1.4.12/Makefile; then $(MAKE) -C 3rdParty/lis-1.4.12 clean; fi
 	rm -f 3rdParty/lis-1.4.12/Makefile

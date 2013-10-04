@@ -25,7 +25,7 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 .PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall boehm-gc
 
 mkbuilddirs:
-	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
+	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
 	mkdir -p $(builddir_bin)
 	mkdir -p $(builddir_lib)/omc/emcc
 	mkdir -p $(builddir_lib)/python
@@ -83,10 +83,10 @@ build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h
 build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 	cp -pP $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
-	(cd 3rdParty/gc-7.2 && ./configure $(GC_THREADS) --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
+	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(GC_THREADS) --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
 
 build/lib/omc/libopenblas_openmodelica.a:
-	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
+	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 PREFIX=${abs_top_builddir}/build OPENBLAS_LIBRARY_DIR=${abs_top_builddir}/build/lib/omc OPENBLAS_INCLUDE_DIR=${abs_top_builddir}/3rdParty/build/install-includes/ NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica install
 openblas: build/lib/omc/libopenblas_openmodelica.a
 
@@ -245,7 +245,7 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean
 	rm -rf libraries/Resources libraries/link-external-libs
 install-dirs:
 	@test ! "${DESTDIR}/${prefix}" -ef "${top_builddir}/build" || (echo Error: Install and build dirs are the same && false)
-	if [ "$(EXE)" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
+	if [ "$(APP)" = ".app" ]; then mkdir -p ${INSTALL_APPDIR}; fi
 	mkdir -p ${INSTALL_BINDIR}
 	mkdir -p ${INSTALL_LIBDIR}
 	mkdir -p ${INSTALL_INCLUDEDIR}
@@ -261,7 +261,7 @@ install-dirs:
 install: install-dirs install-python
 	echo Installing OpenModelica...
 	# Application directory (OSX)
-	if [ "$(EXE)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
+	if [ "$(APP)" = ".app" ]; then cp -rp ${builddir_app} $(INSTALL_APPDIR); fi
 	# Binaries
 	cp -rp ${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries

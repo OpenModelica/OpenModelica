@@ -9,16 +9,17 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
-AR = sh -x ar.sh
+AR = @AR_SH@
 CC = @CC@
 CXX = @CXX@
 CONFIG_CPPFLAGS = @CPPFLAGS@
 CONFIG_CFLAGS = @CFLAGS@ @IPOPT_CFLAGS@
 FPMATHFORTRAN = @FPMATHFORTRAN@
+LDFLAGS=@LDFLAGS@
 
 LIBMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"
-INTERACTIVECLIENT = "../interactive/SampleClient/interactiveclient"
+INTERACTIVECLIENT = ../interactive/SampleClient/interactiveclient@EXE@
 QMAKE=@QMAKE@
 CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
 # Use f2c from the OS itself... If so, don't include the f2c headers from OpenModelica

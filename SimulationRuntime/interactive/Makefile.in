@@ -14,6 +14,7 @@ CXX = @CXX@
 CFLAGS	+= @CFLAGS@
 CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -I.. -Wall -I../c/simulation/results/ -I../c/linearization -I../c/simulation/solver/ -I../c/util/ -I../c/ -I../c/simulation/ -I../c/math-support/ $(LIBF2CINC)
+LDFLAGS = @LDFLAGS@
 
 LIBF2C=@LIBF2C@
 ifeq ($(LIBF2C),)
@@ -23,7 +24,7 @@ endif
 
 OBJ = $(CPPSRC:.cpp=.o)
 
-all: libinteractive.a SampleClient/interactiveclient
+all: libinteractive.a SampleClient/interactiveclient@EXE@
 
 omc_ServiceInterface.o: omi_ServiceInterface.cpp \
   omi_ServiceInterface.h omi_Control.h omi_Transfer.h \
@@ -34,9 +35,9 @@ omc_ServiceInterface.o: omi_ServiceInterface.cpp \
 libinteractive.a : $(OBJ)
 	$(AR) -s -r $@ $(OBJ)
 
-SampleClient/interactiveclient: client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
+SampleClient/interactiveclient@EXE@: client.cpp socket.h socket.cpp socket_win.cpp socket_unix.cpp thread.h thread.cpp
 	@echo "Building client for interactive simulation ... "
-	$(CXX) $(CPPFLAGS) -o $@ client.cpp socket.cpp thread.cpp -lpthread
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ client.cpp socket.cpp thread.cpp $(LDFLAGS) -lpthread @LDFLAGS_SOCKET@
 
 clean:
 	$(RM) -rf *.o *.a SampleClient/interactiveclient
