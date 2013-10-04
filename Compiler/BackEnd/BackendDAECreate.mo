@@ -524,13 +524,15 @@ algorithm
   (outVariables, outKnownVariables, outExternalVariables, oEqnsLst, oInlineHT) :=
   matchcontinue (inElement, functionTree, inVars, inKnVars, inExVars, inEqnsLst, iInlineHT)
     local
+      String str;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
-      BackendDAE.Var backendVar1;
       DAE.Exp e1, e2;
+      BackendDAE.Var backendVar1;
       BackendDAE.Variables vars, knvars, extvars;
-      String str;
       HashTableExpToExp.HashTable inlineHT;
+      list<BackendDAE.Equation> assrtEqs, eqLst;  // assrtEqs pop up when asserts are inlined
+      list<DAE.Statement> assrtLst;
     // external object variables
     case (DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))), _, _, _, _, _, _)
       equation
@@ -546,7 +548,7 @@ algorithm
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(inElement);
         (backendVar1) = lowerDynamicVar(inElement, functionTree);
-        (e2, source, _) = Inline.inlineExp(e2, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e2, source, _,assrtLst) = Inline.inlineExp(e2, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         vars = BackendVariable.addVar(backendVar1, inVars);
         e1 = Expression.crefExp(cr);
       then
@@ -564,10 +566,11 @@ algorithm
     // known variables: parameters and constants
     case (DAE.VAR(componentRef = _), _, _, _, _, _, _)
       equation
-        (backendVar1, inlineHT) = lowerKnownVar(inElement, functionTree, iInlineHT) "in previous rule, lower_var failed." ;
+        (backendVar1, inlineHT,assrtEqs) = lowerKnownVar(inElement, functionTree, iInlineHT) "in previous rule, lower_var failed." ;
         knvars = BackendVariable.addVar(backendVar1, inKnVars);
+        eqLst = listAppend(inEqnsLst,assrtEqs);
       then
-        (inVars, knvars, inExVars, inEqnsLst, inlineHT);
+        (inVars, knvars, inExVars, eqLst, inlineHT);  // CHANGE HERE TO EQLST
 
     else
       equation
@@ -651,8 +654,9 @@ protected function lowerKnownVar
   input HashTableExpToExp.HashTable iInlineHT "workaround to speed up inlining of array parameters";
   output BackendDAE.Var outVar;
   output HashTableExpToExp.HashTable oInlineHT "workaround to speed up inlining of array parameters";
+  output list<BackendDAE.Equation> assrtEqOut;
 algorithm
-  (outVar,oInlineHT) := matchcontinue (inElement, functionTree, iInlineHT)
+  (outVar,oInlineHT,assrtEqOut) := matchcontinue (inElement, functionTree, iInlineHT)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -672,6 +676,8 @@ algorithm
       String str;
       Functiontuple fnstpl;
       HashTableExpToExp.HashTable inlineHT;
+      list<DAE.Statement> assrtLst;
+      list<BackendDAE.Equation> eqLst;
     case (DAE.VAR(componentRef = name,
                   kind = kind,
                   direction = dir,
@@ -694,10 +700,13 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr, name, source, kind_1, tp, {});
         _ = BackendVariable.getNominalAssert(dae_var_attr, name, source, kind_1, tp, {});
         fnstpl = (SOME(functionTree), {DAE.NORM_INLINE()});
-        (bind1, source, inlineHT) = inlineExpOpt(bind, fnstpl, source, iInlineHT);
+        // build algorithms for the inlined asserts
+        (bind1, source, inlineHT,assrtLst) = inlineExpOpt(bind, fnstpl, source, iInlineHT);
+        eqLst = buildAssertAlgorithms(assrtLst,source,{});
+        // building an algorithm of the assert
         (dae_var_attr, source, _) = Inline.inlineStartAttribute(dae_var_attr, source, fnstpl);
       then
-        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind1, NONE(), dims, source, dae_var_attr, comment, ct), inlineHT);
+        (BackendDAE.VAR(name, kind_1, dir, prl, tp, bind1, NONE(), dims, source, dae_var_attr, comment, ct), inlineHT,eqLst);
 
     else
       equation
@@ -706,6 +715,38 @@ algorithm
       then fail();
   end matchcontinue;
 end lowerKnownVar;
+
+
+protected function buildAssertAlgorithms "builds BackendDAE.ALGORITHM out of the given assert statements
+author:Waurich TUD 2013-10"
+  input list<DAE.Statement> assrtIn;
+  input DAE.ElementSource source;
+  input list<BackendDAE.Equation> eqIn;
+  output list<BackendDAE.Equation> eqOut;
+algorithm
+  eqOut := matchcontinue(assrtIn,source,eqIn)
+  local
+    BackendDAE.Equation eq;
+    DAE.Statement assrt;
+    list<DAE.Statement> rest;
+    list<BackendDAE.Equation> eqLst;
+  case({},_,_)
+    then
+      eqIn;
+    case(assrt::rest,_,_)
+      equation
+      eq = BackendDAE.ALGORITHM(0,DAE.ALGORITHM_STMTS({assrt}),source);
+      eqLst = buildAssertAlgorithms(rest,source,eq::eqIn);
+    then
+      eqLst;
+    else
+      equation
+        print("buildAssertAlgorithm failed!\n");
+      then
+        fail();
+  end matchcontinue;
+end buildAssertAlgorithms;
+
 
 protected function inlineExpOpt
 "author Frenkel TUD 2013-02"
@@ -716,17 +757,19 @@ protected function inlineExpOpt
   output Option<DAE.Exp> oOptExp;
   output DAE.ElementSource oSource;
   output HashTableExpToExp.HashTable oInlineHT "workaround to speed up inlining of array parameters";
+  output list<DAE.Statement> assrtLstOut;
 algorithm
-  (oOptExp,oSource,oInlineHT) := match(iOptExp,fnstpl,iSource,iInlineHT)
+  (oOptExp,oSource,oInlineHT,assrtLstOut) := match(iOptExp,fnstpl,iSource,iInlineHT)
     local
       DAE.Exp e;
       DAE.ElementSource source;
       HashTableExpToExp.HashTable inlineHT;
-    case (NONE(),_,_,_) then (iOptExp,iSource,iInlineHT);
+      list<DAE.Statement> assrtLst;
+    case (NONE(),_,_,_) then (iOptExp,iSource,iInlineHT,{});
     case (SOME(e),_,_,_)
       equation
-        (e, source, inlineHT) = inlineExpOpt1(e, fnstpl, iSource, iInlineHT);
-      then (SOME(e),source,inlineHT);
+        (e, source, inlineHT,assrtLst) = inlineExpOpt1(e, fnstpl, iSource, iInlineHT);
+      then (SOME(e),source,inlineHT,assrtLst);
   end match;
 end inlineExpOpt;
 
@@ -739,45 +782,48 @@ protected function inlineExpOpt1
   output DAE.Exp oExp;
   output DAE.ElementSource oSource;
   output HashTableExpToExp.HashTable oInlineHT "workaround to speed up inlining of array parameters";
+  output list<DAE.Statement> assrtLstOut;
 algorithm
-  (oExp,oSource,oInlineHT) := matchcontinue(iExp,fnstpl,iSource,iInlineHT)
+  (oExp,oSource,oInlineHT,assrtLstOut) := matchcontinue(iExp,fnstpl,iSource,iInlineHT)
     local
       DAE.Exp e,e1;
       list<DAE.Exp> elst;
       DAE.ElementSource source;
       HashTableExpToExp.HashTable inlineHT;
       Boolean inlined;
+      list<DAE.Statement> assrtLst,assrtLst1,assrtLst2;
     case (DAE.CALL(path=_),_,_,_)
       equation
         e1 = BaseHashTable.get(iExp,iInlineHT);
         // print("use chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
         source = DAEUtil.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(iExp),DAE.PARTIAL_EQUATION(e1)));
-      then (e1,source,iInlineHT);
+      then (e1,source,iInlineHT,{});
     case (DAE.CALL(path=_),_,_,_)
       equation
         // print("add chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
-        (e1, source, inlined) = Inline.inlineExp(iExp, fnstpl, iSource);
+        (e1, source, inlined,assrtLst) = Inline.inlineExp(iExp, fnstpl, iSource);
         inlineHT = Debug.bcallret2(inlined, BaseHashTable.add, (iExp,e1), iInlineHT, iInlineHT);
-      then (e1,source,inlineHT);
+      then (e1,source,inlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
       equation
         e1 = BaseHashTable.get(e,iInlineHT);
         // print("use chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
         source = DAEUtil.addSymbolicTransformation(iSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e1)));
-        (e, source, _) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, source);
-      then (e,source,iInlineHT);
+        (e, source, _,assrtLst) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, source);
+      then (e,source,iInlineHT,{});
     case (DAE.ASUB(e,elst),_,_,_)
       equation
         // print("add chache Inline(1)\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
-        (e1, _, inlined) = Inline.inlineExp(e, fnstpl, iSource);
+        (e1, _, inlined,assrtLst1) = Inline.inlineExp(e, fnstpl, iSource);
         inlineHT = Debug.bcallret2(inlined, BaseHashTable.add, (e,e1), iInlineHT, iInlineHT);
-        (e, source, _) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, iSource);
-      then (e,source,inlineHT);
+        (e, source, _,assrtLst2) = Inline.inlineExp(DAE.ASUB(e1,elst), fnstpl, iSource);
+        assrtLst = listAppend(assrtLst1,assrtLst2);
+      then (e,source,inlineHT,assrtLst);
     case (_,_,_,_)
       equation
         // print("no chache Inline\n" +& ExpressionDump.printExpStr(iExp) +& "\n");
-        (e, source, _) = Inline.inlineExp(iExp, fnstpl, iSource);
-      then (e,source,iInlineHT);
+        (e, source, _,assrtLst) = Inline.inlineExp(iExp, fnstpl, iSource);
+      then (e,source,iInlineHT,{});
   end matchcontinue;
 end inlineExpOpt1;
 
@@ -1709,6 +1755,7 @@ algorithm
       Absyn.Path functionName;
       HashTableCrToExpSourceTpl.HashTable ht;
       list<tuple<DAE.ComponentRef, tuple<DAE.Exp, DAE.ElementSource>>> crexplst;
+      list<DAE.Statement> assrtLst;
 
     case ({}, _, _, _, _) then (iEquationLst, iReinitStatementLst);
     case (DAE.EQUEQUATION(cr1 = cr, cr2 = cr2, source = source)::xs, _, _, _, _)
@@ -1790,22 +1837,22 @@ algorithm
 
     case (DAE.ASSERT(condition=cond, message = e, level = level, source = source)::xs, _, _, _, _)
       equation
-        (cond, source, _) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (cond, source, _,assrtLst) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, BackendDAE.ASSERT(cond, e, level, source)::iReinitStatementLst);
       then
         (eqnl, reinit);
 
     case (DAE.REINIT(componentRef = cr, exp = e, source = source)::xs, _, _, _, _)
       equation
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, BackendDAE.REINIT(cr, e, source)::iReinitStatementLst);
       then
         (eqnl, reinit);
 
     case (DAE.TERMINATE(message = e, source = source)::xs, _, _, _, _)
       equation
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         (eqnl, reinit) = lowerWhenEqn2(xs, inCond, functionTree, iEquationLst, BackendDAE.TERMINATE(e, source)::iReinitStatementLst);
       then
         (eqnl, reinit);
@@ -1935,6 +1982,7 @@ algorithm
       list<list<DAE.Element>> eqnslst;
       list<DAE.Exp> expl;
       list<tuple<DAE.ComponentRef, tuple<DAE.Exp, DAE.ElementSource>>> crexplst;
+      list<DAE.Statement> assrtLst;
     case (_, {}, _, _)
       then
         iHt;
@@ -1942,7 +1990,7 @@ algorithm
       equation
         e = Expression.crefExp(cr2);
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
         source = DAEUtil.mergeSources(source, source1);
@@ -1952,7 +2000,7 @@ algorithm
     case (_, DAE.DEFINE(componentRef=cr, exp=e, source=source)::rest, _, _)
       equation
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
         source = DAEUtil.mergeSources(source, source1);
@@ -1962,7 +2010,7 @@ algorithm
     case (_, DAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest, _, _)
       equation
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
         source = DAEUtil.mergeSources(source, source1);
@@ -1972,7 +2020,7 @@ algorithm
     case (_, DAE.COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr), rhs=e, source=source)::rest, _, _)
       equation
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
         source = DAEUtil.mergeSources(source, source1);
@@ -1982,7 +2030,7 @@ algorithm
     case (_, DAE.ARRAY_EQUATION(exp=DAE.CREF(componentRef=cr), array=e, source=source)::rest, _, _)
       equation
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ((exp, source1)) = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
         source = DAEUtil.mergeSources(source, source1);
@@ -2049,6 +2097,7 @@ algorithm
       list<DAE.Element> rest, eqns;
       list<list<DAE.Element>> eqnslst;
       list<DAE.Exp> expl;
+      list<DAE.Statement> assrtLst;
     case ({}, _, _)
       then
         iHt;
@@ -2064,7 +2113,7 @@ algorithm
       equation
         failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
@@ -2072,7 +2121,7 @@ algorithm
       equation
         failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
@@ -2080,7 +2129,7 @@ algorithm
       equation
         failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
@@ -2088,7 +2137,7 @@ algorithm
       equation
         failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
-        (e, source, _) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (e, source, _,assrtLst) = Inline.inlineExp(e, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
@@ -2249,6 +2298,7 @@ algorithm
       String str;
       Absyn.Info info;
       list<BackendDAE.Equation> eqns, reqns;
+      list<DAE.Statement> assrtLst;
 
     case (DAE.ALGORITHM(algorithm_=alg, source=source), _, _, _, _)
       equation
@@ -2276,9 +2326,9 @@ algorithm
 
     case (DAE.ASSERT(condition=cond, message=msg, level=level, source=source), _, _, _, _)
       equation
-        (cond, source, _) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        (msg, source, _) = Inline.inlineExp(msg, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
-        (level, source, _) = Inline.inlineExp(level, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (cond, source, _,assrtLst) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (msg, source, _,assrtLst) = Inline.inlineExp(msg, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
+        (level, source, _,assrtLst) = Inline.inlineExp(level, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         BackendDAEUtil.checkAssertCondition(cond, msg, level, DAEUtil.getElementSourceFileInfo(source));
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
       then

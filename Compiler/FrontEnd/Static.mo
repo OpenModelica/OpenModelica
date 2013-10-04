@@ -7564,7 +7564,7 @@ algorithm
   /* Instantiate any implicit record constructors needed and add them to the dae function tree */
   cache := instantiateImplicitRecordConstructors(cache, inEnv, args_1, st);
   functionTree := Env.getFunctionTree(cache);
-  ((call_exp,(_,didInline))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),false)));
+  ((call_exp,(_,didInline,_))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),false,{})));
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
   prop_1 := Debug.bcallret2(didInline, Types.setPropType, prop_1, restype, prop_1);
