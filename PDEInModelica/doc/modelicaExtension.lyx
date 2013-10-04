@@ -747,7 +747,17 @@ DomainBlock3D
 PDE
 \family default
  package, user can define his/her own domain records.
- Domain record contains at least one region member.
+ Domain record contains at least one region member 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+and coordinate defiinition?
+\end_layout
+
+\end_inset
+
+.
  During translation is treated in different way than usual records.
 \begin_inset Newline newline
 \end_inset
@@ -778,12 +788,20 @@ shape
 
 function one-to-one map of points in k-dimensional interval (usualy cartesian
  product of intervals) to points in n-dimensional domain and thus deffine
- a coordinate system in domain
+ a coordinate system in domain 
 \begin_inset Note Note
 status open
 
 \begin_layout Plain Layout
-How is the last sentence meant?
+How is the last sentence meant? (Should it be rather: 
+\begin_inset Quotes sld
+\end_inset
+
+and thus determine shape of the domain in particular coordinates.
+\begin_inset Quotes srd
+\end_inset
+
+)
 \end_layout
 
 \end_inset
@@ -859,6 +877,11 @@ vector implicitly defined for all N-1 dimensional regions in N dimensional
 omega.left.n
 \family default
 ) Used in boundary condition equations.
+ How to write domain and region independently - perhaps 
+\family typewriter
+region.n
+\family default
+?
 \begin_inset Newline newline
 \end_inset
 
@@ -1073,6 +1096,140 @@ New language element.
 \end_layout
 
 \begin_layout Description
+
+\family typewriter
+dom
+\family default
+
+\begin_inset space ~
+\end_inset
+
+keyword stands for current domain specified with 
+\family typewriter
+in
+\family default
+ operator.
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+pder(u,dom.x)=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.interior;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+is equivalent to
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+pder(u,omega.x)=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.interior;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+Is useful to write equations domain independent.
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+region
+\family default
+
+\begin_inset space ~
+\end_inset
+
+keyword stands for current region specified with 
+\family typewriter
+in
+\family default
+ operator.
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+v*region.n=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.left + omega.right;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+is equivalent to
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+v*omega.left.n=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.left;
+\begin_inset space ~
+\end_inset
+
+v*omega.right.n=0
+\begin_inset space ~
+\end_inset
+
+in
+\begin_inset space ~
+\end_inset
+
+omega.right;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+Is useful to get normal vector in domain independent equations and on anonymous
+ regions.
+\begin_inset Newline newline
+\end_inset
+
+New language element.
+ Not shure if it will be needed.
+\end_layout
+
+\begin_layout Description
 region
 \begin_inset space ~
 \end_inset
@@ -1109,7 +1266,10 @@ in omega.left + omega.right;
 \begin_inset Newline newline
 \end_inset
 
+
+\family default
 New language element.
+ Not shure if it will be needed.
 \end_layout
 
 \begin_layout Description

@@ -282,13 +282,14 @@ reference "domainDeffinitions"
 
 \begin_deeper
 \begin_layout Itemize
-in this case shall we have nerertheless some coordinates defined by default
+in this case shall we have nevertheless some coordinates defined by default
  (perhaps cartesian)?
 \end_layout
 
 \end_deeper
 \begin_layout Itemize
-avoid coordinate variables at all
+NO.
+ avoid coordinate variables at all
 \end_layout
 
 \begin_deeper
@@ -347,7 +348,8 @@ in
 \end_layout
 
 \begin_layout Itemize
-fixed names and approach ODE variables from PDE in some special way.
+NO.
+ fixed names and approach ODE variables from PDE in some special way.
 \end_layout
 
 \begin_layout Itemize
@@ -378,7 +380,8 @@ x, y, z
 \family default
 ) when they are not ordered? And what if there are more coordinate systems
  defined (e.g.
- cartesian and polar)?
+ cartesian and polar)? The same problem holds for functions that set start
+ values to fields.
 \end_layout
 
 \begin_layout Itemize
@@ -465,6 +468,17 @@ div
 \begin_layout Itemize
 How should the shape, geometrical structure, mesh structure, etc.
  be described by an external file?
+\end_layout
+
+\begin_layout Itemize
+Philosophical problem: What exists first, domain or coordinates? I would
+ say coordinates must exist first as domain shape is defined using shape-functio
+n using some coordinates.
+\end_layout
+
+\begin_layout Itemize
+Is allowed passing functions as variable? It is used in setting start value
+ to fields.
 \end_layout
 
 \begin_layout Standard

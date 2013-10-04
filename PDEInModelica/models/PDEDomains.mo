@@ -8,9 +8,10 @@ package PDEDomains
       output Real x = l*v + a;
     end shapeFunc;
     Coordinate x (name = "cartesian");
-    Region1D interior(shape = shapeFunc, range = {0,1});
-    Region0D left(shape = shapeFunc, range = 0);
-    Region0D right(shape = shapeFunc, range = 1);
+    Region1D interior(shape = shapeFunc, interval = {0,1});
+    Region0D left(shape = shapeFunc, interval = 0);
+    Region0D right(shape = shapeFunc, interval = 1);
+    Region0D boundary = left + right;
   end DomainLineSegment1D;
 
   class DomainRectangle2D
@@ -33,11 +34,12 @@ package PDEDomains
       r = sqrt(x^2 + y^2);
       theta = arctg(y/x);
 
-    Region2D interior(shape = shapeFunc, range = {{0,1},{0,1}});
-    Region1D right(shape = shapeFunc, range = {1,{0,1}});
-    Region1D bottom(shape = shapeFunc, range = {{0,1},0});
-    Region1D left(shape = shapeFunc, range = {0,{0,1}});
-    Region1D top(shape = shapeFunc, range = {{0,1},1});
+    Region2D interior(shape = shapeFunc, interval = {{0,1},{0,1}});
+    Region1D right(shape = shapeFunc, interval = {1,{0,1}});
+    Region1D bottom(shape = shapeFunc, interval = {{0,1},0});
+    Region1D left(shape = shapeFunc, interval = {0,{0,1}});
+    Region1D top(shape = shapeFunc, interval = {{0,1},1});
+    Region1D boundary = right + bottom + left + top;
   end DomainRectangle2D;
 
   class DomainCircular2D
@@ -63,8 +65,8 @@ package PDEDomains
       theta = arctg(y/x);
     end polar;
 
-    Region2D interior(shape = shapeFunc, range = {{O,1},{O,1}});
-    Region1D boundary(shape = shapeFunc, range = {1,{0,1}});
+    Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});
+    Region1D boundary(shape = shapeFunc, interval = {1,{0,1}});
   end DomainCircular2D;
 
   record DomainBlock3D
@@ -77,13 +79,14 @@ package PDEDomains
     Coordinate x (name="cartesian");
     Coordinate y (name="cartesian");
     Coordinate z (name="cartesian");
-    Region3D interior(shape = shapeFunc, range = {{0,1},{0,1},{0,1}});
-    Region2D right(shape = shapeFunc, range = {1,{0,1},{0,1}});
-    Region2D bottom(shape = shapeFunc, range = {{0,1},{0,1},1});
-    Region2D left(shape = shapeFunc, range = {0,{0,1},{0,1}});
-    Region2D top(shape = shapeFunc, range = {{0,1},{0,1},1});
-    Region2D front(shape = shapeFunc, range = {{0,1},0,{0,1}});
-    Region2D rear(shape = shapeFunc, range = {{0,1},1,{0,1}});
+    Region3D interior(shape = shapeFunc, interval = {{0,1},{0,1},{0,1}});
+    Region2D right(shape = shapeFunc, interval = {1,{0,1},{0,1}});
+    Region2D bottom(shape = shapeFunc, interval = {{0,1},{0,1},1});
+    Region2D left(shape = shapeFunc, interval = {0,{0,1},{0,1}});
+    Region2D top(shape = shapeFunc, interval = {{0,1},{0,1},1});
+    Region2D front(shape = shapeFunc, interval = {{0,1},0,{0,1}});
+    Region2D rear(shape = shapeFunc, interval = {{0,1},1,{0,1}});
+    Region2D boundary = right + bottom + left + top + front + rare;
   end DomainBlock3D;
   //and others ...
 end PDEDomains;

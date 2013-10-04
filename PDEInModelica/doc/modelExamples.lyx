@@ -1640,7 +1640,7 @@ key "membrane"
 \begin_layout Standard
 \begin_inset Formula 
 \begin{eqnarray*}
-\frac{\partial^{2}u}{\partial t^{2}} & = & c^{2}\nabla^{2}u
+\frac{\partial^{2}u}{\partial t^{2}} & = & c_{m}^{2}\nabla^{2}u
 \end{eqnarray*}
 
 \end_inset
@@ -1726,7 +1726,7 @@ key "acoustic"
 \begin_inset Formula 
 \begin{eqnarray*}
 \rho_{0}\frac{\partial\mathbf{v}}{\partial t}+\nabla p & = & 0\\
-\frac{\partial p}{\partial t} & +\rho_{0}c_{0}^{2}\nabla\cdot\mathbf{v}= & 0
+\frac{\partial p}{\partial t}+\rho_{0}c_{0}^{2}\nabla\cdot\mathbf{v} & = & 0
 \end{eqnarray*}
 
 \end_inset
@@ -1752,10 +1752,6 @@ p(x,y,z,0) & = & p_{0}\\
 \end_layout
 
 \begin_layout Paragraph*
-Equation connecting membrane and air
-\end_layout
-
-\begin_layout Paragraph*
 Position of membrane centre in room
 \end_layout
 
@@ -1772,18 +1768,26 @@ membrane lies in
 \begin_inset Formula $\tilde{\Omega}_{m}=\left\{ (a_{x}+x,\, a_{y}+y,\, a_{z})\vert x^{2}+y^{2}<r^{2}\right\} $
 \end_inset
 
+ in term of coordinates defined in 
+\begin_inset Formula $\Omega_{a}$
+\end_inset
 
+.
+\end_layout
+
+\begin_layout Paragraph*
+Equation connecting membrane and air
 \end_layout
 
 \begin_layout Standard
 \begin_inset Formula 
 \[
-\mathbf{v}(x,y,z,t)\cdot(0,0,1)\text{ in }\tilde{\Omega}_{m}\approx u(x,y,t)\text{ in }\Omega_{m}
+\mathbf{v}(x,y,z,t)\cdot\mathbf{n}_{\tilde{\Omega}_{m}}=\frac{\partial u}{\partial t}(x-a_{x},y-a_{y},t)\text{ in }\tilde{\Omega}_{m}
 \]
 
 \end_inset
 
- 
+
 \end_layout
 
 \end_body
