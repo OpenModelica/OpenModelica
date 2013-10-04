@@ -125,7 +125,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
     cflags = (char*)omc_flagValue[FLAG_LS_IPOPT]; 
     if(cflags)
-      AddIpoptStrOption(nlp, "linear_solver", omc_flagValue[FLAG_LS_IPOPT]);
+      AddIpoptStrOption(nlp, "linear_solver", cflags);
     else
       AddIpoptStrOption(nlp, "linear_solver", "mumps");
 
