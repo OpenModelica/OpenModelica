@@ -4090,11 +4090,11 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     %>
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
-
-  <%if dynamicLoad then '' else '<%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
+   
+  <%if dynamicLoad then '' else 'DLLExport<%\n%><%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
   >> else <<
 
-  <%if dynamicLoad then '' else 'void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
+  <%if dynamicLoad then '' else 'DLLExport<%\n%>void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
   >>
 end functionHeaderImpl;
 
