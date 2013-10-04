@@ -102,12 +102,21 @@ AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_LEX
 
+CFLAGS_BEFORE="$CFLAGS"
+CFLAGS="$CFLAGS -Werror"
+AC_MSG_CHECKING([if -Werror works])
+AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed (check your CFLAGS)])])
+CFLAGS="$CFLAGS_BEFORE"
+
 dnl Disables the default CFLAGS="-g -O2"
 if test -z "$CFLAGS"; then
 if  test "Darwin" = `uname`; then
 CFLAGS="-O3"
 else
+CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="-O3 -march=native"
+AC_MSG_CHECKING([looking for -march=native])
+AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
 fi
 fi
 
@@ -122,7 +131,7 @@ if echo $CFLAGS | grep -q -- -fPIC; then
 else
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -fPIC -Werror"
-  AC_TRY_LINK([int abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGSBEFORE -fPIC"], [AC_MSG_RESULT([don't need -fPIC]); CFLAGS="$CFLAGSBEFORE"])
+  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGSBEFORE -fPIC"], [AC_MSG_RESULT([don't need -fPIC]); CFLAGS="$CFLAGSBEFORE"])
 fi
 
 fi
