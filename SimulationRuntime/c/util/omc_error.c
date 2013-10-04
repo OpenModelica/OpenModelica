@@ -59,6 +59,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_NLS",
   "LOG_NLS_V",
   "LOG_NLS_JAC",
+  "LOG_NLS_RES",
   "LOG_RES_INIT",
   "LOG_SIMULATION",
   "LOG_SOLVER",
@@ -87,6 +88,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "logging for nonlinear systems",                      /* LOG_NLS */
   "verbose logging of nonlinear systems",               /* LOG_NLS_V */
   "outputs the jacobian of nonlinear systems",          /* LOG_NLS_JAC */
+  "outputs every evaluation of the residual function",  /* LOG_NLS_RES */
   "outputs residuals of the initialization",            /* LOG_RES_INIT */
   "additional information about simulation process",    /* LOG_SIMULATION */
   "additional information about solver process",        /* LOG_SOLVER */

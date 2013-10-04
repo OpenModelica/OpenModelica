@@ -337,9 +337,21 @@ static int wrapper_fvec_hybrj(integer* n, double* x, double* f, double* fjac, in
       for(i=0; i<*n; i++)
         x[i] = x[i]*solverData->xScalefactors[i];
 
+    /* debug output */
+    if(ACTIVE_STREAM(LOG_NLS_RES)) {
+      INFO1(LOG_NLS_RES, "-- residual function call %d --", solverData->nfev);
+      printVector(x, n, LOG_NLS_RES, "x vector");
+    }
+        
     /* call residual function */
     (systemData->residualFunc)(data, x, f, iflag);
 
+    /* debug output */
+    if(ACTIVE_STREAM(LOG_NLS_RES)) {
+      printVector(f, n, LOG_NLS_RES, "residuals");
+      INFO1(LOG_NLS_RES, "-- end of residual function call %d --", solverData->nfev);
+    }
+    
     /* Scaling x vector */
     if(solverData->useXScaling)
       for(i=0; i<*n; i++)
