@@ -83,10 +83,6 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->degub_step =  10;
   iData->index_debug_next=0;
 
-    cflags = omc_flagValue[FLAG_LS_IPOPT];
-    if(!cflags)
-      cflags = "mumps";
-
   /*ToDo*/
   for(i=0; i<(*iData).nx; i++)
   {
@@ -110,33 +106,26 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
   if(flag == 5)
   {
-     nlp = CreateIpoptProblem((*iData).NV, (*iData).Vmin, (*iData).Vmax,
-         (*iData).NRes, (*iData).gmin, (*iData).gmax, (*iData).njac, NULL, 0, &evalfF,
+     nlp = CreateIpoptProblem(iData->NV, iData->Vmin, iData->Vmax,
+         iData->NRes, iData->gmin, iData->gmax, iData->njac, 1, 0, &evalfF,
                   &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
     AddIpoptNumOption(nlp, "tol", iData->data->simulationInfo.tolerance);
 
-    if(ACTIVE_STREAM(LOG_IPOPT))
-    {
+    if(ACTIVE_STREAM(LOG_IPOPT)){
       AddIpoptIntOption(nlp, "print_level", 5);
-      AddIpoptIntOption(nlp, "file_print_level", 0);
-    }
-    else if(ACTIVE_STREAM(LOG_STATS))
-    {
+    } else if(ACTIVE_STREAM(LOG_STATS)) {
       AddIpoptIntOption(nlp, "print_level", 3);
-      AddIpoptIntOption(nlp, "file_print_level", 0);
-    }
-    else
-    {
+    }else{
       AddIpoptIntOption(nlp, "print_level", 2);
-      AddIpoptIntOption(nlp, "file_print_level", 0);
     }
-
+    AddIpoptIntOption(nlp, "file_print_level", 0);
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
     AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
 
+    cflags = (char*)omc_flagValue[FLAG_LS_IPOPT]; 
     if(cflags)
-      AddIpoptStrOption(nlp, "linear_solver", cflags);
+      AddIpoptStrOption(nlp, "linear_solver", omc_flagValue[FLAG_LS_IPOPT]);
     else
       AddIpoptStrOption(nlp, "linear_solver", "mumps");
 
