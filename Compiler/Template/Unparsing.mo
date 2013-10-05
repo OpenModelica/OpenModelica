@@ -373,7 +373,7 @@ algorithm
            _,
            a_omcname )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINTIONS const char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINITIONS const char* "));
         txt = Tpl.writeText(txt, a_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields[1] = {\"no fields\"};"));
       then txt;
@@ -384,7 +384,7 @@ algorithm
            a_nElts,
            a_omcname )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINTIONS const char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINITIONS const char* "));
         txt = Tpl.writeText(txt, a_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("__desc__fields["));
         txt = Tpl.writeText(txt, a_nElts);
@@ -524,7 +524,7 @@ algorithm
         str_11 = Tpl.textString(l_nElts);
         l_fieldsDescription = fun_40(Tpl.emptyTxt, str_11, l_fieldsStr, l_nElts, l_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "#ifdef ADD_METARECORD_DEFINTIONS\n",
+                                    "#ifdef ADD_METARECORD_DEFINITIONS\n",
                                     "#ifndef "
                                 }, false));
         txt = Tpl.writeText(txt, l_omcname);
@@ -536,7 +536,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc_added\n"));
         txt = Tpl.writeText(txt, l_fieldsDescription);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINTIONS struct record_description "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("ADD_METARECORD_DEFINITIONS struct record_description "));
         txt = Tpl.writeText(txt, l_omcname);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("__desc = {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));

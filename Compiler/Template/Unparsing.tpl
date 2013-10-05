@@ -63,15 +63,15 @@ match elt
       let fieldsDescription =
            match nElts
            case "0" then
-             'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[1] = {"no fields"};'
+             'ADD_METARECORD_DEFINITIONS const char* <%omcname%>__desc__fields[1] = {"no fields"};'
            case _ then
-             'ADD_METARECORD_DEFINTIONS const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};'
+             'ADD_METARECORD_DEFINITIONS const char* <%omcname%>__desc__fields[<%nElts%>] = {<%fieldsStr%>};'
       <<
-      #ifdef ADD_METARECORD_DEFINTIONS
+      #ifdef ADD_METARECORD_DEFINITIONS
       #ifndef <%omcname%>__desc_added
       #define <%omcname%>__desc_added
       <%fieldsDescription%>
-      ADD_METARECORD_DEFINTIONS struct record_description <%omcname%>__desc = {
+      ADD_METARECORD_DEFINITIONS struct record_description <%omcname%>__desc = {
         "<%omcname%>",
         "<%pack%>.<%pathString(r.name)%>.<%c.name%>",
         <%omcname%>__desc__fields
