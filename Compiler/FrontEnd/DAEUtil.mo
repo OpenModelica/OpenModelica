@@ -5601,20 +5601,32 @@ public function addDaeFunction "add functions present in the element list to the
   input DAE.FunctionTree itree;
   output DAE.FunctionTree outTree;
 algorithm
-  outTree := match(ifuncs,itree)
+  outTree := matchcontinue(ifuncs,itree)
     local
-      DAE.Function func;
+      DAE.Function func, fOld;
       list<DAE.Function> funcs;
       DAE.FunctionTree tree;
 
     case ({},tree) then tree;
+    /*
+    case (func::funcs,tree)
+      equation
+        // print("Add to cache [check] : " +& Absyn.pathString(functionName(func)) +& "\n");
+        // print("Function added: \n" +& DAEDump.dumpFunctionStr(func) +& "\n"); 
+        fOld = Util.getOption(avlTreeGet(tree, functionName(func)));
+        failure(equality(fOld = func));
+        print("Function already in the tree and different:" +& 
+          "\nnew:\n" +& DAEDump.dumpFunctionStr(func) +& 
+          "\nold:\n" +& DAEDump.dumpFunctionStr(fOld) +& "\n");
+      then 
+        fail();*/
     case (func::funcs,tree)
       equation
         // print("Add to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeFunction(funcs,tree);
 
-  end match;
+  end matchcontinue;
 end addDaeFunction;
 
 public function addDaeExtFunction "
@@ -5636,6 +5648,7 @@ algorithm
     case (func::funcs,tree)
       equation
         true = isExtFunction(func);
+        // print("Add to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeExtFunction(funcs,tree);
 

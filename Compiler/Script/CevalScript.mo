@@ -1894,7 +1894,7 @@ algorithm
     case (cache,env,"generateCode",{Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache, env, path, false, NONE(), true);
-        (cache,_) = cevalGenerateFunction(cache,env,p,path);
+        (cache,_,_) = cevalGenerateFunction(cache,env,p,path);
       then
         (cache,Values.BOOL(true),st);
 
@@ -4584,6 +4584,36 @@ algorithm
   functionName := System.unquoteIdentifier(Absyn.pathStringReplaceDot(functionPath, "_"));
 end generateFunctionName;
 
+protected function generateFunctionFileName
+"@author adrpo:
+ generate the function name from a path."
+  input Absyn.Path functionPath;
+  output String functionName;
+algorithm
+  functionName := matchcontinue(functionPath)
+    local String name, n1, n2; Integer len;
+    case (_)
+      equation
+        name = Absyn.pathStringReplaceDot(functionPath, "_");
+        name = System.unquoteIdentifier(name);
+        len = stringLength(name);
+        // not bigger than
+        true = len > Global.maxFunctionFileLength;
+        n1 = Absyn.pathFirstIdent(functionPath);
+        n2 = Absyn.pathLastIdent(functionPath);
+        name = System.unquoteIdentifier(n1 +& "_" +& n2);
+        name = name +& "_" +& intString(tick()); 
+      then
+        name;
+    case (_)
+      equation
+        name = Absyn.pathStringReplaceDot(functionPath, "_");
+        name = System.unquoteIdentifier(name);
+      then
+        name;
+  end matchcontinue;
+end generateFunctionFileName;
+
 public function getFunctionDependencies
 "returns all function dependencies as paths, also the main function and the function tree"
   input Env.Cache cache;
@@ -4626,10 +4656,11 @@ public function cevalGenerateFunction "Generates code for a given function name.
   input Absyn.Path inPath;
   output Env.Cache outCache;
   output String functionName;
+  output String functionFileName;
 algorithm
-  (outCache,functionName) := matchcontinue (inCache,inEnv,program,inPath)
+  (outCache,functionName,functionFileName) := matchcontinue (inCache,inEnv,program,inPath)
     local
-      String pathstr;
+      String pathstr, fileName;
       list<Env.Frame> env;
       Absyn.Path path;
       Env.Cache cache;
@@ -4645,11 +4676,12 @@ algorithm
 
         (cache, mainFunction, d, metarecordTypes) = collectDependencies(cache, env, path);
 
-        pathstr = generateFunctionName(path);
-        SimCodeMain.translateFunctions(program, pathstr, SOME(mainFunction), d, metarecordTypes, {});
-        compileModel(pathstr, {}, "", "");
+        pathstr  = generateFunctionName(path);
+        fileName = generateFunctionFileName(path);
+        SimCodeMain.translateFunctions(program, fileName, SOME(mainFunction), d, metarecordTypes, {});
+        compileModel(fileName, {}, "", "");
       then
-        (cache, pathstr);
+        (cache, pathstr, fileName);
 
     // Cheat if we want to generate code for Main.main
     // * Don't do dependency analysis of what functions to generate; just generate all of them
@@ -4663,20 +4695,20 @@ algorithm
         funcs = Env.getFunctionTree(cache);
         // First check if the main function exists... If it does not it might be an interactive function...
         pathstr = generateFunctionName(path);
-
+        fileName = generateFunctionFileName(path);
         // The list of functions is not ordered, so we need to filter out the main function...
         d = DAEUtil.getFunctionList(funcs);
-        SimCodeMain.translateFunctions(program, pathstr, NONE(), d, {}, {});
+        SimCodeMain.translateFunctions(program, fileName, NONE(), d, {}, {});
       then
-        (cache, pathstr);
+        (cache, pathstr, fileName);
 
     case (cache, env, _, path)
       equation
         true = Flags.isSet(Flags.GEN);
         (cache,false) = Static.isExternalObjectFunction(cache,env,path);
         pathstr = generateFunctionName(path);
-        pathstr = stringAppend("/*- CevalScript.cevalGenerateFunction failed(", pathstr);
-        pathstr = stringAppend(pathstr,")*/\n");
+        fileName = generateFunctionFileName(path);
+        pathstr = "CevalScript.cevalGenerateFunction failed:\nfunction: " +& pathstr +& "\nfile: " +& fileName +& "\n";
         Debug.fprint(Flags.FAILTRACE, pathstr);
       then
         fail();
@@ -6314,7 +6346,7 @@ algorithm
       list<GlobalScript.CompiledCFunction> cf;
       list<GlobalScript.LoadedFile> lf;
       Absyn.TimeStamp ts;
-      String funcstr,f;
+      String funcstr,f,fileName;
       list<GlobalScript.CompiledCFunction> newCF;
       String name;
       Boolean ppref, fpref, epref;
@@ -6429,9 +6461,9 @@ algorithm
         //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt)
 
         // now is safe to generate code
-        (cache, funcstr) = cevalGenerateFunction(cache, env, p, funcpath);
+        (cache, funcstr, fileName) = cevalGenerateFunction(cache, env, p, funcpath);
         print_debug = Flags.isSet(Flags.DYN_LOAD);
-        libHandle = System.loadLibrary(funcstr, print_debug);
+        libHandle = System.loadLibrary(fileName, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
         System.freeLibrary(libHandle, print_debug);
@@ -6471,11 +6503,11 @@ algorithm
 
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
-        (cache,funcstr) = cevalGenerateFunction(cache, env, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp), funcpath);
+        (cache,funcstr,fileName) = cevalGenerateFunction(cache, env, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp), funcpath);
         // generate a uniquely named dll!
         Debug.fprintln(Flags.DYN_LOAD, "cevalCallFunction: about to execute " +& funcstr);
         print_debug = Flags.isSet(Flags.DYN_LOAD);
-        libHandle = System.loadLibrary(funcstr, print_debug);
+        libHandle = System.loadLibrary(fileName, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
         System.freeFunction(funcHandle, print_debug);
@@ -6813,112 +6845,6 @@ algorithm
          (cache,value,stOpt);
   end matchcontinue;
 end ceval;
-
-
-public function cevalIfConstant
-  "This function constant evaluates an expression if the expression is constant,
-   or if the expression is a call of parameter constness whose return type
-   contains unknown dimensions (in which case we need to determine the size of
-   those dimensions)."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input DAE.Exp inExp;
-  input DAE.Properties inProp;
-  input Boolean impl;
-  input Absyn.Info inInfo;
-  input Integer numIter;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
-algorithm
-  (outCache, outExp, outProp) :=
-  matchcontinue(inCache, inEnv, inExp, inProp, impl, inInfo, numIter)
-    local
-        DAE.Exp e;
-        Values.Value v;
-        Env.Cache cache;
-        DAE.Properties prop;
-      DAE.Type tp;
-
-    case (_, _, e as DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY(dims = _))),
-        DAE.PROP(constFlag = DAE.C_PARAM()), _, _, _)
-      equation
-        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo, numIter);
-      then
-        (inCache, e, prop);
-
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _, _, _) // BoschRexroth specifics
-      equation
-        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
-      then
-        (inCache, e, DAE.PROP(tp, DAE.C_VAR()));
-
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _, _)
-      equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), numIter+1);
-        e = ValuesUtil.valueExp(v);
-      then
-        (cache, e, inProp);
-
-    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _, _)
-      equation
-        DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), numIter+1);
-        e = ValuesUtil.valueExp(v);
-      then
-        (cache, e, inProp);
-
-    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _, _, _) // BoschRexroth specifics
-      equation
-        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
-        DAE.C_PARAM() = Types.propAllConst(inProp);
-        print(" tuple non constant evaluation not implemented yet\n");
-      then
-        fail();
-
-    else
-      equation
-        // If we fail to evaluate, at least we should simplify the expression
-        (e,_) = ExpressionSimplify.simplify1(inExp);
-      then (inCache, e, inProp);
-
-  end matchcontinue;
-end cevalIfConstant;
-
-protected function cevalWholedimRetCall
-  "Helper function to cevalIfConstant. Determines the size of any unknown
-   dimensions in a function calls return type."
-  input DAE.Exp inExp;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Info inInfo;
-  input Integer numIter;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
-algorithm
-  (outExp, outProp) := match(inExp, inCache, inEnv, inInfo, numIter)
-    local
-      DAE.Exp e;
-      Absyn.Path p;
-      list<DAE.Exp> el;
-      Boolean t, b, isImpure;
-      DAE.InlineType i;
-      DAE.Dimensions dims;
-      Values.Value v;
-      DAE.Type cevalType, ty;
-      DAE.TailCall tc;
-
-     case (e as DAE.CALL(path = p, expLst = el, attr = DAE.CALL_ATTR(tuple_ = t, builtin = b, isImpure=isImpure,
-           ty = DAE.T_ARRAY(dims = dims), inlineType = i, tailCall = tc)), _, _, _, _)
-       equation
-         true = Expression.arrayContainWholeDimension(dims);
-         (_, v, _) = ceval(inCache, inEnv, e, true, NONE(), Absyn.MSG(inInfo), numIter+1);
-         ty = Types.typeOfValue(v);
-         cevalType = Types.simplifyType(ty);
-       then
-         (DAE.CALL(p, el, DAE.CALL_ATTR(cevalType, t, b, isImpure, i, tc)), DAE.PROP(ty, DAE.C_PARAM()));
-  end match;
-end cevalWholedimRetCall;
 
 protected function searchClassNames
   input list<Values.Value> inVals;

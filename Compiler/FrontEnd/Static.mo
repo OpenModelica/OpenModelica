@@ -2278,7 +2278,8 @@ algorithm
         (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
         tty = Types.unboxedFunctionType(tty);
         (cache,args,consts,_,tty,_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), NONE(), pre, info);
-        {p} = Types.getTypeSource(tty);
+        // {p} = Types.getTypeSource(tty);
+        (cache, p) = Inst.makeFullyQualified(cache, env, p);
         tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
         ty = Types.simplifyType(tty_1);
@@ -11602,7 +11603,8 @@ algorithm
         // Debug.traceln("Try elabSucscriptsDims " +& id);
         (cache,cr) = PrefixUtil.prefixCref(cache,crefEnv,InnerOuter.emptyInstHierarchy,crefPrefix,
                                            ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr);
+        (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache, crefEnv, cr); 
+        // false = Types.isUnknownType(t); 
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n");
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.simplifyType(t);

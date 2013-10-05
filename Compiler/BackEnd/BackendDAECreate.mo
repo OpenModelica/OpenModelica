@@ -361,14 +361,14 @@ algorithm
     // algorithm
     case (DAE.ALGORITHM(algorithm_ = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
+        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.EXPAND());
       then
         (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
 
     // initial algorithm
     case (DAE.INITIALALGORITHM(algorithm_ = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
+        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.EXPAND());
       then
         (inVars, inKnVars, inExVars, inEqnsLst, inREqnsLst, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
 
@@ -382,20 +382,20 @@ algorithm
     // assert in equation section is converted to ALGORITHM
     case (DAE.ASSERT(condition = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
+        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
       then
         (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
 
     // terminate in equation section is converted to ALGORITHM
     case (DAE.TERMINATE(message = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
+        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
       then
         (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
 
     case (DAE.NORETCALL(functionName = _), _, _, _, _, _, _, _, _, _, _, _, _, _)
       equation
-        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst);
+        (eqns, reqns, ieqns) = lowerAlgorithm(inElement, functionTree, inEqnsLst, inREqnsLst, inIEqnsLst, DAE.NOT_EXPAND());
       then
         (inVars, inKnVars, inExVars, eqns, reqns, ieqns, inConstraintLst, inClassAttributeLst, inWhenClauseLst, inExtObjClasses, iAliaseqns, iInlineHT);
 
@@ -735,7 +735,7 @@ algorithm
       eqIn;
     case(assrt::rest,_,_)
       equation
-      eq = BackendDAE.ALGORITHM(0,DAE.ALGORITHM_STMTS({assrt}),source);
+      eq = BackendDAE.ALGORITHM(0,DAE.ALGORITHM_STMTS({assrt}),source,DAE.EXPAND());
       eqLst = buildAssertAlgorithms(rest,source,eq::eqIn);
     then
       eqLst;
@@ -1130,27 +1130,45 @@ algorithm
         eqns = lowerTupleAssignment(explst,explst1,source,functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
-      /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
+    
+    // Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c)
     case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
       equation
-       (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+       (eqns,reqns,ieqns) = 
+         lowerAlgorithm(
+           DAE.ALGORITHM(
+             DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
+             source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
       then
         (eqns,reqns,ieqns);
+    
     case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+        (eqns,reqns,ieqns) = 
+          lowerAlgorithm(
+            DAE.ALGORITHM(
+              DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
+              source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
       then
         (eqns,reqns,ieqns);
 
-    /* Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
+    // Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c)
     case(DAE.INITIALEQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
       equation
-       (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+       (eqns,reqns,ieqns) = 
+         lowerAlgorithm(
+           DAE.INITIALALGORITHM(
+             DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
+             source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
       then
         (eqns,reqns,ieqns);
     case(DAE.INITIALEQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEquations,inREquations,inIEquations);
+        (eqns,reqns,ieqns) = 
+          lowerAlgorithm(
+            DAE.INITIALALGORITHM(
+              DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
+              source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
       then
         (eqns,reqns,ieqns);
 
@@ -1170,7 +1188,7 @@ algorithm
       equation
         e1 = Expression.crefExp(cr1);
         e2 = Expression.crefExp(cr2);
-        eqns = lowerextendedRecordEqn(e1,e2,source,functionTree,inEquations);
+        eqns = lowerExtendedRecordEqn(e1,e2,source,functionTree,inEquations);
       then
        (eqns,inREquations,inIEquations);
 
@@ -1191,7 +1209,7 @@ algorithm
     case (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_,_,_)
       equation
         (DAE.EQUALITY_EXPS(e1,e2), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
-        eqns = lowerextendedRecordEqn(e1,e2,source,functionTree,inEquations);
+        eqns = lowerExtendedRecordEqn(e1,e2,source,functionTree,inEquations);
       then
         (eqns,inREquations,inIEquations);
 
@@ -1253,30 +1271,30 @@ algorithm
     // algorithm
     case (DAE.ALGORITHM(algorithm_ = _),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.EXPAND());
       then
         (eqns,reqns,ieqns);
 
     // initial algorithm
     case (DAE.INITIALALGORITHM(algorithm_ = _),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.EXPAND());
       then
         (eqns,reqns,ieqns);
 
     case (DAE.ASSERT(condition=cond,message=msg,level=level,source=source),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND());
       then
         (eqns,reqns,ieqns);
 
     case (DAE.TERMINATE(message=msg,source=source),_,_,_,_)
       then
-        (inEquations,inREquations,BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source)::inIEquations);
+        (inEquations,inREquations,BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source, DAE.NOT_EXPAND())::inIEquations);
 
     case (DAE.NORETCALL(functionName = _),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations);
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND());
       then
         (eqns,reqns,ieqns);
 
@@ -1558,13 +1576,13 @@ algorithm
     case({}, {}, _, _, _) then inEqns;
     case(e1::elst1, e2::elst2, _, _, _)
       equation
-        eqns = lowerextendedRecordEqn(e1, e2, source, functionTree, inEqns);
+        eqns = lowerExtendedRecordEqn(e1, e2, source, functionTree, inEqns);
       then
         lowerextendedRecordEqns(elst1, elst2, source, functionTree, eqns);
   end match;
 end lowerextendedRecordEqns;
 
-protected function lowerextendedRecordEqn "author: Frenkel TUD 2012-06"
+protected function lowerExtendedRecordEqn "author: Frenkel TUD 2012-06"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.ElementSource source;
@@ -1618,11 +1636,11 @@ algorithm
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- BackendDAECreate.lowerextendedRecordEqn failed on: " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& "\n");
+        Debug.traceln("- BackendDAECreate.lowerExtendedRecordEqn failed on: " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& "\n");
       then
         fail();
   end matchcontinue;
-end lowerextendedRecordEqn;
+end lowerExtendedRecordEqn;
 
 protected function lowerArrayEqn "author: Frenkel TUD 2012-06"
   input DAE.Dimensions dims;
@@ -2259,11 +2277,15 @@ algorithm
       list<BackendDAE.Equation> eqns;
       DAE.ElementSource eq_source;
     case ({}, {}, _, _, _) then iEqns;
+    // skip CREF(WILD())
+    case (DAE.CREF(componentRef = DAE.WILD())::rest_targets, source::rest_sources, _, _, _)
+      then
+        lowerTupleAssignment(rest_targets, rest_sources, inEq_source, funcs, iEqns);
     // case for complex equations, array equations and equations
     case (target::rest_targets, source::rest_sources, _, _, _)
       equation
         (DAE.EQUALITY_EXPS(target,source), eq_source) = Inline.simplifyAndInlineEquationExp(DAE.EQUALITY_EXPS(target,source), (SOME(funcs), {DAE.NORM_INLINE()}), inEq_source);
-        eqns = lowerextendedRecordEqn(target, source, eq_source, funcs, iEqns);
+        eqns = lowerExtendedRecordEqn(target, source, eq_source, funcs, iEqns);
       then
         lowerTupleAssignment(rest_targets, rest_sources, inEq_source, funcs, eqns);
   end match;
@@ -2275,17 +2297,21 @@ end lowerTupleAssignment;
 
 protected function lowerAlgorithm
 "Helper function to lower2.
-  Transforms a DAE.Element to Equation."
+  Transforms a DAE.Element to BackEnd.ALGORITHM.
+NOTE: inCrefExpansionStrategy is needed if we translate equations to algorithms as 
+      we should not expand array crefs to full dimensions in that case because that
+      is wrong. Expansion of array crefs to full dimensions SHOULD HAPPEN ONLY IN REAL FULL ALGORITHMS!"
   input DAE.Element inElement;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Equation> inREquations;
   input list<BackendDAE.Equation> inIEquations;
+  input DAE.Expand inCrefExpansion "this is needed if we translate equations to algorithms as we should not expand array crefs to full dimensions in that case";
   output list<BackendDAE.Equation> outEquations;
   output list<BackendDAE.Equation> outREquations;
   output list<BackendDAE.Equation> outIEquations;
 algorithm
-  (outEquations, outREquations, outIEquations) :=  matchcontinue (inElement, functionTree, inEquations, inREquations, inIEquations)
+  (outEquations, outREquations, outIEquations) :=  matchcontinue (inElement, functionTree, inEquations, inREquations, inIEquations, inCrefExpansion)
     local
       DAE.Exp cond, msg, level;
       DAE.Algorithm alg;
@@ -2300,31 +2326,31 @@ algorithm
       list<BackendDAE.Equation> eqns, reqns;
       list<DAE.Statement> assrtLst;
 
-    case (DAE.ALGORITHM(algorithm_=alg, source=source), _, _, _, _)
+    case (DAE.ALGORITHM(algorithm_=alg, source=source), _, _, _, _, _)
       equation
         // calculate the size of the algorithm by collecting the left hand sites of the statemens
         (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
-        crefLst = CheckModel.algorithmOutputs(alg);
+        crefLst = CheckModel.algorithmOutputs(alg, inCrefExpansion);
         size = listLength(crefLst);
-        (eqns, reqns) = List.consOnBool(intGt(size, 0), BackendDAE.ALGORITHM(size, alg, source), inEquations, inREquations);
+        (eqns, reqns) = List.consOnBool(intGt(size, 0), BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion), inEquations, inREquations);
       then
         (eqns, reqns, inIEquations);
 
-    case (DAE.INITIALALGORITHM(algorithm_=alg, source=source), _, _, _, _)
+    case (DAE.INITIALALGORITHM(algorithm_=alg, source=source), _, _, _, _, _)
       equation
         // calculate the size of the algorithm by collecting the left hand sites of the statemens
         (alg, _) = Inline.inlineAlgorithm(alg, (SOME(functionTree), {DAE.NORM_INLINE()}));
-        crefLst = CheckModel.algorithmOutputs(alg);
+        crefLst = CheckModel.algorithmOutputs(alg, inCrefExpansion);
         size = listLength(crefLst);
       then
-        (inEquations, inREquations, BackendDAE.ALGORITHM(size, alg, source)::inIEquations);
+        (inEquations, inREquations, BackendDAE.ALGORITHM(size, alg, source, inCrefExpansion)::inIEquations);
 
     // skipp asserts with condition=true
-    case (DAE.ASSERT(condition=DAE.BCONST(true)), _, _, _, _)
+    case (DAE.ASSERT(condition=DAE.BCONST(true)), _, _, _, _, _)
       then
         (inEquations, inREquations, inIEquations);
 
-    case (DAE.ASSERT(condition=cond, message=msg, level=level, source=source), _, _, _, _)
+    case (DAE.ASSERT(condition=cond, message=msg, level=level, source=source), _, _, _, _, _)
       equation
         (cond, source, _,assrtLst) = Inline.inlineExp(cond, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         (msg, source, _,assrtLst) = Inline.inlineExp(msg, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
@@ -2332,13 +2358,13 @@ algorithm
         BackendDAEUtil.checkAssertCondition(cond, msg, level, DAEUtil.getElementSourceFileInfo(source));
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)});
       then
-        (inEquations, BackendDAE.ALGORITHM(0, alg, source)::inREquations, inIEquations);
+        (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion)::inREquations, inIEquations);
 
-    case (DAE.TERMINATE(message=msg, source=source), _, _, _, _)
+    case (DAE.TERMINATE(message=msg, source=source), _, _, _, _, _)
       then
-        (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source)::inREquations, inIEquations);
+        (inEquations, BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg, source)}), source, inCrefExpansion)::inREquations, inIEquations);
 
-    case (DAE.NORETCALL(functionName = functionName, functionArgs=functionArgs, source=source), _, _, _, _)
+    case (DAE.NORETCALL(functionName = functionName, functionArgs=functionArgs, source=source), _, _, _, _, _)
       equation
         // make sure is not constrain as we don't support it, see below.
         b1 = boolNot(Util.isEqual(functionName, Absyn.IDENT("constrain")));
@@ -2348,13 +2374,13 @@ algorithm
         (functionArgs, source, _) = Inline.inlineExps(functionArgs, (SOME(functionTree), {DAE.NORM_INLINE()}), source);
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(DAE.CALL(functionName, functionArgs, DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())), source)});
       then
-        (inEquations, BackendDAE.ALGORITHM(0, alg, source)::inREquations, inIEquations);
+        (inEquations, BackendDAE.ALGORITHM(0, alg, source, inCrefExpansion)::inREquations, inIEquations);
 
      // constrain is not a standard Modelica function, but used in old libraries such as the old Multibody library.
     // The OpenModelica backend does not support constrain, but the frontend does (Mathcore needs it for their backend).
     // To get a meaningful error message when constrain is used we catch it here, instead of silently failing.
     // User-defined functions should have fully qualified names here, so Absyn.IDENT should only match the builtin constrain function.
-    case (DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain"), source = DAE.SOURCE(info=info)), _, _, _, _)
+    case (DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain"), source = DAE.SOURCE(info=info)), _, _, _, _, _)
       equation
         str = DAEDump.dumpElementsStr({inElement});
         str = stringAppend("rewrite code without using constrain", str);
@@ -2362,7 +2388,7 @@ algorithm
       then
         fail();
 
-    case (_, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
         // only report error if no other error is in the queue!
         0 = Error.getNumErrorMessages();
@@ -3606,17 +3632,18 @@ algorithm
       list<Integer> dimsize;
       BackendDAE.WhenEquation weqn;
       Boolean diffed;
+      DAE.Expand expand;
 
     case (_, _, {}, _, {}, _, countRelations, countMathFunctions, res, relationsLst, sampleLst) then (res, {}, {}, countRelations, countMathFunctions, relationsLst, sampleLst);
 
     // all algorithm stmts are processed firstly
-   case (v, _, ((e as BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source= source_))::xs), eq_count, {}, _, countRelations, countMathFunctions, zcs, relationsLst, sampleLst)
+   case (v, _, ((e as BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source= source_, expand=expand))::xs), eq_count, {}, _, countRelations, countMathFunctions, zcs, relationsLst, sampleLst)
       equation
         eq_count = eq_count + 1;
         ((stmts_1, (_, _, _, (res, relationsLst, sampleLst, countRelations, countMathFunctions), (_, _, _)))) = traverseStmtsExps(stmts, collectZCAlgs, (DAE.RCONST(0.0), {}, DAE.RCONST(0.0), (zcs, relationsLst, sampleLst, countRelations, countMathFunctions), (eq_count, v, knvars)), knvars);
         (res1, eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars, xs, eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst);
       then
-        (res1, BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts_1), source_)::eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
+        (res1, BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts_1), source_, expand)::eq_reslst, wc_reslst, countRelations, countMathFunctions, relationsLst, sampleLst);
 
     // then all when clauses are processed
     case (v, _, el, eq_count, ((wc as BackendDAE.WHEN_CLAUSE(condition = daeExp, reinitStmtLst=whenOperations , elseClause = elseClause_ ))::xsWhen), wc_count, countRelations, countMathFunctions, zcs, relationsLst, sampleLst)

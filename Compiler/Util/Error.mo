@@ -647,7 +647,7 @@ public constant Message INST_INVALID_RESTRICTION = MESSAGE(525, TRANSLATION(), E
 public constant Message INST_NON_LOADED = MESSAGE(526, TRANSLATION(), WARNING(),
   Util.gettext("Library %s was not loaded but is marked as used by model %s."));
 public constant Message RECURSION_DEPTH_REACHED = MESSAGE(527, TRANSLATION(), ERROR(),
-  Util.gettext("The maximum recursion depth was reached, probably due to mutual recursion. The current scope: %s."));
+  Util.gettext("The maximum recursion depth of %s was reached, probably due to mutual recursion. The current scope: %s."));
 public constant Message DERIVATIVE_INPUT = MESSAGE(528, TRANSLATION(), ERROR(),
   Util.gettext("The model requires derivatives of some inputs as listed below:\n%s"));
 public constant Message UTF8_COMMAND_LINE_ARGS = MESSAGE(529, TRANSLATION(), ERROR(),
@@ -659,9 +659,9 @@ public constant Message REINIT_IN_WHEN_INITIAL = MESSAGE(531, TRANSLATION(), ERR
 public constant Message MISSING_INNER_CLASS = MESSAGE(532, TRANSLATION(), WARNING(),
   Util.gettext("No corresponding 'inner' declaration found for class %s declared as '%s'.\n Continuing flattening by only considering the 'outer' class declaration."));
 public constant Message RECURSION_DEPTH_WARNING = MESSAGE(533, TRANSLATION(), ERROR(),
-  Util.gettext("The maximum recursion depth was reached when evaluating expression %s in scope %s. Translation may still succeed but you are recommended to fix the problem."));
+  Util.gettext("The maximum recursion depth of %s was reached when evaluating expression %s in scope %s. Translation may still succeed but you are recommended to fix the problem."));
 public constant Message RECURSION_DEPTH_DERIVED = MESSAGE(534, TRANSLATION(), ERROR(),
-  Util.gettext("The maximum recursion depth was reached when instantiating a derived class. Current class %s in scope %s."));
+  Util.gettext("The maximum recursion depth of %s was reached when instantiating a derived class. Current class %s in scope %s."));
 public constant Message EVAL_EXTERNAL_OBJECT_CONSTRUCTOR = MESSAGE(535, TRANSLATION(), WARNING(),
   Util.gettext("OpenModelica requires that all external objects input arguments are possible to evaluate before initialization in order to avoid odd run-time failures, but %s is a variable."));
 public constant Message CLASS_ANNOTATION_DOES_NOT_EXIST = MESSAGE(536, SCRIPTING(), ERROR(),

@@ -85,6 +85,7 @@ protected import Types;
 protected import Util;
 protected import ValuesUtil;
 protected import ClassInf;
+protected import Global;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -105,7 +106,7 @@ public function ceval "
   output Values.Value outValue;
   output Option<GlobalScript.SymbolTable> outST;
 algorithm
-  (outCache,outValue,outST) := cevalWork1(inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter,numIter > 100);
+  (outCache,outValue,outST) := cevalWork1(inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter,numIter > Global.recursionDepthLimit);
 end ceval;
 
 protected function cevalWork1
@@ -124,15 +125,16 @@ algorithm
   (outCache,outValue,outST) := match (inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter,iterReached)
     local
       Absyn.Info info;
-      String str1,str2;
+      String str1,str2,str3;
     case (_,_,_,_,_,_,_,false)
       equation
         (outCache,outValue,outST) = cevalWork2(inCache,inEnv,inExp,inBoolean,inST,inMsg,numIter);
       then (outCache,outValue,outST);
     case (_,_,_,_,_,Absyn.MSG(info=info),_,true)
       equation
-        str1 = ExpressionDump.printExpStr(inExp);
-        str2 = Env.printEnvPathStr(inEnv);
+        str1 = intString(Global.recursionDepthLimit);
+        str2 = ExpressionDump.printExpStr(inExp);
+        str3 = Env.printEnvPathStr(inEnv);
         Error.addSourceMessage(Error.RECURSION_DEPTH_WARNING, {str1,str2}, info);
       then fail();
   end match;
@@ -877,13 +879,14 @@ algorithm
         Env.Cache cache;
         DAE.Properties prop;
       DAE.Type tp;
-        
+    
+    /* adrpo: this is not needed! we do dimension propagation on function call!
     case (_, _, e as DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY(dims = _))), 
         DAE.PROP(constFlag = DAE.C_PARAM()), _, _)
       equation
         (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo, 0);
       then
-        (inCache, e, prop);
+        (inCache, e, prop);*/
     
     case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _, _) // BoschRexroth specifics
       equation

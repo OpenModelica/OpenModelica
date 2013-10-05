@@ -109,7 +109,7 @@ public function elabMod "
   output Env.Cache outCache;
   output DAE.Mod outMod;
 algorithm
-  (outCache,outMod) := match (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,inInfo)
+  (outCache,outMod) := match(inCache,inEnv,inIH,inPrefix,inMod,inBoolean,inInfo)
     local
       Boolean impl;
       SCode.Final finalPrefix;
@@ -128,6 +128,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       Absyn.Info info;
+      String str;
 
     // no modifications
     case (cache,_,_,_,SCode.NOMOD(),impl,_) then (cache,DAE.NOMOD());
@@ -154,7 +155,7 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e),info))));
 
     // Delayed type checking
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,true)), info = info)),impl,_)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)), info = info)),impl,_)
       equation
         // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, info);
@@ -169,20 +170,16 @@ algorithm
       then
         (cache,DAE.REDECL(finalPrefix,each_,{el_mod}));
 
-    // failure
-    /*
-    case (cache,env,ih,pre,mod,impl,info)
+    /*/ failure
+    case (cache,env,ih,pre,m,impl,info)
       equation
-        Debug.fprint(Flags.FAILTRACE, "#-- elab_mod ");
-        str = SCodeDump.printModStr(mod);
-        Debug.fprint(Flags.FAILTRACE, str);
-        Debug.fprint(Flags.FAILTRACE, " failed\n");
-        print("elab mod failed, mod:");print(str);print("\n");
-        print("env:");print(Env.printEnvStr(env));print("\n");
-        elab mod can fail?
+        str = "- Mod.elabMod  failed: " +& 
+              SCodeDump.printModStr(m) +& 
+              " in env: " +& 
+              Env.printEnvStr(env);
+        Debug.fprintln(Flags.FAILTRACE, str);
       then
-        fail();
-    */
+        fail();*/
   end match;
 end elabMod;
 

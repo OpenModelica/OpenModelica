@@ -4456,13 +4456,13 @@ public function applyAndFold1
   input list<ElementInType> inList;
   input FoldFunc inFoldFunc;
   input ApplyFunc inApplyFunc;
-  input ElementInType inExtraArg;
+  input ArgType1 inExtraArg;
   input FoldType inFoldArg;
   output FoldType outResult;
 
   partial function ApplyFunc
     input ElementInType inElement1;
-    input ElementInType inElement2;
+    input ArgType1 inElement2;
     output ElementOutType1 outElement;
   end ApplyFunc;
 

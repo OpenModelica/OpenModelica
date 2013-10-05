@@ -415,33 +415,40 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<String> slst;
       Boolean jacConstant;
+    
     case (compelem::{},BackendDAE.ALGORITHM(size = _)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEALGORITHM(compelem,varindxs);
+    
     case (compelem::{},BackendDAE.ARRAY_EQUATION(dimSize = _)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEARRAY(compelem,varindxs);
+    
     case (compelem::{},BackendDAE.IF_EQUATION(conditions = _)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEIFEQUATION(compelem,varindxs);
+    
     case (compelem::{},BackendDAE.COMPLEX_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLECOMPLEXEQUATION(compelem,varindxs);
+    
     case (compelem::{},BackendDAE.WHEN_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEWHENEQUATION(compelem,varindxs);
+    
     case (compelem::{},_,(_,v)::{},_,_,_,ass2,false)
       then BackendDAE.SINGLEEQUATION(compelem,v);
+    
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,false)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
@@ -453,6 +460,7 @@ algorithm
         sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,syst,shared,ass1,ass2,true);
       then
         BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);
+    
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
@@ -473,6 +481,7 @@ algorithm
         true = analyzeConstantJacobian(jacConstant,jac,arrayLength(mt),var_lst,eqn_lst,shared);
       then
         BackendDAE.EQUATIONSYSTEM(comp,varindxs,jac,jac_tp);
+    
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
@@ -488,11 +497,13 @@ Sorry - Support for Discrete Equation Systems is not yet implemented\n";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
+    
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentBlock failed"});
       then
         fail();
+  
   end matchcontinue;
 end analyseStrongComponentBlock;
 
@@ -1437,6 +1448,8 @@ algorithm
       list<list<BackendDAE.Equation>> eqnslst;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
       Boolean diffed;
+      DAE.Expand crefExpand;
+    
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source,differentiated = diffed),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
@@ -1444,7 +1457,8 @@ algorithm
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.EQUATION(e1_1,e2_1,source,diffed),ext_arg_2);
-    /* array equation */
+    
+    // Array equation
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source,differentiated = diffed),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
@@ -1452,6 +1466,7 @@ algorithm
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,diffed),ext_arg_2);
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source,differentiated = diffed),_,_)
       equation
         e1 = Expression.crefExp(cr);
@@ -1460,18 +1475,21 @@ algorithm
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e2_1,source,diffed),ext_arg_1);
+    
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated = diffed),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
       then
         (BackendDAE.RESIDUAL_EQUATION(e1_1,source,diffed),ext_arg_1);
-    /* Algorithms */
-    case (BackendDAE.ALGORITHM(size = size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst),source = source),_,_)
+    
+    // Algorithms 
+    case (BackendDAE.ALGORITHM(size = size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst),source = source, expand = crefExpand),_,_)
       equation
         (statementLst,(ops,ext_arg_1)) = DAEUtil.traverseDAEEquationsStmts(statementLst, func, ({},inTypeA));
         source = List.foldr(ops, DAEUtil.addSymbolicTransformation, source);
-      then (BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst),source),ext_arg_1);
+      then (BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst),source, crefExpand),ext_arg_1);
+    
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation =
           BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e1,elsewhenPart=NONE()),source = source),_,_)
       equation
@@ -1494,6 +1512,7 @@ algorithm
         res = BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr,e1_1,SOME(elsepartRes)),source);
       then
         (res,ext_arg_3);
+    
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source,differentiated = diffed),_,_)
       equation
         ((e1_1,(ops,ext_arg_1))) = func((e1,({},inTypeA)));
@@ -1510,6 +1529,7 @@ algorithm
         (eqns,ext_arg_1) = traverseBackendDAEExpsEqnLstWithSymbolicOperation(eqns,func,ext_arg_1,{});
       then
         (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source),ext_arg_1);
+    
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsEqnWithSymbolicOperation failed"});

@@ -3821,6 +3821,7 @@ algorithm
       list<list<DAE.Subscript>> subslst;
       list<BackendDAE.Var> solvedvars;
       String dumpBuffer;
+      DAE.Expand crefExpand;
 
     case(currEquation as BackendDAE.WHEN_EQUATION(size=_),_, vars, functions, inputVars, paramVars, stateVars, knownVars,  _, _, _) equation
       Debug.fcall(Flags.JAC_WARNINGS, print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
@@ -3861,10 +3862,10 @@ algorithm
       derivedEqns = List.map1(exps, createResidualEqn, source);
     then derivedEqns;
 
-    case(currEquation as BackendDAE.ALGORITHM(size=size,alg=alg, source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _)
+    case(currEquation as BackendDAE.ALGORITHM(size=size, alg=alg, source=source, expand = crefExpand),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _)
     equation
       algs = deriveOneAlg(alg,vars,functions,inputVars,paramVars,stateVars,knownVars,inorderedVars,0,inDiffVars,inMatrixName);
-      derivedEqns = List.map2(algs, createAlgorithmEqn, size, source);
+      derivedEqns = List.map3(algs, createAlgorithmEqn, size, source, crefExpand);
     then derivedEqns;
 
     case(currEquation as BackendDAE.COMPLEX_EQUATION(source=_),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
@@ -3940,9 +3941,10 @@ protected function createAlgorithmEqn
   input DAE.Algorithm Alg;
   input Integer Size;
   input DAE.ElementSource Source;
+  input DAE.Expand inCrefExpand;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn := BackendDAE.ALGORITHM(Size, Alg, Source);
+  outEqn := BackendDAE.ALGORITHM(Size, Alg, Source, inCrefExpand);
 end createAlgorithmEqn;
 
 public function differentiateVarWithRespectToX "author: lochel"
@@ -6437,34 +6439,41 @@ algorithm
       list<BackendDAE.Equation> eqns,beqns;
       Integer size;
       DAE.ElementSource source,source1;
+      DAE.Expand crefExpand;
+      
     case ({},_,_,_,_)
       then
         (listReverse(brancheqns1),inEqns);
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source)::eqns,NONE(),_,_,_)
+    
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source, expand=crefExpand)::eqns,NONE(),_,_,_)
       equation
         e = List.fold(conditions,makeIfExp,cond);
-        (beqns,eqns) =  simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(e,msg,level,source1)}),source)::inEqns);
+        (beqns,eqns) =  simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(e,msg,level,source1)}),source,crefExpand)::inEqns);
       then
         (beqns,eqns);
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source)::eqns,SOME(e),_,_,_)
+    
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source,expand=crefExpand)::eqns,SOME(e),_,_,_)
       equation
         e = DAE.IFEXP(e,cond,DAE.BCONST(true));
         e = List.fold(conditions,makeIfExp,e);
-        (beqns,eqns) = simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(e,msg,level,source1)}),source)::inEqns);
+        (beqns,eqns) = simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(e,msg,level,source1)}),source,crefExpand)::inEqns);
       then
         (beqns,eqns);
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source)::eqns,NONE(),_,_,_)
+    
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source,expand=crefExpand)::eqns,NONE(),_,_,_)
       equation
         e = List.fold(conditions,makeIfExp,DAE.BCONST(true));
-        (beqns,eqns) =  simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_IF(e,{DAE.STMT_TERMINATE(msg,source1)},DAE.NOELSE(),source1)}),source)::inEqns);
+        (beqns,eqns) =  simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_IF(e,{DAE.STMT_TERMINATE(msg,source1)},DAE.NOELSE(),source1)}),source,crefExpand)::inEqns);
       then
         (beqns,eqns);
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source)::eqns,SOME(e),_,_,_)
+    
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg=msg,source=source1)}),source=source,expand=crefExpand)::eqns,SOME(e),_,_,_)
       equation
         e = List.fold(conditions,makeIfExp,e);
-        (beqns,eqns) = simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_IF(e,{DAE.STMT_TERMINATE(msg,source1)},DAE.NOELSE(),source1)}),source)::inEqns);
+        (beqns,eqns) = simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_IF(e,{DAE.STMT_TERMINATE(msg,source1)},DAE.NOELSE(),source1)}),source,crefExpand)::inEqns);
       then
         (beqns,eqns);
+    
     case (eqn::eqns,_,_,_,_)
       equation
         (beqns,eqns) = simplifyIfEquationAsserts1(eqns,condition,conditions,eqn::brancheqns1,inEqns);
@@ -7656,12 +7665,15 @@ algorithm
       list<DAE.Exp> outputs;
       DAE.ElementSource source;
       list<DAE.ComponentRef> crlst;
+      DAE.Expand crExpand;
     
-    case((eqn as BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source), vars)) equation
-      crlst = CheckModel.algorithmOutputs(alg);
-      outputs = List.map(crlst, Expression.crefExp);
-      statements = expandAlgorithmStmts(statements, outputs, vars);
-    then ((BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statements), source), vars));
+    case((eqn as BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source, expand=crExpand), vars)) 
+      equation 
+        crlst = CheckModel.algorithmOutputs(alg, crExpand);
+        outputs = List.map(crlst, Expression.crefExp);
+        statements = expandAlgorithmStmts(statements, outputs, vars);
+    then 
+      ((BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statements), source, crExpand), vars));
     
     else
     then inTpl;
@@ -7888,6 +7900,7 @@ algorithm
       DAE.Algorithm alg_;
       list<DAE.Statement> stmts, preStmts;
       HashTableExpToIndex.HashTable ht;
+      DAE.Expand crefExpand;
 
     // when equation
     case ((BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source), (equationArray, vars, eqns, index, ht))) equation
@@ -7899,7 +7912,7 @@ algorithm
     then ((eqn, (equationArray, vars, eqns, index, ht)));
 
     // removed algorithm
-    case ((BackendDAE.ALGORITHM(size=0, alg=alg_, source=source), (equationArray, vars, eqns, index, ht))) equation
+    case ((BackendDAE.ALGORITHM(size=0, alg=alg_, source=source, expand=crefExpand), (equationArray, vars, eqns, index, ht))) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
       size = -index;
       (stmts, preStmts, vars1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
@@ -7907,16 +7920,16 @@ algorithm
       size = size+index-sizePre;
 
       alg_ = DAE.ALGORITHM_STMTS(stmts);
-      eqn = BackendDAE.ALGORITHM(size, alg_, source);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand);
       equationArray = BackendEquation.addEquations({eqn}, equationArray);
 
       alg_ = DAE.ALGORITHM_STMTS(preStmts);
-      eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source);
+      eqn2 = BackendDAE.ALGORITHM(sizePre, alg_, source, crefExpand);
       eqns = Util.if_(intGt(sizePre, 0), eqn2::eqns, eqns);
     then ((eqn, (equationArray, vars1, eqns, index, ht)));
 
     // algorithm
-    case ((BackendDAE.ALGORITHM(size=size, alg=alg_, source=source), (equationArray, vars, eqns, index, ht))) equation
+    case ((BackendDAE.ALGORITHM(size=size, alg=alg_, source=source, expand=crefExpand), (equationArray, vars, eqns, index, ht))) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
       size = size-index;
       (stmts, preStmts, vars1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
@@ -7925,7 +7938,7 @@ algorithm
       stmts = listAppend(preStmts, stmts);
 
       alg_ = DAE.ALGORITHM_STMTS(stmts);
-      eqn = BackendDAE.ALGORITHM(size, alg_, source);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source, crefExpand);
       equationArray = BackendEquation.addEquations({eqn}, equationArray);
     then ((eqn, (equationArray, vars1, eqns, index, ht)));
 
@@ -8114,7 +8127,7 @@ algorithm
       (conditions, initialCall) = getConditionList(condition);
       vars = listAppend(vars, inVars);
 
-      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)});
+      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, DAE.EXPAND());
 
       (stmts, preStmts2, vars, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
       preStmts = listAppend(preStmts, preStmts2);
@@ -8143,7 +8156,7 @@ algorithm
       preStmts2 = List.stripLast(elseWhenList);
       preStmts = listAppend(preStmts, preStmts2);
 
-      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)});
+      {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, SOME(elseWhen), source)}, DAE.EXPAND());
 
       (stmts, preStmts2, vars, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
       preStmts = listAppend(preStmts, preStmts2);

@@ -1265,18 +1265,19 @@ algorithm
       Env.ImportTable it;
       Env.Frame f;
       Env.Extra extra;
+      Env.Env parents;
 
-    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra), cr)
+    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents), cr)
       equation
         SOME(clsAndVars) = switchInnerToOuterInAvlTree(SOME(clsAndVars), cr);
       then
-        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra);
+        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents);
 
-    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra), cr)
+    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents), cr)
       equation
         // when above fails leave unchanged
       then
-        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra);
+        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents);
 
   end matchcontinue;
 end switchInnerToOuterInFrame;

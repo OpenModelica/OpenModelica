@@ -234,6 +234,7 @@ algorithm
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
       Boolean b1,b2,b3,d;
+      DAE.Expand crefExpand;
    
     case(BackendDAE.EQUATION(e1,e2,source,d),_)
       equation
@@ -263,12 +264,12 @@ algorithm
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source,d),true);
 
-    case(BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),_)
+    case(BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source,expand=crefExpand),_)
       equation
         (stmts1,true) = inlineStatements(stmts,fns,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);
       then
-        (BackendDAE.ALGORITHM(size,alg,source),true);
+        (BackendDAE.ALGORITHM(size,alg,source,crefExpand),true);
 
     case(BackendDAE.WHEN_EQUATION(size,weq,source),_)
       equation
@@ -1277,6 +1278,10 @@ algorithm
       DAE.Exp e,e_1,e_2;
       DAE.ElementSource source;
       list<DAE.Statement> assrtLst;
+    
+    // never inline WILD!
+    case (e as DAE.CREF(componentRef = DAE.WILD()),fns,source) then (inExp,inSource,false,{});
+    
     case (e,fns,source)
       equation
         ((e_1,(fns,true,assrtLst))) = Expression.traverseExp(e,inlineCall,(fns,false,{}));
@@ -1284,6 +1289,7 @@ algorithm
         (DAE.PARTIAL_EQUATION(e_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
       then
         (e_2,source,true,assrtLst);
+    
     else (inExp,inSource,false,{});
   end matchcontinue;
 end inlineExp;

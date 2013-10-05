@@ -88,6 +88,7 @@ algorithm
       DAE.Algorithm alg;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
+      DAE.Expand crefExpand;
 
     // equations
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source),timevars,_) /* time varying variables */
@@ -128,7 +129,7 @@ algorithm
       then
         BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,false);
     // diverivative of function with multiple outputs
-    case (BackendDAE.ALGORITHM(size = size,alg=alg,source=source),timevars,BackendDAE.SHARED(functionTree=funcs))
+    case (BackendDAE.ALGORITHM(size = size,alg=alg,source=source,expand=crefExpand),timevars,BackendDAE.SHARED(functionTree=funcs))
       equation
         // get Allgorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = alg;
@@ -139,7 +140,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformation(source,op1);
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)});
        then
-        BackendDAE.ALGORITHM(size,alg,source);
+        BackendDAE.ALGORITHM(size,alg,source,crefExpand);
 
     // if-equations
     case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),timevars,_) /* time varying variables */

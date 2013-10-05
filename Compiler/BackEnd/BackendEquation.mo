@@ -713,18 +713,22 @@ algorithm
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
       Boolean diffed;
+      DAE.Expand crefExpand;
+    
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
         (BackendDAE.EQUATION(e_1,e_2,source,diffed),ext_arg_2);
+    
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
         (BackendDAE.ARRAY_EQUATION(dimSize,e_1,e_2,source,diffed),ext_arg_2);
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source,differentiated=diffed),_,_)
       equation
         tp = Expression.typeof(e2);
@@ -733,11 +737,13 @@ algorithm
         ((e_2,ext_arg_2)) = func((e2,ext_arg_1));
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e_2,source,diffed),ext_arg_2);
+    
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source,diffed),ext_arg_1);
+    
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE()),source = source),_,_)
       equation
         tp = Expression.typeof(e2);
@@ -747,6 +753,7 @@ algorithm
         ((cond,ext_arg_2)) = func((cond,ext_arg_2));
       then
        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,NONE()),source),ext_arg_2);
+    
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),_,_)
       equation
         tp = Expression.typeof(e2);
@@ -757,12 +764,14 @@ algorithm
         (BackendDAE.WHEN_EQUATION(whenEquation=elsePart1),ext_arg_3) = traverseBackendDAEExpsEqn(BackendDAE.WHEN_EQUATION(size,elsePart,source),func,ext_arg_2);
       then
         (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),ext_arg_3);
-    case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source),_,_)
+    
+    case (BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source=source,expand=crefExpand),_,_)
       equation
         (stmts1,ext_arg_1) = DAEUtil.traverseDAEEquationsStmts(stmts,func,inTypeA);
         alg = Util.if_(referenceEq(stmts,stmts1),alg,DAE.ALGORITHM_STMTS(stmts1));
       then
-        (BackendDAE.ALGORITHM(size,alg,source),ext_arg_1);
+        (BackendDAE.ALGORITHM(size,alg,source,crefExpand),ext_arg_1);
+    
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,ext_arg_1)) = func((e1,inTypeA));
@@ -777,6 +786,7 @@ algorithm
         (eqns,ext_arg_2) = List.map1Fold(eqns,traverseBackendDAEExpsEqn,func,ext_arg_2);
       then
         (BackendDAE.IF_EQUATION(expl,eqnslst,eqns,source),ext_arg_2);
+  
   end match;
 end traverseBackendDAEExpsEqn;
 
@@ -966,6 +976,8 @@ algorithm
       list<list<BackendDAE.Equation>> eqnstrue;
       list<BackendDAE.Equation> eqns,eqnsfalse,eqnsfalse1;
       Boolean diffed;
+      DAE.Expand crefExpand;
+      
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
@@ -973,6 +985,7 @@ algorithm
         bres = Util.boolOrList({b1,b2});
       then
         (BackendDAE.EQUATION(e_1,e_2,source,diffed),bres,ext_arg_2);
+    
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
@@ -980,6 +993,7 @@ algorithm
         bres = Util.boolOrList({b1,b2});
       then
         (BackendDAE.ARRAY_EQUATION(dimSize,e_1,e_2,source,diffed),bres,ext_arg_2);
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2,source=source,differentiated=diffed),_,_)
       equation
         tp = Expression.typeof(e2);
@@ -989,11 +1003,13 @@ algorithm
         bres = Util.boolOrList({b1,b2});
       then
         (BackendDAE.SOLVED_EQUATION(cr1,e_2,source,diffed),bres,ext_arg_2);
+    
     case (eq as BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source,diffed),b1,ext_arg_1);
+    
     case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left = cr,right = e2,elsewhenPart=NONE()),source = source),_,_)
       equation
         tp = Expression.typeof(e2);
@@ -1004,6 +1020,7 @@ algorithm
         bres = Util.boolOrList({b1,b2,b3});
       then
        (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,NONE()),source),bres,ext_arg_2);
+    
     case (eq as BackendDAE.WHEN_EQUATION(size=size,whenEquation = BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsePart)),source = source),_,_)
       equation
         tp = Expression.typeof(e2);
@@ -1015,9 +1032,11 @@ algorithm
         bres = Util.boolOrList({b1,b2,b3,b4});
       then
         (BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(cond,cr1,e_2,SOME(elsePart1)),source),bres,ext_arg_3);
-    case (BackendDAE.ALGORITHM(size=size,alg=alg,source=source),_,_)
+    
+    case (BackendDAE.ALGORITHM(size=size,alg=alg,source=source,expand=crefExpand),_,_)
       then
-        (BackendDAE.ALGORITHM(size,alg,source),false,inTypeA);
+        (BackendDAE.ALGORITHM(size,alg,source,crefExpand),false,inTypeA);
+    
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source,differentiated=diffed),_,_)
       equation
         ((e_1,b1,ext_arg_1)) = func((e1,inTypeA));
@@ -2534,38 +2553,48 @@ algorithm
       list<Integer> ds;
       DAE.Algorithm alg;
       Boolean diffed;
+      DAE.Expand crefExpand;
+    
     case (BackendDAE.EQUATION(e1,e2,source,diffed),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.EQUATION(e1,e2,source,diffed);
+    
     case (BackendDAE.ARRAY_EQUATION(ds,e1,e2,source,diffed),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.ARRAY_EQUATION(ds,e1,e2,source,diffed);
+    
     case (BackendDAE.SOLVED_EQUATION(cr1,e1,source,diffed),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.SOLVED_EQUATION(cr1,e1,source,diffed);
+    
     case (BackendDAE.RESIDUAL_EQUATION(e1,source,diffed),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.RESIDUAL_EQUATION(e1,source,diffed);
-    case (BackendDAE.ALGORITHM(size,alg,source),_)
+    
+    case (BackendDAE.ALGORITHM(size,alg,source,crefExpand),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
-      then BackendDAE.ALGORITHM(size,alg,source);
+      then BackendDAE.ALGORITHM(size,alg,source,crefExpand);
+    
     case (BackendDAE.WHEN_EQUATION(size,whenEquation,source),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.WHEN_EQUATION(size,whenEquation,source);
+    
     case (BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,diffed),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,diffed);
+    
     case (BackendDAE.IF_EQUATION(conditions,eqnstrue,eqnsfalse,source),_)
       equation
         source = DAEUtil.addSymbolicTransformation(source,op);
       then BackendDAE.IF_EQUATION(conditions,eqnstrue,eqnsfalse,source);
+    
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendEquation.addOperation failed"});

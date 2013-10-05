@@ -67,6 +67,7 @@ protected import Util;
 protected import SCodeDump;
 protected import ErrorExt;
 protected import SCodeUtil;
+protected import Global;
 //protected import System;
 
 protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
@@ -158,8 +159,8 @@ algorithm
         // outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         outermod = mod;
         
+        // cenv = Env.mergeEnv(cenv, env, "$extends_" +& cn, c, Env.M(pre, className, {}, mod, env, {}));
         cenv = Env.addModification(cenv, Env.M(pre, className, {}, mod, env, {}));
-
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
         els = updateElementListVisibility(els, vis);
 
@@ -644,7 +645,7 @@ algorithm
       InstanceHierarchy ih;
       SCode.Comment cmt;
       list<SCode.Enum> enumLst;
-      String n,name,str1,str2;
+      String n,name,str1,str2,strDepth;
       Option<SCode.ExternalDecl> extdecl;
       Prefix.Prefix pre;
       Absyn.Info info;
@@ -667,7 +668,7 @@ algorithm
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
-    case (cache,env,ih,mod,pre,SCode.CLASS(info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false, _)
+    case (cache,env,ih,mod,pre,SCode.CLASS(name = name, info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false, _)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "DERIVED: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(inClass) +& " mods: " +& Mod.printModStr(mod));
         (cache, c, cenv) = Lookup.lookupClass(cache, env, tp, true);
@@ -676,7 +677,8 @@ algorithm
         //(cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, info);
         // merge in the class env
         //mod = Mod.merge(mod, daeDMOD, cenv, pre);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= 40, numIter+1)
+        // cenv = Env.mergeEnv(cenv, env, "$derived_" +& getElementName(c), c, Env.M(pre, name, {}, mod, env, {}));
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
@@ -684,7 +686,7 @@ algorithm
     case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false,_)
       equation
         c = Inst.instEnumeration(n, enumLst, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= 40, numIter+1);
+        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
 
@@ -692,6 +694,7 @@ algorithm
       equation
         str1 = SCodeDump.printElementStr(inClass);
         str2 = Env.printEnvPathStr(inEnv);
+        strDepth = intString(Global.recursionDepthLimit);
         // print("instDerivedClassesWork recursion depth... " +& str1 +& " " +& str2 +& "\n");
         Error.addSourceMessage(Error.RECURSION_DEPTH_DERIVED,{str1,str2},inInfo);
       then fail();

@@ -74,6 +74,7 @@ protected import Prefix;
 protected import Static;
 protected import UnitAbsyn;
 protected import SCodeDump;
+protected import ErrorExt;
 
 /*   - Lookup functions
 
@@ -368,6 +369,15 @@ algorithm
         scope = Env.printEnvPathStr(inEnv);
         Error.addMessage(Error.LOOKUP_ERROR, {id,scope});
       then fail();
+    /*case (_,_,_,_,_,_)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        id = Absyn.pathString(inPath);
+        scope = Env.printEnvPathStr(inEnv);
+        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupClass failed:\n" +& 
+          id +& " in:\n" +& 
+          scope);
+      then fail();*/
   end matchcontinue;
 end lookupClass1;
 
@@ -533,7 +543,7 @@ algorithm
         env = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env));
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP CLASS QUALIFIED PARTIALICD: " +& Env.printEnvPathStr(env) +& " path: " +& Absyn.pathString(path) +& " class: " +& SCodeDump.shortElementStr(c));
-        (cache,env,_,_) =
+        (cache,env,_,_,_) =
         Inst.partialInstClassIn(
           cache,env,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(),
@@ -798,7 +808,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP MORE UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
-        (cache,(f :: _),_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+        (cache,(f :: _),_,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
       then
         (cache, true);
@@ -859,7 +869,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP UNQUALIFIED IMPORTED ICD: " +& Env.printEnvPathStr(env) +& "." +& ident);
-        (cache,env2,_,cistate1) =
+        (cache,env2,_,cistate1,_) =
         Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         // Restrict import to the imported scope only, not its parents, thus {f} below
@@ -1022,14 +1032,18 @@ algorithm
         (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
         checkPackageVariableConstant(classEnv,attr,ty,cref);
         // optional Expression.exp to return
+        // classEnv = Env.mergeEnv(classEnv, env, "+" +& ComponentReference.printComponentRefStr(cref));
+        // componentEnv = Env.mergeEnv(classEnv, componentEnv, "-" +& ComponentReference.printComponentRefStr(cref));
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);
 
-    // fail if we couldn't find it
+    /*/ fail if we couldn't find it
     case (_,env,cref)
       equation
-        //Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed " +& ComponentReference.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));
-      then fail();
+        Debug.fprintln(Flags.FAILTRACE,  "- Lookup.lookupVar failed:\n" +& 
+          ComponentReference.printComponentRefStr(cref) +& " in:\n" +& 
+          Env.printEnvPathStr(env));
+      then fail();*/
   end matchcontinue;
 end lookupVar;
 
@@ -1218,7 +1232,7 @@ algorithm
             Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,
             false);
         Util.setStatefulBoolean(inState,true);
-        
+
         true = Env.hasModifications(env2);
         // search directly in env2
         (_, env5) = lookupClassLocal(env2, n);
@@ -1397,7 +1411,7 @@ public function lookupClassLocal "Searches for a class definition in the local s
   output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
-  (outClass,outEnv) := match (inEnv,inIdent)
+  (outClass,outEnv) := match(inEnv,inIdent)
     local
       SCode.Element cl;
       list<Env.Frame> env;
@@ -1464,7 +1478,7 @@ public function lookupFunctionsInEnv
 algorithm
   (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inId,inInfo)
     local
-      Env.Env env_1;
+      Env.Env env_1, cenv, env, fs;
       Env.Frame f;
       list<DAE.Type> res;
       list<Absyn.Path> names;
@@ -1472,9 +1486,24 @@ algorithm
       Env.AvlTree ht;
       String str, name;
       Env.Cache cache;
-      Env.Env env, fs;
       Absyn.Path id, scope;
       Absyn.Info info;
+
+    // we might have a component reference, i.e. world.gravityAcceleration
+    case (cache,env,Absyn.QUALIFIED(name, id),info)
+      equation
+        ErrorExt.setCheckpoint("functionViaComponentRef");
+        (cache,_,_,_,_,_,_,cenv,_) = lookupVar(cache, env, ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {}));
+        (cache, res) = lookupFunctionsInEnv(cache, cenv, id, info);
+        ErrorExt.rollBack("functionViaComponentRef");
+      then
+        (cache,res);
+
+   case (cache,env,Absyn.QUALIFIED(name, id),info)
+     equation
+       ErrorExt.rollBack("functionViaComponentRef");
+     then
+       fail();
 
     // uq paths are different!
     case (cache,env,id,info)
@@ -1632,7 +1661,7 @@ algorithm
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
 
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV QUAL ICD: " +& Env.printEnvPathStr(env2) +& "." +& str);
-        (cache,env_2,_,cistate1) =
+        (cache,env_2,_,cistate1,_) =
         Inst.partialInstClassIn(
           cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(),
@@ -2372,7 +2401,7 @@ algorithm
         Env.CLASS(c,_,_) = Env.avlTreeGet(ht, name);
       then
         (cache,c,totenv,prevFrames);
-
+        
     // Search among the qualified imports, e.g. import A.B; or import D=A.B;
     case (cache,Env.FRAME(name = sid,importTable = importTable),totenv,name,_,_,_)
       equation

@@ -1793,6 +1793,9 @@ algorithm
       then
         sizeOf(ty);
 
+    // 0 for T_UNKNOWN as it can only appear in tuples for WILD()??!!
+    case DAE.T_UNKNOWN(_) then 0;
+
     // for all other consider it just 1 variable
     case _ then 1;
   end matchcontinue;

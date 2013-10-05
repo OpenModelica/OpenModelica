@@ -723,13 +723,21 @@ public function isArray "Returns true if Type is an array."
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inType,inDims)
-      local Type t;
+      local 
+        Type t;
+        list<Type> tys;
+        Boolean b;
     // several (at least 2) dimensions means array!
     case (_, _::_::_) then true;
     // if the type is an array, then is an array
     case (DAE.T_ARRAY(ty = _),_) then true;
     // if is a type extending basic type
     case (DAE.T_SUBTYPE_BASIC(complexType = t),_) then isArray(t, {});
+    case (DAE.T_TUPLE(tupleType = tys), _)
+      equation
+        b = List.applyAndFold1(tys, boolOr, isArray, {}, false);
+      then
+        b;
     case (_,_) then false;
   end matchcontinue;
 end isArray;

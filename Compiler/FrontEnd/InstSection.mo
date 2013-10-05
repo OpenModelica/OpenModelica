@@ -833,7 +833,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE);
         s = SCodeDump.equationStr(eqn);
         Debug.fprint(Flags.FAILTRACE, "- instEquationCommonWork failed for eqn: ");
-        Debug.fprint(Flags.FAILTRACE, s +& " in scope:" +& Env.getScopeName(env) +& "\n");
+        Debug.fprint(Flags.FAILTRACE, s +& " in scope:" +& Env.getEnvNameStr(env) +& "\n");
         //print("ENV: " +& Env.printEnvStr(env) +& "\n");
       then
         fail();

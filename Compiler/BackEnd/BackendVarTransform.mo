@@ -1451,6 +1451,7 @@ algorithm
       list<Boolean> blst;
       list<BackendDAE.Equation> eqns;
       list<list<BackendDAE.Equation>> eqnslst;
+      DAE.Expand crefExpand;
 
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source,differentiated = diffed),repl,_,_,_)
       equation
@@ -1462,6 +1463,7 @@ algorithm
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
         (BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,diffed)::inAcc,true);
+    
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source,differentiated = diffed),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -1472,6 +1474,7 @@ algorithm
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
         (BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source,diffed)::inAcc,true);
+    
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source,differentiated = diffed),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
@@ -1482,12 +1485,14 @@ algorithm
         (DAE.EQUALITY_EXPS(e1_2,e2_2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1_1,e2_1),source);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source,diffed)::inAcc,true);
-    case (BackendDAE.ALGORITHM(size=size,alg = alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source = source),repl,_,_,_)
+    
+    case (BackendDAE.ALGORITHM(size=size,alg = alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source = source, expand = crefExpand),repl,_,_,_)
       equation
         (stmts1,true) = replaceStatementLst(stmts,repl,inFuncTypeExpExpToBooleanOption,{},false);
         alg = DAE.ALGORITHM_STMTS(stmts1);
       then
-        (BackendDAE.ALGORITHM(size,alg,source)::inAcc,true);
+        (BackendDAE.ALGORITHM(size,alg,source,crefExpand)::inAcc,true);
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source,differentiated = diffed),repl,_,_,_)
       equation
         (e_1,true) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
@@ -1495,6 +1500,7 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
       then
         (BackendDAE.SOLVED_EQUATION(cr,e_2,source,diffed)::inAcc,true);
+    
     case (BackendDAE.RESIDUAL_EQUATION(exp = e,source = source,differentiated = diffed),repl,_,_,_)
       equation
         (e_1,true) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
@@ -1502,12 +1508,14 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
       then
         (BackendDAE.RESIDUAL_EQUATION(e_2,source,diffed)::inAcc,true);
+    
     case (BackendDAE.WHEN_EQUATION(size,whenEqn,source),repl,_,_,_)
       equation
         (whenEqn1,source,true) = replaceWhenEquation(whenEqn,repl,inFuncTypeExpExpToBooleanOption,source);
       then
         (BackendDAE.WHEN_EQUATION(size,whenEqn1,source)::inAcc,true);
-   case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source = source),repl,_,_,_)
+   
+    case (BackendDAE.IF_EQUATION(conditions=expl, eqnstrue=eqnslst, eqnsfalse=eqns, source = source),repl,_,_,_)
       equation
         (expl1,blst) = replaceExpList1(expl, repl, inFuncTypeExpExpToBooleanOption, {}, {});
         b1 = Util.boolOrList(blst);
@@ -1522,6 +1530,7 @@ algorithm
         (eqns,true);
 
     case (a,_,_,_,_) then (a::inAcc,iReplacementPerformed);
+    
   end matchcontinue;
 end replaceEquation;
 

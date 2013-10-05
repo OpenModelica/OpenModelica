@@ -174,7 +174,7 @@ end FrameType;
 
 public
 type Modifications = list<Modification>;
-  
+
 public uniontype Modification
   record M
     Prefix.Prefix p;
@@ -188,25 +188,27 @@ end Modification;
 
 public uniontype Extra
   record EXTRA
-    Modifications       mods               "Includes the scope specifics, mods, prefix, ad";
+    Modifications mods       "Includes the scope specifics, mods, prefix, ad";
+    Integer       typeLength "How long is the type env appended to the compnent env";
   end EXTRA;
 end Extra;
 
-constant Extra emptyExtra = EXTRA({});
+constant Extra emptyExtra = EXTRA({}, -1);
 
 public
 uniontype Frame
   record FRAME
-    Option<Ident>       name               "Optional class name";
-    Option<ScopeType>   scopeType          "Optional scope type";
-    FrameType           frameType          "Normal, Encapsulated, Implicit";
-    AvlTree             clsAndVars         "List of uniquely named classes and variables";
-    AvlTree             types              "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
-    CSetsType           connectionSet      "Current connection set crefs";
-    list<SCode.Element> defineUnits        "List of units defined in the frame";
-    ImportTable         importTable        "The Import table";
-    Extra               extra              "Contains more info, see Extra";
-  end FRAME;
+    Option<Ident>         name               "Optional class/component/extends name";
+    Option<ScopeType>     scopeType          "Optional scope type";
+    FrameType             frameType          "Normal, Encapsulated, Implicit";
+    AvlTree               clsAndVars         "List of uniquely named classes and variables";
+    AvlTree               types              "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
+    CSetsType             connectionSet      "Current connection set crefs";
+    list<SCode.Element>   defineUnits        "List of units defined in the frame";
+    ImportTable           importTable        "The Import table";
+    Extra                 extra              "Contains more info, see Extra";
+    Env                   parents            "Contains the parent environments"; 
+  end FRAME;  
 end Frame;
 
 public uniontype ItemType
@@ -253,21 +255,18 @@ uniontype Item
     list<DAE.Type> tys "list since several types with the same name can exist in the same scope (overloading)" ;
   end TYPE;
 
-  record ALIAS "An alias for another Item, see comment in SCodeFlattenRedeclare package."
-    String name;
-    Option<Absyn.Path> path;
-    Absyn.Info info;
-  end ALIAS;
-
-  record REDECLARED_ITEM
-    Item item;
-    Env declaredEnv;
-  end REDECLARED_ITEM;
-
   record IMPORT "not really pushed in the frame, just to unify the env management"
     SCode.Element i;
   end IMPORT;
-
+  
+  record PARENT
+    Absyn.Path name;
+    Env parentEnv;
+    SCode.Element childClass;
+    Env childEnv;
+    Modification m;
+  end PARENT;
+  
 end Item;
 
 public function emptyCache
@@ -315,7 +314,7 @@ algorithm
   clsAndVars := emptyAvlTree;
   tys        := emptyAvlTree;
   imps       := emptyImportTable;
-  outFrame   := FRAME(inName,inScopeType,inFrameType,clsAndVars,tys,{},{},imps,emptyExtra);
+  outFrame   := FRAME(inName,inScopeType,inFrameType,clsAndVars,tys,{},{},imps,emptyExtra,{});
 end newFrame;
 
 public function newImportTable
@@ -489,7 +488,7 @@ algorithm
       list<SCode.Element> du;
       ImportTable         it;
       Extra extra;
-      Env fs,env;
+      Env fs,env,parents;
       Frame fr;
       SCode.Element c;
       ItemType ity;
@@ -497,13 +496,13 @@ algorithm
 
     case({fr}) then {fr};
 
-    case((fr as FRAME(SOME(id),st,ft,clsAndVars,tys,crs,du,it,extra))::fs)
+    case((fr as FRAME(SOME(id),st,ft,clsAndVars,tys,crs,du,it,extra,parents))::fs)
       equation
         (old as CLASS(c, env, ity)) = getItemInEnv(id, fs);
         fs = replaceFrameItem(fs, SCode.elementName(c), CLASS(c, fs, ity), {});
         fs = updateEnv(fs);
       then
-        FRAME(SOME(id),st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(SOME(id),st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     else inEnv;
 
@@ -528,13 +527,13 @@ algorithm
       list<SCode.Element> du;
       ImportTable         it;
       Extra extra;
-      Env fs;
+      Env fs, parents;
 
-    case(FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, _)
+    case(FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _)
       equation
         clsAndVars = updateEnvClassesInTree(clsAndVars, inClassEnv);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
   end match;
 end updateEnvClasses;
@@ -613,20 +612,20 @@ algorithm
       CSetsType crs;
       list<SCode.Element> du;
       ImportTable it;
-      Env fs, env;
+      Env fs, env, parents;
       SCode.Element c;
       Ident n;
       ItemType ct;
       SCode.ClassDef cdef;
       Extra extra;
 
-    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, c as SCode.CLASS(name = n))
+    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, c as SCode.CLASS(name = n))
       equation
         cdef = SCode.getClassDef(c);
         ct = getItemType(cdef,NONE());
         clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,ct));
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     case (_,_)
       equation
@@ -662,16 +661,16 @@ algorithm
       CSetsType crs;
       list<SCode.Element> du;
       ImportTable it;
-      Env fs, env;
+      Env fs, env, parents;
       SCode.Element c;
       Ident n;
       Extra extra;
 
-    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, c as SCode.CLASS(name = n), _)
+    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, c as SCode.CLASS(name = n), _)
       equation
         clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,inItemType));
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     case (_,_,_)
       equation
@@ -699,7 +698,7 @@ algorithm
       CSetsType crs;
       list<SCode.Element> du;
       ImportTable it;
-      Env fs,  frames, classEnv, oldCE;
+      Env fs,  frames, classEnv, oldCE, parents;
       SCode.Element e, oldE;
       Ident n;
       ItemType oldCT,clsTy;
@@ -718,21 +717,22 @@ algorithm
 
     case ({}, _, _) then {};
 
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, e as SCode.CLASS(name = n), classEnv)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, e as SCode.CLASS(name = n), classEnv)
       equation
         cdef = SCode.getClassDef(e);
         clsTy = getItemType(cdef, NONE());
         oldItem = avlTreeGet(clsAndVars, n);
         clsAndVars = avlTreeAdd(clsAndVars, n, CLASS(e, classEnv, clsTy));
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     // Also check frames above, e.g. when variable is in base class
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, e, classEnv)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, e, classEnv)
       equation
+        true = isImplicitScope(id);
         frames = updateFrameC(fs, e, classEnv);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::frames;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::frames;
 
     case (_, e, classEnv)
       equation
@@ -802,14 +802,14 @@ algorithm
       list<SCode.Element> du;
       ImportTable         it;
       Extra extra;
-      Env fs;
+      Env fs,parents;
 
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs)
       equation
         // make an empty component env!
         clsAndVars = emptyAvlTree;
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
   end match;
 end removeComponentsFromFrameV;
@@ -836,17 +836,17 @@ algorithm
       DAE.Var v;
       Ident n;
       SCode.Element c;
-      Env fs,coenv;
+      Env fs,coenv,parents;
       DAE.Mod m;
       Extra extra;
       ItemType itty;
 
     // Environment of component
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
       equation
         clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,USERDEFINED()));
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     // Variable already added, perhaps from baseclass
     case (FRAME(clsAndVars  = clsAndVars)::fs,v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
@@ -876,7 +876,7 @@ algorithm
       list<SCode.Element> du;
       ImportTable it;
       InstStatus i;
-      Env fs,coenv,frames;
+      Env fs,coenv,frames,parents;
       DAE.Var v;
       Ident n;
       AvlValue var;
@@ -888,28 +888,33 @@ algorithm
     // fully instantiated env of component
     case ({},_,i,_) then {};
 
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, v as DAE.TYPES_VAR(name = n), i, coenv)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
         (var as VAR(_,c,m,_,_,itty)) = avlTreeGet(clsAndVars, n);
-        // Debug.fprintln(Flags.INST_TRACE, "Updating variable: " +& valueStr(VAR(v,c,i,env)) +& "\n In current env:" +& printEnvPathStr(inEnv1));
-        // Debug.fprintln(Flags.INST_TRACE, "Previous variable: " +& valueStr(var) +& "\nIn current env:" +& printEnvPathStr(inEnv1));
+        //Debug.bprint(not Config.acceptMetaModelicaGrammar(), "UE: " +& printEnvPathStr(inEnv) +& "\n");
+        //Debug.bprint(not Config.acceptMetaModelicaGrammar(), "NV: " +& valueStr(VAR(v,c,m,i,coenv,itty)) +& "\n");
+        //Debug.bprint(not Config.acceptMetaModelicaGrammar(), "PV: " +& valueStr(var) +& "\n");
         clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,itty));
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     // Also check frames above, e.g. when variable is in base class
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs,v as DAE.TYPES_VAR(name = n), i, coenv)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs,v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
+        true = isImplicitScope(id);
         frames = updateFrameV(fs, v, i, coenv);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::frames;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::frames;
 
     case (_,v as DAE.TYPES_VAR(name = n),_,_)
       equation
-        print("- Env.updateFrameV failed on variable: " +&
-              n +& "\n" +& Types.printVarStr(v) +& "\n");
+        /*print("- Env.updateFrameV failed on variable: " +&
+              n +& "\n" +& Types.printVarStr(v) +&
+              "\nin env:" +& getEnvNameStr(inEnv) +&
+              "\nin cenv:" +& getEnvNameStr(inCompEnv) +&
+              "\n");*/
       then
-        fail();
+        inEnv;
   end matchcontinue;
 end updateFrameV;
 
@@ -932,27 +937,27 @@ algorithm
       CSetsType crs;
       list<SCode.Element> du;
       ImportTable it;
-      Env fs;
+      Env fs, parents;
       list<DAE.Type> tps;
       Ident n;
       DAE.Type t;
       Extra extra;
 
     // Other types with that name already exist, add this type as well
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs,n,t)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs,n,t)
       equation
         TYPE(tps) = avlTreeGet(tys, n);
         tys = avlTreeReplace(tys, n, TYPE(t::tps));
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     // No other types exists
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs,n,t)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs,n,t)
       equation
         failure(TYPE(_) = avlTreeGet(tys, n));
         tys = avlTreeAdd(tys, n, TYPE({t}));
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
   end matchcontinue;
 end extendFrameT;
 
@@ -977,10 +982,9 @@ public function addFrameItem
   input Env inEnv;
   input Ident inName;
   input Item inNewItem;
-  input Modifications inMods "the reason for this push or {} if just for fun";
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue (inEnv, inName, inNewItem, inMods)
+  outEnv := matchcontinue (inEnv, inName, inNewItem)
     local
       Option<Ident>       id;
       Option<ScopeType>   st;
@@ -991,22 +995,22 @@ algorithm
       list<SCode.Element> du;
       ImportTable         it;
       Extra extra;
-      Env fs, env;
+      Env fs, env, parents;
       SCode.Element e;
       Item oldItem, newItem;
 
-    case (_, _, IMPORT(e), _)
+    case (_, _, IMPORT(e))
       equation
         env = extendEnvWithImport(e, inEnv);
       then
         env;
 
     // not there, add it
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, _, _, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _, _)
       equation
         clsAndVars = avlTreeAdd(clsAndVars, inName, inNewItem);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
   end matchcontinue;
 end addFrameItem;
@@ -1027,12 +1031,10 @@ algorithm
       AvlTree             clsAndVars;
       AvlTree             tys;
       CSetsType           crs;
-      list<SCode.Element> du;
-      
+      list<SCode.Element> du;      
       ImportTable         it;
-      
       Extra extra;
-      Env fs, env;
+      Env fs, env, parents;
       SCode.Element e;
       Item oldItem, newItem;
 
@@ -1043,11 +1045,11 @@ algorithm
         env;
 
     // not there, add it
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, _, _, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _, _, _)
       equation
         clsAndVars = avlTreeAdd(clsAndVars, inName, inNewItem);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
   end matchcontinue;
 end replaceFrameItem;
@@ -1069,11 +1071,9 @@ algorithm
       AvlTree             tys;
       CSetsType           crs;
       list<SCode.Element> du;
-      
       ImportTable         it;
-      
       Extra               extra;
-      Env fs, env;
+      Env fs, env, parents;
       SCode.Element e;
       Item oldItem, newItem;
 
@@ -1084,20 +1084,20 @@ algorithm
         env;
 
     // already here, merge
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, _, _, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _, _, _)
       equation
         oldItem = avlTreeGet(clsAndVars, inName);
         newItem = mergeItems(inNewItem, oldItem, inMods);
         clsAndVars = avlTreeAdd(clsAndVars, inName, newItem);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     // not there, add it
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, _, _, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _, _, _)
       equation
         clsAndVars = avlTreeAdd(clsAndVars, inName, inNewItem);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
   end matchcontinue;
 end pushFrameItem;
@@ -1115,11 +1115,29 @@ algorithm
   end matchcontinue;
 end mergeItems;
 
+public function isComponentFrame 
+"returns true if this a virtual component name added during instantiation"
+  input Frame inFrame;
+  output Boolean b;
+algorithm
+  b := match(inFrame)
+    local Integer tyLen;
+
+    case (FRAME(extra = EXTRA(_, tyLen)))
+      equation
+        b = intNe(tyLen, -1);
+      then 
+        b;
+    
+    else false;
+  end match;
+end isComponentFrame;
+
 public function setEnvName 
-"set the name in the env"
-  input Env inEnv;
-  input Option<Ident> inEnvName;
-  output Env outEnv;
+ "set the name in the env"
+   input Env inEnv;
+   input Option<Ident> inEnvName;
+   output Env outEnv;
 algorithm
   outEnv := match(inEnv,inEnvName)
     local
@@ -1130,23 +1148,129 @@ algorithm
       AvlTree             tys;
       CSetsType           crs;
       list<SCode.Element> du;
-      
       ImportTable         it;
-      
+      Extra               extra;
+      Env fs, env, parents;
+ 
+     // empty case
+    case ({}, _) then {};
+ 
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _)
+      equation
+        clsAndVars = emptyAvlTree;
+        tys        = emptyAvlTree;
+        it         = emptyImportTable;
+      then
+        //FRAME(inEnvName,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
+        FRAME(inEnvName,st,ft,clsAndVars,tys,{},{},it,extra,parents)::fs;
+ 
+   end match;
+ end setEnvName;
+
+public function setParentEnv 
+"set the name in the env"
+  input Env inEnv;
+  input Frame inFrame;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inEnv,inFrame)
+    local
+      Option<Ident>       id;
+      Option<ScopeType>   st;
+      FrameType           ft;
+      AvlTree             clsAndVars;
+      AvlTree             tys;
+      CSetsType           crs;
+      list<SCode.Element> du;
+      ImportTable         it;
       Extra extra;
       Env fs, env;
+      Env parents;
 
-    // empty case
-    case ({}, _) then {};
-
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _)
+      equation
+        parents = inFrame::parents;
       then
-        FRAME(inEnvName,st,ft,clsAndVars,tys,crs,du,it,extra)::fs;
-
-  end match;
-end setEnvName;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
+        
+    case (FRAME(_,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _)
+      equation
+        print("Env.setParentEnv failed!\n");
+      then
+        fail();
+  end matchcontinue;
+end setParentEnv;
 
 public function mergeEnv
+"@author: adrpo
+ in order to keep track of where we are 
+ we merge environments when we switch scopes:
+ We are in A.B.C we lookup X.Y.Z for component z
+ -> merged env: COMPOSITE(A.B.C.z).X.Y.Z
+ This way we can generate unique environments in which fully qualifying works."
+  input Env inChildEnv;
+  input Env inParentEnv;
+  input Ident inName;
+  input SCode.Element inChildClass;
+  input Modification inMods;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inChildEnv, inParentEnv, inName, inChildClass, inMods)
+    local
+      Env c, p, eq;
+      Ident name;
+      Frame f, ftop;
+      Absyn.Path path;
+
+    // do not merge envs for MetaModelica
+    case (_, _, _, _, _)
+      equation
+        // true = Config.acceptMetaModelicaGrammar();
+      then
+        inChildEnv;
+
+    // merge
+    case (_::_::_, _, _, _, _)
+      equation
+        false = stringEq(Absyn.pathFirstIdent(getEnvName(inParentEnv)), "OpenModelica");
+        eq = envEqualPrefix(inChildEnv, inParentEnv);
+        //print("Merging1CE: " +& getEnvNameStr(inChildEnv) +& "/" +& SCode.elementName(inChildClass) +& "\n" +& " with   PE: " +& getEnvNameStr(inParentEnv) +& "\n" +& " with   EL: " +& inName +& "\n");
+        //print("Merging1EQ: " +& getEnvNameStr(eq) +& "\n");
+        c = listReverse(inChildEnv);
+        f = List.first(c);
+        c = List.stripN(c, listLength(eq) + 1);
+        //print("Merging1ST: " +& getEnvNameStr(listReverse(f::c)) +& "\n");
+        c = setEnvName(f::c, SOME(inName));
+        c = listReverse(c);
+        c = listAppend(c, inParentEnv);
+        //print("Merging1RE: " +& getEnvNameStr(c) +& "/" +& SCode.elementName(inChildClass) +& "\n");
+      then
+        c;
+
+    // merge
+    case (_::_, _, _, _, _)
+      equation
+        //print("Merging2CE: " +& getEnvNameStr(inChildEnv) +& "/" +& SCode.elementName(inChildClass) +& "\n" +& " with   PE: " +& getEnvNameStr(inParentEnv) +& "\n" +& " with   EL: " +& inName +& "\n");
+        c = listReverse(inChildEnv);
+        c = setEnvName(c, SOME(inName));
+        c = listReverse(c);
+        c = listAppend(c, inParentEnv);
+        //print("Merging2RE: " +& getEnvNameStr(c) +& "/" +& SCode.elementName(inChildClass) +& "\n");
+      then
+        c;
+        
+    case (_, _, _, _, _)
+      equation
+        print("Merge fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +& 
+              "           PE: " +& getEnvNameStr(inParentEnv) +& "\n" +& 
+              " with element: " +& inName +& "\n");
+      then
+        inChildEnv; 
+
+  end matchcontinue;
+end mergeEnv;
+
+public function splitEnv
 "@author: adrpo
  in order to keep track of where we are 
  we merge environments when we switch scopes:
@@ -1155,144 +1279,34 @@ public function mergeEnv
  This way we can generate unique environments in which fully qualifying works."
   input Env inChildEnv;
   input Env inParentEnv;
-  input SCode.Element inElement;
-  output Env outEnv;
+  input Ident inName;
+  output Env outChildEnv;
+  output Env outParentEnv;
 algorithm
-  outEnv := matchcontinue(inChildEnv, inParentEnv, inElement)
+  (outChildEnv, outParentEnv) := matchcontinue(inChildEnv, inParentEnv, inName)
     local
-      Env u;
-      Ident name;    
-        
-    // merge envs.
-    case (_, _, _)
-      equation
-        u = listReverse(inChildEnv);
-        name = SCode.elementName(inElement);
-        u = setEnvName(u, SOME(name));
-        u = listReverse(u);
-        u = listAppend(u, inParentEnv);
-      then
-        u;
-    
-    case (_, _, _)
-      equation
-        print("Could not merge child env: " +& getEnvNameStr(inChildEnv) +& 
-              " with parent env: " +& getEnvNameStr(inParentEnv) +& 
-              " with element: " +& SCodeDump.unparseElementStr(inElement) +& "\n"); 
-      then
-        inChildEnv; 
-
-  end matchcontinue;
-end mergeEnv;
-
-public function uniquifyEnv
-  input Env inEnv;
-  input String inName;
-  input DAE.Mod inMod;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inEnv, inName, inMod)
-    local
-      Env e;
-      String uniq;
+      Env c, p;
       Ident name;
-    
-    case (_, _, _) then inEnv;
-    
-    // no need to uniquify on no mods
-    case (_, _, DAE.NOMOD()) then inEnv;
-    case (_, _, DAE.MOD(subModLst={},eqModOption=NONE())) then inEnv;
+      Integer len;
 
-    // not uniquify meta
+    // do not split envs for MetaModelica
     case (_, _, _)
       equation
         true = Config.acceptMetaModelicaGrammar();
       then
-        inEnv;
-
+        (inChildEnv, inParentEnv);
     
-    // uniquify
     case (_, _, _)
       equation
-        uniq = "$uq_" +& Util.modelicaStringToCStr(inName, false);
-        e = openScope(inEnv, SCode.NOT_ENCAPSULATED(), SOME(uniq), NONE());
-      then 
-        e;
-            
-    else inEnv; 
+        /*
+        print("Split fail CE: " +& getEnvNameStr(inChildEnv) +& "\n" +& 
+              "           PE: " +& getEnvNameStr(inParentEnv) +& "\n" +& 
+              " with element: " +& inName +& "\n");*/
+      then
+        (inChildEnv, inParentEnv); 
 
   end matchcontinue;
-end uniquifyEnv;
-
-/*
-public function uniquifyEnv
-  input Env inToUniquify;
-  input Env inParentEnv;
-  input DAE.Mod inMod;
-  output Env outUnique;
-  output Env outParent;
-algorithm
-  (outUnique, outParent) := matchcontinue(inToUniquify, inParentEnv, inMod)
-    local
-      Env u, p, ll;
-      String uniq;
-      SCode.Element pack;
-      SCode.Program el;
-      Frame fr, fru;
-      Ident name;
-    
-    // case (_, _, _) then (inToUniquify, inParentEnv);
-    
-    // no need to uniquify on no mods
-    case (_, _, DAE.NOMOD()) then (inToUniquify, inParentEnv);
-    case (_, _, DAE.MOD(subModLst={},eqModOption=NONE())) then (inToUniquify, inParentEnv);
-    
-    // do not uniquify basic types in the top env!
-    case (_::_, FRAME(name = SOME(name))::{FRAME(name = NONE())}, _)
-      equation
-        true = listMember(name, {"Real", "Integer", "Boolean", "String"});
-      then 
-        (inToUniquify, inParentEnv);
-        
-    // need to uniquify
-    case (_::_, _::_, _)
-      equation
-        uniq = "$unique_" +& intString(tick());
-        // make a unique name after the top!
-        u = listReverse(inToUniquify);
-        p = listReverse(inParentEnv);
-        el = getClassesInFrame(List.first(inToUniquify));
-        pack = SCode.CLASS(
-                 uniq, 
-                 SCode.defaultPrefixes, 
-                 SCode.NOT_ENCAPSULATED(),
-                 SCode.NOT_PARTIAL(),
-                 SCode.R_PACKAGE(),
-                 SCode.PARTS(el,{},{},{},{},{},{},NONE()),
-                 SCode.noComment,
-                 Absyn.dummyInfo);
-
-        {fru} = newEnvironment(SOME(uniq));
-        fr::ll = u;
-        u = fr::fru::ll;        
-        u = extendFrameC(u, pack);
-        fr::ll = u;
-        u = updateFrameC(u, pack, {fr});
-        // now add a pack frame between top and rest!
-        u = listReverse(u);
-
-        p = extendFrameC(p, pack);
-        fr = List.first(p);
-        p = updateFrameC(p, pack, {fr});
-        p = listReverse(p);
-      then 
-        (u, p);
-    
-    else (inToUniquify, inParentEnv); 
-
-  end matchcontinue;
-end uniquifyEnv;
-*/
+end splitEnv;
 
 public function getModifications
 "returns the propagated modifers from the first frame"
@@ -1317,7 +1331,7 @@ public function addModifications
   input Modifications inPMs;
   output Env outEnv;
 algorithm
-  outEnv := match(inEnv,inPMs)
+  outEnv := matchcontinue(inEnv,inPMs)
     local
       Option<Ident>       id;
       Option<ScopeType>   st;
@@ -1326,23 +1340,27 @@ algorithm
       AvlTree             tys;
       CSetsType           crs;
       list<SCode.Element> du;
-      
       ImportTable         it;
-      
       Modifications       mo;
-      Env fs;
+      Env fs, parents;
+      Integer             isCo;
+
+    case (_, _)
+      equation
+        true = Config.acceptMetaModelicaGrammar(); 
+      then inEnv;
 
     // empty case
     case ({}, _) then {};
 
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo))::fs, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo,isCo),parents)::fs, _)
       equation
         // Cannot List.union stuff that contains arrays; need a comparison function
         // mo = List.union(inPMs, mo);
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo))::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo,isCo),parents)::fs;
   
-  end match;
+  end matchcontinue;
 end addModifications;
 
 public function addModification 
@@ -1351,7 +1369,7 @@ public function addModification
   input Modification inPM;
   output Env outEnv;
 algorithm
-  outEnv := match(inEnv,inPM)
+  outEnv := matchcontinue(inEnv,inPM)
     local
       Option<Ident>       id;
       Option<ScopeType>   st;
@@ -1360,20 +1378,24 @@ algorithm
       AvlTree             tys;
       CSetsType           crs;
       list<SCode.Element> du;
-      
       ImportTable         it;
-      
       Modifications       mo;
-      Env fs;
+      Env fs, parents;
+      Integer isCo;
 
+    case (_, _)
+      equation
+        true = Config.acceptMetaModelicaGrammar(); 
+      then inEnv;
+   
     // empty case
     case ({}, _) then {};
 
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo))::fs, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(mo,isCo),parents)::fs, _)
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(inPM::mo))::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,it,EXTRA(inPM::mo,isCo),parents)::fs;
 
-  end match;
+  end matchcontinue;
 end addModification;
 
 public function hasModifications 
@@ -1502,11 +1524,11 @@ algorithm
       list<SCode.Element> du;
       ImportTable         it;
       Extra               extra;
-      Env fs;
+      Env fs, parents;
 
-    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra)::fs, _)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, _)
       then
-        FRAME(id,st,ft,clsAndVars,tys,crs,defunit::du,it,extra)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,defunit::du,it,extra,parents)::fs;
 
   end match;
 end extendFrameDefunit;
@@ -1602,9 +1624,15 @@ public function getEnvName
 protected
   Ident id;
   Env rest;
+  Absyn.Path p;
 algorithm
-  FRAME(name = SOME(id)) :: rest := inEnv;
-  outPath := getEnvName2(rest, Absyn.IDENT(id));
+  outPath := matchcontinue(inEnv)
+    case (FRAME(name = SOME(id)) :: rest)
+      equation
+        outPath = getEnvName2(rest, Absyn.IDENT(id));
+      then 
+        outPath;
+  end matchcontinue;
 end getEnvName;
 
 public function getEnvName2
@@ -1612,16 +1640,17 @@ public function getEnvName2
   input Absyn.Path inPath;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inEnv, inPath)
+  outPath := matchcontinue(inEnv, inPath)
     local
       Ident id;
-      Env rest;
+      Env rest, env;
+      Absyn.Path p;
 
     case (FRAME(name = SOME(id)) :: rest, _)
       then getEnvName2(rest, Absyn.QUALIFIED(id, inPath));
-
+    
     else inPath;
-  end match;
+  end matchcontinue;
 end getEnvName2;
 
 public function getEnvPath "This function returns all partially instantiated parents as an Absyn.Path
@@ -3483,30 +3512,31 @@ algorithm
       Absyn.Info info;
       Boolean hidden;
       Extra extra;
+      Env parents;
 
     // Unqualified imports
     case (SCode.IMPORT(imp = imp as Absyn.UNQUAL_IMPORT(path = _)),
           FRAME(id,st,ft,clsAndVars,tys,crs,du,
             IMPORT_TABLE(hidden, qual_imps, unqual_imps),
-            extra) :: rest)
+            extra, parents) :: rest)
       equation
         unqual_imps = imp :: unqual_imps;
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps), extra) :: rest;
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps), extra, parents) :: rest;
 
     // Qualified imports
     case (SCode.IMPORT(imp = imp, info = info),
           FRAME(id,st,ft,clsAndVars,tys,crs,du,
             IMPORT_TABLE(hidden, qual_imps, unqual_imps),
-            extra) :: rest)
+            extra, parents) :: rest)
       equation
         imp = translateQualifiedImportToNamed(imp);
         checkUniqueQualifiedImport(imp, qual_imps, info);
         qual_imps = imp :: qual_imps;
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,
-          IMPORT_TABLE(hidden, qual_imps, unqual_imps), extra) :: rest;
+          IMPORT_TABLE(hidden, qual_imps, unqual_imps), extra, parents) :: rest;
   end match;
 end extendEnvWithImport;
 
@@ -3698,5 +3728,86 @@ algorithm
   end matchcontinue;
 end pathStripEnvPrefix2;
 
+public function envPrefixOf
+  input Env inPrefixEnv;
+  input Env inEnv;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := envPrefixOf2(listReverse(inPrefixEnv), listReverse(inEnv));
+end envPrefixOf;
+
+public function envPrefixOf2
+  "Checks if one environment is a prefix of another."
+  input Env inPrefixEnv;
+  input Env inEnv;
+  output Boolean outIsPrefix;
+algorithm
+  outIsPrefix := matchcontinue(inPrefixEnv, inEnv)
+    local
+      String n1, n2;
+      Env rest1, rest2;
+
+    case ({}, _) then true;
+
+    case (FRAME(name = NONE()) :: rest1, FRAME(name = NONE()) :: rest2)
+      then envPrefixOf2(rest1, rest2);
+
+    case (FRAME(name = SOME(n1)) :: rest1, FRAME(name = SOME(n2)) :: rest2)
+      equation
+        true = stringEqual(n1, n2);
+      then
+        envPrefixOf2(rest1, rest2);
+
+    else false;
+  end matchcontinue;
+end envPrefixOf2;
+
+public function isImplicitScope
+  input Option<Ident> inIdent;
+  output Boolean isImplicit;
+algorithm
+  isImplicit := match(inIdent)
+    local Ident id;
+    case (NONE()) then false;
+    case (SOME(id)) then listMember(id,implicitScopeNames);
+  end match;
+end isImplicitScope;
+
+public function envEqualPrefix
+  input Env inEnv1;
+  input Env inEnv2;
+  output Env outPrefix;
+algorithm
+  outPrefix := envEqualPrefix2(listReverse(inEnv1), listReverse(inEnv2), {});
+end envEqualPrefix;
+
+public function envEqualPrefix2
+  input Env inEnv1;
+  input Env inEnv2;
+  input Env inAccumEnv;
+  output Env outPrefix;
+algorithm
+  outPrefix := matchcontinue(inEnv1, inEnv2, inAccumEnv)
+    local
+      String name1, name2;
+      Env env, rest_env1, rest_env2;
+      Frame frame;
+
+    case ((frame as FRAME(name = SOME(name1))) :: rest_env1,
+          FRAME(name = SOME(name2)) :: rest_env2, _)
+      equation
+        true = stringEq(name1, name2);
+        env = envEqualPrefix2(rest_env1, rest_env2, frame :: inAccumEnv);
+      then
+        env;
+
+    case (FRAME(name = NONE()) :: rest_env1, FRAME(name = NONE()) :: rest_env2, _)
+      then envEqualPrefix2(rest_env1, rest_env2, inAccumEnv);
+
+    else inAccumEnv;
+
+  end matchcontinue;
+end envEqualPrefix2;
+   
 end Env;
 

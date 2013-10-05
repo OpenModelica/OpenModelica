@@ -2028,12 +2028,9 @@ function simulate "simulates a modelica model by generating c code, build it and
   input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
   input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
   input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
-  input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
   input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
   input String method := "<default>" "integration method used for simulation. <default> = dassl";
   input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp := false "storeInTemp. <default> = false";
-  input Boolean noClean := false "noClean. <default> = false";
   input String options := "<default>" "options. <default> = \"\"";
   input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
   input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
@@ -2044,6 +2041,31 @@ function simulate "simulates a modelica model by generating c code, build it and
 external "builtin";
 annotation(preferredView="text");
 end simulate;
+
+function buildModel "builds a modelica model by generating c code and build it. 
+ It does not run the code! 
+ The only required argument is the className, while all others have some default values.
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ Example command:
+  simulate(A);
+"
+  input TypeName className "the class that should be built";
+  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method := "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
+  input String options := "<default>" "options. <default> = \"\"";
+  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input Boolean measureTime := false "creates a html file with proffiling data for model simulation. <default> = false";
+  input String cflags := "<default>" "cflags. <default> = \"\"";
+  input String simflags := "<default>" "simflags. <default> = \"\"";
+  output String[2] buildModelResults;
+external "builtin";
+annotation(preferredView="text");
+end buildModel;
 
 function moveClass 
 "moves a class up or down depending on the given direction,

@@ -44,6 +44,7 @@ public import SCode;
 public import Values;
 public import HashTable3;
 public import HashTableCG;
+public import CheckModel;
 
 public
 type Type = .DAE.Type
@@ -228,6 +229,7 @@ uniontype Equation
     Integer size "size of equation" ;
     .DAE.Algorithm alg;
     .DAE.ElementSource source "origin of algorithm";
+    .DAE.Expand expand "this algorithm was translated from an equation. we should not expand array crefs!";
   end ALGORITHM;
 
   record WHEN_EQUATION

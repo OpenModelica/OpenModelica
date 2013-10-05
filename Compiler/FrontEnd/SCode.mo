@@ -4573,6 +4573,13 @@ algorithm
   end matchcontinue;
 end algorithmContainReinit;
 
+public function getClassPartialPrefix
+  input Element inElement;
+  output Partial outPartial;
+algorithm
+  CLASS(partialPrefix = outPartial) := inElement;
+end getClassPartialPrefix;
+
 public function getClassRestriction
   input Element inElement;
   output Restriction outRestriction;
@@ -5203,6 +5210,17 @@ algorithm
     else inIO;
   end match;
 end propagatePrefixInnerOuter;
+
+public function isPackage
+"Return true if Class is a partial."
+  input Element inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inClass)
+    case CLASS(restriction = R_PACKAGE()) then true;
+    case _ then false;
+  end matchcontinue;
+end isPackage;
 
 public function isPartial
 "Return true if Class is a partial."

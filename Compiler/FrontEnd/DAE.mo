@@ -1693,6 +1693,12 @@ uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
 end Subscript;
 /* -- End Expression.mo -- */
 
+public 
+uniontype Expand "array cref expansion strategy"
+  record EXPAND     "expand crefs"     end EXPAND;
+  record NOT_EXPAND "not expand crefs" end NOT_EXPAND;
+end Expand;
+
 public constant AvlTree emptyFuncTree = AVLTREENODE(NONE(),0,NONE(),NONE());
 public constant DAElist emptyDae = DAE({});
 

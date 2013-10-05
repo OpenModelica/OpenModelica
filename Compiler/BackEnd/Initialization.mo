@@ -301,6 +301,7 @@ algorithm
       list< DAE.ComponentRef> crefLst;
       HashTable.HashTable leftCrs;
       list<tuple<DAE.ComponentRef, Integer>> crintLst;
+      DAE.Expand crefExpand;
 
     // when equation during initialization
     case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn, source=source), (vars, eqns))) equation
@@ -308,15 +309,15 @@ algorithm
     then ((eqn, (vars, eqns)));
 
     // algorithm
-    case ((eqn as BackendDAE.ALGORITHM(alg=alg, source=source), (vars, eqns))) equation
+    case ((eqn as BackendDAE.ALGORITHM(alg=alg, source=source,expand=crefExpand), (vars, eqns))) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
       (stmts, leftCrs) = generateInitialWhenAlg(stmts, true, {}, HashTable.emptyHashTableSized(50));
       alg = DAE.ALGORITHM_STMTS(stmts);
-      size = listLength(CheckModel.algorithmOutputs(alg));
+      size = listLength(CheckModel.algorithmOutputs(alg, crefExpand));
       crintLst = BaseHashTable.hashTableList(leftCrs);
       crefLst = List.fold(crintLst, selectSecondZero, {});
       (eqns, vars) = generateInactiveWhenEquationForInitialization(crefLst, source, eqns, vars);
-      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source), eqns);
+      eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source, crefExpand), eqns);
     then ((eqn, (vars, eqns)));
 
     case ((eqn, (vars, eqns)))
@@ -402,7 +403,7 @@ algorithm
     // single inactive when equation during initialization
     case ((stmt as DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()))::{}, true, _, _) equation
       false = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm 
       crintLst = List.map1(crefLst, Util.makeTuple, 1);
       leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
     then ({}, leftCrs);
@@ -444,7 +445,7 @@ algorithm
     // active when equation during initialization
     case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()), _, _, _) equation
       true = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       crintLst = List.map1(crefLst, Util.makeTuple, 1);
       leftCrs = List.fold(crintLst, BaseHashTable.add, iLeftCrs);
       stmts = List.foldr(stmts, List.consr, inAcc);
@@ -452,7 +453,7 @@ algorithm
 
     case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)), false, _, _) equation
       true = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       crintLst = List.map1(crefLst, Util.makeTuple, 1);
       leftCrs = List.fold(crintLst, BaseHashTable.add, iLeftCrs);
       stmts = List.foldr(stmts, List.consr, inAcc);
@@ -462,14 +463,14 @@ algorithm
     // inactive when equation during initialization
     case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()), _, _, _) equation
       false = Expression.containsInitialCall(condition, false) and not foundAktiv;
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
     then (inAcc, leftCrs);
 
     // inactive when equation during initialization with elsewhen part
     case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)), _, _, _) equation
       false = Expression.containsInitialCall(condition, false) and not foundAktiv;
-      crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+      crefLst = CheckModel.algorithmStatementListOutputs(stmts, DAE.EXPAND()); // expand as we're in an algorithm
       leftCrs = List.fold(crefLst, addWhenLeftCr, iLeftCrs);
       (stmts, leftCrs) = inlineWhenForInitializationWhenStmt(stmt, foundAktiv, leftCrs, inAcc);
     then (stmts, leftCrs);
@@ -477,6 +478,7 @@ algorithm
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function inlineWhenForInitializationWhenStmt failed"});
     then fail();
+  
   end matchcontinue;
 end inlineWhenForInitializationWhenStmt;
 
