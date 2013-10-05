@@ -1282,7 +1282,14 @@ output_expression_list [int* isTuple] returns [void* ast] :
   | e1=expression
     ( COMMA {*isTuple = true;} el=output_expression_list[isTuple]
       {
-        ast = mk_cons(e1, el);
+        if (RML_NILHDR != RML_GETHDR(el))
+        {
+          ast = mk_cons(e1, el);
+        }
+        else
+        {
+          ast = mk_cons(e1, mk_cons(Absyn__CREF(Absyn__WILD), el));
+        }
       }
     | RPAR
       {
