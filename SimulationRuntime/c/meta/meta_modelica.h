@@ -41,6 +41,8 @@
 extern "C" {
 #endif
 
+#include <pthread.h>
+
 #include "openmodelica.h"
 #include "mmc_gc.h"
 #include "meta_modelica_string_lit.h"
@@ -583,10 +585,9 @@ extern void *mmc_mk_box_arr(int slots, unsigned ctor, void** args);
 extern void *mmc_mk_box_no_assign(int slots, unsigned ctor);
 
 extern modelica_boolean valueEq(modelica_metatype lhs,modelica_metatype rhs);
-extern modelica_metatype boxptr_valueEq(modelica_metatype lhs,modelica_metatype rhs);
 
 extern modelica_integer valueHashMod(modelica_metatype p,modelica_integer mod);
-extern void* boxptr_valueHashMod(void *p, void *mod);
+extern void* boxptr_valueHashMod(threadData_t *,void *p, void *mod);
 
 extern void mmc__unbox(modelica_metatype box, void* res);
 
@@ -628,30 +629,28 @@ struct record_description {
 #define mmc_unbox_string(X) MMC_STRINGDATA(X)
 #define mmc_unbox_array(X) (*((base_array_t*)X))
 
-#include <setjmp.h>
-#include <pthread.h>
-
 void mmc_catch_dummy_fn();
 
-extern pthread_key_t mmc_jumper;
+extern pthread_key_t mmc_thread_data_key;
 extern pthread_once_t mmc_init_once;
 extern void mmc_init();
 #define MMC_INIT() pthread_once(&mmc_init_once,mmc_init)
-#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper; old_jumper = (jmp_buf*)pthread_getspecific(X); pthread_setspecific(X,&new_mmc_jumper); if (setjmp(new_mmc_jumper) == 0) {
-#define MMC_TRY() MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_TRY_INTERNAL(X) { jmp_buf new_mmc_jumper, *old_jumper = threadData->X; threadData->X = &new_mmc_jumper; if (setjmp(new_mmc_jumper) == 0) {
+#define MMC_TRY() { threadData_t *threadData = pthread_getspecific(mmc_thread_data_key); MMC_TRY_INTERNAL(mmc_jumper)
 
 #if !defined(_MSC_VER)
-#define MMC_CATCH_INTERNAL(X) } pthread_setspecific(X,old_jumper);mmc_catch_dummy_fn();}
+#define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;mmc_catch_dummy_fn();}
 #else
-#define MMC_CATCH_INTERNAL(X) } pthread_setspecific(X,old_jumper);}
+#define MMC_CATCH_INTERNAL(X) } threadData->X = old_jumper;}
 #endif
-#define MMC_CATCH() MMC_CATCH_INTERNAL(mmc_jumper)
+#define MMC_CATCH() MMC_CATCH_INTERNAL(mmc_jumper)}
 
-#define MMC_THROW() {longjmp(*((jmp_buf*)pthread_getspecific(mmc_jumper)),1);}
+#define MMC_THROW_INTERNAL() {longjmp(*threadData->mmc_jumper,1);}
+#define MMC_THROW() {longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_jumper,1);}
 #define MMC_ELSE() } else {
 
-#define MMC_TRY_TOP() MMC_TRY()
-#define MMC_CATCH_TOP(X) pthread_setspecific(mmc_jumper,old_jumper);} else {pthread_setspecific(mmc_jumper,old_jumper);X;}}
+#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_CATCH_TOP(X) threadData->mmc_jumper = old_jumper; } else {threadData->mmc_jumper = old_jumper;X;}}}
 
 #if defined(__cplusplus)
 }

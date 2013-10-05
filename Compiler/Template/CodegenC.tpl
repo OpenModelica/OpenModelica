@@ -338,6 +338,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   "Generates function in simulation file."
 ::=
   <<
+  #define threadData data->threadData
   void setupDataStruc(DATA *data)
   {
     ASSERT(data, "Error while initialize Data");
@@ -736,7 +737,7 @@ template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo)
     {
       if(data->simulationInfo.extObjs)
       {
-        <%extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(<%cref(var.name)%>);' ;separator="\n"%>
+        <%extObjInfo.vars |> var as SIMVAR(varKind=ext as EXTOBJ(__)) => 'omc_<%underscorePath(ext.fullClassName)%>_destructor(threadData,<%cref(var.name)%>);' ;separator="\n"%>
         free(data->simulationInfo.extObjs);
         data->simulationInfo.extObjs = 0;
       }
@@ -1514,11 +1515,11 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
       assertCommon(condition, List.fill(message,1), level, contextSimulationDiscrete, &varDecls, info)
     case NORETCALL(__) then
       let &preExp = buffer "" /*BUFD*/
-      let argStr = (functionArgs |> exp => '<%daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
+      let argStr = (functionArgs |> exp => ', <%daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>')
       let funName = '<%underscorePath(functionName)%>'
       <<
       <%preExp%>
-      omc_<%funName%>(<%argStr%>);
+      omc_<%funName%>(threadData<%argStr%>);
       >>
   ;separator="\n")
   <<
@@ -3916,16 +3917,13 @@ template functionHeader(Function fn, Boolean inFunc)
       >>
     case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
-      let funArgsStr = (funArgs |> var as VARIABLE(__) =>
-          '<%varType(var)%> <%crefStr(name)%>'
-        ;separator=", ")
+      let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> <%crefStr(name)%>')
       let funArgsBoxedStr = if acceptMetaModelicaGrammar() then
-          (funArgs |> var => funArgBoxedDefinition(var) ;separator=", ")
+          (funArgs |> var => (", " + funArgBoxedDefinition(var)))
       let boxedHeader = if acceptMetaModelicaGrammar() then
         <<
-        
         DLLExport
-        modelica_metatype boxptr_<%fname%>(<%funArgsBoxedStr%>);
+        modelica_metatype boxptr_<%fname%>(threadData_t *<%funArgsBoxedStr%>);
         >>
       <<
       typedef struct <%fname%>_rettype_s {
@@ -3933,7 +3931,7 @@ template functionHeader(Function fn, Boolean inFunc)
       } <%fname%>_rettype;
 
       DLLExport
-      <%fname%>_rettype omc_<%fname%>(<%funArgsStr%>);
+      <%fname%>_rettype omc_<%fname%>(threadData_t *threadData<%funArgsStr%>); /* record head */
 
       <%boxedHeader%>
       >>
@@ -4063,9 +4061,9 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   boxed version of the header if boxed = true, otherwise a normal header"
 ::=
   let fargsStr = if boxed then
-      (fargs |> var => funArgBoxedDefinition(var) ;separator=", ")
+      (fargs |> var => ", " + funArgBoxedDefinition(var) )
     else
-      (fargs |> var => funArgDefinition(var) ;separator=", ")
+      (fargs |> var => ", " + funArgDefinition(var) )
   let boxStr = if boxed then "boxed"
   let boxPtrStr = if boxed then "boxptr" else "omc"
   let inFnStr = if boxed then "" else if inFunc then
@@ -4090,11 +4088,10 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     %>
   } <%fname%>_rettype<%boxStr%>;
   <%inFnStr%>
-   
-  <%if dynamicLoad then '' else 'DLLExport<%\n%><%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
+  <%if dynamicLoad then '' else 'DLLExport<%\n%><%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%>);'%>
   >> else <<
 
-  <%if dynamicLoad then '' else 'DLLExport<%\n%>void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);'%>
+  <%if dynamicLoad then '' else 'DLLExport<%\n%>void <%boxPtrStr%>_<%fname%>(threadData_t *threadData<%fargsStr%>);'%>
   >>
 end functionHeaderImpl;
 
@@ -4516,7 +4513,7 @@ case FUNCTION(__) then
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
   DLLExport
-  <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
+  <%retType%> omc_<%fname%>(threadData_t *threadData<%functionArguments |> var => ", " + funArgDefinition(var) %>)
   {
     /* functionBodyRegularFunction: GC: save roots mark when you enter the function */
     <%if acceptMetaModelicaGrammar()
@@ -4563,7 +4560,7 @@ case FUNCTION(__) then
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
     MMC_INIT();
     MMC_TRY_TOP()
-    <%if outVars then "out = "%>omc_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
+    <%if outVars then "out = "%>omc_<%fname%>(threadData<%functionArguments |> var => (", " + funArgName(var) )%>);
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
@@ -4857,11 +4854,11 @@ case efn as EXTERNAL_FUNCTION(__) then
 
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   let fnBody = <<
-  <%retType%> omc_<%fname%>(<%funArgs |> arg =>
+  <%retType%> omc_<%fname%>(threadData_t *threadData<%funArgs |> arg => ', <%
     match arg
     case VARIABLE(__) then '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>'
-    case FUNCTION_PTR(__) then 'modelica_fnptr _<%name%>'
-    ;separator=", "%>)
+    case FUNCTION_PTR(__) then 'modelica_fnptr _<%name%>'%>'
+    %>)
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
@@ -4895,7 +4892,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
     MMC_INIT();
     MMC_TRY_TOP()
-    <%if outVars then "out = "%>omc_<%fname%>(<%funArgs |> VARIABLE(__) => contextCref(name,contextFunction) ;separator=", "%>);
+    <%if outVars then "out = "%>omc_<%fname%>(threadData<%funArgs |> VARIABLE(__) => (", " + contextCref(name,contextFunction) )%>);
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
@@ -4927,7 +4924,7 @@ case RECORD_CONSTRUCTOR(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%retType%> omc_<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
+  <%retType%> omc_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> <%crefStr(name)%>'%>)
   {
     <%varDecls%>
     <%varInits%>
@@ -5010,14 +5007,13 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let &varBox = buffer ""
   let &varUnbox = buffer ""
-  let args = (funargs |> arg => funArgUnbox(arg, &varDecls, &varBox) ;separator=", ")
+  let args = (funargs |> arg => (", " + funArgUnbox(arg, &varDecls, &varBox)))
   let retStr = (outvars |> var as VARIABLE(__) hasindex i1 fromindex 1 =>
     let arg = '<%funRetVar%>.c<%i1%>'
     '<%retVar%>.c<%i1%> = <%funArgBox(arg, ty, &varUnbox, &varDecls)%>;'
     ;separator="\n")
   <<
-  
-  <%retTypeBoxed%> boxptr_<%fname%>(<%funargs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
+  <%retTypeBoxed%> boxptr_<%fname%>(threadData_t *threadData<%funargs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
     /* GC: save roots mark when you enter the function */
     <%if acceptMetaModelicaGrammar()
@@ -5026,7 +5022,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     <%addRootsTempArray()%>
     <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     <%varBox%>
-    <%if outvars then '<%funRetVar%> = '%>omc_<%fname%>(<%args%>);
+    <%if outvars then '<%funRetVar%> = '%>omc_<%fname%>(threadData<%args%>);
     <%varUnbox%>
     <%retStr%>
     <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
@@ -5052,7 +5048,7 @@ case RECORD_CONSTRUCTOR(__) then
   ;separator=", ")
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
-  modelica_metatype boxptr_<%fname%>(<%funArgs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
+  modelica_metatype boxptr_<%fname%>(threadData_t *threadData<%funArgs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
     return mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
   }
@@ -5389,19 +5385,19 @@ need to initialize."
 ::=
 match var
 case var as FUNCTION_PTR(__) then
-  let typelist = (args |> arg => mmcVarType(arg) ;separator=", ")
+  let typelist = (args |> arg => (", " + mmcVarType(arg)))
   let rettype = '<%name%>_rettype'
   match tys
     case {} then
-      let &varInit += 'omc_<%name%> = (void(*)(<%typelist%>)) <%name%>;<%\n%>'
-      'void(*omc_<%name%>)(<%typelist%>);<%\n%>'
+      let &varInit += 'omc_<%name%> = (void(*)(threadData_t *<%typelist%>)) <%name%>;<%\n%>'
+      'void(*omc_<%name%>)(threadData_t *<%typelist%>);<%\n%>'
     else
-      let &varInit += 'omc_<%name%> = (<%rettype%>(*)(<%typelist%>)) <%name%>;<%\n%>'
+      let &varInit += 'omc_<%name%> = (<%rettype%>(*)(threadData_t *<%typelist%>)) <%name%>;<%\n%>'
       <<
       typedef struct <%rettype%>_s {
         <% tys |> ty hasindex i1 fromindex 1 => 'modelica_<%mmcTypeShort(ty)%> c<%i1%>;' ; separator="\n" %>
       } <%rettype%>;
-      <%rettype%>(*omc_<%name%>)(<%typelist%>);<%\n%>
+      <%rettype%>(*omc_<%name%>)(threadData_t *<%typelist%>);<%\n%>
       >>
   end match
 end functionArg;
@@ -5920,7 +5916,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_FAILURE(__)        then algStmtFailure(s, context, &varDecls /*BUFD*/)
   case s as STMT_TRY(__)            then algStmtTry(s, context, &varDecls /*BUFD*/)
   case s as STMT_CATCH(__)          then algStmtCatch(s, context, &varDecls /*BUFD*/)
-  case s as STMT_THROW(__)          then 'MMC_THROW();<%\n%>'
+  case s as STMT_THROW(__)          then 'MMC_THROW_INTERNAL();<%\n%>'
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/)
@@ -6589,7 +6585,7 @@ case STMT_FAILURE(__) then
     <%stmtBody%>
     <%tmp%> = 1;
   MMC_CATCH()
-  if (<%tmp%>) MMC_THROW(); /* end failure */
+  if (<%tmp%>) MMC_THROW_INTERNAL(); /* end failure */
   >>
 end algStmtFailure;
 
@@ -7053,12 +7049,11 @@ template daeExpRecordCrefRhs(DAE.Type ty, ComponentRef cr, Context context, Text
 ::=
 match ty
 case T_COMPLEX(complexClassType = record_state, varLst = var_lst) then
-  let vars = var_lst |> v => daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls)
-             ;separator=", "
+  let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls))
   let record_type_name = underscorePath(ClassInf.getStateName(record_state))
   let ret_type = '<%record_type_name%>_rettype'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let &preExp += '<%ret_var%> = omc_<%record_type_name%>(<%vars%>);<%\n%>'
+  let &preExp += '<%ret_var%> = omc_<%record_type_name%>(threadData<%vars%>);<%\n%>'
   '<%ret_var%>.c1'
 end daeExpRecordCrefRhs;
 
@@ -7960,6 +7955,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name="anyString"), expLst={e1}) then
     'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls)%>)'
 
+  case CALL(path=IDENT(name="fail"), attr = CALL_ATTR(builtin = true)) then
+    'MMC_THROW_INTERNAL()'
+
   case CALL(path=IDENT(name="mmc_get_field"), expLst={s1, ICONST(integer=i)}) then
     let tvar = tempDecl("modelica_metatype", &varDecls /*BUFD*/)
     let expPart = daeExp(s1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -7982,7 +7980,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     ""
 
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
+    let argStr = if attr.builtin
+                 then (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
+                 else ("threadData" + (expLst |> exp => (", " + daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/))))
     let funName = '<%underscorePath(path)%>'
     let retType = if attr.builtin then (match attr.ty case T_NORETCALL(__) then ""
       else expTypeModelica(attr.ty))
@@ -8438,7 +8438,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
         <%foldExp%>
       }
     <%loopTail%>
-    <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW();' %>
+    <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW_INTERNAL();' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
     <% resTmp %> = <% res %>;
   }<%\n%>
@@ -8498,7 +8498,7 @@ case exp as MATCHEXPRESSION(__) then
       error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>')
     else tempDecl('mmc_switch_type', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
-  let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW()" case MATCH(__) then "break"
+  let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW_INTERNAL()" case MATCH(__) then "break"
   let &preExp +=
       <<
       <%endModelicaLine()%>
@@ -8522,7 +8522,7 @@ case exp as MATCHEXPRESSION(__) then
             <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" else 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
           }
 
-          if (!<%done%>) MMC_THROW();
+          if (!<%done%>) MMC_THROW_INTERNAL();
         }
       }
       >>
@@ -8567,7 +8567,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     <%assignments%>
     <%stmts%>
     <%modelicaLine(c.resultInfo)%>
-    <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW();<%\n%>' %>
+    <% if c.result then '<%preRes%><%caseRes%>' else 'MMC_THROW_INTERNAL();<%\n%>' %>
     <%endModelicaLine()%>
     <%done%> = 1;
     break;
@@ -9172,7 +9172,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     <<
     <%preExp%>
     /* Pattern-matching assignment */
-    <%patternMatch(lhs.pattern,expPart,"MMC_THROW()",&varDecls,&assignments)%><%assignments%>
+    <%patternMatch(lhs.pattern,expPart,"MMC_THROW_INTERNAL()",&varDecls,&assignments)%><%assignments%>
     >>
 end algStmtAssignPattern;
 
@@ -9855,7 +9855,7 @@ let name = ("omc_" + underscorePath(entryPoint))
 
 #include <meta_modelica.h>
 #include <stdio.h>
-extern void <%name%>(modelica_metatype);
+extern void <%name%>(threadData_t*,modelica_metatype);
 
 void (*omc_assert)(FILE_INFO info,const char *msg,...) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
@@ -9887,7 +9887,7 @@ int main(int argc, char **argv)
   MMC_TRY_TOP()
 
   MMC_TRY_STACK()
-  <%name%>(lst);
+  <%name%>(threadData, lst);
   MMC_ELSE()
   rml_execution_failed(local_GC_state);
   fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at <%url%>\n    Include the following trace:\n");

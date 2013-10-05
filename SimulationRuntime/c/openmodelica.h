@@ -244,6 +244,13 @@ struct type_desc_s {
   } data;
 };
 
+#include <setjmp.h>
+/* Thread-specific data passed around in most functions.
+ * It is also possible to fetch it using pthread_getspecific (mostly for external functions that were not passed the pointer) */
+typedef struct threadData_s {
+  jmp_buf *mmc_jumper;
+  jmp_buf *mmc_stack_overflow_jumper;
+} threadData_t;
 
 /* math functions (-lm)*/
 

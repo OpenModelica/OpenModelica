@@ -100,7 +100,7 @@ static void handler(int signo, siginfo_t *si, void *ptr)
   if (isStackOverflow) {
     setTrace(3,0);
     sigprocmask(SIG_UNBLOCK, &segvset, NULL);
-    longjmp(*((jmp_buf*)pthread_getspecific(mmc_stack_overflow_jumper)),1);
+    longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_stack_overflow_jumper,1);
   }
   /* This backtrace uses very little stack-space, and segmentation faults we always want to print... */
   setTrace(3,16);

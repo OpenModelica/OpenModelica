@@ -511,6 +511,7 @@ typedef struct DATA
   SIMULATION_DATA **localData;
   MODEL_DATA modelData;                /* static stuff */
   SIMULATION_INFO simulationInfo;
-}DATA;
+  threadData_t *threadData; /* NOTE: Each thread needs to have its own version of DATA */
+} DATA;
 
 #endif

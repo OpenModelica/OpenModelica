@@ -740,7 +740,7 @@ static int System_forkCallJoin(int *statuses, int *ids, int len, int *working)
   }
 }
 
-extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
+extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(threadData_t*,void*))
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
   c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available on Windows"),NULL,0);  
@@ -749,6 +749,7 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
   c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not safe to use on OSX"),NULL,0);  
   MMC_THROW();
 #else
+  threadData_t *threadData = (threadData_t *) pthread_getspecific(mmc_thread_data_key);
   int len = listLength(dataLst);
   void *commands[len];
   int status[len], ids[len];
@@ -774,7 +775,7 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
     } else if (id == 0) {
       int exitstatus = 1;
       MMC_TRY()
-      fn(commands[i]);
+      fn(threadData,commands[i]);
       exitstatus = 0;
       MMC_CATCH()
       exit(exitstatus);

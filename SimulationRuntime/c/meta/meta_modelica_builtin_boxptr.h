@@ -32,6 +32,7 @@
  * Else, we only create a header.
  */
 #include "utility.h"
+#include "meta_modelica.h"
 #include "meta_modelica_real.h"
 #include "modelica_string.h"
 
@@ -39,13 +40,13 @@
 #define META_MODELICA_BUILTIN_BOXPTR__H
 
 #ifdef GEN_META_MODELICA_BUILTIN_BOXPTR
-#define boxptr_unOp(name,box,unbox,op) void* name(void* a) {return (void*)box(op(unbox(a)));}
-#define boxptr_binOp(name,box,unbox,op) void* name(void* a, void* b) {return (void*)box((unbox(a)) op (unbox(b)));}
-#define boxptr_binFn(name,box,unbox,fn) void* name(void* a, void* b) {return (void*)box(fn((unbox(a)),(unbox(b))));}
+#define boxptr_unOp(name,box,unbox,op) void* name(threadData_t *threadData, void* a) {return (void*)box(op(unbox(a)));}
+#define boxptr_binOp(name,box,unbox,op) void* name(threadData_t *threadData, void* a, void* b) {return (void*)box((unbox(a)) op (unbox(b)));}
+#define boxptr_binFn(name,box,unbox,fn) void* name(threadData_t *threadData, void* a, void* b) {return (void*)box(fn((unbox(a)),(unbox(b))));}
 #else
-#define boxptr_unOp(name,box,unbox,op) void* name(void*);
-#define boxptr_binOp(name,box,unbox,op) void* name(void*,void*);
-#define boxptr_binFn(name,box,unbox,op) void* name(void*,void*);
+#define boxptr_unOp(name,box,unbox,op) void* name(threadData_t *, void*);
+#define boxptr_binOp(name,box,unbox,op) void* name(threadData_t *, void*,void*);
+#define boxptr_binFn(name,box,unbox,op) void* name(threadData_t *, void*,void*);
 #endif
 
 /* Missing stuff: realMod,realPow,realMax,realMin,intMod,intMax,intMin */
@@ -87,9 +88,6 @@ boxptr_binOp(boxptr_realGt,mmc_mk_bcon,mmc_unbox_real,>)
 boxptr_unOp(boxptr_realInt,mmc_mk_icon,mmc_unbox_real,(modelica_integer))
 boxptr_unOp(boxptr_realString,(void*),mmc_unbox_real,realString)
 
-boxptr_unOp(boxptr_stringInt,mmc_mk_icon,(void*),stringInt)
-boxptr_unOp(boxptr_stringCharInt,mmc_mk_icon,(void*),stringCharInt)
-boxptr_unOp(boxptr_intStringChar,(void*),mmc_unbox_integer,intStringChar)
 boxptr_binFn(boxptr_stringCompare,mmc_mk_icon,(void*),mmc_stringCompare)
 
 boxptr_binFn(boxptr_valueEq,mmc_mk_bcon,(void*),valueEq)

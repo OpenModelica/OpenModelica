@@ -51,14 +51,13 @@ void ModelicaExternalC_5finit(void)
 
 RML_BEGIN_LABEL(ModelicaExternalC__Streams_5fprint)
 {
-  int fail=0;
+  int fail=1;
   char* str = RML_STRINGDATA(rmlA0);
   char* fileName = RML_STRINGDATA(rmlA1);
-  MMC_TRY();
+  MMC_TRY_TOP();
     ModelicaInternal_print(str,fileName);
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -71,12 +70,11 @@ RML_BEGIN_LABEL(ModelicaExternalC__Streams_5freadLine)
   mem_state = get_memory_state();
   char* fileName = RML_STRINGDATA(rmlA0), *res = 0;
   long line = RML_UNTAGFIXNUM(rmlA1);
-  int endOfFile = 0, fail = 0;
-  MMC_TRY();
+  int endOfFile = 0, fail = 1;
+  MMC_TRY_TOP();
     res = (char*)ModelicaInternal_readLine(fileName,line,&endOfFile);
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_scon(res);
   rmlA1 = mk_icon(endOfFile);
@@ -87,13 +85,12 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ModelicaExternalC__Streams_5fcountLines)
 {
-  int fail = 0;
+  int fail = 1;
   char* fileName = RML_STRINGDATA(rmlA0);
-  MMC_TRY();
+  MMC_TRY_TOP();
     rmlA0 = mk_icon(ModelicaInternal_countLines(fileName));
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -105,12 +102,11 @@ RML_BEGIN_LABEL(ModelicaExternalC__File_5ffullPathName)
 
   mem_state = get_memory_state();
   char* fileName = RML_STRINGDATA(rmlA0), *res = 0;
-  int fail = 0;
-  MMC_TRY();
+  int fail = 1;
+  MMC_TRY_TOP();
     res = (char*)ModelicaInternal_fullPathName(fileName);
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_scon(res);
   restore_memory_state(mem_state);
@@ -121,12 +117,11 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ModelicaExternalC__File_5fstat)
 {
   char* name = RML_STRINGDATA(rmlA0);
-  int res = 0, fail = 0;
-  MMC_TRY();
+  int res = 0, fail = 1;
+  MMC_TRY_TOP();
     res = ModelicaInternal_stat(name);
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_icon(res);
   RML_TAILCALLK(rmlSC);
@@ -136,12 +131,11 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ModelicaExternalC__Streams_5fclose)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
-  int fail = 0;
-  MMC_TRY();
+  int fail = 1;
+  MMC_TRY_TOP();
     ModelicaStreams_closeFile(fileName);
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -152,13 +146,12 @@ RML_BEGIN_LABEL(ModelicaExternalC__Strings_5fadvanced_5fscanReal)
   char* str = RML_STRINGDATA(rmlA0);
   int i = RML_UNTAGFIXNUM(rmlA1);
   int unsign = RML_UNTAGFIXNUM(rmlA2);
-  int next_ix=0, fail=0;
+  int next_ix=0, fail=1;
   double val=0;
-  MMC_TRY();
+  MMC_TRY_TOP();
     ModelicaStrings_scanReal(str,i,unsign,&next_ix,&val);
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_icon(next_ix);
   rmlA1 = mk_rcon(val);
@@ -169,12 +162,11 @@ RML_END_LABEL
 RML_BEGIN_LABEL(ModelicaExternalC__Strings_5fadvanced_5fskipWhiteSpace)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  int i = RML_UNTAGFIXNUM(rmlA1), fail = 0;
-  MMC_TRY();
+  int i = RML_UNTAGFIXNUM(rmlA1), fail = 1;
+  MMC_TRY_TOP();
     rmlA0 = mk_icon(ModelicaStrings_skipWhiteSpace(str,i));
-  MMC_ELSE();
-    fail = 1;
-  MMC_CATCH();
+    fail = 0;
+  MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
