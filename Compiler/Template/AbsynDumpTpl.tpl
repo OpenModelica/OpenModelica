@@ -196,7 +196,7 @@ match cref
   case CREF_IDENT(__)
     then '<%name%><%dumpSubscripts(subscripts)%>'
   case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef)%>'
-  case WILD(__) then '_'
+  case WILD(__) then '/*_*/'
   case ALLWILD(__) then '__'
   case CREF_INVALID(__) then 'INVALID(<%dumpCref(cref)%>'
 end dumpCref;

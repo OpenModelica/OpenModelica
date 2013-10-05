@@ -1014,7 +1014,7 @@ algorithm
     case ( txt,
            Absyn.WILD() )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("/*_*/"));
       then txt;
 
     case ( txt,
