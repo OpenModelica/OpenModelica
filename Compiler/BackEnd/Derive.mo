@@ -198,6 +198,7 @@ algorithm
       BackendDAE.VarKind kind;
       Real r;
       BackendDAE.Var var;
+      list<String> fieldNames;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -559,6 +560,12 @@ algorithm
         expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         DAE.CALL(fname,expl_1,attr);
+
+    case (e as DAE.RECORD(path=fname,exps=expl,comp=fieldNames,ty=tp),(timevars,_))
+      equation
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
+      then
+        DAE.RECORD(fname,expl_1,fieldNames,tp);
 
     case (e as DAE.CALL(path = a,expLst = expl),(_,BackendDAE.SHARED(functionTree=functions)))
       equation
@@ -1171,6 +1178,7 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
+      list<String> fieldNames;
 
     case (DAE.ICONST(integer = _),_,_,_) then DAE.RCONST(0.0);
 
@@ -1366,6 +1374,11 @@ algorithm
         true = Absyn.pathEqual(a, path);
         expl_1 = List.map3(expl, differentiateExp, inComponentRef, differentiateIfExp,inFuncs);
       then DAE.CALL(a,expl_1,attr);
+
+    case (DAE.RECORD(path=a,exps=expl,comp=fieldNames,ty=tp),_,_,_)
+      equation
+        expl_1 = List.map3(expl, differentiateExp, inComponentRef, differentiateIfExp,inFuncs);
+      then DAE.RECORD(a,expl_1,fieldNames,tp);
 
     /*
       this is wrong. The derivative of c > d is not dc > dd. It is the derivative of

@@ -52,6 +52,10 @@ match exp
     let func_str = AbsynDumpTpl.dumpPathNoQual(path)
     let argl = dumpExpList(expLst, stringDelimiter, ", ")
     '<%func_str%>(<%argl%>)'
+  case RECORD(__) then
+    let func_str = AbsynDumpTpl.dumpPathNoQual(path)
+    let argl = dumpExpList(exps, stringDelimiter, ", ")
+    '<%func_str%>(<%argl%>)'
   case PARTEVALFUNCTION(__) then
     let func_str = AbsynDumpTpl.dumpPathNoQual(path)
     let argl = dumpExpList(expList, stringDelimiter, ", ")

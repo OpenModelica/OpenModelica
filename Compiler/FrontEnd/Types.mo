@@ -4598,6 +4598,21 @@ algorithm
         e_1 = DAE.METARECORDCALL(path1, elist, l, -1);
       then (e_1,t2);
 
+    case (e as DAE.RECORD(path = path1, exps = elist),
+          t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v, source = {path2}),
+          DAE.T_METABOXED(ty = t2),
+          _)
+      equation
+        true = subtype(t1,t2);
+        true = Absyn.pathEqual(path1, path2);
+        t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
+        l = List.map(v, getVarName);
+        tys1 = List.map(v, getVarType);
+        tys2 = List.map(tys1, boxIfUnboxedType);
+        (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
+        e_1 = DAE.METARECORDCALL(path1, elist, l, -1);
+      then (e_1,t2);
+
     case (e as DAE.CALL(path = _),
           t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v),
           DAE.T_METABOXED(ty = t2),_)

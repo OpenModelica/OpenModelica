@@ -261,6 +261,12 @@ package DAE
       CallAttributes attr;
     end CALL;
 
+    record RECORD
+      Absyn.Path path;
+      list<Exp> exps;
+      list<String> comp;
+    end RECORD;
+
     record PARTEVALFUNCTION
       Absyn.Path path;
       list<Exp> expList;

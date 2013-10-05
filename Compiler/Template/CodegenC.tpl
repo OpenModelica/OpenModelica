@@ -6812,6 +6812,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as RELATION(__)        then daeExpRelation(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as IFEXP(__)           then daeExpIf(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case e as RECORD(__)          then daeExpRecord(e, context, &preExp, &varDecls)
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as RANGE(__)           then daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -7661,6 +7662,16 @@ case T_TUPLE(__) then
 else
   '<%lhs%> = <%rhs%>;'
 end resultVarAssignment;
+
+template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls)
+::=
+  match rec
+  case RECORD(__) then
+  let name = tempDecl(underscorePath(path), &varDecls)
+  let ass = threadTuple(exps,comp) |>  (exp,compn) => '<%name%>._<%compn%> = <%daeExp(exp, context, &preExp, &varDecls)%>;<%\n%>'
+  let &preExp += ass
+  name
+end daeExpRecord;
 
 template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a function call."
@@ -9065,6 +9076,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case e as RELATION(__) then match flag case 1 then "boolean" else "modelica_boolean"
   case IFEXP(__)         then expTypeFromExpFlag(expThen, flag)
   case CALL(attr=CALL_ATTR(__)) then expTypeFlag(attr.ty, flag)
+  case c as RECORD(__) then expTypeFlag(c.ty, flag)
   case c as ARRAY(__)
   case c as MATRIX(__)
   case c as RANGE(__)
@@ -9086,7 +9098,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFlag(c.ty, flag)
-  else error(sourceInfo(), 'expTypeFromExpFlag:<%printExpStr(exp)%>')
+  else error(sourceInfo(), 'expTypeFromExpFlag(flag=<%flag%>):<%printExpStr(exp)%>')
 end expTypeFromExpFlag;
 
 

@@ -1016,6 +1016,12 @@ package DAE
       list<Exp> expLst;
       CallAttributes attr;
     end CALL;
+    record RECORD
+      Absyn.Path path;
+      list<Exp> exps;
+      list<String> comp;
+      Type ty;
+    end RECORD;
     record ARRAY
       Type ty;
       Boolean scalar;

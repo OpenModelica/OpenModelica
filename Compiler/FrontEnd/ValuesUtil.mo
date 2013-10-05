@@ -946,7 +946,8 @@ algorithm
         expl = List.map(vallist,valueExp);
         tpl = List.map(expl,Expression.typeof);
         varlst = List.threadMap(namelst,tpl,Expression.makeVar);
-      then DAE.CALL(path,expl,DAE.CALL_ATTR(DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE(),DAE.emptyTypeSource),false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        t = DAE.T_COMPLEX(ClassInf.RECORD(path),varlst,NONE(),DAE.emptyTypeSource);
+      then DAE.RECORD(path,expl,namelst,t);
 
     case(Values.ENUM_LITERAL(name = path, index = ix))
       then DAE.ENUM_LITERAL(path, ix);

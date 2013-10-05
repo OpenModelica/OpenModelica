@@ -720,6 +720,7 @@ algorithm
       Option<DAE.Exp> eo;
       DAE.Dimensions dims;
       Absyn.Path p1,p2,p3;
+      list<String> fieldNames;
 
     // Real -> Real
     case(DAE.RCONST(r),DAE.T_REAL(varLst = _)) then DAE.RCONST(r);
@@ -781,6 +782,9 @@ algorithm
       equation
         true = Absyn.pathEqual(p1,p2) "It is a record constructor since it has the same path called as its output type";
       then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+
+    case (DAE.RECORD(p1,exps,fieldNames,_),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
+      then DAE.RECORD(p3,exps,fieldNames,tp);
 
     // fill(e, ...) can be simplified
     case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),_)

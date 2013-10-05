@@ -1821,6 +1821,14 @@ algorithm
         (new1,ht2) = extendCrefRecords(new,ht1);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);
+    case((c,e as (DAE.RECORD(exps = expl,ty=DAE.T_COMPLEX(varLst=varLst))))::res,ht)
+      equation
+        (res1,ht1) = extendCrefRecords(res,ht);
+        crlst = List.map1(varLst,extendCrefRecords2,c);
+        new = List.threadTuple(crlst,expl);
+        (new1,ht2) = extendCrefRecords(new,ht1);
+        res2 = listAppend(new1,res1);
+      then ((c,e)::res2,ht2);
     case((c,e)::res,ht)
       equation
         DAE.T_COMPLEX(varLst=varLst) = Expression.typeof(e);

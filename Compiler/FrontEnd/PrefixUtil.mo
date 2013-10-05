@@ -663,6 +663,7 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
+      list<String> fieldNames;
 
     // no prefix, return the input expression
     case (cache,_,_,e,Prefix.NOPRE())
@@ -789,6 +790,12 @@ algorithm
         (cache,es_1) = prefixExpList(cache, env, ih, es, p);
       then
         (cache,DAE.CALL(f,es_1,attr));
+
+    case (cache,env,ih,DAE.RECORD(f,es,fieldNames,t),p)
+      equation
+        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
+      then
+        (cache,DAE.RECORD(f,es,fieldNames,t));
 
     case (cache,env,ih,DAE.ARRAY(ty = t,scalar = sc,array = {}),p)
       then

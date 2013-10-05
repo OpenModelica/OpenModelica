@@ -14453,6 +14453,12 @@ algorithm
         true = Absyn.pathEqual(path, Absyn.IDENT("Distribution"));
       then
         SOME(DAE.DISTRIBUTION(name, params, paramNames));
+    case (mod, _, index_list, bind_name, _)
+      equation
+        SOME(DAE.RECORD(path = path, exps = {name,params, paramNames})) = instBinding(mod, varLst, distributionType, index_list, bind_name, useConstValue);
+        true = Absyn.pathEqual(path, Absyn.IDENT("Distribution"));
+      then
+        SOME(DAE.DISTRIBUTION(name, params, paramNames));
 
     // Cref
     case (mod, _, index_list, bind_name, _)

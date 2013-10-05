@@ -4825,6 +4825,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as IFEXP(__)           then daeExpIf(expCond, expThen, expElse, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode)
   case e as RELATION(__)        then daeExpRelation(operator, index,exp1, exp2, context, &preExp, &varDecls,simCode)
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  case e as RECORD(__)          then daeExpRecord(e, context, &preExp, &varDecls,simCode)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as RANGE(__)           then daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -4834,7 +4835,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ARRAY(__)           then daeExpArray(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  else "ErrorExp"
+  else error(sourceInfo(), 'Unknown exp:<%printExpStr(exp)%>')
 end daeExp;
 
 template daeExpRange(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -5220,6 +5221,16 @@ case CAST(__) then
   else
     '(<%expVar%>) /* could not cast, using the variable as it is */'
 end daeExpCast;
+
+template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, SimCode simCode)
+::=
+  match rec
+  case RECORD(__) then
+  let name = tempDecl(underscorePath(path) + "Type", &varDecls)
+  let ass = threadTuple(exps,comp) |>  (exp,compn) => '<%name%>.<%compn%> = <%daeExp(exp, context, &preExp, &varDecls, simCode)%>;<%\n%>'
+  let &preExp += ass
+  name
+end daeExpRecord;
 
 template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/,SimCode simCode)

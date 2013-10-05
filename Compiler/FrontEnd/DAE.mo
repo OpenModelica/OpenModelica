@@ -1251,6 +1251,13 @@ uniontype Exp "Expressions
     CallAttributes attr;
   end CALL;
 
+  record RECORD "A record value cannot be represented as a call to its constructor. This record also contains the protected components."
+    Absyn.Path path;
+    list<Exp> exps "component values";
+    list<String> comp "component name";
+    Type ty;
+  end RECORD;
+
   record PARTEVALFUNCTION
     Absyn.Path path;
     list<Exp> expList;

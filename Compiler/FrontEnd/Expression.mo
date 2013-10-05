@@ -1895,6 +1895,7 @@ algorithm
     case (DAE.RELATION(operator = op)) then typeofRelation(typeofOp(op));
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)) then typeof(e2);
     case (DAE.CALL(attr = DAE.CALL_ATTR(ty=tp))) then tp;
+    case (DAE.RECORD(ty=tp)) then tp;
     case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;
     case (DAE.ARRAY(ty = tp)) then tp;
     case (DAE.MATRIX(ty = tp)) then tp;
@@ -2263,6 +2264,7 @@ algorithm
     case (e as DAE.UNARY(operator = _)) then {e};
     case (e as DAE.IFEXP(expCond = _)) then {e};
     case (e as DAE.CALL(path = _)) then {e};
+    case (e as DAE.RECORD(path = _)) then {e};
     case (e as DAE.PARTEVALFUNCTION(path = _)) then {e};
     case (e as DAE.ARRAY(ty = _)) then {e};
     case (e as DAE.MATRIX(ty = _)) then {e};
@@ -2413,6 +2415,14 @@ algorithm
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
       then e::acc;
     case ((e as DAE.CALL(path = _)),acc,_,_)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.RECORD(path = _)),acc,_,_)
+      equation
+        e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
+      then e::acc;
+    case ((e as DAE.RECORD(path = _)),acc,_,_)
       equation
         e = Debug.bcallret1(doInverseFactors, inverseFactors, e, e);
       then e::acc;
@@ -4040,6 +4050,14 @@ algorithm
       then
         ((e,ext_arg_2));
 
+    case ((e as DAE.RECORD(path = fn,exps = expl,comp = fieldNames, ty = tp)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.RECORD(fn,expl_1,fieldNames,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
@@ -4460,6 +4478,14 @@ algorithm
       then
         ((e,ext_arg_2));
 
+    case ((e as DAE.RECORD(path = fn,exps = expl,comp = fieldNames, ty = tp)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
+        e = Util.if_(referenceEq(expl,expl_1),e,DAE.RECORD(fn,expl_1,fieldNames,tp));
+        ((e,ext_arg_2)) = rel((e,ext_arg_1));
+      then
+        ((e,ext_arg_2));
+
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       equation
         ((expl_1,ext_arg_1)) = traverseExpWithoutRelationsList(expl, rel, ext_arg);
@@ -4849,6 +4875,12 @@ algorithm
         ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
       then
         ((DAE.CALL(fn,expl_1,attr),ext_arg_1));
+
+    case ((e as DAE.RECORD(path = fn,exps = expl,comp = fieldNames,ty = tp)),rel,ext_arg)
+      equation
+        ((expl_1,ext_arg_1)) = traverseExpListTopDown(expl, rel, ext_arg);
+      then
+        ((DAE.RECORD(fn,expl_1,fieldNames,tp),ext_arg_1));
 
     case ((e as DAE.PARTEVALFUNCTION(path = fn, expList = expl, ty = tp)),rel,ext_arg)
       equation
@@ -5651,6 +5683,12 @@ algorithm
         (expl, tup) = traverseExpListBidir(expl, tup);
       then
         (DAE.CALL(path, expl, attr), tup);
+
+    case (DAE.RECORD(path = path, exps = expl, comp = strl, ty = ty), tup)
+      equation
+        (expl, tup) = traverseExpListBidir(expl, tup);
+      then
+        (DAE.RECORD(path, expl, strl, ty), tup);
 
     case (DAE.PARTEVALFUNCTION(path = path, expList = expl, ty = ty), tup)
       equation
@@ -7342,6 +7380,11 @@ algorithm
         res = Absyn.pathEqual(path1, path2);
       then expEqualWorkList(expl1, expl2, res);
 
+    case (DAE.RECORD(path = path1,exps = expl1),DAE.RECORD(path = path2,exps = expl2),_,_)
+      equation
+        res = Absyn.pathEqual(path1, path2);
+      then expEqualWorkList(expl1, expl2, res);
+
     // partially evaluated functions
     case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2),_,_)
       equation
@@ -7595,6 +7638,12 @@ algorithm
 
     // function calls
     case (DAE.CALL(path = path1,expLst = expl1),DAE.CALL(path = path2,expLst = expl2))
+      equation
+        b = Absyn.pathEqual(path1, path2);
+        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+      then
+        b;
+    case (DAE.RECORD(path = path1,exps = expl1),DAE.RECORD(path = path2,exps = expl2))
       equation
         b = Absyn.pathEqual(path1, path2);
         b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
@@ -8670,6 +8719,10 @@ algorithm
         c2 = listLength(exps);
         /* TODO: Cost is based on type and size of inputs. Maybe even name for builtins :) */
       then c1+c2+25;
+    case DAE.RECORD(exps=exps)
+      equation
+        c1 = List.fold(List.map(exps,complexity),intAdd,1);
+      then c1;
     case DAE.PARTEVALFUNCTION(ty=_)
       then complexityVeryBig; /* This should not be here anyway :) */
     case DAE.ARRAY(array=exps,ty=tp)
@@ -9002,6 +9055,8 @@ algorithm
       equation
         true = Absyn.pathEqual(p1,p2) "is record constructor";
       then exps;
+    case (DAE.RECORD(exps=exps),_)
+      then exps;
   end match;
 end splitRecord;
 
@@ -9247,20 +9302,21 @@ algorithm
  case(DAE.RELATION(e1,op,e2,_,_))                   then 5 + hashExp(e1)+hashOp(op)+hashExp(e2);
  case(DAE.IFEXP(e1,e2,e3))                          then 6 + hashExp(e1)+hashExp(e2)+hashExp(e3);
  case(DAE.CALL(path=path,expLst=expl))              then 7 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.PARTEVALFUNCTION(path=path,expList=expl)) then 8 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.ARRAY(array=expl))                        then 9 + List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.MATRIX(matrix=mexpl))                     then 10 + List.reduce(List.map(List.flatten(mexpl),hashExp),intAdd);
- case(DAE.RANGE(_,e1,SOME(e2),e3))                  then 11 + hashExp(e1)+hashExp(e2)+hashExp(e3);
- case(DAE.RANGE(_,e1,NONE(),e3))                    then 12 + hashExp(e1)+hashExp(e3);
- case(DAE.TUPLE(expl))                              then 13 + List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.CAST(_,e1))                               then 14 + hashExp(e1);
- case(DAE.ASUB(e1,expl))                            then 15 + hashExp(e1)+List.reduce(List.map(expl,hashExp),intAdd);
- case(DAE.TSUB(e1,i,_))                             then 16 + hashExp(e1)+stringHashDjb2(intString(i));
- case(DAE.SIZE(e1,SOME(e2)))                        then 17 + hashExp(e1)+hashExp(e2);
- case(DAE.SIZE(e1,NONE()))                          then 18 + hashExp(e1);
- // case(DAE.CODE(_,_))                                then 19; // TODO: implement hashing of CODE AST
- // case(DAE.EMPTY(scope=_))                           then 20; // TODO: implement hashing of EMTPY (needed ?)
- case(DAE.REDUCTION(info,e1,iters))                 then 21 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
+ case(DAE.RECORD(path=path,exps=expl))            then 8 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.PARTEVALFUNCTION(path=path,expList=expl)) then 9 + stringHashDjb2(Absyn.pathString(path))+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.ARRAY(array=expl))                        then 10 + List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.MATRIX(matrix=mexpl))                     then 11 + List.reduce(List.map(List.flatten(mexpl),hashExp),intAdd);
+ case(DAE.RANGE(_,e1,SOME(e2),e3))                  then 12 + hashExp(e1)+hashExp(e2)+hashExp(e3);
+ case(DAE.RANGE(_,e1,NONE(),e3))                    then 13 + hashExp(e1)+hashExp(e3);
+ case(DAE.TUPLE(expl))                              then 14 + List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.CAST(_,e1))                               then 15 + hashExp(e1);
+ case(DAE.ASUB(e1,expl))                            then 16 + hashExp(e1)+List.reduce(List.map(expl,hashExp),intAdd);
+ case(DAE.TSUB(e1,i,_))                             then 17 + hashExp(e1)+stringHashDjb2(intString(i));
+ case(DAE.SIZE(e1,SOME(e2)))                        then 18 + hashExp(e1)+hashExp(e2);
+ case(DAE.SIZE(e1,NONE()))                          then 19 + hashExp(e1);
+ // case(DAE.CODE(_,_))                             then 20; // TODO: implement hashing of CODE AST
+ // case(DAE.EMPTY(scope=_))                        then 21; // TODO: implement hashing of EMTPY (needed ?)
+ case(DAE.REDUCTION(info,e1,iters))                 then 22 + hashReductionInfo(info)+hashExp(e1)+List.reduce(List.map(iters,hashReductionIter),intAdd);
  // TODO: hashing of all MetaModelica extensions
  case(_) then stringHashDjb2(ExpressionDump.printExpStr(e));
  end matchcontinue;

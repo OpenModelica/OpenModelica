@@ -386,6 +386,12 @@ algorithm
       then
         fail();
 
+    case (cache, env, DAE.RECORD(path=funcpath, exps=expl, comp = fieldNames), impl, stOpt, msg,_)
+      equation
+        (cache, vallst, stOpt) = cevalList(cache, env, expl, impl, stOpt,msg,numIter);
+      then
+        (cache,Values.RECORD(funcpath,vallst,fieldNames,-1),stOpt);
+
     // Strings 
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.T_STRING(varLst = _)),exp2 = rh),impl,stOpt,msg,_)
       equation
