@@ -116,7 +116,7 @@ else
 CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="-O3 -march=native"
 AC_MSG_CHECKING([looking for -march=native])
-AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no]);CFLAGS="-O3"])
 fi
 fi
 
@@ -131,7 +131,7 @@ if echo $CFLAGS | grep -q -- -fPIC; then
 else
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -fPIC -Werror"
-  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGSBEFORE -fPIC"], [AC_MSG_RESULT([don't need -fPIC]); CFLAGS="$CFLAGSBEFORE"])
+  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"], [AC_MSG_RESULT([don't need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
 fi
 
 fi
