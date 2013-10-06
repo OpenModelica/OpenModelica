@@ -214,31 +214,31 @@ int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *dF, i
   refreshSimData(x,u,t,iData);
 
   if(iData->matrixC ==0){
-	  for(i= 0, k = 0; i<iData->nx; ++i, ++k)
-	  {
-		data->simulationInfo.analyticJacobians[index1].seedVars[i] = 1.0;
-		functionJacC_column(data);
-		data->simulationInfo.analyticJacobians[index1].seedVars[i] = 0.0;
-		if(this_it ==0)
-			mayer(iData->data, &dF[k],1);
-		else
-			lagrange(iData->data, &dF[k],1);
+    for(i= 0, k = 0; i<iData->nx; ++i, ++k)
+    {
+    data->simulationInfo.analyticJacobians[index1].seedVars[i] = 1.0;
+    functionJacC_column(data);
+    data->simulationInfo.analyticJacobians[index1].seedVars[i] = 0.0;
+    if(this_it ==0)
+      mayer(iData->data, &dF[k],1);
+    else
+      lagrange(iData->data, &dF[k],1);
 
-		/*printf("\tdF[%i] = %g\t",k,dF[k]);*/
-	  }
+    /*printf("\tdF[%i] = %g\t",k,dF[k]);*/
+    }
   }
   if(iData->matrixD ==0){
-	  for(k =iData->nx, i = 0 ; i<iData->nu; ++i, ++k)
-	  {
-		data->simulationInfo.analyticJacobians[index2].seedVars[i] = 1.0;
-		functionJacD_column(data);
-		data->simulationInfo.analyticJacobians[index2].seedVars[i] = 0.0;
-		if(this_it ==0)
-		  mayer(iData->data, &dF[k],2);
-		else
-		  lagrange(iData->data, &dF[k],2);
-		/*printf("dF[%i] = %g\t",k,dF[k]);*/
-	  }
+    for(k =iData->nx, i = 0 ; i<iData->nu; ++i, ++k)
+    {
+    data->simulationInfo.analyticJacobians[index2].seedVars[i] = 1.0;
+    functionJacD_column(data);
+    data->simulationInfo.analyticJacobians[index2].seedVars[i] = 0.0;
+    if(this_it ==0)
+      mayer(iData->data, &dF[k],2);
+    else
+      lagrange(iData->data, &dF[k],2);
+    /*printf("dF[%i] = %g\t",k,dF[k]);*/
+    }
   }
 
   return 0;
