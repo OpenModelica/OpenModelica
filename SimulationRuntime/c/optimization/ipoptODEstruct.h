@@ -44,7 +44,6 @@
 #include "../simulation/solver/solver_main.h"
 
 #ifdef WITH_IPOPT
-#include <omp.h>
 #include <string.h>
 #include <coin/IpStdCInterface.h>
 #include <stdlib.h>
