@@ -252,13 +252,13 @@ void SimulationDialog::setUpForm()
   mpLogVerboseEventsCheckBox->setToolTip(tr("verbose logging of event system"));
   mpLogInitializationCheckBox = new QCheckBox(tr("Initialization"));
   mpLogInitializationCheckBox->setToolTip(tr("additional information during initialization"));
-  mpLogJacobianCheckBox = new QCheckBox(tr("Jacobians Matrix"));
+  mpLogJacobianCheckBox = new QCheckBox(tr("Jacobian Matrix"));
   mpLogJacobianCheckBox->setToolTip(tr("outputs the jacobian matrix used by the integrator"));
   mpLogNonLinearSystemsCheckBox = new QCheckBox(tr("Non Linear Systems"));
   mpLogNonLinearSystemsCheckBox->setToolTip(tr("logging for nonlinear systems"));
   mpLogVerboseNonLinearSystemsCheckBox = new QCheckBox(tr("Verbose Non Linear Systems"));
   mpLogVerboseNonLinearSystemsCheckBox->setToolTip(tr("verbose logging of nonlinear systems"));
-  mpLogJacobianNonLinearSystemsCheckBox = new QCheckBox(tr("Jacobians Non Linear Systems"));
+  mpLogJacobianNonLinearSystemsCheckBox = new QCheckBox(tr("Jacobian Non Linear Systems"));
   mpLogJacobianNonLinearSystemsCheckBox->setToolTip(tr("outputs the jacobian of nonlinear systems"));
   mpLogResidualsInitializationCheckBox = new QCheckBox(tr("Initialization Residuals"));
   mpLogResidualsInitializationCheckBox->setToolTip(tr("outputs residuals of the initialization"));
