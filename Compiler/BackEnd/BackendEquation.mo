@@ -1563,8 +1563,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -2139,8 +2139,25 @@ Author: Frenkel TUD 2010-05"
   input DAE.ElementSource Source;
   output BackendDAE.Equation outEqn;
 algorithm
-  outEqn :=BackendDAE.EQUATION(iLhs,iRhs,Source,false);
+  outEqn := BackendDAE.EQUATION(iLhs,iRhs,Source,false);
 end generateEQUATION;
+
+public function generateSolvedEqnsfromOption "
+Author: Frenkel TUD 2010-05"
+  input DAE.ComponentRef iLhs;
+  input Option<DAE.Exp> iRhs;
+  input DAE.ElementSource Source;
+  output list<BackendDAE.Equation> outEqn;
+algorithm
+  outEqn :=  match (iLhs, iRhs, Source)
+  local
+    DAE.Exp rhs;
+    DAE.ComponentRef lhs;
+    case (lhs, SOME(rhs), _)
+      then {BackendDAE.SOLVED_EQUATION(lhs,rhs,Source,false)};
+    else then {};
+  end match;
+end generateSolvedEqnsfromOption;
 
 public function generateRESIDUAL_EQUATION "
   author: Frenkel TUD 2010-05"

@@ -89,6 +89,8 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < iData->nx; i++)
     iData->J[i] = (double*) calloc(iData->nv, sizeof(double));
 
+  iData->gradF = (double*) calloc(iData->nv, sizeof(double));
+
   iData->a1_ = (double**) malloc(deg1 * sizeof(double*));
   iData->a2_ = (double**) malloc(deg1 * sizeof(double*));
   iData->a3_ = (double**) malloc(deg1 * sizeof(double*));
@@ -227,7 +229,6 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   iData->t0 = data->simulationInfo.startTime;
   iData->tf = data->simulationInfo.stopTime;
 
-  iData->dt_default = (iData->tf - iData->t0)/iData->nsi;
   move_grid(iData);
 
   iData->nX = iData->nx * iData->deg;
@@ -243,7 +244,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
   iData->nRes = iData->nx*iData->deg;
   iData->NRes = iData->nRes * iData->nsi;
 
-  iData->endN = iData->NV - iData->nv - 1;
+  iData->endN = iData->NV - iData->nv;
 
   /* iData->njac =  iData->nX*iData->nsi*(iData->nv + iData->deg) + iData->nX*(iData->nv-1); */
   local_jac_struct(iData);
@@ -438,49 +439,15 @@ int move_grid(IPOPT_DATA_ *iData)
   double t;
   iData->dt = (double*)malloc((iData->nsi) *sizeof(double));
   t = iData->t0;
-
-  for(i =0; i< 0.2*iData->nsi;++i)
+  iData->dt_default = (iData->tf - iData->t0)/(iData->nsi);
+  for(i=0;i<iData->nsi; ++i)
   {
     iData->dt[i] = iData->dt_default;
     t += iData->dt[i];
   }
 
-  for(; i< 0.3*iData->nsi;++i)
-  {
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
-  }
-
-  for(; i< 0.4*iData->nsi;++i)
-  {
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
-  }
-
-  for(; i< 0.6*iData->nsi;++i)
-  {
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
-  }
-
-  for(; i< 0.7*iData->nsi;++i)
-  {
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
-  }
-
-  for(; i< 0.8*iData->nsi;++i)
-  {
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
-  }
-
-  for(; i< iData->nsi;++i)
-  {
-    iData->dt[i] = iData->dt_default;
-    t += iData->dt[i];
-  }
   iData->dt[iData->nsi-1] = iData->dt_default + (iData->tf - t );
+  assert(iData->nsi>0);
 /*
   for(i = 0; i<iData->nsi;++i){
     printf("\n*dt[%i] =%g | %i",i,iData->dt[i],iData->nsi);

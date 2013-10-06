@@ -6305,8 +6305,8 @@ algorithm
       BackendDAE.Variables knvars,exobj,knvars1;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcTree;

@@ -39,19 +39,9 @@
 #ifndef INTERFACEOPTIMIZATION_H_
 #define INTERFACEOPTIMIZATION_H_
 
-#include "../../../../Compiler/runtime/config.h"
-#include "simulation_data.h"
-#include "../simulation/solver/solver_main.h"
 #include "ipoptODEstruct.h"
 
 #ifdef WITH_IPOPT
-#include <string.h>
-#include <coin/IpStdCInterface.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
-#include <math.h>
-#include <float.h>
 
 int startIpopt(DATA * data,SOLVER_INFO * solverInfo, int flag);
 int destroyIpopt(SOLVER_INFO* solverInfo);

@@ -9771,22 +9771,32 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       let objectiveFunction = match objetiveE
         case SOME(exp) then
         <<
-        *res =  <%daeExp(exp, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>;
-        return 0;   
+        if(i == 0)
+         *res =  $P$TMP_mayerTerm;
+       	else if(i == 1)
+       	 *res =  $P$TMP_mayerTerm$pDERC$PdummyVarC;
+       	else if(i == 2)
+       	 *res = $P$TMP_mayerTerm$pDERD$PdummyVarD;
+        return 0;
         >>
 
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
-        *res=  <%daeExp(exp, contextSimulationNonDiscrete, &preExp1 /*BUFC*/, &varDecls1 /*BUFD*/)%>;
-        return 0;
-       >>
+        if(i == 0)
+          *res =  $P$TMP_lagrangeTerm;
+       	else if(i == 1)
+       	  *res =  $P$TMP_lagrangeTerm$pDERC$PdummyVarC;
+       	else if(i == 2)
+       	  *res = $P$TMP_lagrangeTerm$pDERD$PdummyVarD;
+        return 0;   
+        >>
       let listConstraintsLength = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then listLength(constraints)  
      
       let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then pathConstraints(constraints)              
         <<
             /* objectiveFunction */
 
-           int mayer(DATA* data, modelica_real* res)
+           int mayer(DATA* data, modelica_real* res, int i)
             {
               <%varDecls%>
               <%preExp%>
@@ -9795,7 +9805,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             }
  
             /* objectiveIntegrand */
-            int lagrange(DATA* data, modelica_real* res)
+            int lagrange(DATA* data, modelica_real* res, int i)
             {
               <%varDecls1%>
               <%preExp1%>

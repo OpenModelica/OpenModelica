@@ -89,8 +89,8 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree functionTree;
-      array<DAE.Constraint> constraints;
-      array<DAE.ClassAttributes> classAttrs;
+      list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttrs;
       list<BackendDAE.Var> tempVar;
       Boolean b;
       HashSet.HashSet hs "contains all pre variables";

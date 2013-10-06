@@ -122,8 +122,8 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
-      array<DAE.Constraint> constrsarr;
-      array<DAE.ClassAttributes> clsattrsarra;
+      list<DAE.Constraint> constrsarr;
+      list<DAE.ClassAttributes> clsattrsarra;
 
       list<DAE.Exp> lits;
       list<SimCode.SimVar> tempvars;

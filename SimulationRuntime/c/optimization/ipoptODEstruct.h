@@ -155,6 +155,7 @@ typedef struct IPOPT_DATA_
   long int endN;
   double **J0;
   double **J;
+  double * gradF;
   int **knowedJ;
   double **numJ;
   long double ***H;
@@ -173,6 +174,8 @@ typedef struct IPOPT_DATA_
   double *time;
   short mayer;
   short lagrange;
+  int mayer_index;
+  int lagrange_index;
   DATA * data;
   long int index_u;
 
@@ -180,8 +183,6 @@ typedef struct IPOPT_DATA_
   int matrixB;
   int matrixC;
   int matrixD;
-
-  int numObject;
 
   /*Debuger*/
   FILE **pFile;

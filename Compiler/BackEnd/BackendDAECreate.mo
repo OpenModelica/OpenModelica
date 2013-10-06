@@ -51,6 +51,7 @@ protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import CheckModel;
 protected import ComponentReference;
+protected import Config;
 protected import ClassInf;
 protected import DAEDump;
 protected import DAEUtil;
@@ -96,8 +97,6 @@ protected
   list<DAE.ClassAttributes> clsAttrs;
   list<BackendDAE.WhenClause> whenclauses, whenclauses_1;
   BackendDAE.EquationArray eqnarr, reqnarr, ieqnarr;
-  array<DAE.Constraint> constrarra;
-  array<DAE.ClassAttributes> clsattrsarra;
   BackendDAE.ExternalObjectClasses extObjCls;
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.EventInfo einfo;
@@ -119,12 +118,11 @@ algorithm
   aliasVars := BackendVariable.emptyVars();
   // handle alias equations
   (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1);
-  vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
+  vars_1 := detectImplicitDiscrete(vars, knvars, eqns); 
+  (vars_1, eqns) := addOptimizationVarsEqns(vars, eqns, Config.acceptOptimicaGrammar(), clsAttrs);
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
-  constrarra := listArray(constrs);
-  clsattrsarra := listArray(clsAttrs);
   einfo := BackendDAE.EVENT_INFO(sampleLookup, whenclauses_1, {}, {}, {}, 0, 0);
   symjacs := {(NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {})};
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,
@@ -137,8 +135,8 @@ algorithm
                                                     aliasVars,
                                                     ieqnarr,
                                                     reqnarr,
-                                                    constrarra,
-                                                    clsattrsarra,
+                                                    constrs,
+                                                    clsAttrs,
                                                     inCache,
                                                     inEnv,
                                                     functionTree,
@@ -3268,8 +3266,8 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m, mT;
       BackendDAE.Variables vars, knvars, exobj, vars1, vars2, av;
       BackendDAE.EquationArray eqns, remeqns, inieqns, eqns1, inieqns1;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.BackendDAEType btp;
@@ -3504,8 +3502,8 @@ algorithm
     local
       BackendDAE.Variables vars, knvars, exobj, av;
       BackendDAE.EquationArray remeqns, inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo einfo, einfo1;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SampleLookup sampleLookup;
@@ -3551,8 +3549,8 @@ algorithm
       list<BackendDAE.Var> allvars;
       BackendDAE.Variables vars, knvars, exobj, av;
       BackendDAE.EquationArray eqns, remeqns, inieqns, eqns1;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo einfo, einfo1;
       BackendDAE.ExternalObjectClasses eoc;
       list<BackendDAE.WhenClause> whenclauses;
@@ -4923,4 +4921,50 @@ algorithm
   end matchcontinue;
 end whenEquationsIndices2;
 
+protected function addOptimizationVarsEqns
+"add objective function to DAE. Neeed for derivatives"
+  input BackendDAE.Variables inVars; 
+  input list<BackendDAE.Equation> inEqns;
+  input Boolean inOptimicaFlag;
+  input list< .DAE.ClassAttributes> inClassAttr;
+  output BackendDAE.Variables outVars;
+  output list<BackendDAE.Equation>  outEqns;  
+algorithm 
+  (outVars, outEqns) := match(inVars, inEqns, inOptimicaFlag, inClassAttr)
+  local
+      DAE.ComponentRef leftcref;
+      list<BackendDAE.Equation> objectEqn;
+      BackendDAE.Var dummyVar;
+      Boolean b;
+      BackendDAE.Variables v, knownVars;
+      list<BackendDAE.Equation> e;
+      Option<DAE.Exp> mayer, lagrange;
+    
+    case (v, e, true, {DAE.OPTIMIZATION_ATTRS(objetiveE=mayer, objectiveIntegrandE=lagrange)})
+      equation
+        leftcref = ComponentReference.makeCrefIdent("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {});
+        dummyVar = BackendDAE.VAR(DAE.CREF_IDENT("$TMP_mayerTerm", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        dummyVar = BackendVariable.setVarDirection(dummyVar, DAE.OUTPUT());
+        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, mayer, DAE.emptyElementSource);
+        b = not List.isEmpty(objectEqn);
+        
+        v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
+        e = Util.if_(b, listAppend(e, objectEqn), e);
+
+        leftcref = ComponentReference.makeCrefIdent("$TMP_lagrangeTerm", DAE.T_REAL_DEFAULT, {});
+        dummyVar = BackendDAE.VAR(DAE.CREF_IDENT("$TMP_lagrangeTerm", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        dummyVar = BackendVariable.setVarDirection(dummyVar, DAE.OUTPUT());
+        objectEqn = BackendEquation.generateSolvedEqnsfromOption(leftcref, lagrange, DAE.emptyElementSource);
+        b = not List.isEmpty(objectEqn);
+        
+        v = Util.if_(b, BackendVariable.addNewVar(dummyVar, v), v);
+        e = Util.if_(b, listAppend(e, objectEqn), e);
+    
+    then (v, e);
+    else then (inVars, inEqns);
+  end match;
+end addOptimizationVarsEqns;
+
+
 end BackendDAECreate;
+

@@ -44,6 +44,7 @@
 static int eval_diff_mayer(IPOPT_DATA_ *iData, double* gradF, double *v);
 static int eval_diff_lagrange1(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
 static int eval_diff_lagrange2(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
+static int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *gradF, int this_it);
 
 /*!
  *  eval object function
@@ -55,13 +56,11 @@ Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData)
   double mayer = 0.0;
   double lagrange = 0.0;
 
-  if(0 == iData->mayer)
-  {
-    goal_func_mayer(v + iData->endN + 1, &mayer,iData);
+  if(iData->mayer){
+    goal_func_mayer(v + iData->endN, &mayer,iData);
   }
 
-  if(0 == iData->lagrange)
-  {
+  if(iData->lagrange){
     double *x;
     double tmp;
     int i,k,j;
@@ -109,7 +108,7 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
   
   refreshSimData(x, u, iData->tf, iData);
   functionAlgebraics(iData->data);
-  mayer(iData->data, obj_value);
+  mayer(iData->data, obj_value, 0);
   
   return TRUE;
 }
@@ -125,7 +124,7 @@ Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iD
   
   refreshSimData(x, u, iData->tf, iData);
   functionAlgebraics(iData->data);
-  lagrange(iData->data, obj_value);
+  lagrange(iData->data, obj_value, 0);
   
   return TRUE;
 }
@@ -144,7 +143,7 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
   long double h;
   IPOPT_DATA_ *iData = (IPOPT_DATA_*) useData;
 
-  if(iData->lagrange == 0)
+  if(iData->lagrange)
   {
     x = v;
     id = 0;
@@ -155,19 +154,11 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
       {
         for(k=0; k<iData->deg; ++k, x+=iData->nv)
         {
+
+          diff_symColoredObject(x, iData->time[i*iData->deg+k], iData, iData->gradF, iData->lagrange_index);
           for(j = 0; j<iData->nv; ++j)
           {
-            vsave = x[j];
-            /* tmp = fabs(vsave); */
-            /* h = (long double) (vsave + fmin(fmax(tmp*1e-3,1e-6),1e3))-vsave; */
-            h = DF_STEP(vsave, iData->vnom[j]);
-            x[j] = vsave + h;
-            goal_func_lagrange(x, &obj0,iData->time[i*iData->deg+k], iData);
-            x[j] = vsave - h;
-            goal_func_lagrange(x, &tmp, iData->time[i*iData->deg+k], iData);
-            x[j] = vsave;
-
-            gradF[id++] = iData->dt[i]*iData->br[k]*(obj0-tmp)/(2*h);
+            gradF[id++] =  iData->dt[i]*iData->br[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }
         }
@@ -176,51 +167,80 @@ Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData)
       {
         for(k=0; k<iData->deg+1; ++k, x+=iData->nv)
         {
+          diff_symColoredObject(x, iData->time[i*iData->deg+k], iData, iData->gradF,iData->lagrange_index);
           for(j=0; j<iData->nv; ++j)
           {
-            vsave = x[j];
-            h = DF_STEP(vsave, iData->vnom[j]);
-            /* h = (long double) ( vsave + fmin(fmax(tmp*1e-3,1e-6),1e3))-vsave; */
-            x[j] = vsave + h;
-            goal_func_lagrange(x, &obj0,iData->time[i*iData->deg+k], iData);
-            x[j] = vsave - h;
-            goal_func_lagrange(x, &tmp,iData->time[i*iData->deg+k], iData);
-            x[j] = vsave;
-            gradF[id++] = iData->dt[i]*iData->bl[k]*(obj0-tmp)/(2*h);
+            gradF[id++] = iData->dt[i]*iData->bl[k]*iData->gradF[j]*iData->vnom[j];
             /* printf("\n gradF(%i) = %g, %s, %g", id-1, gradF[id-1], iData->data->modelData.realVarsData[j].info.name, x[j]*iData->vnom[j]); */
           }
         }
       }
     }
-  }
-  else
-  {
+  } else {
     for(i=0; i<n; ++i)
       gradF[i] = 0.0;
   }
-  if(0 == iData->mayer)
-  {
-    x = v + iData->endN + 1;
+  if(iData->mayer){
+    x = v + iData->endN;
+    diff_symColoredObject(x, iData->tf, iData, iData->gradF, iData->mayer_index);
     for(j=0; j<iData->nv; ++j)
     {
-      vsave = x[j];
-      h = DF_STEP(vsave, iData->vnom[j]);
-      x[j] = vsave + h;
-      goal_func_mayer(x, &obj0, iData);
-      x[j] = vsave - h;
-      goal_func_mayer(x, &tmp, iData);
-      x[j] = vsave;
-
-      if(iData->lagrange == 0)
-      {
-        gradF[iData->endN + j + 1] += (obj0 - tmp)/(2*h);
-      }
-      else
-      {
-        gradF[iData->endN + j + 1] = (obj0 - tmp)/(2*h);
+      if(iData->lagrange){
+        gradF[iData->endN + j] +=  iData->gradF[j]*iData->vnom[j];
+      } else {
+        gradF[iData->endN + j] = iData->gradF[j]*iData->vnom[j];
       }
     }
   }
   return TRUE;
+}
+
+
+/*
+ *  function calculates a symbolic colored gradient "matrix"
+ *  author: vitalij
+ */
+int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *dF, int this_it)
+{
+  DATA * data = iData->data;
+  const int index1 = 3;
+  const int index2 = 4;
+  double*x,*u;
+
+  int i,k;
+
+  x = v;
+  u = x + iData->nx;
+  refreshSimData(x,u,t,iData);
+
+  if(iData->matrixC ==0){
+	  for(i= 0, k = 0; i<iData->nx; ++i, ++k)
+	  {
+		data->simulationInfo.analyticJacobians[index1].seedVars[i] = 1.0;
+		functionJacC_column(data);
+		data->simulationInfo.analyticJacobians[index1].seedVars[i] = 0.0;
+		if(this_it ==0)
+			mayer(iData->data, &dF[k],1);
+		else
+			lagrange(iData->data, &dF[k],1);
+
+		/*printf("\tdF[%i] = %g\t",k,dF[k]);*/
+	  }
+  }
+  if(iData->matrixD ==0){
+	  for(k =iData->nx, i = 0 ; i<iData->nu; ++i, ++k)
+	  {
+		data->simulationInfo.analyticJacobians[index2].seedVars[i] = 1.0;
+		functionJacD_column(data);
+		data->simulationInfo.analyticJacobians[index2].seedVars[i] = 0.0;
+		if(this_it ==0)
+		  mayer(iData->data, &dF[k],2);
+		else
+		  lagrange(iData->data, &dF[k],2);
+		/*printf("dF[%i] = %g\t",k,dF[k]);*/
+	  }
+  }
+
+  return 0;
 }
 #endif

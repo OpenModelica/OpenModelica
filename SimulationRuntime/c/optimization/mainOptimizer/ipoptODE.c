@@ -67,16 +67,16 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->current_var = 0;
   iData->current_time = 0;
   iData->data = data;
-  iData->mayer = mayer(data, &obj);
-  iData->lagrange = lagrange(data, &obj);
-  iData->numObject = 2 - iData->mayer -iData->lagrange;
+  iData->mayer_index = 0;
+  iData->lagrange_index = 1;
+
+  iData->mayer = (short) (mayer(data, &obj, -1) >= 0);
+  iData->lagrange = (short) (lagrange(data, &obj, -1) >= 0);
 
   iData->matrixA = initialAnalyticJacobianA((void*) iData->data);
   iData->matrixB = initialAnalyticJacobianB((void*) iData->data);
-  /*
   iData->matrixC = initialAnalyticJacobianC((void*) iData->data);
   iData->matrixD = initialAnalyticJacobianD((void*) iData->data);
-  */
 
   loadDAEmodel(data, iData);
   iData->index_debug_iter=0;
@@ -88,16 +88,13 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   {
     iData->Vmin[i] = (*iData).Vmax[i] = (*iData).x0[i]*iData->scalVar[i];
     iData->v[i] = iData->Vmin[i];
-
-    if(ACTIVE_STREAM(LOG_IPOPT))
-    {
-      printf("\nx[%i] = %s = %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i]);
-    }
   }
+
   initial_guess_ipopt(iData,solverInfo);
 
-  if(ACTIVE_STREAM(LOG_IPOPT))
-  {
+  if(ACTIVE_STREAM(LOG_IPOPT)){
+	for(i=0; i<iData->nx; i++)
+	  printf("\nx[%i] = %s = %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i]);
     for(; i<iData->nv; ++i)
       printf("\nu[%i] = %s = %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i]);
   }
@@ -114,23 +111,25 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
     if(ACTIVE_STREAM(LOG_IPOPT)){
       AddIpoptIntOption(nlp, "print_level", 5);
-    } else if(ACTIVE_STREAM(LOG_STATS)) {
+    } else if(ACTIVE_STREAM(LOG_STATS)){
       AddIpoptIntOption(nlp, "print_level", 3);
-    }else{
+    } else {
       AddIpoptIntOption(nlp, "print_level", 2);
     }
     AddIpoptIntOption(nlp, "file_print_level", 0);
+
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
     AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
 
-    cflags = (char*)omc_flagValue[FLAG_LS_IPOPT]; 
+
+    cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
     if(cflags)
       AddIpoptStrOption(nlp, "linear_solver", cflags);
     else
       AddIpoptStrOption(nlp, "linear_solver", "mumps");
 
-    /* AddIpoptStrOption(nlp, "derivative_test", "second-order"); */
-    /* AddIpoptStrOption(nlp, "derivative_test_print_all", "yes"); */
+     /*AddIpoptStrOption(nlp, "derivative_test", "first-order"); */
+     /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");*/
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
     AddIpoptIntOption(nlp, "max_iter", 5000);
 

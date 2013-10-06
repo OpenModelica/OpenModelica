@@ -968,8 +968,8 @@ algorithm
 
       list<BackendDAE.Equation> eqnsl,reqnsl,ieqnsl;
       BackendDAE.EquationArray reqns,ieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       list<BackendDAE.ZeroCrossing> zc;
 
       list<DAE.Function> functionsElems;
@@ -1008,7 +1008,7 @@ algorithm
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes);
         dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
 
-        dumpConstraints(arrayList(constrs));
+        dumpConstraints(constrs);
         functionsElems = DAEUtil.getFunctionList(funcs);
         dumpFunctions(functionsElems);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);

@@ -216,7 +216,7 @@ public function printShared "This function dumps the BackendDAE.Shared represent
 protected
   BackendDAE.Variables knownVars, externalObjects, aliasVars;
   BackendDAE.EquationArray initialEqs, removedEqs;
-  array<DAE.Constraint> constraints;
+  list<DAE.Constraint> constraints;
   list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst;
   list<BackendDAE.WhenClause> whenClauseLst;
   Integer relationsNumber;
@@ -247,7 +247,7 @@ algorithm
   dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " +& intString(relationsNumber) +& ")");
   dumpZeroCrossingList(sampleLst, "Samples");
   dumpWhenClauseList(whenClauseLst, "When Clauses");
-  dumpConstraintArray(constraints, "Constraints");
+  dumpConstraintList(constraints, "Constraints");
 end printShared;
 
 protected function printBackendDAEType "This is a helper for printShared."
@@ -480,14 +480,14 @@ algorithm
   print("\n");
 end dumpWhenClauseList;
 
-protected function dumpConstraintArray "function dumpConstraintArray"
-  input array<DAE.Constraint> inConstraintArray;
+protected function dumpConstraintList "function dumpConstraintArray"
+  input list<DAE.Constraint> inConstraintArray;
   input String heading;
 algorithm
   print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
-  dumpConstraints(arrayList(inConstraintArray), 0);
+  dumpConstraints(inConstraintArray, 0);
   print("\n");
-end dumpConstraintArray;
+end dumpConstraintList;
 
 public function dumpHashSet "author lochel"
   input HashSet.HashSet hashSet;
@@ -3438,4 +3438,5 @@ algorithm
   n := List.fold(nlst,intAdd,0);
   print(preStr +& " NrOfEquations: " +& intString(n) +& "\n");
 end dumpNrOfEquations;
+
 end BackendDump;

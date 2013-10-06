@@ -184,8 +184,8 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Variables knvars,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       BackendDAE.EventInfo einfo;
@@ -1025,8 +1025,8 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Variables knvars,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       BackendDAE.EventInfo einfo;

@@ -120,16 +120,19 @@ Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData)
       for(j=0; j<iData->nx; ++j)
       {
         g[k++] = (scaldf[j]*dt[i]*(dotx1[j] + d1[4][j]*dotx0[j]) + d1[0][j]*x0[j] + d1[3][j]*x3[j]) - (d1[1][j]*x1[j] + d1[2][j]*x2[j]);
+        //g[k-1] *= 10.0;
       }
 
       for(j=0; j<iData->nx; ++j)
       {
         g[k++] = (scaldf[j]*dt[i]*dotx2[j] + d2[1][j]*x1[j]) - (scaldf[j]*dt[i]*d2[4][j]*dotx0[j] + d2[0][j]*x0[j] + d2[2][j]*x2[j] + d2[3][j]*x3[j]);
+        //g[k-1] *= 10.0;
       }
       
       for(j=0; j<iData->nx; ++j)
       {
         g[k++] = (scaldf[j]*dt[i]*(d3[4][j]*dotx0[j] + dotx3[j]) + d3[0][j]*x0[j] + d3[2][j]*x2[j]) - (d3[1][j]*x1[j] + d3[3][j]*x3[j]);
+        //g[k-1] *= 10.0;
       }
     }
   }

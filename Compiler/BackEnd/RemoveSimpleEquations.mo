@@ -3154,8 +3154,6 @@ algorithm
       BackendDAE.Variables knvars, exobj, knvars1;
       BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray remeqns, inieqns, remeqns1;
-      array<DAE.Constraint> constraints;
-      array<DAE.ClassAttributes> clsAttrs;
       list<DAE.Constraint> constraintsLst;
       list<DAE.ClassAttributes> clsAttrsLst;
       Env.Cache cache;
@@ -3173,7 +3171,7 @@ algorithm
       Boolean b1;
       BackendDAE.SampleLookup sampleLookup;
     case (false, _, _) then inDAE;
-    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraints, clsAttrs, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs)), _)
+    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constraintsLst, clsAttrsLst, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs)), _)
       equation
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
@@ -3188,16 +3186,12 @@ algorithm
         remeqns1 = Debug.bcallret1(b1, BackendEquation.listEquation, eqnslst, remeqns);
         (whenClauseLst1, _) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         // remove optimica contraints and classAttributes
-        constraintsLst = arrayList(constraints);
-        clsAttrsLst = arrayList(clsAttrs);
         (constraintsLst, clsAttrsLst) = replaceOptimicaExps(constraintsLst, clsAttrsLst, repl);
-        constraints = listArray(constraintsLst);
-        clsAttrs = listArray(clsAttrsLst);
         systs1 = removeSimpleEquationsShared1(systs, {}, repl, NONE(), aliasVars);
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1), assertWithCondTrue));
       then
-        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraints, clsAttrs, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs));
+        BackendDAE.DAE(systs1, BackendDAE.SHARED(knvars1, exobj, aliasVars, inieqns, remeqns1, constraintsLst, clsAttrsLst, cache, env, funcTree, BackendDAE.EVENT_INFO(sampleLookup, whenClauseLst1, zeroCrossingLst, sampleLst, relationsLst, numberOfRealtions, numMathFunctions), eoc, btp, symjacs));
   end match;
 end removeSimpleEquationsShared;
 

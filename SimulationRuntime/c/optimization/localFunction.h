@@ -77,8 +77,8 @@ int ddiff(double *v, double t, IPOPT_DATA_ *iData);
 int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData);
 int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData);
 
-extern int mayer(DATA* data, modelica_real* res);
-extern int lagrange(DATA* data, modelica_real* res);
+extern int mayer(DATA* data, modelica_real* res, int i);
+extern int lagrange(DATA* data, modelica_real* res, int i);
 extern int pathConstraints(DATA* data, modelica_real* res, int* N);
 
 /*allocate*/

@@ -145,8 +145,8 @@ protected
   BackendDAE.Variables knownVars, externalObjects, aliasVars;
   BackendDAE.EquationArray initialEqs;
   BackendDAE.EquationArray removedEqs;
-  array< DAE.Constraint> constraints;
-  array< DAE.ClassAttributes> classAttrs;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
   Env.Cache cache;
   Env.Env env;
   DAE.FunctionTree functionTree;
@@ -155,11 +155,11 @@ protected
   BackendDAE.BackendDAEType backendDAEType;
   BackendDAE.SymbolicJacobians symjacs;
 algorithm
-   BackendDAE.SHARED(knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,initialEqs=initialEqs, removedEqs=removedEqs, constraints=constraints, classAttrs=classAttrs, cache=cache, env=env, functionTree=functionTree, eventInfo=eventInfo, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs) := inShared;
+   BackendDAE.SHARED(knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,initialEqs=initialEqs, removedEqs=removedEqs, constraints=constrs, classAttrs=clsAttrs, cache=cache, env=env, functionTree=functionTree, eventInfo=eventInfo, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs) := inShared;
    knownVars := BackendVariable.mergeVariables(invars, knownVars);
    var := BackendDAE.VAR(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
    knownVars := BackendVariable.addVar(var, knownVars);
-   outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars,initialEqs, removedEqs, constraints, classAttrs, cache, env, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs);
+   outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars,initialEqs, removedEqs, constrs, clsAttrs, cache, env, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs);
 end addKnowInitialValueForState;
 
 protected function timeEquation "author: vitalij"

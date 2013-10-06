@@ -188,10 +188,10 @@ static inline int lobattoJac1(double **a, double *J, double *J0, double dt, doub
   /*0*/
   for(l = 0; l< nv; ++l)
   {
-    if(j == l)
+    if(j == l) {
       values[(*k)++] = tmp*J0[l] + a[0][j];
-    else if(iData->knowedJ[j][l] == 1)
-    {
+      values[(*k)-1] *= scalRes;
+    } else if(iData->knowedJ[j][l] == 1) {
       values[(*k)++] = tmp*J0[l];
       values[(*k)-1] *= scalRes;
     }
@@ -257,10 +257,10 @@ static inline int lobattoJac2(double **a, double *J, double *J0, double dt, doub
   /*0*/
   for(l = 0; l< nv; ++l)
   {
-    if( j==l)
+    if( j==l){
       values[(*k)++] = -(tmp*J0[l] + a[0][j]);
-    else if(iData->knowedJ[j][l] == 1)
-    {
+      values[(*k)-1] *= scalRes;
+    } else if(iData->knowedJ[j][l] == 1) {
       values[(*k)++] = -tmp*J0[l];
       values[(*k)-1] *= scalRes;
     }
@@ -322,10 +322,10 @@ static inline int lobattoJac3(double **a, double *J, double *J0, double dt, doub
   /*0*/
   for(l=0; l<nv; ++l)
   {
-    if(j==l)
+    if(j==l){
       values[(*k)++] = tmp*J0[l] + a[0][j];
-    else if(iData->knowedJ[j][l] == 1)
-    {
+      values[(*k)-1] *= scalRes;
+    } else if(iData->knowedJ[j][l] == 1) {
       values[(*k)++] = tmp*J0[l];
       values[(*k)-1] *= scalRes;
     }
@@ -492,8 +492,9 @@ static int jac_struc(IPOPT_DATA_ *iData, int *iRow, int *iCol)
     c += nv;
   }
 
-  if(ACTIVE_STREAM(LOG_IPOPT))
+  /*if(ACTIVE_STREAM(LOG_IPOPT))
     printf(" %i = %i",iData->njac,k);
+    */
 
   return 0;
 }

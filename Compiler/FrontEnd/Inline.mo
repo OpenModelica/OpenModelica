@@ -82,8 +82,8 @@ algorithm
       BackendDAE.Variables externalObjects,aliasVars "alias-variables' hashtable";
       BackendDAE.EquationArray removedEqs;
       BackendDAE.EquationArray initialEqs;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo eventInfo;
       BackendDAE.ExternalObjectClasses extObjClasses;
       Functiontuple tpl;

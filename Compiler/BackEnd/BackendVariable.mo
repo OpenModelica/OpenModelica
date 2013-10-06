@@ -3006,8 +3006,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -3034,8 +3034,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;      
       DAE.FunctionTree funcs;
@@ -3062,8 +3062,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -3090,8 +3090,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;      
       DAE.FunctionTree funcs;

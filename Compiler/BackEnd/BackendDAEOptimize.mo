@@ -101,8 +101,8 @@ algorithm
     local
       BackendDAE.Variables ordvars,knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns,eqns1,inieqns1,remeqns1,eqns2;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcTree;
@@ -956,8 +956,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,knvars1,av;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -1146,8 +1146,8 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Variables knvars,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       BackendDAE.EventInfo einfo;
@@ -1467,8 +1467,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -1609,8 +1609,8 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
@@ -1724,8 +1724,8 @@ algorithm
       DAE.FunctionTree funcs,usedfuncs;
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo einfo;
       list<BackendDAE.WhenClause> whenClauseLst;
       BackendDAE.ExternalObjectClasses eoc;
@@ -3265,14 +3265,15 @@ algorithm
 
       BackendDAE.SparsePattern sparsePattern;
       BackendDAE.SparseColoring sparseColoring;
+     
 
     case (backendDAE)
       equation
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = collapseIndependentBlocks(backendDAE2);
         backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v,orderedEqs = e)},BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
-
+        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v, orderedEqs = e)}, BackendDAE.SHARED(knownVars = kv)) = backendDAE2;
+        
         // Prepare all needed variables
         varlst = BackendVariable.varList(v);
         comref_vars = List.map(varlst,BackendVariable.varCref);
@@ -3282,7 +3283,7 @@ algorithm
         inputvars = List.select(knvarlst,BackendVariable.isInput);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
-        outputvars = List.select(varlst,BackendVariable.isVarOnTopLevelAndOutput);
+        outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
 
         comref_states = List.map(states,BackendVariable.varCref);
         comref_inputvars = List.map(inputvars2,BackendVariable.varCref);
@@ -3302,8 +3303,7 @@ algorithm
         // Differentiate the System w.r.t inputs for matrices B
         (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
-        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
-
+        Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n"); 
 
         // Differentiate the System w.r.t states for matrices C
         (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C");
@@ -3366,7 +3366,7 @@ algorithm
         seedlst = List.map1(comref_vars, createSeedVars, (inName,false));
         comref_seedVars = List.map(seedlst, BackendVariable.varCref);
         s1 =  intString(listLength(inVars));
-
+        
         Debug.execStat("analytical Jacobians -> starting to generate the jacobian. DiffVars:"
                        +& s +& " diffed equations: " +&  s1 +& "\n", GlobalScript.RT_CLOCK_EXECSTAT_JACOBIANS);
 
@@ -3490,8 +3490,8 @@ algorithm
       BackendDAE.EquationArray orderedEqs, jacOrderedEqs; // ordered Equations
       BackendDAE.EquationArray removedEqs, jacRemovedEqs; // Removed equations a=b
       BackendDAE.EquationArray jacInitialEqs; // Initial equations
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo jacEventInfo; // eventInfo
       BackendDAE.ExternalObjectClasses jacExtObjClasses; // classes of external objects, contains constructor & destructor
       // end BackendDAE
@@ -3515,13 +3515,11 @@ algorithm
       jacOrderedEqs = BackendEquation.emptyEqns();
       jacRemovedEqs = BackendEquation.emptyEqns();
       jacInitialEqs = BackendEquation.emptyEqns();
-      constrs = listArray({});
-      clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();
       jacEventInfo = BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
 
-      jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{}));
+      jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{}));
     then jacobian;
 
     case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs ,cache=cache,env=env,  functionTree=functions)), vars, diffedVars, _, stateVars, inputVars, paramVars, matrixName) equation
@@ -3556,13 +3554,11 @@ algorithm
       jacOrderedEqs = BackendEquation.listEquation(derivedEquations);
       jacRemovedEqs = BackendEquation.emptyEqns();
       jacInitialEqs = BackendEquation.emptyEqns();
-      constrs = listArray({});
-      clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();
       jacEventInfo = BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
 
-      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}));
+      jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(),{})::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, {}, {}, cache, env, functions, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}));
 
     then jacobian;
 
@@ -5559,8 +5555,8 @@ algorithm
     local
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcTree;
@@ -5721,7 +5717,7 @@ algorithm
   matchcontinue (isyst,ishared,inTpl)
     local
       BackendDAE.Shared shared;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EquationArray eqns;
 
     case (BackendDAE.EQSYSTEM(orderedEqs = eqns),shared,_)
@@ -7273,8 +7269,8 @@ protected
   DAE.FunctionTree funcs;
   BackendDAE.Variables knvars, exobj, av;
   BackendDAE.EquationArray inieqns, remeqns;
-  array<DAE.Constraint> constrs;
-  array<DAE.ClassAttributes> clsAttrs;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
   Env.Cache cache;
   Env.Env env;
   BackendDAE.EventInfo einfo;
@@ -7419,8 +7415,8 @@ protected function replaceEdgeChangeShared "author: Frenkel TUD 2012-11"
 protected
   BackendDAE.Variables knvars, exobj, aliasVars;
   BackendDAE.EquationArray remeqns, inieqns;
-  array<DAE.Constraint> constrs;
-  array<DAE.ClassAttributes> clsAttrs;
+  list<DAE.Constraint> constrs;
+  list<DAE.ClassAttributes> clsAttrs;
   Env.Cache cache;
   Env.Env env;
   DAE.FunctionTree funcTree;
@@ -7477,8 +7473,8 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.Variables knvars,knvars1,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree funcs;
@@ -7731,8 +7727,8 @@ protected
   BackendDAE.Variables aliasVars;
   BackendDAE.EquationArray initialEqs;
   BackendDAE.EquationArray removedEqs;
-  array<DAE.Constraint> constraints;
-  array<DAE.ClassAttributes> classAttrs;
+  list<DAE.Constraint> constraints;
+  list<DAE.ClassAttributes> classAttrs;
   Env.Cache cache;
   Env.Env env;
   DAE.FunctionTree functionTree;
