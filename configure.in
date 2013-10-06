@@ -459,7 +459,7 @@ else
   AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS=`PKG_CONFIG_PATH=$IPOPT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs ipopt`; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
 fi
 
-if (! test "$NO_IPOPT" = "yes") && "$WANT_IPOPT" = "yes"; then
+if test "$NO_IPOPT" != "yes" -a "$WANT_IPOPT" = "yes"; then
   LIBS=$IPOPT_LDFLAGS
   AC_SEARCH_LIBS(CreateIpoptProblem,ipopt,,[NO_IPOPT="yes"])
   LIBS=""
