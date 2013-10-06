@@ -781,7 +781,7 @@ protected function traverseParameterSorted
   output Env.Cache oCache;
   output Integer oMark;
 algorithm
-  (oKnVars,oRepl,oReplEvaluate,oCache,oMark) := matchcontinue(inComps,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate)
+  (oKnVars,oRepl,oReplEvaluate,oCache,oMark) := match (inComps,inKnVars,m,inIEqns,iCache,env,iMark,markarr,repl,replEvaluate)
     local
       BackendDAE.Variables knvars;
       BackendDAE.Var v;
@@ -811,7 +811,7 @@ algorithm
         (knvars,repl1,evrepl,cache,mark) = traverseParameterSorted(rest,knvars,m,inIEqns,cache,env,mark,markarr,repl1,evrepl);
       then
         (knvars,repl1,evrepl,cache,mark);
-  end matchcontinue;
+  end match;
 end traverseParameterSorted;
 
 protected function evaluateParameterBindings
