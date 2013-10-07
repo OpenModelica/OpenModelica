@@ -271,7 +271,7 @@ public function prefixPath "Prefix a Path variable by adding the supplied
   input Prefix.Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue (inPath,inPrefix)
+  outPath := match (inPath,inPrefix)
     local
       Absyn.Path p,p_1;
       String s;
@@ -282,14 +282,12 @@ algorithm
     case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),cp))
       equation
         p_1 = Absyn.QUALIFIED(s,p);
-      then
-        p_1;
+      then p_1;
     case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = ss),cp))
       equation
         p_1 = prefixPath(Absyn.QUALIFIED(s,p), Prefix.PREFIX(ss,cp));
-      then
-        p_1;
-  end matchcontinue;
+      then p_1;
+  end match;
 end prefixPath;
 
 public function prefixToPath "Convert a Prefix to a Path"
@@ -471,26 +469,41 @@ protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, de
   output Env.Cache outCache;
   output DAE.ComponentRef outCr;
 algorithm
-  (outCache,outCr) := match (inCache,inEnv,inIH,pre,inCr)
-  local
-    DAE.Ident id;
-    DAE.Type tp;
-    list<DAE.Subscript> subs;
-    Env.Cache cache;
-    Env.Env env;
-    DAE.ComponentRef cr;
-
-
-    case(cache,env,_,_,DAE.CREF_IDENT(id,tp,subs)) equation
-     (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
-    then (cache,ComponentReference.makeCrefIdent(id,tp,subs));
-    case(cache,env,_,_,DAE.CREF_QUAL(id,tp,subs,cr)) equation
-      (cache,cr) = prefixSubscriptsInCref(cache,env,inIH,pre,cr);
-      (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
-    then (cache,ComponentReference.makeCrefQual(id,tp,subs,cr));
-    case(cache,_,_,_,DAE.WILD()) then (cache,DAE.WILD());
-  end match;
+  (outCache,outCr) := prefixSubscriptsInCrefWork(inCache,inEnv,inIH,pre,inCr,{});
 end prefixSubscriptsInCref;
+
+protected function prefixSubscriptsInCrefWork "help function to prefixToCrefOpt2, deals with prefixing expressions in subscripts"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix pre;
+  input DAE.ComponentRef inCr;
+  input list<DAE.ComponentRef> acc;
+  output Env.Cache outCache;
+  output DAE.ComponentRef outCr;
+algorithm
+  (outCache,outCr) := match (inCache,inEnv,inIH,pre,inCr,acc)
+    local
+      DAE.Ident id;
+      DAE.Type tp;
+      list<DAE.Subscript> subs;
+      Env.Cache cache;
+      Env.Env env;
+      DAE.ComponentRef cr,crid;
+    case(cache,env,_,_,DAE.CREF_IDENT(id,tp,subs),_)
+      equation
+        (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
+        cr = ComponentReference.makeCrefIdent(id,tp,subs);
+      then (cache,ComponentReference.implode(listReverse(cr::acc)));
+    case(cache,env,_,_,DAE.CREF_QUAL(id,tp,subs,cr),_)
+      equation
+        (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
+        crid = ComponentReference.makeCrefIdent(id,tp,subs);
+        (cache,cr) = prefixSubscriptsInCrefWork(cache,env,inIH,pre,cr,crid::acc);
+      then (cache,cr);
+    case(cache,_,_,_,DAE.WILD(),_) then (cache,DAE.WILD());
+  end match;
+end prefixSubscriptsInCrefWork;
 
 protected function prefixSubscripts "help function to prefixSubscriptsInCref, adds prefix to subscripts"
   input Env.Cache inCache;

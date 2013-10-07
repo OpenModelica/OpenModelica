@@ -1626,13 +1626,13 @@ protected
   Env rest;
   Absyn.Path p;
 algorithm
-  outPath := matchcontinue(inEnv)
+  outPath := match (inEnv)
     case (FRAME(name = SOME(id)) :: rest)
       equation
         outPath = getEnvName2(rest, Absyn.IDENT(id));
       then 
         outPath;
-  end matchcontinue;
+  end match;
 end getEnvName;
 
 public function getEnvName2
@@ -1640,7 +1640,7 @@ public function getEnvName2
   input Absyn.Path inPath;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inEnv, inPath)
+  outPath := match (inEnv, inPath)
     local
       Ident id;
       Env rest, env;
@@ -1650,7 +1650,7 @@ algorithm
       then getEnvName2(rest, Absyn.QUALIFIED(id, inPath));
     
     else inPath;
-  end matchcontinue;
+  end match;
 end getEnvName2;
 
 public function getEnvPath "This function returns all partially instantiated parents as an Absyn.Path

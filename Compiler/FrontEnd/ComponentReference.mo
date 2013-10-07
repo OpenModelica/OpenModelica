@@ -491,8 +491,7 @@ algorithm
       equation
         ns = stringAppendList({inPreString, s, inNameSeparator});
         ss = crefToStr(ns,n,inNameSeparator);
-      then
-        ss;
+      then ss;
   end match;
 end crefToStr;
 
@@ -2892,9 +2891,20 @@ protected
   DAE.ComponentRef first;
   list<DAE.ComponentRef> rest;
 algorithm
-  first :: rest := listReverse(inParts);
-  outCref := implode_tail(rest, first);
+  outCref := implode_reverse(listReverse(inParts));
 end implode;
+
+public function implode_reverse
+  "Constructs a cref from a reversed list of CREF_IDENTs."
+  input list<DAE.ComponentRef> inParts;
+  output DAE.ComponentRef outCref;
+protected
+  DAE.ComponentRef first;
+  list<DAE.ComponentRef> rest;
+algorithm
+  first :: rest := inParts;
+  outCref := implode_tail(rest, first);
+end implode_reverse;
 
 protected function implode_tail
   input list<DAE.ComponentRef> inParts;

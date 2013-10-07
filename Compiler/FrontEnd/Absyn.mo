@@ -2781,29 +2781,16 @@ algorithm
   end match;
 end optPathString;
 
-public function pathString2 "function:
-  Helper function to pathString"
-  input Path inPath;
-  input String inString;
+public function pathString2 "Tail-recursive version, with string builder (stringDelimitList is optimised)"
+  input Path path;
+  input String delimiter;
   output String outString;
 algorithm
-  outString:=
-  match (inPath,inString)
-    local
-      Ident s,ns,s1,ss,str;
-      Path n;
-    case (IDENT(name = s),_) then s;
-    case (QUALIFIED(name = s,path = n),str)
-      equation
-        ns = pathString2(n, str);
-        s1 = stringAppend(s, str);
-        ss = stringAppend(s1, ns);
-      then
-        ss;
-    case(FULLYQUALIFIED(path=n),str)
-      equation
-        ss = "." +& pathString2(n,str);
-      then ss;
+  outString := match (path,delimiter)
+    case (FULLYQUALIFIED(path=_),_)
+      then "." +& stringDelimitList(pathToStringList(path),delimiter);
+    else
+      then stringDelimitList(pathToStringList(path),delimiter);
   end match;
 end pathString2;
 
@@ -3054,20 +3041,27 @@ end pathSuffixOfr;
 public function pathToStringList
   input Path path;
   output list<String> outPaths;
-algorithm outPaths := match(path)
+algorithm
+  outPaths := listReverse(pathToStringListWork(path,{}));
+end pathToStringList;
+
+protected function pathToStringListWork
+  input Path path;
+  input list<String> acc;
+  output list<String> outPaths;
+algorithm
+  outPaths := match(path,acc)
     local
       String n;
       Path p;
       list<String> strings;
 
-    case (IDENT(name = n)) then {n};
-    case (FULLYQUALIFIED(path = p)) then pathToStringList(p);
-    case (QUALIFIED(name = n,path = p))
-      equation
-        strings = pathToStringList(p);
-      then n::strings;
-end match;
-end pathToStringList;
+    case (IDENT(name = n),_) then n::acc;
+    case (FULLYQUALIFIED(path = p),_) then pathToStringListWork(p,acc);
+    case (QUALIFIED(name = n,path = p),_)
+      then pathToStringListWork(p,n::acc);
+  end match;
+end pathToStringListWork;
 
 public function pathReplaceFirstIdent "
   Replaces the first part of a path with a replacement path:

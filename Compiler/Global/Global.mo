@@ -39,7 +39,7 @@ encapsulated package Global
   The Global package contains structures that are available globally."
 
 
-constant Integer recursionDepthLimit = 1000;
+constant Integer recursionDepthLimit = 256;
 constant Integer maxFunctionFileLength = 50;
 
 constant Integer instHashIndex = 0;
