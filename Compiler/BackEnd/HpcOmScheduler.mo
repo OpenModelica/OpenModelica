@@ -1249,18 +1249,18 @@ algorithm
         extInfoArr = listArray(extInfo);
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
         //print("External scheduling info: " +& stringDelimitList(List.map(extInfo, intString), ",") +& "\n");
-			  
-			  taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
-			  rootNodes = HpcOmTaskGraph.getRootNodes(taskGraphT);
-			  allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
-			  nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
-			  nodeList = List.map(nodeList_refCount, Util.tuple21);
-			  nodeList = List.sort(nodeList, compareTasksByWeighting);
-			  threadTasks = arrayCreate(iNumberOfThreads,{});
-			  tmpSchedule = THREADSCHEDULE(threadTasks,{});
-			  tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, allTasks, iSccSimEqMapping, getLocksByPredecessorList, tmpSchedule);
-			  tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,allTasks,addReleaseLocksToSchedule,tmpSchedule);
-			  //printSchedule(tmpSchedule);
+        
+        taskGraphT = HpcOmTaskGraph.transposeTaskGraph(iTaskGraph);
+        rootNodes = HpcOmTaskGraph.getRootNodes(taskGraphT);
+        allTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+        nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allTasks);
+        nodeList = List.map(nodeList_refCount, Util.tuple21);
+        nodeList = List.sort(nodeList, compareTasksByWeighting);
+        threadTasks = arrayCreate(iNumberOfThreads,{});
+        tmpSchedule = THREADSCHEDULE(threadTasks,{});
+        tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, allTasks, iSccSimEqMapping, getLocksByPredecessorList, tmpSchedule);
+        tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,allTasks,addReleaseLocksToSchedule,tmpSchedule);
+        //printSchedule(tmpSchedule);
       then tmpSchedule;
     else
       equation
