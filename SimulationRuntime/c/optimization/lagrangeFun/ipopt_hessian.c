@@ -61,128 +61,128 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
   k = 0;
   if(values == NULL)
   {
-	  int c,r,l,p;
-	  r = 0;
-	  c = 0;
-	  for(i = 0; i<iData->nsi; ++i)
-	  {
+    int c,r,l,p;
+    r = 0;
+    c = 0;
+    for(i = 0; i<iData->nsi; ++i)
+    {
 
-		  if(i == 0)
-		  {
-			  /*0*/
-			  for(p = 0;p <iData->deg+1;++p)
-			  {
-				  for(j=0;j< iData->nv;++j)
-					  for(l = 0; l< j+1; ++l)
-						 {
-						  iRow[k] = r + j;
-						  iCol[k++] = c + l;
-						 }
-				  r += iData->nv;
-				  c += iData->nv;
-			  }
-		  }
-		  else{
-			  for(p = 1;p <iData->deg+1;++p)
-			  {
-				  for(j=0;j< iData->nv;++j)
-					  for(l = 0; l< j+1; ++l)
-						 {
-						  iRow[k] = r + j;
-						  iCol[k++] = c + l;
-						 }
-				  r += iData->nv;
-				  c += iData->nv;
-			  }
-		  }
-	  }
+      if(i == 0)
+      {
+        /*0*/
+        for(p = 0;p <iData->deg+1;++p)
+        {
+          for(j=0;j< iData->nv;++j)
+            for(l = 0; l< j+1; ++l)
+             {
+              iRow[k] = r + j;
+              iCol[k++] = c + l;
+             }
+          r += iData->nv;
+          c += iData->nv;
+        }
+      }
+      else{
+        for(p = 1;p <iData->deg+1;++p)
+        {
+          for(j=0;j< iData->nv;++j)
+            for(l = 0; l< j+1; ++l)
+             {
+              iRow[k] = r + j;
+              iCol[k++] = c + l;
+             }
+          r += iData->nv;
+          c += iData->nv;
+        }
+      }
+    }
        /*
-	  for(i=0;i<nele_hess;++i)
-		  printf("\nH(%i,%i) = 1;", iRow[i]+1, iCol[i]+1);
-		  */
+    for(i=0;i<nele_hess;++i)
+      printf("\nH(%i,%i) = 1;", iRow[i]+1, iCol[i]+1);
+      */
   }
   else
   {
-	  /*obj_factor*/
-	  double *x;
-	  double *ll;
-	  int ii;
-	  int c,r,p,id,l;
-	  double t;
-	  long double sum;
+    /*obj_factor*/
+    double *x;
+    double *ll;
+    int ii;
+    int c,r,p,id,l;
+    double t;
+    long double sum;
     long double mayer_term;
     short mayer_yes;
-	  r = 0;
-	  c = 0;
-	  k = 0;
-	  for(ii = 0; ii <1; ++ii)
-	  {
-		  for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
-		  {
-			hessain_ode(x, iData->time[p], iData,ll);
+    r = 0;
+    c = 0;
+    k = 0;
+    for(ii = 0; ii <1; ++ii)
+    {
+      for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
+      {
+      hessain_ode(x, iData->time[p], iData,ll);
 
-			  if(iData->lagrange)
+        if(iData->lagrange)
            hessain_lagrange(x, iData->time[p], iData,obj_factor);
 
-			  for(i=0;i< iData->nv;++i)
-				  for(j = 0; j< i+1; ++j)
-				  {
-					  sum = 0.0;
-					  for(l = 0; l<iData->nx; ++l)
-						  sum += iData->H[l][i][j];
+        for(i=0;i< iData->nv;++i)
+          for(j = 0; j< i+1; ++j)
+          {
+            sum = 0.0;
+            for(l = 0; l<iData->nx; ++l)
+              sum += iData->H[l][i][j];
 
-					  if(iData->lagrange)
-						  sum += iData->bl[p]*iData->oH[i][j];
+            if(iData->lagrange)
+              sum += iData->bl[p]*iData->oH[i][j];
 
             sum = iData->dt[ii]*sum;
 
-					  values[k++] = (double) sum;
-				  }
-			  r += iData->nv;
-			  c += iData->nv;
+            values[k++] = (double) sum;
+          }
+        r += iData->nv;
+        c += iData->nv;
 
-			  if(p >0)
-				  ll += iData->nx;
+        if(p >0)
+          ll += iData->nx;
 
-		  }
+      }
 
-	  }
+    }
 
-	  for(; ii <iData->nsi; ++ii)
-	  {
-		  for(p = 1;p <iData->deg +1;++p,x += iData->nv)
-		  {
-			  hessain_ode(x, iData->time[ii*iData->deg + p], iData,ll);
+    for(; ii <iData->nsi; ++ii)
+    {
+      for(p = 1;p <iData->deg +1;++p,x += iData->nv)
+      {
+        hessain_ode(x, iData->time[ii*iData->deg + p], iData,ll);
 
-			  if(iData->lagrange)
-      	 hessain_lagrange(x, iData->time[ii*iData->deg + p], iData, obj_factor);
+        if(iData->lagrange)
+         hessain_lagrange(x, iData->time[ii*iData->deg + p], iData, obj_factor);
         mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
-			  if(mayer_yes)
-				 hessain_mayer(x, iData->time[ii*iData->deg + p], iData,obj_factor);
+        if(mayer_yes)
+         hessain_mayer(x, iData->time[ii*iData->deg + p], iData,obj_factor);
 
-			  for(i=0;i< iData->nv;++i)
-				  for(j = 0; j< i+1; ++j)
-				  {
-					  sum = 0.0;
-					  for(l = 0; l<iData->nx; ++l)
-						  sum += iData->H[l][i][j];
+        for(i=0;i< iData->nv;++i)
+          for(j = 0; j< i+1; ++j)
+          {
+            sum = 0.0;
+            for(l = 0; l<iData->nx; ++l)
+              sum += iData->H[l][i][j];
 
-					 if(iData->lagrange)
-						 sum += iData->br[p-1]*iData->oH[i][j];
+           if(iData->lagrange)
+             sum += iData->br[p-1]*iData->oH[i][j];
 
            sum = iData->dt[ii]*sum;
-					 if(mayer_yes)
-						 sum += iData->mH[i][j];
+           if(mayer_yes)
+             sum += iData->mH[i][j];
 
-					  values[k++] = (double)sum;
-				  }
-			  r += iData->nv;
-			  c += iData->nv;
-			  ll += iData->nx;
+            values[k++] = (double)sum;
+          }
+        r += iData->nv;
+        c += iData->nv;
+        ll += iData->nx;
 
-		  }
+      }
 
-	  }
+    }
   }
    //printf("\n k = %i \t %i",k, (int)nele_hess);
    //assert(k == nele_hess);
@@ -197,27 +197,27 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 static int hessain_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
 {
 /* diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *gradF, int this_it);*/
-	long double v_save;
-	long double h;
-	long int i, j, l;
-	diff_functionODE(v, t , iData, iData->J0);
+  long double v_save;
+  long double h;
+  long int i, j, l;
+  diff_functionODE(v, t , iData, iData->J0);
   diff_symColoredObject(v, t, iData, iData->gradF0, iData->mayer_index);
-	for(i = 0; i<iData->nv; ++i)
-	{
-		v_save = (long double)v[i];
-		h = (long double)DF_STEP(v_save, iData->vnom[i]);
-		v[i] += h;
-		diff_symColoredObject(v, t, iData, iData->gradF, iData->mayer_index);
-		v[i] = v_save;
+  for(i = 0; i<iData->nv; ++i)
+  {
+    v_save = (long double)v[i];
+    h = (long double)DF_STEP(v_save, iData->vnom[i]);
+    v[i] += h;
+    diff_symColoredObject(v, t, iData, iData->gradF, iData->mayer_index);
+    v[i] = v_save;
 
-		for(j = i; j < iData->nv; ++j)
+    for(j = i; j < iData->nv; ++j)
     {
-		 iData->mH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
+     iData->mH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
      iData->mH[j][i]  = iData->mH[i][j] ; 
     }
-	}
+  }
 
-	return 0;
+  return 0;
 
 }
 
@@ -227,27 +227,27 @@ static int hessain_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_fac
  **/
 static int hessain_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
 {
-	long double v_save;
-	long double h;
-	long int i, j, l;
-	diff_functionODE(v, t , iData, iData->J0);
+  long double v_save;
+  long double h;
+  long int i, j, l;
+  diff_functionODE(v, t , iData, iData->J0);
   diff_symColoredObject(v, t, iData, iData->gradF0, iData->lagrange_index);
-	for(i = 0; i<iData->nv; ++i)
-	{
-		v_save = (long double)v[i];
-		h = (long double)DF_STEP(v_save, iData->vnom[i]);
-		v[i] += h;
-		diff_symColoredObject(v, t, iData, iData->gradF, iData->lagrange_index);
-		v[i] = v_save;
+  for(i = 0; i<iData->nv; ++i)
+  {
+    v_save = (long double)v[i];
+    h = (long double)DF_STEP(v_save, iData->vnom[i]);
+    v[i] += h;
+    diff_symColoredObject(v, t, iData, iData->gradF, iData->lagrange_index);
+    v[i] = v_save;
 
-		for(j = i; j < iData->nv; ++j)
+    for(j = i; j < iData->nv; ++j)
     {
-		 iData->oH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
+     iData->oH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
      iData->oH[j][i]  = iData->oH[i][j] ; 
     }
-	}
+  }
 
-	return 0;
+  return 0;
 }
 
 /*!
@@ -256,24 +256,24 @@ static int hessain_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_
  **/
 static int hessain_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda)
 {
-	long double v_save;
-	long double h;
-	int i, j, l;
+  long double v_save;
+  long double h;
+  int i, j, l;
   /*double tmp;*/
-	diff_functionODE(v, t , iData, iData->J0);
-	for(i = 0; i<iData->nv; ++i)
-	{
-		v_save = (long double)v[i];
-		h = (long double)DF_STEP(v_save, iData->vnom[i]);
-		v[i] += h;
-		diff_functionODE(v, t , iData, iData->J);
-		v[i] = v_save;
-		for(l = 0; l< iData->nx; ++l)
-		{
-			for(j = i; j < iData->nv; ++j)
+  diff_functionODE(v, t , iData, iData->J0);
+  for(i = 0; i<iData->nv; ++i)
+  {
+    v_save = (long double)v[i];
+    h = (long double)DF_STEP(v_save, iData->vnom[i]);
+    v[i] += h;
+    diff_functionODE(v, t , iData, iData->J);
+    v[i] = v_save;
+    for(l = 0; l< iData->nx; ++l)
+    {
+      for(j = i; j < iData->nv; ++j)
       {
         if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
-				  iData->H[l][i][j]  = lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
+          iData->H[l][i][j]  = lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
         else
           iData->H[l][i][j]  =(long double) 0.0;
         iData->H[l][j][i] = iData->H[l][i][j];
@@ -289,8 +289,8 @@ static int hessain_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda)
         printf("\tlhs - rhs = %g\n", (double) tmp);
 */
       }
-		}
-	}
+    }
+  }
 }
 
 
