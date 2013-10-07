@@ -562,7 +562,6 @@ algorithm
         redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (ty_item, ty_env, repls) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstTypes.EMPTY_PREFIX(NONE()));
         analyseItemIfRedeclares(repls, ty_item, ty_env); 
-        // TODO! Analyse array dimensions from attributes!
         analyseModifier(mods, inEnv, ty_env, inInfo);
       then
         ();
@@ -1295,11 +1294,13 @@ algorithm
     local
       Absyn.Path type_path;
       list<Absyn.TypeSpec> tys;
+      Option<Absyn.ArrayDim> ad;
 
     // A normal type.
-    case (Absyn.TPATH(path = type_path), _, _)
+    case (Absyn.TPATH(path = type_path, arrayDim = ad), _, _)
       equation
         analyseClass(type_path, inEnv, inInfo);
+        analyseTypeSpecDims(ad, inEnv, inInfo);
       then
         ();
 
@@ -1316,6 +1317,45 @@ algorithm
 
   end match;
 end analyseTypeSpec;
+
+protected function analyseTypeSpecDims
+  input Option<Absyn.ArrayDim> inDims;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inDims, inEnv, inInfo)
+    local
+      Absyn.ArrayDim dims;
+
+    case (SOME(dims), _, _)
+      equation
+        List.map2_0(dims, analyseTypeSpecDim, inEnv, inInfo);
+      then
+        ();
+
+    else ();
+  end match;
+end analyseTypeSpecDims;
+
+protected function analyseTypeSpecDim
+  input Absyn.Subscript inDim;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inDim, inEnv, inInfo)
+    local
+      Absyn.Exp dim;
+
+    case (Absyn.NOSUB(), _, _) then ();
+
+    case (Absyn.SUBSCRIPT(subscript = dim), _, _)
+      equation
+        analyseExp(dim, inEnv, inInfo);
+      then
+        ();
+
+  end match;
+end analyseTypeSpecDim;
 
 protected function analyseExternalDecl
   "Analyses an external declaration."
