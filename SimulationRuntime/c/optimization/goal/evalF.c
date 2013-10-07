@@ -44,7 +44,7 @@
 static int eval_diff_mayer(IPOPT_DATA_ *iData, double* gradF, double *v);
 static int eval_diff_lagrange1(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
 static int eval_diff_lagrange2(IPOPT_DATA_ *iData, double *x, int *id_, double* gradF);
-static int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *gradF, int this_it);
+
 
 /*!
  *  eval object function
