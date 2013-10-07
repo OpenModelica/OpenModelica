@@ -52,7 +52,6 @@ protected import Flags;
 protected import List;
 protected import NFInstDump;
 protected import NFInstUtil;
-protected import NFLookup;
 protected import SCodeDump;
 protected import Util;
 

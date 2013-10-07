@@ -65,6 +65,7 @@ protected import Flags;
 protected import Inst;
 protected import InstSection;
 protected import InstTypes;
+protected import InstUtil;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
@@ -1961,10 +1962,10 @@ algorithm
         ld2 = Util.if_(b,{},ld2);
 
         // Transform the element list into a list of element,NOMOD
-        ld_mod = Inst.addNomod(ld2);
+        ld_mod = InstUtil.addNomod(ld2);
 
         dummyFunc = ClassInf.FUNCTION(Absyn.IDENT("dummieFunc"), false);
-        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2,
+        (cache,env2,_) = InstUtil.addComponentsToEnv(cache, env2,
           InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
           dummyFunc, ld_mod, {}, {}, {}, impl);
         (cache,env2,_,_,dae1,_,_,_,_) = Inst.instElementList(

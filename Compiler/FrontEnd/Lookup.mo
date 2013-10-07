@@ -67,6 +67,8 @@ protected import ExpressionDump;
 protected import Flags;
 protected import Inst;
 protected import InstExtends;
+protected import InstFunction;
+protected import InstUtil;
 protected import InnerOuter;
 protected import List;
 protected import Mod;
@@ -216,7 +218,7 @@ algorithm
     case (cache,env_1,path,c)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));
-        true = Inst.classIsExternalObject(c);
+        true = SCode.classIsExternalObject(c);
         (cache,_::env_1,_,_,_,_,_,_,_,_) = Inst.instClass(
           cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), c,
@@ -233,7 +235,7 @@ algorithm
       equation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE ICD: " +& Env.printEnvPathStr(env_1) +& " path:" +& Absyn.pathString(path));
         (cache,env_2,_) =
-        Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
+        InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
       then
         (cache,t,env_3);
@@ -1647,7 +1649,7 @@ algorithm
         // get function dae from instantiation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN ENV ID ICD: " +& Env.printEnvPathStr(env_1) +& "." +& str);
         (cache,(env_2 as (Env.FRAME(name = sid,clsAndVars = ht,types = httypes)::_)),_)
-           = Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
+           = InstFunction.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
 
         (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, str, info);
       then
@@ -1835,7 +1837,7 @@ algorithm
         // select the env if is the same as cenv as is updated!
         cenv = selectUpdatedEnv(env, cenv);
 
-        (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
+        (cache ,env_1,_) = InstFunction.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
 
@@ -1913,7 +1915,7 @@ algorithm
         //function dae collected from instantiation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
         (cache,env_1,_) =
-        Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
+        InstFunction.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
 
         (cache,tps) = lookupFunctionsInEnv2(cache,env_1,Absyn.IDENT(id),true,info);
       then
@@ -1923,7 +1925,7 @@ algorithm
     case (cache,ht,httypes,env,id,_)
       equation
         Env.CLASS(cdef,cenv,_) = Env.avlTreeGet(ht, id);
-        true = Inst.classIsExternalObject(cdef);
+        true = SCode.classIsExternalObject(cdef);
 
         // select the env if is the same as cenv as is updated!
         cenv = selectUpdatedEnv(env, cenv);
@@ -1981,7 +1983,7 @@ algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,icdef);
   name := SCode.className(cdef);
   // Debug.fprintln(Flags.INST_TRACE", "LOOKUP BUILD RECORD TY ICD: " +& Env.printEnvPathStr(env) +& "." +& name);
-  (outCache,outEnv,_) := Inst.implicitFunctionTypeInstantiation(
+  (outCache,outEnv,_) := InstFunction.implicitFunctionTypeInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy, cdef);
   (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
 end buildRecordType;
@@ -2048,9 +2050,9 @@ algorithm
         (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,true,info);
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(Env.CLASS_SCOPE()));
         fpath = Env.getEnvName(env);
-        (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
+        (cdefelts,classExtendsElts,extendsElts,compElts) = InstUtil.splitElts(elts);
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
-        eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
+        eltsMods = listAppend(eltsMods,InstUtil.addNomod(compElts));
         // print("Record Elements: " +&
         //   stringDelimitList(
         //     List.map(
@@ -2058,8 +2060,8 @@ algorithm
         //         eltsMods,
         //         Util.tuple21),
         //       SCodeDump.printElementStr), "\n"));
-        (env1,_) = Inst.addClassdefsToEnv(env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), cdefelts, false, NONE());
-        (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
+        (env1,_) = InstUtil.addClassdefsToEnv(env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), cdefelts, false, NONE());
+        (_,env1,_) = InstUtil.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (cache,env1,funcelts,elts);
 

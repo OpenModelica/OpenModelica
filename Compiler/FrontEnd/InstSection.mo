@@ -64,6 +64,8 @@ protected import ExpressionSimplify;
 protected import ExpressionSimplifyTypes;
 protected import Flags;
 protected import Inst;
+protected import InstDAE;
+protected import InstFunction;
 protected import InstTypes;
 protected import NFInstUtil;
 protected import List;
@@ -3566,7 +3568,7 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
-        daeExpandable = Inst.daeDeclare(c1_2, state, ty1,
+        daeExpandable = InstDAE.daeDeclare(c1_2, state, ty1,
            SCode.ATTR({}, ct1, prl1, vt1, Absyn.BIDIR()),
            vis1, NONE(), {}, NONE(), NONE(),
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
@@ -4282,7 +4284,7 @@ algorithm
         (cache,fpath1) = Inst.makeFullyQualified(cache,env,fpath1);
         cache = Env.addCachedInstFuncGuard(cache,fpath1);
         (cache,env,ih) =
-          Inst.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),equalityConstraintFunction,{});
+          InstFunction.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),Prefix.NOPRE(),equalityConstraintFunction,{});
       then
         (cache,env,ih,sets_1,dae,graph);
 

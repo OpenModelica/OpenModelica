@@ -79,6 +79,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import InnerOuter;
 protected import Inst;
+protected import InstUtil;
 protected import InstTypes;
 protected import List;
 protected import Lookup;
@@ -9550,7 +9551,7 @@ algorithm
       equation
         //Debug.fprintln(Flags.INTER, "Interactive.lookupClassdef 1 Looking for: " +& Absyn.pathString(path) +& " in: " +& Absyn.pathString(inmodel));
         // remove self reference, otherwise we go into an infinite loop!
-        path = Inst.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
+        path = InstUtil.removeSelfReference(Absyn.pathLastIdent(inmodel),path);
         inmodeldef = getPathedClassInProgram(inmodel, p) "Look first inside \'inmodel\'" ;
         cdef = getPathedClassInProgram(path, Absyn.PROGRAM({inmodeldef},Absyn.TOP(),ts));
         newpath = Absyn.joinPaths(inmodel, path);

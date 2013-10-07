@@ -5246,5 +5246,104 @@ algorithm
   end match;
 end isValidPackageElement;
 
+
+public function classIsExternalObject
+"returns true if a Class fulfills the requirements of an external object"
+  input Element cl;
+  output Boolean res;
+algorithm
+  res := matchcontinue (cl)
+  local list<Element> els;
+    case CLASS(classDef=PARTS(elementLst=els))
+      equation
+        res = isExternalObject(els);
+     then res;
+    case (_) then false;
+  end matchcontinue;
+end classIsExternalObject;
+
+public function isExternalObject
+"Returns true if the element list fulfills the condition of an External Object.
+An external object extends the builtinClass ExternalObject, and has two local
+functions, destructor and constructor. "
+input  list<Element> els;
+output Boolean res;
+algorithm
+ res := matchcontinue(els)
+ case _
+   equation
+    true = hasExtendsOfExternalObject(els);
+    true = hasExternalObjectDestructor(els);
+    true = hasExternalObjectConstructor(els);
+    3 = listLength(els);
+  then true;
+  case (_) then false;
+  end matchcontinue;
+end isExternalObject;
+
+protected function hasExtendsOfExternalObject
+"returns true if element list contains 'extends ExternalObject;'"
+  input list<Element> inEls;
+  output Boolean res;
+algorithm
+  res:= match (inEls)
+    local
+      list<Element> els;
+    case {} then false;
+    case EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject"))::_ then true;
+    case _::els then hasExtendsOfExternalObject(els);
+  end match;
+end hasExtendsOfExternalObject;
+
+protected function hasExternalObjectDestructor
+"returns true if element list contains 'function destructor .. end destructor'"
+  input list<Element> inEls;
+  output Boolean res;
+algorithm
+  res:= matchcontinue(inEls)
+    local list<Element> els;
+    case CLASS(name="destructor")::_ then true;
+    case _::els then hasExternalObjectDestructor(els);
+    case _ then false;
+  end matchcontinue;
+end hasExternalObjectDestructor;
+
+protected function hasExternalObjectConstructor
+"returns true if element list contains 'function constructor ... end constructor'"
+  input list<Element> inEls;
+  output Boolean res;
+algorithm
+  res:= matchcontinue(inEls)
+    local list<Element> els;
+    case CLASS(name="constructor")::_ then true;
+    case _::els then hasExternalObjectConstructor(els);
+    case _ then false;
+  end matchcontinue;
+end hasExternalObjectConstructor;
+
+public function getExternalObjectDestructor
+"returns the class 'function destructor .. end destructor' from element list"
+  input list<Element> inEls;
+  output Element cl;
+algorithm
+  cl:= matchcontinue(inEls)
+    local list<Element> els;
+    case ((cl as CLASS(name="destructor"))::_) then cl;
+    case (_::els) then getExternalObjectDestructor(els);
+  end matchcontinue;
+end getExternalObjectDestructor;
+
+public function getExternalObjectConstructor
+"returns the class 'function constructor ... end constructor' from element list"
+input list<Element> inEls;
+output Element cl;
+algorithm
+  cl:= matchcontinue(inEls)
+    local list<Element> els;
+    case ((cl as CLASS(name="constructor"))::_) then cl;
+    case (_::els) then getExternalObjectConstructor(els);
+  end matchcontinue;
+end getExternalObjectConstructor;
+
 end SCode;
 

@@ -2,7 +2,7 @@
 #
 # Common part of Makefile for omc. Contains sourcenames.
 #
-# David K�gedal <x97davka@ida.liu.se>
+# David Kågedal <x97davka@ida.liu.se>
 #
 # $Id$
 #
@@ -69,8 +69,13 @@ Graphviz.mo \
 Inline.mo \
 InnerOuter.mo \
 Inst.mo \
+InstBinding.mo \
+InstDAE.mo \
 InstExtends.mo \
+InstFunction.mo \
 InstSection.mo \
+InstUtil.mo \
+InstVar.mo \
 InstTypes.mo \
 Lookup.mo \
 MMath.mo \

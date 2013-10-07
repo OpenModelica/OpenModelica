@@ -98,6 +98,7 @@ protected import Flags;
 protected import Global;
 protected import Inline;
 protected import Inst;
+protected import InstFunction;
 protected import InstTypes;
 protected import InnerOuter;
 protected import Interactive;
@@ -7293,7 +7294,7 @@ algorithm
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
 
 
-        (cache,func) = Inst.getRecordConstructorFunction(cache,env,fn);
+        (cache,func) = InstFunction.getRecordConstructorFunction(cache,env,fn);
 
         DAE.RECORD_CONSTRUCTOR(path,tp1,source) = func;
         DAE.T_FUNCTION(fargs, outtype, _, {path}) = tp1;
@@ -7931,14 +7932,14 @@ algorithm
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         cache = Env.addCachedInstFuncGuard(cache,name);
-        (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
+        (cache,env,_) = InstFunction.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then (cache,Util.SUCCESS());
 
     // class already available
     case(cache,env,name,_,SOME(cl),_,_,_,_)
       equation
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
-        (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
+        (cache,env,_) = InstFunction.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,{});
       then (cache,Util.SUCCESS());
 
     // call to function reference variable
@@ -8073,7 +8074,7 @@ algorithm
     case (cache,env,path) equation
       (cache,SCode.CLASS(classDef = SCode.PARTS(elementLst = els)),env_1)
           = Lookup.lookupClass(cache,env, path, false);
-      true = Inst.isExternalObject(els);
+      true = SCode.isExternalObject(els);
       then (cache,true);
     case (cache,env,path) equation
       "constructor" = Absyn.pathLastIdent(path); then (cache,true);

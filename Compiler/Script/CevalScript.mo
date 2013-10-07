@@ -92,6 +92,7 @@ protected import Global;
 protected import Graph;
 protected import HashSetString;
 protected import Inst;
+protected import InstFunction;
 protected import InnerOuter;
 protected import List;
 protected import Lookup;
@@ -6376,7 +6377,7 @@ algorithm
           classDef = cdef),
          env) = Lookup.lookupClass(cache, env, funcpath, false);
         isCevaluableFunction(sc);
-        (cache, env, _) = Inst.implicitFunctionInstantiation(
+        (cache, env, _) = InstFunction.implicitFunctionInstantiation(
           cache,
           env,
           InnerOuter.emptyInstHierarchy,

@@ -60,6 +60,7 @@ protected import Dump;
 protected import Error;
 protected import Flags;
 protected import Inst;
+protected import InstUtil;
 protected import List;
 protected import Lookup;
 protected import Mod;
@@ -135,7 +136,7 @@ algorithm
     case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
         Absyn.IDENT(cn) = Absyn.makeNotFullyQualified(tp);
-        true = Inst.isBuiltInClass(cn);
+        true = InstUtil.isBuiltInClass(cn);
         // adrpo: maybe we should check here if what comes down from the other extends has components!
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,elsExtendsScope,ci_state,className,impl,isPartialInst);        
       then
@@ -144,10 +145,10 @@ algorithm
     // instantiate a base class
     case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,elsExtendsScope,ci_state,className,impl,_)
       equation
-        emod = Inst.chainRedeclares(mod, emod);
+        emod = InstUtil.chainRedeclares(mod, emod);
         
         // build a ht with the constant elements from the extends scope
-        ht = getLocalIdentList(Inst.constantAndParameterEls(elsExtendsScope),HashTableStringToPath.emptyHashTable(),getLocalIdentElement);
+        ht = getLocalIdentList(InstUtil.constantAndParameterEls(elsExtendsScope),HashTableStringToPath.emptyHashTable(),getLocalIdentElement);
         // fully qualify modifiers in extends in the extends environment!
         (cache, emod) = fixModifications(cache, env, emod, ht);
 
@@ -174,9 +175,9 @@ algorithm
         cenv3 = Env.openScope(cenv1, encf, SOME(cn), Env.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
-        (importelts,cdefelts,classextendselts,els_1) = Inst.splitEltsNoComponents(els);
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE());
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,SOME(mod));
+        (importelts,cdefelts,classextendselts,els_1) = InstUtil.splitEltsNoComponents(els);
+        (cenv3,ih) = InstUtil.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE());
+        (cenv3,ih) = InstUtil.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,SOME(mod));
 
         els_1 = SCodeUtil.addRedeclareAsElementsToExtends(els_1, SCodeUtil.getRedeclareAsElements(els_1));
 
@@ -370,9 +371,9 @@ algorithm
   outTplSCodeElementModLst := List.map(outTplSCodeElementModLstTpl3, Util.tuple312);
   // Create a list of the class definitions, since these can't be properly added in the recursive call
   tmpelts := List.map(outTplSCodeElementModLst,Util.tuple21);
-  (_,cdefelts,_,_) := Inst.splitEltsNoComponents(tmpelts);
+  (_,cdefelts,_,_) := InstUtil.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
-  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
+  (outEnv,outIH) := InstUtil.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,SOME(outMod));
   //Debug.fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
@@ -653,7 +654,7 @@ algorithm
     // from basic types return nothing
     case (cache,env,ih,mod,pre,SCode.CLASS(name = name),_,info,_,_)
       equation
-        true = Inst.isBuiltInClass(name);
+        true = InstUtil.isBuiltInClass(name);
       then
         (cache,env,ih,{},{},{},{},{});
 

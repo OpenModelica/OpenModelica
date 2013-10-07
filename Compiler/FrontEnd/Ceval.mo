@@ -73,6 +73,8 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Inst;
+protected import InstBinding;
+protected import InstUtil;
 protected import List;
 protected import Mod;
 protected import ModelicaExternalC;
@@ -1476,7 +1478,7 @@ algorithm
     
     case (cache,env,DAE.CREF(componentRef = cr,ty = expTp),dimExp,(impl as false),st,msg,_)
       equation
-        (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env,cr,Absyn.dummyInfo) 
+        (cache,dims) = InstUtil.elabComponentArraydimFromEnv(cache,env,cr,Absyn.dummyInfo) 
         "If component not instantiated yet, recursive definition.
          For example,
            Real x[:](min=fill(1.0,size(x,1))) = {1.0}
@@ -5004,7 +5006,7 @@ algorithm
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
            varLst = vl)) = Types.arrayElementType(ty);
         true = Types.allHaveBindings(vl);
-        binding = Inst.makeRecordBinding(cache, env, tpath, ty, vl, {}, info);
+        binding = InstBinding.makeRecordBinding(cache, env, tpath, ty, vl, {}, info);
         (cache, res) = cevalCrefBinding(cache, env, inComponentRef, binding, inBoolean, inMsg, numIter+1);
       then 
         (cache, res);
