@@ -47,8 +47,6 @@
 #ifdef WITH_IPOPT
 
 static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo);
-Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
-                    int nele_hess, int *iRow, int *iCol, double *values, void* useData){return -1;}
 
 /*!
  *  start main optimization step
@@ -104,7 +102,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   if(flag == 5)
   {
      nlp = CreateIpoptProblem(iData->NV, iData->Vmin, iData->Vmax,
-         iData->NRes, iData->gmin, iData->gmax, iData->njac, 1, 0, &evalfF,
+         iData->NRes, iData->gmin, iData->gmax, iData->njac, iData->nhess, 0, &evalfF,
                   &evalfG, &evalfDiffF, &evalfDiffG, &ipopt_h);
 
     AddIpoptNumOption(nlp, "tol", iData->data->simulationInfo.tolerance);
@@ -119,7 +117,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     AddIpoptIntOption(nlp, "file_print_level", 0);
 
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
-    AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");
+    /*AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");*/
 
 
     cflags = (char*)omc_flagValue[FLAG_LS_IPOPT];
@@ -128,7 +126,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     else
       AddIpoptStrOption(nlp, "linear_solver", "mumps");
 
-     /*AddIpoptStrOption(nlp, "derivative_test", "first-order"); */
+     /*AddIpoptStrOption(nlp, "derivative_test", "second-order"); */
      /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");*/
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
     AddIpoptIntOption(nlp, "max_iter", 5000);
