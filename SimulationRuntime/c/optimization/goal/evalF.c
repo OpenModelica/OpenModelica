@@ -38,6 +38,7 @@
 
 #include "../ipoptODEstruct.h"
 #include "../OptimizationFlags.h"
+#include "../localFunction.h"
 
 #ifdef WITH_IPOPT
 

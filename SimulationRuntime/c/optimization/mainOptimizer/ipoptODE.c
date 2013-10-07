@@ -82,19 +82,21 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->index_debug_next=0;
 
   /*ToDo*/
-  for(i=0; i<(*iData).nx; i++)
+  for(i=0; i<iData->nx; i++)
   {
-    iData->Vmin[i] = (*iData).Vmax[i] = (*iData).x0[i]*iData->scalVar[i];
+    iData->Vmax[i] = iData->x0[i]*iData->scalVar[i];
+    iData->Vmin[i] = iData->Vmax[i];
     iData->v[i] = iData->Vmin[i];
   }
 
   initial_guess_ipopt(iData,solverInfo);
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
-  for(i=0; i<iData->nx; i++)
-    printf("\nx[%i] = %s = %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i]);
+	printf("\nInitial point:");
+    for(i=0; i<iData->nx; i++)
+      printf("\nx[%i] = %s = %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i]*iData->scalVar[i]);
     for(; i<iData->nv; ++i)
-      printf("\nu[%i] = %s = %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i]);
+      printf("\nu[%i] = %s = %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i]*iData->scalVar[i]);
   }
 
   ipoptDebuge(iData,iData->v);
@@ -114,8 +116,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     } else {
       AddIpoptIntOption(nlp, "print_level", 2);
     }
-    AddIpoptIntOption(nlp, "file_print_level", 0);
 
+    AddIpoptIntOption(nlp, "file_print_level", 0);
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");
     /*AddIpoptStrOption(nlp, "hessian_approximation", "limited-memory");*/
 
@@ -131,7 +133,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
     AddIpoptIntOption(nlp, "max_iter", 5000);
 
-    res = IpoptSolve(nlp, (*iData).v, NULL, &obj, (*iData).mult_g, (*iData).mult_x_L, (*iData).mult_x_U, (void*)iData);
+    res = IpoptSolve(nlp, iData->v, NULL, &obj, iData->mult_g, iData->mult_x_L, iData->mult_x_U, (void*)iData);
     FreeIpoptProblem(nlp);
 
     if(ACTIVE_STREAM(LOG_IPOPT))
@@ -229,9 +231,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   while(solverInfo->currentTime < simInfo->stopTime)
   {
     for(i=0; i< iData->nx; ++i)
-    {
       sData->realVars[i] = iData->v[k++]*iData->vnom[i];
-    }
     
     for(i=0,j=iData->nx; i< iData->nu; ++i,++j)
       sData->realVars[iData->index_u + i] = iData->v[k++]*iData->vnom[j];
