@@ -35,6 +35,9 @@
 #include "errorext.h"
 #include "systemimpl.h"
 
+/* this is defined in systemimplmisc.h/cpp */
+extern char* _replace(const char* source_str, const char* search_str, const char* replace_str);
+
 /* adrpo: "int showErrorMessages" is defined in errorext. (enabled with omc +showErrorMessages) */
 
 #define GROWTH_FACTOR 1.4  /* According to some rumors of buffer growth */
@@ -375,12 +378,20 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
   regex_t re_begin,re_end;
   regmatch_t matches[3];
   int i;
-  long nlines=3 /* We start at 3 because we write 2 lines before the first line */, modelicaLine;
+  long nlines=3 /* We start at 3 because we write 2 lines before the first line */, modelicaLine = 0;
   /* What we try to match: */
   /*#modelicaLine [/path/to/a.mo:4:3-4:12]*/
   /*#endModelicaLine*/
+  /* which on Windows is (N is the drive letter): */
+  /*#modelicaLine [N:\path\to\a.mo:4:3-4:12]*/
+  /*#endModelicaLine*/
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  const char *re_str[2] = {"^ */[*]#modelicaLine .(.:\\\\[^:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*.[*]/$", "^ */[*]#endModelicaLine[*]/$"};
+#else /* real OSes */
   const char *re_str[2] = {"^ */[*]#modelicaLine .([^:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*.[*]/$", "^ */[*]#endModelicaLine[*]/$"};
+#endif
   const char *modelicaFileName = NULL;
+  char* strtmp = NULL;
   str[nfilled] = '\0';
 
   /* First, compile the regular expressions */
@@ -438,7 +449,14 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
         fprintf(file,"#line %ld OMC_FILE\n", nlines++);
       }
     } else if (modelicaFileName) {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+      /* on Windows escape the backslashes */
+      strtmp = _replace(modelicaFileName, "\\", "\\\\");
+      fprintf(file,"#line %ld \"%s\"\n", modelicaLine, strtmp);
+      free(strtmp);
+#else /* real OSes */
       fprintf(file,"#line %ld \"%s\"\n", modelicaLine, modelicaFileName);
+#endif
       fprintf(file,"%s\n", str);
       nlines+=2;
     } else {
