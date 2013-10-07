@@ -2351,8 +2351,8 @@ public function dumpAsGraphMLSccLevel "author: marcusw, waurich
   input array<tuple<Integer,Integer>> schedulerInfo; //maps each Task to <threadId, orderId>
 protected
   GraphML.Graph graph;
-  Integer nameAttIdx, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, taskIdAttIdx, commCostAttIdx, critPathAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
-  list<Integer> compIdc;
+  Integer nameAttIdx, calcTimeAttIdx, opCountAttIdx, yCoordAttIdx, taskIdAttIdx, commCostAttIdx, commVarsAttIdx, critPathAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
+  list<Integer> nodeIdc;
 algorithm
   _ := match(iGraph, iGraphData, fileName, criticalPathInfo, iCriticalPath, iCriticalPathWoC, sccSimEqMapping, schedulerInfo)
     case(_,_,_,_,_,_,_,_)
@@ -2367,10 +2367,11 @@ algorithm
         (threadIdAttIdx,graph) = GraphML.addAttribute("", "ThreadId", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graph);
         (taskNumberAttIdx,graph) = GraphML.addAttribute("-1", "TaskNumber", GraphML.TYPE_INTEGER(), GraphML.TARGET_NODE(), graph);
         (commCostAttIdx,graph) = GraphML.addAttribute("-1", "CommCost", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graph);
+        (commVarsAttIdx,graph) = GraphML.addAttribute("-1", "CommVars", GraphML.TYPE_INTEGER(), GraphML.TARGET_EDGE(), graph);
         (critPathAttIdx,graph) = GraphML.addAttribute("", "CriticalPath", GraphML.TYPE_STRING(), GraphML.TARGET_GRAPH(), graph);
         graph = GraphML.addGraphAttributeValue((critPathAttIdx, criticalPathInfo), graph);
-        compIdc = List.intRange(arrayLength(iGraph));
-        graph = List.fold4(compIdc, addNodeToGraphML, (iGraph, iGraphData), (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx), sccSimEqMapping, (iCriticalPath,iCriticalPathWoC,schedulerInfo), graph);
+        nodeIdc = List.intRange(arrayLength(iGraph));
+        graph = List.fold4(nodeIdc, addNodeToGraphML, (iGraph, iGraphData), (nameAttIdx,opCountAttIdx,calcTimeAttIdx,taskIdAttIdx,yCoordAttIdx,commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx), sccSimEqMapping, (iCriticalPath,iCriticalPathWoC,schedulerInfo), graph);
         GraphML.dumpGraph(graph, fileName);
       then ();
   end match;
@@ -2381,8 +2382,8 @@ protected function addNodeToGraphML "author: marcusw, waurich
   Adds the given node to the given graph."
   input Integer nodeIdx;
   input tuple<TaskGraph, TaskGraphMeta> tGraphDataTuple;
-  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> attIdc; 
-  //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx>
+  input tuple<Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer,Integer> attIdc; 
+  //Attribute index for <nameAttIdx,opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx>
   input array<list<Integer>> sccSimEqMapping;
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>,array<tuple<Integer,Integer>>> iSchedulerInfoCritPath; //<criticalPath,criticalPathWoC,schedulerInfo>
   input GraphML.Graph iGraph;
@@ -2393,7 +2394,7 @@ algorithm
       TaskGraph tGraphIn;
       TaskGraphMeta tGraphDataIn;
       GraphML.Graph tmpGraph;
-      Integer opCount, nameAttIdx, calcTimeAttIdx, opCountAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, yCoord, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
+      Integer opCount, nameAttIdx, calcTimeAttIdx, opCountAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, yCoord, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx;
       Real calcTime;
       Integer primalComp;
       list<Integer> childNodes;
@@ -2423,7 +2424,7 @@ algorithm
     case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo),_)
       equation
         false = nodeIdx == 0 or nodeIdx == -1;
-        (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
+        (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         true = listLength(components)==1; 
@@ -2453,16 +2454,16 @@ algorithm
         calcTimeInt = realInt(calcTime);
         calcTimeIntString = intString(calcTimeInt);
         additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeIntString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
-        
+        //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), componentsString, GraphML.COLOR_ORANGE, GraphML.RECTANGLE(), SOME(nodeDesc), {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, additionalLabels, iGraph);
-        tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, (criticalPath,criticalPathWoC), tmpGraph);
+        tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx), (criticalPath,criticalPathWoC), tmpGraph);
       then 
         tmpGraph;
     case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo),_)
       equation
         // for a node that consists of contracted nodes
         false = nodeIdx == 0 or nodeIdx == -1;
-        (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
+        (nameAttIdx, opCountAttIdx, calcTimeAttIdx, taskIdAttIdx, yCoordAttIdx, commCostAttIdx, commVarsAttIdx, simCodeEqAttIdx, threadIdAttIdx, taskNumberAttIdx) = attIdc;
         TASKGRAPHMETA(inComps = inComps, eqSccMapping=eqSccMapping, rootNodes = rootNodes, nodeNames =nodeNames ,nodeDescs=nodeDescs, exeCosts = exeCosts, commCosts=commCosts, nodeMark=nodeMark) = tGraphDataIn;
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
@@ -2485,9 +2486,9 @@ algorithm
         calcTimeInt = realInt(calcTime);
         calcTimeIntString = intString(calcTimeInt);
         additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeIntString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
-        
+        //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), componentsString, GraphML.COLOR_ORANGE, GraphML.RECTANGLE(), SOME(nodeDesc), {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, additionalLabels, iGraph);
-        tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, commCostAttIdx, (criticalPath,criticalPathWoC), tmpGraph);
+        tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx), (criticalPath,criticalPathWoC), tmpGraph);
       then 
         tmpGraph;
     case(_,_,_,_,_,_)
@@ -2533,12 +2534,13 @@ protected function addDepToGraph "author: marcusw
   input Integer childIdx;
   input Integer parentIdx;
   input TaskGraphMeta tGraphDataIn;
-  input Integer commCostAttIdx;
+  input tuple<Integer,Integer> iCommAttIdc; //<%(commCostAttIdx, commVarsAttIdx)%>
   input tuple<list<tuple<Integer,Integer>>,list<tuple<Integer,Integer>>> iCriticalPathEdges; //<%criticalPathEdges, criticalPathEdgesWoC%>
   input GraphML.Graph iGraph;
   output GraphML.Graph oGraph;
 protected
   array<list<tuple<Integer,Integer,Integer>>> commCosts;  
+  Integer commCostAttIdx, commVarsAttIdx;
   Integer commCost, numOfCommVars, primalCompParent, primalCompChild;
   String refSccCountStr, commCostString, numOfCommVarsString;
   array<list<Integer>> inComps; 
@@ -2548,8 +2550,8 @@ protected
   list<tuple<Integer,Integer>> criticalPathEdges, criticalPathEdgesWoC;
   String edgeColor;
 algorithm
-  oGraph := matchcontinue(childIdx, parentIdx, tGraphDataIn, commCostAttIdx, iCriticalPathEdges, iGraph)
-    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),_,(criticalPathEdges, criticalPathEdgesWoC),_)
+  oGraph := matchcontinue(childIdx, parentIdx, tGraphDataIn, iCommAttIdc, iCriticalPathEdges, iGraph)
+    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),(commCostAttIdx, commVarsAttIdx),(criticalPathEdges, criticalPathEdgesWoC),_)
       equation
         true = List.exist1(criticalPathEdges, compareIntTuple2, (parentIdx, childIdx));
         //Edge is part of critical path
@@ -2557,16 +2559,16 @@ algorithm
         numOfCommVarsString = intString(numOfCommVars);
         commCostString = intString(commCost);
         edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
-        tmpGraph = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), "Node" +& intString(childIdx), "Node" +& intString(parentIdx), edgeColor, GraphML.LINE(), GraphML.LINEWIDTH_BOLD, SOME(GraphML.EDGELABEL(numOfCommVarsString,edgeColor, GraphML.FONTSIZE_STANDARD)), (NONE(),SOME(GraphML.ARROWSTANDART())), {(commCostAttIdx, commCostString)}, iGraph);
+        tmpGraph = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), "Node" +& intString(childIdx), "Node" +& intString(parentIdx), edgeColor, GraphML.LINE(), GraphML.LINEWIDTH_BOLD, SOME(GraphML.EDGELABEL(commCostString,edgeColor, GraphML.FONTSIZE_STANDARD)), (NONE(),SOME(GraphML.ARROWSTANDART())), {(commCostAttIdx, commCostString),(commVarsAttIdx, numOfCommVarsString)}, iGraph);
       then tmpGraph;
-    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),_,(criticalPathEdges, criticalPathEdgesWoC),_)
+    case(_,_,TASKGRAPHMETA(commCosts=commCosts, nodeMark=nodeMark, inComps=inComps),(commCostAttIdx, commVarsAttIdx),(criticalPathEdges, criticalPathEdgesWoC),_)
       equation
         //Edge is not part of critical path
         ((_,numOfCommVars,commCost)) = getCommCostBetweenNodes(parentIdx,childIdx,tGraphDataIn);
         numOfCommVarsString = intString(numOfCommVars);
         commCostString = intString(commCost);
         edgeColor = Util.if_(List.exist1(criticalPathEdgesWoC, compareIntTuple2, (parentIdx, childIdx)), GraphML.COLOR_GRAY, GraphML.COLOR_BLACK);
-        tmpGraph = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), "Node" +& intString(childIdx), "Node" +& intString(parentIdx), edgeColor, GraphML.LINE(), GraphML.LINEWIDTH_STANDARD, SOME(GraphML.EDGELABEL(numOfCommVarsString,edgeColor, GraphML.FONTSIZE_STANDARD)), (NONE(),SOME(GraphML.ARROWSTANDART())), {(commCostAttIdx, commCostString)}, iGraph);
+        tmpGraph = GraphML.addEdge("Edge" +& intString(parentIdx) +& intString(childIdx), "Node" +& intString(childIdx), "Node" +& intString(parentIdx), edgeColor, GraphML.LINE(), GraphML.LINEWIDTH_STANDARD, SOME(GraphML.EDGELABEL(commCostString,edgeColor, GraphML.FONTSIZE_STANDARD)), (NONE(),SOME(GraphML.ARROWSTANDART())), {(commCostAttIdx, commCostString),(commVarsAttIdx, numOfCommVarsString)}, iGraph);
       then tmpGraph;
     else
       equation
@@ -3190,7 +3192,7 @@ algorithm
         //(tmpGraph,tmpGraphData) = contractNodesInGraph({mergeNodeList}, iGraph, iGraphData);
         //(tmpGraph,tmpGraphData) = (iGraph, iGraphData);
         tmpMergedNodes = mergeNodeList :: iMergedNodes;
-        tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,iNodeIdx+1,tmpMergedNodes);
+        //tmpMergedNodes = mergeParentNodes0(iGraph,iGraphT,iGraphData,iNodeIdx+1,tmpMergedNodes);
       then tmpMergedNodes;
     case(_,_,_,_,_)
       equation
@@ -3304,23 +3306,33 @@ protected
   Integer endNode;
   Integer startNode;
   list<Integer> deleteEntries;
+  list<Integer> startNodeChildren;
   list<Integer> endChildren;
   list<Integer> deleteNodesParents; //all parents of deleted nodes
   TaskGraph graphTmp;
 algorithm
   //This function contracts all nodes into the startNode
   graphInT := transposeTaskGraph(graphIn);
+  //print("HpcOmTaskGraph.contractNodesInGraph1 contractNodes: " +& stringDelimitList(List.map(contractNodes,intString),",") +& "\n");
   //print("HpcOmTaskGraph.contractNodesInGraph1 startNode: " +& intString(List.last(contractNodes)) +& "\n");
   startNode := List.last(contractNodes);
   deleteEntries := List.deleteMember(contractNodes,startNode); //all nodes which should be deleted
+  //print("HpcOmTaskGraph.contractNodesInGraph1 deleteEntries: " +& stringDelimitList(List.map(deleteEntries,intString),",") +& "\n");
   deleteNodesParents := List.flatten(List.map1(deleteEntries, Util.arrayGetIndexFirst, graphInT));
+  //print("HpcOmTaskGraph.contractNodesInGraph1 deleteNodesParents: " +& stringDelimitList(List.map(deleteNodesParents,intString),",") +& "\n");
   deleteNodesParents := List.sortedUnique(List.sort(deleteNodesParents, intGt),intEq);
   deleteNodesParents := List.setDifferenceOnTrue(deleteNodesParents, contractNodes, intEq);
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteNodesParents: " +& stringDelimitList(List.map(deleteNodesParents,intString),",") +& "\n");
   endNode := List.first(contractNodes);
   endChildren := arrayGet(graphIn,endNode); //all child-nodes of the end node
   //print("HpcOmTaskGraph.contractNodesInGraph1 endChildren: " +& stringDelimitList(List.map(endChildren,intString),",") +& "\n");
-  graphTmp := List.fold2(deleteNodesParents, contractNodesInGraph2, deleteEntries, startNode, graphIn);
+  startNodeChildren := arrayGet(graphIn, startNode);
+  //print("HpcOmTaskGraph.contractNodesInGraph1 startNodeChildren_pre: " +& stringDelimitList(List.map(startNodeChildren,intString),",") +& "\n");
+  startNodeChildren := List.setDifferenceOnTrue(startNodeChildren, deleteEntries, intEq);
+  graphTmp := arrayUpdate(graphIn, startNode, startNodeChildren);
+  //print("HpcOmTaskGraph.contractNodesInGraph1 startNodeChildren_post: " +& stringDelimitList(List.map(startNodeChildren,intString),",") +& "\n");
+  graphTmp := List.fold2(deleteNodesParents, contractNodesInGraph2, deleteEntries, startNode, graphTmp);
+  //print("HpcOmTaskGraph.contractNodesInGraph1 startnode: " +& intString(startNode) +& " endChildren: " +& stringDelimitList(List.map(endChildren,intString),",") +& "\n");
   graphTmp := arrayUpdate(graphIn,startNode,endChildren);
   graphOut := graphTmp;  
 end contractNodesInGraph1;
@@ -3335,8 +3347,11 @@ protected
   list<Integer> adjLstEntry;
 algorithm
   adjLstEntry := arrayGet(iGraph,iParentNode);
+  //print("contractNodesInGraph2 ParentNode: " +& intString(iParentNode) +& " adjLstEntry_Pre: " +& stringDelimitList(List.map(adjLstEntry,intString),",") +& "\n");
   adjLstEntry := List.setDifferenceOnTrue(adjLstEntry, iDeletedNodes, intEq);
   adjLstEntry := iNewNodeIdx :: adjLstEntry;
+  adjLstEntry := List.sortedUnique(List.sort(adjLstEntry, intGt),intEq);
+  //print("contractNodesInGraph2 ParentNode: " +& intString(iParentNode) +& " adjLstEntry_Post: " +& stringDelimitList(List.map(adjLstEntry,intString),",") +& "\n");
   oGraph := arrayUpdate(iGraph, iParentNode, adjLstEntry);
 end contractNodesInGraph2;
 

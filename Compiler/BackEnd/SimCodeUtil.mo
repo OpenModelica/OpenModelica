@@ -2273,9 +2273,9 @@ algorithm
         // block is dynamic, belong in dynamic section
         (eqnslst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         bdynamic = BackendDAEUtil.blockIsDynamic(eqnslst, stateeqnsmark);        
-        (equations1, noDiscEquations1, uniqueEqIndex, tempvars) = createOdeSystem(true, false, false, syst, shared, comp, iuniqueEqIndex, itempvars);
+        (equations1, noDiscEquations1, uniqueEqIndex, tempvars, tmpEqSccMapping) = createOdeSystem(true, false, false, syst, shared, comp, iuniqueEqIndex, itempvars, isccIndex, ieqSccMapping);
         
-        tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);        
+        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);        
         
         (odeEquations, algebraicEquations, allEquations, uniqueEqIndex, tempvars, tmpEqSccMapping) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, uniqueEqIndex, tempvars, isccIndex+1, tmpEqSccMapping);
         odeEquations = Debug.bcallret2(bdynamic, listAppend, noDiscEquations1, odeEquations, odeEquations);
@@ -2453,7 +2453,7 @@ algorithm
                  
     // a system of equations 
     case (_, _, _, _, _, _, _, comp :: restComps, _, _) equation
-      (equations_, noDiscEquations1, uniqueEqIndex, tempvars) = createOdeSystem(genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comp, iuniqueEqIndex, itempvars);
+      (equations_, noDiscEquations1, uniqueEqIndex, tempvars, _) = createOdeSystem(genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comp, iuniqueEqIndex, itempvars, 1, {});
       (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars);
       equations1 = listAppend(equations_, equations);
       noDiscEquations = listAppend(noDiscEquations1, noDiscEquations);  
@@ -3497,13 +3497,16 @@ protected function createOdeSystem
   input BackendDAE.StrongComponent inComp;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
+  input Integer isccIndex; //just to create the simEq to scc mapping. If you don't need this, set the parameter to 1
+  input list<tuple<Integer,Integer>> ieqSccMapping;
   output list<SimCode.SimEqSystem> equations_;
   output list<SimCode.SimEqSystem> noDiscequations_;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
+  output list<tuple<Integer,Integer>> oeqSccMapping;
 algorithm
-  (equations_, noDiscequations_, ouniqueEqIndex, otempvars) :=
-  matchcontinue(genDiscrete, skipDiscInAlgorithm, linearSystem, isyst, ishared, inComp, iuniqueEqIndex, itempvars)
+  (equations_, noDiscequations_, ouniqueEqIndex, otempvars, oeqSccMapping) :=
+  matchcontinue(genDiscrete, skipDiscInAlgorithm, linearSystem, isyst, ishared, inComp, iuniqueEqIndex, itempvars, isccIndex, ieqSccMapping)
     local
       list<BackendDAE.Equation> eqn_lst,  disc_eqn;
       list<BackendDAE.Var> var_lst,  disc_var, var_lst_1;
@@ -3533,6 +3536,7 @@ algorithm
       list<SimCode.SimVar> tempvars;
       list<tuple<Integer, list<Integer>>> eqnvartpllst;
       Boolean b;
+      list<tuple<Integer,Integer>> tmpEqSccMapping;
       
     // EQUATIONSYSTEM: create always a linear system of equations 
     case (_, _, true, syst as BackendDAE.EQSYSTEM(orderedVars=vars, 
@@ -3540,7 +3544,7 @@ algorithm
                                                                                                 functionTree=funcs), comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns, 
                                                                                                                                                        vars=ivars, 
                                                                                                                                                        jac=jac, 
-                                                                                                                                                       jacType=jac_tp), _, _) equation
+                                                                                                                                                       jacType=jac_tp), _, _, _, _) equation
       Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create system (create linear jacobian).");
       // print("\ncreateOdeSystem -> Linear: ...\n");
       // BackendDump.printEquations(block_, daelow);
@@ -3556,7 +3560,8 @@ algorithm
       // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
       jac_tp = changeJactype(jac_tp);
       (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, jac, jac_tp, funcs, vars, iuniqueEqIndex, itempvars);
-    then (equations_, equations_, uniqueEqIndex, tempvars);
+      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+    then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping);
 
     // MIXEDEQUATIONSYSTEM
     case (_, _, true, BackendDAE.EQSYSTEM(orderedVars=vars, 
@@ -3567,7 +3572,7 @@ algorithm
                                                                                 functionTree=funcs, 
                                                                                 eventInfo=ev, 
                                                                                 extObjClasses=eoc), comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns, 
-                                                                                                                                           disc_vars=disc_vars), _, _) equation
+                                                                                                                                           disc_vars=disc_vars), _, _, _, _) equation
       Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system (create linear jacobian).");
       // print("\ncreateOdeSystem -> Linear: ...\n");
       // BackendDump.printEquations(block_, daelow);
@@ -3584,19 +3589,21 @@ algorithm
       // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
       jac_tp = changeJactype(jac_tp);
       (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, jac, jac_tp, funcs, vars, iuniqueEqIndex, itempvars);
-    then (equations_, equations_, uniqueEqIndex, tempvars);
+      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+    then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping);
           
     // MIXEDEQUATIONSYSTEM: mixed system of equations, continuous part only
-    case (false, _, false, syst, shared, BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1), _, _) equation
+    case (false, _, false, syst, shared, BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1), _, _, _, _) equation
       Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system continuous part.");
       (_, noDiscequations_, uniqueEqIndex, tempvars) = createEquations(true, false, false, skipDiscInAlgorithm, false, syst, shared, {comp1}, iuniqueEqIndex, itempvars);
-    then ({}, noDiscequations_, uniqueEqIndex, tempvars);
+      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+    then ({}, noDiscequations_, uniqueEqIndex, tempvars, tmpEqSccMapping);
         
     // MIXEDEQUATIONSYSTEM: mixed system of equations, both continous and discrete eqns
     case (true, _, false, syst as BackendDAE.EQSYSTEM(orderedVars=vars, 
                                                       orderedEqs = eqns), shared as BackendDAE.SHARED(knownVars=knvars), BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1, 
                                                                                                                                                         disc_eqns=ieqns, 
-                                                                                                                                                        disc_vars=ivars), _, _) equation
+                                                                                                                                                        disc_vars=ivars), _, _, _, _) equation
       Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system.");
       // print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
       // BackendDump.printEquations(block_, dlow);
@@ -3605,8 +3612,9 @@ algorithm
       (_, {equation_}, uniqueEqIndex, tempvars) = createEquations(true, false, false, skipDiscInAlgorithm, false, syst, shared, {comp1}, iuniqueEqIndex, itempvars);
       simVarsDisc = List.map2(disc_var, dlowvarToSimvar, NONE(), knvars);
       (discEqs,uniqueEqIndex) = extractDiscEqs(disc_eqn, disc_var, uniqueEqIndex);
+      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
       // was madness        
-    then ({SimCode.SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs, 0)}, {equation_}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs, 0)}, {equation_}, uniqueEqIndex+1, tempvars, tmpEqSccMapping);
      
     // EQUATIONSYSTEM: continuous system of equations
     case (_, _, false, BackendDAE.EQSYSTEM(orderedVars=vars, 
@@ -3615,7 +3623,7 @@ algorithm
                                                                                functionTree=funcs, 
                                                                                eventInfo=ev, 
                                                                                extObjClasses=eoc), comp as BackendDAE.EQUATIONSYSTEM(jac=jac, 
-                                                                                                                                     jacType=jac_tp), _, _) equation
+                                                                                                                                     jacType=jac_tp), _, _, _, _) equation
       Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create continuous system.");
       // print("\ncreateOdeSystem -> Cont sys: ...\n");
       // extract the variables and equations of the block.
@@ -3629,16 +3637,18 @@ algorithm
       vars_1 = BackendVariable.listVar1(var_lst_1);
       eqns_1 = BackendEquation.listEquation(eqn_lst);
       (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, jac, jac_tp, funcs, vars, iuniqueEqIndex, itempvars);
-    then (equations_, equations_, uniqueEqIndex, tempvars);
+      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+    then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping);
         
     // TORNSYSTEM
     case (_, _, false, BackendDAE.EQSYSTEM(orderedVars=vars, 
                                            orderedEqs=eqns), _, comp as BackendDAE.TORNSYSTEM(tearingvars=tf, 
                                                                                               residualequations=rf, 
                                                                                               otherEqnVarTpl=eqnvartpllst, 
-                                                                                              linear=b), _, _) equation
+                                                                                              linear=b), _, _, _, _) equation
       (equations_, uniqueEqIndex, tempvars) = createTornSystem(b, skipDiscInAlgorithm, tf, rf, eqnvartpllst, isyst, ishared, iuniqueEqIndex, itempvars);
-    then (equations_, equations_, uniqueEqIndex, tempvars);
+      tmpEqSccMapping = appendSccIdx(uniqueEqIndex-1, isccIndex, ieqSccMapping);
+    then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping);
         
     else equation
       msg = "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem failed for component " +& BackendDump.strongComponentString(inComp);

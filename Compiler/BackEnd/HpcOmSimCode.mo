@@ -268,6 +268,10 @@ protected
   Boolean changed1,changed2;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
+  
+  array<list<Integer>> sccSimEqMapping;
+  BackendDAE.StrongComponents allComps;
+  array<tuple<Integer,Integer>> schedulerInfo;
 algorithm
   (oTaskGraph,oTaskGraphMeta) := matchcontinue(iTaskGraph,iTaskGraphMeta,inBackendDAE,iApplyFilters)
     case(_,_,_,_)
@@ -277,10 +281,17 @@ algorithm
       then (iTaskGraph, iTaskGraphMeta);
     case(_,_,_,true)
       equation
-        //Merge simple Nodes
+        //print("Start merging\n");
+        //Merge simple and parent nodes
         taskGraph1 = arrayCopy(iTaskGraph);
         taskGraphMeta1 = HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
         (taskGraph1,taskGraphMeta1,changed1) = HpcOmTaskGraph.mergeSimpleNodes(taskGraph1,taskGraphMeta1,inBackendDAE);
+        
+        //(allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
+        //sccSimEqMapping = arrayCreate(listLength(allComps), {});
+        //schedulerInfo = arrayCreate(arrayLength(taskGraph1), (-1,-1));
+        //print("MergeParentNodes\n");
+        //HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphMeta1, "testgraph.graphml", "", {}, {}, sccSimEqMapping, schedulerInfo);
         (taskGraph1,taskGraphMeta1,changed2) = HpcOmTaskGraph.mergeParentNodes(taskGraph1, taskGraphMeta1);
         (taskGraph1,taskGraphMeta1) = applyFiltersToGraph(taskGraph1,taskGraphMeta1,inBackendDAE,changed1 or changed2);
       then (taskGraph1,taskGraphMeta1);
@@ -311,7 +322,8 @@ algorithm
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "ext");
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      then HpcOmScheduler.createExtSchedule(iTaskGraphMeta, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
+        print("Using external Scheduler\n");
+      then HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
     case(_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
