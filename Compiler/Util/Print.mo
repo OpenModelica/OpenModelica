@@ -105,6 +105,12 @@ public function writeBuf
   external "C" Print_writeBuf(inString) annotation(Library = "omcruntime");
 end writeBuf;
 
+public function writeBufConvertLines
+  "Writes the print buffer to the filename, with /*#modelicaLine...*/ directives converted to #line C preprocessor macros"
+  input String filename;
+  external "C" Print_writeBufConvertLines(filename) annotation(Library = "omcruntime");
+end writeBufConvertLines;
+
 public function getBufLength
 "Gets the actual length of the filled space in the print buffer."
   output Integer outBufFilledLength;

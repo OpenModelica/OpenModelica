@@ -113,7 +113,12 @@ extern void Print_printBufNewLine(void)
 
 extern void Print_writeBuf(const char* filename)
 {
-  //fprintf(stderr, "Print_writeBuf %s: %s\n", filename, buf);
   if (PrintImpl__writeBuf(filename))
+    MMC_THROW();
+}
+
+extern void Print_writeBufConvertLines(const char* filename)
+{
+  if (PrintImpl__writeBufConvertLines(filename))
     MMC_THROW();
 }

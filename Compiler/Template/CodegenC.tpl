@@ -60,7 +60,7 @@ template translateModel(SimCode simCode)
 
     let()= textFile(simulationFunctionsHeaderFile(fileNamePrefix, modelInfo.functions, recordDecls), '<%fileNamePrefix%>_functions.h')
 
-    let()= textFile(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.c')
+    let()= textFileConvertLines(simulationFunctionsFile(fileNamePrefix, modelInfo.functions, literals), '<%fileNamePrefix%>_functions.c')
 
     let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefix%>_records.c')
 
@@ -74,7 +74,7 @@ template translateModel(SimCode simCode)
     // adpro: write the main .c file last! Make on windows doesn't seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
-    let()= textFile(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
+    let()= textFileConvertLines(simulationFile(simCode,guid), '<%fileNamePrefix%>.c')
 
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -95,7 +95,7 @@ template translateFunctions(FunctionCode functionCode)
     let filePrefix = name
     let _= (if mainFunction then textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile'))
     let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.h')
-    let()= textFile(functionsFile(filePrefix, mainFunction, functions, literals), '<%filePrefix%>.c')
+    let()= textFileConvertLines(functionsFile(filePrefix, mainFunction, functions, literals), '<%filePrefix%>.c')
     let()= textFile(recordsFile(filePrefix, extraRecordDecls), '<%filePrefix%>_records.c')
     // If ParModelica generate the kernels file too.
     if acceptParModelicaGrammar() then
@@ -3426,8 +3426,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   %>
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
-  MAINFILE=$(FILEPREFIX)<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
-  MAINOBJ=$(FILEPREFIX)<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.o
+  MAINFILE=$(FILEPREFIX).c
+  MAINOBJ=$(FILEPREFIX).o
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
 
   .PHONY: omc_main_target clean bundle
@@ -3437,11 +3437,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   omc_main_target: $(MAINOBJ) $(FILEPREFIX)_records.o $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
   <%\t%>$(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS)
-  <%fileNamePrefix%>.conv.c: $(FILEPREFIX).c
-  <%\t%>$(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
-  <%\t%>@mv $@.tmp $@
-  <%\t%>$(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $(FILEPREFIX)_functions.c $@.tmp
-  <%\t%>@mv $@.tmp $(FILEPREFIX)_functions.c
 
   clean:
   <%\t%>@rm -f $(FILEPREFIX)_records.o $(MAINOBJ)
@@ -3658,16 +3653,13 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%>
   LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lOpenModelicaRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
-  MAINFILE=<%name%><% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
+  MAINFILE=<%name%>.c
 
   .PHONY: <%name%>
   <%name%>: $(MAINFILE) <%name%>.h <%name%>_records.c
   <%\t%> $(CC) $(CFLAGS) -c -o <%name%>.o $(MAINFILE)
   <%\t%> $(CC) $(CFLAGS) -c -o <%name%>_records.o <%name%>_records.c
   <%\t%> $(LINK) -o <%name%>$(DLLEXT) <%name%>.o <%name%>_records.o <%libsStr%> $(CFLAGS) $(LDFLAGS) -lm
-  <%name%>.conv.c: <%name%>.c
-  <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
-  <%\t%> @mv $@.tmp $@
   >>
 end functionsMakefile;
 

@@ -359,6 +359,103 @@ static int PrintImpl__writeBuf(const char* filename)
   return 0;
 }
 
+#include <regex.h>
+
+/* returns 0 on success */
+static int PrintImpl__writeBufConvertLines(const char *filename)
+{
+  print_members* members = getMembers();
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
+#else
+  const char *fileOpenMode = "wb";  /* on Unixes don't bother, do it binary mode */
+#endif
+  char *str = buf, *next;
+  FILE * file = NULL;
+  regex_t re_begin,re_end;
+  regmatch_t matches[3];
+  int i;
+  long nlines=3 /* We start at 3 because we write 2 lines before the first line */, modelicaLine;
+  /* What we try to match: */
+  /*#modelicaLine [/path/to/a.mo:4:3-4:12]*/
+  /*#endModelicaLine*/
+  const char *re_str[2] = {"^ */[*]#modelicaLine .([^:]*):([0-9]*):[0-9]*-[0-9]*:[0-9]*.[*]/$", "^ */[*]#endModelicaLine[*]/$"};
+  const char *modelicaFileName = NULL;
+  str[nfilled] = '\0';
+
+  /* First, compile the regular expressions */
+  if (regcomp(&re_begin, re_str[0], REG_EXTENDED) || regcomp(&re_end, re_str[1], 0)) {
+    const char *c_tokens[1]={filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+      ErrorType_scripting,
+      ErrorLevel_error,
+      gettext("Error compiling regular expression: %s or %s."),
+      re_str,
+      2);
+    return 1;
+  }
+
+  /* check if we have something to write */
+  /* open the file */
+  /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
+  file = fopen(filename,fileOpenMode);
+  if (file == NULL) {
+    const char *c_tokens[1]={filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+      ErrorType_scripting,
+      ErrorLevel_error,
+      gettext("Error writing to file %s."),
+      c_tokens,
+      1);
+    regfree(&re_begin);
+    regfree(&re_end);
+    return 1;
+  }
+  if (str == NULL || str[0]=='\0') {
+    /* nothing to write to file, just close it and return ! */
+    regfree(&re_begin);
+    regfree(&re_end);
+    fclose(file);
+    return 1;
+  }
+#define ABC __FILE__
+  fprintf(file,"#define OMC_FILE __FILE__\n#line %ld OMC_FILE\n", nlines++);
+  do {
+    next = strchr(str,'\n');
+    if (!next) {
+      fprintf(file,"%s",str);
+      break;
+    }
+    *next++ = '\0';
+    if (0==regexec(&re_begin, str, 3, matches, 0)) {
+      str[matches[1].rm_eo] = '\0';
+      str[matches[2].rm_eo] = '\0';
+      modelicaFileName = str + matches[1].rm_so;
+      modelicaLine = strtol(str + matches[2].rm_so, NULL, 10);
+    } else if (0==regexec(&re_end, str, 3, matches, 0)) {
+      if (modelicaFileName) { /* There is sometimes #endModlicaLine without a matching #modelicaLine */
+        modelicaFileName = NULL;
+        fprintf(file,"#line %ld OMC_FILE\n", nlines++);
+      }
+    } else if (modelicaFileName) {
+      fprintf(file,"#line %ld \"%s\"\n", modelicaLine, modelicaFileName);
+      fprintf(file,"%s\n", str);
+      nlines+=2;
+    } else {
+      fprintf(file,"%s\n", str);
+      nlines++;
+    }
+    str = next;
+  } while (1);
+  /* We do destructive updates on the print buffer; hide our tracks */
+  *buf = 0;
+  nfilled = 0;
+  regfree(&re_begin);
+  regfree(&re_end);
+  fclose(file);
+  return 0;
+}
+
 static long PrintImpl__getBufLength(void)
 {
   print_members* members = getMembers();

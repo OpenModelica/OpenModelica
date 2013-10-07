@@ -884,6 +884,11 @@ package Tpl
     input String inFileName;
   end textFile;
   
+  function textFileConvertLines
+    input Text inText;
+    input String inFileName;
+  end textFileConvertLines;
+
   //we do not import Error.addSourceMessage() directly
   //because of list creation in Susan is not possible (yet by design)  
   function addSourceTemplateError

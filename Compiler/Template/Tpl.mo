@@ -1814,6 +1814,44 @@ algorithm
   end matchcontinue;
 end textFile;
 
+public function textFileConvertLines "This function renders a (memory-)text to a file. If we generate modelicaLine directives, translate them to C preprocessor."
+  input Text inText;
+  input String inFileName;
+
+algorithm
+  _ := matchcontinue (inText, inFileName)
+    local
+      Text txt;
+      String file;
+      Real rtTickTxt, rtTickW;
+    case (txt, file)
+      equation
+        rtTickTxt = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        Print.clearBuf();
+        textStringBuf(txt);
+        rtTickW = System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL);
+        System.writeFile(file, "") /* To make realpath work */;
+        Debug.bcall1(boolOr(Config.acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), Print.writeBufConvertLines, System.realpath(file));
+        Debug.bcall1(not boolOr(Config.acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)), Print.writeBuf, file);
+        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
+        Print.clearBuf();
+        Debug.fprintln(Flags.TPL_PERF_TIMES,
+                "textFile " +& file
+           +& "\n    text:" +& realString(realSub(rtTickW,rtTickTxt))
+           +& "\n   write:" +& realString(realSub(System.realtimeTock(GlobalScript.RT_CLOCK_BUILD_MODEL), rtTickW))
+           );
+      then
+        ();
+
+    //TODO: let this function fail and the error message can be reported via  # ( textFile(txt,"file.cpp") ; failMsg="error" )
+    case (_,_)
+      equation
+        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textFile failed - a system error ?\n");
+      then
+        ();
+
+  end matchcontinue;
+end textFileConvertLines;
 
 public function sourceInfo
 "Magic sourceInfo() function implementation"

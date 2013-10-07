@@ -140,6 +140,14 @@ RML_BEGIN_LABEL(Print__writeBuf)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(Print__writeBufConvertLines)
+{
+  if (PrintImpl__writeBufConvertLines(RML_STRINGDATA(rmlA0)))
+    RML_TAILCALLK(rmlFC);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(Print__getBufLength)
 {
   rmlA0 = mk_icon(PrintImpl__getBufLength());
