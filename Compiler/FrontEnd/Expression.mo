@@ -219,6 +219,12 @@ algorithm
         acref = Absyn.pathToCref(path);
       then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
 
+    case (DAE.RECORD(path = path,exps = expl))
+      equation
+        aexpl = List.map(expl,unelabExp);
+        acref = Absyn.pathToCref(path);
+      then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
+
     case(DAE.PARTEVALFUNCTION(path,expl,_))
       equation
         aexpl = List.map(expl,unelabExp);

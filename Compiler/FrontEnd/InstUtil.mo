@@ -3632,7 +3632,7 @@ algorithm
       Absyn.Path path;
       SCode.Element cl;
       String name;
-      list<SCode.Element> selems,extendselts,compelts,extcompelts,classextendselts;
+      list<SCode.Element> selems,extendselts,compelts,extcompelts,classextendselts,classes;
       list<tuple<SCode.Element, DAE.Mod>> extcomps;
       SCode.Mod mod;
       SCode.Comment cmt;
@@ -3641,10 +3641,10 @@ algorithm
     case(SOME(SCode.CONSTRAINCLASS(constrainingClass = path)),_,_)
       equation
         (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))), _) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
-        (_,classextendselts,extendselts,compelts) = splitElts(selems);
+        (classes,classextendselts,extendselts,compelts) = splitElts(selems);
         (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),  pre, extendselts, classextendselts, selems, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
         extcompelts = List.map(extcomps,Util.tuple21);
-        compelts = listAppend(compelts,extcompelts);
+        compelts = listAppend(classes,listAppend(compelts,extcompelts));
       then
         compelts;
     case (SOME(SCode.CONSTRAINCLASS(path, mod, cmt)), _, _)
