@@ -32,7 +32,7 @@ CORBAHOME = @CORBAHOME@
 
 PROG = omc
 
-SCRIPT_FILES = openmodelica.lefty convert_lines.pl default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl
+SCRIPT_FILES = openmodelica.lefty default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime modpar
