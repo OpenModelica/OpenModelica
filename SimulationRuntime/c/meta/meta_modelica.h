@@ -597,6 +597,8 @@ extern void debug__print(void*prefix,void*any); /* For debugging */
 extern void initializeStringBuffer(void);
 extern char* anyString(void*any); /* For debugging in external functions */
 extern void* mmc_anyString(void*any); /* For debugging */
+modelica_metatype mmc_gdb_listGet(threadData_t* threadData, modelica_metatype lst, modelica_integer i); /* For debugging */
+modelica_metatype mmc_gdb_arrayGet(threadData_t* threadData, modelica_metatype arr, modelica_integer i); /* For debugging */
 extern void printAny(void*any); /* For debugging */
 extern void printTypeOfAny(void*any); /* For debugging */
 extern char* getTypeOfAny(void*any); /* For debugging */
