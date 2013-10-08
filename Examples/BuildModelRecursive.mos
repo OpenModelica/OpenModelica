@@ -36,6 +36,9 @@ min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
+writeFile(statFile + \".flat\", \"killed\");getErrorString();
+writeFile(statFile + \".compile\", \"killed\");getErrorString();
+writeFile(statFile + \".sim\", \"killed\");getErrorString();
 "+loadModelCommand+"
 setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
 res:=buildModel("+s+");
@@ -62,13 +65,14 @@ simcode  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting
 templates:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
 total    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
 build    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BUILD_MODEL);
-frontend :=if frontend <> -1.0 then frontend-backend else -1.0;
-backend  :=if backend <> -1.0 then backend-simcode else -1.0;
-simcode  :=if simcode <> -1.0 then simcode-templates else -1.0;
-templates:=if templates <> -1.0 then templates-build else -1.0;
+frontend :=if backend <> -1.0 then frontend-backend else frontend;
+backend  :=if simcode <> -1.0 then backend-simcode else backend;
+simcode  :=if templates <> -1.0 then simcode-templates else simcode;
+templates:=if build <> -1.0 then templates-build else templates;
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-simRes  := if res[1] == \"\" then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
+buildRes := res[1] <> \"\";
+simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 timeSim := if simRes then timeSim else -1.0;
 if simRes then
@@ -85,6 +89,19 @@ algorithm
   str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") + 
     OpenModelica.Scripting.Internal.Time.readableTime(if time < 1e-5 then 0 else time)+\\\"</td>\\\");
 end cell;
+function testcase
+  input Real time;
+  input Boolean success;
+  input String errXML;
+  output String str;
+algorithm
+  str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
+    if not success then \\\"<error type=\\\\\\\"failed\\\\\\\" message=\\\\\\\"\\\"+errXML+\\\"\\\\\\\"/>\\\"
+    else \\\"\\\"
+// Hudson does not print any output on success
+//  else (\\\"<system-out>\\\" + errXML + \\\"</system-out>\\\")
+  )+\\\"</testcase>\n\\\";
+end testcase;
 \");getErrorString();
 sim:=readFile(simFile);
 str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\") +
@@ -94,6 +111,14 @@ str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" els
   \"<td bgcolor=\\\"\"+(if res[1]<>\"\" then greenColor else \"#FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" +
   sum(cell(d,greenColor=greenColor) for d in {frontend,backend,simcode,templates,build}) + \"</tr>\\n\";getErrorString();
 writeFile(statFile,str);getErrorString();
+errXML:=escapeXML(err);
+skip:=\"<testcase name=\\\""+s+"\\\"><skipped /></testcase>\";
+str:=testcase(frontend,backend <> -1.0,errXML);
+writeFile(statFile + \".flat\", str);getErrorString();
+str:=if frontend <> -1.0 then testcase(total,buildRes,errXML) else skip;
+writeFile(statFile + \".compile\", str);getErrorString();
+str:=if buildRes then testcase(timeSim,simRes,readFile(simFile)) else skip;
+writeFile(statFile + \".sim\", str);getErrorString();
 ") for s in a);
 getErrorString();
 results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc + " " + s + ".mos" for s in a});
@@ -118,4 +143,7 @@ writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str
 writeFile(log,"<table><tr><th>Model</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table></body></html>",append=true);getErrorString();
-system("rm tidy.err; for f in *.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
+
+{writeFile("BuildModelRecursive." + phase + ".xml", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
+
+system("rm -f tidy.err; for f in *.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
