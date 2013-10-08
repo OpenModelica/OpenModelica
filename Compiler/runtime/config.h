@@ -37,7 +37,8 @@
 #define DEFAULT_CXX "g++"
 #define DEFAULT_MAKE "make"
 
-#define DEFAULT_LDFLAGS "-lregex -lexpat -lgc -lpthread -fopenmp"
+/* adrpo: add -loleaut32 as is used by ExternalMedia */
+#define DEFAULT_LDFLAGS "-lregex -lexpat -lgc -lpthread -fopenmp -loleaut32"
 
 #define CONFIG_PLATFORM "WIN32"
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
@@ -52,7 +53,8 @@
   #define CONFIGURE_COMMANDLINE "Manually created Makefiles for Visual Studio"
 #endif
 
-#define LDFLAGS_RT " -static-libgcc -luuid -lole32 -lws2_32 -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lcoinmetis -lpthread -lm -lgfortranbegin -lgfortran -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -llapack-mingw -ltmglib-mingw -lblas-mingw -lf2c"
+/* adrpo: add -loleaut32 as is used by ExternalMedia */
+#define LDFLAGS_RT " -static-libgcc -luuid -loleaut32 -lole32 -lws2_32 -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lcoinmetis -lpthread -lm -lgfortranbegin -lgfortran -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -llapack-mingw -ltmglib-mingw -lblas-mingw -lf2c"
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"
