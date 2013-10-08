@@ -2130,9 +2130,13 @@ algorithm
 
         (env1,ih) = InstUtil.addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods)) "1. CLASS & IMPORT nodes and COMPONENT nodes(add to env)" ;
         cdefelts_1 = InstUtil.addNomod(cdefelts) "instantiate CDEFS so redeclares are carried out" ;
-        (cache,env2,ih,cdefelts_2) = updateCompeltsMods(cache,env1,ih, pre, cdefelts_1, ci_state, impl);
-        //env2 = env1;
-        //cdefelts_2 = cdefelts_1;
+        /*
+        (cache,env2,ih,cdefelts_2) = 
+          updateCompeltsMods(cache, env1, ih, pre,
+            InstUtil.sortElementList(cdefelts_1, env1, Env.inFunctionScope(env1)),
+            ci_state, impl);*/
+        env2 = env1;
+        cdefelts_2 = cdefelts_1;
 
         //(cache, cdefelts_2) = removeConditionalComponents(cache, env2, cdefelts_2, pre);
         (cache,env3,ih,store,dae1,csets,ci_state1,tys,graph) =
@@ -2416,9 +2420,13 @@ algorithm
         (cache,env3,ih) = InstUtil.addComponentsToEnv(cache, env2, ih, mods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
         //on components that are inherited.
-        (cache,env4,ih,compelts_2) = updateCompeltsMods(cache, env3, ih, pre, compelts_1, ci_state, impl);
-        //compelts_2 = extcomps;
-        //env4 = env3;
+        /*
+        (cache,env4,ih,compelts_2) = 
+          updateCompeltsMods(cache, env3, ih, pre,
+            InstUtil.sortElementList(compelts_1, env3, Env.inFunctionScope(env3)), 
+            ci_state, impl);*/
+        compelts_2 = compelts_1;
+        env4 = env3;
 
         //compelts_1 = InstUtil.addNomod(compelts);
         //cdefelts_1 = InstUtil.addNomod(cdefelts);
@@ -3191,7 +3199,10 @@ algorithm
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false); // adrpo: here SHOULD BE IMPL=TRUE! not FALSE!
 
-        (cache,env3,ih,lst_constantEls) = updateCompeltsMods(cache, env3, ih, pre, lst_constantEls, ci_state, true);
+        /*(cache,env3,ih,lst_constantEls) = 
+           updateCompeltsMods(cache, env3, ih, pre, 
+             InstUtil.sortElementList(lst_constantEls, env3, Env.inFunctionScope(env3)), 
+             ci_state, true);*/
 
         (cache,env3,ih,_,_,_,ci_state2,vars,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, ci_state1, lst_constantEls,
@@ -3550,6 +3561,7 @@ algorithm
       String comp_name;
       UnitAbsyn.InstStore store;
       list<DAE.Element> elts;
+      DAE.Mod daeMod;
 
     // Don't instantiate conditional components with condition = false.
     case (cache, env, ih, store, mod, pre, ci_state,
@@ -3569,10 +3581,11 @@ algorithm
       then
         (cache, env, ih, store, {}, csets, ci_state, {}, graph);
 
-    /* most work done in inst_element. */
+    // most work done in inst_element.
     case (cache,env,ih,store,mod,pre,ci_state,el,inst_dims,impl,callscope,graph, csets, _)
       equation
         ErrorExt.setCheckpoint("instElementList2");
+        (cache,env,ih,{el}) = updateCompeltsMods(cache, env, ih, pre, {el}, ci_state, impl);
         // Debug.fprintln(Flags.INST_TRACE, "INST ELEMENT: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.shortElementStr(Util.tuple21(el)) +& " mods: " +& Mod.printModStr(mod));
         // check for duplicate modifications
         ele = Util.tuple21(el);
@@ -4082,6 +4095,18 @@ algorithm
 
     case (cache,env,ih,pre,{},_,_) then (cache,env,ih,{});
 
+    // Instantiate the element if there is no mod
+    case (cache,env,ih,pre,((elMod as (comp,DAE.NOMOD())) :: xs),ci_state,impl)
+      equation
+        /*
+        name = SCode.elementName(comp);
+        cref = Absyn.CREF_IDENT(name,{});
+        (cache,env,ih) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), {cref}, ci_state, impl);
+        */
+        (cache,env,ih,res) = updateCompeltsMods_dispatch(cache, env, ih, pre, xs, ci_state, impl);
+      then
+        (cache,env,ih,elMod::res);
+
     // Special case for components being redeclared, we might instantiate partial classes when instantiating var(-> instVar2->instClass) to update component in env.
     case (cache,env,ih,pre,((comp,(cmod as DAE.REDECL(_,_,{(redComp,redMod)}))) :: xs),ci_state,impl)
       equation
@@ -4106,13 +4131,6 @@ algorithm
         (cache,env3,ih,res) = updateCompeltsMods_dispatch(cache, env2, ih, pre, xs, ci_state, impl);
       then
         (cache,env3,ih,((comp,cmod_1) :: res));
-
-    // No need to update a mod unless there's actually anything there.
-    case (cache,env,ih,pre,((elMod as (_,DAE.NOMOD())) :: xs),ci_state,impl)
-      equation
-        (cache,env,ih,res) = updateCompeltsMods_dispatch(cache, env, ih, pre, xs, ci_state, impl);
-      then
-        (cache,env,ih,elMod::res);
 
     // If the modifier has already been updated, just update the environment with it.
     case (cache,env,ih,pre,((comp, cmod as DAE.MOD(subModLst = _)) :: xs),ci_state,impl)

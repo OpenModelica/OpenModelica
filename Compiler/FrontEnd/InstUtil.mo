@@ -1981,6 +1981,8 @@ algorithm
       Absyn.Direction direction;
       list<tuple<SCode.Element, DAE.Mod>> inAllElements;
       SCode.Replaceable rp;
+      list<SCode.Element> els;
+      Option<SCode.ExternalDecl> externalDecl;
 
     // For constants and parameters we check the component conditional, array dimensions, modifiers and binding
     case ((SCode.COMPONENT(name = name, condition = cExpOpt,
@@ -2052,25 +2054,49 @@ algorithm
         (_, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(sexps, exps);
         deps = getDepsFromExps(exps, inAllElements, {});
+        deps = removeCurrentElementFromArrayDimDeps(name, deps);
       then
         deps;
 
     // We might have functions here and their input/output elements can have bindings from the list
-    // see reference_X in PartialMedium.
-    /* this might not be really needed for now.
-    case ((SCode.CLASS(name = name, restriction = SCode.R_FUNCTION(_), classDef = SCode.PARTS(elementLst = els)),
+    // see reference_X in PartialMedium
+    // see ExternalMedia.Media.ExternalTwoPhaseMedium.FluidConstants 
+    //     which depends on function calls which depend on package constants inside external decl
+    case ((SCode.CLASS(name = name,
+                       prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
+                       classDef = SCode.PARTS(elementLst = els, externalDecl = externalDecl)),
            daeMod), (inAllElements, _))
       equation
-        exps = getExpsFromDefaults(els, {});
+        exps = getExpsFromExternalDecl(externalDecl);
+        /*
+        exps = getExpsFromDefaults(els, exps);
+        (bexps, sexps) = getExpsFromConstrainClass(rp);
+        exps = listAppend(bexps, listAppend(sexps, exps));
         (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
         exps = listAppend(bexps, listAppend(sexps, exps));
+        */
         deps = getDepsFromExps(exps, inAllElements, {});
+        deps = removeCurrentElementFromArrayDimDeps(name, deps);
       then
-        deps;*/
+        deps;
 
     else then {};
   end matchcontinue;
 end getElementDependencies;
+
+protected function getExpsFromExternalDecl
+"get dependencies from external declarations"
+  input Option<SCode.ExternalDecl> inExternalDecl;
+  output list<Absyn.Exp> outExps;
+algorithm
+  outExps := match(inExternalDecl)
+    local list<Absyn.Exp> exps;
+    case (NONE()) then {};
+    case (SOME(SCode.EXTERNALDECL(args = exps)))
+      then
+        exps;
+  end match;
+end getExpsFromExternalDecl;
 
 protected function getExpsFromDefaults
   input SCode.Program inEls;
@@ -2080,22 +2106,22 @@ algorithm
   outExps := matchcontinue(inEls, inAcc)
     local
       SCode.Program rest;
-      list<Absyn.Exp> exps, acc;
+      list<Absyn.Exp> exps, sexps, bexps, acc;
       SCode.Mod m;
+      SCode.Replaceable rp;
 
     case ({}, _) then inAcc;
 
-    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.INPUT()), modifications = m)::rest, _)
+    case (SCode.COMPONENT(
+                  prefixes = SCode.PREFIXES(replaceablePrefix = rp), 
+                  modifications = m)::rest, _)
       equation
-        (exps, _) = getExpsFromMod(m);
-        exps = getExpsFromDefaults(rest, listAppend(exps, inAcc));
-      then
-        exps;
-
-    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT()), modifications = m)::rest, _)
-      equation
-        (exps, _) = getExpsFromMod(m);
-        exps = getExpsFromDefaults(rest, listAppend(exps, inAcc));
+        exps = inAcc;
+        (bexps, sexps) = getExpsFromConstrainClass(rp);
+        exps = listAppend(bexps, listAppend(sexps, exps));
+        (bexps, sexps) = getExpsFromMod(m);
+        exps = listAppend(bexps, listAppend(sexps, exps));
+        exps = getExpsFromDefaults(rest, exps);
       then
         exps;
 
@@ -2133,9 +2159,7 @@ algorithm
       then
         ((exp, (all_el, e :: accum_el)));
 
-    /* adpro: add function calls crefs too!
-       this works fine but changes order in too many
-       models, i'll enable this and update them later
+    // adpro: add function calls crefs too!
     case ((exp as Absyn.CALL(function_ = cref), (all_el, accum_el)))
       equation
         id = Absyn.crefFirstIdent(cref);
@@ -2144,7 +2168,7 @@ algorithm
         // ensures that we don't add any dependency more than once.
         (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
       then
-        ((exp, (all_el, e :: accum_el)));*/
+        ((exp, (all_el, e :: accum_el)));
 
     else then inTuple;
   end matchcontinue;
