@@ -3296,7 +3296,7 @@ algorithm
         true = BackendVariable.isStateVar(v);
         cr = BackendVariable.varCref(v);
       then ((v,(inp,st+1,cr::states,dvar,discvars)));
-	case ((v,(inp,st,states,dvar,discvars)))
+  case ((v,(inp,st,states,dvar,discvars)))
       equation
         true = BackendVariable.isVarDiscrete(v);
         cr = BackendVariable.varCref(v);
