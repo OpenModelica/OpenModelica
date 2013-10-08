@@ -97,9 +97,8 @@ function testcase
 algorithm
   str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
     if not success then \\\"<error type=\\\\\\\"failed\\\\\\\" message=\\\\\\\"\\\"+errXML+\\\"\\\\\\\"/>\\\"
+    elseif errXML <> \\\"\\\" then (\\\"<system-out>\\\" + errXML + \\\"</system-out>\\\")
     else \\\"\\\"
-// Hudson does not print any output on success
-//  else (\\\"<system-out>\\\" + errXML + \\\"</system-out>\\\")
   )+\\\"</testcase>\n\\\";
 end testcase;
 \");getErrorString();
