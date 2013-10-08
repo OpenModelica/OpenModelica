@@ -708,12 +708,12 @@ algorithm
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
     
-    case (BackendDAE.EQUATIONSYSTEM(vars=vlst)::rest, _) equation
+    case (BackendDAE.EQUATIONSYSTEM(vars=vlst, jacType=BackendDAE.JAC_NONLINEAR())::rest, _) equation
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       varlst = filterVarsWithoutStartValue(varlst);
       false = List.isEmpty(varlst);
       
-      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in equation system:\n" +& warnAboutVars2(varlst));
+      Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Iteration variables with default zero start attribute in nonlinear equation system:\n" +& warnAboutVars2(varlst));
       _ = warnAboutIterationVariablesWithDefaultZeroStartAttribute2(rest, inVars);
     then true;
         
