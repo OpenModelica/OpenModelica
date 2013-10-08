@@ -365,6 +365,9 @@ constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(99, "disableSingleFlowEq"
   Util.gettext("Disables the generation of single flow equations."));
 constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(100, "partlintornsystem", false,
   Util.gettext("disassembles linear torn systems to various singleEquations and a reduced tornSystem"));
+constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(101, "discreteinfo", false,
+  Util.gettext("Enables dumping of discrete variables. Works only in combination with backenddaeinfo."));
+  
   
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -470,7 +473,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_SCC_GRAPHML,
   TEARING_DUMPVERBOSE,
   DISABLE_SINGLE_FLOW_EQ,
-  PARTLINTORNSYSTEM
+  PARTLINTORNSYSTEM,
+  DUMP_DISCRETEVARS_INFO
 };
 
 // CONFIGURATION FLAGS
