@@ -429,8 +429,13 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
     fclose(file);
     return 1;
   }
-#define ABC __FILE__
-  fprintf(file,"#define OMC_FILE __FILE__\n#line %ld OMC_FILE\n", nlines++);
+  fprintf(file,"#ifdef __BASE_FILE__\n"
+               "  #define OMC_FILE __BASE_FILE__\n"
+               "#else\n"
+               "  #define OMC_FILE \"%s\"\n"
+               "#endif\n"
+               "#line %ld OMC_FILE\n",
+               filename, nlines++);
   do {
     next = strchr(str,'\n');
     if (!next) {
