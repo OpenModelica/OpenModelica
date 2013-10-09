@@ -4,6 +4,7 @@ builddir_share=$(top_builddir)/build/share/
 runtimedir=$(top_builddir)/Compiler/runtime/
 
 QMAKE=@QMAKE@
+APP=@APP@
 EXE=@EXE@
 NAME=OMShell
 
@@ -15,7 +16,7 @@ Makefile: OMShell.config
 	$(QMAKE)
 
 clean: Makefile
-	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(EXE) omc_communication.* Makefile
+	rm -rf ../bin/$(NAME) ../bin/$(NAME)$(APP) omc_communication.* Makefile
 
 omc_communication.cc omc_communication.h: $(runtimedir)/omc_communication.idl
 	@IDLCMD@ $<
@@ -25,7 +26,7 @@ $(NAME): Makefile OMShell.config omc_communication.cc
 
 build: $(NAME)
 	mkdir -p $(builddir_share)/omshell/nls/
-	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/$(NAME)$(EXE) $(top_builddir)/build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin); fi
+	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/$(NAME)$(APP) $(top_builddir)/build/Applications/ ; else cp -p ../bin/$(NAME) $(builddir_bin); fi
 	cp -p $(top_builddir)/OMNotebook/OMNotebookGUI/commands.xml $(builddir_share)/omshell/
 	cp -p OMShell_*.qm $(builddir_share)/omshell/nls/
 
