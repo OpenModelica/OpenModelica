@@ -4,6 +4,7 @@ builddir_share=$(top_builddir)/build/share/
 runtimedir=$(top_builddir)/Compiler/runtime/
 
 QMAKE=@QMAKE@
+APP=@APP@
 EXE=@EXE@
 NAME=OMPlot
 LIB=libOMPlot
@@ -23,12 +24,12 @@ Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
 clean:
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean
-	rm -rf $(NAME) $(NAME)$(EXE) Makefile
+	rm -rf $(NAME) $(NAME)$(APP) Makefile
 
-$(NAME)$(EXE): Makefile $(LIB)
+$(NAME)$(APP): Makefile $(LIB)
 	$(MAKE) -f Makefile
-ifeq ($(EXE),.app)
-$(NAME): $(NAME)$(EXE) always
+ifeq ($(APP),.app)
+$(NAME): $(NAME)$(APP) always
 	cp -p ../bin/$</Contents/MacOS/$(NAME) ../bin/$@
 endif
 
