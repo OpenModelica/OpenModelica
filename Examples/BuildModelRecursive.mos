@@ -33,8 +33,10 @@ system("rm -f "+libraryString+"* " + log);
 /*** This is the stuff executed for each model ***/
 
 min(writeFile(s + ".mos","
-writeFile(\""+log+"\",\""+s+"\n\",append=true);
+\""+s+"\";
+echo(false);
 statFile := \""+s+".stat\";
+writeFile(\""+log+"\",\""+s+"\n\",append=true);
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
 writeFile(statFile + \".flat\", \"killed\");getErrorString();
 writeFile(statFile + \".compile\", \"killed\");getErrorString();
@@ -58,7 +60,6 @@ if err <> \"\" then
   writeFile(errFile,err);
 end if;
 
-echo(false);
 frontend :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
 backend  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
 simcode  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
@@ -96,10 +97,13 @@ function testcase
   output String str;
 algorithm
   str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
-    if not success then \\\"<error type=\\\\\\\"failed\\\\\\\" message=\\\\\\\"\\\"+errXML+\\\"\\\\\\\"/>\\\"
-    elseif errXML <> \\\"\\\" then (\\\"<system-out>\\\" + errXML + \\\"</system-out>\\\")
+    if not success then \\\"<error type=\\\\\\\"Failure\\\\\\\" />\\\"
     else \\\"\\\"
-  )+\\\"</testcase>\n\\\";
+  )+(
+    if errXML <> \\\"\\\" then (\\\"<system-out>\\\" + errXML + \\\"</system-out>\\\")
+    else \\\"\\\"
+  )+
+  \\\"</testcase>\n\\\";
 end testcase;
 \");getErrorString();
 sim:=readFile(simFile);
@@ -114,7 +118,7 @@ errXML:=escapeXML(err);
 skip:=\"<testcase name=\\\""+s+"\\\"><skipped /></testcase>\";
 str:=testcase(frontend,backend <> -1.0,errXML);
 writeFile(statFile + \".flat\", str);getErrorString();
-str:=if frontend <> -1.0 then testcase(total,buildRes,errXML) else skip;
+str:=if backend <> -1.0 then testcase(total,buildRes,errXML) else skip;
 writeFile(statFile + \".compile\", str);getErrorString();
 str:=if buildRes then testcase(timeSim,simRes,readFile(simFile)) else skip;
 writeFile(statFile + \".sim\", str);getErrorString();
