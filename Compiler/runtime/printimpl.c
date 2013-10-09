@@ -378,7 +378,7 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
   regex_t re_begin,re_end;
   regmatch_t matches[3];
   int i;
-  long nlines=3 /* We start at 3 because we write 2 lines before the first line */, modelicaLine = 0;
+  long nlines=6 /* We start at 6 because we write 6 lines before the first line */, modelicaLine = 0;
   /* What we try to match: */
   /*#modelicaLine [/path/to/a.mo:4:3-4:12]*/
   /*#endModelicaLine*/
@@ -429,13 +429,21 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
     fclose(file);
     return 1;
   }
-  fprintf(file,"#ifdef __BASE_FILE__\n"
-               "  #define OMC_FILE __BASE_FILE__\n"
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  /* on Windows change the backslashes to forward slashes */
+  strtmp = _replace(filename, "\\", "/");
+#endif
+  fprintf(file,"#ifdef OMC_BASE_FILE\n"
+               "  #define OMC_FILE OMC_BASE_FILE\n"
                "#else\n"
                "  #define OMC_FILE \"%s\"\n"
-               "#endif\n"
-               "#line %ld OMC_FILE\n",
-               filename, nlines++);
+               "#endif\n",
+#if defined(__MINGW32__) || defined(_MSC_VER)
+               strtmp);
+  free(strtmp);
+#else
+               filename);
+#endif
   do {
     next = strchr(str,'\n');
     if (!next) {
@@ -448,20 +456,20 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
       str[matches[2].rm_eo] = '\0';
       modelicaFileName = str + matches[1].rm_so;
       modelicaLine = strtol(str + matches[2].rm_so, NULL, 10);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+      /* on Windows change the backslashes to forward slashes */
+      modelicaFileName = _replace(modelicaFileName, "\\", "/");
+#endif
     } else if (0==regexec(&re_end, str, 3, matches, 0)) {
       if (modelicaFileName) { /* There is sometimes #endModlicaLine without a matching #modelicaLine */
+#if defined(__MINGW32__) || defined(_MSC_VER)
+        free(modelicaFileName);
+#endif
         modelicaFileName = NULL;
         fprintf(file,"#line %ld OMC_FILE\n", nlines++);
       }
     } else if (modelicaFileName) {
-#if defined(__MINGW32__) || defined(_MSC_VER)
-      /* on Windows escape the backslashes */
-      strtmp = _replace(modelicaFileName, "\\", "\\\\");
-      fprintf(file,"#line %ld \"%s\"\n", modelicaLine, strtmp);
-      free(strtmp);
-#else /* real OSes */
       fprintf(file,"#line %ld \"%s\"\n", modelicaLine, modelicaFileName);
-#endif
       fprintf(file,"%s\n", str);
       nlines+=2;
     } else {
@@ -470,6 +478,11 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
     }
     str = next;
   } while (1);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (modelicaFileName) {
+    free(modelicaFileName);
+  }
+#endif
   /* We do destructive updates on the print buffer; hide our tracks */
   *buf = 0;
   nfilled = 0;
