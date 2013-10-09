@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2013, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -106,9 +106,9 @@
 #endif
 
 #ifdef CONFIG_REVISION
-#define CONFIG_VERSION "1.9.0 (r" CONFIG_REVISION ")"
+#define CONFIG_VERSION "1.9.1+dev (r" CONFIG_REVISION ")"
 #else
-#define CONFIG_VERSION "1.9.0"
+#define CONFIG_VERSION "1.9.1+dev"
 #endif
 
 
