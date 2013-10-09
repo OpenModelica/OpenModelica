@@ -13,13 +13,14 @@ resourcedir=./Resources/nls/
   
 NAME=OMEdit
 EXE=@EXE@
+APP=@APP@
 QMAKE=@QMAKE@
 LRELEASE=@LRELEASE@
 
 install: build Resources/nls/qm.stamp
 	mkdir -p ../../build/share/omedit/nls/
 	cp -p $(resourcedir)/*.qm ../../build/share/omedit/nls/
-	if [ "$(EXE)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
+	if [ "$(APP)" = ".app" ]; then cp -rp ../bin/OMEdit.app ../../build/Applications/ ; else cp -p ../bin/OMEdit ../../build/bin/OMEdit; fi
 
 Resources/nls/qm.stamp: OMEditGUI.pro Resources/nls/*.ts
 	$(LRELEASE) $<
