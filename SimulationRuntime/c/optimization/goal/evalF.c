@@ -212,6 +212,7 @@ int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *dF, i
   x = v;
   u = x + iData->nx;
   refreshSimData(x,u,t,iData);
+  functionAlgebraics(iData->data);
 
   if(iData->matrixC ==0){
     for(i= 0, k = 0; i<iData->nx; ++i, ++k)
