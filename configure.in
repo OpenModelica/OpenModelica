@@ -73,6 +73,7 @@ AC_SUBST(AR)
 AC_SUBST(AR_SH)
 AC_SUBST(CPPFLAGS_F2C)
 AC_SUBST(LDFLAGS_SOCKET)
+AC_SUBST(APP)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
