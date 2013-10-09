@@ -137,8 +137,8 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 
     //save discrete varibales
     event_system->saveDiscreteVars(); // store values of discrete vars vor next check
-	
-	int dim = event_system->getDimZeroFunc();
+  
+  int dim = event_system->getDimZeroFunc();
     bool* conditions0 = new bool[dim];
     bool* conditions1 = new bool[dim];
     event_system->getConditions(conditions0);

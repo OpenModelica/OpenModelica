@@ -21,7 +21,7 @@ void Initialization::initializeSystem()
     bool* conditions1 = new bool[dim];
    
     _system->setInitial(true);
-	//Initialization of continous equations and bounded parameters
+  //Initialization of continous equations and bounded parameters
     _system->initialize();
     bool restart=true;
    int iter=0;
