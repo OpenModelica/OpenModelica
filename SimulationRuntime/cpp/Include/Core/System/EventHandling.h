@@ -6,7 +6,7 @@ Implements the Modelica pre,edge,change operators
 Holds a help vector for the discrete variables
 Holds an event queue to handle all events occured at the same time
 */
-typedef boost::function<void (unsigned int)> resetHelpVar_type;
+typedef boost::function<bool (unsigned int)> getCondition_type;
 class BOOST_EXTENSION_EVENTHANDLING_DECL EventHandling
 {
 public:
@@ -35,9 +35,7 @@ public:
     bool edge(double var,string key);
     //Implementation of the Modelica change  operator
     bool change(double var,string key);
-    //Implementation of the Modelica change  operator
-    double sample(double start,double interval);
-    //Adds an event to the eventqueue
+      //Adds an event to the eventqueue
     void addEvent(long index);
     //removes an event from the eventqueue
     void removeEvent(long index);
@@ -46,12 +44,9 @@ public:
 
     void saveDiscreteVar(double var,string key);
     bool changeDiscreteVar(double var,string key);
-    void addTimeEvent(long index,double time);
-    void addTimeEvents( event_times_type times);
-     event_times_type makePeriodeEvents(double ts,double te,double ti,long index);
-    ///returns the vector with all time events
-     event_times_type& getTimeEvents();
-    resetHelpVar_type  resetHelpVar;
+   
+  
+    getCondition_type  getCondition;
 private:
     //Stores all varibales occured before an event
     unordered_map<string,double> _pre_vars;

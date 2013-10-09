@@ -81,8 +81,7 @@ void EventHandling::setHelpVar(unsigned int i,double var)
 const double& EventHandling::operator[](unsigned int i) const
 {
   assert(i >= 0 && i < _dimH);
-  //update helpvar before return
-  resetHelpVar(i);
+
   return _h[i];
 }
 /**
@@ -125,13 +124,7 @@ bool EventHandling::changeDiscreteVar(double var,string key)
     return var != _pre_discrete_vars[key];
 }
 
-/**
-Implementation of the Modelica change  operator
-*/
-double EventHandling::sample(double start,double interval)
-{
-  return 0.0;
-}
+
 /**
 Handles  all events occured a the same time. These are stored  the eventqueue
 */
@@ -144,7 +137,11 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
 
     //save discrete varibales
     event_system->saveDiscreteVars(); // store values of discrete vars vor next check
-
+	
+	int dim = event_system->getDimZeroFunc();
+    bool* conditions0 = new bool[dim];
+    bool* conditions1 = new bool[dim];
+    event_system->getConditions(conditions0);
     //Handle all events
 
     state_vars_reinitialized =     countinous_system->evaluate();  
@@ -153,50 +150,30 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
     //check if discrete variables changed
     bool drestart= event_system->checkForDiscreteEvents();
 
-    //update all conditions    
-    bool crestart=event_system->checkConditions(0,true);
-   
+    
+    event_system->getConditions(conditions1);
+    bool crestart = !std::equal (conditions1, conditions1+dim,conditions0);
   
     return((drestart||crestart)); //returns true if new events occured
 }
 
-
-
-void EventHandling::addTimeEvent(long index,double time)
-{
-   _time_events.insert(make_pair(time,index));
+/*
+bool EventHandling::checkConditions(const bool* events, bool all)
+ {
+       IEvent* event_system= dynamic_cast<IEvent*>(_system);
+       int dim = event_system->getDimZeroFunc();
+       bool* conditions0 = new bool[dim];
+       bool* conditions1 = new bool[dim];
+       event_system->getConditions(conditions0);
+       
+       for(int i=0;i<dim;i++)
+       {
+         if(all||events[i])
+            getCondition(i);
+       }
+       event_system->getConditions(conditions1);
+       return !std::equal (conditions1, conditions1+dim,conditions0);
+       
 }
-void  EventHandling::addTimeEvents( event_times_type times)
-{
+*/
 
-   event_times_type::iterator iter,iter2;
-
-   for( iter=times.begin();iter!=times.end();++iter)
-   {
-       //check if time event already exists
-      iter2 = find_if( _time_events.begin(), _time_events.end(), floatCompare<double>(iter->first, 1e-10) );
-       if(iter2==_time_events.end())
-        _time_events.insert(*iter);
-   }
-
-}
-
-event_times_type EventHandling::makePeriodeEvents(double ts,double te,double interval,long index)
-{
-    using namespace boost::math::tools;
-    event_times_type periode;
-    if((te < ts)||(interval==0.0))
-       throw std::runtime_error("wrong make sample parameters");
-     double val = ts;
-     while(val < te)
-     {
-         periode.insert(make_pair(real_cast<double>(val),index));
-         val += interval;
-     }
-     return periode;
-}
-
- event_times_type& EventHandling::getTimeEvents()
-{
-    return _time_events;
-}

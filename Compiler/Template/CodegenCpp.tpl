@@ -17,6 +17,8 @@ template translateModel(SimCode simCode) ::=
   // empty result of the top-level template .., only side effects
 end translateModel;
 
+
+
 template translateFunctions(FunctionCode functionCode)
  "Generates C code and Makefile for compiling and calling Modelica and
   MetaModelica functions."
@@ -255,7 +257,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Initialize the state vector
     SystemDefaultImplementation::initialize();
     //Instantiate auxiliary object for event handling functionality
-    _event_handling.resetHelpVar =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::resetHelpVar, this, _1);
+    _event_handling.getCondition =  boost::bind(&<%lastIdentOfPath(modelInfo.name)%>::getCondition, this, _1);
     _historyImpl = new HistoryImplType(*globalSettings);
     <%arrayReindex(modelInfo)%>
     //Initialize array elements
@@ -276,7 +278,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%checkForDiscreteEvents(discreteModelVars,simCode)%>
    <%giveZeroFunc1(zeroCrossings,simCode)%>
    <%setConditions(simCode)%>
-   <%giveConditions(simCode)%>
+   <%geConditions(simCode)%>
    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode)%>
    <%generatehandleTimeEvent(sampleLookup,simCode)%>
    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
@@ -287,11 +289,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%DimZeroFunc(simCode)%>
    <%GetIntialStatus(simCode)%>
    <%SetIntialStatus(simCode)%>
-   <%checkConditions(zeroCrossings,whenClauses,simCode)%>
+   
+  
+   <%getCondition(zeroCrossings,whenClauses,simCode)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
    <%saveall(modelInfo,simCode)%>
    <%savediscreteVars(modelInfo,simCode)%>
-   <%resethelpvar(whenClauses,simCode)%>
    <%LabeledDAE(modelInfo.labels,simCode)%>
    <%functionAnalyticJacobians(jacobianMatrixes,simCode)%>
    <%giveVariables(modelInfo)%>
@@ -1566,22 +1569,28 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::initialize()
    {
+   
       <%generateAlgloopsolvers( listAppend(allEquations,initialEquations),simCode)%>
       _simTime = 0.0;
      _historyImpl->init();
     <%varDecls%>
     <%initVariables%>
    <%initFunctions%>
-     checkConditions(NULL,true);
+     _event_handling.initialize(this,<%helpvarlength(simCode)%>);
+    
+    
+   
     <%initEventHandling%>
-    _event_handling.initialize(this,<%helpvarlength(simCode)%>);
       map<unsigned int,string> var_ouputs_idx;
     <%initOutputIndices%>
    _historyImpl->setOutputs(var_ouputs_idx);
    _historyImpl->clear();
     <%initALgloopSolvers%>
     initEquations();
-       
+    for(int i=0;i<_dimZeroFunc;i++)
+    {
+       getCondition(i);
+    }
   initialAnalyticJacobian();
   saveAll();
     }
@@ -2126,12 +2135,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       ~<%lastIdentOfPath(modelInfo.name)%>();
 
        <%generateMethodDeclarationCode(simCode)%>
-
+  bool getCondition(unsigned int index);
   private:
     //Methods:
      void initEquations();
-
-     void resetHelpVar(const int index);
+  
+    
      void initialAnalyticJacobian();
      void calcJacobianColumn();
      //Variables:
@@ -2472,9 +2481,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     //Provides current values of root/zero functions
      virtual void getZeroFunc(double* f);
       virtual void setConditions(bool* c);
-    virtual void giveConditions(bool* c);
-    //Called to check conditions for event-handling
-    virtual bool checkConditions(const bool* events, bool all);
+    virtual void getConditions(bool* c);
+  
+    
      //Called to handle all  events occured at same time
     virtual bool handleSystemEvents( bool* events);
     //Called to handle an event
@@ -4139,8 +4148,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     else
     <<
 
-     if(!(command & IContinuous::RANKING))
-    {
+  
 
     try
       {
@@ -4151,14 +4159,14 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
        } 
 
-    }
-       else _algLoop<%i%>->initialize();
+   
      
       >>
     end match
       
      
   case e as SES_MIXED(__)
+  /*<%equationMixed(e, context, &varDecls, simCode)%>*/
     then
     <<
         throw std::runtime_error("Mixed systems are not supported yet");
@@ -4166,9 +4174,14 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   else
     "NOT IMPLEMENTED EQUATION"
 end equation_;
-
-
- /*<%equationMixed(e, context, &varDecls, simCode)%>*/
+/*ranking: removed from equation_ before try block:
+   if(!(command & IContinuous::RANKING))
+    {
+    
+     }
+       else _algLoop<%i%>->initialize();
+ */
+ 
 
 
 
@@ -4203,7 +4216,7 @@ case SES_MIXED(__) then
        {
          <%discVars |> SIMVAR(__) hasindex i0 => 'pre_disc_vars<%num%>[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
           <%contEqs%>
-           checkConditions(NULL,true);
+         
           <%preDisc%>
          <%discvars2%>
          bool* cur_disc_vars<%num%>[<%numDiscVarsStr%>]= {<%discVars |> SIMVAR(__) => '&<%cref(name)%>' ;separator=", "%>};
@@ -4755,17 +4768,7 @@ case SIM_WHEN_CLAUSE(__) then
 >>
 end helpvarvector1;
 
-template resethelpvar(list<SimWhenClause> whenClauses,SimCode simCode)
-::=
-match simCode
-case SIMCODE(modelInfo = MODELINFO(__)) then
-  <<
-   void <%lastIdentOfPath(modelInfo.name)%>::resetHelpVar(const int index)
-   {
-     // removed
-   }
-  >>
-end resethelpvar;
+
 
 template preCref(ComponentRef cr, SimCode simCode, Context context) ::=
 'pre<%representationCref(cr, simCode,context)%>'
@@ -6172,6 +6175,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    void <%lastIdentOfPath(modelInfo.name)%>::setInitial(bool status)
     {
       _initial = status;
+      if(_initial)
+        _callType = IContinuous::DISCRETE;
+      else
+       _callType = IContinuous::CONTINUOUS;
+  
     }
   >>
 end SetIntialStatus;
@@ -6188,7 +6196,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   >>
 end GetIntialStatus;
 
-
+template daeExpRelation2(Context context,Integer index) ::=
+match context
+    case ALGLOOP_CONTEXT(genInitialisation = false) 
+        then  <<_system->getCondition(<%index%>)>>
+    else
+       <<getCondition(<%index%>)>>
+end daeExpRelation2;
 template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context context, Text &preExp,Text &varDecls,SimCode simCode) ::=
   let e1 = daeExp(exp1, context, &preExp, &varDecls,simCode)
   let e2 = daeExp(exp2, context, &preExp, &varDecls,simCode)
@@ -6235,35 +6249,35 @@ template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context c
       end match
   case _ then
      match op
-    case LESS(ty = T_BOOL(__))        then '_conditions[<%index%>]'
+    case LESS(ty = T_BOOL(__))        then daeExpRelation2(context,index)
     case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
     case LESS(ty = T_INTEGER(__))
-    case LESS(ty = T_REAL(__))        then '_conditions[<%index%>]'
+    case LESS(ty = T_REAL(__))        then daeExpRelation2(context,index)
 
-    case GREATER(ty = T_BOOL(__))     then '_conditions[<%index%>]'
+    case GREATER(ty = T_BOOL(__))     then daeExpRelation2(context,index)
     case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
     case GREATER(ty = T_INTEGER(__))
-    case GREATER(ty = T_REAL(__))     then '_conditions[<%index%>]'
+    case GREATER(ty = T_REAL(__))     then daeExpRelation2(context,index)
 
-    case LESSEQ(ty = T_BOOL(__))      then '_conditions[<%index%>]'
+    case LESSEQ(ty = T_BOOL(__))      then daeExpRelation2(context,index)
     case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
     case LESSEQ(ty = T_INTEGER(__))
-    case LESSEQ(ty = T_REAL(__))       then '_conditions[<%index%>]'
+    case LESSEQ(ty = T_REAL(__))       then daeExpRelation2(context,index)
 
-    case GREATEREQ(ty = T_BOOL(__))   then '_conditions[<%index%>]'
+    case GREATEREQ(ty = T_BOOL(__))   then daeExpRelation2(context,index)
     case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
     case GREATEREQ(ty = T_INTEGER(__))
-    case GREATEREQ(ty = T_REAL(__))   then '_conditions[<%index%>]'
+    case GREATEREQ(ty = T_REAL(__))   then daeExpRelation2(context,index)
 
-    case EQUAL(ty = T_BOOL(__))       then '_conditions[<%index%>]'
+    case EQUAL(ty = T_BOOL(__))       then daeExpRelation2(context,index)
     case EQUAL(ty = T_STRING(__))
     case EQUAL(ty = T_INTEGER(__))
-    case EQUAL(ty = T_REAL(__))       then '_conditions[<%index%>]'
+    case EQUAL(ty = T_REAL(__))       then daeExpRelation2(context,index)
 
-    case NEQUAL(ty = T_BOOL(__))      then '_conditions[<%index%>]'
+    case NEQUAL(ty = T_BOOL(__))      then daeExpRelation2(context,index)
     case NEQUAL(ty = T_STRING(__))
     case NEQUAL(ty = T_INTEGER(__))
-    case NEQUAL(ty = T_REAL(__))      then '_conditions[<%index%>]'
+    case NEQUAL(ty = T_REAL(__))      then daeExpRelation2(context,index)
     case _                         then "daeExpRelationCondition:ERR"
       end match
 end daeExpRelation;
@@ -6799,18 +6813,47 @@ template checkConditions(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> wh
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
 <<
-   bool <%lastIdentOfPath(modelInfo.name)%>::checkConditions(const bool* events, bool all)
+   bool <%lastIdentOfPath(modelInfo.name)%>::checkConditions()
    {
-      bool* conditions0 = new bool[_dimZeroFunc];
-      memcpy(conditions0,_conditions,(int)_dimZeroFunc*sizeof(bool));
-      <%varDecls%>
-
-      <%zeroCrossingsCode%> 
-      return !std::equal (_conditions, _conditions+_dimZeroFunc,conditions0);     
-
+   _callType = IContinuous::DISCRETE;
+    return  _event_handling.checkConditions(0,true);
+      _callType = IContinuous::CONTINUOUS;
    }
 >>
 end checkConditions;
+
+
+template getCondition(list<ZeroCrossing> zeroCrossings,list<SimWhenClause> whenClauses,SimCode simCode)
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let zeroCrossingsCode = checkConditions1(zeroCrossings, &varDecls /*BUFD*/, simCode)
+match zeroCrossings
+case {} then
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+<<
+   bool <%lastIdentOfPath(modelInfo.name)%>::getCondition(unsigned int index)
+   {
+        return false;
+   }
+>>
+end match
+else
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+<<
+   bool <%lastIdentOfPath(modelInfo.name)%>::getCondition(unsigned int index)
+   {
+      <%varDecls%>
+       switch(index)
+       {
+          <%zeroCrossingsCode%> 
+       };  
+
+   }
+>>
+end match
+end getCondition;
 
 template checkConditions1(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
@@ -6830,13 +6873,18 @@ template checkConditions2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,
     let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let res = tempDecl("bool", &varDecls /*BUFC*/)
     <<
-    <%preExp%>
-    if(all||events[<%zerocrossingIndex%>])
+    case <%zerocrossingIndex%>:
     {
-      <%res%>=(<%e1%><%op%><%e2%>);
-      _conditions[<%zerocrossingIndex%>]=<%res%>;
+       if(_callType & IContinuous::DISCRETE)
+       {
+            <%preExp%>
+            <%res%>=(<%e1%><%op%><%e2%>);
+            _conditions[<%zerocrossingIndex%>]=<%res%>;
+            return <%res%>;
+       }
+       else
+            return _conditions[<%zerocrossingIndex%>];
     }
-    
    >>
   
 end checkConditions2;
@@ -6849,12 +6897,13 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
   <<
   bool <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(bool* events)
   {
+    _callType = IContinuous::DISCRETE;
     bool restart=true;
     bool state_vars_reinitialized = false;
     int iter=0;
+  
     
-    checkConditions(events,false);
-    
+  
     while(restart && !(iter++ > 100))
     {
             bool st_vars_reinit = false; 
@@ -6870,6 +6919,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
    
     if(iter>100 && restart ){
      throw std::runtime_error("Number of event iteration steps exceeded at time: " + boost::lexical_cast<string>(_simTime) );}
+    _callType = IContinuous::CONTINUOUS;
     return state_vars_reinitialized;
    }
   >>
@@ -6916,17 +6966,17 @@ template setConditions(SimCode simCode)
 >>
 end setConditions;
 
-template giveConditions(SimCode simCode)
+template geConditions(SimCode simCode)
 ::=
  match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
 <<
- void <%lastIdentOfPath(modelInfo.name)%>::giveConditions(bool* c)
+ void <%lastIdentOfPath(modelInfo.name)%>::getConditions(bool* c)
   {
     memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
   }
 >>
-end giveConditions;
+end geConditions;
 
 template saveConditions(SimCode simCode)
 ::=
@@ -7226,14 +7276,13 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
     bool state_var_reinitialized = false;
     <%varDecls%>
 
-    if(command & IContinuous::RANKING) checkConditions(0,true);
       <%all_equations%>
     <%reinit%>
     return state_var_reinitialized;
   }
   >>
 end update;
-
+ /*Ranking: removed from update: if(command & IContinuous::RANKING) checkConditions();*/
 
 template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int,SimCode simCode, Context context)
 ::=

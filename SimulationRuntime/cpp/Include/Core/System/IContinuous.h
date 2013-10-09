@@ -23,11 +23,12 @@ public:
     enum UPDATETYPE
     {
         UNDEF_UPDATE  =  0x00000000,
-
         ACROSS      =  0x00000001,
         THROUGH      =  0x00000002,
         ALL        =  0x00000003,
-        RANKING      =  0x00000010      ///< Ranking Method  
+        DISCRETE   = 0x00000004,
+        CONTINUOUS  = 0x00000008,
+        RANKING      =  0x00000016      ///< Ranking Method  
     };
 
 

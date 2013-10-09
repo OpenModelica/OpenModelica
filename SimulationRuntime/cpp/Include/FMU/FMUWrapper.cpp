@@ -113,7 +113,11 @@ fmiStatus FMUWrapper::initialize(fmiBoolean toleranceControlled, fmiReal relativ
   }
 
   _model->saveAll();
-  _model->checkConditions(0,true);
+   int dim = _model->getDimZeroFunc();
+   for(int i=0;i<dim;i++)
+   {
+     _model->getCondition(i);
+   }
  
   _model->setInitial(false);
   _need_update = false;
@@ -128,7 +132,7 @@ fmiStatus FMUWrapper::getEventIndicators(fmiReal eventIndicators[], size_t ni)
 {
   updateModel();
   bool conditions[NUMBER_OF_EVENT_INDICATORS];
-  _model->giveConditions(conditions);
+  _model->getConditions(conditions);
   _model->getZeroFunc(eventIndicators);
   for(int i = 0; i < ni; i++)
     if(!conditions[i]) eventIndicators[i] = -eventIndicators[i];

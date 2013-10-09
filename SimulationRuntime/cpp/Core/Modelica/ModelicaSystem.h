@@ -117,18 +117,18 @@ class Modelica: public IMixedSystem ,public IContinuous ,public IEvent ,public I
 
   // Provides current values of root/zero functions 
    virtual void getZeroFunc(double* f);
+   virtual bool checkConditions();
    virtual void getConditions(bool* c);
+
    //Called to handle all  events occured at same time  
    virtual bool handleSystemEvents( bool* events);
-   virtual bool checkConditions(const bool* events, bool all);
   //Called to handle an event
    virtual void handleEvent(const bool* events);
   virtual IHistory* getHistory();
   //Checks if a discrete variable has changed and triggers an event
    virtual bool checkForDiscreteEvents();
 
-  //Returns the vector with all time events
-  virtual event_times_type getTimeEvents();
+  
 
   // M is regular 
    virtual bool isODE();

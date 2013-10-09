@@ -144,7 +144,7 @@ protected:
     ostream
         *_outputStream;        ///< Output stream for results
 
-   
+     IContinuous::UPDATETYPE _callType;
       
 
     bool _initial;    

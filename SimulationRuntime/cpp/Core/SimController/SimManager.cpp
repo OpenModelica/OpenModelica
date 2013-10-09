@@ -394,7 +394,7 @@ void SimManager::runSingleProcess()
           {
              timeevent_system->handleTimeEvent(_timeeventcounter);
           }
-            cont_system->evaluate(IContinuous::ALL);      // vxworksupdate
+            cont_system->evaluate(IContinuous::CONTINUOUS);      // vxworksupdate
             event_system->getZeroFunc(zeroVal_new);
 
             for(int i=0;i<_dimZeroFunc;i++)
@@ -426,7 +426,7 @@ void SimManager::runSingleProcess()
                               startTime = endTime;
                               _timeeventcounter[iter->second]++;
                               timeevent_system->handleTimeEvent(_timeeventcounter);
-                              cont_system->evaluate(IContinuous::ALL);   // vxworksupdate
+                              cont_system->evaluate(IContinuous::CONTINUOUS);   // vxworksupdate
                               event_system->getZeroFunc(zeroVal_new);
                               for(int i=0;i<_dimZeroFunc;i++)
                                     _events[i] = bool(zeroVal_new[i]);
@@ -452,7 +452,7 @@ void SimManager::runSingleProcess()
                               {
                                     _timeeventcounter[iter->second]++;
                                     timeevent_system->handleTimeEvent(_timeeventcounter);
-                                    cont_system->evaluate(IContinuous::ALL);   // vxworksupdate
+                                    cont_system->evaluate(IContinuous::CONTINUOUS);   // vxworksupdate
                                     event_system->getZeroFunc(zeroVal_new);
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);
@@ -515,7 +515,7 @@ void SimManager::runSingleProcess()
                               if(zeroVal_new)
                               {
                                     timeevent_system->handleTimeEvent(_timeeventcounter);
-                                    cont_system->evaluate(IContinuous::ALL);   // vxworksupdate
+                                    cont_system->evaluate(IContinuous::CONTINUOUS);   // vxworksupdate
                                     event_system->getZeroFunc(zeroVal_new);
                                     for(int i=0;i<_dimZeroFunc;i++)
                                           _events[i] = bool(zeroVal_new[i]);

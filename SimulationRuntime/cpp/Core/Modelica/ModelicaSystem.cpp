@@ -61,11 +61,6 @@ void Modelica::setTime(const double& t)
   SystemDefaultImplementation::setTime(t);
 }
 
-// Returns the vector with all time events
-event_times_type Modelica::getTimeEvents()
-{
-  return _event_handling.getTimeEvents();
-}
 
 
 // Provide number (dimension) of variables
@@ -199,7 +194,7 @@ bool Modelica::checkForDiscreteEvents()
 void Modelica::stepCompleted(double time)
 {
 }
- bool Modelica::checkConditions(const bool* events, bool all)
+ bool Modelica::checkConditions()
  {
      throw std::runtime_error("checkConditions is not yet implemented"); 
  }

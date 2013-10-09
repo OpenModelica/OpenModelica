@@ -99,7 +99,7 @@ void Cvode::initialize()
     //
 
     // Set initial values for CVODE
-    _continuous_system->evaluate(IContinuous::ALL);
+    _continuous_system->evaluate(IContinuous::CONTINUOUS);
     _continuous_system->getContinuousStates(_zInit);
     memcpy(_z,_zInit,_dimSys*sizeof(double));
 
@@ -306,7 +306,7 @@ void Cvode::CVodeCore()
       _zeroFound = true;
       _time_system->setTime(_tCurrent);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluate(IContinuous::ALL );
+      _continuous_system->evaluate(IContinuous::CONTINUOUS );
       // Zustände recorden bis hierher
       if (_cvodesettings->getEventOutput())
         writeToFile(0, _tCurrent, _h);
@@ -346,7 +346,8 @@ void Cvode::CVodeCore()
     {
       _time_system->setTime(_tEnd);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-      _continuous_system->evaluate(IContinuous::ALL);
+      _continuous_system->evaluate(IContinuous::CONTINUOUS);
+       writeToFile(0, _tEnd, _h);
       _solverStatus = DONE;
       writeToFile(0, _tEnd, _h);
     }
@@ -361,27 +362,27 @@ void Cvode::writeCVodeOutput(const double &time,const double &h,const int &stp)
     {
 
       _bWritten = false;
-      while (_tLastWrite +  dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput()  < time)
+      while (_tLastWrite +  dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput()  <= time)
       {
         _bWritten = true;
         _tLastWrite = _tLastWrite +  dynamic_cast<ISolverSettings*>(_cvodesettings)->getGlobalSettings()->gethOutput();
         _idid = CVodeGetDky(_cvodeMem, _tLastWrite, 0, _CV_yWrite);
         _time_system->setTime(_tLastWrite);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_yWrite));
-        _continuous_system->evaluate(IContinuous::ALL );
+        _continuous_system->evaluate(IContinuous::CONTINUOUS );
         SolverDefaultImplementation::writeToFile(stp, _tLastWrite, h);
       }//end if time -_tLastWritten
       if (_bWritten)
       {
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(_z);
-        _continuous_system->evaluate(IContinuous::ALL );
+        _continuous_system->evaluate(IContinuous::CONTINUOUS );
       }else if(time == _tEnd && _tLastWrite != time)
       {
         _idid = CVodeGetDky(_cvodeMem, time, 0, _CV_y);
         _time_system->setTime(time);
         _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
-        _continuous_system->evaluate(IContinuous::ALL);
+        _continuous_system->evaluate(IContinuous::CONTINUOUS);
         SolverDefaultImplementation::writeToFile(stp, _tEnd, h);
       }
     }
@@ -398,7 +399,7 @@ int Cvode::calcFunction(const double& time, const double* y, double* f)
   {
     _time_system->setTime(time);
     _continuous_system->setContinuousStates(y);
-    _continuous_system->evaluate(IContinuous::ALL);
+    _continuous_system->evaluate(IContinuous::CONTINUOUS);
     _continuous_system->getRHS(f);
   }//workaround until exception can be catch from c- libraries
   catch(std::exception& ex)
@@ -423,7 +424,7 @@ void Cvode::giveZeroVal(const double &t,const double *y,double *zeroValue)
   _continuous_system->setContinuousStates(y);
 
   // System aktualisieren
-  _continuous_system->evaluate(IContinuous::ALL);
+  _continuous_system->evaluate(IContinuous::CONTINUOUS);
 
   _event_system->getZeroFunc(zeroValue);
 

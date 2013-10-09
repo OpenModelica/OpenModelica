@@ -71,6 +71,7 @@ int SystemDefaultImplementation::getDimRHS() const
 /// (Re-) initialize the system of equations
 void SystemDefaultImplementation::initialize()
 {
+    _callType = IContinuous::CONTINUOUS;
     if((_dimContinuousStates) > 0)
     {
         // Initialize "extended state vector"
