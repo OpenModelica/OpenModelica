@@ -90,12 +90,18 @@ algorithm
   str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") + 
     OpenModelica.Scripting.Internal.Time.readableTime(if time < 1e-5 then 0 else time)+\\\"</td>\\\");
 end cell;
+function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
+function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
+function firstPart input String str; input Integer maxLength := 4096; output String out; algorithm out := if length(str) < maxLength then str else (substring(str,1,maxLength) + \\\"\n... (output truncated, was \\\" + String(length(str)) + \\\" bytes)\\\"); end firstPart;
 function testcase
   input Real time;
   input Boolean success;
-  input String errXML;
+  input String errXMLLong;
   output String str;
+protected
+  String errXML;
 algorithm
+  errXML := firstPart(errXMLLong,16*1024); // 16 kB log per test should be enough; increase if there is a good reason to do so
   str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
     if not success then \\\"<error type=\\\\\\\"Failure\\\\\\\" />\\\"
     else \\\"\\\"
@@ -120,7 +126,7 @@ str:=testcase(frontend,backend <> -1.0,errXML);
 writeFile(statFile + \".flat\", str);getErrorString();
 str:=if backend <> -1.0 then testcase(total,buildRes,errXML) else skip;
 writeFile(statFile + \".compile\", str);getErrorString();
-str:=if buildRes then testcase(timeSim,simRes,readFile(simFile)) else skip;
+str:=if buildRes then testcase(timeSim,simRes,escapeXML(sim)) else skip;
 writeFile(statFile + \".sim\", str);getErrorString();
 ") for s in a);
 getErrorString();
