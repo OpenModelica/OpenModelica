@@ -18,7 +18,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
 then
 <<
 ```yaml script=scriptloader
-- <%fileNamePrefix%>.js
+- tinytimer.js
 ```
 
 ```yaml script=dataloader
@@ -58,6 +58,9 @@ params:
 ```
 
 ```js
+if (typeof(isRunning) == "undefined") isRunning = false
+
+if (typeof(timer) != "undefined") {clearInterval(timer.interval); timer = null};
 $xml = $(xml)
 
 // Set the default simulation parameters
@@ -67,64 +70,116 @@ defex.attr("stepSize", +stopTime / intervals)
 defex.attr("tolerance", tolerance)
 defex.attr("solver", solver)
 
-// Set some model parameters
+// Set some model parameters - UNCOMMENT & CHANGE AS NEEDED
+//$xml.find("ScalarVariable[name = 'RL.R']").find("Real").attr("start", RL)
 
 // Write out the initialization file
 xmlstring = new XMLSerializer().serializeToString(xml)
-Module['FS_createDataFile']('/', '<%fileNamePrefix%>_init.xml', xmlstring, true, true)
 
-// Run the simulation!
-run()
+$("#statustext").html('<img src="wait.gif" /> Simulation running')
+$("#statustimer").html("");
+$('#statustimer').tinyTimer({ from: Date.now() });
 
-// delete the input file
-FS.unlink('/<%fileNamePrefix%>_init.xml')
+timer = $("#statustimer").data("tinyTimer")
+
+// Start the simulation!
+basename = "<%fileNamePrefix%>"
+
+if (typeof(wworker) != "undefined" && isRunning) wworker.terminate() 
+if (typeof(wworker) == "undefined" || isRunning) wworker = new Worker(basename + ".js")
+isRunning = true
+
+wworker.postMessage({basename: basename, xmlstring: xmlstring})
+wworker.addEventListener('error', function(event) {
+});
+
+
 ```
+
+<div id="status" style="text-align:center"><span id="statustext">
+Simulation loading</span>. &nbsp Time: <span id="statustimer"> </span></div>
+
 
 ## Results
 
+<div id="yaxisform"> </div>
+
 ```js
 // read the csv file with the simulation results
-csv = intArrayToString(FS.findObject("<%fileNamePrefix%>_res.csv").contents)
-x = $.csv.toArrays(csv, {onParseValue: $.csv.hooks.castToScalar})
 
-// `header` has the column names. The first is the time, and the rest
-// of the columns are the variables.
-header = x.slice(0,1)[0].slice(1)
+wworker.addEventListener("message", function(e) {
+    $("#statustext").html(e.data.status)
+    timer.stop();
+    isRunning = false
+    x = $.csv.toArrays(e.data.csv, {onParseValue: $.csv.hooks.castToScalar})
+    
+    // `header` has the column names. The first is the time, and the rest
+    // of the columns are the variables.
+    header = x.slice(0,1)[0]
+    
+    // Select graph variables with a select box based on the header values
+    if (typeof(graphvar) == "undefined") graphvar = header[1];
+    if (typeof(graphvarX) == "undefined") graphvarX = header[0];
+    
+    var jsonform = {
+      schema: {
+        graphvar: {
+          type: "string",
+          title: "Plot variable",
+          default: graphvar,
+          enum: header
+        }
+      },
+      form: [
+        {
+          key: "graphvar",
+          onChange: function (evt) {
+            calculate_forms();
+            $("#plotdiv").calculate();
+          }
+        }
+      ]
+    };
+    var jsonformX = {
+      schema: {
+        graphvarX: {
+          type: "string",
+          default: graphvarX,
+          enum: x.slice(0,1)[0]
+        }
+      },
+      form: [
+        {
+          key: "graphvarX",
+          onChange: function (evt) {
+            calculate_forms();
+            $("#plotdiv").calculate();
+          }
+        }
+      ]
+    };
+    
+    $("#yaxisform").html("");
+    $("#yaxisform").jsonForm(jsonform);
+    $("#xaxisform").html("");
+    $("#xaxisform").jsonForm(jsonformX);
+    $("#plotdiv").calculate();
+    
+}, false);
 
-// Select graph variables with a select box based on the header values
-if (typeof(graphvar) == "undefined") graphvar = header[0];
-
-var jsonform = {
-  schema: {
-    graphvar: {
-      type: "string",
-      title: "Plot variable",
-      default: graphvar,
-      enum: header
-    }
-  },
-  form: [
-    {
-      key: "graphvar",
-      onChange: function (evt) {
-        calculate_forms();
-        $("#plotdiv").calculate();
-      }
-    }
-  ]
-};
-
-$active_element.jsonForm(jsonform);
 ```
 
 ```js id=plotdiv
-idx = header.indexOf(graphvar) + 1;
-
-// pick out the column to plot
-series = x.slice(1).map(function(x) {return [x[0], x[idx]];});
-
-plot([series]);
+if (typeof(header) != "undefined") {
+    yidx = header.indexOf(graphvar);
+    xidx = header.indexOf(graphvarX);
+    // pick out the column to plot
+    series = x.slice(1).map(function(x) {return [x[xidx], x[yidx]];});
+    plot([series]);
+}
 ```
+
+<div id="xaxisform" style="left:200px; width:300px; position:relative"> </div>
 
 ## Comments
 
@@ -139,7 +194,7 @@ For more information on compiling OpenModelica to JavaScript, see
 
 The user interface was created in
 [mdpad](http://tshort.github.io/mdpad/). See
-[chua.md](http://tshort.github.io/mdpad/chua.md) for the Markdown code
+[<%fileNamePrefix%>.md](<%fileNamePrefix%>.md) for the Markdown code
 for this page.
 >>
 end markdownContents;
