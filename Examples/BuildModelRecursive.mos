@@ -75,7 +75,6 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-timeSim := if simRes then timeSim else -1.0;
 if simRes then
   system(\"touch "+s+".simsuccess\");
 end if;
@@ -116,7 +115,7 @@ sim:=readFile(simFile);
 str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\") +
   (if sim <> \"\" then \" (<a href=\"+simFile+\">sim</a>)\" else \"\") +
   \"</td>\" +
-  cell(timeSim,greenOnOk=true,greenColor=greenColor) +
+  cell(if simRes then timeSim else -1.0,greenOnOk=true,greenColor=greenColor) +
   \"<td bgcolor=\\\"\"+(if res[1]<>\"\" then greenColor else \"#FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" +
   sum(cell(d,greenColor=greenColor) for d in {frontend,backend,simcode,templates,build}) + \"</tr>\\n\";getErrorString();
 writeFile(statFile,str);getErrorString();
