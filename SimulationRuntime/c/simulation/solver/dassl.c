@@ -738,7 +738,7 @@ int jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, do
   double delta_h = dasslData->sqrteps;
   double delta_hh,delta_hhh, deltaInv;
   double ysave;
-  integer ires;
+  fortran_integer ires;
   int i,j;
 
   for(i = data->modelData.nStates-1; i >=0 ; i--)
@@ -820,7 +820,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double delta_h = dasslData->sqrteps;
   double delta_hhh;
-  integer ires;
+  fortran_integer ires;
   double* delta_hh = dasslData->delta_hh;
   double* ysave = dasslData->ysave;
 
