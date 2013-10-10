@@ -20,7 +20,7 @@ HISTORY="$WWW/history"
 "$OMHOME/bin/omc" ++v
 
 rm -rf "$WORKDIR"
-mkdir -p "$WORKDIR" "$WWW" "$HISTORY"
+mkdir -p "$WORKDIR" "$WWW/$LIB_NAME" "$HISTORY"
 cd "$WORKDIR"
 
 sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTMODELS/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($LIB_NAME);/" > BuildModelRecursive.mos
@@ -28,6 +28,6 @@ sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTM
 
 shopt -s nullglob
 rm -f "$WWW"/*.sim "$WWW"/*.err
-cp BuildModelRecursive.html *.sim *.err "$WWW"
+cp BuildModelRecursive.html *.sim *.err "$WWW/$LIB_NAME/"
 cp BuildModelRecursive.html "$HISTORY"/`date +${LIB_NAME}-%Y-%m-%d.html`
 bash -e "$TESTMODELS/PlotLibraryTrend.sh" "$HISTORY" "$LIB_NAME"
