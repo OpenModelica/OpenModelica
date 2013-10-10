@@ -1880,8 +1880,8 @@ algorithm
   //dumpOption(mT,dumpIncidenceMatrixT);
   tags := dumpFullMatchingHTML(matching,prefixId,tags);
 //  doc := DumpHTML.addBodyTags(tags,doc);
+  doc := DumpHTML.addLine("<hr>",doc);
   doc := DumpHTML.addHyperLink("javascript:toggle('" +& prefixId +& "system')","System einblenden","System " +& intString(i) +& " ein/ausblenden",doc);
-  doc := DumpHTML.addLine("",doc);
   doc := DumpHTML.addDivision(prefixId +& "system",{("display","none")},tags,doc);
   outTpl := (doc,i+1);
 end dumpEqSystemHTML;
@@ -2016,7 +2016,7 @@ algorithm
         s = intString(i);
         eqn = v[i];
         s2 = intString(eqn);
-        s = "Variable <a href=\"#" +& prefixId +& "varanker" +& s +& "\">" +& s +& "</a> is solved in Equation  <a href=\"#" +& prefixId +& "eqanker" +& s2 +& "\">" +& s2 +& "</a>";
+        s = "Variable <a href=\"#" +& prefixId +& "varanker" +& s +& "\" onclick=\"return show('" +& prefixId +& "variables');\">" +& s +& "</a> is solved in Equation  <a href=\"#" +& prefixId +& "eqanker" +& s2 +& "\" onclick=\"return show('" +& prefixId +& "equations');\">" +& s2 +& "</a>";
       then
         dumpMatchingHTML2(v, i+1, len, prefixId, DumpHTML.LINE(s)::inTags);
     else
