@@ -24,7 +24,7 @@ mkdir -p "$WORKDIR" "$WWW" "$HISTORY"
 cd "$WORKDIR"
 
 sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTMODELS/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($LIB_NAME);/" > BuildModelRecursive.mos
-"$OMHOME/bin/omc" +g=MetaModelica "$TESTMODELS/BuildModelRecursive.mos"
+"$OMHOME/bin/omc" +g=MetaModelica BuildModelRecursive.mos
 
 shopt -s nullglob
 rm -f "$WWW"/*.sim "$WWW"/*.err
