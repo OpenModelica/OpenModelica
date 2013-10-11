@@ -41,10 +41,10 @@
 
 #ifdef WITH_IPOPT
 
-static int hessain_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda);
-static int hessain_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_factor);
-static int hessain_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_factor);
-static int hessain_ode0(double *v, double t, IPOPT_DATA_ *iData, double *lambda);
+static int hessian_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda);
+static int hessian_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_factor);
+static int hessian_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_factor);
+
 
 /*!
  *  calc hessian
@@ -119,10 +119,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     {
       for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
       {
-      hessain_ode(x, iData->time[p], iData,ll);
+      hessian_ode(x, iData->time[p], iData,ll);
 
         if(iData->lagrange)
-           hessain_lagrange(x, iData->time[p], iData,obj_factor);
+           hessian_lagrange(x, iData->time[p], iData,obj_factor);
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
@@ -152,13 +152,13 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     {
       for(p = 1;p <iData->deg +1;++p,x += iData->nv)
       {
-        hessain_ode(x, iData->time[ii*iData->deg + p], iData,ll);
+        hessian_ode(x, iData->time[ii*iData->deg + p], iData,ll);
 
         if(iData->lagrange)
-         hessain_lagrange(x, iData->time[ii*iData->deg + p], iData, obj_factor);
+         hessian_lagrange(x, iData->time[ii*iData->deg + p], iData, obj_factor);
         mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
         if(mayer_yes)
-         hessain_mayer(x, iData->time[ii*iData->deg + p], iData,obj_factor);
+         hessian_mayer(x, iData->time[ii*iData->deg + p], iData,obj_factor);
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
@@ -194,13 +194,11 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
  *  cal hessian (mayer part)
  *  autor: Vitalij Ruge
  **/
-static int hessain_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
+static int hessian_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
 {
-/* diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *gradF, int this_it);*/
   long double v_save;
   long double h;
   long int i, j, l;
-  diff_functionODE(v, t , iData, iData->J0);
   diff_symColoredObject(v, t, iData, iData->gradF0, iData->mayer_index);
   for(i = 0; i<iData->nv; ++i)
   {
@@ -225,12 +223,11 @@ static int hessain_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_fac
  *  cal hessian (lagrange part)
  *  autor: Vitalij Ruge
  **/
-static int hessain_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
+static int hessian_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
 {
   long double v_save;
   long double h;
   long int i, j, l;
-  diff_functionODE(v, t , iData, iData->J0);
   diff_symColoredObject(v, t, iData, iData->gradF0, iData->lagrange_index);
   for(i = 0; i<iData->nv; ++i)
   {
@@ -254,12 +251,12 @@ static int hessain_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_
  *  cal hessian (mayer part)
  *  autor: Vitalij Ruge
  **/
-static int hessain_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda)
+static int hessian_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda)
 {
   long double v_save;
   long double h;
   int i, j, l;
-  /*double tmp;*/
+
   diff_functionODE(v, t , iData, iData->J0);
   for(i = 0; i<iData->nv; ++i)
   {
@@ -275,7 +272,7 @@ static int hessain_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda)
         if(iData->knowedJ[l][j] + iData->knowedJ[l][i] >= 2)
           iData->H[l][i][j]  = lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
         else
-          iData->H[l][i][j]  =(long double) 0.0;
+          iData->H[l][i][j] = (long double) 0.0;
         iData->H[l][j][i] = iData->H[l][i][j];
 /*
         tmp = (double) iData->H[l][j][i];

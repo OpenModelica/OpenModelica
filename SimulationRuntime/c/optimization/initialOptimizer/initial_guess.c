@@ -39,7 +39,7 @@
 
 #include "../localFunction.h"
 #include "../ipoptODEstruct.h"
-#include "../simulation/solver/radau.h"
+#include "../simulation/solver/dassl.h"
 
 #ifdef WITH_IPOPT
 
@@ -53,14 +53,27 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
   int i,j,k,ii,jj,id;
   int err;
   double *v;
+  long double tol;
+
   DATA* data = iData->data;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  KINODE *kinOde;
 
-  u0 = iData->data->localData[1]->realVars + iData->index_u;
-  u = iData->data->localData[0]->realVars + iData->index_u;
-  x = iData->data->localData[0]->realVars;
+  /* Initial DASSL solver */
+  DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
+
+  tol = data->simulationInfo.tolerance;
+  data->simulationInfo.tolerance = fmin(fmax(tol,1e-8),1e-3);
+  INFO(LOG_SOLVER, "Initializing DASSL");
+  sInfo->solverMethod = "dasslColorSymJac";
+  solverInfo->solverMethod = S_DASSL;
+  dasrt_initial(iData->data, solverInfo, dasslData);
+  solverInfo->solverMethod = S_OPTIMIZATION;
+  solverInfo->solverData = dasslData;
+
+  u0 = data->localData[1]->realVars + iData->index_u;
+  u = data->localData[0]->realVars + iData->index_u;
+  x = data->localData[0]->realVars;
   v = iData->v;
 
   for(ii=iData->nx,j=0; j < iData->nu; ++j, ++ii)
@@ -71,12 +84,7 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     v[ii] = u0[j]*iData->scalVar[j + iData->nx];
   }
 
-  solverInfo->solverData = calloc(1, sizeof(KINODE));
-  kinOde = (KINODE*) solverInfo->solverData;
-  refreshSimData(x, u, iData->tf, iData);
-  allocateKinOde(data, solverInfo, 8, 1);
-
-  if(ACTIVE_STREAM(LOG_IPOPT))
+  if(ACTIVE_STREAM(LOG_IPOPT) && !ACTIVE_STREAM(LOG_SOLVER))
   {
     printf("\n****initial guess****");
       printf("\n #####done time[%i] = %f",0,iData->time[0]);
@@ -89,30 +97,10 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
       solverInfo->currentStepSize = iData->time[k] - iData->time[k-1];
       iData->data->localData[1]->timeValue = iData->time[k];
       
-      do
-      {
-        err = kinsolOde(solverInfo->solverData);
+      dasrt_step(data, solverInfo);
 
-        if(err < 0)
-        {
-          solverInfo->currentStepSize *= 0.99;
-          kinOde->kData->fnormtol *=10.0;
-          kinOde->kData->scsteptol *=10.0;
-          
-          if(ACTIVE_STREAM(LOG_SOLVER))
-          {
-            printf("\n #####try time[%i] = %f",k,iData->time[k]);
-          }
-        }
-        else
-        {
-          if(ACTIVE_STREAM(LOG_IPOPT))
-            printf("\n #####done time[%i] = %f",k,iData->time[k]);
-        }
-      }while(err <0);
-      
-      kinOde->kData->fnormtol =iData->data->simulationInfo.tolerance;
-      kinOde->kData->scsteptol =iData->data->simulationInfo.tolerance;
+      if(ACTIVE_STREAM(LOG_IPOPT) && !ACTIVE_STREAM(LOG_SOLVER))
+        printf("\n #####done time[%i] = %f",k,iData->time[k]);
 
       for(j=0; j< iData->nx; ++j)
       {
@@ -147,9 +135,11 @@ int initial_guess_ipopt(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
 
   if(ACTIVE_STREAM(LOG_IPOPT))
     printf("\n*****initial guess done*****");
-  freeKinOde(data, solverInfo, 8, 1);
-  solverInfo->solverData = (void*)iData;
 
+  dasrt_deinitial(solverInfo->solverData);
+  solverInfo->solverData = (void*)iData;
+  sInfo->solverMethod = "optimization";
+  data->simulationInfo.tolerance = tol;
   return 0;
 }
 

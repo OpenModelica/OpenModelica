@@ -128,9 +128,10 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
   dasslData->dasslMethod = 0;
 
-  for(i=0; i< DASSL_MAX;i++){
+  for(i=1; i< DASSL_MAX;i++){
     if(!strcmp((const char*)simInfo->solverMethod, dasslMethodStr[i])){
       dasslData->dasslMethod = i;
+      break;
     }
   }
 
@@ -304,7 +305,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
 
     /* read input vars */
-    input_function(simData);
+    if(solverInfo->solverMethod != S_OPTIMIZATION)
+      input_function(simData);
 
     if(dasslData->dasslMethod ==  DASSL_SYMJAC)
     {
