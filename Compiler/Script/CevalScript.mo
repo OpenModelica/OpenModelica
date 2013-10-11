@@ -3912,8 +3912,7 @@ algorithm
   end matchcontinue;
 end getFileDir;
 
-public function compileModel "author: PA, x02lucpo
-  Compiles a model given a file-prefix, helper function to buildModel."
+public function compileModel "Compiles a model given a file-prefix, helper function to buildModel."
   input String inFilePrefix;
   input list<String> inLibsList;
   input String inFileDir;
@@ -3921,9 +3920,10 @@ public function compileModel "author: PA, x02lucpo
 algorithm
   _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,solverMethod)
     local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make,target;
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make,target,numParallelStr;
       list<String> libs;
       Boolean isWindows;
+      Integer numParallel;
 
     // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     // adrpo 2009-11-29: use ALL THE TIME $OPENMODELICAHOME/bin/Compile
@@ -3948,7 +3948,9 @@ algorithm
         omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& System.stringReplace(omhome_1, "/", "\\") +& "\"&& ", "");
         win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",target});
         make = System.getMakeCommand();
-        make_call = stringAppendList({make," -f ",fileprefix,".makefile > ",fileprefix,".log 2>&1"});
+        numParallel = Util.if_(Config.getRunningTestsuite(), 1, Config.noProc());
+        numParallelStr = intString(numParallel);
+        make_call = stringAppendList({make," -j",numParallelStr," -f ",fileprefix,".makefile > ",fileprefix,".log 2>&1"});
         s_call = Util.if_(isWindows, win_call, make_call);
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " +& s_call);
 
