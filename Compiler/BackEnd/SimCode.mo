@@ -311,6 +311,7 @@ uniontype Function
     list<Variable> inVars;
     list<Variable> outVars;
     list<Variable> biVars;
+    list<String> includes "this one is needed so that we know if we should generate the external function prototype or not";
     list<String> libs "need this one for C#";
     String language "C or Fortran";
     Absyn.Info info;

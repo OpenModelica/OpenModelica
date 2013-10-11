@@ -1493,22 +1493,23 @@ algorithm
   end match;
 end updateInstHierarchy;
 
-public function addClass
+public function addClassIfInner
   input SCode.Element inClass;
   input Prefix.Prefix inPrefix;
-  input String inScope;
+  input Env.Env inScope;
   input InstHierarchy inIH;
   output InstHierarchy outIH;
 algorithm
   outIH := matchcontinue(inClass, inPrefix, inScope, inIH)
     local
-      String name;
+      String name, scopeName;
       Absyn.InnerOuter io;
 
     // add inner or innerouter
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io)), _, _, _)
       equation
         true = Absyn.isInner(io);
+        scopeName = Env.getEnvNameStr(inScope);
         // add to instance hierarchy
         outIH = updateInstHierarchy(inIH, inPrefix, io,
           INST_INNER(
@@ -1517,7 +1518,7 @@ algorithm
             io,
             name,
             Absyn.IDENT(name),
-            inScope,
+            scopeName,
             NONE(),
             {},
             SOME(inClass)));
@@ -1528,7 +1529,7 @@ algorithm
     else then inIH;
 
   end matchcontinue;
-end addClass;
+end addClassIfInner;
 
 public function addOuterPrefixToIH
 "@author: adrpo

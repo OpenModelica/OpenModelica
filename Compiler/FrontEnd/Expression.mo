@@ -297,6 +297,40 @@ algorithm
   end matchcontinue;
 end unelabExp;
 
+public function unelabDimension
+"Transform an DAE.Dimension into Absyn.Subscript, if possible"
+  input DAE.Dimension inDim;
+  output Absyn.Subscript outDim;
+algorithm
+  outDim := matchcontinue (inDim)
+    local
+      Integer i;
+      Absyn.Path p;
+      Absyn.ComponentRef c;
+      DAE.Exp e;
+      Absyn.Exp ae;
+    
+    case (DAE.DIM_INTEGER(i)) then Absyn.SUBSCRIPT(Absyn.INTEGER(i));
+    
+    case (DAE.DIM_BOOLEAN()) then Absyn.SUBSCRIPT(Absyn.CREF(Absyn.CREF_IDENT("Boolean", {})));
+    
+    case (DAE.DIM_ENUM(enumTypeName = p))
+      equation 
+        c = Absyn.pathToCref(p); 
+      then 
+        Absyn.SUBSCRIPT(Absyn.CREF(c));
+    
+    case (DAE.DIM_EXP(e))
+      equation 
+        ae = unelabExp(e);
+      then 
+        Absyn.SUBSCRIPT(ae);
+  
+    case (DAE.DIM_UNKNOWN()) then Absyn.NOSUB();
+      
+  end matchcontinue;
+end unelabDimension;
+
 protected function unelabReductionIterator
   input DAE.ReductionIterator riter;
   output Absyn.ForIterator aiter;

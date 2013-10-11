@@ -1283,7 +1283,7 @@ algorithm
   end match;
 end prefixArrayDimensions;
 
-protected function prefixDimensions
+public function prefixDimensions
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;

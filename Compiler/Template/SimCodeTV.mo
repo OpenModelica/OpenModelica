@@ -504,6 +504,7 @@ package SimCode
       list<Variable> inVars;
       list<Variable> outVars;
       list<Variable> biVars;
+      list<String> includes;
       list<String> libs;
       String language;
       Absyn.Info info;

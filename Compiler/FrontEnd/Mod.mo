@@ -65,6 +65,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Inst;
+protected import InstUtil;
 protected import List;
 protected import PrefixUtil;
 protected import Print;
@@ -277,7 +278,7 @@ algorithm
       SCode.Prefixes prefixes;
 
     // search for it locally in the freaking env as it might have been redeclared
-    case(cache,env,ih,pre,f,SCode.CLASS(name = cn,prefixes = prefixes),_,_)
+    case(cache,env,ih,pre,f,SCode.CLASS(name = cn,prefixes = prefixes, info = i),_,_)
       equation
         modOriginal = SCodeUtil.getConstrainedByModifiers(prefixes);
         (c, _) = Lookup.lookupClassLocal(env, cn);
@@ -286,7 +287,7 @@ algorithm
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         mod = SCode.mergeModifiers(mod, modOriginal);
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
-        (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+        (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
@@ -303,7 +304,7 @@ algorithm
         // merge modifers from the component to the modifers from the constrained by 
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
-        (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+        (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,cn,tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
@@ -322,7 +323,7 @@ algorithm
         // merge modifers from the component to the modifers from the constrained by 
         mod = SCode.mergeModifiers(mod, SCodeUtil.getConstrainedByModifiers(prefixes));
         (cache,emod) = elabMod(cache,env,ih,pre,mod,impl,info);
-        (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
+        (cache,tp1) = elabModQualifyTypespec(cache,env,ih,pre,impl,info,compname,tp);
         // unelab mod so we get constant evaluation of parameters
         mod = unelabMod(emod);
       then
@@ -344,19 +345,42 @@ protected function elabModQualifyTypespec
  This is achieved by making them fully qualified."
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input InnerOuter.InstHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input Boolean impl;
+  input Absyn.Info info;
+  input Absyn.Ident name;  
   input Absyn.TypeSpec tp;
   output Env.Cache outCache;
   output Absyn.TypeSpec outTp;
 algorithm
-  (outCache,outTp) := match(inCache,inEnv,tp)
+  (outCache,outTp) := match(inCache,inEnv,inIH,inPrefix,impl,info,name,tp)
       local
         Env.Cache cache; Env.Env env;
-        Option<Absyn.ArrayDim> ad;
+        Absyn.ArrayDim dims;
         Absyn.Path p,p1;
-    case (cache, env,Absyn.TPATH(p,ad)) equation
-      // todo! elab the array dims too!!
-      (cache,p1) = Inst.makeFullyQualified(cache,env,p);
-    then (cache,Absyn.TPATH(p1,ad));
+        Absyn.ComponentRef cref;
+        DAE.Dimensions edims;
+        InnerOuter.InstHierarchy ih;
+        Prefix.Prefix pre;
+        
+    // no array dimensions
+    case (cache, env, _, _, _, _, _, Absyn.TPATH(p,NONE()))
+      equation
+        (cache,p1) = Inst.makeFullyQualified(cache,env,p);
+    then 
+      (cache,Absyn.TPATH(p1,NONE()));
+        
+    // some array dimensions, elaborate them!
+    case (cache, env, ih, pre, _, _, _, Absyn.TPATH(p,SOME(dims)))
+      equation
+        cref = Absyn.CREF_IDENT(name,{});
+        (cache,edims) = InstUtil.elabArraydim(cache, env, cref, p, dims, NONE(), impl, NONE(), true, false, pre, info, {});
+        (cache,edims) = PrefixUtil.prefixDimensions(cache, env, ih, pre, edims);
+        dims = List.map(edims, Expression.unelabDimension);
+        (cache,p1) = Inst.makeFullyQualified(cache,env,p);
+    then 
+      (cache,Absyn.TPATH(p1,SOME(dims)));
 
   end match;
 end elabModQualifyTypespec;

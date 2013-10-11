@@ -48,6 +48,11 @@ package CodegenC
 import interface SimCodeTV;
 import CodegenUtil.*;
 
+template escapeCComments(String stringWithCComments)
+"escape the C comments inside a string, replaces them with /* */->(* *)"
+::= '<%System.stringReplace(System.stringReplace(stringWithCComments, "/*", "(*"), "*/", "*)")%>'
+end escapeCComments;
+
 template translateModel(SimCode simCode)
   "Generates C code and Makefile for compiling and running a simulation of a
   Modelica model."
@@ -124,8 +129,11 @@ template simulationFile(SimCode simCode, String guid)
   match simCode
     case simCode as SIMCODE(__) then
     <<
-    <%simulationFileHeader(simCode)%>
+    <%simulationFileHeader(simCode)%>    
+    
+    /* start - annotation(Include=...) if we have any */
     <%externalFunctionIncludes(externalFunctionIncludes)%>
+    /* end - annotation(Include=...) */
     #include "<%fileNamePrefix%>_model.h"
     #include "<%fileNamePrefix%>_functions.c"
     /* dummy VARINFO and FILEINFO */
@@ -266,7 +274,7 @@ template simulationFileHeader(SimCode simCode)
 
     #include <assert.h>
     #include <string.h>
-
+  
     #include "<%fileNamePrefix%>_functions.h"
 
     >>
@@ -2593,20 +2601,20 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: RESIDUAL
       
-      <%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%>
+      <%escapeCComments(printExpStr(e.exp))%>
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN
-      <%crefStr(e.cref)%> = <%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%>
+      <%crefStr(e.cref)%> = <%escapeCComments(printExpStr(e.exp))%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__) then
       <<
       equation index: <%equationIndex(eq)%>
       type: ARRAY_CALL_ASSIGN
       
-      <%crefStr(e.componentRef)%> = <%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%>
+      <%crefStr(e.componentRef)%> = <%escapeCComments(printExpStr(e.exp))%>
       >>
     case e as SES_ALGORITHM(statements={}) then
       <<
@@ -2617,7 +2625,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: ALGORITHM
       
-      <%e.statements |> stmt => System.stringReplace(System.stringReplace(ppStmtStr(stmt,2), "/*", "(*"), "*/", "*)")%>
+      <%e.statements |> stmt => escapeCComments(ppStmtStr(stmt,2))%>
       >>
     case e as SES_LINEAR(__) then
       <<
@@ -2626,7 +2634,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       
       <%e.vars |> SIMVAR(name=cr) => '<var><%crefStr(cr)%></var>' ; separator = "\n" %>
       <row>
-        <%beqs |> exp => '<cell><%System.stringReplace(System.stringReplace(printExpStr(exp), "/*", "(*"), "*/", "*)")%></cell>' ; separator = "\n" %><%\n%>
+        <%beqs |> exp => '<cell><%escapeCComments(printExpStr(exp))%></cell>' ; separator = "\n" %><%\n%>
       </row>
       <matrix>
         <%simJac |> (i1,i2,eq) =>
@@ -2634,7 +2642,7 @@ template dumpEqs(list<SimEqSystem> eqs)
         <cell row="<%i1%>" col="<%i2%>">
           <%match eq case e as SES_RESIDUAL(__) then
             <<
-            <residual><%System.stringReplace(System.stringReplace(printExpStr(e.exp), "/*", "(*"), "*/", "*)")%></residual>
+            <residual><%escapeCComments(printExpStr(e.exp))%></residual>
             >>
            %>
         </cell>
@@ -2671,7 +2679,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       type: WHEN
       
       when {<%conditions |> cond => '<%crefStr(cond)%>' ; separator=", " %>} then
-        <%crefStr(e.left)%> = <%System.stringReplace(System.stringReplace(printExpStr(e.right), "/*", "(*"), "*/", "*)")%>;
+        <%crefStr(e.left)%> = <%escapeCComments(printExpStr(e.right))%>;
       end when;
       >>
     case e as SES_IFEQUATION(__) then
@@ -3647,7 +3655,10 @@ template functionsHeaderFile(String filePrefix,
   <%extraRecordDecls |> rd => recordDeclarationHeader(rd) ;separator="\n"%>
   <%match mainFunction case SOME(fn) then functionHeader(fn,true)%>
   <%functionHeaders(functions)%>
+   
+  /* start - annotation(Include=...) if we have any */
   <%externalFunctionIncludes(includes)%>
+  /* end - annotation(Include=...) */
 
   #ifdef __cplusplus
   }
@@ -4294,7 +4305,28 @@ match fn
 case func as EXTERNAL_FUNCTION(__) then
   let fn_name = extFunctionName(extName, language)
   let fargsStr = extFunDefArgs(extArgs, language)
-  'extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStr%>);'
+  let fargsStrEscaped = '<%escapeCComments(fargsStr)%>'
+  let includesStr = includes |> i => i ;separator=", "
+  /*
+   * adrpo: 
+   *   only declare the external function definition IF THERE WERE NO INCLUDES!
+   *   i did not put includesStr string in the comment below as it might include
+   *   entire files  
+   */
+  if  includes then
+    <<
+    /* 
+     * The function has annotation(Include=...>)
+     * the external function definition should be present 
+     * in one of these files and have this prototype:
+     * extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStrEscaped%>); 
+     */
+    >>
+  else 
+    <<
+    extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStr%>); 
+    >>
+end match
 end extFunDef;
 
 template extFunDefDynamic(Function fn)

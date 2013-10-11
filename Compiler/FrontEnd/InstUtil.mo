@@ -2538,7 +2538,7 @@ algorithm
         enumclass = Inst.instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
         (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
-        ih = InnerOuter.addClass(cl2, pre, Env.getEnvNameStr(env_1), ih);
+        ih = InnerOuter.addClassIfInner(cl2, pre, env_1, ih);
       then
         (env_1,ih);
 
@@ -2549,7 +2549,7 @@ algorithm
         env_1 = Env.extendFrameC(env, sel1);
         // call to redeclareType which calls updateComponents in env wich updates the class frame
         (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
-        ih = InnerOuter.addClass(cl2, pre, Env.getEnvNameStr(env_1), ih);
+        ih = InnerOuter.addClassIfInner(cl2, pre, env_1, ih);
       then
         (env_1,ih);
 
@@ -2569,7 +2569,7 @@ algorithm
       equation
         enumclass = Inst.instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
-        ih = InnerOuter.addClass(enumclass, pre, Env.getEnvNameStr(env_1), ih);
+        ih = InnerOuter.addClassIfInner(enumclass, pre, env_1, ih);
       then
         (env_1,ih);
 
@@ -2578,7 +2578,7 @@ algorithm
       equation
         // Debug.traceln("Extend frame " +& Env.printEnvPathStr(env) +& " with " +& SCode.className(cl));
         env_1 = Env.extendFrameC(env, sel1);
-        ih = InnerOuter.addClass(sel1, pre, Env.getEnvNameStr(env_1), ih);
+        ih = InnerOuter.addClassIfInner(sel1, pre, env_1, ih);
       then
         (env_1,ih);
 
@@ -3434,11 +3434,12 @@ algorithm
         true = stringEq(Env.printEnvPathStr(env1), Env.printEnvPathStr(env2));
         // the classes are the same!
         true = SCode.elementEqual(c1, c2);
+        /*
         // add a warning and let it continue!
         s1 = SCodeDump.unparseElementStr(oldElt);
         s2 = SCodeDump.unparseElementStr(newElt);
-        Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,
-          {s1, s2}, {old_info, new_info});
+        Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL, {s1, s2}, {old_info, new_info});
+        */
       then
         ();
 

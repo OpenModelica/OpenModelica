@@ -734,7 +734,7 @@ algorithm
       Absyn.Path name;
       DAE.ElementSource source;
       Absyn.Info info;
-      Boolean dynamicLoad;
+      Boolean dynamicLoad, hasIncludeAnnotation, hasLibraryAnnotation;
       list<String> includeDirs;
       DAE.FunctionAttributes funAttrs;
       list<DAE.Var> varlst; 
@@ -853,6 +853,8 @@ algorithm
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         (fn_includes, fn_includeDirs, fn_libs, dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann);
+        hasIncludeAnnotation = List.isNotEmpty(fn_includes);
+        hasLibraryAnnotation = List.isNotEmpty(fn_libs);
         includes = List.union(fn_includes, includes);
         includeDirs = List.union(fn_includeDirs, includeDirs);
         libs = List.union(fn_libs, libs);
@@ -864,7 +866,7 @@ algorithm
         lang = System.toupper(lang);
       then
         (SimCode.EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn, 
-          inVars, outVars, biVars, fn_libs, lang, info, dynamicLoad), 
+          inVars, outVars, biVars, fn_includes, fn_libs, lang, info, dynamicLoad), 
           rt_1, recordDecls, includes, includeDirs, libs);
         
         // Record constructor.
