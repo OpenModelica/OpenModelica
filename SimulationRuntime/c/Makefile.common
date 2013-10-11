@@ -62,7 +62,6 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./util/varinfo.h \
 ./linearization/linearize.h \
 ./simulation/solver/perform_simulation.c \
-./simulation/solver/omp_perform_simulation.c \
 ./optimization/interfaceOptimization.h \
 ./simulation/solver/dassl.h 
 

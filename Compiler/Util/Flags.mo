@@ -685,7 +685,7 @@ constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(23, "corbaSessionName",
 
 constant ConfigFlag NUM_PROC = CONFIG_FLAG(24, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
-  Util.gettext("Sets the number of processors to use."));
+  Util.gettext("Sets the number of processors to use (0=default=auto)."));
 
 constant ConfigFlag LATENCY = CONFIG_FLAG(25, "latency",
   SOME("l"), EXTERNAL(), INT_FLAG(0), NONE(),

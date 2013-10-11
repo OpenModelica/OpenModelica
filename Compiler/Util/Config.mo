@@ -78,8 +78,18 @@ end modelicaOutput;
 public function noProc
   output Integer outInteger;
 algorithm
-  outInteger := Flags.getConfigInt(Flags.NUM_PROC);
+  outInteger := noProcWork(Flags.getConfigInt(Flags.NUM_PROC));
 end noProc;
+
+protected function noProcWork
+  input Integer inProc;
+  output Integer outInteger;
+algorithm
+  outInteger := match inProc
+    case 0  then System.numProcessors();
+    else inProc;
+  end match;
+end noProcWork;
 
 public function latency
   output Real outReal;

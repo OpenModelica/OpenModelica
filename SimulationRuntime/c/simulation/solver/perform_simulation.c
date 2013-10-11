@@ -48,6 +48,10 @@
 #include <errno.h>
 #include <float.h>
 
+#if defined(_OPENMP) && !defined(HPCOM)
+  #include <omp.h>
+  #define OMC_OMP
+#endif
 
 
 
@@ -82,7 +86,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   int retValIntegrator = 0;
   int retValue = 0;
-  int i, ui, eventType, retry = 0;
+  int i, ui, eventType, retry = 0, stop = 0;
 
   FILE *fmt = NULL;
   unsigned int stepNo = 0;
@@ -111,14 +115,29 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
 
+#if defined(OMC_OMP)
+  omp_set_num_threads(4);
+#endif
+
+#if defined(OMC_OMP)
+#pragma omp parallel
+{
+#endif
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
   {
+#if defined(OMC_OMP)
+#pragma omp barrier
+#endif
     mem_state = get_memory_state();
     currectJumpState = ERROR_SIMULATION;
     /* try */
     if(!setjmp(simulationJmpbuf))
     {
+#if defined(OMC_OMP)
+#pragma omp master
+{
+#endif
       if(measure_time_flag)
       {
         for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
@@ -162,9 +181,21 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       INDENT(LOG_SOLVER);
       communicateStatus("Running", (solverInfo->currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
       retValIntegrator = solver_main_step(data, solverInfo);  
-      if(solverInfo->solverMethod == S_OPTIMIZATION) 
-        return 0;
+      if (solverInfo->solverMethod == S_OPTIMIZATION) {
+        stop = 1;
+      }
+#if defined(OMC_OMP)
+} /* end pragma omp master */
+#pragma omp barrier
+#endif
+      if (stop) break;
+
       updateContinuousSystem(data);
+
+#if defined(OMC_OMP)
+#pragma omp master
+{
+#endif
       saveZeroCrossings(data);
       RELEASE(LOG_SOLVER);
 
@@ -339,7 +370,13 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         break;
       }
     }
+#if defined(OMC_OMP)
+} /* end pragma master */
+#endif
   } /* end while solver */
+#if defined(OMC_OMP)
+} /* end pragma parallel */
+#endif
 
   if(fmt)
     fclose(fmt);

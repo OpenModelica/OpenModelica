@@ -2986,7 +2986,7 @@ algorithm
 
     case (cache,env,"numProcessors",{},st,_)
       equation
-        i = System.numProcessors();
+        i = Config.noProc();
       then (cache,Values.INTEGER(i),st);
 
     case (cache,env,"forkAvailable",{},st,_)

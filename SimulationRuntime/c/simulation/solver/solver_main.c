@@ -46,7 +46,7 @@
 #include "radau.h"
 
 #include "interfaceOptimization.h"
-
+#include "simulation_inline_solver.h"
 
 /*
  * #include "dopri45.h"

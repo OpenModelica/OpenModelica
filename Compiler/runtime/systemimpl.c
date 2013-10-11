@@ -607,13 +607,13 @@ int System_numProcessors(void)
   if(depth != HWLOC_TYPE_DEPTH_UNKNOWN) {
     int res = hwloc_get_nbobjs_by_depth(topology, depth);
     hwloc_topology_destroy(topology);
-    return res;
+    return max(res,1);
   }
 #endif
 #if defined(__MINGW32__) || defined(_MSC_VER)
   SYSTEM_INFO sysinfo;
   GetSystemInfo( &sysinfo );
-  return sysinfo.dwNumberOfProcessors;
+  return max(sysinfo.dwNumberOfProcessors, 1);
 #else
   return max(sysconf(_SC_NPROCESSORS_ONLN), 1);
 #endif
