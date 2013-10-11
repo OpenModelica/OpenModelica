@@ -495,15 +495,16 @@ algorithm
     local
       Integer i; Real r;
       Absyn.Exp exp;
+      String str;
 
-    case (Absyn.UNARY(Absyn.SUB(),exp), _)
+    case (Absyn.UNARY(Absyn.UMINUS(),exp), _)
       equation
         DAE.ICONST(i) = getConst(exp, inExpType);
         i = intNeg(i);
       then
         DAE.ICONST(i);
 
-    case (Absyn.UNARY(Absyn.SUB(),exp), _)
+    case (Absyn.UNARY(Absyn.UMINUS(),exp), _)
       equation
         DAE.RCONST(r) = getConst(exp, inExpType);
         r = realNeg(r);
@@ -512,13 +513,12 @@ algorithm
 
     case (Absyn.INTEGER(i), DAE.T_INTEGER(source = _))  then DAE.ICONST(i);
     case (Absyn.REAL(r),    DAE.T_REAL(source = _)) then DAE.RCONST(r);
-
     case (Absyn.INTEGER(i), DAE.T_REAL(source = _)) equation r = intReal(i); then DAE.RCONST(r);
-    case (Absyn.REAL(r),    DAE.T_INTEGER(source = _))  equation i = realInt(r); then DAE.ICONST(i);
 
     case (exp,    _)
       equation
-        print("CevalScript.getConst: Not handled exp: " +& Dump.printExpStr(exp) +& "\n");
+        str = "CevalScript.getConst: Not handled exp: " +& Dump.printExpStr(exp) +& " of type " +& Types.unparseType(inExpType) +& "\n";
+        print(str);
       then
         fail();
   end matchcontinue;
