@@ -1454,7 +1454,9 @@ annotation(preferredView="text");
 end ErrorMessage;
 
 function getMessagesStringInternal
-  "{{[file.mo:n:n-n:n:b] Error: message, TRANSLATION, Error, code}}"
+  "{{[file.mo:n:n-n:n:b] Error: message, TRANSLATION, Error, code}}
+  if unique = true (the default) only unique messages will be shown"
+  input Boolean unique := true;
   output ErrorMessage[:] messagesString;
 external "builtin";
 annotation(preferredView="text");

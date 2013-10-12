@@ -883,6 +883,7 @@ algorithm
       list<String> names, namesPublic, namesChanged, fileNames;
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
+      list<Error.TotalMessage> messages;
    
     Real stoptime,starttime,tol,stepsize;
     Integer interval;
@@ -1826,9 +1827,16 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,"getMessagesStringInternal",{},st,_)
+    case (cache,env,"getMessagesStringInternal",{Values.BOOL(true)},st,_)
       equation
-        v = ValuesUtil.makeArray(List.map(Error.getMessages(),errorToValue));
+        messages = List.unique(Error.getMessages());
+        v = ValuesUtil.makeArray(List.map(messages, errorToValue));
+      then
+        (cache,v,st);
+    
+    case (cache,env,"getMessagesStringInternal",{Values.BOOL(false)},st,_)
+      equation
+        v = ValuesUtil.makeArray(List.map(Error.getMessages(), errorToValue));
       then
         (cache,v,st);
 
