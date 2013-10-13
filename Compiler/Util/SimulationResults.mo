@@ -88,5 +88,19 @@ public function cmpSimulationResults
 end cmpSimulationResults;
 
 
+public function diffSimulationResults
+  input Boolean runningTestsuite;
+  input String filename;
+  input String reffilename;
+  input String prefix;
+  input Real refTol;
+  input Real absTol;
+  input list<String> vars;
+  input Boolean keepEqualResults;
+  output Boolean success;
+  output list<String> res;
+  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,absTol,vars,keepEqualResults,success) annotation(Library = "omcruntime");
+end diffSimulationResults;
+
 end SimulationResults;
 

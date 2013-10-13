@@ -2428,6 +2428,26 @@ algorithm
     case (cache,env,"compareSimulationResults",_,st,_)
       then (cache,Values.STRING("Error in compareSimulationResults"),st);
 
+    case (cache,env,"diffSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(x1),Values.REAL(x2),Values.ARRAY(valueLst=cvars),Values.BOOL(b)},st,_)
+      equation
+        pwd = System.pwd();
+        pd = System.pathDelimiter();
+        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = Util.testsuiteFriendlyPath(filename_1);
+        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
+        filename2 = Util.if_(System.substring(filename2,1,1) ==& "/",filename2,stringAppendList({pwd,pd,filename2}));
+        vars_1 = List.map(cvars, ValuesUtil.valString);
+        (b,strings) = SimulationResults.diffSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,x1,x2,vars_1,b);
+        cvars = List.map(strings,ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(cvars);
+      then
+        (cache,Values.TUPLE({Values.BOOL(b),v}),st);
+
+    case (cache,env,"diffSimulationResults",_,st,_)
+      equation
+        v = ValuesUtil.makeArray({});
+      then (cache,Values.TUPLE({Values.BOOL(false),v}),st);
+
     case (cache,env,"checkTaskGraph",{Values.STRING(filename),Values.STRING(filename_1)},st,_)
       equation
         pwd = System.pwd();

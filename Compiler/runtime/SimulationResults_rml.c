@@ -86,8 +86,17 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__cmpSimulationResults)
 {
-  rmlA0 = SimulationResultsCmp_compareResults(RML_UNTAGFIXNUM(rmlA0),RML_STRINGDATA(rmlA1),RML_STRINGDATA(rmlA2),RML_STRINGDATA(rmlA3),rml_prim_get_real(rmlA4),rml_prim_get_real(rmlA5),rmlA6);
+  rmlA0 = SimulationResultsCmp_compareResults(1,RML_UNTAGFIXNUM(rmlA0),RML_STRINGDATA(rmlA1),RML_STRINGDATA(rmlA2),RML_STRINGDATA(rmlA3),rml_prim_get_real(rmlA4),rml_prim_get_real(rmlA5),rmlA6,0,NULL);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+
+RML_BEGIN_LABEL(SimulationResults__diffSimulationResults)
+{
+  int res;
+  rmlA1 = SimulationResultsCmp_compareResults(0,RML_UNTAGFIXNUM(rmlA0),RML_STRINGDATA(rmlA1),RML_STRINGDATA(rmlA2),RML_STRINGDATA(rmlA3),rml_prim_get_real(rmlA4),rml_prim_get_real(rmlA5),rmlA6,RML_UNTAGFIXNUM(rmlA7),&res);
+  rmlA0 = mk_icon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

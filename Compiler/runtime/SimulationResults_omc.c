@@ -32,8 +32,6 @@
 #include <stdlib.h>
 
 
-extern "C" {
-
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
 #define ADD_METARECORD_DEFINITIONS static
@@ -67,12 +65,15 @@ double SimulationResults_val(const char *filename, const char *varname, double t
 
 void* SimulationResults_cmpSimulationResults(int runningTestsuite, const char *filename,const char *reffilename,const char *logfilename, double refTol, double absTol, void *vars)
 {
-  return SimulationResultsCmp_compareResults(runningTestsuite,filename,reffilename,logfilename,refTol,absTol,vars);
+  return SimulationResultsCmp_compareResults(1,runningTestsuite,filename,reffilename,logfilename,refTol,absTol,vars,0,NULL);
+}
+
+void* SimulationResults_diffSimulationResults(int runningTestsuite, const char *filename,const char *reffilename,const char *logfilename, double refTol, double absTol, void *vars, int keepEqualResults, int *success)
+{
+  return SimulationResultsCmp_compareResults(0,runningTestsuite,filename,reffilename,logfilename,refTol,absTol,vars,keepEqualResults,success);
 }
 
 void SimulationResults_close()
 {
   SimulationResultsImpl__close(&simresglob);
-}
-
 }

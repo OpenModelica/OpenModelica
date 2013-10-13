@@ -38,7 +38,7 @@
 #include "systemimpl.h"
 
 /* Size of the buffer for warnings and other messages */
-#define WARNINGBUFFSIZE 2000
+#define WARNINGBUFFSIZE 4096
 
 typedef struct {
   double *data;
@@ -237,7 +237,7 @@ static char AlmostEqualRelativeAndAbs(double A, double B)
   return 0;
 }
 
-static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx)
+static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, char *prefix)
 {
   unsigned int i,j,k,j_event;
   double t,tr,d,dr,err,d_left,d_right,dr_left,dr_right,t_event;
@@ -246,6 +246,16 @@ static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, 
   char isdifferent = 0;
   char refevent = 0;
   double average=0;
+  FILE *fout = NULL;
+  char *fname = NULL;
+  if (!isResultCmp) {
+    fname = (char*) malloc(15 + strlen(varname));
+    sprintf(fname, "%s.%s.csv", prefix, varname);
+    fout = fopen(fname,"w");
+    if (fout) {
+      fprintf(fout, "time,reference,actual,err,relerr,\"%s\"\n",varname);
+    }
+  }
   for (i=0;i<refdata->n;i++){
     average += absdouble(refdata->data[i]);
   }
@@ -504,6 +514,9 @@ static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, 
 #ifdef DEBUGOUTPUT
     fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
+    if (fout) {
+      fprintf(fout, "%.6g,%.6g,%.6g,%.6g,%.6g\n",tr,d,dr,err,AlmostEqualRelativeAndAbs(d,0) ? err/average : absdouble(err/d));
+    }
     if ( err > average){
       if (j+1<reftime->n) {
         if (reftime->data[j+1] == tr) {
@@ -517,25 +530,39 @@ static unsigned int cmpData(char* varname, DataField *time, DataField *reftime, 
       }
 
       isdifferent = 1;
-      if (ddf->n >= ddf->n_max) {
-        DiffData *diffdatafild;
-        ddf->n_max = ddf->n_max ? ddf->n_max*2 : 1024;
-        ddf->data = (DiffData*) realloc(ddf->data, sizeof(DiffData)*(ddf->n_max));
-        /* TODO: Check for errors? */
+      if (isResultCmp) { /* If we produce the full diff, this data has already been output */
+        if (ddf->n >= ddf->n_max) {
+          DiffData *newData;
+          ddf->n_max = ddf->n_max ? ddf->n_max*2 : 1024;
+          newData = (DiffData*) realloc(ddf->data, sizeof(DiffData)*(ddf->n_max));
+          if (!newData) continue; /* realloc failed... pretty bad, but let's continue */
+          ddf->data = newData;
+        }
+        ddf->data[ddf->n].name = varname;
+        ddf->data[ddf->n].data = d;
+        ddf->data[ddf->n].dataref = dr;
+        ddf->data[ddf->n].time = t;
+        ddf->data[ddf->n].timeref = tr;
+        ddf->data[ddf->n].interpolate = interpolate?'1':'0';
+        ddf->n +=1;
       }
-      ddf->data[ddf->n].name = varname;
-      ddf->data[ddf->n].data = d;
-      ddf->data[ddf->n].dataref = dr;
-      ddf->data[ddf->n].time = t;
-      ddf->data[ddf->n].timeref = tr;
-      ddf->data[ddf->n].interpolate = interpolate?'1':'0';
-      ddf->n +=1;
     }
   }
-  if (isdifferent)
-  {
+  if (isdifferent) {
     cmpdiffvars[vardiffindx] = varname;
     vardiffindx++;
+    if (!isResultCmp) {
+      *diffLst = mk_cons(mk_scon(fname),*diffLst);
+    }
+  }
+  if (fout) {
+    fclose(fout);
+  }
+  if (!isdifferent && 0==keepEqualResults && 0==isResultCmp) {
+    SystemImpl__removeFile(fname);
+  }
+  if (fname) {
+    free(fname);
   }
   return vardiffindx;
 }
@@ -577,7 +604,8 @@ static const char* getTimeVarName(void *vars) {
   return res;
 }
 
-void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol,  void *vars)
+/* Common, huge function, for both result comparison and result diff */
+void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol, void *vars, int keepEqualResults, int *success)
 {
   char **cmpvars=NULL;
   char **cmpdiffvars=NULL;
@@ -642,14 +670,12 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
   timeVarName = getTimeVarName(allvars);
   timeVarNameRef = getTimeVarName(allvarsref);
   time = getData(timeVarName,filename,size,&simresglob_c);
-  if (time.n==0)
-  {
+  if (time.n==0) {
     return mk_cons(mk_scon("Error get time!"),mk_nil());
   }
   /* fprintf(stderr, "get reftime\n"); */
   timeref = getData(timeVarNameRef,reffilename,size_ref,&simresglob_ref);
-  if (timeref.n==0)
-  {
+  if (timeref.n==0) {
     return mk_cons(mk_scon("Error get ref time!"),mk_nil());
   }
   /* check if time is larger or less reftime */
@@ -659,11 +685,10 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
 #ifdef DEBUGOUTPUT
     fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n-1],timeref.data[timeref.n-1]);
 #endif
-    res = mk_cons(mk_scon("Warning: Resultfile and Reference have different end time points!\n"),res);
-    snprintf(buf,WARNINGBUFFSIZE,"Reffile[%d]=%f\n",timeref.n,timeref.data[timeref.n-1]);
-    res = mk_cons(mk_scon(buf),res);
-    snprintf(buf,WARNINGBUFFSIZE,"File[%d]=%f\n",time.n,time.data[time.n-1]);
-    res = mk_cons(mk_scon(buf),res);
+    snprintf(buf,WARNINGBUFFSIZE,"Resultfile and Reference have different end time points!\n"
+    "Reffile[%d]=%f\n"
+    "File[%d]=%f\n",timeref.n,timeref.data[timeref.n-1],time.n,time.data[time.n-1]);
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, buf, NULL, 0);
   }
   var1=NULL;
   var2=NULL;
@@ -701,8 +726,6 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
         msg[1] = var;
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
         ngetfailedvars++;
-        snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
-        res = mk_cons(mk_scon(buf),res);
         continue;
       }
     }
@@ -719,35 +742,36 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
         msg[1] = var;
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
         ngetfailedvars++;
-        snprintf(buf,WARNINGBUFFSIZE,"Get data of variable %s from file %s failed!\n",var,msg[0]);
-        res = mk_cons(mk_scon(buf),res);
         continue;
       }
     }
     /* compare */
-    vardiffindx = cmpData(var,&time,&timeref,&data,&dataref,reltol,abstol,&ddf,cmpdiffvars,vardiffindx);
+    vardiffindx = cmpData(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,abstol,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename);
     /* free */
     if (dataref.data) free(dataref.data);
     if (data.data) free(data.data);
   }
 
-  if (writeLogFile(resultfilename,&ddf,filename,reffilename,reltol,abstol))
-  {
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Cannot write to the difference (.csv) file!\n"), msg, 0);
-  }
-
-  if ((ddf.n > 0) || (ngetfailedvars > 0)){
-    /* fprintf(stderr, "diff: %d\n",ddf.n); */
-    /* for (i=0;i<vardiffindx;i++)
-    fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
-    for (i=0;i<vardiffindx;i++){
-      res = (void*)mk_cons(mk_scon(cmpdiffvars[i]),res);
+  if (isResultCmp) {
+    if (writeLogFile(resultfilename,&ddf,filename,reffilename,reltol,abstol)) {
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Cannot write to the difference (.csv) file!\n"), msg, 0);
     }
-    res = mk_cons(mk_scon("Files not Equal!"),res);
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Files not Equal\n"), msg, 0);
+
+    if ((ddf.n > 0) || (ngetfailedvars > 0)){
+      /* fprintf(stderr, "diff: %d\n",ddf.n); */
+      /* for (i=0;i<vardiffindx;i++)
+      fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
+      for (i=0;i<vardiffindx;i++){
+        res = (void*)mk_cons(mk_scon(cmpdiffvars[i]),res);
+      }
+      res = mk_cons(mk_scon("Files not Equal!"),res);
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Files not Equal\n"), msg, 0);
+    } else {
+      res = mk_cons(mk_scon("Files Equal!"),res);
+    }
+  } else {
+    *success = 0==vardiffindx;
   }
-  else
-    res = mk_cons(mk_scon("Files Equal!"),res);
 
   if (var1) free(var1);
   if (var2) free(var2);

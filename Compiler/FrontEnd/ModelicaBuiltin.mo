@@ -2331,6 +2331,23 @@ external "builtin";
 annotation(preferredView="text");
 end compareSimulationResults;
 
+public function diffSimulationResults "compares simulation results."
+  input String actualFile;
+  input String expectedFile;
+  input String diffPrefix;
+  input Real relTol := 0.01;
+  input Real absTol := 0.0001;
+  input String[:] vars := fill("",0);
+  input Boolean keepEqualResults := false;
+  output Boolean success /* On success, resultFiles is empty. But it might be empty on failure anyway (for example if an input file does not exist) */;
+  output String[:] resultFiles;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>The output is the generated filesnames</p>
+</html>"),preferredView="text");
+end diffSimulationResults;
+
 public function checkTaskGraph "Checks if the given taskgraph has the same structure as the reference taskgraph and if all attributes are set correctly."
   input String filename;
   input String reffilename;
