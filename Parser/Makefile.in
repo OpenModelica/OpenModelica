@@ -1,7 +1,7 @@
 CC=@CC@
 CXX=@CXX@
 CFLAGS=@CFLAGS@
-CPPFLAGS=@CPPFLAGS@ -I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -I../3rdParty/gc-7.2/include $(BUILDINC)
+CPPFLAGS=@CPPFLAGS@ -I$(COMPILERHOME) $(RMLINC) -I. -I$(ANTLR) -I$(ANTLR)/include -I../3rdParty/gc-7.2/include $(BUILDINC)
 RMLHOME=@rmlhome@
 OMC=../build/bin/omc
 
