@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköpings University,
+ * Copyright (c) 1998-CurrentYear, LinkÃ¶pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from LinkÃ¶pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -41,6 +41,7 @@
 #include <ParModelica_Lexer.h>
 #include <ModelicaParser.h>
 #include <antlr3intstream.h>
+#include <antlr3config.h>
 
 #include "runtime/errorext.h"
 #include "runtime/systemimpl.h"
@@ -378,7 +379,13 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", members.filename_C); fflush(stderr); }
 
   fName  = (pANTLR3_UINT8)members.filename_C;
+#if defined(ANTLR_C_VERSION_3_2)
   input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)data,strlen(data),fName);
+#elif defined(ANTLR_C_VERSION_3_4)
+  input  = antlr3StringStreamNew((pANTLR3_UINT8)data, ANTLR3_ENC_8BIT, strlen(data), fName);
+#else
+  #error "Neiter ANTLR_C_VERSION_3_2 or ANTLR_C_VERSION_3_4 is defined. Could not find the ANTLR 3.x C runtime!"
+#endif
   if ( input == NULL ) {
     fprintf(stderr, "Unable to open file %s\n", members.filename_C); fflush(stderr);
     return NULL;
@@ -421,7 +428,13 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)fileName;
+#if defined(ANTLR_C_VERSION_3_2)
   input  = antlr3AsciiFileStreamNew(fName);
+#elif defined(ANTLR_C_VERSION_3_4)
+  input  = antlr3FileStreamNew(fName, ANTLR3_ENC_8BIT);
+#else
+  #error "Neiter ANTLR_C_VERSION_3_2 or ANTLR_C_VERSION_3_4 is defined. Could not find the ANTLR 3.x C runtime!"
+#endif
   if ( input == NULL ) {
     return NULL;
   }

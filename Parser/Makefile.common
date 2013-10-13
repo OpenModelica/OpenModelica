@@ -1,8 +1,13 @@
+ANTLR=../3rdParty/antlr/3.2/libantlr3c-3.2
+#ANTLR=../3rdParty/antlr/3.4/libantlr3c-3.4
+ANTLRJAR = $(ANTLR)/../tool/antlr-3.2.jar
+#ANTLRJAR = $(ANTLR)/../tool/antlr-3.4-complete.jar
+ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -report
+
 COMPILERHOME=../Compiler/
 BUILDINC = -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util -I../SimulationRuntime/c/simulation/libf2c
 RMLINC	= -I$(RMLHOME)/include/plain
 
-ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
 
 .PHONY: all
 .SUFFIXES: .c .o
@@ -11,9 +16,9 @@ all: install libomparse_rml.a
 install: libantlr3.a libomparse.a
 	cp libantlr3.a libomparse.a ../build/lib/omc/
 
-libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
+libantlr3.a: $(ANTLR)/src/* $(ATRLR)/include/*
 	# build the library
-	$(CC) ${CFLAGS} ${CPPFLAGS} -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
+	$(CC) ${CFLAGS} ${CPPFLAGS} -c $(ANTLR)/src/*.c -I$(ANTLR)/include -I$(ANTLR)
 	rm -f $@
 	ar -ru libantlr3.a antlr3*.o
 	ranlib libantlr3.a
@@ -117,7 +122,7 @@ $(parmodelicagen) : ParModelica_Lexer.stamp
 
 
 clean:
-	rm -f *.o *.a \
+	rm -f *.o *.obj *.lib *.a \
 ModelicaParser.c ModelicaParser.h \
 *Modelica*_Lexer.c *Modelica*_Lexer.h \
 *.tokens *.stamp *.stamp.tmp
