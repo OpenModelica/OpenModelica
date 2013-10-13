@@ -5608,18 +5608,18 @@ algorithm
       DAE.FunctionTree tree;
 
     case ({},tree) then tree;
-    /*
     case (func::funcs,tree)
       equation
+        true = Flags.isSet(Flags.FAILTRACE);
         // print("Add to cache [check] : " +& Absyn.pathString(functionName(func)) +& "\n");
         // print("Function added: \n" +& DAEDump.dumpFunctionStr(func) +& "\n"); 
         fOld = Util.getOption(avlTreeGet(tree, functionName(func)));
         failure(equality(fOld = func));
-        print("Function already in the tree and different:" +& 
+        print("Function already in the tree and different (keep the one already in the tree):" +& 
           "\nnew:\n" +& DAEDump.dumpFunctionStr(func) +& 
           "\nold:\n" +& DAEDump.dumpFunctionStr(fOld) +& "\n");
       then 
-        fail();*/
+        fail();
     case (func::funcs,tree)
       equation
         // print("Add to cache: " +& Absyn.pathString(functionName(func)) +& "\n");

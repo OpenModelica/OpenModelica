@@ -2386,7 +2386,7 @@ algorithm
         model_path = Absyn.crefToPath(class_) "class in package" ;
         cl = getPathedClassInProgram(model_path, p);
         cl = renameComponentInClass(cl, old_comp, new_comp);
-        w = buildWithin(Absyn.FULLYQUALIFIED(model_path));
+        w = buildWithin(Absyn.makeFullyQualified(model_path));
         p = updateProgram(Absyn.PROGRAM({cl}, w, Absyn.dummyTimeStamp), p);
         str = Absyn.pathString(model_path);
         paths_2 = stringAppendList({"{",str,"}"});

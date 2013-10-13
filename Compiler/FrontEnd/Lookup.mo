@@ -1221,8 +1221,8 @@ algorithm
       then
         (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
-    // lookup of constants on form A.B in packages. instantiate package and look inside.
-    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a class. */
+    /*/ lookup of constants on form A.B in packages. instantiate package and look inside.
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_)
       equation
         (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
         (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) =
@@ -1231,17 +1231,21 @@ algorithm
             env,
             Absyn.IDENT(id),
             prevFrames,
-            Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,
+            Util.makeStatefulBoolean(true), // In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon!
             false);
         Util.setStatefulBoolean(inState,true);
 
         true = Env.hasModifications(env2);
+        
+        // env <> env2!
+        env2 = selectUpdatedEnv(env, env2);  
+        
         // search directly in env2
         (_, env5) = lookupClassLocal(env2, n);
 
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name); */
 
     // lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a class. */

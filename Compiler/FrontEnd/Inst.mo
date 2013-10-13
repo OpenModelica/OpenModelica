@@ -2697,8 +2697,8 @@ algorithm
         //cenv_2 = Env.mergeEnv(cenv_2, env, "$derived_" +& cn2, c, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
         cenv_2 = Env.addModification(cenv_2, Env.M(pre, className, adno, mods_1, parentEnv, inst_dims_1));
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis,
-          inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
-
+            inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
+        
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
         oDA = SCode.mergeAttributes(DA,oDA);
       then
@@ -5035,7 +5035,7 @@ algorithm
         (cache,cl as SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, path, false);
         path_2 = makeFullyQualified2(env_1,Absyn.IDENT(name));
       then
-        (cache,Absyn.FULLYQUALIFIED(path_2));
+        (cache,Absyn.makeFullyQualified(path_2));
 
     // Needed to make external objects fully-qualified
     case (cache,env as (Env.FRAME(name = SOME(name))::_),Absyn.IDENT(s))
@@ -5043,7 +5043,7 @@ algorithm
         true = name ==& s;
         SOME(path_2) = Env.getEnvPath(env);
       then
-        (cache,Absyn.FULLYQUALIFIED(path_2));
+        (cache,Absyn.makeFullyQualified(path_2));
 
     // A type can exist without a class (i.e. builtin functions)
     case (cache,env,path as Absyn.IDENT(s))
@@ -5051,7 +5051,7 @@ algorithm
          (cache,_,env_1) = Lookup.lookupType(cache,env, Absyn.IDENT(s), NONE());
          path_2 = makeFullyQualified2(env_1,path);
       then
-        (cache,Absyn.FULLYQUALIFIED(path_2));
+        (cache,Absyn.makeFullyQualified(path_2));
 
      // A package constant, first try to look it up local(top frame)
     case (cache,(f::fs) ,path)
@@ -5060,7 +5060,7 @@ algorithm
         (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternal(cache, {f}, crPath,InstTypes.SEARCH_ALSO_BUILTIN());
         path3 = makeFullyQualified2(env,Absyn.IDENT(name));
       then
-        (cache,Absyn.FULLYQUALIFIED(path3));
+        (cache,Absyn.makeFullyQualified(path3));
 
     // TODO! FIXME! what do we do here??!!
     case (cache,env,path)
@@ -5069,7 +5069,7 @@ algorithm
          (cache,env,_,_,_,_,_,_,name) = Lookup.lookupVarInPackages(cache, env, crPath, {}, Util.makeStatefulBoolean(false));
           path3 = makeFullyQualified2(env,Absyn.IDENT(name));
       then
-        (cache,Absyn.FULLYQUALIFIED(path3));
+        (cache,Absyn.makeFullyQualified(path3));
 
     // If it fails, leave name unchanged.
     case (cache,env,path)

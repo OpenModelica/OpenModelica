@@ -2081,7 +2081,7 @@ algorithm
       equation
         (cr, tup) = traverseExpBidirCref(cr, inTuple);
       then
-        (CREF_FULLYQUALIFIED(cr), tup);
+        (crefMakeFullyQualified(cr), tup);
 
     case (CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
@@ -3106,7 +3106,7 @@ algorithm
       equation
         cr = addSubscriptsLast(cr,i);
       then
-        CREF_FULLYQUALIFIED(cr);
+        crefMakeFullyQualified(cr);
   end match;
 end addSubscriptsLast;
 
@@ -3126,7 +3126,7 @@ algorithm
     case (CREF_FULLYQUALIFIED(componentRef = cr),_)
       equation
         cr = crefReplaceFirstIdent(cr,replPath);
-      then CREF_FULLYQUALIFIED(cr);
+      then crefMakeFullyQualified(cr);
     case (CREF_QUAL(componentRef = cr, subscripts = subs),_)
       equation
         cref = pathToCref(replPath);
@@ -3798,7 +3798,7 @@ algorithm
       equation
         c_1 = crefStripLast(c);
       then
-        CREF_FULLYQUALIFIED(c_1);
+        crefMakeFullyQualified(c_1);
   end match;
 end crefStripLast;
 
@@ -3917,7 +3917,7 @@ algorithm
     case(FULLYQUALIFIED(p))
       equation
         c = pathToCref(p);
-      then CREF_FULLYQUALIFIED(c);
+      then crefMakeFullyQualified(c);
   end match;
 end pathToCref;
 
@@ -3946,7 +3946,7 @@ algorithm
       equation
         c = pathToCrefWithSubs(p, inSubs);
       then
-        CREF_FULLYQUALIFIED(c);
+        crefMakeFullyQualified(c);
   end match;
 end pathToCrefWithSubs;
 
@@ -4128,7 +4128,7 @@ algorithm
       equation
         cr_1 = crefStripLastSubs(cr);
       then
-        CREF_FULLYQUALIFIED(cr_1);
+        crefMakeFullyQualified(cr_1);
   end match;
 end crefStripLastSubs;
 
@@ -4156,7 +4156,7 @@ algorithm
       equation
         cr_1 = joinCrefs(cr, cr2);
       then
-        CREF_FULLYQUALIFIED(cr_1);
+        crefMakeFullyQualified(cr_1);
   end match;
 end joinCrefs;
 
@@ -5397,7 +5397,7 @@ algorithm
         equation
           cref2 = crefInsertSubscriptLstLst2(cref, subs);
         then
-          CREF_FULLYQUALIFIED(cref2);
+          crefMakeFullyQualified(cref2);
       case (CREF_INVALID(componentRef = cref), subs)
         equation
           cref2 = crefInsertSubscriptLstLst2(cref, subs);

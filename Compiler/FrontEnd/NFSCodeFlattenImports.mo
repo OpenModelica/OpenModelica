@@ -731,7 +731,7 @@ algorithm
       equation
         cref = flattenComponentRefSubs(cref, inEnv, inInfo);
       then
-        Absyn.CREF_FULLYQUALIFIED(cref);
+        Absyn.crefMakeFullyQualified(cref);
 
   end match;
 end flattenComponentRefSubs;

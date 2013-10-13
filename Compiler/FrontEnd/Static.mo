@@ -7531,7 +7531,7 @@ algorithm
    slots) := elabTypes(cache, inEnv, args, nargs, typelist, true/* Check types*/, impl,isExternalObject,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
 
-  (fn_1,functype) := deoverloadFuncname(fn, functype);
+  (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
   tuple_ := isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
   inlineType := inlineBuiltin(isBuiltin,inlineType);
@@ -8449,24 +8449,46 @@ protected function deoverloadFuncname
   so this is returned. Otherwise return input."
   input Absyn.Path inPath;
   input DAE.Type inType;
+  input Env.Env inEnv;
   output Absyn.Path outPath;
   output DAE.Type outType;
 algorithm
-  (outPath,outType) := match (inPath,inType)
+  (outPath,outType) := matchcontinue (inPath,inType,inEnv)
     local
       Absyn.Path fn;
       String name;
       DAE.Type tty;
-    case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))))
+    
+    case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        fn = Absyn.IDENT(name);
+        false = Absyn.pathEqual(inPath, fn);
+        print("P1: " +& Env.getEnvNameStr(inEnv) +& "/" +& Absyn.pathString(inPath) +& "\n" +& 
+              "N1: " +& name +& "\n-------------\n");
+      then 
+        fail();
+
+    case (_,DAE.T_FUNCTION(funcArg = _, source = {fn}), _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        false = Absyn.pathEqual(inPath, fn);
+        print("P2: " +& Env.getEnvNameStr(inEnv) +& "/" +& Absyn.pathString(inPath) +& "\n" +& 
+              "N2: " +& Absyn.pathString(fn) +& "\n-------------\n"); 
+      then 
+        fail();
+
+    case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
       equation
         fn = Absyn.IDENT(name);
         tty = Types.setTypeSource(tty,Types.mkTypeSource(SOME(fn)));
       then (fn,tty);
 
-    case (_,DAE.T_FUNCTION(funcArg = _, source = {fn})) then (fn,inType);
+    case (_,DAE.T_FUNCTION(funcArg = _, source = {fn}), _)
+      then (fn,inType);
 
     else (inPath,inType);
-  end match;
+  end matchcontinue;
 end deoverloadFuncname;
 
 protected function isTuple

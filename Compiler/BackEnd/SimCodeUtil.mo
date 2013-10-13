@@ -622,6 +622,7 @@ protected
 algorithm
   (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals, {}, {});
   (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs) := elaborateFunctions2(program, daeElements, {}, outRecordTypes, extraRecordDecls, includes, {}, {});
+  extraRecordDecls := List.unique(extraRecordDecls);
   (extraRecordDecls, _) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes);
   extraRecordDecls := List.sort(extraRecordDecls, orderRecordDecls);
 end elaborateFunctions;

@@ -1409,7 +1409,7 @@ algorithm
       equation
         path = joinPaths(path, inPath2);
       then
-        Absyn.FULLYQUALIFIED(path);
+        Absyn.makeFullyQualified(path);
   end match;
 end joinPaths;
 

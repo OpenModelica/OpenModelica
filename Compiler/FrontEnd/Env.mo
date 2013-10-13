@@ -1618,7 +1618,20 @@ algorithm
 end getClassName;
 
 public function getEnvName
-  "Returns the FQ name of the environment, see also getEnvPath"
+"Returns the FQ name of the environment, see also getEnvPath"
+  input Env inEnv;
+  output Absyn.Path outPath;
+protected
+  Ident id;
+  Env rest;
+  Absyn.Path p;
+algorithm
+  // outPath := Absyn.makeFullyQualified(getEnvName_dispatch(inEnv));
+  outPath :=  getEnvName_dispatch(inEnv);
+end getEnvName;
+
+protected function getEnvName_dispatch
+"Returns the Q name of the environment, see also getEnvPath"
   input Env inEnv;
   output Absyn.Path outPath;
 protected
@@ -1633,7 +1646,7 @@ algorithm
       then 
         outPath;
   end match;
-end getEnvName;
+end getEnvName_dispatch;
 
 public function getEnvName2
   input Env inEnv;
@@ -1717,6 +1730,7 @@ algorithm
     case (_,_)
       equation
         SOME(envPath) = getEnvPath(inEnv);
+        //envPath = Absyn.makeFullyQualified(Absyn.joinPaths(envPath,inPath));
         envPath = Absyn.joinPaths(envPath,inPath);
       then envPath;
     case (_,_)

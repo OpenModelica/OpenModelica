@@ -380,18 +380,25 @@ algorithm
   end match;
 end printEventStr;
 
-public function start "!includecode
-  - Transitions
+public function start "
+  This is the state machine initialization function."
+  input SCode.Restriction inRestriction;
+  input Absyn.Path inPath;
+  output State outState;
+algorithm
+  outState := start_dispatch(inRestriction, Absyn.makeFullyQualified(inPath)); 
+end start;
 
-  This is the state machine initialization function.
-"
+// Transitions
+protected function start_dispatch "
+  This is the state machine initialization function."
   input SCode.Restriction inRestriction;
   input Absyn.Path inPath;
   output State outState;
 algorithm
   outState:=
   match (inRestriction,inPath)
-    local Absyn.Path p; Boolean isExpandable, isImpure;
+    local Absyn.Path p; Boolean isExpandable, isImpure; 
     case (SCode.R_CLASS(),p) then UNKNOWN(p);
     case (SCode.R_OPTIMIZATION(),p) then OPTIMIZATION(p);
     case (SCode.R_MODEL(),p) then MODEL(p);
@@ -414,7 +421,7 @@ algorithm
     case (SCode.R_UNIONTYPE(),p) then META_UNIONTYPE(p);
     case (SCode.R_METARECORD(index=_),p) then META_RECORD(p);
   end match;
-end start;
+end start_dispatch;
 
 public function trans "
   This is the state machine transition function.  It describes the

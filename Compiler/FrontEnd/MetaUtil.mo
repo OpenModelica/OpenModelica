@@ -554,7 +554,7 @@ algorithm
 
     case (ClassInf.META_UNIONTYPE(p),_,SCode.PARTS(elementLst = els))
       equation
-        p = Absyn.FULLYQUALIFIED(p);
+        p = Absyn.makeFullyQualified(p);
         slst = getListOfStrings(els);
         paths = List.map1r(slst, Absyn.pathReplaceIdent, p);
         b = listLength(paths)==1;

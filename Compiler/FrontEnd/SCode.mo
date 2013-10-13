@@ -2577,7 +2577,7 @@ algorithm
       equation
         (cr, tup) = traverseComponentRefExps(cr, inTuple);
       then
-        (Absyn.CREF_FULLYQUALIFIED(cr), tup);
+        (Absyn.crefMakeFullyQualified(cr), tup);
 
     case (Absyn.CREF_QUAL(name = name, subscripts = subs, componentRef = cr), _)
       equation
