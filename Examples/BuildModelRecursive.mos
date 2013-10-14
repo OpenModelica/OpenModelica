@@ -2,7 +2,7 @@
 
 library:=$TypeName(Modelica);
 libraryVersion:="default";
-referenceFiles:="/home/martin/trunk/testsuite/simulation/libraries/msl32/ReferenceFiles";
+referenceFiles:="";
 
 setCommandLineOptions({"+g=Modelica","+d=nogen,"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -139,10 +139,10 @@ set samples 300
 \" + sum(\"set output \\\"\"+file+\".svg\\\"
 set multiplot layout 3,1
 set title \\\"Result difference of \"+csvFileToVariable(file)+\"\\\"
-plot \\\"\"+file+\"\\\" using \\\"time\\\":\\\"reference\\\" smooth csplines with lines, \\\"\"+file+\"\\\" using \\\"time\\\":\\\"actual\\\" smooth csplines with lines
+plot \\\"\"+file+\"\\\" using 1:2 title 'reference' smooth csplines with lines, \\\"\"+file+\"\\\" using 1:3 title 'actual' smooth csplines with lines
 unset title
-plot \\\"\"+file+\"\\\" using \\\"time\\\":\\\"err\\\" title \\\"absolute error\\\" smooth unique with lines, \\\"\"+file+\"\\\" using \\\"time\\\":\\\"threshold\\\" smooth unique with lines
-plot \\\"\"+file+\"\\\" using \\\"time\\\":\\\"relerr\\\" title \\\"relative error\\\" smooth unique with lines
+plot \\\"\"+file+\"\\\" using 1:4 title 'absolute error' smooth unique with lines, \\\"\"+file+\"\\\" using 1:6 title 'threshold' smooth unique with lines
+plot \\\"\"+file+\"\\\" using 1:5 title 'relative error' smooth unique with lines
 unset multiplot
 \" for file in diffFiles));
       system(\"gnuplot '"+s+".gnuplot'\");
@@ -200,8 +200,8 @@ writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.gz\">Offline v
 
 {writeFile("BuildModelRecursive." + phase + ".xml", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
 
-system("rm -f tidy.err; for f in *.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
+system("rm -f tidy.err; for f in files/*.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
 system("chmod -R go+r BuildModelRecursive.html files tidy.err");
-system("chmod -R g+x files");
+system("chmod go+x files");
 system("tar czf BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");
 system("chmod go+r BuildModelRecursive.tar.gz");
