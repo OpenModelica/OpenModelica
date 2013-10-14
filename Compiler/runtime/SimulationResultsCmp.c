@@ -253,7 +253,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
     if (fout) {
-      fprintf(fout, "time,reference,actual,err,relerr,threshold,\"%s\"\n",varname);
+      fprintf(fout, "time,reference,actual,err,relerr,threshold\n");
     }
   }
   for (i=0;i<refdata->n;i++){

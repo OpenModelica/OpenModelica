@@ -200,4 +200,6 @@ writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.xz\">Offline v
 {writeFile("BuildModelRecursive." + phase + ".xml", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
 
 system("rm -f tidy.err; for f in *.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
+system("chmod -R go+r BuildModelRecursive.tar.xz BuildModelRecursive.html files tidy.err");
+system("chmod g+x files");
 system("tar cJf BuildModelRecursive.tar.xz BuildModelRecursive.html files tidy.err");
