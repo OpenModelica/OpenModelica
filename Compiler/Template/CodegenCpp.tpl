@@ -7007,7 +7007,13 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
       let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
       match rel.operator
 
-      case LESS(__)
+      case LESS(__) then
+      <<
+         if(_conditions[<%zerocrossingIndex%>])
+                f[<%index1%>]=(<%e1%> -EPSILON - <%e2%>);
+           else
+                f[<%index1%>]=(<%e2%> - <%e1%> -  10*EPSILON);
+       >>
       case LESSEQ(__) then
        <<
          if(_conditions[<%zerocrossingIndex%>])
@@ -7015,7 +7021,13 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
            else
                 f[<%index1%>]=(<%e2%> - <%e1%> - EPSILON);
        >>
-      case GREATER(__)
+      case GREATER(__) then
+       <<
+         if(_conditions[<%zerocrossingIndex%>])
+                f[<%index1%>]=(<%e2%> - <%e1%> - EPSILON);
+           else
+                f[<%index1%>]=(<%e1%> -10*EPSILON - <%e2%>);
+         >>
       case GREATEREQ(__) then
         <<
          if(_conditions[<%zerocrossingIndex%>])
