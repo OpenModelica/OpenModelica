@@ -1523,40 +1523,6 @@ QStringList OMCProxy::parseString(QString value)
 }
 
 /*!
-  Gets the available OpenModelica libraries.
-  \return the list of libaries.
-  */
-QStringList OMCProxy::getAvailableLibraries()
-{
-  sendCommand("getAvailableLibraries()");
-  QString result = getResult();
-  return StringHandler::unparseStrings(result);
-}
-
-/*!
-  Gets the derived class modifier value.
-  \param className - the name of the derived class.
-  \param modifierName - the modifier name.
-  \return the value of the modifier.
-  */
-QString OMCProxy::getDerivedClassModifierValue(QString className, QString modifierName)
-{
-  sendCommand("getDerivedClassModifierValue(" + className + "," + modifierName + ")", true, className);
-  return StringHandler::getModifierValue(StringHandler::unparse(getResult()));
-}
-
-/*!
-  Gets the DocumentationClass annotation.
-  \param className - the name of the class.
-  \return true/false.
-  */
-bool OMCProxy::getDocumentationClassAnnotation(QString className)
-{
-  sendCommand("getNamedAnnotation(" + className + ", DocumentationClass)");
-  return StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(getResult()));
-}
-
-/*!
   Creates a new class in OMC.
   \param type - the class type.
   \param className - the class name.
@@ -1960,11 +1926,26 @@ bool OMCProxy::simulate(QString className, QString simualtionParameters)
   \param className - the name of the class.
   \param simualtionParameters - the simulation parameters.
   \return true on success.
+  \deprecated OMEdit now use OMCProxy::translateModel(QString className, QString simualtionParameters)
   */
 bool OMCProxy::buildModel(QString className, QString simualtionParameters)
 {
   sendCommand("buildModel(" + className + "," + simualtionParameters + ")");
   bool res = getResult() != "{\"\",\"\"}";
+  printMessagesStringInternal();
+  return res;
+}
+
+/*!
+  Builds the model. Only creates the simulation files.
+  \param className - the name of the class.
+  \param simualtionParameters - the simulation parameters.
+  \return true on success.
+  */
+bool OMCProxy::translateModel(QString className, QString simualtionParameters)
+{
+  sendCommand("translateModel(" + className + "," + simualtionParameters + ")");
+  bool res = StringHandler::unparseBool(getResult());
   printMessagesStringInternal();
   return res;
 }
@@ -2301,6 +2282,50 @@ QString OMCProxy::getModelicaPath()
   QString result = StringHandler::unparse(getResult());
   printMessagesStringInternal();
   return result;
+}
+
+/*!
+  Gets the available OpenModelica libraries.
+  \return the list of libaries.
+  */
+QStringList OMCProxy::getAvailableLibraries()
+{
+  sendCommand("getAvailableLibraries()");
+  QString result = getResult();
+  return StringHandler::unparseStrings(result);
+}
+
+/*!
+  Gets the derived class modifier value.
+  \param className - the name of the derived class.
+  \param modifierName - the modifier name.
+  \return the value of the modifier.
+  */
+QString OMCProxy::getDerivedClassModifierValue(QString className, QString modifierName)
+{
+  sendCommand("getDerivedClassModifierValue(" + className + "," + modifierName + ")", true, className);
+  return StringHandler::getModifierValue(StringHandler::unparse(getResult()));
+}
+
+/*!
+  Gets the DocumentationClass annotation.
+  \param className - the name of the class.
+  \return true/false.
+  */
+bool OMCProxy::getDocumentationClassAnnotation(QString className)
+{
+  sendCommand("getNamedAnnotation(" + className + ", DocumentationClass)");
+  return StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(getResult()));
+}
+
+/*!
+  Gets the number of processors.
+  \return the number of processors.
+  */
+QString OMCProxy::numProcessors()
+{
+  sendCommand("numProcessors()");
+  return getResult();
 }
 
 /*!

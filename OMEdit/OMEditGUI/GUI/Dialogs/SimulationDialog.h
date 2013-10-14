@@ -49,12 +49,7 @@ class SimulationDialog : public QDialog
 public:
   SimulationDialog(MainWindow *pParent = 0);
   ~SimulationDialog();
-  void setUpForm();
   void show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive);
-  bool validate();
-  void initializeFields();
-  bool buildModel(QString simulationParameters, QStringList simulationFlags);
-  void saveSimulationOptions();
 private:
   MainWindow *mpMainWindow;
   Label *mpSimulationHeading;
@@ -75,6 +70,8 @@ private:
   QCheckBox *mpSaveSimulationCheckbox;
   Label *mpCflagsLabel;
   QLineEdit *mpCflagsTextBox;
+  Label *mpNumberOfProcessorsLabel;
+  QSpinBox *mpNumberOfProcessorsSpinBox;
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpNumberofIntervalLabel;
@@ -139,17 +136,38 @@ private:
   QPushButton *mpCancelButton;
   QPushButton *mpSimulateButton;
   QDialogButtonBox *mpButtonBox;
+  QString mSimulationParameters;
+  QStringList mSimulationFlags;
+  bool mIsCancelled;
   ProgressDialog *mpProgressDialog;
+  QProcess *mpCompilationProcess;
+  bool mIsCompilationProcessRunning;
   QProcess *mpSimulationProcess;
   QList<QWidget*> mSimulationOutputWidgetsList;
-  bool mIsSimulationProcessFinished;
+  QDateTime mLastModifiedDateTime;
+  bool mIsSimulationProcessRunning;
   bool mIsInteractive;
   LibraryTreeNode *mpLibraryTreeNode;
+
+  void setUpForm();
+  bool validate();
+  void initializeFields();
+  void translateModel();
+  void compileModel();
+  void setProcessEnvironment(QProcess *pProcess);
+  void runSimulationExecutable();
+  void saveSimulationOptions();
 public slots:
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
   void simulate();
+  void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void compilationProcessError(QProcess::ProcessError processError);
+  void writeCompilationOutput();
+  void showSimulationOutputWidget();
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
+  void simulationProcessError(QProcess::ProcessError processError);
+  void writeSimulationOutput();
   void cancelSimulation();
 };
 
@@ -171,18 +189,16 @@ class SimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles, QProcess *pSimulationProcess,
-                         MainWindow *pParent);
+  SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles, MainWindow *pParent);
+  QTabWidget* getGeneratedFilesTabWidget();
   QPlainTextEdit* getSimulationOutputTextBox();
+  QPlainTextEdit* getCompilationOutputTextBox();
   void addGeneratedFileTab(QString fileName);
 private:
-  QProcess *mpSimulationProcess;
   MainWindow *mpMainWindow;
   QTabWidget *mpGeneratedFilesTabWidget;
   QPlainTextEdit *mpSimulationOutputTextBox;
-public slots:
-  void writeSimulationOutput();
-  void showSimulationOutputDialog();
+  QPlainTextEdit *mpCompilationOutputTextBox;
 };
 
 #endif // SIMULATIONDIALOG_H

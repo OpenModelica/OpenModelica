@@ -180,6 +180,7 @@ public:
   bool instantiateModelSucceeds(QString className);
   bool simulate(QString className, QString simualtionParameters);
   bool buildModel(QString className, QString simualtionParameters);
+  bool translateModel(QString className, QString simualtionParameters);
   QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);
@@ -202,6 +203,7 @@ public:
   QStringList getAvailableLibraries();
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   bool getDocumentationClassAnnotation(QString className);
+  QString numProcessors();
 signals:
   void commandFinished();
 public slots:

@@ -66,6 +66,19 @@ SimulationDialog::~SimulationDialog()
 }
 
 /*!
+  Reimplementation of QDialog::show method.
+  \param pLibraryTreeNode - pointer to LibraryTreeNode
+  \param isInteractive - true indicates that the simulation is interacive.
+  */
+void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive)
+{
+  mIsInteractive = isInteractive;
+  mpLibraryTreeNode = pLibraryTreeNode;
+  initializeFields();
+  setVisible(true);
+}
+
+/*!
   Creates all the controls and set their layout.
   */
 void SimulationDialog::setUpForm()
@@ -128,6 +141,10 @@ void SimulationDialog::setUpForm()
   // Compiler Flags
   mpCflagsLabel = new Label(tr("Compiler Flags (Optional):"));
   mpCflagsTextBox = new QLineEdit;
+  // Number of Processors
+  mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
+  mpNumberOfProcessorsSpinBox = new QSpinBox;
+  mpNumberOfProcessorsSpinBox->setSpecialValueText("<Auto>");
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
@@ -135,6 +152,8 @@ void SimulationDialog::setUpForm()
   pGeneralTabLayout->addWidget(mpIntegrationGroupBox, 1, 0, 1, 2);
   pGeneralTabLayout->addWidget(mpCflagsLabel, 2, 0);
   pGeneralTabLayout->addWidget(mpCflagsTextBox, 2, 1);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 3, 0);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 3, 1);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);
@@ -358,6 +377,20 @@ void SimulationDialog::setUpForm()
 }
 
 /*!
+  Validates the simulation values entered by the user.
+  */
+bool SimulationDialog::validate()
+{
+  if (mpStartTimeSpinBox->value() > mpStopTimeSpinBox->value())
+  {
+    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+    return false;
+  }
+  return true;
+}
+
+/*!
   Initializes the simulation dialog with the default values.
   */
 void SimulationDialog::initializeFields()
@@ -403,16 +436,199 @@ void SimulationDialog::initializeFields()
 }
 
 /*!
-  Reimplementation of QDialog::show method.
-  \param pLibraryTreeNode - pointer to LibraryTreeNode
-  \param isInteractive - true indicates that the simulation is interacive.
+  Used for non-interactive simulation.\n
+  Sends the translateModel command to OMC.
   */
-void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive)
+void SimulationDialog::translateModel()
 {
-  mIsInteractive = isInteractive;
-  mpLibraryTreeNode = pLibraryTreeNode;
-  initializeFields();
-  setVisible(true);
+  if (mpMainWindow->getOMCProxy()->translateModel(mpLibraryTreeNode->getNameStructure(), mSimulationParameters))
+  {
+    mIsCancelled = false;
+    compileModel();
+  }
+}
+
+void SimulationDialog::compileModel()
+{
+  mpCompilationProcess = new QProcess;
+#ifdef WIN32
+  setProcessEnvironment(mpCompilationProcess);
+#endif
+  mpCompilationProcess->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
+  mpCompilationProcess->setProcessChannelMode(QProcess::MergedChannels);
+  QString outputFile;
+  if (mpFileNameTextBox->text().isEmpty())
+    outputFile = mpLibraryTreeNode->getNameStructure();
+  else
+    outputFile = mpFileNameTextBox->text();
+  SimulationOutputWidget *pSimulationOutputWidget;
+  pSimulationOutputWidget = new SimulationOutputWidget(mpLibraryTreeNode->getNameStructure(), outputFile,
+                                                       mpShowGeneratedFilesCheckBox->isChecked(), mpMainWindow);
+  mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
+  connect(mpCompilationProcess, SIGNAL(readyRead()), SLOT(writeCompilationOutput()));
+  connect(mpCompilationProcess, SIGNAL(readyRead()), SLOT(showSimulationOutputWidget()));
+  connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
+  mpProgressDialog->getCancelSimulationButton()->setText(tr("Cancel Compilation"));
+  mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
+  mpProgressDialog->setText(tr("Compiling <b>%1</b>.<br />Please wait for a while.").arg(mpLibraryTreeNode->getNameStructure()));
+  QString numProcs;
+  if (mpNumberOfProcessorsSpinBox->value() == 0)
+    numProcs = mpMainWindow->getOMCProxy()->numProcessors();
+  else
+    numProcs = QString::number(mpNumberOfProcessorsSpinBox->value());
+  QStringList args;
+  QString fileName;
+  if (mpFileNameTextBox->text().isEmpty())
+    fileName = mpLibraryTreeNode->getNameStructure();
+  else
+    fileName = mpFileNameTextBox->text();
+  args << "-j" + numProcs << "-f" << fileName + ".makefile";
+  mIsCompilationProcessRunning = true;
+  mpCompilationProcess->start("make", args);
+  while (mpCompilationProcess->state() == QProcess::Starting || mpCompilationProcess->state() == QProcess::Running)
+  {
+    if (!mIsCompilationProcessRunning)
+      break;
+    qApp->processEvents();
+  }
+}
+
+void SimulationDialog::setProcessEnvironment(QProcess *pProcess)
+{
+#ifdef WIN32
+  QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+  const char *omdev = getenv("OMDEV");
+  if (QString(omdev).isEmpty())
+    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW\\bin") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\libexec\\gcc\\mingw32\\4.4.0") + ";" + environment.value("PATH"));
+  else
+    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin") + ";" + QString(omdev).append(QDir::separator()).append("tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0") + ";" + environment.value("PATH"));
+  pProcess->setProcessEnvironment(environment);
+#endif
+}
+
+/*!
+  Starts the simulation executable with -port argument.\n
+  Creates a TCP server and starts listening for the simulation runtime progress messages.
+  */
+void SimulationDialog::runSimulationExecutable()
+{
+  QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
+  mLastModifiedDateTime = QDateTime::currentDateTime();
+  QString outputFile;
+  QRegExp regExp("\\b(mat|plt|csv)\\b");
+  if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
+  {
+    outputFile = mpLibraryTreeNode->getNameStructure();
+    if (!mpFileNameTextBox->text().isEmpty())
+      outputFile = mpFileNameTextBox->text().trimmed();
+    QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(outputFile).append("_res.").append(mpOutputFormatComboBox->currentText()));
+    if (resultFileInfo.exists())
+    {
+      mLastModifiedDateTime = resultFileInfo.lastModified();
+    }
+  }
+  // read the file path according to the file prefix variable
+  QString fileName;
+  if (mpFileNameTextBox->text().isEmpty())
+    fileName = QString(workingDirectory).append("/").append(mpLibraryTreeNode->getNameStructure());
+  else
+    fileName = QString(workingDirectory).append("/").append(mpFileNameTextBox->text());
+  fileName = fileName.replace("//", "/");
+  // run the simulation executable to create the result file
+#ifdef WIN32
+  fileName = fileName.append(".exe");
+#endif
+  // start the process
+  mpSimulationProcess = new QProcess();
+#ifdef WIN32
+  setProcessEnvironment(mpSimulationProcess);
+#endif
+  mpSimulationProcess->setWorkingDirectory(workingDirectory);
+  mpSimulationProcess->setProcessChannelMode(QProcess::MergedChannels);
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+  if (pSimulationOutputWidget)
+  {
+    connect(mpSimulationProcess, SIGNAL(readyRead()), SLOT(writeSimulationOutput()));
+    connect(mpSimulationProcess, SIGNAL(readyRead()), SLOT(showSimulationOutputWidget()));
+  }
+  connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
+  connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
+  mpProgressDialog->getCancelSimulationButton()->setText(tr("Cancel Simulation"));
+  mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
+  mpProgressDialog->setText(tr("Running Simulation of <b>%1</b>.<br />Please wait for a while.").arg(mpLibraryTreeNode->getNameStructure()));
+  // set progress bar range
+  mpProgressDialog->getProgressBar()->setRange(0, 100);       // the simulation runtime sends double value until 100.
+  mpProgressDialog->getProgressBar()->setTextVisible(true);
+  // start the executable with the tcp server so it can listen to the simulation progress messages
+  QTcpSocket *sock = 0;
+  QTcpServer server;
+  const int SOCKMAXLEN = 4096;
+  char buf[SOCKMAXLEN];
+  server.listen(QHostAddress(QHostAddress::LocalHost));
+  QStringList args(QString("-port=").append(QString::number(server.serverPort())));
+  args << mSimulationFlags;
+  // start the executable
+  mIsSimulationProcessRunning = true;
+  mpSimulationProcess->start(fileName, args);
+  while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
+  {
+    if (!mIsSimulationProcessRunning)
+      break;
+    if (!sock && server.hasPendingConnections()) {
+      sock = server.nextPendingConnection();
+    } else if (!sock) {
+      QEventLoop eventLoop;
+      QTimer timer;   /* in case we don't get any newConnection() from simulation executable we must quit the event loop.*/
+      connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+      connect(&server, SIGNAL(newConnection()), &eventLoop, SLOT(quit()));
+      timer.start(1000);
+      eventLoop.exec();
+      //server.waitForNewConnection(100,0);
+    } else {
+      sock->waitForReadyRead(100);
+      while (sock->readLine(buf,SOCKMAXLEN) > 0) {
+        char *msg = 0;
+        double d = strtod(buf, &msg);
+        if (msg == buf || *msg != ' ') {
+          // do we really need to take care of this communication error?????
+          //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", buf);
+        } else {
+          mpProgressDialog->getProgressBar()->setValue(d/100.0);
+          //fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
+        }
+      }
+    }
+    qApp->processEvents();
+  }
+  if (sock) delete sock;
+  server.close();
+}
+
+/*!
+  Saves the simulation options in the model.
+  */
+void SimulationDialog::saveSimulationOptions()
+{
+  if (!mpSaveSimulationCheckbox->isChecked())
+    return;
+
+  QString annotationString;
+  // create simulations options annotation
+  annotationString.append("annotate=experiment(");
+  annotationString.append("StartTime=").append(QString::number(mpStartTimeSpinBox->value())).append(",");
+  annotationString.append("StopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
+  annotationString.append("Tolerance=").append(QString::number(mpToleranceSpinBox->value()));
+  annotationString.append(")");
+  // send the simulations options annotation to OMC
+  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
+  // make the model modified
+  if (mpLibraryTreeNode->getModelWidget())
+  {
+    mpLibraryTreeNode->getModelWidget()->setModelModified();
+    if (mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
+      mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
+  }
 }
 
 /*!
@@ -453,89 +669,89 @@ void SimulationDialog::simulate()
 
   if (validate())
   {
-    QString simulationParameters;
-    QStringList simulationFlags;
+    mSimulationParameters.clear();
+    mSimulationFlags.clear();
     // if user is performing a simple simulation then take start and stop times
     if (!mIsInteractive)
     {
-      simulationParameters.append("startTime=").append(QString::number(mpStartTimeSpinBox->value()));
-      simulationParameters.append(", stopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
+      mSimulationParameters.append("startTime=").append(QString::number(mpStartTimeSpinBox->value()));
+      mSimulationParameters.append(", stopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
     }
-    simulationParameters.append(" numberOfIntervals=").append(QString::number(mpNumberofIntervalsSpinBox->value()));
+    mSimulationParameters.append(" numberOfIntervals=").append(QString::number(mpNumberofIntervalsSpinBox->value()));
     if (mpMethodComboBox->currentText().isEmpty())
-      simulationParameters.append(", method=\"dassl\"");
+      mSimulationParameters.append(", method=\"dassl\"");
     else
-      simulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
-    simulationParameters.append(", tolerance=").append(QString::number(mpToleranceSpinBox->value()));
-    simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
+      mSimulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
+    mSimulationParameters.append(", tolerance=").append(QString::number(mpToleranceSpinBox->value()));
+    mSimulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
     if (!mpFileNameTextBox->text().isEmpty())
-      simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+      mSimulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
     if (!mpVariableFilterTextBox->text().isEmpty())
-      simulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");
+      mSimulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");
     if (!mpCflagsTextBox->text().isEmpty())
-      simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
+      mSimulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
     if (mpProfilingCheckBox->isChecked())
-      simulationParameters.append(", measureTime=true");
+      mSimulationParameters.append(", measureTime=true");
     // setup simulation flags
     // setup Model Setup file flag
     if (!mpModelSetupFileTextBox->text().isEmpty())
     {
-      simulationFlags.append(QString("-f=").append(mpModelSetupFileTextBox->text()));
+      mSimulationFlags.append(QString("-f=").append(mpModelSetupFileTextBox->text()));
     }
     // setup initiaization method flag
     if (!mpInitializationMethodComboBox->currentText().isEmpty())
     {
-      simulationFlags.append(QString("-iim=").append(mpInitializationMethodComboBox->currentText()));
+      mSimulationFlags.append(QString("-iim=").append(mpInitializationMethodComboBox->currentText()));
     }
     // setup Optimization Method flag
     if (!mpOptimizationMethodComboBox->currentText().isEmpty())
     {
-      simulationFlags.append(QString("-iom=").append(mpOptimizationMethodComboBox->currentText()));
+      mSimulationFlags.append(QString("-iom=").append(mpOptimizationMethodComboBox->currentText()));
     }
     // setup Equation System Initialization file flag
     if (!mpEquationSystemInitializationFileTextBox->text().isEmpty())
     {
-      simulationFlags.append(QString("-iif=").append(mpEquationSystemInitializationFileTextBox->text()));
+      mSimulationFlags.append(QString("-iif=").append(mpEquationSystemInitializationFileTextBox->text()));
     }
     // setup Equation System Initialization time flag
     if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty())
     {
-      simulationFlags.append(QString("-iit=").append(mpEquationSystemInitializationTimeTextBox->text()));
+      mSimulationFlags.append(QString("-iit=").append(mpEquationSystemInitializationTimeTextBox->text()));
     }
     // clock
     if (!mpClockComboBox->currentText().isEmpty())
     {
-      simulationFlags.append(QString("-clock=").append(mpClockComboBox->currentText()));
+      mSimulationFlags.append(QString("-clock=").append(mpClockComboBox->currentText()));
     }
     // linear solver
     if (!mpLinearSolverComboBox->currentText().isEmpty())
     {
-      simulationFlags.append(QString("-ls=").append(mpLinearSolverComboBox->currentText()));
+      mSimulationFlags.append(QString("-ls=").append(mpLinearSolverComboBox->currentText()));
     }
     // non linear solver
     if (!mpNonLinearSolverComboBox->currentText().isEmpty())
     {
-      simulationFlags.append(QString("-nls=").append(mpNonLinearSolverComboBox->currentText()));
+      mSimulationFlags.append(QString("-nls=").append(mpNonLinearSolverComboBox->currentText()));
     }
     // time where the linearization of the model should be performed
     if (!mpLinearizationTimeTextBox->text().isEmpty())
     {
-      simulationFlags.append(QString("-l=").append(mpLinearizationTimeTextBox->text()));
+      mSimulationFlags.append(QString("-l=").append(mpLinearizationTimeTextBox->text()));
     }
     // output variables
     if (!mpOutputVariablesTextBox->text().isEmpty())
     {
-      simulationFlags.append(QString("-output=").append(mpOutputVariablesTextBox->text()));
+      mSimulationFlags.append(QString("-output=").append(mpOutputVariablesTextBox->text()));
     }
     // setup cpu time flag
     if (mpCPUTimeCheckBox->isChecked())
     {
-      simulationFlags.append("-cpu");
+      mSimulationFlags.append("-cpu");
     }
     // setup enable all warnings flag
     if (mpEnableAllWarningsCheckBox->isChecked())
     {
-      simulationFlags.append("-w");
+      mSimulationFlags.append("-w");
     }
     // setup Logging flags
     if (mpLogDasslSolverCheckBox->isChecked() ||
@@ -596,30 +812,27 @@ void SimulationDialog::simulate()
       if (mpLogZeroCrossingsCheckBox->isChecked())
         loggingFlagValues.isEmpty() ? loggingFlagValues.append("LOG_ZEROCROSSINGS") : loggingFlagValues.append(",LOG_ZEROCROSSINGS");
 
-      simulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
+      mSimulationFlags.append(QString(loggingFlagName).append(loggingFlagValues));
     }
     if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty())
     {
-      simulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
+      mSimulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
     }
     // before simulating save the simulation options.
     saveSimulationOptions();
     // show the progress bar
-    mpProgressDialog->setText(tr("Compiling Model.\nPlease wait for a while."));
+    mpProgressDialog->setText(tr("Translating <b>%1</b>.<br />Please wait for a while.").arg(mpLibraryTreeNode->getNameStructure()));
     mpProgressDialog->getCancelSimulationButton()->setEnabled(false);
     mpProgressDialog->getProgressBar()->setRange(0, 0);
     mpProgressDialog->getProgressBar()->setTextVisible(false);
     mpProgressDialog->show();
-    mpMainWindow->getStatusBar()->showMessage(tr("Compiling Model"));
     // interactive or non interactive
-    bool result;
     int numberOfSimulationOutputWidgets = mSimulationOutputWidgetsList.size();
     if (mIsInteractive)
-      result = buildModel(simulationParameters, simulationFlags);
+      translateModel();
     else
-      result = buildModel(simulationParameters, simulationFlags);
+      translateModel();
     // hide the progress bar
-    mpMainWindow->getStatusBar()->clearMessage();
     mpProgressDialog->hide();
     if (mpProfilingCheckBox->isChecked())
     {
@@ -629,29 +842,170 @@ void SimulationDialog::simulate()
         QDesktopServices::openUrl(QUrl(mpMainWindow->getOMCProxy()->changeDirectory() + "/" + mpFileNameTextBox->text() + "_prof.html"));
     }
     accept();
-    /* if the buildModel returns true and we have a SimulationOutputWidget then make it the active window. */
-    if (result && mSimulationOutputWidgetsList.size() > numberOfSimulationOutputWidgets)
+    /* if we have a new SimulationOutputWidget then make it the active window. */
+    if (mSimulationOutputWidgetsList.size() > numberOfSimulationOutputWidgets)
     {
       QWidget *pSimulationOutputWidget = mSimulationOutputWidgetsList.last();
-      if (pSimulationOutputWidget->isVisible())
-      {
-        pSimulationOutputWidget->raise();
-        pSimulationOutputWidget->activateWindow();
-      }
+      showSimulationOutputWidget();
+      pSimulationOutputWidget->raise();
+      pSimulationOutputWidget->activateWindow();
     }
   }
 }
 
 /*!
-  #2145 A hack to handle the QProcess status.
-  We check QProcess::status() while the process is running but some versions of Qt doesn't set that value properly.\n
-  So this extra flag is used within that loop to get out that infinite loop.
+  Slot activated when mpCompilationProcess finished signal is raised.\n
+  Writes the error if mpCompilationProcess has crashed.\n
+  If the mpCompilationProcess finished normally then run the simulation executable.
+  */
+void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
+{
+  Q_UNUSED(exitCode);
+  mIsCompilationProcessRunning = false;
+  if (exitStatus == QProcess::NormalExit)
+  {
+    runSimulationExecutable();
+  }
+  else if (!mIsCancelled)
+  {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+    if (pSimulationOutputWidget)
+    {
+      pSimulationOutputWidget->getCompilationOutputTextBox()->appendPlainText(mpCompilationProcess->errorString());
+      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(1);
+    }
+  }
+}
+
+/*!
+  Slot activated when mpCompilationProcess error signal is raised.\n
+  Writes the mpCompilationProcess error string.
+  */
+void SimulationDialog::compilationProcessError(QProcess::ProcessError processError)
+{
+  Q_UNUSED(processError);
+  mIsCompilationProcessRunning = false;
+  if (!mIsCancelled)
+  {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+    if (pSimulationOutputWidget)
+    {
+      pSimulationOutputWidget->getCompilationOutputTextBox()->appendPlainText(mpCompilationProcess->errorString());
+      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(1);
+    }
+  }
+}
+
+/*!
+  Slot activated when mpCompilationProcess readyRead signal is raised.\n
+  Writes the available output bytes to the compilation output text box.
+  */
+void SimulationDialog::writeCompilationOutput()
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+  if (pSimulationOutputWidget)
+  {
+    pSimulationOutputWidget->getCompilationOutputTextBox()->appendPlainText(mpCompilationProcess->read(mpCompilationProcess->bytesAvailable()));
+    pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(1);
+  }
+}
+
+/*!
+  Slot activated when mpCompilationProcess/mpSimulationProcess readyRead signal is raised.\n
+  Shows the simulation output widget.\n
+  Since readyRead signal can be emitted many times depending on the compilation process output and we only want this slot to be
+  activated only once. So we have to disconnect it from the readyRead signal only if the sender is the compilation process.
+  */
+void SimulationDialog::showSimulationOutputWidget()
+{
+  if (sender())
+  {
+    QProcess *pProcess = qobject_cast<QProcess*>(const_cast<QObject*>(sender()));
+    if (pProcess)
+      disconnect(pProcess, SIGNAL(readyRead()), this, SLOT(showSimulationOutputWidget()));
+  }
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+  int xPos = mpMainWindow->width() < 550 ? x() : mpMainWindow->width() - 550;
+  int yPos = mpMainWindow->height() < 300 ? y() : mpMainWindow->height() - 300;
+  pSimulationOutputWidget->setGeometry(xPos, yPos, 550, 300);
+  pSimulationOutputWidget->show();
+}
+
+/*!
+  Slot activated when mpSimulationProcess finished signal is raised.\n
+  Writes the error if mpSimulationProcess has crashed.\n
+  If the mpSimulationProcess finished normally then read the simulation result file and switch to plotting view.
   */
 void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   Q_UNUSED(exitCode);
-  Q_UNUSED(exitStatus);
-  mIsSimulationProcessFinished = true;
+  mIsSimulationProcessRunning = false;
+  // If user has cancelled the simulation then don't show the plotting view.
+  if (mIsCancelled)
+    return;
+  if (exitStatus == QProcess::CrashExit)
+  {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+    if (pSimulationOutputWidget)
+    {
+      pSimulationOutputWidget->getSimulationOutputTextBox()->appendPlainText(mpSimulationProcess->errorString());
+      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
+    }
+  }
+  QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
+  // read the result file
+  QString outputFile;
+  if (mpFileNameTextBox->text().isEmpty())
+    outputFile = mpLibraryTreeNode->getNameStructure();
+  else
+    outputFile = mpFileNameTextBox->text();
+  QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(outputFile).append("_res.").append(mpOutputFormatComboBox->currentText()));
+  QRegExp regExp("\\b(mat|plt|csv)\\b");
+  if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1 && resultFileInfo.exists() && mLastModifiedDateTime < resultFileInfo.lastModified())
+  {
+    VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
+    OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
+    QString resultFileName = QString(outputFile).append("_res.").append(mpOutputFormatComboBox->currentText());
+    QStringList list = pOMCProxy->readSimulationResultVars(resultFileName);
+    // close the simulation result file.
+    pOMCProxy->closeSimulationResultFile();
+    mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+    pVariablesWidget->addPlotVariablestoTree(resultFileName, pOMCProxy->changeDirectory(), list);
+    mpMainWindow->getVariablesDockWidget()->show();
+  }
+}
+
+/*!
+  Slot activated when mpSimulationProcess error signal is raised.\n
+  Writes the mpSimulationProcess error string.
+  */
+void SimulationDialog::simulationProcessError(QProcess::ProcessError processError)
+{
+  Q_UNUSED(processError);
+  mIsSimulationProcessRunning = false;
+  if (!mIsCancelled)
+  {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+    if (pSimulationOutputWidget)
+    {
+      pSimulationOutputWidget->getSimulationOutputTextBox()->appendPlainText(mpSimulationProcess->errorString());
+      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
+    }
+  }
+}
+
+/*!
+  Slot activated when mpSimulationProcess readyRead signal is raised.\n
+  Writes the available output bytes to the simulation output text box.
+  */
+void SimulationDialog::writeSimulationOutput()
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+  if (pSimulationOutputWidget)
+  {
+    pSimulationOutputWidget->getSimulationOutputTextBox()->appendPlainText(mpSimulationProcess->read(mpSimulationProcess->bytesAvailable()));
+    pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
+  }
 }
 
 /*!
@@ -660,188 +1014,12 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
   */
 void SimulationDialog::cancelSimulation()
 {
-  mpSimulationProcess->kill();
+  mIsCancelled = true;
+  if (mIsCompilationProcessRunning)
+    mpCompilationProcess->kill();
+  else
+    mpSimulationProcess->kill();
   mpProgressDialog->hide();
-}
-
-/*!
-  Validates the simulation values entered by the user.
-  */
-bool SimulationDialog::validate()
-{
-  if (mpStartTimeSpinBox->value() > mpStopTimeSpinBox->value())
-  {
-    QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
-    return false;
-  }
-  return true;
-}
-
-/*!
-  Used for non-interactive simulation.\n
-  Sends the buildModel command to OMC.\n
-  Starts the simulation executable with -port argument.\n
-  Creates a TCP server and starts listening for the simulation runtime progress messages.
-  \param simulationParameters - a comma separated list of simulation parameters.
-  \param simulationFlags - a list of simulation flags for the simulation executable.
-  */
-bool SimulationDialog::buildModel(QString simulationParameters, QStringList simulationFlags)
-{
-  QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
-  QDateTime lastModifiedDateTime = QDateTime::currentDateTime();
-  QString output_file;
-  // if simualtion output format is not plt, csv and mat then dont show plot window.
-  QRegExp regExp("\\b(mat|plt|csv)\\b");
-  if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1)
-  {
-    output_file = mpLibraryTreeNode->getNameStructure();
-    if (!mpFileNameTextBox->text().isEmpty())
-      output_file = mpFileNameTextBox->text().trimmed();
-    QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
-    if (resultFileInfo.exists())
-    {
-      lastModifiedDateTime = resultFileInfo.lastModified();
-    }
-  }
-  if (mpMainWindow->getOMCProxy()->buildModel(mpLibraryTreeNode->getNameStructure(), simulationParameters))
-  {
-    // read the file path according to the file prefix variable
-    QString file;
-    if (mpFileNameTextBox->text().isEmpty())
-      file = QString(workingDirectory).append("/").append(mpLibraryTreeNode->getNameStructure());
-    else
-      file = QString(workingDirectory).append("/").append(mpFileNameTextBox->text());
-
-    file = file.replace("//", "/");
-    // run the simulation executable to create the result file
-#ifdef WIN32
-    file = file.append(".exe");
-#endif
-    QFileInfo fileInfo(file);
-    // start the process
-    mpSimulationProcess = new QProcess();
-#ifdef WIN32
-    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
-    environment.insert("PATH", environment.value("Path") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\bin"));
-    mpSimulationProcess->setProcessEnvironment(environment);
-#endif
-    mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
-    mpSimulationProcess->setProcessChannelMode(QProcess::MergedChannels);
-    SimulationOutputWidget *pSimulationOutputWidget;
-    pSimulationOutputWidget = new SimulationOutputWidget(mpLibraryTreeNode->getNameStructure(), output_file,
-                                                         mpShowGeneratedFilesCheckBox->isChecked(), mpSimulationProcess, mpMainWindow);
-    mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-    connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputWidget, SLOT(writeSimulationOutput()));
-    connect(mpSimulationProcess, SIGNAL(readyRead()), pSimulationOutputWidget, SLOT(showSimulationOutputDialog()));
-    connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
-    mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
-    mpProgressDialog->setText(tr("Running Simulation.\nPlease wait for a while."));
-    // set progress bar range
-    mpProgressDialog->getProgressBar()->setRange(0, 100);       // the simulation runtime sends double value until 100.
-    mpProgressDialog->getProgressBar()->setTextVisible(true);
-    mpMainWindow->getStatusBar()->showMessage(tr("Running Simulation"));
-    // start the executable with the tcp server so it can listen to the simulation progress messages
-    QTcpSocket *sock = 0;
-    QTcpServer server;
-    const int SOCKMAXLEN = 4096;
-    char buf[SOCKMAXLEN];
-    server.listen(QHostAddress(QHostAddress::LocalHost));
-    QStringList args(QString("-port=").append(QString::number(server.serverPort())));
-    args << simulationFlags;
-    // start the executable
-    mIsSimulationProcessFinished = false;
-    mpSimulationProcess->start(file, args);
-    while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
-    {
-      if (mIsSimulationProcessFinished)
-        break;
-      if (!sock && server.hasPendingConnections()) {
-        sock = server.nextPendingConnection();
-      } else if (!sock) {
-        QEventLoop eventLoop;
-        QTimer timer;   /* in case we don't get any newConnection() from simulation executable we must quit the event loop.*/
-        connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
-        connect(&server, SIGNAL(newConnection()), &eventLoop, SLOT(quit()));
-        timer.start(1000);
-        eventLoop.exec();
-        //server.waitForNewConnection(100,0);
-      } else {
-        sock->waitForReadyRead(100);
-        while (sock->readLine(buf,SOCKMAXLEN) > 0) {
-          char *msg = 0;
-          double d = strtod(buf, &msg);
-          if (msg == buf || *msg != ' ') {
-            // do we really need to take care of this communication error?????
-            //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", buf);
-          } else {
-            mpProgressDialog->getProgressBar()->setValue(d/100.0);
-            //fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
-          }
-        }
-      }
-      qApp->processEvents();
-    }
-    if (sock) delete sock;
-    server.close();
-    // show simulation process error if any
-    if (mpSimulationProcess->error() != QProcess::UnknownError && !mpProgressDialog->isHidden())
-    {
-      pSimulationOutputWidget->getSimulationOutputTextBox()->insertPlainText("\n\n" + mpSimulationProcess->errorString());
-      if (pSimulationOutputWidget->isHidden())
-        pSimulationOutputWidget->showSimulationOutputDialog();
-    }
-    else if (mpShowGeneratedFilesCheckBox->isChecked())
-    {
-      if (pSimulationOutputWidget->isHidden())
-        pSimulationOutputWidget->showSimulationOutputDialog();
-    }
-    // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return true.
-    if (mpProgressDialog->isHidden())
-      return true;
-    // read the output file
-    QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(output_file).append("_res.").append(mpOutputFormatComboBox->currentText()));
-    if (regExp.indexIn(mpOutputFormatComboBox->currentText()) != -1 && resultFileInfo.exists() && lastModifiedDateTime < resultFileInfo.lastModified())
-    {
-      VariablesWidget *pVariablesWidget = mpMainWindow->getVariablesWidget();
-      OMCProxy *pOMCProxy = mpMainWindow->getOMCProxy();
-      QString resultFileName = QString(output_file).append("_res.").append(mpOutputFormatComboBox->currentText());
-      QStringList list = pOMCProxy->readSimulationResultVars(resultFileName);
-      // close the simulation result file.
-      pOMCProxy->closeSimulationResultFile();
-      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
-      pVariablesWidget->addPlotVariablestoTree(resultFileName, pOMCProxy->changeDirectory(), list);
-      mpMainWindow->getVariablesDockWidget()->show();
-    }
-    return true;
-  }
-  return false;
-}
-
-/*!
-  Saves the simulation options in the model.
-  */
-void SimulationDialog::saveSimulationOptions()
-{
-  if (!mpSaveSimulationCheckbox->isChecked())
-    return;
-
-  QString annotationString;
-  // create simulations options annotation
-  annotationString.append("annotate=experiment(");
-  annotationString.append("StartTime=").append(QString::number(mpStartTimeSpinBox->value())).append(",");
-  annotationString.append("StopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
-  annotationString.append("Tolerance=").append(QString::number(mpToleranceSpinBox->value()));
-  annotationString.append(")");
-  // send the simulations options annotation to OMC
-  mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
-  // make the model modified
-  if (mpLibraryTreeNode->getModelWidget())
-  {
-    mpLibraryTreeNode->getModelWidget()->setModelModified();
-    if (mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
-      mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
-  }
 }
 
 /*!
@@ -860,7 +1038,7 @@ ProgressDialog::ProgressDialog(SimulationDialog *pParent)
   // create heading label
   mpProgressLabel = new Label;
   mpProgressLabel->setAlignment((Qt::AlignHCenter));
-  mpCancelSimulationButton = new QPushButton(tr("Cancel Simulation"));
+  mpCancelSimulationButton = new QPushButton(tr("Cancel Translation"));
   connect(mpCancelSimulationButton, SIGNAL(clicked()), pParent, SLOT(cancelSimulation()));
   mpProgressBar = new QProgressBar;
   mpProgressBar->setRange(0, 0);
@@ -910,23 +1088,58 @@ void ProgressDialog::setText(QString text)
   \param pSimulationProcess - the simulation process.
   \param pParent - pointer to MainWindow.
   */
-SimulationOutputWidget::SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles,
-                                               QProcess *pSimulationProcess, MainWindow *pParent)
+SimulationOutputWidget::SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles, MainWindow *pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(className).append(" ").append(tr("Simulation Output")));
-  mpSimulationProcess = pSimulationProcess;
   mpMainWindow = pParent;
   // Generated Files tab widget
   mpGeneratedFilesTabWidget = new QTabWidget;
+  mpGeneratedFilesTabWidget->setMovable(true);
   // Simulation Output TextBox
   mpSimulationOutputTextBox = new QPlainTextEdit;
   mpSimulationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBox, Helper::output);
+  // Compilation Output TextBox
+  mpCompilationOutputTextBox = new QPlainTextEdit;
+  mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Compilation"));
   if (showGeneratedFiles)
   {
     QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
     /* className.c tab */
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append(".c"));
+    /* className_01exo.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_01exo.c"));
+    /* className_02nls.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_02nls.c"));
+    /* className_03lsy.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_03lsy.c"));
+    /* className_04set.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_04set.c"));
+    /* className_05evt.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_05evt.c"));
+    /* className_06inz.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_06inz.c"));
+    /* className_07dly.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_07dly.c"));
+    /* className_08bnd.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_08bnd.c"));
+    /* className_09alg.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_09alg.c"));
+    /* className_10asr.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_10asr.c"));
+    /* className_11mix.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_11mix.c"));
+    /* className_11mix.h tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_11mix.h"));
+    /* className_12jac.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_12jac.c"));
+    /* className_12jac.h tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_12jac.h"));
+    /* className_13opt.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_13opt.c"));
+    /* className_14lnz.c tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_14lnz.c"));
     /* className_functions.c tab */
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_functions.c"));
     /* className_functions.h tab */
@@ -935,6 +1148,8 @@ SimulationOutputWidget::SimulationOutputWidget(QString className, QString output
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_info.xml"));
     /* className_init.xml tab */
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_init.xml"));
+    /* className_literals.h tab */
+    addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_literals.h"));
     /* className_model.h tab */
     addGeneratedFileTab(QString(workingDirectory).append("/").append(outputFile).append("_model.h"));
     /* className_records.c tab */
@@ -948,12 +1163,30 @@ SimulationOutputWidget::SimulationOutputWidget(QString className, QString output
 }
 
 /*!
+  Returns the pointer to mpGeneratedFilesTabWidget.
+  \return the generated files tab widget.
+  */
+QTabWidget* SimulationOutputWidget::getGeneratedFilesTabWidget()
+{
+  return mpGeneratedFilesTabWidget;
+}
+
+/*!
   Returns the pointer to mpSimulationOutputTextBox.
   \return the Simulation Output text box.
   */
 QPlainTextEdit* SimulationOutputWidget::getSimulationOutputTextBox()
 {
   return mpSimulationOutputTextBox;
+}
+
+/*!
+  Returns the pointer to mpCompilationOutputTextBox.
+  \return the Compilation Output text box.
+  */
+QPlainTextEdit* SimulationOutputWidget::getCompilationOutputTextBox()
+{
+  return mpCompilationOutputTextBox;
 }
 
 void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
@@ -968,32 +1201,4 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
     mpGeneratedFilesTabWidget->addTab(pPlainTextEdit, fileInfo.fileName());
     file.close();
   }
-}
-
-/*!
-  Slot activated when mpSimulationProcess readyRead signal is raised.\n
-  Writes the available output bytes to the simulation output text box.
-  */
-void SimulationOutputWidget::writeSimulationOutput()
-{
-  mpSimulationOutputTextBox->appendPlainText(mpSimulationProcess->read(mpSimulationProcess->bytesAvailable()));
-}
-
-/*!
-  Slot activated when mpSimulationProcess readyRead signal is raised.\n
-  Shows the simulation output dialog.\n
-  Since readyRead signal can be emitted many times depending on the simulation process output and we only want this slot to be
-  activated only once. So we have to disconnect it from the readyRead signal only if the sender is the simulation process.
-  */
-void SimulationOutputWidget::showSimulationOutputDialog()
-{
-  if (sender())
-  {
-    QProcess *pProcess = qobject_cast<QProcess*>(const_cast<QObject*>(sender()));
-    disconnect(pProcess, SIGNAL(readyRead()), this, SLOT(showSimulationOutputDialog()));
-  }
-  int xPos = mpMainWindow->width() < 550 ? x() : mpMainWindow->width() - 550;
-  int yPos = mpMainWindow->height() < 300 ? y() : mpMainWindow->height() - 300;
-  setGeometry(xPos, yPos, 550, 300);
-  show();
 }
