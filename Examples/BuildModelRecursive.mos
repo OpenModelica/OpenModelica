@@ -117,6 +117,7 @@ templates:=if build <> -1.0 then templates-build else templates;
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
+system(\"sed -i '300,$ d' \" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 referenceExists := false;
 referenceCell := \"<td bgcolor=\\\"#FFFF00\\\">&nbsp;</td>\";
@@ -195,11 +196,11 @@ str:="<h1>Recursive BuildModel Test</h1>
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
 writeFile(log,"<table><tr><th>Model</th><th>Verified</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
-writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.xz\">Offline version</a></p></body></html>",append=true);getErrorString();
+writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.gz\">Offline version</a></p></body></html>",append=true);getErrorString();
 
 {writeFile("BuildModelRecursive." + phase + ".xml", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
 
 system("rm -f tidy.err; for f in *.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
-system("chmod -R go+r BuildModelRecursive.tar.xz BuildModelRecursive.html files tidy.err");
+system("chmod -R go+r BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");
 system("chmod g+x files");
-system("tar cJf BuildModelRecursive.tar.xz BuildModelRecursive.html files tidy.err");
+system("tar czf BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");

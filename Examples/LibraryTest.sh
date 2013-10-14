@@ -28,7 +28,7 @@ sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTM
 "$OMHOME/bin/omc" +g=MetaModelica BuildModelRecursive.mos
 
 shopt -s nullglob
-cp BuildModelRecursive.tar.xz "$WWW/$LIB_DIR/"
-(cd "$WWW/$LIB_DIR/" && rm -rf files *.err *.sim *.html && tar xJf BuildModelRecursive.tar.xz)
+cp BuildModelRecursive.tar.gz "$WWW/$LIB_DIR/"
+(cd "$WWW/$LIB_DIR/" && rm -rf files *.err *.sim *.html && tar xzf BuildModelRecursive.tar.gz)
 cp BuildModelRecursive.html "$HISTORY"/`date +${LIB_DIR}-%Y-%m-%d.html`
 bash -e "$TESTMODELS/PlotLibraryTrend.sh" "$HISTORY" "$LIB_NAME"
