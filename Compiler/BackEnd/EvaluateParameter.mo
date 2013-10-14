@@ -323,8 +323,7 @@ protected function evaluateSelectedParameters
   output BackendVarTransform.VariableReplacements oReplEvaluate;
   output Integer oMark;
 algorithm
-  (oKnVars,oCache,oRepl,oReplEvaluate,oMark) :=
-  matchcontinue(iSelected,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate)
+  (oKnVars,oCache,oRepl,oReplEvaluate,oMark) := match (iSelected,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate)
     local
       Integer i,mark;
       list<Integer> rest;
@@ -335,6 +334,40 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_) then (iKnVars,iCache,iRepl,iReplEvaluate,iMark);
     case (i::rest,_,_,_,_,_,_,_,_,_)
       equation
+        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters0(i,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate);
+        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl,repleval);
+      then (knVars,cache,repl,repleval,mark);
+  end match;
+end evaluateSelectedParameters;
+
+protected function evaluateSelectedParameters0
+"author Frenkel TUD"
+  input Integer i;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.EquationArray inIEqns;
+  input Env.Cache iCache;
+  input Env.Env env;
+  input Integer iMark;
+  input array<Integer> markarr;
+  input BackendVarTransform.VariableReplacements iRepl;
+  input BackendVarTransform.VariableReplacements iReplEvaluate;
+  output BackendDAE.Variables oKnVars;
+  output Env.Cache oCache;
+  output BackendVarTransform.VariableReplacements oRepl;
+  output BackendVarTransform.VariableReplacements oReplEvaluate;
+  output Integer oMark;
+algorithm
+  (oKnVars,oCache,oRepl,oReplEvaluate,oMark) := matchcontinue(i,iKnVars,m,inIEqns,iCache,env,iMark,markarr,iRepl,iReplEvaluate)
+    local
+      Integer mark;
+      list<Integer> rest;
+      BackendDAE.Variables knVars;
+      BackendVarTransform.VariableReplacements repl,repleval;
+      BackendDAE.Var v;
+      Env.Cache cache;
+    case (_,_,_,_,_,_,_,_,_,_)
+      equation
         false = intGt(markarr[i],0) "not allready evaluated";
         _ = arrayUpdate(markarr,i,iMark);
         // evaluate needed parameters
@@ -343,19 +376,16 @@ algorithm
         v = BackendVariable.getVarAt(knVars,i);
         (v,knVars,cache,repl,mark) = evaluateFixedAttribute(v,true,knVars,m,inIEqns,cache,env,mark,markarr,repl);
         (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,knVars,inIEqns,repl,iReplEvaluate,cache,env);
-        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,mark,markarr,repl,repleval);
       then
         (knVars,cache,repl,repleval,mark);
-    case (i::rest,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         // evaluate parameter
         v = BackendVariable.getVarAt(iKnVars,i);
         (knVars,cache,repl,repleval) = evaluateSelectedParameter(v,i,iKnVars,inIEqns,iRepl,iReplEvaluate,iCache,env);
-        (knVars,cache,repl,repleval,mark) = evaluateSelectedParameters(rest,knVars,m,inIEqns,cache,env,iMark,markarr,repl,repleval);
-      then
-        (knVars,cache,repl,repleval,mark);
+      then (knVars,cache,repl,repleval,iMark);
   end matchcontinue;
-end evaluateSelectedParameters;
+end evaluateSelectedParameters0;
 
 protected function evaluateSelectedParameters1
 "author Frenkel TUD"

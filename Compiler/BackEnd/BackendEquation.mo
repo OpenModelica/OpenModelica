@@ -157,19 +157,10 @@ protected function equationList2 "author: PA
   input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue(arr, pos, iAcc)
-    local
-      BackendDAE.Equation e;
-
+  outEquationLst := match (arr, pos, iAcc)
     case (_,0,_) then iAcc;
-
-    case (_,_,_) equation
-      SOME(e) = arr[pos];
-    then equationList2(arr,pos-1,e::iAcc);
-
-    case (_,_,_)
-    then equationList2(arr,pos-1,iAcc);
-  end matchcontinue;
+    else equationList2(arr,pos-1,List.consOption(arr[pos],iAcc));
+  end match;
 end equationList2;
 
 public function getWhenEquationExpr
