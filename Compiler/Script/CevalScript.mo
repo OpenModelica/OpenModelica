@@ -1695,6 +1695,15 @@ algorithm
     case (cache,env,"clearCommandLineOptions",_,st,_)
       then (cache,Values.BOOL(false),st);
 
+    case (cache,env,"clearDebugFlags",_,st,_)
+      equation
+        Flags.resetDebugFlags();
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,"clearDebugFlags",_,st,_)
+      then (cache,Values.BOOL(false),st);
+
     case (cache,env,"cd",{Values.STRING("")},st,_)
       equation
         str_1 = System.pwd();

@@ -1218,6 +1218,13 @@ algorithm
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setDebugFlags;
 
+function clearDebugFlags
+  "Resets all debug flags to their default values."
+  output Boolean success;
+  external "builtin";
+  annotation(preferredView="text");
+end clearDebugFlags;
+
 function setPreOptModules "example input: removeFinalParameters,removeSimpleEquations,expandDerOperator"
   input String modules;
   output Boolean success;
@@ -1308,7 +1315,7 @@ annotation(preferredView="text");
 end setCommandLineOptions;
 
 function clearCommandLineOptions
-  "Resets all commdand-line flags to their default values."
+  "Resets all command-line flags to their default values."
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
