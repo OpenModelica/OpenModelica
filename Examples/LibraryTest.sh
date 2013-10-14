@@ -29,6 +29,7 @@ sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTM
 
 shopt -s nullglob
 cp BuildModelRecursive.tar.gz "$WWW/$LIB_DIR/"
-(cd "$WWW/$LIB_DIR/" && rm -rf files *.err *.sim *.html && tar xzf BuildModelRecursive.tar.gz)
+rm -rf "$WWW/$LIB_DIR/files"
+tar -C "$WWW/$LIB_DIR/" -xzvf BuildModelRecursive.tar.gz
 cp BuildModelRecursive.html "$HISTORY"/`date +${LIB_DIR}-%Y-%m-%d.html`
 bash -e "$TESTMODELS/PlotLibraryTrend.sh" "$HISTORY" "$LIB_NAME"

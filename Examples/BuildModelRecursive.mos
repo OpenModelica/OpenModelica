@@ -2,7 +2,7 @@
 
 library:=$TypeName(Modelica);
 libraryVersion:="default";
-referenceFiles:="";
+referenceFiles:="/home/martin/trunk/testsuite/simulation/libraries/msl32/ReferenceFiles";
 
 setCommandLineOptions({"+g=Modelica","+d=nogen,"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -117,7 +117,7 @@ templates:=if build <> -1.0 then templates-build else templates;
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
-system(\"sed -i '300,$ d' \" + simFile + \"'\"); // Only keep the top 300 lines
+system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 referenceExists := false;
 referenceCell := \"<td bgcolor=\\\"#FFFF00\\\">&nbsp;</td>\";
@@ -201,6 +201,7 @@ writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.gz\">Offline v
 {writeFile("BuildModelRecursive." + phase + ".xml", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
 
 system("rm -f tidy.err; for f in *.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
-system("chmod -R go+r BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");
-system("chmod g+x files");
+system("chmod -R go+r BuildModelRecursive.html files tidy.err");
+system("chmod -R g+x files");
 system("tar czf BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");
+system("chmod go+r BuildModelRecursive.tar.gz");
