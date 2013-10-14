@@ -361,6 +361,14 @@ int initializeModel(DATA* data, const char* init_initMethod,
       retValue = -1;
     }
     restore_memory_state(mem_state);
+
+    storePreValues(data);
+    storeOldValues(data);
+    function_storeDelayed(data);
+    function_updateRelations(data, 1);
+    storeRelations(data);
+    updateHysteresis(data);
+    saveZeroCrossings(data);
   }
   /* catch */
   else
@@ -376,13 +384,6 @@ int initializeModel(DATA* data, const char* init_initMethod,
   if(ACTIVE_STREAM(LOG_DEBUG))
     printParameters(data, LOG_DEBUG);
 
-  storePreValues(data);
-  storeOldValues(data);
-  function_storeDelayed(data);
-  function_updateRelations(data, 1);
-  storeRelations(data);
-  updateHysteresis(data);
-  saveZeroCrossings(data);
 
   /* Initialization complete */
   if(measure_time_flag)
