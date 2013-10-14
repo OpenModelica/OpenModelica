@@ -100,7 +100,7 @@ static inline void fixCommaInName(char **str, size_t len)
 
   if (nc > 0) {
 
-    newvar = (char*) malloc(len+nc+1);
+    newvar = (char*) malloc(len+nc+10);
     k = 0;
     for (j=0;j<len;j++) {
       newvar[k] = (*str)[j];
@@ -237,7 +237,7 @@ static char AlmostEqualRelativeAndAbs(double A, double B)
   return 0;
 }
 
-static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, char *prefix)
+static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix)
 {
   unsigned int i,j,k,j_event;
   double t,tr,d,dr,err,d_left,d_right,dr_left,dr_right,t_event;
@@ -249,11 +249,11 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
   FILE *fout = NULL;
   char *fname = NULL;
   if (!isResultCmp) {
-    fname = (char*) malloc(15 + strlen(varname));
+    fname = (char*) malloc(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
     if (fout) {
-      fprintf(fout, "time,reference,actual,err,relerr,\"%s\"\n",varname);
+      fprintf(fout, "time,reference,actual,err,relerr,threshold,\"%s\"\n",varname);
     }
   }
   for (i=0;i<refdata->n;i++){
@@ -382,7 +382,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
 #ifdef DEBUGOUTPUT
              fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
-            if ( err < average){
+            if ( err < average ) {
               continue;
             }
           }
@@ -515,7 +515,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
     fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
     if (fout) {
-      fprintf(fout, "%.6g,%.6g,%.6g,%.6g,%.6g\n",tr,d,dr,err,AlmostEqualRelativeAndAbs(d,0) ? err/average : absdouble(err/d));
+      fprintf(fout, "%.6g,%.6g,%.6g,%.6g,%.6g,%.6g\n",tr,d,dr,err,AlmostEqualRelativeAndAbs(d,0) ? err/average : absdouble(err/d),average);
     }
     if ( err > average){
       if (j+1<reftime->n) {
@@ -552,7 +552,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
     cmpdiffvars[vardiffindx] = varname;
     vardiffindx++;
     if (!isResultCmp) {
-      *diffLst = mk_cons(mk_scon(fname),*diffLst);
+      *diffLst = mk_cons(mk_scon(varname),*diffLst);
     }
   }
   if (fout) {
@@ -613,7 +613,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   unsigned int ncmpvars = 0;
   unsigned int ngetfailedvars = 0;
   void *allvars,*allvarsref,*res;
-  unsigned int i,size,size_ref,len,oldlen,j,k;
+  unsigned int i,size,size_ref,len,j,k;
   char *var,*var1,*var2;
   DataField time,timeref,data,dataref;
   DiffDataField ddf;
@@ -622,13 +622,12 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   ddf.data=NULL;
   ddf.n=0;
   ddf.n_max=0;
-  oldlen = 0;
   len = 1;
 
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
-    char *str = (char*) malloc(21+strlen(filename));
+    char *str = (char*) malloc(25+strlen(filename));
     *str = 0;
     strcat(strcat(str,"Error opening file: "),runningTestsuite ? SystemImpl__basename(filename) : filename);
     void *res = mk_scon(str);
@@ -637,7 +636,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   }
   /* fprintf(stderr, "Open File %s\n", reffilename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
-    char *str = (char*) malloc(31+strlen(reffilename));
+    char *str = (char*) malloc(35+strlen(reffilename));
     *str = 0;
     strcat(strcat(str,"Error opening reference file: "),runningTestsuite ? SystemImpl__basename(reffilename) : reffilename);
     void *res = mk_scon(str);
@@ -653,8 +652,8 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   /* get vars to compare */
   cmpvars = getVars(vars,&ncmpvars);
   /* if no var compare all vars */
-  allvars = SimulationResultsImpl__readVars(filename,&simresglob_c);
-  allvarsref = SimulationResultsImpl__readVars(reffilename,&simresglob_ref);
+  allvars = SimulationResultsImpl__readVarsFilterAliases(filename,&simresglob_c);
+  allvarsref = SimulationResultsImpl__readVarsFilterAliases(reffilename,&simresglob_ref);
   if (ncmpvars==0){
     cmpvars = getVars(allvarsref,&ncmpvars);
     if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
@@ -697,11 +696,8 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   for (i=0;i<ncmpvars;i++) {
     var = cmpvars[i];
     len = strlen(var);
-    if (oldlen < len) {
-      if (var1) free(var1);
-      var1 = (char*) malloc(len+1);
-      oldlen = len;
-    }
+    if (var1) free(var1);
+    var1 = (char*) malloc(len+10);
     k = 0;
     for (j=0;j<len;j++) {
       if (var[j] !='\"' ) {
@@ -715,7 +711,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     dataref = getData(var1,reffilename,size_ref,&simresglob_ref);
     if (dataref.n==0) {
       if (var2) free(var2);
-      var2 = (char*) malloc(len+1);
+      var2 = (char*) malloc(len+10);
       strncpy(var2,var1,len+1);
       fixDerInName(var2,len);
       fixCommaInName(&var2,len);
@@ -773,8 +769,8 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     *success = 0==vardiffindx;
   }
 
-  if (var1) free(var1);
-  if (var2) free(var2);
+  // if (var1) free(var1);
+  // if (var2) free(var2);
   if (ddf.data) free(ddf.data);
   if (cmpvars) free(cmpvars);
   if (time.data) free(time.data);

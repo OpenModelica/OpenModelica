@@ -1,9 +1,9 @@
 #!/bin/bash -e
 # Script to generate detailed test reports in a given directory, with history in another
 
-if test ! "$#" = 6; then
-  echo "Usage: $0 omhome workdir libraries_dir libdirname library_name library_version"
-  echo "Example: $0 /path/to/build/ OpenModelica/BuildModelTest/MSL_3.2.1 /var/www/libraries/ MSL_3.2.1 Modelica 3.2.1"
+if test ! "$#" = 7 -a ! "$#" = 6; then
+  echo "Usage: $0 omhome workdir libraries_dir libdirname library_name library_version [path/to/referenceFiles]"
+  echo "Example: $0 /path/to/build/ OpenModelica/BuildModelTest/MSL_3.2.1 /var/www/libraries/ MSL_3.2.1 Modelica 3.2.1 /path/to/trunk/testsuite/simulation/libraries/msl32/ReferenceFiles"
   exit 1
 fi
 
@@ -13,6 +13,7 @@ WWW="$3"
 LIB_DIR="$4"
 LIB_NAME="$5"
 LIB_VERSION="$6"
+REF_FILES="$7"
 
 TESTMODELS="$OMHOME/share/doc/omc/testmodels/"
 HISTORY="$WWW/history"
@@ -23,11 +24,12 @@ rm -rf "$WORKDIR"
 mkdir -p "$WORKDIR" "$WWW/$LIB_NAME" "$HISTORY"
 cd "$WORKDIR"
 
-sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTMODELS/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($LIB_NAME);/" > BuildModelRecursive.mos
+sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTMODELS/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($LIB_NAME);/" | sed "s/referenceFiles:=.*/referenceFiles:=\"$REF_FILES\"" > BuildModelRecursive.mos
 "$OMHOME/bin/omc" +g=MetaModelica BuildModelRecursive.mos
 
 shopt -s nullglob
 rm -f "$WWW"/*.sim "$WWW"/*.err
-cp BuildModelRecursive.html *.sim *.err "$WWW/$LIB_NAME/"
+cp BuildModelRecursive.tar.xz "$WWW/$LIB_NAME/"
+(cd "$WWW/$LIB_NAME/" && rm -rf files *.err *.sim *.html && tar xJf BuildModelRecursive.tar.xz)
 cp BuildModelRecursive.html "$HISTORY"/`date +${LIB_NAME}-%Y-%m-%d.html`
 bash -e "$TESTMODELS/PlotLibraryTrend.sh" "$HISTORY" "$LIB_NAME"

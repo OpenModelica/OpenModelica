@@ -1805,7 +1805,9 @@ annotation(preferredView="text");
 end listVariables;
 
 function strtok "Splits the strings at the places given by the token, for example:
-  strtok(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}"
+  strtok(\"abcbdef\",\"b\") => {\"a\",\"c\",\"def\"}
+  strtok(\"abcbdef\",\"cd\") => {\"ab\",\"ef\"}
+"
   input String string;
   input String token;
   output String[:] strings;
@@ -2344,7 +2346,7 @@ public function diffSimulationResults "compares simulation results."
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
-<p>The output is the generated filesnames</p>
+<p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResults;
 

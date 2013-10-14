@@ -2,6 +2,7 @@
 
 library:=$TypeName(Modelica);
 libraryVersion:="default";
+referenceFiles:="";
 
 setCommandLineOptions({"+g=Modelica","+d=nogen,"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -28,7 +29,8 @@ getErrorString();
 // writeFile("x",sum(s + "\n" for s in a));
 
 print("Number of classes to build: " + String(size(a,1)));
-system("rm -f "+libraryString+"* " + log);
+system("rm -rf files/ "+libraryString+"* " + log);
+mkdir("files");
 
 /*** This is the stuff executed for each model ***/
 
@@ -43,6 +45,47 @@ writeFile(statFile + \".compile\", \"killed\");getErrorString();
 writeFile(statFile + \".sim\", \"killed\");getErrorString();
 "+loadModelCommand+"
 setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
+loadString(\"
+function cell
+  input Real time;
+  input Boolean greenOnOk := false;
+  input String greenColor := \\\"#00FF00\\\";
+  output String str;
+algorithm
+  str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") + 
+    OpenModelica.Scripting.Internal.Time.readableTime(if time < 1e-5 then 0 else time)+\\\"</td>\\\");
+end cell;
+function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
+function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
+function firstPart input String str; input Integer maxLength := 4096; output String out; algorithm out := if length(str) < maxLength then str else (substring(str,1,maxLength) + \\\"\n... (output truncated, was \\\" + String(length(str)) + \\\" bytes)\\\"); end firstPart;
+function csvFileToVariable
+  input String str;
+  output String out;
+protected
+  String matches[2];
+algorithm
+  (,matches) := OpenModelica.Scripting.regex(str,\\\"^.*[.]diff[.](.*)[.]csv$\\\",2);
+  out := matches[2];
+end csvFileToVariable;
+function testcase
+  input Real time;
+  input Boolean success;
+  input String errXMLLong;
+  output String str;
+protected
+  String errXML;
+algorithm
+  errXML := firstPart(errXMLLong,16*1024); // 16 kB log per test should be enough; increase if there is a good reason to do so
+  str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
+    if not success then \\\"<error type=\\\\\\\"Failure\\\\\\\" />\\\"
+    else \\\"\\\"
+  )+(
+    if errXML <> \\\"\\\" then (\\\"<system-out>\\\" + errXML + \\\"</system-out>\\\")
+    else \\\"\\\"
+  )+
+  \\\"</testcase>\n\\\";
+end testcase;
+\");getErrorString();
 res:=buildModel("+s+");
 greenColor := \"#00FF00\";
 if res[1] == \"\" then
@@ -51,8 +94,8 @@ if res[1] == \"\" then
   res:=buildModel("+s+");
   greenColor := \"#FFFF00\";
 end if;
-errFile:=\""+s+".err\";
-simFile:=\""+s+".sim\";
+errFile:=\"files/"+s+".err\";
+simFile:=\"files/"+s+".sim\";
 err:=getErrorString();
 system(\"rm -f \" + errFile);
 writeFile(simFile,\"\");
@@ -75,46 +118,48 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 buildRes := res[1] <> \"\";
 simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
+referenceExists := false;
+referenceCell := \"<td bgcolor=\\\"#FFFF00\\\">&nbsp;</td>\";
 if simRes then
   system(\"touch "+s+".simsuccess\");
+  reference := \""+referenceFiles+"/"+s+".mat\";
+  referenceExists := regularFileExists(reference);
+  prefix := \"files/"+s+".diff\";
+  if referenceExists then
+    OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
+    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.mat\",reference,prefix);
+    timeDiff := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
+    diffFiles := {prefix + \".\" + var + \".csv\" for var in diffVars};
+    if not referenceOK then
+      writeFile(\""+s+".gnuplot\",\"set term svg size 600,800
+set datafile separator \\\",\\\"
+set format y \\\"%g\\\"
+set samples 300
+\" + sum(\"set output \\\"\"+file+\".svg\\\"
+set multiplot layout 3,1
+set title \\\"Result difference of \"+csvFileToVariable(file)+\"\\\"
+plot \\\"\"+file+\"\\\" using \\\"time\\\":\\\"reference\\\" smooth csplines with lines, \\\"\"+file+\"\\\" using \\\"time\\\":\\\"actual\\\" smooth csplines with lines
+unset title
+plot \\\"\"+file+\"\\\" using \\\"time\\\":\\\"err\\\" title \\\"absolute error\\\" smooth unique with lines, \\\"\"+file+\"\\\" using \\\"time\\\":\\\"threshold\\\" smooth unique with lines
+plot \\\"\"+file+\"\\\" using \\\"time\\\":\\\"relerr\\\" title \\\"relative error\\\" smooth unique with lines
+unset multiplot
+\" for file in diffFiles));
+      system(\"gnuplot '"+s+".gnuplot'\");
+      timeDiff := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
+      referenceCell := \"<td bgcolor=\\\"#FF0000\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\", <a href=\\\"files/"+s+".diff.html\\\">\"+String(size(diffFiles,1))+\" failed</a></td>\";
+      writeFile(\"files/"+s+".diff.html\",\"<html><body><h1>"+s+" differences from the reference file</h1><ul>\" + sum(\"<li>\"+csvFileToVariable(file)+\" <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".svg\\\">(plot)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\"\\\">(csv)</a></li>\" for file in diffFiles) + \"</ul></body></html>\");
+    else
+      referenceCell := \"<td bgcolor=\\\"#00FF00\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\"</td>\";
+    end if;
+  end if;
+else
+  referenceCell := \"<td bgcolor=\\\"#FF0000\\\">&nbsp;</td>\";
 end if;
 
-loadString(\"
-function cell
-  input Real time;
-  input Boolean greenOnOk := false;
-  input String greenColor := \\\"#00FF00\\\";
-  output String str;
-algorithm
-  str := if time==-1.0 then \\\"<td bgcolor=\\\\\\\"#FF0000\\\\\\\">&nbsp;</td>\\\" else ((if greenOnOk then \\\"<td bgcolor=\\\\\\\"\\\" + greenColor + \\\"\\\\\\\">\\\" else \\\"<td>\\\") + 
-    OpenModelica.Scripting.Internal.Time.readableTime(if time < 1e-5 then 0 else time)+\\\"</td>\\\");
-end cell;
-function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
-function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
-function firstPart input String str; input Integer maxLength := 4096; output String out; algorithm out := if length(str) < maxLength then str else (substring(str,1,maxLength) + \\\"\n... (output truncated, was \\\" + String(length(str)) + \\\" bytes)\\\"); end firstPart;
-function testcase
-  input Real time;
-  input Boolean success;
-  input String errXMLLong;
-  output String str;
-protected
-  String errXML;
-algorithm
-  errXML := firstPart(errXMLLong,16*1024); // 16 kB log per test should be enough; increase if there is a good reason to do so
-  str:=\\\"<testcase name=\\\\\\\""+s+"\\\\\\\" time=\\\\\\\"\\\"+String(time)+\\\"\\\\\\\">\\\"+(
-    if not success then \\\"<error type=\\\\\\\"Failure\\\\\\\" />\\\"
-    else \\\"\\\"
-  )+(
-    if errXML <> \\\"\\\" then (\\\"<system-out>\\\" + errXML + \\\"</system-out>\\\")
-    else \\\"\\\"
-  )+
-  \\\"</testcase>\n\\\";
-end testcase;
-\");getErrorString();
 sim:=readFile(simFile);
 str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" else \""+s+"\") +
   (if sim <> \"\" then \" (<a href=\"+simFile+\">sim</a>)\" else \"\") +
-  \"</td>\" +
+  \"</td>\" + referenceCell +
   cell(if simRes then timeSim else -1.0,greenOnOk=true,greenColor=greenColor) +
   \"<td bgcolor=\\\"\"+(if res[1]<>\"\" then greenColor else \"#FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" +
   sum(cell(d,greenColor=greenColor) for d in {frontend,backend,simcode,templates,build}) + \"</tr>\\n\";getErrorString();
@@ -148,10 +193,11 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
-writeFile(log,"<table><tr><th>Model</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
+writeFile(log,"<table><tr><th>Model</th><th>Verified</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
-writeFile(log,"</table></body></html>",append=true);getErrorString();
+writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.xz\">Offline version</a></p></body></html>",append=true);getErrorString();
 
 {writeFile("BuildModelRecursive." + phase + ".xml", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
 
 system("rm -f tidy.err; for f in *.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
+system("tar cJf BuildModelRecursive.tar.xz BuildModelRecursive.html files tidy.err");

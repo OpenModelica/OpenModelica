@@ -266,6 +266,37 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
   }
 }
 
+static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, SimulationResult_Globals* simresglob)
+{
+  const char *msg[2] = {"",""};
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,simresglob)) {
+    return mk_nil();
+  }
+  switch (simresglob->curFormat) {
+  case MATLAB4: {
+    void *res = mk_nil();
+    int i;
+    int *params = (int*) calloc(simresglob->matReader.nparam+1,sizeof(int));
+    int *vars = (int*) calloc(simresglob->matReader.nvar+1,sizeof(int));
+    for (i=simresglob->matReader.nall-1; i>=0; i--) {
+      if (0 >= simresglob->matReader.allInfo[i].index) continue; /* Negated aliases always have a real variable, so skip it */
+      if (simresglob->matReader.allInfo[i].isParam && params[simresglob->matReader.allInfo[i].index]) continue;
+      if (!simresglob->matReader.allInfo[i].isParam && vars[simresglob->matReader.allInfo[i].index]) continue;
+      if (simresglob->matReader.allInfo[i].isParam) {
+        params[simresglob->matReader.allInfo[i].index] = 1;
+      } else {
+        vars[simresglob->matReader.allInfo[i].index] = 1;
+      }
+      res = mk_cons(mk_scon(simresglob->matReader.allInfo[i].name),res);
+    }
+    free(params);
+    free(vars);
+    return res;
+  }
+  default: return SimulationResultsImpl__readVars(filename, simresglob);
+  }
+}
+
 static void* SimulationResultsImpl__readDataset(const char *filename, void *vars, int dimsize, SimulationResult_Globals* simresglob)
 {
   const char *msg[2] = {"",""};
