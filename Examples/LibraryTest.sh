@@ -21,15 +21,14 @@ HISTORY="$WWW/history"
 "$OMHOME/bin/omc" ++v
 
 rm -rf "$WORKDIR"
-mkdir -p "$WORKDIR" "$WWW/$LIB_NAME" "$HISTORY"
+mkdir -p "$WORKDIR" "$WWW/$LIB_DIR" "$HISTORY"
 cd "$WORKDIR"
 
 sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTMODELS/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($LIB_NAME);/" | sed "s/referenceFiles:=.*/referenceFiles:=\"$REF_FILES\"" > BuildModelRecursive.mos
 "$OMHOME/bin/omc" +g=MetaModelica BuildModelRecursive.mos
 
 shopt -s nullglob
-rm -f "$WWW"/*.sim "$WWW"/*.err
-cp BuildModelRecursive.tar.xz "$WWW/$LIB_NAME/"
+cp BuildModelRecursive.tar.xz "$WWW/$LIB_DIR/"
 (cd "$WWW/$LIB_NAME/" && rm -rf files *.err *.sim *.html && tar xJf BuildModelRecursive.tar.xz)
-cp BuildModelRecursive.html "$HISTORY"/`date +${LIB_NAME}-%Y-%m-%d.html`
+cp BuildModelRecursive.html "$HISTORY"/`date +${LIB_DIR}-%Y-%m-%d.html`
 bash -e "$TESTMODELS/PlotLibraryTrend.sh" "$HISTORY" "$LIB_NAME"
