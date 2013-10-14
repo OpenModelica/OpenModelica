@@ -1697,6 +1697,7 @@ algorithm
       Exp e;
 
     case DAE.ARRAY(ty = tp) then arrayDimension(tp);
+    case DAE.MATRIX(ty = tp) then arrayDimension(tp);
     case DAE.LUNARY(exp = e) then expDimensions(e);
     case DAE.LBINARY(exp1 = e) then expDimensions(e);
   end match;
