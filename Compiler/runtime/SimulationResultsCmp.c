@@ -515,7 +515,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
     fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
     if (fout) {
-      fprintf(fout, "%.6g,%.6g,%.6g,%.6g,%.6g,%.6g\n",tr,d,dr,err,AlmostEqualRelativeAndAbs(d,0) ? err/average : absdouble(err/d),average);
+      fprintf(fout, "%.6g,%.6g,%.6g,%.6g,%.6g,%.6g\n",tr,dr,d,err,AlmostEqualRelativeAndAbs(d,0) ? err/average : absdouble(err/d),average);
     }
     if ( err > average){
       if (j+1<reftime->n) {
