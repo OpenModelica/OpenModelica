@@ -7895,7 +7895,6 @@ protected function preOptimizeDAE "
   input list<tuple<BackendDAEFunc.preOptimizationDAEModule, String, Boolean>> optModules;
   output BackendDAE.BackendDAE outDAE;
   output Util.Status status;
-  BackendDAE.ExtraInfo ei;
 algorithm
   (outDAE, status) := matchcontinue (inDAE, optModules)
     local
