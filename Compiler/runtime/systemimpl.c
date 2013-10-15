@@ -738,7 +738,25 @@ extern int SystemImpl__createDirectory(const char *str)
   }
 }
 
-extern int SystemImpl__removeDirectory(const char *path)
+static char * SystemImpl__NextDir(const char * path)
+{
+  char * res = NULL;
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  res = strchr(path, '\\');
+#endif
+  if (res == NULL)
+  {
+    res = strchr(path, '/');
+  }
+  if (res != NULL)
+  {
+      res++;
+  }
+  return res;
+}
+
+static int SystemImpl__removeDirectoryItem(const char *path)
 {
   int retval;
   DIR * d = opendir(path);
@@ -795,6 +813,156 @@ extern int SystemImpl__removeDirectory(const char *path)
   {
     /* Could not open path as dir, try to handle as file */
     retval = unlink(path);
+  }
+
+  return retval;
+}
+
+extern int SystemImpl__removeDirectory(const char *path)
+{
+  int retval = -1;
+  char * wild = strchr(path, '*');
+
+  if (wild == NULL)
+  {
+    retval = SystemImpl__removeDirectoryItem(path);
+  }
+  else
+  {
+    /* [ basepath '/' ] [pat_pre] '*' [pat_post] [ '/' sub ] */
+    /* replace first wildcard item */
+    char * basepath;
+    char * ctmp = NULL;
+    const char * str = path;
+    DIR * d;
+    char * pattern;
+    char * pat_pre = NULL;
+    char * pat_post = NULL;
+    char * sub = NULL;
+    size_t len_sub = 0;
+
+    do
+    {
+      char * res = SystemImpl__NextDir(str);
+
+      if (res == NULL)
+      {
+        /* basepath is finally found */
+        pattern = strdup(str);
+        break;
+      }
+      else
+      {
+        if (res <= wild)
+        {
+          /* found new constituent of basepath */
+          ctmp = res;
+          str = res;
+        }
+        else
+        {
+          /* basepath is finally found */
+          pattern = strdup(str);
+          sub = res;
+          len_sub = strlen(sub);
+          break;
+        }
+      }
+    } while(1);
+
+    /* prepare basepath */
+    if (ctmp == NULL)
+    {
+      basepath = strdup(".");
+    }
+    else
+    {
+      size_t len = ctmp-path;
+      basepath = (char *)malloc(len);
+      strncpy(basepath, path, len);
+      basepath[len-1] = 0;
+    }
+
+    /* prepare pattern */
+    ctmp = SystemImpl__NextDir(pattern);
+    if (ctmp != NULL)
+    {
+        ctmp--;
+        *ctmp = 0;
+    }
+    pat_pre = pattern;
+    pat_post = strchr(pattern, '*');
+    *pat_post = 0;
+    pat_post++;
+
+    d = opendir(basepath);
+    if (d != NULL)
+    {
+      struct dirent * p;
+
+      size_t len_base = strlen(basepath);
+      size_t len_pre = strlen(pat_pre);
+      size_t len_post = strlen(pat_post);
+
+      while ((p = readdir(d)) != NULL)
+      {
+        size_t len;
+
+        /* Do not recurse on "." and ".." */
+        if ((p->d_name[0] == '.') && ( (p->d_name[1] == 0) || ((p->d_name[1] == '.') && (p->d_name[2] == 0))))
+        {
+          continue;
+        }
+
+        len = strlen(p->d_name);
+        if ((len >= (len_pre+len_post)) && (strncmp(p->d_name, pat_pre, len_pre) == 0))
+        {
+          if (strcmp(p->d_name+(len-len_post), pat_post) == 0)
+          {
+            /* pre and post pattern do match */
+            struct stat statbuf;
+            char * newdir = (char *)malloc(len_base+len+len_sub+3);
+
+            strcpy(newdir, basepath);
+            strcat(newdir, "/");
+            strcat(newdir, p->d_name);
+            if (stat(newdir, &statbuf) == 0)
+            {
+              if (S_ISDIR(statbuf.st_mode))
+              {
+                if (sub != NULL)
+                {
+                  strcat(newdir, "/");
+                  strcat(newdir, sub);
+                }
+                SystemImpl__removeDirectory(newdir);
+              }
+              else
+              {
+                if (sub == NULL)
+                {
+                  unlink(newdir);
+                }
+                else
+                {
+                  /* we have more paths, but this is no directory, skip */
+                }
+              }
+            }
+
+            free(newdir);
+          }
+        }
+      }
+      closedir(d);
+      retval = 0;
+    }
+    else
+    {
+      retval = -1;
+    }
+    free(basepath);
+    free(pattern);
   }
 
   return retval;
