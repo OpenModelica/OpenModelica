@@ -1290,7 +1290,8 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
     menu.addAction(mpInstantiateModelAction);
     menu.addAction(mpCheckModelAction);
     menu.addAction(mpSimulationAction);
-    if (!isSearchedTree())
+    /* If item is OpenModelica or part of it or is search tree item then don't show the unload for it. */
+    if (!((StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()).compare("OpenModelica") == 0)  || isSearchedTree()))
     {
       menu.addSeparator();
       menu.addAction(mpUnloadClassAction);
