@@ -476,8 +476,9 @@ template simulationFile(SimCode simCode, String guid)
   match simCode
     case simCode as SIMCODE(__) then
     <<
-    /* Main Simulation File */
-    
+    /* Main Simulation File */    
+    <%simulationFileHeader(simCode)%>  
+
     #include <perform_simulation.c>
 
     /* dummy VARINFO and FILEINFO */
@@ -491,8 +492,6 @@ template simulationFile(SimCode simCode, String guid)
     #else
     int measure_time_flag = 0;
     #endif
-    
-    <%simulationFileHeader(simCode)%>  
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
 
