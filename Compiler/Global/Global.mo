@@ -42,6 +42,7 @@ encapsulated package Global
 constant Integer recursionDepthLimit = 256;
 constant Integer maxFunctionFileLength = 50;
 
+// hash indexes in global array
 constant Integer instHashIndex = 0;
 constant Integer typesIndex = 1;
 constant Integer crefIndex = 2;
@@ -52,6 +53,9 @@ constant Integer profilerTime2Index = 6;
 constant Integer flagsIndex = 7;
 constant Integer builtinGraphEnvIndex = 8;
 constant Integer instOnlyForcedFunctions = 9;
+
+// indexes in System.tick
+constant Integer backendDAE_fileSequence = 20;
 
 constant Integer RT_CLOCK_EXECSTAT_MAIN = 11 /* See GlobalScript.mo */;
 

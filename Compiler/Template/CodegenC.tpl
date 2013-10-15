@@ -174,22 +174,9 @@ template simulationFile_exo(SimCode simCode, String guid)
   match simCode
     case simCode as SIMCODE(__) then
     <<
+    /* External objects file */
     <%simulationFileHeader(simCode)%>    
     
-    #include <perform_simulation.c> 
-
-    /* dummy VARINFO and FILEINFO */
-    const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
-    const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
-    #ifdef __cplusplus
-    extern "C" {
-    #endif
-    #ifdef _OMC_MEASURE_TIME
-    int measure_time_flag = 1;
-    #else
-    int measure_time_flag = 0;
-    #endif
-
     <%functionCallExternalObjectConstructors(extObjInfo)%>
 
     <%functionCallExternalObjectDestructors(extObjInfo)%>
@@ -365,9 +352,16 @@ template simulationFile_alg(SimCode simCode, String guid)
     <<
     /* Algebraic */
     <%simulationFileHeader(simCode)%>
-
+    
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
+    
     <%functionAlgebraic(algebraicEquations)%>    
-        
+    
+    #ifdef __cplusplus
+    }
+    #endif
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -483,6 +477,21 @@ template simulationFile(SimCode simCode, String guid)
     case simCode as SIMCODE(__) then
     <<
     /* Main Simulation File */
+    
+    #include <perform_simulation.c>
+
+    /* dummy VARINFO and FILEINFO */
+    const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
+    const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
+    #ifdef __cplusplus
+    extern "C" {
+    #endif
+    #ifdef _OMC_MEASURE_TIME
+    int measure_time_flag = 1;
+    #else
+    int measure_time_flag = 0;
+    #endif
+    
     <%simulationFileHeader(simCode)%>  
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
@@ -2091,7 +2100,12 @@ end equationNamesHPCOM_;
 template functionXXX_system(list<SimEqSystem> derivativEquations, String name, Integer n)
 ::=
   let odeEqs = derivativEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete); separator="\n"
+  let forwardEqs = derivativEquations |> eq => equationForward_(eq,contextSimulationNonDiscrete); separator="\n"
   <<
+  
+  /* forwarded equations */
+  <%forwardEqs%>
+  
   static void function<%name%>_system<%n%>(DATA *data)
   {
     state mem_state;
@@ -3042,6 +3056,32 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   )
 end equation_;
 
+template equationForward_(SimEqSystem eq, Context context)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+match context
+case SIMULATION_CONTEXT(genDiscrete=true) then
+ match eq
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(eq)
+  <<
+  extern void eqFunction_<%ix%>(DATA* data);
+  >>
+else
+ match eq
+  case e as SES_ALGORITHM(statements={})
+  then ""
+  else
+  let ix = equationIndex(eq)
+  <<
+  extern void eqFunction_<%ix%>(DATA* data);
+  >>
+end equationForward_;
+
 template equationNames_(SimEqSystem eq, Context context)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
@@ -3695,6 +3735,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # Simulations use -O2 by default
   SIM_OR_DYNLOAD_OPT_LEVEL=
   MODELICAUSERCFLAGS=
+  CC=cl
   CXX=cl
   EXEEXT=.exe
   DLLEXT=.dll
@@ -3723,10 +3764,19 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=$(FILEPREFIX).c
   MAINOBJ=$(FILEPREFIX).obj
-  GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
+  CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
+  <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
+  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c
+  OFILES=$(CFILES:.c=.obj)
+  GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.h $(FILEPREFIX).makefile $(CFILES)
 
-  $(FILEPREFIX)$(EXEEXT): $(MAINOBJ) $(FILEPREFIX)_records.c $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
-  <%\t%>$(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(FILEPREFIX)_records.c $(CFLAGS) $(LDFLAGS)
+  .PHONY: $(FILEPREFIX)$(EXEEXT)
+
+  # This is to make sure that <%fileNamePrefix%>_*.c are always compiled.
+  .PHONY: $(CFILES)
+
+  $(FILEPREFIX)$(EXEEXT): $(MAINFILE) $(FILEPREFIX)_functions.h $(CFILES)
+  <%\t%>$(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(CFILES) $(CFLAGS) $(LDFLAGS)
   >>
 end match
 case "gcc" then
@@ -3761,7 +3811,6 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -lf2c -s TOTAL_MEMORY=536870912 -s MAX_SETJMPS=20000 -s OUTLINING_LIMIT=20000 --pre-js <%makefileParams.omhome%>/lib/omc/emcc/pre.js>>
   else <<-L"<%makefileParams.omhome%>/lib/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%match System.os() case "OSX" then "-lf2c -llis" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis"%>>>
   %>
-  PERL=perl
   MAINFILE=<%fileNamePrefix%>.c
   MAINOBJ=<%fileNamePrefix%>.o
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \

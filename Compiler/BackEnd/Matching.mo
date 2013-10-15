@@ -39,6 +39,7 @@ encapsulated package Matching
 
 public import Absyn;
 public import BackendDAE;
+public import BackendDAEFunc;
 public import DAE;
 
 protected import BackendDAEEXT;
@@ -57,41 +58,6 @@ protected import List;
 protected import Util;
 protected import System;
 
-
-/*************************************/
-/*   Interfaces */
-/*************************************/
-
-public partial function StructurallySingularSystemHandlerFunc
-  input list<list<Integer>> eqns;
-  input Integer actualEqn;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input array<Integer> inAssignments1;
-  input array<Integer> inAssignments2;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output list<Integer> changedEqns;
-  output Integer continueEqn;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output array<Integer> outAssignments1;
-  output array<Integer> outAssignments2;
-  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-end StructurallySingularSystemHandlerFunc;
-
-public partial function matchingAlgorithmFunc
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input Boolean clearMatching;
-  input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-end matchingAlgorithmFunc;
-
-
 /*************************************/
 /*   Matching Algorithms */
 /*************************************/
@@ -102,7 +68,7 @@ public function DFSLH
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -177,7 +143,7 @@ protected function DFSLH2
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions match_opts;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2;
@@ -446,7 +412,7 @@ public function BFSB
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -478,6 +444,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
+    
     // fail case if system is empty
     case (_,_,_,_,_,_)
       equation
@@ -490,6 +457,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
+    
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");
@@ -514,7 +482,7 @@ protected function BFSB1
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -533,11 +501,13 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,parentcolum1;
+    
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
+    
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // not assigned
@@ -776,7 +746,7 @@ public function DFSB
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -807,6 +777,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
+    
     // fail case if system is empty
     case (_,_,_,_,_,_)
       equation
@@ -819,6 +790,7 @@ algorithm
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
+    
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");
@@ -842,7 +814,7 @@ protected function DFSB1
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -1038,7 +1010,7 @@ public function MC21A
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -1106,7 +1078,7 @@ protected function MC21A1
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -1402,7 +1374,7 @@ public function PF
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -1468,7 +1440,7 @@ protected function PF1
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -1516,7 +1488,7 @@ protected function PF2
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<Integer> outunmatched;
   output array<Integer> outrowmarks;
@@ -1803,7 +1775,7 @@ public function PFPlus
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -1869,7 +1841,7 @@ protected function PFPlus1
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output Integer outI;
   output array<Integer> outAss1;
@@ -2157,7 +2129,7 @@ public function HK
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -2225,7 +2197,7 @@ protected function HK1
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -2274,7 +2246,7 @@ protected function HK2
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<Integer> outunmatched;
   output array<Integer> outrowmarks;
@@ -2807,7 +2779,7 @@ public function HKDW
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -2875,7 +2847,7 @@ protected function HKDW1
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -3126,7 +3098,7 @@ public function ABMP
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -3198,7 +3170,7 @@ protected function ABMP1
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -3250,7 +3222,7 @@ protected function ABMP2
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<Integer> outunmatched;
   output array<Integer> outrowmarks;
@@ -3834,7 +3806,7 @@ public function PR_FIFO_FAIR
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -3900,7 +3872,7 @@ protected function PR_FIFO_FAIR1
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -3967,7 +3939,7 @@ protected function PR_FIFO_FAIR2
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<Integer> outunmatched;
   output array<Integer> outl_label;
@@ -4924,7 +4896,7 @@ public function DFSBExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -4976,7 +4948,7 @@ public function BFSBExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5028,7 +5000,7 @@ public function MC21AExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5080,7 +5052,7 @@ public function PFExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5132,7 +5104,7 @@ public function PFPlusExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5184,7 +5156,7 @@ public function HKExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5236,7 +5208,7 @@ public function HKDWExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5288,7 +5260,7 @@ public function ABMPExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5340,7 +5312,7 @@ public function PR_FIFO_FAIRExternal
   input BackendDAE.Shared ishared;
   input Boolean clearMatching;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
@@ -5401,7 +5373,7 @@ protected function matchingExternal
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAss1;
   output array<Integer> outAss2;
@@ -5803,7 +5775,7 @@ protected function reduceIndexifNecessary
   input array<Integer> ass1;
   input array<Integer> ass2;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
+  input BackendDAEFunc.StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<Integer> outchangedEqns;
   output Integer continueEqn;
@@ -5965,7 +5937,7 @@ protected
   array<list<Integer>> m;
   array<Integer> vec1,vec2;
   list<Integer> unassigned,meqns;
-  list<tuple<String,matchingAlgorithmFunc>> matchingAlgorithms;
+  list<tuple<String,BackendDAEFunc.matchingAlgorithmFunc>> matchingAlgorithms;
   list<tuple<String,Integer>> extmatchingAlgorithms;
   BackendDAE.EqSystem syst;
 algorithm
@@ -6017,7 +5989,7 @@ end testMatchingAlgorithms;
 public function testMatchingAlgorithms1
 "function testMatchingAlgorithms1, helper for testMatchingAlgorithms
  author: Frenkel TUD 2012-04"
-  input list<tuple<String,matchingAlgorithmFunc>> matchingAlgorithms;
+  input list<tuple<String,BackendDAEFunc.matchingAlgorithmFunc>> matchingAlgorithms;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -6025,9 +5997,9 @@ algorithm
   _ :=
   matchcontinue (matchingAlgorithms,isyst,ishared,inMatchingOptions)
       local
-        list<tuple<String,matchingAlgorithmFunc>> rest;
+        list<tuple<String,BackendDAEFunc.matchingAlgorithmFunc>> rest;
         String str;
-        matchingAlgorithmFunc matchingAlgorithm;
+        BackendDAEFunc.matchingAlgorithmFunc matchingAlgorithm;
         Real t;
     case ({},_,_,_)
       then ();
@@ -6053,7 +6025,7 @@ public function testMatchingAlgorithm
 "function testMatchingAlgorithm, tests a specific matching algorithm
  author: Frenkel TUD 2012-04"
   input Integer index;
-  input matchingAlgorithmFunc matchingAlgorithm;
+  input BackendDAEFunc.matchingAlgorithmFunc matchingAlgorithm;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;

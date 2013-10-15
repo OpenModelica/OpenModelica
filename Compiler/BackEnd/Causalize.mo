@@ -40,6 +40,7 @@ encapsulated package Causalize
   RCS: $Id: Causalize.mo 14235 2013-01-23 04:34:35Z jfrenkel $"
 
 public import BackendDAE;
+public import BackendDAEFunc;
 public import DAE;
 
 protected import Absyn;
@@ -61,43 +62,13 @@ protected import Matching;
  *
  */
 
-public partial function StructurallySingularSystemHandlerFunc
-  input list<list<Integer>> eqns;
-  input Integer actualEqn;
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input array<Integer> inAssignments1;
-  input array<Integer> inAssignments2;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output list<Integer> changedEqns;
-  output Integer continueEqn;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output array<Integer> outAssignments1;
-  output array<Integer> outAssignments2;
-  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-end StructurallySingularSystemHandlerFunc;
-
-public partial function matchingAlgorithmFunc
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input Boolean clearMatching;
-  input BackendDAE.MatchingOptions inMatchingOptions;
-  input StructurallySingularSystemHandlerFunc sssHandler;
-  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
-  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-end matchingAlgorithmFunc;
-
-
 public partial function stateDeselectionFunc
   input BackendDAE.BackendDAE inDAE;
   input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> inArgs;
   output BackendDAE.BackendDAE outDAE;
 end stateDeselectionFunc;
 
-protected type DAEHandler = tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String>;
+protected type DAEHandler = tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String>;
 
 /*
  * public part
@@ -129,7 +100,7 @@ public function singularSystemCheck
   input Integer neqns;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.MatchingOptions inMatchingOptions;
-  input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
+  input tuple<BackendDAEFunc.matchingAlgorithmFunc,String> matchingAlgorithm;
   input BackendDAE.StructurallySingularSystemHandlerArg arg;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem outSyst;
@@ -137,14 +108,17 @@ algorithm
   outSyst := matchcontinue (nvars,neqns,isyst,inMatchingOptions,matchingAlgorithm,arg,ishared)
     local
       String esize_str,vsize_str;
+    
     case (_,_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_)
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.ALLOW_UNDERCONSTRAINED(),matchingAlgorithm,arg,ishared);
+    
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
       equation
         true = intEq(nvars,neqns);
       then
         singularSystemCheck1(nvars,neqns,isyst,BackendDAE.EXACT(),matchingAlgorithm,arg,ishared);
+    
     case (_,_,_,(_,BackendDAE.EXACT()),_,_,_)
       equation
         true = intGt(nvars,neqns);
@@ -153,6 +127,7 @@ algorithm
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();
+    
     case (_,_,_,_,_,_,_)
       equation
         true = intLt(nvars,neqns);
@@ -161,11 +136,13 @@ algorithm
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();
+    
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Causalize.singularSystemCheck failed\n");
       then
         fail();
+  
   end matchcontinue;
 end singularSystemCheck;
 
@@ -178,7 +155,7 @@ protected function singularSystemCheck1
   input Integer nEqns;
   input BackendDAE.EqSystem iSyst;
   input BackendDAE.EquationConstraints eqnConstr;
-  input tuple<Matching.matchingAlgorithmFunc,String> matchingAlgorithm;
+  input tuple<BackendDAEFunc.matchingAlgorithmFunc,String> matchingAlgorithm;
   input BackendDAE.StructurallySingularSystemHandlerArg arg;
   input BackendDAE.Shared iShared;
   output BackendDAE.EqSystem outSyst;
@@ -190,7 +167,7 @@ protected
   BackendDAE.StateSets stateSets;
   list<list<Integer>> comps;
   array<Integer> ass1,ass2;
-  Matching.matchingAlgorithmFunc matchingFunc;
+  BackendDAEFunc.matchingAlgorithmFunc matchingFunc;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m),mT=SOME(mT),stateSets=stateSets) := iSyst;
   (matchingFunc,_) :=  matchingAlgorithm;

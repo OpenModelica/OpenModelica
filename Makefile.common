@@ -215,6 +215,9 @@ sustst:
 
 include Makefile.libraries
 
+cleancompiler:
+	cd Compiler/omc_release && rm -f *.srz *.c *.h *.sig *.o omc *.exe
+
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) reallyclean)

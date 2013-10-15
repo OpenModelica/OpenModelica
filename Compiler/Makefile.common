@@ -135,6 +135,7 @@ ValuesUtil.mo
 
 BACKEND = \
 BackendDAE.mo \
+BackendDAEFunc.mo \
 BackendDAECreate.mo \
 BackendDAEOptimize.mo \
 BackendDAETransform.mo \

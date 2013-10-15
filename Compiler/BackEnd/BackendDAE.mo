@@ -102,8 +102,15 @@ uniontype Shared "Data shared for all equation-systems"
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
     SymbolicJacobians symjacs               "Symbolic Jacobians";
+    ExtraInfo info "contains extra info that we send around like the model name";
   end SHARED;
 end Shared;
+
+uniontype ExtraInfo "extra information that we should send arround with the DAE"
+  record EXTRA_INFO "extra information that we should send arround with the DAE"
+    String fileNamePrefix "the model name to be used in the dumps";
+  end EXTRA_INFO;
+end ExtraInfo;
 
 public
 uniontype BackendDAEType "BackendDAEType to indicate different types of BackendDAEs.

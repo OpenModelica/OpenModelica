@@ -39,6 +39,7 @@ encapsulated package Initialization
 
 public import Absyn;
 public import BackendDAE;
+public import BackendDAEFunc;
 public import DAE;
 public import Env;
 public import Util;
@@ -94,11 +95,12 @@ algorithm
       list<BackendDAE.Var> tempVar;
       Boolean b;
       HashSet.HashSet hs "contains all pre variables";
-      list<tuple<BackendDAEUtil.postOptimizationDAEModule, String, Boolean>> pastOptModules;
-      tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
-      tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
+      list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> pastOptModules;
+      tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
+      tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
       Boolean useHomotopy;
       list<BackendDAE.Var> dumpVars, dumpVars2;
+      BackendDAE.ExtraInfo ei;
 
     case(_) equation
       // inline all when equations, if active with body else with lhs=pre(lhs)
@@ -115,7 +117,8 @@ algorithm
                                                         classAttrs=classAttrs,
                                                         cache=cache,
                                                         env=env,
-                                                        functionTree=functionTree)) = dae;
+                                                        functionTree=functionTree,
+                                                        info = ei)) = dae;
 
       // collect vars and eqns for initial system
       vars = BackendVariable.emptyVars();
@@ -151,7 +154,8 @@ algorithm
                                  BackendDAE.EVENT_INFO(BackendDAE.SAMPLE_LOOKUP(0, {}), {}, {}, {}, {}, 0, 0),
                                  {},
                                  BackendDAE.INITIALSYSTEM(),
-                                 {});
+                                 {},
+                                 ei);
 
       // generate initial system and pre-balance it
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});

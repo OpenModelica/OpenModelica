@@ -1767,7 +1767,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
   return res;
 }
 
-#define MAX_TMP_TICK 16
+#define MAX_TMP_TICK 50
 static modelica_integer tmp_tick_no[MAX_TMP_TICK] = {0};
 static modelica_integer parfor_tick_no = 0;
 

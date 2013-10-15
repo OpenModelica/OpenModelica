@@ -62,6 +62,7 @@ protected import Expression;
 protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Flags;
+protected import Global;
 protected import GlobalScript;
 protected import HashTableExpToExp;
 protected import HashTableExpToIndex;
@@ -89,6 +90,7 @@ public function lower "This function translates a DAE, which is the result from 
   input DAE.DAElist lst;
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input BackendDAE.ExtraInfo inExtraInfo;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
   BackendDAE.Variables vars, knvars, vars_1, extVars, aliasVars;
@@ -106,6 +108,8 @@ protected
   BackendDAE.SampleLookup sampleLookup;
 algorithm
   System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  // reset dumped file sequence number
+  System.tmpTickResetIndex(0, Global.backendDAE_fileSequence);
   Debug.execStat("Enter Backend", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
   (DAE.DAE(elems), functionTree, sampleLookup) := processBuiltinExpressions(lst, functionTree);
@@ -143,7 +147,7 @@ algorithm
                                                     einfo,
                                                     extObjCls,
                                                     BackendDAE.SIMULATION(),
-                                                    symjacs));
+                                                    symjacs,inExtraInfo));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, print, "No. of Equations: " +& intString(BackendDAEUtil.equationSize(eqnarr)) +& "\nNo. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
   Debug.execStat("generate Backend Data Structure", GlobalScript.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
@@ -3277,12 +3281,13 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs))
+      BackendDAE.ExtraInfo ei;
+    case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei))
       equation
         (eqns1, (vars1, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns, traverserexpandDerEquation, (vars, shared));
         (inieqns1, (vars2, _)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns, traverserexpandDerEquation, (vars1, shared));
       then
-        (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs));
+        (BackendDAE.EQSYSTEM(vars2, eqns1, m, mT, matching, stateSets), BackendDAE.SHARED(knvars, exobj, av, inieqns1, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs,ei));
   end match;
 end expandDerOperatorWork;
 
@@ -3518,10 +3523,12 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       BackendDAE.EqSystems systs;
+      BackendDAE.ExtraInfo ei;
+      
     case (BackendDAE.DAE(systs, (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
           cache, env, funcs, einfo as BackendDAE.EVENT_INFO(sampleLookup=sampleLookup, zeroCrossingLst=zero_crossings, relationsLst=relationsLst,
           sampleLst=sampleLst, whenClauseLst=whenclauses, relationsNumber=countRelations,
-          numberMathEvents=countMathFunctions), eoc, btp, symjacs))), _)
+          numberMathEvents=countMathFunctions), eoc, btp, symjacs, ei))), _)
       equation
         vars = BackendVariable.listVar1(allvars);
         eqs_lst = BackendEquation.equationList(remeqns);
@@ -3533,7 +3540,7 @@ algorithm
         Debug.fcall(Flags.RELIDX, print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
         einfo1 = BackendDAE.EVENT_INFO(sampleLookup, whenclauses, zero_crossings, sampleLst, relationsLst, countRelations, countMathFunctions);
       then
-        BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs));
+        BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs, ei));
   end match;
 end findZeroCrossingsShared;
 
@@ -3568,12 +3575,14 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       BackendDAE.StateSets stateSets;
+      BackendDAE.ExtraInfo ei;
+    
     case (BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets),
           (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs,
           cache, env, funcs, einfo as BackendDAE.EVENT_INFO(sampleLookup=sampleLookup, zeroCrossingLst=zero_crossings,
           sampleLst=sampleLst, whenClauseLst=whenclauses, relationsLst=relations,
           relationsNumber=countRelations, numberMathEvents=countMathFunctions),
-          eoc, btp, symjacs), allvars))
+          eoc, btp, symjacs, ei), allvars))
       equation
         eqs_lst = BackendEquation.equationList(eqns);
         (zero_crossings, eqs_lst1, _, countRelations, countMathFunctions, relations, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, countMathFunctions, zero_crossings, relations, sampleLst);
@@ -3583,7 +3592,8 @@ algorithm
         einfo1 = BackendDAE.EVENT_INFO(sampleLookup, whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
         allvars = listAppend(allvars, BackendVariable.varList(vars));
       then
-        (BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets), (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs), allvars));
+        (BackendDAE.EQSYSTEM(vars, eqns1, m, mT, matching, stateSets), (BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo1, eoc, btp, symjacs, ei), allvars));
+  
   end match;
 end findZeroCrossings1;
 

@@ -85,7 +85,6 @@ protected import Debug;
 protected import Dump;
 protected import DynLoad;
 protected import Expression;
-protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Flags;
 protected import Global;
@@ -1123,7 +1122,8 @@ algorithm
         (cache, env, _, dae) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, scodeP, path);
         dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(path,dae,env));
-        daelow = BackendDAECreate.lower(dae,cache,env);
+        filenameprefix = Absyn.pathString(path);
+        daelow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
         (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
         vars = BackendVariable.daeVars(syst);
@@ -3145,7 +3145,7 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
-        dlow = BackendDAECreate.lower(dae,cache,env);
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         dlow = BackendDAECreate.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
@@ -3861,6 +3861,7 @@ algorithm
       DAE.FunctionTree funcs;
       GlobalScript.SymbolTable st;
       Boolean showFlatModelica;
+      String filenameprefix;
 
     case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
@@ -3874,7 +3875,8 @@ algorithm
         // TODO FIXME
         // sort all variable names in the distribution order
         // TODO FIXME
-        dlow = BackendDAECreate.lower(dae,cache,env);
+        filenameprefix = Absyn.pathString(className);
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         //print("lowered class\n");
         //print("calling generateOpenTurnsInterface\n");
         scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
@@ -4268,12 +4270,12 @@ algorithm
       equation
         Error.clearMessages() "Clear messages";
         compileDir = System.pwd() +& System.pathDelimiter();
-        filenameprefix = Util.if_(filenameprefix ==& "<default>", Absyn.pathString(classname), filenameprefix);
         cname_str = Absyn.pathString(classname);
+        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
-        dlow = BackendDAECreate.lower(dae,cache,env); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -4292,10 +4294,11 @@ algorithm
         Error.clearMessages() "Clear messages";
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
+        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
-        dlow = BackendDAECreate.lower(dae,cache,env); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix)); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
@@ -4315,10 +4318,11 @@ algorithm
         Error.clearMessages() "Clear messages";
         compileDir = System.pwd() +& System.pathDelimiter();
         cname_str = Absyn.pathString(classname);
+        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
-        dlow = BackendDAECreate.lower(dae,cache,env);
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();

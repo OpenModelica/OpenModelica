@@ -229,7 +229,7 @@ algorithm
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env);
+        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
@@ -301,13 +301,13 @@ algorithm
         System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env);
+        dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
         
         (indexed_dlow_1,libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeXML(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
+          generateModelCodeXML(dlow_1, p, dae, className, filenameprefix, inSimSettingsOpt);
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
           ("timeSimCode",  Values.REAL(timeSimCode)),
@@ -545,7 +545,7 @@ algorithm
       
       System.realtimeTick(GlobalScript.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache, env, dae);
-      dlow = BackendDAECreate.lower(dae, cache, env);
+      dlow = BackendDAECreate.lower(dae, cache, env, BackendDAE.EXTRA_INFO(filenameprefix));
       dlow_1 = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
       timeBackend = System.realtimeTock(GlobalScript.RT_CLOCK_BACKEND);
       

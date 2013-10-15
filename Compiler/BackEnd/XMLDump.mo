@@ -983,7 +983,7 @@ algorithm
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs)),addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 _,ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         knvars  = BackendVariable.varList(vars_knownVars);

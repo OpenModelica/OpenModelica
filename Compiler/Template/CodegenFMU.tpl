@@ -415,9 +415,10 @@ case SIMCODE(__) then
   #include "openmodelica_func.h"
   #include "simulation_data.h"
   #include "omc_error.h"
+  #include "<%fileNamePrefix%>_functions.h"
+  #include "<%fileNamePrefix%>_literals.h"
   #include "fmiModelTypes.h"
   #include "fmiModelFunctions.h"
-  #include "<%fileNamePrefix%>_functions.h"
   #include "initialization.h"
   #include "events.h"
   #include "fmu_model_interface.h"
@@ -1002,19 +1003,18 @@ match platform
   case "win32" then
   <<
   <%fileNamePrefix%>_FMU: <%fileNamePrefix%>.def <%fileNamePrefix%>.dll
-  <%\t%> dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
-
+  <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>.dll --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%fileNamePrefix%>.lib <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp $(GENERATEDFILES) <%fmudirname%>/sources/
   <%\t%>cp modelDescription.xml <%fmudirname%>/modelDescription.xml
-  <%\t%>cp <%omhome%>/lib/omc/libexec/gnuplot/binary/libexpat-1.dll <%fmudirname%>/binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libexpat.dll <%fmudirname%>/binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/pthreadGC2.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cd <%fmudirname%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%>rm -rf <%fmudirname%>
-  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
 
-  <%fileNamePrefix%>.dll: clean <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o
-  <%\t%>$(CXX) -shared -I. -o <%fileNamePrefix%>.dll <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o <%fileNamePrefix%>_records.o  $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis -Wl,--kill-at
+  <%fileNamePrefix%>.dll: clean $(MAINOBJ) $(OFILES)
+  <%\t%>$(CXX) -shared -I. -o <%fileNamePrefix%>.dll $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis -Wl,--kill-at
 
   <%\t%>mkdir.exe -p <%fmudirname%>
   <%\t%>mkdir.exe -p <%fmudirname%>/binaries
@@ -1038,7 +1038,7 @@ match platform
   <%\t%>cp modelDescription.xml <%fmudirname%>/modelDescription.xml
   <%\t%>cd <%fmudirname%>; rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%>rm -rf <%fmudirname%>
-  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>_records.o
+  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>_FMU.libs <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_*.o
 
   >>
 end getPlatformString2;
@@ -1097,7 +1097,11 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=$(FILEPREFIX).c
   MAINOBJ=$(FILEPREFIX).obj
-  GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
+  CFILES=<%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
+  <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
+  <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c
+  OFILES=$(CFILES:.c=.obj)
+  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)
 
   $(FILEPREFIX)$(FMUEXT): $(FILEPREFIX)$(DLLEXT) modelDescription.xml
       if not exist <%fmudirname%>\binaries\$(PLATWIN32) mkdir <%fmudirname%>\binaries\$(PLATWIN32)
@@ -1121,8 +1125,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       cd ..
       rmdir /S /Q <%fmudirname%>
 
-  $(FILEPREFIX)$(DLLEXT): $(MAINOBJ) $(FILEPREFIX)_records.c $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
-      $(CXX) /Fe$(FILEPREFIX)$(DLLEXT) $(MAINFILE) $(FILEPREFIX)_FMU.c $(FILEPREFIX)_records.c $(CFLAGS) $(LDFLAGS)
+  $(FILEPREFIX)$(DLLEXT): $(MAINOBJ) $(CFILES)
+      $(CXX) /Fe$(FILEPREFIX)$(DLLEXT) $(MAINFILE) $(FILEPREFIX)_FMU.c $(CFILES) $(CFLAGS) $(LDFLAGS)
   >>
 end match
 case "gcc" then
@@ -1162,7 +1166,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c
   OFILES=$(CFILES:.c=.o)
-  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)  
+  GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>_FMU.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_model.h <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_init.c <%fileNamePrefix%>_info.c $(CFILES)
 
   .PHONY: omc_main_target clean bundle
 

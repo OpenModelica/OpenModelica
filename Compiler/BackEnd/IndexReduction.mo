@@ -369,7 +369,9 @@ algorithm
       list<Integer> ilst,unassignedEqns,eqnsLst,discEqns,stateIndxs;
       list<list<Integer>> rest;
       Boolean b;
+    
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc);
+    
     case (ilst::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         //  print("Eqns " +& stringDelimitList(List.map(ilst,intString),", ") +& "\n");
@@ -383,6 +385,7 @@ algorithm
           minimalStructurallySingularSystemMSS(rest,isyst,ishared,inAssignments1,inAssignments2,inArg,statemark,mark+1,m,vars,eqnsLst::inEqnsLstAcc,stateIndxs::inStateIndxsAcc,unassignedEqns::inUnassEqnsAcc,discEqns);
      then
        (outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns);
+  
   end match;
 end minimalStructurallySingularSystemMSS;
 
@@ -406,8 +409,10 @@ algorithm
       list<Integer> eqns1;
       BackendDAE.EqSystem syst;
       array<Integer> mapIncRowEqn;
+    
     // OK
     case (true,_,_,_::_,_,_,_,_,_) then ();
+    
     // Failure
     case (_,_,_,{},_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
@@ -421,6 +426,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
       then
         fail();
+    
     case (false,_,_,_::_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned continues equations is larger than number of states.\nmarked equations:\n");
@@ -437,6 +443,7 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
       then
         fail();
+  
   end match;
 end singulareSystemError;
 
@@ -2884,7 +2891,7 @@ algorithm
         eqns = BackendEquation.listEquation(eqnslst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
 
-        //BackendDAE.DAE(eqs={syst}) = RemoveSimpleEquations.allAcausal(BackendDAE.DAE({syst},ishared));
+        //BackendDAE.DAE(eqs={syst}) = RemoveSimpleEquations.allAcausal(BackendDAE.DAE({syst},ishared,ei?));
 
         (me,meT,mapEqnIncRow,mapIncRowEqn) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,ishared);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
@@ -6317,7 +6324,9 @@ algorithm
       Integer numberOfRelations, numberOfMathEventFunctions;
       BackendDAE.BackendDAEType btp;
       BackendDAE.SampleLookup sampleLookup;
-    case (BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs),_)
+      BackendDAE.ExtraInfo ei;
+      
+    case (BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei),_)
       equation
         // replace dummy_derivatives in knvars,aliases,ineqns,remeqns
         (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceDummyDerivativesVar,ht);
@@ -6326,7 +6335,8 @@ algorithm
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,replaceDummyDerivatives,ht);
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceDummyDerivatives,ht);
       then
-        BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs);
+        BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs,ei);
+  
   end match;
 end replaceDummyDerivativesShared;
 

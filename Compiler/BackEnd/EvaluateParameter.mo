@@ -201,7 +201,9 @@ algorithm
       BackendDAE.IncidenceMatrixT m;
       BackendDAE.IncidenceMatrixT mt;
       list<Integer> selectedParameter;
-    case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)),_)
+      BackendDAE.ExtraInfo ei;
+      
+    case (BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // get parameters with annotation(Evaluate=true)
         size = BackendVariable.varsSize(knvars);
@@ -225,7 +227,7 @@ algorithm
         (systs,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval)) = List.mapFold(systs,replaceEvaluatedParametersSystem,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
         (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceEvaluatedParameterTraverser,(knvars,m,inieqns,cache,env,mark,markarr,repl,repleval));
       then
-        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)),repleval);
+        (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),repleval);
   end match;
 end evaluateParameters;
 
@@ -1067,9 +1069,12 @@ algorithm
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       Boolean b;
+      BackendDAE.ExtraInfo ei;
+    
     // do nothing if there are no replacements
     case (true,_,_) then inDAE;
-    case (false,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)),_)
+    
+    case (false,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_)
       equation
         // do replacements in initial equations
         eqnslst = BackendEquation.equationList(inieqns);
@@ -1082,7 +1087,8 @@ algorithm
         // do replacements in systems
         systs = List.map1(systs,replaceEvaluatedParametersSystemEqns,repl);
       then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei));
+  
   end match;
 end replaceEvaluatedParametersEqns;
 

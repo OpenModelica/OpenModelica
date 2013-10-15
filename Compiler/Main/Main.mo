@@ -685,11 +685,13 @@ algorithm
       Absyn.Path classname;
       Env.Cache cache;
       Env.Env env;
+      String filenameprefix;
 
     case (cache,env,_,_,classname)
       equation
         true = Config.simulationCg();
-        dlow = BackendDAECreate.lower(dae,cache,env);
+        filenameprefix = Absyn.pathString(classname);
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
         //modpar(dlow_1);
         Debug.execStat("Lowering Done",GlobalScript.RT_CLOCK_EXECSTAT_MAIN);

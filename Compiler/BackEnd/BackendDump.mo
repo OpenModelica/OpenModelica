@@ -3135,6 +3135,7 @@ algorithm
       BackendDAE.Shared shared;
       String str,strlow,headerline;
       DumpHTML.Document doc;
+    
     case ((headerline,BackendDAE.DAE(eqs,shared)))
       equation
         Flags.STRING_FLAG(data=str) = Flags.getConfigValue(Flags.DUMP_TARGET);
@@ -3149,6 +3150,7 @@ algorithm
         DumpHTML.dumpDocument(doc,str);
       then
         ();
+    
     case ((headerline,BackendDAE.DAE(eqs,shared)))
       equation
         print(headerline); print(":\n");

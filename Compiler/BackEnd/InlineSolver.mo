@@ -39,6 +39,7 @@ encapsulated package InlineSolver
 
 public import Absyn;
 public import BackendDAE;
+public import BackendDAEFunc;
 public import DAE;
 public import Env;
 
@@ -110,9 +111,9 @@ protected
   BackendDAE.EquationArray orderedEqs;
 
   /*need for new matching */
-  list<tuple<BackendDAEUtil.postOptimizationDAEModule, String, Boolean>> pastOptModules;
-  tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
-  tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
+  list<tuple<BackendDAEFunc.postOptimizationDAEModule, String, Boolean>> pastOptModules;
+  tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
+  tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
   BackendDAE.BackendDAE dae;
 
 algorithm
@@ -154,12 +155,13 @@ protected
   BackendDAE.ExternalObjectClasses extObjClasses;
   BackendDAE.BackendDAEType backendDAEType;
   BackendDAE.SymbolicJacobians symjacs;
+  BackendDAE.ExtraInfo ei;
 algorithm
-   BackendDAE.SHARED(knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,initialEqs=initialEqs, removedEqs=removedEqs, constraints=constrs, classAttrs=clsAttrs, cache=cache, env=env, functionTree=functionTree, eventInfo=eventInfo, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs) := inShared;
+   BackendDAE.SHARED(knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,initialEqs=initialEqs, removedEqs=removedEqs, constraints=constrs, classAttrs=clsAttrs, cache=cache, env=env, functionTree=functionTree, eventInfo=eventInfo, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs, info = ei) := inShared;
    knownVars := BackendVariable.mergeVariables(invars, knownVars);
    var := BackendDAE.VAR(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
    knownVars := BackendVariable.addVar(var, knownVars);
-   outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars,initialEqs, removedEqs, constrs, clsAttrs, cache, env, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs);
+   outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars,initialEqs, removedEqs, constrs, clsAttrs, cache, env, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs, ei);
 end addKnowInitialValueForState;
 
 protected function timeEquation "author: vitalij"

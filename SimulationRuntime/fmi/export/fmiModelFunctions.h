@@ -87,7 +87,7 @@
 #include <stdlib.h>
 
 /* Export fmi functions on Windows */
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #define DllExport __declspec( dllexport )
 #else
 #define DllExport
