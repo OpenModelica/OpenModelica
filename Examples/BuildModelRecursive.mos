@@ -120,7 +120,7 @@ simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+"
 system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 referenceExists := false;
-referenceCell := \"<td bgcolor=\\\"#FFFF00\\\">&nbsp;</td>\";
+referenceCell := \"<td bgcolor=\\\"#0000FF\\\">&nbsp;</td>\";
 if simRes then
   system(\"touch "+s+".simsuccess\");
   reference := \""+referenceFiles+"/"+s+".mat\";
@@ -191,7 +191,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
 <p>Flags: setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
-<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
+<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#0000FF\">Blue</font> means there was no reference file to compare simulation results against. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
 writeFile(log,"<table><tr><th>Model</th><th>Verified</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
