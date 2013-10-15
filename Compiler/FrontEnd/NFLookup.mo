@@ -809,23 +809,21 @@ end lookupNameInEntry;
 
 public function isNameGlobal
   "Returns whether a simple name is global or not, as well as it's entry and
-   environment. Global in this case means a non-local class."
+   environment. Global in this case means a name not defined in the local scope."
   input String inName;
   input Env inEnv;
   output Boolean outIsGlobal;
   output Entry outEntry;
   output Env outEnv;
 protected
-  Boolean is_local, is_class;
+  Boolean is_local;
   Env env;
 algorithm
   // Look up the name unresolved and check if it's a local name.
   (outEntry, env) := lookupSimpleName_impl(inName, inEnv);  
-  is_local := referenceEq(env, inEnv);
+  outIsGlobal := not referenceEq(env, inEnv);
   // Then resolve the entry and check if it refers to a class.
   (outEntry, outEnv) := NFEnv.resolveEntry(outEntry, env);
-  is_class := NFEnv.isClassEntry(outEntry);
-  outIsGlobal := not is_local and is_class;
 end isNameGlobal;
 
 public function enterEntryScope
