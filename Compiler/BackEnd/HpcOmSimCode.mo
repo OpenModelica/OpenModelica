@@ -55,6 +55,7 @@ protected import ComponentReference;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import Flags;
 protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;
@@ -637,17 +638,53 @@ end checkOdeSystemSize;
 // start new functions for handling linearTornSystems from here
 //-------------------------------------------------//
 
+public function traverseEqSystemsWithIndex  "traverse alle EqSystems of the BackendDAE and hold an index of the current torn system.
+author:Waurich TUD 2013-10"
+  input Integer eqSysIdx;
+  input Integer tornSysIdxIn;
+  input BackendDAE.BackendDAE daeIn;
+  output BackendDAE.BackendDAE daeOut;
+algorithm
+  daeOut := matchcontinue(eqSysIdx,tornSysIdxIn,daeIn)
+    local
+      Integer tornSysIdx;
+      BackendDAE.BackendDAE daeTmp;
+      BackendDAE.EqSystem eqSyst;
+      BackendDAE.EqSystems eqSysts;
+      BackendDAE.Shared shared;
+    case(_,_,BackendDAE.DAE(eqs=eqSysts, shared=shared))
+      equation
+        true = listLength(eqSysts) >= eqSysIdx;
+        eqSyst = listGet(eqSysts,eqSysIdx);
+        (eqSyst,shared,tornSysIdx) = reduceLinearTornSystem(eqSyst,shared,tornSysIdxIn);
+        eqSysts = List.replaceAt(eqSyst,eqSysIdx,eqSysts);
+        daeTmp = BackendDAE.DAE(eqSysts,shared);
+        daeTmp = traverseEqSystemsWithIndex(eqSysIdx+1,tornSysIdx,daeTmp);
+      then
+        daeTmp;
+    case(_,_,BackendDAE.DAE(eqs=eqSysts, shared=shared))
+      equation
+        true = listLength(eqSysts) < eqSysIdx;
+      then
+        daeIn;
+  end matchcontinue;
+end traverseEqSystemsWithIndex;
+  
+  
 public function reduceLinearTornSystem  "checks the EqSystem for tornSystems in order to dissassemble them into various SingleEquation and a reduced EquationSystem.
 This is useful in order to reduce the execution costs of the equationsystem and generate a bunch of parallel singleEquations. use +d=doLienarTearing,partlintornsystem to activate it.
 Remark: this is still under development
 author:Waurich TUD 2013-09"
   input BackendDAE.EqSystem systIn;
   input BackendDAE.Shared sharedIn;
+  input Integer tornSysIdxIn;
   output BackendDAE.EqSystem systOut;
   output BackendDAE.Shared sharedOut;
+  output Integer tornSysIdxOut;
 algorithm
-  (systOut, sharedOut) := matchcontinue(systIn,sharedIn)
+  (systOut, sharedOut, tornSysIdxOut) := matchcontinue(systIn,sharedIn,tornSysIdxIn)
     local
+      Integer tornSysIdx;
       array<Integer> ass1, ass2;
       BackendDAE.EqSystem systTmp;
       BackendDAE.EquationArray eqs, eqsTmp;
@@ -655,15 +692,15 @@ algorithm
       BackendDAE.Shared sharedTmp;
       BackendDAE.StrongComponents allComps, compsTmp;
       BackendDAE.Variables vars, varsTmp;
-    case(_,_)
+    case(_,_,_)
       equation
         BackendDAE.EQSYSTEM(matching = BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps= allComps)) = systIn; 
           //BackendDump.dumpEqSystem(systIn,"original system");
-        systTmp = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn,sharedIn,1);
+        (systTmp,tornSysIdx) = reduceLinearTornSystem1(1, allComps, ass1, ass2, systIn,sharedIn,tornSysIdxIn);
           //BackendDump.dumpEqSystem(systTmp,"new system");
         sharedTmp = sharedIn;
       then
-        (systTmp,sharedTmp);
+        (systTmp, sharedTmp, tornSysIdx);
     else
       equation
         print("reduceLinearTornSystem failed!");
@@ -681,12 +718,13 @@ author: Waurich TUD 2013-09"
   input array<Integer> ass2;
   input BackendDAE.EqSystem systIn;
   input BackendDAE.Shared sharedIn;
-  input Integer tornSysIdx;
+  input Integer tornSysIdxIn;
   output BackendDAE.EqSystem systOut;
+  output Integer tornSysIdxOut;
 algorithm
-  systOut := matchcontinue(compIdx,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdx)
+  (systOut,tornSysIdxOut) := matchcontinue(compIdx,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn)
     local
-      Integer numNewSingleEqs;
+      Integer numNewSingleEqs, tornSysIdx;
       Boolean linear;
       array<Integer> ass1New, ass2New, ass1All, ass2All, ass1Other, ass2Other;
       list<Integer> tvarIdcs;
@@ -708,18 +746,20 @@ algorithm
         true = listLength(compsIn) < compIdx;
           //print("finished at:"+&intString(compIdx)+&"\n");
       then
-        systIn;
+        (systIn,tornSysIdxIn);
     case(_,_,_,_,_,_,_)
       equation
         // strongComponent is a linear tornSystem
         true = listLength(compsIn) >= compIdx;
+        
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
+           //BackendDump.dumpEqSystem(systIn,"the original system");
         // build the new components, the new variables and the new equations
-          //BackendDump.dumpEqSystem(systIn,"the original system");
-        (varsNew,eqsNew,tvars,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdx);
+          
+        (varsNew,eqsNew,tvars,resEqs,matchingNew) = reduceLinearTornSystem2(systIn,sharedIn,tvarIdcs,resEqIdcs,otherEqnVarTpl,tornSysIdxIn);
         
         BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) = matchingNew;
                   
@@ -738,7 +778,7 @@ algorithm
                 
         // build the matching
         ass1All = arrayCreate(listLength(varLst),-1);
-        ass2All = arrayCreate(listLength(eqLst),-1);
+        ass2All = arrayCreate(listLength(varLst),-1);  // actually has to be listLength(eqLst), but there is stille the probelm taht ass1 and ass2 have the same size
         ass1All = Util.arrayCopy(ass1,ass1All);  // the comps before and after the tornsystem
         ass2All = Util.arrayCopy(ass2,ass2All);
         ((ass1All, ass2All)) = List.fold2(List.intRange(listLength(tvarIdcs)),updateResidualMatching,tvarIdcs,resEqIdcs,(ass1All,ass2All));  // sets matching info for the tearingVars and residuals
@@ -760,17 +800,16 @@ algorithm
         systTmp = BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),matching,stateSets);
         (systTmp,_,_) = BackendDAEUtil.getIncidenceMatrix(systTmp, BackendDAE.NORMAL(),NONE());
           //BackendDump.dumpEqSystem(systTmp,"the whole new system");
-        //systTmp = reduceLinearTornSystem1(compIdx+listLength(compsNew)+1,compsTmp,ass1All,ass2All,systTmp,sharedIn);
-        systTmp = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdx+1);
+        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1+numNewSingleEqs,compsTmp,ass1All,ass2All,systTmp,sharedIn,tornSysIdxIn+1);
       then
-        systTmp;
+        (systTmp,tornSysIdx);
     else
       // go to next StrongComponent
       equation
         //print("no torn system in comp:"+&intString(compIdx)+&"\n");
-        systTmp = reduceLinearTornSystem1(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdx);
+        (systTmp,tornSysIdx) = reduceLinearTornSystem1(compIdx+1,compsIn,ass1,ass2,systIn,sharedIn,tornSysIdxIn);
       then
-        systTmp;
+        (systTmp,tornSysIdx);
   end matchcontinue;
 end reduceLinearTornSystem1;
 
@@ -799,15 +838,15 @@ protected
   BackendDAE.StrongComponent rComp;
   BackendDAE.StrongComponents comps, compsNew, oComps;
   BackendDAE.Variables vars, kv,  diffVars, ovars, dVars;
-  BackendVarTransform.VariableReplacements repl;
+  BackendVarTransform.VariableReplacements repl, repl1;
   DAE.FunctionTree functree;
-  list<BackendDAE.Equation> eqLst,reqns, otherEqnsLst,otherEqnsLstReplaced, eqNew, hs;
+  list<BackendDAE.Equation> eqLst,reqns, otherEqnsLst,otherEqnsLstReplaced, eqNew, hs, hs1;
   list<BackendDAE.EquationArray> gEqs, hEqs, hsEqs;
   list<BackendDAE.Var> varLst, tvars, tvarsReplaced, ovarsLst, xa0, a_0, varNew;
   list<BackendDAE.Variables> xaVars, rVars, aVars;
   list<BackendVarTransform.VariableReplacements> replLst;
-  list<list<BackendDAE.Equation>> g_i_lst, h_i_lst, hs_i_lst, hs_0_lst;
-  list<list<BackendDAE.Var>> xa_i_lst, r_i_lst, a_i_lst;
+  list<list<BackendDAE.Equation>> g_i_lst, g_i_lst1, h_i_lst, h_i_lst1, hs_i_lst, hs_i_lst1, hs_0_lst;
+  list<list<BackendDAE.Var>> xa_i_lst, xa_i_lst1, r_i_lst, r_i_lst1, a_i_lst, a_i_lst1;
   list<DAE.ComponentRef> tcrs,ovcrs;
 algorithm
    // handle torn systems for the linear case
@@ -835,45 +874,39 @@ algorithm
    ovarsLst := List.map(ovarsLst, SimCodeUtil.transformXToXd);  //try this
    ovars := BackendVariable.listVar1(ovarsLst);
    ovcrs := List.map(ovarsLst, BackendVariable.varCref);
-   
-   //print("disassemble a linear torn system\n");
-   //print("tvars:\n");
-   //print(ComponentReference.printComponentRefListStr(tcrs)+&"\n");
-   //print("resEqs:\n");
-   //BackendDump.printEquationList(reqns);
-   //print("otherEqs:\n");
-   //BackendDump.printEquationList(otherEqnsLstReplaced);
-   //print("other vars:\n");
-   //print(ComponentReference.printComponentRefListStr(ovcrs)+&"\n");
-   
+      
    //build the components and systems to get the system for computing the tearingVars
    size := listLength(tvars);
    otherEqSize := listLength(otherEqnsLst);
    compSize := listLength(comps);
    tVarRange := List.intRange2(0,size);
+   repl1 := BackendVarTransform.emptyReplacements();
    
    //  get g_i(xt=e_i, xa=xa_i) with xa_i as variables to be solved
    (g_i_lst,xa_i_lst,replLst) := getAlgebraicEquationsForEI(tVarRange,size,otherEqnsLstReplaced,tvarsReplaced,tcrs,ovarsLst,ovcrs,{},{},{},tornSysIdx);
-   
+   (g_i_lst1,xa_i_lst1,repl1) := simplifyEquations(g_i_lst,xa_i_lst,repl1);
+     
      //dumpVarLstLst(xa_i_lst,"xa");
      //dumpEqLstLst(g_i_lst,"g");
    
    //  compute residualValues h_i(xt=e_i,xa_i,r_i) for r_i
    (h_i_lst,r_i_lst) := addResidualVarToEquation(tVarRange,reqns,{},{},tornSysIdx);
    h_i_lst := replaceVarsInResidualEquations(tVarRange,h_i_lst,replLst,{});
+   (h_i_lst1,r_i_lst1,repl1) := simplifyEquations(h_i_lst,r_i_lst,repl1);
    
       //dumpVarLstLst(r_i_lst,"r");
       //dumpEqLstLst(h_i_lst,"h");
    
    //  get the co-efficients for the new residualEquations a_i from hs_i(r_i,xt=e_i, a_i) 
    (hs_i_lst,a_i_lst) := getTornSystemCoefficients(tVarRange,size,r_i_lst,{},{},tornSysIdx);
+   (hs_i_lst1,a_i_lst1,repl1) := simplifyEquations(hs_i_lst,a_i_lst,repl1);
    
       //dumpVarLstLst(a_i_lst,"a");
       //dumpEqLstLst(hs_i_lst,"hs_i");
    
    // gather all additional equations and build the strongComponents (not including the new residual equation)
-   eqsNewOut := List.flatten(listAppend(listAppend(g_i_lst,h_i_lst),hs_i_lst));
-   varsNewOut := List.flatten(listAppend(listAppend(xa_i_lst,r_i_lst),a_i_lst));
+   eqsNewOut := List.flatten(listAppend(listAppend(g_i_lst1,h_i_lst1),hs_i_lst1));
+   varsNewOut := List.flatten(listAppend(listAppend(xa_i_lst1,r_i_lst1),a_i_lst1));
    matchingNew := buildSingleEquationSystem(compSize,eqsNewOut,varsNewOut,ishared,{});
    BackendDAE.MATCHING(ass1=ass1New, ass2=ass2New, comps=compsNew) := matchingNew;
    
@@ -889,8 +922,9 @@ algorithm
    //a_0 := listReverse(a_0);
    
    hs := buildNewResidualEquation(1,a_i_lst,a_0,tvars,{});
+   (hs1,_) := BackendVarTransform.replaceEquations(hs,repl1,NONE());
    tVarsOut := tvars;
-   resEqsOut := hs;
+   resEqsOut := hs1;
    
    //// get the strongComponent for the residual equations and add it at the end of the new StrongComponents
    rComp := BackendDAE.EQUATIONSYSTEM(residualEqs,tearingVars,NONE(),BackendDAE.JAC_NO_ANALYTIC());   
@@ -898,27 +932,7 @@ algorithm
    oComps := List.appendElt(rComp,compsNew);
    matchingOut := BackendDAE.MATCHING(ass1New,ass2New,oComps);
    
-     
-   // print section  
-   //print("disassemble a linear torn system\n");
-   //print("tvars:\n");
-   //print(ComponentReference.printComponentRefListStr(tcrs)+&"\n");
-   //print("resEqs:\n");
-   //BackendDump.printEquationList(reqns);
-   //print("otherEqs:\n");
-   //BackendDump.printEquationList(otherEqnsLst);
-   //print("other vars:\n");
-   //print(ComponentReference.printComponentRefListStr(ovcrs)+&"\n");
-   //dumpVarLstLst(xa_i_lst,"xa");
-   //dumpEqLstLst(g_i_lst,"g");
-   //dumpVarLstLst(r_i_lst,"r");
-   //dumpEqLstLst(h_i_lst,"h");
-   //dumpVarLstLst(a_i_lst,"a");
-   //dumpEqLstLst(hs_i_lst,"hs_i");
-   //BackendDump.dumpEquationList(hs,"hs");
-   //print("components to get the A-matrix\n");
-   //BackendDump.dumpComponents(compsNew);
-   //print("\n");
+   //printPartLinTornInfo(tcrs,reqns,otherEqnsLst,ovcrs,xa_i_lst,g_i_lst,r_i_lst,h_i_lst,a_i_lst,hs_i_lst,hs,compsNew);
 end reduceLinearTornSystem2; 
 
 
@@ -1776,6 +1790,414 @@ algorithm
   headingOut := heading;
 end dumpEqLstLst1;
 
+
+protected function printPartLinTornInfo "prints information about the partitioning of a linear torn system
+author: Waurich TUD 2013-10"
+  input list<DAE.ComponentRef> tcrs;
+  input list<BackendDAE.Equation> reqns;
+  input list<BackendDAE.Equation> otherEqnsLst;
+  input list<DAE.ComponentRef> ovcrs;
+  input list<list<BackendDAE.Var>> xa_i_lst;
+  input list<list<BackendDAE.Equation>> g_i_lst;
+  input list<list<BackendDAE.Var>> r_i_lst;
+  input list<list<BackendDAE.Equation>> h_i_lst;
+  input list<list<BackendDAE.Var>> a_i_lst;
+  input list<list<BackendDAE.Equation>> hs_i_lst;
+  input list<BackendDAE.Equation> hs;
+  input BackendDAE.StrongComponents compsNew;
+algorithm
+   print("disassemble a linear torn system\n");
+   print("tvars:\n");
+   print(ComponentReference.printComponentRefListStr(tcrs)+&"\n");
+   print("resEqs:\n");
+   BackendDump.printEquationList(reqns);
+   print("otherEqs:\n");
+   BackendDump.printEquationList(otherEqnsLst);
+   print("other vars:\n");
+   print(ComponentReference.printComponentRefListStr(ovcrs)+&"\n");
+   dumpVarLstLst(xa_i_lst,"xa");
+   dumpEqLstLst(g_i_lst,"g");
+   dumpVarLstLst(r_i_lst,"r");
+   dumpEqLstLst(h_i_lst,"h");
+   dumpVarLstLst(a_i_lst,"a");
+   dumpEqLstLst(hs_i_lst,"hs_i");
+   BackendDump.dumpEquationList(hs,"hs");
+   print("components to get the A-matrix\n");
+   BackendDump.dumpComponents(compsNew);
+   print("\n");  
+end printPartLinTornInfo;
+
+
+//--------------------------------------------------//
+// functions to simplify the generated equations
+//-------------------------------------------------//
+
+protected function simplifyEquations "removes simpleEquations like a=0 and replaces variables from equations like a=b, without holding them in the knownvars or aliasvars
+author: Waurich TUD 2013-10"
+  input list<list<BackendDAE.Equation>> eqLstLstIn;
+  input list<list<BackendDAE.Var>> varLstLstIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output list<list<BackendDAE.Equation>> eqLstLstOut;
+  output list<list<BackendDAE.Var>> varLstLstOut;
+  output BackendVarTransform.VariableReplacements replOut;
+algorithm
+  ((eqLstLstOut,varLstLstOut,replOut)) := List.fold(List.intRange(listLength(eqLstLstIn)),simplifyEquations1,(eqLstLstIn,varLstLstIn,replIn));  
+  //(eqLstLstOut,varLstLstOut,replOut) := (eqLstLstIn,varLstLstIn,replIn); 
+end simplifyEquations;
+
+
+protected function simplifyEquations1 "implementation for simplifyEquations. traverses a list of the list<list<equation>>"
+  input Integer idx;
+  input tuple<list<list<BackendDAE.Equation>>,list<list<BackendDAE.Var>>,BackendVarTransform.VariableReplacements> tplIn;
+  output tuple<list<list<BackendDAE.Equation>>,list<list<BackendDAE.Var>>,BackendVarTransform.VariableReplacements> tplOut;
+protected
+  BackendVarTransform.VariableReplacements repl;
+  list<BackendDAE.Equation> eqLst;
+  list<BackendDAE.Var> varLst;
+  list<list<BackendDAE.Equation>> eqLstLst;
+  list<list<BackendDAE.Var>> varLstLst;
+algorithm 
+  (eqLstLst,varLstLst,repl) := tplIn;
+  eqLst := listGet(eqLstLst,idx);
+  varLst := listGet(varLstLst,idx);
+  // remove all vars that are assigned to a constant or alias, remove the equations, update the replacement rule
+  ((eqLst,varLst,repl)) := simplifyEquations2((eqLst,varLst,repl));
+  eqLstLst := List.replaceAt(eqLst,idx-1,eqLstLst);
+  varLstLst := List.replaceAt(varLst,idx-1,varLstLst);
+  tplOut := ((eqLstLst,varLstLst,repl));
+end simplifyEquations1;
+
+
+protected function simplifyEquations2 "repeats the simplification until nothing changed anymore"
+  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplIn;
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Var>,BackendVarTransform.VariableReplacements> tplOut;
+algorithm
+  tplOut := matchcontinue(tplIn)
+    local
+      Boolean changed;
+      BackendVarTransform.VariableReplacements repl, replIn;
+      list<BackendDAE.Equation> eqLst, eqLstIn;
+      list<BackendDAE.Var> varLst, varLstIn;
+    case((eqLstIn,varLstIn,replIn))
+      equation
+        ((varLst,eqLst,repl,changed)) = removeConstOrAlias(1,(varLstIn,eqLstIn,replIn,false));
+        true = changed;
+        (eqLst,_) = BackendVarTransform.replaceEquations(eqLst,repl,NONE());
+        ((eqLst,varLst,repl)) = simplifyEquations2((eqLst,varLst,repl));
+      then
+        ((eqLst,varLst,repl));
+    case((eqLstIn,varLstIn,replIn))
+      equation
+        ((varLst,eqLst,repl,changed)) = removeConstOrAlias(1,(varLstIn,eqLstIn,replIn,false));
+        false = changed;
+        (eqLst,_) = BackendVarTransform.replaceEquations(eqLst,repl,NONE());
+      then
+        ((eqLst,varLst,repl));
+    else
+      equation
+        print("simplifyEquations2 failed!\n");
+      then
+        fail();
+  end matchcontinue;
+end simplifyEquations2; 
+
+
+protected function removeConstOrAlias "removes the equations and vars for which vars are assigned to constants or alias and replaces them.
+author: Waurich TUD 2013-10"
+  input Integer eqIdx;
+  input tuple<list<BackendDAE.Var>, list<BackendDAE.Equation>, BackendVarTransform.VariableReplacements,Boolean> tplIn;
+  output tuple<list<BackendDAE.Var>, list<BackendDAE.Equation>, BackendVarTransform.VariableReplacements,Boolean> tplOut;
+algorithm
+  tplOut := matchcontinue(eqIdx,tplIn)
+    local
+      Boolean b, changed, changed1;
+      Integer eqIdxTmp;
+      BackendDAE.Equation eq;
+      BackendDAE.Variables vars;
+      BackendVarTransform.VariableReplacements repl,replIn;
+      DAE.ComponentRef varCref;
+      DAE.Exp varExp, const, exp1, exp2;
+      list<BackendDAE.Equation>  eqLst, eqLstIn;
+      list<BackendDAE.Var> varLst, varLstIn;
+  case(_,(varLstIn,eqLstIn,replIn,changed))
+    equation
+      true = listLength(eqLstIn) < eqIdx;
+    then
+      tplIn;
+  case(_,(varLstIn,eqLstIn,replIn,changed))
+    equation
+      //one side of the equation is constant
+      eq = listGet(eqLstIn,eqIdx);
+      (b,SOME((varExp,const))) = oneSideConstant(eq);
+      true = b;
+      //print("\neq with const: "+&BackendDump.dumpEqnsStr({eq})+&"\n");
+      //print("one side is constant\n");
+      (eqLst,varLst,repl,changed1) = handleConstantSide(varExp,const,eqIdx,eqLstIn,varLstIn,replIn,changed);
+      eqIdxTmp = Util.if_(changed1, eqIdx, eqIdx+1);
+      changed = changed1 or changed;
+      //print("changed? "+&boolString(changed)+&"\n");
+      ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdxTmp,(varLst,eqLst,repl,changed));
+    then
+      ((varLst,eqLst,repl,changed));
+  case(_,(varLstIn,eqLstIn,replIn,changed))
+    equation
+      //both sides of the equation are crefs
+      eq = listGet(eqLstIn,eqIdx);
+      BackendDAE.EQUATION(exp= exp1, scalar=exp2) = eq;
+      true = Expression.isCref(exp1);
+      true = Expression.isCref(exp2);
+      //print("\neq with both sides CREFs: "+&BackendDump.dumpEqnsStr({eq})+&"\n");
+      (eqLst,varLst,repl,changed1) = checkForPosAlias(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn);
+      eqIdxTmp = Util.if_(changed1, eqIdx, eqIdx+1);
+      changed = changed1 or changed;
+      //print("changed? "+&boolString(changed)+&"\n");
+      ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdxTmp,(varLst,eqLst,repl,changed));
+    then
+      ((varLst,eqLst,repl,changed));
+  case(_,(varLstIn,eqLstIn,replIn,changed))
+    equation
+      // nothing to simplify. go to next equation
+      //print("nothing to simplify\n");
+      //print("changed? "+&boolString(changed)+&"\n");
+      ((varLst,eqLst,repl,changed)) = removeConstOrAlias(eqIdx+1,(varLstIn,eqLstIn,replIn,changed));
+    then
+      ((varLst,eqLst,repl,changed));
+    else
+      equation
+        print("removeConstOrAlias failed!\n");
+      then 
+        fail();
+  end matchcontinue;
+end removeConstOrAlias;           
+      
+      
+protected function handleConstantSide "checks if the equation is a constant assignment i.e. a=const, const=a or a simple equation i.e. a+b=0
+author: Waurich TUD 2013-10"
+  input DAE.Exp varExp;
+  input DAE.Exp constExp;
+  input Integer eqIdx;
+  input list<BackendDAE.Equation> eqLstIn;
+  input list<BackendDAE.Var> varLstIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  input Boolean changedIn;
+  output list<BackendDAE.Equation> eqLstOut;
+  output list<BackendDAE.Var> varLstOut;
+  output BackendVarTransform.VariableReplacements replOut;
+  output Boolean changedOut;
+algorithm
+  (eqLstOut,varLstOut,replOut,changedOut) := matchcontinue(varExp,constExp,eqIdx,eqLstIn,varLstIn,replIn,changedIn)
+    local
+      Boolean changed;
+      Real real;
+      BackendDAE.Variables vars;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cref;
+      DAE.Exp exp1,exp2;
+      DAE.Operator op;
+      list<BackendDAE.Equation> eqLst;
+      list<BackendDAE.Var> varLst;
+    case(DAE.CREF(componentRef = cref),DAE.RCONST(real=real),_,_,_,_,_)
+      equation
+        // check for simple equations: a = const.
+        vars = BackendVariable.listVar(varLstIn);
+        vars = BackendVariable.removeCref(cref,vars);
+        varLst = BackendVariable.varList(vars);
+        eqLst = listDelete(eqLstIn, eqIdx-1);
+        repl = BackendVarTransform.addReplacement(replIn,cref,constExp,NONE());
+      then
+        (eqLst,varLst,repl,true);
+    case(DAE.BINARY(exp1=exp1,operator=op,exp2=exp2),DAE.RCONST(real=real),_,_,_,_,_)
+      equation
+        // check for alias vars: a+-b = 0.0
+        true = real ==. 0.0;
+        (eqLst,varLst,repl,changed) = checkForAlias(exp1,exp2,op,eqIdx,eqLstIn,varLstIn,replIn);
+      then
+        (eqLst,varLst,repl,changed);
+    else
+      equation
+      then
+        (eqLstIn,varLstIn,replIn,false);        
+  end matchcontinue;
+end handleConstantSide;
+      
+
+protected function checkForAlias "checks if the there are alias variables for the new vars from varLstIn.
+author: Waurich TUD 2013-10"
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  input DAE.Operator op;
+  input Integer eqIdx;
+  input list<BackendDAE.Equation> eqLstIn;
+  input list<BackendDAE.Var> varLstIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output list<BackendDAE.Equation> eqLstOut;
+  output list<BackendDAE.Var> varLstOut;
+  output BackendVarTransform.VariableReplacements replOut;
+  output Boolean changedOut;
+algorithm
+  (eqLstOut,varLstOut,replOut,changedOut) := matchcontinue(exp1,exp2,op,eqIdx,eqLstIn,varLstIn,replIn)
+    local
+      Boolean changed;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cref1,cref2;
+      list<BackendDAE.Equation> eqLst;
+      list<BackendDAE.Var> varLst;
+    case(_,_,DAE.ADD(_),_,_,_,_)
+      equation
+        true = Expression.isCref(exp1);
+        true = Expression.isCref(exp2);
+        // a + otherVar = 0  replace: a--> -otherVar   or   a + b = 0 replace: a --> -b
+        (eqLst,varLst,repl,changed) = checkForNegAlias(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn);
+      then
+        (eqLst,varLst,repl,changed);
+    case(_,_,DAE.SUB(_),_,_,_,_)
+      equation
+        true = Expression.isCref(exp1);
+        true = Expression.isCref(exp2);
+        // a - otherVar = 0  replace: a--> otherVar   or   a - b = 0 replace: a --> b
+        (eqLst,varLst,repl,changed) = checkForPosAlias(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn);
+      then
+        (eqLst,varLst,repl,changed);
+    else
+      equation
+      then
+        (eqLstIn,varLstIn,replIn,false);
+  end matchcontinue;
+end checkForAlias;
+
+
+protected function checkForNegAlias "checks if there are variables that can be replaced from a+otherVar = 0  to  a --> -otherVar. a has to be in the varLstIn
+author: Waurich TUD 2013-10"
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  input Integer eqIdx;
+  input list<BackendDAE.Equation> eqLstIn;
+  input list<BackendDAE.Var> varLstIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output list<BackendDAE.Equation> eqLstOut;
+  output list<BackendDAE.Var> varLstOut;
+  output BackendVarTransform.VariableReplacements replOut;
+  output Boolean changed;
+algorithm
+  (eqLstOut,varLstOut,replOut,changed) := matchcontinue(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn)
+    local
+      BackendDAE.Variables vars;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cref1,cref2;
+      DAE.Exp newExp;
+      list<BackendDAE.Equation> eqLst;
+      list<BackendDAE.Var> varLst;
+    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+      equation
+        // a + otherVar = 0  replace: a --> -otherVar   or   a + b = 0 replace: a --> -b
+        vars = BackendVariable.listVar(varLstIn);
+        true = BackendVariable.existsVar(cref1,vars,false);
+        vars = BackendVariable.removeCref(cref1,vars);
+        varLst = BackendVariable.varList(vars);
+        eqLst = listDelete(eqLstIn, eqIdx-1);
+        newExp = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp2);
+        //print("checkForNegAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with "+&ExpressionDump.printExpStr(newExp)+&"\n");
+        repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
+      then
+        (eqLst,varLst,repl,true);
+    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+      equation
+        // otherVar + a = 0  replace: a --> -otherVar 
+        vars = BackendVariable.listVar(varLstIn);
+        true = BackendVariable.existsVar(cref2,vars,false);
+        vars = BackendVariable.removeCref(cref2,vars);
+        varLst = BackendVariable.varList(vars);
+        eqLst = listDelete(eqLstIn, eqIdx-1);
+        newExp = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp1);
+        //print("checkForNegAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with - "+&ExpressionDump.printExpStr(newExp)+&"\n");
+        repl = BackendVarTransform.addReplacement(replIn,cref2,newExp,NONE());
+      then
+        (eqLst,varLst,repl,true);
+    else
+      equation
+      then
+        (eqLstIn,varLstIn,replIn,false);
+  end matchcontinue;
+end checkForNegAlias;
+
+
+protected function checkForPosAlias"checks if there are variables that can be replaced from a-otherVar = 0  to  a --> otherVar. a has to be in the varLstIn
+author: Waurich TUD 2013-10"
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  input Integer eqIdx;
+  input list<BackendDAE.Equation> eqLstIn;
+  input list<BackendDAE.Var> varLstIn;
+  input BackendVarTransform.VariableReplacements replIn;
+  output list<BackendDAE.Equation> eqLstOut;
+  output list<BackendDAE.Var> varLstOut;
+  output BackendVarTransform.VariableReplacements replOut;
+  output Boolean changed;
+algorithm
+  (eqLstOut,varLstOut,replOut,changed) := matchcontinue(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn)
+    local
+      BackendDAE.Variables vars;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cref1,cref2;
+      list<BackendDAE.Equation> eqLst;
+      list<BackendDAE.Var> varLst;
+    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+      equation
+        // a - otherVar = 0  replace: a --> otherVar   or   a - b = 0 replace: a --> b
+        vars = BackendVariable.listVar(varLstIn);
+        true = BackendVariable.existsVar(cref1,vars,false);
+        //print("checkForPosAlias: replace "+&ComponentReference.printComponentRefStr(cref1)+&" with "+&ExpressionDump.printExpStr(exp2)+&"\n");
+        vars = BackendVariable.removeCref(cref1,vars);
+        varLst = BackendVariable.varList(vars);
+        eqLst = listDelete(eqLstIn, eqIdx-1);
+        repl = BackendVarTransform.addReplacement(replIn,cref1,exp2,NONE());
+      then
+        (eqLst,varLst,repl,true);
+    case(DAE.CREF(componentRef = cref1),DAE.CREF(componentRef = cref2),_,_,_,_)
+      equation
+        // otherVar - a = 0  replace: a --> otherVar 
+        vars = BackendVariable.listVar(varLstIn);
+        true = BackendVariable.existsVar(cref2,vars,false);
+        //print("checkForPosAlias: replace "+&ComponentReference.printComponentRefStr(cref2)+&" with "+&ExpressionDump.printExpStr(exp1)+&"\n");
+        vars = BackendVariable.removeCref(cref2,vars);
+        varLst = BackendVariable.varList(vars);
+        eqLst = listDelete(eqLstIn, eqIdx-1);
+        repl = BackendVarTransform.addReplacement(replIn,cref2,exp1,NONE());
+      then
+        (eqLst,varLst,repl,true);
+    else
+      equation
+      then
+        (eqLstIn,varLstIn,replIn,false);
+  end matchcontinue;
+end checkForPosAlias;
+
+
+protected function oneSideConstant "checks whether the given equation has one side with a constant.
+author: Waurich TUD 2013-07"
+  input BackendDAE.Equation eqIn;
+  output Boolean hasConst;
+  output Option<tuple<DAE.Exp,DAE.Exp>> varExp;  //<non-constant side, constant side>
+algorithm
+  (hasConst,varExp) := matchcontinue(eqIn)
+    local
+      DAE.Exp lhs,rhs;
+    case(BackendDAE.EQUATION(exp = rhs, scalar = lhs))
+      equation
+        true = Expression.isConst(lhs);
+      then
+        (true,SOME((rhs,lhs)));
+    case(BackendDAE.EQUATION(exp = rhs, scalar = lhs))
+      equation
+        true = Expression.isConst(rhs);
+      then
+        (true,SOME((lhs,rhs)));
+    else
+      equation
+      then
+        (false,NONE());
+  end matchcontinue;  
+end oneSideConstant;
 
 //--------------------------------------------------//
 // 

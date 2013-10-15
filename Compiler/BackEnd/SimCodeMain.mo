@@ -391,11 +391,11 @@ algorithm
       true = Flags.isSet(Flags.HPCOM);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = (numProc > 0);
-      backendDAE2 = Debug.fcallret2(Flags.PARTLINTORNSYSTEM, BackendDAEUtil.mapEqSystem, inBackendDAE, HpcOmSimCode.reduceLinearTornSystem, inBackendDAE);  // searches for linear torn systems and disassembles them into SingleEquations and a reduced linear EquationSystem   
+      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmSimCode.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
     then HpcOmSimCode.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     
     else equation
-      backendDAE2 = Debug.fcallret2(Flags.PARTLINTORNSYSTEM, BackendDAEUtil.mapEqSystem, inBackendDAE, HpcOmSimCode.reduceLinearTornSystem, inBackendDAE);  // searches for linear torn systems and disassembles them into SingleEquations and a reduced linear EquationSystem
+      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmSimCode.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
       (tmpSimCode, _) = SimCodeUtil.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
     then tmpSimCode;
   end matchcontinue;
