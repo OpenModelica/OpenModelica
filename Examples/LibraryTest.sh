@@ -32,4 +32,4 @@ cp BuildModelRecursive.tar.gz "$WWW/$LIB_DIR/"
 rm -rf "$WWW/$LIB_DIR/files"
 tar -C "$WWW/$LIB_DIR/" -xzf BuildModelRecursive.tar.gz
 cp BuildModelRecursive.html "$HISTORY"/`date +${LIB_DIR}-%Y-%m-%d.html`
-bash -e "$TESTMODELS/PlotLibraryTrend.sh" "$HISTORY" "$LIB_NAME"
+bash -e "$TESTMODELS/PlotLibraryTrend.sh" "$HISTORY" "$LIB_DIR"
