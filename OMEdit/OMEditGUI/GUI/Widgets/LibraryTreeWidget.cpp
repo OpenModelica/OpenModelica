@@ -1290,7 +1290,7 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
     menu.addAction(mpInstantiateModelAction);
     menu.addAction(mpCheckModelAction);
     menu.addAction(mpSimulationAction);
-    if (!(pLibraryTreeNode->isSystemLibrary() || isSearchedTree()))
+    if (!isSearchedTree())
     {
       menu.addSeparator();
       menu.addAction(mpUnloadClassAction);
