@@ -490,6 +490,11 @@ void SimulationDialog::compileModel()
   {
     if (!mIsCompilationProcessRunning)
       break;
+    QEventLoop eventLoop;
+    QTimer timer;
+    connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+    timer.start(1000);
+    eventLoop.exec();
     qApp->processEvents();
   }
 }
@@ -1091,6 +1096,7 @@ void ProgressDialog::setText(QString text)
 SimulationOutputWidget::SimulationOutputWidget(QString className, QString outputFile, bool showGeneratedFiles, MainWindow *pParent)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(className).append(" ").append(tr("Simulation Output")));
+  setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
   mpMainWindow = pParent;
   // Generated Files tab widget
   mpGeneratedFilesTabWidget = new QTabWidget;
