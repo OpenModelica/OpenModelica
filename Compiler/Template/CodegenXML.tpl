@@ -232,14 +232,17 @@ template variableCategoryXml(VarKind varKind)
  "Returns the variable category of ScalarVariable."
 ::=
   match varKind
-  case VARIABLE(__)    then "algebraic"
-  case STATE(__)       then "state"
-  case STATE_DER(__)   then "derivative"
-  case DUMMY_DER(__)   then "algebraic"
-  case DUMMY_STATE(__) then "algebraic"
-  case DISCRETE(__)    then "algebraic"
-  case PARAM(__)       then "independentParameter"
-  case CONST(__)       then "independentConstant"
+  case VARIABLE(__)     then "algebraic"
+  case STATE(__)        then "state"
+  case STATE_DER(__)    then "derivative"
+  case DUMMY_DER(__)    then "algebraic"
+  case DUMMY_STATE(__)  then "algebraic"
+  case DISCRETE(__)     then "algebraic"
+  case PARAM(__)        then "independentParameter"
+  case CONST(__)        then "independentConstant"
+  case EXTOBJ(__)       then 'externalObject_<%dotPathXml(fullClassName)%>'
+  case JAC_VAR(__)      then "jacobianVar"
+  case JAC_DIFF_VAR(__) then "jacobianDiffVar" 
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
 

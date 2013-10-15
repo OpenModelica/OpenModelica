@@ -322,7 +322,9 @@ algorithm
         (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
         cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
         prio = stringDelimitList(rest, " ");
-        prio = Util.if_(stringEq(prio,""), "default", prio);
+        // send "" priority if that is it, don't send "default"
+        // see https://trac.openmodelica.org/OpenModelica/ticket/2422
+        // prio = Util.if_(stringEq(prio,""), "default", prio);
         mp = System.realpath(dir +& "/../");
         p1 = loadClass(Absyn.IDENT(cname),{prio},mp,SOME(encoding));
       then p1;

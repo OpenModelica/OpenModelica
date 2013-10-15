@@ -731,6 +731,8 @@ package BackendDAE
     record PARAM end PARAM;
     record CONST end CONST;
     record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+    record JAC_VAR end JAC_VAR;
+    record JAC_DIFF_VAR end JAC_DIFF_VAR;
   end VarKind;
 
   uniontype ZeroCrossing
