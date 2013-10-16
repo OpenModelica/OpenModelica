@@ -61,6 +61,7 @@ public constant Integer RT_PROFILER1=20;
 public constant Integer RT_PROFILER2=21;
 public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=22;
 public constant Integer RT_CLOCK_USER_RESERVED = 23;
+public constant Integer RT_CLOCK_EXECSTAT_HPCOM_MODULES = 24;
 public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
 
 public

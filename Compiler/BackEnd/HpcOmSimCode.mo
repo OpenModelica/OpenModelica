@@ -55,13 +55,14 @@ protected import ComponentReference;
 protected import Debug;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Flags;
+protected import GlobalScript;
 protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
 protected import SimCodeUtil;
+protected import System;
 protected import Util;
 
 public function createSimCode "function createSimCode
@@ -167,9 +168,10 @@ algorithm
       
     case (_, _, _, _, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
-
+    
       //Setup
       //-----
+      System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);  
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
       highestSccIdx = findHighestSccIdxInMapping(equationSccMapping,-1);
@@ -180,24 +182,29 @@ algorithm
       
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simEqSccMapping = convertToSimEqSccMapping(equationSccMapping, lastEqMappingIdx);
+      Debug.execStat("hpcom setup", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);      
 
       //Create TaskGraph
       //----------------
       (taskGraph,taskGraphData) = HpcOmTaskGraph.createTaskGraph(inBackendDAE,filenamePrefix);
       
+      Debug.execStat("hpcom createTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);  
       fileName = ("taskGraph"+&filenamePrefix+&".graphml"); 
       schedulerInfo = arrayCreate(arrayLength(taskGraph), (-1,-1));   
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph, taskGraphData, fileName, "", {}, {}, sccSimEqMapping ,schedulerInfo);
+      Debug.execStat("hpcom dumpTaskGraph", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES); 
 
       //Create Costs
       //------------
       taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_prof.xml" , simEqSccMapping, taskGraphData); 
+      Debug.execStat("hpcom create costs", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       
       //Get ODE System
       //--------------
       taskGraphOde = arrayCopy(taskGraph);
       taskGraphDataOde = HpcOmTaskGraph.copyTaskGraphMeta(taskGraphData);
       (taskGraphOde,taskGraphDataOde) = HpcOmTaskGraph.getOdeSystem(taskGraphOde,taskGraphDataOde,inBackendDAE,filenamePrefix);
+      Debug.execStat("hpcom get ode system", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       
       taskGraphMetaValid = HpcOmTaskGraph.validateTaskGraphMeta(taskGraphDataOde, inBackendDAE);
       taskGraphMetaMessage = Util.if_(taskGraphMetaValid, "TaskgraphMeta valid\n", "TaskgraphMeta invalid\n");
@@ -252,7 +259,7 @@ algorithm
       print("HpcOm is still under construction.\n");
       then simCode;
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/HpcSimCode.mo: function createSimCode failed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/HpcOmSimCode.mo: function createSimCode failed."});
     then fail();
   end matchcontinue;
 end createSimCode;
@@ -317,6 +324,7 @@ algorithm
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
+        print("Using level Scheduler\n");
       then HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_)
       equation
@@ -333,6 +341,14 @@ algorithm
       then HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
     case(_,_,_,_)
       equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "list");
+        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+      then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+    case(_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        print("HpcOmScheduler.createSchedule warning: The scheduler '" +& flagValue +& "' is unknown. The list-scheduling algorithm is used instead.\n");
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
     else

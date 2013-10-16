@@ -2409,7 +2409,7 @@ algorithm
       array<String> nodeNames; 
       array<String> nodeDescs;  
       array<list<tuple<Integer,Integer,Integer>>> commCosts;  
-      String calcTimeString, calcTimeIntString, opCountString, yCoordString;
+      String calcTimeString, calcTimeString, opCountString, yCoordString;
       String compText;
       String description;
       String nodeDesc;
@@ -2418,7 +2418,6 @@ algorithm
       String threadIdxString, taskNumberString;
       Integer schedulerThreadId, schedulerTaskNumber;
       list<GraphML.NodeLabel> additionalLabels;
-      Integer calcTimeInt;
       array<tuple<Integer,Integer>> schedulerInfo;
       list<tuple<Integer,Integer>> criticalPath, criticalPathWoC;
     case(_,(tGraphIn,tGraphDataIn),_,_,(criticalPath,criticalPathWoC,schedulerInfo),_)
@@ -2446,14 +2445,11 @@ algorithm
         simCodeEqString = stringDelimitList(List.map(simCodeEqs,intString),", ");
         //componentsString = List.fold(components, addNodeToGraphML2, " ");
         componentsString = (" "+&intString(nodeIdx)+&" ");
-        
         ((schedulerThreadId,schedulerTaskNumber)) = arrayGet(schedulerInfo,nodeIdx);
         threadIdxString = "Th " +& intString(schedulerThreadId);
         taskNumberString = intString(schedulerTaskNumber);
-        
-        calcTimeInt = realInt(calcTime);
-        calcTimeIntString = intString(calcTimeInt);
-        additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeIntString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
+        calcTimeString = System.snprintff("%.0f", -1, calcTime);
+        additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), componentsString, GraphML.COLOR_ORANGE, GraphML.RECTANGLE(), SOME(nodeDesc), {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, additionalLabels, iGraph);
         tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx), (criticalPath,criticalPathWoC), tmpGraph);
@@ -2468,6 +2464,7 @@ algorithm
         components = arrayGet(inComps,nodeIdx);
         false = listLength(components)==1;
         primalComp = List.last(components);
+        //print("node in the taskGraph (case 2) "+&intString(nodeIdx)+&" primalComp "+&intString(primalComp)+&"\n");
         compText = arrayGet(nodeNames,primalComp);        
         nodeDesc = arrayGet(nodeDescs,primalComp);
         ((opCount,calcTime)) = List.fold1(components, addNodeToGraphML1, exeCosts, (0,0.0));
@@ -2483,17 +2480,16 @@ algorithm
         threadIdxString = "Th " +& intString(schedulerThreadId);
         taskNumberString = intString(schedulerTaskNumber);
         
-        calcTimeInt = realInt(calcTime);
-        calcTimeIntString = intString(calcTimeInt);
-        additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeIntString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
+        calcTimeString = System.snprintff("%.0f", -1, calcTime);
+        additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), componentsString, GraphML.COLOR_ORANGE, GraphML.RECTANGLE(), SOME(nodeDesc), {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, additionalLabels, iGraph);
         tmpGraph = List.fold4(childNodes, addDepToGraph, nodeIdx, tGraphDataIn, (commCostAttIdx, commVarsAttIdx), (criticalPath,criticalPathWoC), tmpGraph);
       then 
         tmpGraph;
-    case(_,_,_,_,_,_)
+    else
       equation
-        true = nodeIdx == 0 or nodeIdx == -1;
+        //true = nodeIdx == 0 or nodeIdx == -1;
         print("addSccToGraphML failed \n");
       then 
           fail();
