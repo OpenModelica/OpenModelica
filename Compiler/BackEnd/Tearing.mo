@@ -956,8 +956,8 @@ algorithm
     case(_,_,_,_,_)
       equation
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
-		false = listLength(unsolvables)==0;
-		tvar = listGet(unsolvables,1);
+    false = listLength(unsolvables)==0;
+    tvar = listGet(unsolvables,1);
            Debug.fcall(Flags.TEARING_DUMP,print,"tVar: " +& intString(tvar) +& " (unsolvable in omcTearingSelectTearingVar)\n\n");
       then
         tvar;
@@ -1015,7 +1015,7 @@ algorithm
   outUnsolvable := matchcontinue(index,size,meT,ass1,ass2,inUnsolvables)
     local
       BackendDAE.AdjacencyMatrixElementEnhanced elem;
-	case(_,_,_,_,_,_)
+  case(_,_,_,_,_,_)
       equation
         true = intEq(index,size);
         /* unmatched var */
@@ -1042,8 +1042,8 @@ algorithm
         true = intLe(index,size);
       then
        getUnsolvableVarsConsiderMatching(index+1,size,meT,ass1,ass2,inUnsolvables);
-	else
-	  then {};
+  else
+    then {};
   end matchcontinue;
 end getUnsolvableVarsConsiderMatching;
 
@@ -1850,7 +1850,7 @@ algorithm
     BackendDAE.IncidenceMatrix m;
     BackendDAE.IncidenceMatrixT mt;
     Boolean causal;
-	array<Integer> ass1_arr,ass2_arr;
+  array<Integer> ass1_arr,ass2_arr;
   case(true,_,_,_,_,_,_,_,_,_,_,_)
     equation
      then 
@@ -1879,11 +1879,11 @@ algorithm
          Debug.fcall(Flags.TEARING_DUMP, print,"ass2: "+&stringDelimitList(List.map(ass2,intString),",")+&"\n");
          Debug.fcall(Flags.TEARING_DUMP, print,"order: "+&stringDelimitList(List.map(List.flatten(order),intString),",")+&"\n");
       // find out if there are new unsolvables now
-	  ass1_arr = listArray(ass1);
-	  ass2_arr = listArray(ass2);
-	  unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1_arr,ass2_arr,{});
-	  (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
-		// ((_,unassigned)) = List.fold(ass2,getUnassigned,(1,{}));
+    ass1_arr = listArray(ass1);
+    ass2_arr = listArray(ass2);
+    unsolvables = getUnsolvableVarsConsiderMatching(1,arrayLength(meTIn),meTIn,ass1_arr,ass2_arr,{});
+    (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
+    // ((_,unassigned)) = List.fold(ass2,getUnassigned,(1,{}));
         // ((_,unassigned)) = List.fold(ass1,getUnassigned,(1,{}));
       (tvars, ass1, ass2, order) = TearingSystemCellier(causal,m,mt,meIn,meTIn,ass1,ass2,unsolvables,unsolvableEqns,tvars,order,impossibleAss);
      then 
@@ -1987,11 +1987,11 @@ algorithm
       // 7. determine which possible Vars causalize most equations and write them into potentials
       msel2t := Util.arraySelect(mt,selectedcols1);
       ((_,_,_,_,potentials,_,_)) := Util.arrayFold(msel2t,selectCausalVars,(m,impossibleAss,selectedrows,selectedcols1,{},0,1));
-	  // convert indexes from msel2t to indexes from mt
+    // convert indexes from msel2t to indexes from mt
       potentials := selectFromList(selectedcols1,potentials);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n5th: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from (3rd) causalizing most equations)\n\n");
       // 8. choose vars with the most impossible assignments
-	  potentials := countImpossibleAss(potentials,impossibleAss,mt,{},0);
+    potentials := countImpossibleAss(potentials,impossibleAss,mt,{},0);
          Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n6th: "+& stringDelimitList(List.map(potentials,intString),",")+&"\n(Variables from 5th with most incident impossible assignments)\n\n");
 end potentialsCellier;
 
@@ -2006,7 +2006,7 @@ protected function selectCausalVars
     OutValue := matchcontinue(row,inValue)
   local
     BackendDAE.IncidenceMatrix m;
-	list<list<Integer>> impAss;
+  list<list<Integer>> impAss;
     list<Integer> Eqs,selEqs,selVars,cVars,interEqs;
     Integer size,num,indx;
     case(_,(m,impAss,selEqs,selVars,cVars,num,indx))
@@ -2014,7 +2014,7 @@ protected function selectCausalVars
         Eqs = row;
         interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
         size = List.fold4(interEqs,sizeOfAssignable,m,impAss,selVars,indx,0);
-		Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(indx) +& " (from 3rd) would causalize " +& intString(size) +& " Eqns\n");
+    Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(indx) +& " (from 3rd) would causalize " +& intString(size) +& " Eqns\n");
         true = size < num;
       then ((m,impAss,selEqs,selVars,cVars,num,indx+1));
     case(_,(m,impAss,selEqs,selVars,cVars,num,indx))
@@ -2022,7 +2022,7 @@ protected function selectCausalVars
         Eqs = row;
         interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
         size = List.fold4(interEqs,sizeOfAssignable,m,impAss,selVars,indx,0);
-		Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(indx) +& " (from 3rd) would causalize " +& intString(size) +& " Eqns\n");
+    Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(indx) +& " (from 3rd) would causalize " +& intString(size) +& " Eqns\n");
         true = size == num;
       then ((m,impAss,selEqs,selVars,indx::cVars,num,indx+1));
     case(_,(m,impAss,selEqs,selVars,cVars,num,indx))
@@ -2030,7 +2030,7 @@ protected function selectCausalVars
         Eqs = row;
         interEqs = List.intersectionOnTrue(Eqs,selEqs,intEq);
         size = List.fold4(interEqs,sizeOfAssignable,m,impAss,selVars,indx,0);
-		Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(indx) +& " (from 3rd) would causalize " +& intString(size) +& " Eqns\n");
+    Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(indx) +& " (from 3rd) would causalize " +& intString(size) +& " Eqns\n");
         true = size > num;
       then ((m,impAss,selEqs,selVars,{indx},size,indx+1));
     end matchcontinue;
@@ -2077,15 +2077,15 @@ algorithm
    outPotentials := match(inPotentials,impAss,mT,newPotentials,max)
    local
      Integer v,count;
-	 list<Integer> rest,newPotentials1;
+   list<Integer> rest,newPotentials1;
    case({},_,_,_,_)
      then newPotentials;
    case(v::rest,_,_,_,_)
     equation
-	  count = countImpossibleAss2(v,impAss,mT,0);
-	     Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(v) +& " has " +& intString(count) +& " incident impossible assignments\n");
-	  (newPotentials1,count) = countImpossibleAss3(count,max,v,newPotentials);
-	 then countImpossibleAss(rest,impAss,mT,newPotentials1,count);
+    count = countImpossibleAss2(v,impAss,mT,0);
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Var " +& intString(v) +& " has " +& intString(count) +& " incident impossible assignments\n");
+    (newPotentials1,count) = countImpossibleAss3(count,max,v,newPotentials);
+   then countImpossibleAss(rest,impAss,mT,newPotentials1,count);
    end match;
 end countImpossibleAss;
 
@@ -2104,14 +2104,14 @@ algorithm
   outCount := matchcontinue(var,impAss,mT,inCount)
   local
     Integer e,v;
-	list<list<Integer>> rest;
+  list<list<Integer>> rest;
   case(_,{},_,_)
     then inCount;
   case(_,{e,v}::rest,_,_)
    equation
      true = v == var;
-	 true = listMember(e,mT[var]);
-	then countImpossibleAss2(var,rest,mT,inCount+1);
+   true = listMember(e,mT[var]);
+  then countImpossibleAss2(var,rest,mT,inCount+1);
   case(_,{e,v}::rest,_,_)
     then countImpossibleAss2(var,rest,mT,inCount);
   end matchcontinue;
@@ -2132,16 +2132,16 @@ algorithm
   (outPotentials,outCount) := matchcontinue(inCount,max,v,inPotentials)
   case(_,_,_,_)
    equation
-	 true = inCount == max;
+   true = inCount == max;
     then (v::inPotentials,inCount);
   case(_,_,_,_)
    equation
      true = inCount > max;
-	then ({v},inCount);
+  then ({v},inCount);
   else
     then (inPotentials,max);
   end matchcontinue;
-end countImpossibleAss3;	  
+end countImpossibleAss3;    
 
 
 protected function Tarjan"Tarjan assignment.
