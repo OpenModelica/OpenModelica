@@ -673,7 +673,7 @@ algorithm
         true = listLength(eqSysts) >= eqSysIdx;
         eqSyst = listGet(eqSysts,eqSysIdx);
         (eqSyst,shared,tornSysIdx) = reduceLinearTornSystem(eqSyst,shared,tornSysIdxIn);
-        eqSysts = List.replaceAt(eqSyst,eqSysIdx,eqSysts);
+        eqSysts = List.replaceAt(eqSyst,eqSysIdx-1,eqSysts);
         daeTmp = BackendDAE.DAE(eqSysts,shared);
         daeTmp = traverseEqSystemsWithIndex(eqSysIdx+1,tornSysIdx,daeTmp);
       then
