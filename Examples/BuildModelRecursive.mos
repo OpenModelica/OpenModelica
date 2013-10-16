@@ -29,7 +29,11 @@ getErrorString();
 // writeFile("x",sum(s + "\n" for s in a));
 
 print("Number of classes to build: " + String(size(a,1)));
-system("rm -rf files/ "+libraryString+"* " + log);
+system("rm -f *.o");
+system("rm -f *.c");
+system("rm -f *.h");
+system("rm -rf "+libraryString+"*");
+system("rm -rf files/ "+log);
 mkdir("files");
 
 /*** This is the stuff executed for each model ***/
@@ -37,6 +41,7 @@ mkdir("files");
 min(writeFile(s + ".mos","
 \""+s+"\";
 echo(false);
+runScript(\"common.mos\");
 statFile := \""+s+".stat\";
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
@@ -120,11 +125,12 @@ simRes  := if not buildRes then false else 0 == system(\"ulimit -t "+ulimitExe+"
 system(\"sed -i '300,$ d' '\" + simFile + \"'\"); // Only keep the top 300 lines
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 referenceExists := false;
-referenceCell := \"<td bgcolor=\\\"#0000FF\\\">&nbsp;</td>\";
+referenceFiles := \""+referenceFiles+"\";
+referenceCell := if referenceFiles == \"\" then \"\" else \"<td>&nbsp;</td>\";
 if simRes then
   system(\"touch "+s+".simsuccess\");
   reference := \""+referenceFiles+"/"+s+".mat\";
-  referenceExists := regularFileExists(reference);
+  referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
   prefix := \"files/"+s+".diff\";
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -153,8 +159,6 @@ unset multiplot
       referenceCell := \"<td bgcolor=\\\"#00FF00\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\"</td>\";
     end if;
   end if;
-else
-  referenceCell := \"<td bgcolor=\\\"#FF0000\\\">&nbsp;</td>\";
 end if;
 
 sim:=readFile(simFile);
@@ -191,10 +195,10 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
 <p>Flags: setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
-<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#0000FF\">Blue</font> means there was no reference file to compare simulation results against. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
+<p>Links are provided if getErrorString() or the simulation generates output. <font style=\"background-color:#00FF00\">Green</font> means success, <font style=\"background-color:#FFFF00\">yellow</font> means success if +d=scodeInstShortcut was used. <font style=\"background-color:#FF0000\">Red</font> is bad and in general signifies a failure.</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
-writeFile(log,"<table><tr><th>Model</th><th>Verified</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
+writeFile(log,"<table><tr><th>Model</th>"+(if referenceFiles == "" then "" else "<th>Verified</th>")+"<th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>\n",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.gz\">Offline version</a></p></body></html>",append=true);getErrorString();
 
