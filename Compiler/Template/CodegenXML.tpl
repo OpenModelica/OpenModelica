@@ -222,10 +222,10 @@ template getAliasVarXml(AliasVariable aliasvar)
  "Returns the alias Attribute of ScalarVariable."
 ::=
 match aliasvar
-  case NOALIAS(__) then "noAlias"
-  case ALIAS(__) then "alias"
-  case NEGATEDALIAS(__) then "negatedAlias"
-  else "noAlias"
+  case NOALIAS(__) then ""
+  case ALIAS(__) then '<%crefStrXml(varName)%>'
+  case NEGATEDALIAS(__) then '-<%crefStrXml(varName)%>'
+  else ""
 end getAliasVarXml;
 
 template variableCategoryXml(VarKind varKind)
