@@ -5176,10 +5176,9 @@ algorithm
         primalChildLst = arrayGet(inComps,childNode);
         true = listLength(primalChildLst) > 1;
         primalChild = listGet(primalChildLst,1);
-        ((_,costs)) = arrayGet(exeCosts,primalChild);
-        print("getCostsForNode failed!- implement cost computation for contracted rootNodes");
+        costs = getCostsForContractedNodes(primalChildLst,exeCosts);
       then
-        fail();    
+        costs;    
     case(_,_,_,_,_)
       equation
         // the childNode is not contracted
@@ -5199,9 +5198,9 @@ algorithm
         primalChildLst = arrayGet(inComps,childNode);
         primalParentLst = arrayGet(inComps,parentNode);
         true = listLength(primalChildLst) > 1;
-        print("getCostsForNode failed! - implement cost computation for contracted childNode");
+        costs = getCostsForContractedNodes(primalChildLst,exeCosts);
       then
-        fail();
+        costs;
     else
       equation
         print("getCostsForNode failed! \n");
@@ -5209,6 +5208,30 @@ algorithm
         fail();
   end matchcontinue;
 end getCostsForNode;
+
+
+protected function getCostsForContractedNodes "sums up alle execution costs for a contracted node.
+authro:Waurich TUD 2013-10"
+  input list<Integer> nodeList;
+  input array<tuple<Integer,Real>> exeCosts;
+  output Real costsOut;
+algorithm
+  costsOut := List.fold1(nodeList,getCostsForContractedNodes1,exeCosts,0.0);
+end getCostsForContractedNodes;
+
+
+protected function getCostsForContractedNodes1 "gets exeCosts for one node and add it to the foldType.
+author:Waurich TUD 2013-10"
+  input Integer node;
+  input array<tuple<Integer,Real>> exeCosts;
+  input Real costsIn;
+  output Real costsOut;
+protected
+  Real exeCost;
+algorithm
+  ((_,exeCost)) := arrayGet(exeCosts,node);
+  costsOut := realAdd(costsIn,exeCost);
+end getCostsForContractedNodes1;
 
 
 protected function getNodeCoords " computes the location of the nodes in the .graphml  with regard to the parallel sets
