@@ -273,7 +273,7 @@ algorithm
       Absyn.AlgorithmItem algitem;
       Boolean outres;
       Absyn.Exp exp;
-      Boolean partialInst;
+      Boolean partialInst, gen, evalfunc;
 
     // evaluate graphical API
     case ((stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(function_ = _))})),st)
@@ -281,7 +281,9 @@ algorithm
         // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
         partialInst = System.getPartialInstantiation();
         System.setPartialInstantiation(true);
-        (str,newst) = evaluateGraphicalApi(stmts, st, partialInst);
+        gen = Flags.set(Flags.GEN, false);
+        evalfunc = Flags.set(Flags.EVAL_FUNC, false);
+        (str,newst) = evaluateGraphicalApi(stmts, st, partialInst, gen, evalfunc);
         str_1 = stringAppend(str, "\n");
       then
         (str_1,newst);
@@ -1182,23 +1184,29 @@ protected function evaluateGraphicalApi
   input GlobalScript.Statements inStatements;
   input GlobalScript.SymbolTable inSymbolTable;
   input Boolean isPartialInst;
+  input Boolean flagGen;
+  input Boolean flagEvalFunc;
   output String outString;
   output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,isPartialInst)
+  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,isPartialInst,flagGen,flagEvalFunc)
 
-    case (_, _, _)
+    case (_, _, _, _, _)
       equation
         (outString,outSymbolTable) = evaluateGraphicalApi_dispatch(inStatements,inSymbolTable);
         // reset the flags!
         System.setPartialInstantiation(isPartialInst);
+        _ = Flags.set(Flags.GEN, flagGen);
+        _ = Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
       then
         (outString,outSymbolTable);
 
-    case (_, _, _)
+    case (_, _, _, _, _)
       equation
         // reset the flags!
         System.setPartialInstantiation(isPartialInst);
+        _ = Flags.set(Flags.GEN, flagGen);
+        _ = Flags.set(Flags.EVAL_FUNC, flagEvalFunc);
       then
         fail();
 
