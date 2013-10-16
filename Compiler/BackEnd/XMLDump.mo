@@ -161,6 +161,7 @@ protected import ClassInf;
   protected constant String ORDERED  = "ordered";
   protected constant String KNOWN    = "known";
   protected constant String EXTERNAL = "external";
+  protected constant String ALIAS = "alias";
   protected constant String CLASSES  = "classes";
   protected constant String CLASSES_ = "Classes";
 
@@ -173,7 +174,8 @@ protected import ClassInf;
 
   protected constant String VAR_ID       = ID;
   protected constant String VAR_NAME     = "name";
-  protected constant String VAR_INDEX    = INDEX;
+  protected constant String VAR_INDEX    = "differentiatedIndex";
+  protected constant String VAR_DERNAME    = "derivativeName";
   protected constant String VAR_ORIGNAME = "origName";
 
   protected constant String STATE_SELECT_NEVER   = "Never";
@@ -942,7 +944,7 @@ the relative tag is not printed.
 algorithm
   _ := matchcontinue (inBackendDAE,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
-      list<BackendDAE.Var> vars,knvars,extvars;
+      list<BackendDAE.Var> vars,knvars,extvars,aliasvars;
 
       //Ordered Variables: state & algebraic variables.
       //VARIABLES record for vars.
@@ -963,6 +965,14 @@ algorithm
       Integer bucketSize_externalObject;
       Integer numberOfVars_externalObject;
 
+      //Alias Variables: alias variables
+      BackendDAE.Variables vars_aliasVars;
+      //VARIABLES record for aliasVars.
+      array<list<BackendDAE.CrefIndex>> crefIdxLstArr_aliasVars;
+      BackendDAE.VariableArray varArr_aliasVars;
+      Integer bucketSize_aliasVars;
+      Integer numberOfVars_aliasVars;
+
       //External Classes
       BackendDAE.ExternalObjectClasses extObjCls;
 
@@ -981,23 +991,26 @@ algorithm
       DAE.FunctionTree funcs;
 
     case (BackendDAE.DAE(systs,
-                 BackendDAE.SHARED(vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
+                 BackendDAE.SHARED(
+                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars), 
+                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         knvars  = BackendVariable.varList(vars_knownVars);
         extvars = BackendVariable.varList(vars_externalObject);
+        aliasvars = BackendVariable.varList(vars_aliasVars);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
-        dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)));
+        dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)+listLength(aliasvars)));
         //Bucket size info is no longer present.
-
         vars = List.fold(systs,getOrderedVars,{});
         dumpVars(vars,arrayCreate(1,{}),stringAppend(ORDERED,VARIABLES_),addMML);
         dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
         dumpVars(extvars,crefIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
+        dumpVars(aliasvars,crefIdxLstArr_aliasVars,stringAppend(ALIAS,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
         eqnsl = List.fold(systs,getOrderedEqs,{});
@@ -2999,7 +3012,8 @@ content of a variable. In particular it takes:
 * kind: variable, state, dummy_der, dummy_state,..
 * dir: input, output or bi-directional
 * var_type: builtin type or enumeration
-* indx: corresponding index in the implementation vector
+* indx: if this is a state, how often this states was differentiated
+* derName: if this is a state, the derivative name 
 * old_name: the original name of the variable
 * varFixed: fixed attribute for variables (default fixed
   value is used if not found. Default is true for parameters
@@ -3009,15 +3023,15 @@ content of a variable. In particular it takes:
 * comment: a comment associated to the variable.
 Please note that all the inputs must be passed as String variables.
 "
-  input String varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,comment;
+  input String varno,cr,kind,dir,var_type,indx,derName,varFixed,flowPrefix,streamPrefix,comment;
 algorithm
   _:=
-  matchcontinue (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,comment)
+  matchcontinue (varno,cr,kind,dir,var_type,indx,derName,varFixed,flowPrefix,streamPrefix,comment)
       //local String str;
-    case (_,_,_,_,_,_,_,_,_,"")
+    case (_,_,_,_,_,_,_,_,_,_,"")
     equation
     /*
-      str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
+      str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" derName=derName,origName=\"",
             old_name,"\" fixed=\"",varFixed,"\" flow=\"",flowPrefix,"\" stream=\"",streamPrefix,"\">"});
     then str;
     */
@@ -3026,20 +3040,20 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_VARIABILITY);Print.printBuf("=\"");Print.printBuf(kind);
       Print.printBuf("\" ");Print.printBuf(VAR_DIRECTION);Print.printBuf("=\"");Print.printBuf(dir);
       Print.printBuf("\" ");Print.printBuf(VAR_TYPE);Print.printBuf("=\"");Print.printBuf(var_type);
-      Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
+      printIndexAndDerName(indx, derName);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
       Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
       Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\">");
     then();
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
     equation
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
       Print.printBuf("\" ");Print.printBuf(VAR_NAME);Print.printBuf("=\"");Print.printBuf(cr);
       Print.printBuf("\" ");Print.printBuf(VAR_VARIABILITY);Print.printBuf("=\"");Print.printBuf(kind);
       Print.printBuf("\" ");Print.printBuf(VAR_DIRECTION);Print.printBuf("=\"");Print.printBuf(dir);
       Print.printBuf("\" ");Print.printBuf(VAR_TYPE);Print.printBuf("=\"");Print.printBuf(var_type);
-      Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
+      printIndexAndDerName(indx, derName);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
       Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
       Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
@@ -3054,6 +3068,30 @@ algorithm
   end matchcontinue;
 end dumpVariable;
 
+protected function printIndexAndDerName
+  input String indx;
+  input String derName;
+algorithm
+  _ := match(indx, derName)
+    case ("", "") then ();
+    case (_, "") 
+      equation
+        Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
+      then 
+        ();
+    case ("", _) 
+      equation
+        Print.printBuf("\" ");Print.printBuf(VAR_DERNAME);Print.printBuf("=\"");Print.printBuf(derName);
+      then 
+        ();
+    case (_, _) 
+      equation
+        Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
+        Print.printBuf("\" ");Print.printBuf(VAR_DERNAME);Print.printBuf("=\"");Print.printBuf(derName);
+      then 
+        ();
+  end match;
+end printIndexAndDerName;
 
 public function dumpVarsAdditionalInfo "
 This function dumps the additional info that a
@@ -3153,6 +3191,31 @@ algorithm
   end matchcontinue;
 end dumpVars;
 
+protected function getIndex
+  input BackendDAE.VarKind kind;
+  output String diffIndex;
+algorithm
+  diffIndex := match(kind)
+    local Integer di;
+    case (BackendDAE.STATE(index=di)) then intString(di);
+    else ""; 
+  end match;
+end getIndex;
+
+protected function getDerName
+  input BackendDAE.VarKind kind;
+  output String derName;
+algorithm
+  derName := match(kind)
+    local String dn; DAE.ComponentRef cr;
+    case (BackendDAE.STATE(derName=SOME(cr)))
+      equation
+        dn = ComponentReference.printComponentRefStr(cr);
+      then dn;
+    else ""; 
+  end match;
+end getDerName;
+
 protected function dumpVars2 "
 This function is one of the two help function to the
 dumpVar method. The two help functions differ from
@@ -3198,7 +3261,7 @@ algorithm
                             connectorType = ct)) :: xs),varno,addMMLCode)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(0),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
+                     getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
                      dumpStreamStr(ct),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
@@ -3260,8 +3323,8 @@ algorithm
                             comment = comment,
                             connectorType = ct)) :: xs),_,varno,_)
       equation
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(0),
-                        boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
+        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
+                        getIndex(kind),getDerName(kind),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
                         DAEDump.dumpCommentAnnotationStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the

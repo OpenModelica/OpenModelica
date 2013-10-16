@@ -2409,7 +2409,7 @@ algorithm
       array<String> nodeNames; 
       array<String> nodeDescs;  
       array<list<tuple<Integer,Integer,Integer>>> commCosts;  
-      String calcTimeString, calcTimeString, opCountString, yCoordString;
+      String calcTimeString, opCountString, yCoordString;
       String compText;
       String description;
       String nodeDesc;

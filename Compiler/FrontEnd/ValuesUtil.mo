@@ -1912,6 +1912,14 @@ algorithm
   v := Values.STRING(s);
 end makeString;
 
+public function makeTuple 
+"Construct an tuple of a list of Values."
+  input list<Values.Value> inValueLst;
+  output Values.Value outValue;
+algorithm
+  outValue := Values.TUPLE(inValueLst);
+end makeTuple;
+
 public function makeArray "
   Construct an array of a list of Values.
 "

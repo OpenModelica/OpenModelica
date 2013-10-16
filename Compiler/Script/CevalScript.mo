@@ -2995,14 +2995,13 @@ algorithm
 
     case (cache,env,"dumpXMLDAE",vals,st,_)
       equation
-        (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache,env,vals,st, msg);
+        (cache,st,xml_contents,xml_filename) = dumpXMLDAE(cache,env,vals,st, msg);
       then
-        (cache,ValuesUtil.makeArray({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
+        (cache,ValuesUtil.makeTuple({Values.BOOL(true),Values.STRING(xml_filename)}),st);
 
     case (cache,env,"dumpXMLDAE",_,st,_)
-      equation
-        str = Error.printMessagesStr();
-      then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING(str)}),st);
+      then 
+        (cache,ValuesUtil.makeTuple({Values.BOOL(false),Values.STRING("")}),st);
 
     case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})},st,_)
       equation
@@ -4248,10 +4247,10 @@ protected function dumpXMLDAE " author: fildo
   input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable3;
-  output String xml_filename "initFileName";
   output String xml_contents;
+  output String xml_filename;
 algorithm
-  (outCache,outInteractiveSymbolTable3,xml_filename,xml_contents) :=
+  (outCache,outInteractiveSymbolTable3,xml_contents,xml_filename) :=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       String cname_str,filenameprefix,compileDir;
@@ -4286,7 +4285,7 @@ algorithm
         System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
+        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="optimiser"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -4310,7 +4309,7 @@ algorithm
         System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
+        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="backEnd"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -4332,7 +4331,7 @@ algorithm
         System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppendList({"The model has been dumped to xml file: ",compileDir,xml_filename}));
+        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
 
   end match;
 end dumpXMLDAE;
