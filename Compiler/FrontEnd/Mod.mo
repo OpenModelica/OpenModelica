@@ -3350,13 +3350,6 @@ algorithm
     case (_, {}) then inMod;
     case (DAE.NOMOD(), _) then DAE.NOMOD();
 
-    // do not apply if dimensions are more than 1 (only leafs)
-    case (_, _)
-      equation
-        true = listLength(inDimensions) > 1;
-      then
-        inMod;
-
     case (DAE.REDECL(finalPrefix,eachPrefix,elist), _)
       then
         DAE.REDECL(finalPrefix,SCode.EACH(),elist);
@@ -3370,7 +3363,7 @@ algorithm
       equation
         subs = addEachToSubsIfNeeded(subs, inDimensions);
       then
-        DAE.MOD(finalPrefix,SCode.EACH(),subs,eq);
+        DAE.MOD(finalPrefix,eachPrefix,subs,eq);
 
     case(_, _)
       equation
@@ -3380,6 +3373,39 @@ algorithm
 
   end matchcontinue;
 end addEachIfNeeded;
+
+public function addEachOneLevel
+"This function adds each to the mods
+ if the dimensions are not empty."
+  input DAE.Mod inMod;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue (inMod)
+    local
+      SCode.Final finalPrefix;
+      list<tuple<SCode.Element, DAE.Mod>> elist;
+      SCode.Each eachPrefix;
+      list<DAE.SubMod> subs;
+      Option<DAE.EqMod> eq;
+
+    case (DAE.NOMOD()) then DAE.NOMOD();
+
+    case (DAE.REDECL(finalPrefix,eachPrefix,elist))
+      then
+        DAE.REDECL(finalPrefix,SCode.EACH(),elist);
+
+    case (DAE.MOD(finalPrefix,eachPrefix,subs,eq))
+      then
+        DAE.MOD(finalPrefix,SCode.EACH(),subs,eq);
+
+    case(_)
+      equation
+        print("Mod.addEachOneLevel failed on: " +& printModStr(inMod) +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end addEachOneLevel;
 
 public function addEachToSubsIfNeeded
   input list<DAE.SubMod> inSubMods;
@@ -3399,7 +3425,7 @@ algorithm
 
     case (DAE.NAMEMOD(id, m)::rest, _)
       equation
-        m = addEachIfNeeded(m, inDimensions);
+        m = addEachOneLevel(m);
         rest = addEachToSubsIfNeeded(rest, inDimensions);
       then
         DAE.NAMEMOD(id, m)::rest;

@@ -4020,7 +4020,7 @@ algorithm
         eq = Mod.modEquation(mod_1);
         (cache,dim1,cl,type_mods) = getUsertypeDimensions(cache, cenv, ih, pre, cl, dims, impl);
         (cache,dim2) = elabArraydim(cache, env, owncref, cn, ad_1, eq, impl, NONE(), true, false, pre, info, dims);
-        type_mods = Mod.addEachIfNeeded(type_mods, listAppend(dim2, dim1));
+        type_mods = Mod.addEachIfNeeded(type_mods, dim2);
         // do not add each to mod_1, it should have it already!
         // mod_1 = Mod.addEachIfNeeded(mod_1, dim2);
         type_mods = Mod.merge(mod_1, type_mods, env, pre);
@@ -4043,7 +4043,7 @@ algorithm
         (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, info);
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, path, false);
         (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
-        type_mods = Mod.addEachIfNeeded(type_mods, res);
+        // type_mods = Mod.addEachIfNeeded(type_mods, res);
         type_mods = Mod.merge(mod_1, type_mods, env, pre);
       then
         (cache,res,cl,type_mods);
