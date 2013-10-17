@@ -431,32 +431,41 @@ end updateArrayCond;
 protected function inlineVarOptArray
 "functio: inlineVarOptArray
   inlines calls in a variable option"
-  input Integer Index;
+  input Integer index;
   input array<Option<BackendDAE.Var>> inVarArray;
   input Integer arraysize;
   input Functiontuple fns;
   input Boolean iInlined;
   output Boolean oInlined;
 algorithm
-  oInlined := matchcontinue(Index,inVarArray,arraysize,fns,iInlined)
+  oInlined := inlineVarOptArrayWork(index > arraysize,index,inVarArray,arraysize,fns,iInlined);
+end inlineVarOptArray;
+
+protected function inlineVarOptArrayWork
+"functio: inlineVarOptArray
+  inlines calls in a variable option"
+  input Boolean stop;
+  input Integer index;
+  input array<Option<BackendDAE.Var>> inVarArray;
+  input Integer arraysize;
+  input Functiontuple fns;
+  input Boolean iInlined;
+  output Boolean oInlined;
+algorithm
+  oInlined := match (stop,index,inVarArray,arraysize,fns,iInlined)
     local
       Option<BackendDAE.Var> var;
       Boolean b;
-    case(_,_,_,_,_)
+    case (true,_,_,_,_,_)
+      then iInlined;
+    else
       equation
-        true = intLe(Index,arraysize);
-        var = inVarArray[Index];
+        var = inVarArray[index];
         (var,b) = inlineVarOpt(var,fns);
-        updateArrayCond(b,inVarArray,Index,var);
-      then
-        inlineVarOptArray(Index+1,inVarArray,arraysize,fns,b or iInlined);
-    case(_,_,_,_,_)
-      equation
-        false = intLe(Index,arraysize);
-      then
-        iInlined;
-  end matchcontinue;
-end inlineVarOptArray;
+        updateArrayCond(b,inVarArray,index,var);
+      then inlineVarOptArrayWork(index+1 > arraysize,index+1,inVarArray,arraysize,fns,b or iInlined);
+  end match;
+end inlineVarOptArrayWork;
 
 protected function inlineVarOpt
 "functio: inlineVarOpt

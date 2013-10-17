@@ -1070,23 +1070,7 @@ Use +d=failtrace for more information."});
   end matchcontinue;
 end tarjanAlgorithm;
 
-public function strongConnectMain "author: PA
-
-  Helper function to strong_components
-
-  inputs:  (IncidenceMatrix,
-              IncidenceMatrixT,
-              int vector, /* Assignment */
-              int vector, /* Assignment */
-              int vector, /* Number */
-              int vector, /* Lowlink */
-              int, /* n - number of equations */
-              int, /* i */
-              int, /* w */
-              int list, /* stack */
-              int list list /* components */)
-  outputs: (int /* i */, int list /* stack */, int list list /* components */)
-"
+public function strongConnectMain
   input BackendDAE.IncidenceMatrixT mt;
   input array<Integer> a2;
   input array<Integer> number;
@@ -1099,34 +1083,66 @@ public function strongConnectMain "author: PA
   output list<Integer> ostack;
   output list<list<Integer>> ocomps;
 algorithm
-  (ostack,ocomps):=
-  matchcontinue (mt,a2,number,lowlink,stackflag,n,w,istack,icomps)
+  (ostack,ocomps) := strongConnectMain2(w>n,mt,a2,number,lowlink,stackflag,n,w,istack,icomps);
+end strongConnectMain;
+
+protected function strongConnectMain2
+  input Boolean stop;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> a2;
+  input array<Integer> number;
+  input array<Integer> lowlink;
+  input array<Boolean> stackflag;
+  input Integer n;
+  input Integer w;
+  input list<Integer> istack;
+  input list<list<Integer>> icomps;
+  output list<Integer> ostack;
+  output list<list<Integer>> ocomps;
+algorithm
+  (ostack,ocomps) := match (stop,mt,a2,number,lowlink,stackflag,n,w,istack,icomps)
     local
       Integer num;
       list<Integer> stack;
       list<list<Integer>> comps;
 
-    case (_,_,_,_,_,_,_,_,_)
-      equation
-        (w > n) = true;
-      then
-        (istack,icomps);
-    case (_,_,_,_,_,_,_,_,_)
-      equation
-        true = intEq(number[w],0);
-        (_,stack,comps) = strongConnect(mt,a2,number,lowlink,stackflag,0,w,istack,icomps);
-        (stack,comps) = strongConnectMain(mt,a2,number,lowlink,stackflag,n,w + 1,stack,comps);
-      then
-        (stack,comps);
+    case (true,_,_,_,_,_,_,_,_,_)
+      then (istack,icomps);
     else
       equation
-        num = number[w];
-        (num == 0) = false;
-        (stack,comps) = strongConnectMain(mt,a2,number,lowlink, stackflag, n, w + 1, istack, icomps);
-      then
-        (stack,comps);
-  end matchcontinue;
-end strongConnectMain;
+        (stack,comps) = strongConnectMain3(intEq(number[w],0),mt,a2,number,lowlink,stackflag,n,w,istack,icomps);
+        (stack,comps) = strongConnectMain2(w+1>n,mt,a2,number,lowlink, stackflag, n, w + 1, stack, comps);
+      then (stack,comps);
+  end match;
+end strongConnectMain2;
+
+protected function strongConnectMain3
+  input Boolean doCalc;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> a2;
+  input array<Integer> number;
+  input array<Integer> lowlink;
+  input array<Boolean> stackflag;
+  input Integer n;
+  input Integer w;
+  input list<Integer> istack;
+  input list<list<Integer>> icomps;
+  output list<Integer> ostack;
+  output list<list<Integer>> ocomps;
+algorithm
+  (ostack,ocomps) := match (doCalc,mt,a2,number,lowlink,stackflag,n,w,istack,icomps)
+    local
+      Integer num;
+      list<Integer> stack;
+      list<list<Integer>> comps;
+
+    case (true,_,_,_,_,_,_,_,_,_)
+      equation
+        (_,stack,comps) = strongConnect(mt,a2,number,lowlink,stackflag,0,w,istack,icomps);
+      then (stack,comps);
+    else (istack,icomps);
+  end match;
+end strongConnectMain3;
 
 protected function strongConnect "author: PA
 
