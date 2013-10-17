@@ -550,7 +550,6 @@ void SimulationDialog::runSimulationExecutable()
   setProcessEnvironment(mpSimulationProcess);
 #endif
   mpSimulationProcess->setWorkingDirectory(workingDirectory);
-  mpSimulationProcess->setProcessChannelMode(QProcess::MergedChannels);
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
   if (pSimulationOutputWidget)
   {
