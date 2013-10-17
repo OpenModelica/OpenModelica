@@ -598,7 +598,7 @@ algorithm
       equation
         str1 = Absyn.pathString(getStateName(st));
         str2 = printStateStr(st);
-        str3 = SCodeDump.restrString(re);
+        str3 = SCodeDump.restrictionStringPP(re);
         Error.addSourceMessage(Error.RESTRICTION_VIOLATION, {str1,str2,str3}, info);
       then
         fail();

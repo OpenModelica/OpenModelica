@@ -176,7 +176,7 @@ public constant Message NEGATIVE_SQRT = MESSAGE(25, TRANSLATION(), ERROR(),
 public constant Message NO_CONSTANT_BINDING = MESSAGE(26, TRANSLATION(), ERROR(),
   Util.gettext("No constant value for variable %s in scope %s."));
 public constant Message TYPE_NOT_FROM_PREDEFINED = MESSAGE(27, TRANSLATION(), ERROR(),
-  Util.gettext("In class %s, class restriction 'type' can only be derived from predefined types."));
+  Util.gettext("In class %s, class specialization 'type' can only be derived from predefined types."));
 public constant Message INCOMPATIBLE_CONNECTOR_VARIABILITY = MESSAGE(28, TRANSLATION(), ERROR(),
   Util.gettext("Cannot connect %s %s to non-constant/parameter %s."));
 public constant Message INVALID_CONNECTOR_PREFIXES = MESSAGE(29, TRANSLATION(), ERROR(),
@@ -408,7 +408,7 @@ public constant Message NON_STREAM_OPERAND_IN_STREAM_OPERATOR = MESSAGE(149, TRA
 public constant Message UNBALANCED_CONNECTOR = MESSAGE(150, TRANSLATION(), WARNING(),
   Util.gettext("Connector %s is not balanced: %s"));
 public constant Message RESTRICTION_VIOLATION = MESSAGE(151, TRANSLATION(), ERROR(),
-  Util.gettext("Restriction violation: %s is a %s, not a %s."));
+  Util.gettext("Class specialization violation: %s is a %s, not a %s."));
 public constant Message ZERO_STEP_IN_ARRAY_CONSTRUCTOR = MESSAGE(152, TRANSLATION(), ERROR(),
   Util.gettext("Step equals 0 in array constructor %s."));
 public constant Message RECURSIVE_SHORT_CLASS_DEFINITION = MESSAGE(153, TRANSLATION(), ERROR(),
@@ -526,7 +526,7 @@ public constant Message UNKNOWN_OPTION = MESSAGE(210, SCRIPTING(), ERROR(),
 public constant Message SUBSCRIPTED_MODIFIER = MESSAGE(211, TRANSLATION(), ERROR(),
   Util.gettext("Subscripted modifier is illegal."));
 public constant Message TRANS_VIOLATION = MESSAGE(212, TRANSLATION(), ERROR(),
-  Util.gettext("Restriction violation: %s is a %s, which may not contain an %s."));
+  Util.gettext("Class specialization violation: %s is a %s, which may not contain an %s."));
 public constant Message INSERT_CLASS = MESSAGE(213, SCRIPTING(), ERROR(),
   Util.gettext("Failed to insert class %s %s the available classes were:%s"));
 public constant Message MISSING_MODIFIED_ELEMENT = MESSAGE(214, TRANSLATION(), ERROR(),
@@ -643,7 +643,7 @@ public constant Message SIMPLIFICATION_COMPLEXITY = MESSAGE(523, SYMBOLIC(), NOT
 public constant Message ITERATOR_NON_ARRAY = MESSAGE(524, TRANSLATION(), ERROR(),
   Util.gettext("Iterator %s, has type %s, but expected an array expression."));
 public constant Message INST_INVALID_RESTRICTION = MESSAGE(525, TRANSLATION(), ERROR(),
-  Util.gettext("Cannot instantiate %s due to restriction %s."));
+  Util.gettext("Cannot instantiate %s due to class specialization %s."));
 public constant Message INST_NON_LOADED = MESSAGE(526, TRANSLATION(), WARNING(),
   Util.gettext("Library %s was not loaded but is marked as used by model %s."));
 public constant Message RECURSION_DEPTH_REACHED = MESSAGE(527, TRANSLATION(), ERROR(),
