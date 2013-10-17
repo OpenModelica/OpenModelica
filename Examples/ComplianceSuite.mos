@@ -71,7 +71,7 @@ echo '<testsuites name=\"'`cat version`'\">' >> \"$OMCRESULT\"
 for f in `ls ModelicaCompliance.*.res | sed 's/[.][^.]*[.]res$//' | sort -u`; do
   echo \"<testsuite name=\\\"$f\\\">\" >> \"$OMCRESULT\"
   for t in `ls \"$f\".*.res | grep \"$f[.][^.]*[.]res\"`; do
-    cat \"$t\" >> \"$OMCRESULT\"
+    iconv -f utf8 -t utf8 -c \"$t\" >> \"$OMCRESULT\"
   done
   echo \"</testsuite>\" >> \"$OMCRESULT\"
 done
