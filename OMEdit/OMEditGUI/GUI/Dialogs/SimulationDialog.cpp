@@ -455,7 +455,6 @@ void SimulationDialog::compileModel()
   setProcessEnvironment(mpCompilationProcess);
 #endif
   mpCompilationProcess->setWorkingDirectory(mpMainWindow->getOMCProxy()->changeDirectory());
-  mpCompilationProcess->setProcessChannelMode(QProcess::MergedChannels);
   QString outputFile;
   if (mpFileNameTextBox->text().isEmpty())
     outputFile = mpLibraryTreeNode->getNameStructure();
@@ -465,7 +464,8 @@ void SimulationDialog::compileModel()
   pSimulationOutputWidget = new SimulationOutputWidget(mpLibraryTreeNode->getNameStructure(), outputFile,
                                                        mpShowGeneratedFilesCheckBox->isChecked(), mpMainWindow);
   mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-  connect(mpCompilationProcess, SIGNAL(readyRead()), SLOT(writeCompilationOutput()));
+  connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(writeCompilationStandardOutput()));
+  connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(writeCompilationStandardError()));
   connect(mpCompilationProcess, SIGNAL(readyRead()), SLOT(showSimulationOutputWidget()));
   connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
@@ -554,7 +554,8 @@ void SimulationDialog::runSimulationExecutable()
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
   if (pSimulationOutputWidget)
   {
-    connect(mpSimulationProcess, SIGNAL(readyRead()), SLOT(writeSimulationOutput()));
+    connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(writeSimulationStandardOutput()));
+    connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(writeSimulationStandardError()));
     connect(mpSimulationProcess, SIGNAL(readyRead()), SLOT(showSimulationOutputWidget()));
   }
   connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
@@ -633,6 +634,58 @@ void SimulationDialog::saveSimulationOptions()
     mpLibraryTreeNode->getModelWidget()->setModelModified();
     if (mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
       mpLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpMainWindow->getOMCProxy()->list(mpLibraryTreeNode->getNameStructure()));
+  }
+}
+
+/*!
+  Writes the compilation standard output & standard error.
+  */
+void SimulationDialog::writeCompilationOutput(QString output, QColor color)
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+  if (pSimulationOutputWidget)
+  {
+    /* move the cursor down before adding to the logger. */
+    QTextCursor textCursor = pSimulationOutputWidget->getCompilationOutputTextBox()->textCursor();
+    textCursor.movePosition(QTextCursor::End);
+    pSimulationOutputWidget->getCompilationOutputTextBox()->setTextCursor(textCursor);
+    /* set the text color red */
+    QTextCharFormat charFormat = pSimulationOutputWidget->getCompilationOutputTextBox()->currentCharFormat();
+    charFormat.setForeground(color);
+    pSimulationOutputWidget->getCompilationOutputTextBox()->setCurrentCharFormat(charFormat);
+    /* append the output */
+    pSimulationOutputWidget->getCompilationOutputTextBox()->insertPlainText(output);
+    /* move the cursor */
+    textCursor.movePosition(QTextCursor::End);
+    pSimulationOutputWidget->getCompilationOutputTextBox()->setTextCursor(textCursor);
+    /* make the compilation tab the current one */
+    pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(1);
+  }
+}
+
+/*!
+  Writes the simulation standard output & standard error.
+  */
+void SimulationDialog::writeSimulationOutput(QString output, QColor color)
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
+  if (pSimulationOutputWidget)
+  {
+    /* move the cursor down before adding to the logger. */
+    QTextCursor textCursor = pSimulationOutputWidget->getSimulationOutputTextBox()->textCursor();
+    textCursor.movePosition(QTextCursor::End);
+    pSimulationOutputWidget->getSimulationOutputTextBox()->setTextCursor(textCursor);
+    /* set the text color red */
+    QTextCharFormat charFormat = pSimulationOutputWidget->getSimulationOutputTextBox()->currentCharFormat();
+    charFormat.setForeground(color);
+    pSimulationOutputWidget->getSimulationOutputTextBox()->setCurrentCharFormat(charFormat);
+    /* append the output */
+    pSimulationOutputWidget->getSimulationOutputTextBox()->insertPlainText(output);
+    /* move the cursor */
+    textCursor.movePosition(QTextCursor::End);
+    pSimulationOutputWidget->getSimulationOutputTextBox()->setTextCursor(textCursor);
+    /* make the compilation tab the current one */
+    pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
   }
 }
 
@@ -867,18 +920,13 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
 {
   Q_UNUSED(exitCode);
   mIsCompilationProcessRunning = false;
-  if (exitStatus == QProcess::NormalExit)
+  if (exitStatus == QProcess::NormalExit && exitCode == 0)
   {
     runSimulationExecutable();
   }
   else if (!mIsCancelled)
   {
-    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
-    if (pSimulationOutputWidget)
-    {
-      pSimulationOutputWidget->getCompilationOutputTextBox()->appendPlainText(mpCompilationProcess->errorString());
-      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(1);
-    }
+    writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
   }
 }
 
@@ -892,27 +940,26 @@ void SimulationDialog::compilationProcessError(QProcess::ProcessError processErr
   mIsCompilationProcessRunning = false;
   if (!mIsCancelled)
   {
-    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
-    if (pSimulationOutputWidget)
-    {
-      pSimulationOutputWidget->getCompilationOutputTextBox()->appendPlainText(mpCompilationProcess->errorString());
-      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(1);
-    }
+    writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
   }
 }
 
 /*!
-  Slot activated when mpCompilationProcess readyRead signal is raised.\n
-  Writes the available output bytes to the compilation output text box.
+  Slot activated when mpCompilationProcess readyReadStandardOutput signal is raised.\n
+  Writes the available standard output bytes to the compilation output text box.
   */
-void SimulationDialog::writeCompilationOutput()
+void SimulationDialog::writeCompilationStandardOutput()
 {
-  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
-  if (pSimulationOutputWidget)
-  {
-    pSimulationOutputWidget->getCompilationOutputTextBox()->appendPlainText(mpCompilationProcess->read(mpCompilationProcess->bytesAvailable()));
-    pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(1);
-  }
+  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardOutput()), Qt::black);
+}
+
+/*!
+  Slot activated when mpCompilationProcess readyReadStandardError signal is raised.\n
+  Writes the available error output bytes to the compilation output text box.
+  */
+void SimulationDialog::writeCompilationStandardError()
+{
+  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
 }
 
 /*!
@@ -950,12 +997,7 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
     return;
   if (exitStatus == QProcess::CrashExit)
   {
-    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
-    if (pSimulationOutputWidget)
-    {
-      pSimulationOutputWidget->getSimulationOutputTextBox()->appendPlainText(mpSimulationProcess->errorString());
-      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
-    }
+    writeSimulationOutput(mpSimulationProcess->errorString(), Qt::red);
   }
   QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
   // read the result file
@@ -990,27 +1032,26 @@ void SimulationDialog::simulationProcessError(QProcess::ProcessError processErro
   mIsSimulationProcessRunning = false;
   if (!mIsCancelled)
   {
-    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
-    if (pSimulationOutputWidget)
-    {
-      pSimulationOutputWidget->getSimulationOutputTextBox()->appendPlainText(mpSimulationProcess->errorString());
-      pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
-    }
+    writeSimulationOutput(mpSimulationProcess->errorString(), Qt::red);
   }
 }
 
 /*!
-  Slot activated when mpSimulationProcess readyRead signal is raised.\n
+  Slot activated when mpSimulationProcess readyReadStandardOutput signal is raised.\n
   Writes the available output bytes to the simulation output text box.
   */
-void SimulationDialog::writeSimulationOutput()
+void SimulationDialog::writeSimulationStandardOutput()
 {
-  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
-  if (pSimulationOutputWidget)
-  {
-    pSimulationOutputWidget->getSimulationOutputTextBox()->appendPlainText(mpSimulationProcess->read(mpSimulationProcess->bytesAvailable()));
-    pSimulationOutputWidget->getGeneratedFilesTabWidget()->setCurrentIndex(0);
-  }
+  writeSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), Qt::black);
+}
+
+/*!
+  Slot activated when mpSimulationProcess readyReadStandardError signal is raised.\n
+  Writes the available output bytes to the simulation output text box.
+  */
+void SimulationDialog::writeSimulationStandardError()
+{
+  writeSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), Qt::red);
 }
 
 /*!

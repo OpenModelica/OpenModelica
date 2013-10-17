@@ -157,17 +157,21 @@ private:
   void setProcessEnvironment(QProcess *pProcess);
   void runSimulationExecutable();
   void saveSimulationOptions();
+  void writeCompilationOutput(QString output, QColor color);
+  void writeSimulationOutput(QString output, QColor color);
 public slots:
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
   void simulate();
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void compilationProcessError(QProcess::ProcessError processError);
-  void writeCompilationOutput();
+  void writeCompilationStandardOutput();
+  void writeCompilationStandardError();
   void showSimulationOutputWidget();
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void simulationProcessError(QProcess::ProcessError processError);
-  void writeSimulationOutput();
+  void writeSimulationStandardOutput();
+  void writeSimulationStandardError();
   void cancelSimulation();
 };
 
