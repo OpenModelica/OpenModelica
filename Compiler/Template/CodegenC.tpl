@@ -6490,12 +6490,20 @@ template indexedAssign(DAE.Type ty, String exp, DAE.ComponentRef cr,
   case PARALLEL_FUNCTION_CONTEXT(__) then
     'indexed_assign_<%type%>(&<%exp%>, &<%cref%>, &<%ispec%>);'
   else
-    let tmp = tempDecl("real_array", &varDecls)
-    <<
-    alloc_<%type%>(&<%tmp%>, 1, size_of_dimension_<%type%>(<%exp%>, 1));
-    indexed_assign_<%type%>(&<%exp%>, &<%tmp%>, &<%ispec%>);
-    copy_<%type%>_data_mem(&<%tmp%>, &<%cref%>);
-    >>
+    match cr
+    case CREF_IDENT(identType = T_ARRAY(ty = aty, dims = adims)) then
+      // let tmp = tempDecl("real_array", &varDecls)
+      let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFD*/)      
+      let dimsLenStr = listLength(adims)
+      let dimsValuesStr = (adims |> dim => dimension(dim) ;separator=", ")
+      let atype = expTypeShort(aty)
+      <<
+      <%atype%>_array_create(&<%tmpArr%>, ((modelica_<%atype%>*)&(<%arrayCrefCStr(cr)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);
+      indexed_assign_<%type%>(&<%exp%>, &<%tmpArr%>, &<%ispec%>);
+      copy_<%type%>_data_mem(&<%tmpArr%>, &<%cref%>);
+      >>
+    else
+      error(sourceInfo(), 'indexedAssign simulationContext failed')
 end indexedAssign;
 
 template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
