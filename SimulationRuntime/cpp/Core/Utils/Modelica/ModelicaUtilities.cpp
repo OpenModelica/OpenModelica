@@ -1,8 +1,4 @@
-
-
-
-
-#include "Utils\Modelica\ModelicaUtilities.h"
+#include "Utils/Modelica/ModelicaUtilities.h"
 #include <stdexcept>     
 #include <exception>
 #include <string>
@@ -53,4 +49,3 @@ char* ModelicaAllocateStringWithErrorReturn(size_t len)
 #ifdef __cplusplus
 }
 #endif
-
