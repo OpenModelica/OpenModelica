@@ -375,6 +375,18 @@ algorithm
   Flags.setConfigString(Flags.TEARING_METHOD, inString);
 end setTearingMethod;
 
+public function getTearingHeuristic
+  output String outString;
+algorithm
+  outString := Flags.getConfigString(Flags.TEARING_HEURISTIC);
+end getTearingHeuristic;
+
+public function setTearingHeuristic
+  input String inString;
+algorithm
+  Flags.setConfigString(Flags.TEARING_HEURISTIC, inString);
+end setTearingHeuristic;
+
 public function simCodeTarget "Default is set by +simCodeTarget=C"
   output String target;
 algorithm
