@@ -1930,16 +1930,16 @@ algorithm
   matchcontinue(me,meT,m,mt,impossibleAss,algo)
     local
       list<Integer> potentials;
-	  String heuristic;
+    String heuristic;
     case(_,_,_,_,_,1)
       equation
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\n" +& BORDER +& "\nBEGINNING of potentialsCellier\n\n");  
-	    heuristic = Config.getTearingHeuristic();
-		   Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Chosen Heuristic: " +& heuristic +& "\n\n");
+      heuristic = Config.getTearingHeuristic();
+       Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"Chosen Heuristic: " +& heuristic +& "\n\n");
         potentials = Debug.bcallret3(stringEqual(heuristic,"cellier"),potentialsCellier,m,mt,impossibleAss,{});
-		potentials = Debug.bcallret3(stringEqual(heuristic,"cellier2"),potentialsCellier2,m,mt,impossibleAss,potentials);
-		potentials = Debug.bcallret3(stringEqual(heuristic,"cellier3"),potentialsCellier3,m,mt,impossibleAss,potentials);
-		potentials = Debug.bcallret3(stringEqual(heuristic,"cellier4"),potentialsCellier4,m,mt,impossibleAss,potentials);
+    potentials = Debug.bcallret3(stringEqual(heuristic,"cellier2"),potentialsCellier2,m,mt,impossibleAss,potentials);
+    potentials = Debug.bcallret3(stringEqual(heuristic,"cellier3"),potentialsCellier3,m,mt,impossibleAss,potentials);
+    potentials = Debug.bcallret3(stringEqual(heuristic,"cellier4"),potentialsCellier4,m,mt,impossibleAss,potentials);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"\nEND of potentialsCellier\n" +& BORDER +& "\n\n");
           // potentials = List.setDifference(potentials,unsolvables);
       then 
