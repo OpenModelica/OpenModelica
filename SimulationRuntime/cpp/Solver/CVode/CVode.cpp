@@ -312,10 +312,10 @@ void Cvode::CVodeCore()
         writeToFile(0, _tCurrent, _h);
     
       _idid = CVodeGetRootInfo(_cvodeMem, _zeroSign);
-       /*
+       
       for(int i=0;i<_dimZeroFunc;i++)
         _events[i] = bool(_zeroSign[i]);
-       */
+       
       //Event Iteration starten
       _mixed_system->handleSystemEvents(_events);
       _event_system->getZeroFunc(_zeroVal);            

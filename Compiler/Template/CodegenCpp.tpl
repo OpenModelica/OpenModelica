@@ -170,7 +170,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
   #LDFLAGS=/MDd   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib
-  LDFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib    
+  LDFLAGS=/MD /Debug  /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" /LIBPATH:"$(BOOST_LIBS)" OMCppSystem.lib OMCppModelicaUtilities.lib  OMCppMath.lib OMCppModelicaExternalC.lib    
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/cpp
 
@@ -211,7 +211,7 @@ FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>     $(CFLAGS)  $(LDFLAGS) -lOMCppSystem -lOMCppMath -lOMCppModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(listAppend(allEquations,initialEquations),simCode)%>     $(CFLAGS)  $(LDFLAGS) -lOMCppSystem -lOMCppModelicaUtilities -lOMCppMath -lOMCppModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
      
 >>
 end simulationMakefile;
@@ -733,8 +733,18 @@ case FUNCTION(outVars= vars as _::_) then
 
  let fname = underscorePath(name)
   << /*tuple return type*/
-    typedef boost::tuple< <%vars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
-    typedef boost::tuple< <%vars |> var => funReturnDefinition2(var,simCode) ;separator=", "%> > <%fname%>RefRetType;
+    struct <%fname%>Type
+    {
+       typedef boost::tuple< <%vars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> > TUPLE_ARRAY;
+   
+      <%fname%>Type& operator=(const <%fname%>Type& A)
+      {
+        <%vars |> var hasindex i0 => tupplearrayassign(var,i0) ;separator="\n "%>
+        return *this;
+      }
+      TUPLE_ARRAY data;
+    };
+    typedef <%fname%>Type <%fname%>RetType;
   >>
 
  case RECORD_CONSTRUCTOR(__) then
@@ -747,7 +757,12 @@ case FUNCTION(outVars= vars as _::_) then
       >>
 end functionHeaderRegularFunction1;
 
-
+template tupplearrayassign(Variable var,Integer index)
+::=
+  match var
+  case var as VARIABLE(__) then
+     if instDims then 'assign_array(get<<%index%>>(data),get<<%index%>>(A.data));' else 'get<<%index%>>(data)= get<<%index%>>(A.data);'
+end tupplearrayassign;
 
 template functionHeaderRecordConstruct(Function fn,SimCode simCode)
 ::=
@@ -857,27 +872,32 @@ end daeExpSharedLiteral;
 template functionHeaderRegularFunction2(Function fn,SimCode simCode)
 ::=
 match fn
-case FUNCTION(__) then
+case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
         <%fname%>RetType <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode) ;separator=", "%>);
   >>
-case EXTERNAL_FUNCTION(__) then
+case EXTERNAL_FUNCTION(outVars=var::_) then
 let fname = underscorePath(name)
    <<
         <%fname%>RetType <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode) ;separator=", "%>);
+   >>
+case EXTERNAL_FUNCTION(outVars={}) then
+let fname = underscorePath(name)
+   <<
+        void <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode) ;separator=", "%>);
    >>
 end functionHeaderRegularFunction2;
 
 template functionHeaderRegularFunction3(Function fn,SimCode simCode)
 ::=
 match fn
-case FUNCTION(__) then
+case FUNCTION(outVars=_) then
   let fname = underscorePath(name)
   <<
         <%fname%>RetType _<%fname%>;
   >>
- case EXTERNAL_FUNCTION(__) then
+ case EXTERNAL_FUNCTION(outVars=var::_) then
  let fname = underscorePath(name)
  <<
         <%fname%>RetType _<%fname%>;
@@ -1178,7 +1198,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
       let assginEnd = ')'
 
     <<
-     <%assginBegin%>_<%fnName%><%assginEnd%> = <%cr%>;
+     <%assginBegin%>_<%fnName%>.data<%assginEnd%> = <%cr%>;
     >>
 end extFunCallVarcopyTuple;
 
@@ -1333,13 +1353,13 @@ case var as VARIABLE(__) then
   let assginBegin = 'get<<%ix%>>('
   let assginEnd = ')'
   if instDims then
-    let &varInits += '<%assginBegin%>_<%fname%><%assginEnd%>.resize((boost::extents[<%instDimsInit%>]));
-    <%assginBegin%>_<%fname%><%assginEnd%>.reindex(1);<%\n%>'
-    let &varAssign += '<%assginBegin%>_<%fname%><%assginEnd%>=<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+    let &varInits += '<%assginBegin%>_<%fname%>.data<%assginEnd%>.resize((boost::extents[<%instDimsInit%>]));
+    <%assginBegin%>_<%fname%>.data<%assginEnd%>.reindex(1);<%\n%>'
+    let &varAssign += '<%assginBegin%>_<%fname%>.data<%assginEnd%>=<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
     ""
   else
    // let &varInits += initRecordMembers(var)
-    let &varAssign += ' <%assginBegin%>_<%fname%><%assginEnd%> = <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+    let &varAssign += ' <%assginBegin%>_<%fname%>.data<%assginEnd%> = <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
     ""
 case var as FUNCTION_PTR(__) then
     let &varAssign += '_<%fname%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
@@ -1585,13 +1605,14 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     <%initOutputIndices%>
    _historyImpl->setOutputs(var_ouputs_idx);
    _historyImpl->clear();
-    <%initALgloopSolvers%>
+  
     initEquations();
+      <%initALgloopSolvers%>
     for(int i=0;i<_dimZeroFunc;i++)
     {
        getCondition(i);
     }
-  initialAnalyticJacobian();
+  //initialAnalyticJacobian();
   saveAll();
     }
   
@@ -1983,7 +2004,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     {
       HistoryImplType::value_type_v v(<%numAlgvars(modelInfo)%>+<%numInOutvars(modelInfo)%>+<%numAliasvars(modelInfo)%>+<%numStatevars(modelInfo)%>);
       HistoryImplType::value_type_dv v2(<%numDerivativevars(modelInfo)%>);
-      <%writeoutput2(modelInfo)%>
+      <%writeoutput2(modelInfo,simCode)%>
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
       HistoryImplType::value_type_r v3(<%numResidues(allEquations)%>);
@@ -2141,8 +2162,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      void initEquations();
   
     
+     /*
      void initialAnalyticJacobian();
      void calcJacobianColumn();
+     */
      //Variables:
      EventHandling _event_handling;
 
@@ -2159,7 +2182,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <%generateAlgloopsolverVariables(listAppend(allEquations,initialEquations),simCode)%>
      //workaround for jacobian variables
 
-      <%variableDefinitionsJacobians(jacobianMatrixes)%>   
+     <%variableDefinitionsJacobians(jacobianMatrixes)%> 
     boost::shared_ptr<ISimData> _simData;
 
    };
@@ -2647,13 +2670,13 @@ case MODELINFO(vars=SIMVARS(__)) then
    <%vars.stringConstVars |> var =>
     MemberVariableDefine("const string",var, "stringConstvariables")
   ;separator="\n"%>
-   <%vars.stateVars |> var =>
+   /*<%vars.stateVars |> var =>
     VariableAliasDefinition(var)
   ;separator="\n"%>
    <%vars.derivativeVars |> var =>
     VariableAliasDefinition(var)
   ;separator="\n"%>
-  
+  */
   >>
 end MemberVariable;
 
@@ -2943,6 +2966,11 @@ end MemberVariableDefine;
 template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre)
 ::=
 match simVar
+      
+       case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
+      <<
+       //<%type%>& <%pre%><%cref(name)%>
+      >>
       case SIMVAR(numArrayElement={}) then
       <<
       <%type%>& <%pre%><%cref(name)%>
@@ -2974,7 +3002,11 @@ match simVar
        <%variableType(type_)%> <%cref(name)%>;
        >>
     */
-      case SIMVAR(numArrayElement={}) then
+      case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
+      <<
+      //<%variableType(type_)%> <%cref(name)%> ;
+      >>
+      case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
       <%variableType(type_)%> <%cref(name)%>;
       >>
@@ -3643,17 +3675,17 @@ case MODELINFO(varInfo=VARINFO(__)) then
 >>
 end numDerivativevars;
 
-template getAliasVar(AliasVariable aliasvar)
+template getAliasVar(AliasVariable aliasvar, SimCode simCode,Context context)
  "Returns the alias Attribute of ScalarVariable."
 ::=
   match aliasvar
     case NOALIAS(__) then 'noAlias'
-    case ALIAS(__) then '<%cref(varName)%>'
-    case NEGATEDALIAS(__) then '-<%cref(varName)%>'
+    case ALIAS(__) then '<%cref1(varName,simCode,context)%>'
+    case NEGATEDALIAS(__) then '-<%cref1(varName,simCode,context)%>'
     else 'noAlias'
 end getAliasVar;
 
-template writeoutput2(ModelInfo modelInfo)
+template writeoutput2(ModelInfo modelInfo,SimCode simCode)
 
 ::=
 match modelInfo
@@ -3678,9 +3710,9 @@ case MODELINFO(vars=SIMVARS(__)) then
      <%vars.inputVars       |> SIMVAR(__) hasindex i3 =>'v(inputVarsStart+<%i3%>)=<%cref(name)%>;'%>
      <%vars.outputVars      |> SIMVAR(__) hasindex i4 =>'v(outputVarsStart+<%i4%>)=<%cref(name)%>;'%>
 
-     <%vars.aliasVars       |> SIMVAR(__) hasindex i5 =>'v(aliasVarsStart+<%i5%>)=<%getAliasVar(aliasvar)%>;'%>
-     <%vars.intAliasVars    |> SIMVAR(__) hasindex i6 =>'v(intAliasVarsStart+<%i6%>)=<%getAliasVar(aliasvar)%>;'%>
-     <%vars.boolAliasVars   |> SIMVAR(__) hasindex i7 =>'v(boolAliasVarsStart+<%i7%>)=<%getAliasVar(aliasvar)%>;'%>
+     <%vars.aliasVars       |> SIMVAR(__) hasindex i5 =>'v(aliasVarsStart+<%i5%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;'%>
+     <%vars.intAliasVars    |> SIMVAR(__) hasindex i6 =>'v(intAliasVarsStart+<%i6%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;'%>
+     <%vars.boolAliasVars   |> SIMVAR(__) hasindex i7 =>'v(boolAliasVarsStart+<%i7%>)=<%getAliasVar(aliasvar, simCode,contextOther)%>;'%>
      
      <%(vars.stateVars      |> SIMVAR(__) hasindex i8 =>'v(stateVarsStart+<%i8%>)=__z[<%index%>]; ')%>
      <%(vars.derivativeVars |> SIMVAR(__) hasindex i9 =>'v2(<%i9%>)=__zDot[<%index%>]; ')%>
@@ -4138,12 +4170,21 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
 
       try
       {
-        _algLoopSolver<%index%>->solve(); 
-               }
-        catch(std::exception &ex)
-           {
-                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
-            } 
+         _algLoopSolver<%index%>->initialize();
+         _algLoop<%index%>->evaluate();
+         for(int i=0;i<_dimZeroFunc;i++)
+          {
+             getCondition(i);
+          }
+          IContinuous::UPDATETYPE calltype = _callType;
+         _callType = IContinuous::CONTINUOUS;
+         _algLoopSolver<%index%>->solve(); 
+         _callType = calltype;
+      }
+      catch(std::exception &ex)
+      {
+          throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
+      } 
     >>
     else
     <<
@@ -4152,7 +4193,16 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
 
     try
       {
-        _algLoopSolver<%index%>->solve(command);     
+         _algLoopSolver<%index%>->initialize();
+         _algLoop<%index%>->evaluate();
+         for(int i=0;i<_dimZeroFunc;i++)
+          {
+             getCondition(i);
+          }
+          IContinuous::UPDATETYPE calltype = _callType;
+         _callType = IContinuous::CONTINUOUS;
+         _algLoopSolver<%index%>->solve(command);
+         _callType = calltype;     
       }
       catch(std::exception &ex)
        {
@@ -5068,9 +5118,8 @@ template daeExpArray(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for an array expression."
 ::=
 match exp
-case ARRAY(__) then
+case ARRAY(array=_::_) then
   let arrayTypeStr = expTypeArray(ty)
-
   let arrayDim = expTypeArrayforDim(ty)
   let &tmpdecl = buffer "" /*BUFD*/
   let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
@@ -5086,6 +5135,19 @@ case ARRAY(__) then
    <%arrayVar%>.reindex(1);
    <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
    <%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+<%listLength(array)%>);<%\n%>'
+  arrayVar
+case ARRAY(__) then
+  let arrayTypeStr = expTypeArray(ty)
+  let arrayDim = expTypeArrayforDim(ty)
+  let &tmpdecl = buffer "" /*BUFD*/
+  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
+  // let scalarPrefix = if scalar then "scalar_" else ""
+  //let scalarRef = if scalar then "&" else ""
+  let &tmpVar = buffer ""
+  let &preExp += '
+   //tmp array
+   <%arrayDim%><%arrayVar%>(boost::extents[<%listLength(array)%>]);
+   <%arrayVar%>.reindex(1);<%\n%>'
   arrayVar
 end daeExpArray;
 
@@ -5396,6 +5458,15 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+    
+     case CALL(path=IDENT(name="sinh"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = 'double'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
 
    case CALL(path=IDENT(name="cos"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
@@ -5405,7 +5476,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
-
+ case CALL(path=IDENT(name="cosh"),
+            expLst={e1},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = 'double'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
+    if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
    case CALL(path=IDENT(name="log"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
@@ -5665,7 +5743,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
      then  "Tuple not supported yet"
    */
     /*Function calls with default type*/
-
    case exp as CALL(expLst = explist,attr=attr as CALL_ATTR(ty =ty)) then  
 
     let funName = '<%underscorePath(path)%>'
@@ -5680,7 +5757,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retType = '<%funName%>RetType'
     let retVar = tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
-    else '<%if retVar then '<%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
+    else '<%if retVar then '<%retVar%> = '%>(_functions.<%funName%>(<%argStr%>));<%\n%>'
      '<%retVar%>'
 
 
@@ -5820,7 +5897,8 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else "double"
     //let var = tempDecl(type,&varDecls /*BUFD*/)
     let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
+    //let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
+    let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
     '<%var1%>'
   case MUL_MATRIX_PRODUCT(ty=T_ARRAY(dims=dims)) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>'
@@ -5831,7 +5909,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else "double"
     //let var = tempDecl(type,&varDecls /*BUFD*/)
     let var1 = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
+    let &preExp += 'assign_array(<%var1%>,multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
     '<%var1%>'
   case DIV_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
   let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int'
@@ -6463,11 +6541,12 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let &afterExp += '/* algStmtTupleAssign: afterExp buffer created for <%marker%> */<%\n%>'
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode)
   let lhsCrefs = (expExpLst |> cr hasindex i1 fromindex 0 =>
-                    let rhsStr = 'get<<%i1%>>(<%retStruct%>)'
+                    let rhsStr = 'get<<%i1%>>(<%retStruct%>.data)'
                     writeLhsCref(cr, rhsStr, context, &afterExp /*BUFC*/, &varDecls /*BUFD*/ , simCode)
                   ;separator="\n";empty)
   <<
   /* algStmtTupleAssign: preExp printout <%marker%>*/
+  
   <%preExp%>
   /* algStmtTupleAssign: writeLhsCref <%marker%> */
   <%lhsCrefs%>
@@ -6563,7 +6642,7 @@ case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
 case CREF(__) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   <<
-  <%lhsStr%> = <%rhsStr%>;
+  <%lhsStr%> = <%rhsStr%>/*testassign2*/;
   >>
 case UNARY(exp = e as CREF(__)) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -6572,6 +6651,7 @@ case UNARY(exp = e as CREF(__)) then
   >>
 case ARRAY(array = {}) then
   <<
+  /*testassign3*/
   >>
 case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   let typeShort = expTypeFromExpShort(exp)
@@ -6755,18 +6835,23 @@ template literalExpConstImpl(Exp lit, Integer index) "These should all be declar
       >>
   case lit as MATRIX(ty=ty as T_ARRAY(__))
   case lit as ARRAY(ty=ty as T_ARRAY(__)) then
+    let size = listLength(flattenArrayExpToList(lit))
     let ndim = listLength(ty.dims)
     let arrayTypeStr = expTypeShort(ty)
     let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
     let instDimsInit = (ty.dims |> exp =>
      dimension(exp);separator="][")
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
+    match listLength(flattenArrayExpToList(lit))
+    case 0 then ""
+    else
     <<
       <%name%>.resize((boost::extents[<%instDimsInit%>]));
       <%name%>.reindex(1);
       <%arrayTypeStr%> <%name%>_data[]={<%data%>};
-       <%name%>.assign(<%name%>_data,<%name%>_data+<%listLength(flattenArrayExpToList(lit))%>);
+       <%name%>.assign(<%name%>_data,<%name%>_data+<%size%>);
     >>
+   
   else error(sourceInfo(), 'literalExpConst failed: <%printExpStr(lit)%>')
 end literalExpConstImpl;
 
@@ -6847,7 +6932,10 @@ else
       <%varDecls%>
        switch(index)
        {
-          <%zeroCrossingsCode%> 
+          <%zeroCrossingsCode%>
+          default:
+            throw std::runtime_error("Wrong condition index " + boost::lexical_cast<string>(index) );
+             
        };  
 
    }
@@ -7472,6 +7560,7 @@ end initialAnalyticJacobians;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
+/*
   let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _) hasindex index0 =>
     initialAnalyticJacobians(index0, mat, vars, name, sparsepattern, colorList,simCode)
     ;separator="\n\n";empty)
@@ -7482,6 +7571,15 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCod
 <%initialjacMats%>
 <%jacMats%>
 >>
+*/
+  match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+  let classname =  lastIdentOfPath(modelInfo.name)
+ <<
+ void <%classname%>::getJacobian(SparseMatrix& matrix)
+     {
+     }
+  >>
 end functionAnalyticJacobians;
 
 
@@ -7581,6 +7679,7 @@ end generateMatrix;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
  "Generates defines for jacobian vars."
 ::=
+  /*
   let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
     let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
@@ -7592,8 +7691,10 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
 
   <<
   /* Jacobian Variables */
-  <%analyticVars%>
+   <%analyticVars%> 
   >>
+  */
+  ""
 end variableDefinitionsJacobians;
 
 template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name)
@@ -7666,7 +7767,7 @@ case "A" then
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
   /* <%matrixName%> sparse indexes */
-  <%diffVarsResult%>
+  /*<%diffVarsResult%>*/
   >>
   else " "
 end defineSparseIndexes;
@@ -8057,10 +8158,10 @@ case STMT_ASSIGN_ARR(exp=e as CALL(__), componentRef=cr, type_=t) then
     indexedAssign(t, expPart, cr, ispec, context, &varDecls)
     >>
   else
+  let cref = contextArrayCref(cr, context)
     <<
-    STMT_ASSIGN_ARR CALL
-    <%preExp%>
-     copyArrayDataAndFreeMemAfterCall(t, expPart, cr, context)
+     <%preExp%>
+       assign_array(<%cref%>,<%expPart%>);
     >>
 case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
   let &preExp = buffer "" /*BUFD*/
