@@ -42,6 +42,7 @@ int ModelicaInternal_countLines(const char*);
 const char* ModelicaInternal_fullPathName(const char*);
 int ModelicaInternal_stat(const char*);
 void ModelicaStreams_closeFile(const char*);
+int ModelicaStrings_compare(const char*,const char*,int);
 void ModelicaStrings_scanReal(const char*,int,int,int*,double*);
 int ModelicaStrings_skipWhiteSpace(const char*,int);
 
@@ -137,6 +138,21 @@ RML_BEGIN_LABEL(ModelicaExternalC__Streams_5fclose)
     fail = 0;
   MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(ModelicaExternalC__Strings_5fcompare)
+{
+  char* str1 = RML_STRINGDATA(rmlA0);
+  char* str2 = RML_STRINGDATA(rmlA1);
+  int i = RML_UNTAGFIXNUM(rmlA2), fail = 1;
+  MMC_TRY_TOP();
+    i = ModelicaStrings_compare(str1,str2,i);
+    fail = 0;
+  MMC_CATCH_TOP();
+  if (fail) RML_TAILCALLK(rmlFC);
+  rmlA0 = mk_icon(i);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

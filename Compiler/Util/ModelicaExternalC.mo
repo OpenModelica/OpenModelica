@@ -77,6 +77,15 @@ function Streams_close
   external "C" ModelicaStreams_closeFile(fileName) annotation(Library="ModelicaExternalC");
 end Streams_close;
 
+function Strings_compare
+  input String string1;
+  input String string2;
+  input Boolean caseSensitive;
+  output Integer result;
+
+  external "C" result=ModelicaStrings_compare(string1,string2,caseSensitive) annotation(Library = "ModelicaExternalC");
+end Strings_compare;
+
 function Strings_advanced_scanReal
   input String string;
   input Integer startIndex;

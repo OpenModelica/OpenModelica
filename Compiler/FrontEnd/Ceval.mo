@@ -1216,6 +1216,7 @@ algorithm
     case ("ModelicaInternal_readLine") then ();
     case ("ModelicaInternal_stat") then ();
     case ("ModelicaInternal_fullPathName") then ();
+    case ("ModelicaStrings_compare") then ();
     case ("ModelicaStrings_scanReal") then ();
     case ("ModelicaStrings_skipWhiteSpace") then ();
     case ("ModelicaError") then ();
@@ -1232,7 +1233,7 @@ algorithm
   outValue := match (id,inValuesValueLst,inMsg)
     local 
       Real rv_1,rv,rv1,rv2,sv,cv,r;
-      String str,fileName,re;
+      String str,fileName,re,str1,str2;
       Integer start, stop, i, lineNumber, n;
       Boolean b, extended, insensitive;
       list<String> strs;
@@ -1354,12 +1355,18 @@ algorithm
         v = Values.ENUM_LITERAL(p,i);
       then v;
         
+    case ("ModelicaStrings_compare",{Values.STRING(str1),Values.STRING(str2),Values.BOOL(b)},_)
+      equation
+        i = ModelicaExternalC.Strings_compare(str1,str2,b);
+        p = listGet({EnumCompareLess,EnumCompareEqual,EnumCompareGreater},i);
+      then Values.ENUM_LITERAL(p,i);
+
     case ("ModelicaStrings_scanReal",{Values.STRING(str),Values.INTEGER(i),Values.BOOL(b)},_)
       equation
         (i,r) = ModelicaExternalC.Strings_advanced_scanReal(str,i,b);
       then Values.TUPLE({Values.INTEGER(i),Values.REAL(r)});
 
-    case ("ModelicaInternal_skipWhiteSpace",{Values.STRING(str),Values.INTEGER(i)},_)
+    case ("ModelicaStrings_skipWhiteSpace",{Values.STRING(str),Values.INTEGER(i)},_)
       equation
         i = ModelicaExternalC.Strings_advanced_skipWhiteSpace(str,i);
       then Values.INTEGER(i);
@@ -1373,6 +1380,10 @@ algorithm
 
   end match;
 end cevalKnownExternalFuncs2;
+
+protected constant Absyn.Path EnumCompareLess = Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Types",Absyn.QUALIFIED("Compare",Absyn.IDENT("Less")))));
+protected constant Absyn.Path EnumCompareEqual = Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Types",Absyn.QUALIFIED("Compare",Absyn.IDENT("Equal")))));
+protected constant Absyn.Path EnumCompareGreater = Absyn.QUALIFIED("Modelica",Absyn.QUALIFIED("Utilities",Absyn.QUALIFIED("Types",Absyn.QUALIFIED("Compare",Absyn.IDENT("Greater")))));
 
 protected function cevalMatrixElt "Evaluates the expression of a matrix constructor, e.g. {1,2;3,4}"
   input Env.Cache inCache;
