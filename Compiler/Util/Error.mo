@@ -672,6 +672,8 @@ public constant Message INVALID_ARRAY_DIM_IN_SCALAR_OP = MESSAGE(538, TRANSLATIO
   Util.gettext("The operator scalar requires all dimension size to be 1, but the input has type %s."));
 public constant Message NON_STANDARD_OPERATOR_CLASS_DIRECTORY = MESSAGE(539, TRANSLATION(), WARNING(),
   Util.gettext("classDirectory() is a non-standard operator that was replaced by Modelica.Utilities.Files.loadResource(uri) before it was added to the language specification."));
+public constant Message PACKAGE_DUPLICATE_CHILDREN = MESSAGE(540, TRANSLATION(), ERROR(),
+  Util.gettext("The same class is defined in multiple files: %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

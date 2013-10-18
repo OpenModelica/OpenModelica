@@ -392,6 +392,14 @@ algorithm
   end matchcontinue;
 end parsePackageFile;
 
+protected function getBothPackageAndFilename
+  input String str;
+  input String mp;
+  output String out;
+algorithm
+  out := Util.testsuiteFriendly(System.realpath(mp +& "/" +& str +& ".mo")) +& ", " +& Util.testsuiteFriendly(System.realpath(mp +& "/" +& str +& "/package.mo"));
+end getBothPackageAndFilename;
+
 protected function getPackageContentNames
   "Gets the names of packages to load before the package.mo, and the ones to load after"
   input Absyn.Class cl;
@@ -402,8 +410,8 @@ protected function getPackageContentNames
 algorithm
   (po) := matchcontinue (cl,filename,mp,numError)
     local
-      String contents, duplicatesStr, differencesStr;
-      list<String> duplicates, namesToFind, mofiles, subdirs, differences;
+      String contents, duplicatesStr, differencesStr, classFilename;
+      list<String> duplicates, namesToFind, mofiles, subdirs, differences, intersection;
       list<Absyn.ClassPart> cp;
       Absyn.Info info;
       list<PackageOrder> po1, po2;
@@ -424,6 +432,9 @@ algorithm
         subdirs = System.subDirectories(mp);
         subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
         // build a list
+        intersection = List.intersectionOnTrue(subdirs,mofiles,stringEq);
+        differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
+        Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
         mofiles = listAppend(subdirs,mofiles);
         // check if all are present in the package.order
         differences = List.setDifference(mofiles, namesToFind);
@@ -446,6 +457,11 @@ algorithm
         subdirs = System.subDirectories(mp);
         subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
         mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
+        // Look for duplicates
+        intersection = List.sortedFilterDuplicates(mofiles,stringEq);
+        differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
+        Error.assertionOrAddSourceMessage(List.isEmpty(intersection),Error.PACKAGE_DUPLICATE_CHILDREN,{differencesStr},info);
+
         po = listAppend(List.map(cp, makeClassPart),List.map(mofiles, makeClassLoad));
       then po;
 
