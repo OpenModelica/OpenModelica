@@ -85,8 +85,6 @@ char** read_csv_variables(FILE *fin)
     free(res);
     return NULL;
   }
-  res[numVar] = 0;
-  res[numVar+1] = 0;
   tmp = res;
   tmp[0] = buf;
   tmp = tmp+1;
@@ -109,8 +107,8 @@ char** read_csv_variables(FILE *fin)
     {
       ++buf;
     }
-  }while(*buf != '\0');
-
+  } while(*buf != '\0');
+  *tmp=0;
   return res;
 }
 

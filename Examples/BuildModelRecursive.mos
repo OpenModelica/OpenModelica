@@ -3,6 +3,8 @@
 library:=$TypeName(Modelica);
 libraryVersion:="default";
 referenceFiles:="";
+referenceFileExtension:="mat";
+referenceFileNameDelimiter:=".";
 
 setCommandLineOptions({"+g=Modelica","+d=nogen,"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -129,7 +131,7 @@ referenceFiles := \""+referenceFiles+"\";
 referenceCell := if referenceFiles == \"\" then \"\" else \"<td>&nbsp;</td>\";
 if simRes then
   system(\"touch "+s+".simsuccess\");
-  reference := \""+referenceFiles+"/"+s+".mat\";
+  reference := \""+referenceFiles+"/"+OpenModelica.Scripting.stringReplace(s,".",referenceFileNameDelimiter)+"."+referenceFileExtension+"\";
   referenceExists := referenceFiles <> \"\" and regularFileExists(reference);
   prefix := \"files/"+s+".diff\";
   if referenceExists then
