@@ -168,7 +168,7 @@ static int execute_function(void *in_arg, void **out_arg,
   state mem_state = get_memory_state();
   // fprintf(stderr, "states-ix: %d\n", mem_state);
 
-  if (printDebug) { fprintf(stderr, "input parameters:\n"); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "[dynload]: input parameters:\n"); fflush(stderr); }
 
   v = in_arg;
   arg = arglst;
@@ -180,7 +180,7 @@ static int execute_function(void *in_arg, void **out_arg,
       if (printDebug)
       {
         puttype(arg);
-        fprintf(stderr, "returning from execute function due to value_to_type_desc failure!\n"); fflush(stderr);
+        fprintf(stderr, "[dynload]: returning from execute function due to value_to_type_desc failure!\n"); fflush(stderr);
       }
       return -1;
     }
@@ -196,7 +196,7 @@ static int execute_function(void *in_arg, void **out_arg,
 
   retarg.retval = 1;
 
-  if (printDebug) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
+  if (printDebug) { fprintf(stderr, "[dynload]: calling the function\n"); fflush(stderr); }
 
   fflush(stdout);
   /* call our function pointer! */
@@ -221,7 +221,7 @@ static int execute_function(void *in_arg, void **out_arg,
     *out_arg = Values__META_5fFAIL;
     return 0;
   } else {
-    if (printDebug) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
+    if (printDebug) { fprintf(stderr, "[dynload]: output results:\n"); fflush(stderr); puttype(&retarg); }
 
     (*out_arg) = type_desc_to_value(&retarg);
     /* out_arg doesn't seem to get freed, something we can do anything about?
@@ -231,7 +231,7 @@ static int execute_function(void *in_arg, void **out_arg,
     free_type_description(&retarg);
 
     if ((*out_arg) == NULL) {
-      printf("Unable to parse returned values.\n");
+      printf("[dynload]: Unable to parse returned values.\n");
       return -1;
     }
 
@@ -453,7 +453,7 @@ static void *value_to_mmc(void* value)
     return mmc_mk_rcon(rml_prim_get_real(data));
   }
   case Values__ARRAY_3dBOX2:
-    printf("Parsing of array inside uniontype failed\n");
+    printf("[dynload]: Parsing of array inside uniontype failed\n");
     return 0;
   case Values__RECORD_3dBOX4: {
     void *path = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
@@ -466,7 +466,7 @@ static void *value_to_mmc(void* value)
     void **data_mmc;
     struct record_description* desc = (struct record_description*) malloc(sizeof(struct record_description));
     if (desc == NULL) {
-      fprintf(stderr, "value_to_mmc: malloc failed\n");
+      fprintf(stderr, "[dynload]: value_to_mmc: malloc failed\n");
       return 0;
     }
     while (!MMC_NILTEST(tmp)) {

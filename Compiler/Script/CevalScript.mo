@@ -6411,7 +6411,7 @@ algorithm
       equation
         true = Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: try constant evaluation: " +& Absyn.pathString(funcpath));
+        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " +& Absyn.pathString(funcpath) +& "\n");
         (cache,
          sc as SCode.CLASS(
           partialPrefix = SCode.NOT_PARTIAL(),
@@ -6429,7 +6429,7 @@ algorithm
           {});
         func = Env.getCachedInstFunc(cache, funcpath);
         (cache, newval, st) = CevalFunction.evaluate(cache, env, func, vallst, st);
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation SUCCESS: " +& Absyn.pathString(funcpath));
+        // Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " +& Absyn.pathString(funcpath) +& "\n");
       then
         (cache, newval, st);
 
@@ -6440,7 +6440,7 @@ algorithm
         true = bIsCompleteFunction;
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "[dynload]: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath) +& "\n");
 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(funcRest),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -6448,7 +6448,7 @@ algorithm
         false = stringEq(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] About to execute function present in CF list: " +& Absyn.pathString(funcpath));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from file] About to execute function present in CF list: " +& Absyn.pathString(funcpath) +& "\n");
 
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
@@ -6464,7 +6464,7 @@ algorithm
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath) +& "\n");
 
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(funcRest),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
@@ -6475,7 +6475,7 @@ algorithm
         true = (buildTime >=. build);
         true = (buildTime >. edit);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] About to execute function present in CF list: " +& Absyn.pathString(funcpath));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [func from buffer] About to execute function present in CF list: " +& Absyn.pathString(funcpath) +& "\n");
 
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
@@ -6490,7 +6490,7 @@ algorithm
         true = Flags.isSet(Flags.GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath) +& "\n");
 
         // remove it and all its dependencies as it might be there with an older build time.
         // get dependencies!
@@ -6499,8 +6499,8 @@ algorithm
         newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
         //print("\nFunctions after remove:\n\t" +& stringDelimitList(List.map(newCF, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: removed deps:" +&
-          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list: removed deps:" +&
+          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", ") +& "\n");
         //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt)
 
         // now is safe to generate code
@@ -6518,7 +6518,7 @@ algorithm
         ts = Absyn.setTimeStampBuild(ts, buildTime);
         w = Interactive.buildWithin(funcpath);
 
-        Debug.fprintln(Flags.DYN_LOAD, "Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
 
         p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
         f = Absyn.getFileNameFromInfo(info);
@@ -6528,8 +6528,8 @@ algorithm
                 GlobalScript.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF,
                 lf);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list [finished]: " +&
-          Absyn.pathString(funcpath));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [SOME SYMTAB] not in in CF list [finished]: " +&
+          Absyn.pathString(funcpath) +& "\n");
         //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt));
       then
         (cache,newval,SOME(syt));
@@ -6542,13 +6542,13 @@ algorithm
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
         ErrorExt.setCheckpoint("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
         
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath) +& "\n");
 
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
         (cache,funcstr,fileName) = cevalGenerateFunction(cache, env, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp), funcpath);
         // generate a uniquely named dll!
-        Debug.fprintln(Flags.DYN_LOAD, "cevalCallFunction: about to execute " +& funcstr);
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: cevalCallFunction: about to execute " +& funcstr +& "\n");
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         libHandle = System.loadLibrary(fileName, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
@@ -6556,7 +6556,7 @@ algorithm
         System.freeFunction(funcHandle, print_debug);
         System.freeLibrary(libHandle, print_debug);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath) +& "\n");
         ErrorExt.rollBack("cevalCallFunctionEvaluateOrGenerate_NO_SYMTAB");
       then
         (cache,newval,NONE());
@@ -6573,7 +6573,7 @@ algorithm
 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st, msg, _)
       equation
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath));
+        Debug.bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath) +& "\n");
         error_Str = Absyn.pathString(funcpath);
         //TODO: readd this when testsuite is okay.
         //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
@@ -6716,7 +6716,7 @@ algorithm
         proVarNames = List.map(proVarLst,Expression.varName);
         varNames = listAppend(pubVarNames, proVarNames);
         vallst = listAppend(pubVallst, proVallst);
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));
+        // Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));
       then
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
@@ -6732,7 +6732,7 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "CALL: is complete function: " +& Absyn.pathString(funcpath) +& " " +&  Util.if_(bIsCompleteFunction, "[true]", "[false]"));
         (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg,bIsCompleteFunction);
 
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
+        // Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
       then
         (cache, newval, st);
 
