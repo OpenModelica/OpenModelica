@@ -35,8 +35,8 @@ cd "$WORKDIR"
 
 sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTMODELS/BuildModelRecursive.mos" | \
 sed "s/library:=.*/library:=\$TypeName($LIB_NAME);/" | \
-sed "s,referenceFiles:=.*,referenceFiles:=\"$REF_FILES\";," \
-sed "s,referenceFileExtension:=.*,referenceFileExtension:=\"$REF_EXT\";," \
+sed "s,referenceFiles:=.*,referenceFiles:=\"$REF_FILES\";," | \
+sed "s,referenceFileExtension:=.*,referenceFileExtension:=\"$REF_EXT\";," | \
 sed "s,referenceFileNameDelimiter:=.*,referenceFileNameDelimiter:=\"$REF_NAME_DELIMITER\";," \
 > BuildModelRecursive.mos
 "$OMHOME/bin/omc" +g=MetaModelica BuildModelRecursive.mos
