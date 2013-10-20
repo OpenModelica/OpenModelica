@@ -686,7 +686,7 @@ algorithm
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false,_)
       equation
-        c = Inst.instEnumeration(n, enumLst, cmt, info);
+        c = SCodeUtil.expandEnumeration(n, enumLst, cmt, info);
         (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
         (cache,env,ih,elt,eq,ieq,alg,ialg);
@@ -1543,7 +1543,7 @@ algorithm
 
     case (cache,env,path1 as Absyn.FULLYQUALIFIED(_),ht)
       equation
-        // path1 = Env.pathStripEnvPrefix(path1, env);
+        // path1 = Env.pathStripEnvPrefix(path1, env, false);
         //Debug.fprintln(Flags.DEBUG, "Path FULLYQUAL: " +& Absyn.pathString(path));
       then
         (cache,path1);
@@ -1553,7 +1553,7 @@ algorithm
         id = Absyn.pathFirstIdent(path1);
         path2 = BaseHashTable.get(id,ht);
         path2 = Absyn.pathReplaceFirstIdent(path1,path2);
-        path2 = Env.pathStripEnvPrefix(path2, env);
+        path2 = Env.pathStripEnvPrefix(path2, env, false);
         //Debug.fprintln(Flags.DEBUG, "Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
       then (cache,path2);
 
@@ -1562,7 +1562,7 @@ algorithm
       equation
         //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
         (_, _) = Lookup.lookupClassLocal(env, Absyn.pathFirstIdent(path));
-        path = Env.pathStripEnvPrefix(path, env);
+        path = Env.pathStripEnvPrefix(path, env, false);
         //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
 
@@ -1570,13 +1570,13 @@ algorithm
       equation
         //Debug.fprintln(Flags.DEBUG,"Try makeFullyQualified " +& Absyn.pathString(path));
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
-        path = Env.pathStripEnvPrefix(path, env);
+        path = Env.pathStripEnvPrefix(path, env, false);
         //Debug.fprintln(Flags.DEBUG,"FullyQual: " +& Absyn.pathString(path));
       then (cache,path);
 
     case (cache,env,path,_)
       equation
-        path = Env.pathStripEnvPrefix(path, env);
+        path = Env.pathStripEnvPrefix(path, env, false);
         //Debug.fprintln(Flags.DEBUG, "Path not fixed: " +& Absyn.pathString(path) +& "\n");
       then
         (cache,path);
@@ -1635,7 +1635,7 @@ algorithm
         path = BaseHashTable.get(id,ht);
         //Debug.fprintln(Flags.DEBUG,"Got path " +& Absyn.pathString(path));
         cref = Absyn.crefReplaceFirstIdent(cref,path);
-        cref = Env.crefStripEnvPrefix(cref, env);
+        cref = Env.crefStripEnvPrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref HT fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 
@@ -1649,7 +1649,7 @@ algorithm
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         denv = Env.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(denv));
-        cref = Env.crefStripEnvPrefix(cref, env);
+        cref = Env.crefStripEnvPrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref VAR fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
     
@@ -1663,7 +1663,7 @@ algorithm
         //Debug.fprintln(Flags.DEBUG,"Got env " +& intString(listLength(env)));
         denv = Env.openScope(denv,SCode.ENCAPSULATED(),SOME(id),NONE());
         cref = Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(denv));
-        cref = Env.crefStripEnvPrefix(cref, env);
+        cref = Env.crefStripEnvPrefix(cref, env, false);
         //Debug.fprintln(Flags.DEBUG, "Cref CLASS fixed: " +& Absyn.printComponentRefStr(cref));
       then (cache,cref);
 

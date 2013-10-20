@@ -53,6 +53,7 @@ protected import NFSCodeLookup;
 protected import NFSCodeCheck;
 protected import SCodeUtil;
 protected import System;
+protected import Builtin;
 
 public type Import = Absyn.Import;
 
@@ -1729,6 +1730,8 @@ protected
   ExtendsTable exts;
   ImportTable imps;
   Util.StatefulBoolean is_used;
+  SCode.Program p;
+  list<Absyn.Class> initialClasses;
 algorithm
   tree := avlTreeNew();
   exts := newExtendsTable();
@@ -1741,6 +1744,10 @@ algorithm
   tree := addDummyClassToTree("spliceFunction", tree);
 
   outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps, SOME(is_used))};
+
+  // add the builtin classes from ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
+  Absyn.PROGRAM(classes=initialClasses) := Builtin.getInitialFunctions();  
+  outInitialEnv := extendEnvWithClasses(listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), outInitialEnv);
 end buildInitialEnv;
 
 protected function addDummyClassToTree

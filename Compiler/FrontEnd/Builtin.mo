@@ -36,12 +36,9 @@ encapsulated package Builtin
 
   RCS: $Id$
 
-  This module defines the builtin types, variables and functions in
-  Modelica.  The only exported functions are Builtin.initialEnv and
-  Builtin.simpleInitialEnv.
+  This module defines the builtin types, variables and functions in Modelica.  
 
-  There are several builtin attributes defined in the builtin types,
-  such as unit, start, etc."
+  There are several builtin attributes defined in the builtin types, such as unit, start, etc."
 
 public import Absyn;
 public import DAE;
@@ -568,29 +565,6 @@ algorithm
   end match;
 end isDer;
 
-public function simpleInitialEnv "
-  function: simpleInitialEnv
-  The initial environment where instantiation takes place is built
-  up using this function.  It creates an empty environment and adds
-  all the built-in types to it.
-  This only creates a minimal environment, useful for debugging purposes."
-  output list<Env.Frame> env;
-algorithm
-  env := Env.newEnvironment(NONE());
-  env := Env.extendFrameC(env, rlType);
-  env := Env.extendFrameC(env, intType);
-  env := Env.extendFrameC(env, strType);
-  env := Env.extendFrameC(env, boolType);
-  env := Env.extendFrameC(env, enumType);
-  env := Env.extendFrameC(env, ExternalObjectType);
-  env := Env.extendFrameC(env, realType);
-  env := Env.extendFrameC(env, integerType);
-  env := Env.extendFrameC(env, stringType);
-  env := Env.extendFrameC(env, booleanType);
-  env := Env.extendFrameC(env, stateSelectType);
-  env := Env.extendFrameC(env, uncertaintyType);
-end simpleInitialEnv;
-
 public function initialEnv
 "The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
@@ -705,8 +679,9 @@ algorithm
 
       env = initialEnvMetaModelica(env);
 
+      // add the builtin classes from ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
       Absyn.PROGRAM(classes=initialClasses) = getInitialFunctions();
-      env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), SOME(Env.BUILTIN())) "Add classes in the initial env";
+      env = Env.extendFrameClasses(env, listReverse(List.fold(initialClasses, SCodeUtil.translate2, {})), SOME(Env.BUILTIN()));
       cache = Env.setCachedInitialEnv(cache,env);
       _ = getSetInitialEnv(SOME(env));
     then 

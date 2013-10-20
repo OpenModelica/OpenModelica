@@ -188,7 +188,6 @@ algorithm
 
         // let the GC collect these as they are used only by Inst!
         setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
-        setGlobalRoot(Global.typesIndex, Types.createEmptyTypeMemory());
       then
         (cache,env_2,ih,dae2);
 
@@ -249,7 +248,6 @@ algorithm
 
         // let the GC collect these as they are used only by Inst!
         setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
-        setGlobalRoot(Global.typesIndex, Types.createEmptyTypeMemory());
       then
         (cache, env_2, ih, dae);
 
@@ -307,7 +305,6 @@ algorithm
 
         // let the GC collect these as they are used only by Inst!
         setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
-        setGlobalRoot(Global.typesIndex,  Types.createEmptyTypeMemory());
       then
         fail();
   end matchcontinue;
@@ -433,10 +430,9 @@ algorithm
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
-        env_2 = Env.extendFrameC(env_2, cdef);
-        (cache, env, ih, dae) = implicitInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
+        env = Env.extendFrameC(env_2, cdef);
       then
-        (cache,env,ih,dae);
+        (cache,env,ih,DAE.emptyDae);
 
     case (_,_,_,_)
       equation
@@ -530,10 +526,8 @@ algorithm
       equation
         c = InstUtil.lookupTopLevelClass(name, inProgram, false);
         env = Env.extendFrameC(env, c);
-        (cache, env, ih, dae) = implicitInstantiation(cache, env, ih,
-          DAE.NOMOD(), Prefix.NOPRE(), c, {});
       then
-        (cache, env, ih, dae);
+        (cache, env, ih, DAE.emptyDae);
 
     else
       equation
@@ -4886,7 +4880,7 @@ public function instClassDecl
 algorithm
   (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
     local
-      list<Env.Frame> env_1,env_2,env;
+      Env.Env env;
       DAE.DAElist dae;
       DAE.Mod mod;
       Prefix.Prefix pre;
@@ -4900,11 +4894,9 @@ algorithm
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = restr)),inst_dims)
       equation
         // add the class in the environment
-        env_1 = Env.extendFrameC(env, c);
-        // do instantiation of enumerations!
-        (cache,env_2,ih,dae) = implicitInstantiation(cache, env_1, ih, DAE.NOMOD(), pre, c, inst_dims);
+        env = Env.extendFrameC(env, c);
       then
-        (cache,env_2,ih,dae);
+        (cache,env,ih,DAE.emptyDae);
 
     case (cache,env,ih,_,_,_,_)
       equation
@@ -4913,53 +4905,6 @@ algorithm
         fail();
   end matchcontinue;
 end instClassDecl;
-
-public function implicitInstantiation
-"This function adds types to the environment.
-  If a class definition is a function or a package or an enumeration ,
-  it is implicitly instantiated and added as a type binding under the
-  same name as the class name."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input InnerOuter.InstHierarchy inIH;
-  input DAE.Mod inMod;
-  input Prefix.Prefix inPrefix;
-  input SCode.Element inClass;
-  input list<list<DAE.Subscript>>inInstDims;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output InnerOuter.InstHierarchy outIH;
-  output DAE.DAElist outDae;
-algorithm
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims)
-    local
-      list<Env.Frame> env,env_2;
-      DAE.Mod mod;
-      Prefix.Prefix pre;
-      SCode.Element c,enumclass;
-      String n;
-      InstDims inst_dims;
-      list<SCode.Enum> l;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-      SCode.Comment cmt;
-      Absyn.Info info;
-
-     // enumerations
-     case (cache,env,ih,mod,pre,
-           (c as SCode.CLASS(name = n,restriction = SCode.R_TYPE(),
-                             classDef = SCode.ENUMERATION(enumLst=l),cmt=cmt,info = info)),inst_dims)
-      equation
-        enumclass = instEnumeration(n, l, cmt, info);
-        env_2 = Env.extendFrameC(env, enumclass);
-      then
-        (cache,env_2,ih,DAE.emptyDae);
-
-    // .. the rest will fall trough
-    case (cache,env,ih,mod,pre,c,_) then (cache,env,ih,DAE.emptyDae);
-
-  end matchcontinue;
-end implicitInstantiation;
 
 public function makeEnvFromProgram
 "This function takes a SCode.Program and builds
@@ -5084,30 +5029,6 @@ algorithm
         (cache,path);
   end matchcontinue;
 end makeFullyQualified;
-
-public function instEnumeration
-"author: PA
-  This function takes an Ident and list of strings, and returns an enumeration class."
-  input SCode.Ident n;
-  input list<SCode.Enum> l;
-  input SCode.Comment cmt;
-  input Absyn.Info info;
-  output SCode.Element outClass;
-protected
-  list<SCode.Element> comp;
-algorithm
-  comp := InstUtil.makeEnumComponents(l, info);
-  outClass :=
-    SCode.CLASS(
-     n,
-     SCode.defaultPrefixes,
-     SCode.NOT_ENCAPSULATED(),
-     SCode.NOT_PARTIAL(),
-     SCode.R_ENUMERATION(),
-     SCode.PARTS(comp,{},{},{},{},{},{},NONE()),
-     cmt,
-     info);
-end instEnumeration;
 
 public function instList
 "This is a utility used to do instantiation of list

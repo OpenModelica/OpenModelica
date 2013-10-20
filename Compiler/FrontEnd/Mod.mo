@@ -370,7 +370,7 @@ algorithm
         (cache,p1) = Inst.makeFullyQualified(cache,env,p);
     then 
       (cache,Absyn.TPATH(p1,NONE()));
-        
+    
     // some array dimensions, elaborate them!
     case (cache, env, ih, pre, _, _, _, Absyn.TPATH(p,SOME(dims)))
       equation

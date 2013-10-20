@@ -6375,7 +6375,7 @@ algorithm
       Prefix.Prefix pre;
       Absyn.ComponentRef cr;
 
-    /* impl for normal builtin operators and functions */
+    // impl for normal builtin operators and functions
     case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl,pre,_)
       equation
         handler = elabBuiltinHandler(name);
@@ -6389,19 +6389,21 @@ algorithm
       then
         (cache,exp,prop);
 
-    /* special handling for MultiBody 3.x rooted() operator */
+    // special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.CREF_IDENT(name = "rooted"),args,nargs,impl,pre,_)
       equation
         (cache,exp,prop) = elabBuiltinRooted(cache,env, args, nargs, impl,pre,info);
       then
         (cache,exp,prop);
-    /* special handling for Connections.isRoot() operator */
+    
+    // special handling for Connections.isRoot() operator
     case (cache,env,Absyn.CREF_QUAL(name = "Connections", componentRef = Absyn.CREF_IDENT(name = "isRoot")),args,nargs,impl,pre,_)
       equation
         (cache,exp,prop) = elabBuiltinIsRoot(cache,env, args, nargs, impl,pre,info);
       then
         (cache,exp,prop);
-    /* for generic types, like e.g. cardinality */
+    
+    // for generic types, like e.g. cardinality
     case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl,pre,_)
       equation
         handler = elabBuiltinHandlerGeneric(name);
@@ -8459,6 +8461,25 @@ algorithm
       String name;
       DAE.Type tty;
     
+    case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        fn = Absyn.IDENT(name);
+        false = Absyn.pathEqual(inPath, fn);
+        print("P1: " +& Env.getEnvNameStr(inEnv) +& "/" +& Absyn.pathString(inPath) +& "\n" +& 
+              "N1: " +& name +& "\n-------------\n");
+      then 
+        fail();
+
+    case (_,DAE.T_FUNCTION(funcArg = _, source = {fn}), _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        false = Absyn.pathEqual(inPath, fn);
+        print("P2: " +& Env.getEnvNameStr(inEnv) +& "/" +& Absyn.pathString(inPath) +& "\n" +& 
+              "N2: " +& Absyn.pathString(fn) +& "\n-------------\n"); 
+      then 
+        fail();
+
     case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
       equation
         fn = Absyn.IDENT(name);

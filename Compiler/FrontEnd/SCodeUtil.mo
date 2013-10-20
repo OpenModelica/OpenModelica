@@ -72,35 +72,17 @@ public function translateAbsyn2SCode
   input Absyn.Program inProgram;
   output SCode.Program outProgram;
 algorithm
-  outProgram := translateAbsyn2SCode2(inProgram,true);
-end translateAbsyn2SCode;
-
-public function translateAbsyn2SCode2
-"This function takes an Absyn.Program
-  and constructs a SCode.Program from it.
-  This particular version of translate tries to fix any uniontypes
-  in the inProgram before translating further. This should probably
-  be moved into Parser.parse since you have to modify the tree every
-  single time you translate..."
-  input Absyn.Program inProgram;
-  input Boolean withInitial;
-  output SCode.Program outProgram;
-algorithm
-  outProgram := match(inProgram,withInitial)
+  outProgram := match(inProgram)
     local
       SCode.Program spInitial, spAbsyn, sp;
       list<Absyn.Class> inClasses,initialClasses;
 
-    case (_,_)
+    case (_)
       equation
         Inst.initInstHashTable();
-        setGlobalRoot(Global.typesIndex,  Types.createEmptyTypeMemory());
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
         // setGlobalRoot(Ceval.cevalHashIndex, Ceval.emptyCevalHashTable());
         Absyn.PROGRAM(classes=inClasses) = MetaUtil.createMetaClassesInProgram(inProgram);
-
-        Absyn.PROGRAM(classes=initialClasses) = Builtin.getInitialFunctions();
-        initialClasses = Util.if_(withInitial,initialClasses,{});
 
         // set the external flag that signals the presence of inner/outer components in the model
         System.setHasInnerOuterDefinitions(false);
@@ -109,21 +91,16 @@ algorithm
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
 
-        // translate builtin functions
-        spInitial = List.fold(initialClasses, translate2, {});
-        // call flatten program on the initial classes only
-        spInitial = NFSCodeFlatten.flattenCompleteProgram(spInitial);
-        spInitial = listReverse(spInitial);
-
         // translate given absyn to scode.
         spAbsyn = List.fold(inClasses, translate2, {});
-        spAbsyn = listReverse(spAbsyn);
-
-        sp = listAppend(spInitial, spAbsyn);
+        sp = listReverse(spAbsyn);
+        
+        // adrpo: note that WE DO NOT NEED to add initial functions to the program
+        //        as they are already part of the initialEnv done by Builtin.initialEnv
       then
         sp;
   end match;
-end translateAbsyn2SCode2;
+end translateAbsyn2SCode;
 
 public function translate2
 "Folds an Absyn.Program into SCode.Program."
@@ -144,7 +121,6 @@ public function translateClass
 algorithm
   outClass := translateClass2(inClass, Error.getNumMessages());
 end translateClass;
-
 
 protected function translateClass2
   "This functions converts an Absyn.Class to a SCode.Class."
@@ -2698,5 +2674,65 @@ algorithm
     else SCode.NOMOD();
   end match;
 end getConstrainedByModifiers;
+
+public function expandEnumerationClass
+"@author: PA, adrpo
+ this function expands the enumeration from a list into a class with components
+ if the class is not an enumeration is kept as it is"
+  input SCode.Element inElement;
+  output SCode.Element outElement;
+algorithm
+  outElement := match(inElement)
+    local
+      SCode.Ident n;
+      list<SCode.Enum> l;
+      SCode.Comment cmt;
+      Absyn.Info info;
+      SCode.Element c;
+    
+    case SCode.CLASS(name = n,restriction = SCode.R_TYPE(),
+                     classDef = SCode.ENUMERATION(enumLst=l),cmt=cmt,info = info)
+      equation
+        c = expandEnumeration(n, l, cmt, info);
+      then
+        c;
+    
+    else inElement;
+  
+  end match;
+end expandEnumerationClass;
+
+public function expandEnumeration
+"author: PA
+  This function takes an Ident and list of strings, and returns an enumeration class."
+  input SCode.Ident n;
+  input list<SCode.Enum> l;
+  input SCode.Comment cmt;
+  input Absyn.Info info;
+  output SCode.Element outClass;
+protected
+  list<SCode.Element> comp;
+algorithm
+  comp := makeEnumComponents(l, info);
+  outClass :=
+    SCode.CLASS(
+     n,
+     SCode.defaultPrefixes,
+     SCode.NOT_ENCAPSULATED(),
+     SCode.NOT_PARTIAL(),
+     SCode.R_ENUMERATION(),
+     SCode.PARTS(comp,{},{},{},{},{},{},NONE()),
+     cmt,
+     info);
+end expandEnumeration;
+
+public function makeEnumComponents
+  "Translates a list of Enums to a list of elements of type EnumType."
+  input list<SCode.Enum> inEnumLst;
+  input Absyn.Info info;
+  output list<SCode.Element> outSCodeElementLst;
+algorithm
+  outSCodeElementLst := List.map1(inEnumLst, SCode.makeEnumType, info);
+end makeEnumComponents;
 
 end SCodeUtil;

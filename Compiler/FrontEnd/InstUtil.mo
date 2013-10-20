@@ -2532,16 +2532,6 @@ algorithm
       SCode.Comment cmt;
       SCode.Replaceable rpp;
 
-    // we have a redeclaration of an enumeration.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst),cmt=cmt,info=info))),impl,SOME(_))
-      equation
-        enumclass = Inst.instEnumeration(s, enumLst, cmt, info);
-        env_1 = Env.extendFrameC(env, enumclass);
-        (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
-        ih = InnerOuter.addClassIfInner(cl2, pre, env_1, ih);
-      then
-        (env_1,ih);
-
     // we do have a redeclaration of class.
     case (env,ih,pre,( (sel1 as SCode.CLASS(name = s))),impl,SOME(_))
       equation
@@ -2563,15 +2553,6 @@ algorithm
         // do nothing, just move along!
       then
         (env,ih);
-
-    // adrpo: see if is an enumeration! then extend frame with in class.
-    case (env,ih,pre,(sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst),cmt=cmt,info=info)),impl,_)
-      equation
-        enumclass = Inst.instEnumeration(s, enumLst, cmt, info);
-        env_1 = Env.extendFrameC(env, enumclass);
-        ih = InnerOuter.addClassIfInner(enumclass, pre, env_1, ih);
-      then
-        (env_1,ih);
 
     // otherwise, extend frame with in class.
     case (env,ih,pre,(sel1 as SCode.CLASS(classDef = _)),impl,_)
@@ -6203,15 +6184,6 @@ algorithm
       then fail();
   end match;
 end assertExtArgOutputIsCrefVariable;
-
-public function makeEnumComponents
-  "Translates a list of Enums to a list of elements of type EnumType."
-  input list<SCode.Enum> inEnumLst;
-  input Absyn.Info info;
-  output list<SCode.Element> outSCodeElementLst;
-algorithm
-  outSCodeElementLst := List.map1(inEnumLst, SCode.makeEnumType, info);
-end makeEnumComponents;
 
 public function makeDaeProt
 "Creates a DAE.VarVisibility from a SCode.Visibility"

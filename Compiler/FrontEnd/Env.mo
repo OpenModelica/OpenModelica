@@ -102,6 +102,7 @@ protected import List;
 protected import Print;
 protected import Types;
 protected import SCodeDump;
+protected import SCodeUtil;
 protected import Mod;
 protected import Config;
 
@@ -598,7 +599,8 @@ algorithm
 end updateEnvClassesInTreeOpt;
 
 public function extendFrameC
-"This function adds a class definition to the environment."
+"This function adds a class definition to the environment.
+ Enumeration are expanded from a list into a class with components"
   input Env inEnv;
   input SCode.Element inClass;
   output Env outEnv;
@@ -621,6 +623,7 @@ algorithm
 
     case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, c as SCode.CLASS(name = n))
       equation
+        c = SCodeUtil.expandEnumerationClass(c);
         cdef = SCode.getClassDef(c);
         ct = getItemType(cdef,NONE());
         clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,ct));
@@ -628,7 +631,7 @@ algorithm
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     case (_,_)
-      equation
+      equation true = Flags.isSet(Flags.FAILTRACE);
         n = SCode.elementName(inClass);
         print("- Env.extendFrameC failed on element: " +& n +& "\n");
       then
@@ -646,7 +649,8 @@ algorithm
 end extendFrameCBuiltin;
 
 public function extendFrameCItemType
-"This function adds a class definition to the environment with the given class type."
+"This function adds a class definition to the environment with the given class type.
+ Enumeration are expanded from a list into a class with components"
   input Env inEnv;
   input SCode.Element inClass;
   input ItemType inItemType;
@@ -668,12 +672,13 @@ algorithm
 
     case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs, c as SCode.CLASS(name = n), _)
       equation
+        c = SCodeUtil.expandEnumerationClass(c);
         clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,inItemType));
       then
         FRAME(id,st,ft,clsAndVars,tys,crs,du,it,extra,parents)::fs;
 
     case (_,_,_)
-      equation
+      equation true = Flags.isSet(Flags.FAILTRACE);
         n = SCode.elementName(inClass);
         print("- Env.extendFrameCItemType failed on element: " +& n +& "\n");
       then
@@ -2069,7 +2074,7 @@ algorithm
       equation
         ENVCACHE(tree) = arr[1];
         env = cacheGetEnv(scope,path,tree);
-        //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
+        // print("got cached env for ");print(Absyn.pathString(path)); print("\n");
       then env;
   end match;
 end cacheGet;
@@ -3624,19 +3629,21 @@ public function crefStripEnvPrefix
   InsideP package has been inherited from P."
   input Absyn.ComponentRef inCref;
   input Env inEnv;
+  input Boolean stripPartial;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref, inEnv)
+  outCref := matchcontinue(inCref, inEnv, stripPartial)
     local
       Absyn.Path env_path;
       Absyn.ComponentRef cref1, cref2;
 
-    case (_, _)
+    case (_, _, _)
       equation
         SOME(env_path) = getEnvPath(inEnv);
         cref1 = Absyn.unqualifyCref(inCref);
+        env_path = Absyn.makeNotFullyQualified(env_path);
         // try to strip as much as possible
-        cref2 = crefStripEnvPrefix2(cref1, env_path);
+        cref2 = crefStripEnvPrefix2(cref1, env_path, stripPartial);
         // check if we really did anything, fail if we did nothing!
         false = Absyn.crefEqual(cref1, cref2);
       then
@@ -3649,35 +3656,36 @@ end crefStripEnvPrefix;
 protected function crefStripEnvPrefix2
   input Absyn.ComponentRef inCref;
   input Absyn.Path inEnvPath;
+  input Boolean stripPartial;
   output Absyn.ComponentRef outCref;
 algorithm
-  outCref := matchcontinue(inCref, inEnvPath)
+  outCref := matchcontinue(inCref, inEnvPath, stripPartial)
     local
       Absyn.Ident id1, id2;
       Absyn.ComponentRef cref;
       Absyn.Path env_path;
 
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
-          Absyn.QUALIFIED(name = id2, path = env_path))
+          Absyn.QUALIFIED(name = id2, path = env_path), _)
       equation
         true = stringEqual(id1, id2);
       then
-        crefStripEnvPrefix2(cref, env_path);
+        crefStripEnvPrefix2(cref, env_path, stripPartial);
 
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
-          Absyn.IDENT(name = id2))
+          Absyn.IDENT(name = id2), _)
       equation
         true = stringEqual(id1, id2);
       then
         cref;
     
-    /*/ adrpo: leave it as stripped as you can if you can't match it above!
+    // adrpo: leave it as stripped as you can if you can't match it above and we have true for stripPartial
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
-          Absyn.IDENT(name = id2))
+          env_path, true)
       equation
-        false = stringEqual(id1, id2);
+        false = stringEqual(id1, Absyn.pathFirstIdent(env_path));
       then
-        inCref;*/
+        inCref;
   end matchcontinue;
 end crefStripEnvPrefix2;
 
@@ -3685,19 +3693,21 @@ public function pathStripEnvPrefix
 "same as pathStripEnvPrefix"
   input Absyn.Path inPath;
   input Env inEnv;
+  input Boolean stripPartial;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inPath, inEnv)
+  outPath := matchcontinue(inPath, inEnv, stripPartial)
     local
       Absyn.Path env_path;
       Absyn.Path path1, path2;
 
-    case (_, _)
+    case (_, _, _)
       equation
         SOME(env_path) = getEnvPath(inEnv);
         path1 = Absyn.makeNotFullyQualified(inPath);
+        env_path = Absyn.makeNotFullyQualified(env_path);
         // try to strip as much as possible
-        path2 = pathStripEnvPrefix2(path1, env_path);
+        path2 = pathStripEnvPrefix2(path1, env_path, stripPartial);
         // check if we really did anything, fail if we did nothing!
         false = Absyn.pathEqual(path1, path2);
       then
@@ -3710,37 +3720,102 @@ end pathStripEnvPrefix;
 protected function pathStripEnvPrefix2
   input Absyn.Path inPath;
   input Absyn.Path inEnvPath;
+  input Boolean stripPartial;
   output Absyn.Path outPath;
 algorithm
-  outPath := matchcontinue(inPath, inEnvPath)
+  outPath := matchcontinue(inPath, inEnvPath, stripPartial)
     local
       Absyn.Ident id1, id2;
       Absyn.Path path;
       Absyn.Path env_path;
 
     case (Absyn.QUALIFIED(name = id1, path = path),
-          Absyn.QUALIFIED(name = id2, path = env_path))
+          Absyn.QUALIFIED(name = id2, path = env_path), _)
       equation
         true = stringEqual(id1, id2);
       then
-        pathStripEnvPrefix2(path, env_path);
+        pathStripEnvPrefix2(path, env_path, stripPartial);
 
     case (Absyn.QUALIFIED(name = id1, path = path),
-          Absyn.IDENT(name = id2))
+          Absyn.IDENT(name = id2), _)
       equation
         true = stringEqual(id1, id2);
       then
         path;
     
-    /*/ adrpo: leave it as stripped as you can if you can't match it above!
-    case (Absyn.QUALIFIED(name = id1, path = path),
-          Absyn.IDENT(name = id2))
+    // adrpo: leave it as stripped as you can if you can't match it above and stripPartial is true
+    case (Absyn.QUALIFIED(name = id1, path = path), env_path, true)
       equation
-        false = stringEqual(id1, id2);
+        false = stringEqual(id1, Absyn.pathFirstIdent(env_path));
       then
-        inPath;*/
+        inPath;
   end matchcontinue;
 end pathStripEnvPrefix2;
+
+public function daeCrefStripEnvPrefix
+"Removes the entire environment prefix from the given component reference, or
+ returns the unchanged reference."
+  input DAE.ComponentRef inCref;
+  input Env inEnv;
+  input Boolean stripPartial;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnv, stripPartial)
+    local
+      Absyn.Path env_path;
+      DAE.ComponentRef cref1, cref2;
+
+    case (_, _, _)
+      equation
+        SOME(env_path) = getEnvPath(inEnv);
+        cref1 = inCref;
+        env_path = Absyn.makeNotFullyQualified(env_path);
+        // try to strip as much as possible
+        cref2 = daeCrefStripEnvPrefix2(cref1, env_path, stripPartial);
+        // check if we really did anything, fail if we did nothing!
+        false = ComponentReference.crefEqual(cref1, cref2);
+      then
+        cref2;
+
+    else inCref;
+  end matchcontinue;
+end daeCrefStripEnvPrefix;
+
+protected function daeCrefStripEnvPrefix2
+  input DAE.ComponentRef inCref;
+  input Absyn.Path inEnvPath;
+  input Boolean stripPartial;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(inCref, inEnvPath, stripPartial)
+    local
+      Absyn.Ident id1, id2;
+      DAE.ComponentRef cref;
+      Absyn.Path env_path;
+
+    case (DAE.CREF_QUAL(ident = id1, subscriptLst = {}, componentRef = cref),
+          Absyn.QUALIFIED(name = id2, path = env_path), _)
+      equation
+        true = stringEqual(id1, id2);
+      then
+        daeCrefStripEnvPrefix2(cref, env_path, stripPartial);
+
+    case (DAE.CREF_QUAL(ident = id1, subscriptLst = {}, componentRef = cref),
+          Absyn.IDENT(name = id2), _)
+      equation
+        true = stringEqual(id1, id2);
+      then
+        cref;
+    
+    // adrpo: leave it as stripped as you can if you can't match it above and stripPartial is true
+    case (DAE.CREF_QUAL(ident = id1, subscriptLst = {}, componentRef = cref),
+          env_path, true)
+      equation
+        false = stringEqual(id1, Absyn.pathFirstIdent(env_path));
+      then
+        inCref;
+  end matchcontinue;
+end daeCrefStripEnvPrefix2;
 
 public function envPrefixOf
   input Env inPrefixEnv;
@@ -3822,6 +3897,117 @@ algorithm
 
   end matchcontinue;
 end envEqualPrefix2;
-   
+
+public function daeCrefStripEnvIfFullyQualifedInEnv
+"@author: adrpo
+ strip the environment prefix from cref
+ if the cref is fully qualified in env"
+  input DAE.ComponentRef inCref;
+  input Env inEnv;
+  output DAE.ComponentRef outCref;
+algorithm
+  false := true;
+  // not in top env!
+  false := isTopScope(inEnv);
+  true := isIdentOnlyInTop(ComponentReference.crefFirstIdent(inCref), inEnv);
+  outCref := daeCrefStripEnvPrefix(inCref, inEnv, true);
+  false := ComponentReference.crefEqualNoStringCompare(outCref, inCref);
+  /*
+  print("DC->: " +& ComponentReference.printComponentRefStr(inCref) +& 
+      "\nDC<-" +& ComponentReference.printComponentRefStr(outCref) +& 
+      "\nE:" +& getEnvNameStr(inEnv) +& "\n");*/
+end daeCrefStripEnvIfFullyQualifedInEnv;
+
+public function crefStripEnvIfFullyQualifedInEnv
+"@author: adrpo
+ strip the environment prefix from cref
+ if the cref is fully qualified in env"
+  input Absyn.ComponentRef inCref;
+  input Env inEnv;
+  output Absyn.ComponentRef outCref;
+algorithm
+  false := true;
+  // not in top env!
+  false := isTopScope(inEnv);
+  true := isIdentOnlyInTop(Absyn.crefFirstIdent(inCref), inEnv);
+  outCref := crefStripEnvPrefix(inCref, inEnv, true);
+  false := Absyn.crefEqual(outCref, inCref);
+  /*
+  print("C->: " +& Absyn.printComponentRefStr(inCref) +& 
+      "\nC<-" +& Absyn.printComponentRefStr(outCref) +& 
+      "\nE:" +& getEnvNameStr(inEnv) +& "\n");*/
+end crefStripEnvIfFullyQualifedInEnv;
+
+public function pathStripEnvIfFullyQualifedInEnv
+"@author: adrpo
+ strip the environment prefix from path
+ if the path is fully qualified in env"
+  input Absyn.Path inPath;
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  false := true;
+  // not in top env!
+  false := isTopScope(inEnv);
+  true := isFullyQualifiedInEnv(inPath, inEnv);
+  outPath := pathStripEnvPrefix(inPath, inEnv, true);
+  false := Absyn.pathEqual(outPath, inPath);
+  /*
+  print("P->: " +& Absyn.pathString(inPath) +& 
+      "\nP<-" +& Absyn.pathString(outPath) +& 
+      "\nE:" +& getEnvNameStr(inEnv) +& "\n");*/
+end pathStripEnvIfFullyQualifedInEnv;
+
+public function isFullyQualifiedInEnv
+"@author: adrpo
+ checks that qualifed paths are actually fully qualifed.
+ if the first id in the path is only found in top then
+ the path is fully qualifed and we return true."
+  input Absyn.Path inPath;
+  input Env inEnv;
+  output Boolean isFQ;
+algorithm
+  isFQ := match(inPath, inEnv)
+    local Ident id; Boolean b;
+    case (Absyn.FULLYQUALIFIED(_), _) then true;
+    case (_, _)
+      equation
+        id = Absyn.pathFirstIdent(inPath);
+        b = isIdentOnlyInTop(id, inEnv);
+      then
+        b;
+  end match;
+end isFullyQualifiedInEnv;
+
+public function isIdentOnlyInTop
+"@author: adrpo
+ checks that the given id is not defined in any frame but top"
+  input Ident inId;
+  input Env inEnv;
+  output Boolean isFQ;
+algorithm
+  isFQ := matchcontinue(inId, inEnv)
+    local Frame f; Env fs; Ident id; Boolean b;
+    
+    case (_, {}) then false;
+    
+    // we found it
+    case (_, f::fs)
+      equation
+        _ = getItemInEnv(inId, {f});
+        b = isTopScope({f});
+      then 
+        b;
+    
+    // we haven't found it
+    case (_, f::fs)
+      equation
+        failure(_ = getItemInEnv(inId, {f}));
+        b = isIdentOnlyInTop(inId, fs);
+      then
+        b;
+  end matchcontinue;
+end isIdentOnlyInTop;
+
 end Env;
 

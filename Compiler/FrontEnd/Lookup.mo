@@ -125,14 +125,14 @@ algorithm
       then
         (cache, t, env);
 
-      // For simple names
+    // For simple names
     case (cache,env,(path as Absyn.IDENT(name = _)),_)
       equation
         (cache,t,env_1) = lookupTypeInEnv(cache,env,path);
       then
         (cache,t,env_1);
 
-      // Special classes (function, record, metarecord, external object)
+    // Special classes (function, record, metarecord, external object)
     case (cache,env,path,_)
       equation
         (cache,c,env_1) = lookupClass(cache,env,path,false);
@@ -140,7 +140,7 @@ algorithm
       then
         (cache,t,env_2);
 
-       // Error for type not found
+    // Error for type not found
     case (cache,env,path,SOME(info))
       equation
         classname = Absyn.pathString(path);
@@ -178,6 +178,14 @@ algorithm
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
       DAE.TypeSource ts;
+
+    /*/ possibly qualified path
+    case (cache,env_1,path,c)
+      equation
+        path = Env.pathStripEnvIfFullyQualifedInEnv(path, env_1);
+        (cache,t,env_1) = lookupType2(cache,env_1,path,c); 
+      then
+        (cache,t,env_1);*/
 
     // Record constructors
     case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
@@ -335,14 +343,23 @@ public function lookupClass "Tries to find a specified class in an environment"
   output SCode.Element outClass;
   output Env.Env outEnv;
 algorithm
-  /*
-  (Env.CLASS(cls = outClass, env = outEnv), _, _) :=
-    FLookup.lookupClassName(inPath, inEnv, Absyn.dummyInfo);
-  outCache := inCache;
-  */
   // print("Lookup C1: " +& Absyn.pathString(inPath) +& " env: " +& Env.printEnvPathStr(inEnv) +& " msg: " +& boolString(msg) +& "\n");
-  (outCache,outClass,outEnv,_) := lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
-  // outEnv := selectUpdatedEnv(inEnv, outEnv);
+  (outCache,outClass,outEnv) := matchcontinue(inCache, inEnv, inPath, msg)
+    local Absyn.Path p;
+    /*/ strip fully qualified paths in this env 
+    case (_, _, _, _)
+      equation
+         p = Env.pathStripEnvIfFullyQualifedInEnv(inPath, inEnv);
+         (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, p, {}, Util.makeStatefulBoolean(false), msg);
+      then
+        (outCache,outClass,outEnv);*/
+    // normal case
+    case (_, _, _, _)
+      equation
+         (outCache,outClass,outEnv,_) = lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
+      then
+        (outCache,outClass,outEnv);
+  end matchcontinue;
   // print("Lookup C2: " +& " outenv: " +& Env.printEnvPathStr(outEnv) +& "\n");
 end lookupClass;
 
@@ -1021,6 +1038,15 @@ algorithm
       then
         fail();
     */
+    
+    /*/ strip fully qualified crefs
+    case (cache,env,cref)
+      equation
+        cref = Env.daeCrefStripEnvIfFullyQualifedInEnv(cref, env);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVar(cache, env, cref);
+      then
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv,name);*/
+    
     // try the old lookupVarInternal
     case (cache,env,cref)
       equation
@@ -1495,6 +1521,14 @@ algorithm
       Absyn.Path id, scope;
       Absyn.Info info;
 
+    /*/ strip env if path is fully qualified in env
+    case (cache,env,id,info)
+      equation
+        id = Env.pathStripEnvIfFullyQualifedInEnv(id, env);
+        (cache,res) = lookupFunctionsInEnv(cache,env,id,info);
+      then
+        (cache,res);*/
+
     // we might have a component reference, i.e. world.gravityAcceleration
     case (cache,env,Absyn.QUALIFIED(name, id),info)
       equation
@@ -1662,7 +1696,7 @@ algorithm
     // For qualified function names, e.g. Modelica.Math.sin
     case (cache,(env as (Env.FRAME(name = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path),_,_)
       equation
-        (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, Absyn.IDENT(pack), false) ;
+        (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, Absyn.IDENT(pack), false);
         env2 = Env.openScope(env_1, encflag, SOME(str), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
 

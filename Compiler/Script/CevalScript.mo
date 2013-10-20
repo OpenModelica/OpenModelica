@@ -1098,7 +1098,7 @@ algorithm
         p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
         str = Debug.bcallret2(name ==& "Absyn", Dump.unparseStr, p, false, "");
         str = Debug.bcallret1(name ==& "Internal", System.anyStringCode, p, str);
-        scodeP = Debug.bcallret2(name ==& "SCode", SCodeUtil.translateAbsyn2SCode2, p, false, {});
+        scodeP = Debug.bcallret1(name ==& "SCode", SCodeUtil.translateAbsyn2SCode, p, {});
         str = Debug.bcallret1(name ==& "SCode", SCodeDump.programStr, scodeP, str);
       then
         (cache,Values.STRING(str),st);
@@ -1931,7 +1931,7 @@ algorithm
 
     case (cache,env,"generateSeparateCodeDependencies",{Values.STRING(suffix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation
-        sp = SCodeUtil.translateAbsyn2SCode2(p,false);
+        sp = SCodeUtil.translateAbsyn2SCode(p);
         names = List.filterMap(sp,SCode.getElementName);
         
         deps = Graph.buildGraph(names,buildDependencyGraph,sp);
