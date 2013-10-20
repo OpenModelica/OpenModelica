@@ -1453,7 +1453,7 @@ protected function handleSets "author: Frenkel TUD 2012-12
   convert the found simple equtions to replacements and remove the simple 
   variabes from the variables"
   input Integer index "downwarts";
-  input Integer mark;
+  input Integer inMark;
   input array<SimpleContainer> simpleeqnsarr;
   input array<list<Integer>> iMT;
   input HashSet.HashSet unreplacable;
@@ -1466,8 +1466,45 @@ protected function handleSets "author: Frenkel TUD 2012-12
   output BackendDAE.Shared oshared;
   output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  (oVars, oEqnslst, oshared, oRepl):=
-  matchcontinue (index, mark, simpleeqnsarr, iMT, unreplacable, iVars, iEqnslst, ishared, iRepl)
+  (oVars, oEqnslst, oshared, oRepl) := match (index, inMark, simpleeqnsarr, iMT, unreplacable, iVars, iEqnslst, ishared, iRepl)
+    local
+      Option<tuple<Integer, Integer>> rmax, smax;
+      Option<Integer> unremovable, const;
+      Integer mark;
+      BackendDAE.Variables vars;
+      list<BackendDAE.Equation> eqnslst;
+      BackendDAE.Shared shared;
+      BackendVarTransform.VariableReplacements repl;
+    case (0, _, _, _, _, _, _, _, _) then (iVars, iEqnslst, ishared, iRepl);
+    else
+      equation
+        (mark, vars, eqnslst, shared, repl) = handleSetsWork(intGt(getVisited(simpleeqnsarr[index]), 0), index, inMark, simpleeqnsarr, iMT, unreplacable, iVars, iEqnslst, ishared, iRepl);
+        (vars, eqnslst, shared, repl) = handleSets(index-1, mark, simpleeqnsarr, iMT, unreplacable, vars, eqnslst, shared, repl);
+      then
+        (vars, eqnslst, shared, repl);
+  end match;
+end handleSets;
+
+protected function handleSetsWork "author: Frenkel TUD 2012-12
+  convert the found simple equtions to replacements and remove the simple 
+  variabes from the variables"
+  input Boolean isVisited;
+  input Integer index "downwarts";
+  input Integer mark;
+  input array<SimpleContainer> simpleeqnsarr;
+  input array<list<Integer>> iMT;
+  input HashSet.HashSet unreplacable;
+  input BackendDAE.Variables iVars;
+  input list<BackendDAE.Equation> iEqnslst;
+  input BackendDAE.Shared iShared;
+  input BackendVarTransform.VariableReplacements iRepl;
+  output Integer oMark;
+  output BackendDAE.Variables oVars;
+  output list<BackendDAE.Equation> oEqnslst;
+  output BackendDAE.Shared oshared;
+  output BackendVarTransform.VariableReplacements oRepl;
+algorithm
+  (oMark, oVars, oEqnslst, oshared, oRepl) := match (isVisited, index, mark, simpleeqnsarr, iMT, unreplacable, iVars, iEqnslst, iShared, iRepl)
     local
       Option<tuple<Integer, Integer>> rmax, smax;
       Option<Integer> unremovable, const;
@@ -1476,25 +1513,17 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
       BackendVarTransform.VariableReplacements repl;
-    case (0, _, _, _, _, _, _, _, _) then (iVars, iEqnslst, ishared, iRepl);
-    case (_, _, _, _, _, _, _, _, _)
-      equation
-        true = intGt(getVisited(simpleeqnsarr[index]), 0);
-        (vars, eqnslst, shared, repl) = handleSets(index-1, mark, simpleeqnsarr, iMT, unreplacable, iVars, iEqnslst, ishared, iRepl);
-      then
-        (vars, eqnslst, shared, repl);
-   case (_, _, _, _, _, _, _, _, _)
+    case (true, _, _, _, _, _, _, _, _, _)
+      then (mark, iVars, iEqnslst, iShared, iRepl);
+   else
       equation
         // collect set
         (rmax, smax, unremovable, const, _) = getAlias({index}, NONE(), mark, simpleeqnsarr, iMT, iVars, unreplacable, false, {}, NONE(), NONE(), NONE(), NONE());
         // traverse set and add replacements, move vars, ...
-        (vars, eqnslst, shared, repl) = handleSet(rmax, smax, unremovable, const, mark+1, simpleeqnsarr, iMT, unreplacable, iVars, iEqnslst, ishared, iRepl);
-        // next
-        (vars, eqnslst, shared, repl) = handleSets(index-1, mark+2, simpleeqnsarr, iMT, unreplacable, vars, eqnslst, shared, repl);
-      then
-        (vars, eqnslst, shared, repl);
-  end matchcontinue;
-end handleSets;
+        (vars, eqnslst, shared, repl) = handleSet(rmax, smax, unremovable, const, mark+1, simpleeqnsarr, iMT, unreplacable, iVars, iEqnslst, iShared, iRepl);
+      then (mark+2, vars, eqnslst, shared, repl);
+  end match;
+end handleSetsWork;
 
 protected function getAlias "author: Frenkel TUD 2012-12
   traverse the simple tree to find the variable we keep"
