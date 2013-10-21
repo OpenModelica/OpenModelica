@@ -673,9 +673,14 @@ extern const char* System_getMakeCommand()
 
 extern const char* System_snprintff(const char *fmt, int len, double d)
 {
-  char *buf = ModelicaAllocateString(len);
-  if (snprintf(buf,len,fmt,d) >= len)
+  char *buf;
+  if (len < 0) {
     MMC_THROW();
+  }
+  buf = ModelicaAllocateString(len);
+  if (snprintf(buf,len,fmt,d) >= len) {
+    MMC_THROW();
+  }
   return buf;
 }
 

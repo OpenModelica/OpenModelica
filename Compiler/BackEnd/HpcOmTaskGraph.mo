@@ -2448,7 +2448,7 @@ algorithm
         ((schedulerThreadId,schedulerTaskNumber)) = arrayGet(schedulerInfo,nodeIdx);
         threadIdxString = "Th " +& intString(schedulerThreadId);
         taskNumberString = intString(schedulerTaskNumber);
-        calcTimeString = System.snprintff("%.0f", -1, calcTime);
+        calcTimeString = System.snprintff("%.0f", 25, calcTime);
         additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), componentsString, GraphML.COLOR_ORANGE, GraphML.RECTANGLE(), SOME(nodeDesc), {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)),((yCoordAttIdx,yCoordString)),((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, additionalLabels, iGraph);
@@ -2480,7 +2480,7 @@ algorithm
         threadIdxString = "Th " +& intString(schedulerThreadId);
         taskNumberString = intString(schedulerTaskNumber);
         
-        calcTimeString = System.snprintff("%.0f", -1, calcTime);
+        calcTimeString = System.snprintff("%.0f", 25, calcTime);
         additionalLabels = {GraphML.NODELABEL_CORNER(calcTimeString, GraphML.COLOR_YELLOW, GraphML.FONTBOLD(), "se")};
         //print("Node " +& intString(nodeIdx) +& " has child nodes " +& stringDelimitList(List.map(childNodes,intString),", ") +& "\n");
         tmpGraph = GraphML.addNode("Node" +& intString(nodeIdx), componentsString, GraphML.COLOR_ORANGE, GraphML.RECTANGLE(), SOME(nodeDesc), {((nameAttIdx,compText)),((calcTimeAttIdx,calcTimeString)),((opCountAttIdx, opCountString)),((taskIdAttIdx,componentsString)), ((simCodeEqAttIdx,simCodeEqString)),((threadIdAttIdx,threadIdxString)),((taskNumberAttIdx,taskNumberString))}, additionalLabels, iGraph);

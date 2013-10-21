@@ -1702,10 +1702,16 @@ RML_BEGIN_LABEL(System__snprintff)
   const char *fmt = RML_STRINGDATA(rmlA0);
   long len = RML_UNTAGFIXNUM(rmlA1);
   double d = rml_prim_get_real(rmlA2);
-  char buf[len];
-  snprintf(buf,len,fmt,d);
-  buf[len-1] = 0;
-  rmlA0 = mk_scon(buf);
+  if (len > 0) {
+    char buf[len];
+    if (snprintf(buf,len,fmt,d) >= len) {
+      RML_TAILCALLK(rmlFC);
+    }
+    buf[len-1] = 0;
+    rmlA0 = mk_scon(buf);
+  } else {
+    RML_TAILCALLK(rmlFC);
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
