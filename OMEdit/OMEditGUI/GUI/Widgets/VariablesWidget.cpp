@@ -190,7 +190,7 @@ void VariablesWidget::createActions()
 
 void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath, QStringList plotVariablesList)
 {
-  mpVariablesTreeWidget->blockSignals(true);
+  bool state = mpVariablesTreeWidget->blockSignals(true);
   // Remove the simulation result if we already had it in tree
   if (!filePath.endsWith('/'))
     filePath = filePath.append("/");
@@ -277,7 +277,7 @@ void VariablesWidget::addPlotVariablestoTree(QString fileName, QString filePath,
       parentStructure.append(".").append(variables[i]);
     }
   }
-  mpVariablesTreeWidget->blockSignals(false);
+  mpVariablesTreeWidget->blockSignals(state);
   if (isResultFileRemoved)
     emit resultFileUpdated(mpVariablesTreeWidget);
   // sort items and expand the current plot variables node.
@@ -354,9 +354,9 @@ void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindo
       pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
     if (!pPlotWindow)
     {
-      mpVariablesTreeWidget->blockSignals(true);
+      bool state = mpVariablesTreeWidget->blockSignals(true);
       pItem->setCheckState(column, Qt::Unchecked);
-      mpVariablesTreeWidget->blockSignals(false);
+      mpVariablesTreeWidget->blockSignals(state);
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                                tr("No plot window is active for plotting. Please select a plot window or open a new."), Helper::ok);
       return;
@@ -412,11 +412,11 @@ void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindo
           {
             if (mFileName.compare(pItem->getFileName()) != 0)
             {
-              mpVariablesTreeWidget->blockSignals(true);
+              bool state = mpVariablesTreeWidget->blockSignals(true);
               pItem->setCheckState(0, Qt::Unchecked);
               QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                                     GUIMessages::getMessage(GUIMessages::PLOT_PARAMETRIC_DIFF_FILES), Helper::ok);
-              mpVariablesTreeWidget->blockSignals(false);
+              mpVariablesTreeWidget->blockSignals(state);
               return;
             }
             mPlotParametricVariables.last().append(QStringList(pItem->getPlotVariable()));
@@ -463,7 +463,7 @@ void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindo
                 QString curveTitle = pPlotCurve->title().text();
                 if ((curveTitle.compare(itemTitle) == 0) and (pItem->getFileName().compare(pPlotCurve->getFileName()) == 0))
                 {
-                  mpVariablesTreeWidget->blockSignals(true);
+                  bool state = mpVariablesTreeWidget->blockSignals(true);
                   // uncheck the x variable
                   QString xVariable = QString(pPlotCurve->getFileName()).append(".").append(pPlotCurve->getXVariable());
                   VariableTreeItem *pTreeItem;
@@ -475,7 +475,7 @@ void VariablesWidget::plotVariables(QTreeWidgetItem *item, int column, PlotWindo
                   pTreeItem = mpVariablesTreeWidget->getVariableTreeItem(yVariable);
                   if (pTreeItem)
                     pTreeItem->setCheckState(0, Qt::Unchecked);
-                  mpVariablesTreeWidget->blockSignals(false);
+                  mpVariablesTreeWidget->blockSignals(state);
                   pPlotWindow->getPlot()->removeCurve(pPlotCurve);
                   pPlotCurve->detach();
                   pPlotWindow->fitInView();
@@ -519,7 +519,7 @@ void VariablesWidget::updatePlotVariablesTree(QMdiSubWindow *window)
   if (!window and mpMainWindow->getPlotWindowContainer()->subWindowList().size() != 0)
     return;
   // first clear all the check boxes in the tree
-  mpVariablesTreeWidget->blockSignals(true);
+  bool state = mpVariablesTreeWidget->blockSignals(true);
   QTreeWidgetItemIterator it(mpVariablesTreeWidget);
   while (*it)
   {
@@ -527,14 +527,14 @@ void VariablesWidget::updatePlotVariablesTree(QMdiSubWindow *window)
       (*it)->setCheckState(0, Qt::Unchecked);
     ++it;
   }
-  mpVariablesTreeWidget->blockSignals(false);
+  mpVariablesTreeWidget->blockSignals(state);
   // all plotwindows are closed down then simply return
   if (mpMainWindow->getPlotWindowContainer()->subWindowList().size() == 0)
     return;
 
   PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(window->widget());
   // now loop through the curves and tick variables in the tree whose curves are on the plot
-  mpVariablesTreeWidget->blockSignals(true);
+  state = mpVariablesTreeWidget->blockSignals(true);
   foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList())
   {
     VariableTreeItem *pTreeItem;
@@ -558,7 +558,7 @@ void VariablesWidget::updatePlotVariablesTree(QMdiSubWindow *window)
         pTreeItem->setCheckState(0, Qt::Checked);
     }
   }
-  mpVariablesTreeWidget->blockSignals(false);
+  mpVariablesTreeWidget->blockSignals(state);
 }
 
 void VariablesWidget::showContextMenu(QPoint point)

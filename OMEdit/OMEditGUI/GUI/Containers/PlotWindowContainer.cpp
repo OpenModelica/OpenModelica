@@ -202,10 +202,10 @@ void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeW
         pPlotWindow->getPlot()->updateGeometry();
         if (pVariableTreeItem)
         {
-          pVariablesTreeWidget->blockSignals(true);
+          bool state = pVariablesTreeWidget->blockSignals(true);
           pVariableTreeItem->setCheckState(0, Qt::Checked);
           pVariablesTreeWidget->getVariablesWidget()->plotVariables(pVariableTreeItem, 0, pPlotWindow);
-          pVariablesTreeWidget->blockSignals(false);
+          pVariablesTreeWidget->blockSignals(state);
         }
       }
       else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
@@ -216,12 +216,12 @@ void PlotWindowContainer::updatePlotWindows(VariablesTreeWidget *pVariablesTreeW
         VariableTreeItem *pYVariableTreeItem = pVariablesTreeWidget->getVariableTreeItem(yVariable);
         if (pXVariableTreeItem && pYVariableTreeItem)
         {
-          pVariablesTreeWidget->blockSignals(true);
+          bool state = pVariablesTreeWidget->blockSignals(true);
           pXVariableTreeItem->setCheckState(0, Qt::Checked);
           pVariablesTreeWidget->getVariablesWidget()->plotVariables(pXVariableTreeItem, 0, pPlotWindow);
           pYVariableTreeItem->setCheckState(0, Qt::Checked);
           pVariablesTreeWidget->getVariablesWidget()->plotVariables(pYVariableTreeItem, 0, pPlotWindow);
-          pVariablesTreeWidget->blockSignals(false);
+          pVariablesTreeWidget->blockSignals(state);
         }
         else
         {
