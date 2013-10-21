@@ -2316,7 +2316,7 @@ algorithm
   oSccIdc := ((iCurrentIdx,iSccIdx))::iSccIdc; 
 end appendSccIdx;
 
-public function createEquations
+protected function createEquations
   input Boolean includeWhen;
   input Boolean skipDiscInZc;
   input Boolean genDiscrete;
@@ -2332,7 +2332,28 @@ public function createEquations
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
 algorithm
-  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := matchcontinue (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comps, iuniqueEqIndex, itempvars)
+  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := createEquations1(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comps, iuniqueEqIndex, itempvars, {}, {});
+end createEquations;
+
+protected function createEquations1
+  input Boolean includeWhen;
+  input Boolean skipDiscInZc;
+  input Boolean genDiscrete;
+  input Boolean skipDiscInAlgorithm;
+  input Boolean linearSystem "if true always generate a linear system";
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.StrongComponents comps;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  input list<list<SimCode.SimEqSystem>> accEquations;
+  input list<list<SimCode.SimEqSystem>> accNoDiscEquations;
+  output list<SimCode.SimEqSystem> equations;
+  output list<SimCode.SimEqSystem> noDiscEquations;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := match (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comps, iuniqueEqIndex, itempvars, accEquations, accNoDiscEquations)
     local
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents restComps;
@@ -2348,132 +2369,135 @@ algorithm
       BackendDAE.ExtraInfo ei;
       
       // handle empty
-    case (_, _, _, _, _, _, _, {}, _, _) then ({}, {}, iuniqueEqIndex, itempvars);
+    case (_, _, _, _, _, _, _, {}, _, _, _, _) then (List.flatten(listReverse(accEquations)), List.flatten(listReverse(accNoDiscEquations)), iuniqueEqIndex, itempvars);
       
       // ignore when equations if we should not generate them
-    case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index) :: restComps, _, _)
+    case (_, _, _, _, _, _, _, comp :: restComps, _, _, _, _)
+      equation
+        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquationsWork(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comp, iuniqueEqIndex, itempvars);
+        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations1(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars, equations::accEquations, noDiscEquations::accNoDiscEquations);
+      then (equations, noDiscEquations, uniqueEqIndex, tempvars);
+  end match;
+end createEquations1;
+
+protected function createEquationsWork
+  input Boolean includeWhen;
+  input Boolean skipDiscInZc;
+  input Boolean genDiscrete;
+  input Boolean skipDiscInAlgorithm;
+  input Boolean linearSystem "if true always generate a linear system";
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendDAE.StrongComponent comp;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimEqSystem> equations;
+  output list<SimCode.SimEqSystem> noDiscEquations;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+  (equations, noDiscEquations, ouniqueEqIndex, otempvars) := matchcontinue (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comp, iuniqueEqIndex, itempvars)
+    local
+      Integer index, vindex, uniqueEqIndex;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.Var v;
+      list<BackendDAE.Equation> eqnlst;
+      list<BackendDAE.Var> varlst;
+      list<Integer> zcEqns;
+      list<SimCode.SimEqSystem> equations_, equations1, noDiscEquations1;
+      list<SimCode.SimVar> tempvars;
+      BackendDAE.ExtraInfo ei;
+      
+      // ignore when equations if we should not generate them
+    case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index), _, _)
       equation
         BackendDAE.WHEN_EQUATION(size=_) = BackendDAEUtil.equationNth(eqns, index-1);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, iuniqueEqIndex, itempvars);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);
+      then ({}, {}, iuniqueEqIndex, itempvars);
 
-    case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=_) :: restComps, _, _)
-      equation
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, iuniqueEqIndex, itempvars);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);
+    case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=_), _, _)
+      then ({}, {}, iuniqueEqIndex, itempvars);
         
         // ignore discrete if we should not generate them
-    case (_, _, false, _, _, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(var=index) :: restComps, _, _)
+    case (_, _, false, _, _, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(var=index), _, _)
       equation
         v = BackendVariable.getVarAt(vars, index);
         true = BackendVariable.isVarDiscrete(v);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, false, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, iuniqueEqIndex, itempvars);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);
-    case (_, _, false, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=_) :: restComps, _, _)
-      equation
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, iuniqueEqIndex, itempvars);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);        
+      then ({}, {}, iuniqueEqIndex, itempvars);
+    case (_, _, false, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=_), _, _)
+      then ({}, {}, iuniqueEqIndex, itempvars);
         
         // ignore discrete in zero crossing if we should not generate them
-    case (_, true, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex) :: restComps, _, _)
+    case (_, true, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex), _, _)
       equation
         v = BackendVariable.getVarAt(vars, vindex);
         true = BackendVariable.isVarDiscrete(v);
         zcEqns = BackendDAECreate.zeroCrossingsEquations(syst, shared);
         true = listMember(index, zcEqns);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, true, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, iuniqueEqIndex, itempvars);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);
+      then ({}, {}, iuniqueEqIndex, itempvars);
         
         // single equation 
-    case (_, _, _, _, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex) :: restComps, _, _)
+    case (_, _, _, _, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index, var=vindex), _, _)
       equation
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, linearSystem, skipDiscInAlgorithm, iuniqueEqIndex, itempvars);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars);
-        equations = listAppend(equations1, equations);
-        noDiscEquations = listAppend(equations1, noDiscEquations);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);
+      then (equations1, equations1, uniqueEqIndex, tempvars);
        
       // A single array equation
-    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), 
-         BackendDAE.SHARED(info = ei), (comp as BackendDAE.SINGLEARRAY(eqn=index)) :: restComps, _, _)
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLEARRAY(eqn=index), _, _)
       equation
         (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, transformXToXd);
         (equations1, noDiscEquations1, uniqueEqIndex, tempvars) = createSingleArrayEqnCode(genDiscrete, eqnlst, varlst, iuniqueEqIndex, itempvars, ei);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars);
-        equations = listAppend(equations1, equations);
-        noDiscEquations = listAppend(noDiscEquations1, noDiscEquations);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);
+      then (equations1, noDiscEquations1, uniqueEqIndex, tempvars);
         
         // A single algorithm section for several variables.
-    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (comp as BackendDAE.SINGLEALGORITHM(eqn=index)) :: restComps, _, _)
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEALGORITHM(eqn=index), _, _)
       equation
         (eqnlst, varlst, _) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         varlst = List.map(varlst, transformXToXd);
         (equations1, uniqueEqIndex) = createSingleAlgorithmCode(eqnlst, varlst, skipDiscInAlgorithm, iuniqueEqIndex);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, itempvars);
-        equations = listAppend(equations1, equations);
-        noDiscEquations = listAppend(equations1, noDiscEquations);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);      
+      then (equations1, equations1, uniqueEqIndex, itempvars);
        
       // A single complex equation
-    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=index)) :: restComps, _, _)
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLECOMPLEXEQUATION(eqn=index), _, _)
       equation
         (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, transformXToXd);
         (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listGet(eqnlst, 1), varlst, iuniqueEqIndex, itempvars);
-        (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars);
-        equations = listAppend(equations1, equations);
-        noDiscEquations = listAppend(equations1, noDiscEquations);
-      then
-        (equations, noDiscEquations, uniqueEqIndex, tempvars);
+      then (equations1, equations1, uniqueEqIndex, tempvars);
           
     // A single when equation
-    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (comp as BackendDAE.SINGLEWHENEQUATION(eqn=index)) :: restComps, _, _) equation
-      (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
-      // States are solved for der(x) not x.
-      varlst = List.map(varlst, transformXToXd);
-      (equations1, uniqueEqIndex, tempvars) = createSingleWhenEqnCode(listGet(eqnlst, 1), varlst, shared, iuniqueEqIndex, itempvars);
-      (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars);
-      equations = listAppend(equations1, equations);
-      noDiscEquations = listAppend(equations1, noDiscEquations);
-    then (equations, noDiscEquations, uniqueEqIndex, tempvars);
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=index), _, _)
+      equation
+        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        // States are solved for der(x) not x.
+        varlst = List.map(varlst, transformXToXd);
+        (equations1, uniqueEqIndex, tempvars) = createSingleWhenEqnCode(listGet(eqnlst, 1), varlst, shared, iuniqueEqIndex, itempvars);
+      then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // A single if equation
-    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (comp as BackendDAE.SINGLEIFEQUATION(eqn=index)) :: restComps, _, _) equation
-      (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
-      // States are solved for der(x) not x.
-      varlst = List.map(varlst, transformXToXd);
-      (equations1, uniqueEqIndex, tempvars) = createSingleIfEqnCode(listGet(eqnlst, 1), varlst, shared, genDiscrete, iuniqueEqIndex, itempvars);
-      (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars);
-      equations = listAppend(equations1, equations);
-      noDiscEquations = listAppend(equations1, noDiscEquations);
-    then (equations, noDiscEquations, uniqueEqIndex, tempvars);
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEIFEQUATION(eqn=index), _, _)
+      equation
+        (eqnlst, varlst, index) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
+        // States are solved for der(x) not x.
+        varlst = List.map(varlst, transformXToXd);
+        (equations1, uniqueEqIndex, tempvars) = createSingleIfEqnCode(listGet(eqnlst, 1), varlst, shared, genDiscrete, iuniqueEqIndex, itempvars);
+      then (equations1, equations1, uniqueEqIndex, tempvars);
                  
     // a system of equations 
-    case (_, _, _, _, _, _, _, comp :: restComps, _, _) equation
-      (equations_, noDiscEquations1, uniqueEqIndex, tempvars, _) = createOdeSystem(genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comp, iuniqueEqIndex, itempvars, 1, {});
-      (equations, noDiscEquations, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, uniqueEqIndex, tempvars);
-      equations1 = listAppend(equations_, equations);
-      noDiscEquations = listAppend(noDiscEquations1, noDiscEquations);  
-    then (equations1, noDiscEquations, uniqueEqIndex, tempvars);
+    case (_, _, _, _, _, _, _, _, _, _)
+      equation
+        (equations1, noDiscEquations1, uniqueEqIndex, tempvars, _) = createOdeSystem(genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, comp, iuniqueEqIndex, itempvars, 1, {});
+      then (equations1, noDiscEquations1, uniqueEqIndex, tempvars);
        
     // failure
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"createEquation failed"});
     then fail();
   end matchcontinue;
-end createEquations;
+end createEquationsWork;
 
 protected function addAssertEqn
   input list<DAE.Statement> asserts;
