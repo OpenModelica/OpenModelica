@@ -8463,25 +8463,6 @@ algorithm
     
     case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        fn = Absyn.IDENT(name);
-        false = Absyn.pathEqual(inPath, fn);
-        print("P1: " +& Env.getEnvNameStr(inEnv) +& "/" +& Absyn.pathString(inPath) +& "\n" +& 
-              "N1: " +& name +& "\n-------------\n");
-      then 
-        fail();
-
-    case (_,DAE.T_FUNCTION(funcArg = _, source = {fn}), _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        false = Absyn.pathEqual(inPath, fn);
-        print("P2: " +& Env.getEnvNameStr(inEnv) +& "/" +& Absyn.pathString(inPath) +& "\n" +& 
-              "N2: " +& Absyn.pathString(fn) +& "\n-------------\n"); 
-      then 
-        fail();
-
-    case (_,tty as DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN(SOME(name)))), _)
-      equation
         fn = Absyn.IDENT(name);
         tty = Types.setTypeSource(tty,Types.mkTypeSource(SOME(fn)));
       then (fn,tty);
