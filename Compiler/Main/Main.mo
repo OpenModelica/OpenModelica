@@ -849,33 +849,22 @@ protected function serverLoopCorba
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
-  outInteractiveSymbolTable:=
-  matchcontinue (inInteractiveSymbolTable)
+  outInteractiveSymbolTable := match (inInteractiveSymbolTable)
     local
+      Boolean b;
       String str,replystr;
       GlobalScript.SymbolTable newsymb,ressymb,isymb;
     case (isymb)
       equation
         str = Corba.waitForCommand();
         Print.clearBuf();
-        (true,replystr,newsymb) = handleCommand(str, isymb);
-        Corba.sendreply(replystr);
-        ressymb = serverLoopCorba(newsymb);
-      then
-        ressymb;
-    case (isymb)
-      equation
-        str = Corba.waitForCommand() "start - 2005-06-12 - adrpo added this part to make the loop deterministic" ;
-        Print.clearBuf();
-        (false,replystr,newsymb) = handleCommand(str, isymb);
-        Print.printBuf("Exiting\n") "end - 2005-06-12 -" ;
-        Corba.sendreply("quit requested, shutting server down\n");
-        Corba.close();
-      then
-        isymb;
-  end matchcontinue;
+        (b,replystr,newsymb) = handleCommand(str, isymb);
+        Corba.sendreply(Util.if_(b,replystr,"quit requested, shutting server down\n"));
+        Debug.bcall0(not b,Corba.close);
+        ressymb = Debug.bcallret1(b,serverLoopCorba,newsymb,isymb);
+      then ressymb;
+  end match;
 end serverLoopCorba;
-
 
 protected function readSettings
 " author: x02lucpo
