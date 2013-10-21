@@ -486,7 +486,7 @@ void SimulationDialog::compileModel()
   args << "-j" + numProcs << "-f" << fileName + ".makefile";
   mIsCompilationProcessRunning = true;
 #ifdef WIN32
-  mpCompilationProcess->start("mingw32-make", args);
+  mpCompilationProcess->start(mCompilationProcessPath, args);
 #else
   mpCompilationProcess->start("make", args);
 #endif
@@ -509,9 +509,15 @@ void SimulationDialog::setProcessEnvironment(QProcess *pProcess)
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   const char *omdev = getenv("OMDEV");
   if (QString(omdev).isEmpty())
+  {
     environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW\\bin") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\libexec\\gcc\\mingw32\\4.4.0") + ";" + environment.value("PATH"));
+    mCompilationProcessPath = QString(Helper::OpenModelicaHome).append("MinGW\\bin\\mingw32-make.exe");
+  }
   else
+  {
     environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin") + ";" + QString(omdev).append(QDir::separator()).append("tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0") + ";" + environment.value("PATH"));
+    mCompilationProcessPath = QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin\\mingw32-make.exe");
+  }
   pProcess->setProcessEnvironment(environment);
 #endif
 }
@@ -944,7 +950,15 @@ void SimulationDialog::compilationProcessError(QProcess::ProcessError processErr
   mIsCompilationProcessRunning = false;
   if (!mIsCancelled)
   {
-    writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+    switch (processError)
+    {
+      case QProcess::FailedToStart:
+        writeCompilationOutput(mpCompilationProcess->errorString() + " " + mCompilationProcessPath, Qt::red);
+        break;
+      default:
+        writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+        break;
+    }
   }
 }
 
