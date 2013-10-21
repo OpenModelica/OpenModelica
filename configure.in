@@ -74,6 +74,8 @@ AC_SUBST(AR_SH)
 AC_SUBST(CPPFLAGS_F2C)
 AC_SUBST(LDFLAGS_SOCKET)
 AC_SUBST(APP)
+AC_SUBST(OMC)
+AC_SUBST(OMCTARGET)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -152,7 +154,21 @@ fi # End x86-specific CFLAGS
 
 dnl check for environment variables
 
-AC_ARG_WITH(rml,  [  --with-rml=[yes]       (use =no if you are using experimental bootstrapping)],[WANT_RML="$withval"],[WANT_RML="yes"])
+AC_ARG_WITH(omc,  [  --with-omc=[omc]       (the installed omc path which we will use to compile omc)],[OMC=`readlink "$withval"`],[OMC=`which omc`;OMC=`readlink "$OMC"`])
+
+AC_MSG_CHECKING([for omc])
+
+if test "$WANT_OMC" = "no" ; then
+  AC_MSG_RESULT([building it through bootstrapping (not recommended since you might end up unable to recompile omc)])
+  OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
+elif "$OMC" ++v >& /dev/null; then
+  AC_MSG_RESULT([$OMC])
+else
+  AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (not recommended since you might end up unable to recompile omc).])
+  OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
+fi
+
+AC_ARG_WITH(rml,  [  --with-rml=[no]       (use =no if you are using experimental bootstrapping)],[WANT_RML="$withval";OMCTARGET=omc-rml],[WANT_RML="yes";OMCTARGET=omc-rml])
 
 if test "$WANT_RML" != "no"; then
 AC_MSG_CHECKING([for \$RMLHOME])
@@ -195,7 +211,6 @@ AC_MSG_RESULT([no])
 else
 AC_MSG_RESULT([yes])
 fi
-
 else
   rmlhome=CONFIGUREDWITHOUTRMLDONTTRYTHISMAKEFILETARGETAGAIN
 fi

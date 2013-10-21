@@ -41,11 +41,11 @@ include Makefile.common
 .testvariables:
 settings:
 
-omc: omc-diff interactive docs fmi fmil opencl_rt lis
+omc: @OMCTARGET@
+
+omc-rml: omc-diff interactive docs fmi fmil opencl_rt lis
 	(cd Compiler && $(MAKE) -f Makefile release)
 	$(MAKE) omlibrary
-omcd: omc-diff interactive docs fmi fmil opencl_rt lis
-	(cd Compiler && $(MAKE) -f Makefile debug)
 
 boehm-gc-lib: @LIBGC@
 build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so mkbuilddirs
@@ -98,6 +98,9 @@ qtclean: qtclean-common
 	$(MAKE) -C OMOptimBasis/build -f Makefile.unix clean
 endif
 
+omc-bootstrapped:
+	if test -f @OMC@; then $(MAKE) bootstrap-from-compiled; else $(MAKE) bootstrap-from-tarball; fi
+
 # configure --without-rml works using this target
 bootstrap-from-tarball:
 	$(MAKE) bootstrap-dependencies
@@ -107,7 +110,7 @@ bootstrap-from-tarball:
 
 # configure --without-rml works using this target, but requires a compiled omc (either from bootstrap or regular one)
 bootstrap-from-compiled:
-	test -f build/bin/omc
+	test -f @OMC@
 	$(MAKE) bootstrap-dependencies
 	$(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-compiled
 	$(MAKE) omlibrary
