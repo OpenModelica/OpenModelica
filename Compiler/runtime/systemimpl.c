@@ -252,6 +252,7 @@ extern char* SystemImpl__pwd(void)
   char buf[MAXPATHLEN];
 #if defined(__MINGW32__) || defined(_MSC_VER)
   char* buf2,buf3;
+  int i;
   LPTSTR bufPtr=buf;
   DWORD bufLen = MAXPATHLEN;
   if (!GetCurrentDirectory(bufLen,bufPtr)) {
