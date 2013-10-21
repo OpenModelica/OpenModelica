@@ -485,7 +485,11 @@ void SimulationDialog::compileModel()
     fileName = mpFileNameTextBox->text();
   args << "-j" + numProcs << "-f" << fileName + ".makefile";
   mIsCompilationProcessRunning = true;
+#ifdef WIN32
+  mpCompilationProcess->start("mingw32-make", args);
+#else
   mpCompilationProcess->start("make", args);
+#endif
   while (mpCompilationProcess->state() == QProcess::Starting || mpCompilationProcess->state() == QProcess::Running)
   {
     if (!mIsCompilationProcessRunning)
@@ -670,6 +674,7 @@ void SimulationDialog::writeSimulationOutput(QString output, QColor color)
   SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mSimulationOutputWidgetsList.last());
   if (pSimulationOutputWidget)
   {
+    pSimulationOutputWidget->getGeneratedFilesTabWidget()->setTabEnabled(0, true);
     /* move the cursor down before adding to the logger. */
     QTextCursor textCursor = pSimulationOutputWidget->getSimulationOutputTextBox()->textCursor();
     textCursor.movePosition(QTextCursor::End);
@@ -1145,6 +1150,7 @@ SimulationOutputWidget::SimulationOutputWidget(QString className, QString output
   mpSimulationOutputTextBox = new QPlainTextEdit;
   mpSimulationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpGeneratedFilesTabWidget->addTab(mpSimulationOutputTextBox, Helper::output);
+  mpGeneratedFilesTabWidget->setTabEnabled(0, false);
   // Compilation Output TextBox
   mpCompilationOutputTextBox = new QPlainTextEdit;
   mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
