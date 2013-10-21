@@ -513,9 +513,12 @@ template simulationFile(SimCode simCode, String guid)
     /* call the simulation runtime main from our main! */
     int main(int argc, char**argv)
     {
+      int res;
       DATA data;
       setupDataStruc(&data);
-      return _main_SimulationRuntime(argc, argv, &data);
+      GC_init();
+      res = _main_SimulationRuntime(argc, argv, &data);
+      return res;
     }
     <%\n%>
     >>
@@ -1006,7 +1009,6 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
         <<
         <%preExp%>
         <%cref(var.name)%> = <%arg%>;
-        restore_memory_state(mem_state);
         >>
       ;separator="\n")
 
@@ -1015,8 +1017,6 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
     void callExternalObjectConstructors(DATA *data)
     {
       <%varDecls%>
-      state mem_state;
-      mem_state = get_memory_state();
       /* data->simulationInfo.extObjs = NULL; */
       INFO(LOG_DEBUG, "call external Object Constructors");
       <%ctorCalls%>
@@ -1431,16 +1431,13 @@ template functionNonLinearResiduals(list<SimEqSystem> allEquations)
      void residualFunc<%index%>(void* dataIn, double* xloc, double* res, integer* iflag)
      {
        DATA* data = (DATA*) dataIn;
-       state mem_state;
        <%varDecls%>
        #ifdef _OMC_MEASURE_TIME
        SIM_PROF_ADD_NCALL_EQ(modelInfoXmlGetEquation(&data->modelData.modelDataXml,<%index%>).profileBlockIndex,1);
        #endif
-       mem_state = get_memory_state();
        <%xlocs%>
        <%prebody%>
        <%body%>
-       restore_memory_state(mem_state);
      }
    >>
    )
@@ -1547,16 +1544,13 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   let body = (parameterEquations |> eq  =>
       <<
       <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)%>
-      restore_memory_state(mem_state);
       >>
     ;separator="\n")
   <<
   <%&tmp%>
   int updateBoundParameters(DATA *data)
   {
-    state mem_state;
     <%varDecls%>
-    mem_state = get_memory_state();
     <%body%>
 
     return 0;
@@ -1619,15 +1613,12 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   int initial_residual(DATA *data, double *initialResiduals)
   {
     int i = 0;
-    state mem_state;
     <%varDecls%>
 
-    mem_state = get_memory_state();
     INFO(LOG_RES_INIT, "updating initial residuals");
     INDENT(LOG_RES_INIT);
     <%body%>
     RELEASE(LOG_RES_INIT);
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -1643,7 +1634,6 @@ template functionInitialEquations(Boolean useSymbolicInitialization, Boolean use
   let body = (initalEquations |> eq  =>
       <<
       <%equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)%>
-      restore_memory_state(mem_state);
       >>
     ;separator="\n")
 
@@ -1657,10 +1647,8 @@ template functionInitialEquations(Boolean useSymbolicInitialization, Boolean use
   const int useHomotopy = <%useHomotopyToInt%>; /* <%useHomotopy%> */
   int functionInitialEquations(DATA *data)
   {
-    state mem_state;
     <%varDecls%>
 
-    mem_state = get_memory_state();
     <%errorMsg%>
     data->simulationInfo.discreteCall = 1;
     <%body%>
@@ -1691,12 +1679,9 @@ template functionInlineEquations(list<SimEqSystem> inlineEquations)
   <%&tmp%>
   int functionInlineEquations(DATA *data)
   {
-    state mem_state;
     <%varDecls%>
 
-    mem_state = get_memory_state();
     <%body%>
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -1721,13 +1706,8 @@ template functionStoreDelayed(DelayedExpression delayed)
   <<
   int function_storeDelayed(DATA *data)
   {
-    state mem_state;
     <%varDecls%>
-
-    mem_state = get_memory_state();
     <%storePart%>
-    restore_memory_state(mem_state);
-
     return 0;
   }
   >>
@@ -1866,13 +1846,17 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
        funcs //just the one function
      case nFuncs then //2 and more
        let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
-       let head = if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
        let &varDecls += 'int id;<%\n%>'
-     
        let &loop +=
-         /* Text for the loop body that calls the equations */
+         if Flags.isSet(Flags.OPENMP) then /* Text for the loop body that calls the equations */
          <<
-         <%head%>
+         #pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)
+         for(id=0; id<<%nFuncs%>; id++) {
+           function<%name%>_systems[id](data);
+         }
+         >>
+         else
+         <<
          for(id=0; id<<%nFuncs%>; id++) {
            function<%name%>_systems[id](data);
          }
@@ -1894,10 +1878,7 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       <<
       static void function<%name%>_system<%n%>(DATA *data)
       {
-        state mem_state;
-        mem_state = get_memory_state();
         <%odeEqs%>
-        restore_memory_state(mem_state);
       }
       >>
    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
@@ -1909,8 +1890,6 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       static int initialized = 0;
       static void function<%name%>_system<%n%>(DATA *data)
       {
-        state mem_state;
-        mem_state = get_memory_state();
         omp_set_dynamic(0);
         //create locks
         <%locks%>
@@ -1925,7 +1904,6 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
         }
         
         <%taskEqs%>
-        restore_memory_state(mem_state);
       }
       >>      
 end functionXXX_system_HPCOM;
@@ -2107,10 +2085,7 @@ template functionXXX_system(list<SimEqSystem> derivativEquations, String name, I
   
   static void function<%name%>_system<%n%>(DATA *data)
   {
-    state mem_state;
-    mem_state = get_memory_state();
     <%odeEqs%>
-    restore_memory_state(mem_state);
   }
   >>
 end functionXXX_system;
@@ -2171,16 +2146,6 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   <%tmp%>
   <%systems%>
 
-  void function_initMemoryState()
-  {
-  #ifdef _OPENMP
-    push_memory_states(<% match noProc() case 0 then "omp_get_max_threads()" else noProc() %>);
-    get_thread_index = omp_get_thread_num;
-  #else
-    push_memory_states(1);
-  #endif
-  }
-
   int functionODE(DATA *data)
   {
   #ifdef _OMC_MEASURE_TIME
@@ -2188,12 +2153,9 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   #endif
     
     <%varDecls%>
-    state mem_state; /* We need to have separate memory pools for separate systems... */
-    mem_state = get_memory_state();
 
     data->simulationInfo.discreteCall = 0;
     <%loop%>
-    restore_memory_state(mem_state);
   #ifdef _OMC_MEASURE_TIME
     rt_accumulate(SIM_TIMER_FUNCTION_ODE);
   #endif
@@ -2214,14 +2176,11 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
    */
   int functionODE_inline(DATA* data, double stepSize)
   {
-    state mem_state;
     <%varDecls2%>
     data->simulationInfo.discreteCall = 0;
-    mem_state = get_memory_state();
     begin_inline();
     <%stateContPartInline%>
     end_inline();
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -2269,12 +2228,9 @@ template functionAliasEquation(list<SimEqSystem> removedEquations)
   /* for continuous time variables */
   int functionAliasEquations(DATA *data)
   {
-    state mem_state;
     <%varDecls%>
     data->simulationInfo.discreteCall = 0;
-    mem_state = get_memory_state();
     <%removedPart%>
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -2298,14 +2254,11 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   <%&tmp%>
   int functionDAE(DATA *data)
   {
-    state mem_state;
     <%varDecls%>
     data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
-    mem_state = get_memory_state();
     <%eqs%>
     <%reinit%>
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -2341,12 +2294,9 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings)
 
   int function_ZeroCrossings(DATA *data, double *gout, double *t)
   {
-    state mem_state;
     <%varDecls%>
 
-    mem_state = get_memory_state();
     <%zeroCrossingsCode%>
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -2455,10 +2405,8 @@ template functionRelations(list<ZeroCrossing> relations) "template functionRelat
 
   int function_updateRelations(DATA *data, int evalforZeroCross)
   {
-    state mem_state;
     <%varDecls%>
 
-    mem_state = get_memory_state();
     if(evalforZeroCross)
     {
       <%relationsCode%>
@@ -2467,7 +2415,6 @@ template functionRelations(list<ZeroCrossing> relations) "template functionRelat
     {
       <%relationsCodeElse%>
     }
-    restore_memory_state(mem_state);
 
     return 0;
   }
@@ -2855,13 +2802,10 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   <%&tmp%>
   int functionJac<%matrixName%>_column(void* inData)
   {
-    state mem_state;
     DATA* data = ((DATA*)inData);
     int index = INDEX_JAC_<%matrixName%>;
     <%varDecls%>
-    mem_state = get_memory_state();
     <%eqns_%>
-    restore_memory_state(mem_state);
     return 0;
   }
   >>
@@ -3803,7 +3747,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%> -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME
   LIBSIMULATIONRUNTIMEC=<% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-Wl,-whole-archive "%>-lSimulationRuntimeC <% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then " -Wl,-no-whole-archive"%> <% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%>
   LDFLAGS=<%
@@ -4848,22 +4792,6 @@ template functionBodyParModelica(Function fn, Boolean inFunc)
   case fn as PARALLEL_FUNCTION(__)         then functionBodyParallelFunction(fn, inFunc)
 end functionBodyParModelica;
 
-template addRoots(Variable var)
-"template to add the roots, only the meta-types are added!"
-::=
-  match var
-  case var as VARIABLE(__) then
-  match ty
-    case T_METATYPE(__)
-      then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
-    case T_METABOXED(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
-    /*case T_COMPLEX(__) then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'*/
-    case _ then
-      let typ = varType(var)
-      match typ case "modelica_metatype" then 'mmc_GC_add_root(&<%contextCref(var.name,contextFunction)%>, mmc_GC_local_state, "<%contextCref(var.name,contextFunction)%>");'
-  end match
-end addRoots;
-
 template extractParforBodies(Function fn, Boolean inFunc)
  "Generates the body for a Modelica/MetaModelica function."
 ::=
@@ -4895,12 +4823,9 @@ case FUNCTION(__) then
   let &varInits = buffer "" /*BUFD*/
   let &varFrees = buffer "" /*BUFF*/
   let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/, &varFrees /*BUFF*/) ; empty /* increase the counter! */
     )
-  let addRootsInputs = (functionArguments |> var => addRoots(var) ;separator="\n")
-  let addRootsOutputs = (outVars |> var => addRoots(var) ;separator="\n")
   let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
   let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls /*BUFD*/) ;separator="\n")
   let &outVarInits = buffer ""
@@ -4919,11 +4844,6 @@ case FUNCTION(__) then
   DLLExport
   <%retType%> omc_<%fname%>(threadData_t *threadData<%functionArguments |> var => ", " + funArgDefinition(var) %>)
   {
-    /* functionBodyRegularFunction: GC: save roots mark when you enter the function */
-    <%if acceptMetaModelicaGrammar()
-      then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("_<%fname%>");'%>
-    /* functionBodyRegularFunction: GC: adding inputs as roots! */
-    <%if acceptMetaModelicaGrammar() then '<%addRootsInputs%>'%>
     /* functionBodyRegularFunction: arguments */
     <%funArgs%>
     /* functionBodyRegularFunction: locals */
@@ -4931,8 +4851,6 @@ case FUNCTION(__) then
     _tailrecursive:
     /* functionBodyRegularFunction: out inits */
     <%outVarInits%>
-    /* functionBodyRegularFunction: state in */
-    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     /* functionBodyRegularFunction: var inits */
     <%varInits%>
     /* functionBodyRegularFunction: body */
@@ -4940,13 +4858,9 @@ case FUNCTION(__) then
     _return:
     /* functionBodyRegularFunction: out var copy */
     <%outVarCopy%>
-    /* functionBodyRegularFunction: state out */
-    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     /* functionBodyRegularFunction: out var assign */
     <%outVarAssign%>
     /* GC: pop the mark! */
-    <%if acceptMetaModelicaGrammar()
-      then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
     <%if acceptParModelicaGrammar() then
     '/* Free GPU/OpenCL CPU memory */<%\n%><%varFrees%>'%>
     /* functionBodyRegularFunction: return the outs */
@@ -4957,7 +4871,6 @@ case FUNCTION(__) then
   DLLExport
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    void* states = push_memory_states(1);
     <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init(mmc_GC_settings_default);" %>
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
@@ -4968,7 +4881,6 @@ case FUNCTION(__) then
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
-    pop_memory_states(states);
     return 0;
   }
   >>
@@ -4992,7 +4904,6 @@ case KERNEL_FUNCTION(__) then
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
   let &varFrees = buffer "" /*BUFF*/
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/, &varFrees /*BUFF*/) ; empty /* increase the counter! */
     )
@@ -5032,15 +4943,10 @@ case KERNEL_FUNCTION(__) then
     /* functionBodyKernelFunction: locals */
     <%varDecls%>
 
-    /* functionBodyKernelFunction: state in */
-    <%stateVar%> = get_memory_state();
     /* functionBodyKernelFunction: var inits */
     <%varInits%>
     /* functionBodyKernelFunction: body */
     <%bodyPart%>
-
-    /* functionBodyKernelFunction: state out */
-    restore_memory_state(<%stateVar%>);
 
     /* Free GPU/OpenCL CPU memory */
     <%varFrees%>
@@ -5062,7 +4968,6 @@ case PARALLEL_FUNCTION(__) then
   let &varInits = buffer "" /*BUFD*/
   let &varFrees = buffer "" /*BUFF*/
   let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInitParallel(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/, &varFrees /*BUFF*/)
       ;empty
@@ -5086,14 +4991,11 @@ case PARALLEL_FUNCTION(__) then
     <%varDecls%>
     <%outVarInits%>
 
-    <%stateVar%> = get_memory_state();
-
     <%varInits%>
 
     <%bodyPart%>
 
     <%outVarCopy%>
-    restore_memory_state(<%stateVar%>);
     <%outVarAssign%>
 
     /*mahge: Free unwanted meomory allocated*/
@@ -5120,8 +5022,6 @@ case KERNEL_FUNCTION(__) then
   let &varInits = buffer "" /*BUFD*/
   let &varFrees = buffer "" /*BUFF*/
   let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
-
 
   // let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       // varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/, &varFrees /*BUFF*/) ; empty /* increase the counter! */
@@ -5171,8 +5071,6 @@ case KERNEL_FUNCTION(__) then
     <%varDecls%>
     <%outVarInits%>
 
-    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
-
     <%varInits%>
 
     /* functionBodyKernelFunctionInterface : <%fname%> Kernel creation and execution */
@@ -5185,7 +5083,6 @@ case KERNEL_FUNCTION(__) then
 
 
     <%outVarCopy%>
-    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     <%outVarAssign%>
 
     /*mahge: Free unwanted meomory allocated*/
@@ -5248,7 +5145,6 @@ case efn as EXTERNAL_FUNCTION(__) then
   // make sure the variable is named "out", doh!
   let retVar = if outVars then outDecl(retType, &varDecls /*BUFD*/)
   let &outputAlloc = buffer "" /*BUFD*/
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let callPart = extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   let _ = ( outVars |> var hasindex i1 fromindex 1 =>
             varInit(var, retVar, i1, &varDecls /*BUFD*/, &outputAlloc /*BUFC*/, &varFrees /*BUFF*/)
@@ -5266,14 +5162,12 @@ case efn as EXTERNAL_FUNCTION(__) then
   {
     /* functionBodyExternalFunction: varDecls */
     <%varDecls%>
-    <%if false /* disabled due to problem with outputAlloc being discarded not acceptMetaModelicaGrammar() */ then '<%stateVar%> = get_memory_state();'%>
     /* functionBodyExternalFunction: preExp */
     <%preExp%>
     /* functionBodyExternalFunction: outputAlloc */
     <%outputAlloc%>
     /* functionBodyExternalFunction: callPart */
     <%callPart%>
-    <%if false /* disabled due to problem with outputAlloc being discarded not acceptMetaModelicaGrammar() */ then 'restore_memory_state(<%stateVar%>);'%>
     /* functionBodyExternalFunction: return */
     return <%if outVars then retVar%>;
   }
@@ -5289,7 +5183,6 @@ case efn as EXTERNAL_FUNCTION(__) then
   DLLExport
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    void* states = push_memory_states(1);
     <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init(mmc_GC_settings_default);" %>
     <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%contextCref(name,contextFunction)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
@@ -5300,7 +5193,6 @@ case efn as EXTERNAL_FUNCTION(__) then
     MMC_CATCH_TOP(return 1)
     <%if outVars then (outVars |> var hasindex i1 fromindex 1 => writeOutVar(var, i1) ;separator="\n";empty) else "write_noretcall(outVar);"%>
     fflush(NULL);
-    pop_memory_states(states);
     return 0;
   }
   >> %>
@@ -5408,7 +5300,6 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   let &varDecls = buffer ""
   let retVar = if outvars then tempDecl(retTypeBoxed, &varDecls)
   let funRetVar = if outvars then tempDecl(retType, &varDecls)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let &varBox = buffer ""
   let &varUnbox = buffer ""
   let args = (funargs |> arg => (", " + funArgUnbox(arg, &varDecls, &varBox)))
@@ -5419,20 +5310,12 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
   <<
   <%retTypeBoxed%> boxptr_<%fname%>(threadData_t *threadData<%funargs |> var => (", " + funArgBoxedDefinition(var))%>)
   {
-    /* GC: save roots mark when you enter the function */
-    <%if acceptMetaModelicaGrammar()
-      then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("boxptr__<%fname%>");'%>
     <%varDecls%>
     <%addRootsTempArray()%>
-    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     <%varBox%>
     <%if outvars then '<%funRetVar%> = '%>omc_<%fname%>(threadData<%args%>);
     <%varUnbox%>
     <%retStr%>
-    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
-    /* GC: pop roots mark when you exit the function */
-    <%if acceptMetaModelicaGrammar()
-      then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
     return <%retVar%>;
   }
   >>
@@ -5623,8 +5506,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   let typ = '<%varType(var)%>'
   let initVar = match typ case "modelica_metatype" then ' = NULL' else ''
-  let addRoot = match typ case "modelica_metatype" then ' mmc_GC_add_root(&<%varName%>, mmc_GC_local_state, "<%varName%>");' else ''
-  let &varDecls += if not outStruct then '<%typ%> <%varName%><%initVar%>;<%addRoot%><%\n%>' //else ""
+  let &varDecls += if not outStruct then '<%typ%> <%varName%><%initVar%>;<%\n%>' //else ""
   let varName = if outStruct then '<%outStruct%>.c<%i%>' else '<%contextCref(var.name,contextFunction)%>'
   let &varInits += initRecordMembers(var)
   let instDimsInit = (instDims |> exp =>
@@ -6783,7 +6665,6 @@ template algStmtParForRangeInterface_impl(Exp range, Ident iterator, String type
 match range
 case RANGE(__) then
   let iterName = contextIteratorName(iterator, context)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let startVar = tempDecl(type, &varDecls)
   let stepVar = tempDecl(type, &varDecls)
   let stopVar = tempDecl(type, &varDecls)
@@ -6854,7 +6735,6 @@ template algStmtForRange_impl(Exp range, Ident iterator, String type, String sho
 match range
 case RANGE(__) then
   let iterName = contextIteratorName(iterator, context)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let startVar = tempDecl(type, &varDecls)
   let stepVar = tempDecl(type, &varDecls)
   let stopVar = tempDecl(type, &varDecls)
@@ -6878,9 +6758,7 @@ case RANGE(__) then
     <%type%> <%iterName%>;
     for(<%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>)
     {
-      <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%body%>
-      <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     }
   }
   >> /* else we're looping over a zero-length range */
@@ -6906,7 +6784,6 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
  "The implementation of algStmtForGeneric, which is also used by daeExpReduction."
 ::=
   let iterName = contextIteratorName(iterator, context)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls)
   let tvar = tempDecl("int", &varDecls)
   let ivar = tempDecl(type, &varDecls)
   let &preExp = buffer ""
@@ -6922,10 +6799,8 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
 
     for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>)
     {
-      <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%stmtStuff%>
       <%body%>
-      <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     }
   }
   >>
@@ -8744,7 +8619,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let &bodyExpPre = buffer ""
   let &guardExpPre = buffer ""
   let &rangeExpPre = buffer ""
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let identType = expTypeFromExpModelica(iter.exp)
   let arrayType = expTypeFromExpArray(iter.exp)
   let arrayTypeResult = expTypeFromExpArray(r)
@@ -8829,11 +8703,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     {
       <%identType%> <%iteratorName%>;
       <%iteratorName%> = *(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++));
-      <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     >>
-  let loopTail = match identType
-     case "modelica_metatype" then "}"
-     else if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);<%\n%>}' else "}"
   let &preExp += <<
   {
     <%&tmpVarDecls%>
@@ -8849,7 +8719,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
         <%&bodyExpPre%>
         <%foldExp%>
       }
-    <%loopTail%>
+    }
     <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW_INTERNAL();' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
     <% resTmp %> = <% res %>;
@@ -8925,13 +8795,13 @@ case exp as MATCHEXPRESSION(__) then
           case MATCH(switch=SOME(_)) then '<%done%> = 0;<%\n%>{'
           else 'for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {'
           %>
-            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" else 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("switch");'%>
+            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
 
             switch (MMC_SWITCH_CAST(<%ix%>)) {
             <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,startIndexOutputs,prefix,startIndexInputs,exp.inputs,onPatternFail,done,context,&varDecls)%>
             }
 
-            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" else 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
+            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
           }
 
           if (!<%done%>) MMC_THROW_INTERNAL();
@@ -10143,7 +10013,6 @@ template addRootsTempArray()
     case i then
       <<
       modelica_metatype tmpMeta[<%i%>] = {0};
-      mmc_GC_add_roots(tmpMeta, <%i%>, mmc_GC_local_state, "Array of temporaries");
       >>
 end addRootsTempArray;
 
@@ -10284,9 +10153,8 @@ void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warn
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)() = omc_throw_function;
 
-int rml_execution_failed(mmc_GC_local_state_type local_GC_state)
+int rml_execution_failed()
 {
-  mmc_GC_undo_roots_state(local_GC_state);
   fflush(NULL);
   fprintf(stderr, "Execution failed!\n");
   fflush(NULL);
@@ -10297,28 +10165,25 @@ int main(int argc, char **argv)
 {
   MMC_INIT();
   {
-  mmc_GC_local_state_type local_GC_state = mmc_GC_save_roots_state("top"); /* push the first mark */
   void *lst = mmc_mk_nil();
   int i = 0;
 
   for (i=argc-1; i>0; i--)
     lst = mmc_mk_cons(mmc_mk_scon(argv[i]), lst);
 
-  mmc_GC_add_root(&lst, local_GC_state, "commandLineParameters"); /* add to roots */
-
   MMC_TRY_TOP()
 
   MMC_TRY_STACK()
   <%name%>(threadData, lst);
   MMC_ELSE()
-  rml_execution_failed(local_GC_state);
+  rml_execution_failed();
   fprintf(stderr, "Stack overflow detected and was not caught.\nSend us a bug report at <%url%>\n    Include the following trace:\n");
   printStacktraceMessages();
   fflush(NULL);
   return 1;
   MMC_CATCH_STACK()
 
-  MMC_CATCH_TOP(return rml_execution_failed(local_GC_state));
+  MMC_CATCH_TOP(return rml_execution_failed());
   }
 
   fflush(NULL);

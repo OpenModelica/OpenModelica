@@ -35,27 +35,13 @@
 #include <stdlib.h>
 #include "openmodelica.h"
 
-extern int (*get_thread_index)(void); /* Implemented by generated code; different for each thread implementation */
-extern state get_memory_state(void);
-extern void restore_memory_state(state restore_state);
-extern void clear_memory_state(void);
-extern void clear_current_state(void);
-
-/*Help functions*/
-extern void print_current_state(void);
-extern void print_state(state s);
-
 /* Allocation functions */
-extern void* alloc_elements(int n, int sz);
 extern m_real* real_alloc(int n);
 extern m_integer* integer_alloc(int n);
 extern m_string* string_alloc(int n);
 extern m_boolean* boolean_alloc(int n);
 extern _index_t* size_alloc(int n);
 extern _index_t** index_alloc(int n);
-
-extern void* push_memory_states(int maxThreads);
-extern void pop_memory_states(void* new_states);
 
 void* generic_alloc(int n, size_t sze);
 

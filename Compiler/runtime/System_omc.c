@@ -185,7 +185,7 @@ extern const char* System_basename(const char* str)
 
 extern const char* System_dirname(const char* str)
 {
-  char *cpy = strdup(str);
+  char *cpy = GC_strdup(str);
   char *res = NULL;
 #if defined(_MSC_VER)
   char drive[_MAX_DRIVE], dir[_MAX_DIR], filename[_MAX_FNAME], extension[_MAX_EXT];
@@ -195,8 +195,7 @@ extern const char* System_dirname(const char* str)
 #else
   res = dirname(cpy);
 #endif
-  res = strcpy(ModelicaAllocateString(strlen(res)), res);
-  free(cpy);
+  res = GC_strdup(res);
   return res;
 }
 
@@ -292,19 +291,15 @@ extern void* System_strtok(const char *str0, const char *delimit)
 {
   char *s;
   void *res = mmc_mk_nil();
-  char *str = strdup(str0);
+  char *str = GC_strdup(str0);
   s=strtok(str,delimit);
-  if (s == NULL)
-  {
-    free(str);
+  if (s == NULL) {
     return res;
   }
   res = mmc_mk_cons(mmc_mk_scon(s),res);
-  while ((s=strtok(NULL,delimit)))
-  {
+  while ((s=strtok(NULL,delimit))) {
     res = mmc_mk_cons(mmc_mk_scon(s),res);
   }
-  free(str);
   return listReverse(res);
 }
 
@@ -372,9 +367,7 @@ const char* System_getClassnamesForSimulation()
 
 void System_setClassnamesForSimulation(const char *class_names)
 {
-  if(class_names_for_simulation)
-    free(class_names_for_simulation);
-  class_names_for_simulation = strdup(class_names);
+  class_names_for_simulation = GC_strdup(class_names);
 }
 
 extern double System_getVariableValue(double _timeStamp, void* _timeValues, void* _varValues)
@@ -670,7 +663,6 @@ extern void System_getLoadModelPath(const char *className, void *prios, void *mp
   *name = NULL;
   if (SystemImpl__getLoadModelPath(className,prios,mps,dir,name,isDir)) MMC_THROW();
   char *res = strcpy(ModelicaAllocateString(strlen(*name)),*name);
-  free(*name);
   *name = res;
 }
 

@@ -350,7 +350,6 @@ STRING : '"' STRING_GUTS '"'
                   strs, 2, $line, $pos+1, $line, $pos+len+1,
                   ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
              text->set8(text,res);
-             free(res);
              /* ModelicaParser_lexerError = ANTLR3_TRUE; */
            } else if (strcmp(ModelicaParser_encoding,"UTF-8")!=0) {
              text->set8(text,res);

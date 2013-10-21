@@ -341,7 +341,6 @@ void indexed_assign_boolean_array(const boolean_array_t* source,
     _index_t* idx_vec2;
     _index_t* idx_size;
     int i,j;
-    state mem_state;
 
     assert(base_array_ok(source));
     assert(base_array_ok(dest));
@@ -354,7 +353,6 @@ void indexed_assign_boolean_array(const boolean_array_t* source,
     }
     assert(j == source->ndims);
 
-    mem_state = get_memory_state();
     idx_vec1 = size_alloc(dest->ndims);
     idx_vec2 = size_alloc(source->ndims);
     idx_size = size_alloc(dest_spec->ndims);
@@ -382,8 +380,6 @@ void indexed_assign_boolean_array(const boolean_array_t* source,
                                                         idx_vec2, source)));
 
     } while(0 == next_index(dest_spec->ndims, idx_vec1, idx_size));
-
-    restore_memory_state(mem_state);
 }
 
 /*
@@ -406,7 +402,6 @@ void index_boolean_array(const boolean_array_t* source,
     _index_t* idx_size;
     int j;
     int i;
-    state mem_state;
 
     assert(base_array_ok(source));
     assert(base_array_ok(dest));
@@ -421,7 +416,6 @@ void index_boolean_array(const boolean_array_t* source,
     }
     assert(j == dest->ndims);
 
-    mem_state = get_memory_state();
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
     idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
     idx_size = size_alloc(source_spec->ndims);
@@ -453,8 +447,6 @@ void index_boolean_array(const boolean_array_t* source,
                                                      source, source_spec)));
 
     } while(0 == next_index(source->ndims, idx_vec1, idx_size));
-
-    restore_memory_state(mem_state);
 }
 
 /*

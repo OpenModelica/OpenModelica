@@ -141,7 +141,7 @@ modelica_string_const init_modelica_string(modelica_string_const str)
 modelica_string_t alloc_modelica_string(int length)
 {
     /* Reserve place for null terminator too.*/
-    modelica_string_t dest = (modelica_string_t) GC_malloc(length+1);
+    modelica_string_t dest = (modelica_string_t) GC_malloc_atomic(length+1);
     if (dest != 0) {
       dest[length]=0;
     }
@@ -150,13 +150,7 @@ modelica_string_t alloc_modelica_string(int length)
 
 void free_modelica_string(modelica_string_t* a)
 {
-    /* int length; */
-
     assert(modelica_string_ok(a));
-
-    /* length = modelica_string_length(*a); */
-    /* Free also null terminator.*/
-    /* free(a); */ /* char_free(length+1); */
 }
 
 modelica_string_const copy_modelica_string(modelica_string_const source)

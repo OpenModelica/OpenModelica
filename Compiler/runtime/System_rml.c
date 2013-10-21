@@ -84,13 +84,11 @@ RML_BEGIN_LABEL(System__strtok)
 {
   char *s;
   char *delimit = RML_STRINGDATA(rmlA1);
-  char *str = strdup(RML_STRINGDATA(rmlA0));
+  char *str = GC_strdup(RML_STRINGDATA(rmlA0));
 
   void * res = (void*)mk_nil();
   s=strtok(str,delimit);
-  if (s == NULL)
-  {
-    free(str);
+  if (s == NULL) {
     /* Empty string becomes empty list: A success! */
     rmlA0=res; RML_TAILCALLK(rmlSC);
   }
@@ -100,8 +98,6 @@ RML_BEGIN_LABEL(System__strtok)
     res = (void*)mk_cons(mk_scon(s),res);
   }
   rmlA0=res;
-
-  free(str);
 
   RML_TAILCALLQ(RML__list_5freverse,1);
 }
@@ -132,13 +128,12 @@ RML_BEGIN_LABEL(System__substring)
 
   /* Allocate memory and copy string */
   len2 = stopIndex - startIndex + 1;
-  substring = (char*)malloc(len2+1);
+  substring = (char*)GC_malloc(len2+1);
   strncpy(substring, &str[startIndex-1], len2);
   substring[len2] = '\0';
 
   rmlA0 = mk_scon(substring);
 
-  free(substring);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -147,16 +142,13 @@ RML_BEGIN_LABEL(System__toupper)
 {
   char *base = RML_STRINGDATA(rmlA0);
   long len = strlen(base);
-  char *res = (char*) malloc(len+1);
+  char *res = (char*) GC_malloc_atomic(len+1);
   int i;
   for (i=0; i<len; i++)
     res[i] = toupper(base[i]);
   // fix the end!
   res[i] = '\0';
   rmlA0 = (void*) mk_scon(res);
-
-  /* adrpo added 2004-10-29 */
-  free(res);
 
   RML_TAILCALLK(rmlSC);
 }
@@ -166,15 +158,12 @@ RML_BEGIN_LABEL(System__tolower)
 {
   char *base = RML_STRINGDATA(rmlA0);
   long len = strlen(base);
-  char *res = (char*) malloc(len+1);
+  char *res = (char*) GC_malloc_atomic(len+1);
   int i;
   for (i=0; i<len; i++)
     res[i] = tolower(base[i]);
   res[i] = '\0';
   rmlA0 = (void*) mk_scon(res);
-
-  /* adrpo added 2004-10-29 */
-  free(res);
 
   RML_TAILCALLK(rmlSC);
 }
@@ -186,17 +175,14 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
   char *res = NULL;
   int length=strlen(str);
   int i;
-  if(length > 1)
-    {
-      res=(char*)malloc((length-1)*sizeof(char));
+  if(length > 1) {
+      res=(char*)GC_malloc((length-1)*sizeof(char));
       strncpy(res,str + 1,length-2);
       res[length-1] = '\0';
       rmlA0 = (void*) mk_scon(res);
-      /* adrpo added 2004-10-29 */
-      free(res);
-    }
-  else
+  } else {
       rmlA0 = (void*) mk_scon(str);
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -216,7 +202,6 @@ RML_BEGIN_LABEL(System__trim)
   char *chars_to_be_removed = RML_STRINGDATA(rmlA1);
   char *res = SystemImpl__trim(str,chars_to_be_removed);
   rmlA0 = (void*) mk_scon(res);
-  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -226,7 +211,6 @@ RML_BEGIN_LABEL(System__trimWhitespace)
   char *str = RML_STRINGDATA(rmlA0);
   char *res = SystemImpl__trim(str," \f\n\r\t\v");
   rmlA0 = (void*) mk_scon(res);
-  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -255,9 +239,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__dirname)
 {
   const char *str = RML_STRINGDATA(rmlA0);
-  char *cpy = strdup(str);
-  rmlA0 = mk_scon(dirname(cpy));
-  free(cpy);
+  rmlA0 = mk_scon(dirname(GC_strdup(str)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -360,7 +342,6 @@ RML_BEGIN_LABEL(System__stringReplace)
   if (res == NULL)
     RML_TAILCALLK(rmlFC);
   rmlA0 = (void*) mk_scon(res);
-  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -497,7 +478,6 @@ RML_BEGIN_LABEL(System__readFile)
   char* filename = RML_STRINGDATA(rmlA0);
   char* res = SystemImpl__readFile(filename);
   rmlA0 = (void*) mk_scon(res);
-  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -507,7 +487,6 @@ RML_BEGIN_LABEL(System__readFileNoNumeric)
   const char* filename = RML_STRINGDATA(rmlA0);
   char *res = SystemImpl__readFileNoNumeric(filename);
   rmlA0 = (void*) mk_scon(res);
-  free(res);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -583,10 +562,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__setClassnamesForSimulation)
 {
   char* class_names = RML_STRINGDATA(rmlA0);
-  if(class_names_for_simulation)
-    free(class_names_for_simulation);
-
-  class_names_for_simulation = strdup(class_names);
+  class_names_for_simulation = GC_strdup(class_names);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1004,109 +980,6 @@ int fileExistsLocal(char * s){
 return ret;
 }
 
-RML_BEGIN_LABEL(System__getPackageFileNames)
-{
-  char* dir = RML_STRINGDATA(rmlA0);
-  char* fileName = RML_STRINGDATA(rmlA1);
-    char * strSearch = (char*)malloc(sizeof(char*)*(strlen(dir)+strlen(fileName)+10));
-    char * tmpSearchString = (char*)malloc(sizeof(char*)*MAX_PATH);
-    int mallocSize = MAX_PATH,current=0;
-    char * retString = (char*)malloc(mallocSize*sizeof(char*));
-    int ret_val;
-    void *res;
-    WIN32_FIND_DATA FileData;
-    HANDLE sh;
-
-    sprintf(strSearch,"%s\\*\0",dir);
-  sh = FindFirstFile(strSearch, &FileData);
-
-  if (sh == INVALID_HANDLE_VALUE) {
-    printf(" invalid\n");
-  }
-  else {
-    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-      sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
-      if(fileExistsLocal(tmpSearchString)==0){
-        if(strlen(FileData.cFileName)+current>mallocSize){
-          mallocSize *= 2;
-          retString = (char *)realloc(retString,mallocSize);
-        }
-        if(current==0){
-          sprintf(retString,"%s",FileData.cFileName);
-        }
-        else{
-          sprintf(retString,",%s",FileData.cFileName);
-        }
-        current +=strlen(FileData.cFileName)+1;
-      }
-    }
-  }
-  while(FindNextFile(sh, &FileData) != 0){
-    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-      sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
-      if(fileExistsLocal(tmpSearchString)==0){
-        if(strlen(FileData.cFileName)+current>mallocSize){
-          mallocSize *= 2;
-          retString = (char *)realloc(retString,mallocSize);
-        }
-        if(current==0){
-          sprintf(retString,"%s",FileData.cFileName);
-        }
-        else{
-          sprintf(retString,"%s,%s",retString,FileData.cFileName);
-        }
-        current +=strlen(FileData.cFileName)+1;
-      }
-    }
-  }
-  FindClose(sh);
-  //printf(" to return: %s\n",retString);
-  rmlA0 = (void*) mk_scon(retString);
-  free(strSearch);
-  free(tmpSearchString);
-  free(retString);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-//void* generate_array(char type, int curdim, type_description *desc, void *data)
-//
-//{
-//  void *lst;
-//  double rval;
-//  int ival;
-//  int i;
-//  lst = (void*)mk_nil();
-//  if (curdim == desc->ndims)
-//  {
-//    for (i=0; i< desc->dim_size[curdim-1]; i++)
-//    {
-//      if (type == 'r')
-//      {
-//      rval = next_realelt((double*)data);
-//      lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
-//      }
-//      else if (type == 'i')
-//      {
-//      ival = next_intelt((int*)data);
-//      lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
-//      }
-//      else if (type == 'b')
-//      {
-//      rval = next_realelt((double*)data);
-//      lst = (void*)mk_cons(Values__BOOL(rval?RML_TRUE:RML_FALSE/*mk_bcon(rval)*/),lst);
-//      }
-//    }
-//  }
-//  else
-//  {
-//    for (i=0; i< desc->dim_size[curdim-1]; i++) {
-//    lst = (void*)mk_cons(Values__ARRAY(generate_array(type,curdim+1,desc,data)),lst);
-//  }
-//  }
-//  return lst;
-//}
-
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
@@ -1239,282 +1112,6 @@ void System_5finit(void)
   last_ptr_index = -1;
   memset(ptr_vector, 0, sizeof(ptr_vector));
 }
-
-/**
- * Author BZ
- * helper function for getSymbolicLinkPath
- **/
-static char *mergePathWithLink(char *path,char *linkPath)
-{
-    char *lastSlash;
-    char *newPath = (char *) malloc(sizeof(char)*MAXPATHLEN);
-    //printf(" entered mergePathWithLink, path: %s, link: %s\n",path,linkPath);
-    if(linkPath[0] =='/') // if link is non relative
-  return linkPath;
-    // else; replace ......./link with ..../link_result
-    lastSlash = strrchr(path,'/')+1;
-    *lastSlash = '\0';
-    strncpy(newPath,path,lastSlash-path+1);
-    strcat(newPath,linkPath);
-    free(linkPath);
-return newPath;
-}
-
-/**
- * Author BZ, 2008-09
- * helper function for findSymbolicLinks
- * This function evaluates each directory/file and if it is a symbolic link, call mergePathWithLink
- * to produce resulting path ( if a link is refering to a relative dir or not).
- *
- * */
-static char *getSymbolicLinkPath(char* path)
-{
-    int err,readChars;
-    char *buffer;
-    struct stat ss;
-
-    err = lstat(path,&ss);
-    //printf(" check existence %s\n",path);
-    if(err==0){ // file exists
-      //printf("okay succ %s, %d\n",path,ss.st_mode);
-      if(S_ISLNK(ss.st_mode))
-      {
-          //printf("*** is link *** %s\n",path);
-          buffer = (char *) malloc(sizeof(char)*MAXPATHLEN);
-          readChars = readlink (path, buffer, MAXPATHLEN);
-          if(readChars >0){
-            buffer[readChars]='\0';
-            buffer = mergePathWithLink(path,buffer);
-            free(path);
-            path = buffer;
-            //printf(" have %s from symolic link\n",path);
-            path = getSymbolicLinkPath(path);
-            //printf(" after recursive call, terminating; %s\n\n",path);
-          }
-          else if(readChars==-1){
-            free(buffer);
-          }
-      }
-      return path;
-    }
-    else{
-        //printf(" no existing: %s\n",path);
-      return path;
-    }
-}
-/**
- * Author BZ, 2008-09
- * This function traverses all directories searching for symbolic links like;
- * home/bjozac/linkToNewDir/a.mo
- * 1) isLink(/home) "then get link path"
- * 2) isLink(/home/bjozac/) same as above, do nothing
- * 3) isLink(/home/bjozac/linkToNewDir) => true, new path: /home/bjozac/NewDir/
- * 4) isLink(/home/bjozac/newDir/a.mo)
- **/
-static char* findSymbolicLinks(char* path)
-{
-  int i;
-  char *curRes = (char *) malloc(sizeof(char)*MAXPATHLEN);
-  char *curPos;
-  char *endPos;
-  curRes[0]='\0';
-  curPos = path;
-  if(path[0]=='/'){
-    curRes = strcat(curRes,"/");
-    curPos = &path[1]; // skip first slash, will add when finished.
-  }
-
-  for(i=0;i<100;++i){
-    endPos = strchr(curPos,'/');
-    if(endPos==NULL){ // End OF String
-      endPos = strrchr(curPos,'\0');
-      strncat(curRes,curPos,endPos-curPos); // add filename
-      //printf(" check: %s ==> " ,curRes);
-      curRes = getSymbolicLinkPath(curRes);
-      //printf("\tbecame: %s\n",curRes);
-      free(path);
-      return curRes;
-    }
-    strncat(curRes,curPos,endPos-curPos);
-    curRes = getSymbolicLinkPath(curRes);
-    if(curRes[strlen(curRes)-1] != '/')
-    {
-      strcat(curRes,"/");
-    }
-    //printf("path: %s\n",curRes);
-    curPos = endPos+1;
-  }
-    if(strchr(path,'/')!=NULL)
-  fprintf(stderr,"possible error in save-function\n");
-  free(path);
-  return curRes;
-}
-
-
-/* Normalize a path i.e. transforms /usr/local/..//lib to /usr/lib
-   returns NULL on failure.
-
-*/
-static char* normalizePath(const char* src)
-{
-  const char* srcEnd = src + strlen(src);
-  const char* srcPos = src;
-  char* dest = NULL;
-  char* targetPos = dest;
-  char* newSrcPos = NULL;
-  char* p = NULL;
-  char* tmp;
-  int appendSlash = 0;
-
-  if (strlen(src) == 0) {
-    return NULL;
-  }
-
-  if (src[0] != '/') {
-    /* it is a relative path, so prepend cwd */
-    tmp = malloc(1024);
-    p = getcwd(tmp, 1024);
-    if (p == NULL) {
-      free(tmp);
-      return NULL;
-    }
-    dest = malloc(strlen(src) + strlen(p) + 2);
-    strcpy(dest, p);
-    free(p);
-    targetPos = dest + strlen(dest);
-    if (dest[strlen(dest) - 1] != '/') {
-      appendSlash = 1;
-    }
-  }
-  else {
-    /* absolute path */
-    dest = malloc(strlen(src) + 2);
-    dest[0] = '\0';
-    targetPos = dest;
-    appendSlash = 1;
-  }
-
-  while (srcPos < srcEnd) {
-    if (strstr(srcPos, "..") == (srcPos)) {
-      /* found .. remove last part of the path in dest */
-      p = strrchr(dest, '/');
-      if (p == NULL) {
-        p = dest;
-        appendSlash = 0;
-      }
-      p[0] = '\0';
-      targetPos = p;
-      /* seek next / in src */
-      srcPos = strchr(srcPos, '/');
-      if (srcPos == NULL) {
-        break;
-      }
-      srcPos = srcPos + 1; /* skip the found / */
-      continue;
-    }
-    if (appendSlash) {
-      targetPos[0] = '/';
-      targetPos++;
-      targetPos[0] = '\0'; /* always null terminate so that dest is a valid string */
-    }
-    newSrcPos = strchr(srcPos, '/');
-    /* printf("dest = %s\n", dest); */
-    /* printf("srcPos = %s\n", srcPos); */
-    /* printf("newSrcPos = %s\n", newSrcPos); */
-    if (newSrcPos == NULL) {
-      /* did not find any more / copy rest of string and end */
-      strcpy(targetPos, srcPos);
-      break;
-    }
-    if (newSrcPos == srcPos) {
-      /* skip multiple / */
-      srcPos = srcPos + 1;
-      appendSlash = 0;
-      continue;
-    }
-    strncpy(targetPos, srcPos, newSrcPos - srcPos);
-    targetPos = targetPos + (newSrcPos - srcPos);
-    srcPos = newSrcPos + 1; /* + 1 to skip the found / */
-    appendSlash = 1;
-  }
-  //printf("calling: -->%s<--\n" ,dest);
-  dest = findSymbolicLinks(dest);
-  //printf(" RES:  %s\n",dest);
-  return dest;
-}
-/*
-*/
-
-RML_BEGIN_LABEL(System__isSameFile)
-{
-  char* fileName1 = RML_STRINGDATA(rmlA0);
-  char* fileName2 = RML_STRINGDATA(rmlA1);
-  char* normPath1 = normalizePath(fileName1);
-  char* normPath2 = normalizePath(fileName2);
-  int same = 0;
-  if (normPath1 == NULL || normPath2 == NULL) {
-    if (normPath1) free(normPath1);
-    if (normPath2) free(normPath2);
-    RML_TAILCALLK(rmlFC);
-  }
-
-  same = strcmp(normPath1, normPath2) == 0;
-  free(normPath1);
-  free(normPath2);
-  if (same) {
-    RML_TAILCALLK(rmlSC);
-  }
-  else {
-    RML_TAILCALLK(rmlFC);
-  }
-}
-RML_END_LABEL
-
-RML_BEGIN_LABEL(System__compileCFile)
-{
-  char* str = RML_STRINGDATA(rmlA0);
-  char command[255];
-  char exename[255];
-  char *tmp;
-
-  if (strlen(str) >= 255) {
-    RML_TAILCALLK(rmlFC);
-  }
-  if (cc == NULL||cflags == NULL) {
-    RML_TAILCALLK(rmlFC);
-  }
-  memcpy(exename,str,strlen(str)-2);
-  exename[strlen(str)-2]='\0';
-
-  sprintf(command,"%s %s -o %s %s > compilelog.txt 2>&1",cc,str,exename,cflags);
-  //printf("compile using: %s\n",command);
-
-#ifndef __APPLE_CC__  /* seems that we need to disable this on MacOS */
-  putenv("GCC_EXEC_PREFIX=");
-#endif
-  tmp = getenv("MODELICAUSERCFLAGS");
-  if (tmp == NULL || tmp[0] == '\0'  ) {
-    putenv("MODELICAUSERCFLAGS=  ");
-  }
-  if (system(command) != 0) {
-    RML_TAILCALLK(rmlFC);
-  }
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-/* RML_BEGIN_LABEL(System__modelicapath) */
-/* { */
-/*   char *path = getenv("OPENMODELICALIBRARY"); */
-/*   if (path == NULL)  */
-/*       RML_TAILCALLK(rmlFC); */
-
-/*   rmlA0 = (void*) mk_scon(path); */
-
-/*   RML_TAILCALLK(rmlSC); */
-/* } */
-/* RML_END_LABEL */
 
 RML_BEGIN_LABEL(System__subDirectories)
 {
@@ -1850,7 +1447,6 @@ RML_BEGIN_LABEL(System__pwd)
   char *buf = SystemImpl__pwd();
   if (buf == NULL) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_scon(buf);
-  free(buf);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1965,7 +1561,6 @@ RML_BEGIN_LABEL(System__unescapedString)
     RML_TAILCALLK(rmlSC);
   } else {
     rmlA0 = mk_scon(str);
-    free(str);
     RML_TAILCALLK(rmlSC);
   }
 }
@@ -1978,7 +1573,6 @@ RML_BEGIN_LABEL(System__escapedString)
     RML_TAILCALLK(rmlSC);
   } else {
     rmlA0 = mk_scon(str);
-    free(str);
     RML_TAILCALLK(rmlSC);
   }
 }
@@ -1991,7 +1585,6 @@ RML_BEGIN_LABEL(System__unquoteIdentifier)
     RML_TAILCALLK(rmlSC);
   } else {
     rmlA0 = mk_scon(str);
-    free(str);
     RML_TAILCALLK(rmlSC);
   }
 }
@@ -2019,8 +1612,6 @@ RML_BEGIN_LABEL(System__uriToClassAndPath)
   rmlA0 = scheme ? mk_scon((char*)scheme) : 0;
   rmlA1 = name ? mk_scon(name) : 0;
   rmlA2 = path ? mk_scon(path) : 0;
-  if (name) free(name);
-  if (path) free(path);
   if (res)
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
@@ -2080,7 +1671,6 @@ RML_BEGIN_LABEL(System__getLoadModelPath)
     RML_TAILCALLK(rmlFC);
   rmlA0 = mk_scon(outDir);
   rmlA1 = mk_scon(outName);
-  free(outName);
   rmlA2 = mk_icon(isDir);
   RML_TAILCALLK(rmlSC);
 }

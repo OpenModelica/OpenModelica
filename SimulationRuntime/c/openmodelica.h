@@ -111,24 +111,6 @@ typedef const char* m_string;
 typedef signed char m_boolean;
 typedef m_integer   _index_t;
 
-struct state_s {
-  _index_t buffer;
-  _index_t offset;
-};
-
-typedef struct state_s state;
-
-
-/* BEFORE: #include "memory_pool.c" */
-struct one_state_s {
-  int **buffer;
-  int nbuffers;
-  state current_state;
-};
-
-typedef struct one_state_s one_state;
-
-
 /* BEFORE: #include "index_spec.h" */
 /* This structure holds indexes when subscripting an array.
  * ndims - number of subscripts, E.g. A[1,{2,3},:] => ndims = 3

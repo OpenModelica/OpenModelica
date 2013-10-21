@@ -214,61 +214,36 @@ static int filterString(char* buf,char* bufRes)
 
 extern int SystemImpl__setCCompiler(const char *str)
 {
-  size_t len = strlen(str);
-  if ((cc != NULL) && (cc != def_cc)) {
-    free(cc);
-  }
-  cc = (char*)malloc(len+1);
+  cc = GC_strdup(str);
   if (cc == NULL) return -1;
-  memcpy(cc,str,len+1);
   return 0;
 }
 
 extern int SystemImpl__setCXXCompiler(const char *str)
 {
-  size_t len = strlen(str);
-  if ((cxx != NULL) && (cxx != def_cxx)) {
-    free(cxx);
-  }
-  cxx = (char*)malloc(len+1);
+  cxx = GC_strdup(str);
   if (cxx == NULL) return -1;
-  memcpy(cxx,str,len+1);
   return 0;
 }
 
 extern int SystemImpl__setLinker(const char *str)
 {
-  size_t len = strlen(str);
-  if ((linker != NULL) && (linker != def_linker)) {
-    free(linker);
-  }
-  linker = (char*)malloc(len+1);
+  linker = GC_strdup(str);
   if (linker == NULL) return -1;
-  memcpy(linker,str,len+1);
   return 0;
 }
 
 extern int SystemImpl__setCFlags(const char *str)
 {
-  size_t len = strlen(str);
-  if ((cflags != NULL) && (cflags != def_cflags)) {
-    free(cflags);
-  }
-  cflags = (char*)malloc(len+1);
+  cflags = GC_strdup(str);
   if (cflags == NULL) return -1;
-  memcpy(cflags,str,len+1);
   return 0;
 }
 
 extern int SystemImpl__setLDFlags(const char *str)
 {
-  size_t len = strlen(str);
-  if ((ldflags != NULL) && (ldflags != def_ldflags)) {
-    free(ldflags);
-  }
-  ldflags = (char*)malloc(len+1);
+  ldflags = GC_strdup(str);
   if (ldflags == NULL) return -1;
-  memcpy(ldflags,str,len+1);
   return 0;
 }
 
@@ -276,22 +251,24 @@ extern char* SystemImpl__pwd(void)
 {
   char buf[MAXPATHLEN];
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  char* buf2;
+  char* buf2,buf3;
   LPTSTR bufPtr=buf;
   DWORD bufLen = MAXPATHLEN;
   if (!GetCurrentDirectory(bufLen,bufPtr)) {
     fprintf(stderr, "System.pwd failed\n");
     return NULL;
   }
-
-  /* Make sure windows paths use fronslash and not backslash */
-  return _replace(buf,"\\","/"); // free this result later
+  /* Make sure windows paths use frontslash and not backslash */
+  for (i=0; i<MAXPATHLEN && buf[i]; i++) {
+    if (buf[i] == '\\') buf[i] = '/';
+  }
+  return GC_strdup(buf);
 #else
   if (NULL == getcwd(buf,MAXPATHLEN)) {
     fprintf(stderr, "System.pwd failed\n");
     return NULL;
   }
-  return strdup(buf); // to mimic Windows behaviour
+  return GC_strdup(buf);
 #endif
 }
 
@@ -348,8 +325,7 @@ static char* SystemImpl__readFile(const char* filename)
   struct stat statstr;
   res = stat(filename, &statstr);
 
-  if(res!=0)
-  {
+  if (res != 0) {
     const char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
@@ -357,13 +333,12 @@ static char* SystemImpl__readFile(const char* filename)
       gettext("Error opening file: %s."),
       c_tokens,
       1);
-    return strdup("No such file");
+    return "No such file";
   }
 
   /* adrpo: if size is larger than the max string, return a different string */
 #ifndef _LP64
-  if (statstr.st_size > (pow((double)2, (double)22) * 4))
-  {
+  if (statstr.st_size > (pow((double)2, (double)22) * 4)) {
     const char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
@@ -372,18 +347,16 @@ static char* SystemImpl__readFile(const char* filename)
       c_tokens,
       1);
     fclose(file);
-    return strdup("File too large");
+    return "File too large";
   }
 #endif
 
   file = fopen(filename,"rb");
-  buf = (char*) malloc(statstr.st_size+1);
+  buf = (char*) GC_malloc_atomic(statstr.st_size+1);
 
-  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
-  {
-    free(buf);
+  if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
     fclose(file);
-    return strdup("Failed while reading file");
+    return "Failed while reading file";
   }
   buf[statstr.st_size] = '\0';
   fclose(file);
@@ -496,7 +469,7 @@ static char* SystemImpl__trim(const char* str, const char* chars_to_be_removed)
     str2 = str;
   //fprintf(stderr, "trim right '%s'\n", str2);
   length = str2 - str + 1;
-  res = (char*) malloc(length+1);
+  res = (char*) GC_malloc_atomic(length+1);
   strncpy(res,str,length);
   res[length] = '\0';
   return res;
@@ -517,11 +490,10 @@ void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
     while(str[end_pos] == char_to_be_trimmed) {
       end_pos--;
     }
-    res = (char*)malloc(end_pos - start_pos +2);
+    res = (char*)GC_malloc_atomic(end_pos - start_pos +2);
     strncpy(res,&str[start_pos],end_pos - start_pos+1);
     res[end_pos - start_pos+1] = '\0';
     rmlRes = (void*) mk_scon(res);
-    free(res);
     return rmlRes;
   } else {
     return mk_scon("");
@@ -630,9 +602,9 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     tmp = RML_CDR(tmp);
   }
   if (sz == 0) return mk_nil();
-  calls = (char**) malloc(sz*sizeof(char*));
+  calls = (char**) GC_malloc(sz*sizeof(char*));
   assert(calls);
-  results = (int*) malloc(sz*sizeof(int));
+  results = (int*) GC_malloc_atomic(sz*sizeof(int));
   assert(results);
   tmp = lst;
   sz = 0;
@@ -650,8 +622,6 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
   for (i=sz-1; i>=0; i--) {
     tmp = mk_cons(mk_icon(results[i]),tmp);
   }
-  free(calls);
-  free(results);
   return tmp;
 }
 
@@ -780,7 +750,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
       }
 
       len = path_len + strlen(p->d_name) + 2;
-      buf = (char *)malloc(len);
+      buf = (char *)GC_malloc_atomic(len);
       if (buf != NULL)
       {
         struct stat statbuf;
@@ -797,7 +767,6 @@ static int SystemImpl__removeDirectoryItem(const char *path)
             r2 = unlink(buf);
           }
         }
-        free(buf);
       }
       retval = r2;
     }
@@ -848,7 +817,7 @@ extern int SystemImpl__removeDirectory(const char *path)
       if (res == NULL)
       {
         /* basepath is finally found */
-        pattern = strdup(str);
+        pattern = GC_strdup(str);
         break;
       }
       else
@@ -862,7 +831,7 @@ extern int SystemImpl__removeDirectory(const char *path)
         else
         {
           /* basepath is finally found */
-          pattern = strdup(str);
+          pattern = GC_strdup(str);
           sub = res;
           len_sub = strlen(sub);
           break;
@@ -871,14 +840,11 @@ extern int SystemImpl__removeDirectory(const char *path)
     } while(1);
 
     /* prepare basepath */
-    if (ctmp == NULL)
-    {
-      basepath = strdup(".");
-    }
-    else
-    {
+    if (ctmp == NULL) {
+      basepath = ".";
+    } else {
       size_t len = ctmp-path;
-      basepath = (char *)malloc(len);
+      basepath = (char *)GC_malloc_atomic(len);
       strncpy(basepath, path, len);
       basepath[len-1] = 0;
     }
@@ -921,7 +887,7 @@ extern int SystemImpl__removeDirectory(const char *path)
           {
             /* pre and post pattern do match */
             struct stat statbuf;
-            char * newdir = (char *)malloc(len_base+len+len_sub+3);
+            char * newdir = (char *)GC_malloc_atomic(len_base+len+len_sub+3);
 
             strcpy(newdir, basepath);
             strcat(newdir, "/");
@@ -949,8 +915,6 @@ extern int SystemImpl__removeDirectory(const char *path)
                 }
               }
             }
-
-            free(newdir);
           }
         }
       }
@@ -961,8 +925,6 @@ extern int SystemImpl__removeDirectory(const char *path)
     {
       retval = -1;
     }
-    free(basepath);
-    free(pattern);
   }
 
   return retval;
@@ -984,22 +946,19 @@ extern char* SystemImpl__readFileNoNumeric(const char* filename)
       gettext("Error opening file %s."),
       c_tokens,
       1);
-    return strdup("No such file");
+    return "No such file";
   }
 
   file = fopen(filename,"rb");
-  buf = (char*) malloc(statstr.st_size+1);
-  bufRes = (char*) malloc((statstr.st_size+70)*sizeof(char));
+  buf = (char*) GC_malloc_atomic(statstr.st_size+1);
+  bufRes = (char*) GC_malloc_atomic((statstr.st_size+70)*sizeof(char));
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
-    free(buf);
-    free(bufRes);
-    return strdup("Failed while reading file");
+    return "Failed while reading file";
   }
   buf[statstr.st_size] = '\0';
   numCount = filterString(buf,bufRes);
   fclose(file);
   sprintf(bufRes,"%s\nFilter count from number domain: %d",bufRes,numCount);
-  free(buf);
   return bufRes;
 }
 
@@ -1042,10 +1001,9 @@ static int file_select_mo(direntry entry)
 int setenv(const char* envname, const char* envvalue, int overwrite)
 {
   int res;
-  char *temp = (char*)malloc(strlen(envname)+strlen(envvalue)+2);
+  char *temp = (char*)GC_malloc_atomic(strlen(envname)+strlen(envvalue)+2);
   sprintf(temp,"%s=%s", envname, envvalue);
   res = _putenv(temp);
-  free(temp);
   return res;
 }
 #endif
@@ -1397,7 +1355,7 @@ extern char* SystemImpl__unescapedString(const char* str)
   len1 = strlen(str);
   len2 = SystemImpl__unescapedStringLength(str);
   if (len1 == len2) return NULL;
-  res = (char*) malloc(len2+1);
+  res = (char*) GC_malloc_atomic(len2+1);
   while (*str) {
     res[i] = str[0];
     if (str[0] == '\\') {
@@ -1442,7 +1400,7 @@ extern char* SystemImpl__unquoteIdentifier(const char* str)
   const char _omcQuot[]="_omcQuot_";
   if (*str != '\'') return NULL;
   len = strlen(str)-2;
-  res = (char*) malloc(2*len+offset+64);
+  res = (char*) GC_malloc_atomic(2*len+offset+64);
   cur = res;
   cur += sprintf(cur,"%s",_omcQuot);
   for (i=0; i<len; i++) {
@@ -1528,9 +1486,9 @@ static void decodeUri(const char *src, char **name, char **path)
   const char *srcName = src;
   int len = strlen(src);
   int lenPath = srcPath ? strlen(srcPath+1) : 0;
-  *name = (char*) malloc(len - lenPath + 2);
+  *name = (char*) GC_malloc_atomic(len - lenPath + 2);
   decodeUri2(src,*name,'/');
-  *path = (char*) malloc(lenPath+2);
+  *path = (char*) GC_malloc_atomic(lenPath+2);
   **path = '\0';
   if (srcPath == NULL) {
     return;
@@ -1592,9 +1550,9 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
     sz++;
     tmp = RML_CDR(tmp);
   }
-  A = (double*) malloc(sz*sz*sizeof(double));
+  A = (double*) GC_malloc_atomic(sz*sz*sizeof(double));
   assert(A != NULL);
-  B = (double*) malloc(sz*sizeof(double));
+  B = (double*) GC_malloc_atomic(sz*sizeof(double));
   assert(B != NULL);
   for (i=0; i<sz; i++) {
     tmp = RML_CAR(lA);
@@ -1606,7 +1564,8 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
     lA = RML_CDR(lA);
     lB = RML_CDR(lB);
   }
-  ipiv = (integer*) calloc(sz,sizeof(integer));
+  ipiv = (integer*) GC_malloc_atomic(sz*sizeof(integer));
+  memset(ipiv,0,sz*sizeof(integer));
   assert(ipiv != 0);
   lda = sz;
   ldb = sz;
@@ -1616,9 +1575,6 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   while (sz--) {
     tmp = mk_cons(mk_rcon(B[sz]),tmp);
   }
-  free(A);
-  free(B);
-  free(ipiv);
   *res = tmp;
   return info;
 }
@@ -1636,7 +1592,8 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
     sz++;
     tmp = RML_CDR(tmp);
   }
-  vres = (double*)calloc(sz,sizeof(double));
+  vres = (double*)GC_malloc_atomic(sz*sizeof(double));
+  memset(vres,0,sz*sizeof(double));
   lp = make_lp(sz, sz);
   set_verbose(lp, 1);
   inf = get_infinite(lp);
@@ -1696,7 +1653,7 @@ void splitVersion(const char *version, long *versionNum, char **versionExtra)
     buf = next;
   } while (cont && ++i < MODELICAPATH_LEVELS);
   if (*buf == ' ') buf++;
-  *versionExtra = strdup(buf);
+  *versionExtra = GC_strdup(buf);
   len = strlen(*versionExtra);
   /* fprintf(stderr, "have len %ld versionExtra %s\n", len, *versionExtra); */
   if (len >= 2 && 0==strcmp("mo", *versionExtra+len-2)) {
@@ -1708,10 +1665,9 @@ static int regularFileExistsInDirectory(const char *dir1, const char *dir2, cons
 {
   char *str;
   int res;
-  str = (char*) malloc(strlen(dir1) + strlen(dir2) + strlen(file) + 3);
+  str = (char*) GC_malloc_atomic(strlen(dir1) + strlen(dir2) + strlen(file) + 3);
   sprintf(str,"%s/%s/%s", dir1, dir2, file);
   res = SystemImpl__regularFileExists(str);
-  free(str);
   return res;
 }
 
@@ -1751,7 +1707,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
   }
   /* fprintf(stderr, "numMatches: %ld\n", *numMatches); */
   /*** NOTE: Doing the same thing again. It is very important the same (number of) entries are match as in the loop above ***/
-  res = (modelicaPathEntry*) malloc(*numMatches*sizeof(modelicaPathEntry));
+  res = (modelicaPathEntry*) GC_malloc(*numMatches*sizeof(modelicaPathEntry));
   mps = save_mps;
   while (RML_NILHDR != RML_GETHDR(mps)) {
     const char *mp = RML_STRINGDATA(RML_CAR(mps));
@@ -1781,12 +1737,12 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
         if (!ok)
           continue;
         res[i].dir = mp;
-        res[i].file = strdup(ent->d_name);
+        res[i].file = GC_strdup(ent->d_name);
         if (res[i].file[nlen] == ' ') {
           splitVersion(res[i].file+nlen+1, res[i].version, &res[i].versionExtra);
         } else {
           memset(res[i].version,0,sizeof(long)*MODELICAPATH_LEVELS);
-          res[i].versionExtra = strdup("");
+          res[i].versionExtra = "";
         }
         assert(i<*numMatches);
         i++;
@@ -1795,16 +1751,6 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     closedir(dir);
   }
   return res;
-}
-
-static void freeAllModelicaPaths(modelicaPathEntry *entries, int numEntries)
-{
-  int i;
-  for (i=0; i<numEntries; i++) {
-    free(entries[i].file);
-    free(entries[i].versionExtra);
-  }
-  free(entries);
 }
 
 static int modelicaPathEntryVersionEqual(long *ver1, long *ver2, int numToTest)
@@ -1854,7 +1800,6 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
         *outDir = entries[foundIndex].dir;
         *outName = entries[foundIndex].file;
         *isDir = entries[foundIndex].fileIsDir;
-        free(versionExtra);
         return 0;
       }
     }
@@ -1868,12 +1813,10 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
         *outDir = entries[i].dir;
         *outName = entries[i].file;
         *isDir = entries[i].fileIsDir;
-        free(versionExtra);
         return 0;
       }
     }
   }
-  free(versionExtra);
   return 1;
 }
 
@@ -1930,8 +1873,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
     prios = RML_CDR(prios);
   }
   /* fprintf(stderr, "result: %d %s %s %d", res, *outDir, *outName, *isDir); */
-  *outName = *outName ? strdup(*outName) : 0;
-  freeAllModelicaPaths(entries,numEntries);
+  *outName = *outName ? GC_strdup(*outName) : 0;
   return res;
 }
 
@@ -2010,7 +1952,7 @@ char* SystemImpl__iconv__ascii(const char * str)
   iconv_t ic;
   int i;
   sz = strlen(str);
-  buf = malloc(sz+1);
+  buf = GC_malloc_atomic(sz+1);
   *buf = 0;
   for (i=0; i<=sz; i++)
     buf[i] = str[i] & 0x80 ? '?' : str[i];
@@ -2019,22 +1961,15 @@ char* SystemImpl__iconv__ascii(const char * str)
 
 extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError)
 {
-  static char *buf = 0;
-  static int buflen = 0;
   char *in_str,*res;
-  size_t sz,out_sz;
+  size_t sz,out_sz,buflen;
   iconv_t ic;
   int count;
+  char *buf;
   sz = strlen(str);
-  if (buflen < sz*4) {
-    if (buf) free(buf);
-    buf = (char*)malloc(sz*8);
-    if (!buf) {
-      buflen = 0;
-      return (char*) "";
-    }
-    buflen = sz*8;
-  }
+  buflen = sz*8;
+  buf = (char*) GC_malloc_atomic(buflen);
+  assert(buf != 0);
   *buf = 0;
   /* fprintf(stderr,"iconv(%s,to=%s,%s) of size %d, buflen %d\n",str,to,from,sz,buflen); */
   ic = iconv_open(to, from);
@@ -2043,7 +1978,6 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
       char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
       c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
-      free(ignore);
     }
     return (char*) "";
   }
@@ -2057,7 +1991,6 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
       char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
       c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
-      free(ignore);
     }
     return (char*) "";
   }
@@ -2066,7 +1999,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
     if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
     return (char*) "";
   }
-  return buf;
+  return GC_strdup(buf);
 }
 
 #include <tinymt64.h>
@@ -2106,7 +2039,7 @@ int SystemImpl__intRand(int n)
 
 char* alloc_locale_str(const char *locale, int llen, const char *suffix, int slen)
 {
-  char *loc = (char*)malloc(sizeof(char) * (llen + slen + 1));
+  char *loc = (char*)GC_malloc_atomic(sizeof(char) * (llen + slen + 1));
   assert(loc != NULL);
   strncpy(loc, locale, llen);
   strncpy(loc + llen, suffix, slen + 1);
@@ -2142,7 +2075,7 @@ void SystemImpl__gettextInit(const char *locale)
   char *old_ctype_default = setlocale(LC_CTYPE, "");
   if (!old_ctype_default)
     old_ctype_default = "UTF-8";
-  char *old_ctype = strdup(old_ctype_default);
+  char *old_ctype = GC_strdup(old_ctype_default);
   int old_ctype_is_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
 
   int res = *locale == 0 ? setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, ""):
@@ -2152,8 +2085,6 @@ void SystemImpl__gettextInit(const char *locale)
   if (!res) {
     fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
   }
-  free(locale2);
-  free(locale3);
   clocale = setlocale(LC_CTYPE, NULL);
   int have_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
   /* We succesfully forced a new non-system locale; let's clear some variables */
@@ -2174,7 +2105,6 @@ void SystemImpl__gettextInit(const char *locale)
               setlocale(LC_CTYPE, "UTF-8"))) {
     fprintf(stderr, gettext("Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C.UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you might have some issues.\n"));
   }
-  free(old_ctype);
 #endif /* __MINGW32__ */
   if(omhome == NULL)
   {
@@ -2182,11 +2112,10 @@ void SystemImpl__gettextInit(const char *locale)
   return;
   }
   omlen = strlen(omhome);
-  localedir = (char*) malloc(omlen + 25);
+  localedir = (char*) GC_malloc_atomic(omlen + 25);
   sprintf(localedir, "%s/share/locale", omhome);
   bindtextdomain ("openmodelica", localedir);
   textdomain ("openmodelica");
-  free(localedir);
 #endif /* _MSC_VER */
 }
 
@@ -2210,7 +2139,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
   {
     const char *c_tokens[0]={};
     const char* fmt = "System.realpath failed on %s with errno: %d";
-    char* msg = (char*)malloc(strlen(path) + strlen(fmt) + 10);
+    char* msg = (char*)GC_malloc_atomic(strlen(path) + strlen(fmt) + 10);
     sprintf(msg, fmt, path, errno);
     c_add_message(6000,
       ErrorType_scripting,

@@ -66,9 +66,6 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ModelicaExternalC__Streams_5freadLine)
 {
-  state mem_state;
-
-  mem_state = get_memory_state();
   char* fileName = RML_STRINGDATA(rmlA0), *res = 0;
   long line = RML_UNTAGFIXNUM(rmlA1);
   int endOfFile = 0, fail = 1;
@@ -79,7 +76,6 @@ RML_BEGIN_LABEL(ModelicaExternalC__Streams_5freadLine)
   if (fail) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_scon(res);
   rmlA1 = mk_icon(endOfFile);
-  restore_memory_state(mem_state);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -99,9 +95,6 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(ModelicaExternalC__File_5ffullPathName)
 {
-  state mem_state;
-
-  mem_state = get_memory_state();
   char* fileName = RML_STRINGDATA(rmlA0), *res = 0;
   int fail = 1;
   MMC_TRY_TOP();
@@ -110,7 +103,6 @@ RML_BEGIN_LABEL(ModelicaExternalC__File_5ffullPathName)
   MMC_CATCH_TOP();
   if (fail) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_scon(res);
-  restore_memory_state(mem_state);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -164,9 +164,6 @@ static int execute_function(void *in_arg, void **out_arg,
   type_description crashbufretarg, retarg;
   void *v = NULL;
   int retval = 0;
-  void *states = push_memory_states(1);
-  state mem_state = get_memory_state();
-  // fprintf(stderr, "states-ix: %d\n", mem_state);
 
   if (printDebug) { fprintf(stderr, "[dynload]: input parameters:\n"); fflush(stderr); }
 
@@ -176,7 +173,6 @@ static int execute_function(void *in_arg, void **out_arg,
   while (!listEmpty(v)) {
     void *val = RML_CAR(v);
     if (value_to_type_desc(val, arg)) {
-      restore_memory_state(mem_state);
       if (printDebug)
       {
         puttype(arg);
@@ -214,8 +210,6 @@ static int execute_function(void *in_arg, void **out_arg,
     free_type_description(arg);
     ++arg;
   }
-
-  pop_memory_states(states);
 
   if (retval) {
     *out_arg = Values__META_5fFAIL;

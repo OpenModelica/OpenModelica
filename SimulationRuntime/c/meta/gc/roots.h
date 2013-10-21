@@ -94,12 +94,13 @@ void mmc_GC_add_roots_fallback(modelica_metatype*, int, mmc_GC_local_state_type 
 
 #else /* NO GC */
 
+/* Should not be generated any more
 #define mmc_GC_add_root(A,B,C)
 #define mmc_GC_add_roots(p, n, local_GC_state, name)
 #define mmc_GC_save_roots_state(name)                  (0)
 #define mmc_GC_undo_roots_state(local_GC_state)
 #define mmc_GC_unwind_roots_state(local_GC_state)
-
+*/
 
 #endif /* defined(_MMC_GC_) */
 

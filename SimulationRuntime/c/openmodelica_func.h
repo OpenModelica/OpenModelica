@@ -231,14 +231,6 @@ extern const char *relationDescription[];
  */
 extern void function_initSample(DATA *data);
 
-/*! \fn function_initMemoryState
- *
- *  This function initialize interval memory buffer.
- *
- *  \param [ref] [data]
- */
-extern void function_initMemoryState(void);
-
 /* function for calculation Jacobian */
 /*#ifdef D_OMC_JACOBIAN*/
 extern const int INDEX_JAC_G;

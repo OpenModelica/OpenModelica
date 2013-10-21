@@ -981,8 +981,6 @@ void deInitializeDataStruc(DATA *data)
     freeRingBuffer(data->simulationInfo.delayStructure[i]);
 
   free(data->simulationInfo.delayStructure);
-
-  pop_memory_states(NULL);
 }
 
 /* relation functions used in zero crossing detection

@@ -819,7 +819,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
   data->simulationInfo.lsMethod = getlinearSolverMethod(argc, argv);
 
-  function_initMemoryState();
   read_input_xml(&(data->modelData), &(data->simulationInfo));
   initializeOutputFilter(&(data->modelData), data->simulationInfo.variableFilter);
   /* set the global stepsize variable */

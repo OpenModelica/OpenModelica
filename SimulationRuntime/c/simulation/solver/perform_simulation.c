@@ -39,9 +39,6 @@
 #include "simulation_result.h"
 #include "openmodelica_func.h"
 
-/*
- * #include "dopri45.h"
- */
 #include "omc_error.h"
 #include <math.h>
 #include <string.h>
@@ -90,7 +87,6 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
   FILE *fmt = NULL;
   unsigned int stepNo = 0;
-  state mem_state;
   double oldStepSize;
 
   SIMULATION_INFO *simInfo = &(data->simulationInfo);
@@ -129,7 +125,6 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 #if defined(OMC_OMP)
 #pragma omp barrier
 #endif
-    mem_state = get_memory_state();
     currectJumpState = ERROR_SIMULATION;
     /* try */
     if(!setjmp(simulationJmpbuf))
@@ -238,8 +233,6 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
       checkForAsserts(data);
 
-      restore_memory_state(mem_state);
-
       if(retry)
       {
         solverInfo->offset = simInfo->stepSize - oldStepSize;
@@ -347,8 +340,6 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     { /* catch */
       if(!retry)
       {
-        restore_memory_state(mem_state);
-
         /* reduce step size by a half and try again */
         solverInfo->laststep = solverInfo->currentTime - solverInfo->laststep;
         oldStepSize = simInfo->stepSize;

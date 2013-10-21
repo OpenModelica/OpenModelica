@@ -39,14 +39,6 @@ encapsulated package System
   This module contain a set of system calls, for e.g. compiling and
   executing stuff, reading and writing files and so on."
 
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function removeFirstAndLastChar
-  input String inString;
-  output String outString;
-
-  external "C" outString=System_removeFirstAndLastChar(inString) annotation(Library = "omcruntime");
-end removeFirstAndLastChar;*/
-
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
   input String inString;
@@ -409,14 +401,6 @@ public function renameFile "Renames a file, returns 0 if suceeds, implemented us
   external "C" res=rename(fileName1,fileName2) annotation(Include="#include <stdio.h>");
 end renameFile;
 
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function getPackageFileNames
-  input String inString1;
-  input String inString2;
-  output String outString;
-  external "C" outString=System_getPackageFileNames(inString1,inString2) annotation(Library = "omcruntime");
-end getPackageFileNames;*/
-
 public function directoryExists
   input String inString;
   output Boolean outBool;
@@ -494,27 +478,6 @@ using the asctime() function in time.h (libc)
   external "C" timeStr=System_getCurrentTimeStr() annotation(Library = "omcruntime");
 end getCurrentTimeStr;
 
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function isSameFile "Checks if two filenames points to the same file"
-  input String fileName1;
-  input String fileName2;
-  external "C" System_isSameFile(fileName1,fileName2) annotation(Library = "omcruntime");
-end isSameFile;*/
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function isIdenticalFile "Checks if two filenames points to the exact same file"
-  input String fileName1;
-  input String fileName2;
-  output Boolean same;
-  external "C" same=System_isIdenticalFile(fileName1,fileName2) annotation(Library = "omcruntime");
-end isIdenticalFile;*/
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function windowsNewline "returns /r/n, since MetaModelica has a bug for representing this as a literal"
-output String str;
-external "C" str=System_windowsNewline() annotation(Library = "omcruntime");
-end windowsNewline;*/
-
 public function os "Returns a string with the operating system name
 
 For linux: 'linux'
@@ -524,12 +487,6 @@ For Windows : 'Windows_NT' (the name of env var OS )
   output String str;
   external "C" str = System_os() annotation(Library = "omcruntime");
 end os;
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function compileCFile
-  input String inString;
-  external "C" System_compileCFile(inString) annotation(Library = "omcruntime");
-end compileCFile;*/
 
 public function readFileNoNumeric
   input String inString;
