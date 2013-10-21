@@ -210,7 +210,7 @@ void Helper::initHelperVariables()
   Helper::newModelicaClass = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
   Helper::findClasses = tr("Find Classes");
-  Helper::openModelicaFiles = tr("Open Modelica File(s)");
+  Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::libraries = tr("Libraries");
   Helper::clearRecentFiles = tr("Clear Recent Files");
