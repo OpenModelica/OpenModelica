@@ -48,7 +48,7 @@ m_integer* integer_alloc(int n)
 /* allocates n strings in the string_buffer */
 m_string* string_alloc(int n)
 {
-  return (m_string*) GC_MALLOC(n*sizeof(m_string));
+  return (m_string*) GC_malloc_atomic(n*sizeof(m_string));
 }
 
 /* allocates n booleans in the boolean_buffer */
@@ -64,11 +64,11 @@ _index_t* size_alloc(int n)
 
 _index_t** index_alloc(int n)
 {
-  return (_index_t**) GC_MALLOC(n*sizeof(_index_t*));
+  return (_index_t**) GC_malloc(n*sizeof(_index_t*));
 }
 
 /* allocates n elements of size sze */
 void* generic_alloc(int n, size_t sze)
 {
-  return (void*) GC_MALLOC(n*sze);
+  return (void*) GC_malloc(n*sze);
 }
