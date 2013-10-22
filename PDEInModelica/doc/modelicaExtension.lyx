@@ -752,7 +752,7 @@ PDE
 status open
 
 \begin_layout Plain Layout
-and coordinate defiinition?
+and coordinate definition?
 \end_layout
 
 \end_inset
@@ -858,30 +858,6 @@ Region2D left (shape = shapeFunc, interval = {0,{0,1}}).
 
 \family default
  
-\begin_inset Newline newline
-\end_inset
-
-New language element.
-\end_layout
-
-\begin_layout Description
-normal
-\begin_inset space ~
-\end_inset
-
-vector implicitly defined for all N-1 dimensional regions in N dimensional
- domain.
- (e.g.
- 
-\family typewriter
-omega.left.n
-\family default
-) Used in boundary condition equations.
- How to write domain and region independently - perhaps 
-\family typewriter
-region.n
-\family default
-?
 \begin_inset Newline newline
 \end_inset
 
@@ -1270,6 +1246,30 @@ in omega.left + omega.right;
 \family default
 New language element.
  Not shure if it will be needed.
+\end_layout
+
+\begin_layout Description
+normal
+\begin_inset space ~
+\end_inset
+
+vector implicitly defined for all N-1 dimensional regions in N dimensional
+ domain.
+ (e.g.
+ 
+\family typewriter
+omega.left.n
+\family default
+) Used in boundary condition equations.
+ How to write domain and region independently - perhaps 
+\family typewriter
+region.n
+\family default
+?
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description

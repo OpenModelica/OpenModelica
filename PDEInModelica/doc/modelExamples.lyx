@@ -510,7 +510,7 @@ T(a,y,t)=0
 3D heat transfer with source and PID controller 
 \begin_inset CommandInset citation
 LatexCommand cite
-key "KristiansSlides"
+key "KristiansSlides,PDEModelingHiFlow3"
 
 \end_inset
 
@@ -1589,6 +1589,13 @@ For check: the result should be in agreement with Moens–Korteweg equation.
 
 \begin_layout Subsection
 Vibrating membrane (drum) in air
+\begin_inset CommandInset label
+LatexCommand label
+name "Vibrating-membrane"
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsubsection*
@@ -1784,6 +1791,17 @@ Equation connecting membrane and air
 \[
 \mathbf{v}(x,y,z,t)\cdot\mathbf{n}_{\tilde{\Omega}_{m}}=\frac{\partial u}{\partial t}(x-a_{x},y-a_{y},t)\text{ in }\tilde{\Omega}_{m}
 \]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/media/janek/AC6CB0776CB03DC0/Users/Jan/Work/EclipseWorkspace/OpenModelica/doc/PDEInModelica/models/membraneInAir.mo"
+lstparams "breaklines=true,caption={Vibrating membrane in air},captionpos=b,frame=tb,label={membraneInAir.mo}"
 
 \end_inset
 

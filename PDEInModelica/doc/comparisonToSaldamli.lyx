@@ -1,0 +1,1008 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Comparison of mine to Saldamlis extension
+\end_layout
+
+\begin_layout Standard
+4.2.1 
+\series bold
+Field Variables
+\series default
+ -- accepted
+\end_layout
+
+\begin_layout Standard
+4.2.2 
+\series bold
+Field Constructor
+\series default
+ -- good idea, will undertake
+\end_layout
+
+\begin_layout Standard
+4.2.3 
+\series bold
+Field Type in Expressions
+\end_layout
+
+\begin_layout Standard
+- 4.2.3.1 
+\series bold
+Binary operators
+\series default
+ -- accepted
+\end_layout
+
+\begin_layout Standard
+- 4.2.3.2 
+\series bold
+Special operators
+\series default
+ -- for time derivative of field should be used pder operator instead of
+ der 
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+4.2.4 Accessing Field Values
+\series default
+ -- This should not be allowed, if possible, for two reasons
+\end_layout
+
+\begin_layout Itemize
+it is not allowd in current Modelica for unknown functions of time 
+\end_layout
+
+\begin_layout Itemize
+more then one coordinate system should be allowed in one domain, it would
+ not be clear which coordinates are used in the acces
+\end_layout
+
+\begin_layout Standard
+Insted of accesing field values directly regions consisting of one point
+ will be used.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+4.3.1.
+ Domains Geometry Deffinition
+\end_layout
+
+\begin_layout Standard
+Main difference: Saldamli uses curves to describe boundary and thus the
+ domain.
+ This doesn't work very well in 3D, where the user would have to calculate
+ intersections of boundaries.
+ I prefare the way used in Peters book -- parametrize the interior and other
+ regions of the domain.
+ There are two aproaches to do this
+\end_layout
+
+\begin_layout Itemize
+shape function
+\end_layout
+
+\begin_layout Itemize
+equations holding coordinate transformations
+\end_layout
+
+\begin_layout Standard
+This way of domain deffinition should be supplemented with CSG (not designed
+ how) and the option to define domain in external CAD file.
+\end_layout
+
+\begin_layout Standard
+4.3.1.1 
+\series bold
+Domain Type
+\series default
+ (built-in) - Saldamli uses built in type that is directly used or inherited
+ by other domains.
+ Here domain is designed as a type that contains coordinates and is identified
+ by type-checking.
+ I'm not shure and don't insist on the latter.
+\end_layout
+
+\begin_layout Standard
+3.2.1.2 
+\series bold
+Boundary type
+\series default
+ (built-in) -- here it is not needed.
+ Here is 
+\family typewriter
+Region0D, Region1D, Region2D
+\family default
+ and 
+\family typewriter
+Region3D
+\family default
+ built-in type to describe boundaries, interior and other regions in the
+ domain instead.
+\end_layout
+
+\begin_layout Standard
+4.3.1.3 
+\series bold
+Coordinate Systems 
+\series default
+Saldamlis domain always has cartesian coordinates.
+ I would not insist on this.
+ 
+\end_layout
+
+\begin_layout Standard
+There are other differences compare examples:
+\end_layout
+
+\begin_layout Standard
+Saldamli:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Domain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Integer ndims = 1 ;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real cartesian [ ndims ] ;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real coord [ ndims ] = cartesian ;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Boundary boundary [ : ] ;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Domain ;
+\begin_inset VSpace medskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+type Cartesian2D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Domain (ndims=2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real x=coord[1]; //alias for first coordinate
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real y=coord[2]; //alias for second coordinate
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end Cartesian2D;
+\begin_inset VSpace medskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+type RectangularDomain
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+extends Cartesian2D (boundary ={left, bottom, right, top});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real w;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real h;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p2 = Point(p.x+w, p.y);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p3 = Point(p.x+w, p.y+h);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Point p4 = Point(p, p.y+h);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Linebottom = Line(p, p2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Lineright = Line(p2, p3);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Linetop = Line(p3, p4);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Lineleft = Line(p4, p);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end RectangularDomain;
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Mine:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Frameless
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+class DomainRectangle2D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real Lx = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real Ly = 1;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real ax = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real ay = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+function shapeFunc
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+input Real v1, v2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+output Real x = ax + Lx * v1, y = ay + Ly * v2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+end shapeFunc;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate x (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate y (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate r (name = "polar");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate theta (name = "polar");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+equation r = sqrt(x^2 + y^2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+theta = arctg(y/x);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region2D interior(shape = shapeFunc, interval = {{0,1},{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D right(shape = shapeFunc, interval = {1,{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D bottom(shape = shapeFunc, interval = {{0,1},0});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D left(shape = shapeFunc, interval = {0,{0,1}});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D top(shape = shapeFunc, interval = {{0,1},1});
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D boundary = right + bottom + left + top;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainRectangle2D;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset VSpace medskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+or
+\family typewriter
+
+\begin_inset VSpace medskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+class DomainRectangle2D
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate x (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate y (name = "cartesian");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate r (name = "polar");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Coordinate theta (name = "polar");
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real L1 = 1; //rectangle length, assign implicit value 
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real L2 = 1; //rectangle height, assign implicit value
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a1 = 0; //x-coordinate of left side, implicitly 0
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real a2 = 0; //y-coorinate of lower side, implicitly 0
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real b1 = a1 + L1; //x-coordinate of right side
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+parameter Real b2 = a2 + L2; //y-coorinate of upper side
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region2D interior (x in (a1,b1), y in (a2,b2)); //or rather (x,y) in (a1,b1)@(a2
+,b2)??
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D right (x = a, y in (a2,b2));
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D bottom (x in (a1,b1), y = b1);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D left (x = a1, y = (a2,b2));
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D top (x in (a1,b1), y = b2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+Region1D boundary = right + bottom + left + top;
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+equation
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+r = sqrt(x^2 + y^2);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+\begin_inset space \quad{}
+\end_inset
+
+
+\begin_inset space \quad{}
+\end_inset
+
+theta = arctg(y/x);
+\end_layout
+
+\begin_layout Plain Layout
+
+\family typewriter
+end DomainRectangle2D; 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+4.3.2 Differential Operators
+\end_layout
+
+\begin_layout Standard
+4.3.2.1 
+\series bold
+Partial derivative 
+\series default
+Saldamli uses 
+\family typewriter
+der(u,x,y..)
+\family default
+, here 
+\family typewriter
+pder(u,dom.x,dom.y..).
+
+\family default
+ I'm not shure, what is better.
+ But time derivatives should not be written as 
+\family typewriter
+der(u)
+\family default
+ but 
+\family typewriter
+(p)der(u,time)
+\end_layout
+
+\begin_layout Standard
+4.3.2.2 
+\series bold
+Normal derivative
+\series default
+ - accepted, but accesd via the 
+\family typewriter
+region
+\family default
+ keyword, e.g.
+\end_layout
+
+\begin_layout Standard
+pder(u
+\family typewriter
+,omega.boundary.n) = 0 in omega.boundary;
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+pder(u,region.n) = 0 in omega.boundary;
+\end_layout
+
+\begin_layout Standard
+4.3.2.3 
+\series bold
+Vector notation 
+\series default
+-- coordinate-free differential operators as 
+\family typewriter
+gradient
+\family default
+, 
+\family typewriter
+divergence, rotation
+\family default
+ ...
+ I didn't work up how to define this.
+ Could be accepted.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+4.3.3 Domain Specifier in Equations
+\end_layout
+
+\begin_layout Standard
+keyword 
+\family typewriter
+in
+\family default
+ accepted.
+ Should be used even for PDE to specifie region.
+ Introduced new keywords 
+\family typewriter
+dom
+\family default
+ (or 
+\family typewriter
+domain
+\family default
+) and 
+\family typewriter
+region
+\family default
+ used in equations to represent current domain and region specified with
+ the 
+\family typewriter
+in
+\family default
+ op.
+ They are used to acces coordinates and normal vector:
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+pder(u,dom.x) in omega.interior;
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+pder(u,region.n) in omega.boundary;
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+4.3.4 Field Reduction 
+\series default
+-- integral operator.
+ I didn't consider yet, coul'd be perhaps undertaken.
+\end_layout
+
+\begin_layout Standard
+\begin_inset VSpace medskip
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Can Saldamli write equations domain independent without domain independent
+ operators? Perhaps not, but is it actualy needed?
+\end_layout
+
+\begin_layout Standard
+How to write equations connecting fields from different domains?
+\end_layout
+
+\end_body
+\end_document

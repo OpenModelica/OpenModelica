@@ -117,6 +117,32 @@ key "leveque2007finite"
 
 \end_layout
 
+\begin_layout Standard
+
+\lang british
+A Framework for Describing and Solving PDE Models in Modelica 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "saldamli2005framework"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\lang british
+Solving pde models in modelica.
+\begin_inset CommandInset citation
+LatexCommand cite
+key "li2008solving"
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Chapter
 
 \lang british
@@ -204,7 +230,9 @@ Notation for normal vector to domain boundaries e.g.
 omega.left.n.
 
 \family default
- How to write normal vector domain-independently?
+ How to write normal vector domain-independently? -- perhaps keyword 
+\family typewriter
+region
 \end_layout
 
 \end_deeper
@@ -421,12 +449,43 @@ cartesian
 \begin_layout Itemize
 
 \series bold
-How to write boundary conditions that combine field variables from different
- domains?
+How to write equations (boundary conditions) that combine field variables
+ from different domains?
 \series default
- Allow some connection of regions of different domains.
+ 
 \end_layout
 
+\begin_deeper
+\begin_layout Itemize
+Using a ragion that is is subset of both domains -- how to write this?
+\end_layout
+
+\begin_layout Itemize
+Use just one domain, transform coordinates from the other domain.
+ Example from 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Vibrating-membrane"
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+v(dom.x,dom.y,dom.z,t)*region.n = pder(u,t)(dom.x - a_x,dom.y - a_y,t) in room.membrane
+;
+\begin_inset Newline newline
+\end_inset
+
+
+\family default
+I dislike usage of arguments in equations.
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 Initialization.
 \end_layout
