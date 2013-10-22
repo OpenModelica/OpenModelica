@@ -82,11 +82,12 @@ static inline size_t round_up(size_t num, size_t factor)
 
 static inline void pool_expand(size_t len)
 {
+  list *newlist = NULL;
   /* Check if we have enough memory already */
   if (memory_pools->size - memory_pools->used >= len) {
     return;
   }
-  list *newlist = (list*) malloc(sizeof(list));
+  newlist = (list*) malloc(sizeof(list));
   newlist->next = memory_pools;
   memory_pools = newlist;
   memory_pools->used = 0;
@@ -100,7 +101,7 @@ static void* pool_malloc(size_t sz)
   sz = round_up(sz,8);
   pthread_mutex_lock(&memory_pool_mutex);
   pool_expand(sz);
-  res = memory_pools->memory + memory_pools->used;
+  res = (void*)((char*)memory_pools->memory + memory_pools->used);
   memory_pools->used += sz;
   pthread_mutex_unlock(&memory_pool_mutex);
   memset(res,0,sz);
