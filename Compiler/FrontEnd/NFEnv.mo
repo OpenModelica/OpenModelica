@@ -935,7 +935,7 @@ algorithm
 
     else false;
   end match;
-end isEqual;
+end isFrameEqual;
 
 protected function scopeTypeEqual
   input ScopeType inScopeType1;
