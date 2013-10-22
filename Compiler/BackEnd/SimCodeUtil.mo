@@ -2432,7 +2432,7 @@ algorithm
       equation
         v = BackendVariable.getVarAt(vars, vindex);
         true = BackendVariable.isVarDiscrete(v);
-        zcEqns = BackendDAECreate.zeroCrossingsEquations(syst, shared);
+        zcEqns = zeroCrossingsEquations(syst, shared);
         true = listMember(index, zcEqns);
       then ({}, {}, iuniqueEqIndex, itempvars);
         
@@ -2498,6 +2498,76 @@ algorithm
     then fail();
   end matchcontinue;
 end createEquationsWork;
+
+// =============================================================================
+// section for zeroCrossingsEquations
+//
+// =============================================================================
+
+public function zeroCrossingsEquations "
+  Returns a list of all equations (by their index) that contain a zero crossing
+  Used e.g. to find out which discrete equations are not part of a zero crossing"
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output list<Integer> eqns;
+algorithm
+  eqns := match (syst, shared)
+    local
+      list<BackendDAE.ZeroCrossing> zcLst;
+      list<list<Integer>> zcEqns;
+      list<Integer> wcEqns;
+      BackendDAE.EquationArray eqnArr;
+    case (BackendDAE.EQSYSTEM(orderedEqs=eqnArr), BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst)))
+      equation
+        zcEqns = List.map(zcLst, zeroCrossingEquations);
+        wcEqns = whenEquationsIndices(eqnArr);
+        eqns = List.unionList(listAppend(zcEqns, {wcEqns}));
+      then eqns;
+  end match;
+end zeroCrossingsEquations;
+
+protected function zeroCrossingEquations "
+  Returns the list of equations (indices) from a ZeroCrossing"
+  input BackendDAE.ZeroCrossing inZC;
+  output list<Integer> outLst;
+algorithm
+  BackendDAE.ZERO_CROSSING(_, outLst, _) := inZC;
+end zeroCrossingEquations;
+
+protected function whenEquationsIndices "
+  Returns all equation-indices that contain a when clause"
+  input BackendDAE.EquationArray eqns;
+  output list<Integer> res;
+algorithm
+   res := match (eqns)
+     case _ equation
+         res=whenEquationsIndices2(1, BackendDAEUtil.equationArraySize(eqns), eqns);
+       then res;
+   end match;
+end whenEquationsIndices;
+
+protected function whenEquationsIndices2
+  input Integer i;
+  input Integer size;
+  input BackendDAE.EquationArray eqns;
+  output list<Integer> eqnLst;
+algorithm
+  eqnLst := matchcontinue(i, size, eqns)
+    case(_, _, _)
+      equation
+        true = (i > size );
+      then {};
+    case(_, _, _)
+      equation
+        BackendDAE.WHEN_EQUATION(whenEquation = _) = BackendDAEUtil.equationNth(eqns, i-1);
+        eqnLst = whenEquationsIndices2(i+1, size, eqns);
+      then i::eqnLst;
+    case(_, _, _)
+      equation
+        eqnLst=whenEquationsIndices2(i+1, size, eqns);
+      then eqnLst;
+  end matchcontinue;
+end whenEquationsIndices2;
 
 protected function addAssertEqn
   input list<DAE.Statement> asserts;
