@@ -43,7 +43,8 @@ public import Absyn;
 public import NFConnect2;
 public import DAE;
 public import SCode;
-public import NFEnv;
+
+//public import NFEnv;
 
 public uniontype Prefix
   record EMPTY_PREFIX
@@ -134,7 +135,7 @@ public uniontype Binding
 
   record RAW_BINDING
     Absyn.Exp bindingExp;
-    NFEnv.Env env;
+    Env env;
     Prefix prefix;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
     Absyn.Info info;
@@ -181,7 +182,7 @@ public uniontype Component
     SCode.Element element;
     Modifier modifier;
     Prefixes prefixes;
-    NFEnv.Env env;
+    Env env;
     Prefix prefix;
     Absyn.Info info;
   end CONDITIONAL_COMPONENT;
@@ -235,7 +236,7 @@ public uniontype Modifier
     SCode.Final finalPrefix;
     SCode.Each eachPrefix;
     SCode.Element element;
-    NFEnv.Env env;
+    Env env;
     Modifier mod;
   end REDECLARE;
 
@@ -433,5 +434,79 @@ public uniontype FunctionSlot
     Option<DAE.Exp> defaultValue;
   end SLOT;
 end FunctionSlot;
+
+public uniontype EntryOrigin
+  record LOCAL_ORIGIN "An entry declared in the local scope." end LOCAL_ORIGIN;
+  record BUILTIN_ORIGIN "An entry declared in the builtin scope." end BUILTIN_ORIGIN;
+
+  record INHERITED_ORIGIN
+    "An entry that has been inherited through an extends clause."
+    Absyn.Path baseClass "The path of the baseclass the entry was inherited from.";
+    Absyn.Info info "The info of the extends clause.";
+    list<EntryOrigin> origin "The origins of the element in the baseclass.";
+    Env originEnv "The environment the entry was inherited from.";
+  end INHERITED_ORIGIN;
+
+  record REDECLARED_ORIGIN
+    "An entry that has replaced another entry through redeclare."
+    Entry replacedEntry "The replaced entry.";
+    Env originEnv "The environment the replacement came from.";
+  end REDECLARED_ORIGIN;
+
+  record IMPORTED_ORIGIN
+    "An entry that has been imported with an import statement."
+    Absyn.Import imp;
+    Absyn.Info info;
+    Env originEnv "The environment the entry was imported from.";
+  end IMPORTED_ORIGIN;
+end EntryOrigin;
+
+public uniontype Entry
+  record ENTRY
+    String name;
+    SCode.Element element;
+    Modifier mod;
+    list<EntryOrigin> origins;
+  end ENTRY;
+end Entry;
+
+public uniontype ScopeType
+  record BUILTIN_SCOPE end BUILTIN_SCOPE;
+  record TOP_SCOPE end TOP_SCOPE;
+  record NORMAL_SCOPE end NORMAL_SCOPE;
+  record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
+  record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
+end ScopeType;
+
+public uniontype Frame
+  record FRAME
+    Option<String> name;
+    ScopeType scopeType;
+    AvlTree entries;
+  end FRAME;
+end Frame;
+
+public type Env = list<Frame>;
+
+public type AvlKey = String;
+public type AvlValue = Entry;
+
+public uniontype AvlTree
+  "The binary tree data structure"
+  record AVLTREENODE
+    Option<AvlTreeValue> value "Value";
+    Integer height "height of tree, used for balancing";
+    Option<AvlTree> left "left subtree";
+    Option<AvlTree> right "right subtree";
+  end AVLTREENODE;
+end AvlTree;
+
+public uniontype AvlTreeValue
+  "Each node in the binary tree can have a value associated with it."
+  record AVLTREEVALUE
+    AvlKey key "Key" ;
+    AvlValue value "Value" ;
+  end AVLTREEVALUE;
+end AvlTreeValue;
 
 end NFInstTypes;

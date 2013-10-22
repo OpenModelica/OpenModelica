@@ -61,9 +61,6 @@ public type Entry = NFEnv.Entry;
 public type Prefix = NFInstTypes.Prefix;
 public type Modifier = NFInstTypes.Modifier;
 
-public type ModTable = list<tuple<String, Modifier>>;
-public constant ModTable emptyModTable = {};
-
 public function translateMod
   input SCode.Mod inMod;
   input String inElementName;
@@ -186,136 +183,54 @@ algorithm
   end match;
 end translateBinding;
 
-public function addClassModToTable
+public function addModToEnv
   input Modifier inMod;
-  input ModTable inTable;
-  output ModTable outTable;
+  input Env inEnv;
+  output Env outEnv;
 algorithm
-  outTable := matchcontinue(inMod, inTable)
+  outEnv := matchcontinue(inMod, inEnv)
     local
       list<tuple<String, Modifier>> mods;
-      ModTable table;
+      Env env;
 
-    case (NFInstTypes.NOMOD(), _) then emptyModTable;
+    case (NFInstTypes.NOMOD(), _) then inEnv;
 
     case (_, _)
       equation
         mods = splitMod(inMod);
-        
-        table = List.fold(mods, addModToTable, inTable);
+        env = List.fold(mods, addModToEnv2, inEnv);
       then
-        table;
+        env;
 
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFMod.addClassModToTable failed on modifier " +&
-          printMod(inMod));
+        Debug.traceln("- NFMod.addModToEnv failed on modifier " +& printMod(inMod));
       then
         fail();
 
   end matchcontinue;
-end addClassModToTable;
+end addModToEnv;
 
-protected function addModToTable
-  input tuple<String, Modifier> inMod;
-  input ModTable inModTable;
-  output ModTable outModTable;
+protected function addModToEnv2
+  input tuple<String, Modifier> inMods;
+  input Env inEnv;
+  output Env outEnv;
 algorithm
-  outModTable := match(inMod, inModTable)
-    local
-      String inner_name, outer_name;
-      tuple<String, Modifier> mod;
-      ModTable rest_mods;
-      Boolean eq_name;
-
-    case ((inner_name, _), (mod as (outer_name, _)) :: rest_mods)
-      equation
-        eq_name = stringEq(inner_name, outer_name);
-      then
-        addModToTable2(eq_name, inMod, mod, rest_mods);
-
-    case (_, {}) then inMod :: inModTable;
-
-  end match;
-end addModToTable;
-
-protected function addModToTable2
-  input Boolean inIsEqual;
-  input tuple<String, Modifier> inInnerMod;
-  input tuple<String, Modifier> inOuterMod;
-  input ModTable inModTable;
-  output ModTable outModTable;
-algorithm
-  outModTable := match(inIsEqual, inInnerMod, inOuterMod, inModTable)
-    local
-      String name;
-      Modifier inner_mod, outer_mod;
-      ModTable rest_mods;
-
-    case (true, (_, inner_mod), (name, outer_mod), _)
-      equation
-        outer_mod = mergeMod(outer_mod, inner_mod);
-      then
-        ((name, outer_mod) :: inModTable);
-
-    else
-      equation
-        rest_mods = addModToTable(inInnerMod, inModTable);
-      then
-        (inOuterMod :: rest_mods);
-
-  end match;
-end addModToTable2;
-
-public function getModFromTable
-  input String inName;
-  input ModTable inTable;
-  output Modifier outMod;
-algorithm
-  outMod := matchcontinue(inName, inTable)
+  outEnv := match(inMods, inEnv)
     local
       String name;
       Modifier mod;
-      list<tuple<String, Modifier>> rest_mods;
+      Env env;
 
-    case (_, (name, mod) :: _)
+    case ((name, mod), env)
       equation
-        true = stringEq(name, inName);
-        mod = getModFromTable2(mod);
+        (env, _) = NFEnv.updateEntry(name, mod, NFEnv.setEntryModifier, inEnv);
       then
-        mod;
+        env;
 
-    case (_, _ :: rest_mods) then getModFromTable(inName, rest_mods);
-
-    case (_, {}) then NFInstTypes.NOMOD();
-
-  end matchcontinue;
-end getModFromTable;
-
-protected function getModFromTable2
-  input Modifier inMod;
-  output Modifier outMod;
-algorithm
-  outMod := match(inMod)
-    case NFInstTypes.MODIFIER(name = _) then inMod;
-    else NFInstTypes.NOMOD();
   end match;
-end getModFromTable2;
-
-public function getRedeclaresFromTable
-  input ModTable inMods;
-  output list<Modifier> outRedeclares;
-algorithm
-  outRedeclares := List.filterMap(inMods, getRedeclaresFromTable2);
-end getRedeclaresFromTable;
-
-protected function getRedeclaresFromTable2
-  input tuple<String, Modifier> inMod;
-  output Modifier outRedeclare;
-algorithm
-  (_, outRedeclare as NFInstTypes.REDECLARE(element = _)) := inMod;
-end getRedeclaresFromTable2;
+end addModToEnv2;
 
 //protected function checkModifier
 //  input tuple<String, Modifier> inMod;

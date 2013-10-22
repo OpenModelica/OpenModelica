@@ -39,6 +39,8 @@ encapsulated package NFEnv
 "
 public import Absyn;
 public import SCode;
+public import NFInstTypes;
+public import NFEnvAvlTree;
 
 protected import Debug;
 protected import Dump;
@@ -48,68 +50,24 @@ protected import List;
 protected import NFBuiltin;
 protected import Util;
 
-public constant Integer tmpTickIndex = 2;
+public type EntryOrigin = NFInstTypes.EntryOrigin;
+public type Entry = NFInstTypes.Entry;
+public type ScopeType = NFInstTypes.ScopeType;
+public type Frame = NFInstTypes.Frame;
+public type Env = NFInstTypes.Env;
+public type AvlTree = NFEnvAvlTree.AvlTree;
+public type Modifier = NFInstTypes.Modifier;
 
-public uniontype EntryOrigin
-  record LOCAL_ORIGIN "An entry declared in the local scope." end LOCAL_ORIGIN;
-  record BUILTIN_ORIGIN "An entry declared in the builtin scope." end BUILTIN_ORIGIN;
-
-  record INHERITED_ORIGIN
-    "An entry that has been inherited through an extends clause."
-    Absyn.Path baseClass "The path of the baseclass the entry was inherited from.";
-    Absyn.Info info "The info of the extends clause.";
-    list<EntryOrigin> origin "The origins of the element in the baseclass.";
-    Env originEnv "The environment the entry was inherited from.";
-  end INHERITED_ORIGIN;
-
-  record REDECLARED_ORIGIN
-    "An entry that has replaced another entry through redeclare."
-    Entry replacedEntry "The replaced entry.";
-    Env originEnv "The environment the replacement came from.";
-  end REDECLARED_ORIGIN;
-
-  record IMPORTED_ORIGIN
-    "An entry that has been imported with an import statement."
-    Absyn.Import imp;
-    Absyn.Info info;
-    Env originEnv "The environment the entry was imported from.";
-  end IMPORTED_ORIGIN;
-end EntryOrigin;
-
-public uniontype Entry
-  record ENTRY
-    String name;
-    SCode.Element element;
-    list<EntryOrigin> origins;
-  end ENTRY;
-end Entry;
-
-public uniontype ScopeType
-  record BUILTIN_SCOPE end BUILTIN_SCOPE;
-  record TOP_SCOPE end TOP_SCOPE;
-  record NORMAL_SCOPE end NORMAL_SCOPE;
-  record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
-  record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
-end ScopeType;
-
-public uniontype Frame
-  record FRAME
-    Option<String> name;
-    ScopeType scopeType;
-    AvlTree entries;
-  end FRAME;
-end Frame;
-
-public type Env = list<Frame>;
 public constant Env emptyEnv = {};
+public constant Integer tmpTickIndex = 2;
 
 protected function encapsulatedToScopeType
   input SCode.Encapsulated inEncapsulated;
   output ScopeType outScopeType;
 algorithm
   outScopeType := match(inEncapsulated)
-    case SCode.ENCAPSULATED() then ENCAPSULATED_SCOPE();
-    else NORMAL_SCOPE();
+    case SCode.ENCAPSULATED() then NFInstTypes.ENCAPSULATED_SCOPE();
+    else NFInstTypes.NORMAL_SCOPE();
   end match;
 end encapsulatedToScopeType;
 
@@ -119,7 +77,7 @@ public function openScope
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := FRAME(inScopeName, inScopeType, emptyAvlTree) :: inEnv;
+  outEnv := NFInstTypes.FRAME(inScopeName, inScopeType, NFEnvAvlTree.emptyAvlTree) :: inEnv;
 end openScope;
 
 public function openClassScope
@@ -131,7 +89,7 @@ protected
   ScopeType st;
 algorithm
   st := encapsulatedToScopeType(inEncapsulated);
-  outEnv := FRAME(SOME(inClassName), st, emptyAvlTree) :: inEnv;
+  outEnv := NFInstTypes.FRAME(SOME(inClassName), st, NFEnvAvlTree.emptyAvlTree) :: inEnv;
 end openClassScope;
 
 public function exitScope
@@ -177,7 +135,7 @@ public function isTopScope
   output Boolean outIsTopScope;
 algorithm
   outIsTopScope := match(inEnv)
-    case FRAME(scopeType = TOP_SCOPE()) :: _ then true;
+    case NFInstTypes.FRAME(scopeType = NFInstTypes.TOP_SCOPE()) :: _ then true;
     else false;
   end match;
 end isTopScope;
@@ -187,7 +145,7 @@ public function isBuiltinScope
   output Boolean outIsBuiltinScope;
 algorithm
   outIsBuiltinScope := match(inEnv)
-    case FRAME(scopeType = BUILTIN_SCOPE()) :: _ then true;
+    case NFInstTypes.FRAME(scopeType = NFInstTypes.BUILTIN_SCOPE()) :: _ then true;
     else false;
   end match;
 end isBuiltinScope;
@@ -201,7 +159,7 @@ protected
   Absyn.Info info;
 algorithm
   SCode.EXTENDS(baseClassPath = bc, info = info) := inExtends;
-  outOrigin := INHERITED_ORIGIN(bc, info, {}, inEnv);
+  outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, {}, inEnv);
 end makeInheritedOrigin;
   
 public function makeImportedOrigin
@@ -213,7 +171,7 @@ protected
   Absyn.Info info;
 algorithm
   SCode.IMPORT(imp = imp, info = info) := inImport;
-  outOrigin := IMPORTED_ORIGIN(imp, info, inEnv);
+  outOrigin := NFInstTypes.IMPORTED_ORIGIN(imp, info, inEnv);
 end makeImportedOrigin;
   
 public function makeEntry
@@ -223,7 +181,7 @@ protected
   String name;
 algorithm
   name := SCode.elementName(inElement);
-  outEntry := ENTRY(name, inElement, {});
+  outEntry := NFInstTypes.ENTRY(name, inElement, NFInstTypes.NOMOD(), {});
 end makeEntry;
 
 public function makeEntryWithOrigin
@@ -234,7 +192,7 @@ protected
   String name;
 algorithm
   name := SCode.elementName(inElement);
-  outEntry := ENTRY(name, inElement, inOrigin);
+  outEntry := NFInstTypes.ENTRY(name, inElement, NFInstTypes.NOMOD(), inOrigin);
 end makeEntryWithOrigin;
 
 public function changeEntryOrigin
@@ -256,9 +214,9 @@ protected
   AvlTree entries;
   Env rest_env;
 algorithm
-  FRAME(name, ty, entries) :: rest_env := inEnv;
-  entries := avlTreeAdd(entries, entryName(inEntry), inEntry, mergeEntry);
-  outEnv := FRAME(name, ty, entries) :: rest_env;
+  NFInstTypes.FRAME(name, ty, entries) :: rest_env := inEnv;
+  entries := NFEnvAvlTree.add(entries, entryName(inEntry), inEntry, mergeEntry);
+  outEnv := NFInstTypes.FRAME(name, ty, entries) :: rest_env;
 end insertEntry;
 
 protected function mergeEntry
@@ -272,22 +230,23 @@ algorithm
     local
       String name;
       SCode.Element old_element, new_element, element;
+      Modifier old_mod, new_mod;
       list<EntryOrigin> old_origins, new_origins, origins;
       EntryOrigin origin;
 
     // Merge the origins to make sure that it's a valid insertion.
     // Then update the old entry with the new origins.
-    case (ENTRY(name, old_element, old_origins),
-          ENTRY(element = new_element, origins = new_origins))
+    case (NFInstTypes.ENTRY(name, old_element, old_mod, old_origins),
+        NFInstTypes.ENTRY(element = new_element, mod = new_mod, origins = new_origins))
       equation
         // New entries should only have one origin.
         origin = getSingleOriginFromList(new_origins);
         element = checkOrigin(origin, old_origins, old_element, new_element);
         origins = mergeOrigin(origin, old_origins);
       then
-        ENTRY(name, element, origins);
+        NFInstTypes.ENTRY(name, element, old_mod, origins);
 
-    case (ENTRY(name = name), _)
+    case (NFInstTypes.ENTRY(name = name), _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- NFEnv.mergeEntry failed on entry " +& name);
@@ -305,7 +264,7 @@ algorithm
     local
       EntryOrigin origin;
 
-    case {} then LOCAL_ORIGIN();
+    case {} then NFInstTypes.LOCAL_ORIGIN();
     case {origin} then origin;
 
   end match;
@@ -322,13 +281,13 @@ algorithm
       list<EntryOrigin> rest_origins;
 
     // The new origin is inherited, try to merge it with an existing origin.
-    case (INHERITED_ORIGIN(baseClass = _), _)
+    case (NFInstTypes.INHERITED_ORIGIN(baseClass = _), _)
       then mergeInheritedOrigin(inNewOrigin, inOldOrigins);
 
     // The first origin is local. Keep it at the head of the list, so that we
     // can quickly determine if an entry is local or not.
-    case (_, LOCAL_ORIGIN() :: rest_origins)
-      then LOCAL_ORIGIN() :: inNewOrigin :: rest_origins;
+    case (_, NFInstTypes.LOCAL_ORIGIN() :: rest_origins)
+      then NFInstTypes.LOCAL_ORIGIN() :: inNewOrigin :: rest_origins;
 
     // Otherwise, just add the new origin to the head of the list.
     else inNewOrigin :: inOldOrigins;
@@ -354,13 +313,13 @@ algorithm
       Env env;
 
     // Found two origins with the same base class, merge their origins.
-    case (INHERITED_ORIGIN(baseClass = bc1, origin = origin1),
-        INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins)
+    case (NFInstTypes.INHERITED_ORIGIN(baseClass = bc1, origin = origin1),
+        NFInstTypes.INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins)
       equation
         true = Absyn.pathEqual(bc1, bc2);
         origin2 = List.fold(origin1, mergeOrigin, origin2);
       then
-        INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins;
+        NFInstTypes.INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins;
 
     // No match, search the rest.
     case (_, origin :: rest_origins)
@@ -397,17 +356,17 @@ algorithm
     // so we can't print an error for that here.
 
     // The new element was imported from an unqualified import, keep the old.
-    case (IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)), _, _, _)
+    case (NFInstTypes.IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)), _, _, _)
       then inOldElement;
 
     // The old element was imported from an unqualified import, replace with the new.
-    case (_, IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)) :: _, _, _)
+    case (_, NFInstTypes.IMPORTED_ORIGIN(imp = Absyn.UNQUAL_IMPORT(path = _)) :: _, _, _)
       then inNewElement;
 
     // The new element is imported by a named or qualified import, which means
     // that we either have conflicting imports or that the imported element is
     // shadowed by a local/inherited element.
-    case (IMPORTED_ORIGIN(imp = _), _, _, _)
+    case (NFInstTypes.IMPORTED_ORIGIN(imp = _), _, _, _)
       equation
         // Check if we have conflicting imports.
         List.map1_0(inOldOrigins, checkOriginImportConflict, inNewOrigin);
@@ -423,7 +382,7 @@ algorithm
     // element. Note that if the old element would have had more than one
     // origin, then we would already have printed a warning in the case above
     // when it was added.
-    case (_, {origin as IMPORTED_ORIGIN(imp = _)}, _, _)
+    case (_, {origin as NFInstTypes.IMPORTED_ORIGIN(imp = _)}, _, _)
       equation
         printImportShadowWarning(origin, inNewElement);
       then
@@ -432,7 +391,7 @@ algorithm
     // The new element was inherited, check that it's identical to the existing
     // element. Keep the old one in that case, so that e.g. error messages favor
     // the local elements.
-    case (INHERITED_ORIGIN(baseClass = _), _, _, _)
+    case (NFInstTypes.INHERITED_ORIGIN(baseClass = _), _, _, _)
       equation
         /*********************************************************************/
         // TODO: Check duplicate elements due to inheritance here.
@@ -445,14 +404,14 @@ algorithm
     // The new element is a local element. Since local elements are added first
     // this means that we have duplicate elements in the scope. This is not
     // allowed, so print an error and fail.
-    case (LOCAL_ORIGIN(), _, _, _)
+    case (NFInstTypes.LOCAL_ORIGIN(), _, _, _)
       equation
         printDoubleDeclarationError(inOldElement, inNewElement);
       then
         fail();
 
     // Same as case above, but with builtin elements.
-    case (BUILTIN_ORIGIN(), _, _, _)
+    case (NFInstTypes.BUILTIN_ORIGIN(), _, _, _)
       equation
         printDoubleDeclarationError(inOldElement, inNewElement);
       then
@@ -483,7 +442,7 @@ algorithm
       String name;
       Absyn.Info info1, info2;
 
-    case (IMPORTED_ORIGIN(imp = imp, info = info1), IMPORTED_ORIGIN(info = info2))
+    case (NFInstTypes.IMPORTED_ORIGIN(imp = imp, info = info1), NFInstTypes.IMPORTED_ORIGIN(info = info2))
       equation
         name = Absyn.importName(imp);
         Error.addMultiSourceMessage(Error.MULTIPLE_QUALIFIED_IMPORTS_WITH_SAME_NAME,
@@ -507,7 +466,7 @@ protected
   String import_str;
 algorithm
   info1 := SCode.elementInfo(inShadowElement);
-  IMPORTED_ORIGIN(imp = imp, info = info2) := inImportOrigin;
+  NFInstTypes.IMPORTED_ORIGIN(imp = imp, info = info2) := inImportOrigin;
   import_str := Dump.unparseImportStr(imp);
   Error.addMultiSourceMessage(Error.LOOKUP_SHADOWING,
     {import_str}, {info1, info2});
@@ -563,9 +522,9 @@ protected
   list<EntryOrigin> origins;
   Env env;
 algorithm
-  INHERITED_ORIGIN(bc, info, origins, env) := inOrigin1;
+  NFInstTypes.INHERITED_ORIGIN(bc, info, origins, env) := inOrigin1;
   origins := inOrigin2 :: origins;
-  outOrigin := INHERITED_ORIGIN(bc, info, origins, env);
+  outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, origins, env);
 end collapseInheritedOrigins2;
 
 public function insertElement
@@ -611,11 +570,11 @@ protected
   Env rest_env;
   String entry_name;
 algorithm
-  FRAME(name, ty, entries) :: rest_env := inEnv;
+  NFInstTypes.FRAME(name, ty, entries) :: rest_env := inEnv;
   entry_name := entryName(inReplacement);
   (entries, outWasReplaced) :=
-    avlTreeUpdate(entries, entry_name, replaceEntry2, (inReplacement, inOriginEnv));
-  outEnv := FRAME(name, ty, entries) :: rest_env;
+    NFEnvAvlTree.update(entries, entry_name, replaceEntry2, (inReplacement, inOriginEnv));
+  outEnv := NFInstTypes.FRAME(name, ty, entries) :: rest_env;
 end replaceEntry;
 
 protected function replaceEntry2
@@ -628,10 +587,37 @@ protected
   Env env;
 algorithm
   (entry, env) := inNewEntry;
-  origin := REDECLARED_ORIGIN(inOldEntry, env);
+  origin := NFInstTypes.REDECLARED_ORIGIN(inOldEntry, env);
   outEntry := setEntryOrigin(entry, {origin});
 end replaceEntry2;
   
+public function updateEntry
+  input String inName;
+  input ArgType inArg;
+  input UpdateFunc inUpdateFunc;
+  input Env inEnv;
+  output Env outEnv;
+  output Boolean outWasUpdated;
+
+  partial function UpdateFunc
+    input Entry inEntry;
+    input ArgType inArg;
+    output Entry outEntry;
+  end UpdateFunc;
+
+  replaceable type ArgType subtypeof Any;
+protected
+  Option<String> name;
+  ScopeType st;
+  AvlTree entries;
+  Env rest_env;
+algorithm
+  NFInstTypes.FRAME(name, st, entries) :: rest_env := inEnv;
+  (entries, outWasUpdated) :=
+    NFEnvAvlTree.update(entries, inName, inUpdateFunc, inArg);
+  outEnv := NFInstTypes.FRAME(name, st, entries) :: rest_env;
+end updateEntry;
+
 public function mapScope
   "Maps over all entries in the current scope."
   input Env inEnv;
@@ -648,9 +634,9 @@ protected
   AvlTree entries;
   Env rest_env;
 algorithm
-  FRAME(name, st, entries) :: rest_env := inEnv;
-  entries := avlTreeMap(entries, inMapFunc);
-  outEnv := FRAME(name, st, entries) :: rest_env;
+  NFInstTypes.FRAME(name, st, entries) :: rest_env := inEnv;
+  entries := NFEnvAvlTree.map(entries, inMapFunc);
+  outEnv := NFInstTypes.FRAME(name, st, entries) :: rest_env;
 end mapScope;
 
 public function insertIterators
@@ -664,8 +650,8 @@ protected
   AvlTree tree;
   Frame frame;
 algorithm
-  tree := List.fold(inIterators, insertIterator, emptyAvlTree);
-  frame := FRAME(SOME("$for$"), IMPLICIT_SCOPE(inIterIndex), tree);
+  tree := List.fold(inIterators, insertIterator, NFEnvAvlTree.emptyAvlTree);
+  frame := NFInstTypes.FRAME(SOME("$for$"), NFInstTypes.IMPLICIT_SCOPE(inIterIndex), tree);
   outEnv := frame :: inEnv;
 end insertIterators;
 
@@ -682,7 +668,7 @@ algorithm
     SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
     Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
     SCode.noComment, NONE(), Absyn.dummyInfo);
-  outTree := avlTreeAddUnique(inTree, iter_name, makeEntry(iter));
+  outTree := NFEnvAvlTree.addUnique(inTree, iter_name, makeEntry(iter));
 end insertIterator;
 
 public function lookupEntry
@@ -692,8 +678,8 @@ public function lookupEntry
 protected
   AvlTree entries;
 algorithm
-  FRAME(entries = entries) :: _ := inEnv;
-  outEntry := avlTreeGet(entries, inName);
+  NFInstTypes.FRAME(entries = entries) :: _ := inEnv;
+  outEntry := NFEnvAvlTree.get(entries, inName);
 end lookupEntry;
 
 public function resolveEntry
@@ -709,12 +695,12 @@ algorithm
       EntryOrigin origin;
 
     // Local entry => nothing to resolve.
-    case (ENTRY(origins = {}), _) then (inEntry, inEnv);
-    case (ENTRY(origins = LOCAL_ORIGIN() :: _), _) then (inEntry, inEnv);
-    case (ENTRY(origins = BUILTIN_ORIGIN() :: _), _) then (inEntry, inEnv);
+    case (NFInstTypes.ENTRY(origins = {}), _) then (inEntry, inEnv);
+    case (NFInstTypes.ENTRY(origins = NFInstTypes.LOCAL_ORIGIN() :: _), _) then (inEntry, inEnv);
+    case (NFInstTypes.ENTRY(origins = NFInstTypes.BUILTIN_ORIGIN() :: _), _) then (inEntry, inEnv);
 
     // Some origins => choose the first.
-    case (ENTRY(origins = origin :: _), _)
+    case (NFInstTypes.ENTRY(origins = origin :: _), _)
       equation
         env = originEnv(origin);
       then
@@ -731,9 +717,9 @@ algorithm
     local
       Env env;
 
-    case INHERITED_ORIGIN(originEnv = env) then env;
-    case REDECLARED_ORIGIN(originEnv = env) then env;
-    case IMPORTED_ORIGIN(originEnv = env) then env;
+    case NFInstTypes.INHERITED_ORIGIN(originEnv = env) then env;
+    case NFInstTypes.REDECLARED_ORIGIN(originEnv = env) then env;
+    case NFInstTypes.IMPORTED_ORIGIN(originEnv = env) then env;
 
   end match;
 end originEnv;
@@ -745,9 +731,10 @@ protected function setEntryOrigin
 protected
   String name;
   SCode.Element element;
+  Modifier mod;
 algorithm
-  ENTRY(name, element, _) := inEntry;
-  outEntry := ENTRY(name, element, inOrigin);
+  NFInstTypes.ENTRY(name, element, mod, _) := inEntry;
+  outEntry := NFInstTypes.ENTRY(name, element, mod, inOrigin);
 end setEntryOrigin;
 
 public function isScopeEncapsulated
@@ -755,7 +742,7 @@ public function isScopeEncapsulated
   output Boolean outIsEncapsulated;
 algorithm
   outIsEncapsulated := match(inEnv)
-    case FRAME(scopeType = ENCAPSULATED_SCOPE()) :: _ then true;
+    case NFInstTypes.FRAME(scopeType = NFInstTypes.ENCAPSULATED_SCOPE()) :: _ then true;
     else false;
   end match;
 end isScopeEncapsulated;
@@ -766,7 +753,7 @@ public function getImplicitScopeIndex
   input Env inEnv;
   output Integer outIndex;
 algorithm
-  FRAME(scopeType = IMPLICIT_SCOPE(iterIndex = outIndex)) :: _ := inEnv;
+  NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE(iterIndex = outIndex)) :: _ := inEnv;
 end getImplicitScopeIndex;
 
 public function entryHasBuiltinOrigin
@@ -774,7 +761,7 @@ public function entryHasBuiltinOrigin
   output Boolean outBuiltin;
 algorithm
   outBuiltin := match(inEntry)
-    case ENTRY(origins = {BUILTIN_ORIGIN()}) then true;
+    case NFInstTypes.ENTRY(origins = {NFInstTypes.BUILTIN_ORIGIN()}) then true;
     else false;
   end match;
 end entryHasBuiltinOrigin;
@@ -783,7 +770,7 @@ public function entryName
   input Entry inEntry;
   output String outName;
 algorithm
-  ENTRY(name = outName) := inEntry;
+  NFInstTypes.ENTRY(name = outName) := inEntry;
 end entryName;
 
 public function renameEntry
@@ -792,25 +779,53 @@ public function renameEntry
   output Entry outEntry;
 protected
   SCode.Element element;
+  Modifier mod;
   list<EntryOrigin> origins;
 algorithm
-  ENTRY(_, element, origins) := inEntry;
-  outEntry := ENTRY(inName, element, origins);
+  NFInstTypes.ENTRY(_, element, mod, origins) := inEntry;
+  outEntry := NFInstTypes.ENTRY(inName, element, mod, origins);
 end renameEntry;
 
 public function entryElement
   input Entry inEntry;
   output SCode.Element outElement;
 algorithm
-  ENTRY(element = outElement) := inEntry;
+  NFInstTypes.ENTRY(element = outElement) := inEntry;
 end entryElement;
+
+public function entryOrigins
+  input Entry inEntry;
+  output list<EntryOrigin> outOrigins;
+algorithm
+  NFInstTypes.ENTRY(origins = outOrigins) := inEntry;
+end entryOrigins;
+
+public function setEntryModifier
+  input Entry inEntry;
+  input Modifier inModifier;
+  output Entry outEntry;
+protected
+  String name;
+  SCode.Element element;
+  list<EntryOrigin> origins;
+algorithm
+  NFInstTypes.ENTRY(name, element, _, origins) := inEntry;
+  outEntry := NFInstTypes.ENTRY(name, element, inModifier, origins);
+end setEntryModifier;
+
+public function entryModifier
+  input Entry inEntry;
+  output Modifier outMod;
+algorithm
+  NFInstTypes.ENTRY(mod = outMod) := inEntry;
+end entryModifier;
 
 public function isClassEntry
   input Entry inEntry;
   output Boolean outIsClass;
 algorithm
   outIsClass := match(inEntry)
-    case ENTRY(element = SCode.CLASS(name = _)) then true;
+    case NFInstTypes.ENTRY(element = SCode.CLASS(name = _)) then true;
     else false;
   end match;
 end isClassEntry;
@@ -819,7 +834,7 @@ public function scopeName
   input Env inEnv;
   output String outName;
 algorithm
-  FRAME(name = SOME(outName)) :: _ := inEnv;
+  NFInstTypes.FRAME(name = SOME(outName)) :: _ := inEnv;
 end scopeName;
 
 public function scopeNames
@@ -839,10 +854,10 @@ algorithm
       String name;
       Env env;
 
-    case (FRAME(name = SOME(name), scopeType = NORMAL_SCOPE()) :: env, _)
+    case (NFInstTypes.FRAME(name = SOME(name), scopeType = NFInstTypes.NORMAL_SCOPE()) :: env, _)
       then scopeNames2(env, name :: inAccumNames);
 
-    case (FRAME(name = SOME(name), scopeType = ENCAPSULATED_SCOPE()) :: env, _)
+    case (NFInstTypes.FRAME(name = SOME(name), scopeType = NFInstTypes.ENCAPSULATED_SCOPE()) :: env, _)
       then scopeNames2(env, name :: inAccumNames);
 
     case (_ :: env, _) then scopeNames2(env, inAccumNames);
@@ -861,16 +876,16 @@ algorithm
       Absyn.Path path;
       Env env;
 
-    case (FRAME(name = SOME(name)) :: FRAME(scopeType = TOP_SCOPE()) :: _)
+    case (NFInstTypes.FRAME(name = SOME(name)) :: NFInstTypes.FRAME(scopeType = NFInstTypes.TOP_SCOPE()) :: _)
       then Absyn.IDENT(name);
 
-    case (FRAME(name = SOME(name)) :: FRAME(scopeType = BUILTIN_SCOPE()) :: _)
+    case (NFInstTypes.FRAME(name = SOME(name)) :: NFInstTypes.FRAME(scopeType = NFInstTypes.BUILTIN_SCOPE()) :: _)
       then Absyn.IDENT(name);
 
-    case (FRAME(scopeType = IMPLICIT_SCOPE(iterIndex = _)) :: env)
+    case (NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE(iterIndex = _)) :: env)
       then envPath(env);
 
-    case (FRAME(name = SOME(name)) :: env)
+    case (NFInstTypes.FRAME(name = SOME(name)) :: env)
       equation
         path = envPath(env);
       then
@@ -902,7 +917,7 @@ algorithm
       String n1, n2;
       Env rest1, rest2;
 
-    case (FRAME(name = SOME(n1)) :: _,  FRAME(name = SOME(n2)) :: _)
+    case (NFInstTypes.FRAME(name = SOME(n1)) :: _,  NFInstTypes.FRAME(name = SOME(n2)) :: _)
       equation
         false = stringEq(n1, n2);
       then
@@ -966,681 +981,12 @@ protected
   Env env;
   SCode.Program prog, builtin;
 algorithm
-  env := openScope(NONE(), BUILTIN_SCOPE(), emptyEnv);
+  env := openScope(NONE(), NFInstTypes.BUILTIN_SCOPE(), emptyEnv);
   env := insertElement(NFBuiltin.BUILTIN_TIME, env);
   (builtin, prog) := List.splitOnTrue(inProgram, SCode.isBuiltinElement);
-  env := List.fold1(builtin, insertElementWithOrigin, {BUILTIN_ORIGIN()}, env);
-  env := openScope(NONE(), TOP_SCOPE(), env);
+  env := List.fold1(builtin, insertElementWithOrigin, {NFInstTypes.BUILTIN_ORIGIN()}, env);
+  env := openScope(NONE(), NFInstTypes.TOP_SCOPE(), env);
   outEnv := List.fold(prog, insertElement, env);
 end buildInitialEnv;
-
-// AVL Tree implementation
-public type AvlKey = String;
-public type AvlValue = Entry;
-
-protected constant AvlTree emptyAvlTree = AVLTREENODE(NONE(), 0, NONE(), NONE());
-
-public uniontype AvlTree
-  "The binary tree data structure"
-  record AVLTREENODE
-    Option<AvlTreeValue> value "Value";
-    Integer height "height of tree, used for balancing";
-    Option<AvlTree> left "left subtree";
-    Option<AvlTree> right "right subtree";
-  end AVLTREENODE;
-end AvlTree;
-
-public uniontype AvlTreeValue
-  "Each node in the binary tree can have a value associated with it."
-  record AVLTREEVALUE
-    AvlKey key "Key" ;
-    AvlValue value "Value" ;
-  end AVLTREEVALUE;
-end AvlTreeValue;
-
-protected function avlTreeNew
-  "Return an empty tree"
-  output AvlTree tree;
-algorithm
-  tree := emptyAvlTree;
-end avlTreeNew;
-
-protected function avlTreeAdd
-  "Inserts a new value into the tree. If the key already exists, then the value
-   is updated with the given update function."
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  input UpdateFunc inUpdateFunc;
-  output AvlTree outAvlTree;
-
-  partial function UpdateFunc
-    input AvlValue inOldValue;
-    input AvlValue inNewValue;
-    output AvlValue outValue;
-  end UpdateFunc;
-algorithm
-  outAvlTree := match(inAvlTree, inKey, inValue, inUpdateFunc)
-    local
-      AvlKey key;
-      Integer key_comp;
-      AvlTree tree;
-
-    // Empty node, create a new node for the value.
-    case (AVLTREENODE(value = NONE(), left = NONE(), right = NONE()), _, _, _)
-      then AVLTREENODE(SOME(AVLTREEVALUE(inKey, inValue)), 1, NONE(), NONE());
-
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = key))), _, _, _)
-      equation
-        key_comp = stringCompare(inKey, key);
-        tree = avlTreeAdd2(inAvlTree, key_comp, inKey, inValue, inUpdateFunc);
-        tree = avlBalance(tree);
-      then
-        tree;
-
-  end match;
-end avlTreeAdd;
-
-protected function avlTreeAdd2
-  input AvlTree inAvlTree;
-  input Integer inKeyComp;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  input UpdateFunc inUpdateFunc;
-  output AvlTree outAvlTree;
-
-  partial function UpdateFunc
-    input AvlValue inOldValue;
-    input AvlValue inNewValue;
-    output AvlValue outValue;
-  end UpdateFunc;
-algorithm
-  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue, inUpdateFunc)
-    local
-      AvlKey key;
-      AvlValue value;
-      Option<AvlTree> left, right;
-      Integer h;
-      AvlTree t;
-      Option<AvlTreeValue> oval;
-
-    // Existing node, update it with the given update function.
-    case (AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right), 0, _, _, _)
-      equation
-        value = inUpdateFunc(value, inValue);
-      then
-        AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
-
-    // Insert into right subtree.
-    case (AVLTREENODE(oval, h, left, right), 1, _, _, _)
-      equation
-        t = avlCreateEmptyIfNone(right);
-        t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
-      then
-        AVLTREENODE(oval, h, left, SOME(t));
-
-    // Insert into left subtree.
-    case (AVLTREENODE(oval, h, left, right), -1, _, _, _)
-      equation
-        t = avlCreateEmptyIfNone(left);
-        t = avlTreeAdd(t, inKey, inValue, inUpdateFunc);
-      then
-        AVLTREENODE(oval, h, SOME(t), right);
-
-  end match;
-end avlTreeAdd2;
-
-protected function avlTreeAddUnique
-  "Inserts a new value into the tree. Fails if the key already exists in the tree."
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match(inAvlTree, inKey, inValue)
-    local
-      AvlKey key, rkey;
-      AvlValue value;
-
-    // empty tree
-    case (AVLTREENODE(value = NONE(), left = NONE(), right = NONE()), _, _)
-      then AVLTREENODE(SOME(AVLTREEVALUE(inKey, inValue)), 1, NONE(), NONE());
-
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
-      then avlBalance(avlTreeAddUnique2(inAvlTree, stringCompare(key, rkey), key, value));
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeAddUnique failed"});
-      then fail();
-
-  end match;
-end avlTreeAddUnique;
-
-protected function avlTreeAddUnique2
-  "Helper function to avlTreeAddUnique."
-  input AvlTree inAvlTree;
-  input Integer inKeyComp;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
-    local
-      AvlKey key;
-      AvlValue value;
-      Option<AvlTree> left, right;
-      Integer h;
-      AvlTree t;
-      Option<AvlTreeValue> oval;
-      Absyn.Info info;
-
-    // Insert into right subtree.
-    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        1, key, value)
-      equation
-        t = avlCreateEmptyIfNone(right);
-        t = avlTreeAddUnique(t, key, value);
-      then
-        AVLTREENODE(oval, h, left, SOME(t));
-
-    // Insert into left subtree.
-    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
-        -1, key, value)
-      equation
-        t = avlCreateEmptyIfNone(left);
-        t = avlTreeAddUnique(t, key, value);
-      then
-        AVLTREENODE(oval, h, SOME(t), right);
-  end match;
-end avlTreeAddUnique2;
-
-protected function avlTreeGet
-  "Get a value from the binary tree given a key."
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  output AvlValue outValue;
-protected
-  AvlKey rkey;
-algorithm
-  AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))) := inAvlTree;
-  outValue := avlTreeGet2(inAvlTree, stringCompare(inKey, rkey), inKey);
-end avlTreeGet;
-
-protected function avlTreeGet2
-  "Helper function to avlTreeGet."
-  input AvlTree inAvlTree;
-  input Integer inKeyComp;
-  input AvlKey inKey;
-  output AvlValue outValue;
-algorithm
-  outValue := match(inAvlTree, inKeyComp, inKey)
-    local
-      AvlKey key;
-      AvlValue rval;
-      AvlTree left, right;
-
-    // Found match.
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(value = rval))), 0, _)
-      then rval;
-
-    // Search to the right.
-    case (AVLTREENODE(right = SOME(right)), 1, key)
-      then avlTreeGet(right, key);
-
-    // Search to the left.
-    case (AVLTREENODE(left = SOME(left)), -1, key)
-      then avlTreeGet(left, key);
-  end match;
-end avlTreeGet2;
-
-protected function avlTreeReplace
-  "Replaces the value of an already existing node in the tree with a new value."
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match(inAvlTree, inKey, inValue)
-    local
-      AvlKey key, rkey;
-      AvlValue value;
-
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
-      then avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value);
-
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
-      then fail();
-
-  end match;
-end avlTreeReplace;
-
-protected function avlTreeReplace2
-  "Helper function to avlTreeReplace."
-  input AvlTree inAvlTree;
-  input Integer inKeyComp;
-  input AvlKey inKey;
-  input AvlValue inValue;
-  output AvlTree outAvlTree;
-algorithm
-  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
-    local
-      Option<AvlTree> left, right;
-      Integer h;
-      AvlTree t;
-      Option<AvlTreeValue> oval;
-
-    // Replace this node.
-    case (AVLTREENODE(SOME(_), h, left, right), 0, _, _)
-      then AVLTREENODE(SOME(AVLTREEVALUE(inKey, inValue)), h, left, right);
-
-    // Insert into right subtree.
-    case (AVLTREENODE(oval, h, left, SOME(t)), 1, _, _)
-      equation
-        t = avlTreeReplace(t, inKey, inValue);
-      then
-        AVLTREENODE(oval, h, left, SOME(t));
-
-    // Insert into left subtree.
-    case (AVLTREENODE(oval, h, SOME(t), right), -1, _, _)
-      equation
-        t = avlTreeReplace(t, inKey, inValue);
-      then
-        AVLTREENODE(oval, h, SOME(t), right);
-
-  end match;
-end avlTreeReplace2;
-
-protected function avlTreeUpdate
-  input AvlTree inAvlTree;
-  input AvlKey inKey;
-  input UpdateFunc inUpdateFunc;
-  input ArgType inArg;
-  output AvlTree outAvlTree;
-  output Boolean outWasUpdated;
-
-  partial function UpdateFunc
-    input AvlValue inValue;
-    input ArgType inArg;
-    output AvlValue outValue;
-  end UpdateFunc;
-
-  replaceable type ArgType subtypeof Any;
-algorithm
-  (outAvlTree, outWasUpdated) := match(inAvlTree, inKey, inUpdateFunc, inArg)
-    local
-      AvlKey key;
-      Integer key_comp;
-      AvlTree tree;
-      Boolean updated;
-
-    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = key))), _, _, _)
-      equation
-        key_comp = stringCompare(key, inKey);
-        (tree, updated) = 
-          avlTreeUpdate2(inAvlTree, key_comp, inKey, inUpdateFunc, inArg);
-      then
-        (tree, updated);
-
-  end match;
-end avlTreeUpdate;
-
-protected function avlTreeUpdate2
-  input AvlTree inAvlTree;
-  input Integer inKeyComp;
-  input AvlKey inKey;
-  input UpdateFunc inUpdateFunc;
-  input ArgType inArg;
-  output AvlTree outAvlTree;
-  output Boolean outWasUpdated;
-
-  partial function UpdateFunc
-    input AvlValue inValue;
-    input ArgType inArg;
-    output AvlValue outValue;
-  end UpdateFunc;
-
-  replaceable type ArgType subtypeof Any;
-algorithm
-  (outAvlTree, outWasUpdated) :=
-  match(inAvlTree, inKeyComp, inKey, inUpdateFunc, inArg)
-    local
-      AvlKey key;
-      AvlValue value;
-      Option<AvlTree> left, right;
-      Integer h;
-      AvlTree t;
-      Option<AvlTreeValue> oval;
-      Boolean updated;
-
-    case (AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right), 0, _, _, _)
-      equation
-        value = inUpdateFunc(value, inArg);
-      then
-        (AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right), true);
-
-    case (AVLTREENODE(oval, h, left, SOME(t)), 1, _, _, _)
-      equation
-        (t, updated) = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
-      then
-        (AVLTREENODE(oval, h, left, SOME(t)), updated);
-
-    case (AVLTREENODE(oval, h, SOME(t), right), -1, _, _, _)
-      equation
-        (t, updated) = avlTreeUpdate(t, inKey, inUpdateFunc, inArg);
-      then
-        (AVLTREENODE(oval, h, SOME(t), right), updated);
-
-    case (AVLTREENODE(_, _, _, NONE()), 1, _, _, _)
-      then (inAvlTree, false);
-
-    case (AVLTREENODE(_, _, NONE(), _), -1, _, _, _)
-      then (inAvlTree, false);
-
-  end match;
-end avlTreeUpdate2;
-
-protected function avlTreeMap
-  "Applies a function to all value entries in the AVL tree."
-  input AvlTree inTree;
-  input MapFunc inMapFunc;
-  output AvlTree outTree;
-
-  partial function MapFunc
-    input AvlValue inValue;
-    output AvlValue outValue;
-  end MapFunc;
-protected
-  Option<AvlTreeValue> value;
-  Integer height;
-  Option<AvlTree> left, right;
-algorithm
-  AVLTREENODE(value, height, left, right) := inTree;
-  value := Util.applyOption1(value, avlTreeMapValue, inMapFunc);
-  left := Util.applyOption1(left, avlTreeMap, inMapFunc);
-  right := Util.applyOption1(right, avlTreeMap, inMapFunc);
-  outTree := AVLTREENODE(value, height, left, right);
-end avlTreeMap;
-
-protected function avlTreeMapValue
-  input AvlTreeValue inValue;
-  input MapFunc inMapFunc;
-  output AvlTreeValue outValue;
-
-  partial function MapFunc
-    input AvlValue inValue;
-    output AvlValue outValue;
-  end MapFunc;
-protected
-  AvlKey key;
-  AvlValue value;
-algorithm
-  AVLTREEVALUE(key, value) := inValue;
-  value := inMapFunc(value);
-  outValue := AVLTREEVALUE(key, value);
-end avlTreeMapValue;
-
-protected function avlCreateEmptyIfNone
-  "Help function to AvlTreeAdd"
-    input Option<AvlTree> t;
-    output AvlTree outT;
-algorithm
-  outT := match(t)
-    case (NONE()) then avlTreeNew();
-    case (SOME(outT)) then outT;
-  end match;
-end avlCreateEmptyIfNone;
-
-protected function avlBalance
-  "Balances an AvlTree"
-  input AvlTree bt;
-  output AvlTree outBt;
-protected
-  Integer d;
-algorithm
-  d := avlDifferenceInHeight(bt);
-  outBt := avlDoBalance(d, bt);
-end avlBalance;
-
-protected function avlDoBalance
-  "Performs balance if difference is > 1 or < -1"
-  input Integer difference;
-  input AvlTree bt;
-  output AvlTree outBt;
-algorithm
-  outBt := match(difference, bt)
-    case(-1, _) then avlComputeHeight(bt);
-    case( 0, _) then avlComputeHeight(bt);
-    case( 1, _) then avlComputeHeight(bt);
-    // d < -1 or d > 1
-    else avlDoBalance2(difference < 0, bt);
-  end match;
-end avlDoBalance;
-
-protected function avlDoBalance2
-"help function to doBalance"
-  input Boolean inDiffIsNegative;
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := match(inDiffIsNegative,inBt)
-    local AvlTree bt;
-    case(true,bt)
-      equation
-        bt = avlDoBalance3(bt);
-        bt = avlRotateLeft(bt);
-      then bt;
-    case(false,bt)
-      equation
-        bt = avlDoBalance4(bt);
-        bt = avlRotateRight(bt);
-      then bt;
-  end match;
-end avlDoBalance2;
-
-protected function avlDoBalance3 "help function to doBalance2"
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := matchcontinue(inBt)
-    local
-      AvlTree rr,bt;
-    case(bt)
-      equation
-        true = avlDifferenceInHeight(Util.getOption(avlRightNode(bt))) > 0;
-        rr = avlRotateRight(Util.getOption(avlRightNode(bt)));
-        bt = avlSetRight(bt,SOME(rr));
-      then bt;
-    else inBt;
-  end matchcontinue;
-end avlDoBalance3;
-
-protected function avlDoBalance4 "help function to doBalance2"
-  input AvlTree inBt;
-  output AvlTree outBt;
-algorithm
-  outBt := matchcontinue(inBt)
-    local
-      AvlTree rl,bt;
-    case (bt)
-      equation
-        true = avlDifferenceInHeight(Util.getOption(avlLeftNode(bt))) < 0;
-        rl = avlRotateLeft(Util.getOption(avlLeftNode(bt)));
-        bt = avlSetLeft(bt,SOME(rl));
-      then bt;
-    else inBt;
-  end matchcontinue;
-end avlDoBalance4;
-
-protected function avlSetRight
-  "set right treenode"
-  input AvlTree node;
-  input Option<AvlTree> right;
-  output AvlTree outNode;
-protected
-  Option<AvlTreeValue> value;
-  Option<AvlTree> l;
-  Integer height;
-algorithm
-  AVLTREENODE(value, height, l, _) := node;
-  outNode := AVLTREENODE(value, height, l, right);
-end avlSetRight;
-
-protected function avlSetLeft
-  "set left treenode"
-  input AvlTree node;
-  input Option<AvlTree> left;
-  output AvlTree outNode;
-protected
-  Option<AvlTreeValue> value;
-  Option<AvlTree> r;
-  Integer height;
-algorithm
-  AVLTREENODE(value, height, _, r) := node;
-  outNode := AVLTREENODE(value, height, left, r);
-end avlSetLeft;
-
-protected function avlLeftNode
-  "Retrieve the left subnode"
-  input AvlTree node;
-  output Option<AvlTree> subNode;
-algorithm
-  AVLTREENODE(left = subNode) := node;
-end avlLeftNode;
-
-protected function avlRightNode
-  "Retrieve the right subnode"
-  input AvlTree node;
-  output Option<AvlTree> subNode;
-algorithm
-  AVLTREENODE(right = subNode) := node;
-end avlRightNode;
-
-protected function avlExchangeLeft
-  "help function to balance"
-  input AvlTree inNode;
-  input AvlTree inParent;
-  output AvlTree outParent "updated parent";
-protected
-  AvlTree parent, node;
-algorithm
-  parent := avlSetRight(inParent, avlLeftNode(inNode));
-  parent := avlBalance(parent);
-  node := avlSetLeft(inNode, SOME(parent));
-  outParent := avlBalance(node);
-end avlExchangeLeft;
-
-protected function avlExchangeRight
-  "help function to balance"
-  input AvlTree inNode;
-  input AvlTree inParent;
-  output AvlTree outParent "updated parent";
-protected
-  AvlTree parent, node;
-algorithm
-  parent := avlSetLeft(inParent, avlRightNode(inNode));
-  parent := avlBalance(parent);
-  node := avlSetRight(inNode, SOME(parent));
-  outParent := avlBalance(node);
-end avlExchangeRight;
-
-protected function avlRotateLeft
-  "help function to balance"
-  input AvlTree node;
-  output AvlTree outNode "updated node";
-algorithm
-  outNode := avlExchangeLeft(Util.getOption(avlRightNode(node)), node);
-end avlRotateLeft;
-
-protected function avlRotateRight
-  "help function to balance"
-  input AvlTree node;
-  output AvlTree outNode "updated node";
-algorithm
-  outNode := avlExchangeRight(Util.getOption(avlLeftNode(node)), node);
-end avlRotateRight;
-
-protected function avlDifferenceInHeight
-  "help function to balance, calculates the difference in height between left
-  and right child"
-  input AvlTree node;
-  output Integer diff;
-protected
-  Option<AvlTree> l, r;
-algorithm
-  AVLTREENODE(left = l, right = r) := node;
-  diff := avlGetHeight(l) - avlGetHeight(r);
-end avlDifferenceInHeight;
-
-protected function avlComputeHeight
-  "Compute the height of the AvlTree and store in the node info."
-  input AvlTree bt;
-  output AvlTree outBt;
-protected
-  Option<AvlTree> l,r;
-  Option<AvlTreeValue> v;
-  AvlValue val;
-  Integer hl,hr,height;
-algorithm
-  AVLTREENODE(value = v as SOME(AVLTREEVALUE(value = val)),
-    left = l, right = r) := bt;
-  hl := avlGetHeight(l);
-  hr := avlGetHeight(r);
-  height := intMax(hl, hr) + 1;
-  outBt := AVLTREENODE(v, height, l, r);
-end avlComputeHeight;
-
-protected function avlGetHeight
-  "Retrieve the height of a node"
-  input Option<AvlTree> bt;
-  output Integer height;
-algorithm
-  height := match(bt)
-    case(NONE()) then 0;
-    case(SOME(AVLTREENODE(height = height))) then height;
-  end match;
-end avlGetHeight;
-
-protected function avlPrintTreeStrPP
-  input AvlTree inTree;
-  output String outString;
-algorithm
-  outString := avlPrintTreeStrPP2(SOME(inTree), "");
-end avlPrintTreeStrPP;
-
-protected function avlPrintTreeStrPP2
-  input Option<AvlTree> inTree;
-  input String inIndent;
-  output String outString;
-algorithm
-  outString := match(inTree, inIndent)
-    local
-      AvlKey rkey;
-      Option<AvlTree> l, r;
-      String s1, s2, res, indent;
-
-    case (NONE(), _) then "";
-
-    case (SOME(AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey)), left = l, right = r)), _)
-      equation
-        indent = inIndent +& "  ";
-        s1 = avlPrintTreeStrPP2(l, indent);
-        s2 = avlPrintTreeStrPP2(r, indent);
-        res = "\n" +& inIndent +& rkey +& s1 +& s2;
-      then
-        res;
-
-    case (SOME(AVLTREENODE(value = NONE(), left = l, right = r)), _)
-      equation
-        indent = inIndent +& "  ";
-        s1 = avlPrintTreeStrPP2(l, indent);
-        s2 = avlPrintTreeStrPP2(r, indent);
-        res = "\n" +& s1 +& s2;
-      then
-        res;
-  end match;
-end avlPrintTreeStrPP2;
 
 end NFEnv;

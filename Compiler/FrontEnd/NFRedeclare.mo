@@ -48,19 +48,18 @@ protected import List;
 
 public type Env = NFEnv.Env;
 public type Modifier = NFMod.Modifier;
-public type ModTable = NFMod.ModTable;
 
-public function applyRedeclares
-  input ModTable inMods;
-  input Env inEnv;
-  output Env outEnv;
-protected
-  list<Modifier> redecl;
-algorithm
-  redecl := NFMod.getRedeclaresFromTable(inMods);
-  outEnv := List.fold(redecl, applyRedeclare, inEnv);
-end applyRedeclares;
-
+//public function applyRedeclares
+//  input ModTable inMods;
+//  input Env inEnv;
+//  output Env outEnv;
+//protected
+//  list<Modifier> redecl;
+//algorithm
+//  redecl := NFMod.getRedeclaresFromTable(inMods);
+//  outEnv := List.fold(redecl, applyRedeclare, inEnv);
+//end applyRedeclares;
+//
 protected function applyRedeclare
   input Modifier inMod;
   input Env inEnv;
