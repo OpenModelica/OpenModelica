@@ -8509,7 +8509,7 @@ algorithm
                        (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
                        (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
                        (BackendDAEOptimize.collapseIndependentBlocks, "collapseIndependentBlocks", true),
-                       (BackendDAEOptimize.expandDerOperator, "expandDerOperator", false),
+                       (BackendDAECreate.expandDerOperator, "expandDerOperator", false),
                        (IndexReduction.findStateOrder,"findStateOrder",false),
                        (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
                        (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
