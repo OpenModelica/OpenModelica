@@ -66,7 +66,6 @@ protected import DAEUtil;
 protected import PrefixUtil;
 protected import Types;
 protected import InstSection;
-protected import Config;
 
 public constant DAE.Type stateSelectType =
           DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},

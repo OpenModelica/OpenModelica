@@ -47,7 +47,6 @@ public import SCode;
 
 protected import List;
 protected import NFBuiltin;
-protected import NFRedeclare;
 protected import System;
 
 public type Env = NFEnv.Env;

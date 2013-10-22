@@ -44,7 +44,6 @@ public import NFMod;
 public import SCode;
 
 protected import Error;
-protected import List;
 
 public type Env = NFEnv.Env;
 public type Modifier = NFMod.Modifier;

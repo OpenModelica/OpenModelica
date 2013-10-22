@@ -56,7 +56,6 @@ public import Values;
 public import SimCode;
 
 // protected imports
-protected import BackendDAECreate;
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendDump;
@@ -2504,7 +2503,7 @@ end createEquationsWork;
 //
 // =============================================================================
 
-public function zeroCrossingsEquations "
+protected function zeroCrossingsEquations "
   Returns a list of all equations (by their index) that contain a zero crossing
   Used e.g. to find out which discrete equations are not part of a zero crossing"
   input BackendDAE.EqSystem syst;

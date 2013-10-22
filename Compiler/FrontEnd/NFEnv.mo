@@ -48,7 +48,6 @@ protected import Error;
 protected import Flags;
 protected import List;
 protected import NFBuiltin;
-protected import Util;
 
 public type EntryOrigin = NFInstTypes.EntryOrigin;
 public type Entry = NFInstTypes.Entry;

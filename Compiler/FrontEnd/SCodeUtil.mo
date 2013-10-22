@@ -48,18 +48,14 @@ encapsulated package SCodeUtil
 public import Absyn;
 public import SCode;
 
-protected import Builtin;
 protected import Debug;
 protected import Error;
 protected import Flags;
-protected import Global;
 protected import Inst;
 protected import List;
 protected import MetaUtil;
 protected import System;
-protected import Types;
 protected import Util;
-protected import NFSCodeFlatten;
 protected import SCodeDump;
 
 public function translateAbsyn2SCode
