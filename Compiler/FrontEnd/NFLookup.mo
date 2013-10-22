@@ -129,14 +129,22 @@ public function lookupBaseClassName
   output Entry outEntry;
   output Env outEnv;
 algorithm
-  (outEntry, outEnv) := match(inName, inEnv, inInfo)
+  (outEntry, outEnv) := matchcontinue(inName, inEnv, inInfo)
     local
       Env env;
       Entry entry;
+      String name;
       LookupState state;
 
+    // Extending a builtin type.
+    case (Absyn.IDENT(name = name), _, _)
+      equation
+        (entry, env) = lookupBuiltinType(name, inEnv);
+      then
+        (entry, env);
+
     // Normal baseclass.
-    case (_, _, _)
+    else
       equation
         (entry, env, state) = lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
           SOME(Error.LOOKUP_BASECLASS_ERROR));
@@ -144,7 +152,7 @@ algorithm
       then
         (entry, env);
 
-  end match;
+  end matchcontinue;
 end lookupBaseClassName;
 
 public function lookupVariableName

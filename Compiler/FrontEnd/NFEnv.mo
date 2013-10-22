@@ -912,22 +912,38 @@ public function isEqual
   input Env inEnv2;
   output Boolean outIsEqual;
 algorithm
-  outIsEqual := matchcontinue(inEnv1, inEnv2)
+  outIsEqual := List.isEqualOnTrue(inEnv1, inEnv2, isFrameEqual);
+end isEqual;
+
+protected function isFrameEqual
+  input Frame inFrame1;
+  input Frame inFrame2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := match(inFrame1, inFrame2)
     local
       String n1, n2;
-      Env rest1, rest2;
+      ScopeType st1, st2;
 
-    case (NFInstTypes.FRAME(name = SOME(n1)) :: _,  NFInstTypes.FRAME(name = SOME(n2)) :: _)
-      equation
-        false = stringEq(n1, n2);
-      then
-        false;
+    case (NFInstTypes.FRAME(name = SOME(n1)),
+          NFInstTypes.FRAME(name = SOME(n2)))
+      then stringEq(n1, n2);
 
-    case ({}, {}) then true;
-    case (_ :: rest1, _ :: rest2) then isEqual(rest1, rest2);
+    case (NFInstTypes.FRAME(name = NONE(), scopeType = st1),
+          NFInstTypes.FRAME(name = NONE(), scopeType = st2))
+      then scopeTypeEqual(st1, st2);
 
-  end matchcontinue;
+    else false;
+  end match;
 end isEqual;
+
+protected function scopeTypeEqual
+  input ScopeType inScopeType1;
+  input ScopeType inScopeType2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := valueEq(inScopeType1, inScopeType2);
+end scopeTypeEqual;
 
 public function isPrefix
   "Checks if one environment is a prefix of another."
