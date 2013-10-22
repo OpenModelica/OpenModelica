@@ -2143,20 +2143,10 @@ protected function vararrayList2
   input list<BackendDAE.Var> inVarLst;
   output list<BackendDAE.Var> outVarLst;
 algorithm
-  outVarLst:=
-  matchcontinue (arr,pos,inVarLst)
-    local
-      BackendDAE.Var v;
+  outVarLst := match (arr,pos,inVarLst)
     case (_,0,_) then inVarLst;
-    case (_,_,_)
-      equation
-        SOME(v) = arr[pos];
-      then
-        vararrayList2(arr,pos-1,v::inVarLst);
-    case (_,_,_)
-      then
-        vararrayList2(arr,pos-1,inVarLst);
-  end matchcontinue;
+    else then vararrayList2(arr,pos-1,List.consOption(arr[pos],inVarLst));
+  end match;
 end vararrayList2;
 
 public function copyVariables

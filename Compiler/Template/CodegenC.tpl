@@ -516,7 +516,7 @@ template simulationFile(SimCode simCode, String guid)
       int res;
       DATA data;
       setupDataStruc(&data);
-      GC_init();
+      <%if Flags.isSet(HPCOM) then 'omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>'%>omc_alloc_interface.init();
       res = _main_SimulationRuntime(argc, argv, &data);
       return res;
     }

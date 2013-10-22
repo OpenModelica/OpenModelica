@@ -122,6 +122,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
   /***** Start main simulation loop *****/
   while(solverInfo->currentTime < simInfo->stopTime)
   {
+    omc_alloc_interface.collect_a_little();
 #if defined(OMC_OMP)
 #pragma omp barrier
 #endif
@@ -196,8 +197,9 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
 
       /***** Event handling *****/
-      if(measure_time_flag)
+      if(measure_time_flag) {
         rt_tick(SIM_TIMER_EVENT);
+      }
 
       eventType = checkEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
       if(eventType > 0)
@@ -257,19 +259,16 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, fmt);
         tmpdbl = rt_accumulated(SIM_TIMER_STEP);
         flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
-        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-        {
+        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
           tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
           flag = flag && 1 == fwrite(&tmpint, sizeof(unsigned int), 1, fmt);
         }
-        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++)
-        {
+        for(i = 0; i < data->modelData.modelDataXml.nFunctions + data->modelData.modelDataXml.nProfileBlocks; i++) {
           tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
           flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
         }
         rt_accumulate(SIM_TIMER_OVERHEAD);
-        if(!flag)
-        {
+        if (!flag) {
           WARNING1(LOG_SOLVER, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
           fclose(fmt);
           fmt = NULL;
@@ -282,10 +281,10 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       /***** end of Emit this time step *****/
 
       /* save dassl stats before reset */
-      if(solverInfo->didEventStep == 1 && solverInfo->solverMethod == 3)
-      {
-        for(ui = 0; ui < numStatistics; ui++)
+      if (solverInfo->didEventStep == 1 && solverInfo->solverMethod == 3) {
+        for(ui = 0; ui < numStatistics; ui++) {
           ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
+        }
       }
 
       /* Check if terminate()=true */

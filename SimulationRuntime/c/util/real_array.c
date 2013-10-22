@@ -805,10 +805,10 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
     }
 
     /* calculate size of sub and super structure in 1-dim data representation */
-    for(i = 0; i < (k - 1); i++) {
+    for (i = 0; i < (k - 1); i++) {
         n_super *= elts[0]->dim_size[i];
     }
-    for(i = k; i < elts[0]->ndims; i++) {
+    for (i = k; i < elts[0]->ndims; i++) {
         n_sub *= elts[0]->dim_size[i];
     }
     /* allocate dest structure */

@@ -261,4 +261,16 @@ typedef struct threadData_s {
 }
 #endif
 
+typedef struct {
+  void (*init)(void);
+  void* (*malloc)(size_t);
+  void* (*malloc_atomic)(size_t);
+  char* (*malloc_string)(size_t);
+  char* (*malloc_strdup)(const char*);
+  int (*collect_a_little)(void);
+} omc_alloc_interface_t;
+
+extern omc_alloc_interface_t omc_alloc_interface;
+extern omc_alloc_interface_t omc_alloc_interface_pooled;
+
 #endif

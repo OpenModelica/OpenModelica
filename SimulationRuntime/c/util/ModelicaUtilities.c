@@ -82,7 +82,7 @@ char* ModelicaAllocateString(size_t len) {
 }
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len) {
-  char *res = GC_malloc_atomic(len+1);
+  char *res = omc_alloc_interface.malloc_string(len+1);
   if (res != NULL) {
     res[len] = '\0';
   }

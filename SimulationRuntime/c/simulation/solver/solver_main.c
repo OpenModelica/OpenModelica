@@ -557,10 +557,13 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   /* allocate SolverInfo memory */
   retVal = initializeSolverData(data, &solverInfo);
-
+  omc_alloc_interface.collect_a_little();
+  
   /* initialize all parts of the model */
-  if(0 == retVal)
+  if(0 == retVal) {
     retVal = initializeModel(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps);
+  }
+  omc_alloc_interface.collect_a_little();
 
   /* starts the simulation main loop */
   if(0 == retVal)
@@ -574,9 +577,10 @@ int solver_main(DATA* data, const char* init_initMethod,
 
     INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
     retVal = performSimulation(data, &solverInfo);
-    
+    omc_alloc_interface.collect_a_little();
     /* terminate the simulation */
     finishSimulation(data, &solverInfo, outputVariablesAtEnd);
+    omc_alloc_interface.collect_a_little();
   }
 
   /* free SolverInfo memory */

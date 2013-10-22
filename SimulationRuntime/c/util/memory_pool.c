@@ -31,44 +31,141 @@
 
 
 #include "memory_pool.h"
+#include <string.h>
+#include <pthread.h>
 #include <gc.h>
+
+omc_alloc_interface_t omc_alloc_interface = {
+  GC_init,
+  GC_malloc,
+  GC_malloc_atomic,
+  (char*(*)(size_t)) GC_malloc_atomic,
+  GC_strdup,
+  GC_collect_a_little
+};
+
+typedef struct list_s {
+  void *memory;
+  size_t used;
+  size_t size;
+  struct list_s *next;
+} list;
+
+static pthread_mutex_t memory_pool_mutex = PTHREAD_MUTEX_INITIALIZER;
+static list *memory_pools = NULL;
+
+static void pool_init(void)
+{
+  memory_pools = (list*) malloc(sizeof(list));
+  memory_pools->used = 0;
+  memory_pools->size = 2*1024*1024; /* 2MB pool by default */
+  memory_pools->memory = malloc(memory_pools->size);
+  memory_pools->next = NULL;
+}
+
+static unsigned long upper_power_of_two(unsigned long v)
+{
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  return v;
+}
+
+static inline size_t round_up(size_t num, size_t factor)
+{
+  return num + factor - 1 - (num - 1) % factor;
+}
+
+static inline void pool_expand(size_t len)
+{
+  /* Check if we have enough memory already */
+  if (memory_pools->size - memory_pools->used >= len) {
+    return;
+  }
+  list *newlist = (list*) malloc(sizeof(list));
+  newlist->next = memory_pools;
+  memory_pools = newlist;
+  memory_pools->used = 0;
+  memory_pools->size = upper_power_of_two(3*memory_pools->next->size/2 + len); /* expand by 1.5x the old memory pool. More if we request a very large array. */
+  memory_pools->memory = malloc(memory_pools->size);
+}
+
+static void* pool_malloc(size_t sz)
+{
+  void *res;
+  sz = round_up(sz,8);
+  pthread_mutex_lock(&memory_pool_mutex);
+  pool_expand(sz);
+  res = memory_pools->memory + memory_pools->used;
+  memory_pools->used += sz;
+  pthread_mutex_unlock(&memory_pool_mutex);
+  memset(res,0,sz);
+  return res;
+}
+
+static int pool_free(void)
+{
+  list *freelist = memory_pools->next;
+  while (freelist) {
+    list *next = freelist->next;
+    free(freelist->memory);
+    free(freelist);
+    freelist = next;
+  }
+  memory_pools->used = 0;
+  memory_pools->next = 0;
+  return 0;
+}
+
+omc_alloc_interface_t omc_alloc_interface_pooled = {
+  pool_init,
+  pool_malloc,
+  pool_malloc,
+  (char*(*)(size_t)) malloc,
+  strdup,
+  pool_free
+};
 
 /* allocates n reals in the real_buffer */
 m_real* real_alloc(int n)
 {
-  return (m_real*) GC_malloc_atomic(n*sizeof(m_real));
+  return (m_real*) omc_alloc_interface.malloc_atomic(n*sizeof(m_real));
 }
 
 /* allocates n integers in the integer_buffer */
 m_integer* integer_alloc(int n)
 {
-  return (m_integer*) GC_malloc_atomic(n*sizeof(m_integer));
+  return (m_integer*) omc_alloc_interface.malloc_atomic(n*sizeof(m_integer));
 }
 
 /* allocates n strings in the string_buffer */
 m_string* string_alloc(int n)
 {
-  return (m_string*) GC_malloc_atomic(n*sizeof(m_string));
+  return (m_string*) omc_alloc_interface.malloc_atomic(n*sizeof(m_string));
 }
 
 /* allocates n booleans in the boolean_buffer */
 m_boolean* boolean_alloc(int n)
 {
-  return (m_boolean*) GC_malloc_atomic(n*sizeof(m_boolean));
+  return (m_boolean*) omc_alloc_interface.malloc_atomic(n*sizeof(m_boolean));
 }
 
 _index_t* size_alloc(int n)
 {
-  return (_index_t*) GC_malloc_atomic(n*sizeof(_index_t));
+  return (_index_t*) omc_alloc_interface.malloc_atomic(n*sizeof(_index_t));
 }
 
 _index_t** index_alloc(int n)
 {
-  return (_index_t**) GC_malloc(n*sizeof(_index_t*));
+  return (_index_t**) omc_alloc_interface.malloc(n*sizeof(_index_t*));
 }
 
 /* allocates n elements of size sze */
 void* generic_alloc(int n, size_t sze)
 {
-  return (void*) GC_malloc(n*sze);
+  return (void*) omc_alloc_interface.malloc(n*sze);
 }
