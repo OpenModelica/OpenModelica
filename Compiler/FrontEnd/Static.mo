@@ -13160,7 +13160,7 @@ algorithm
       equation
       str1 = "\n" +&
                  "- Failed to deoverload operator '" +& Dump.opSymbol(inOper) +& "' " +&
-                 "  for record of type: '" +& Absyn.pathString(Absyn.pathPrefix(inPath));
+                 "  for record of type: '" +& Absyn.pathString(Absyn.pathPrefix(inPath)) +& "'";
       Error.addSourceMessage(Error.OPERATOR_OVERLOADING_ERROR,
           {str1}, inInfo);
       then fail();
@@ -13367,6 +13367,7 @@ algorithm
          DAE.Properties prop, props1, props2;
          Absyn.Exp  absexp1, absexp2;
          Boolean lastRound;
+         DAE.Dimension n,m1,m2,p;
 
      // handle tuple op non_tuple
      case (_, _, aboper, props1 as DAE.PROP_TUPLE(type_ = _), exp1, props2 as DAE.PROP(type_ = _), exp2, _, _, _, _, _, _, _)
@@ -13401,6 +13402,33 @@ algorithm
          warnUnsafeRelations(inEnv,AbExp,const, type1,type2,exp1,exp2,oper,inPre);
        then
          (inCache,exp, prop);
+         
+     /* We have a matrix multiplication of records. According to Spec. 3.2 Section 14.4 and 10.6.4, this should be handled
+        the same way as matrix multilication of numeric matrics. 
+        - Not sure what will happen when users want to overload multiplication '*' for matrices of their records with their own algorithm. 
+        Which one should be chosen? 
+        - Also if the user hasn't overloaded either of '+' or '*'(for scalar records) then what should happen? The matrix multiplication needs both to be overloaded. 
+     */    
+     case (cache, env, Absyn.MUL(), DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, absexp1, absexp2, _, _, _, _)
+       equation
+         true = typeIsRecord(Types.arrayElementType(type1));
+         true = typeIsRecord(Types.arrayElementType(type2));
+         2 = Types.numberOfDimensions(type1);
+         2 = Types.numberOfDimensions(type2);         
+         n = Types.getDimensionNth(type1, 1);
+         m1 = Types.getDimensionNth(type1, 2);
+         m2 = Types.getDimensionNth(type2, 1);
+         p = Types.getDimensionNth(type2, 2);
+
+         true = isValidMatrixProductDims(m1, m2);
+         otype = Types.arrayElementType(type1);
+         otype = Types.liftArrayListDims(otype, {n, p});
+                  
+         exp = handleMatMultOfRecords(cache,env,type1,type2,exp1,exp2,inInfo);        
+         const = Types.constAnd(const1, const2);
+         prop = DAE.PROP(otype,const);         
+       then
+         (inCache,exp, prop);  
 
       // The order of this two cases determines the priority given to operators
       // Now left has priority for all.
@@ -13432,6 +13460,106 @@ algorithm
 
   end matchcontinue;
 end operatorDeoverloadBinary;
+
+
+protected function handleMatMultOfRecords
+"handles matrix multiplication of record types. It looks up the scalar versions of overloaded
+addition and multiplication operations and uses them to expand and simplify the matrix multiplication."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Type inType1;
+  input DAE.Type inType2;
+  input DAE.Exp inDAEExp1;
+  input DAE.Exp inDAEExp2;
+  input Absyn.Info inInfo;
+  output DAE.Exp outDAEExp;
+algorithm
+  (outDAEExp) :=
+  matchcontinue (inCache,inEnv,inType1,inType2,inDAEExp1,inDAEExp2,inInfo)
+    local
+      Absyn.Path path, multPath, sumPath;
+      list<Absyn.Path> operNames;
+      Env.Env recordEnv,env;
+      SCode.Element operatorCl;
+      Env.Cache cache;
+      list<DAE.Type> types,scalartypes,arraytypes;
+      DAE.Type type1, type2, funcType;
+        
+    case (cache, env, type1, type2, _, _, _)
+      equation       
+        path = getRecordPath(type1);
+        path = Absyn.makeFullyQualified(path);
+        (cache,_,recordEnv) = Lookup.lookupClass(cache,env,path, false);
+        
+        // Get the overloaded scalar multiplication function
+        multPath = getOverloadedScalarOperator(cache, recordEnv, path, "*", inInfo);
+        // Get the overloaded scalar addition function
+        sumPath = getOverloadedScalarOperator(cache, recordEnv, path, "+", inInfo);
+        
+        outDAEExp = ExpressionSimplify.simplifyMatrixProductOfRecords(inDAEExp1,inDAEExp2,multPath,sumPath);
+      then
+        (outDAEExp);
+    case (_, _, _, _, _, _, _)
+      equation
+        // Error.addSourceMessage(Error.INTERNAL_ERROR, {"- Static.handleMatMultOfRecords failed."}, inInfo);
+      then fail(); 
+     
+  end matchcontinue;                
+end handleMatMultOfRecords;
+
+protected function getOverloadedScalarOperator
+"Given the symobl of an operator this function finds its overloaded operator function (scalar version)
+and returns the full path to it. Currently used in handleMatMultOfRecords to find '*' and '+' operators
+to handle matrix multiplication of records."
+  input Env.Cache inCache;
+  input Env.Env inRecordEnv;
+  input Absyn.Path inRecordPath;
+  input String opSymbol;
+  input Absyn.Info inInfo;
+  output Absyn.Path outMultPath;
+algorithm
+  (outMultPath) :=
+  matchcontinue (inCache,inRecordEnv,inRecordPath,opSymbol,inInfo)
+    local
+      Env.Cache cache;
+      Absyn.Path path;
+      list<Absyn.Path> operNames;
+      Env.Env operatorEnv;
+      SCode.Element operatorCl;
+      list<DAE.Type> types,scalartypes;
+      DAE.Type funcType;
+      String str1;
+    
+    case (_, _, _, _, _)
+      equation
+        str1 = "'" +& opSymbol +& "'";
+        path = Absyn.joinPaths(inRecordPath, Absyn.IDENT(str1));
+        
+        // check if the operator is defined. i.e overloaded
+        (cache,operatorCl,operatorEnv) = Lookup.lookupClass(inCache,inRecordEnv,path, false);
+        true = SCode.isOperator(operatorCl);
+
+        // get the list of functions in the operator. there can be multiple options
+        operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
+        (cache,types) = Lookup.lookupFunctionsListInEnv(inCache, operatorEnv, operNames, inInfo, {});
+        
+        (_, scalartypes) = List.splitOnTrue(types,isFuncWithArrayInput);
+        funcType::_ = scalartypes; 
+        path = Types.getClassname(funcType);
+      then
+        path;
+        
+    case (_, _, _, _, _)
+      equation
+        str1 = "- Failed to find scalar version of overloaded operator '" +& opSymbol +& "'" +&
+                 " for expanding matrix multiplication of record type: '" +& Absyn.pathStringNoQual(inRecordPath) +& 
+                 "'. OMC will try to vectorize the multiplication";
+        Error.addSourceMessage(Error.OPERATOR_OVERLOADING_ERROR,
+          {str1}, inInfo);
+      then fail();        
+  end matchcontinue;        
+end getOverloadedScalarOperator;
+
 
 protected function operatorDeoverloadUnary
 "used to resolve unary operations.

@@ -6967,6 +6967,11 @@ algorithm
     // any other call is a function call
     case (DAE.CALL(path = _)) then true;
 
+    // mahge: Commented out because it doesn't seem neccessary to 
+    // traverse all expressions. It is not needed (I think) and it
+    // is expensive because success here means exps will be elaborated 
+    // again by InstSecion.condenseArrayEquation for no apparent use .
+/*
     // partial evaluation functions
     case (DAE.PARTEVALFUNCTION(path = _, expList = elst)) // stefan
       equation
@@ -7110,7 +7115,7 @@ algorithm
         true = containFunctioncall(e2);
       then
         true;
-
+*/
     // anything else
     case (_) then false;
 

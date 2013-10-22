@@ -5012,5 +5012,105 @@ algorithm
   end match;
 end condSimplifyAddSymbolicOperation;
 
+
+public function simplifyMatrixProductOfRecords
+  "mahge: Simplifies matrix multiplication of record types by using overloaded 
+  multiplication and addition functions."
+  input DAE.Exp inMatrix1;
+  input DAE.Exp inMatrix2;
+  input Absyn.Path mulFunc;
+  input Absyn.Path sumFunc;
+  output DAE.Exp outProduct;
+protected
+  DAE.Exp mat1, mat2;
+algorithm
+  mat1 := Expression.matrixToArray(inMatrix1);
+  mat2 := Expression.matrixToArray(inMatrix2);
+  // Transpose the second matrix. This makes it easier to do the multiplication,
+  // since we can do row-row multiplications instead of row-column.
+  mat2 := Expression.transposeArray(mat2);
+  outProduct := simplifyMatrixProductOfRecords2(mat1, mat2, mulFunc, sumFunc);
+end simplifyMatrixProductOfRecords;
+
+
+protected function simplifyMatrixProductOfRecords2
+" Simplifies the scalar product of two vectors of record types using overloaded 
+  scalar addition and multiplication functions."
+  input DAE.Exp inMatrix1;
+  input DAE.Exp inMatrix2;
+  input Absyn.Path mulFunc;
+  input Absyn.Path sumFunc;
+  output DAE.Exp outProduct;
+algorithm
+  outProduct := matchcontinue(inMatrix1, inMatrix2, mulFunc, sumFunc)
+    local
+      DAE.Dimension n, m, p;
+      list<DAE.Exp> expl1, expl2;
+      DAE.Type ty, row_ty;
+      DAE.TypeSource tp;
+      list<list<DAE.Exp>> matrix;
+
+    // Matrix-matrix multiplication, c[n, p] = a[n, m] * b[m, p].
+    case (DAE.ARRAY(ty = DAE.T_ARRAY(ty, {n, m}, tp), array = expl1),
+          DAE.ARRAY(ty = DAE.T_ARRAY(dims = {p, _}), array = expl2), _, _)
+      equation
+        // c[i, j] = a[i, :] * b[:, j] for i in 1:n, j in 1:p
+        matrix = List.map3(expl1, simplifyMatrixProductOfRecords3, expl2, mulFunc, sumFunc);
+        row_ty = DAE.T_ARRAY(ty, {p}, tp);
+        expl1 = List.map2(matrix, Expression.makeArray, row_ty, true);
+      then
+        DAE.ARRAY(DAE.T_ARRAY(ty, {n, p}, tp), false, expl1);
+
+  end matchcontinue;
+end simplifyMatrixProductOfRecords2;
+
+protected function simplifyMatrixProductOfRecords3
+  "mahge: Simplifies the scalar product of two vectors of record types using overloaded 
+  scalar addition and multiplication functions."
+  input DAE.Exp inRow;
+  input list<DAE.Exp> inMatrix;
+  input Absyn.Path mulFunc;
+  input Absyn.Path sumFunc;
+  output list<DAE.Exp> outRow;
+algorithm
+  outRow := List.map3(inMatrix, simplifyScalarProductOfRecords, inRow, mulFunc, sumFunc);
+end simplifyMatrixProductOfRecords3;
+
+
+public function simplifyScalarProductOfRecords
+  "mahge: Simplifies the scalar product of two vectors of record types using overloaded 
+  scalar addition and multiplication functions."
+  input DAE.Exp inVector1;
+  input DAE.Exp inVector2;
+  input Absyn.Path mulFunc;
+  input Absyn.Path sumFunc;
+  output DAE.Exp outProduct;
+algorithm
+  outProduct := match(inVector1, inVector2, mulFunc, sumFunc)
+    local
+      list<DAE.Exp> expl, expl1, expl2;
+      DAE.Exp exp;
+      Type   tp;
+            
+    case (DAE.ARRAY(array = expl1), DAE.ARRAY(array = expl2), _, _)
+      equation
+        expl = List.threadMap1(expl2, expl1, makeDaeCall, mulFunc);
+        exp = List.reduce1(expl, makeDaeCall, sumFunc);        
+      then
+        exp;
+
+  end match;
+end simplifyScalarProductOfRecords;
+
+protected function makeDaeCall
+  input DAE.Exp inArg1;
+  input DAE.Exp inArg2;
+  input Absyn.Path funcPath;
+  output DAE.Exp outExp;
+algorithm
+  /* mahge: TODO: Fix the type of the call attributes. Type should propagate and reach here from handleMatMultOfRecords*/
+  outExp := DAE.CALL(funcPath,{inArg1,inArg2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));  
+end makeDaeCall;
+
 end ExpressionSimplify;
 
