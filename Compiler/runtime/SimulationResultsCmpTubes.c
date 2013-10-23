@@ -84,7 +84,7 @@ static void generateHighTube(privates *priv, double *x, double *y)
   int index = priv->countHigh - 1;
   double m1 = priv->mh[index];
   double m2 = priv->mh[index - 1];
-  priv->slopeDif = fabs(m1 - m2);		// (3.2.6.2)
+  priv->slopeDif = fabs(m1 - m2);    // (3.2.6.2)
 
   if ((priv->slopeDif == 0) || ((priv->slopeDif < 2e-15 * fmax(fabs(m1), fabs(m2))) && (priv->i0h[priv->countHigh - 1] - priv->i1h[priv->countHigh - 2] < 100))) {
     /* new accumulated value of the saved interval is the terminal
@@ -104,7 +104,7 @@ static void generateHighTube(privates *priv, double *x, double *y)
     /* write slope to the list of slopes */
     priv->mh[index - 1] = (y3 - y4) / (x3 - x4);
 
-  } else { /* If difference is too big:	( 3.2.6.4) */
+  } else { /* If difference is too big:  ( 3.2.6.4) */
     priv->xHigh[index] = priv->x2 - (priv->delta * (m1 + m2) / (sqrt((m2 * m2) + (priv->S * priv->S)) + sqrt((m1 * m1) + (priv->S * priv->S))));
     if (m1 * m2 < 0) {
       priv->yHigh[index] = priv->y2 + (priv->delta * (m1 * sqrt((m2 * m2) + (priv->S * priv->S)) - m2 * sqrt((m1 * m1) + (priv->S * priv->S)))) / (m1 - m2);
@@ -132,7 +132,7 @@ static void generateHighTube(privates *priv, double *x, double *y)
         double x3 = x[0];
         priv->xHigh[index] = x3 - priv->delta;
         priv->yHigh[index] = priv->y2 + m1 * (priv->xHigh[index] - priv->x2) + priv->delta * sqrt((m1 * m1) + (priv->S * priv->S));
-      } else { /* if it is not the first:	(3.2.6.7.3.5.2.) */
+      } else { /* if it is not the first:  (3.2.6.7.3.5.2.) */
         m2 = priv->mh[index - 1];
         double x3 = priv->xHigh[index - 1];
         double y3 = priv->yHigh[index - 1];
@@ -291,7 +291,7 @@ privates* calculateTubes(double *x, double *y, size_t length, double r)
 
       priv->countHigh++;
       priv->countLow++;
-    } else {	// if not 1st interval (3.2.6)
+    } else {  // if not 1st interval (3.2.6)
       /* fill lists with new values, set X and Y to arbitrary value (3.2.6.1) */
       priv->xHigh[priv->countHigh] = 1;
       priv->yHigh[priv->countHigh] = 1;
