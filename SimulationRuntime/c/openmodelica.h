@@ -257,10 +257,6 @@ typedef struct threadData_s {
 #define homotopy(actual, simplified) (actual)
 #define homotopyParameter() data->simulationInfo.lambda
 
-#if defined(__cplusplus)
-}
-#endif
-
 typedef struct {
   void (*init)(void);
   void* (*malloc)(size_t);
@@ -272,5 +268,9 @@ typedef struct {
 
 extern omc_alloc_interface_t omc_alloc_interface;
 extern omc_alloc_interface_t omc_alloc_interface_pooled;
+
+#if defined(__cplusplus)
+} /* end extern "C" */
+#endif
 
 #endif

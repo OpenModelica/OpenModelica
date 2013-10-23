@@ -35,6 +35,10 @@
 #include <stdlib.h>
 #include "openmodelica.h"
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 /* Allocation functions */
 extern m_real* real_alloc(int n);
 extern m_integer* integer_alloc(int n);
@@ -44,5 +48,9 @@ extern _index_t* size_alloc(int n);
 extern _index_t** index_alloc(int n);
 
 void* generic_alloc(int n, size_t sze);
+
+#if defined(__cplusplus)
+} /* end extern "C" */
+#endif
 
 #endif

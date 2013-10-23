@@ -3720,6 +3720,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   $(FILEPREFIX)$(EXEEXT): $(MAINFILE) $(FILEPREFIX)_functions.h $(CFILES)
   <%\t%>$(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(CFILES) $(CFLAGS) $(LDFLAGS)
+  
+  clean:
+  <%\t%>rm -f *.obj *.lib *.exp *.c *.h *.xml *.libs *.log *.makefile *.pdb *.idb *.exe
   >>
 end match
 case "gcc" then

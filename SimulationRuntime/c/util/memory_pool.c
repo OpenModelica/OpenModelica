@@ -35,6 +35,10 @@
 #include <pthread.h>
 #include <gc.h>
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 omc_alloc_interface_t omc_alloc_interface = {
   GC_init,
   GC_malloc,
@@ -170,3 +174,9 @@ void* generic_alloc(int n, size_t sze)
 {
   return (void*) omc_alloc_interface.malloc(n*sze);
 }
+
+
+#if defined(__cplusplus)
+} /* end extern "C" */
+#endif
+
