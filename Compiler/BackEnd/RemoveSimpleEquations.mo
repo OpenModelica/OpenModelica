@@ -75,7 +75,7 @@ protected import List;
 protected import Types;
 protected import Util;
 
-protected type EquationAttributes = tuple<DAE.ElementSource, Boolean> "eqnAttributes";
+protected type EquationAttributes = tuple<DAE.ElementSource, Boolean> "eqnAttributes(source,differentiated)";
 
 protected
 uniontype SimpleContainer
@@ -2001,7 +2001,7 @@ algorithm
        vsattr = Debug.bcallret5(replacable and replaceble1, addVarSetAttributes, v, negate, mark, simpleeqnsarr, vsattr, vsattr);
        rows = List.removeOnTrue(r, intEq, iMT[i]);
        _ = arrayUpdate(iMT, i, {});
-       (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp1, SOME(expcr), negate, SOME(DAE.RCONST(0.0)), mark, simpleeqnsarr, iMT, unreplacable, vars, eqnslst, shared, repl, vsattr);
+       (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, SOME(expcr), negate, SOME(DAE.RCONST(0.0)), mark, simpleeqnsarr, iMT, unreplacable, vars, eqnslst, shared, repl, vsattr);
      then
        (vars, eqnslst, shared, repl);
    // time set
@@ -2021,7 +2021,7 @@ algorithm
        vsattr = addVarSetAttributes(v, negate, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r, intEq, iMT[i]);
        _ = arrayUpdate(iMT, i, {});
-       (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp1, SOME(expcr), negate, SOME(dexp), mark, simpleeqnsarr, iMT, unreplacable, vars, eqnslst, shared, repl, vsattr);
+       (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(rows, i, exp, SOME(expcr), negate, SOME(dexp), mark, simpleeqnsarr, iMT, unreplacable, vars, eqnslst, shared, repl, vsattr);
      then
        (vars, eqnslst, shared, repl);
    // constant set
