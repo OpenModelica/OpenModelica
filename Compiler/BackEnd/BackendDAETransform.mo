@@ -899,8 +899,8 @@ algorithm
     then (contEqnLst, contVarLst, discEqnLst, discVarLst, indxcontEqnLst, indxcontVarLst, indxdiscEqnLst, indxdiscVarLst);
     
     case (_, _, _, _) equation
-      BackendDump.printVarList(varLst);
-      BackendDump.printEquationList(eqnLst);
+      Error.addCompilerWarning(BackendDump.varListString(varLst, "involved variables"));
+      Error.addCompilerWarning(BackendDump.equationListString(eqnLst, "involved equations"));
     then fail();
   end matchcontinue;
 end splitMixedEquations;

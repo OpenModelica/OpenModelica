@@ -2196,111 +2196,92 @@ public function applyOptionSimplify
   input Option<DAE.Exp> bindExpIn;
   output Option<DAE.Exp> bindExpOut;
 algorithm
-  bindExpOut:=
-  match (bindExpIn)
+  bindExpOut := match(bindExpIn)
     local
-      DAE.Exp e,e1;
-    case (NONE()) then NONE();
-    case (SOME(e))
-      equation
-        (e1,_) = ExpressionSimplify.simplify1(e);
-      then
-        SOME(e1);
+      DAE.Exp e, e1;
+
+    case NONE()
+    then NONE();
+
+    case SOME(e) equation
+      (e1,_) = ExpressionSimplify.simplify1(e);
+    then SOME(e1);
   end match;
 end applyOptionSimplify;
 
-public function setVarCref "
-  author: PA
-
-  sets the ComponentRef of a variable.
-"
+public function setVarCref "author: PA
+  Sets the ComponentRef of a variable."
   input BackendDAE.Var inVar;
   input DAE.ComponentRef cr;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef name;
+  BackendDAE.VarKind kind;
+  DAE.VarDirection dir;
+  DAE.VarParallelism prl;
+  DAE.Type tp;
+  Option<DAE.Exp> bind ;
+  Option<Values.Value> bindval;
+  DAE.InstDims ad;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> attr;
+  Option<SCode.Comment> cmt;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,cr)
-    local
-      DAE.ComponentRef name;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      DAE.Type tp;
-      Option<DAE.Exp> bind ;
-      Option<Values.Value> bindval;
-      DAE.InstDims ad;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> cmt;
-      DAE.ConnectorType ct;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),_) then
-      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct);
-  end match;
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct) := inVar;
+  outVar := BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct);
 end setVarCref;
 
-public function setVarBindingOpt "
-  author: PA
-
-  sets the optional binding of a variable.
-"
+public function setVarBindingOpt "author: PA
+  Sets the optional binding of a variable."
   input BackendDAE.Var inVar;
   input Option<DAE.Exp> bindExp;
   output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef name;
+  BackendDAE.VarKind kind;
+  DAE.VarDirection dir;
+  DAE.VarParallelism prl;
+  BackendDAE.Type tp;
+  Option<DAE.Exp> bind ;
+  Option<Values.Value> bindval;
+  DAE.InstDims ad;
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> attr;
+  Option<SCode.Comment> cmt;
+  DAE.ConnectorType ct;
 algorithm
-  outVar := match (inVar,bindExp)
-    local
-      DAE.ComponentRef name;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<DAE.Exp> bind ;
-      Option<Values.Value> bindval;
-      DAE.InstDims ad;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> cmt;
-      DAE.ConnectorType ct;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),_) then
-      BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,cmt,ct);
-  end match;
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct) := inVar;
+  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,cmt,ct);
 end setVarBindingOpt;
 
 public function moveVariables "
   This function takes the two variable lists of a dae (states+alg) and
   known vars and moves a set of variables from the first to the second set.
   This function is needed to manage this in complexity O(n) by only
-  traversing the set once for all variables.
-"
+  traversing the set once for all variables."
   input BackendDAE.Variables inVariables1;
   input BackendDAE.Variables inVariables2;
   input HashTable.HashTable hashTable;
   output BackendDAE.Variables outVariables1;
   output BackendDAE.Variables outVariables2;
+protected
+  list<BackendDAE.Var> lst1, lst2, lst1_1, lst2_1;
+  BackendDAE.Variables v1, v2, vars, knvars;
 algorithm
-  (outVariables1,outVariables2) := match (inVariables1,inVariables2,hashTable)
-    local
-      list<BackendDAE.Var> lst1,lst2,lst1_1,lst2_1;
-      BackendDAE.Variables v1,v2,vars,knvars,vars1,vars2;
-      HashTable.HashTable mvars;
-    case (vars1,vars2,mvars)
-      equation
-        lst1 = BackendVariable.varList(vars1);
-        lst2 = BackendVariable.varList(vars2);
-        (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
-        v1 = BackendVariable.emptyVars();
-        v2 = BackendVariable.emptyVars();
-        //vars = addVarsNoUpdCheck(lst1_1, v1);
-        vars = BackendVariable.addVars(lst1_1, v1);
-        //knvars = addVarsNoUpdCheck(lst2_1, v2);
-        knvars = BackendVariable.addVars(lst2_1, v2);
-      then
-        (vars,knvars);
-  end match;
+  lst1 := BackendVariable.varList(inVariables1);
+  lst2 := BackendVariable.varList(inVariables2);
+  (lst1_1, lst2_1) := moveVariables2(lst1, lst2, hashTable);
+  v1 := BackendVariable.emptyVars();
+  v2 := BackendVariable.emptyVars();
+  //vars := addVarsNoUpdCheck(lst1_1, v1);
+  outVariables1 := BackendVariable.addVars(lst1_1, v1);
+  //knvars := addVarsNoUpdCheck(lst2_1, v2);
+  outVariables2 := BackendVariable.addVars(lst2_1, v2);
 end moveVariables;
 
 protected function moveVariables2 "
-  helper function to move_variables.
-"
+  Helper function to moveVariables."
   input list<BackendDAE.Var> inVarLst1;
   input list<BackendDAE.Var> inVarLst2;
   input HashTable.HashTable hashTable;

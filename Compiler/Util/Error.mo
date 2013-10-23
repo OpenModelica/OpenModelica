@@ -1121,4 +1121,17 @@ algorithm
   end match;
 end addCompilerWarning;
 
+public function addCompilerNotification
+"Used to make a compiler notification"
+  input String message;
+algorithm
+  _ := match (message)
+    case _
+      equation
+        addMessage(COMPILER_NOTIFICATION, {message});
+      then
+        ();
+  end match;
+end addCompilerNotification;
+
 end Error;

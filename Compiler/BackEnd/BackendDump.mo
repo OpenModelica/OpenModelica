@@ -161,6 +161,40 @@ algorithm
   oInteger := (i + 1,iscalar + size);
 end printEquationList2;
 
+public function equationListString
+  input list<BackendDAE.Equation> inEqns;
+  input String heading;
+  output String outString;
+algorithm
+  outString := match(inEqns, heading)
+    local 
+      String buffer;
+      
+    case (_, "") equation
+      ((_, _, buffer)) = List.fold(inEqns, equationList2String, (1, 1, ""));
+    then buffer;
+    
+    else equation
+      ((_, _, buffer)) = List.fold(inEqns, equationList2String, (1, 1, ""));
+      buffer = heading +& "\n" +& UNDERLINE +& "\n" +& buffer;
+    then buffer;
+  end match;
+end equationListString;
+
+protected function equationList2String
+  input BackendDAE.Equation inEquation;
+  input tuple<Integer, Integer, String /*buffer*/> inTuple;
+  output tuple<Integer, Integer, String /*buffer*/> outTuple;
+protected
+  Integer iscalar, i, size;
+  String buffer;
+algorithm
+  (i, iscalar, buffer) := inTuple;
+  size := BackendEquation.equationSize(inEquation);
+  buffer := buffer +& intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "\n";
+  outTuple := (i + 1, iscalar + size, buffer);
+end equationList2String;
+
 public function printEquations ""
   input list<Integer> inIntegerLst;
   input BackendDAE.EqSystem syst;
@@ -282,7 +316,7 @@ algorithm
   debuglst((crstates,ComponentReference.printComponentRefStr,"\n","\n"));
 end printStateSet;
 
-public function printVar ""
+public function printVar
   input BackendDAE.Var inVar;
 algorithm
   print(varString(inVar) +& "\n");
@@ -310,6 +344,40 @@ algorithm
   printVar(inVar);
   outVarNo := inVarNo + 1;
 end printVars1;
+
+public function varListString
+  input list<BackendDAE.Var> inVars;
+  input String heading;
+  output String outString;
+algorithm
+  outString := match(inVars, heading)
+    local 
+      String buffer;
+      
+    case (_, "") equation
+      ((_, buffer)) = List.fold(inVars, var1String, (1, ""));
+    then buffer;
+    
+    else equation
+      ((_, buffer)) = List.fold(inVars, var1String, (1, ""));
+      buffer = heading +& "\n" +& UNDERLINE +& "\n" +& buffer;
+    then buffer;
+  end match;
+end varListString;
+
+protected function var1String
+  input BackendDAE.Var inVar;
+  input tuple<Integer /*inVarNo*/, String /*buffer*/> inTpl;
+  output tuple<Integer /*outVarNo*/, String /*buffer*/> outTpl;
+protected
+  Integer varNo;
+  String buffer;
+algorithm
+  (varNo, buffer) := inTpl;
+  buffer := buffer +& intString(varNo) +& ": ";
+  buffer := buffer +& varString(inVar) +& "\n";
+  outTpl := (varNo + 1, buffer);
+end var1String;
 
 protected function printExternalObjectClasses "dump classes of external objects"
   input BackendDAE.ExternalObjectClasses cls;
@@ -2828,19 +2896,20 @@ algorithm
     local
       array<Integer> ass1;
       BackendDAE.StrongComponents comps;
-      case (BackendDAE.NO_MATCHING()) equation print("no matching\n"); then ();
-      case (BackendDAE.MATCHING(ass1,_,comps))
-        equation
-          dumpMatching(ass1);
-          print("\n\n");
-          dumpComponents(comps);
-        then
-          ();
-    end match;
+      
+    case (BackendDAE.NO_MATCHING()) equation
+      print("no matching\n");
+    then ();
+    
+    case (BackendDAE.MATCHING(ass1, _, comps)) equation
+      dumpMatching(ass1);
+      print("\n\n");
+      dumpComponents(comps);
+    then ();
+  end match;
 end dumpFullMatching;
 
-public function dumpMatching
-"author: PA
+public function dumpMatching "author: PA
   prints the matching information on stdout."
   input array<Integer> v;
 protected
@@ -2856,8 +2925,7 @@ algorithm
   dumpMatching2(v, 1, len);
 end dumpMatching;
 
-protected function dumpMatching2
-"author: PA
+protected function dumpMatching2 "author: PA
   Helper function to dumpMatching."
   input array<Integer> v;
   input Integer i;
