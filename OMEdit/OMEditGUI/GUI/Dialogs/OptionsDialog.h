@@ -233,7 +233,7 @@ public:
   Label *mpNameLabel;
   QComboBox *mpNameComboBox;
   Label *mpValueLabel;
-  QLineEdit *mpValueTextBox;
+  QLineEdit *mpVersionTextBox;
   QPushButton *mpOkButton;
   bool mEditFlag;
 private slots:

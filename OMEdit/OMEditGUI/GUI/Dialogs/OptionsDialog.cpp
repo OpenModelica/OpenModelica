@@ -1106,7 +1106,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pParent)
   mpSystemLibrariesTree->setColumnCount(2);
   mpSystemLibrariesTree->setTextElideMode(Qt::ElideMiddle);
   QStringList systemLabels;
-  systemLabels << tr("Name") << tr("Value");
+  systemLabels << tr("Name") << tr("Version");
   mpSystemLibrariesTree->setHeaderLabels(systemLabels);
   connect(mpSystemLibrariesTree, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(openEditSystemLibrary()));
   // system libraries buttons
@@ -1229,7 +1229,7 @@ void LibrariesPage::openEditSystemLibrary()
     pAddSystemLibraryWidget->mEditFlag = true;
     int currentIndex = pAddSystemLibraryWidget->mpNameComboBox->findText(mpSystemLibrariesTree->selectedItems().at(0)->text(0), Qt::MatchExactly);
     pAddSystemLibraryWidget->mpNameComboBox->setCurrentIndex(currentIndex);
-    pAddSystemLibraryWidget->mpValueTextBox->setText(mpSystemLibrariesTree->selectedItems().at(0)->text(1));
+    pAddSystemLibraryWidget->mpVersionTextBox->setText(mpSystemLibrariesTree->selectedItems().at(0)->text(1));
     pAddSystemLibraryWidget->show();
   }
 }
@@ -1288,8 +1288,8 @@ AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pParent)
     mpNameComboBox->addItem(key,key);
   }
 
-  mpValueLabel = new Label(tr("Value:"));
-  mpValueTextBox = new QLineEdit("default");
+  mpValueLabel = new Label(tr("Version:"));
+  mpVersionTextBox = new QLineEdit("default");
   mpOkButton = new QPushButton(Helper::ok);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystemLibrary()));
   QGridLayout *mainLayout = new QGridLayout;
@@ -1297,7 +1297,7 @@ AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pParent)
   mainLayout->addWidget(mpNameLabel, 0, 0);
   mainLayout->addWidget(mpNameComboBox, 0, 1);
   mainLayout->addWidget(mpValueLabel, 1, 0);
-  mainLayout->addWidget(mpValueTextBox, 1, 1);
+  mainLayout->addWidget(mpVersionTextBox, 1, 1);
   mainLayout->addWidget(mpOkButton, 2, 0, 1, 2, Qt::AlignRight);
   setLayout(mainLayout);
 }
@@ -1345,7 +1345,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
     return;
   }
   // if value text box is empty show error and return
-  if (mpValueTextBox->text().isEmpty())
+  if (mpVersionTextBox->text().isEmpty())
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
@@ -1361,7 +1361,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
       return;
     }
     QStringList values;
-    values << mpNameComboBox->currentText() << mpValueTextBox->text();
+    values << mpNameComboBox->currentText() << mpVersionTextBox->text();
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
   }
   // if user is editing old library
@@ -1375,7 +1375,7 @@ void AddSystemLibraryDialog::addSystemLibrary()
       return;
     }
     // pItem->setText(0, mpNameTextBox->text());
-    pItem->setText(1, mpValueTextBox->text());
+    pItem->setText(1, mpVersionTextBox->text());
   }
   accept();
 }
