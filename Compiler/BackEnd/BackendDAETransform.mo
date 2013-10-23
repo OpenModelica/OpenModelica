@@ -108,8 +108,8 @@ algorithm
         (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets),comps1);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function strongComponentsScalar failed
-sorting equations (strongComponents) failed"});
+      Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function strongComponentsScalar failed
+- sorting equations (strongComponents) failed");
       then fail();
   end matchcontinue;
 end strongComponentsScalar;
@@ -202,7 +202,7 @@ algorithm
         analyseStrongComponentsScalar(comps,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,mark,markarray,acomp::iAcc);
     else
       equation
-        print("- BackendDAETransform.analyseStrongComponents failed\n");
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentsScalar failed");
       then
         fail();
   end match;
@@ -249,7 +249,7 @@ algorithm
         (compX,imark+1);
     else
       equation
-        print("- BackendDAETransform.analyseStrongComponent failed\n");
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentScalar failed");
       then
         fail();
   end match;
@@ -310,8 +310,8 @@ algorithm
         (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets),comps1);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function strongComponents failed
-sorting equations (strongComponents) failed"});
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function strongComponents failed
+- sorting equations (strongComponents) failed");
       then fail();
   end matchcontinue;
 end strongComponents;
@@ -341,7 +341,7 @@ algorithm
         analyseStrongComponents(comps,syst,shared,inAss1,inAss2,acomp::iAcc);
     else
       equation
-        print("- BackendDAETransform.analyseStrongComponents failed\n");
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponents failed");
       then
         fail();
   end match;
@@ -374,7 +374,7 @@ algorithm
         compX;
     else
       equation
-        print("- BackendDAETransform.analyseStrongComponent failed\n");
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponent failed");
       then
         fail();
   end match;
@@ -494,13 +494,13 @@ Sorry - Support for Discrete Equation Systems is not yet implemented\n";
         msg = msg +& stringDelimitList(slst,"\n");
         slst = List.map(eqn_lst,BackendDump.equationString);
         msg = msg +& "\n" +& stringDelimitList(slst,"\n");
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        Error.addInternalError(msg);
       then
         fail();
     
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentBlock failed"});
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentBlock failed");
       then
         fail();
   
@@ -899,8 +899,8 @@ algorithm
     then (contEqnLst, contVarLst, discEqnLst, discVarLst, indxcontEqnLst, indxcontVarLst, indxdiscEqnLst, indxdiscVarLst);
     
     case (_, _, _, _) equation
-      Error.addCompilerWarning(BackendDump.varListString(varLst, "involved variables"));
-      Error.addCompilerWarning(BackendDump.equationListString(eqnLst, "involved equations"));
+      Error.addInternalError(BackendDump.varListString(varLst, "involved variables"));
+      Error.addInternalError(BackendDump.equationListString(eqnLst, "involved equations"));
     then fail();
   end matchcontinue;
 end splitMixedEquations;
@@ -1548,7 +1548,7 @@ algorithm
     
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsEqnWithSymbolicOperation failed"});
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsEqnWithSymbolicOperation failed");
       then
         fail();
   end matchcontinue;
@@ -1696,7 +1696,7 @@ algorithm
         (wop::res1,ext_arg_1);
      case (_,_,_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsWhenOperator failed"});
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsWhenOperator failed");
       then
         fail();
   end matchcontinue;
@@ -1735,7 +1735,7 @@ algorithm
         (BackendDAE.WHEN_CLAUSE(cond1,reinitStmtLst1,elsindx)::wclst1,ext_arg_3);
      case (_,_,_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsWhenClauseLst failed"});
+        Error.addInternalError("./Compiler/BackEnd/BackendDAETransform.mo: function traverseBackendDAEExpsWhenClauseLst failed");
       then
         fail();
   end matchcontinue;

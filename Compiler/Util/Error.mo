@@ -1134,4 +1134,17 @@ algorithm
   end match;
 end addCompilerNotification;
 
+public function addInternalError
+"Used to make a compiler notification"
+  input String message;
+algorithm
+  _ := match (message)
+    case _
+      equation
+        addMessage(INTERNAL_ERROR, {message});
+      then
+        ();
+  end match;
+end addInternalError;
+
 end Error;
