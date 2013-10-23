@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
-"POT-Creation-Date: 2013-10-17 10:43+0200\n"
+"POT-Creation-Date: 2013-10-23 16:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,19 +17,19 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../FrontEnd/NFLookup.mo:428 ../FrontEnd/NFLookup.mo:429
+#: ../FrontEnd/NFLookup.mo:437 ../FrontEnd/NFLookup.mo:438
 msgid "component"
 msgstr ""
 
-#: ../FrontEnd/NFLookup.mo:430 ../FrontEnd/NFLookup.mo:433
+#: ../FrontEnd/NFLookup.mo:439 ../FrontEnd/NFLookup.mo:442
 msgid "class"
 msgstr ""
 
-#: ../FrontEnd/NFLookup.mo:431 ../FrontEnd/NFLookup.mo:434
+#: ../FrontEnd/NFLookup.mo:440 ../FrontEnd/NFLookup.mo:443
 msgid "function"
 msgstr ""
 
-#: ../FrontEnd/NFLookup.mo:432
+#: ../FrontEnd/NFLookup.mo:441
 msgid "package"
 msgstr ""
 
@@ -124,8 +124,8 @@ msgid "Class %s not found."
 msgstr ""
 
 #: ../Util/Error.mo:167 ../runtime/printimpl.c:331 ../runtime/printimpl.c:350
-#: ../runtime/printimpl.c:418 ../runtime/systemimpl.c:420
-#: ../runtime/systemimpl.c:438
+#: ../runtime/printimpl.c:418 ../runtime/systemimpl.c:394
+#: ../runtime/systemimpl.c:412
 #, c-format
 msgid "Error writing to file %s."
 msgstr ""
@@ -314,8 +314,7 @@ msgstr ""
 
 #: ../Util/Error.mo:237
 #, c-format
-msgid ""
-"Missing redeclare keyword on redeclaration of class %s in modifier of %s."
+msgid "Missing redeclare keyword on redeclaration of class %s."
 msgstr ""
 
 #: ../Util/Error.mo:239
@@ -1594,49 +1593,54 @@ msgid ""
 "specification."
 msgstr ""
 
-#: ../Util/Error.mo:677
+#: ../Util/Error.mo:676
 #, c-format
-msgid "Local variable '%s' shadows another variable."
+msgid "The same class is defined in multiple files: %s."
 msgstr ""
 
 #: ../Util/Error.mo:679
 #, c-format
-msgid "%s uses invalid subtypeof syntax. Only subtypeof Any is supported."
+msgid "Local variable '%s' shadows another variable."
 msgstr ""
 
 #: ../Util/Error.mo:681
+#, c-format
+msgid "%s uses invalid subtypeof syntax. Only subtypeof Any is supported."
+msgstr ""
+
+#: ../Util/Error.mo:683
 #, c-format
 msgid ""
 "%s is used as a function reference, but doesn't specify the partial prefix."
 msgstr ""
 
-#: ../Util/Error.mo:683
+#: ../Util/Error.mo:685
 #, c-format
 msgid "Match expression equation sections forbid the use of %s-equations."
 msgstr ""
 
-#: ../Util/Error.mo:685
+#: ../Util/Error.mo:687
 #, c-format
 msgid ""
 "Uniontype %s was not generated correctly. One possible cause is "
 "modifications, which are not allowed."
 msgstr ""
 
-#: ../Util/Error.mo:687
-msgid "MetaModelica complex types may not have modifiers."
-msgstr ""
-
 #: ../Util/Error.mo:689
-#, c-format
-msgid "Cannot evaluate function pointers (got %s)."
+msgid "MetaModelica complex types may not have modifiers."
 msgstr ""
 
 #: ../Util/Error.mo:691
 #, c-format
-msgid "Tried to use function %s, but it was not instantiated."
+msgid "Cannot evaluate function pointers (got %s)."
 msgstr ""
 
 #: ../Util/Error.mo:693
+#, c-format
+msgid "Tried to use function %s, but it was not instantiated."
+msgstr ""
+
+#: ../Util/Error.mo:695
 #, c-format
 msgid ""
 "Could not solve the polymorphism in the function call to %s\n"
@@ -1648,61 +1652,61 @@ msgid ""
 "%s"
 msgstr ""
 
-#: ../Util/Error.mo:695
+#: ../Util/Error.mo:697
 #, c-format
 msgid "In record constructor %s: %s"
 msgstr ""
 
-#: ../Util/Error.mo:697
+#: ../Util/Error.mo:699
 #, c-format
 msgid "Invalid pattern: %s"
 msgstr ""
 
-#: ../Util/Error.mo:699
+#: ../Util/Error.mo:701
 #, c-format
 msgid "Failed to elaborate match expression %s"
 msgstr ""
 
-#: ../Util/Error.mo:701
+#: ../Util/Error.mo:703
 #, c-format
 msgid ""
 "Failed to match types of cons expression %s. The head has type %s and the "
 "tail %s."
 msgstr ""
 
-#: ../Util/Error.mo:703
+#: ../Util/Error.mo:705
 #, c-format
 msgid ""
 "%s. Strict RML enforces match expression input and output to be the same as "
 "the function's."
 msgstr ""
 
-#: ../Util/Error.mo:705
+#: ../Util/Error.mo:707
 msgid "NONE is not acceptable syntax. Use NONE() instead."
 msgstr ""
 
-#: ../Util/Error.mo:707
+#: ../Util/Error.mo:709
 #, c-format
 msgid "Invalid named fields: %s"
 msgstr ""
 
-#: ../Util/Error.mo:709
+#: ../Util/Error.mo:711
 #, c-format
 msgid ""
 "Only components without direction are allowed in local declarations, got: %s"
 msgstr ""
 
-#: ../Util/Error.mo:711
+#: ../Util/Error.mo:713
 #, c-format
 msgid "Invalid complex type name: %s"
 msgstr ""
 
-#: ../Util/Error.mo:713
+#: ../Util/Error.mo:715
 #, c-format
 msgid "In pattern %s: %s is not part of uniontype %s"
 msgstr ""
 
-#: ../Util/Error.mo:715
+#: ../Util/Error.mo:717
 #, c-format
 msgid ""
 "Type mismatch in pattern %s\n"
@@ -1712,77 +1716,77 @@ msgid ""
 "  %s"
 msgstr ""
 
-#: ../Util/Error.mo:717
+#: ../Util/Error.mo:719
 #, c-format
 msgid "Call pattern is not a record constructor %s"
 msgstr ""
 
-#: ../Util/Error.mo:719
+#: ../Util/Error.mo:721
 #, c-format
 msgid "Match expression has mismatched result types:%s"
 msgstr ""
 
-#: ../Util/Error.mo:721
+#: ../Util/Error.mo:723
 msgid ""
 "This matchcontinue expression has no overlapping patterns and should be "
 "using match instead of matchcontinue."
 msgstr ""
 
-#: ../Util/Error.mo:723
+#: ../Util/Error.mo:725
 #, c-format
 msgid "Dead code elimination: %s."
 msgstr ""
 
-#: ../Util/Error.mo:725
+#: ../Util/Error.mo:727
 #, c-format
 msgid "Unused local variable: %s."
 msgstr ""
 
-#: ../Util/Error.mo:727
+#: ../Util/Error.mo:729
 #, c-format
 msgid "Removing unused as-binding: %s."
 msgstr ""
 
-#: ../Util/Error.mo:729
-#, c-format
-msgid "Converted match expression to switch of type %s."
-msgstr ""
-
 #: ../Util/Error.mo:731
 #, c-format
-msgid ""
-"Reductions require the types of the %s and %s to be %s, but got: %s and %s."
+msgid "Converted match expression to switch of type %s."
 msgstr ""
 
 #: ../Util/Error.mo:733
 #, c-format
 msgid ""
-"Expected a reduction function with type signature ('A,'B) => 'B, but got %s."
+"Reductions require the types of the %s and %s to be %s, but got: %s and %s."
 msgstr ""
 
 #: ../Util/Error.mo:735
 #, c-format
-msgid "Operator %s expects numeric types as operands, but got '%s and %s'."
+msgid ""
+"Expected a reduction function with type signature ('A,'B) => 'B, but got %s."
 msgstr ""
 
 #: ../Util/Error.mo:737
+#, c-format
+msgid "Operator %s expects numeric types as operands, but got '%s and %s'."
+msgstr ""
+
+#: ../Util/Error.mo:739
 #, c-format
 msgid ""
 "Could not evaluate structural parameter (or constant): %s which gives "
 "dimensions of array: %s. Array dimensions must be known at compile time."
 msgstr ""
 
-#: ../Util/Error.mo:749
+#: ../Util/Error.mo:751
 #, c-format
 msgid "Template error: %s"
 msgstr ""
 
-#: ../Util/Error.mo:751 ../Util/Error.mo:753
+#: ../Util/Error.mo:753 ../Util/Error.mo:755
 #, c-format
 msgid "Operator Overloading: %s."
 msgstr ""
 
-#: ../Util/Error.mo:761
+#: ../Util/Error.mo:763
 #, c-format
 msgid "File not Found: %s."
 msgstr ""
@@ -2661,62 +2665,83 @@ msgstr ""
 msgid "Sets the scheduler for task graph scheduling. Default: list scheduling."
 msgstr ""
 
-#: ../Util/Flags.mo:1672
+#: ../Util/Flags.mo:809
+msgid "Original Cellier with consideration of impossible assignments."
+msgstr ""
+
+#: ../Util/Flags.mo:810
+msgid "Modified Cellier, new step 'count impossible assignments'."
+msgstr ""
+
+#: ../Util/Flags.mo:811
+msgid "Modified Cellier, drop first step."
+msgstr ""
+
+#: ../Util/Flags.mo:812
+msgid ""
+"Modified Cellier, drop first step, new step 'count impossible assignments'."
+msgstr ""
+
+#: ../Util/Flags.mo:813
+msgid "Sets the tearing heuristic to use for Cellier-tearing."
+msgstr ""
+
+#: ../Util/Flags.mo:1682
 msgid ""
 "Help on the command-line and scripting environments, including OMShell and "
 "OMNotebook."
 msgstr ""
 
-#: ../Util/Flags.mo:1673
+#: ../Util/Flags.mo:1683
 msgid "The command-line options available for omc."
 msgstr ""
 
-#: ../Util/Flags.mo:1674
+#: ../Util/Flags.mo:1684
 msgid "Flags that enable debugging, diagnostics, and research prototypes."
 msgstr ""
 
-#: ../Util/Flags.mo:1675
+#: ../Util/Flags.mo:1685
 msgid ""
 "Flags that determine which symbolic methods are used to produce the "
 "causalized equation system."
 msgstr ""
 
-#: ../Util/Flags.mo:1676
+#: ../Util/Flags.mo:1686
 msgid ""
 "The command-line options available for simulation executables generated by "
 "OpenModelica."
 msgstr ""
 
-#: ../Util/Flags.mo:1677
+#: ../Util/Flags.mo:1687
 msgid "Displays option descriptions for multi-option flag <flagname>."
 msgstr ""
 
-#: ../Util/Flags.mo:1678
+#: ../Util/Flags.mo:1688
 msgid "This help-text."
 msgstr ""
 
-#: ../Util/Flags.mo:1688
+#: ../Util/Flags.mo:1698
 msgid "The available topics (help(\"topics\")) are as follows:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1695
+#: ../Util/Flags.mo:1705
 msgid "The simulation executable takes the following flags:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1700
+#: ../Util/Flags.mo:1710
 msgid ""
 "The debug flag takes a comma-separated list of flags which are used by the\n"
 "compiler for debugging or experimental purposes.\n"
 "Flags prefixed with \"-\" or \"no\" will be disabled.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1701
+#: ../Util/Flags.mo:1711
 msgid ""
 "The available flags are (+ are enabled by default, - are disabled):\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1708
+#: ../Util/Flags.mo:1718
 msgid ""
 "The +preOptModules flag sets the optimization modules which are used before "
 "the\n"
@@ -2724,36 +2749,36 @@ msgid ""
 "a comma-separated list, where the valid modules are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1711
+#: ../Util/Flags.mo:1721
 msgid ""
 "The +matchingAlgorithm sets the method that is used for the matching "
 "algorithm, after the pre optimization modules. Valid options are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1714
+#: ../Util/Flags.mo:1724
 msgid ""
 "The +indexReductionMethod sets the method that is used for the index "
 "reduction, after the pre optimization modules. Valid options are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1717
+#: ../Util/Flags.mo:1727
 msgid ""
 "The +postOptModules then sets the optimization modules which are used after "
 "the index reduction, specified as a comma-separated list. The valid modules "
 "are:"
 msgstr ""
 
-#: ../Util/Flags.mo:1774
+#: ../Util/Flags.mo:1784
 msgid "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1775
+#: ../Util/Flags.mo:1785
 msgid ""
 "Distributed under OMSC-PL and GPL, see www.openmodelica.org\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1777
+#: ../Util/Flags.mo:1787
 msgid ""
 "Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries "
 "| .mo-files] \n"
@@ -2764,87 +2789,87 @@ msgid ""
 "* runtimeOptions: call omc -help to see runtime options\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1778
+#: ../Util/Flags.mo:1788
 msgid ""
 "\n"
 "* +omcOptions:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1780
+#: ../Util/Flags.mo:1790
 msgid ""
 "\n"
 "For more details on a specific topic, use +help=topics or help(\"topics\")\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1781
+#: ../Util/Flags.mo:1791
 msgid "* Examples:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1782
+#: ../Util/Flags.mo:1792
 msgid ""
 "  omc Model.mo             will produce flattened Model on standard output.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1783
+#: ../Util/Flags.mo:1793
 msgid ""
 "  omc +s Model.mo          will produce simulation code for the model:\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1784
+#: ../Util/Flags.mo:1794
 msgid "                            * Model.c           The model C code.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1785
+#: ../Util/Flags.mo:1795
 msgid ""
 "                            * Model_functions.c The model functions C code.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1786
+#: ../Util/Flags.mo:1796
 msgid ""
 "                            * Model.makefile    The makefile to compile the "
 "model.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1787
+#: ../Util/Flags.mo:1797
 msgid "                            * Model_init.xml    The initial values.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1789
+#: ../Util/Flags.mo:1799
 msgid "  omc Script.mos           will run the commands from Script.mos.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1790
+#: ../Util/Flags.mo:1800
 msgid ""
 "  omc Model.mo Modelica    will first load the Modelica library and then "
 "produce \n"
 "                            flattened Model on standard output.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1791
+#: ../Util/Flags.mo:1801
 msgid ""
 "  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and "
 "produce \n"
 "                            flattened Model1 on standard output.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1792
+#: ../Util/Flags.mo:1802
 msgid "  *.mo (Modelica files) \n"
 msgstr ""
 
-#: ../Util/Flags.mo:1794
+#: ../Util/Flags.mo:1804
 msgid ""
 "  *.mos (Modelica Script files)\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1795
+#: ../Util/Flags.mo:1805
 msgid ""
 "For available simulation flags, use +help=simulation.\n"
 "\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1796
+#: ../Util/Flags.mo:1806
 msgid ""
 "Documentation is available in the built-in package OpenModelica.Scripting "
 "or\n"
@@ -2852,7 +2877,7 @@ msgid ""
 "html>.\n"
 msgstr ""
 
-#: ../Util/Flags.mo:1871 ../Util/Flags.mo:1877
+#: ../Util/Flags.mo:1881 ../Util/Flags.mo:1887
 msgid "Valid options:"
 msgstr ""
 
@@ -2860,7 +2885,7 @@ msgstr ""
 msgid "File does not exist: "
 msgstr ""
 
-#: ../Main/Main.mo:1119
+#: ../Main/Main.mo:1108
 msgid "You are trying to run OpenModelica as root.\n"
 msgstr ""
 
@@ -2965,80 +2990,80 @@ msgstr ""
 msgid "Files not Equal\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:315 ../runtime/systemimpl.c:357
+#: ../runtime/systemimpl.c:293 ../runtime/systemimpl.c:334
 #, c-format
 msgid "Error opening file: %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:371
+#: ../runtime/systemimpl.c:347
 #, c-format
 msgid "File too large to fit into a MetaModelica string: %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:462
+#: ../runtime/systemimpl.c:436
 #, c-format
 msgid "Error appending to file %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:564 ../runtime/systemimpl.c:570
-#: ../runtime/systemimpl.c:680
+#: ../runtime/systemimpl.c:537 ../runtime/systemimpl.c:543
+#: ../runtime/systemimpl.c:651
 #, c-format
 msgid "system(%s) failed: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:984
+#: ../runtime/systemimpl.c:947
 #, c-format
 msgid "Error opening file %s."
 msgstr ""
 
-#: ../runtime/systemimpl.c:1133
+#: ../runtime/systemimpl.c:1092
 #, c-format
 msgid "OMC unable to load `%s': %s.\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1554
+#: ../runtime/systemimpl.c:1513
 #, c-format
 msgid "Modelica URI lacks classname: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1563
+#: ../runtime/systemimpl.c:1522
 #, c-format
 msgid "File URI has no path: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1567
+#: ../runtime/systemimpl.c:1526
 #, c-format
 msgid "File URI using hostnames is not supported: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1572
+#: ../runtime/systemimpl.c:1531
 #, c-format
 msgid "Unknown uri: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:1999
+#: ../runtime/systemimpl.c:1942
 #, c-format
 msgid "freopen(%s,%s,%s) failed: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:2045 ../runtime/systemimpl.c:2059
+#: ../runtime/systemimpl.c:1981 ../runtime/systemimpl.c:1994
 #, c-format
 msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
 msgstr ""
 
-#: ../runtime/systemimpl.c:2066
+#: ../runtime/systemimpl.c:2000
 #, c-format
 msgid ""
 "iconv(to=%s) failed because the character set output null bytes in the "
 "middle of the string."
 msgstr ""
 
-#: ../runtime/systemimpl.c:2153
+#: ../runtime/systemimpl.c:2087
 #, c-format
 msgid "Warning: Failed to set locale: '%s'\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:2175
+#: ../runtime/systemimpl.c:2107
 #, c-format
 msgid ""
 "Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C."
@@ -3046,29 +3071,29 @@ msgid ""
 "might have some issues.\n"
 msgstr ""
 
-#: ../runtime/systemimpl.c:2447 ../runtime/systemimpl.c:2457
+#: ../runtime/systemimpl.c:2377 ../runtime/systemimpl.c:2387
 #, c-format
 msgid "Could not access file %s: %s."
 msgstr ""
 
-#: ../runtime/System_omc.c:724
+#: ../runtime/System_omc.c:721
 #, c-format
 msgid "Failed to wait for forked process to return: %s"
 msgstr ""
 
-#: ../runtime/System_omc.c:746
+#: ../runtime/System_omc.c:743
 msgid "Fork is not available on Windows"
 msgstr ""
 
-#: ../runtime/System_omc.c:749
+#: ../runtime/System_omc.c:746
 msgid "Fork is not safe to use on OSX"
 msgstr ""
 
-#: ../runtime/System_omc.c:773
+#: ../runtime/System_omc.c:770
 #, c-format
 msgid "fork() failed: %s"
 msgstr ""
 
-#: ../runtime/System_rml.c:2224
+#: ../runtime/System_rml.c:1820
 msgid "Fork is not available when OpenModelica is compiled using RML"
 msgstr ""

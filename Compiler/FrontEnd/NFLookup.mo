@@ -179,6 +179,7 @@ public function lookupFunctionName
 protected
   LookupState state;
 algorithm
+  /* TODO: Handle Integer and String also. */
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
     SOME(Error.LOOKUP_FUNCTION_ERROR));
   validateEndState(state, STATE_FUNC(), inName, inInfo);
@@ -263,12 +264,12 @@ protected function makeDummyMetaType
   input String inTypeName;
   output SCode.Element outClass;
 algorithm
-  outClass :=
-  SCode.CLASS(
+  outClass := SCode.CLASS(
     inTypeName,
     SCode.defaultPrefixes,
     SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
-    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, Absyn.dummyInfo);
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), 
+    SCode.noComment, Absyn.dummyInfo);
 end makeDummyMetaType;
 
 protected function lookupBuiltinType
@@ -673,6 +674,8 @@ protected function isValidPackageElement
 protected
   SCode.Element el;
 algorithm
+  /* TODO: A component might be a constant due to a class prefix. */
+  /* TODO: Return the found invalid element to improve the error message. */
   el := NFEnv.entryElement(inEntry);
   true := SCode.isValidPackageElement(el);
   outEntry := inEntry;
@@ -967,7 +970,7 @@ algorithm
         env = populateEnvWithElements(cls_vars, origin, env);
         //env = NFRedeclare.applyRedeclares(inMods, env);
         env = populateEnvWithImports(imps, env, false);
-        env = populateEnvWithExtends(exts, inOrigins, env, env);
+        env = populateEnvWithExtends(exts, inOrigins, 0, env, env);
         env = NFMod.addModToEnv(inModifier, env);
       then
         env;
@@ -1206,21 +1209,37 @@ end populateEnvWithImport2;
 protected function populateEnvWithExtends
   input list<SCode.Element> inExtends;
   input list<EntryOrigin> inOrigins;
+  input Integer inIndex;
   input Env inEnv;
   input Env inAccumEnv;
   output Env outAccumEnv;
 algorithm
-  outAccumEnv := List.fold2(inExtends, populateEnvWithExtend, inOrigins, inEnv, inAccumEnv);
+  outAccumEnv := match(inExtends, inOrigins, inIndex, inEnv, inAccumEnv)
+    local
+      SCode.Element el;
+      list<SCode.Element> rest_el;
+      Env env;
+
+    case (el :: rest_el, _, _, _, _)
+      equation
+        env = populateEnvWithExtend(el, inOrigins, inIndex, inEnv, inAccumEnv);
+      then
+        populateEnvWithExtends(rest_el, inOrigins, inIndex + 1, inEnv, env);
+
+    else inAccumEnv;
+
+  end match;
 end populateEnvWithExtends;
 
 protected function populateEnvWithExtend
   input SCode.Element inExtends;
   input list<EntryOrigin> inOrigins;
+  input Integer inIndex;
   input Env inEnv;
   input Env inAccumEnv;
   output Env outAccumEnv;
 algorithm
-  outAccumEnv := match(inExtends, inOrigins, inEnv, inAccumEnv)
+  outAccumEnv := match(inExtends, inOrigins, inIndex, inEnv, inAccumEnv)
     local
       Entry entry;
       Env env, accum_env;
@@ -1235,7 +1254,7 @@ algorithm
       SCode.Element el;
 
     case (SCode.EXTENDS(baseClassPath = bc, visibility = vis,
-        modifications = smod, info = info), _, _, _)
+        modifications = smod, info = info), _, _, _, _)
       equation
         // Look up the base class and check that it's a valid base class.
         (entry, env) = lookupBaseClassName(bc, inEnv, info);
@@ -1249,7 +1268,7 @@ algorithm
         env = populateEnvWithClassDef(cdef, mod, SCode.PUBLIC(), {}, env,
           elementSplitterExtends, info, env);
         // Populate the accumulated environment with the inherited elements.
-        origin = NFEnv.makeInheritedOrigin(inExtends, env);
+        origin = NFEnv.makeInheritedOrigin(inExtends, inIndex, env);
         origins = origin :: inOrigins;
         accum_env = populateEnvWithClassDef(cdef, mod, vis, origins, env,
           elementSplitterInherited, info, inAccumEnv);

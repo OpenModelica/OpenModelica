@@ -311,9 +311,6 @@ algorithm
       equation
         // Enter the class scope.
         env = NFLookup.enterEntryScope(inEntry, inClassMod, inEnv);
-        //mod = NFEnv.entryModifier(inEntry);
-        //mod = NFMod.mergeMod(inClassMod, mod);
-        //env = NFMod.addModToEnv(mod, env);
 
         // Instantiate the class' elements.
         (elems, es, globals) = instElementList(el, inPrefixes, env, inTypePath,
@@ -664,59 +661,6 @@ algorithm
   end match;
 end getBasicTypeAttrTypeString;
 
-
-
-
-//protected function instBasicTypeAttribute
-//  input Modifier inMod;
-//  input NFSCodeEnv.AvlTree inAttributes;
-//  input Globals inGlobals;
-//  output DAE.Var outAttribute;
-//  output Globals outGlobals;
-//algorithm
-//  (outAttribute, outGlobals) := match(inMod, inAttributes, inGlobals)
-//    local
-//      String ident, tspec;
-//      DAE.Type ty;
-//      Absyn.Exp bind_exp;
-//      DAE.Exp inst_exp;
-//      DAE.Binding binding;
-//      Env env;
-//      Prefix prefix;
-//      Globals globals;
-//      Absyn.Info info;
-//
-//    case (NFInstTypes.MODIFIER(name = ident, subModifiers = {},
-//        binding = NFInstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
-//      equation
-//        NFSCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
-//          Absyn.IDENT(tspec)))) = NFSCodeEnv.avlTreeGet(inAttributes, ident);
-//        ty = instBasicTypeAttributeType(tspec);
-//        (inst_exp, globals) = instExp(bind_exp, env, prefix, info, globals);
-//        binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(),
-//          DAE.BINDING_FROM_DEFAULT_VALUE());
-//      then
-//        (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), globals);
-//
-//    // TODO: Print error message for invalid attributes.
-//  end match;
-//end instBasicTypeAttribute;
-//
-//protected function instBasicTypeAttributeType
-//  input String inTypeName;
-//  output DAE.Type outType;
-//algorithm
-//  outType := match(inTypeName)
-//    case "$RealType" then DAE.T_REAL_DEFAULT;
-//    case "$IntegerType" then DAE.T_INTEGER_DEFAULT;
-//    case "$BooleanType" then DAE.T_BOOL_DEFAULT;
-//    case "$StringType" then DAE.T_STRING_DEFAULT;
-//    case "$EnumType" then DAE.T_ENUMERATION_DEFAULT;
-//    case "StateSelect" then DAE.T_ENUMERATION_DEFAULT;
-//  end match;
-//end instBasicTypeAttributeType;
-//
-
 protected function instElementList
   input list<SCode.Element> inElements;
   input Prefixes inPrefixes;
@@ -800,78 +744,6 @@ algorithm
 
   end match;
 end resolveElement;
-
-//public function resolveRedeclaredElement
-//  "This function makes sure that an element is up-to-date in case it has been
-//   redeclared. This is achieved by looking the element up in the environment. In
-//   the case that the element has been redeclared, the environment where it should
-//   be instantiated is returned, otherwise the old environment."
-//  input tuple<SCode.Element, Modifier> inElement;
-//  input Env inEnv;
-//  input Prefix inPrefix;
-//  output tuple<SCode.Element, Modifier> outElement;
-//  output Modifier outOriginalMod;
-//  output Env outEnv;
-//  output list<tuple<NFSCodeEnv.Item, Env>> outPreviousItem;
-//algorithm
-//  (outElement, outOriginalMod, outEnv, outPreviousItem) := match(inElement, inEnv, inPrefix)
-//    local
-//      Modifier mod, omod;
-//      String name;
-//      Item item;
-//      SCode.Element orig_el, new_el;
-//      Env env;
-//      Boolean b;
-//      list<tuple<NFSCodeEnv.Item, Env>> previousItem;
-//
-//    // Only components which are actually replaceable needs to be looked up,
-//    // since non-replaceable components can't have been replaced.
-//    case ((orig_el as SCode.COMPONENT(name = name, prefixes =
-//        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _, _)
-//      equation
-//        (item, _) = NFSCodeLookup.lookupInClass(name, inEnv);
-//        (NFSCodeEnv.VAR(var = new_el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
-//        omod = getOriginalMod(orig_el, inEnv, inPrefix);
-//      then
-//        ((new_el, mod), omod, env, previousItem);
-//
-//    // Other elements doesn't need to be looked up. Extends may not be
-//    // replaceable, and classes are looked up in the environment anyway. The
-//    // exception is packages with constants, but those are handled in
-//    // instPackageConstants.
-//    else (inElement, NFInstTypes.NOMOD(), inEnv, {});
-//
-//  end match;
-//end resolveRedeclaredElement;
-//
-//protected function getOriginalMod
-//  input SCode.Element inOriginalElement;
-//  input Env inEnv;
-//  input Prefix inPrefix;
-//  output Modifier outModifier;
-//algorithm
-//  outModifier := match(inOriginalElement, inEnv, inPrefix)
-//    local
-//      SCode.Ident name;
-//      Absyn.ArrayDim ad;
-//      Integer dim_count;
-//      SCode.Mod smod;
-//      Modifier mod;
-//
-//    case (SCode.COMPONENT(modifications = SCode.NOMOD()), _, _)
-//      then NFInstTypes.NOMOD();
-//
-//    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
-//        modifications = smod), _, _)
-//      equation
-//        dim_count = listLength(ad);
-//        mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
-//      then
-//        mod;
-//
-//  end match;
-//end getOriginalMod;
-//
 
 protected function instElement
   input SCode.Element inElement;

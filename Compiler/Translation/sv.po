@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OpenModelica trunk\n"
 "Report-Msgid-Bugs-To: openmodelica at ida.liu.se\n"
-"POT-Creation-Date: 2013-10-17 10:43+0200\n"
+"POT-Creation-Date: 2013-10-23 16:09+0200\n"
 "PO-Revision-Date: 2012-08-28 16:55+0200\n"
 "Last-Translator: Martin Sjölund <martin.sjolund at liu.se>\n"
 "Language-Team: Swedish <openmodelica at ida.liu.se>\n"
@@ -22,19 +22,19 @@ msgstr ""
 "X-Language: sv_SE\n"
 "X-Source-Language: C\n"
 
-#: ../FrontEnd/NFLookup.mo:428 ../FrontEnd/NFLookup.mo:429
+#: ../FrontEnd/NFLookup.mo:437 ../FrontEnd/NFLookup.mo:438
 msgid "component"
 msgstr "komponent"
 
-#: ../FrontEnd/NFLookup.mo:430 ../FrontEnd/NFLookup.mo:433
+#: ../FrontEnd/NFLookup.mo:439 ../FrontEnd/NFLookup.mo:442
 msgid "class"
 msgstr "klass"
 
-#: ../FrontEnd/NFLookup.mo:431 ../FrontEnd/NFLookup.mo:434
+#: ../FrontEnd/NFLookup.mo:440 ../FrontEnd/NFLookup.mo:443
 msgid "function"
 msgstr "funktion"
 
-#: ../FrontEnd/NFLookup.mo:432
+#: ../FrontEnd/NFLookup.mo:441
 msgid "package"
 msgstr "paket"
 
@@ -130,8 +130,8 @@ msgid "Class %s not found."
 msgstr "Klass %s hittades inte."
 
 #: ../Util/Error.mo:167 ../runtime/printimpl.c:331 ../runtime/printimpl.c:350
-#: ../runtime/printimpl.c:418 ../runtime/systemimpl.c:420
-#: ../runtime/systemimpl.c:438
+#: ../runtime/printimpl.c:418 ../runtime/systemimpl.c:394
+#: ../runtime/systemimpl.c:412
 #, c-format
 msgid "Error writing to file %s."
 msgstr "Fel vid skrivning till fil %s."
@@ -342,9 +342,8 @@ msgstr "Tupel %s får enbart innehålla komponent-referenser."
 
 #: ../Util/Error.mo:237
 #, c-format
-msgid ""
-"Missing redeclare keyword on redeclaration of class %s in modifier of %s."
-msgstr "Redeclare saknas på omdeklarering av klass %s i modifikation av %s."
+msgid "Missing redeclare keyword on redeclaration of class %s."
+msgstr "Redeclare saknas på omdeklarering av klass %s."
 
 #: ../Util/Error.mo:239
 #, c-format
@@ -1854,17 +1853,22 @@ msgstr ""
 "Modelica.Utilities.Files.loadResource(uri) innan den lades till i "
 "språkspecifikationen."
 
-#: ../Util/Error.mo:677
+#: ../Util/Error.mo:676
+#, c-format
+msgid "The same class is defined in multiple files: %s."
+msgstr "Samma klass är definierad i flera filer: %s."
+
+#: ../Util/Error.mo:679
 #, c-format
 msgid "Local variable '%s' shadows another variable."
 msgstr "Lokal variabel '%s' skuggar en annan variabel."
 
-#: ../Util/Error.mo:679
+#: ../Util/Error.mo:681
 #, c-format
 msgid "%s uses invalid subtypeof syntax. Only subtypeof Any is supported."
 msgstr "%s använder ogiltig subtypeof syntax. Endast subtypeof Any stöds."
 
-#: ../Util/Error.mo:681
+#: ../Util/Error.mo:683
 #, c-format
 msgid ""
 "%s is used as a function reference, but doesn't specify the partial prefix."
@@ -1872,13 +1876,13 @@ msgstr ""
 "%s används som en funktionsreferens, men specificerar inte prefixet "
 "'partial'."
 
-#: ../Util/Error.mo:683
+#: ../Util/Error.mo:685
 #, c-format
 msgid "Match expression equation sections forbid the use of %s-equations."
 msgstr ""
 "Ekvations-sektioner i match-uttryck förbjuder användandet av %s-ekvationer."
 
-#: ../Util/Error.mo:685
+#: ../Util/Error.mo:687
 #, c-format
 msgid ""
 "Uniontype %s was not generated correctly. One possible cause is "
@@ -1887,21 +1891,21 @@ msgstr ""
 "Unionstyp %s skapades inte korrekt. En möjlig förklaring är modifikationer, "
 "som inte tillåts."
 
-#: ../Util/Error.mo:687
+#: ../Util/Error.mo:689
 msgid "MetaModelica complex types may not have modifiers."
 msgstr "Komplexa typer i MetaModelica får inte ha modifikationer."
 
-#: ../Util/Error.mo:689
+#: ../Util/Error.mo:691
 #, c-format
 msgid "Cannot evaluate function pointers (got %s)."
 msgstr "Kan inte evaluera funktionspekare (fick %s)."
 
-#: ../Util/Error.mo:691
+#: ../Util/Error.mo:693
 #, c-format
 msgid "Tried to use function %s, but it was not instantiated."
 msgstr "Försökte använda funktion %s, men den var inte instansierad."
 
-#: ../Util/Error.mo:693
+#: ../Util/Error.mo:695
 #, c-format
 msgid ""
 "Could not solve the polymorphism in the function call to %s\n"
@@ -1920,22 +1924,22 @@ msgstr ""
 "  Olösta bindningar:\n"
 "%s"
 
-#: ../Util/Error.mo:695
+#: ../Util/Error.mo:697
 #, c-format
 msgid "In record constructor %s: %s"
 msgstr "I metarecordanrop %s: %s"
 
-#: ../Util/Error.mo:697
+#: ../Util/Error.mo:699
 #, c-format
 msgid "Invalid pattern: %s"
 msgstr "Ogiltigt mönster: %s"
 
-#: ../Util/Error.mo:699
+#: ../Util/Error.mo:701
 #, c-format
 msgid "Failed to elaborate match expression %s"
 msgstr "Kunde inte utveckla matchuttryck %s"
 
-#: ../Util/Error.mo:701
+#: ../Util/Error.mo:703
 #, c-format
 msgid ""
 "Failed to match types of cons expression %s. The head has type %s and the "
@@ -1944,7 +1948,7 @@ msgstr ""
 "Kunde inte matcha typer i cons-uttryck %s. Huvudet har typen %s och svansen "
 "%s."
 
-#: ../Util/Error.mo:703
+#: ../Util/Error.mo:705
 #, c-format
 msgid ""
 "%s. Strict RML enforces match expression input and output to be the same as "
@@ -1953,16 +1957,16 @@ msgstr ""
 "%s. Strikt RML tvingar matchuttryck input och output att vara detsamma som "
 "funktionens."
 
-#: ../Util/Error.mo:705
+#: ../Util/Error.mo:707
 msgid "NONE is not acceptable syntax. Use NONE() instead."
 msgstr "NONE är inte acceptabel syntax. Använd NONE() istället."
 
-#: ../Util/Error.mo:707
+#: ../Util/Error.mo:709
 #, c-format
 msgid "Invalid named fields: %s"
 msgstr "Ogiltiga namngivna fält: %s"
 
-#: ../Util/Error.mo:709
+#: ../Util/Error.mo:711
 #, c-format
 msgid ""
 "Only components without direction are allowed in local declarations, got: %s"
@@ -1970,17 +1974,17 @@ msgstr ""
 "Endast komponenter utan riktning får användas i lokala deklarationer, fick: "
 "%s"
 
-#: ../Util/Error.mo:711
+#: ../Util/Error.mo:713
 #, c-format
 msgid "Invalid complex type name: %s"
 msgstr "Ogiltigt namn på komplex typ: %s"
 
-#: ../Util/Error.mo:713
+#: ../Util/Error.mo:715
 #, c-format
 msgid "In pattern %s: %s is not part of uniontype %s"
 msgstr "I mönster %s: %s är inte en del av unionstyp %s"
 
-#: ../Util/Error.mo:715
+#: ../Util/Error.mo:717
 #, c-format
 msgid ""
 "Type mismatch in pattern %s\n"
@@ -1995,17 +1999,17 @@ msgstr ""
 "förväntad typ:\n"
 "  %s"
 
-#: ../Util/Error.mo:717
+#: ../Util/Error.mo:719
 #, c-format
 msgid "Call pattern is not a record constructor %s"
 msgstr "Anropsmönster är inte en record-konstruktor %s"
 
-#: ../Util/Error.mo:719
+#: ../Util/Error.mo:721
 #, c-format
 msgid "Match expression has mismatched result types:%s"
 msgstr "Match-uttryck har resultattyper som inte stämmer överens:%s"
 
-#: ../Util/Error.mo:721
+#: ../Util/Error.mo:723
 msgid ""
 "This matchcontinue expression has no overlapping patterns and should be "
 "using match instead of matchcontinue."
@@ -2013,47 +2017,47 @@ msgstr ""
 "Detta matchcontinue-uttryck saknar överlappande mönster och borde använda "
 "match istället för matchcontinue."
 
-#: ../Util/Error.mo:723
+#: ../Util/Error.mo:725
 #, c-format
 msgid "Dead code elimination: %s."
 msgstr "Eliminering av död kod: %s."
 
-#: ../Util/Error.mo:725
+#: ../Util/Error.mo:727
 #, c-format
 msgid "Unused local variable: %s."
 msgstr "Oanvänd lokal variabel: %s."
 
-#: ../Util/Error.mo:727
+#: ../Util/Error.mo:729
 #, c-format
 msgid "Removing unused as-binding: %s."
 msgstr "Tar bort oanvänd as-bindning: %s."
 
-#: ../Util/Error.mo:729
+#: ../Util/Error.mo:731
 #, c-format
 msgid "Converted match expression to switch of type %s."
 msgstr "Omvandlade matchuttryck till switchuttryck av typ %s."
 
-#: ../Util/Error.mo:731
+#: ../Util/Error.mo:733
 #, c-format
 msgid ""
 "Reductions require the types of the %s and %s to be %s, but got: %s and %s."
 msgstr "Reduktioner kräver att typerna av %s och %s är %s, men fick %s och %s."
 
-#: ../Util/Error.mo:733
+#: ../Util/Error.mo:735
 #, c-format
 msgid ""
 "Expected a reduction function with type signature ('A,'B) => 'B, but got %s."
 msgstr ""
 "Förväntade en reduktionsfunktion med typsignatur ('A,'B) => 'B, men fick %s."
 
-#: ../Util/Error.mo:735
+#: ../Util/Error.mo:737
 #, c-format
 msgid "Operator %s expects numeric types as operands, but got '%s and %s'."
 msgstr ""
 "Operator %s förväntar sig numeriska typer som operander, men fick '%s' och "
 "'%s'."
 
-#: ../Util/Error.mo:737
+#: ../Util/Error.mo:739
 #, c-format
 msgid ""
 "Could not evaluate structural parameter (or constant): %s which gives "
@@ -2063,17 +2067,17 @@ msgstr ""
 "dimensioner av en array: %s. Array-dimensioner måste vara kända vid "
 "kompilering."
 
-#: ../Util/Error.mo:749
+#: ../Util/Error.mo:751
 #, c-format
 msgid "Template error: %s"
 msgstr "Template-fel: %s"
 
-#: ../Util/Error.mo:751 ../Util/Error.mo:753
+#: ../Util/Error.mo:753 ../Util/Error.mo:755
 #, c-format
 msgid "Operator Overloading: %s."
 msgstr "Operatoröverlagring: %s."
 
-#: ../Util/Error.mo:761
+#: ../Util/Error.mo:763
 #, c-format
 msgid "File not Found: %s."
 msgstr "Filen hittades inte: %s."
@@ -3058,7 +3062,30 @@ msgstr ""
 "Anger schemaläggaren för schemaläggning med uppgiftsgraf. Standard: "
 "list-schemaläggning."
 
-#: ../Util/Flags.mo:1672
+#: ../Util/Flags.mo:809
+msgid "Original Cellier with consideration of impossible assignments."
+msgstr "Original Cellier med hänsyn till omöjliga tilldelningar."
+
+#: ../Util/Flags.mo:810
+msgid "Modified Cellier, new step 'count impossible assignments'."
+msgstr "Modifierad Cellier, nytt steg 'räkna omöjliga tilldelningar'."
+
+#: ../Util/Flags.mo:811
+msgid "Modified Cellier, drop first step."
+msgstr "Modifierad Cellier, hoppa över första steget."
+
+#: ../Util/Flags.mo:812
+msgid ""
+"Modified Cellier, drop first step, new step 'count impossible assignments'."
+msgstr ""
+"Modifierad Cellier, hoppa över första steget, nytt steg 'räkna omöjliga "
+"tilldelningar'."
+
+#: ../Util/Flags.mo:813
+msgid "Sets the tearing heuristic to use for Cellier-tearing."
+msgstr "Anger tearing-heuristiken att använda för Cellier-tearing."
+
+#: ../Util/Flags.mo:1682
 msgid ""
 "Help on the command-line and scripting environments, including OMShell and "
 "OMNotebook."
@@ -3066,16 +3093,16 @@ msgstr ""
 "Hjälp angående kommandorad- och skript-miljöer, inklusive OMShell och "
 "OMNotebook."
 
-#: ../Util/Flags.mo:1673
+#: ../Util/Flags.mo:1683
 msgid "The command-line options available for omc."
 msgstr "Kommandoradsalternativen tillgängliga för omc."
 
-#: ../Util/Flags.mo:1674
+#: ../Util/Flags.mo:1684
 msgid "Flags that enable debugging, diagnostics, and research prototypes."
 msgstr ""
 "Flaggor som aktiverar felsökning, diagnostik, och forskningsprototyper."
 
-#: ../Util/Flags.mo:1675
+#: ../Util/Flags.mo:1685
 msgid ""
 "Flags that determine which symbolic methods are used to produce the "
 "causalized equation system."
@@ -3083,7 +3110,7 @@ msgstr ""
 "Flaggor som bestämmer vilken symbolisk metod som används för att producera "
 "det kausaliserade ekvationssystemet."
 
-#: ../Util/Flags.mo:1676
+#: ../Util/Flags.mo:1686
 msgid ""
 "The command-line options available for simulation executables generated by "
 "OpenModelica."
@@ -3091,23 +3118,23 @@ msgstr ""
 "Kommandoradsalternativ tillgängliga för simuleringsprogram genererade av "
 "OpenModelica."
 
-#: ../Util/Flags.mo:1677
+#: ../Util/Flags.mo:1687
 msgid "Displays option descriptions for multi-option flag <flagname>."
 msgstr "Beskriver alternativen tillgängliga för flervalsflaggan <flagname>."
 
-#: ../Util/Flags.mo:1678
+#: ../Util/Flags.mo:1688
 msgid "This help-text."
 msgstr "Visar hjälptexten."
 
-#: ../Util/Flags.mo:1688
+#: ../Util/Flags.mo:1698
 msgid "The available topics (help(\"topics\")) are as follows:\n"
 msgstr "De tillgängliga ämnena (help(\"topics\")) är följande:\n"
 
-#: ../Util/Flags.mo:1695
+#: ../Util/Flags.mo:1705
 msgid "The simulation executable takes the following flags:\n"
 msgstr "Simuleringsprogram tar följande flaggor:\n"
 
-#: ../Util/Flags.mo:1700
+#: ../Util/Flags.mo:1710
 msgid ""
 "The debug flag takes a comma-separated list of flags which are used by the\n"
 "compiler for debugging or experimental purposes.\n"
@@ -3117,7 +3144,7 @@ msgstr ""
 "kompilatorn för debuggning och experimentella funktioner.\n"
 "Flaggor med \"-\" eller \"no\" som prefix slås av.\n"
 
-#: ../Util/Flags.mo:1701
+#: ../Util/Flags.mo:1711
 msgid ""
 "The available flags are (+ are enabled by default, - are disabled):\n"
 "\n"
@@ -3125,7 +3152,7 @@ msgstr ""
 "De tillgängliga flaggorna är (+ är påslagna som standard, - är avslagna):\n"
 "\n"
 
-#: ../Util/Flags.mo:1708
+#: ../Util/Flags.mo:1718
 msgid ""
 "The +preOptModules flag sets the optimization modules which are used before "
 "the\n"
@@ -3137,7 +3164,7 @@ msgstr ""
 "och index-reduktion i bakdelen. Dessa moduler anges som en komma-separerad "
 "lista, där de giltiga modulerna är:"
 
-#: ../Util/Flags.mo:1711
+#: ../Util/Flags.mo:1721
 msgid ""
 "The +matchingAlgorithm sets the method that is used for the matching "
 "algorithm, after the pre optimization modules. Valid options are:"
@@ -3145,7 +3172,7 @@ msgstr ""
 "Flaggan +matchingAlgorithm anger metoden som används för "
 "matchningsalgoritmen, efter modulerna under för-optimeringen. Giltiga val är:"
 
-#: ../Util/Flags.mo:1714
+#: ../Util/Flags.mo:1724
 msgid ""
 "The +indexReductionMethod sets the method that is used for the index "
 "reduction, after the pre optimization modules. Valid options are:"
@@ -3153,7 +3180,7 @@ msgstr ""
 "Flaggan +indexReductionMethod anger metoden som används för index-reduktion, "
 "efter modulerna under för-optimeringen. Giltiga val är:"
 
-#: ../Util/Flags.mo:1717
+#: ../Util/Flags.mo:1727
 msgid ""
 "The +postOptModules then sets the optimization modules which are used after "
 "the index reduction, specified as a comma-separated list. The valid modules "
@@ -3163,11 +3190,11 @@ msgstr ""
 "index-reduktion, specificerad som en komma-separerad lista. De giltiga "
 "modulerna är:"
 
-#: ../Util/Flags.mo:1774
+#: ../Util/Flags.mo:1784
 msgid "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
 msgstr "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
 
-#: ../Util/Flags.mo:1775
+#: ../Util/Flags.mo:1785
 msgid ""
 "Distributed under OMSC-PL and GPL, see www.openmodelica.org\n"
 "\n"
@@ -3175,7 +3202,7 @@ msgstr ""
 "Distribueras under OMSC-PL och GPL, se www.openmodelica.org\n"
 "\n"
 
-#: ../Util/Flags.mo:1777
+#: ../Util/Flags.mo:1787
 msgid ""
 "Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries "
 "| .mo-files] \n"
@@ -3192,7 +3219,7 @@ msgstr ""
 "             Biblioteken ska separeras med mellanslag: Lib1 Lib2 ... LibN.\n"
 "* runtimeFlaggor: anropa omc -help för att se runtime-val\n"
 
-#: ../Util/Flags.mo:1778
+#: ../Util/Flags.mo:1788
 msgid ""
 "\n"
 "* +omcOptions:\n"
@@ -3200,7 +3227,7 @@ msgstr ""
 "\n"
 "* +omcFlaggor:\n"
 
-#: ../Util/Flags.mo:1780
+#: ../Util/Flags.mo:1790
 msgid ""
 "\n"
 "For more details on a specific topic, use +help=topics or help(\"topics\")\n"
@@ -3211,31 +3238,31 @@ msgstr ""
 "help(\"topics\")\n"
 "\n"
 
-#: ../Util/Flags.mo:1781
+#: ../Util/Flags.mo:1791
 msgid "* Examples:\n"
 msgstr "* Exempel:\n"
 
-#: ../Util/Flags.mo:1782
+#: ../Util/Flags.mo:1792
 msgid ""
 "  omc Model.mo             will produce flattened Model on standard output.\n"
 msgstr "  omc Model.mo             producerar uflatat Model på standard ut.\n"
 
-#: ../Util/Flags.mo:1783
+#: ../Util/Flags.mo:1793
 msgid ""
 "  omc +s Model.mo          will produce simulation code for the model:\n"
 msgstr "  omc +s Model.mo          producerar simuleringskod för modellen:\n"
 
-#: ../Util/Flags.mo:1784
+#: ../Util/Flags.mo:1794
 msgid "                            * Model.c           The model C code.\n"
 msgstr "                            * Model.c           Modellens C-kod.\n"
 
-#: ../Util/Flags.mo:1785
+#: ../Util/Flags.mo:1795
 msgid ""
 "                            * Model_functions.c The model functions C code.\n"
 msgstr ""
 "                            * Model_functions.c C-kod för funktioner.\n"
 
-#: ../Util/Flags.mo:1786
+#: ../Util/Flags.mo:1796
 msgid ""
 "                            * Model.makefile    The makefile to compile the "
 "model.\n"
@@ -3244,15 +3271,15 @@ msgstr ""
 "modellen.\n"
 
 # Översättningen kapas av Qt Linguist, men är korrekt.
-#: ../Util/Flags.mo:1787
+#: ../Util/Flags.mo:1797
 msgid "                            * Model_init.xml    The initial values.\n"
 msgstr "                            * Model_init.xml    Begynnelsevillkor.\n"
 
-#: ../Util/Flags.mo:1789
+#: ../Util/Flags.mo:1799
 msgid "  omc Script.mos           will run the commands from Script.mos.\n"
 msgstr "  omc Script.mos           kör kommandon från Script.mos.\n"
 
-#: ../Util/Flags.mo:1790
+#: ../Util/Flags.mo:1800
 msgid ""
 "  omc Model.mo Modelica    will first load the Modelica library and then "
 "produce \n"
@@ -3262,7 +3289,7 @@ msgstr ""
 "                            producerar sedan en utflatat Model på standard "
 "ut.\n"
 
-#: ../Util/Flags.mo:1791
+#: ../Util/Flags.mo:1801
 msgid ""
 "  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and "
 "produce \n"
@@ -3271,11 +3298,11 @@ msgstr ""
 "  omc Model1.mo Model2.mo  laddar både Model1.mo och Model2.mo och\n"
 "                            producerar utflatad Model1 på standard ut.\n"
 
-#: ../Util/Flags.mo:1792
+#: ../Util/Flags.mo:1802
 msgid "  *.mo (Modelica files) \n"
 msgstr "  *.mo (Modelica-filer) \n"
 
-#: ../Util/Flags.mo:1794
+#: ../Util/Flags.mo:1804
 msgid ""
 "  *.mos (Modelica Script files)\n"
 "\n"
@@ -3283,7 +3310,7 @@ msgstr ""
 "  *.mos (Modelica-skript)\n"
 "\n"
 
-#: ../Util/Flags.mo:1795
+#: ../Util/Flags.mo:1805
 msgid ""
 "For available simulation flags, use +help=simulation.\n"
 "\n"
@@ -3291,7 +3318,7 @@ msgstr ""
 "För tillgängliga simuleringsflaggor, använd +help=simulation.\n"
 "\n"
 
-#: ../Util/Flags.mo:1796
+#: ../Util/Flags.mo:1806
 msgid ""
 "Documentation is available in the built-in package OpenModelica.Scripting "
 "or\n"
@@ -3303,7 +3330,7 @@ msgstr ""
 "online "
 "<https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"
 
-#: ../Util/Flags.mo:1871 ../Util/Flags.mo:1877
+#: ../Util/Flags.mo:1881 ../Util/Flags.mo:1887
 msgid "Valid options:"
 msgstr "Giltiga alternativ:"
 
@@ -3311,7 +3338,7 @@ msgstr "Giltiga alternativ:"
 msgid "File does not exist: "
 msgstr "Filen finns inte: "
 
-#: ../Main/Main.mo:1119
+#: ../Main/Main.mo:1108
 msgid "You are trying to run OpenModelica as root.\n"
 msgstr "Du försöker köra OpenModelica som root.\n"
 
@@ -3418,68 +3445,68 @@ msgstr "Kan inte skriva till differensfilen (.csv)!\n"
 msgid "Files not Equal\n"
 msgstr "Filerna är inte lika\n"
 
-#: ../runtime/systemimpl.c:315 ../runtime/systemimpl.c:357
+#: ../runtime/systemimpl.c:293 ../runtime/systemimpl.c:334
 #, c-format
 msgid "Error opening file: %s."
 msgstr "Fel vid öppning av fil %s."
 
-#: ../runtime/systemimpl.c:371
+#: ../runtime/systemimpl.c:347
 #, c-format
 msgid "File too large to fit into a MetaModelica string: %s."
 msgstr "Filen får inte plats i en MetaModelica string: %s."
 
-#: ../runtime/systemimpl.c:462
+#: ../runtime/systemimpl.c:436
 #, c-format
 msgid "Error appending to file %s."
 msgstr "Fel vid tillägg till fil %s."
 
-#: ../runtime/systemimpl.c:564 ../runtime/systemimpl.c:570
-#: ../runtime/systemimpl.c:680
+#: ../runtime/systemimpl.c:537 ../runtime/systemimpl.c:543
+#: ../runtime/systemimpl.c:651
 #, c-format
 msgid "system(%s) failed: %s"
 msgstr "system(%s) misslyckades: %s"
 
-#: ../runtime/systemimpl.c:984
+#: ../runtime/systemimpl.c:947
 #, c-format
 msgid "Error opening file %s."
 msgstr "Fel vid öppning av fil %s."
 
-#: ../runtime/systemimpl.c:1133
+#: ../runtime/systemimpl.c:1092
 #, c-format
 msgid "OMC unable to load `%s': %s.\n"
 msgstr "OMC kunde inte ladda `%s': %s.\n"
 
-#: ../runtime/systemimpl.c:1554
+#: ../runtime/systemimpl.c:1513
 #, c-format
 msgid "Modelica URI lacks classname: %s"
 msgstr "Modelica URI saknar klassnamn: %s"
 
-#: ../runtime/systemimpl.c:1563
+#: ../runtime/systemimpl.c:1522
 #, c-format
 msgid "File URI has no path: %s"
 msgstr "File URI saknar sökväg: %s"
 
-#: ../runtime/systemimpl.c:1567
+#: ../runtime/systemimpl.c:1526
 #, c-format
 msgid "File URI using hostnames is not supported: %s"
 msgstr "File URI med värdnamn stöds inte: %s"
 
-#: ../runtime/systemimpl.c:1572
+#: ../runtime/systemimpl.c:1531
 #, c-format
 msgid "Unknown uri: %s"
 msgstr "Okänd uri: %s"
 
-#: ../runtime/systemimpl.c:1999
+#: ../runtime/systemimpl.c:1942
 #, c-format
 msgid "freopen(%s,%s,%s) failed: %s"
 msgstr "freopen(%s,%s,%s) misslyckades: %s"
 
-#: ../runtime/systemimpl.c:2045 ../runtime/systemimpl.c:2059
+#: ../runtime/systemimpl.c:1981 ../runtime/systemimpl.c:1994
 #, c-format
 msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
 msgstr "iconv(\"%s\",to=\"%s\",from=\"%s\") misslyckades: %s"
 
-#: ../runtime/systemimpl.c:2066
+#: ../runtime/systemimpl.c:2000
 #, c-format
 msgid ""
 "iconv(to=%s) failed because the character set output null bytes in the "
@@ -3488,12 +3515,12 @@ msgstr ""
 "iconv(to=%s) misslyckades eftersom teckenuppsättningen använde en noll-byte "
 "mitt i strängen."
 
-#: ../runtime/systemimpl.c:2153
+#: ../runtime/systemimpl.c:2087
 #, c-format
 msgid "Warning: Failed to set locale: '%s'\n"
 msgstr "Varning: Misslyckades sätta nationella inställningar: '%s'\n"
 
-#: ../runtime/systemimpl.c:2175
+#: ../runtime/systemimpl.c:2107
 #, c-format
 msgid ""
 "Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and "
@@ -3504,30 +3531,30 @@ msgstr ""
 "inställningarna och C.UTF-8. OpenModelica antar att all in- och utdata är "
 "kodad som UTF-8 så du kan få smärre problem.\n"
 
-#: ../runtime/systemimpl.c:2447 ../runtime/systemimpl.c:2457
+#: ../runtime/systemimpl.c:2377 ../runtime/systemimpl.c:2387
 #, c-format
 msgid "Could not access file %s: %s."
 msgstr "Kunde inte få åtkomst till filen %s: %s."
 
-#: ../runtime/System_omc.c:724
+#: ../runtime/System_omc.c:721
 #, c-format
 msgid "Failed to wait for forked process to return: %s"
 msgstr "Misslyckades med att vänta på retur från den forkade processen: %s"
 
-#: ../runtime/System_omc.c:746
+#: ../runtime/System_omc.c:743
 msgid "Fork is not available on Windows"
 msgstr "Fork är inte tillgänglig på Windows"
 
-#: ../runtime/System_omc.c:749
+#: ../runtime/System_omc.c:746
 msgid "Fork is not safe to use on OSX"
 msgstr "Fork är inte säkert att använda på OSX"
 
-#: ../runtime/System_omc.c:773
+#: ../runtime/System_omc.c:770
 #, c-format
 msgid "fork() failed: %s"
 msgstr "fork() misslyckades: %s"
 
-#: ../runtime/System_rml.c:2224
+#: ../runtime/System_rml.c:1820
 msgid "Fork is not available when OpenModelica is compiled using RML"
 msgstr "Fork är inte tillgänglig när OpenModelica kompilerats med RML"
 

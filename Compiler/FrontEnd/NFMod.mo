@@ -222,99 +222,85 @@ algorithm
       String name;
       Modifier mod;
       Env env;
+      Option<Entry> uentry;
 
     case ((name, mod), env)
       equation
-        (env, _) = NFEnv.updateEntry(name, mod, NFEnv.setEntryModifier, inEnv);
+        (env, uentry) = NFEnv.updateEntry(name, mod, NFEnv.setEntryModifier, inEnv);
+        checkModifiedElement(uentry, name, mod, inEnv);
+        // Add modifier to the extends the entry came from.
       then
         env;
 
   end match;
 end addModToEnv2;
 
-//protected function checkModifier
-//  input tuple<String, Modifier> inMod;
-//  input Env inEnv;
-//  input Prefix inPrefix;
-//protected
-//  String name;
-//  Modifier mod;
-//  Entry mod_entry;
-//algorithm
-//  (name, mod) := inMod;
-//  mod_entry := lookupMod(name, inEnv, mod);
-//  checkClassModifier(mod_entry, inMod, inPrefix);
-//end checkModifier;
-//
-//protected function lookupMod
-//  input String inName;
-//  input Env inEnv;
-//  input Modifier inMod;
-//  output Entry outEntry;
-//algorithm
-//  outEntry := matchcontinue(inName, inEnv, inMod)
-//    local
-//      Entry entry;
-//      Absyn.Info info;
-//      String cls_name;
-//
-//    case (_, _, _)
-//      equation
-//        (entry, _) = NFLookup.lookupInLocalScope(inName, inEnv);
-//      then
-//        entry;
-//
-//    // The modified element couldn't be found, show an error.
-//    else
-//      equation
-//        cls_name = NFEnv.scopeName(inEnv);
-//        info = modifierInfo(inMod);
-//        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-//          {inName, cls_name}, info);
-//      then
-//        fail();
-//
-//  end matchcontinue;
-//end lookupMod;
-//
-//protected function checkClassModifier
-//  "This function checks that a modifier isn't trying to replace a class, i.e.
-//   c(A = B), where A and B are classes. This should only be allowed if the
-//   modification is an actual redeclaration."
-//  input Entry inEntry;
-//  input tuple<String, Modifier> inMod;
-//  input Prefix inPrefix;
-//algorithm
-//  _ := match(inEntry, inMod, inPrefix)
-//    local
-//      String name, pre_str;
-//      Modifier mod;
-//      Absyn.Info info;
-//
-//    // The modified element is a class but the modifier has no binding, e.g.
-//    // c(A(x = 3)). This is ok.
-//    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)),
-//        (_, NFInstTypes.MODIFIER(binding = NFInstTypes.UNBOUND())), _)
-//      then ();
-//
-//    // The modified element is a class but the modifier has a binding. This is
-//    // not ok, tell the user that the redeclare keyword is missing.
-//    case (NFEnv.ENTRY(element = SCode.CLASS(name = _)), (name, mod), _)
-//      equation
-//        info = modifierInfo(mod);
-//        pre_str = NFInstDump.prefixStr(inPrefix);
-//        Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
-//          {name, pre_str}, info);
-//      then
-//        fail();
-//
-//    else ();
-//
-//  end match;
-//end checkClassModifier;
-//
-//
-//
+protected function checkModifiedElement
+  input Option<Entry> inEntry;
+  input String inName;
+  input Modifier inModifier;
+  input Env inEnv;
+algorithm
+  _ := match(inEntry, inName, inModifier, inEnv)
+    local
+      String cls_name;
+      Absyn.Info info;
+      Entry entry;
+      SCode.Element el;
+      Binding binding;
+
+    case (SOME(entry), _, _, _)
+      equation
+        el = NFEnv.entryElement(entry);
+        binding = modifierBinding(inModifier);
+        info = modifierInfo(inModifier);
+        checkClassModifier(el, binding, inName, info); 
+      then
+        ();
+
+    // The modified element couldn't be found, print an error.
+    else
+      equation
+        cls_name = NFEnv.scopeName(inEnv);
+        info = modifierInfo(inModifier);
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {inName, cls_name}, info);
+      then
+        fail();
+
+  end match;
+end checkModifiedElement;
+
+protected function checkClassModifier
+  "This function checks that a modifier isn't trying to replace a class, i.e.
+   c(A = B), where A and B are classes. This should only be allowed if the
+   modification is an actual redeclaration."
+  input SCode.Element inElement;
+  input Binding inBinding;
+  input String inName;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inElement, inBinding, inName, inInfo)
+
+    // The modified element is a class but the modifier has no binding, e.g.
+    // c(A(x = 3)). This is ok.
+    case (SCode.CLASS(name = _), NFInstTypes.UNBOUND(), _, _)
+      then ();
+
+    // The modified element is a class but the modifier has a binding. This is
+    // not ok, tell the user that the redeclare keyword is missing.
+    case (SCode.CLASS(name = _), _, _, _)
+      equation
+        Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
+          {inName}, inInfo);
+      then
+        fail();
+
+    // Any other element is ok.
+    else ();
+
+  end match;
+end checkClassModifier;
 
 protected function modifierName
   input Modifier inMod;

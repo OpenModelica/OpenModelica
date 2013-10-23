@@ -48,6 +48,7 @@ protected import Error;
 protected import Flags;
 protected import List;
 protected import NFBuiltin;
+protected import Util;
 
 public type EntryOrigin = NFInstTypes.EntryOrigin;
 public type Entry = NFInstTypes.Entry;
@@ -151,6 +152,7 @@ end isBuiltinScope;
 
 public function makeInheritedOrigin
   input SCode.Element inExtends;
+  input Integer inIndex;
   input Env inEnv;
   output EntryOrigin outOrigin;
 protected
@@ -158,7 +160,7 @@ protected
   Absyn.Info info;
 algorithm
   SCode.EXTENDS(baseClassPath = bc, info = info) := inExtends;
-  outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, {}, inEnv);
+  outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, {}, inEnv, inIndex);
 end makeInheritedOrigin;
   
 public function makeImportedOrigin
@@ -297,8 +299,23 @@ end mergeOrigin;
 protected function mergeInheritedOrigin
   "This function handles the case when an element has multiple origins from the
    same base class, i.e. when an element is inherited from multiple sources in a
-   base class. In that case we can merge the sub-origins of those origins. Fails
-   if no matching origin is found."
+   base class. For example:
+     
+     class A      class B     class C          class D
+       Real x;      Real x;     extends A;       extends C;
+     end A;       end B;        extends B;     end D;
+                              end C;
+
+   In this example we get two origins for x inherited from C:
+     INHERITED_ORIGIN(baseClass = C, origin = INHERITED_ORIGIN(baseClass = A))
+     INHERITED_ORIGIN(baseClass = C, origin = INHERITED_ORIGIN(baseClass = B))
+
+   This function searches for an existing origin with the same base class as the
+   new origin, and if found it merges them. In the example above we'd then get:
+     INHERITED_ORIGIN(baseClass = C, origin = {INHERITED_ORIGIN(baseClass = A),
+                                               INHERITED_ORIGIN(baseClass = B))
+
+   If no matching origin can be found the function fails."
   input EntryOrigin inNewOrigin;
   input list<EntryOrigin> inOldOrigins;
   output list<EntryOrigin> outOrigins;
@@ -310,15 +327,16 @@ algorithm
       Absyn.Info info;
       EntryOrigin origin;
       Env env;
+      Integer idx;
 
     // Found two origins with the same base class, merge their origins.
     case (NFInstTypes.INHERITED_ORIGIN(baseClass = bc1, origin = origin1),
-        NFInstTypes.INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins)
+        NFInstTypes.INHERITED_ORIGIN(bc2, info, origin2, env, idx) :: rest_origins)
       equation
         true = Absyn.pathEqual(bc1, bc2);
         origin2 = List.fold(origin1, mergeOrigin, origin2);
       then
-        NFInstTypes.INHERITED_ORIGIN(bc2, info, origin2, env) :: rest_origins;
+        NFInstTypes.INHERITED_ORIGIN(bc2, info, origin2, env, idx) :: rest_origins;
 
     // No match, search the rest.
     case (_, origin :: rest_origins)
@@ -520,10 +538,11 @@ protected
   Absyn.Info info;
   list<EntryOrigin> origins;
   Env env;
+  Integer idx;
 algorithm
-  NFInstTypes.INHERITED_ORIGIN(bc, info, origins, env) := inOrigin1;
+  NFInstTypes.INHERITED_ORIGIN(bc, info, origins, env, idx) := inOrigin1;
   origins := inOrigin2 :: origins;
-  outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, origins, env);
+  outOrigin := NFInstTypes.INHERITED_ORIGIN(bc, info, origins, env, idx);
 end collapseInheritedOrigins2;
 
 public function insertElement
@@ -568,12 +587,14 @@ protected
   AvlTree entries;
   Env rest_env;
   String entry_name;
+  Option<Entry> uentry;
 algorithm
   NFInstTypes.FRAME(name, ty, entries) :: rest_env := inEnv;
   entry_name := entryName(inReplacement);
-  (entries, outWasReplaced) :=
+  (entries, uentry) :=
     NFEnvAvlTree.update(entries, entry_name, replaceEntry2, (inReplacement, inOriginEnv));
   outEnv := NFInstTypes.FRAME(name, ty, entries) :: rest_env;
+  outWasReplaced := Util.isSome(uentry);
 end replaceEntry;
 
 protected function replaceEntry2
@@ -596,7 +617,7 @@ public function updateEntry
   input UpdateFunc inUpdateFunc;
   input Env inEnv;
   output Env outEnv;
-  output Boolean outWasUpdated;
+  output Option<Entry> outUpdatedEntry;
 
   partial function UpdateFunc
     input Entry inEntry;
@@ -612,7 +633,7 @@ protected
   Env rest_env;
 algorithm
   NFInstTypes.FRAME(name, st, entries) :: rest_env := inEnv;
-  (entries, outWasUpdated) :=
+  (entries, outUpdatedEntry) :=
     NFEnvAvlTree.update(entries, inName, inUpdateFunc, inArg);
   outEnv := NFInstTypes.FRAME(name, st, entries) :: rest_env;
 end updateEntry;

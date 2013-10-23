@@ -234,7 +234,7 @@ public constant Message MODIFY_PROTECTED = MESSAGE(54, TRANSLATION(), WARNING(),
 public constant Message INVALID_TUPLE_CONTENT = MESSAGE(55, TRANSLATION(), ERROR(),
   Util.gettext("Tuple %s must contain component references only."));
 public constant Message MISSING_REDECLARE_IN_CLASS_MOD = MESSAGE(56, TRANSLATION(), ERROR(),
-  Util.gettext("Missing redeclare keyword on redeclaration of class %s in modifier of %s."));
+  Util.gettext("Missing redeclare keyword on redeclaration of class %s."));
 public constant Message IMPORT_SEVERAL_NAMES = MESSAGE(57, TRANSLATION(), ERROR(),
   Util.gettext("%s found in several unqualified import statements (import ABC.*)."));
 public constant Message LOOKUP_TYPE_FOUND_COMP = MESSAGE(58, TRANSLATION(), ERROR(),

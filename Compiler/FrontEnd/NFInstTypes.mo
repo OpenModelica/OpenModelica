@@ -445,6 +445,7 @@ public uniontype EntryOrigin
     Absyn.Info info "The info of the extends clause.";
     list<EntryOrigin> origin "The origins of the element in the baseclass.";
     Env originEnv "The environment the entry was inherited from.";
+    Integer index "Index used to identify the extends clause for optimization.";
   end INHERITED_ORIGIN;
 
   record REDECLARED_ORIGIN

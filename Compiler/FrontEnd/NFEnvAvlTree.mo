@@ -312,7 +312,7 @@ public function update
   input UpdateFunc inUpdateFunc;
   input ArgType inArg;
   output AvlTree outAvlTree;
-  output Boolean outWasUpdated;
+  output Option<AvlValue> outUpdatedValue;
 
   partial function UpdateFunc
     input AvlValue inValue;
@@ -322,22 +322,24 @@ public function update
 
   replaceable type ArgType subtypeof Any;
 algorithm
-  (outAvlTree, outWasUpdated) := match(inAvlTree, inKey, inUpdateFunc, inArg)
+  (outAvlTree, outUpdatedValue) :=
+  matchcontinue(inAvlTree, inKey, inUpdateFunc, inArg)
     local
       AvlKey key;
       Integer key_comp;
       AvlTree tree;
-      Boolean updated;
+      Option<AvlValue> updated_val;
 
     case (NFInstTypes.AVLTREENODE(value = SOME(NFInstTypes.AVLTREEVALUE(key = key))), _, _, _)
       equation
         key_comp = stringCompare(key, inKey);
-        (tree, updated) = 
+        (tree, updated_val) = 
           update2(inAvlTree, key_comp, inKey, inUpdateFunc, inArg);
       then
-        (tree, updated);
+        (tree, updated_val);
 
-  end match;
+    else (inAvlTree, NONE());
+  end matchcontinue;
 end update;
 
 protected function update2
@@ -347,7 +349,7 @@ protected function update2
   input UpdateFunc inUpdateFunc;
   input ArgType inArg;
   output AvlTree outAvlTree;
-  output Boolean outWasUpdated;
+  output Option<AvlValue> outUpdatedValue;
 
   partial function UpdateFunc
     input AvlValue inValue;
@@ -357,7 +359,7 @@ protected function update2
 
   replaceable type ArgType subtypeof Any;
 algorithm
-  (outAvlTree, outWasUpdated) :=
+  (outAvlTree, outUpdatedValue) :=
   match(inAvlTree, inKeyComp, inKey, inUpdateFunc, inArg)
     local
       AvlKey key;
@@ -366,31 +368,25 @@ algorithm
       Integer h;
       AvlTree t;
       Option<AvlTreeValue> oval;
-      Boolean updated;
+      Option<AvlValue> uval;
 
     case (NFInstTypes.AVLTREENODE(SOME(NFInstTypes.AVLTREEVALUE(key, value)), h, left, right), 0, _, _, _)
       equation
         value = inUpdateFunc(value, inArg);
       then
-        (NFInstTypes.AVLTREENODE(SOME(NFInstTypes.AVLTREEVALUE(key, value)), h, left, right), true);
+        (NFInstTypes.AVLTREENODE(SOME(NFInstTypes.AVLTREEVALUE(key, value)), h, left, right), SOME(value));
 
     case (NFInstTypes.AVLTREENODE(oval, h, left, SOME(t)), -1, _, _, _)
       equation
-        (t, updated) = update(t, inKey, inUpdateFunc, inArg);
+        (t, uval) = update(t, inKey, inUpdateFunc, inArg);
       then
-        (NFInstTypes.AVLTREENODE(oval, h, left, SOME(t)), updated);
+        (NFInstTypes.AVLTREENODE(oval, h, left, SOME(t)), uval);
 
     case (NFInstTypes.AVLTREENODE(oval, h, SOME(t), right), 1, _, _, _)
       equation
-        (t, updated) = update(t, inKey, inUpdateFunc, inArg);
+        (t, uval) = update(t, inKey, inUpdateFunc, inArg);
       then
-        (NFInstTypes.AVLTREENODE(oval, h, SOME(t), right), updated);
-
-    case (NFInstTypes.AVLTREENODE(_, _, _, NONE()), -1, _, _, _)
-      then (inAvlTree, false);
-
-    case (NFInstTypes.AVLTREENODE(_, _, NONE(), _), 1, _, _, _)
-      then (inAvlTree, false);
+        (NFInstTypes.AVLTREENODE(oval, h, SOME(t), right), uval);
 
   end match;
 end update2;
