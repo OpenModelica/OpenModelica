@@ -246,16 +246,11 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
   }
   case CSV: {
     char **variables = read_csv_variables(simresglob->csvReader);
-    char **toFree = variables;
     if (variables) {
-      variables++ /* Skip the first element: It's the malloc buffer. */;
       while (*variables) {
         res = mk_cons(mk_scon(*variables),res);
         variables++;
       }
-      /* All strings are allocated in a single malloc for efficiency */
-      free(*toFree);
-      free(toFree);
     }
     return res;
   }
@@ -355,7 +350,9 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
         return NULL;
       } else {
         col=mk_nil();
-        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
+        for (i=0;i<dimsize;i++) {
+          col=mk_cons(mk_rcon(vals[i]),col);
+        }
         res = mk_cons(col,res);
       }
     }

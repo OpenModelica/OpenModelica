@@ -2,7 +2,7 @@
 
 library:=$TypeName(Modelica);
 libraryVersion:="default";
-referenceFiles:="";
+referenceFiles:="/home/marsj/trunk/testsuite/simulation/libraries/msl32/ReferenceFiles/";
 referenceFileExtension:="mat";
 referenceFileNameDelimiter:=".";
 
@@ -11,6 +11,9 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 log:="BuildModelRecursive.html";
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
 ulimitExe:="480";  // 8 minutes to initialize and run the simulation
+tolerance:=1e-6;
+reference_reltol:=1e-3;
+reference_rangeDelta:=5e-3;
 loadModel(library,{libraryVersion});
 getErrorString();
 libraryVersionRevision:=getVersion(library);
@@ -24,6 +27,7 @@ system("rm -f tmp.date");
 loadModelCommand:="\nloadModel("+libraryString+",{\""+libraryVersion+"\"});\n";
 
 omc:=getInstallationDirectoryPath()+"/bin/omc";
+dygraphs:=getInstallationDirectoryPath()+"/share/doc/omc/testmodels/dygraph-combined.js";
 
 a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(library,recursive=true,sort=true)};
 getErrorString();
@@ -43,7 +47,9 @@ mkdir("files");
 min(writeFile(s + ".mos","
 \""+s+"\";
 echo(false);
-runScript(\"common.mos\");
+tolerance:="+String(tolerance)+";
+reference_reltol:="+String(reference_reltol)+";
+reference_rangeDelta:="+String(reference_rangeDelta)+";
 statFile := \""+s+".stat\";
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
@@ -71,7 +77,7 @@ function csvFileToVariable
 protected
   String matches[2];
 algorithm
-  (,matches) := OpenModelica.Scripting.regex(str,\\\"^.*[.]diff[.](.*)[.]csv$\\\",2);
+  (,matches) := OpenModelica.Scripting.regex(str,\\\"^.*[.]diff[.](.*)$\\\",2);
   out := matches[2];
 end csvFileToVariable;
 function testcase
@@ -93,12 +99,12 @@ algorithm
   \\\"</testcase>\n\\\";
 end testcase;
 \");getErrorString();
-res:=buildModel("+s+");
+res:=buildModel("+s+",tolerance=tolerance);
 greenColor := \"#00FF00\";
 if res[1] == \"\" then
   err:=getErrorString();
   setCommandLineOptions(\"+d=scodeInstShortcut\");
-  res:=buildModel("+s+");
+  res:=buildModel("+s+",tolerance=tolerance);
   greenColor := \"#FFFF00\";
 end if;
 errFile:=\"files/"+s+".err\";
@@ -136,27 +142,54 @@ if simRes then
   prefix := \"files/"+s+".diff\";
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.mat\",reference,prefix);
+    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.mat\",reference,prefix,relTol=reference_reltol,rangeDelta=reference_rangeDelta);
     timeDiff := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-    diffFiles := {prefix + \".\" + var + \".csv\" for var in diffVars};
+    diffFiles := {prefix + \".\" + var for var in diffVars};
+    // Create a file containing only the calibrated variables, for easy display
+    {system(\"cut -d, -f1,2,3,4,5,6 '\" + prefix + \".\" + var + \".csv' | grep -v ^, > '\" + prefix + \".\" + var + \".calibrated.csv'\") for var in diffVars};
     if not referenceOK then
-      writeFile(\""+s+".gnuplot\",\"set term svg size 600,800
+      writeFile(\""+s+".gnuplot\",\"set term svg size 800,500
 set datafile separator \\\",\\\"
-set format y \\\"%g\\\"
+set format y \\\"%.15g\\\"
 set samples 300
 \" + sum(\"set output \\\"\"+file+\".svg\\\"
-set multiplot layout 3,1
 set title \\\"Result difference of \"+csvFileToVariable(file)+\"\\\"
-plot \\\"\"+file+\"\\\" using 1:2 title 'reference' smooth csplines with lines, \\\"\"+file+\"\\\" using 1:3 title 'actual' smooth csplines with lines
-unset title
-plot \\\"\"+file+\"\\\" using 1:4 title 'absolute error' smooth unique with lines, \\\"\"+file+\"\\\" using 1:6 title 'threshold' smooth unique with lines
-plot \\\"\"+file+\"\\\" using 1:5 title 'relative error' smooth unique with lines
-unset multiplot
+# Skip setting xrange; it removes too many lines
+set xrange [`head -2  \\\"\"+file+\".csv\\\" | tail -1 | cut -d, -f15,16 | tr , :`]
+plot \\\"\"+file+\".csv\\\" using 1:2 title 'reference' with lines, \\\"\"+file+\".csv\\\" using 5:6 title 'actual' with lines, \\\"\"+file+\".csv\\\" using 1:3 title 'high' with lines, \\\"\"+file+\".csv\\\" using 1:4 title 'low' with lines
 \" for file in diffFiles));
       system(\"gnuplot '"+s+".gnuplot'\");
       timeDiff := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
       referenceCell := \"<td bgcolor=\\\"#FF0000\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\", <a href=\\\"files/"+s+".diff.html\\\">\"+String(size(diffFiles,1))+\" failed</a></td>\";
-      writeFile(\"files/"+s+".diff.html\",\"<html><body><h1>"+s+" differences from the reference file</h1><ul>\" + sum(\"<li>\"+csvFileToVariable(file)+\" <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".svg\\\">(plot)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\"\\\">(csv)</a></li>\" for file in diffFiles) + \"</ul></body></html>\");
+      writeFile(\"files/"+s+".diff.html\",\"<html><body><h1>"+s+" differences from the reference file</h1><ul>\" + sum(\"<li>\"+csvFileToVariable(file)+\" <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".html\\\">(javascript)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".svg\\\">(svg)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".csv\\\">(csv)</a></li>\" for file in diffFiles) + \"</ul></body></html>\");
+      {writeFile(prefix + \".\" + var + \".html\",\"<html>
+<head>
+<script type=\\\"text/javascript\\\" src=\\\"dygraph-combined.js\\\"></script>
+    <style type=\\\"text/css\\\">
+    #graphdiv {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 40px;
+      bottom: 10px;
+    }
+    </style>
+</head>
+<body>
+<div id=\\\"graphdiv\\\"></div>
+<script type=\\\"text/javascript\\\">
+g = new Dygraph(document.getElementById(\\\"graphdiv\\\"),
+                 \\\"\"+OpenModelica.Scripting.basename(prefix + \".\" + var+\".calibrated.csv\")+\"\\\",{title: '\"+var+\"',
+  legend: 'always',
+  xlabel: ['time'],
+  y2label: ['error'],
+  series : { 'error': { axis: 'y2' } },
+  colors: ['blue','red','teal','lightblue','orange']
+});
+</script>
+</body>
+</html>\") for var in diffVars};
+
     else
       referenceCell := \"<td bgcolor=\\\"#00FF00\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\"</td>\";
     end if;
@@ -204,10 +237,12 @@ writeFile(log,"<table><tr><th>Model</th>"+(if referenceFiles == "" then "" else 
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table><hr /><p><a href=\"BuildModelRecursive.tar.gz\">Offline version</a></p></body></html>",append=true);getErrorString();
 
-{writeFile("BuildModelRecursive." + phase + ".xml", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
+{writeFile("BuildModelRecursive." + phase + ".xml.tmp", "<testsuite>\n" + sum(readFile(s + ".stat." + phase) for s in a) + "</testsuite>\n") for phase in {"flat","compile","sim"}};getErrorString();
+{system("iconv -f utf8 -t utf8 -c BuildModelRecursive." + phase + ".xml.tmp -o BuildModelRecursive." + phase + ".xml") for phase in {"flat","compile","sim"}};getErrorString();
 
+system("cp '" + dygraphs + "' files/");getErrorString();
 system("rm -f tidy.err; for f in files/*.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
-system("chmod -R go+r BuildModelRecursive.html files tidy.err");
-system("chmod go+x files");
-system("tar czf BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");
+system("chmod -R go+r BuildModelRecursive.html files tidy.err");getErrorString();
+system("chmod go+x files");getErrorString();
+system("tar czf BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");getErrorString();
 system("chmod go+r BuildModelRecursive.tar.gz");

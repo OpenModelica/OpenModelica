@@ -2345,8 +2345,8 @@ public function diffSimulationResults "compares simulation results."
   input String actualFile;
   input String expectedFile;
   input String diffPrefix;
-  input Real relTol := 0.01;
-  input Real absTol := 0.0001;
+  input Real relTol := 1e-4 "y tolerance";
+  input Real rangeDelta := 0.002 "x tolerance";
   input String[:] vars := fill("",0);
   input Boolean keepEqualResults := false;
   output Boolean success /* On success, resultFiles is empty. But it might be empty on failure anyway (for example if an input file does not exist) */;

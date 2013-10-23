@@ -42,6 +42,7 @@ extern "C"
 #include <stdlib.h>
 #include <stdio.h>
 #include "read_csv.h"
+#include <gc.h>
 
 int read_csv_dataset_size(const char* filename)
 {
@@ -77,31 +78,30 @@ char** read_csv_variables(FILE *fin)
     length++;
   } while(p != EOF && p != '\n');
   fseek(fin,0,SEEK_SET);
-  buf = (char*) malloc((length+1)*sizeof(char));
-  res = (char**)malloc((2+numVar)*sizeof(char*));
-  if(!fgets(buf,length,fin))
-  {
+  buf = (char*) GC_malloc_atomic((length+1)*sizeof(char));
+  res = (char**)GC_malloc((1+numVar)*sizeof(char*));
+  if(!fgets(buf,length,fin)) {
     free(buf);
     free(res);
     return NULL;
   }
   tmp = res;
-  tmp[0] = buf;
-  tmp = tmp+1;
   if(*buf == '\"')
     buf++;
   tmp[0] = buf;
+  tmp++;
   do {
     if(*buf == ',')
     {
       *buf = '\0';
-      tmp++;
       if(buf[-1] == '"')
         buf[-1] = '\0';
       if(buf[1] == '"')
         buf++;
-      if(buf[1] != '\0' && buf[1] != '\r')
+      if(buf[1] != '\0' && buf[1] != '\r') {
         *tmp = ++buf;
+        tmp++;
+      }
     }
     else
     {
@@ -157,8 +157,9 @@ double* read_csv_dataset(const char *filename, const char *var, int dimsize)
       }
     }
   }
-  if(found==0)
-  return NULL;
+  if(found==0) {
+    return NULL;
+  }
   /* collect data */
   getline(stream,header);
   length = strlen(header.c_str());
@@ -182,7 +183,7 @@ double* read_csv_dataset(const char *filename, const char *var, int dimsize)
     value.clear();
   }
 
-  double *res = (double*)malloc((data.size())*sizeof(double));
+  double *res = (double*)GC_malloc_atomic((data.size())*sizeof(double));
   for(unsigned int k = 0 ; k < data.size(); k++)
   {
     res[k] = data.at(k);

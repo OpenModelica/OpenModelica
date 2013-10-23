@@ -8099,8 +8099,17 @@ protected function rewriteIndex
   input Integer iindex;
   output list<SimCode.SimVar> outVars;
 algorithm 
+  outVars := rewriteIndexWork(inVars, iindex, {});
+end rewriteIndex;
+
+protected function rewriteIndexWork
+  input list<SimCode.SimVar> inVars;
+  input Integer iindex;
+  input list<SimCode.SimVar> inAcc;
+  output list<SimCode.SimVar> outVars;
+algorithm 
   outVars :=
-  match(inVars, iindex)
+  match(inVars, iindex, inAcc)
     local
       DAE.ComponentRef name;
       BackendDAE.VarKind kind;
@@ -8118,14 +8127,13 @@ algorithm
       SimCode.Causality causality;
       list<String> numArrayElement;
       Integer index;
+      SimCode.SimVar var;
       
-    case ({}, _) then {};
-    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement)::rest, index_)
-      equation
-        rest2 = rewriteIndex(rest, index_ + 1);
-      then (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement)::rest2);
+    case ({}, _, _) then listReverse(inAcc);
+    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement)::rest, index_, _)
+      then rewriteIndexWork(rest, index_ + 1, SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement)::inAcc);
   end match;
-end rewriteIndex;
+end rewriteIndexWork;
 
 protected function varIndexComparer
   input SimCode.SimVar lhs;

@@ -79,8 +79,8 @@ BackendDAEEXT_rml.o : BackendDAEEXT.cpp matching.c matchmaker.h matching_cheap.c
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT)
 Socket_rml.o : socketimpl.c
 Socket_omc.o : socketimpl.c
-SimulationResults_rml.o : SimulationResults.c SimulationResultsCmp.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
-SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
+SimulationResults_rml.o : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
+SimulationResults_omc.o : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/read_matlab4.h
 TaskGraphResults_rml.o : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp
 TaskGraphResults_omc.o : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp
 HpcOmBenchmarkExt_rml.o : HpcOmBenchmarkExt.cpp
