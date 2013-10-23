@@ -480,7 +480,7 @@ algorithm
     then (stmts, leftCrs);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function inlineWhenForInitializationWhenStmt failed"});
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function inlineWhenForInitializationWhenStmt failed");
     then fail();
   
   end matchcontinue;
@@ -999,7 +999,7 @@ algorithm
     then (vars, eqs, b, dumpVars);
     
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function preBalanceInitialSystem1 failed"});
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function preBalanceInitialSystem1 failed");
     then fail();
   end matchcontinue;
 end preBalanceInitialSystem1;
@@ -1217,7 +1217,7 @@ algorithm
     then (eqns, var::dumpVars);
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed"});
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed");
     then fail();
   end matchcontinue;
 end addStartValueEquations;
@@ -1587,7 +1587,6 @@ algorithm
       Option<DAE.Exp> startValue;
       DAE.Exp startValue_;
       DAE.Exp startExp, bindExp;
-      String errorMessage;
       BackendDAE.VarKind varKind;
       HashSet.HashSet hs;
 
@@ -1733,12 +1732,11 @@ algorithm
     then ((var, (vars, fixvars, eqns, hs)));
 
     case ((var, _)) equation
-      errorMessage = "./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " +& BackendDump.varString(var);
-      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed for: " +& BackendDump.varString(var));
     then fail();
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed"});
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialVars failed");
     then fail();
   end matchcontinue;
 end collectInitialVars;
@@ -1817,7 +1815,6 @@ algorithm
       BackendDAE.Var var;
       DAE.ComponentRef cr;
       DAE.Type ty;
-      String errorMessage;
       BackendDAE.EquationArray eqns, reeqns;
       DAE.Exp bindExp, crefExp;
       DAE.ElementSource source;
@@ -1835,12 +1832,11 @@ algorithm
     then ((var, (eqns, reeqns)));
 
     case ((var, _)) equation
-      errorMessage = "./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " +& BackendDump.varString(var);
-      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed for: " +& BackendDump.varString(var));
     then fail();
 
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed"});
+      Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function collectInitialBindings failed");
     then fail();
   end match;
 end collectInitialBindings;

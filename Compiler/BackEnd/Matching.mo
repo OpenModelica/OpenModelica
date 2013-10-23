@@ -494,7 +494,6 @@ algorithm
   matchcontinue (i,rowmark,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg)
     local
       list<Integer> visitedcolums;
-      String s;
       BackendDAE.IncidenceMatrix m1,mt1;
       Integer nv_1,ne_1,i_1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
@@ -531,8 +530,7 @@ algorithm
 
     else
       equation
-        s = "Matching.BFSB1 failed in Equation " +& intString(i) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR,{s});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSB1 failed in equation " +& intString(i));
       then
         fail();
 
@@ -577,7 +575,7 @@ algorithm
         BFSBphase1(b,rest,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,queue1,c::inVisitedColums);
     else
       equation
-        print("Matching.BFSBphase failed in Equation " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBphase failed in equation " +& intString(i));
       then
         fail();
 
@@ -611,7 +609,7 @@ algorithm
         BFSBphase(queue,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,nextQueue,inVisitedColums);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.BFSBphase1 failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBphase1 failed");
       then
         fail();
   end match;
@@ -661,7 +659,7 @@ algorithm
         (queue2,b);
     else
       equation
-        print("Matching.BFSBtraverseRows failed in Equation " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBtraverseRows failed in equation " +& intString(i));
       then
         fail();
 
@@ -699,7 +697,7 @@ algorithm
         ();
     else
       equation
-        print("Matching.BFSBreasign failed in Equation " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBreasign failed");
       then
         fail();
    end matchcontinue;
@@ -731,7 +729,7 @@ algorithm
         (rc::queue);
     else
       equation
-        print("Matching.BFSBenque failed!\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function BFSBenque failed");
       then
         fail();
 
@@ -860,7 +858,7 @@ algorithm
 
     else
       equation
-        print("Matching.DFSB1 failed in Equation " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function DFSB1 failed in equation " +& intString(i));
       then
         fail();
 
@@ -897,7 +895,7 @@ algorithm
         DFSBtraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
       equation
-        print("Matching.DFSBphase failed in Equation " +& intString(c) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function DFSBphase failed in equation " +& intString(c));
       then
         fail();
 
@@ -948,7 +946,7 @@ algorithm
         DFSBtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.DFSBtraverseRows failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function DFSBtraverseRows failed");
       then
         fail();
 
@@ -1122,7 +1120,7 @@ algorithm
         (ass1_1,ass2_1,syst,shared,arg);
     else
       equation
-        print("Matching.MC21A1 failed in Equation " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21A1 failed in equation " +& intString(i));
       then
         fail();
   end matchcontinue;
@@ -1156,7 +1154,7 @@ algorithm
         (rowmarks1,lookahead1);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.MC21A1fixArrays failed!\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21A1fixArrays failed");
       then
         fail();
   end match;
@@ -1181,7 +1179,7 @@ algorithm
         ();
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.MC21A1fixArray failed!\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21A1fixArray failed");
       then
         fail();
   end match;
@@ -1220,7 +1218,7 @@ algorithm
         MC21Achecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
       equation
-        print("Matching.MC21Aphase failed in Equation " +& intString(c) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21Aphase failed in equation " +& intString(c));
       then
         fail();
   end match;
@@ -1336,7 +1334,7 @@ algorithm
         MC21AtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.MC21AtraverseRows failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function MC21AtraverseRows failed");
       then
         fail();
   end matchcontinue;
@@ -1586,7 +1584,7 @@ algorithm
         (i_1,unmatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PFaugmentmatching failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFaugmentmatching failed");
       then
         fail();
   end matchcontinue;
@@ -1623,7 +1621,7 @@ algorithm
         PFchecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
       equation
-        print("Matching.PFphase failed in Equation " +& intString(c) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFphase failed in equation " +& intString(c));
       then
         fail();
 
@@ -1738,7 +1736,7 @@ algorithm
         PFtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PFtraverseRows failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFtraverseRows failed");
       then
         fail();
   end matchcontinue;
@@ -1928,7 +1926,7 @@ algorithm
         (i_1,unmatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PFPlusaugmentmatching failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFPlusaugmentmatching failed");
       then
         fail();
   end matchcontinue;
@@ -1973,7 +1971,7 @@ algorithm
         PFPluschecklookahead(b,listReverse(rows),stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
       equation
-        print("Matching.PFPlusphase failed in Equation " +& intString(c) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFPlusphase failed in equation " +& intString(c));
       then
         fail();
 
@@ -2091,7 +2089,7 @@ algorithm
         PFPlustraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PFPlustraverseRows failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PFPlustraverseRows failed");
       then
         fail();
   end matchcontinue;
@@ -2344,7 +2342,7 @@ algorithm
         (i_1,unmatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.HKphase failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKphase failed");
       then
         fail();
   end matchcontinue;
@@ -2406,7 +2404,7 @@ algorithm
         HKBFS(rest,nv,ne,m,mT,rowmarks,i,level,ll,ass1,ass2,rows);
     else
       equation
-        print("Matching.HKBFS failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFS failed in phase " +& intString(i));
       then
         fail();
   end match;
@@ -2466,7 +2464,7 @@ algorithm
         (rows,ll);
     else
       equation
-        print("Matching.HKBFSBphase failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFSBphase failed in phase " +& intString(i));
       then
         fail();
 
@@ -2507,7 +2505,7 @@ algorithm
         (rows,ll);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.HKBFSBphase1 failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFSBphase1 failed");
       then
         fail();
   end match;
@@ -2566,7 +2564,7 @@ algorithm
         (queue1,rowstpl,b);
     else
       equation
-        print("Matching.HKBFStraverseRows failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKBFStraverseRows failed in phase " +& intString(i));
       then
         fail();
 
@@ -2606,7 +2604,7 @@ algorithm
         HKDFS(rest,i,nv,ne,m,mT,collummarks,level,ass1,ass2,ur);
     else
       equation
-        print("Matching.HKDFSB failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDFS failed in phase " +& intString(i));
       then
         fail();
 
@@ -2644,7 +2642,7 @@ algorithm
         HKDFStraverseCollums(collums,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     else
       equation
-        print("Matching.HKDFSphase failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDFSphase failed in phase " +& intString(i));
       then
         fail();
   end match;
@@ -2715,7 +2713,7 @@ algorithm
         HKDFStraverseCollums(rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.HKDFSBtraverseCollums failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDFStraverseCollums failed");
       then
         fail();
   end matchcontinue;
@@ -2934,7 +2932,7 @@ algorithm
         (i_1,unmatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.HKphase failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWphase failed");
       then
         fail();
   end matchcontinue;
@@ -2968,7 +2966,7 @@ algorithm
         ();
     else
       equation
-        print("Matching.HKDWDFSB failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWDFS failed in phase " +& intString(i));
       then
         fail();
 
@@ -3004,7 +3002,7 @@ algorithm
         HKDWDFStraverseCollums(collums,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
     else
       equation
-        print("Matching.HKDWDFSphase failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWDFSphase failed in phase " +& intString(i));
       then
         fail();
   end match;
@@ -3061,7 +3059,7 @@ algorithm
         HKDWDFStraverseCollums(rest,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.HKDWDFSBtraverseCollums failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function HKDWDFStraverseCollums failed");
       then
         fail();
   end matchcontinue;
@@ -3303,7 +3301,7 @@ algorithm
         ABMPphase1(U,ur,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPphase failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPphase failed");
       then
         fail();
   end match;
@@ -3345,7 +3343,7 @@ algorithm
         ABMPphase2(unmatched,i,L,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPphase1 failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPphase1 failed");
       then
         fail();
   end match;
@@ -3385,7 +3383,7 @@ algorithm
        ABMPphase(U,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPphase2 failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPphase2 failed");
       then
         fail();
   end matchcontinue;
@@ -3433,7 +3431,7 @@ algorithm
         ABMPBFSphase(rest,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue1,unmatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPBFSphase failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPBFSphase failed");
       then
         fail();
   end match;
@@ -3468,7 +3466,7 @@ algorithm
         ABMPBFSphase(queue,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,nextqueue,unMatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPBFSphase1 failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPBFSphase1 failed");
       then
         fail();
   end match;
@@ -3530,7 +3528,7 @@ algorithm
         (queue1,unmatched);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPBFStraverseRows failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPBFStraverseRows failed");
       then
         fail();
   end matchcontinue;
@@ -3574,7 +3572,7 @@ algorithm
         ();
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPBFS failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPBFS failed");
       then
         fail();
   end matchcontinue;
@@ -3650,7 +3648,7 @@ algorithm
       then ();
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPBFS1 failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPBFS1 failed");
       then
         fail();
   end matchcontinue;
@@ -3691,7 +3689,7 @@ algorithm
         (i_1,b);
     else
       equation
-        print("Matching.ABMPDFSphase failed in Phase " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPDFSphase failed in phase " +& intString(i));
       then
         fail();
   end match;
@@ -3756,7 +3754,7 @@ algorithm
         (i_1,b);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPDFSBtraverseCollums failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function ABMPDFSBtraverseCollums failed");
       then
         fail();
   end matchcontinue;
@@ -4135,7 +4133,7 @@ algorithm
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PR_Global_Relabel_traverseCollums failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PR_Global_Relabel_traverseCollums failed");
       then
         fail();
   end matchcontinue;
@@ -4313,7 +4311,7 @@ algorithm
         (rel,minlabel,minvertex);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PR_FIFO_FAIRphase_traverseRows failed\n"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function PR_FIFO_FAIRphase_traverseRows failed");
       then
         fail();
   end matchcontinue;
@@ -4443,7 +4441,7 @@ algorithm
         ();
     else
       equation
-        print("Matching.matchSingleVars failed in Equation " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function matchSingleVars failed in equation " +& intString(i));
       then
         fail();
   end matchcontinue;
@@ -4508,7 +4506,7 @@ algorithm
         cheapmatching(i+1,nv,ne,m,mT,ass1,ass2,i::inUnMatched);
     else
       equation
-        print("Matching.cheapmatching failed in Equation " +& intString(i) +& "\n");
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function cheapmatching failed in equation " +& intString(i));
       then
         fail();
   end matchcontinue;
@@ -5839,7 +5837,7 @@ algorithm
         Util.arrayExpand(needed-memsize, ass, default);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Matching.assignmentsArrayExpand failed!"});
+        Error.addInternalError("./Compiler/BackEnd/Matching.mo: function assignmentsArrayExpand failed");
       then
         fail();
   end matchcontinue;
