@@ -506,16 +506,16 @@ void SimulationDialog::compileModel()
 void SimulationDialog::setProcessEnvironment(QProcess *pProcess)
 {
 #ifdef WIN32
-  QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+  QProcessEnvironment environment;
   const char *omdev = getenv("OMDEV");
   if (QString(omdev).isEmpty())
   {
-    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW\\bin") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\libexec\\gcc\\mingw32\\4.4.0") + ";" + environment.value("PATH"));
+    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW\\bin") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\libexec\\gcc\\mingw32\\4.4.0"));
     mCompilationProcessPath = QString(Helper::OpenModelicaHome).append("MinGW\\bin\\mingw32-make.exe");
   }
   else
   {
-    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin") + ";" + QString(omdev).append(QDir::separator()).append("tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0") + ";" + environment.value("PATH"));
+    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin") + ";" + QString(omdev).append(QDir::separator()).append("tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0"));
     mCompilationProcessPath = QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin\\mingw32-make.exe");
   }
   pProcess->setProcessEnvironment(environment);
