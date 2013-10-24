@@ -111,6 +111,7 @@ protected import SCodeSimplify;
 protected import SimCodeMain;
 protected import System;
 protected import Static;
+protected import StaticScript;
 protected import SCode;
 protected import SCodeUtil;
 protected import Settings;
@@ -427,18 +428,19 @@ public function buildSimulationOptionsFromModelExperimentAnnotation
   input GlobalScript.SymbolTable inSymTab;
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
+  input Option<GlobalScript.SimulationOptions> defaultOption;
   output GlobalScript.SimulationOptions outSimOpt;
 algorithm
-  outSimOpt := matchcontinue (inSymTab, inModelPath, inFileNamePrefix)
+  outSimOpt := matchcontinue (inSymTab, inModelPath, inFileNamePrefix, defaultOption)
     local
       GlobalScript.SimulationOptions defaults, simOpt;
       String experimentAnnotationStr;
       list<Absyn.NamedArg> named;
 
     // search inside annotation(experiment(...))
-    case (_, _, _)
+    case (_, _, _, _)
       equation
-        defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
+        defaults = Util.getOptionOrDefault(defaultOption, setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix));
 
         experimentAnnotationStr =
           Interactive.getNamedAnnotation(
@@ -464,11 +466,10 @@ algorithm
         simOpt;
 
     // if we fail, just use the defaults
-    case (_, _, _)
+    else
       equation
         defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
-      then
-        defaults;
+      then defaults;
   end matchcontinue;
 end buildSimulationOptionsFromModelExperimentAnnotation;
 
@@ -825,6 +826,7 @@ algorithm
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition,scriptFile,logFile, simflags2, outputFile,
              systemPath, gccVersion, gd, strlinearizeTime, direction, suffix;
+      list<DAE.Exp> simOptions;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
@@ -835,6 +837,9 @@ algorithm
       list<GlobalScript.InstantiatedClass> ic,ic_1;
       list<GlobalScript.Variable> iv;
       list<GlobalScript.CompiledCFunction> cf;
+      GlobalScript.SimulationOptions simOpt;
+      Real startTime,stopTime,tolerance;
+      DAE.Exp startTimeExp,stopTimeExp,toleranceExp;
       DAE.Type tp;
       Absyn.Class absynClass;
       Absyn.ClassDef cdef;
@@ -2219,6 +2224,20 @@ algorithm
     case (cache,env,"isExperiment",_,st as GlobalScript.SYMBOLTABLE(ast=p),_)
       then
         (cache,Values.BOOL(false),st);
+
+    case (cache,env,"getSimulationOptions",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance)},st as GlobalScript.SYMBOLTABLE(ast = p),_)
+      equation
+        cr_1 = Absyn.pathToCref(classpath);
+        // ignore the name of the model
+        ErrorExt.setCheckpoint("getSimulationOptions");
+        simOpt = GlobalScript.SIMULATION_OPTIONS(DAE.RCONST(startTime),DAE.RCONST(stopTime),DAE.ICONST(0),DAE.RCONST(0.0),DAE.RCONST(tolerance),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.SCONST(""),DAE.BCONST(false),DAE.SCONST(""),DAE.SCONST(""));
+        ErrorExt.rollBack("getSimulationOptions");
+        (_, _::startTimeExp::stopTimeExp::_::toleranceExp::_) = StaticScript.getSimulationArguments(Env.emptyCache(), {},{Absyn.CREF(cr_1)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo,SOME(simOpt));
+        startTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,startTimeExp,Values.REAL(startTime)));
+        stopTime = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,stopTimeExp,Values.REAL(stopTime)));
+        tolerance = ValuesUtil.valueReal(Util.makeValueOrDefault(Ceval.cevalSimple,toleranceExp,Values.REAL(tolerance)));
+      then
+        (cache,Values.TUPLE({Values.REAL(startTime),Values.REAL(stopTime),Values.REAL(tolerance)}),st);
 
     case (cache,env,"classAnnotationExists",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation

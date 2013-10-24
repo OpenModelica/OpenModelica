@@ -115,11 +115,12 @@ public function getSimulationArguments
   input Option<GlobalScript.SymbolTable> inInteractiveInteractiveSymbolTableOption;
   input Prefix.Prefix inPrefix;
   input Absyn.Info inInfo;
+  input Option<GlobalScript.SimulationOptions> defaultOption;
   output Env.Cache outCache;
   output list<DAE.Exp> outSimulationArguments;
 algorithm
   (outCache, outSimulationArguments) :=
-  match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo)
+  match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaultOption)
     local
       Absyn.Exp crexp;
       list<Absyn.NamedArg> args;
@@ -137,7 +138,7 @@ algorithm
       Values.Value v;
 
     // fill in defaults
-    case (cache,env,{crexp},args,impl,SOME(st),pre,info)
+    case (cache,env,{crexp},args,impl,SOME(st),pre,info,_)
       equation
         exp = Static.elabCodeExp(crexp,cache,env,DAE.C_TYPENAME(),info);
         // We need to force eval in order to get the correct prefix
@@ -145,7 +146,7 @@ algorithm
         Values.CODE(Absyn.C_TYPENAME(className)) = CevalScript.evalCodeTypeName(v,env);
 
         cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
-        defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str);
+        defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str, defaultOption);
 
         (cache, startTime, stopTime, numberOfIntervals) =
           calculateSimulationTimes(inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, impl, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, defaulSimOpt);
@@ -267,7 +268,7 @@ public function elabCallInteractive "This function elaborates the functions defi
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
         (cache,Expression.makeBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
@@ -342,42 +343,42 @@ public function elabCallInteractive "This function elaborates the functions defi
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
         (cache,Expression.makeBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
       then
         (cache,Expression.makeBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)},DAE.emptyTypeSource),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getDrModelicaSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "residualCMP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("residualCMP",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info, NONE());
         recordtype = CevalScript.getSimulationResultType();
       then
         (cache,Expression.makeBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));

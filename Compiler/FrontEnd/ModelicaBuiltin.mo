@@ -2731,6 +2731,20 @@ function isExperiment "An experiment is defined as having annotation Experiment(
 external "builtin";
 end isExperiment;
 
+function getSimulationOptions
+  input TypeName name;
+  input Real defaultStartTime := 0.0;
+  input Real defaultStopTime := 1.0;
+  input Real defaultTolerance := 1e-6;
+  output Real startTime;
+  output Real stopTime;
+  output Real tolerance;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Returns the startTime, stopTime, interval and tolerance based on the experiment annotation.</p>
+</html>"));
+end getSimulationOptions;
+
 function classAnnotationExists "Check if annotation exists"
   input TypeName className;
   input TypeName annotationName;

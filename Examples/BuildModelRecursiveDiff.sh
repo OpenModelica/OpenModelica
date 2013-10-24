@@ -19,3 +19,5 @@ egrep "$SIM" "$2" | egrep -o "$SEARCH" | tr -d "<> (" > "$2.sim"
 echo "Sim diff (failures between $REV1 and $REV2 - *plus is bad*)"
 diff -u "$1.sim" "$2.sim" | grep "^[+-][A-Za-z0-9._]"
 rm -f "$1.build" "$2.build" "$1.sim" "$2.sim"
+
+# xpath -e "html/body/table/tr/td[2][@bgcolor = '#FF0000']/../td[1]/text()" BuildModelRecursive.html
