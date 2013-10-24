@@ -343,6 +343,7 @@ algorithm
         dims = Absyn.typeSpecDimensions(dty);
         dim_count = listLength(dims);
         mod = NFMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
+        mod = NFMod.mergeMod(NFEnv.entryModifier(inEntry), mod);
         mod = NFMod.mergeMod(inClassMod, mod);
 
         //    redecls = listAppend(
