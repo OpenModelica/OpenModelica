@@ -334,8 +334,8 @@ package SCode
     record R_OPTIMIZATION end R_OPTIMIZATION;
     record R_MODEL end R_MODEL;
     record R_RECORD 
-	  Boolean isOperator;
-	end R_RECORD;
+    Boolean isOperator;
+  end R_RECORD;
     record R_BLOCK end R_BLOCK;
     record R_CONNECTOR
       Boolean isExpandable;
