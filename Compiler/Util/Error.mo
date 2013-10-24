@@ -958,53 +958,43 @@ algorithm
   num := ErrorExt.getNumErrorMessages();
 end getNumErrorMessages;
 
-public function getMessages "Relations for interactive comm. These returns the messages as an array
+public function getMessages "
+  Relations for interactive comm. These returns the messages as an array
   of strings, suitable for sending to clients like model editor, MDT, etc.
 
-  function getMessagesStr
-
   Return all messages in a matrix format, vector of strings for each
-  message, written out as a string.
-"
+  message, written out as a string."
   output list<TotalMessage> res;
 algorithm
   res := ErrorExt.getMessages();
 end getMessages;
 
-public function getMessagesStrType "Return all messages in a matrix format, vector of strings for each
+public function getMessagesStrType "
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
-  Filtered by a specific MessageType.
-"
+  Filtered by a specific MessageType."
   input MessageType inMessageType;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inMessageType)
-    case (_) then "not impl yet.";
-  end matchcontinue;
+  outString := "not impl yet.";
 end getMessagesStrType;
 
-public function getMessagesStrSeverity "Return all messages in a matrix format, vector of strings for each
+public function getMessagesStrSeverity "
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
-  Filtered by a specific MessageType.
-"
+  Filtered by a specific MessageType."
   input Severity inSeverity;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inSeverity)
-    case (_) then "not impl yet.";
-  end matchcontinue;
+  outString := "not impl yet.";
 end getMessagesStrSeverity;
 
 public function messageTypeStr "
-  Converts a MessageType to a string.
-"
+  Converts a MessageType to a string."
   input MessageType inMessageType;
   output String outString;
 algorithm
-  outString:=
-  match (inMessageType)
+  outString := match(inMessageType)
     case (SYNTAX()) then "SYNTAX";
     case (GRAMMAR()) then "GRAMMAR";
     case (TRANSLATION()) then "TRANSLATION";
@@ -1015,13 +1005,11 @@ algorithm
 end messageTypeStr;
 
 public function severityStr "
-  Converts a Severity to a string.
-"
+  Converts a Severity to a string."
   input Severity inSeverity;
   output String outString;
 algorithm
-  outString:=
-  match (inSeverity)
+  outString := match(inSeverity)
     case (ERROR()) then "Error";
     case (WARNING()) then "Warning";
     case (NOTIFICATION()) then "Notification";
@@ -1029,8 +1017,7 @@ algorithm
 end severityStr;
 
 protected function selectString "author: adrpo, 2006-02-05
-  selects first string is bool is true otherwise the second string
-"
+  selects first string is bool is true otherwise the second string"
   input Boolean inBoolean1;
   input String inString2;
   input String inString3;
@@ -1044,8 +1031,8 @@ algorithm
   end matchcontinue;
 end selectString;
 
-public function infoStr
-  "Converts an Absyn.Info into a string ready to be used in error messages.
+public function infoStr "
+  Converts an Absyn.Info into a string ready to be used in error messages.
   Format is [filename:line start:column start-line end:column end]"
   input Absyn.Info info;
   output String str;
@@ -1064,38 +1051,36 @@ algorithm
   end match;
 end infoStr;
 
-public function assertion
-"Used to make compiler-internal assertions. These messages are not meant
-to be shown to a user, but rather to show internal error messages."
+public function assertion "
+  Used to make compiler-internal assertions. These messages are not meant
+  to be shown to a user, but rather to show internal error messages."
   input Boolean b;
   input String message;
   input Absyn.Info info;
 algorithm
   _ := match (b,message,info)
-    case (true,_,_) then ();
-    else
-      equation
-        addSourceMessage(INTERNAL_ERROR, {message}, info);
-      then fail();
+    case (true, _, _) then ();
+    else equation
+      addSourceMessage(INTERNAL_ERROR, {message}, info);
+    then fail();
   end match;
 end assertion;
 
-public function assertionOrAddSourceMessage
-"Used to make assertions. These messages are meant to be shown to a user when
-the condition is true. If the Error-level of the message is Error, this function
-fails."
+public function assertionOrAddSourceMessage "
+  Used to make assertions. These messages are meant to be shown to a user when
+  the condition is true. If the Error-level of the message is Error, this function
+  fails."
   input Boolean inCond;
   input Message inErrorMsg;
   input MessageTokens inMessageTokens;
   input Absyn.Info inInfo;
 algorithm
   _ := match (inCond, inErrorMsg, inMessageTokens, inInfo)
-    case (true,_,_,_) then ();
-    else
-      equation
-        addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
-        failOnErrorMsg(inErrorMsg);
-      then ();
+    case (true, _, _, _) then ();
+    else equation
+      addSourceMessage(inErrorMsg, inMessageTokens, inInfo);
+      failOnErrorMsg(inErrorMsg);
+    then ();
   end match;
 end assertionOrAddSourceMessage;
 
@@ -1103,48 +1088,30 @@ protected function failOnErrorMsg
   input Message inMessage;
 algorithm
   _ := match(inMessage)
-    case MESSAGE(severity = ERROR()) then fail();
+    case MESSAGE(severity=ERROR()) then fail();
     else ();
   end match;
 end failOnErrorMsg;
 
-public function addCompilerWarning
-"Used to make a compiler warning "
+public function addCompilerWarning "
+  Used to make a compiler warning"
   input String message;
 algorithm
-  _ := match (message)
-    case _
-      equation
-        addMessage(COMPILER_WARNING, {message});
-      then
-        ();
-  end match;
+  addMessage(COMPILER_WARNING, {message});
 end addCompilerWarning;
 
-public function addCompilerNotification
-"Used to make a compiler notification"
+public function addCompilerNotification "
+  Used to make a compiler notification"
   input String message;
 algorithm
-  _ := match (message)
-    case _
-      equation
-        addMessage(COMPILER_NOTIFICATION, {message});
-      then
-        ();
-  end match;
+  addMessage(COMPILER_NOTIFICATION, {message});
 end addCompilerNotification;
 
-public function addInternalError
-"Used to make a compiler notification"
+public function addInternalError "
+  Used to make an internal error"
   input String message;
 algorithm
-  _ := match (message)
-    case _
-      equation
-        addMessage(INTERNAL_ERROR, {message});
-      then
-        ();
-  end match;
+  addMessage(INTERNAL_ERROR, {message});
 end addInternalError;
 
 end Error;
