@@ -130,15 +130,20 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setSpecialValueText("<Auto>");
+#ifdef WIN32
+  mpNumberOfProcessorsSpinBox->setValue(1);
+#endif
+  mpNumberOfProcessorsNoteLabel = new Label(tr("Note: Use 1 processor if you encounter problems during compilation."));
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
   pGeneralTabLayout->setAlignment(Qt::AlignTop);
-  pGeneralTabLayout->addWidget(mpSimulationIntervalGroupBox, 0, 0, 1, 2);
-  pGeneralTabLayout->addWidget(mpIntegrationGroupBox, 1, 0, 1, 2);
+  pGeneralTabLayout->addWidget(mpSimulationIntervalGroupBox, 0, 0, 1, 3);
+  pGeneralTabLayout->addWidget(mpIntegrationGroupBox, 1, 0, 1, 3);
   pGeneralTabLayout->addWidget(mpCflagsLabel, 2, 0);
-  pGeneralTabLayout->addWidget(mpCflagsTextBox, 2, 1);
+  pGeneralTabLayout->addWidget(mpCflagsTextBox, 2, 1, 1, 2);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsLabel, 3, 0);
   pGeneralTabLayout->addWidget(mpNumberOfProcessorsSpinBox, 3, 1);
+  pGeneralTabLayout->addWidget(mpNumberOfProcessorsNoteLabel, 3, 2);
   mpGeneralTab->setLayout(pGeneralTabLayout);
   // add General Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);

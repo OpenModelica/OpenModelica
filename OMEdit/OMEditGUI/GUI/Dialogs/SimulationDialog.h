@@ -72,6 +72,7 @@ private:
   QLineEdit *mpCflagsTextBox;
   Label *mpNumberOfProcessorsLabel;
   QSpinBox *mpNumberOfProcessorsSpinBox;
+  Label *mpNumberOfProcessorsNoteLabel;
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpNumberofIntervalLabel;
