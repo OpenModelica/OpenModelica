@@ -7216,7 +7216,7 @@ algorithm
       equation
         (cache,cl as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) =
            Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);
-        (cache,cl as SCode.CLASS(name = name, restriction = SCode.R_RECORD()),env_1) = Lookup.lookupClass(cache, env, fn, false);
+        (cache,cl as SCode.CLASS(name = name, restriction = SCode.R_RECORD(_)),env_1) = Lookup.lookupClass(cache, env, fn, false);
         (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache, env_1 /* env */, fn);
         (comps,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result!
         /*
@@ -7293,7 +7293,7 @@ algorithm
         ErrorExt.setCheckpoint("RecordConstructor");
 
         (_,recordCl,recordEnv) = Lookup.lookupClass(cache, env, fn, false);
-        true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
+        true = SCode.isRecord(recordCl);
 
 
         (cache,func) = InstFunction.getRecordConstructorFunction(cache,env,fn);
@@ -7326,8 +7326,8 @@ algorithm
       then
         (cache,expProps);
 
-        /* If the default constructor failed look for
-        overloaded Record constructors (operators), user defined.
+        /* If the default constructor failed and we have an operator record
+        look for overloaded Record constructors (operators), user defined.
         mahge:TODO move this to a function and call it from above.
         avoids uneccesary lookup since we already have a record.*/
     case (cache,env,fn,args,nargs,impl,_,st,pre,_)
@@ -7336,7 +7336,7 @@ algorithm
         false = Util.getStatefulBoolean(stopElab);
 
         (cache,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
-        true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
+        true = SCode.isOperatorRecord(recordCl);
 
         fn_1 = Absyn.joinPaths(fn,Absyn.IDENT("'constructor'"));
         (cache,recordCl,recordEnv) = Lookup.lookupClass(cache,recordEnv,fn_1, false);

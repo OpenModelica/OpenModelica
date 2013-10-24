@@ -58,14 +58,14 @@ uniontype Restriction
   record R_CLASS end R_CLASS;
   record R_OPTIMIZATION end R_OPTIMIZATION;
   record R_MODEL end R_MODEL;
-  record R_RECORD end R_RECORD;
+  record R_RECORD 
+    Boolean isOperator;  
+  end R_RECORD;
   record R_BLOCK end R_BLOCK;
   record R_CONNECTOR "a connector"
     Boolean isExpandable "is expandable?";
   end R_CONNECTOR;
   record R_OPERATOR end R_OPERATOR;
-
-  record R_OPERATOR_RECORD end R_OPERATOR_RECORD;
   record R_TYPE end R_TYPE;
   record R_PACKAGE end R_PACKAGE;
   record R_FUNCTION
@@ -933,10 +933,21 @@ public function isRecord
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inClass)
-    case CLASS(restriction = R_RECORD()) then true;
+    case CLASS(restriction = R_RECORD(_)) then true;
     case _ then false;
   end matchcontinue;
 end isRecord;
+
+public function isOperatorRecord
+"Return true if Class is a operator record."
+  input Element inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inClass)
+    case CLASS(restriction = R_RECORD(true)) then true;
+    case _ then false;
+  end matchcontinue;
+end isOperatorRecord;
 
 public function isFunction
 "Return true if Class is a function."
@@ -1134,12 +1145,12 @@ algorithm
      case (R_CLASS(),R_CLASS()) then true;
      case (R_OPTIMIZATION(),R_OPTIMIZATION()) then true;
      case (R_MODEL(),R_MODEL()) then true;
-     case (R_RECORD(),R_RECORD()) then true;
+     case (R_RECORD(true),R_RECORD(true)) then true; // operator record
+     case (R_RECORD(false),R_RECORD(false)) then true;
      case (R_BLOCK(),R_BLOCK()) then true;
      case (R_CONNECTOR(true),R_CONNECTOR(true)) then true; // expandable connectors
      case (R_CONNECTOR(false),R_CONNECTOR(false)) then true; // non expandable connectors
      case (R_OPERATOR(),R_OPERATOR()) then true; // operator
-     case (R_OPERATOR_RECORD(),R_OPERATOR_RECORD()) then true; // operator function
      case (R_TYPE(),R_TYPE()) then true;
      case (R_PACKAGE(),R_PACKAGE()) then true;
      case (R_FUNCTION(funcRest1),R_FUNCTION(funcRest2)) then funcRestrictionEqual(funcRest1,funcRest2);

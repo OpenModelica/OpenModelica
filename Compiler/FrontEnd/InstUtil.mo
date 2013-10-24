@@ -807,19 +807,19 @@ algorithm
     // type -> type
     case (SCode.R_TYPE(), SCode.R_TYPE()) then ();
     // record -> record
-    case (SCode.R_RECORD(), SCode.R_RECORD()) then ();
+    case (SCode.R_RECORD(_), SCode.R_RECORD(_)) then ();
     // connector -> type
     case (SCode.R_CONNECTOR(_), SCode.R_TYPE()) then ();
     // connector -> record
-    case (SCode.R_CONNECTOR(_), SCode.R_RECORD()) then ();
+    case (SCode.R_CONNECTOR(_), SCode.R_RECORD(_)) then ();
     // connector -> connector
     case (SCode.R_CONNECTOR(_), SCode.R_CONNECTOR(_)) then ();
     // block -> record
-    case (SCode.R_BLOCK(), SCode.R_RECORD()) then ();
+    case (SCode.R_BLOCK(), SCode.R_RECORD(false)) then ();
     // block -> block
     case (SCode.R_BLOCK(), SCode.R_BLOCK()) then ();
     // model -> record
-    case (SCode.R_MODEL(), SCode.R_RECORD()) then ();
+    case (SCode.R_MODEL(), SCode.R_RECORD(false)) then ();
     // model -> block
     case (SCode.R_MODEL(), SCode.R_BLOCK()) then ();
     // model -> model
@@ -831,15 +831,13 @@ algorithm
     // class -> model
     case (SCode.R_CLASS(), SCode.R_MODEL()) then ();
     // class -> record
-    case (SCode.R_CLASS(), SCode.R_RECORD()) then ();
+    case (SCode.R_CLASS(), SCode.R_RECORD(_)) then ();
     // class -> block
     case (SCode.R_CLASS(), SCode.R_BLOCK()) then ();
     // class -> class
     case (SCode.R_CLASS(), SCode.R_CLASS()) then ();
     // operator -> operator
     case (SCode.R_OPERATOR(), SCode.R_OPERATOR()) then ();
-    // operator record
-    case (SCode.R_OPERATOR_RECORD(), SCode.R_OPERATOR_RECORD()) then ();
   end matchcontinue;
 end checkExtendsRestrictionMatch;
 
@@ -3121,7 +3119,7 @@ algorithm
 
     // add it to the cache if we have a input record component
     case (_, _, _, _, _, ClassInf.FUNCTION(path = path), _,
-          SCode.CLASS(name = name, restriction = SCode.R_RECORD()), _)
+          SCode.CLASS(name = name, restriction = SCode.R_RECORD(_)), _)
       equation
         print("Depreciated record constructor used: Inst.addRecordConstructorsToTheCache");
 
@@ -3948,7 +3946,7 @@ algorithm
     case (cache, _, _, _, cl as SCode.CLASS(name = "String"), _, _) then (cache,{},cl,DAE.NOMOD());
     case (cache, _, _, _, cl as SCode.CLASS(name = "Boolean"), _, _) then (cache,{},cl,DAE.NOMOD());
 
-    case (cache, _, _, _, cl as SCode.CLASS(restriction = SCode.R_RECORD(),
+    case (cache, _, _, _, cl as SCode.CLASS(restriction = SCode.R_RECORD(_),
                                         classDef = SCode.PARTS(elementLst = _)), _, _) then (cache,{},cl,DAE.NOMOD());
 
     //------------------------

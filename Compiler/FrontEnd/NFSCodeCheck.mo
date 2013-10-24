@@ -558,7 +558,7 @@ algorithm
   outIsInstantiable := match(inRestriction)
     case SCode.R_CLASS() then true;
     case SCode.R_MODEL() then true;
-    case SCode.R_RECORD() then true;
+    case SCode.R_RECORD(_) then true;
     case SCode.R_BLOCK() then true;
     case SCode.R_CONNECTOR(isExpandable = _) then true;
     case SCode.R_TYPE() then true;

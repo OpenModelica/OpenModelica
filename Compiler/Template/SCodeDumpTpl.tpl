@@ -602,12 +602,13 @@ match restriction
   case R_CLASS(__) then 'class'
   case R_OPTIMIZATION(__) then 'optimization'
   case R_MODEL(__) then 'model'
-  case R_RECORD(__) then 'record'
+  case R_RECORD(__) then
+    if isOperator then 'operator record' else 'record'
+  case R_OPERATOR(__) then 'operator'
   case R_BLOCK(__) then 'block'
   case R_CONNECTOR(__) then
     if isExpandable then 'expandable connector' else 'connector'
   case R_OPERATOR(__) then 'operator'
-  case R_OPERATOR_RECORD(__) then 'operator record'
   case R_TYPE(__) then 'type'
   case R_PACKAGE(__) then 'package'
   case R_FUNCTION(__) then dumpFunctionRestriction(functionRestriction)

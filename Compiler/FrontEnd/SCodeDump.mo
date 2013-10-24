@@ -93,7 +93,8 @@ algorithm
     case SCode.R_CLASS() then "CLASS";
     case SCode.R_OPTIMIZATION() then "OPTIMIZATION";
     case SCode.R_MODEL() then "MODEL";
-    case SCode.R_RECORD() then "RECORD";
+    case SCode.R_RECORD(false) then "RECORD";
+    case SCode.R_RECORD(true) then "OPERATOR_RECORD";
     case SCode.R_BLOCK() then "BLOCK";
     case SCode.R_CONNECTOR(false) then "CONNECTOR";
     case SCode.R_CONNECTOR(true) then "EXPANDABLE_CONNECTOR";
@@ -106,7 +107,6 @@ algorithm
     case SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()) then "RECORD_CONSTRUCTOR";
     case SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()) then "PARALLEL FUNCTION";
     case SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION()) then "KERNEL_FUNCTION";
-    case SCode.R_OPERATOR_RECORD() then "OPERATOR_RECORD";
     case SCode.R_TYPE() then "TYPE";
     case SCode.R_PACKAGE() then "PACKAGE";
     case SCode.R_ENUMERATION() then "ENUMERATION";

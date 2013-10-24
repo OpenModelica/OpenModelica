@@ -324,7 +324,7 @@ algorithm
       SCode.Restriction r;
       SCode.Partial pPrefix;
 
-    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD(), partialPrefix = pPrefix)),inst_dims)
+    case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD(_), partialPrefix = pPrefix)),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
         (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,_,_,_,source,_)}) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,c,inst_dims,true);
@@ -335,7 +335,7 @@ algorithm
 
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(name = n,restriction = r,partialPrefix = pPrefix)),inst_dims)
       equation
-        failure(SCode.R_RECORD() = r);
+        failure(SCode.R_RECORD(_) = r);
         true = MetaUtil.strictRMLCheck(Flags.isSet(Flags.RML),c);
         (cache,env,ih,funs) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,c,inst_dims,false);
         cache = InstUtil.addFunctionsToDAE(cache, funs, pPrefix);
@@ -903,7 +903,7 @@ algorithm
         equation
 
           (_,recordCl,recordEnv) = Lookup.lookupClass(inCache, inEnv, inPath, false);
-          true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
+          true = SCode.isRecord(recordCl);
 
           (cache,_,_,_,_,_,recType,_,_,_) = Inst.instClass(inCache,recordEnv, InnerOuter.emptyInstHierarchy,
             UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), recordCl,

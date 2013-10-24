@@ -402,7 +402,7 @@ algorithm
     case (SCode.R_CLASS(),p) then UNKNOWN(p);
     case (SCode.R_OPTIMIZATION(),p) then OPTIMIZATION(p);
     case (SCode.R_MODEL(),p) then MODEL(p);
-    case (SCode.R_RECORD(),p) then RECORD(p);
+    case (SCode.R_RECORD(_),p) then RECORD(p);
     case (SCode.R_BLOCK(),p) then BLOCK(p);
     case (SCode.R_CONNECTOR(isExpandable),p) then CONNECTOR(p,isExpandable);
     case (SCode.R_TYPE(),p) then TYPE(p);
@@ -410,7 +410,7 @@ algorithm
     case (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
     case (SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)),p) then FUNCTION(p, isImpure);
     case (SCode.R_FUNCTION(_),p) then FUNCTION(p, false);
-    case (SCode.R_OPERATOR(),p) then RECORD(p);
+    case (SCode.R_OPERATOR(),p) then FUNCTION(p, false);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
     case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);
     case (SCode.R_PREDEFINED_REAL(),p) then TYPE_REAL(p);
@@ -538,9 +538,9 @@ algorithm
     case (MODEL(path = p),SCode.R_MODEL()) then ();
 
 
-    case (RECORD(path = p),SCode.R_RECORD()) then ();
+    case (RECORD(path = p),SCode.R_RECORD(_)) then ();
     case (RECORD(path = p),SCode.R_CONNECTOR(_)) then ();
-    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_RECORD()) then ();
+    case (HAS_RESTRICTIONS(path = p,hasEquations=false,hasConstraints=false,hasAlgorithms=false),SCode.R_RECORD(_)) then ();
 
     case (BLOCK(path = p),SCode.R_BLOCK()) then ();
     case (MODEL(path = p),SCode.R_MODEL()) then ();
@@ -745,7 +745,8 @@ algorithm
     case UNKNOWN(p) then (SCode.R_CLASS(),p);
     case OPTIMIZATION(p) then (SCode.R_OPTIMIZATION(),p);
     case MODEL(p) then (SCode.R_MODEL(),p);
-    case RECORD(p) then (SCode.R_RECORD(),p);
+      // mahge: TODO ClassInf.RECORD should contain isOperator.
+    case RECORD(p) then (SCode.R_RECORD(false),p);
     case BLOCK(p) then (SCode.R_BLOCK(),p) ;
     case CONNECTOR(p,isExpandable) then (SCode.R_CONNECTOR(isExpandable),p);
     case TYPE(p) then (SCode.R_TYPE(),p);

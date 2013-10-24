@@ -2284,8 +2284,8 @@ algorithm
         false = valueEq(SCode.R_MODEL(), re);
         false = valueEq(SCode.R_PACKAGE(), re);
         false = SCode.isFunctionRestriction(re);
-        false = valueEq(SCode.R_RECORD(), re);
-        false = valueEq(SCode.R_OPERATOR_RECORD(), re);
+        false = valueEq(SCode.R_RECORD(true), re);
+        false = valueEq(SCode.R_RECORD(false), re);
         // no components and at least one extends!
 
         (cdefelts,extendsclasselts,extendselts as _::_,compelts as {}) = InstUtil.splitElts(els);        

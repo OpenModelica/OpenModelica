@@ -698,7 +698,7 @@ algorithm
         //   R1 r2(v1=1, v1=2);     // <= Here
         // end out;
         // see testsuit/mofiles/RecordBindings.mo.
-     case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = subMods, eqModOption = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD()),attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
+     case (cache,env,ih,store,ci_state,mod as DAE.MOD(subModLst = subMods, eqModOption = NONE()),pre,n,cl as SCode.CLASS(restriction = SCode.R_RECORD(_)),attr,pf,dims,idxs,inst_dims,impl,comment,info,graph,csets)
       equation
         true = ClassInf.isFunction(ci_state);
         InstUtil.checkFunctionVar(n, attr, pf, info);

@@ -188,7 +188,7 @@ algorithm
         (cache,t,env_1);*/
 
     // Record constructors
-    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
+    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD(_)))
       equation
         (cache,env_1,t) = buildRecordType(cache,env_1,c);
       then
@@ -927,7 +927,7 @@ algorithm
     case (cache,env,path)
       equation
         (cache,c,env_1) = lookupClass(cache,env, path, false);
-        SCode.CLASS(name = name, restriction=SCode.R_RECORD()) = c;
+        SCode.CLASS(name = name, restriction=SCode.R_RECORD(_)) = c;
         (cache,_,c) = buildRecordConstructorClass(cache,env_1,c);
       then
         (cache,c,env_1);
@@ -1855,7 +1855,7 @@ algorithm
         fail();
 
     // Record constructor function
-    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv,_),env,id)
+    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD(_))),cenv,_),env,id)
       equation
         (cache,env_3,ty) = buildRecordType(cache,env,cdef);
       then
@@ -1936,7 +1936,7 @@ algorithm
     // Records, create record constructor function
     case (cache,ht,httypes,env,id,_)
       equation
-        Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv,_) = Env.avlTreeGet(ht, id);
+        Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD(_))),cenv,_) = Env.avlTreeGet(ht, id);
         (cache,_,ftype) = buildRecordType(cache,env,cdef);
       then
         (cache,{ftype});

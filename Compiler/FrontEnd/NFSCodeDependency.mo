@@ -895,7 +895,7 @@ algorithm
         inExtends;
 
     //operators in operator record might be used later.
-    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, SCode.R_OPERATOR_RECORD())
+    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, SCode.R_RECORD(true))
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
@@ -912,7 +912,7 @@ algorithm
         fail();
 
     //operator functions in operator record might be used later.
-    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, SCode.R_OPERATOR_RECORD())
+    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, SCode.R_RECORD(true))
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
@@ -1033,7 +1033,7 @@ protected function markAsUsedOnRestriction2
 algorithm
   isRestricted := match(inRestriction)
     case SCode.R_CONNECTOR(isExpandable = _) then true;
-    case SCode.R_RECORD() then true;
+    case SCode.R_RECORD(_) then true;
     else false;
   end match;
 end markAsUsedOnRestriction2;
@@ -1988,8 +1988,6 @@ algorithm
         (cdef, class_env) =
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
 
-        //Fix operator record restriction to record
-        res = fixRestrictionOfOperatorRecord(res);
         cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
         resolved_item = updateItemEnv(resolved_item, cls, class_env);
         basename = name +& NFSCodeEnv.BASE_CLASS_SUFFIX;
@@ -2010,8 +2008,6 @@ algorithm
         enclosing_env = NFSCodeEnv.enterScope(inEnv, name);
         (cdef, class_env) =
           collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
-        //Fix operator record restriction to record
-        res = fixRestrictionOfOperatorRecord(res);
         // Add the class to the new environment.
         cls = SCode.CLASS(name, prefixes, ep, pp, res, cdef, cmt, info);
         item = updateItemEnv(item, cls, class_env);
@@ -2021,18 +2017,6 @@ algorithm
 
   end match;
 end collectUsedClass;
-
-protected function fixRestrictionOfOperatorRecord
-  input SCode.Restriction inRes;
-  output SCode.Restriction outRes;
-algorithm
-  outRes := match(inRes)
-  case (SCode.R_OPERATOR_RECORD())
-      then SCode.R_RECORD();
-
-  else inRes;
-  end match;
-end fixRestrictionOfOperatorRecord;
 
 protected function checkClassUsed
   "Given the environment item and definition for a class, returns whether the
