@@ -1126,7 +1126,7 @@ protected function readArg
 algorithm
   outNotConsumed := matchcontinue(inArg, inFlags)
     local
-      Integer  len;
+      Integer len, pos;
       String flag;
 
     // Ignore flags that don't start with + or -.
@@ -1158,7 +1158,9 @@ algorithm
     else
       equation
         true = stringEq(stringGetStringChar(inArg, 1), "+");
-        flag = System.substring(inArg, 2, stringLength(inArg));
+        len = stringLength(inArg);
+        pos = Util.if_(len == 1, 1, 2); // Handle + without anything else.
+        flag = System.substring(inArg, pos, len);
         parseFlag(flag, inFlags);
       then
         false;
