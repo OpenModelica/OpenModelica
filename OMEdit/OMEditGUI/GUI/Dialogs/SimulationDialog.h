@@ -59,14 +59,14 @@ private:
   QWidget *mpGeneralTab;
   QGroupBox *mpSimulationIntervalGroupBox;
   Label *mpStartTimeLabel;
-  DoubleSpinBox *mpStartTimeSpinBox;
+  QLineEdit *mpStartTimeTextBox;
   Label *mpStopTimeLabel;
-  DoubleSpinBox *mpStopTimeSpinBox;
+  QLineEdit *mpStopTimeTextBox;
   QGroupBox *mpIntegrationGroupBox;
   Label *mpMethodLabel;
   QComboBox *mpMethodComboBox;
   Label *mpToleranceLabel;
-  DoubleSpinBox *mpToleranceSpinBox;
+  QLineEdit *mpToleranceTextBox;
   QCheckBox *mpSaveSimulationCheckbox;
   Label *mpCflagsLabel;
   QLineEdit *mpCflagsTextBox;
@@ -75,7 +75,7 @@ private:
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpNumberofIntervalLabel;
-  DoubleSpinBox *mpNumberofIntervalsSpinBox;
+  QSpinBox *mpNumberofIntervalsSpinBox;
   Label *mpOutputFormatLabel;
   QComboBox *mpOutputFormatComboBox;
   Label *mpFileNameLabel;

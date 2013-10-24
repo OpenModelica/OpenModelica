@@ -97,26 +97,16 @@ void SimulationDialog::setUpForm()
   // Simulation Interval
   mpSimulationIntervalGroupBox = new QGroupBox(tr("Simulation Interval"));
   mpStartTimeLabel = new Label(tr("Start Time:"));
-  mpStartTimeSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpStartTimeSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
-  mpStartTimeSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-  mpStartTimeSpinBox->setValue(0);
-  mpStartTimeSpinBox->setSingleStep(0.1);
+  mpStartTimeTextBox = new QLineEdit("0");
   mpStopTimeLabel = new Label(tr("Stop Time:"));
-  mpStopTimeSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpStopTimeSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
-  mpStopTimeSpinBox->setValue(1);
-  mpStopTimeSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
-  mpStopTimeSpinBox->setSingleStep(0.1);
+  mpStopTimeTextBox = new QLineEdit("1");
   // set the layout for simulation interval groupbox
   QGridLayout *pSimulationIntervalGridLayout = new QGridLayout;
   pSimulationIntervalGridLayout->setColumnStretch(1, 1);
   pSimulationIntervalGridLayout->addWidget(mpStartTimeLabel, 0, 0);
-  pSimulationIntervalGridLayout->addWidget(mpStartTimeSpinBox, 0, 1);
+  pSimulationIntervalGridLayout->addWidget(mpStartTimeTextBox, 0, 1);
   pSimulationIntervalGridLayout->addWidget(mpStopTimeLabel, 1, 0);
-  pSimulationIntervalGridLayout->addWidget(mpStopTimeSpinBox, 1, 1);
+  pSimulationIntervalGridLayout->addWidget(mpStopTimeTextBox, 1, 1);
   mpSimulationIntervalGroupBox->setLayout(pSimulationIntervalGridLayout);
   // Integration
   mpIntegrationGroupBox = new QGroupBox(tr("Integration"));
@@ -124,19 +114,14 @@ void SimulationDialog::setUpForm()
   mpMethodComboBox = new QComboBox;
   mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.split(","));
   mpToleranceLabel = new Label(tr("Tolerance:"));
-  mpToleranceSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpToleranceSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
-  mpToleranceSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpToleranceSpinBox->setValue(0.000001);
-  mpToleranceSpinBox->setSingleStep(0.000001);
+  mpToleranceTextBox = new QLineEdit("1e-6");
   // set the layout for integration groupbox
   QGridLayout *pIntegrationGridLayout = new QGridLayout;
   pIntegrationGridLayout->setColumnStretch(1, 1);
   pIntegrationGridLayout->addWidget(mpMethodLabel, 0, 0);
   pIntegrationGridLayout->addWidget(mpMethodComboBox, 0, 1);
   pIntegrationGridLayout->addWidget(mpToleranceLabel, 1, 0);
-  pIntegrationGridLayout->addWidget(mpToleranceSpinBox, 1, 1);
+  pIntegrationGridLayout->addWidget(mpToleranceTextBox, 1, 1);
   mpIntegrationGroupBox->setLayout(pIntegrationGridLayout);
   // Compiler Flags
   mpCflagsLabel = new Label(tr("Compiler Flags (Optional):"));
@@ -161,12 +146,10 @@ void SimulationDialog::setUpForm()
   mpOutputTab = new QWidget;
   // Output Interval
   mpNumberofIntervalLabel = new Label(tr("Number of Intervals:"));
-  mpNumberofIntervalsSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpNumberofIntervalsSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
-  mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<double>::max());
-  mpNumberofIntervalsSpinBox->setValue(500);
+  mpNumberofIntervalsSpinBox = new QSpinBox;
+  mpNumberofIntervalsSpinBox->setRange(1, std::numeric_limits<int>::max());
   mpNumberofIntervalsSpinBox->setSingleStep(100);
+  mpNumberofIntervalsSpinBox->setValue(500);
   // Output Format
   mpOutputFormatLabel = new Label(tr("Output Format:"));
   mpOutputFormatComboBox = new QComboBox;
@@ -353,6 +336,11 @@ void SimulationDialog::setUpForm()
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
+  // Add the validators
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  mpStartTimeTextBox->setValidator(pDoubleValidator);
+  mpStopTimeTextBox->setValidator(pDoubleValidator);
+  mpToleranceTextBox->setValidator(pDoubleValidator);
   // Create the buttons
   mpSimulateButton = new QPushButton(Helper::simulate);
   mpSimulateButton->setAutoDefault(true);
@@ -381,7 +369,15 @@ void SimulationDialog::setUpForm()
   */
 bool SimulationDialog::validate()
 {
-  if (mpStartTimeSpinBox->value() > mpStopTimeSpinBox->value())
+  if (mpStartTimeTextBox->text().isEmpty())
+  {
+    mpStartTimeTextBox->setText("0");
+  }
+  if (mpStopTimeTextBox->text().isEmpty())
+  {
+    mpStopTimeTextBox->setText("1");
+  }
+  if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble())
   {
     QMessageBox::critical(mpMainWindow, QString(Helper::applicationName).append(" - ").append(Helper::error),
                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
@@ -429,9 +425,9 @@ void SimulationDialog::initializeFields()
     result = StringHandler::removeFirstLastCurlBrackets(StringHandler::removeComment(result));
     QStringList simulationOptionsList = StringHandler::getStrings(result);
     // since we always get simulationOptions so just get the values from array
-    mpStartTimeSpinBox->setValue(simulationOptionsList.at(0).toFloat());
-    mpStopTimeSpinBox->setValue(simulationOptionsList.at(1).toFloat());
-    mpToleranceSpinBox->setValue(simulationOptionsList.at(3).toFloat());
+    mpStartTimeTextBox->setText(simulationOptionsList.at(0));
+    mpStopTimeTextBox->setText(simulationOptionsList.at(1));
+    mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat()));
   }
 }
 
@@ -631,9 +627,9 @@ void SimulationDialog::saveSimulationOptions()
   QString annotationString;
   // create simulations options annotation
   annotationString.append("annotate=experiment(");
-  annotationString.append("StartTime=").append(QString::number(mpStartTimeSpinBox->value())).append(",");
-  annotationString.append("StopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
-  annotationString.append("Tolerance=").append(QString::number(mpToleranceSpinBox->value()));
+  annotationString.append("StartTime=").append(mpStartTimeTextBox->text()).append(",");
+  annotationString.append("StopTime=").append(mpStopTimeTextBox->text()).append(",");
+  annotationString.append("Tolerance=").append(mpToleranceTextBox->text());
   annotationString.append(")");
   // send the simulations options annotation to OMC
   mpMainWindow->getOMCProxy()->addClassAnnotation(mpLibraryTreeNode->getNameStructure(), annotationString);
@@ -739,18 +735,16 @@ void SimulationDialog::simulate()
   {
     mSimulationParameters.clear();
     mSimulationFlags.clear();
-    // if user is performing a simple simulation then take start and stop times
-    if (!mIsInteractive)
-    {
-      mSimulationParameters.append("startTime=").append(QString::number(mpStartTimeSpinBox->value()));
-      mSimulationParameters.append(", stopTime=").append(QString::number(mpStopTimeSpinBox->value())).append(",");
-    }
-    mSimulationParameters.append(" numberOfIntervals=").append(QString::number(mpNumberofIntervalsSpinBox->value()));
+    /* build the simulation parameters */
+    mSimulationParameters.append("startTime=").append(mpStartTimeTextBox->text());
+    mSimulationParameters.append(", stopTime=").append(mpStopTimeTextBox->text());
+    mSimulationParameters.append(", numberOfIntervals=").append(QString::number(mpNumberofIntervalsSpinBox->value()));
     if (mpMethodComboBox->currentText().isEmpty())
       mSimulationParameters.append(", method=\"dassl\"");
     else
       mSimulationParameters.append(", method=").append("\"").append(mpMethodComboBox->currentText()).append("\"");
-    mSimulationParameters.append(", tolerance=").append(QString::number(mpToleranceSpinBox->value()));
+    if (!mpToleranceTextBox->text().isEmpty())
+      mSimulationParameters.append(", tolerance=").append(mpToleranceTextBox->text());
     mSimulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
     if (!mpFileNameTextBox->text().isEmpty())
       mSimulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
