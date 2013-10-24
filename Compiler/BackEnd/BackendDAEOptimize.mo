@@ -2435,7 +2435,7 @@ protected function getSparsePattern
   input BackendDAE.IncidenceMatrix inMatrixT;
   output array<list<Integer>> outSparsePattern;
 algorithm
-  outSparsePattern := matchcontinue(inComponents, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue, inMatrix, inMatrixT)
+  outSparsePattern := match (inComponents, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue, inMatrix, inMatrixT)
   local
     list<Integer> vars, vars1, vars2, eqns, eqns1,  eqns2;
     list<Integer> inputVars;
@@ -2573,7 +2573,7 @@ algorithm
          BackendDump.dumpComponent(comp);
          Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePattern failed"});
        then fail();
-  end matchcontinue;
+  end match;
 end getSparsePattern;
 
 protected function getSparsePattern2
