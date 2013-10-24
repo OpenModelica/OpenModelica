@@ -193,6 +193,19 @@ algorithm
       then
         ((e3,(b,options)));
 
+    /*/ -(-e) -> e
+    case ((DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = 
+           DAE.UNARY(operator = DAE.UMINUS(ty = tp),exp = e)),(b,options)))
+       equation
+       then
+         ((e,(true, options)));
+    
+    case ((DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = 
+           DAE.UNARY(operator = DAE.UMINUS_ARR(ty = tp),exp = e)),(b,options)))
+       equation
+       then
+         ((e,(true, options)));*/
+    
     // der(-v) -> -der(v)
     case ((DAE.CALL(path=Absyn.IDENT("der"), expLst={DAE.UNARY(DAE.UMINUS(tp),e1 as DAE.CREF(componentRef=_))},attr=attr), (b, options)))
       then
@@ -204,9 +217,11 @@ algorithm
     case ((e as DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
       then
         ((e,(b,options)));
+    
     case ((e as DAE.CALL(path=Absyn.IDENT("change"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
       then
         ((e,(b,options)));
+    
     case ((e as DAE.CALL(path=Absyn.IDENT("edge"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
       then
         ((e,(b,options)));
