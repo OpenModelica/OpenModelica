@@ -426,13 +426,11 @@ void SimulationDialog::initializeFields()
   if (mpMainWindow->getOMCProxy()->isExperiment(mpLibraryTreeNode->getNameStructure()))
   {
     // get the simulation options....
-    QString result = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeNode->getNameStructure());
-    result = StringHandler::removeFirstLastCurlBrackets(StringHandler::removeComment(result));
-    QStringList simulationOptionsList = StringHandler::getStrings(result);
+    QStringList result = mpMainWindow->getOMCProxy()->getSimulationOptions(mpLibraryTreeNode->getNameStructure());
     // since we always get simulationOptions so just get the values from array
-    mpStartTimeTextBox->setText(simulationOptionsList.at(0));
-    mpStopTimeTextBox->setText(simulationOptionsList.at(1));
-    mpToleranceTextBox->setText(QString::number(simulationOptionsList.at(3).toFloat()));
+    mpStartTimeTextBox->setText(QString::number(result.at(0).toFloat()));
+    mpStopTimeTextBox->setText(QString::number(result.at(1).toFloat()));
+    mpToleranceTextBox->setText(QString::number(result.at(2).toFloat()));
   }
 }
 

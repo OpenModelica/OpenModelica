@@ -185,7 +185,7 @@ public:
   bool closeSimulationResultFile();
   QString checkModel(QString className);
   bool isExperiment(QString className);
-  QString getSimulationOptions(QString className);
+  QStringList getSimulationOptions(QString className, double defaultTolerance = 1e-4);
   bool translateModelFMU(QString className);
   bool translateModelXML(QString className);
   QString importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging, bool generateInputConnectors, bool generateOutputConnectors);

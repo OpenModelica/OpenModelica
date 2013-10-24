@@ -2020,10 +2020,11 @@ bool OMCProxy::isExperiment(QString className)
   \param className - the name of the class.
   \return the simulation options
   */
-QString OMCProxy::getSimulationOptions(QString className)
+QStringList OMCProxy::getSimulationOptions(QString className, double defaultTolerance)
 {
-  sendCommand("getSimulationOptions(" + className + ")", true, className);
-  return getResult();
+  sendCommand("getSimulationOptions(" + className + ", defaultTolerance=" + QString::number(defaultTolerance) +")", true, className);
+  QString result = StringHandler::removeFirstLastBrackets(getResult());
+  return result.split(",");
 }
 
 /*!
