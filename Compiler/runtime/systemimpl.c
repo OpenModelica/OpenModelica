@@ -2393,6 +2393,11 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
 #endif
 }
 
+void SystemImpl__initGarbageCollector(void)
+{
+  GC_init();
+}
+
 #ifdef __cplusplus
 }
 #endif

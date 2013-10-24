@@ -1003,6 +1003,8 @@ algorithm
   _ := matchcontinue args
     case _
       equation
+        // call GC_init() the first thing we do!
+        System.initGarbageCollector();
         Global.initialize();
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         args_1 = Flags.new(args);

@@ -98,5 +98,6 @@ extern double SystemImpl__getCurrentTime(void);
 extern int SystemImpl__unescapedStringLength(const char* str);
 extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
 extern char* SystemImpl__iconv__ascii(const char * str);
+extern void SystemImpl__initGarbageCollector(void);
 
 #endif //__SYSTEMIMPL_H

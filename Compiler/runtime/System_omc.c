@@ -855,6 +855,11 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(void*))
 }
 #endif
 
+void System_initGarbageCollector(void)
+{
+  SystemImpl__initGarbageCollector();
+}
+
 #ifdef __cplusplus
 }
 #endif

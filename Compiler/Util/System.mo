@@ -1019,4 +1019,8 @@ public function getMemorySize
 external "C" memory=System_getMemorySize() annotation(Library = {"omcruntime"});
 end getMemorySize;
 
+public function initGarbageCollector "this needs to be called first in Main.mo"
+external "C" System_initGarbageCollector() annotation(Library = {"omcruntime"});
+end initGarbageCollector;
+
 end System;

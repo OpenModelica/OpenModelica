@@ -1835,3 +1835,10 @@ RML_BEGIN_LABEL(System__getMemorySize)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__initGarbageCollector)
+{
+  SystemImpl__initGarbageCollector();
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
