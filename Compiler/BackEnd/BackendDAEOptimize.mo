@@ -73,7 +73,6 @@ protected import Flags;
 protected import GlobalScript;
 protected import Graph;
 protected import HashTableExpToIndex;
-protected import Inline;
 protected import List;
 protected import SCode;
 protected import System;
@@ -85,7 +84,11 @@ protected import ValuesUtil;
 // =============================================================================
 // inline arrayeqns stuff
 //
+// public functions:
+//   - inlineArrayEqn
+//   - getScalarArrayEqns
 // =============================================================================
+
 public function inlineArrayEqn "author: Frenkel TUD 2011-3"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -93,44 +96,27 @@ algorithm
   (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,inlineArrayEqn1,false);
 end inlineArrayEqn;
 
-public function inlineArrayEqnShared "function inlineArrayEqnShared"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
+public function getScalarArrayEqns
+  input list<BackendDAE.Equation> iEqsLst;
+  input list<BackendDAE.Equation> iAcc;
+  input Boolean iFound;
+  output list<BackendDAE.Equation> oEqsLst;
+  output Boolean oFound;
 algorithm
-  outDAE := match(inDAE)
+  (oEqsLst,oFound) := match(iEqsLst,iAcc,iFound)
     local
-      BackendDAE.Variables ordvars,knvars,exobj,knvars1,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns,eqns1,inieqns1,remeqns1,eqns2;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
-      DAE.FunctionTree funcTree;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.EventInfo ev;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.EqSystems systs,systs1;
-      BackendDAE.Shared shared;
-      list<BackendDAE.Var> ordvarslst;
-      list<BackendDAE.Equation> eqnslst;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns,eqns1;
       Boolean b;
-      BackendDAE.ExtraInfo ei;
-      
-    case (_) then inDAE;
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,ev,eoc,btp,symjacs,ei)))
-      equation
-        eqnslst = BackendEquation.equationList(inieqns);
-        (eqnslst,b) = getScalarArrayEqns(eqnslst,{},false);
-        inieqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,inieqns);
-        eqnslst = BackendEquation.equationList(remeqns);
-        (eqnslst,b) = getScalarArrayEqns(eqnslst,{},false);
-        remeqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,remeqns);
-      then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,ev,eoc,btp,symjacs,ei));
+    case ({},_,_) then (listReverse(iAcc),iFound);
+    case (eqn::eqns,_,_)
+     equation
+       (eqns1,b) = getScalarArrayEqns1(eqn,iAcc);
+       (eqns1,b) = getScalarArrayEqns(eqns,eqns1,b or iFound);
+     then
+       (eqns1,b);
   end match;
-end inlineArrayEqnShared;
+end getScalarArrayEqns;
 
 protected function inlineArrayEqn1 "author: Frenkel TUD 2011-5"
   input BackendDAE.EqSystem isyst;
@@ -161,28 +147,6 @@ algorithm
         (isyst,sharedOptimized);
   end matchcontinue;
 end inlineArrayEqn1;
-
-public function getScalarArrayEqns
-  input list<BackendDAE.Equation> iEqsLst;
-  input list<BackendDAE.Equation> iAcc;
-  input Boolean iFound;
-  output list<BackendDAE.Equation> oEqsLst;
-  output Boolean oFound;
-algorithm
-  (oEqsLst,oFound) := match(iEqsLst,iAcc,iFound)
-    local
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqns,eqns1;
-      Boolean b;
-    case ({},_,_) then (listReverse(iAcc),iFound);
-    case (eqn::eqns,_,_)
-     equation
-       (eqns1,b) = getScalarArrayEqns1(eqn,iAcc);
-       (eqns1,b) = getScalarArrayEqns(eqns,eqns1,b or iFound);
-     then
-       (eqns1,b);
-  end match;
-end getScalarArrayEqns;
 
 protected function getScalarArrayEqns1 "author: Frenkel TUD 2012-06"
   input  BackendDAE.Equation iEqn;
@@ -303,343 +267,310 @@ algorithm
   end matchcontinue;
 end generateScalarArrayEqns2;
 
-
-
-
 // =============================================================================
-// inline functions stuff
+// simplify time independent function calls
 //
+// public functions:
+//   - simplifyTimeIndepFuncCalls
 // =============================================================================
-public function lateInlineFunction "function lateInlineFunction"
-    input BackendDAE.BackendDAE inDAE;
-    output BackendDAE.BackendDAE outDAE;
+
+public function simplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06
+  pre(param) -> param
+  der(param) -> 0.0
+  change(param) -> false
+  edge(param) -> false"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := Inline.inlineCalls({DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},inDAE);
-end lateInlineFunction;
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,simplifyTimeIndepFuncCalls0,false);
+  outDAE := simplifyTimeIndepFuncCallsShared(outDAE);
+end simplifyTimeIndepFuncCalls;
 
-
-
-
-// =============================================================================
-// remove simply equations stuff
-//
-// =============================================================================
-// protected function updateEquationSystemMatching "author: Frenkel TUD 2012-09"
-//   input BackendDAE.Variables ordvars;
-//   input BackendDAE.EquationArray eqns;
-//   input array<Integer> ass1 "ass[varindx]=eqnindx";
-//   input array<Integer> ass2 "ass[eqnindx]=varindx";
-//   input BackendDAE.StrongComponents comps;
-//   input BackendDAE.StateSets stateSets;
-//   output BackendDAE.EqSystem osyst;
-// algorithm
-//   osyst := matchcontinue(ordvars,eqns,ass1,ass2,comps,stateSets)
-//     local
-//       array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-//       Integer bucketSize,numberOfVars,size,neqns,nvars,arrSizeEqns,arrSizeVars,neqns1,nvars1;
-//       array<Option<BackendDAE.Var>> varOptArr;
-//       array<Option<BackendDAE.Equation>> equOptArr;
-//       array<Integer> eqnindxs,varindxs;
-//       BackendDAE.StrongComponents comps_1;
-//       BackendDAE.Variables vars;
-//       BackendDAE.EquationArray eqns1;
-//       BackendDAE.VariableArray varArr;
-//     case(BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(nvars,arrSizeVars,varOptArr),bucketSize=bucketSize),
-//          BackendDAE.EQUATION_ARRAY(size, neqns, arrSizeEqns, equOptArr),
-//          _,_,_,_)
-//       equation
-//         // update equationsarray
-//         eqnindxs = arrayCreate(neqns,-1);
-//         neqns1 = updateEquationArray(1,neqns,1,equOptArr,ass1,ass2,eqnindxs);
-//         // update variablearray
-//         varindxs = arrayCreate(nvars,-1);
-//         crefIdxLstArr = arrayCreate(bucketSize, {});
-//         nvars1 = updateVarArray(1,nvars,1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,varindxs);
-//         // update strongComponents
-//         comps_1 = List.fold2(comps,updateStrongComponent,varindxs,eqnindxs,{});
-//         comps_1 = listReverse(comps_1);
-//         // generate updated data structs
-//         varArr = BackendDAE.VARIABLE_ARRAY(nvars1,arrSizeVars,varOptArr);
-//         vars = BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, nvars1);
-//         eqns1 = BackendDAE.EQUATION_ARRAY(size, neqns1, arrSizeEqns, equOptArr);
-//       then
-//         BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps_1),stateSets);
-//     else
-//       equation
-//         print("BackendDAEOptimize.updateEquationSystemMatching failed\n");
-//       then
-//         fail();
-//   end matchcontinue;
-// end updateEquationSystemMatching;
-
-// protected function updateStrongComponent
-// "//   author: Frenkel TUD 2012-09"
-//   input BackendDAE.StrongComponent iComp;
-//   input array<Integer> varindxs;
-//   input array<Integer> eqnindxs;
-//   input BackendDAE.StrongComponents iAcc;
-//   output BackendDAE.StrongComponents oComps;
-// algorithm
-//   oComps := matchcontinue(iComp,varindxs,eqnindxs,iAcc)
-//     local
-//       BackendDAE.StrongComponents comps;
-//       BackendDAE.StrongComponent comp;
-//       Integer v,e;
-//       list<Integer> vars,eqns;
-//       BackendDAE.JacobianType jacType;
-//       Boolean b;
-//       list<tuple<Integer,list<Integer>>> eqnvartpllst;
-//     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),_,_,_)
-//       equation
-//         e = eqnindxs[e];
-//         v = varindxs[v];
-//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEEQUATION(e,v), iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars,jacType=jacType),_,_,_)
-//       equation
-//         eqns = List.map1r(eqns,arrayGet,eqnindxs);
-//         eqns = List.select1(eqns,intGt,0);
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         e::_ = eqns;
-//         v::_ = vars;
-//         comp = Util.if_(intEq(listLength(eqns),1),BackendDAE.SINGLEEQUATION(e,v),BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType));
-//         comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=eqns,disc_vars=vars),_,_,_)
-//       equation
-//         comp::_ =updateStrongComponent(comp,varindxs,eqnindxs,{});
-//         eqns = List.map1r(eqns,arrayGet,eqnindxs);
-//         eqns = List.select1(eqns,intGt,0);
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         comp = Util.if_(intEq(listLength(eqns),0),comp,BackendDAE.MIXEDEQUATIONSYSTEM(comp,eqns,vars));
-//         comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vars),_,_,_)
-//       equation
-//         e = eqnindxs[e];
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEIFEQUATION(e,vars), iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vars),_,_,_)
-//       equation
-//         e = eqnindxs[e];
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEARRAY(e,vars), iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vars),_,_,_)
-//       equation
-//         e = eqnindxs[e];
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEALGORITHM(e,vars), iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vars),_,_,_)
-//       equation
-//         e = eqnindxs[e];
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLECOMPLEXEQUATION(e,vars), iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vars),_,_,_)
-//       equation
-//         e = eqnindxs[e];
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEWHENEQUATION(e,vars), iAcc);
-//       then
-//         comps;
-//     case (BackendDAE.TORNSYSTEM(tearingvars=vars,residualequations=eqns,otherEqnVarTpl=eqnvartpllst,linear=b),_,_,_)
-//       equation
-//         eqns = List.map1r(eqns,arrayGet,eqnindxs);
-//         eqns = List.select1(eqns,intGt,0);
-//         vars = List.map1r(vars,arrayGet,varindxs);
-//         vars = List.select1(vars,intGt,0);
-//         eqnvartpllst = updateTornSystemComp(eqnvartpllst,varindxs,eqnindxs,{});
-//         comp = BackendDAE.TORNSYSTEM(vars,eqns,eqnvartpllst,b);
-//       then
-//         comp::iAcc;
-//     case (_,_,_,_)
-//       equation
-//         print("BackendDAEOptimize.updateStrongComponent failed for Comp:\n");
-//         BackendDump.dumpComponent(iComp);
-//         print("Size EqnsIndx: " +& intString(arrayLength(eqnindxs)) +& "\n");
-//         print("Size VarsIndx: " +& intString(arrayLength(varindxs)) +& "\n");
-//       then
-//         fail();
-//   end matchcontinue;
-// end updateStrongComponent;
-
-// protected function updateEquationSystemComp
-//   input list<Integer> eqns;
-//   input list<Integer> vars;
-//   input BackendDAE.JacobianType jacType;
-//   input BackendDAE.StrongComponents iAcc;
-//   output BackendDAE.StrongComponents oComps;
-// algorithm
-//   oComps := match(eqns,vars,jacType,iAcc)
-//     local
-//       Integer e,v;
-//     case ({},{},_,_) then iAcc;
-//     case ({},v::_,_,_)
-//       //equation
-//       then
-//         fail();
-//     case (e::{},v::_,_,_)
-//       then
-//         BackendDAE.SINGLEEQUATION(e,v)::iAcc;
-//     case (_,_,_,_)
-//       then
-//         BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType)::iAcc;
-//   end match;
-// end updateEquationSystemComp;
-
-protected function updateTornSystemComp
-  input list<tuple<Integer,list<Integer>>> inEqnVarTplLst;
-  input array<Integer> varindxs;
-  input array<Integer> eqnindxs;
-  input list<tuple<Integer,list<Integer>>> iAcc;
-  output list<tuple<Integer,list<Integer>>> oAcc;
+protected function simplifyTimeIndepFuncCalls0 "author: Frenkel TUD 2012-06"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
 algorithm
-  oAcc := match(inEqnVarTplLst,varindxs,eqnindxs,iAcc)
+  (osyst,osharedChanged) :=
+    matchcontinue(isyst,sharedChanged)
     local
-      Integer e;
-      list<Integer> vars;
-      list<tuple<Integer,list<Integer>>> rest,acc;
-    case({},_,_,_) then listReverse(iAcc);
-    case((e,vars)::rest,_,_,_)
+      BackendDAE.Variables orderedVars,knvars,aliasvars;
+      BackendDAE.EquationArray orderedEqs;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      BackendDAE.Shared shared;
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared as BackendDAE.SHARED(knownVars = knvars,aliasVars = aliasvars), _))
       equation
-        e = eqnindxs[e];
-        vars = List.map1r(vars,arrayGet,varindxs);
-        acc = List.consOnTrue(intGt(e,0), (e,vars), iAcc);
+        ((_,_,true)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traversersimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
       then
-        updateTornSystemComp(rest,varindxs,eqnindxs,acc);
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared,true));
+    else
+      (isyst,sharedChanged);
+  end matchcontinue;
+end simplifyTimeIndepFuncCalls0;
+
+protected function traversersimplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> itpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> outTpl;
+protected
+  DAE.Exp e;
+  tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean> tpl;
+algorithm
+  (e,tpl) := itpl;
+  outTpl := Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,tpl);
+end traversersimplifyTimeIndepFuncCalls;
+
+protected function traverserExpsimplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      BackendDAE.Variables knvars,aliasvars;
+      DAE.Type tp;
+      DAE.Exp e,zero;
+      DAE.ComponentRef cr;
+      BackendDAE.Var var;
+      DAE.CallAttributes attr;
+      Boolean negate;
+    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, knvars);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+        ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr)}),(knvars,aliasvars,_)))
+      equation
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
+      then
+        ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
+      then
+        ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}),(knvars,aliasvars,_)))
+      then
+        ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
+        (cr,negate) = BackendVariable.getAlias(var);
+        e = DAE.CREF(cr,tp);
+        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"),{e},attr));
+        ((e,_)) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
+      then
+        ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
+      equation
+        (_::_,_) = BackendVariable.getVar(cr, knvars);
+        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
+      then
+        ((zero,(knvars,aliasvars,true)));
+    case((e as DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
+      equation
+        (_::_,_) = BackendVariable.getVar(cr, aliasvars);
+        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
+      then
+        ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
+      then
+        ((DAE.BCONST(false),(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
+        (cr,negate) = BackendVariable.getAlias(var);
+        e = DAE.CREF(cr,tp);
+        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"),{e},attr));
+        ((e,_)) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
+      then
+        ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
+      equation
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
+        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
+      then
+        ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
+      then
+        ((DAE.BCONST(false),(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
+        (cr,negate) = BackendVariable.getAlias(var);
+        e = DAE.CREF(cr,tp);
+        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"),{e},attr));
+        ((e,_)) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
+      then
+        ((e,(knvars,aliasvars,true)));
+    case _ then tpl;
+  end matchcontinue;
+end traverserExpsimplifyTimeIndepFuncCalls;
+
+protected function simplifyTimeIndepFuncCallsShared "pre(param) -> param
+  der(param) -> 0.0
+  change(param) -> false
+  edge(param) -> false
+  author: Frenkel TUD 2012-06"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:= match (inDAE)
+    local
+      BackendDAE.Variables knvars,exobj,aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;
+      DAE.FunctionTree funcTree;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.EqSystems systs;
+      BackendDAE.ExtraInfo ei;
+      
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs,ei)))
+      equation
+        _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
+        (eventInfo,_) = traverseEventInfoExps(eventInfo,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
+      then
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs,ei));
   end match;
-end updateTornSystemComp;
+end simplifyTimeIndepFuncCallsShared;
 
-// protected function updateVarArray
-// "//   author: Frenkel TUD 2012-09"
-//   input Integer index;
-//   input Integer numberOfElement;
-//   input Integer insertindex;
-//   input array<Option<BackendDAE.Var>> varOptArr;
-//   input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
-//   input Integer bucketSize;
-//   input array<Integer> ass1 "ass[varindx]=eqnindx";
-//   input array<Integer> ass2 "ass[eqnindx]=varindx";
-//   input array<Integer> newindexarr;
-//   output Integer newnumberOfElement;
-// algorithm
-//   newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr)
-//     local
-//       BackendDAE.Var var;
-//       DAE.ComponentRef cr;
-//       Integer e,indx,i;
-//       list<BackendDAE.CrefIndex> indexes;
-//     // found element
-//     case(_,_,_,_,_,_,_,_,_)
-//       equation
-//         true = intLe(index,numberOfElement);
-//         SOME(var as BackendDAE.VAR(varName=cr)) = varOptArr[index];
-//         // insert on new pos
-//         _ = arrayUpdate(varOptArr,insertindex,SOME(var));
-//         // store new pos
-//         _ = arrayUpdate(newindexarr,index,insertindex);
-//         // add to hash vec
-//         indx = ComponentReference.hashComponentRefMod(cr, bucketSize);
-//         indexes = crefIdxLstArr[indx + 1];
-//         i = insertindex-1;
-//         _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));
-//         // update assignments
-//         e = ass1[index];
-//         _ = arrayUpdate(ass1,insertindex,e);
-//         _ = arrayUpdate(ass2,e,insertindex);
-//       then
-//         updateVarArray(index+1,numberOfElement,insertindex+1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
-//     // found non element
-//     case(_,_,_,_,_,_,_,_,_)
-//       equation
-//         true = intLe(index,numberOfElement);
-//         NONE() = varOptArr[index];
-//       then
-//         updateVarArray(index+1,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
-//     // at the end
-//     case(_,_,_,_,_,_,_,_,_)
-//       equation
-//         false = intLe(index,numberOfElement);
-//       then
-//         insertindex-1;
-//     else
-//       equation
-//         print("BackendDAEOptimize.updateVarArray failed\n");
-//       then
-//         fail();
-//   end matchcontinue;
-// end updateVarArray;
+protected function traverseEventInfoExps
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.EventInfo iEventInfo;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output BackendDAE.EventInfo oEventInfo;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+protected
+  BackendDAE.SampleLookup sampleLookup;
+  list<BackendDAE.WhenClause> whenClauseLst;
+  list<BackendDAE.ZeroCrossing> zeroCrossingLst,sampleLst,relationsLst;
+  Integer relationsNumber,numberMathEvents;
+algorithm
+  BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents) := iEventInfo;
+  (whenClauseLst,outTypeA) := traverseWhenClauseExps(whenClauseLst,func,inTypeA,{});
+  (zeroCrossingLst,outTypeA) := traverseZeroCrossingExps(zeroCrossingLst,func,outTypeA,{});
+  (sampleLst,outTypeA) := traverseZeroCrossingExps(sampleLst,func,outTypeA,{});
+  (relationsLst,outTypeA) := traverseZeroCrossingExps(relationsLst,func,outTypeA,{});
+  oEventInfo := BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents);
+end traverseEventInfoExps;
 
-// protected function updateEquationArray
-// "//   author: Frenkel TUD 2012-09"
-//   input Integer index;
-//   input Integer numberOfElement;
-//   input Integer insertindex;
-//   input array<Option<BackendDAE.Equation>> equOptArr;
-//   input array<Integer> ass1 "ass[varindx]=eqnindx";
-//   input array<Integer> ass2 "ass[eqnindx]=varindx";
-//   input array<Integer> newindexarr;
-//   output Integer newnumberOfElement;
-// algorithm
-//   newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr)
-//     local
-//       BackendDAE.Equation eqn;
-//       Integer v;
-//     // found element
-//     case(_,_,_,_,_,_,_)
-//       equation
-//         true = intLe(index,numberOfElement);
-//         SOME(eqn) = equOptArr[index];
-//         // insert on new pos
-//         _ = arrayUpdate(equOptArr,insertindex,SOME(eqn));
-//         // store new pos
-//         _ = arrayUpdate(newindexarr,index,insertindex);
-//         // update assignments
-//         v = ass2[index];
-//         _ = arrayUpdate(ass2,insertindex,v);
-//         _ = arrayUpdate(ass1,v,insertindex);
-//       then
-//         updateEquationArray(index+1,numberOfElement,insertindex+1,equOptArr,ass1,ass2,newindexarr);
-//     // found non element
-//     case(_,_,_,_,_,_,_)
-//       equation
-//         true = intLe(index,numberOfElement);
-//         NONE() = equOptArr[index];
-//       then
-//         updateEquationArray(index+1,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr);
-//     // at the end
-//     case(_,_,_,_,_,_,_)
-//       equation
-//         false = intLe(index,numberOfElement);
-//       then
-//         insertindex-1;
-//     else
-//       equation
-//         print("BackendDAEOptimize.updateEquationArray failed\n");
-//       then
-//         fail();
-//   end matchcontinue;
-// end updateEquationArray;
+protected function traverseWhenClauseExps
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.WhenClause> iWhenClauses;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<BackendDAE.WhenClause> iAcc;
+  output list<BackendDAE.WhenClause> oWhenClauses;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (oWhenClauses,outTypeA) := match(iWhenClauses,func,inTypeA,iAcc)
+    local
+      list<BackendDAE.WhenClause> whenClause;
+      DAE.Exp condition;
+      list<BackendDAE.WhenOperator> reinitStmtLst;
+      Option<Integer> elseClause;
+      Type_a arg;
+    case({},_,_,_) then (listReverse(iAcc),inTypeA);
+    case(BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::whenClause,_,_,_)
+      equation
+        ((condition,arg)) = Expression.traverseExp(condition,func,inTypeA);
+        (whenClause,arg) = traverseWhenClauseExps(whenClause,func,arg,BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::iAcc);
+      then
+        (whenClause,arg);
+  end match;
+end traverseWhenClauseExps;
 
-protected function traverseIncidenceMatrix
-"  author: Frenkel TUD 2010-12"
+protected function traverseZeroCrossingExps
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.ZeroCrossing> iZeroCrossing;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<BackendDAE.ZeroCrossing> iAcc;
+  output list<BackendDAE.ZeroCrossing> oZeroCrossing;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (oZeroCrossing,outTypeA) := match(iZeroCrossing,func,inTypeA,iAcc)
+    local
+      list<BackendDAE.ZeroCrossing> zeroCrossing;
+      DAE.Exp relation_;
+      list<Integer> occurEquLst,occurWhenLst;
+      Type_a arg;
+    case({},_,_,_) then (listReverse(iAcc),inTypeA);
+    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::zeroCrossing,_,_,_)
+      equation
+        ((relation_,arg)) = Expression.traverseExp(relation_,func,inTypeA);
+        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::iAcc);
+      then
+        (zeroCrossing,arg);
+  end match;
+end traverseZeroCrossingExps;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// =============================================================================
+// =============================================================================
+
+protected function traverseIncidenceMatrix "author: Frenkel TUD 2010-12"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.IncidenceMatrix inM;
   input FuncType func;
@@ -654,8 +585,7 @@ algorithm
   (outM,outTypeA) := traverseIncidenceMatrix1(inM,func,1,arrayLength(inM),inTypeA);
 end traverseIncidenceMatrix;
 
-protected function traverseIncidenceMatrix1
-"  author: Frenkel TUD 2010-12"
+protected function traverseIncidenceMatrix1 "author: Frenkel TUD 2010-12"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.IncidenceMatrix inM;
   input FuncType func;
@@ -5413,270 +5343,6 @@ algorithm
   end matchcontinue;
 end residualForm2;
 
-
-
-
-// =============================================================================
-// simplify time independent function calls
-//
-// =============================================================================
-public function simplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06
-  pre(param) -> param
-  der(param) -> 0.0
-  change(param) -> false
-  edge(param) -> false"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,simplifyTimeIndepFuncCalls0,false);
-  outDAE := simplifyTimeIndepFuncCallsShared(outDAE);
-end simplifyTimeIndepFuncCalls;
-
-protected function simplifyTimeIndepFuncCalls0 "author: Frenkel TUD 2012-06"
-  input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
-  output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
-algorithm
-  (osyst,osharedChanged) :=
-    matchcontinue(isyst,sharedChanged)
-    local
-      BackendDAE.Variables orderedVars,knvars,aliasvars;
-      BackendDAE.EquationArray orderedEqs;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;
-      BackendDAE.Shared shared;
-      BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared as BackendDAE.SHARED(knownVars = knvars,aliasVars = aliasvars), _))
-      equation
-        ((_,_,true)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traversersimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
-      then
-        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,stateSets),(shared,true));
-    else
-      (isyst,sharedChanged);
-  end matchcontinue;
-end simplifyTimeIndepFuncCalls0;
-
-protected function traversersimplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> itpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> outTpl;
-protected
-  DAE.Exp e;
-  tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean> tpl;
-algorithm
-  (e,tpl) := itpl;
-  outTpl := Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,tpl);
-end traversersimplifyTimeIndepFuncCalls;
-
-protected function traverserExpsimplifyTimeIndepFuncCalls "author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> tpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> outTpl;
-algorithm
-  outTpl := matchcontinue(tpl)
-    local
-      BackendDAE.Variables knvars,aliasvars;
-      DAE.Type tp;
-      DAE.Exp e,zero;
-      DAE.ComponentRef cr;
-      BackendDAE.Var var;
-      DAE.CallAttributes attr;
-      Boolean negate;
-    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, knvars);
-        false = BackendVariable.isVarOnTopLevelAndInput(var);
-        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-      then
-        ((zero,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr)}),(knvars,aliasvars,_)))
-      equation
-        (_::{},_) = BackendVariable.getVar(cr, knvars);
-      then
-        ((e,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
-      then
-        ((e,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}),(knvars,aliasvars,_)))
-      then
-        ((e,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,negate) = BackendVariable.getAlias(var);
-        e = DAE.CREF(cr,tp);
-        e = Debug.bcallret1(negate,Expression.negate,e,e);
-        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"),{e},attr));
-        ((e,_)) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
-      then
-        ((e,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
-      equation
-        (_::_,_) = BackendVariable.getVar(cr, knvars);
-        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
-      then
-        ((zero,(knvars,aliasvars,true)));
-    case((e as DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
-      equation
-        (_::_,_) = BackendVariable.getVar(cr, aliasvars);
-        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
-      then
-        ((zero,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
-      then
-        ((DAE.BCONST(false),(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,negate) = BackendVariable.getAlias(var);
-        e = DAE.CREF(cr,tp);
-        e = Debug.bcallret1(negate,Expression.negate,e,e);
-        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"),{e},attr));
-        ((e,_)) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
-      then
-        ((e,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
-      equation
-        (_::{},_) = BackendVariable.getVar(cr, knvars);
-        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
-      then
-        ((zero,(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
-      then
-        ((DAE.BCONST(false),(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
-      equation
-        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,negate) = BackendVariable.getAlias(var);
-        e = DAE.CREF(cr,tp);
-        e = Debug.bcallret1(negate,Expression.negate,e,e);
-        (e,_) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"),{e},attr));
-        ((e,_)) = Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
-      then
-        ((e,(knvars,aliasvars,true)));
-    case _ then tpl;
-  end matchcontinue;
-end traverserExpsimplifyTimeIndepFuncCalls;
-
-protected function simplifyTimeIndepFuncCallsShared "pre(param) -> param
-  der(param) -> 0.0
-  change(param) -> false
-  edge(param) -> false
-  author: Frenkel TUD 2012-06"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  outDAE:= match (inDAE)
-    local
-      BackendDAE.Variables knvars,exobj,aliasVars;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
-      DAE.FunctionTree funcTree;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.EventInfo eventInfo;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.EqSystems systs;
-      BackendDAE.ExtraInfo ei;
-      
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs,ei)))
-      equation
-        _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
-        (eventInfo,_) = traverseEventInfoExps(eventInfo,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
-      then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs,ei));
-  end match;
-end simplifyTimeIndepFuncCallsShared;
-
-protected function traverseEventInfoExps
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.EventInfo iEventInfo;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  output BackendDAE.EventInfo oEventInfo;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;
-protected
-  BackendDAE.SampleLookup sampleLookup;
-  list<BackendDAE.WhenClause> whenClauseLst;
-  list<BackendDAE.ZeroCrossing> zeroCrossingLst,sampleLst,relationsLst;
-  Integer relationsNumber,numberMathEvents;
-algorithm
-  BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents) := iEventInfo;
-  (whenClauseLst,outTypeA) := traverseWhenClauseExps(whenClauseLst,func,inTypeA,{});
-  (zeroCrossingLst,outTypeA) := traverseZeroCrossingExps(zeroCrossingLst,func,outTypeA,{});
-  (sampleLst,outTypeA) := traverseZeroCrossingExps(sampleLst,func,outTypeA,{});
-  (relationsLst,outTypeA) := traverseZeroCrossingExps(relationsLst,func,outTypeA,{});
-  oEventInfo := BackendDAE.EVENT_INFO(sampleLookup,whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,relationsNumber,numberMathEvents);
-end traverseEventInfoExps;
-
-protected function traverseWhenClauseExps
-  replaceable type Type_a subtypeof Any;
-  input list<BackendDAE.WhenClause> iWhenClauses;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  input list<BackendDAE.WhenClause> iAcc;
-  output list<BackendDAE.WhenClause> oWhenClauses;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;
-algorithm
-  (oWhenClauses,outTypeA) := match(iWhenClauses,func,inTypeA,iAcc)
-    local
-      list<BackendDAE.WhenClause> whenClause;
-      DAE.Exp condition;
-      list<BackendDAE.WhenOperator> reinitStmtLst;
-      Option<Integer> elseClause;
-      Type_a arg;
-    case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::whenClause,_,_,_)
-      equation
-        ((condition,arg)) = Expression.traverseExp(condition,func,inTypeA);
-        (whenClause,arg) = traverseWhenClauseExps(whenClause,func,arg,BackendDAE.WHEN_CLAUSE(condition,reinitStmtLst,elseClause)::iAcc);
-      then
-        (whenClause,arg);
-  end match;
-end traverseWhenClauseExps;
-
-protected function traverseZeroCrossingExps
-  replaceable type Type_a subtypeof Any;
-  input list<BackendDAE.ZeroCrossing> iZeroCrossing;
-  input FuncExpType func;
-  input Type_a inTypeA;
-  input list<BackendDAE.ZeroCrossing> iAcc;
-  output list<BackendDAE.ZeroCrossing> oZeroCrossing;
-  output Type_a outTypeA;
-  partial function FuncExpType
-    input tuple<DAE.Exp, Type_a> inTpl;
-    output tuple<DAE.Exp, Type_a> outTpl;
-  end FuncExpType;
-algorithm
-  (oZeroCrossing,outTypeA) := match(iZeroCrossing,func,inTypeA,iAcc)
-    local
-      list<BackendDAE.ZeroCrossing> zeroCrossing;
-      DAE.Exp relation_;
-      list<Integer> occurEquLst,occurWhenLst;
-      Type_a arg;
-    case({},_,_,_) then (listReverse(iAcc),inTypeA);
-    case(BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::zeroCrossing,_,_,_)
-      equation
-        ((relation_,arg)) = Expression.traverseExp(relation_,func,inTypeA);
-        (zeroCrossing,arg) = traverseZeroCrossingExps(zeroCrossing,func,arg,BackendDAE.ZERO_CROSSING(relation_,occurEquLst,occurWhenLst)::iAcc);
-      then
-        (zeroCrossing,arg);
-  end match;
-end traverseZeroCrossingExps;
-
 // =============================================================================
 // countOperations
 //
@@ -7450,187 +7116,6 @@ algorithm
   outDAE := BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, aliasVars, inieqns, remeqns, constrs, clsAttrs, cache, env, funcTree, eventInfo, eoc, btp, symjacs, ei));
 end replaceEdgeChangeShared;
 
-
-// =============================================================================
-// optimize inital system
-//
-// =============================================================================
-public function optimizeInitialSystem "author Frenkel TUD 2012-08"
-  input BackendDAE.BackendDAE inDAE;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  outDAE := matchcontinue (inDAE)
-    local
-      BackendDAE.EqSystems systs;
-      BackendDAE.Variables knvars;
-      BackendDAE.EquationArray inieqns;
-      HashTable2.HashTable initalAliases;
-      list<BackendDAE.Equation> eqnlst;
-      Boolean optimizationfound;
-    
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knownVars=knvars,initialEqs=inieqns)))
-      equation
-        // search
-        initalAliases = HashTable2.emptyHashTable();
-        eqnlst = BackendEquation.equationList(inieqns);
-        (eqnlst,initalAliases,optimizationfound) = optimizeInitialSystem1(eqnlst,knvars,initalAliases,{},false);
-      then
-        // do optimization
-        optimizeInitialSystemWork(optimizationfound,inDAE,eqnlst,initalAliases);
-    else then inDAE;
-  end matchcontinue;
-end optimizeInitialSystem;
-
-protected function optimizeInitialSystemWork "author: Frenkel TUD 2012-08"
-  input Boolean optimizationfound;
-  input BackendDAE.BackendDAE inDAE;
-  input list<BackendDAE.Equation> eqnlst;
-  input HashTable2.HashTable initalAliases;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  outDAE := match (optimizationfound,inDAE,eqnlst,initalAliases)
-    local
-      BackendDAE.EqSystems systs;
-      BackendDAE.Variables knvars,knvars1,exobj,av;
-      BackendDAE.EquationArray remeqns,inieqns;
-      list<DAE.Constraint> constrs;
-      list<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.ExtraInfo ei;
-    
-    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei)),_,_)
-      equation
-        (knvars1,(_,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,optimizeInitialAliasesFinder,(initalAliases,false));
-        inieqns = BackendEquation.listEquation(eqnlst);
-        systs= List.map1(systs,optimizeInitialAliases,initalAliases);
-      then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs,ei));
-    
-    case(false,_,_,_)
-      then inDAE;
-  
-  end match;
-end optimizeInitialSystemWork;
-
-protected function optimizeInitialSystem1 "author: Frenkel TUD 2012-06"
-  input list<BackendDAE.Equation> iEqns;
-  input BackendDAE.Variables knvars;
-  input HashTable2.HashTable iInitalAliases;
-  input list<BackendDAE.Equation> iAcc;
-  input Boolean iOptimizationfound;
-  output list<BackendDAE.Equation> outEqsLst;
-  output HashTable2.HashTable oInitalAliases;
-  output Boolean oOptimizationfound;
-algorithm
-  (outEqsLst,oInitalAliases,oOptimizationfound) := matchcontinue (iEqns,knvars,iInitalAliases,iAcc,iOptimizationfound)
-    local
-      list<BackendDAE.Equation> eqnslst,eqnslst1;
-      BackendDAE.Equation eqn;
-      HashTable2.HashTable initalAliases;
-      Boolean optimizationfound,negate;
-      DAE.ComponentRef cr1,cr2;
-      DAE.Exp e1,e2;
-
-    case ({},_,_,_,_) then (listReverse(iAcc),iInitalAliases,iOptimizationfound);
-    case ((eqn as BackendDAE.EQUATION(exp=e1,scalar=e2))::eqnslst,_,_,_,_)
-      equation
-        ((cr1,cr2,e1,e2,negate)::{}) = BackendEquation.aliasEquation(eqn);
-        initalAliases = addInitialAlias(cr1,cr2,e1,e2,negate,knvars,iInitalAliases);
-        (eqnslst1,initalAliases,optimizationfound) = optimizeInitialSystem1(eqnslst,knvars,initalAliases,iAcc,true);
-       then
-         (eqnslst1,initalAliases,optimizationfound);
-    case (eqn::eqnslst,_,_,_,_)
-      equation
-        (eqnslst1,initalAliases,optimizationfound) = optimizeInitialSystem1(eqnslst,knvars,iInitalAliases,eqn::iAcc,iOptimizationfound);
-       then
-         (eqnslst1,initalAliases,optimizationfound);
-  end matchcontinue;
-end optimizeInitialSystem1;
-
-protected function addInitialAlias
-  input DAE.ComponentRef cr1;
-  input DAE.ComponentRef cr2;
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  input Boolean negate;
-  input BackendDAE.Variables knvars;
-  input HashTable2.HashTable iInitalAliases;
-  output HashTable2.HashTable oInitalAliases;
-algorithm
-  oInitalAliases := matchcontinue(cr1,cr2,e1,e2,negate,knvars,iInitalAliases)
-    local
-      HashTable2.HashTable initalAliases;
-      DAE.Exp e;
-    case(_,_,_,_,_,_,_)
-      equation
-        (_::_,_) = BackendVariable.getVar(cr2, knvars);
-        e = Debug.bcallret1(negate, Expression.negate, e2, e2);
-        initalAliases = BaseHashTable.add((cr1,e),iInitalAliases);
-        Debug.fcall(Flags.DUMPOPTINIT,BackendDump.debugStrCrefStrExpStr,("Found initial Alias ",cr1," = ",e,"\n"));
-      then
-        initalAliases;
-    case(_,_,_,_,_,_,_)
-      equation
-        (_::_,_) = BackendVariable.getVar(cr1, knvars);
-        e = Debug.bcallret1(negate, Expression.negate, e1, e1);
-        initalAliases = BaseHashTable.add((cr2,e),iInitalAliases);
-        Debug.fcall(Flags.DUMPOPTINIT,BackendDump.debugStrCrefStrExpStr,("Found initial Alias ",cr2," = ",e,"\n"));
-      then
-        initalAliases;
-  end matchcontinue;
-end addInitialAlias;
-
-protected function optimizeInitialAliases "author: Frenkel TUD 2012-08"
-  input BackendDAE.EqSystem isyst;
-  input HashTable2.HashTable initalAliases;
-  output BackendDAE.EqSystem osyst;
-algorithm
-  osyst := match (isyst,initalAliases)
-    local
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.Matching matching;
-      Boolean b;
-      BackendDAE.EqSystem syst;
-      BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),_)
-      equation
-        (vars,(_,b)) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,optimizeInitialAliasesFinder,(initalAliases,false));
-        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),isyst);
-      then
-        syst;
-  end match;
-end optimizeInitialAliases;
-
-protected function optimizeInitialAliasesFinder "author: Frenkel TUD 2011-03"
-  input tuple<BackendDAE.Var, tuple<HashTable2.HashTable,Boolean>> inTpl;
-  output tuple<BackendDAE.Var, tuple<HashTable2.HashTable,Boolean>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Var v;
-      HashTable2.HashTable initalAliases;
-      DAE.ComponentRef varName;
-      DAE.Exp exp;
-    case ((v as BackendDAE.VAR(varName=varName),(initalAliases,_)))
-      equation
-        exp = BaseHashTable.get(varName,initalAliases);
-        v = BackendVariable.setVarStartValue(v, exp);
-        v = BackendVariable.setVarFixed(v, true);
-        Debug.fcall(Flags.DUMPOPTINIT,BackendDump.debugStrCrefStrExpStr,("Set Var ",varName," (start= ",exp,", fixed=true)\n"));
-      then ((v,(initalAliases,true)));
-    case _ then inTpl;
-  end matchcontinue;
-end optimizeInitialAliasesFinder;
-
 // =============================================================================
 // section for postOptModule >>addInitialStmtsToAlgorithms<<
 //
@@ -8147,7 +7632,7 @@ algorithm
     // when statement (without outputs)
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source))::rest, _, _) equation
       (condition, vars, preStmts, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
-      (conditions, initialCall) = getConditionList(condition);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
       vars = listAppend(vars, inVars);
 
       {} = CheckModel.algorithmStatementListOutputs({DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)}, DAE.EXPAND());
@@ -8160,7 +7645,7 @@ algorithm
     // when statement
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), source=source))::rest, _, _) equation
       (condition, vars, preStmts, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
-      (conditions, initialCall) = getConditionList(condition);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
       vars = listAppend(vars, inVars);
 
       (stmts, stmts_, vars, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
@@ -8171,7 +7656,7 @@ algorithm
     // when - elsewhen statement (without outputs)
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source))::rest, _, _) equation
       (condition, vars, preStmts, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
-      (conditions, initialCall) = getConditionList(condition);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
       vars = listAppend(vars, inVars);
 
       (elseWhenList, _, vars, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
@@ -8189,7 +7674,7 @@ algorithm
     // when - elsewhen statement
     case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source))::rest, _, _) equation
       (condition, vars, preStmts, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
-      (conditions, initialCall) = getConditionList(condition);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(condition);
       vars = listAppend(vars, inVars);
 
       ({elseWhen}, preStmts2, vars, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
@@ -8309,69 +7794,6 @@ algorithm
     then fail();
   end matchcontinue;
 end encapsulateWhenConditionsForAlgorithmsWithArrayConditions;
-
-// =============================================================================
-// section for ???
-//
-// =============================================================================
-
-public function getConditionList "author: lochel
-  This function extracts all when-conditions. A when-condition can only be a
-  ComponentRef or initial()-call. If one condion is equal to >initial()<, the
-  second output becomes true."
-  input DAE.Exp inCondition;
-  output list<DAE.ComponentRef> outConditionVarList;
-  output Boolean outInitialCall;
-algorithm
-  (outConditionVarList, outInitialCall) := match (inCondition)
-    local
-      list<DAE.Exp> conditionList;
-      list<DAE.ComponentRef> conditionVarList;
-      Boolean initialCall;
-
-    case DAE.ARRAY(array=conditionList) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, {}, false);
-    then (conditionVarList, initialCall);
-
-    else equation
-      (conditionVarList, initialCall) = getConditionList1({inCondition}, {}, false);
-    then (conditionVarList, initialCall);
-  end match;
-end getConditionList;
-
-protected function getConditionList1 "author: lochel"
-  input list<DAE.Exp> inConditionList;
-  input list<DAE.ComponentRef> inConditionVarList;
-  input Boolean inInitialCall;
-  output list<DAE.ComponentRef> outConditionVarList;
-  output Boolean outInitialCall;
-algorithm
-  (outConditionVarList, outInitialCall) := matchcontinue (inConditionList, inConditionVarList, inInitialCall)
-    local
-      list<DAE.Exp> conditionList;
-      list<DAE.ComponentRef> conditionVarList;
-      Boolean initialCall;
-      DAE.ComponentRef componentRef;
-      DAE.Exp exp;
-      String msg;
-
-    case ({}, _, _)
-    then (inConditionVarList, inInitialCall);
-
-    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, _, _) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, true);
-    then (conditionVarList, initialCall);
-
-    case (DAE.CREF(componentRef=componentRef)::conditionList, _, _) equation
-      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
-    then (conditionVarList, initialCall);
-
-    case (exp::_, _ ,_) equation
-      msg = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
-      Error.addMessage(Error.INTERNAL_ERROR, {msg});
-   then fail();
-  end matchcontinue;
-end getConditionList1;
 
 // =============================================================================
 // section for expandDerOperator

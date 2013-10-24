@@ -42,7 +42,6 @@ encapsulated package SimCodeUtil
 // public imports
 public import Absyn;
 public import BackendDAE;
-public import BackendDAEUtil;
 public import Ceval;
 public import DAE;
 public import Env;
@@ -58,6 +57,7 @@ public import SimCode;
 // protected imports
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
+protected import BackendDAEUtil;
 protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
@@ -2665,7 +2665,7 @@ algorithm
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(cond, left, right, NONE()) = whenEquation;
-        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+        (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
       then
         ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, NONE(), source)}, iuniqueEqIndex+1, itempvars);
         
@@ -2675,7 +2675,7 @@ algorithm
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(cond, left, right, SOME(elseWhen)) = whenEquation;
         elseWhenEquation = createElseWhenEquation(elseWhen, wcl, source);
-        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+        (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
       then
         ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, SOME(elseWhenEquation), source)}, iuniqueEqIndex+1, itempvars);
         
@@ -2968,12 +2968,12 @@ algorithm
       Boolean initialCall;
       
     case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=NONE()), _) equation
-      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
       conditionVars = Expression.extractCrefsFromExp(cond);        
     then SimCode.SIM_WHEN_CLAUSE(conditionVars, conditions, initialCall, {}, SOME(inWhenEquation))::inSimWhenClause;
     
     case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=SOME(we)), _) equation
-      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
       conditionVars = Expression.extractCrefsFromExp(cond);        
     then findWhenEquation1(we, SimCode.SIM_WHEN_CLAUSE(conditionVars, conditions, initialCall, {}, SOME(inWhenEquation))::inSimWhenClause);        
   end match;
@@ -2992,7 +2992,7 @@ protected
 algorithm
   BackendDAE.WHEN_CLAUSE(condition=condition, reinitStmtLst=reinitStmtLst) := inWhenClause;
 
-  (conditions, initialCall) := BackendDAEOptimize.getConditionList(condition);
+  (conditions, initialCall) := BackendDAEUtil.getConditionList(condition);
   conditionVars := Expression.extractCrefsFromExp(condition);
 
   outSimWhenClauseList := SimCode.SIM_WHEN_CLAUSE(conditionVars, conditions, initialCall, reinitStmtLst, NONE())::inSimWhenClauseList;
@@ -5970,7 +5970,7 @@ algorithm
       equation
         crefs = List.map(inVars, BackendVariable.varCref);
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
-        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+        (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
       then ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, NONE(), source)}, iuniqueEqIndex+1, itempvars);
       
     // when eq with else
@@ -5979,7 +5979,7 @@ algorithm
         crefs = List.map(inVars, BackendVariable.varCref);
         List.map1rAllValue(crefs, ComponentReference.crefPrefixOf, true, left);
         elseWhenEquation = createElseWhenEquation(elseWhen, wcl, source);
-        (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+        (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
       then ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, left, right, SOME(elseWhenEquation), source)}, iuniqueEqIndex+1, itempvars);       
     
     // failure
@@ -6007,13 +6007,13 @@ algorithm
     
     // when eq without else
     case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), _, _) equation
-      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
     then SimCode.SES_WHEN(0, conditions, initialCall, left, right, NONE(), inElementSource);
         
     // when eq with else
     case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart = SOME(elseWhenEquation)), _, _) equation
       simElseWhenEq = createElseWhenEquation(elseWhenEquation, inWhenClause, inElementSource);
-      (conditions, initialCall) = BackendDAEOptimize.getConditionList(cond);
+      (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
     then SimCode.SES_WHEN(0, conditions, initialCall, left, right, SOME(simElseWhenEq), inElementSource);
   end match;
 end createElseWhenEquation;

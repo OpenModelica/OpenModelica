@@ -82,6 +82,7 @@ protected import Flags;
 protected import Global;
 protected import GlobalScript;
 protected import IndexReduction;
+protected import Initialization;
 protected import Inline;
 protected import List;
 protected import Matching;
@@ -7964,7 +7965,7 @@ algorithm
   // reduce index
   (systs,shared,args,causalized) := mapCausalizeDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{},false);
   // do late inline
-  outDAE := Debug.bcallret1(dolateinline,BackendDAEOptimize.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
+  outDAE := Debug.bcallret1(dolateinline,Inline.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
   // do state selection
   BackendDAE.DAE(systs,shared) := stateDeselectionDAE(causalized,outDAE,args,stateDeselection);
   // sort assigned equations to blt form
@@ -8534,7 +8535,7 @@ protected
   list<String> strpostOptModules;
 algorithm
   allpostOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", false),
-                        (BackendDAEOptimize.lateInlineFunction,"lateInlineFunction",false),
+                        (Inline.lateInlineFunction,"lateInlineFunction",false),
                         (RemoveSimpleEquations.causal,"removeSimpleEquations",false),
                         (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
                         (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
@@ -8559,7 +8560,7 @@ algorithm
                         (BackendDAEOptimize.inputDerivativesUsed,"inputDerivativesUsed",false),
                         (BackendDAEOptimize.simplifysemiLinear,"simplifysemiLinear",false),
                         (BackendDAEOptimize.removeConstants,"removeConstants",false),
-                        (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
+                        (Initialization.optimizeInitialSystem,"optimizeInitialSystem",false),
                         (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false),
                         (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
                         (Tearing.tearingSystem, "tearingSystem", false),
@@ -8942,4 +8943,68 @@ algorithm
         inTpl;
   end match;
 end collectAlgorithms;
+
+// =============================================================================
+// section for getConditionList
+//
+// =============================================================================
+
+public function getConditionList "author: lochel
+  This function extracts all when-conditions. A when-condition can only be a
+  ComponentRef or initial()-call. If one condion is equal to >initial()<, the
+  second output becomes true."
+  input DAE.Exp inCondition;
+  output list<DAE.ComponentRef> outConditionVarList;
+  output Boolean outInitialCall;
+algorithm
+  (outConditionVarList, outInitialCall) := match (inCondition)
+    local
+      list<DAE.Exp> conditionList;
+      list<DAE.ComponentRef> conditionVarList;
+      Boolean initialCall;
+
+    case DAE.ARRAY(array=conditionList) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, {}, false);
+    then (conditionVarList, initialCall);
+
+    else equation
+      (conditionVarList, initialCall) = getConditionList1({inCondition}, {}, false);
+    then (conditionVarList, initialCall);
+  end match;
+end getConditionList;
+
+protected function getConditionList1 "author: lochel"
+  input list<DAE.Exp> inConditionList;
+  input list<DAE.ComponentRef> inConditionVarList;
+  input Boolean inInitialCall;
+  output list<DAE.ComponentRef> outConditionVarList;
+  output Boolean outInitialCall;
+algorithm
+  (outConditionVarList, outInitialCall) := matchcontinue (inConditionList, inConditionVarList, inInitialCall)
+    local
+      list<DAE.Exp> conditionList;
+      list<DAE.ComponentRef> conditionVarList;
+      Boolean initialCall;
+      DAE.ComponentRef componentRef;
+      DAE.Exp exp;
+      String msg;
+
+    case ({}, _, _)
+    then (inConditionVarList, inInitialCall);
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "initial"))::conditionList, _, _) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, inConditionVarList, true);
+    then (conditionVarList, initialCall);
+
+    case (DAE.CREF(componentRef=componentRef)::conditionList, _, _) equation
+      (conditionVarList, initialCall) = getConditionList1(conditionList, componentRef::inConditionVarList, inInitialCall);
+    then (conditionVarList, initialCall);
+
+    case (exp::_, _ ,_) equation
+      msg = "./Compiler/BackEnd/BackendDAEOptimize.mo: function getConditionList1 failed for " +& ExpressionDump.printExpStr(exp) +& "\n";
+      Error.addMessage(Error.INTERNAL_ERROR, {msg});
+   then fail();
+  end matchcontinue;
+end getConditionList1;
+
 end BackendDAEUtil;

@@ -62,7 +62,6 @@ protected import ErrorExt;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
-protected import ExpressionSolve;
 protected import Flags;
 protected import GraphML;
 protected import HashTable2;

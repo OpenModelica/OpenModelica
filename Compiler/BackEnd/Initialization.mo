@@ -60,6 +60,7 @@ protected import Expression;
 protected import Flags;
 protected import HashSet;
 protected import HashTable;
+protected import HashTable2;
 protected import HashTable3;
 protected import HashTableCG;
 protected import List;
@@ -1366,7 +1367,7 @@ protected function pathFound "author: Frenkel TUD 2012-12
   output Boolean found;
 algorithm
   found :=
-  match (stack, i, m, mT, ass1, ass2, mark, markarr)
+  match(stack, i, m, mT, ass1, ass2, mark, markarr)
     local
       list<Integer> eqns;
 
@@ -1390,7 +1391,7 @@ protected function pathFoundtraverseEqns "author: Frenkel TUD 2012-12
   input array<Integer> markarr;
   output Boolean found;
 algorithm
-  found := matchcontinue (rows, stack, m, mT, ass1, ass2, mark, markarr)
+  found := matchcontinue(rows, stack, m, mT, ass1, ass2, mark, markarr)
     local
       list<Integer> rest;
       Integer rc, e;
@@ -1430,7 +1431,7 @@ protected function pathFoundtraverseEqns1 "author: Frenkel TUD 2012-12
   input array<Integer> markarr;
   output Boolean found;
 algorithm
-  found := match (b, rows, stack, m, mT, ass1, ass2, mark, markarr)
+  found := match(b, rows, stack, m, mT, ass1, ass2, mark, markarr)
     case (true, _, _, _, _, _, _, _, _) then true;
     else pathFoundtraverseEqns(rows, stack, m, mT, ass1, ass2, mark, markarr);
   end match;
@@ -1445,7 +1446,7 @@ protected function reasign "author: Frenkel TUD 2012-03
   input array<Integer> ass1;
   input array<Integer> ass2;
 algorithm
-  _ := match (stack, e, ass1, ass2)
+  _ := match(stack, e, ass1, ass2)
     local
       Integer i, e1;
       list<Integer> rest;
@@ -2043,5 +2044,172 @@ end collectInitialBindings;
 //   print("Discrete States for Initialization:\n========================================\n");
 //   BackendDump.debuglst((crefs, ComponentReference.printComponentRefStr, "\n", "\n"));
 // end dumpDiscreteStates;
+
+// =============================================================================
+// optimize inital system
+//
+// =============================================================================
+public function optimizeInitialSystem "author Frenkel TUD 2012-08"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := matchcontinue(inDAE)
+    local
+      BackendDAE.EqSystems systs;
+      BackendDAE.Variables knvars;
+      BackendDAE.EquationArray inieqns;
+      HashTable2.HashTable initalAliases;
+      list<BackendDAE.Equation> eqnlst;
+      Boolean optimizationfound;
+    
+    case (BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars, initialEqs=inieqns))) equation
+      // search
+      initalAliases = HashTable2.emptyHashTable();
+      eqnlst = BackendEquation.equationList(inieqns);
+      (eqnlst, initalAliases, optimizationfound) = optimizeInitialSystem1(eqnlst, knvars, initalAliases, {}, false);
+      // do optimization
+    then optimizeInitialSystemWork(optimizationfound, inDAE, eqnlst, initalAliases);
+      
+    else then inDAE;
+  end matchcontinue;
+end optimizeInitialSystem;
+
+protected function optimizeInitialSystemWork "author: Frenkel TUD 2012-08"
+  input Boolean optimizationfound;
+  input BackendDAE.BackendDAE inDAE;
+  input list<BackendDAE.Equation> eqnlst;
+  input HashTable2.HashTable initalAliases;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := match(optimizationfound, inDAE, eqnlst, initalAliases)
+    local
+      BackendDAE.EqSystems systs;
+      BackendDAE.Variables knvars, knvars1, exobj, av;
+      BackendDAE.EquationArray remeqns, inieqns;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+      BackendDAE.ExtraInfo ei;
+    
+    case (true, BackendDAE.DAE(systs, BackendDAE.SHARED(knvars, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei)), _, _) equation
+      (knvars1, (_, _)) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars, optimizeInitialAliasesFinder, (initalAliases, false));
+      inieqns = BackendEquation.listEquation(eqnlst);
+      systs= List.map1(systs, optimizeInitialAliases, initalAliases);
+    then BackendDAE.DAE(systs, BackendDAE.SHARED(knvars1, exobj, av, inieqns, remeqns, constrs, clsAttrs, cache, env, funcs, einfo, eoc, btp, symjacs, ei));
+  
+    case(false, _, _, _)
+    then inDAE;
+  end match;
+end optimizeInitialSystemWork;
+
+protected function optimizeInitialSystem1 "author: Frenkel TUD 2012-06"
+  input list<BackendDAE.Equation> iEqns;
+  input BackendDAE.Variables knvars;
+  input HashTable2.HashTable iInitalAliases;
+  input list<BackendDAE.Equation> iAcc;
+  input Boolean iOptimizationfound;
+  output list<BackendDAE.Equation> outEqsLst;
+  output HashTable2.HashTable oInitalAliases;
+  output Boolean oOptimizationfound;
+algorithm
+  (outEqsLst, oInitalAliases, oOptimizationfound) := matchcontinue(iEqns, knvars, iInitalAliases, iAcc, iOptimizationfound)
+    local
+      list<BackendDAE.Equation> eqnslst, eqnslst1;
+      BackendDAE.Equation eqn;
+      HashTable2.HashTable initalAliases;
+      Boolean optimizationfound, negate;
+      DAE.ComponentRef cr1, cr2;
+      DAE.Exp e1, e2;
+
+    case ({}, _, _, _, _)
+    then (listReverse(iAcc), iInitalAliases, iOptimizationfound);
+    
+    case ((eqn as BackendDAE.EQUATION(exp=e1, scalar=e2))::eqnslst, _, _, _, _) equation
+      ((cr1, cr2, e1, e2, negate)::{}) = BackendEquation.aliasEquation(eqn);
+      initalAliases = addInitialAlias(cr1, cr2, e1, e2, negate, knvars, iInitalAliases);
+      (eqnslst1, initalAliases, optimizationfound) = optimizeInitialSystem1(eqnslst, knvars, initalAliases, iAcc, true);
+    then (eqnslst1, initalAliases, optimizationfound);
+         
+    case (eqn::eqnslst, _, _, _, _) equation
+      (eqnslst1, initalAliases, optimizationfound) = optimizeInitialSystem1(eqnslst, knvars, iInitalAliases, eqn::iAcc, iOptimizationfound);
+    then (eqnslst1, initalAliases, optimizationfound);
+  end matchcontinue;
+end optimizeInitialSystem1;
+
+protected function addInitialAlias
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  input Boolean negate;
+  input BackendDAE.Variables knvars;
+  input HashTable2.HashTable iInitalAliases;
+  output HashTable2.HashTable oInitalAliases;
+algorithm
+  oInitalAliases := matchcontinue(cr1, cr2, e1, e2, negate, knvars, iInitalAliases)
+    local
+      HashTable2.HashTable initalAliases;
+      DAE.Exp e;
+      
+    case(_, _, _, _, _, _, _) equation
+      (_::_, _) = BackendVariable.getVar(cr2, knvars);
+      e = Debug.bcallret1(negate, Expression.negate, e2, e2);
+      initalAliases = BaseHashTable.add((cr1, e), iInitalAliases);
+      Debug.fcall(Flags.DUMPOPTINIT, BackendDump.debugStrCrefStrExpStr, ("Found initial Alias ", cr1, " = ", e, "\n"));
+    then initalAliases;
+    
+    case(_, _, _, _, _, _, _) equation
+      (_::_, _) = BackendVariable.getVar(cr1, knvars);
+      e = Debug.bcallret1(negate, Expression.negate, e1, e1);
+      initalAliases = BaseHashTable.add((cr2, e), iInitalAliases);
+      Debug.fcall(Flags.DUMPOPTINIT, BackendDump.debugStrCrefStrExpStr, ("Found initial Alias ", cr2, " = ", e, "\n"));
+    then initalAliases;
+  end matchcontinue;
+end addInitialAlias;
+
+protected function optimizeInitialAliases "author: Frenkel TUD 2012-08"
+  input BackendDAE.EqSystem inSyst;
+  input HashTable2.HashTable initalAliases;
+  output BackendDAE.EqSystem outSyst;
+protected
+  Option<BackendDAE.IncidenceMatrix> m, mT;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Matching matching;
+  Boolean b;
+  BackendDAE.StateSets stateSets;
+algorithm
+  BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets) := inSyst;
+  (vars, (_, b)) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, optimizeInitialAliasesFinder, (initalAliases, false));
+  outSyst := Util.if_(b, BackendDAE.EQSYSTEM(vars, eqns, m, mT, matching, stateSets), inSyst);
+end optimizeInitialAliases;
+
+protected function optimizeInitialAliasesFinder "author: Frenkel TUD 2011-03"
+  input tuple<BackendDAE.Var, tuple<HashTable2.HashTable, Boolean>> inTpl;
+  output tuple<BackendDAE.Var, tuple<HashTable2.HashTable, Boolean>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+    local
+      BackendDAE.Var v;
+      HashTable2.HashTable initalAliases;
+      DAE.ComponentRef varName;
+      DAE.Exp exp;
+      
+    case ((v as BackendDAE.VAR(varName=varName), (initalAliases, _))) equation
+      exp = BaseHashTable.get(varName, initalAliases);
+      v = BackendVariable.setVarStartValue(v, exp);
+      v = BackendVariable.setVarFixed(v, true);
+      Debug.fcall(Flags.DUMPOPTINIT, BackendDump.debugStrCrefStrExpStr, ("Set Var ", varName, " (start= ", exp, ", fixed=true)\n"));
+    then ((v, (initalAliases, true)));
+      
+    case _ then inTpl;
+  end matchcontinue;
+end optimizeInitialAliasesFinder;
 
 end Initialization;

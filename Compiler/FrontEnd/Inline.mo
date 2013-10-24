@@ -68,6 +68,21 @@ protected import List;
 protected import Types;
 protected import VarTransform;
 
+// =============================================================================
+// late inline functions stuff
+//
+// =============================================================================
+public function lateInlineFunction
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := inlineCalls({DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}, inDAE);
+end lateInlineFunction;
+
+// =============================================================================
+// inline calls stuff
+//
+// =============================================================================
 
 public function inlineCalls
 "searches for calls where the inline flag is true, and inlines them"
