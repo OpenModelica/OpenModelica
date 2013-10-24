@@ -810,7 +810,7 @@ algorithm
 
     case (_, _, _, _)
       equation
-        env = enterEntryScope(inEntry, NFInstTypes.NOMOD(), inEnv);
+        (env, _) = enterEntryScope(inEntry, NFInstTypes.NOMOD(), inEnv);
         (entry, env, state) = lookupNameInPackage(inName, env, inState);
       then
         (entry, env, state);
@@ -842,6 +842,7 @@ public function enterEntryScope
   input Modifier inModifier;
   input Env inEnv;
   output Env outEnv;
+  output list<Modifier> outExtendsMods;
 protected
   SCode.Element el;
   Modifier mod;
@@ -849,7 +850,7 @@ algorithm
   el := NFEnv.entryElement(inEntry);
   mod := NFEnv.entryModifier(inEntry);
   mod := NFMod.mergeMod(inModifier, mod);
-  outEnv := enterEntryScope_impl(el, mod, inEnv);
+  (outEnv, outExtendsMods) := enterEntryScope_impl(el, mod, inEnv);
 end enterEntryScope;
 
 public function enterEntryScope_impl
@@ -857,29 +858,31 @@ public function enterEntryScope_impl
   input Modifier inModifier;
   input Env inEnv;
   output Env outEnv;
+  output list<Modifier> outExtendsMods;
 algorithm
-  outEnv := match(inElement, inModifier, inEnv)
+  (outEnv, outExtendsMods) := match(inElement, inModifier, inEnv)
     local
       Env env;
       SCode.ClassDef cdef;
       Absyn.Info info;
       Absyn.TypeSpec ty;
       Entry entry;
+      list<Modifier> ext_mods;
 
     case (SCode.CLASS(classDef = cdef, info = info), _, _)
       equation
         env = openClassScope(inElement, inEnv);
-        env = populateEnvWithClassDef(cdef, inModifier, SCode.PUBLIC(), {}, env,
-          elementSplitterRegular, info, env);
+        (env, ext_mods) = populateEnvWithClassDef(cdef, inModifier,
+          SCode.PUBLIC(), {}, env, elementSplitterRegular, info, env);
       then
-        env;
+        (env, ext_mods);
 
     case (SCode.COMPONENT(typeSpec = ty, info = info), _, _)
       equation
         (entry, env) = lookupTypeSpec(ty, inEnv, info);
-        env = enterEntryScope(entry, inModifier, env);
+        (env, ext_mods) = enterEntryScope(entry, inModifier, env);
       then
-        env;
+        (env, ext_mods);
 
   end match;
 end enterEntryScope_impl;
@@ -944,9 +947,10 @@ protected function populateEnvWithClassDef
   input Absyn.Info inInfo;
   input Env inAccumEnv;
   output Env outAccumEnv;
+  output list<Modifier> outExtendsMods;
 algorithm
-  outAccumEnv := match(inClassDef, inModifier, inVisibility, inOrigins, inEnv,
-      inSplitFunc, inInfo, inAccumEnv)
+  (outAccumEnv, outExtendsMods) := match(inClassDef, inModifier, inVisibility,
+      inOrigins, inEnv, inSplitFunc, inInfo, inAccumEnv)
     local
       list<SCode.Element> elems, cls_vars, exts, imps;
       Env env;
@@ -957,6 +961,7 @@ algorithm
       SCode.ClassDef cdef;
       Absyn.TypeSpec ty;
       SCode.Element el;
+      list<Modifier> ext_mods;
 
     case (SCode.PARTS(elementLst = elems), _, _, _, _, _, _, env)
       equation
@@ -970,14 +975,18 @@ algorithm
         env = populateEnvWithElements(cls_vars, origin, env);
         //env = NFRedeclare.applyRedeclares(inMods, env);
         env = populateEnvWithImports(imps, env, false);
-        env = populateEnvWithExtends(exts, inOrigins, 0, env, env);
+        env = populateEnvWithExtends(exts, inOrigins, 1, env, env);
         env = NFMod.addModToEnv(inModifier, env);
+        ext_mods = NFMod.partitionExtendsMods(env, listLength(exts));
       then
-        env;
+        (env, ext_mods);
 
     case (SCode.CLASS_EXTENDS(composition = cdef), _, _, _, _, _, _, _)
-      then populateEnvWithClassDef(cdef, inModifier, inVisibility, inOrigins,
-        inEnv, inSplitFunc, inInfo, inAccumEnv);
+      equation
+        (env, ext_mods) = populateEnvWithClassDef(cdef, inModifier,
+          inVisibility, inOrigins, inEnv, inSplitFunc, inInfo, inAccumEnv);
+      then
+        (env, ext_mods);
 
     case (SCode.DERIVED(typeSpec = ty), _, _, _, _, _, _, _)
       equation
@@ -986,19 +995,19 @@ algorithm
         // TODO: Only create this environment if needed, i.e. if the cdef
         // contains extends.
         env = openClassScope(el, env);
-        env = populateEnvWithClassDef(cdef, inModifier, inVisibility, inOrigins, env,
-          elementSplitterExtends, inInfo, inAccumEnv);
-        env = populateEnvWithClassDef(cdef, inModifier, inVisibility, inOrigins, env,
-          inSplitFunc, inInfo, inAccumEnv);
+        (env, _) = populateEnvWithClassDef(cdef, inModifier, inVisibility,
+          inOrigins, env, elementSplitterExtends, inInfo, inAccumEnv);
+        (env, ext_mods) = populateEnvWithClassDef(cdef, inModifier,
+          inVisibility, inOrigins, env, inSplitFunc, inInfo, inAccumEnv);
       then
-        env;
+        (env, ext_mods);
 
     case (SCode.ENUMERATION(enumLst = enums), _, _, _, _, _, _, env)
       equation
         path = NFEnv.envPath(inEnv);
         env = insertEnumLiterals(enums, path, 1, env);
       then
-        env;
+        (env, {});
 
   end match;
 end populateEnvWithClassDef;
@@ -1189,7 +1198,7 @@ algorithm
       equation
         SCode.CLASS(classDef = cdef) = NFEnv.entryElement(inEntry);
         origins = NFEnv.entryOrigins(inEntry);
-        env = populateEnvWithClassDef(cdef, NFInstTypes.NOMOD(), SCode.PUBLIC(),
+        (env, _) = populateEnvWithClassDef(cdef, NFInstTypes.NOMOD(), SCode.PUBLIC(),
           origins, inEnv, elementSplitterRegular, inInfo, inAccumEnv);
       then
         env;
@@ -1265,12 +1274,12 @@ algorithm
         (el as SCode.CLASS(classDef = cdef)) = NFEnv.entryElement(entry);
         mod = NFMod.translateMod(smod, "", 0, NFInstTypes.emptyPrefix, inEnv);
         env = openClassScope(el, env);
-        env = populateEnvWithClassDef(cdef, mod, SCode.PUBLIC(), {}, env,
+        (env, _) = populateEnvWithClassDef(cdef, mod, SCode.PUBLIC(), {}, env,
           elementSplitterExtends, info, env);
         // Populate the accumulated environment with the inherited elements.
         origin = NFEnv.makeInheritedOrigin(inExtends, inIndex, env);
         origins = origin :: inOrigins;
-        accum_env = populateEnvWithClassDef(cdef, mod, vis, origins, env,
+        (accum_env, _) = populateEnvWithClassDef(cdef, mod, vis, origins, env,
           elementSplitterInherited, info, inAccumEnv);
       then
         accum_env;

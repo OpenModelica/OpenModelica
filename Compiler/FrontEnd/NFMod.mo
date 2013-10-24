@@ -58,6 +58,7 @@ protected import Util;
 public type Binding = NFInstTypes.Binding;
 public type Env = NFEnv.Env;
 public type Entry = NFEnv.Entry;
+public type EntryOrigin = NFEnv.EntryOrigin;
 public type Prefix = NFInstTypes.Prefix;
 public type Modifier = NFInstTypes.Modifier;
 
@@ -228,7 +229,6 @@ algorithm
       equation
         (env, uentry) = NFEnv.updateEntry(name, mod, NFEnv.setEntryModifier, inEnv);
         checkModifiedElement(uentry, name, mod, inEnv);
-        // Add modifier to the extends the entry came from.
       then
         env;
 
@@ -302,6 +302,89 @@ algorithm
   end match;
 end checkClassModifier;
 
+public function partitionExtendsMods
+  input Env inEnv;
+  input Integer inExtendsCount;
+  output list<Modifier> outExtendsModifiers;
+algorithm
+  outExtendsModifiers := match(inEnv, inExtendsCount)
+    local
+      array<list<Modifier>> ext_mods;
+      
+    // No extends, no need to partition modifiers.
+    case (_, 0) then {};
+
+    else
+      equation
+        ext_mods = arrayCreate(inExtendsCount, {});
+        ext_mods = NFEnv.foldScope(inEnv, partitionExtendsMods2, ext_mods);
+      then
+        List.map(arrayList(ext_mods), collapseExtendsMod);
+
+  end match;
+end partitionExtendsMods;
+
+protected function partitionExtendsMods2
+  input Entry inEntry;
+  input array<list<Modifier>> inExtendsModifiers;
+  output array<list<Modifier>> outExtendsModifiers;
+protected
+  Modifier mod;
+  list<EntryOrigin> origins;
+algorithm
+  mod := NFEnv.entryModifier(inEntry);
+  origins := NFEnv.entryOrigins(inEntry);
+  outExtendsModifiers := partitionExtendsMods3(origins, mod, inExtendsModifiers);
+end partitionExtendsMods2;
+
+protected function partitionExtendsMods3
+  input list<EntryOrigin> inOrigins;
+  input Modifier inModifier;
+  input array<list<Modifier>> inExtendsModifiers;
+  output array<list<Modifier>> outExtendsModifiers;
+algorithm
+  outExtendsModifiers := match(inOrigins, inModifier, inExtendsModifiers)
+    case (_, NFInstTypes.NOMOD(), _) then inExtendsModifiers;
+    else List.fold1(inOrigins, partitionExtendsMods4, inModifier, inExtendsModifiers);
+  end match;
+end partitionExtendsMods3;
+
+protected function partitionExtendsMods4
+  input EntryOrigin inOrigin;
+  input Modifier inModifier;
+  input array<list<Modifier>> inExtendsModifiers;
+  output array<list<Modifier>> outExtendsModifiers;
+algorithm
+  outExtendsModifiers := match(inOrigin, inModifier, inExtendsModifiers)
+    local
+      Integer idx;
+      list<Modifier> mods;
+      array<list<Modifier>> ext_mods;
+
+    case (NFInstTypes.INHERITED_ORIGIN(index = idx), _, _)
+      equation
+        mods = arrayGet(inExtendsModifiers, idx);
+        mods = inModifier :: mods;
+        ext_mods = arrayUpdate(inExtendsModifiers, idx, mods);
+      then
+        ext_mods;
+
+    else inExtendsModifiers;
+  end match;
+end partitionExtendsMods4;
+  
+protected function collapseExtendsMod
+  input list<Modifier> inModifiers;
+  output Modifier outModifier;
+algorithm
+  outModifier := match(inModifiers)
+    case {} then NFInstTypes.NOMOD();
+
+    else NFInstTypes.MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(),
+      NFInstTypes.UNBOUND(), inModifiers, Absyn.dummyInfo);
+  end match;
+end collapseExtendsMod;
+        
 protected function modifierName
   input Modifier inMod;
   output String outName;

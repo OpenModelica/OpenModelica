@@ -659,6 +659,27 @@ algorithm
   outEnv := NFInstTypes.FRAME(name, st, entries) :: rest_env;
 end mapScope;
 
+public function foldScope
+  "Folds over the entries in the current scope."
+  input Env inEnv;
+  input FoldFunc inFoldFunc;
+  input FoldArg inFoldArg;
+  output FoldArg outFoldArg;
+
+  partial function FoldFunc
+    input Entry inEntry;
+    input FoldArg inFoldArg;
+    output FoldArg outFoldArg;
+  end FoldFunc;
+
+  replaceable type FoldArg subtypeof Any;
+protected
+  AvlTree entries;
+algorithm
+  NFInstTypes.FRAME(entries = entries) :: _ := inEnv;
+  outFoldArg := NFEnvAvlTree.fold(entries, inFoldFunc, inFoldArg);
+end foldScope;
+
 public function insertIterators
   "Opens up a new implicit scope in the environment and adds the given
    iterators."

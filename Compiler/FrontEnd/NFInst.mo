@@ -294,6 +294,7 @@ algorithm
       SCode.Mod smod;
       SCode.Restriction res;
       String name;
+      list<Modifier> ext_mods;
 
     // A builtin type (only builtin types can be PARTS).
     case (_, SCode.CLASS(name = name, restriction = SCode.R_TYPE(),
@@ -310,11 +311,11 @@ algorithm
         _, _, _, ip, globals)
       equation
         // Enter the class scope.
-        env = NFLookup.enterEntryScope(inEntry, inClassMod, inEnv);
+        (env, ext_mods) = NFLookup.enterEntryScope(inEntry, inClassMod, inEnv);
 
         // Instantiate the class' elements.
-        (elems, es, globals) = instElementList(el, inPrefixes, env, inTypePath,
-          inPrefix, ip, globals);
+        (elems, es, globals) = instElementList(el, ext_mods, inPrefixes, env,
+          inTypePath, inPrefix, ip, globals);
 
         // Instantiate all equation and algorithm sections.
         (eq, ieq, alg, ialg, globals) = instSections(cdef, env, inPrefix, ip, globals);
@@ -663,6 +664,7 @@ end getBasicTypeAttrTypeString;
 
 protected function instElementList
   input list<SCode.Element> inElements;
+  input list<Modifier> inExtendsMods;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Absyn.Path inTypePath;
@@ -674,11 +676,12 @@ protected function instElementList
   output Globals outGlobals;
 algorithm
   (outElements, outExtendsState, outGlobals) := instElementList2(inElements,
-    inPrefixes, inEnv, inPrefix, inInstPolicy, {}, NO_EXTENDS(), inGlobals);
+    inExtendsMods, inPrefixes, inEnv, inPrefix, inInstPolicy, {}, NO_EXTENDS(), inGlobals);
 end instElementList;
 
 protected function instElementList2
   input list<SCode.Element> inElements;
+  input list<Modifier> inExtendsMods;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
@@ -690,7 +693,7 @@ protected function instElementList2
   output ExtendsState outExtendsState;
   output Globals outGlobals;
 algorithm
-  (outElements, outExtendsState, outGlobals) := match(inElements, inPrefixes,
+  (outElements, outExtendsState, outGlobals) := match(inElements, inExtendsMods, inPrefixes,
       inEnv, inPrefix, inInstPolicy, inAccumEl, inExtendsState, inGlobals)
     local
       SCode.Element elem;
@@ -700,18 +703,19 @@ algorithm
       list<Element> accum_el;
       Globals globals;
       Env env;
+      list<Modifier> ext_mods;
 
-    case (elem :: rest_el, _, env, _, _, accum_el, es, globals)
+    case (elem :: rest_el, _, _, env, _, _, accum_el, es, globals)
       equation
         (elem, mod, env) = resolveElement(elem, env);
-        (accum_el, es, globals) = instElement(elem, mod, inPrefixes, env,
-          inPrefix, inInstPolicy, accum_el, es, globals);
-        (accum_el, es, globals) = instElementList2(rest_el, inPrefixes,
+        (accum_el, ext_mods, es, globals) = instElement(elem, mod, inExtendsMods,
+          inPrefixes, env, inPrefix, inInstPolicy, accum_el, es, globals);
+          (accum_el, es, globals) = instElementList2(rest_el, ext_mods, inPrefixes,
           inEnv, inPrefix, inInstPolicy, accum_el, es, globals);
       then
         (accum_el, es, globals);
 
-    case ({}, _, _, _, _, _, es, globals)
+    case ({}, _, _, _, _, _, _, es, globals)
       then (listReverse(inAccumEl), es, globals);
 
   end match;
@@ -748,6 +752,7 @@ end resolveElement;
 protected function instElement
   input SCode.Element inElement;
   input Modifier inModifier;
+  input list<Modifier> inExtendsMods;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
@@ -756,12 +761,13 @@ protected function instElement
   input ExtendsState inExtendsState;
   input Globals inGlobals;
   output list<Element> outElements;
+  output list<Modifier> outExtendsMods;
   output ExtendsState outExtendsState;
   output Globals outGlobals;
 algorithm
-  (outElements, outExtendsState, outGlobals) :=
-  match(inElement, inModifier, inPrefixes, inEnv, inPrefix, inInstPolicy,
-      inAccumEl, inExtendsState, inGlobals)
+  (outElements, outExtendsMods, outExtendsState, outGlobals) :=
+  match(inElement, inModifier, inExtendsMods, inPrefixes, inEnv, inPrefix,
+      inInstPolicy, inAccumEl, inExtendsState, inGlobals)
     local
       Globals globals;
       ExtendsState es;
@@ -770,43 +776,45 @@ algorithm
       list<Element> accum_el;
       InstPolicy ip;
       String name;
+      Modifier mod;
+      list<Modifier> ext_mods;
 
     // A component when we're in 'instantiate everything' mode.
-    case (SCode.COMPONENT(name = _), _, _, _, _, INST_ALL(), _, es, globals)
+    case (SCode.COMPONENT(name = _), _, _, _, _, _, INST_ALL(), _, es, globals)
       equation
         (res, globals) = instComponent(inElement, inModifier, inPrefixes,
           inEnv, inPrefix, inInstPolicy, globals);
       then
-        (res :: inAccumEl, es, globals);
+        (res :: inAccumEl, inExtendsMods, es, globals);
 
     // A constant when we're in 'instantiate only constants' mode.
     case (SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), _, _, _, _, INST_ONLY_CONST(), _, es, globals)
+        SCode.CONST())), _, _, _, _, _, INST_ONLY_CONST(), _, es, globals)
       equation
         (res, globals) = instComponent(inElement, inModifier, inPrefixes,
           inEnv, inPrefix, inInstPolicy, globals);
       then
-        (res :: inAccumEl, es, globals);
+        (res :: inAccumEl, inExtendsMods, es, globals);
 
     // An extends clause.
-    case (SCode.EXTENDS(baseClassPath = _), _, _, _, _, ip, _, es, globals)
+    case (SCode.EXTENDS(baseClassPath = _), _, mod :: ext_mods, _, _, _, ip, _, es, globals)
       equation
-        (res, es, globals) = instExtends(inElement, inPrefixes, inEnv, inPrefix,
-          es, ip, globals);
+        (res, es, globals) = instExtends(inElement, mod, inPrefixes, inEnv,
+          inPrefix, es, ip, globals);
       then
-        (res :: inAccumEl, es, globals);
+        (res :: inAccumEl, ext_mods, es, globals);
 
     // A package which might contain constants we should instantiate.
     case (SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        _, _, _, _, ip, _, es, globals)
+        _, _, _, _, _, ip, _, es, globals)
       equation
         (ores, globals) = instPackageConstants(inElement, inEnv, inPrefix, globals);
         accum_el = List.consOption(ores, inAccumEl);
       then
-        (accum_el, es, globals);
+        (accum_el, inExtendsMods, es, globals);
 
     // Ignore everything else.
-    else (inAccumEl, inExtendsState, inGlobals);
+    else (inAccumEl, inExtendsMods, inExtendsState, inGlobals);
 
   end match;
 end instElement;
@@ -955,6 +963,7 @@ end instComponent;
 
 protected function instExtends
   input SCode.Element inExtends;
+  input Modifier inModifier;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
@@ -965,8 +974,8 @@ protected function instExtends
   output ExtendsState outExtendsState;
   output Globals outGlobals;
 algorithm
-  (outElement, outExtendsState, outGlobals) := match(inExtends, inPrefixes,
-      inEnv, inPrefix, inExtendsState, inInstPolicy, inGlobals)
+  (outElement, outExtendsState, outGlobals) := match(inExtends, inModifier,
+      inPrefixes, inEnv, inPrefix, inExtendsState, inInstPolicy, inGlobals)
     local
       Absyn.Path path;
       Absyn.Info info;
@@ -983,12 +992,13 @@ algorithm
       Boolean special_ext;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, _, _, es, ip, globals)
+        _, _, _, _, es, ip, globals)
       equation
         // Look up the base class in the environment.
         (entry, env) = NFLookup.lookupBaseClassName(path, inEnv, info);
         prefs = NFInstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
         mod = NFMod.translateMod(smod, "", 0, inPrefix, inEnv);
+        mod = NFMod.mergeMod(inModifier, mod);
 
         (cls, ty, _, globals) =
           instClassEntry(path, entry, mod, prefs, env, inPrefix, ip, globals);

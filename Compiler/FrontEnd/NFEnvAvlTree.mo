@@ -431,6 +431,51 @@ algorithm
   outValue := NFInstTypes.AVLTREEVALUE(key, value);
 end mapValue;
 
+public function fold
+  input AvlTree inTree;
+  input FoldFunc inFoldFunc;
+  input FoldArg inFoldArg;
+  output FoldArg outFoldArg;
+
+  partial function FoldFunc
+    input AvlValue inValue;
+    input FoldArg inFoldArg;
+    output FoldArg outFoldArg;
+  end FoldFunc;
+
+  replaceable type FoldArg subtypeof Any;
+protected
+  Option<AvlTreeValue> value;
+  Integer height;
+  Option<AvlTree> left, right;
+  FoldArg fold_arg;
+algorithm
+  NFInstTypes.AVLTREENODE(value, height, left, right) := inTree;
+  fold_arg := Util.applyOptionOrDefault2(value, foldValue, inFoldFunc, inFoldArg, inFoldArg); 
+  fold_arg := Util.applyOptionOrDefault2(left, fold, inFoldFunc, fold_arg, fold_arg);
+  outFoldArg := Util.applyOptionOrDefault2(right, fold, inFoldFunc, fold_arg, fold_arg);
+end fold;
+
+protected function foldValue
+  input AvlTreeValue inValue;
+  input FoldFunc inFoldFunc;
+  input FoldArg inFoldArg;
+  output FoldArg outFoldArg;
+
+  partial function FoldFunc
+    input AvlValue inValue;
+    input FoldArg inFoldArg;
+    output FoldArg outFoldArg;
+  end FoldFunc;
+
+  replaceable type FoldArg subtypeof Any;
+protected
+  AvlValue value;
+algorithm
+  NFInstTypes.AVLTREEVALUE(value = value) := inValue;
+  outFoldArg := inFoldFunc(value, inFoldArg);
+end foldValue;
+
 protected function createEmptyIfNone
   "Help function to add"
   input Option<AvlTree> t;

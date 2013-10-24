@@ -2203,6 +2203,40 @@ algorithm
   end match;
 end applyOptionOrDefault1;
 
+public function applyOptionOrDefault2
+  input Option<InType> inValue;
+  input FuncType inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input OutType inDefault;
+  output OutType outValue;
+
+  partial function FuncType
+    input InType inValue;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output OutType outValue;
+  end FuncType;
+
+  replaceable type InType subtypeof Any;
+  replaceable type ArgType1 subtypeof Any;
+  replaceable type ArgType2 subtypeof Any;
+  replaceable type OutType subtypeof Any;
+algorithm
+  outValue := match(inValue, inFunc, inArg1, inArg2, inDefault)
+    local
+      InType value;
+      OutType res;
+
+    case (SOME(value), _, _, _, _)
+      equation
+        res = inFunc(value, inArg1, inArg2);
+      then
+        res;
+
+    else inDefault;
+  end match;
+end applyOptionOrDefault2;
 
 public function makeOption "Makes a value into value option, using SOME(value)"
   input Type_a inTypeA;
