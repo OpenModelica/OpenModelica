@@ -64,17 +64,17 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // Transformations Group Box
   mpTransformationGroupBox = new QGroupBox(tr("Transformation"));
   mpOriginXLabel = new Label(Helper::originX);
-  mpOriginXSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpOriginXSpinBox = new DoubleSpinBox;
   mpOriginXSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpOriginXSpinBox->setValue(mpShapeAnnotation->getOrigin().x());
   mpOriginXSpinBox->setSingleStep(1);
   mpOriginYLabel = new Label(Helper::originY);
-  mpOriginYSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpOriginYSpinBox = new DoubleSpinBox;
   mpOriginYSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpOriginYSpinBox->setValue(mpShapeAnnotation->getOrigin().y());
   mpOriginYSpinBox->setSingleStep(1);
   mpRotationLabel = new Label(Helper::rotation);
-  mpRotationSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpRotationSpinBox = new DoubleSpinBox;
   mpRotationSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpRotationSpinBox->setValue(mpShapeAnnotation->getRotation());
   mpRotationSpinBox->setSingleStep(90);
@@ -95,22 +95,22 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   // Extent1X
   QList<QPointF> extents = mpShapeAnnotation->getExtents();
   mpExtent1XLabel = new Label(Helper::extent1X);
-  mpExtent1XSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpExtent1XSpinBox = new DoubleSpinBox;
   mpExtent1XSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpExtent1XSpinBox->setValue(extents.size() > 0 ? extents.at(0).x() : 0);
   mpExtent1XSpinBox->setSingleStep(10);
   mpExtent1YLabel = new Label(Helper::extent1Y);
-  mpExtent1YSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpExtent1YSpinBox = new DoubleSpinBox;
   mpExtent1YSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpExtent1YSpinBox->setValue(extents.size() > 0 ? extents.at(0).y() : 0);
   mpExtent1YSpinBox->setSingleStep(10);
   mpExtent2XLabel = new Label(Helper::extent2X);
-  mpExtent2XSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpExtent2XSpinBox = new DoubleSpinBox;
   mpExtent2XSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpExtent2XSpinBox->setValue(extents.size() > 0 ? extents.at(1).x() : 0);
   mpExtent2XSpinBox->setSingleStep(10);
   mpExtent2YLabel = new Label(Helper::extent2Y);
-  mpExtent2YSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpExtent2YSpinBox = new DoubleSpinBox;
   mpExtent2YSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpExtent2YSpinBox->setValue(extents.size() > 0 ? extents.at(1).y() : 0);
   mpExtent2YSpinBox->setSingleStep(10);
@@ -141,7 +141,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
     mpBorderPatternComboBox->setCurrentIndex(currentIndex);
   // radius
   mpRadiusLabel = new Label(Helper::radius);
-  mpRadiusSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpRadiusSpinBox = new DoubleSpinBox;
   mpRadiusSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpRadiusSpinBox->setValue(mpShapeAnnotation->getRadius());
   mpRadiusSpinBox->setSingleStep(1);
@@ -158,13 +158,13 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpAngleGroupBox = new QGroupBox(tr("Angle"));
   // start angle
   mpStartAngleLabel = new Label(Helper::startAngle);
-  mpStartAngleSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpStartAngleSpinBox = new DoubleSpinBox;
   mpStartAngleSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpStartAngleSpinBox->setValue(mpShapeAnnotation->getStartAngle());
   mpStartAngleSpinBox->setSingleStep(90);
   // end angle
   mpEndAngleLabel = new Label(Helper::endAngle);
-  mpEndAngleSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpEndAngleSpinBox = new DoubleSpinBox;
   mpEndAngleSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpEndAngleSpinBox->setValue(mpShapeAnnotation->getEndAngle());
   mpEndAngleSpinBox->setSingleStep(90);
@@ -195,7 +195,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   else
     mpFontNameComboBox->setCurrentIndex(0);
   mpFontSizeLabel = new Label(Helper::size);
-  mpFontSizeSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpFontSizeSpinBox = new DoubleSpinBox;
   mpFontSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpFontSizeSpinBox->setValue(mpShapeAnnotation->getFontSize());
   mpFontSizeSpinBox->setSingleStep(1);
@@ -245,7 +245,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
     mpLinePatternComboBox->setCurrentIndex(currentIndex);
   // Line Thickness
   mpLineThicknessLabel = new Label(Helper::thickness);
-  mpLineThicknessSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpLineThicknessSpinBox = new DoubleSpinBox;
   mpLineThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpLineThicknessSpinBox->setValue(mpShapeAnnotation->getLineThickness());
   mpLineThicknessSpinBox->setSingleStep(0.25);
@@ -284,7 +284,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   if (currentIndex > -1)
     mpLineEndArrowComboBox->setCurrentIndex(currentIndex);
   mpLineArrowSizeLabel = new Label(Helper::arrowSize);
-  mpLineArrowSizeSpinBox = new DoubleSpinBox(mpMainWindow->getOptionsDialog()->getGeneralSettingsPage()->getGlobalPrecision());
+  mpLineArrowSizeSpinBox = new DoubleSpinBox;
   mpLineArrowSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpLineArrowSizeSpinBox->setValue(mpShapeAnnotation->getArrowSize());
   mpLineArrowSizeSpinBox->setSingleStep(1);

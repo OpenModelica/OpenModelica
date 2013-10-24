@@ -108,9 +108,6 @@ void OptionsDialog::readGeneralSettings()
   // read the user customizations
   if (mSettings.contains("userCustomizations"))
     mpGeneralSettingsPage->setPreserveUserCustomizations(mSettings.value("userCustomizations").toBool());
-  // read the global precision value
-  if (mSettings.contains("precision"))
-    mpGeneralSettingsPage->setGlobalPrecision(mSettings.value("precision").toInt());
   // read show protected classes
   if (mSettings.contains("showProtectedClasses"))
     mpGeneralSettingsPage->setShowProtectedClasses(mSettings.value("showProtectedClasses").toBool());
@@ -352,10 +349,6 @@ void OptionsDialog::saveGeneralSettings()
   mSettings.setValue("workingDirectory", mpMainWindow->getOMCProxy()->changeDirectory());
   // save user customizations
   mSettings.setValue("userCustomizations", mpGeneralSettingsPage->getPreserveUserCustomizations());
-  // save global precision
-  mSettings.setValue("precision", mpGeneralSettingsPage->getGlobalPrecision());
-  // update all listener DoubleSpinBoxes with new precision
-  mpGeneralSettingsPage->setGlobalPrecision(mpGeneralSettingsPage->getGlobalPrecision());
   // save show protected classes
   mSettings.setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
   // show/hide the protected classes
@@ -762,18 +755,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations"));
-  // Global Precision value.
-  mpGlobalPrecisionLabel = new Label(tr("Global Precision Value:"));
-  mpGlobalPrecisionSpinBox = new QSpinBox;
-  mpGlobalPrecisionSpinBox->setRange(2, 10);
-  mpGlobalPrecisionSpinBox->setValue(6);
-  /*
-    Read the global precision value from omedit.ini and set it so that any DoubleSpinBox control created
-    before calling OptionsDialog::readSettings() will get the right precision value.
-    */
-  QSettings settings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
-  if (settings.contains("precision"))
-    mpGlobalPrecisionSpinBox->setValue(settings.value("precision").toInt());
   // set the layout of general settings group
   QGridLayout *generalSettingsLayout = new QGridLayout;
   generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -783,8 +764,6 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pParent)
   generalSettingsLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
   generalSettingsLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
   generalSettingsLayout->addWidget(mpPreserveUserCustomizations, 2, 0, 1, 3);
-  generalSettingsLayout->addWidget(mpGlobalPrecisionLabel, 3, 0);
-  generalSettingsLayout->addWidget(mpGlobalPrecisionSpinBox, 3, 1, 1, 2);
   mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
@@ -943,17 +922,6 @@ void GeneralSettingsPage::setPreserveUserCustomizations(bool value)
 bool GeneralSettingsPage::getPreserveUserCustomizations()
 {
   return mpPreserveUserCustomizations->isChecked();
-}
-
-void GeneralSettingsPage::setGlobalPrecision(int value)
-{
-  mpGlobalPrecisionSpinBox->setValue(value);
-  emit globalPrecisionValueChanged(value);
-}
-
-int GeneralSettingsPage::getGlobalPrecision()
-{
-  return mpGlobalPrecisionSpinBox->value();
 }
 
 void GeneralSettingsPage::setShowProtectedClasses(bool value)
@@ -1665,9 +1633,7 @@ ModelicaTextEditorPage::ModelicaTextEditorPage(OptionsDialog *pParent)
   connect(mpFontFamilyComboBox, SIGNAL(currentFontChanged(QFont)), SLOT(fontFamilyChanged(QFont)));
   // font size combobox
   mpFontSizeLabel = new Label(tr("Font Size:"));
-  mpFontSizeSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpFontSizeSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpFontSizeSpinBox = new DoubleSpinBox;
   mpFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
   mpFontSizeSpinBox->setValue(mpOptionsDialog->getModelicaTextSettings()->getFontSize());
   mpFontSizeSpinBox->setSingleStep(1);
@@ -1912,30 +1878,22 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   // create Icon View extent points group box
   mpIconViewExtentGroupBox = new QGroupBox(Helper::extent);
   mpIconViewLeftLabel = new Label(QString(Helper::left).append(":"));
-  mpIconViewLeftSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpIconViewLeftSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpIconViewLeftSpinBox = new DoubleSpinBox;
   mpIconViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewLeftSpinBox->setValue(-100);
   mpIconViewLeftSpinBox->setSingleStep(10);
   mpIconViewBottomLabel = new Label(Helper::bottom);
-  mpIconViewBottomSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpIconViewBottomSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpIconViewBottomSpinBox = new DoubleSpinBox;
   mpIconViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewBottomSpinBox->setValue(-100);
   mpIconViewBottomSpinBox->setSingleStep(10);
   mpIconViewRightLabel = new Label(QString(Helper::right).append(":"));
-  mpIconViewRightSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpIconViewRightSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpIconViewRightSpinBox = new DoubleSpinBox;
   mpIconViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewRightSpinBox->setValue(100);
   mpIconViewRightSpinBox->setSingleStep(10);
   mpIconViewTopLabel = new Label(Helper::top);
-  mpIconViewTopSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpIconViewTopSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpIconViewTopSpinBox = new DoubleSpinBox;
   mpIconViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpIconViewTopSpinBox->setValue(100);
   mpIconViewTopSpinBox->setSingleStep(10);
@@ -1956,16 +1914,12 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   // create the Icon View grid group box
   mpIconViewGridGroupBox = new QGroupBox(Helper::grid);
   mpIconViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
-  mpIconViewGridHorizontalSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpIconViewGridHorizontalSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpIconViewGridHorizontalSpinBox = new DoubleSpinBox;
   mpIconViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpIconViewGridHorizontalSpinBox->setValue(2);
   mpIconViewGridHorizontalSpinBox->setSingleStep(1);
   mpIconViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
-  mpIconViewGridVerticalSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpIconViewGridVerticalSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpIconViewGridVerticalSpinBox = new DoubleSpinBox;
   mpIconViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpIconViewGridVerticalSpinBox->setValue(2);
   mpIconViewGridVerticalSpinBox->setSingleStep(1);
@@ -1981,9 +1935,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   // create the Icon View Component group box
   mpIconViewComponentGroupBox = new QGroupBox(Helper::component);
   mpIconViewScaleFactorLabel = new Label(Helper::scaleFactor);
-  mpIconViewScaleFactorSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpIconViewScaleFactorSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpIconViewScaleFactorSpinBox = new DoubleSpinBox;
   mpIconViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpIconViewScaleFactorSpinBox->setValue(0.1);
   mpIconViewScaleFactorSpinBox->setSingleStep(0.1);
@@ -2011,30 +1963,22 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   // create Diagram View extent points group box
   mpDiagramViewExtentGroupBox = new QGroupBox(Helper::extent);
   mpDiagramViewLeftLabel = new Label(QString(Helper::left).append(":"));
-  mpDiagramViewLeftSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpDiagramViewLeftSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpDiagramViewLeftSpinBox = new DoubleSpinBox;
   mpDiagramViewLeftSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewLeftSpinBox->setValue(-100);
   mpDiagramViewLeftSpinBox->setSingleStep(10);
   mpDiagramViewBottomLabel = new Label(Helper::bottom);
-  mpDiagramViewBottomSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpDiagramViewBottomSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpDiagramViewBottomSpinBox = new DoubleSpinBox;
   mpDiagramViewBottomSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewBottomSpinBox->setValue(-100);
   mpDiagramViewBottomSpinBox->setSingleStep(10);
   mpDiagramViewRightLabel = new Label(QString(Helper::right).append(":"));
-  mpDiagramViewRightSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpDiagramViewRightSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpDiagramViewRightSpinBox = new DoubleSpinBox;
   mpDiagramViewRightSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewRightSpinBox->setValue(100);
   mpDiagramViewRightSpinBox->setSingleStep(10);
   mpDiagramViewTopLabel = new Label(Helper::top);
-  mpDiagramViewTopSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpDiagramViewTopSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpDiagramViewTopSpinBox = new DoubleSpinBox;
   mpDiagramViewTopSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpDiagramViewTopSpinBox->setValue(100);
   mpDiagramViewTopSpinBox->setSingleStep(10);
@@ -2055,16 +1999,12 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   // create the Diagram View grid group box
   mpDiagramViewGridGroupBox = new QGroupBox(Helper::grid);
   mpDiagramViewGridHorizontalLabel = new Label(QString(Helper::horizontal).append(":"));
-  mpDiagramViewGridHorizontalSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpDiagramViewGridHorizontalSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpDiagramViewGridHorizontalSpinBox = new DoubleSpinBox;
   mpDiagramViewGridHorizontalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpDiagramViewGridHorizontalSpinBox->setValue(2);
   mpDiagramViewGridHorizontalSpinBox->setSingleStep(1);
   mpDiagramViewGridVerticalLabel = new Label(QString(Helper::vertical).append(":"));
-  mpDiagramViewGridVerticalSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpDiagramViewGridVerticalSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpDiagramViewGridVerticalSpinBox = new DoubleSpinBox;
   mpDiagramViewGridVerticalSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpDiagramViewGridVerticalSpinBox->setValue(2);
   mpDiagramViewGridVerticalSpinBox->setSingleStep(1);
@@ -2080,9 +2020,7 @@ GraphicalViewsPage::GraphicalViewsPage(OptionsDialog *pParent)
   // create the Diagram View Component group box
   mpDiagramViewComponentGroupBox = new QGroupBox(Helper::component);
   mpDiagramViewScaleFactorLabel = new Label(Helper::scaleFactor);
-  mpDiagramViewScaleFactorSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpDiagramViewScaleFactorSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpDiagramViewScaleFactorSpinBox = new DoubleSpinBox;
   mpDiagramViewScaleFactorSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpDiagramViewScaleFactorSpinBox->setValue(0.1);
   mpDiagramViewScaleFactorSpinBox->setSingleStep(0.1);
@@ -2435,9 +2373,7 @@ LineStylePage::LineStylePage(OptionsDialog *pParent)
   setLinePattern(StringHandler::getLinePatternString(StringHandler::LineSolid));
   // Line Thickness
   mpLineThicknessLabel = new Label(Helper::thickness);
-  mpLineThicknessSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpLineThicknessSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpLineThicknessSpinBox = new DoubleSpinBox;
   mpLineThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpLineThicknessSpinBox->setValue(0.25);
   mpLineThicknessSpinBox->setSingleStep(0.25);
@@ -2447,9 +2383,7 @@ LineStylePage::LineStylePage(OptionsDialog *pParent)
   mpLineEndArrowLabel = new Label(Helper::endArrow);
   mpLineEndArrowComboBox = StringHandler::getEndArrowComboBox();
   mpLineArrowSizeLabel = new Label(Helper::arrowSize);
-  mpLineArrowSizeSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpLineArrowSizeSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpLineArrowSizeSpinBox = new DoubleSpinBox;
   mpLineArrowSizeSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpLineArrowSizeSpinBox->setValue(3);
   mpLineArrowSizeSpinBox->setSingleStep(1);
@@ -2687,9 +2621,7 @@ CurveStylePage::CurveStylePage(OptionsDialog *pParent)
   mpCurvePatternComboBox->addItem("Steps", 7);
   // Curve Thickness
   mpCurveThicknessLabel = new Label(Helper::thickness);
-  mpCurveThicknessSpinBox = new DoubleSpinBox(mpOptionsDialog->getGeneralSettingsPage()->getGlobalPrecision());
-  connect(mpOptionsDialog->getGeneralSettingsPage(), SIGNAL(globalPrecisionValueChanged(int)),
-          mpCurveThicknessSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+  mpCurveThicknessSpinBox = new DoubleSpinBox;
   mpCurveThicknessSpinBox->setRange(0, std::numeric_limits<double>::max());
   mpCurveThicknessSpinBox->setValue(1);
   mpCurveThicknessSpinBox->setSingleStep(1);

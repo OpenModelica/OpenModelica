@@ -77,6 +77,10 @@ private:
 };
 
 //! @class DoubleSpinBox
+/*! \brief Only keeping this class so that if in future we need to change the way QDoubleSpinBox works then we don't have to change the
+ * forms controls again.
+ */
+/* Old Description */
 /*! \brief It creates a double spinbox with a specified precision value.
  * If you want the precision value to be changed based on the global precision value defined in omedit.ini then connect this object with
  * the object of GeneralSettingsPage object right after creating this object. e.g,\n
@@ -86,9 +90,12 @@ class DoubleSpinBox : public QDoubleSpinBox
 {
   Q_OBJECT
 public:
+  DoubleSpinBox(QWidget *parent = 0) : QDoubleSpinBox(parent) {}
+  /* old implementation
   DoubleSpinBox(int precision = 2, QWidget *parent = 0) : QDoubleSpinBox(parent) {setDecimals(precision);}
 public slots:
   void handleGlobalPrecisionValueChange(int value) {setDecimals(value);}
+  */
 };
 
 //! @struct RecentFile

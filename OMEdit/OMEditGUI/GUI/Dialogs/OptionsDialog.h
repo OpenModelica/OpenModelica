@@ -129,8 +129,6 @@ public:
   QString getWorkingDirectory();
   void setPreserveUserCustomizations(bool value);
   bool getPreserveUserCustomizations();
-  void setGlobalPrecision(int value);
-  int getGlobalPrecision();
   void setShowProtectedClasses(bool value);
   bool getShowProtectedClasses();
   void setModelingViewMode(QString value);
@@ -155,8 +153,6 @@ private:
   QLineEdit *mpWorkingDirectoryTextBox;
   QPushButton *mpWorkingDirectoryBrowseButton;
   QCheckBox *mpPreserveUserCustomizations;
-  Label *mpGlobalPrecisionLabel;
-  QSpinBox *mpGlobalPrecisionSpinBox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   QCheckBox *mpShowProtectedClasses;
   QGroupBox *mpModelingViewModeGroupBox;
@@ -183,8 +179,6 @@ private:
 public slots:
   void selectWorkingDirectory();
   void autoSaveIntervalValueChanged(int value);
-signals:
-  void globalPrecisionValueChanged(int value);
 };
 
 class LibrariesPage : public QWidget
