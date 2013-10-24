@@ -2532,7 +2532,7 @@ protected function getSparsePatternHelp
   input list<Integer> inLocalList;
   output list<Integer> outLocalList;
 algorithm
-  outLocalList := matchcontinue(inInputVars, invarSparse, inMark, inUsed, inmarkValue, inLocalList)
+  outLocalList := match (inInputVars, invarSparse, inMark, inUsed, inmarkValue, inLocalList)
   local
     list<Integer> localList, varSparse, rest;
     Integer arrayElement, var;
@@ -2540,23 +2540,13 @@ algorithm
     case (var::rest,_,_,_,_,_)
       equation
         arrayElement = arrayGet(inUsed, var);
-        false = intEq(1, arrayElement);
-
-        varSparse = arrayGet(invarSparse, var);
-        localList = List.fold2(varSparse, getSparsePatternHelp2, inMark, inmarkValue, inLocalList);
-        localList =  getSparsePatternHelp(rest, invarSparse, inMark, inUsed, inmarkValue, localList);
-      then localList;
-    case (var::rest,_,_,_,_,_)
-      equation
-        arrayElement = arrayGet(inUsed, var);
-        true = intEq(1, arrayElement);
-        localList = getSparsePatternHelp2(var, inMark, inmarkValue, inLocalList);
+        localList = Debug.bcallret4(intEq(1, arrayElement), getSparsePatternHelp2, var, inMark, inmarkValue, inLocalList, inLocalList);
 
         varSparse = arrayGet(invarSparse, var);
         localList = List.fold2(varSparse, getSparsePatternHelp2, inMark, inmarkValue, localList);
         localList =  getSparsePatternHelp(rest, invarSparse, inMark, inUsed, inmarkValue, localList);
       then localList;
-  end matchcontinue;
+  end match;
 end getSparsePatternHelp;
 
 protected function getSparsePatternHelp2
