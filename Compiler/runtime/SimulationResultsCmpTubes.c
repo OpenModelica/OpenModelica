@@ -198,7 +198,7 @@ static void generateLowTube(privates *priv, double *x, double *y)
 }
 
 /* This method generates tubes around a given curve */
-privates* calculateTubes(double *x, double *y, size_t length, double r)
+static privates* calculateTubes(double *x, double *y, size_t length, double r)
 {
   privates *priv = (privates*) GC_malloc(sizeof(privates));
   int i;
@@ -212,18 +212,18 @@ privates* calculateTubes(double *x, double *y, size_t length, double r)
   priv->countHigh = 0;
 
   /* Initialize lists (upper tube) */
-  priv->mh  = (double*)GC_malloc(sizeof(double)*length);
-  priv->i0h = (int*)GC_malloc(sizeof(int)*length);
-  priv->i1h = (int*)GC_malloc(sizeof(int)*length);
+  priv->mh  = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->i0h = (int*)GC_malloc_atomic(sizeof(int)*length);
+  priv->i1h = (int*)GC_malloc_atomic(sizeof(int)*length);
   /* Initialize lists (lower tube) */
-  priv->ml  = (double*)GC_malloc(sizeof(double)*length);
-  priv->i0l = (int*)GC_malloc(sizeof(int)*length);
-  priv->i1l = (int*)GC_malloc(sizeof(int)*length);
+  priv->ml  = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->i0l = (int*)GC_malloc_atomic(sizeof(int)*length);
+  priv->i1l = (int*)GC_malloc_atomic(sizeof(int)*length);
 
-  priv->xHigh = (double*)GC_malloc(sizeof(double)*length);
-  priv->xLow  = (double*)GC_malloc(sizeof(double)*length);
-  priv->yHigh = (double*)GC_malloc(sizeof(double)*length);
-  priv->yLow  = (double*)GC_malloc(sizeof(double)*length);
+  priv->xHigh = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->xLow  = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->yHigh = (double*)GC_malloc_atomic(sizeof(double)*length);
+  priv->yLow  = (double*)GC_malloc_atomic(sizeof(double)*length);
 
   /* calculate the tubes delta */
   priv->delta = r * (priv->tStop - priv->tStart);
@@ -335,7 +335,7 @@ privates* calculateTubes(double *x, double *y, size_t length, double r)
 }
 
 /* Count the number of errors */
-int validate(int n, double *low, double *high, double *val)
+static int validate(int n, double *low, double *high, double *val)
 {
   int iErrors = 0, i;
   for (i = 0; i < n; i++) {
@@ -347,7 +347,7 @@ int validate(int n, double *low, double *high, double *val)
 }
 
 /* Calibrate the target time+value pair onto the source timeline */
-double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, double* targetValues, size_t *nsource, size_t ntarget)
+static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, double* targetValues, size_t *nsource, size_t ntarget)
 {
   if (0 == nsource) {
     return NULL;
@@ -370,10 +370,13 @@ double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, double* 
     x1 = targetTimeLine[j];
     y1 = targetValues[j];
 
-    while (x1 < x && j + 1 < ntarget) { // step source timline to the current moment
+    while (x1 <= x && j + 1 < ntarget) { // step source timline to the current moment
       j++;
       x1 = targetTimeLine[j];
       y1 = targetValues[j];
+      if (x1 == x) {
+        break; /* Consume at most one if equal */
+      }
     }
 
     x0 = targetTimeLine[j - 1];
@@ -387,6 +390,69 @@ double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, double* 
   }
 
   return interpolatedValues;
+}
+
+typedef struct {
+  double *time;
+  double *values;
+  size_t size;
+} addTargetEventTimesRes;
+
+static inline size_t findNextEvent(size_t i, double *time, size_t n)
+{
+  for (i; i < n; i++) {
+    if (AlmostEqualRelativeAndAbs(time[i-1],time[i])) return i;
+  }
+  return 0; /* Not found */
+}
+
+static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double* targetTimeLine, double *sourceValues, size_t nsource, size_t ntarget)
+{
+  addTargetEventTimesRes res;
+  size_t i=0,j,count=0;
+  while (i=findNextEvent(i+1,targetTimeLine,ntarget)) {
+    if (targetTimeLine[i] >= sourceTimeLine[nsource-1]) {
+      break;
+    }
+    count++; /* The number of found time events in the target file */
+  }
+  if (count == 0) {
+    res.size = nsource;
+    res.time = sourceTimeLine;
+    res.values = sourceValues;
+    return res;
+  }
+  res.size = nsource+count;
+  res.values = GC_malloc_atomic(sizeof(double)*res.size);
+  res.time = GC_malloc_atomic(sizeof(double)*res.size);
+  i=0;
+  count=0;
+  int iter=0;
+  j=findNextEvent(1,targetTimeLine,ntarget);
+  while (j) {
+    if (targetTimeLine[j] >= sourceTimeLine[nsource-1]) {
+      break;
+    }
+    while (sourceTimeLine[i] < targetTimeLine[j] && i<nsource) {
+      res.values[count] = sourceValues[i];
+      res.time[count++] = sourceTimeLine[i++];
+    }
+    if (sourceTimeLine[i] == targetTimeLine[j]) {
+      res.size--; /* Filter events at identical times in both files */
+    } else {
+      res.values[count] = sourceValues[intmax(0,i-1)];
+      res.time[count++] = targetTimeLine[j];
+    }
+    assert(count < res.size);
+    j=findNextEvent(j+1,targetTimeLine,ntarget);
+    iter++;
+  }
+  while (i < nsource) {
+    res.values[count] = sourceValues[i];
+    res.time[count++] = sourceTimeLine[i++];
+  }
+  assert(res.size == count);
+  return res;
 }
 
 /* Adds a relative tolerance compared to the reference signal. Overwrites the target values vector. */
@@ -406,19 +472,20 @@ static inline void addRelativeTolerance(double *targetValues, double *sourceValu
 
 static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix)
 {
-  int i, isdifferent;
+  int i, isdifferent = 0;
   FILE *fout = NULL;
   char *fname = NULL;
-  size_t n = reftime->n;
-  privates *priv = calculateTubes(reftime->data,refdata->data,reftime->n,rangeDelta);
-  double *refdata_interpolated = calibrateValues(reftime->data,time->data,data->data,&n,time->n);
-  double *high = calibrateValues(reftime->data,priv->xHigh,priv->yHigh,&n,priv->countHigh);
-  double *low  = calibrateValues(reftime->data,priv->xLow,priv->yLow,&n,priv->countLow);
-  addRelativeTolerance(high,refdata->data,n,reltol,1);
-  addRelativeTolerance(low ,refdata->data,n,reltol,-1);
-  isdifferent = validate(n,low,high,refdata_interpolated);
+  addTargetEventTimesRes ref = addTargetEventTimes(reftime->data, time->data, refdata->data, reftime->n, time->n);
+  size_t n = ref.size;
+  // calibrateValuesConsiderEventsResult calibrated = calibrateValuesConsiderEvents(ref->time,time->data,data->data,&n,time->n);
+  double *calibrated_values = calibrateValues(ref.time,time->data,data->data,&n,time->n);
+  privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
+  double *high = calibrateValues(ref.time,priv->xHigh,priv->yHigh,&n,priv->countHigh);
+  double *low  = calibrateValues(ref.time,priv->xLow,priv->yLow,&n,priv->countLow);
+  addRelativeTolerance(high,ref.values,n,reltol,1);
+  addRelativeTolerance(low ,ref.values,n,reltol,-1);
   if (!isResultCmp) {
-    fname = (char*) GC_malloc(25 + strlen(prefix) + strlen(varname));
+    fname = (char*) GC_malloc_atomic(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
     if (fout) {
@@ -426,26 +493,36 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
       fprintf(fout, "timereference,reference,actual,high,low,error,timeactual,rawactual,timehigh,rawhigh,timelow,rawlow,actual_interpolated,min,max,startTime,stopTime\n");
     }
   }
-  size_t maxn = intmax(intmax(intmax(reftime->n,time->n),priv->countHigh),priv->countLow);
+  size_t maxn = intmax(intmax(intmax(ref.size,time->n),priv->countHigh),priv->countLow);
   if (fout) {
     for (i=0; i<maxn; i++) {
-      if (i < reftime->n) {
-       fprintf(fout, "%.15g,%.15g,",reftime->data[i],refdata->data[i]);
+      if (i < ref.size) {
+       fprintf(fout, "%.15g,%.15g,",ref.time[i],ref.values[i]);
       } else {
        fprintf(fout, ",,");
       }
       if (i < n) { /* actual,high,low,error */
-        fprintf(fout, "%.15g,", refdata_interpolated[i]);
+        fprintf(fout, "%.15g,", calibrated_values[i]);
         fprintf(fout, "%.15g,%.15g,",high[i],low[i]);
-        if (refdata_interpolated[i] < low[i]) {
-          fprintf(fout, "%.15g,", low[i]-refdata_interpolated[i]);
-        } else if (refdata_interpolated[i] > high[i]) {
-          fprintf(fout, "%.15g,", refdata_interpolated[i]-high[i]);
+        if ((i && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i-1])) || (i+1<n && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i+1]))) {
+          /* Skip calculating errors at events */
+          fprintf(fout, "0,");
+        } else if (calibrated_values[i] < low[i]) {
+          fprintf(fout, "%.15g,", low[i]-calibrated_values[i]);
+          isdifferent++;
+        } else if (calibrated_values[i] > high[i]) {
+          fprintf(fout, "%.15g,", calibrated_values[i]-high[i]);
+          isdifferent++;
         } else {
           fprintf(fout, "0,");
         }
       } else {
         fprintf(fout, ",,,,");
+      }
+      if (i < time->n) {
+       fprintf(fout, "%.15g,%.15g,",time->data[i],data->data[i]);
+      } else {
+       fprintf(fout, ",,");
       }
       if (i < priv->countHigh) {
        fprintf(fout, "%.15g,%.15g,",priv->xHigh[i],priv->yHigh[i]);
@@ -457,18 +534,15 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
       } else {
        fprintf(fout, ",,");
       }
-      if (i < time->n) {
-       fprintf(fout, "%.15g,%.15g,",time->data[i],data->data[i]);
-      } else {
-       fprintf(fout, ",,");
-      }
       if (i==0) {
-        fprintf(fout, "%.15g,%.15g,%.15g,%.15g", priv->min, priv->max, reftime->data[0], reftime->data[reftime->n-1]);
+        fprintf(fout, "%.15g,%.15g,%.15g,%.15g", priv->min, priv->max, ref.time[0], ref.time[ref.size-1]);
       } else {
         fprintf(fout, ",,,");
       }
       fprintf(fout, "\n");
     }
+  } else {
+    isdifferent = validate(n,low,high,calibrated_values);
   }
   if (isdifferent) {
     cmpdiffvars[vardiffindx] = varname;
