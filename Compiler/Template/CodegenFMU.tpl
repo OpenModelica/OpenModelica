@@ -671,7 +671,7 @@ template initVal(Exp initialValue)
   case RCONST(__) then real
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
   case BCONST(__) then if bool then "1" else "0"
-  case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPath(name)%>*/'
+  case ENUM_LITERAL(__) then '<%index%>'
   else "*ERROR* initial value of unknown type"
 end initVal;
 
