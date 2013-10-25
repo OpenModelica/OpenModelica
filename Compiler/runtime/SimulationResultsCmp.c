@@ -598,7 +598,7 @@ static const char* getTimeVarName(void *vars) {
 #include "SimulationResultsCmpTubes.c"
 
 /* Common, huge function, for both result comparison and result diff */
-void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol, void *vars, int keepEqualResults, int *success)
+void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol, double rangeDelta, double reltolDiffMaxMin, void *vars, int keepEqualResults, int *success, int isHtml, char **htmlOut)
 {
   char **cmpvars=NULL;
   char **cmpdiffvars=NULL;
@@ -735,10 +735,12 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       }
     }
     /* compare */
-    if (isResultCmp) {
+    if (isHtml) {
+      vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,1,htmlOut);
+    } if (isResultCmp) {
       vardiffindx = cmpData(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,abstol,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename);
     } else {
-      vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,/*rangeDelta*/abstol,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename);
+      vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,0,0);
     }
     /* free */
     if (dataref.data) free(dataref.data);
@@ -763,7 +765,9 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       res = mk_cons(mk_scon("Files Equal!"),res);
     }
   } else {
-    *success = 0==vardiffindx;
+    if (success) {
+      *success = 0==vardiffindx;
+    }
   }
 
   // if (var1) free(var1);

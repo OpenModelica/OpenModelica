@@ -65,12 +65,19 @@ double SimulationResults_val(const char *filename, const char *varname, double t
 
 void* SimulationResults_cmpSimulationResults(int runningTestsuite, const char *filename,const char *reffilename,const char *logfilename, double refTol, double absTol, void *vars)
 {
-  return SimulationResultsCmp_compareResults(1,runningTestsuite,filename,reffilename,logfilename,refTol,absTol,vars,0,NULL);
+  return SimulationResultsCmp_compareResults(1,runningTestsuite,filename,reffilename,logfilename,refTol,absTol,0,0,vars,0,NULL,0,NULL);
 }
 
-void* SimulationResults_diffSimulationResults(int runningTestsuite, const char *filename,const char *reffilename,const char *logfilename, double refTol, double absTol, void *vars, int keepEqualResults, int *success)
+void* SimulationResults_diffSimulationResults(int runningTestsuite, const char *filename,const char *reffilename,const char *logfilename, double refTol, double reltolDiffMaxMin, double rangeDelta, void *vars, int keepEqualResults, int *success)
 {
-  return SimulationResultsCmp_compareResults(0,runningTestsuite,filename,reffilename,logfilename,refTol,absTol,vars,keepEqualResults,success);
+  return SimulationResultsCmp_compareResults(0,runningTestsuite,filename,reffilename,logfilename,refTol,0,reltolDiffMaxMin,rangeDelta,vars,keepEqualResults,success,0,NULL);
+}
+
+const char* SimulationResults_diffSimulationResultsHtml(int runningTestsuite, const char *var, const char *filename,const char *reffilename, double refTol, double reltolDiffMaxMin, double rangeDelta)
+{
+  char *res;
+  SimulationResultsCmp_compareResults(0,runningTestsuite,filename,reffilename,"",refTol,0,reltolDiffMaxMin,rangeDelta,mmc_mk_cons(mmc_mk_scon(var),mmc_mk_nil()),0,NULL,1,&res);
+  return res;
 }
 
 void SimulationResults_close()

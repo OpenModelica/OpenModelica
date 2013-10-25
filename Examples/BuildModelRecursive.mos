@@ -2,7 +2,7 @@
 
 library:=$TypeName(Modelica);
 libraryVersion:="default";
-referenceFiles:="";
+referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/libraries/msl32/ReferenceFiles";
 referenceFileExtension:="mat";
 referenceFileNameDelimiter:=".";
 
@@ -13,7 +13,8 @@ ulimitOmc:="1200"; // 20 minutes to generate the C-code
 ulimitExe:="480";  // 8 minutes to initialize and run the simulation
 default_tolerance:=1e-5;
 reference_reltol:=1e-3;
-reference_rangeDelta:=2e-3;
+reference_reltolDiffMinMax:=1e-4;
+reference_rangeDelta:=1e-4;
 loadModel(library,{libraryVersion});
 getErrorString();
 libraryVersionRevision:=getVersion(library);
@@ -97,6 +98,7 @@ writeFile(statFile + \".sim\", testcase(0,false,\"killed\"));getErrorString();
 writeFile(statFile + \".verify\", testcase(0,false,\"killed\"));getErrorString();
 "+loadModelCommand+"
 reference_reltol:="+String(reference_reltol)+";
+reference_reltolDiffMinMax:="+String(reference_reltolDiffMinMax)+";
 reference_rangeDelta:="+String(reference_rangeDelta)+";
 (startTime,stopTime,tolerance):=getSimulationOptions("+s+",defaultTolerance="+String(default_tolerance)+");
 setCommandLineOptions(\"+d=nogen,initialization\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
@@ -127,6 +129,7 @@ frontend :=if backend <> -1.0 then frontend-backend else frontend;
 backend  :=if simcode <> -1.0 then backend-simcode else backend;
 simcode  :=if templates <> -1.0 then simcode-templates else simcode;
 templates:=if build <> -1.0 then templates-build else templates;
+timeDiff := -1.0;
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 buildRes := res[1] <> \"\";
@@ -145,25 +148,16 @@ if simRes then
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
     (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.mat\",reference,prefix,relTol=reference_reltol,rangeDelta=reference_rangeDelta);
+    if referenceOK then
+      system(\"touch "+s+".verifysuccess\");
+    end if;
     timeDiff := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
     diffFiles := {prefix + \".\" + var for var in diffVars};
     // Create a file containing only the calibrated variables, for easy display
-    {system(\"cut -d, -f1,2,3,4,5,6 '\" + prefix + \".\" + var + \".csv' | grep -v ^, > '\" + prefix + \".\" + var + \".calibrated.csv'\") for var in diffVars};
     if not referenceOK then
-      writeFile(\""+s+".gnuplot\",\"set term svg size 800,500
-set datafile separator \\\",\\\"
-set format y \\\"%.15g\\\"
-set samples 300
-\" + sum(\"set output \\\"\"+file+\".svg\\\"
-set title \\\"Result difference of \"+csvFileToVariable(file)+\"\\\"
-# Skip setting xrange; it removes too many lines
-set xrange [\"+String(startTime)+\":\"+String(stopTime)+\"]
-plot \\\"\"+file+\".csv\\\" using 1:2 title 'reference' with lines, \\\"\"+file+\".csv\\\" using 1:3 title 'actual' with lines, \\\"\"+file+\".csv\\\" using 1:4 title 'high' with lines, \\\"\"+file+\".csv\\\" using 1:5 title 'low' with lines
-\" for file in diffFiles));
-      system(\"gnuplot '"+s+".gnuplot'\");
       timeDiff := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
       referenceCell := \"<td bgcolor=\\\"#FF0000\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(timeDiff)+\", <a href=\\\"files/"+s+".diff.html\\\">\"+String(size(diffFiles,1))+\" failed</a></td>\";
-      writeFile(\"files/"+s+".diff.html\",\"<html><body><h1>"+s+" differences from the reference file</h1><p>startTime: \"+String(startTime)+\"</p><p>stopTime: \"+String(stopTime)+\"</p><p>Simulated using tolerance: \"+String(tolerance)+\"</p><ul>\" + sum(\"<li>\"+csvFileToVariable(file)+\" <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".html\\\">(javascript)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".svg\\\">(svg)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".csv\\\">(csv)</a></li>\" for file in diffFiles) + \"</ul></body></html>\");
+      writeFile(\"files/"+s+".diff.html\",\"<html><body><h1>"+s+" differences from the reference file</h1><p>startTime: \"+String(startTime)+\"</p><p>stopTime: \"+String(stopTime)+\"</p><p>Simulated using tolerance: \"+String(tolerance)+\"</p><ul>\" + sum(\"<li>\"+csvFileToVariable(file)+\" <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".html\\\">(javascript)</a> <a href=\\\"\"+OpenModelica.Scripting.basename(file)+\".csv\\\">(csv)</a></li>\" for file in diffFiles) + \"</ul></body></html>\");
       {writeFile(prefix + \".\" + var + \".html\",\"<html>
 <head>
 <script type=\\\"text/javascript\\\" src=\\\"dygraph-combined.js\\\"></script>
@@ -179,15 +173,33 @@ plot \\\"\"+file+\".csv\\\" using 1:2 title 'reference' with lines, \\\"\"+file+
 </head>
 <body>
 <div id=\\\"graphdiv\\\"></div>
+<p><input type=checkbox id=\\\"0\\\" checked onClick=\\\"change(this)\\\">
+<label for=\\\"0\\\">reference</label>
+<input type=checkbox id=\\\"1\\\" checked onClick=\\\"change(this)\\\">
+<label for=\\\"1\\\">actual</label>
+<input type=checkbox id=\\\"2\\\" checked onClick=\\\"change(this)\\\">
+<label for=\\\"2\\\">high</label>
+<input type=checkbox id=\\\"3\\\" checked onClick=\\\"change(this)\\\">
+<label for=\\\"3\\\">low</label>
+<input type=checkbox id=\\\"4\\\" checked onClick=\\\"change(this)\\\">
+<label for=\\\"4\\\">error</label>
+<input type=checkbox id=\\\"5\\\" onClick=\\\"change(this)\\\">
+<label for=\\\"5\\\">actual (original)</label>
+Parameters used for the comparison: Relative tolerance \"+String(reference_reltol)+\" (local), \"+String(reference_reltolDiffMinMax)+\" (relative to max-min). Range delta \"+String(reference_rangeDelta)+\".</p>
 <script type=\\\"text/javascript\\\">
 g = new Dygraph(document.getElementById(\\\"graphdiv\\\"),
-                 \\\"\"+OpenModelica.Scripting.basename(prefix + \".\" + var+\".calibrated.csv\")+\"\\\",{title: '\"+var+\"',
+                 \\\"\"+OpenModelica.Scripting.basename(prefix + \".\" + var+\".csv\")+\"\\\",{title: '\"+var+\"',
   legend: 'always',
+  connectSeparatedPoints: true,
   xlabel: ['time'],
   y2label: ['error'],
   series : { 'error': { axis: 'y2' } },
-  colors: ['blue','red','teal','lightblue','orange']
+  colors: ['blue','red','teal','lightblue','orange','black'],
+  visibility: [true,true,true,true,true,false]
 });
+function change(el) {
+  g.setVisibility(parseInt(el.id), el.checked);
+}
 </script>
 </body>
 </html>\") for var in diffVars};
@@ -224,9 +236,11 @@ getErrorString();
 system("rm -f " + log);
 nsucceeded := String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1));
 nsimsucceeded := String(sum(if OpenModelica.Scripting.regularFileExists(s + ".simsuccess") then 1 else 0 for s in a)) + "/" + String(size(a,1));
+nverifysucceeded := String(sum(if OpenModelica.Scripting.regularFileExists(s + ".verifysuccess") then 1 else 0 for s in a)) + "/" + String(size(a,1));
 str:="<h1>Recursive BuildModel Test</h1>
 <p>BuildModel Results: " + nsucceeded + " succeeded</p>
-<p>Simulation Results: " + nsimsucceeded + " succeeded</p>
+<p>Simulation Results: " + nsimsucceeded + " succeeded</p>"+(if referenceFiles<> "" then "
+<p>Verified Results: " + nverifysucceeded + " succeeded</p>" else "")+"
 <p>Total time taken: "+OpenModelica.Scripting.Internal.Time.readableTime(OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED))+"</p>
 <p>OpenModelica Version: "+OpenModelica.Scripting.getVersion()+"</p>
 <p>Test started: "+dateAndTime+"</p>

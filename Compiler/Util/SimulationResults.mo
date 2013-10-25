@@ -94,13 +94,26 @@ public function diffSimulationResults
   input String reffilename;
   input String prefix;
   input Real refTol;
-  input Real absTol;
+  input Real relTolDiffMaxMin;
+  input Real rangeDelta;
   input list<String> vars;
   input Boolean keepEqualResults;
   output Boolean success;
   output list<String> res;
-  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,absTol,vars,keepEqualResults,success) annotation(Library = "omcruntime");
+  external "C" res=SimulationResults_diffSimulationResults(runningTestsuite,filename,reffilename,prefix,refTol,relTolDiffMaxMin,rangeDelta,vars,keepEqualResults,success) annotation(Library = "omcruntime");
 end diffSimulationResults;
+
+public function diffSimulationResultsHtml
+  input Boolean runningTestsuite;
+  input String filename;
+  input String reffilename;
+  input Real refTol;
+  input Real relTolDiffMaxMin;
+  input Real rangeDelta;
+  input String var;
+  output String html;
+  external "C" html=SimulationResults_diffSimulationResultsHtml(runningTestsuite,var,filename,reffilename,refTol,relTolDiffMaxMin,rangeDelta) annotation(Library = "omcruntime");
+end diffSimulationResultsHtml;
 
 end SimulationResults;
 

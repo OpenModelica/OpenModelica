@@ -2345,7 +2345,8 @@ public function diffSimulationResults "compares simulation results."
   input String actualFile;
   input String expectedFile;
   input String diffPrefix;
-  input Real relTol := 1e-4 "y tolerance";
+  input Real relTol := 1e-3 "y tolerance";
+  input Real relTolDiffMinMax := 1e-4 "y tolerance based on the difference between the maximum and minimum of the signal";
   input Real rangeDelta := 0.002 "x tolerance";
   input String[:] vars := fill("",0);
   input Boolean keepEqualResults := false;
@@ -2357,6 +2358,21 @@ annotation(Documentation(info="<html>
 <p>The output is the names of the variables for which files were generated.</p>
 </html>"),preferredView="text");
 end diffSimulationResults;
+
+public function diffSimulationResultsHtml
+  input String var;
+  input String actualFile;
+  input String expectedFile;
+  input Real relTol := 1e-3 "y tolerance";
+  input Real relTolDiffMinMax := 1e-4 "y tolerance based on the difference between the maximum and minimum of the signal";
+  input Real rangeDelta := 0.002 "x tolerance";
+  output String html;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Takes two result files and compares them. By default, all selected variables that are not equal in the two files are output to diffPrefix.varName.csv.</p>
+<p>The output is the names of the variables for which files were generated.</p>
+</html>"),preferredView="text");
+end diffSimulationResultsHtml;
 
 public function checkTaskGraph "Checks if the given taskgraph has the same structure as the reference taskgraph and if all attributes are set correctly."
   input String filename;

@@ -119,7 +119,7 @@ static void generateHighTube(privates *priv, double *x, double *y)
     }
 
     /* If the juncture of the current interval is before the last saved one (3.2.6.7) */
-    while (/* Avoid underflow. Should this generate an error instead? */ index && priv->xHigh[index] <= priv->xHigh[index - 1]) {
+    while (/* Avoid underflow. Should this generate an error instead? */ index>1 && priv->xHigh[index] <= priv->xHigh[index - 1]) {
       /* consolidating the current and the previous interval (3.2.6.7.3) */
       priv->i0h[index-1] = priv->i0h[index]; /* Remove the second to last element */
       priv->i1h[index-1] = priv->i1h[index];
@@ -175,7 +175,7 @@ static void generateLowTube(privates *priv, double *x, double *y)
       priv->ml[index - 1] = (priv->yLow[index] - priv->yLow[index - 1]) / priv->xMinStep;
     }
 
-    while (index /* Avoid underflow. Should this generate an error instead? */ && priv->xLow[index] <= priv->xLow[index - 1]) {
+    while (index>1 /* Avoid underflow. Should this generate an error instead? */ && priv->xLow[index] <= priv->xLow[index - 1]) {
       priv->i0l[index-1] = priv->i0l[index];
       priv->i1l[index-1] = priv->i1l[index];
       priv->ml[index-1] = priv->ml[index];
@@ -374,18 +374,19 @@ static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, d
       j++;
       x1 = targetTimeLine[j];
       y1 = targetValues[j];
-      if (x1 == x) {
-        break; /* Consume at most one if equal */
+      if (AlmostEqualRelativeAndAbs(x1,x)) {
+        break;
       }
     }
-
     x0 = targetTimeLine[j - 1];
     y0 = targetValues[j - 1];
 
-    if (((x1 - x0) * (x - x0)) != 0) { //prevent NaN -> division by zero
-      interpolatedValues[i] = y0 + (((y1 - y0) / (x1 - x0)) * (x - x0)); // linear interpolation of the source value at the target moment in time
-    } else {
+    if (AlmostEqualRelativeAndAbs(x1,x)) { //prevent NaN -> division by zero
+      interpolatedValues[i] = y1;
+    } else if (AlmostEqualRelativeAndAbs(x1,x0) || AlmostEqualRelativeAndAbs(x,x0)) { //prevent NaN -> division by zero
       interpolatedValues[i] = y0;
+    } else {
+      interpolatedValues[i] = y0 + (((y1 - y0) / (x1 - x0)) * (x - x0)); // linear interpolation of the source value at the target moment in time
     }
   }
 
@@ -456,91 +457,139 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
 }
 
 /* Adds a relative tolerance compared to the reference signal. Overwrites the target values vector. */
-static inline void addRelativeTolerance(double *targetValues, double *sourceValues, double length, double reltol, int direction)
+static inline void addRelativeTolerance(double *targetValues, double *sourceValues, double length, double abstol, double reltol, int direction)
 {
   int i;
   if (direction > 0) {
     for (i=0; i<length; i++) {
-      targetValues[i] = fmax(sourceValues[i] + fabs(sourceValues[i]*reltol), targetValues[i]);
+      targetValues[i] = fmax(sourceValues[i] + fmax(fabs(sourceValues[i]*reltol),abstol), targetValues[i]);
     }
   } else {
     for (i=0; i<length; i++) {
-      targetValues[i] = fmin(sourceValues[i] - fabs(sourceValues[i]*reltol), targetValues[i]);
+      targetValues[i] = fmin(sourceValues[i] - fmax(fabs(sourceValues[i]*reltol),abstol), targetValues[i]);
     }
   }
 }
 
-static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix)
+static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, double reltolDiffMaxMin, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix, int isHtml, char **htmlOut)
 {
   int i, isdifferent = 0;
   FILE *fout = NULL;
   char *fname = NULL;
-  addTargetEventTimesRes ref = addTargetEventTimes(reftime->data, time->data, refdata->data, reftime->n, time->n);
+  char *html;
+  size_t html_size=0;
+  /* Calculate the tubes without additional events added */
+  addTargetEventTimesRes ref;
+  ref.values = refdata->data;
+  ref.time = reftime->data;
+  ref.size = reftime->n;
+  privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
+  ref = addTargetEventTimes(ref.time, time->data, ref.values, ref.size, time->n);
   size_t n = ref.size;
   // calibrateValuesConsiderEventsResult calibrated = calibrateValuesConsiderEvents(ref->time,time->data,data->data,&n,time->n);
   double *calibrated_values = calibrateValues(ref.time,time->data,data->data,&n,time->n);
-  privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
+  double maxPlusTol = priv->max + fabs(priv->max) * reltol;
+  double minMinusTol = priv->min - fabs(priv->min) * reltol;
   double *high = calibrateValues(ref.time,priv->xHigh,priv->yHigh,&n,priv->countHigh);
   double *low  = calibrateValues(ref.time,priv->xLow,priv->yLow,&n,priv->countLow);
-  addRelativeTolerance(high,ref.values,n,reltol,1);
-  addRelativeTolerance(low ,ref.values,n,reltol,-1);
-  if (!isResultCmp) {
+  double abstol = fabs((priv->max-priv->min)*reltolDiffMaxMin);
+  addRelativeTolerance(high,ref.values,n,reltol,abstol,1);
+  addRelativeTolerance(low ,ref.values,n,reltol,abstol,-1);
+  if (isHtml ) {
+#if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
+    fout = open_memstream(&html, &html_size);
+#endif
+
+    fprintf(fout, "<html>\n"
+"<head>\n"
+"<script type=\"text/javascript\" src=\"dygraph-combined.js\"></script>\n"
+"    <style type=\"text/css\">\n"
+"    #graphdiv {\n"
+"      position: absolute;\n"
+"      left: 10px;\n"
+"      right: 10px;\n"
+"      top: 40px;\n"
+"      bottom: 10px;\n"
+"    }\n"
+"    </style>\n"
+"</head>\n"
+"<body>\n"
+"<div id=\"graphdiv\"></div>\n"
+"<p>"
+"<input type=checkbox id=\"0\" checked onClick=\"change(this)\">\n"
+"<label for=\"0\">reference</label>\n"
+"<input type=checkbox id=\"1\" checked onClick=\"change(this)\">\n"
+"<label for=\"1\">actual</label>\n"
+"<input type=checkbox id=\"2\" checked onClick=\"change(this)\">\n"
+"<label for=\"2\">high</label>\n"
+"<input type=checkbox id=\"3\" checked onClick=\"change(this)\">\n"
+"<label for=\"3\">low</label>\n"
+"<input type=checkbox id=\"4\" checked onClick=\"change(this)\">\n"
+"<label for=\"4\">error</label>\n"
+"<input type=checkbox id=\"5\" onClick=\"change(this)\">\n"
+"<label for=\"5\">actual (original)</label>\n"
+"Parameters used for the comparison: Relative tolerance %.2g. Absolute tolerance %.2g (%.2g relative). Range delta %.2g."
+"</p>\n"
+"<script type=\"text/javascript\">\n"
+"g = new Dygraph(document.getElementById(\"graphdiv\"),\n"
+"[\n",
+  reltol,
+  abstol,
+  reltolDiffMaxMin,
+  rangeDelta
+);
+  } else if (!isResultCmp) {
     fname = (char*) GC_malloc_atomic(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
-    if (fout) {
-       /*            1             2         3      4    5   6     7          8         9        10      11      12     13                  14  15  16        17   */
-      fprintf(fout, "timereference,reference,actual,high,low,error,timeactual,rawactual,timehigh,rawhigh,timelow,rawlow,actual_interpolated,min,max,startTime,stopTime\n");
-    }
   }
   size_t maxn = intmax(intmax(intmax(ref.size,time->n),priv->countHigh),priv->countLow);
   if (fout) {
-    for (i=0; i<maxn; i++) {
-      if (i < ref.size) {
-       fprintf(fout, "%.15g,%.15g,",ref.time[i],ref.values[i]);
-      } else {
-       fprintf(fout, ",,");
-      }
-      if (i < n) { /* actual,high,low,error */
-        fprintf(fout, "%.15g,", calibrated_values[i]);
-        fprintf(fout, "%.15g,%.15g,",high[i],low[i]);
-        if ((i && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i-1])) || (i+1<n && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i+1]))) {
-          /* Skip calculating errors at events */
-          fprintf(fout, "0,");
-        } else if (calibrated_values[i] < low[i]) {
-          fprintf(fout, "%.15g,", low[i]-calibrated_values[i]);
-          isdifferent++;
-        } else if (calibrated_values[i] > high[i]) {
-          fprintf(fout, "%.15g,", calibrated_values[i]-high[i]);
-          isdifferent++;
+    const char *empty = isHtml ? "null" : "";
+    const char *lbracket = isHtml ? "[" : "";
+    const char *rbracket = isHtml ? "]," : "";
+    int j=0;
+    int lastStepError = 0;
+    if (!isHtml) {
+      fputs("time,reference,actual,high,low,error,actual (raw)\n", fout);
+    }
+    for (i=0; i<ref.size; i++) {
+      int thisStepError = 0;
+      fprintf(fout, "%s%.15g,%.15g,",lbracket,ref.time[i],ref.values[i]);
+      if (i < n) {
+        int isEvent = (i && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i-1])) || (i+1<n && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i+1]));
+        if (isEvent) {
+          double refv = ref.values[i];
+          double val = calibrated_values[i];
+          double tol = fmax(abstol*10,fmax(fabs(refv),fabs(val))*reltol*10);
+          /* If there was no error in the last step before the event, give a nice tight curve around both values */
+          double high = (lastStepError ? refv : fmax(refv,val)) + tol;
+          double low = (lastStepError ? refv : fmin(refv,val)) - tol;
+          fprintf(fout, "%.15g,%.15g,%.15g,%s,%s%s\n",val,high,low,empty,empty,rbracket);
         } else {
-          fprintf(fout, "0,");
+          double error = 0;
+          thisStepError=lastStepError;
+          if (calibrated_values[i] < low[i]) {
+            error = low[i]-calibrated_values[i];
+            isdifferent++;
+            thisStepError=1;
+          } else if (calibrated_values[i] > high[i]) {
+            error = calibrated_values[i]-high[i];
+            isdifferent++;
+            thisStepError=1;
+          }
+          fprintf(fout, "%.15g,%.15g,%.15g,%.15g,%s%s\n",calibrated_values[i],high[i],low[i],error,empty,rbracket);
         }
       } else {
-        fprintf(fout, ",,,,");
+        fputs(isHtml ? "null,null,null,null,null],\n" : ",,,,\n", fout);
       }
-      if (i < time->n) {
-       fprintf(fout, "%.15g,%.15g,",time->data[i],data->data[i]);
-      } else {
-       fprintf(fout, ",,");
+      while (ref.time[i] > time->data[j] && j < time->n) {
+        fprintf(fout, "%s%.15g,%s,%s,%s,%s,%s,%.15g%s\n",lbracket,time->data[j],empty,empty,empty,empty,empty,data->data[j],rbracket);
+        j++;
       }
-      if (i < priv->countHigh) {
-       fprintf(fout, "%.15g,%.15g,",priv->xHigh[i],priv->yHigh[i]);
-      } else {
-       fprintf(fout, ",,");
-      }
-      if (i < priv->countLow) {
-       fprintf(fout, "%.15g,%.15g,",priv->xLow[i],priv->yLow[i]);
-      } else {
-       fprintf(fout, ",,");
-      }
-      if (i==0) {
-        fprintf(fout, "%.15g,%.15g,%.15g,%.15g", priv->min, priv->max, ref.time[0], ref.time[ref.size-1]);
-      } else {
-        fprintf(fout, ",,,");
-      }
-      fprintf(fout, "\n");
+      lastStepError = thisStepError;
     }
+    fputs(isHtml ? "],\n" : "\n", fout);
   } else {
     isdifferent = validate(n,low,high,calibrated_values);
   }
@@ -552,7 +601,30 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
     }
   }
   if (fout) {
+    if (isHtml) {
+fprintf(fout, "%s", "{title: 'pathPlanning.pathToAxis3.axisControlBus.acceleration',\n"
+"legend: 'always',\n"
+"xlabel: ['time'],\n"
+"connectSeparatedPoints: true,\n"
+"labels: ['time','reference','actual','high','low','error','actual (original)'],\n"
+"y2label: ['error'],\n"
+"series : { 'error': { axis: 'y2' } },\n"
+"colors: ['blue','red','teal','lightblue','orange','black'],\n"
+"visibility: [true,true,true,true,true,false]\n"
+"});\n"
+"function change(el) {\n"
+"  g.setVisibility(parseInt(el.id), el.checked);\n"
+"}\n"
+"</script>\n"
+"</body>\n"
+"</html>\n");
+    }
+
     fclose(fout);
+    if (isHtml) {
+      *htmlOut = GC_strdup(html);
+      free(html);
+    }
   }
   if (!isdifferent && 0==keepEqualResults && 0==isResultCmp) {
     SystemImpl__removeFile(fname);
