@@ -2173,9 +2173,7 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
     // just to be on safe-side.
     if (componentsAnnotationsList.size() <= i)
       continue;
-    QString transformation = "";
-    if (!componentsAnnotationsList.at(i).toLower().contains("error"))
-      transformation =  StringHandler::removeFirstLastCurlBrackets(componentsAnnotationsList.at(i));
+    QString transformation = StringHandler::getPlacementAnnotation(componentsAnnotationsList.at(i));
     // add the component to the diagram view.
     if (!transformation.isEmpty())
     {

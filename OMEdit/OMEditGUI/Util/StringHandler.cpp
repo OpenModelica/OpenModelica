@@ -1126,6 +1126,24 @@ QStringList StringHandler::getDialogAnnotation(QString componentAnnotation)
   return QStringList();
 }
 
+QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
+{
+  if (componentAnnotation.toLower().contains("error"))
+    return QString();
+  componentAnnotation = StringHandler::removeFirstLastCurlBrackets(componentAnnotation);
+  if (componentAnnotation.isEmpty())
+    return QString();
+  QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
+  foreach (QString annotation, annotations)
+  {
+    if (annotation.startsWith("Placement"))
+    {
+      return StringHandler::removeFirstLastBrackets(annotation);
+    }
+  }
+  return QString();
+}
+
 /*!
   Reduces Angle to useful values. Finds the angle between 0° and 360°.\n
   This functin is useful for performing shapes and components flipping.\n\n

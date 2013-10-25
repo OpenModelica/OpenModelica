@@ -121,6 +121,7 @@ public:
   static void setLastOpenDirectory(QString lastOpenDirectory);
   static QString getLastOpenDirectory();
   static QStringList getDialogAnnotation(QString componentAnnotation);
+  static QString getPlacementAnnotation(QString componentAnnotation);
   static qreal getNormalizedAngle(qreal angle);
   static QStringList splitStringWithSpaces(QString value);
   static void fillEncodingComboBox(QComboBox *pEncodingComboBox);

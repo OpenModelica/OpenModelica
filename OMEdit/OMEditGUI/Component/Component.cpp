@@ -352,22 +352,19 @@ void Component::getClassComponents()
     // just to be on safe-side.
     if (componentsAnnotations.size() <= i)
       continue;
+    QString transformation = StringHandler::getPlacementAnnotation(componentsAnnotations.at(i));
     // if component is protected we don't show it in the icon layer.
-    if (componentsAnnotations.at(i).toLower().contains("error") || pComponentInfo->getProtected() ||
-        mpOMCProxy->isBuiltinType(pComponentInfo->getClassName()))
+    if (transformation.isEmpty() || pComponentInfo->getProtected() || mpOMCProxy->isBuiltinType(pComponentInfo->getClassName()))
     {
       i++;
       continue;
     }
-    if (StringHandler::removeFirstLastCurlBrackets(componentsAnnotations.at(i)).length() > 0)
+    if (mpOMCProxy->isWhat(StringHandler::Connector, pComponentInfo->getClassName()))
     {
-      if (mpOMCProxy->isWhat(StringHandler::Connector, pComponentInfo->getClassName()))
-      {
-        QString result = mpOMCProxy->getIconAnnotation(pComponentInfo->getClassName());
-        Component *pComponent = new Component(result, componentsAnnotations.at(i), pComponentInfo, StringHandler::Connector,
-                                              getRootParentComponent());
-        mpComponentsList.append(pComponent);
-      }
+      QString result = mpOMCProxy->getIconAnnotation(pComponentInfo->getClassName());
+      Component *pComponent = new Component(result, transformation, pComponentInfo, StringHandler::Connector,
+                                            getRootParentComponent());
+      mpComponentsList.append(pComponent);
     }
     i++;
   }
