@@ -564,6 +564,7 @@ protected function traverseIncidenceMatrix1 "author: Frenkel TUD 2010-12"
   end FuncType;
 algorithm
   (outM,outTypeA) := traverseIncidenceMatrix2(inM,func,pos,len,intGt(pos,len),inTypeA);
+  annotation(__OpenModelica_EarlyInline = true);
 end traverseIncidenceMatrix1;
 
 protected function traverseIncidenceMatrix2
@@ -581,7 +582,6 @@ protected function traverseIncidenceMatrix2
     input tuple<BackendDAE.IncidenceMatrixElement,Integer,BackendDAE.IncidenceMatrix,Type_a> inTpl;
     output tuple<list<Integer>,BackendDAE.IncidenceMatrix,Type_a> outTpl;
   end FuncType;
-  annotation(__OpenModelica_EarlyInline = true);
 algorithm
   (outM,outTypeA) := match (inM,func,pos,len,stop,inTypeA)
     local
@@ -597,7 +597,7 @@ algorithm
         ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
         eqns1 = List.removeOnTrue(pos,intLt,eqns);
         (m1,extArg1) = traverseIncidenceMatrixList(eqns1,m,func,arrayLength(m),pos,extArg);
-        (m2,extArg2) = traverseIncidenceMatrix1(m1,func,pos+1,len,extArg1);
+        (m2,extArg2) = traverseIncidenceMatrix2(m1,func,pos+1,len,intGt(pos+1,len),extArg1);
       then (m2,extArg2);
 
   end match;

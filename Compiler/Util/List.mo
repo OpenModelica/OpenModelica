@@ -748,6 +748,18 @@ algorithm
   _ :: outList := inList;
 end rest;
 
+public function restCond
+  "Returns all elements except for the first in a list."
+  input Boolean cond;
+  input list<ElementType> inList;
+  output list<ElementType> outList;
+algorithm
+  outList := match (cond,inList)
+    case (true,_::outList) then outList;
+    case (false,_) then inList;
+  end match;
+end restCond;
+
 public function restOrEmpty
   "Returns all elements except for the first in a list, or the empty list of the
    list is empty."
@@ -907,8 +919,7 @@ algorithm
         (left, right) = split(inList, middle);
         left = sort(left, inCompFunc);
         right = sort(right, inCompFunc);
-      then
-        merge(left, right, inCompFunc);
+      then merge(left, right, inCompFunc, {});
 
   end match;
 end sort;
@@ -1004,6 +1015,7 @@ protected function merge
   input list<ElementType> inLeft;
   input list<ElementType> inRight;
   input CompareFunc inCompFunc;
+  input list<ElementType> acc;
   output list<ElementType> outList;
 
   partial function CompareFunc
@@ -1012,30 +1024,27 @@ protected function merge
     output Boolean outRes;
   end CompareFunc;
 algorithm
-  outList := matchcontinue(inLeft, inRight, inCompFunc)
+  outList := match (inLeft, inRight, inCompFunc, acc)
     local
-      ElementType l, r;
+      Boolean b;
+      ElementType l, r, el;
       list<ElementType> l_rest, r_rest, res;
 
-    case ({}, {}, _) then {};
-
-    case (l :: l_rest, r :: _, _)
+    /* Tail recursive version */
+    case (l :: l_rest, r :: r_rest, _, _)
       equation
-        true = inCompFunc(r, l);
-        res = merge(l_rest, inRight, inCompFunc);
-      then
-        l :: res;
+        b = inCompFunc(r, l);
+        l_rest = Util.if_(b,l_rest,inLeft);
+        r_rest = Util.if_(not b,r_rest,inRight);
+        el = Util.if_(b, listGet(inLeft, 1), listGet(inRight, 1));
+        res = merge(l_rest, r_rest, inCompFunc, el::acc);
+      then res;
 
-    case (l :: _, r :: r_rest, _)
-      equation
-        res = merge(inLeft, r_rest, inCompFunc);
-      then
-        r :: res;
+    case ({}, {}, _, _) then listReverse(acc);
+    case ({}, _, _, _) then listAppend(listReverse(acc),inRight);
+    case (_, {}, _, _) then listAppend(listReverse(acc),inLeft);
 
-    case ({}, _, _) then inRight;
-    case (_, {}, _) then inLeft;
-
-  end matchcontinue;
+  end match;
 end merge;
 
 public function mergeSorted

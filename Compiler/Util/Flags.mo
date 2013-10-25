@@ -970,8 +970,7 @@ algorithm
     case (DEBUG_FLAG(index = index), _)
       equation
         true = intEq(index, inFlagIndex);
-      then
-        inFlagIndex + 1;
+      then inFlagIndex + 1;
 
     case (DEBUG_FLAG(index = index, name = name), _)
       equation
@@ -979,8 +978,7 @@ algorithm
         err_str = "Invalid flag " +& name +& " with index " +& index_str +&
           " in Flags.allDebugFlags. Make sure that all flags are present and ordered correctly.";
         Error.addMessage(Error.INTERNAL_ERROR, {err_str});
-      then
-        fail();
+      then fail();
   end matchcontinue;
 end checkDebugFlag;
 
