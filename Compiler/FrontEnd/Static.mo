@@ -8857,8 +8857,8 @@ algorithm
        
     case(_, _, _, _, _)
       equation
-	      failure(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), _) = inSlot);
-	      failure(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), _) = inSlot);
+        failure(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), _) = inSlot);
+        failure(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), _) = inSlot);
         (ident, pty, c, oexp) = inParam;
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
         outParam = (ident, pty, c, oexp);
