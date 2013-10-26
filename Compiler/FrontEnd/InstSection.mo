@@ -3310,6 +3310,8 @@ algorithm
       list<String> variables1, variables2, variablesUnion;
       DAE.ElementSource source;
       SCode.Visibility vis1, vis2;
+      Absyn.ArrayDim arrDims;
+      DAE.Dimensions daeDims;
 
     // both c1 and c2 are expandable
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,_)
@@ -3429,6 +3431,9 @@ algorithm
 
         envComponentEmpty = Env.removeComponentsFromFrameV(envComponent);
 
+        // get the dimensions from the type!
+        daeDims = Types.getDimensions(ty2);
+        arrDims = List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(
@@ -3440,7 +3445,7 @@ algorithm
                           SCode.COMPONENT(
                             componentName,
                             SCode.defaultPrefixes,
-                            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                            SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                             SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
@@ -3511,6 +3516,9 @@ algorithm
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
 
+        // get the dimensions from the type!
+        daeDims = Types.getDimensions(ty2);
+        arrDims = List.map(daeDims,Expression.unelabDimension);
         // add to the environment of the expandable
         // connector the new virtual variable.
         envExpandable = Env.extendFrameV(
@@ -3522,7 +3530,7 @@ algorithm
                           SCode.COMPONENT(
                             componentName,
                             SCode.defaultPrefixes,
-                            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                            SCode.ATTR(arrDims, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
                             Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
                             SCode.noComment, NONE(), Absyn.dummyInfo),
                           DAE.NOMOD(),
@@ -3568,8 +3576,12 @@ algorithm
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
+        
+        // get the dimensions from the type!
+        daeDims = Types.getDimensions(ty1);
+        arrDims = List.map(daeDims,Expression.unelabDimension);
         daeExpandable = InstDAE.daeDeclare(c1_2, state, ty1,
-           SCode.ATTR({}, ct1, prl1, vt1, Absyn.BIDIR()),
+           SCode.ATTR(arrDims, ct1, prl1, vt1, Absyn.BIDIR()),
            vis1, NONE(), {}, NONE(), NONE(),
            SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
            io1, SCode.NOT_FINAL(), source, true);
