@@ -1010,7 +1010,7 @@ match platform
   <%\t%>cp modelDescription.xml <%fmudirname%>/modelDescription.xml
   <%\t%>cp <%omhome%>/bin/libexpat.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cp <%omhome%>/bin/pthreadGC2.dll <%fmudirname%>/binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/MinGW/bin/libgfortran-3.dll <%fmudirname%>/binaries/<%platform%>/
+  <%\t%>cp <%omhome%>/bin/libgfortran-3.dll <%fmudirname%>/binaries/<%platform%>/
   <%\t%>cd <%fmudirname%>&& rm -f ../<%fileNamePrefix%>.fmu&& zip -r ../<%fileNamePrefix%>.fmu *
   <%\t%>rm -rf <%fmudirname%>
 
