@@ -76,7 +76,7 @@ void* SimulationResults_diffSimulationResults(int runningTestsuite, const char *
 const char* SimulationResults_diffSimulationResultsHtml(int runningTestsuite, const char *var, const char *filename,const char *reffilename, double refTol, double reltolDiffMaxMin, double rangeDelta)
 {
   char *res;
-  SimulationResultsCmp_compareResults(0,runningTestsuite,filename,reffilename,"",refTol,0,reltolDiffMaxMin,rangeDelta,mmc_mk_cons(mmc_mk_scon(var),mmc_mk_nil()),0,NULL,1,&res);
+  SimulationResultsCmp_compareResults(0,runningTestsuite,filename,reffilename,"",0,refTol,reltolDiffMaxMin,rangeDelta,mmc_mk_cons(mmc_mk_scon(var),mmc_mk_nil()),0,NULL,1,&res);
   return res;
 }
 

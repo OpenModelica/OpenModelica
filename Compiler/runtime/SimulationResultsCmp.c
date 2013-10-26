@@ -211,21 +211,22 @@ static DataField getData(const char *varname,const char *filename, unsigned int 
 }
 
 /* see http://randomascii.wordpress.com/2012/02/25/comparing-floating-point-numbers-2012-edition/ */
-static char AlmostEqualRelativeAndAbs(double A, double B)
+static char almostEqualRelativeAndAbs(double a, double b, double reltol, double abstol)
 {
-  /* Check if the numbers are really close -- needed
-  when comparing numbers near zero. */
-  double diff = fabs(A - B);
-  if (diff <= DOUBLEEQUAL_TOTAL)
+  /* Check if the numbers are really close -- needed when comparing numbers near zero. */
+  double diff = fabs(a - b);
+  if (diff <= abstol) {
     return 1;
-
-  A = fabs(A);
-  B = fabs(B);
-  double largest = (B > A) ? B : A;
-
-  if (diff <= largest * DOUBLEEQUAL_REL)
+  }
+  if (diff <= fmax(fabs(a),fabs(b)) * reltol) {
     return 1;
+  }
   return 0;
+}
+
+static char almostEqualWithDefaultTolerance(double a, double b)
+{
+  return almostEqualRelativeAndAbs(a,b,DOUBLEEQUAL_REL,DOUBLEEQUAL_TOTAL);
 }
 
 static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double abstol, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix)
@@ -300,7 +301,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
        fprintf(stderr, "check event: %.15g  - %.15g = %.15g\n",t,time->data[i+1],fabs(t-time->data[i+1]));
 #endif
       /* an event */
-      if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
+      if (almostEqualWithDefaultTolerance(t,time->data[i+1])) {
 #ifdef DEBUGOUTPUT
          fprintf(stderr, "event: %.15g  %d  %.15g\n",t,i,d);
 #endif
@@ -311,7 +312,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
 #endif
         /* right value */
         if (i+1<data->n) {
-          while (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
+          while (almostEqualWithDefaultTolerance(t,time->data[i+1])) {
             i +=1;
             if (i+1>=data->n) break;
           }
@@ -333,7 +334,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
         j_event = j;
         while(tr < t_event) {
           if (j+1<reftime->n) {
-            if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
+            if (almostEqualWithDefaultTolerance(tr,reftime->data[j+1])) {
               dr_left = refdata->data[j];
 #ifdef DEBUGOUTPUT
               fprintf(stderr, "ref left value: %.15g  %d %.15g\n",tr,j,dr_left);
@@ -343,7 +344,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
               do {
                 j +=1;
                 if (j+1>=reftime->n) break;
-              } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1]));
+              } while (almostEqualWithDefaultTolerance(tr,reftime->data[j+1]));
             }
           }
           if (refevent == 0) {
@@ -386,7 +387,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
           t_event = t - t*reltol*0.1;
           while(tr > t_event) {
             if (j-1>0) {
-              if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
+              if (almostEqualWithDefaultTolerance(tr,reftime->data[j-1])) {
                 dr_right = refdata->data[j];
 #ifdef DEBUGOUTPUT
                 fprintf(stderr, "ref right value: %.15g  %d %.15g\n",tr,j,dr_right);
@@ -396,7 +397,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
                 do {
                   j -=1;
                   if (j-1<=0) break;
-                } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1]));
+                } while (almostEqualWithDefaultTolerance(tr,reftime->data[j-1]));
               }
             }
             if (refevent == 0) {
@@ -506,7 +507,7 @@ static unsigned int cmpData(int isResultCmp, char* varname, DataField *time, Dat
     fprintf(stderr, "delta:%.15g  reltol:%.15g\n",err,average);
 #endif
     if (fout) {
-      fprintf(fout, "%.15g,%.15g,%.15g,%.15g,%.15g,%.15g\n",tr,dr,d,err,AlmostEqualRelativeAndAbs(d,0) ? err/average : fabs(err/d),average);
+      fprintf(fout, "%.15g,%.15g,%.15g,%.15g,%.15g,%.15g\n",tr,dr,d,err,almostEqualWithDefaultTolerance(d,0) ? err/average : fabs(err/d),average);
     }
     if ( err > average){
       if (j+1<reftime->n) {
@@ -598,7 +599,7 @@ static const char* getTimeVarName(void *vars) {
 #include "SimulationResultsCmpTubes.c"
 
 /* Common, huge function, for both result comparison and result diff */
-void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol, double rangeDelta, double reltolDiffMaxMin, void *vars, int keepEqualResults, int *success, int isHtml, char **htmlOut)
+void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol, double reltolDiffMaxMin, double rangeDelta, void *vars, int keepEqualResults, int *success, int isHtml, char **htmlOut)
 {
   char **cmpvars=NULL;
   char **cmpdiffvars=NULL;
@@ -737,7 +738,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     /* compare */
     if (isHtml) {
       vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,1,htmlOut);
-    } if (isResultCmp) {
+    } else if (isResultCmp) {
       vardiffindx = cmpData(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,abstol,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename);
     } else {
       vardiffindx = cmpDataTubes(isResultCmp,var,&time,&timeref,&data,&dataref,reltol,rangeDelta,reltolDiffMaxMin,&ddf,cmpdiffvars,vardiffindx,keepEqualResults,&res,resultfilename,0,0);

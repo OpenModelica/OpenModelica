@@ -11,9 +11,9 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 log:="BuildModelRecursive.html";
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
 ulimitExe:="480";  // 8 minutes to initialize and run the simulation
-default_tolerance:=1e-5;
+default_tolerance:=1e-6;
 reference_reltol:=1e-3;
-reference_reltolDiffMinMax:=1e-4;
+reference_reltolDiffMinMax:=1e-3;
 reference_rangeDelta:=1e-4;
 loadModel(library,{libraryVersion});
 getErrorString();

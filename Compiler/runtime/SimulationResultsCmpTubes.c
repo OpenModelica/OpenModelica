@@ -346,8 +346,21 @@ static int validate(int n, double *low, double *high, double *val)
   return iErrors;
 }
 
+static inline double linearInterpolation(double x, double x0, double x1, double y0, double y1, double xabstol)
+{
+  if (almostEqualRelativeAndAbs(x0,x,0,xabstol)) { //prevent NaN -> division by zero
+    return y0;
+  } else if (almostEqualRelativeAndAbs(x1,x,0,xabstol)) { //prevent NaN -> division by zero
+    return y1;
+  } else if (almostEqualRelativeAndAbs(x1,x0,0,xabstol)) { //prevent NaN -> division by zero
+    return y0;
+  } else {
+    return y0 + (((y1 - y0) / (x1 - x0)) * (x - x0)); // linear interpolation of the source value at the target moment in time
+  }
+}
+
 /* Calibrate the target time+value pair onto the source timeline */
-static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, double* targetValues, size_t *nsource, size_t ntarget)
+static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, double* targetValues, size_t *nsource, size_t ntarget, double xabstol)
 {
   if (0 == nsource) {
     return NULL;
@@ -362,8 +375,9 @@ static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, d
   for (i = 0; i < n; i++) {
     x = sourceTimeLine[i];
 
-    if (targetTimeLine[j] > sourceTimeLine[n - 1]) { // Avoid extrapolation by cutting the sequence
-      *nsource = i;
+    if (targetTimeLine[j] > sourceTimeLine[n - 1] && !almostEqualRelativeAndAbs(targetTimeLine[j],sourceTimeLine[n - 1],0,xabstol)) { // Avoid extrapolation by cutting the sequence
+      interpolatedValues[i] = linearInterpolation(x,x0,x1,y0,y1,xabstol);
+      *nsource = i+1;
       break;
     }
 
@@ -374,20 +388,14 @@ static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, d
       j++;
       x1 = targetTimeLine[j];
       y1 = targetValues[j];
-      if (AlmostEqualRelativeAndAbs(x1,x)) {
+      if (almostEqualRelativeAndAbs(x1,x,0,xabstol)) {
         break;
       }
     }
     x0 = targetTimeLine[j - 1];
     y0 = targetValues[j - 1];
 
-    if (AlmostEqualRelativeAndAbs(x1,x)) { //prevent NaN -> division by zero
-      interpolatedValues[i] = y1;
-    } else if (AlmostEqualRelativeAndAbs(x1,x0) || AlmostEqualRelativeAndAbs(x,x0)) { //prevent NaN -> division by zero
-      interpolatedValues[i] = y0;
-    } else {
-      interpolatedValues[i] = y0 + (((y1 - y0) / (x1 - x0)) * (x - x0)); // linear interpolation of the source value at the target moment in time
-    }
+    interpolatedValues[i] = linearInterpolation(x,x0,x1,y0,y1,xabstol);
   }
 
   return interpolatedValues;
@@ -399,19 +407,19 @@ typedef struct {
   size_t size;
 } addTargetEventTimesRes;
 
-static inline size_t findNextEvent(size_t i, double *time, size_t n)
+static inline size_t findNextEvent(size_t i, double *time, size_t n, double xabstol)
 {
   for (i; i < n; i++) {
-    if (AlmostEqualRelativeAndAbs(time[i-1],time[i])) return i;
+    if (almostEqualRelativeAndAbs(time[i-1],time[i],0,xabstol) || (i<n-1 && almostEqualRelativeAndAbs(time[i],time[i+1],0,xabstol))) return i;
   }
   return 0; /* Not found */
 }
 
-static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double* targetTimeLine, double *sourceValues, size_t nsource, size_t ntarget)
+static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double* targetTimeLine, double *sourceValues, size_t nsource, size_t ntarget, double xabstol)
 {
   addTargetEventTimesRes res;
   size_t i=0,j,count=0;
-  while (i=findNextEvent(i+1,targetTimeLine,ntarget)) {
+  while (i=findNextEvent(i+1,targetTimeLine,ntarget,xabstol)) {
     if (targetTimeLine[i] >= sourceTimeLine[nsource-1]) {
       break;
     }
@@ -429,7 +437,7 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
   i=0;
   count=0;
   int iter=0;
-  j=findNextEvent(1,targetTimeLine,ntarget);
+  j=findNextEvent(1,targetTimeLine,ntarget,xabstol);
   while (j) {
     if (targetTimeLine[j] >= sourceTimeLine[nsource-1]) {
       break;
@@ -441,11 +449,17 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
     if (sourceTimeLine[i] == targetTimeLine[j]) {
       res.size--; /* Filter events at identical times in both files */
     } else {
-      res.values[count] = sourceValues[intmax(0,i-1)];
-      res.time[count++] = targetTimeLine[j];
+      double x0 = sourceTimeLine[intmax(0,i-1)];
+      double y0 = sourceValues[intmax(0,i-1)];
+      double x1 = sourceTimeLine[i];
+      double y1 = sourceValues[i];
+      double x = targetTimeLine[j];
+      double y = linearInterpolation(x,x0,x1,y0,y1,xabstol);
+      res.values[count] = y;
+      res.time[count++] = x;
     }
     assert(count < res.size);
-    j=findNextEvent(j+1,targetTimeLine,ntarget);
+    j=findNextEvent(j+1,targetTimeLine,ntarget,xabstol);
     iter++;
   }
   while (i < nsource) {
@@ -453,6 +467,81 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
     res.time[count++] = sourceTimeLine[i++];
   }
   assert(res.size == count);
+  return res;
+}
+
+static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTargetEventTimesRes actual, double xabstol)
+{
+  addTargetEventTimesRes res;
+  res.size = ref.size + actual.size;
+  res.values = GC_malloc_atomic(sizeof(double)*res.size);
+  res.time = GC_malloc_atomic(sizeof(double)*res.size);
+  int i=0,j=0,count=0;
+  res.values[count] = ref.values[0];
+  res.time[count++] = ref.time[0];
+  for (i=1; i<ref.size; i++) {
+    double x0 = ref.time[i-1];
+    double y0 = ref.values[i-1];
+    double x1 = ref.time[i];
+    double y1 = ref.values[i];
+    while (j<actual.size && actual.time[j] <= x1) {
+      double x = actual.time[j];
+      int isEventInRef = almostEqualRelativeAndAbs(x0,x1,0,xabstol);
+      int isEventInActual = j<actual.size-1 && almostEqualRelativeAndAbs(x,actual.time[j+1],0,xabstol);
+      int isEvent = isEventInRef || isEventInActual;
+      if ((almostEqualRelativeAndAbs(x,x0,0,xabstol) || almostEqualRelativeAndAbs(x,x1,0,xabstol)) && !isEvent) {
+        /* Not an event but we got the same time stamp; skip! */
+        j++;
+        continue;
+      }
+      res.time[count] = x;
+      res.values[count++] = linearInterpolation(x,x0,x1,y0,y1,xabstol);
+      j++;
+    }
+    res.time[count] = x1;
+    res.values[count++] = y1;
+    assert(count <= res.size);
+  }
+  res.size = count;
+  return res;
+}
+
+static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, double reltol, double xabstol)
+{
+  int i;
+  addTargetEventTimesRes res;
+  res.values = (double*) GC_malloc_atomic(in.size * sizeof(double));
+  res.time = (double*) GC_malloc_atomic(in.size * sizeof(double));
+  /* Don't remove first point */
+  res.values[0] = in.values[0];
+  res.time[0] = in.time[0];
+  res.size = 1;
+  for (i=1; i<in.size-1; i++) {
+    int isEvent = almostEqualRelativeAndAbs(in.time[i],in.time[i-1],0,xabstol);
+    /* Skip events if the values are the same */
+    if (in.values[i] == in.values[i-1] && isEvent) {
+      continue;
+    }
+    double x0 = in.time[i-1];
+    double y0 = in.values[i-1];
+    double x = in.time[i];
+    double y = in.values[i];
+    double x1 = in.time[i+1];
+    double y1 = in.values[i+1];
+    if (almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent) {
+      /* The point can be reconstructed using linear interpolation */
+      continue;
+    }
+    res.values[res.size] = in.values[i];
+    res.time[res.size] = in.time[i];
+    res.size++;
+  }
+  if (in.size > 1) {
+    /* Don't remove last point */
+    res.values[res.size] = in.values[in.size-1];
+    res.time[res.size] = in.time[in.size-1];
+    res.size++;
+  }
   return res;
 }
 
@@ -471,6 +560,17 @@ static inline void addRelativeTolerance(double *targetValues, double *sourceValu
   }
 }
 
+static void assertMonotonic(addTargetEventTimesRes series)
+{
+  int i;
+  for (i=1; i<series.size; i++) {
+    if (series.time[i] < series.time[i-1]) {
+      printf("assertion failed, size %ld: %.15g < %.15g\n", series.size, series.time[i], series.time[i-1]);
+      abort();
+    }
+  }
+}
+
 static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, double reltolDiffMaxMin, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix, int isHtml, char **htmlOut)
 {
   int i, isdifferent = 0;
@@ -478,20 +578,32 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   char *fname = NULL;
   char *html;
   size_t html_size=0;
+  double xabstol = (reftime->data[0]-reftime->data[reftime->n-1])*rangeDelta;
   /* Calculate the tubes without additional events added */
-  addTargetEventTimesRes ref;
+  addTargetEventTimesRes ref,actual;
   ref.values = refdata->data;
   ref.time = reftime->data;
   ref.size = reftime->n;
+  actual.values = data->data;
+  actual.time = time->data;
+  actual.size = time->n;
+  /* assertMonotonic(ref); */
+  /* assertMonotonic(actual); */
+  ref = removeUneventfulPoints(ref, reltol, xabstol);
+  actual = removeUneventfulPoints(actual, reltol, xabstol);
+  /* assertMonotonic(ref); */
+  /* assertMonotonic(actual); */
   privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
-  ref = addTargetEventTimes(ref.time, time->data, ref.values, ref.size, time->n);
+  // ref = addTargetEventTimes(ref.time, actual.time, ref.values, ref.size, actual.size, xabstol);
+  ref = mergeTimelines(ref,actual,xabstol);
+  /* assertMonotonic(ref); */
   size_t n = ref.size;
   // calibrateValuesConsiderEventsResult calibrated = calibrateValuesConsiderEvents(ref->time,time->data,data->data,&n,time->n);
-  double *calibrated_values = calibrateValues(ref.time,time->data,data->data,&n,time->n);
+  double *calibrated_values = calibrateValues(ref.time,actual.time,actual.values,&n,actual.size,xabstol);
   double maxPlusTol = priv->max + fabs(priv->max) * reltol;
   double minMinusTol = priv->min - fabs(priv->min) * reltol;
-  double *high = calibrateValues(ref.time,priv->xHigh,priv->yHigh,&n,priv->countHigh);
-  double *low  = calibrateValues(ref.time,priv->xLow,priv->yLow,&n,priv->countLow);
+  double *high = calibrateValues(ref.time,priv->xHigh,priv->yHigh,&n,priv->countHigh,xabstol);
+  double *low  = calibrateValues(ref.time,priv->xLow,priv->yLow,&n,priv->countLow,xabstol);
   double abstol = fabs((priv->max-priv->min)*reltolDiffMaxMin);
   addRelativeTolerance(high,ref.values,n,reltol,abstol,1);
   addRelativeTolerance(low ,ref.values,n,reltol,abstol,-1);
@@ -543,13 +655,13 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
   }
-  size_t maxn = intmax(intmax(intmax(ref.size,time->n),priv->countHigh),priv->countLow);
+  size_t maxn = intmax(intmax(intmax(ref.size,actual.size),priv->countHigh),priv->countLow);
   if (fout) {
     const char *empty = isHtml ? "null" : "";
     const char *lbracket = isHtml ? "[" : "";
     const char *rbracket = isHtml ? "]," : "";
     int j=0;
-    int lastStepError = 0;
+    int lastStepError = 1;
     if (!isHtml) {
       fputs("time,reference,actual,high,low,error,actual (raw)\n", fout);
     }
@@ -557,7 +669,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
       int thisStepError = 0;
       fprintf(fout, "%s%.15g,%.15g,",lbracket,ref.time[i],ref.values[i]);
       if (i < n) {
-        int isEvent = (i && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i-1])) || (i+1<n && AlmostEqualRelativeAndAbs(ref.time[i],ref.time[i+1]));
+        int isEvent = (i && almostEqualRelativeAndAbs(ref.time[i],ref.time[i-1],0,xabstol)) || (i+1<n && almostEqualRelativeAndAbs(ref.time[i],ref.time[i+1],0,xabstol));
         if (isEvent) {
           double refv = ref.values[i];
           double val = calibrated_values[i];
@@ -565,7 +677,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
           /* If there was no error in the last step before the event, give a nice tight curve around both values */
           double high = (lastStepError ? refv : fmax(refv,val)) + tol;
           double low = (lastStepError ? refv : fmin(refv,val)) - tol;
-          fprintf(fout, "%.15g,%.15g,%.15g,%s,%s%s\n",val,high,low,empty,empty,rbracket);
+          fprintf(fout, "%.15g,%.15g,%.15g,%s",val,high,low,empty);
         } else {
           double error = 0;
           thisStepError=lastStepError;
@@ -578,13 +690,18 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
             isdifferent++;
             thisStepError=1;
           }
-          fprintf(fout, "%.15g,%.15g,%.15g,%.15g,%s%s\n",calibrated_values[i],high[i],low[i],error,empty,rbracket);
+          fprintf(fout, "%.15g,%.15g,%.15g,%.15g",calibrated_values[i],high[i],low[i],error);
+        }
+        if (ref.time[i] == actual.time[j] && j < actual.size) {
+          fprintf(fout, ",%.15g%s\n",actual.values[j++],rbracket);
+        } else {
+          fprintf(fout, ",%s%s\n",empty,rbracket);
         }
       } else {
         fputs(isHtml ? "null,null,null,null,null],\n" : ",,,,\n", fout);
       }
-      while (ref.time[i] > time->data[j] && j < time->n) {
-        fprintf(fout, "%s%.15g,%s,%s,%s,%s,%s,%.15g%s\n",lbracket,time->data[j],empty,empty,empty,empty,empty,data->data[j],rbracket);
+      while (ref.time[i] > actual.time[j] && j < actual.size) {
+        fprintf(fout, "%s%.15g,%s,%s,%s,%s,%s,%.15g%s\n",lbracket,actual.time[j],empty,empty,empty,empty,empty,actual.values[j],rbracket);
         j++;
       }
       lastStepError = thisStepError;
@@ -602,7 +719,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   }
   if (fout) {
     if (isHtml) {
-fprintf(fout, "%s", "{title: 'pathPlanning.pathToAxis3.axisControlBus.acceleration',\n"
+fprintf(fout, "{title: '%s',\n"
 "legend: 'always',\n"
 "xlabel: ['time'],\n"
 "connectSeparatedPoints: true,\n"
@@ -617,7 +734,7 @@ fprintf(fout, "%s", "{title: 'pathPlanning.pathToAxis3.axisControlBus.accelerati
 "}\n"
 "</script>\n"
 "</body>\n"
-"</html>\n");
+"</html>\n", varname);
     }
 
     fclose(fout);
