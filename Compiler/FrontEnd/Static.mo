@@ -8533,7 +8533,9 @@ algorithm
       equation
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, isExternalObject,{},st,pre,info);
-        (params, restype) = applyArgTypesToFuncType(newslots, params, restype, env);
+        // Check the sanity of function parameters whose types are dependent on other parameters.
+        // e.g. input Integer i; input Integer a[i];  // type of 'a' depends on te value 'i' 
+        (params, restype) = applyArgTypesToFuncType(newslots, params, restype, env, checkTypes, info);
         dims = slotsVectorizable(newslots);
         polymorphicBindings = Types.solvePolymorphicBindings(polymorphicBindings,info,ts);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings, info);
@@ -8566,11 +8568,13 @@ protected function applyArgTypesToFuncType
   input list<DAE.FuncArg> inParameters;
   input DAE.Type inResultType;
   input Env.Env inEnv;
+  input Boolean checkTypes; // If not checking types no need to do any of this. In and out.
+  input Absyn.Info inInfo;
   output list<DAE.FuncArg> outParameters;
   output DAE.Type outResultType;
 algorithm
   (outParameters, outResultType) :=
-  matchcontinue(inSlots, inParameters, inResultType, inEnv)
+  matchcontinue(inSlots, inParameters, inResultType, inEnv, checkTypes, inInfo)
     local
       Env.Env env;
       Env.Cache cache;
@@ -8583,12 +8587,16 @@ algorithm
       list<DAE.Dimension> dims;
       list<Slot> used_slots;
 
+    // If not checking types there is nothing to be done here. 
+    // Even if dims don't match we need the function as candidate for error messages.
+    case (_, _, _, _, false, _) then (inParameters, inResultType);
+    
     // some optimizations so we don't do all that below
-    case ({}, {}, _, _) then ({}, inResultType);
+    case ({}, {}, _, _, _, _) then ({}, inResultType);
 
     // get all the dims, bind the actual params to the formal params
-    // build an new env frame with these bindings and evaluate dimensions
-    case (_, _, _, _)
+    // build a new env frame with these bindings and evaluate dimensions
+    case (_, _, _, _, _, _)
       equation
         // Extract all dimensions from the parameters.
         tys = List.map(inParameters, funcArgType);
@@ -8618,7 +8626,8 @@ algorithm
         env = makeDummyFuncEnv(env, vars, dummy_var);
 
         // Evaluate the dimensions in the types.
-        params = List.map2(inParameters, evaluateFuncParamDim, env, cache);
+        params = List.threadMap3(inSlots,inParameters, evaluateFuncParamDimAndMatchTypes, env, cache, inInfo);
+        
         res_ty = evaluateFuncArgTypeDims(inResultType, env, cache);
       then
         (params, res_ty);
@@ -8785,22 +8794,79 @@ algorithm
   end match;
 end makeDummyFuncEnv;
 
-protected function evaluateFuncParamDim
-  "Constant evaluates the dimensions of a FuncArg."
+
+protected function evaluateFuncParamDimAndMatchTypes
+  "Constant evaluates the dimensions of a FuncArg and then makes
+  sure the type matches with the expected type in the slot."
+  input Slot inSlot;
   input DAE.FuncArg inParam;
   input Env.Env inEnv;
   input Env.Cache inCache;
+  input Absyn.Info inInfo;
   output DAE.FuncArg outParam;
-protected
-  DAE.Ident ident;
-  DAE.Type ty;
-  DAE.Const c;
-  Option<DAE.Exp> oexp;
 algorithm
-  (ident, ty, c, oexp) := inParam;
-  ty := evaluateFuncArgTypeDims(ty, inEnv, inCache);
-  outParam := (ident, ty, c, oexp);
-end evaluateFuncParamDim;
+  outParam := matchcontinue(inSlot, inParam, inEnv, inCache, inInfo)
+  local
+    DAE.Ident ident;
+    DAE.Type pty, sty;
+    DAE.Const c;
+    Option<DAE.Exp> oexp;
+    DAE.Dimensions dims1, dims2;
+    String t_str1,t_str2; 
+    DAE.Dimensions vdims;
+    
+    
+    // If we have a code exp argument we can't check dims...
+    // There are all kinds of scripting function that complicate things.
+    case(_, (_,DAE.T_CODE(_,_),_,_), _, _, _)
+      then
+        inParam;
+    
+    // If we have an array constant-evaluate the dimensions and make sure
+    // They add up
+    case(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), vdims), _, _, _, _)
+      equation
+        (ident, pty, c, oexp) = inParam;
+        // evaluate the dimesions
+        pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
+        // append the vectorization dim if argument is vectorized.
+        dims1 = Types.getDimensions(pty); 
+        dims1 = listAppend(vdims,dims1); 
+            
+        dims2 = Types.getDimensions(sty);
+        true = Expression.dimsEqual(dims1, dims2);
+        
+        outParam = (ident, pty, c, oexp);
+      then
+        outParam;
+    
+    case(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), vdims), _, _, _, _)
+      equation
+        (ident, pty, c, oexp) = inParam;
+        // evaluate the dimesions
+        pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
+        // append the vectorization dim if argument is vectorized.
+        dims1 = Types.getDimensions(pty); 
+        dims1 = listAppend(dims1,vdims);     
+        dims2 = Types.getDimensions(sty);
+        true = Expression.dimsEqual(dims1, dims2);
+        
+        outParam = (ident, pty, c, oexp);
+      then
+        outParam;
+       
+    case(_, _, _, _, _)
+      equation
+	      failure(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), _) = inSlot);
+	      failure(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), _) = inSlot);
+        (ident, pty, c, oexp) = inParam;
+        pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
+        outParam = (ident, pty, c, oexp);
+      then
+        outParam;   
+      
+  end matchcontinue;      
+end evaluateFuncParamDimAndMatchTypes;
 
 protected function evaluateFuncArgTypeDims
   "Constant evaluates the dimensions of a type."
