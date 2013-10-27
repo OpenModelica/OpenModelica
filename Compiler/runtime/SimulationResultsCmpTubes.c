@@ -578,7 +578,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   char *fname = NULL;
   char *html;
   size_t html_size=0;
-  double xabstol = (reftime->data[0]-reftime->data[reftime->n-1])*rangeDelta;
+  double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*rangeDelta;
   /* Calculate the tubes without additional events added */
   addTargetEventTimesRes ref,actual;
   ref.values = refdata->data;
