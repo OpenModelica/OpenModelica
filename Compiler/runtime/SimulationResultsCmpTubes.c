@@ -551,7 +551,7 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     res.size++;
   }
   if (iter) {
-    return removeUneventfulPoints(res,removeNonEvents,reltol,xabstol);
+    return removeUneventfulPoints(res,removeNonEvents,reltol / 4.0,xabstol);
   } else {
     return res;
   }
@@ -602,8 +602,8 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   actual = actualoriginal;
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
-  ref = removeUneventfulPoints(ref, 1, reltol, xabstol);
-  actual = removeUneventfulPoints(actual, 1, reltol, xabstol);
+  ref = removeUneventfulPoints(ref, 1, reltol / 10.0, xabstol);
+  actual = removeUneventfulPoints(actual, 1, reltol / 10.0, xabstol);
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
   privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
