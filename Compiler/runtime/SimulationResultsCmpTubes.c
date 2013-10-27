@@ -506,9 +506,9 @@ static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTarg
   return res;
 }
 
-static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, double reltol, double xabstol)
+static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, int removeNonEvents, double reltol, double xabstol)
 {
-  int i;
+  int i,iter=0;
   addTargetEventTimesRes res;
   res.values = (double*) GC_malloc_atomic(in.size * sizeof(double));
   res.time = (double*) GC_malloc_atomic(in.size * sizeof(double));
@@ -522,18 +522,25 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     if (in.values[i] == in.values[i-1] && isEvent) {
       continue;
     }
-    double x0 = in.time[i-1];
-    double y0 = in.values[i-1];
+    double x0 = res.values[res.size-1];
+    double y0 = res.time[res.size-1];
     double x = in.time[i];
     double y = in.values[i];
     double x1 = in.time[i+1];
     double y1 = in.values[i+1];
-    if (almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent) {
+    if (almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent && removeNonEvents) {
       /* The point can be reconstructed using linear interpolation */
+      res.time[res.size] = x1;
+      res.values[res.size] = y1;
+      res.size++;
+      i++;
+      if (i < in.size-2) {
+        iter=1;
+      }
       continue;
     }
-    res.values[res.size] = in.values[i];
-    res.time[res.size] = in.time[i];
+    res.time[res.size] = x;
+    res.values[res.size] = y;
     res.size++;
   }
   if (in.size > 1) {
@@ -542,11 +549,15 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     res.time[res.size] = in.time[in.size-1];
     res.size++;
   }
-  return res;
+  if (iter) {
+    return removeUneventfulPoints(res,removeNonEvents,reltol,xabstol);
+  } else {
+    return res;
+  }
 }
 
 /* Adds a relative tolerance compared to the reference signal. Overwrites the target values vector. */
-static inline void addRelativeTolerance(double *targetValues, double *sourceValues, double length, double abstol, double reltol, int direction)
+static inline void addRelativeTolerance(double *targetValues, double *sourceValues, size_t length, double reltol, double abstol, int direction)
 {
   int i;
   if (direction > 0) {
@@ -580,17 +591,18 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   size_t html_size=0;
   double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*rangeDelta;
   /* Calculate the tubes without additional events added */
-  addTargetEventTimesRes ref,actual;
+  addTargetEventTimesRes ref,actual,actualoriginal;
   ref.values = refdata->data;
   ref.time = reftime->data;
   ref.size = reftime->n;
-  actual.values = data->data;
-  actual.time = time->data;
-  actual.size = time->n;
+  actualoriginal.values = data->data;
+  actualoriginal.time = time->data;
+  actualoriginal.size = time->n;
+  actual = actualoriginal;
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
-  ref = removeUneventfulPoints(ref, reltol, xabstol);
-  actual = removeUneventfulPoints(actual, reltol, xabstol);
+  ref = removeUneventfulPoints(ref, 1, reltol, xabstol);
+  actual = removeUneventfulPoints(actual, 1, reltol, xabstol);
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
   privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
@@ -640,11 +652,15 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
 "<label for=\"4\">error</label>\n"
 "<input type=checkbox id=\"5\" onClick=\"change(this)\">\n"
 "<label for=\"5\">actual (original)</label>\n"
-"Parameters used for the comparison: Relative tolerance %.2g. Absolute tolerance %.2g (%.2g relative). Range delta %.2g."
+"Reference time: %.15g to %.15g, actual time: %.15g to %.15g. Parameters used for the comparison: Relative tolerance %.2g. Absolute tolerance %.2g (%.2g relative). Range delta %.2g."
 "</p>\n"
 "<script type=\"text/javascript\">\n"
 "g = new Dygraph(document.getElementById(\"graphdiv\"),\n"
 "[\n",
+  reftime->data[0],
+  reftime->data[reftime->n-1],
+  time->data[0],
+  time->data[time->n-1],
   reltol,
   abstol,
   reltolDiffMaxMin,
