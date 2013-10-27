@@ -157,27 +157,17 @@ protected function getChangedEqnsAndLowest
   output list<Integer> oAcc;
   output Integer oLowest;
 algorithm
-  (oAcc,oLowest) := matchcontinue(index,ass2,iAcc,iLowest)
+  (oAcc,oLowest) := match (index,ass2,iAcc,iLowest)
     local
       list<Integer> acc;
       Integer l;
-    case(_,_,_,_)
+    case (0,_,_,_) then (iAcc,iLowest);
+    case (_,_,_,_)
       equation
         true = intGt(index,0);
-        true = intLt(ass2[index],1);
-        (acc,l) = getChangedEqnsAndLowest(index-1,ass2,index::iAcc,index);
-      then
-        (acc,l);
-    case(_,_,_,_)
-      equation
-        true = intGt(index,0);
-        (acc,l) = getChangedEqnsAndLowest(index-1,ass2,iAcc,iLowest);
-      then
-        (acc,l);
-    case(_,_,_,_)
-      then
-        (iAcc,iLowest);
-  end matchcontinue;
+        (acc,l) = getChangedEqnsAndLowest(index-1,ass2,List.consOnTrue(intLt(ass2[index],1),index,iAcc),index);
+      then (acc,l);
+  end match;
 end getChangedEqnsAndLowest;
 
 protected function pantelidesIndexReduction1

@@ -166,9 +166,7 @@ algorithm
         e = -1;
       then
         varAssignmentNonScalar(index+1,size,ass1,mapIncRowEqn,e::iAcc);
-    else
-      then
-        listArray(listReverse(iAcc));
+    else listArray(listReverse(iAcc));
   end matchcontinue;
 end varAssignmentNonScalar;
 

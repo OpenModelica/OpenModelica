@@ -1286,7 +1286,7 @@ public function split2
   output list<ElementType> outList1;
   output list<ElementType> outList2;
 algorithm
-  (outList1, outList2) := matchcontinue(inList1, inList2, inPosition)
+  (outList1, outList2) := match (inList1, inList2, inPosition)
     local
       ElementType e;
       list<ElementType> rest, list1, list2;
@@ -1306,7 +1306,7 @@ algorithm
         print("Index out of bounds (greater than list length) in relation List.split\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end split2;
 
 public function splitOnTrue
