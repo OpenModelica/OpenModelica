@@ -407,7 +407,7 @@ typedef struct {
   size_t size;
 } addTargetEventTimesRes;
 
-static inline size_t findNextEvent(size_t i, double *time, size_t n, double xabstol)
+static size_t findNextEvent(size_t i, double *time, size_t n, double xabstol)
 {
   for (i; i < n; i++) {
     if (almostEqualRelativeAndAbs(time[i-1],time[i],0,xabstol) || (i<n-1 && almostEqualRelativeAndAbs(time[i],time[i+1],0,xabstol))) return i;
@@ -508,10 +508,14 @@ static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTarg
 
 static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, int removeNonEvents, double reltol, double xabstol)
 {
-  int i,iter=0;
+  int i,iter,niter=0;
   addTargetEventTimesRes res;
   res.values = (double*) GC_malloc_atomic(in.size * sizeof(double));
   res.time = (double*) GC_malloc_atomic(in.size * sizeof(double));
+// printf("niter x: %ld\n", in.size);
+tail:
+  iter=0;
+  niter++;
   /* Don't remove first point */
   res.values[0] = in.values[0];
   res.time[0] = in.time[0];
@@ -522,8 +526,8 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     if (in.values[i] == in.values[i-1] && isEvent) {
       continue;
     }
-    double x0 = res.values[res.size-1];
-    double y0 = res.time[res.size-1];
+    double x0 = res.time[res.size-1];
+    double y0 = res.values[res.size-1];
     double x = in.time[i];
     double y = in.values[i];
     double x1 = in.time[i+1];
@@ -551,14 +555,16 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     res.size++;
   }
   if (iter) {
-    return removeUneventfulPoints(res,removeNonEvents,reltol / 4.0,xabstol);
+    in = res;
+    reltol /= 10.0;
+    goto tail;
   } else {
     return res;
   }
 }
 
 /* Adds a relative tolerance compared to the reference signal. Overwrites the target values vector. */
-static inline void addRelativeTolerance(double *targetValues, double *sourceValues, size_t length, double reltol, double abstol, int direction)
+static void addRelativeTolerance(double *targetValues, double *sourceValues, size_t length, double reltol, double abstol, int direction)
 {
   int i;
   if (direction > 0) {
