@@ -602,8 +602,8 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   actual = actualoriginal;
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
-  ref = removeUneventfulPoints(ref, 1, reltol / 10.0, xabstol);
-  actual = removeUneventfulPoints(actual, 1, reltol / 10.0, xabstol);
+  ref = removeUneventfulPoints(ref, 1, reltol * reltol, xabstol);
+  actual = removeUneventfulPoints(actual, 1, reltol * reltol, xabstol);
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
   privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
