@@ -103,7 +103,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__diffSimulationResultsHtml)
 {
-  char *res;
+  char *res = "";
   SimulationResultsCmp_compareResults(0,RML_UNTAGFIXNUM(rmlA0),RML_STRINGDATA(rmlA1),RML_STRINGDATA(rmlA2),"",rml_prim_get_real(rmlA3),0.0/*abstol*/,rml_prim_get_real(rmlA4),rml_prim_get_real(rmlA5),mk_cons(rmlA6,mk_nil()),0,NULL,1,&res);
   rmlA0 = mk_scon(res);
   RML_TAILCALLK(rmlSC);

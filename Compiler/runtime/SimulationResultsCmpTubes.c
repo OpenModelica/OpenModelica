@@ -528,8 +528,9 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     double y = in.values[i];
     double x1 = in.time[i+1];
     double y1 = in.values[i+1];
-    if (almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent && removeNonEvents) {
-      /* The point can be reconstructed using linear interpolation */
+    int isLocalMinOrMax = (x > x1 && x > x0) || (x < x1 && x < x0);
+    if (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent && removeNonEvents) {
+      /* The point can be reconstructed using linear interpolation and is not a local minimum or maximum */
       res.time[res.size] = x1;
       res.values[res.size] = y1;
       res.size++;
@@ -708,16 +709,16 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
           }
           fprintf(fout, "%.15g,%.15g,%.15g,%.15g",calibrated_values[i],high[i],low[i],error);
         }
-        if (ref.time[i] == actual.time[j] && j < actual.size) {
-          fprintf(fout, ",%.15g%s\n",actual.values[j++],rbracket);
+        if (ref.time[i] == actualoriginal.time[j] && j < actualoriginal.size) {
+          fprintf(fout, ",%.15g%s\n",actualoriginal.values[j++],rbracket);
         } else {
           fprintf(fout, ",%s%s\n",empty,rbracket);
         }
       } else {
         fputs(isHtml ? "null,null,null,null,null],\n" : ",,,,\n", fout);
       }
-      while (ref.time[i] > actual.time[j] && j < actual.size) {
-        fprintf(fout, "%s%.15g,%s,%s,%s,%s,%s,%.15g%s\n",lbracket,actual.time[j],empty,empty,empty,empty,empty,actual.values[j],rbracket);
+      while (ref.time[i] > actualoriginal.time[j] && j < actualoriginal.size) {
+        fprintf(fout, "%s%.15g,%s,%s,%s,%s,%s,%.15g%s\n",lbracket,actualoriginal.time[j],empty,empty,empty,empty,empty,actualoriginal.values[j],rbracket);
         j++;
       }
       lastStepError = thisStepError;
