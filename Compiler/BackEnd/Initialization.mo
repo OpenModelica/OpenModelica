@@ -947,7 +947,7 @@ protected function preBalanceInitialSystem1 "author: lochel"
   output Boolean oB;
   output list<BackendDAE.Var> outDumpVars;
 algorithm
-  (outVars, outEqs, oB, outDumpVars) := matchcontinue(n, mt, inVars, inEqs, iB, inDumpVars)
+  (outVars, outEqs, oB, outDumpVars) := match (n, mt, inVars, inEqs, iB, inDumpVars)
     local
       list<Integer> row;
       Boolean b, useHomotopy;
@@ -966,6 +966,38 @@ algorithm
     then (vars, inEqs, true, inDumpVars);
 
     case(_, _, _, _, _, _) equation
+      true = n > 0;
+      (vars, eqs, b, dumpVars) = preBalanceInitialSystem2(n, mt, inVars, inEqs, iB, inDumpVars);
+      (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, vars, eqs, b, dumpVars);
+    then (vars, eqs, b, dumpVars);
+
+  end match;
+end preBalanceInitialSystem1;
+
+protected function preBalanceInitialSystem2 "author: lochel"
+  input Integer n;
+  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.EquationArray inEqs;
+  input Boolean iB;
+  input list<BackendDAE.Var> inDumpVars;
+  output BackendDAE.Variables outVars;
+  output BackendDAE.EquationArray outEqs;
+  output Boolean oB;
+  output list<BackendDAE.Var> outDumpVars;
+algorithm
+  (outVars, outEqs, oB, outDumpVars) := matchcontinue(n, mt, inVars, inEqs, iB, inDumpVars)
+    local
+      list<Integer> row;
+      Boolean b, useHomotopy;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqs;
+      list<BackendDAE.Var> rvarlst;
+      BackendDAE.Var var;
+      DAE.ComponentRef cref;
+      list<BackendDAE.Var> dumpVars;
+
+    case(_, _, _, _, _, _) equation
       row = mt[n];
       true = List.isEmpty(row);
 
@@ -973,11 +1005,8 @@ algorithm
       cref = BackendVariable.varCref(var);
       true = ComponentReference.isPreCref(cref);
       
-      (vars, rvarlst) = BackendVariable.removeVars({n}, inVars, {});
-      // Debug.fcall2(Flags.INITIALIZATION, BackendDump.dumpVarList, rvarlst, "removed unused variables");
-      
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, vars, inEqs, true, inDumpVars);
-    then (vars, eqs, b, dumpVars);
+      (vars, _) = BackendVariable.removeVars({n}, inVars, {});
+    then (vars, inEqs, true, inDumpVars);
     
     case(_, _, _, _, _, _) equation
       row = mt[n];
@@ -987,23 +1016,19 @@ algorithm
       cref = BackendVariable.varCref(var);
       false = ComponentReference.isPreCref(cref);
       
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, inVars, inEqs, true, inDumpVars);
-      
-      // Debug.fcall(Flags.INITIALIZATION, Error.addCompilerWarning, "Assuming fixed start value for the following variable:");
-      (eqs, dumpVars) = addStartValueEquations({var}, eqs, dumpVars);
-    then (vars, eqs, b, dumpVars);
+      (eqs, dumpVars) = addStartValueEquations({var}, inEqs, inDumpVars);
+    then (inVars, eqs, true, dumpVars);
     
     case(_, _, _, _, _, _) equation
       row = mt[n];
       false = List.isEmpty(row);
-      (vars, eqs, b, dumpVars) = preBalanceInitialSystem1(n-1, mt, inVars, inEqs, iB, inDumpVars);
-    then (vars, eqs, b, dumpVars);
+    then (inVars, inEqs, iB, inDumpVars);
     
     else equation
       Error.addInternalError("./Compiler/BackEnd/Initialization.mo: function preBalanceInitialSystem1 failed");
     then fail();
   end matchcontinue;
-end preBalanceInitialSystem1;
+end preBalanceInitialSystem2;
 
 protected function analyzeInitialSystem "author: lochel
   This function fixes discrete and state variables to balance the initial equation system."
