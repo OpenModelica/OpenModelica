@@ -485,7 +485,7 @@ int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
   for (i=0; i<2*reader->nvar; i++) {
     if (!reader->vars[i]) {
       reader->vars[i] = (double*) malloc(reader->nrows*sizeof(double));
-      memcpy(reader->vars[i], tmp, reader->nrows*sizeof(double));
+      memcpy(reader->vars[i], tmp + i*reader->nrows, reader->nrows*sizeof(double));
     }
   }
   free(tmp);

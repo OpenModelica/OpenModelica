@@ -382,8 +382,12 @@ static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, d
     }
     x0 = targetTimeLine[j - 1];
     y0 = targetValues[j - 1];
-
-    interpolatedValues[i] = linearInterpolation(x,x0,x1,y0,y1,xabstol);
+    if (i && almostEqualRelativeAndAbs(sourceTimeLine[i-1],x0,0,xabstol) && almostEqualRelativeAndAbs(x0,x1,0,xabstol)) {
+      /* Previous value was the left limit of the event; use the right limit! */
+      interpolatedValues[i] = y1;
+    } else {
+      interpolatedValues[i] = linearInterpolation(x,x0,x1,y0,y1,xabstol);
+    }
   }
 
   return interpolatedValues;
@@ -509,10 +513,6 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     res.size = 1;
     for (i=1; i<in.size-1; i++) {
       int isEvent = almostEqualRelativeAndAbs(in.time[i],in.time[i-1],0,xabstol);
-      /* Skip events if the values are the same */
-      if (in.values[i] == in.values[i-1] && isEvent) {
-        continue;
-      }
       double x0 = res.time[res.size-1];
       double y0 = res.values[res.size-1];
       double x = in.time[i];
@@ -520,7 +520,8 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
       double x1 = in.time[i+1];
       double y1 = in.values[i+1];
       int isLocalMinOrMax = (x > x1 && x > x0) || (x < x1 && x < x0);
-      if (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent) {
+      if ((isEvent && in.values[i] == in.values[i-1]) ||
+          (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent)) {
         /* The point can be reconstructed using linear interpolation and is not a local minimum or maximum */
         res.time[res.size] = x1;
         res.values[res.size] = y1;
