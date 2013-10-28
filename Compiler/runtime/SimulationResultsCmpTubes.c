@@ -334,18 +334,6 @@ static privates* calculateTubes(double *x, double *y, size_t length, double r)
   return priv;
 }
 
-/* Count the number of errors */
-static int validate(int n, double *low, double *high, double *val)
-{
-  int iErrors = 0, i;
-  for (i = 0; i < n; i++) {
-    if (val[i] < low[i] || val[i] > high[i]) {
-      iErrors++; //Count as error if current value is bigger than value of high tube and smaller than value of lowtube
-    }
-  }
-  return iErrors;
-}
-
 static inline double linearInterpolation(double x, double x0, double x1, double y0, double y1, double xabstol)
 {
   if (almostEqualRelativeAndAbs(x0,x,0,xabstol)) { //prevent NaN -> division by zero
@@ -506,7 +494,7 @@ static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTarg
   return res;
 }
 
-static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, int removeNonEvents, double reltol, double xabstol)
+static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, double reltol, double xabstol)
 {
   int i,iter;
   addTargetEventTimesRes res;
@@ -532,7 +520,7 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
       double x1 = in.time[i+1];
       double y1 = in.values[i+1];
       int isLocalMinOrMax = (x > x1 && x > x0) || (x < x1 && x < x0);
-      if (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent && removeNonEvents) {
+      if (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent) {
         /* The point can be reconstructed using linear interpolation and is not a local minimum or maximum */
         res.time[res.size] = x1;
         res.values[res.size] = y1;
@@ -553,26 +541,15 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
       res.time[res.size] = in.time[in.size-1];
       res.size++;
     }
-
     if (iter) {
-      /* swap buffers for in and res */
-      double * tmp;
-      tmp = in.time;
-      in.time = res.time;
-      res.time = tmp;
-      tmp = in.values;
-      in.values = res.values;
-      res.values = tmp;
-      /* set size of in, res will be overwritten anyways*/
-      in.size = res.size;
-      /* set new tolerance */
-      reltol /= 10.0;
+      /* This is ok, because we only remove the current element we iterate over; we could do this in-place but we avoid copying the initial array (which we want to remain as is) */
+      in = res;
+      reltol = 0;
     } else {
       /* no more recursion */
       break;
     }
   } while (1);
-
   return res;
 }
 
@@ -602,9 +579,47 @@ static void assertMonotonic(addTargetEventTimesRes series)
   }
 }
 
+/* Return NULL if there were no errors */
+static double* validate(int n, addTargetEventTimesRes ref, double *low, double *high, double *calibrated_values, double reltol, double abstol, double xabstol)
+{
+  double *error = GC_malloc_atomic(n * sizeof(double));
+  int isdifferent = 0;
+  int i,lastStepError = 1;
+  for (i=0; i<n; i++) {
+    int thisStepError = 0;
+    int isEvent = (i && almostEqualRelativeAndAbs(ref.time[i],ref.time[i-1],0,xabstol)) || (i+1<n && almostEqualRelativeAndAbs(ref.time[i],ref.time[i+1],0,xabstol));
+    if (isEvent) {
+      double refv = ref.values[i];
+      double val = calibrated_values[i];
+      double tol = fmax(abstol*10,fmax(fabs(refv),fabs(val))*reltol*10);
+      /* If there was no error in the last step before the event, give a nice tight curve around both values */
+      high[i] = (lastStepError ? refv : fmax(refv,val)) + tol;
+      low[i] = (lastStepError ? refv : fmin(refv,val)) - tol;
+      error[i] = NAN;
+    } else {
+      error[i] = 0;
+      thisStepError=lastStepError;
+      if (calibrated_values[i] < low[i]) {
+        error[i] = low[i]-calibrated_values[i];
+        isdifferent++;
+        thisStepError=1;
+      } else if (calibrated_values[i] > high[i]) {
+        error[i] = calibrated_values[i]-high[i];
+        isdifferent++;
+        thisStepError=1;
+      }
+    }
+    lastStepError = thisStepError;
+  }
+  if (isdifferent) {
+    return error;
+  }
+  return NULL;
+}
+
 static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time, DataField *reftime, DataField *data, DataField *refdata, double reltol, double rangeDelta, double reltolDiffMaxMin, DiffDataField *ddf, char **cmpdiffvars, unsigned int vardiffindx, int keepEqualResults, void **diffLst, const char *prefix, int isHtml, char **htmlOut)
 {
-  int i, isdifferent = 0;
+  int i;
   FILE *fout = NULL;
   char *fname = NULL;
   char *html;
@@ -621,8 +636,8 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   actual = actualoriginal;
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
-  ref = removeUneventfulPoints(ref, 1, reltol * reltol, xabstol);
-  actual = removeUneventfulPoints(actual, 1, reltol * reltol, xabstol);
+  ref = removeUneventfulPoints(ref, reltol*reltol, xabstol);
+  actual = removeUneventfulPoints(actual, reltol*reltol, xabstol);
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
   privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
@@ -639,6 +654,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   double abstol = fabs((priv->max-priv->min)*reltolDiffMaxMin);
   addRelativeTolerance(high,ref.values,n,reltol,abstol,1);
   addRelativeTolerance(low ,ref.values,n,reltol,abstol,-1);
+  double *error = validate(n,ref,low,high,calibrated_values,reltol,abstol,xabstol);
   if (isHtml ) {
 #if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
     fout = open_memstream(&html, &html_size);
@@ -686,7 +702,7 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   reltolDiffMaxMin,
   rangeDelta
 );
-  } else if (!isResultCmp) {
+  } else if (!isResultCmp && (error || keepEqualResults)) {
     fname = (char*) GC_malloc_atomic(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
@@ -705,28 +721,10 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
       int thisStepError = 0;
       fprintf(fout, "%s%.15g,%.15g,",lbracket,ref.time[i],ref.values[i]);
       if (i < n) {
-        int isEvent = (i && almostEqualRelativeAndAbs(ref.time[i],ref.time[i-1],0,xabstol)) || (i+1<n && almostEqualRelativeAndAbs(ref.time[i],ref.time[i+1],0,xabstol));
-        if (isEvent) {
-          double refv = ref.values[i];
-          double val = calibrated_values[i];
-          double tol = fmax(abstol*10,fmax(fabs(refv),fabs(val))*reltol*10);
-          /* If there was no error in the last step before the event, give a nice tight curve around both values */
-          double high = (lastStepError ? refv : fmax(refv,val)) + tol;
-          double low = (lastStepError ? refv : fmin(refv,val)) - tol;
-          fprintf(fout, "%.15g,%.15g,%.15g,%s",val,high,low,empty);
+        if (!error || isnan(error[i])) {
+          fprintf(fout, "%.15g,%.15g,%.15g,%s",calibrated_values[i],high[i],low[i],empty);
         } else {
-          double error = 0;
-          thisStepError=lastStepError;
-          if (calibrated_values[i] < low[i]) {
-            error = low[i]-calibrated_values[i];
-            isdifferent++;
-            thisStepError=1;
-          } else if (calibrated_values[i] > high[i]) {
-            error = calibrated_values[i]-high[i];
-            isdifferent++;
-            thisStepError=1;
-          }
-          fprintf(fout, "%.15g,%.15g,%.15g,%.15g",calibrated_values[i],high[i],low[i],error);
+          fprintf(fout, "%.15g,%.15g,%.15g,%.15g",calibrated_values[i],high[i],low[i],error[i]);
         }
         if (ref.time[i] == actualoriginal.time[j] && j < actualoriginal.size) {
           fprintf(fout, ",%.15g%s\n",actualoriginal.values[j++],rbracket);
@@ -743,10 +741,8 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
       lastStepError = thisStepError;
     }
     fputs(isHtml ? "],\n" : "\n", fout);
-  } else {
-    isdifferent = validate(n,low,high,calibrated_values);
   }
-  if (isdifferent) {
+  if (error) {
     cmpdiffvars[vardiffindx] = varname;
     vardiffindx++;
     if (!isResultCmp) {
@@ -779,8 +775,22 @@ fprintf(fout, "{title: '%s',\n"
       free(html);
     }
   }
-  if (!isdifferent && 0==keepEqualResults && 0==isResultCmp) {
-    SystemImpl__removeFile(fname);
-  }
+  /* Tell the GC some variables have been free'd */
+  if (error) GC_free(error);
+  if (fname) GC_free(fname);
+  GC_free(low);
+  GC_free(high);
+  GC_free(priv->mh);
+  GC_free(priv->i0h);
+  GC_free(priv->i1h);
+  GC_free(priv->ml);
+  GC_free(priv->i0l);
+  GC_free(priv->i1l);
+  GC_free(priv->xHigh);
+  GC_free(priv->xLow);
+  GC_free(priv->yHigh);
+  GC_free(priv->yLow);
+  GC_free(priv);
+  GC_free(calibrated_values);
   return vardiffindx;
 }

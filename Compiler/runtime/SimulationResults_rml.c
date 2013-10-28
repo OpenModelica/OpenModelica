@@ -52,7 +52,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(SimulationResults__readDataset)
 {
-  rmlA0 = (void*)SimulationResultsImpl__readDataset(RML_STRINGDATA(rmlA0),rmlA1,RML_UNTAGFIXNUM(rmlA2),&simresglob);
+  rmlA0 = (void*)SimulationResultsImpl__readDataset(RML_STRINGDATA(rmlA0),rmlA1,RML_UNTAGFIXNUM(rmlA2),0,&simresglob);
 
   if (rmlA0 == NULL) {
     RML_TAILCALLK(rmlFC);

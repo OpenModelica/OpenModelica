@@ -292,7 +292,7 @@ static void* SimulationResultsImpl__readVarsFilterAliases(const char *filename, 
   }
 }
 
-static void* SimulationResultsImpl__readDataset(const char *filename, void *vars, int dimsize, SimulationResult_Globals* simresglob)
+static void* SimulationResultsImpl__readDataset(const char *filename, void *vars, int dimsize, int suggestReadAllVars, SimulationResult_Globals* simresglob)
 {
   const char *msg[2] = {"",""};
   void *res,*col;
@@ -312,6 +312,9 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
       fprintf(stderr, "dimsize: %d, rows %d\n", dimsize, simresglob->matReader.nrows);
       c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("readDataset(...): Expected and actual dimension sizes do not match."), NULL, 0);
       return NULL;
+    }
+    if (suggestReadAllVars) {
+      omc_matlab4_read_all_vals(&simresglob->matReader);
     }
     while (RML_NILHDR != RML_GETHDR(vars)) {
       var = RML_STRINGDATA(RML_CAR(vars));

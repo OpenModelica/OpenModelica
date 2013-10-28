@@ -48,7 +48,7 @@ void* SimulationResults_readVariables(const char *filename, const char *visvars)
 extern void* _ValuesUtil_reverseMatrix(void*);
 void* SimulationResults_readDataset(const char *filename, void *vars, int datasize)
 {
-  void *res = SimulationResultsImpl__readDataset(filename,vars,datasize,&simresglob);
+  void *res = SimulationResultsImpl__readDataset(filename,vars,datasize,0,&simresglob);
   if (res == NULL) MMC_THROW();
   return res;
 }

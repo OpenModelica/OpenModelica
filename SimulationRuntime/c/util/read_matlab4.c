@@ -83,6 +83,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   reader->file = fopen(filename, "rb");
   if(!reader->file) return strerror(errno);
   reader->fileName = strdup(filename);
+  reader->readAll = 0;
   for(i=0; i<nMatrix;i++) {
     MHeader_t hdr;
     int nr = fread(&hdr,sizeof(MHeader_t),1,reader->file);
@@ -334,9 +335,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
             }
           }
           free(tmp);
-        }
-        else
-        {
+        } else {
           float *tmp=NULL;
           tmp = (float*) malloc(hdr.mrows*hdr.ncols*sizeof(float));
           if(1 != fread(tmp,matrix_length,1,reader->file)) return "Corrupt header: data_2 matrix";
@@ -427,6 +426,71 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
     reader->vars[ix] = tmp;
   }
   return reader->vars[ix];
+}
+
+static void transpose(double *m, int w, int h)
+{
+	int start, next, i;
+	double tmp;
+ 
+	for (start = 0; start <= w * h - 1; start++) {
+		next = start;
+		i = 0;
+		do {	i++;
+			next = (next % h) * w + next / h;
+		} while (next > start);
+		if (next < start || i == 1) continue;
+ 
+		tmp = m[next = start];
+		do {
+			i = (next % h) * w + next / h;
+			m[next] = (i == start) ? tmp : m[i];
+			next = i;
+		} while (next > start);
+	}
+}
+
+int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
+{
+  int done = reader->readAll;
+  int i,j;
+  double *tmp;
+  for (i=0; i<2*reader->nvar; i++) {
+    if (reader->vars[i] == 0) done = 0;
+  }
+  if (done) {
+    reader->readAll = 1;
+    return 0;
+  }
+  tmp = (double*) malloc(2*reader->nvar*reader->nrows*sizeof(double));
+  if (!tmp) {
+    return 1;
+  }
+  fseek(reader->file, reader->var_offset, SEEK_SET);
+  if (reader->nvar*reader->nrows != fread(tmp, reader->doublePrecision==1 ? sizeof(double) : sizeof(float), reader->nvar*reader->nrows, reader->file)) {
+    free(tmp);
+    return 1;
+  }
+  if(reader->doublePrecision != 1) {
+    for (i=reader->nvar*reader->nrows-1; i>=0; i--) {
+      tmp[i] = ((float*)tmp)[i];
+    }
+  }
+  transpose(tmp,reader->nvar,reader->nrows);
+  /* Negative aliases */
+  for (i=0; i<reader->nrows*reader->nvar; i++) {
+    tmp[reader->nrows*reader->nvar + i] = -tmp[i];
+  }
+  /* Setup all the pointers */
+  for (i=0; i<2*reader->nvar; i++) {
+    if (!reader->vars[i]) {
+      reader->vars[i] = (double*) malloc(reader->nrows*sizeof(double));
+      memcpy(reader->vars[i], tmp, reader->nrows*sizeof(double));
+    }
+  }
+  free(tmp);
+  reader->readAll = 1;
+  return 0;
 }
 
 double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int varIndex, int timeIndex)

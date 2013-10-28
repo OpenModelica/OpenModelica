@@ -160,7 +160,7 @@ static char ** getVars(void *vars, unsigned int* nvars)
   return cmpvars;
 }
 
-static DataField getData(const char *varname,const char *filename, unsigned int size, SimulationResult_Globals* srg)
+static DataField getData(const char *varname,const char *filename, unsigned int size, int suggestRealAll, SimulationResult_Globals* srg)
 {
   DataField res;
   void *cmpvar,*dataset,*lst,*datasetBackup;
@@ -171,7 +171,7 @@ static DataField getData(const char *varname,const char *filename, unsigned int 
   /* fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename);  */
   cmpvar = mk_nil();
   cmpvar =  mk_cons(mk_scon(varname),cmpvar);
-  dataset = SimulationResultsImpl__readDataset(filename,cmpvar,size,srg);
+  dataset = SimulationResultsImpl__readDataset(filename,cmpvar,size,suggestRealAll,srg);
   if (dataset==NULL) {
     /* fprintf(stderr, "getData of Var: %s failed!\n",varname); */
     return res;
@@ -613,6 +613,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   DiffDataField ddf;
   const char *msg[2] = {"",""};
   const char *timeVarName, *timeVarNameRef;
+  int suggestReadAll=0;
   ddf.data=NULL;
   ddf.n=0;
   ddf.n_max=0;
@@ -648,7 +649,8 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   /* if no var compare all vars */
   allvars = SimulationResultsImpl__readVarsFilterAliases(filename,&simresglob_c);
   allvarsref = SimulationResultsImpl__readVarsFilterAliases(reffilename,&simresglob_ref);
-  if (ncmpvars==0){
+  if (ncmpvars==0) {
+    suggestReadAll = 1;
     cmpvars = getVars(allvarsref,&ncmpvars);
     if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
   }
@@ -662,12 +664,12 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   /* fprintf(stderr, "get time\n"); */
   timeVarName = getTimeVarName(allvars);
   timeVarNameRef = getTimeVarName(allvarsref);
-  time = getData(timeVarName,filename,size,&simresglob_c);
+  time = getData(timeVarName,filename,size,suggestReadAll,&simresglob_c);
   if (time.n==0) {
     return mk_cons(mk_scon("Error get time!"),mk_nil());
   }
   /* fprintf(stderr, "get reftime\n"); */
-  timeref = getData(timeVarNameRef,reffilename,size_ref,&simresglob_ref);
+  timeref = getData(timeVarNameRef,reffilename,size_ref,suggestReadAll,&simresglob_ref);
   if (timeref.n==0) {
     return mk_cons(mk_scon("Error get ref time!"),mk_nil());
   }
@@ -702,14 +704,14 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     var1[k] = 0;
     /* fprintf(stderr, "compare var: %s\n",var); */
     /* check if in ref_file */
-    dataref = getData(var1,reffilename,size_ref,&simresglob_ref);
+    dataref = getData(var1,reffilename,size_ref,suggestReadAll,&simresglob_ref);
     if (dataref.n==0) {
       if (var2) free(var2);
       var2 = (char*) malloc(len+10);
       strncpy(var2,var1,len+1);
       fixDerInName(var2,len);
       fixCommaInName(&var2,len);
-      dataref = getData(var2,reffilename,size_ref,&simresglob_ref);
+      dataref = getData(var2,reffilename,size_ref,suggestReadAll,&simresglob_ref);
       if (dataref.n==0) {
         msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
         msg[1] = var;
@@ -719,11 +721,11 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       }
     }
     /*  check if in file */
-    data = getData(var1,filename,size,&simresglob_c);
+    data = getData(var1,filename,size,suggestReadAll,&simresglob_c);
     if (data.n==0)  {
       fixDerInName(var1,len);
       fixCommaInName(&var1,len);
-      data = getData(var1,filename,size,&simresglob_c);
+      data = getData(var1,filename,size,suggestReadAll,&simresglob_c);
       if (data.n==0)  {
         if (data.data) free(data.data);
         msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;

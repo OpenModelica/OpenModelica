@@ -30,6 +30,7 @@ typedef struct {
   double *params; /* This has size 2*nparam; the first parameter has row0=startTime,row1=stopTime. Other variables are stored as row0=row1 */
   uint32_t nvar,nrows;
   size_t var_offset; /* This is the offset in the file */
+  int readAll; /* Read all variables already */
   double **vars;
   char doublePrecision; /* data_1 and data_2 in double ore single precision */
 } ModelicaMatReader;
