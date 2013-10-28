@@ -363,7 +363,7 @@ static double* calibrateValues(double* sourceTimeLine, double* targetTimeLine, d
   for (i = 0; i < n; i++) {
     x = sourceTimeLine[i];
 
-    if (targetTimeLine[j] > sourceTimeLine[n - 1] && !almostEqualRelativeAndAbs(targetTimeLine[j],sourceTimeLine[n - 1],0,xabstol)) { // Avoid extrapolation by cutting the sequence
+    if (targetTimeLine[j] > sourceTimeLine[n - 1] && targetTimeLine[j-1] > sourceTimeLine[n - 1]) { // Avoid extrapolation by cutting the sequence
       interpolatedValues[i] = linearInterpolation(x,x0,x1,y0,y1,xabstol);
       *nsource = i+1;
       break;
@@ -512,17 +512,13 @@ static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, 
     res.time[0] = in.time[0];
     res.size = 1;
     for (i=1; i<in.size-1; i++) {
-      int isEvent = almostEqualRelativeAndAbs(in.time[i],in.time[i-1],0,xabstol);
       double x0 = res.time[res.size-1];
       double y0 = res.values[res.size-1];
       double x = in.time[i];
       double y = in.values[i];
       double x1 = in.time[i+1];
       double y1 = in.values[i+1];
-      int isLocalMinOrMax = (x > x1 && x > x0) || (x < x1 && x < x0);
-      if ((isEvent && in.values[i] == in.values[i-1]) ||
-          (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent)) {
-        /* The point can be reconstructed using linear interpolation and is not a local minimum or maximum */
+      if (y0 == y1 && y == y0) {
         res.time[res.size] = x1;
         res.values[res.size] = y1;
         res.size++;
@@ -625,7 +621,8 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   char *fname = NULL;
   char *html;
   size_t html_size=0;
-  double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*rangeDelta;
+  /* The tolerance for detecting events is proportional to the number of output points in the file */
+  double xabstol = (reftime->data[reftime->n-1]-reftime->data[0])*rangeDelta / fmax(time->n,reftime->n);
   /* Calculate the tubes without additional events added */
   addTargetEventTimesRes ref,actual,actualoriginal;
   ref.values = refdata->data;
@@ -650,7 +647,11 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   double minMinusTol = priv->min - fabs(priv->min) * reltol;
   double *high = calibrateValues(ref.time,priv->xHigh,priv->yHigh,&n,priv->countHigh,xabstol);
   double *low  = calibrateValues(ref.time,priv->xLow,priv->yLow,&n,priv->countLow,xabstol);
-  double abstol = fabs((priv->max-priv->min)*reltolDiffMaxMin);
+  /* If all values in the reference are ~0 (and the same)... Allow reltolDiffMaxMin^2 as tolerance
+   * Maybe we should just treat it differently though
+   * Like not creating a tubes and simply check that the other file also has only identical points close to this
+   */
+  double abstol = (priv->max-priv->min == 0 && priv->max < reltolDiffMaxMin*reltolDiffMaxMin) ? reltolDiffMaxMin*reltolDiffMaxMin : fabs((priv->max-priv->min)*reltolDiffMaxMin);
   addRelativeTolerance(high,ref.values,n,reltol,abstol,1);
   addRelativeTolerance(low ,ref.values,n,reltol,abstol,-1);
   double *error = validate(n,ref,low,high,calibrated_values,reltol,abstol,xabstol);
