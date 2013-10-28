@@ -510,7 +510,7 @@ algorithm
       SCode.Comment cmt;
       list<SCode.Annotation> annl;
       Option<SCode.ExternalDecl> ext_decl;
-      Env ty_env, env;
+      Env ty_env, env, nore_env;
       Item ty_item;
       SCode.Attributes attr;
       list<Absyn.Path> paths;
@@ -555,7 +555,8 @@ algorithm
         _, _ :: env, _, _)
       equation
         env = Util.if_(inInModifierScope, inEnv, env);
-        analyseTypeSpec(ty, env, inInfo);
+        nore_env = NFSCodeEnv.removeRedeclaresFromLocalScope(env);
+        analyseTypeSpec(ty, nore_env, inInfo);
         (ty_item, _, ty_env) = NFSCodeLookup.lookupTypeSpec(ty, env, inInfo);
         (ty_item, ty_env, _) = NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
