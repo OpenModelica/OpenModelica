@@ -467,7 +467,6 @@ void SimulationDialog::compileModel()
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(writeCompilationStandardError()));
   connect(mpCompilationProcess, SIGNAL(readyRead()), SLOT(showSimulationOutputWidget()));
   connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
-  connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
   mpProgressDialog->getCancelSimulationButton()->setText(tr("Cancel Compilation"));
   mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
   mpProgressDialog->setText(tr("Compiling <b>%1</b>.<br />Please wait for a while.").arg(mpLibraryTreeNode->getNameStructure()));
@@ -482,12 +481,19 @@ void SimulationDialog::compileModel()
     fileName = mpLibraryTreeNode->getNameStructure();
   else
     fileName = mpFileNameTextBox->text();
-  args << "-j" + numProcs << "-f" << fileName + ".makefile";
+  int numProcsInt = numProcs.toInt();
+  if (numProcsInt > 1)
+  {
+    args << "-j" + numProcs;
+  }
+  args << "-f" << fileName + ".makefile";
   mIsCompilationProcessRunning = true;
 #ifdef WIN32
   mpCompilationProcess->start(mCompilationProcessPath, args);
+  writeCompilationOutput(QString("%1 %2\n").arg(mCompilationProcessPath).arg(args.join(" ")), Qt::blue);
 #else
   mpCompilationProcess->start("make", args);
+  writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
 #endif
   while (mpCompilationProcess->state() == QProcess::Starting || mpCompilationProcess->state() == QProcess::Running)
   {
@@ -567,7 +573,6 @@ void SimulationDialog::runSimulationExecutable()
     connect(mpSimulationProcess, SIGNAL(readyRead()), SLOT(showSimulationOutputWidget()));
   }
   connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
-  connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
   mpProgressDialog->getCancelSimulationButton()->setText(tr("Cancel Simulation"));
   mpProgressDialog->getCancelSimulationButton()->setEnabled(true);
   mpProgressDialog->setText(tr("Running Simulation of <b>%1</b>.<br />Please wait for a while.").arg(mpLibraryTreeNode->getNameStructure()));
@@ -585,6 +590,7 @@ void SimulationDialog::runSimulationExecutable()
   // start the executable
   mIsSimulationProcessRunning = true;
   mpSimulationProcess->start(fileName, args);
+  writeSimulationOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), Qt::blue);
   while (mpSimulationProcess->state() == QProcess::Starting || mpSimulationProcess->state() == QProcess::Running)
   {
     if (!mIsSimulationProcessRunning)
@@ -925,7 +931,6 @@ void SimulationDialog::simulate()
   */
 void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  Q_UNUSED(exitCode);
   mIsCompilationProcessRunning = false;
   if (exitStatus == QProcess::NormalExit && exitCode == 0)
   {
@@ -933,29 +938,11 @@ void SimulationDialog::compilationProcessFinished(int exitCode, QProcess::ExitSt
   }
   else if (!mIsCancelled)
   {
-    writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
-  }
-}
-
-/*!
-  Slot activated when mpCompilationProcess error signal is raised.\n
-  Writes the mpCompilationProcess error string.
-  */
-void SimulationDialog::compilationProcessError(QProcess::ProcessError processError)
-{
-  Q_UNUSED(processError);
-  mIsCompilationProcessRunning = false;
-  if (!mIsCancelled)
-  {
-    switch (processError)
-    {
-      case QProcess::FailedToStart:
-        writeCompilationOutput(mpCompilationProcess->errorString() + " " + mCompilationProcessPath, Qt::red);
-        break;
-      default:
-        writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
-        break;
-    }
+    QString exitCodeStr = tr("Compilation process exited with code %1").arg(QString::number(exitCode));
+    if (mpCompilationProcess->error() == QProcess::UnknownError)
+      writeCompilationOutput(exitCodeStr, Qt::red);
+    else
+      writeCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
   }
 }
 
@@ -1005,14 +992,17 @@ void SimulationDialog::showSimulationOutputWidget()
   */
 void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  Q_UNUSED(exitCode);
   mIsSimulationProcessRunning = false;
   // If user has cancelled the simulation then don't show the plotting view.
   if (mIsCancelled)
     return;
-  if (exitStatus == QProcess::CrashExit)
+  if (exitStatus == QProcess::CrashExit || exitCode != 0)
   {
-    writeSimulationOutput(mpSimulationProcess->errorString(), Qt::red);
+    QString exitCodeStr = tr("Simulation process exited with code %1").arg(QString::number(exitCode));
+    if (mpSimulationProcess->error() == QProcess::UnknownError)
+      writeSimulationOutput(exitCodeStr, Qt::red);
+    else
+      writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
   }
   QString workingDirectory = mpMainWindow->getOMCProxy()->changeDirectory();
   // read the result file
@@ -1034,20 +1024,6 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
     mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
     pVariablesWidget->addPlotVariablestoTree(resultFileName, pOMCProxy->changeDirectory(), list);
     mpMainWindow->getVariablesDockWidget()->show();
-  }
-}
-
-/*!
-  Slot activated when mpSimulationProcess error signal is raised.\n
-  Writes the mpSimulationProcess error string.
-  */
-void SimulationDialog::simulationProcessError(QProcess::ProcessError processError)
-{
-  Q_UNUSED(processError);
-  mIsSimulationProcessRunning = false;
-  if (!mIsCancelled)
-  {
-    writeSimulationOutput(mpSimulationProcess->errorString(), Qt::red);
   }
 }
 

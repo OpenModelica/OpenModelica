@@ -166,12 +166,10 @@ public slots:
   void browseEquationSystemInitializationFile();
   void simulate();
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void compilationProcessError(QProcess::ProcessError processError);
   void writeCompilationStandardOutput();
   void writeCompilationStandardError();
   void showSimulationOutputWidget();
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void simulationProcessError(QProcess::ProcessError processError);
   void writeSimulationStandardOutput();
   void writeSimulationStandardError();
   void cancelSimulation();
