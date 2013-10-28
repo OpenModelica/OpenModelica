@@ -135,13 +135,13 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 
 void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
 {
-  applyLinePattern(painter);
-  applyFillPattern(painter);
   QPainterPath path;
   // first we invert the painter since we have our coordinate system inverted.
   // inversion is required to draw the elliptic curves at correct angles.
   painter->scale(1.0, -1.0);
   painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
+  applyLinePattern(painter);
+  applyFillPattern(painter);
   qreal startAngle = StringHandler::getNormalizedAngle(mStartAngle);
   qreal endAngle = StringHandler::getNormalizedAngle(mEndAngle);
   if ((startAngle - endAngle) == 0)
