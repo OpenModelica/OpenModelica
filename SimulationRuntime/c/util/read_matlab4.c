@@ -430,24 +430,24 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
 
 static void transpose(double *m, int w, int h)
 {
-	int start, next, i;
-	double tmp;
+  int start, next, i;
+  double tmp;
  
-	for (start = 0; start <= w * h - 1; start++) {
-		next = start;
-		i = 0;
-		do {	i++;
-			next = (next % h) * w + next / h;
-		} while (next > start);
-		if (next < start || i == 1) continue;
+  for (start = 0; start <= w * h - 1; start++) {
+    next = start;
+    i = 0;
+    do {  i++;
+      next = (next % h) * w + next / h;
+    } while (next > start);
+    if (next < start || i == 1) continue;
  
-		tmp = m[next = start];
-		do {
-			i = (next % h) * w + next / h;
-			m[next] = (i == start) ? tmp : m[i];
-			next = i;
-		} while (next > start);
-	}
+    tmp = m[next = start];
+    do {
+      i = (next % h) * w + next / h;
+      m[next] = (i == start) ? tmp : m[i];
+      next = i;
+    } while (next > start);
+  }
 }
 
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
