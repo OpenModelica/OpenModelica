@@ -33,23 +33,23 @@
  * The original source:
  * https://svn.modelica.org/projects/Modelica/branches/tools/csv-compare/Modelica_ResultCompare/Tubes.cs
  * Comes with the following terms [BSD 3-clause]:
- * 
+ *
  * Copyright (c) 2013, ITI GmbH Dresden
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
- * Redistributions of source code must retain the above copyright notice, 
+ *
+ * Redistributions of source code must retain the above copyright notice,
  * this list of conditions and the following disclaimer.
  * Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation 
+ * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * 
+ *
  * Neither the name of the ITI GmbH nor the names of its contributors may be
  * used to endorse or promote products derived from this software without
  * specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -409,7 +409,7 @@ typedef struct {
 
 static size_t findNextEvent(size_t i, double *time, size_t n, double xabstol)
 {
-  for (i; i < n; i++) {
+  for (; i < n; i++) {
     if (almostEqualRelativeAndAbs(time[i-1],time[i],0,xabstol) || (i<n-1 && almostEqualRelativeAndAbs(time[i],time[i+1],0,xabstol))) return i;
   }
   return 0; /* Not found */
@@ -419,7 +419,7 @@ static addTargetEventTimesRes addTargetEventTimes(double* sourceTimeLine, double
 {
   addTargetEventTimesRes res;
   size_t i=0,j,count=0;
-  while (i=findNextEvent(i+1,targetTimeLine,ntarget,xabstol)) {
+  while ((i=findNextEvent(i+1,targetTimeLine,ntarget,xabstol))) {
     if (targetTimeLine[i] >= sourceTimeLine[nsource-1]) {
       break;
     }
@@ -508,59 +508,72 @@ static addTargetEventTimesRes mergeTimelines(addTargetEventTimesRes ref, addTarg
 
 static addTargetEventTimesRes removeUneventfulPoints(addTargetEventTimesRes in, int removeNonEvents, double reltol, double xabstol)
 {
-  int i,iter,niter=0;
+  int i,iter;
   addTargetEventTimesRes res;
   res.values = (double*) GC_malloc_atomic(in.size * sizeof(double));
   res.time = (double*) GC_malloc_atomic(in.size * sizeof(double));
-// printf("niter x: %ld\n", in.size);
-tail:
-  iter=0;
-  niter++;
-  /* Don't remove first point */
-  res.values[0] = in.values[0];
-  res.time[0] = in.time[0];
-  res.size = 1;
-  for (i=1; i<in.size-1; i++) {
-    int isEvent = almostEqualRelativeAndAbs(in.time[i],in.time[i-1],0,xabstol);
-    /* Skip events if the values are the same */
-    if (in.values[i] == in.values[i-1] && isEvent) {
-      continue;
-    }
-    double x0 = res.time[res.size-1];
-    double y0 = res.values[res.size-1];
-    double x = in.time[i];
-    double y = in.values[i];
-    double x1 = in.time[i+1];
-    double y1 = in.values[i+1];
-    int isLocalMinOrMax = (x > x1 && x > x0) || (x < x1 && x < x0);
-    if (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent && removeNonEvents) {
-      /* The point can be reconstructed using linear interpolation and is not a local minimum or maximum */
-      res.time[res.size] = x1;
-      res.values[res.size] = y1;
-      res.size++;
-      i++;
-      if (i < in.size-2) {
-        iter=1;
+
+  do {
+    iter=0;
+    /* Don't remove first point */
+    res.values[0] = in.values[0];
+    res.time[0] = in.time[0];
+    res.size = 1;
+    for (i=1; i<in.size-1; i++) {
+      int isEvent = almostEqualRelativeAndAbs(in.time[i],in.time[i-1],0,xabstol);
+      /* Skip events if the values are the same */
+      if (in.values[i] == in.values[i-1] && isEvent) {
+        continue;
       }
-      continue;
+      double x0 = res.time[res.size-1];
+      double y0 = res.values[res.size-1];
+      double x = in.time[i];
+      double y = in.values[i];
+      double x1 = in.time[i+1];
+      double y1 = in.values[i+1];
+      int isLocalMinOrMax = (x > x1 && x > x0) || (x < x1 && x < x0);
+      if (!isLocalMinOrMax && almostEqualRelativeAndAbs(y,linearInterpolation(x,x0,x1,y0,y1,xabstol),reltol,0) && !isEvent && removeNonEvents) {
+        /* The point can be reconstructed using linear interpolation and is not a local minimum or maximum */
+        res.time[res.size] = x1;
+        res.values[res.size] = y1;
+        res.size++;
+        i++;
+        if (i < in.size-2) {
+          iter=1;
+        }
+        continue;
+      }
+      res.time[res.size] = x;
+      res.values[res.size] = y;
+      res.size++;
     }
-    res.time[res.size] = x;
-    res.values[res.size] = y;
-    res.size++;
-  }
-  if (in.size > 1) {
-    /* Don't remove last point */
-    res.values[res.size] = in.values[in.size-1];
-    res.time[res.size] = in.time[in.size-1];
-    res.size++;
-  }
-  if (iter) {
-    in = res;
-    reltol /= 10.0;
-    goto tail;
-  } else {
-    return res;
-  }
+    if (in.size > 1) {
+      /* Don't remove last point */
+      res.values[res.size] = in.values[in.size-1];
+      res.time[res.size] = in.time[in.size-1];
+      res.size++;
+    }
+
+    if (iter) {
+      /* swap buffers for in and res */
+      double * tmp;
+      tmp = in.time;
+      in.time = res.time;
+      res.time = tmp;
+      tmp = in.values;
+      in.values = res.values;
+      res.values = tmp;
+      /* set size of in, res will be overwritten anyways*/
+      in.size = res.size;
+      /* set new tolerance */
+      reltol /= 10.0;
+    } else {
+      /* no more recursion */
+      break;
+    }
+  } while (1);
+
+  return res;
 }
 
 /* Adds a relative tolerance compared to the reference signal. Overwrites the target values vector. */
