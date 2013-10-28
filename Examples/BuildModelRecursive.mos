@@ -147,7 +147,7 @@ if simRes then
   prefix := \"files/"+s+".diff\";
   if referenceExists then
     OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
-    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.mat\",reference,prefix,relTol=reference_reltol,rangeDelta=reference_rangeDelta);
+    (referenceOK,diffVars) := diffSimulationResults(\""+s+"_res.mat\",reference,prefix,relTol=reference_reltol,relTolDiffMinMax=reference_reltolDiffMinMax,rangeDelta=reference_rangeDelta);
     if referenceOK then
       system(\"touch "+s+".verifysuccess\");
     end if;

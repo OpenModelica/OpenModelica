@@ -642,11 +642,9 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
   /* assertMonotonic(ref); */
   /* assertMonotonic(actual); */
   privates *priv = calculateTubes(ref.time,ref.values,ref.size,rangeDelta);
-  // ref = addTargetEventTimes(ref.time, actual.time, ref.values, ref.size, actual.size, xabstol);
   ref = mergeTimelines(ref,actual,xabstol);
   /* assertMonotonic(ref); */
   size_t n = ref.size;
-  // calibrateValuesConsiderEventsResult calibrated = calibrateValuesConsiderEvents(ref->time,time->data,data->data,&n,time->n);
   double *calibrated_values = calibrateValues(ref.time,actual.time,actual.values,&n,actual.size,xabstol);
   double maxPlusTol = priv->max + fabs(priv->max) * reltol;
   double minMinusTol = priv->min - fabs(priv->min) * reltol;
