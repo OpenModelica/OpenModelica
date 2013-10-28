@@ -12371,4 +12371,14 @@ algorithm
   tpl := (eqs, i);
 end eqSystemWCET;
 
+public function isParallelFunctionContext
+  input SimCode.Context context;
+  output Boolean outBool;
+algorithm
+  outBool := match(context)
+    case (SimCode.PARALLEL_FUNCTION_CONTEXT()) then true;
+    else false;    
+  end match;
+end isParallelFunctionContext;
+
 end SimCodeUtil;

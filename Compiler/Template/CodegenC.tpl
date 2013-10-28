@@ -4445,10 +4445,10 @@ template functionHeaderKernelFunctionInterface(String fname, list<Variable> farg
     %>
   } <%fname%>_rettype;
 
-  <%fname%>_rettype omc_<%fname%>(<%fargsStr%>);
+  <%fname%>_rettype omc_<%fname%>(threadData_t *threadData, <%fargsStr%>);
   >> else <<
 
-  void _<%fname%>(<%fargsStr%>);
+  void _<%fname%>(threadData_t *threadData, <%fargsStr%>);
   >>
 end functionHeaderKernelFunctionInterface;
 
@@ -5068,7 +5068,7 @@ case KERNEL_FUNCTION(__) then
   <<
 
   /* Interface function to <%fname%> defined in parallelFunctions.cl file. */
-  <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
+  <%retType%> omc_<%fname%>(threadData_t *threadData, <%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
   {
     <%funArgs%>
     <%varDecls%>
@@ -8270,8 +8270,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     ""
 
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
-    let argStr = if attr.builtin
-                 then (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
+    let argStr = if attr.builtin then (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
+                 else if isParallelFunctionContext(context) then (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
                  else ("threadData" + (expLst |> exp => (", " + daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/))))
     let funName = '<%underscorePath(path)%>'
     let retType = if attr.builtin then (match attr.ty case T_NORETCALL(__) then ""

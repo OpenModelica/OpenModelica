@@ -712,6 +712,11 @@ package SimCodeUtil
     input list<SimCode.SimEqSystem> eqs;
     output list<SimCode.SimEqSystem> outEqs;
   end sortEqSystems;
+  
+  function isParallelFunctionContext
+    input SimCode.Context context;
+    output Boolean s;
+  end isParallelFunctionContext;
 
 end SimCodeUtil;
 

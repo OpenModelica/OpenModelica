@@ -568,7 +568,7 @@ extern void mmc_init();
 #define MMC_THROW() {longjmp(*((threadData_t*)pthread_getspecific(mmc_thread_data_key))->mmc_jumper,1);}
 #define MMC_ELSE() } else {
 
-#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = pthread_getspecific(mmc_thread_data_key), *threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); MMC_TRY_INTERNAL(mmc_jumper)
+#define MMC_TRY_TOP() { threadData_t threadDataOnStack = {0}, *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key),*threadData = &threadDataOnStack; pthread_setspecific(mmc_thread_data_key,threadData); MMC_TRY_INTERNAL(mmc_jumper)
 #define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
 
 #if defined(__cplusplus)
