@@ -166,6 +166,9 @@ algorithm
       HpcOmScheduler.Schedule schedule;
       HpcOmScheduler.ScheduleSimCode taskScheduleSimCode;
       
+      Integer graphOps;
+      Real graphCosts;
+      
     case (_, _, _, _, _, _, _, _, _, _, _, _) equation
       uniqueEqIndex = 1;
     
@@ -196,7 +199,7 @@ algorithm
 
       //Create Costs
       //------------
-      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_prof.xml" , simEqSccMapping, taskGraphData); 
+      taskGraphData = HpcOmTaskGraph.createCosts(inBackendDAE, filenamePrefix +& "_eqs_prof.xml" , simEqSccMapping, taskGraphData); 
       Debug.execStat("hpcom create costs", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);
       
       //Get ODE System
@@ -217,6 +220,8 @@ algorithm
       //----------------------------------
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphOde,taskGraphDataOde);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+      ((graphOps,graphCosts)) = HpcOmTaskGraph.sumUpExecCosts(taskGraphDataOde);
+      criticalPathInfo = criticalPathInfo +& " sum: (" +& realString(graphCosts) +& " ; " +& intString(graphOps) +& ")";
       fileName = ("taskGraph"+&filenamePrefix+&"ODE.graphml");  
       schedulerInfo = arrayCreate(arrayLength(taskGraphOde), (-1,-1));
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraphOde, taskGraphDataOde, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);  
@@ -234,12 +239,12 @@ algorithm
       
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
-      // That's failing
-      //((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
-      //criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-      criticalPathInfo = "";
-      criticalPaths = {{}};
-      criticalPathsWoC = {{}};
+
+      ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
+      criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+      //criticalPathInfo = "";
+      //criticalPaths = {{}};
+      //criticalPathsWoC = {{}};
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(taskSchedule);
       

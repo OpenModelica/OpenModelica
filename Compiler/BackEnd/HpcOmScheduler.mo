@@ -1270,7 +1270,7 @@ algorithm
 end createExtSchedule;
 
 protected function createExtSchedule1
-input list<Task> iNodeList; //the sorted nodes -> this method will pick the first task
+  input list<Task> iNodeList; //the sorted nodes -> this method will pick the first task
   input array<Integer> iThreadAssignments; //assignment taskIdx -> threadIdx
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraph iTaskGraphT;
@@ -1376,7 +1376,8 @@ algorithm
     case({},_,_,_,_,_,_,_) then iSchedule;
     else
       equation
-        print("HpcOmScheduler.createExtSchedule1 failed\n");
+        print("HpcOmScheduler.createExtSchedule1 failed. Tasks in List:\n");
+        printTaskList(iNodeList);
       then fail();
   end matchcontinue;
 end createExtSchedule1;

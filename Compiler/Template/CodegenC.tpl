@@ -2001,11 +2001,11 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   #pragma omp section
   {
   #ifdef _OMC_MEASURE_TIME
-   SIM_PROF_TICK_EQEXT(<%ix%>);
+   //SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif
   eqFunction_<%ix%>(data);
   #ifdef _OMC_MEASURE_TIME
-   SIM_PROF_ACC_EQEXT(<%ix%>);
+   //SIM_PROF_ACC_EQEXT(<%ix%>);
   #endif
   }
   >>
@@ -2017,11 +2017,11 @@ else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
   #ifdef _OMC_MEASURE_TIME
-   SIM_PROF_TICK_EQEXT(<%ix%>);
+   //SIM_PROF_TICK_EQEXT(<%ix%>);
   #endif
   eqFunction_<%ix%>(data);
   #ifdef _OMC_MEASURE_TIME
-   SIM_PROF_ACC_EQEXT(<%ix%>);
+   //SIM_PROF_ACC_EQEXT(<%ix%>);
   #endif
   >>
 end equationNamesHPCOM_Thread_;

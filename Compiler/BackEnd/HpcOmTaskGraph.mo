@@ -3809,7 +3809,7 @@ algorithm
     else
       equation
         tmpTaskGraphMeta = estimateCosts(iDae,iTaskGraphMeta);
-        print("Warning: The costs have been estimated. Maybe the _prof.xml-file is missing.\n");
+        print("Warning: The costs have been estimated. Maybe " +& benchFileName +& "-file is missing.\n");
       then tmpTaskGraphMeta;
   end matchcontinue;  
 end createCosts;
@@ -5571,6 +5571,37 @@ algorithm
     else then iHighestTuple;
   end matchcontinue;
 end getHighestCommCost;
+
+public function sumUpExecCosts
+  input TaskGraphMeta iMeta;
+  output tuple<Integer,Real> execCosts;
+protected
+  tuple<Integer,Real> costs;
+  array<tuple<Integer,Real>> exeCosts;
+algorithm
+  execCosts := match(iMeta)
+    case(TASKGRAPHMETA(exeCosts=exeCosts))
+      equation
+        costs = Util.arrayFold(exeCosts, sumUpExecCosts1, (0,0.0));
+      then costs;
+    else then ((0,0.0));
+  end match;
+end sumUpExecCosts;
+
+protected function sumUpExecCosts1
+  input tuple<Integer,Real> iEntry;
+  input tuple<Integer,Real> iCostsOps;
+  output tuple<Integer,Real> oCostsOps;
+protected
+  Real tmpCosts, iCosts;
+  Integer tmpOps, iOps;
+algorithm
+  (tmpOps,tmpCosts) := iEntry;
+  (iOps,iCosts) := iCostsOps;
+  tmpCosts := realAdd(iCosts,tmpCosts);
+  tmpOps := tmpOps + iOps;
+  oCostsOps := (tmpOps,tmpCosts);
+end sumUpExecCosts1;
 
 // public function arrangeGraphInLevels "
 // author: Waurich TUD 2013-07"
