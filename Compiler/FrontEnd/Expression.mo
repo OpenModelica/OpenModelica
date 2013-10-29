@@ -4327,10 +4327,10 @@ protected function traverseExpMatrix
 "author: PA
    Helper function to traverseExp, traverses matrix expressions."
   replaceable type Type_a subtypeof Any;
-  input list<list<DAE.Exp>> inTplExpBooleanLstLst;
+  input list<list<DAE.Exp>> inMatrix;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<DAE.Exp>> outTplExpBooleanLstLst;
+  output list<list<DAE.Exp>> outMatrix;
   output Type_a outTypeA;
   partial function FuncExpType
     input tuple<DAE.Exp, Type_a> inTplExpTypeA;
@@ -4338,7 +4338,7 @@ protected function traverseExpMatrix
     replaceable type Type_a subtypeof Any;
   end FuncExpType;
 algorithm
-  (outTplExpBooleanLstLst,outTypeA) := match (inTplExpBooleanLstLst,func,inTypeA)
+  (outMatrix,outTypeA) := match (inMatrix,func,inTypeA)
     local
       FuncExpType rel;
       Type_a e_arg,e_arg_1,e_arg_2;
@@ -4351,8 +4351,9 @@ algorithm
       equation
         ((row_1,e_arg_1)) = traverseExpList(row, rel, e_arg);
         (rows_1,e_arg_2) = traverseExpMatrix(rows, rel, e_arg_1);
+        rows_1 = Util.if_(referenceEq(row,row_1) and referenceEq(rows,rows_1),inMatrix,row_1::rows_1);
       then
-        ((row_1 :: rows_1),e_arg_2);
+        (rows_1,e_arg_2);
   end match;
 end traverseExpMatrix;
 
