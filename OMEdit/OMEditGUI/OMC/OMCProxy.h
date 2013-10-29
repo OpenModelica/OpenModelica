@@ -60,6 +60,7 @@ class OMCProxy : public QObject
 private:
   OmcCommunication_var mOMC;
   bool mHasInitialized;
+  bool mCanUseEventLoop;
   QString mResult;
   QString mExpression;
   QWidget *mpOMCLoggerWidget;
@@ -77,6 +78,8 @@ private:
 public:
   OMCProxy(MainWindow *pMainWindow);
   ~OMCProxy();
+  bool canUseEventLoop();
+  void enableCanUseEventLoop(bool enable);
   void enableCustomExpression(bool enable);
   void getPreviousCommand();
   void getNextCommand();

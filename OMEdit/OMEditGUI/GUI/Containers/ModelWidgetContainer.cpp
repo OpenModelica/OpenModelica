@@ -2119,7 +2119,11 @@ void ModelWidget::updateParentModelsText(QString className)
       // clean up the OMC cache for this particular model classname.
       mpModelWidgetContainer->getMainWindow()->getOMCProxy()->removeCachedOMCCommand(className);
       if (pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->isVisible())
+      {
+        mpModelWidgetContainer->getMainWindow()->getOMCProxy()->enableCanUseEventLoop(false);
         pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->setPlainText(mpModelWidgetContainer->getMainWindow()->getOMCProxy()->list(className));
+        mpModelWidgetContainer->getMainWindow()->getOMCProxy()->enableCanUseEventLoop(true);
+      }
     }
     if (!pLibraryTreeNode->getParentName().isEmpty())
       updateParentModelsText(className);

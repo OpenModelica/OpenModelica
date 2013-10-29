@@ -50,7 +50,7 @@
   \param pMainWindow - pointer to MainWindow
   */
 OMCProxy::OMCProxy(MainWindow *pMainWindow)
-  : QObject(pMainWindow), mOMC(0), mHasInitialized(false) ,mResult("")
+  : QObject(pMainWindow), mOMC(0), mHasInitialized(false), mCanUseEventLoop(true) ,mResult("")
 {
   mpMainWindow = pMainWindow;
   mCurrentCommandIndex = -1;
@@ -89,6 +89,16 @@ OMCProxy::OMCProxy(MainWindow *pMainWindow)
 OMCProxy::~OMCProxy()
 {
   delete mpOMCLoggerWidget;
+}
+
+bool OMCProxy::canUseEventLoop()
+{
+  return mCanUseEventLoop;
+}
+
+void OMCProxy::enableCanUseEventLoop(bool enable)
+{
+  mCanUseEventLoop = enable;
 }
 
 /*!
@@ -434,17 +444,20 @@ void OMCProxy::sendCommand(const QString expression, bool cacheCommand, QString 
   {
     setExpression(expression);
     QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
-    QEventLoop eventLoop;
-    QTimer timer;
-    connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
-    connect(this, SIGNAL(commandFinished()), &eventLoop, SLOT(quit()));
-    timer.start(10);
-    while (future.isRunning())
+    if (canUseEventLoop())
     {
-      eventLoop.exec(QEventLoop::ExcludeUserInputEvents);
-      qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+      QEventLoop eventLoop;
+      QTimer timer;
+      connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+      connect(this, SIGNAL(commandFinished()), &eventLoop, SLOT(quit()));
+      timer.start(10);
+      while (future.isRunning())
+      {
+        eventLoop.exec(QEventLoop::ExcludeUserInputEvents);
+        qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+      }
+      timer.stop();
     }
-    timer.stop();
     future.waitForFinished();
     writeCommandResponseLog(&commandTime);
     logOMCMessages(expression);
