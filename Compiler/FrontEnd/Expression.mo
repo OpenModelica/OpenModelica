@@ -5141,11 +5141,12 @@ public function traverseExpOpt "Calls traverseExp for SOME(exp) and does nothing
   replaceable type Type_a subtypeof Any;
 algorithm
   outTpl:= match (inExp,func,inTypeA)
-    local DAE.Exp e; Type_a a;
-    case(NONE(),_,a) then ((NONE(),a));
-    case(SOME(e),_,a) equation
-      ((e,a)) = traverseExp(e,func,a);
-     then ((SOME(e),a));
+    local DAE.Exp e,e1; Type_a a; Option<DAE.Exp> oe;
+    case(NONE(),_,a) then ((inExp/*In case external functions create a copy of NONE()*/,a));
+    case(oe as SOME(e),_,a) equation
+      ((e1,a)) = traverseExp(e,func,a);
+      oe = Util.if_(referenceEq(e,e1),oe,SOME(e1));
+     then ((oe,a));
   end match;
 end traverseExpOpt;
 
@@ -8617,16 +8618,17 @@ algorithm
   (outIter,outArg) := match (iter,func,iarg)
     local
       String id;
-      DAE.Exp exp;
-      Option<DAE.Exp> gexp;
+      DAE.Exp exp,exp1;
+      Option<DAE.Exp> gexp,gexp1;
       DAE.Type ty;
       Type_a arg;
 
     case (DAE.REDUCTIONITER(id,exp,gexp,ty),_,arg)
       equation
-        ((exp, arg)) = traverseExp(exp, func, arg);
-        ((gexp, arg)) = traverseExpOpt(gexp, func, arg);
-      then (DAE.REDUCTIONITER(id,exp,gexp,ty), arg);
+        ((exp1, arg)) = traverseExp(exp, func, arg);
+        ((gexp1, arg)) = traverseExpOpt(gexp, func, arg);
+        outIter = Util.if_(referenceEq(exp,exp1) and referenceEq(gexp,gexp1), iter, DAE.REDUCTIONITER(id,exp1,gexp1,ty));
+      then (outIter, arg);
   end match;
 end traverseReductionIterator;
 
@@ -8645,16 +8647,17 @@ protected function traverseReductionIterators
 algorithm
   (outIters,outArg) := match (inIters,func,inArg)
     local
-      DAE.ReductionIterator iter;
-      DAE.ReductionIterators iters;
+      DAE.ReductionIterator iter,iter1;
+      DAE.ReductionIterators iters,iters1;
       Type_a arg;
 
     case ({},_,arg) then ({},arg);
     case (iter::iters,_,arg)
       equation
-        (iter, arg) = traverseReductionIterator(iter, func, arg);
-        (iters, arg) = traverseReductionIterators(iters, func, arg);
-      then (iter::iters, arg);
+        (iter1, arg) = traverseReductionIterator(iter, func, arg);
+        (iters1, arg) = traverseReductionIterators(iters, func, arg);
+        iters = Util.if_(referenceEq(iter,iter1) and referenceEq(iters,iters1), inIters, iter1::iters1);
+      then (iters, arg);
   end match;
 end traverseReductionIterators;
 
