@@ -454,19 +454,20 @@ public function optimizeIf
   input DAE.Else iels;
   input DAE.ElementSource isource;
   output list<DAE.Statement> ostmts "can be empty or selected branch";
+  output Boolean changed;
 algorithm
-  ostmts := match (icond, istmts, iels, isource)
+  (ostmts,changed) := match (icond, istmts, iels, isource)
     local
       list<DAE.Statement> stmts;
       DAE.Else els;
       DAE.ElementSource source;
       DAE.Exp cond;
 
-    case (DAE.BCONST(true), stmts, _, source) then stmts;
-    case (DAE.BCONST(false), stmts, DAE.NOELSE(), source) then {};
-    case (DAE.BCONST(false), _, DAE.ELSE(stmts), source) then stmts;
-    case (DAE.BCONST(false), _, DAE.ELSEIF(cond, stmts, els), source) then optimizeIf(cond, stmts, els, source);
-    else DAE.STMT_IF(icond, istmts, iels, isource)::{};
+    case (DAE.BCONST(true), stmts, _, source) then (stmts,true);
+    case (DAE.BCONST(false), stmts, DAE.NOELSE(), source) then ({},true);
+    case (DAE.BCONST(false), _, DAE.ELSE(stmts), source) then (stmts,true);
+    case (DAE.BCONST(false), _, DAE.ELSEIF(cond, stmts, els), source) equation (ostmts,_) = optimizeIf(cond, stmts, els, source); then (ostmts,true);
+    else then (DAE.STMT_IF(icond, istmts, iels, isource)::{},false);
   end match;
 end optimizeIf;
 

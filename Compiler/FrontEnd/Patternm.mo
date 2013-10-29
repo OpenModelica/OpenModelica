@@ -1896,21 +1896,22 @@ algorithm
     local
       list<DAE.Pattern> patterns;
       list<DAE.Element> decls;
-      list<DAE.Statement> body;
-      Option<DAE.Exp> result,patternGuard;
+      list<DAE.Statement> body,body1;
+      Option<DAE.Exp> result,result1,patternGuard,patternGuard1;
       Integer jump;
       Absyn.Info resultInfo,info;
-      list<DAE.MatchCase> cases;
+      list<DAE.MatchCase> cases,cases1;
       A a;
 
     case ({},_,a) then ({},a);
     case (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases,_,a)
       equation
-        (body,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
-        ((patternGuard,a)) = Expression.traverseExpOpt(patternGuard,func,a);
-        ((result,a)) = Expression.traverseExpOpt(result,func,a);
-        (cases,a) = traverseCases(cases,func,a);
-      then (DAE.CASE(patterns,patternGuard,decls,body,result,resultInfo,jump,info)::cases,a);
+        (body1,(_,a)) = DAEUtil.traverseDAEEquationsStmts(body,Expression.traverseSubexpressionsHelper,(func,a));
+        ((patternGuard1,a)) = Expression.traverseExpOpt(patternGuard,func,a);
+        ((result1,a)) = Expression.traverseExpOpt(result,func,a);
+        (cases1,a) = traverseCases(cases,func,a);
+        cases = Util.if_(referenceEq(cases,cases1) and referenceEq(patternGuard,patternGuard1) and referenceEq(result,result1) and referenceEq(body,body1), inCases, DAE.CASE(patterns,patternGuard1,decls,body1,result1,resultInfo,jump,info)::cases1);
+      then (cases,a);
   end match;
 end traverseCases;
 

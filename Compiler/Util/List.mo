@@ -9200,4 +9200,19 @@ algorithm
   end match;
 end combinationMap1_tail2;
 
+public function allReferenceEq "Checks if all elements in the lists have equal references"
+  input list<ElementInType> lst1;
+  input list<ElementInType> lst2;
+  output Boolean b;
+algorithm
+  b := match (lst1,lst2)
+    local
+      ElementInType el1,el2;
+      list<ElementInType> rest1,rest2;
+    case ({},{}) then true;
+    case (el1::rest1,el2::rest2) then referenceEq(el1,el2) and allReferenceEq(rest1,rest2);
+    else false;
+  end match;
+end allReferenceEq;
+
 end List;
