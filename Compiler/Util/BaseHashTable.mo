@@ -321,17 +321,26 @@ algorithm
 end delete;
 
 public function anyKeyInHashTable "Returns true if any of the keys are present in the hashtable. Stops and returns true upon first occurence"
-  input list<Key> keys;
-  input HashTable ht;
+  input list<Key> inKeys;
+  input HashTable inHt;
   output Boolean res;
 algorithm
-  res := matchcontinue(keys,ht)
-  local Key key;
-    case({},ht) then false;
-    case(key::keys,ht) equation
-      _ = get(key,ht);
-    then true;
-    case(_::keys,ht) then anyKeyInHashTable(keys,ht);
+  res := matchcontinue(inKeys,inHt)
+    local 
+      Key key; 
+      list<Key> keys;
+    
+    case({}, _) then false;
+    
+    case(key::keys, _) 
+      equation
+        _ = get(key, inHt);
+      then 
+        true;
+    
+    case(_::keys, _) 
+      then anyKeyInHashTable(keys, inHt);
+  
   end matchcontinue;
 end anyKeyInHashTable;
 
