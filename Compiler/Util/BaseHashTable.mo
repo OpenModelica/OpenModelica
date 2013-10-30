@@ -320,6 +320,21 @@ algorithm
   end matchcontinue;
 end delete;
 
+public function anyKeyInHashTable "Returns true if any of the keys are present in the hashtable. Stops and returns true upon first occurence"
+  input list<Key> keys;
+  input HashTable ht;
+  output Boolean res;
+algorithm
+  res := matchcontinue(keys,ht)
+  local Key key;
+    case({},ht) then false;
+    case(key::keys,ht) equation
+      _ = get(key,ht);
+    then true;
+    case(_::keys,ht) then anyKeyInHashTable(keys,ht);
+  end matchcontinue;
+end anyKeyInHashTable;
+
 public function get
   "Returns a Value given a Key and a HashTable."
   input Key key;
