@@ -5047,6 +5047,9 @@ end daeExpRange;
 
 
 
+
+
+
 template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
                          Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates code for a reduction expression. The code is quite messy because it handles all
@@ -5296,6 +5299,9 @@ case ARRAY(__) then
    <%arrayVar%>.reindex(1);<%\n%>'
   arrayVar
 end daeExpArray;
+
+
+
 
 
 
@@ -5687,13 +5693,16 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%retVar%>'
     case CALL(path=IDENT(name="smooth"),
             expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
-    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    /*let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
 
     let retType = expTypeShort(attr.ty)
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = smooth(<%argStr%>);<%\n%>'
     '<%retVar%>'
-
+    */
+    let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
+    let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
+    '<%var2%>'
    case CALL(path=IDENT(name="exp"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
