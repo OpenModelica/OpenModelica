@@ -8,6 +8,14 @@ SET(BLAS_blas_LIBRARY $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/blas_win32.dll CACHE F
 SET(LAPACK_lapack_LIBRARY  $ENV{OMDEV}/lib/3rdParty/Lapack/Lib/lapack_win32.dll CACHE FILEPATH "Lapack library")
 SET(BLAS_DIRY "$ENV{OMDEV}/lib/3rdParty/Lapack/Lib/" CACHE LOCATION "where was yarp built?")
 
+########################################
+# TEST
+ #SET(MINPACK_LIBRARIES  "$ENV{OMDEV}/lib/3rdParty/Minpack/lib/minpack_mt_vc100.lib")
+#include_directories ("$ENV{OMDEV}/lib/3rdParty/Minpack/include/")
+
+# END TEST
+########################################
+
 # Disable Optimization for RelWithDebInfo on Windows
 if (MSVC)
     STRING(REPLACE "/O2" "/Od" CMAKE_CXX_FLAGS_RELWITHDEBINFO ${CMAKE_CXX_FLAGS_RELWITHDEBINFO})

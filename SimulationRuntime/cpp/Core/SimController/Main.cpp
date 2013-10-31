@@ -35,6 +35,7 @@ int main(int argc, const char* argv[])
         ("step-size,f", po::value< double >()->default_value(1e-2),  "simulation step size")
           ("solver,i", po::value< string >()->default_value("euler"),  "solver method")
        ("number-of-intervalls,v", po::value< int >()->default_value(500),  "number of intervalls")
+        ("tollerance,y", po::value< double >()->default_value(1e-6),  "solver tollerance")
            ;
         po::variables_map vm;
         po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -47,6 +48,7 @@ int main(int argc, const char* argv[])
     double starttime =  vm["start-time"].as<double>();
     double stoptime = vm["stop-time"].as<double>();
     double stepsize =  stoptime/vm["number-of-intervalls"].as<int>();
+    double tollerance =vm["tollerance"].as<double>();
     string solver =  vm["solver"].as<string>();
         if (vm.count("runtime-libray"))
         {
@@ -114,7 +116,7 @@ int main(int argc, const char* argv[])
 
             
             //SimController to start simulation
-             SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,1e-12,0.01,results_file_path.string()};
+             SimSettings settings = {solver,"newton",starttime,stoptime,stepsize,UROUND,0.01,tollerance,results_file_path.string()};
             boost::shared_ptr<ISimController> sim_controller =  boost::shared_ptr<ISimController>(new SimController(runtime_lib_path,modelica_path));
              //create Modelica system
             std::pair<boost::weak_ptr<IMixedSystem>,boost::weak_ptr<ISimData> > system = sim_controller->LoadSystem("ModelicaSystem");

@@ -80,7 +80,8 @@ void SimController::Start(boost::weak_ptr<IMixedSystem> mixedsystem,SimSettings 
         solver_settings->setLowerLimit(simsettings.lower_limit);
         solver_settings->sethInit(simsettings.lower_limit);
         solver_settings->setUpperLimit(simsettings.upper_limit);
-    
+        solver_settings->setRTol(simsettings.tolerance);
+        solver_settings->setATol(simsettings.tolerance);
         simMgr->initialize();
       
         simMgr->runSimulation();

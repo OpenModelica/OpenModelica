@@ -52,7 +52,18 @@ public:
             nonlin_solver_key.assign("extension_export_kinsol");
         }
         else if(nonlin_solver.compare("hybrj")==0)
+        {
+            PATH hybrj_path = ObjectFactory<CreationPolicy>::_library_path;
+            PATH hybrj_name(HYBRJ_LIB);
+            hybrj_path/=hybrj_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(hybrj_path.string(),_non_linsolver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+            
+                throw std::runtime_error("Failed loading Hybrj solver library!");
+            }
             nonlin_solver_key.assign("extension_export_hybrj");
+        }
         else
             throw std::invalid_argument("Selected nonlinear solver is not available");
         _last_selected_solver =  nonlin_solver;

@@ -948,7 +948,11 @@ case FUNCTION(__) then
     <%varDecls%>
     <%outVarInits%>
     <%varInits%>
-    <%bodyPart%>
+    do
+    {
+        <%bodyPart%>
+    }
+    while(false);
     <%outVarAssign%>
     return <%if outVars then '_<%fname%>' %>;
   }
@@ -4013,6 +4017,17 @@ template expTypeFlag(DAE.Type ty, Integer flag)
 
 end expTypeFlag;
 
+
+template boostExtents(DAE.Type ty)
+::=
+ match ty
+    case T_ARRAY(dims=dims) then
+    << 
+    boost::extents[<%(dims |> dim as DIM_INTEGER(integer=i)  =>  '<%i%>';separator="][")%>]
+    >>
+    
+end boostExtents;
+
 template expTypeArray(DAE.Type ty)
 
 ::=
@@ -4190,10 +4205,12 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     <<
 
   
-
+    unsigned int dim<%index%> =   _algLoop<%index%>->getDimReal();
+    double* algloop<%index%>Vars = new double[dim<%index%>];
+    _algLoop<%index%>->getReal(algloop<%index%>Vars );
     try
       {
-         _algLoopSolver<%index%>->initialize();
+        
          _algLoop<%index%>->evaluate();
          for(int i=0;i<_dimZeroFunc;i++)
           {
@@ -4206,7 +4223,19 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
       }
       catch(std::exception &ex)
        {
-             throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
+             try
+             {  //try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                IContinuous::UPDATETYPE calltype = _callType;
+               _callType = IContinuous::DISCRETE;
+                 _algLoop<%index%>->setReal(algloop<%index%>Vars );
+                _algLoopSolver<%index%>->solve(command);
+               _callType = calltype;   
+             }
+             catch(std::exception &ex)
+             {
+                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+             }
+              
        } 
 
    
@@ -4774,22 +4803,127 @@ template equationWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,S
  "Generates a when equation."
 ::=
   match eq
-    case SES_WHEN(__) then
+     case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
       let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref1(e, simCode, context)%>"))')
-      let &preExp = buffer ""
-      let rightExp = daeExp(right, context, &preExp,&varDecls,simCode)
+      
+        let initial_assign = 
+        if initialCall then
+          whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
+        else 
+           '<%cref1(left,simCode, context)%> = _event_handling.pre(<%cref1(left,simCode, context)%>,"<%cref1(left,simCode, context)%>");'
+       let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
       <<
-      if(initial()) {
-        ; /* not implemented yet */
+    
+      if(initial()) 
+      {
+        <%initialCall%>; 
       }
-      else if (0<%helpIf%>) {
-        <%preExp%>
-        <%cref1(left, simCode, context)%> = <%rightExp%>;
+       else if (0<%helpIf%>)
+       {
+        <%assign%>;
+      }
+      else
+      {
+        <%cref1(left,simCode, context)%> = _event_handling.pre(<%cref1(left,simCode, context)%>,"<%cref1(left,simCode, context)%>");
+      }
+           >>
+    case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
+       let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref1(e, simCode, context)%>"))')
+      let initial_assign = 
+        if initialCall then
+          whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
+        else 
+         '<%cref1(left,simCode, context)%> = _event_handling.pre(<%cref1(left,simCode, context)%>,"<%cref1(left,simCode, context)%>");'
+      let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
+      let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,simCode)
+      <<
+      if(initial())
+      {
+        <%initial_assign%>
+      }
+      else if(0<%helpIf%>)
+      {
+        <%assign%>
+      }
+      <%elseWhen%>
+      else
+      {
+         <%cref1(left,simCode, context)%> = _event_handling.pre(<%cref1(left,simCode, context)%>,"<%cref1(left,simCode, context)%>");
       }
       >>
-    else
-      "UNKNOWN_equation"
 end equationWhen;
+
+
+template whenAssign(ComponentRef left, Type ty, Exp right, Context context,  Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates assignment for when."
+::=
+match ty
+  case T_ARRAY(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let expPart = daeExp(right, context, &preExp, &varDecls /*BUFD*/,simCode)
+    match expTypeFromExpShort(right)
+    case "boolean" then
+      let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
+      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+      <<
+      <%preExp%>
+      copy_boolean_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
+      >>
+    case "integer" then
+      let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
+      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+      <<
+      <%preExp%>
+      copy_integer_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
+      >>
+    case "real" then
+      <<
+      <%preExp%>
+      copy_real_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,expPart,left)%>
+      >>
+    case "string" then
+      <<
+      <%preExp%>
+      copy_string_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,expPart,left)%>
+      >>
+    else
+      error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%printExpStr(right)%>')
+    end match
+  else
+    let &preExp = buffer "" /*BUFD*/
+    let exp = daeExp(right, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    <<
+    <%preExp%>
+    <%cref(left)%> = <%exp%>;
+   >>
+end whenAssign;
+
+
+template equationElseWhen(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a else when equation."
+::=
+match eq
+case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=NONE()) then
+  let helpIf =  (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref1(e, simCode, context)%>"))')
+  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
+  <<
+  else if(0<%helpIf%>)
+  {
+    <%assign%>
+  }
+  >>
+case SES_WHEN(left=left, right=right, conditions=conditions, elseWhen=SOME(elseWhenEq)) then
+  let helpIf = (conditions |> e => ' || (<%cref1(e, simCode, context)%> && !_event_handling.pre(<%cref1(e, simCode, context)%>,"<%cref1(e, simCode, context)%>"))')
+  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/,simCode)
+  let elseWhen = equationElseWhen(elseWhenEq,context,varDecls,simCode)
+  <<
+  else if(0<%helpIf%>)
+  {
+    <%assign%>
+  }
+  <%elseWhen%>
+  >>
+end equationElseWhen;
 
 template helpvarvector(list<SimWhenClause> whenClauses,SimCode simCode)
 ::=
@@ -4876,7 +5010,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as LUNARY(__)          then daeExpLunary(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as BINARY(__)          then daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls,simCode)
   case e as IFEXP(__)           then daeExpIf(expCond, expThen, expElse, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode)
-  case e as RELATION(__)        then daeExpRelation(operator, index,exp1, exp2, context, &preExp, &varDecls,simCode)
+  case e as RELATION(__)        then daeExpRelation(e, context, &preExp, &varDecls,simCode)
   case e as CALL(__)            then daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   case e as RECORD(__)          then daeExpRecord(e, context, &preExp, &varDecls,simCode)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -5118,7 +5252,7 @@ template daeExpArray(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for an array expression."
 ::=
 match exp
-case ARRAY(array=_::_) then
+case ARRAY(array=_::_, ty = arraytype) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayDim = expTypeArrayforDim(ty)
   let &tmpdecl = buffer "" /*BUFD*/
@@ -5126,15 +5260,27 @@ case ARRAY(array=_::_) then
   // let scalarPrefix = if scalar then "scalar_" else ""
   //let scalarRef = if scalar then "&" else ""
   let &tmpVar = buffer ""
-  let params = (array |> e =>
-    '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>'
-   ;separator=", ")
+  
+  let params = if scalar then (array |> e =>
+    '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>';separator=", ")
+               else
+                (array |> e hasindex i0 fromindex 1 =>
+                '<%arrayVar%>[<%i0%>]=<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>;'
+                ;separator="\n")
+   
+   let boostExtents = if scalar then '<%arrayDim%><%arrayVar%>(boost::extents[<%listLength(array)%>]);' 
+                      else        '<%arrayDim%><%arrayVar%>(<%boostExtents(arraytype)%>,boost::fortran_storage_order());'
+                      
+   let arrayassign =  if scalar then '<%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>}; 
+<%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+<%listLength(array)%>);<%\n%>'
+                                     
+                      else    '<%params%>'           
+  
    let &preExp += '
    //tmp array
-   <%arrayDim%><%arrayVar%>(boost::extents[<%listLength(array)%>]);
+   <%boostExtents%>
    <%arrayVar%>.reindex(1);
-   <%arrayTypeStr%> <%arrayVar%>_data[]={<%params%>};
-   <%arrayVar%>.assign(<%arrayVar%>_data,<%arrayVar%>_data+<%listLength(array)%>);<%\n%>'
+   <%arrayassign%>'
   arrayVar
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
@@ -5150,6 +5296,9 @@ case ARRAY(__) then
    <%arrayVar%>.reindex(1);<%\n%>'
   arrayVar
 end daeExpArray;
+
+
+
 
 
 //template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -6253,10 +6402,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    void <%lastIdentOfPath(modelInfo.name)%>::setInitial(bool status)
     {
       _initial = status;
-      if(_initial)
+    if(_initial)
         _callType = IContinuous::DISCRETE;
       else
        _callType = IContinuous::CONTINUOUS;
+       
   
     }
   >>
@@ -6274,14 +6424,54 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   >>
 end GetIntialStatus;
 
-template daeExpRelation2(Context context,Integer index) ::=
+template daeExpRelation(Exp exp, Context context, Text &preExp,Text &varDecls,SimCode simCode) 
+::=
+match exp
+case rel as RELATION(__) then
+match rel.optionExpisASUB
+ case NONE() then
+    daeExpRelation2(rel.operator,rel.index,rel.exp1,rel.exp2, context, preExp,varDecls,simCode)
+ case SOME((exp,i,j)) then
+    let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/,simCode)
+    let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/,simCode)
+    match context
+    case ALGLOOP_CONTEXT(genInitialisation = false) then 
+       match rel.operator
+       case LESS(__) then
+          '_system->getCondition(<%rel.index%>) && (<%e1%> < <%e2%>)'
+       
+        case LESSEQ(__) then
+          '_system->getCondition(<%rel.index%>) && (<%e1%> <= <%e2%>)'
+        
+        case GREATER(__) then
+          '_system->getCondition(<%rel.index%>) && (<%e1%> > <%e2%>)'
+        
+        case GREATEREQ(__) then
+         '_system->getCondition(<%rel.index%>)  && (<%e1%> >= <%e2%>)'
+            end match
+   else
+          match rel.operator
+        case LESS(__) then
+          'getCondition(<%rel.index%>) && (<%e1%> < <%e2%>)'
+       
+        case LESSEQ(__) then
+          'getCondition(<%rel.index%>) && (<%e1%> <= <%e2%>)'
+        
+        case GREATER(__) then
+          'getCondition(<%rel.index%>) && (<%e1%> > <%e2%>)'
+        
+        case GREATEREQ(__) then
+         'getCondition(<%rel.index%>) && (<%e1%> >= <%e2%>)'
+            end match
+end daeExpRelation;
+template daeExpRelation3(Context context,Integer index) ::=
 match context
     case ALGLOOP_CONTEXT(genInitialisation = false) 
         then  <<_system->getCondition(<%index%>)>>
     else
        <<getCondition(<%index%>)>>
-end daeExpRelation2;
-template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context context, Text &preExp,Text &varDecls,SimCode simCode) ::=
+end daeExpRelation3;
+template daeExpRelation2(Operator op, Integer index,Exp exp1, Exp exp2, Context context, Text &preExp,Text &varDecls,SimCode simCode) ::=
   let e1 = daeExp(exp1, context, &preExp, &varDecls,simCode)
   let e2 = daeExp(exp2, context, &preExp, &varDecls,simCode)
   match index
@@ -6327,38 +6517,38 @@ template daeExpRelation(Operator op, Integer index,Exp exp1, Exp exp2, Context c
       end match
   case _ then
      match op
-    case LESS(ty = T_BOOL(__))        then daeExpRelation2(context,index)
+    case LESS(ty = T_BOOL(__))        then daeExpRelation3(context,index)
     case LESS(ty = T_STRING(__))      then "# string comparison not supported\n"
     case LESS(ty = T_INTEGER(__))
-    case LESS(ty = T_REAL(__))        then daeExpRelation2(context,index)
+    case LESS(ty = T_REAL(__))        then daeExpRelation3(context,index)
 
-    case GREATER(ty = T_BOOL(__))     then daeExpRelation2(context,index)
+    case GREATER(ty = T_BOOL(__))     then daeExpRelation3(context,index)
     case GREATER(ty = T_STRING(__))   then "# string comparison not supported\n"
     case GREATER(ty = T_INTEGER(__))
-    case GREATER(ty = T_REAL(__))     then daeExpRelation2(context,index)
+    case GREATER(ty = T_REAL(__))     then daeExpRelation3(context,index)
 
-    case LESSEQ(ty = T_BOOL(__))      then daeExpRelation2(context,index)
+    case LESSEQ(ty = T_BOOL(__))      then daeExpRelation3(context,index)
     case LESSEQ(ty = T_STRING(__))    then "# string comparison not supported\n"
     case LESSEQ(ty = T_INTEGER(__))
-    case LESSEQ(ty = T_REAL(__))       then daeExpRelation2(context,index)
+    case LESSEQ(ty = T_REAL(__))       then daeExpRelation3(context,index)
 
-    case GREATEREQ(ty = T_BOOL(__))   then daeExpRelation2(context,index)
+    case GREATEREQ(ty = T_BOOL(__))   then daeExpRelation3(context,index)
     case GREATEREQ(ty = T_STRING(__)) then "# string comparison not supported\n"
     case GREATEREQ(ty = T_INTEGER(__))
-    case GREATEREQ(ty = T_REAL(__))   then daeExpRelation2(context,index)
+    case GREATEREQ(ty = T_REAL(__))   then daeExpRelation3(context,index)
 
-    case EQUAL(ty = T_BOOL(__))       then daeExpRelation2(context,index)
+    case EQUAL(ty = T_BOOL(__))       then daeExpRelation3(context,index)
     case EQUAL(ty = T_STRING(__))
     case EQUAL(ty = T_INTEGER(__))
-    case EQUAL(ty = T_REAL(__))       then daeExpRelation2(context,index)
+    case EQUAL(ty = T_REAL(__))       then daeExpRelation3(context,index)
 
-    case NEQUAL(ty = T_BOOL(__))      then daeExpRelation2(context,index)
+    case NEQUAL(ty = T_BOOL(__))      then daeExpRelation3(context,index)
     case NEQUAL(ty = T_STRING(__))
     case NEQUAL(ty = T_INTEGER(__))
-    case NEQUAL(ty = T_REAL(__))      then daeExpRelation2(context,index)
+    case NEQUAL(ty = T_REAL(__))      then daeExpRelation3(context,index)
     case _                         then "daeExpRelationCondition:ERR"
       end match
-end daeExpRelation;
+end daeExpRelation2;
 
 
 template daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text &preExp, Text &varDecls,SimCode simCode) ::=
@@ -7787,12 +7977,12 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls ,simCode)
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls ,simCode)
-  case s as STMT_BREAK(__)          then "STMT BREAK"
+  case s as STMT_BREAK(__)          then 'break;<%\n%>'
   case s as STMT_FAILURE(__)        then "STMT FAILURE"
   case s as STMT_TRY(__)            then "STMT TRY"
   case s as STMT_CATCH(__)          then "STMT CATCH"
   case s as STMT_THROW(__)          then "STMT THROW"
-  case s as STMT_RETURN(__)         then "break;/*Todo stm return*/"
+  case s as STMT_RETURN(__)         then "break;/*Todo stmt return*/"
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/,simCode)
   else error(sourceInfo(), 'ALG_STATEMENT NYI')
@@ -8111,29 +8301,37 @@ template algStmtForRange_impl(Exp range, Ident iterator, String type, String sho
 ::=
 match range
 case RANGE(__) then
-  let iterName = iterator
-  let &stopVar = buffer ""
+  let iterName = contextIteratorName(iterator, context)
+  let startVar = tempDecl(type, &varDecls)
+  let stepVar = tempDecl(type, &varDecls)
+  let stopVar = tempDecl(type, &varDecls)
   let &preExp = buffer ""
   let startValue = daeExp(start, context, &preExp, &varDecls,simCode)
+  let stepValue = match step case SOME(eo) then
+      daeExp(eo, context, &preExp, &varDecls,simCode)
+    else
+      "(1)"
   let stopValue = daeExp(stop, context, &preExp, &varDecls,simCode)
-  let res = tempDecl(type, &varDecls /*BUFC*/)
-  match step
-  case SOME(eo) then
-    let &stepVar = buffer ""
-    let stepValue = daeExp(eo, context, &preExp,&varDecls,simCode)
-    <<
-    <%preExp%>
-    for(<%type%> <%iterName%> = <%startValue%>;(<%stepValue%> > 0? <%iterName%><=<%stopValue%> : <%stopValue%><=<%iterName%>); <%iterName%> += <%stepValue%>){
+  <<
+  <%preExp%>
+  <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>;
+  if(!<%stepVar%>)
+  {
+  
+    
+  }
+  else if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
+  {
+    <%type%> <%iterName%>;
+                               //half-open range
+    BOOST_FOREACH(<%iterName%>,boost::irange( <%startValue%>,(int)<%stopValue%>+1,(int)<%stepVar%>))
+    {
+     
       <%body%>
+      
     }
-    >>
-  else //optimization for 1 step
-    <<
-    <%preExp%>
-    for(<%type%> <%iterName%> = <%startValue%>; <%iterName%><=<%stopValue%>; <%iterName%> += 1){
-      <%body%>
-    }
-    >>
+  }
+  >> /* else we're looping over a zero-length range */
 end algStmtForRange_impl;
 
 

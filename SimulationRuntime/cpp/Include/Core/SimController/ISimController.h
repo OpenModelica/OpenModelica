@@ -12,6 +12,7 @@ struct SimSettings
     double step_size;
     double lower_limit;
     double upper_limit;
+    double tolerance;
     string outputfile_name;
 };
 

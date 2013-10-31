@@ -147,7 +147,7 @@ void Cvode::initialize()
       throw std::invalid_argument("CVoder::initialize()");
 
 
-    _idid = CVodeSetMinStep(_cvodeMem, 1000*EPSILON);       // MINIMUM STEPSIZE
+    _idid = CVodeSetMinStep(_cvodeMem, dynamic_cast<ISolverSettings*>(_cvodesettings)->getLowerLimit());       // MINIMUM STEPSIZE
     if(_idid < 0)
       throw std::invalid_argument("CVode::initialize()");
 

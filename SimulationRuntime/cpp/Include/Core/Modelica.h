@@ -46,6 +46,7 @@ using namespace std;
 #include <boost/multi_array.hpp>
 #include <boost/shared_ptr.hpp>
 #include <functional>
+#include <boost/range/irange.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/vector.hpp>
