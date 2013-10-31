@@ -750,7 +750,7 @@ algorithm
 
     case (SOME(pats)::patternMatrix,_,_,_)
       equation
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.T_UNKNOWN_DEFAULT, numPatternsInMatrix);
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats, {}, DAE.T_UNKNOWN_DEFAULT, true, numPatternsInMatrix);
       then ((index,ty,extraarg));
     case (_::patternMatrix,_,_,_)
       then findPatternToConvertToSwitch(patternMatrix,index+1,numPatternsInMatrix,info);
@@ -761,53 +761,54 @@ protected function findPatternToConvertToSwitch2
   input list<DAE.Pattern> ipats;
   input list<Integer> ixs;
   input DAE.Type ity;
+  input Boolean allSubPatternsMatch;
   input Integer numPatternsInMatrix;
   output DAE.Type outTy;
   output Integer extraarg;
 algorithm
-  (outTy,extraarg) := match (ipats,ixs,ity,numPatternsInMatrix)
+  (outTy,extraarg) := match (ipats,ixs,ity,allSubPatternsMatch,numPatternsInMatrix)
     local
       Integer ix;
       String str;
-      list<DAE.Pattern> pats;
+      list<DAE.Pattern> pats,subpats;
       DAE.Type ty;
 
-    case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,_,_,_)
+    case (DAE.PAT_CONSTANT(exp=DAE.SCONST(str))::pats,_,_,_,_)
       equation
         ix = System.stringHashDjb2Mod(str,65536);
         false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_STRING_DEFAULT,numPatternsInMatrix);
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_STRING_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
       then (ty,extraarg);
 
-    case (DAE.PAT_CALL(index=ix)::pats,_,_,_)
+    case (DAE.PAT_CALL(index=ix,patterns=subpats)::pats,_,_,_,_)
       equation
         false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_METATYPE_DEFAULT,numPatternsInMatrix);
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_METATYPE_DEFAULT,allSubPatternsMatch and allPatternsAlwaysMatch(subpats),numPatternsInMatrix);
       then (ty,extraarg);
 
-    case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats,_,_,_)
+    case (DAE.PAT_CONSTANT(exp=DAE.ICONST(ix))::pats,_,_,_,_)
       equation
         false = listMember(ix,ixs);
-        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_INTEGER_DEFAULT,numPatternsInMatrix);
+        (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_INTEGER_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
       then (ty,extraarg);
 
-    case ({},_,DAE.T_STRING(varLst = _),_)
+    case ({},_,DAE.T_STRING(varLst = _),_,_)
       equation
         true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix = findMinMod(ixs,1);
       then (DAE.T_STRING_DEFAULT,ix);
 
-    case ({_},_,DAE.T_STRING(varLst = _),1)
+    case ({_},_,DAE.T_STRING(varLst = _),_,1)
       equation
         true = listLength(ixs)>11; // hashing has a considerable overhead, only convert to switch if it is worth it
         ix = findMinMod(ixs,1);
       then (DAE.T_STRING_DEFAULT,ix);
 
-    case ({},_,_,_) then (ity,0);
+    case ({},_,_,_,_) then (ity,0);
 
     // Sadly, we cannot switch a default uniontype as the previous case in not guaranteed
     // to succeed matching if it matches for subpatterns.
-    case ({_},_,DAE.T_INTEGER(varLst = _),1) then (ity,0);
+    case ({_},_,_,true,1) then (ity,0);
   end match;
 end findPatternToConvertToSwitch2;
 

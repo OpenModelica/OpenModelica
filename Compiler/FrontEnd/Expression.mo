@@ -6497,33 +6497,17 @@ algorithm
   nb := boolNot(b);
 end isNotConst;
 
-public function isRelation
-"Returns true if expression is a function expression."
+public function isRelation "Returns true if expression is a relation"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inExp)
-    local
-      Boolean b1,b2,res;
-      DAE.Exp e1,e2;
-
+  outBoolean := match (inExp)
     case (DAE.RELATION(exp1 = _)) then true;
-    case (DAE.LUNARY(exp = DAE.RELATION(exp1 = _))) then true;
-
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2))
-      equation
-        b1 = isRelation(e1);
-        b2 = isRelation(e2);
-        res = boolOr(b1, b2);
-      then
-        res;
-
-    case (_) then false;
-
-  end matchcontinue;
+    else false;
+  end match;
 end isRelation;
 
-protected function isEventTriggeringFunctionExp
+public function isEventTriggeringFunctionExp
   input DAE.Exp inExp;
   output Boolean outB;
 algorithm
