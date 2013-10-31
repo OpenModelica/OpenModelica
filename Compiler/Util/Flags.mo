@@ -806,10 +806,13 @@ constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(51, "hpcomScheduler",
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(52, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("cellier"),
   SOME(STRING_DESC_OPTION({
-    ("cellier", Util.gettext("Original Cellier with consideration of impossible assignments.")),
-    ("cellier2", Util.gettext("Modified Cellier, new step 'count impossible assignments'.")),
-    ("cellier3", Util.gettext("Modified Cellier, drop first step.")),
-    ("cellier4", Util.gettext("Modified Cellier, drop first step, new step 'count impossible assignments'."))})),
+    ("cellier", Util.gettext("Original cellier with consideration of impossible assignments.")),
+    ("cellier2", Util.gettext("Modified cellier, new last step 'count impossible assignments'.")),
+    ("cellier3", Util.gettext("Modified cellier, drop first step.")),
+    ("cellier4", Util.gettext("Modified cellier, drop first step, new step 'count impossible assignments'.")),
+    ("cellier5", Util.gettext("Modified cellier2, step 'count impossible assignments' before last step.")),
+    ("cellier6", Util.gettext("Modified cellier4, step 'count impossible assignments' before last step.")),
+	("cellier7", Util.gettext("Modified cellier4, Two rounds, choose better potentials-set."))})),
     Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));  
 
 // This is a list of all configuration flags. A flag can not be used unless it's
