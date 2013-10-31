@@ -119,11 +119,43 @@ struct gi_array
 typedef struct gr_array real_array;
 typedef struct gi_array integer_array;
 
+struct lr_array
+{
+    int ndims;
+    local modelica_integer* dim_size;
+    local modelica_real* data;
+};
+
+struct li_array
+{
+    int ndims;
+    local modelica_integer* dim_size;
+    local modelica_integer* data;
+};
+typedef struct lr_array local_real_array;
+typedef struct li_array local_integer_array;
+
 
 // ParModelica versions of OpenCL thread managment functions.
 // They start counting from 0. Parmodelica/Modelica starts from 1.
 modelica_integer  oclGetGlobalId(modelica_integer dim) {
     return get_global_id(dim - 1) + 1;
+}
+
+modelica_integer  oclGetLocalId(modelica_integer dim) {
+    return get_local_id(dim - 1) + 1;
+}
+
+modelica_integer  oclGetLocalSize(modelica_integer dim) {
+    return get_local_size(dim - 1);
+}
+
+modelica_integer  oclGetGlobalSize(modelica_integer dim) {
+    return get_global_size(dim - 1);
+}
+
+modelica_integer  oclGetGroupId(modelica_integer dim) {
+    return get_group_id(dim - 1) + 1;
 }
 
 #define oclGlobalBarrier() barrier(CLK_GLOBAL_MEM_FENCE)

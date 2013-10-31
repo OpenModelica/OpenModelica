@@ -361,7 +361,7 @@ match ty
 end dumpType;
 
 template dumpFuncArg(DAE.FuncArg arg)
-::= match arg case (name, _, _, _) then name
+::= match arg case (name, _, _, _, _) then name
 end dumpFuncArg;
 
 template dumpDimensions(DAE.Dimensions dims)

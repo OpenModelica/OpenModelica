@@ -149,10 +149,27 @@ void alloc_real_array(device_real_array *dest, int ndims, ...){
 
 }
 
+//entry point for allocating LOCAL real array on device
+void alloc_device_local_real_array(device_local_real_array *dest, int ndims, ...){
+
+    size_t elements = 0;
+    va_list ap;
+    va_start(ap, ndims);
+    elements = alloc_device_base_array(dest,ndims,ap);
+    va_end(ap);
+    // dest->data = ocl_device_alloc(elements*sizeof(modelica_real));
+    // dest->info_dev = ocl_device_alloc_init(dest->info,
+        // (ndims+1)*sizeof(modelica_integer));
+
+}
+
 
 void free_device_array(device_array* dest){
-    clReleaseMemObject(dest->data);
-    clReleaseMemObject(dest->info_dev);
+    cl_int err;
+    err = clReleaseMemObject(dest->data);
+    ocl_error_check(OCL_REALEASE_MEM_OBJECT, err);
+    err = clReleaseMemObject(dest->info_dev);
+    ocl_error_check(OCL_REALEASE_MEM_OBJECT, err);
     free(dest->info);
 }
 

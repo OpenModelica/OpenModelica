@@ -299,9 +299,9 @@ protected constant DAE.Var objectiveVar = DAE.TYPES_VAR("objective",
 protected constant DAE.Type stringIntInt2string =
           DAE.T_FUNCTION(
               {
-              ("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),
-              ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-              ("z",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())
+              ("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+              ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+              ("z",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())
               },
               DAE.T_STRING_DEFAULT,
               DAE.FUNCTION_ATTRIBUTES_BUILTIN,
@@ -309,151 +309,151 @@ protected constant DAE.Type stringIntInt2string =
 
 protected constant DAE.Type real2real =
           DAE.T_FUNCTION(
-            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_REAL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type realReal2real =
           DAE.T_FUNCTION(
-            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_REAL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type int2int =
           DAE.T_FUNCTION(
-            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type int2bool =
           DAE.T_FUNCTION(
-            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_BOOL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type enumeration2int =
           DAE.T_FUNCTION(
-            {("x",DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            {("x",DAE.T_ENUMERATION(NONE(), Absyn.IDENT(""), {}, {}, {}, DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type intInt2int =
           DAE.T_FUNCTION(
-            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type intInt2bool =
           DAE.T_FUNCTION(
-            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_BOOL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type bool2bool =
           DAE.T_FUNCTION(
-            {("x",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_BOOL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type real2bool =
           DAE.T_FUNCTION(
-            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_BOOL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type realReal2bool =
           DAE.T_FUNCTION(
-            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_BOOL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type realRealReal2Real =
           DAE.T_FUNCTION(
-            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-             ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_REAL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type anyNonExpandableConnector2int =
           DAE.T_FUNCTION(
-            {("x", DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            {("x", DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false)),DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type anyExpandableConnector2int =
           DAE.T_FUNCTION(
-            {("x",DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true)),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+            {("x",DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true)),DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type vectorVector2int =
           DAE.T_FUNCTION(
-            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type vectorVector2real =
           DAE.T_FUNCTION(
-            {("x", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y", T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_REAL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type intInt2vectorreal =
           DAE.T_FUNCTION(
-            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             T_REAL_ARRAY_1_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type realRealInt2vectorreal =
           DAE.T_FUNCTION(
-            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-             ("n",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+             ("n",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             T_REAL_ARRAY_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type array2real =
           DAE.T_FUNCTION(
-            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",T_INT_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_INTEGER_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource) "T_ARRAY is appearently not constant. To bad!" ;
 
 protected constant DAE.Type int2boxed =
           DAE.T_FUNCTION(
-            {("index",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE())},
+            {("index",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_METABOXED_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
 protected constant DAE.Type string2string =
           DAE.T_FUNCTION(
-            {("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE())},
+            {("x",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
             DAE.T_STRING_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
@@ -461,9 +461,9 @@ protected constant DAE.Type string2string =
 protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2array1dimreal =
           DAE.T_FUNCTION(
             {
-            ("x",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-            ("y",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE()),
-            ("z",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),NONE())
+            ("x",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+            ("y",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+            ("z",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())
             },
             T_REAL_ARRAY_1_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
@@ -472,9 +472,9 @@ protected constant DAE.Type array1dimrealarray1dimrealarray1dimreal2array1dimrea
 protected constant DAE.Type realrealreal2real =
           DAE.T_FUNCTION(
             {
-            ("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-            ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-            ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE())
+            ("x",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+            ("y",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+            ("z",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())
             },
             DAE.T_REAL_DEFAULT,
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,

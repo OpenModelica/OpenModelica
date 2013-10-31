@@ -386,7 +386,7 @@ package DAE
     end PATTERN;
   end Exp;
 
-  type FuncArg = tuple<Ident, Type, Const, Option<Exp>>;
+  type FuncArg = tuple<Ident, Type, Const, VarParallelism, Option<Exp>>;
 
   uniontype MatchCase
     record CASE

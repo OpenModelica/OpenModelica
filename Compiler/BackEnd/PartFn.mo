@@ -903,7 +903,7 @@ protected function isNotFunctionType
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue(inFuncArg)
-    case((_,DAE.T_FUNCTION(funcArg = _),_,_)) then false;
+    case((_,DAE.T_FUNCTION(funcArg = _),_,_,_)) then false;
     case(_) then true;
   end matchcontinue;
 end isNotFunctionType;

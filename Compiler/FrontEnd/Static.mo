@@ -332,6 +332,13 @@ public function checkAssignmentToInput
   input Absyn.Info inInfo;
 algorithm
   _ := matchcontinue(inExp, inAttributes, inEnv, inAllowTopLevelInputs, inInfo)
+  
+    case (_, _, _, _, _)
+      equation
+        true = Config.acceptParModelicaGrammar();
+      then
+        ();
+        
     case (_, _, _, _, _)
       equation
         true = inAllowTopLevelInputs or not Env.inFunctionScope(inEnv);
@@ -1564,7 +1571,7 @@ algorithm
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR, {str1,str2}, info);
       then fail();
 
-    case (env, _, {DAE.T_FUNCTION(funcArg={(_,typeA,DAE.C_VAR(),_),(_,typeB,DAE.C_VAR(),_)},funcResultType = resType, source = {path})}, _)
+    case (env, _, {DAE.T_FUNCTION(funcArg={(_,typeA,DAE.C_VAR(),_,_),(_,typeB,DAE.C_VAR(),_,_)},funcResultType = resType, source = {path})}, _)
       then (typeA,typeB,resType,path);
 
     case (env, path, _, _)
@@ -4661,15 +4668,15 @@ algorithm
       equation
         i = listLength(args);
         ty1 = DAE.T_FUNCTION(
-                {("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-                 ("delayTime",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),NONE())},
+                {("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 ("delayTime",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN,
                 DAE.emptyTypeSource);
         ty2 = DAE.T_FUNCTION(
-                {("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-                 ("delayTime",DAE.T_REAL_DEFAULT,DAE.C_VAR(),NONE()),
-                 ("delayMax",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),NONE())},
+                {("expr",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 ("delayTime",DAE.T_REAL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
+                 ("delayMax",DAE.T_REAL_DEFAULT,DAE.C_PARAM(),DAE.NON_PARALLEL(),NONE())},
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN,
                 DAE.emptyTypeSource);
@@ -5673,12 +5680,12 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
         // Create argument slots for String function.
-        slots = {SLOT(("x",tp,DAE.C_VAR(),NONE()),false,NONE(),{}),
-                 SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.ICONST(0)),{}),
-                 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.BCONST(true)),{})};
+        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{}),
+                 SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(0)),{}),
+                 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.BCONST(true)),{})};
         // Only String(Real) has the significantDigits option.
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.ICONST(6)),{})}),
+          listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.ICONST(6)),{})}),
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info);
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -5691,16 +5698,16 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl,NONE(),true,pre,info);
 
-        slots = {SLOT(("x",tp,DAE.C_VAR(),NONE()),false,NONE(),{})};
+        slots = {SLOT(("x",tp,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,NONE(),{})};
 
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.SCONST("f")),{})}),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("f")),{})}),
           slots);
         slots = Util.if_(Types.isIntegerOrSubTypeInteger(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.SCONST("d")),{})}),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("d")),{})}),
           slots);
         slots = Util.if_(Types.isString(tp),
-          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),NONE()),false,SOME(DAE.SCONST("s")),{})}),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),false,SOME(DAE.SCONST("s")),{})}),
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, NONE(), pre, info);
         c = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -6906,7 +6913,7 @@ protected function createDummyFarg
   input String name;
   output DAE.FuncArg farg;
 algorithm
-  farg := (name, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), NONE());
+  farg := (name, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE());
 end createDummyFarg;
 
 protected function transformModificationsToNamedArguments
@@ -7131,7 +7138,7 @@ algorithm
     case ({}, i) then i;
 
     // only interested in filled slots that have a optional expression
-    case (SLOT(an = (id, _, _, _), slotFilled = true, expExpOption = SOME(e))::rest, i)
+    case (SLOT(an = (id, _, _, _, _), slotFilled = true, expExpOption = SOME(e))::rest, i)
       equation
         o = VarTransform.addReplacement(i, ComponentReference.makeCrefIdent(id, DAE.T_UNKNOWN_DEFAULT, {}), e);
         o = createInputVariableReplacements(rest, o);
@@ -7808,7 +7815,7 @@ algorithm
       equation
         fieldNames = List.map(vars, Types.getVarName);
         tys = List.map(vars, Types.getVarType);
-        fargs = List.thread4Tuple(fieldNames, tys, List.fill(DAE.C_VAR(),listLength(tys)), List.fill(NONE(),listLength(tys)));
+        fargs = List.thread5Tuple(fieldNames, tys, List.fill(DAE.C_VAR(),listLength(tys)), List.fill(DAE.NON_PARALLEL(),listLength(tys)), List.fill(NONE(),listLength(tys)));
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true ,impl, NOT_EXTERNAL_OBJECT_MODEL_SCOPE(), {}, st, pre, info);
         const = List.fold(constlist, Types.constAnd, DAE.C_CONST());
@@ -8640,7 +8647,7 @@ protected function funcArgType
   input DAE.FuncArg inFuncArg;
   output DAE.Type outType;
 algorithm
-  (_, outType, _, _) := inFuncArg;
+  (_, outType, _, _, _) := inFuncArg;
 end funcArgType;
 
 protected function getAllOutputDimensions
@@ -8718,7 +8725,7 @@ protected function isSlotUsed
 protected
   String slot_name;
 algorithm
-  SLOT(an = (slot_name, _, _, _)) := inSlot;
+  SLOT(an = (slot_name, _, _, _, _)) := inSlot;
   outIsUsed := List.isMemberOnTrue(slot_name, inUsedNames, stringEq);
 end isSlotUsed;
 
@@ -8739,7 +8746,7 @@ algorithm
 
     // If the argument expression already has known dimensions, no need to
     // constant evaluate it.
-    case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
+    case (SLOT(an = (name, _, _, _, _), expExpOption = SOME(exp)), _, _)
       equation
         false = Expression.expHasCref(exp,ComponentReference.makeCrefIdent(name,DAE.T_UNKNOWN_DEFAULT,{}));
         ty = Expression.typeof(exp);
@@ -8750,7 +8757,7 @@ algorithm
         DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
     // Otherwise, try to constant evaluate the expression.
-    case (SLOT(an = (name, _, _, _), expExpOption = SOME(exp)), _, _)
+    case (SLOT(an = (name, _, _, _, _), expExpOption = SOME(exp)), _, _)
       equation
         // Constant evaluate the bound expression.
         (_, val, _) = Ceval.ceval(inCache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
@@ -8762,7 +8769,7 @@ algorithm
       then
         DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, binding, NONE());
 
-    case (SLOT(an = (name, ty, _, _)), _, _)
+    case (SLOT(an = (name, ty, _, _, _)), _, _)
       then DAE.TYPES_VAR(name, DAE.dummyAttrParam, ty, DAE.UNBOUND(), NONE());
 
   end matchcontinue;
@@ -8810,6 +8817,7 @@ algorithm
     DAE.Ident ident;
     DAE.Type pty, sty;
     DAE.Const c;
+    DAE.VarParallelism p;
     Option<DAE.Exp> oexp;
     DAE.Dimensions dims1, dims2;
     String t_str1,t_str2; 
@@ -8818,7 +8826,7 @@ algorithm
     
     // If we have a code exp argument we can't check dims...
     // There are all kinds of scripting function that complicate things.
-    case(_, (_,DAE.T_CODE(_,_),_,_), _, _, _)
+    case(_, (_,DAE.T_CODE(_,_),_,_,_), _, _, _)
       then
         inParam;
     
@@ -8826,7 +8834,7 @@ algorithm
     // They add up
     case(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), vdims), _, _, _, _)
       equation
-        (ident, pty, c, oexp) = inParam;
+        (ident, pty, c, p, oexp) = inParam;
         // evaluate the dimesions
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
@@ -8836,13 +8844,13 @@ algorithm
         dims2 = Types.getDimensions(sty);
         true = Expression.dimsEqual(dims1, dims2);
         
-        outParam = (ident, pty, c, oexp);
+        outParam = (ident, pty, c, p, oexp);
       then
         outParam;
     
     case(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), vdims), _, _, _, _)
       equation
-        (ident, pty, c, oexp) = inParam;
+        (ident, pty, c, p, oexp) = inParam;
         // evaluate the dimesions
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
         // append the vectorization dim if argument is vectorized.
@@ -8851,7 +8859,7 @@ algorithm
         dims2 = Types.getDimensions(sty);
         true = Expression.dimsEqual(dims1, dims2);
         
-        outParam = (ident, pty, c, oexp);
+        outParam = (ident, pty, c, p, oexp);
       then
         outParam;
        
@@ -8859,9 +8867,9 @@ algorithm
       equation
         failure(SLOT(_, _, SOME(DAE.ARRAY(ty = sty)), _) = inSlot);
         failure(SLOT(_, _, SOME(DAE.MATRIX(ty = sty)), _) = inSlot);
-        (ident, pty, c, oexp) = inParam;
+        (ident, pty, c, p, oexp) = inParam;
         pty = evaluateFuncArgTypeDims(pty, inEnv, inCache);
-        outParam = (ident, pty, c, oexp);
+        outParam = (ident, pty, c, p, oexp);
       then
         outParam;   
       
@@ -9231,9 +9239,10 @@ protected function getTypes
   input list<DAE.FuncArg> farg;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  outTypesTypeLst := List.map(farg,Util.tuple42);
+  outTypesTypeLst := List.map(farg,Util.tuple52);
 end getTypes;
 
+/*
 protected function functionParams
 "A function definition is just a clas definition where all publi
   components are declared as either inpu or outpu.  This
@@ -9256,7 +9265,7 @@ algorithm
 
     case {} then ({},{});
 
-    case ((DAE.TYPES_VAR(attributes = DAE.ATTR(visibility = SCode.PROTECTED())) :: vs)) /* Ignore protected components */
+    case ((DAE.TYPES_VAR(attributes = DAE.ATTR(visibility = SCode.PROTECTED())) :: vs)) // Ignore protected components 
       equation
         (in_,out) = functionParams(vs);
       then
@@ -9293,6 +9302,7 @@ algorithm
         fail();
   end match;
 end functionParams;
+*/
 
 protected function elabInputArgs
 "function_: elabInputArgs
@@ -9435,7 +9445,7 @@ algorithm
       then
         DAE.T_COMPLEX(complexClassType, {}, NONE(), DAE.emptyTypeSource);
 
-    case(SLOT(an = (id,ty,_,_))::slots,_)
+    case(SLOT(an = (id,ty,_,_,_))::slots,_)
       equation
         etp = Types.simplifyType(ty);
         DAE.T_COMPLEX(ci,vLst,ec,ts) = complexTypeFromSlots(slots,complexClassType);
@@ -9535,15 +9545,16 @@ algorithm
       DAE.Exp exp_1;
       DAE.Type tp;
       DAE.Const c2;
+      DAE.VarParallelism prl;
       String id;
 
     case (SLOT(slotFilled = true,expExpOption = e as SOME(_)),_) then slot;
 
-    case (SLOT(an = (id,tp,c2,e as SOME(exp_1)),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds),_)
+    case (SLOT(an = (id,tp,c2,prl,e as SOME(exp_1)),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds),_)
       then
-        SLOT((id,tp,c2,e),true,SOME(exp_1),ds);
+        SLOT((id,tp,c2,prl,e),true,SOME(exp_1),ds);
 
-    case (SLOT(an = (id,_,_,_)),_)
+    case (SLOT(an = (id,_,_,_,_)),_)
       equation
         Error.addSourceMessage(Error.UNFILLED_SLOT, {id}, info);
       then fail();
@@ -9582,6 +9593,7 @@ algorithm
       DAE.Exp exp,exp_1;
       DAE.Type t,tp;
       DAE.Const c1,c2;
+      DAE.VarParallelism pr;
       list<DAE.Const> constLst;
       String id;
       Env.Cache cache;
@@ -9594,7 +9606,7 @@ algorithm
       then
         (cache, SLOT(fa,true,e,ds) :: res, constLst, polymorphicBindings);
 
-    case (cache,(SLOT(an = (id,tp,c2,e),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,_)
+    case (cache,(SLOT(an = (id,tp,c2,pr,e),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
         (cache,res,constLst,polymorphicBindings) = fillGraphicsDefaultSlots(cache, xs, class_, env, impl, polymorphicBindings, pre, info);
 
@@ -9605,7 +9617,7 @@ algorithm
         (exp_1,_,polymorphicBindings) = Types.matchTypePolymorphic(exp,t,tp,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
         true = Types.constEqualOrHigher(c1,c2);
       then
-        (cache, SLOT((id,tp,c2,e),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
+        (cache, SLOT((id,tp,c2,pr,e),true,SOME(exp_1),ds) :: res, c1::constLst, polymorphicBindings);
 
     case (cache,(SLOT(an = fa,slotFilled = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl,polymorphicBindings,pre,_)
       equation
@@ -9721,6 +9733,7 @@ algorithm
       DAE.Exp e_1,e_2;
       DAE.Type t,vt;
       DAE.Const c1,c2;
+      DAE.VarParallelism pr;
       list<DAE.Const> clist;
       list<Env.Frame> env;
       Absyn.Exp e;
@@ -9739,7 +9752,7 @@ algorithm
     case (cache, _, {}, _, slots, _, impl, _, polymorphicBindings,_,pre,_)
       then (cache,slots,{},polymorphicBindings);
 
-    case (cache, env, (e :: es), ((farg as (_,DAE.T_CODE(ct,_),_,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (_,DAE.T_CODE(ct,_),_,_,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,info);
         (cache,slots_1,clist,polymorphicBindings) =
@@ -9749,7 +9762,7 @@ algorithm
         (cache,newslots,(DAE.C_VAR() :: clist),polymorphicBindings);
 
     // exact match
-    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2,pr,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st, true,pre,info);
         t = Types.getPropType(props);
@@ -9760,12 +9773,12 @@ algorithm
         // TODO: Check const
         (cache,slots_1,clist,polymorphicBindings) =
         elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info);
-        newslots = fillSlot((id,vt,c1,NONE()), e_2, {}, slots_1,checkTypes,pre,info) "no vectorized dim" ;
+        newslots = fillSlot((id,vt,c1,pr,NONE()), e_2, {}, slots_1,checkTypes,pre,info) "no vectorized dim" ;
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check if vectorized argument
-    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2,pr,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
@@ -9776,12 +9789,12 @@ algorithm
         // TODO: Check const...
         (cache,slots_1,clist,_) =
           elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info);
-        newslots = fillSlot((id,vt,c1,NONE()), e_2, ds, slots_1, checkTypes,pre,info);
+        newslots = fillSlot((id,vt,c1,pr,NONE()), e_2, ds, slots_1, checkTypes,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // not checking types
-    case (cache, env, (e :: es), ((farg as (id,vt,_,_)) :: vs), slots, false, impl, _, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (id,vt,_,pr,_)) :: vs), slots, false, impl, _, polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
@@ -9790,12 +9803,12 @@ algorithm
         (cache,slots_1,clist,polymorphicBindings) =
           elabPositionalInputArgs(cache, env, es, vs, slots,checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info);
         /* fill slot with actual type for error message*/
-        newslots = fillSlot((id,t,c1,NONE()), e_1, {}, slots_1, checkTypes,pre,info);
+        newslots = fillSlot((id,t,c1,pr,NONE()), e_1, {}, slots_1, checkTypes,pre,info);
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check types and display error
-    case (cache, env, (e :: es), ((farg as (_,vt,_,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (_,vt,_,_,_)) :: vs), slots, true, impl, _, polymorphicBindings,_,pre,_)
       equation
         /* FAILTRACE REMOVE
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env,e,impl,NONE(),true,pre,info);
@@ -9851,6 +9864,7 @@ algorithm
       DAE.Exp e_1,e_2;
       DAE.Type t,vt;
       DAE.Const c1;
+      DAE.VarParallelism pr;
       list<Slot> slots_1,newslots,slots;
       list<DAE.Const> clist;
       list<Env.Frame> env;
@@ -9872,8 +9886,9 @@ algorithm
     case (cache, env, (Absyn.NAMEDARG(argName = id,argValue = e) :: nas), farg, slots, true, impl, _, polymorphicBindings,_,pre,_)
       equation
         (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
+        pr = findNamedArgParallelism(id,farg);
         e_1 = elabCodeExp(e,cache,env,ct,info);
-        slots_1 = fillSlot((id,vt,DAE.C_VAR(),NONE()), e_1, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot((id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
         elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, isExternalObject, polymorphicBindings, st, pre, info);
       then
@@ -9883,10 +9898,11 @@ algorithm
     case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,true,impl,_,polymorphicBindings,_,pre,_)
       equation
         vt = findNamedArgType(id, farg);
+        pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,Env.getEnvPathNoImplicitScope(env),polymorphicBindings,false);
-        slots_1 = fillSlot((id,vt,c1,NONE()), e_2, {}, slots,checkTypes,pre,info);
+        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_2, {}, slots,checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info);
       then
@@ -9898,8 +9914,9 @@ algorithm
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         vt = findNamedArgType(id, farg);
+        pr = findNamedArgParallelism(id,farg);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, Env.getEnvPathNoImplicitScope(env));
-        slots_1 = fillSlot((id,vt,c1,NONE()), e_2, ds, slots, checkTypes,pre,info);
+        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_2, ds, slots, checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info);
       then
@@ -9911,7 +9928,8 @@ algorithm
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env, e, impl,st,true,pre,info);
         (cache,e_1) = evalExternalObjectInput(isExternalObject, t, c1, cache, env, e_1, info);
         vt = findNamedArgType(id, farg);
-        slots_1 = fillSlot((id,vt,c1,NONE()), e_1, {}, slots,checkTypes,pre,info);
+        pr = findNamedArgParallelism(id,farg);
+        slots_1 = fillSlot((id,vt,c1,pr,NONE()), e_1, {}, slots,checkTypes,pre,info);
         (cache,newslots,clist,polymorphicBindings) =
           elabNamedInputArgs(cache, env, nas, farg, slots_1, checkTypes, impl, isExternalObject, polymorphicBindings,st,pre,info);
       then
@@ -9943,12 +9961,12 @@ algorithm
       String id,id2;
       DAE.Type ty;
       list<DAE.FuncArg> ts;
-    case (id,(id2,ty,_,_) :: ts)
+    case (id,(id2,ty,_,_,_) :: ts)
       equation
         true = stringEq(id, id2);
       then
         ty;
-    case (id,(id2,_,_,_) :: ts)
+    case (id,(id2,_,_,_,_) :: ts)
       equation
         false = stringEq(id, id2);
         ty = findNamedArgType(id, ts);
@@ -9956,6 +9974,33 @@ algorithm
         ty;
   end matchcontinue;
 end findNamedArgType;
+
+protected function findNamedArgParallelism
+"This function takes an Ident and a FuncArg list, and returns the 
+  parallelism of the FuncArg which has  that identifier."
+  input String inIdent;
+  input list<DAE.FuncArg> inTypesFuncArgLst;
+  output DAE.VarParallelism outParallelism;
+algorithm
+  outParallelism :=
+  matchcontinue (inIdent,inTypesFuncArgLst)
+    local
+      String id,id2;
+      DAE.VarParallelism pr;
+      list<DAE.FuncArg> ts;
+    case (id,(id2,_,_,pr,_) :: ts)
+      equation
+        true = stringEq(id, id2);
+      then
+        pr;
+    case (id,(id2,_,_,_,_) :: ts)
+      equation
+        false = stringEq(id, id2);
+        pr = findNamedArgParallelism(id, ts);
+      then
+        pr;
+  end matchcontinue;
+end findNamedArgParallelism;
 
 protected function fillSlot
 "This function takses a `FuncArg\' and an DAE.Exp and a Slot list and fills
@@ -9982,17 +10027,18 @@ algorithm
       Prefix.Prefix pre;
       String ps,str1,str2;
       DAE.Const c1,c2;
+      DAE.VarParallelism prl;
       Option<DAE.Exp> oe;
 
-    case ((fa1,b,c1,_),exp,ds,(SLOT(an = (fa2,_,c2,oe),slotFilled = false) :: xs),_,pre,_)
+    case ((fa1,b,c1,_,_),exp,ds,(SLOT(an = (fa2,_,c2,prl,oe),slotFilled = false) :: xs),_,pre,_)
       equation
         true = stringEq(fa1, fa2);
         true = Types.constEqualOrHigher(c1,c2);
       then
-        (SLOT((fa2,b,c2,oe),true,SOME(exp),ds) :: xs);
+        (SLOT((fa2,b,c2,prl,oe),true,SOME(exp),ds) :: xs);
 
     // fail if variability is wrong
-    case (farg1 as (fa1,_,c1,_),exp,ds,(SLOT(an = farg2 as (fa2,b,c2,_),slotFilled = false) :: xs),_,pre,_)
+    case (farg1 as (fa1,_,c1,_,_),exp,ds,(SLOT(an = farg2 as (fa2,b,c2,prl,_),slotFilled = false) :: xs),_,pre,_)
       equation
         true = stringEq(fa1, fa2);
         false = Types.constEqualOrHigher(c1,c2);
@@ -10003,7 +10049,7 @@ algorithm
         fail();
 
     // fail if slot already filled
-    case ((fa1,_,_,_),exp,ds,(SLOT(an = (fa2,b,_,_),slotFilled = true) :: xs), _,pre,_)
+    case ((fa1,_,_,_,_),exp,ds,(SLOT(an = (fa2,b,_,_,_),slotFilled = true) :: xs), _,pre,_)
       equation
         true = stringEq(fa1, fa2);
         ps = PrefixUtil.printPrefixStr3(pre);
@@ -10012,7 +10058,7 @@ algorithm
         fail();
 
     // no equal, try next
-    case ((farg as (fa1,_,_,_)),exp,ds,((s1 as SLOT(an = (fa2,_,_,_))) :: xs),_,pre,_)
+    case ((farg as (fa1,_,_,_,_)),exp,ds,((s1 as SLOT(an = (fa2,_,_,_,_))) :: xs),_,pre,_)
       equation
         false = stringEq(fa1, fa2);
         newslots = fillSlot(farg, exp, ds, xs,checkTypes,pre,info);
@@ -10020,7 +10066,7 @@ algorithm
         (s1 :: newslots);
 
     // failure
-    case ((fa,_,_,_),_,_,{},_,pre,_)
+    case ((fa,_,_,_,_),_,_,{},_,pre,_)
       equation
         Error.addSourceMessage(Error.NO_SUCH_ARGUMENT, {"",fa}, info);
       then
@@ -13101,7 +13147,7 @@ algorithm
   outBool := matchcontinue(inType)
     local
       DAE.Type ty;
-    case (DAE.T_FUNCTION((_, ty, _, _)::_, _, _, _))
+    case (DAE.T_FUNCTION((_, ty, _, _, _)::_, _, _, _))
     equation
         true = Types.arrayType(ty);
     then true;
@@ -14190,7 +14236,7 @@ algorithm
     case ({},_) then {};
     case (DAE.T_FUNCTION(funcArg = args,funcResultType = tp) :: tps,funcname)
       equation
-        argtypes = List.map(args, Util.tuple42);
+        argtypes = List.map(args, Util.tuple52);
         rest = buildOperatorTypes(tps, funcname);
       then
         ((DAE.USERDEFINED(funcname),argtypes,tp) :: rest);

@@ -1057,7 +1057,7 @@ public uniontype DimensionBinding
 end DimensionBinding;
 
 public
-type FuncArg = tuple<Ident, Type, Const, Option<Exp>> "Function Argument; name, type, variability and default binding (should probably be constant)" ;
+type FuncArg = tuple<Ident, Type, Const, VarParallelism, Option<Exp>> "Function Argument; name, type, variability parallelism, and default binding (should probably be constant)" ;
 
 public
 uniontype Const "The degree of constantness of an expression is determined by the Const

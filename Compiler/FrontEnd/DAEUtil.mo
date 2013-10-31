@@ -75,6 +75,17 @@ algorithm
   end match;
 end constStrFriendly;
 
+public function dumpVarParallelismStr "Dump VarParallelism to a string"
+  input DAE.VarParallelism inVarParallelism;
+  output String outString;
+algorithm
+  outString := match (inVarParallelism)
+    case DAE.NON_PARALLEL() then "";
+    case DAE.PARGLOBAL() then "parglobal ";
+    case DAE.PARLOCAL() then "parlocal ";
+  end match;
+end dumpVarParallelismStr;
+
 public function expTypeSimple "returns true if type is simple type"
   input DAE.Type tp;
   output Boolean isSimple;

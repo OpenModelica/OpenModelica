@@ -94,7 +94,8 @@ void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg);
 //sets a single Kernel Integer argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg);
 
-
+// sets a __local Kernel argument. The size should be given.
+void ocl_set_local_kernel_arg(cl_kernel kernel, int arg_nr, size_t in_size);
 
 
 
@@ -104,6 +105,8 @@ void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg);
 void alloc_integer_array(device_integer_array *dest, int ndims, ...);
 
 void alloc_real_array(device_integer_array *dest, int ndims, ...);
+
+void alloc_device_local_real_array(device_local_real_array *dest, int ndims, ...);
 
 void copy_real_array(device_real_array* dev_array_ptr, real_array_t* host_array_ptr);
 

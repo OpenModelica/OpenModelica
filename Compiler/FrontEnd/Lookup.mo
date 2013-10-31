@@ -114,14 +114,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
       equation
-        t = DAE.T_FUNCTION({("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+        t = DAE.T_FUNCTION({("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),_)
       equation
-        t = DAE.T_FUNCTION({("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+        t = DAE.T_FUNCTION({("x", DAE.T_ANYTYPE_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE())}, DAE.T_BOOL_DEFAULT, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
       then
         (cache, t, env);
 
@@ -1743,12 +1743,12 @@ algorithm
     // function_name cardinality
     case (env,"cardinality")
       then {DAE.T_FUNCTION(
-              {("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+              {("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
               DAE.T_INTEGER_DEFAULT,
               DAE.FUNCTION_ATTRIBUTES_DEFAULT,
               DAE.emptyTypeSource),
             DAE.T_FUNCTION(
-              {("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),NONE())},
+              {("x",DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE(),DAE.emptyTypeSource),DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
               DAE.T_INTEGER_DEFAULT,
               DAE.FUNCTION_ATTRIBUTES_DEFAULT,
               DAE.emptyTypeSource)};

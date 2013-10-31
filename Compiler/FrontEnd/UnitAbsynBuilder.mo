@@ -1300,7 +1300,7 @@ algorithm
       UnitAbsyn.Store store;
 
     case({},_,store) then (store,{});
-    case((_,tp,_,_)::fargs,_,store) equation
+    case((_,tp,_,_,_)::fargs,_,store) equation
       unitStr = getUnitStr(tp);
 
       unit = str2unit(unitStr,SOME(funcInstId));

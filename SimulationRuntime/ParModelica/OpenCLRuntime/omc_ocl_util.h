@@ -102,6 +102,9 @@ void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg);
 //sets a single Kernel Integer argument.
 void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_integer in_arg);
 
+// sets a __local Kernel argument. The size should be given.
+void ocl_set_local_kernel_arg(cl_kernel kernel, int arg_nr, size_t in_size);
+
 //executes a kernel
 void ocl_execute_kernel(cl_kernel kernel);
 

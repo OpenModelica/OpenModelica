@@ -3120,6 +3120,7 @@ algorithm
       list<Frame> fl;
     case ({}) then false;
     case (FRAME(scopeType = SOME(FUNCTION_SCOPE())) :: _) then true;
+    case (FRAME(scopeType = SOME(PARALLEL_SCOPE())) :: _) then true;
     case (FRAME(scopeType = SOME(CLASS_SCOPE())) :: _) then false;
     case (_ :: fl) then inFunctionScope(fl);
   end matchcontinue;

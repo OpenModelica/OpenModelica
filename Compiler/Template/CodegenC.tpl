@@ -4469,7 +4469,8 @@ end funArgDefinition;
 template funArgDefinitionKernelFunctionInterface(Variable var)
 ::=
   match var
-  case VARIABLE(ty=T_ARRAY(__)) then 'device_<%varType(var)%> <%contextCref(name,contextFunction)%>'
+  case VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then 'device_<%varType(var)%> <%contextCref(name,contextFunction)%>'
+  case VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then 'device_local_<%varType(var)%> <%contextCref(name,contextFunction)%>'
   case VARIABLE(__) then '<%varType(var)%> <%contextCref(name,contextFunction)%>'
   else 'Invalid function argument to Kernel function Interface.'
 end funArgDefinitionKernelFunctionInterface;
@@ -4480,15 +4481,23 @@ template funArgDefinitionKernelFunctionBody(Variable var)
 ::=
 match var
 //function args will have nill instdims even if they are arrays. handled here
-case var as VARIABLE(ty=T_ARRAY(__)) then
+case var as VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then
   let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
+  
+case var as VARIABLE(ty=T_ARRAY(__), parallelism = PARLOCAL(__)) then
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
+  '__local modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __local modelica_integer* info_<%varName%>'
 
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   if instDims then
-    '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
-
+    (match parallelism
+    case PARGLOBAL(__) then 
+      '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
+    case PARLOCAL(__) then
+      '__global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,<%\n%>    __global modelica_integer* info_<%varName%>'
+    )  
   else
     'modelica_<%expTypeShort(var.ty)%> <%varName%>'
 
@@ -4510,7 +4519,7 @@ case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   if instDims then
     let &parArgList += ',<%\n%>    __global modelica_<%expTypeShort(var.ty)%>* data_<%varName%>,'
-  let &parArgList += '<%\n%>    __global modelica_integer* info_<%varName%>'
+    let &parArgList += '<%\n%>    __global modelica_integer* info_<%varName%>'
   " "
   else
     let &parArgList += ',<%\n%>    modelica_<%expTypeShort(var.ty)%> <%varName%>'
@@ -4570,9 +4579,16 @@ template reconstructKernelArrays(Variable var, Text &reconstructedArrs)
 ::=
 match var
 //function args will have nill instdims even if they are arrays. handled here
-case var as VARIABLE(ty=T_ARRAY(__)) then
+case var as VARIABLE(ty=T_ARRAY(__),parallelism=PARGLOBAL(__)) then
   let varName = '<%contextCref(var.name,contextParallelFunction)%>'
   let &reconstructedArrs += '<%expTypeShort(var.ty)%>_array <%varName%>; <%\n%>'
+  let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
+  let &reconstructedArrs += '<%varName%>.ndims = info_<%varName%>[0]; <%\n%>'
+  let &reconstructedArrs += '<%varName%>.dim_size = info_<%varName%> + 1; <%\n%>'
+  ""
+case var as VARIABLE(ty=T_ARRAY(__),parallelism=PARLOCAL(__)) then
+  let varName = '<%contextCref(var.name,contextParallelFunction)%>'
+  let &reconstructedArrs += 'local_<%expTypeShort(var.ty)%>_array <%varName%>; <%\n%>'
   let &reconstructedArrs += '<%varName%>.data = data_<%varName%>; <%\n%>'
   let &reconstructedArrs += '<%varName%>.ndims = info_<%varName%>[0]; <%\n%>'
   let &reconstructedArrs += '<%varName%>.dim_size = info_<%varName%> + 1; <%\n%>'
@@ -5101,16 +5117,23 @@ template setKernelArg_ith(Variable var, Text &KernelName, Text &argNr, Text &par
 ::=
 match var
 //function args will have nill instdims even if they are arrays. handled here
-case var as VARIABLE(ty=T_ARRAY(__)) then
+case var as VARIABLE(ty=T_ARRAY(__),parallelism=PARGLOBAL(__)) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>.data); ++<%argNr%>; <%\n%>'
   let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>.info_dev); ++<%argNr%>; <%\n%>'
+  ""
+case var as VARIABLE(ty=T_ARRAY(__),parallelism=PARLOCAL(__)) then
+  let varName = '<%contextCref(var.name,contextFunction)%>'
+  // Increment twice. Both data and info set in the function
+  // let &parVarList += 'ocl_set_local_array_kernel_arg(<%KernelName%>, <%argNr%>, &<%varName%>); ++<%argNr%>; ++<%argNr%>; <%\n%>'
+  let &parVarList += 'ocl_set_local_kernel_arg(<%KernelName%>, <%argNr%>, sizeof(modelica_<%expTypeShort(var.ty)%>) * device_array_nr_of_elements(&<%varName%>)); ++<%argNr%>; <%\n%>'
+  let &parVarList += 'ocl_set_local_kernel_arg(<%KernelName%>, <%argNr%>, sizeof(modelica_integer) * (<%varName%>.info[0]+1)*sizeof(modelica_integer)); ++<%argNr%>; <%\n%>'
   ""
 case var as VARIABLE(__) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
   if instDims then
     let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>.data); ++<%argNr%>; <%\n%>'
-  let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>.info_dev); ++<%argNr%>; <%\n%>'
+    let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>.info_dev); ++<%argNr%>; <%\n%>'
   ""
   else
     let &parVarList += 'ocl_set_kernel_arg(<%KernelName%>, <%argNr%>, <%varName%>); ++<%argNr%>; <%\n%>'
@@ -5574,7 +5597,6 @@ match var
 case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   let varName = '<%contextCref(var.name,contextFunction)%>'
 
-
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
     ;separator=", ")
@@ -5600,7 +5622,30 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
       "")
 
 case var as VARIABLE(parallelism = PARLOCAL(__)) then
-  let &varDecls += '#PARLOCAL variable type should not be allowed here. FIXME!!<%\n%>' ""
+  let varName = '<%contextCref(var.name,contextFunction)%>'
+
+  let instDimsInit = (instDims |> exp =>
+      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/)
+    ;separator=", ")
+  if instDims then
+    let &varDecls += 'device_local_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
+    let &varInits += 'alloc_device_local_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
+    let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+    let &varInits += defaultValue
+
+    // let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'
+    ""
+  else
+    (match var.value
+    case SOME(exp) then
+      let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
+      let defaultValue = '<%contextCref(var.name,contextFunction)%> = <%daeExp(exp, contextFunction, &varInits  /*BUFC*/, &varDecls /*BUFD*/)%>;<%\n%>'
+      let &varInits += defaultValue
+
+      " "
+    else
+    let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
+      "")
 
 else
   let &varDecls += '#error Unknown parallel variable type<%\n%>'
@@ -9187,9 +9232,9 @@ case var as VARIABLE(parallelism = PARGLOBAL()) then
     '<%expTypeArrayIf(var.ty)%>'
 case var as VARIABLE(parallelism = PARLOCAL()) then
   if instDims then
-    'Fix Me Parlocal'
+    'device_local_<%expTypeArray(var.ty)%>'
   else
-    'Fix Me Parlocal'
+    '<%expTypeArrayIf(var.ty)%>'
 end varType;
 
 template varTypeBoxed(Variable var)

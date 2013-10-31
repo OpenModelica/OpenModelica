@@ -905,33 +905,34 @@ algorithm
       DAE.Type res_ty;
       list<SimCode.Variable> var_args;
       list<DAE.Type> tys;
+      DAE.VarParallelism prl;
       
-    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(tupleType = tys)), _, _))
+    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_TUPLE(tupleType = tys)), _, _, _))
       equation
         var_args = List.map(args, typesSimFunctionArg);
         tys = List.map(tys, Types.simplifyType);
       then
         SimCode.FUNCTION_PTR(name, tys, var_args);
         
-    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_NORETCALL(source = _)), _, _))
+    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = DAE.T_NORETCALL(source = _)), _, _, _))
       equation
         var_args = List.map(args, typesSimFunctionArg);
       then
         SimCode.FUNCTION_PTR(name, {}, var_args);
         
-    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _, _))
+    case ((name, tty as DAE.T_FUNCTION(funcArg = args, funcResultType = res_ty), _, _, _))
       equation
         res_ty = Types.simplifyType(res_ty);
         var_args = List.map(args, typesSimFunctionArg);
       then
         SimCode.FUNCTION_PTR(name, {res_ty}, var_args);
         
-    case ((name, tty, _, _))
+    case ((name, tty, _, prl, _))
       equation
         tty = Types.simplifyType(tty);
         cref_  = ComponentReference.makeCrefIdent(name, tty, {});
       then
-        SimCode.VARIABLE(cref_, tty, NONE(), {}, DAE.NON_PARALLEL());
+        SimCode.VARIABLE(cref_, tty, NONE(), {}, prl);
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -949,9 +950,9 @@ algorithm
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
       SimCode.Variable var;
-    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name), ty = daeType as DAE.T_FUNCTION(funcArg=_)))
+    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name), ty = daeType as DAE.T_FUNCTION(funcArg=_), parallelism = prl))
       equation
-        var = typesSimFunctionArg((name, daeType, DAE.C_VAR(), NONE()));
+        var = typesSimFunctionArg((name, daeType, DAE.C_VAR(), prl, NONE()));
       then var;
         
     case (DAE.VAR(componentRef = id, 

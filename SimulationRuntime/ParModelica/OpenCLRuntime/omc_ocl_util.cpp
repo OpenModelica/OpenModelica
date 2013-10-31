@@ -396,6 +396,21 @@ void ocl_set_kernel_arg(cl_kernel kernel, int arg_nr, modelica_real in_arg){
 
 }
 
+void ocl_set_local_kernel_arg(cl_kernel kernel, int arg_nr, size_t in_size){
+
+    cl_int err;
+
+    // Allocate the memory in local space for the data
+    err = clSetKernelArg(kernel, arg_nr, in_size, NULL);
+    ocl_error_check(OCL_SET_KER_ARGS, err);
+    if(err){
+       printf("Error: setting argument nr:  %d. Local variable\n", arg_nr + 1);
+       exit(1);
+    }
+
+}
+
+
 void ocl_execute_kernel(cl_kernel kernel){
 
     cl_int err = 0;
@@ -875,6 +890,21 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
             }
             break;
+            
+            case OCL_REALEASE_MEM_OBJECT:
+            switch (error_code){
+                case CL_INVALID_MEM_OBJECT:
+                    printf("Error freeing device memory object:\n");
+                    printf("CL_INVALID_MEM_OBJECT \n");
+                    break;
+                case CL_SUCCESS:
+                    //printf("********** Successfuly copied data from dev mem to host mem.\n");
+                    break;
+                default:
+                    printf("Possible unknown error in : OCL_COPY_DEV_TO_HOST\n");
+            }
+            break;
+            
 
     }
 }

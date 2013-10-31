@@ -71,9 +71,6 @@ cl_kernel ocl_create_kernel(cl_program program, const char* kernel_name);
 //executes a kernel
 void ocl_execute_kernel(cl_kernel kernel);
 
-//
-
-
 
 typedef cl_mem device_integer;
 typedef cl_mem device_real;
@@ -96,8 +93,23 @@ typedef struct dev_arr{
 typedef device_array device_integer_array;
 typedef device_array device_real_array;
 
+// typedef struct dev_local_arr{
+ // cl_mem data;
+ // cl_mem info_dev;
+ // modelica_integer* info;
+// } device_local_array;
+
+typedef device_array device_local_real_array;
+typedef device_array device_local_integer_array;
+
+
 enum ocl_error {OCL_BUILD_PROGRAM, OCL_CREATE_KERNEL, OCL_CREATE_BUFFER, OCL_CREATE_CONTEXT,
                 OCL_CREATE_COMMAND_QUEUE, OCL_SET_KER_ARGS, OCL_ENQUE_ND_RANGE_KERNEL, OCL_COPY_DEV_TO_DEV,
-                OCL_COPY_HOST_TO_DEV,OCL_COPY_DEV_TO_HOST};
+                OCL_COPY_HOST_TO_DEV, OCL_COPY_DEV_TO_HOST, OCL_REALEASE_MEM_OBJECT};
+                
+                
+
+// Defined in: omc_ocl_interface.cpp
+size_t device_array_nr_of_elements(device_array *a);
 
 #endif

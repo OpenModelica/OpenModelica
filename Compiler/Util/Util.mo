@@ -1550,6 +1550,66 @@ algorithm
   (_,_,_,out) := tpl;
 end tuple44;
 
+public function tuple51
+  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
+  output Type_a out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+algorithm
+  (out,_,_,_,_) := tpl;
+end tuple51;
+
+public function tuple52
+  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
+  output Type_b out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+algorithm
+  (_,out,_,_,_) := tpl;
+end tuple52;
+
+public function tuple53
+  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
+  output Type_c out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+algorithm
+  (_,_,out,_,_) := tpl;
+end tuple53;
+
+public function tuple54
+  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
+  output Type_d out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+algorithm
+  (_,_,_,out,_) := tpl;
+end tuple54;
+
+public function tuple55
+  input tuple<Type_a,Type_b,Type_c,Type_d,Type_e> tpl;
+  output Type_e out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+algorithm
+  (_,_,_,_,out) := tpl;
+end tuple55;
+
 public function splitTuple2List "Takes a list of two-tuples and splits it into two lists.
   Example: splitTuple2List({(\"a\",1),(\"b\",2),(\"c\",3)}) => ({\"a\",\"b\",\"c\"}, {1,2,3})"
   input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
