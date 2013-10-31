@@ -56,6 +56,7 @@ protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import ExpressionSolve;
 protected import Flags;
 protected import HashTable;
 protected import List;
@@ -2153,6 +2154,76 @@ algorithm
     else then {};
   end match;
 end generateSolvedEqnsfromOption;
+
+public function solveEquation
+"Author: wbraun
+solves an equation w.r.t. a component reference. All equations are transformed
+to a SOLVED_EQUATION(cref, exp).
+Algorithm, when and if equation are left as they are.
+"
+  input BackendDAE.Equation eqn;
+  input DAE.Exp crefExp;
+  output BackendDAE.Equation outEqn;
+algorithm
+  outEqn := matchcontinue(eqn,crefExp)
+    local
+      DAE.Exp e1,e2;
+      DAE.Exp res;
+      DAE.ComponentRef cref, cr;
+      list<DAE.ComponentRef> crefLst;
+      BackendDAE.Equation eq;
+      Boolean differentiated;
+      DAE.ElementSource source;
+    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source,differentiated=differentiated),_)
+      equation
+        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
+      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated));
+
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source,differentiated=differentiated),_)
+      equation
+        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
+      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated));
+
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cref,exp=e2,source=source,differentiated=differentiated),_)
+      equation
+        cr = Expression.expCref(crefExp);
+        true = ComponentReference.crefEqual(cref, cr);
+      then (BackendDAE.EQUATION(crefExp, e2 ,source, differentiated));
+
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cref,exp=e2,source=source,differentiated=differentiated),_)
+      equation
+        cr = Expression.expCref(crefExp);
+        false = ComponentReference.crefEqual(cref, cr);
+        e1 = Expression.crefExp(cref);
+        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
+      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated));
+
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e2,source=source,differentiated=differentiated),_)
+      equation
+        e1 = Expression.makeConstOne(Expression.typeof(e2));
+        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
+      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated));
+
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source,differentiated=differentiated),_)
+      equation
+        (res,_) = ExpressionSolve.solve(e1,e2,crefExp);
+      then (BackendDAE.EQUATION(crefExp, res ,source, differentiated));
+/*
+    case (eq as BackendDAE.ALGORITHM(alg=_),_)
+      then eq;
+        
+    case (eq as BackendDAE.WHEN_EQUATION(size=_),_)
+      then (eq);
+
+    case (eq as BackendDAE.IF_EQUATION(conditions=_),_)
+      then (eq);
+*/
+    case(_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendEquation.solveEquation failed"});
+      then fail();
+  end matchcontinue;
+end solveEquation;
 
 public function generateRESIDUAL_EQUATION "
   author: Frenkel TUD 2010-05"

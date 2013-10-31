@@ -91,9 +91,11 @@ protected import BackendEquation;
 protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
+protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
+protected import Flags;
 protected import List;
 protected import Print;
 protected import Util;
@@ -941,8 +943,9 @@ the relative tag is not printed.
   input Boolean addSolvingInfo;
   input Boolean addMathMLCode;
   input Boolean dumpResiduals;
+  input Boolean dumpSolvedEquations;
 algorithm
-  _ := matchcontinue (inBackendDAE,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  _ := matchcontinue (inBackendDAE,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,dumpSolvedEquations)
     local
       list<BackendDAE.Var> vars,knvars,extvars,aliasvars;
 
@@ -984,18 +987,20 @@ algorithm
 
       list<DAE.Function> functionsElems;
 
-      Boolean addOrInMatrix,addSolInfo,addMML,dumpRes;
+      Boolean addOrInMatrix,addSolInfo,addMML,dumpRes,dumpSolved;
       BackendDAE.BackendDAEType btp;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree funcs;
+      
+      list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> eqnsVarsinOrderLst;
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
                  vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars), 
-                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
       equation
 
         knvars  = BackendVariable.varList(vars_knownVars);
@@ -1013,12 +1018,49 @@ algorithm
         dumpVars(aliasvars,crefIdxLstArr_aliasVars,stringAppend(ALIAS,VARIABLES_),addMML);
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
-        eqnsl = List.fold(systs,getOrderedEqs,{});
-        dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
+        eqnsl = List.fold(systs,getEqsList,{});
+        dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes, false);
         reqnsl = BackendEquation.equationList(reqns);
-        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes);
+        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes,false);
         ieqnsl = BackendEquation.equationList(ieqns);
-        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes);
+        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes,false);
+        dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
+
+        dumpConstraints(constrs);
+        functionsElems = DAEUtil.getFunctionList(funcs);
+        dumpFunctions(functionsElems);
+        dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
+        dumpStrCloseTag(DAE_CLOSE);
+      then ();
+    case (BackendDAE.DAE(systs,
+                 BackendDAE.SHARED(
+                 vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
+                 vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
+                 vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars), 
+                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
+      equation
+
+        knvars  = BackendVariable.varList(vars_knownVars);
+        extvars = BackendVariable.varList(vars_externalObject);
+        aliasvars = BackendVariable.varList(vars_aliasVars);
+
+        Print.printBuf(HEADER);
+        dumpStrOpenTag(DAE_OPEN);
+        dumpStrOpenTagAttr(VARIABLES, DIMENSION, intString(List.fold(List.map(systs,BackendDAEUtil.systemSize),intAdd,0)+listLength(knvars)+listLength(extvars)+listLength(aliasvars)));
+        //Bucket size info is no longer present.
+        vars = List.fold(systs,getOrderedVars,{});
+        dumpVars(vars,arrayCreate(1,{}),stringAppend(ORDERED,VARIABLES_),addMML);
+        dumpVars(knvars,crefIdxLstArr_knownVars,stringAppend(KNOWN,VARIABLES_),addMML);
+        dumpVars(extvars,crefIdxLstArr_externalObject,stringAppend(EXTERNAL,VARIABLES_),addMML);
+        dumpVars(aliasvars,crefIdxLstArr_aliasVars,stringAppend(ALIAS,VARIABLES_),addMML);
+        dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
+        dumpStrCloseTag(VARIABLES);
+        eqnsVarsinOrderLst = List.fold(systs,getOrderedEqsandVars,{});
+        dumpSolvedEqns(eqnsVarsinOrderLst,1,EQUATIONS,addMML,dumpRes, true);
+        reqnsl = BackendEquation.equationList(reqns);
+        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes,false);
+        ieqnsl = BackendEquation.equationList(ieqns);
+        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes,false);
         dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
 
         dumpConstraints(constrs);
@@ -1060,7 +1102,7 @@ algorithm
   dumpVars(vars,crefIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
 end dumpOrderedVars;
 
-protected function getOrderedEqs
+protected function getEqsList
   input BackendDAE.EqSystem syst;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
@@ -1069,20 +1111,132 @@ protected
 algorithm
   eqnsl := BackendEquation.equationList(BackendEquation.daeEqns(syst));
   outEqns := listAppend(inEqns,eqnsl);
-end getOrderedEqs;
+end getEqsList;
 
-protected function dumpOrderedEqs
+protected function getOrderedEqsandVars
   input BackendDAE.EqSystem syst;
-  input Boolean addMML;
-  input Boolean dumpRes;
+  input list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> inEqnsVars;
+  output list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> outEqnsVars;
 protected
-  BackendDAE.EquationArray eqns;
   list<BackendDAE.Equation> eqnsl;
+  list<BackendDAE.Var> varlst;
+  BackendDAE.StrongComponents comps;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Variables vars;
 algorithm
-  BackendDAE.EQSYSTEM(orderedEqs=eqns) := syst;
-  eqnsl := BackendEquation.equationList(eqns);
-  dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
-end dumpOrderedEqs;
+  BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars,matching=BackendDAE.MATCHING(comps=comps)) := syst;
+  outEqnsVars := getOrderedEqs2(comps, eqns, vars, inEqnsVars);
+end getOrderedEqsandVars;
+
+protected function getOrderedEqs2
+  input BackendDAE.StrongComponents inComps;
+  input BackendDAE.EquationArray eqns;
+  input BackendDAE.Variables vars;
+  input list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> inAccum;
+  output list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> outEqnsVarsLst;
+algorithm
+  outEqnsVarsLst :=
+  match(inComps, eqns, vars, inAccum)
+    local
+      Integer e,v;
+      list<Integer> elst,vlst,vlst1,elst1;
+      BackendDAE.StrongComponent comp;
+      BackendDAE.StrongComponents rest;
+      BackendDAE.Var var;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Var> inAccumVars, varlst, varlst1;
+      list<BackendDAE.Equation> inAccumEqns, eqnlst, eqnlst1;
+      list<tuple<Integer,list<Integer>>> eqnsvartpllst;
+      tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>> eqnsVars;
+      list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> result;
+    case ({},_,_,_)  then inAccum;
+    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_,_)
+      equation
+        var = BackendVariable.getVarAt(vars,v);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        result = listAppend(inAccum,{({eqn},{var})});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst)::rest,_,_,_)
+      equation
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqnlst = BackendEquation.getEqns(elst,eqns);
+        result = listAppend(inAccum,{(eqnlst,varlst)});
+        result = getOrderedEqs2({comp},eqns,vars,result);
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest,_,_,_)
+      equation
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqnlst = BackendEquation.getEqns(elst,eqns);
+        result = listAppend(inAccum,{(eqnlst,varlst)});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,_,_,_)
+      equation
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        result = listAppend(inAccum,{({eqn},varlst)});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
+      equation
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        result = listAppend(inAccum,{({eqn},varlst)});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,_,_)
+      equation
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        result = listAppend(inAccum,{({eqn},varlst)});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
+      equation
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        result = listAppend(inAccum,{({eqn},varlst)});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst)::rest,_,_,_)
+      equation
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        result = listAppend(inAccum,{({eqn},varlst)});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst)::rest,_,_,_)
+      equation
+        vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
+        varlst1 = List.map1r(vlst1, BackendVariable.getVarAt, vars);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        varlst = listAppend(varlst1,varlst);
+        elst1 = List.map(eqnsvartpllst,Util.tuple21);
+        eqnlst1 = BackendEquation.getEqns(elst1,eqns);
+        eqnlst = BackendEquation.getEqns(elst,eqns);
+        eqnlst = listAppend(eqnlst1,eqnlst);
+        result = listAppend(inAccum,{(eqnlst,varlst)});
+        result = getOrderedEqs2(rest,eqns,vars,result);
+      then
+        result;
+    case (_::rest,_,_,_)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("XMLDump.getOrderedEqs2 failed!");
+      then
+        fail();
+  end match;
+end getOrderedEqs2;
 
 public function dumpDAEVariableAttributes "
 This function dump the attributes a variable could have,
@@ -1214,6 +1368,46 @@ algorithm
 end dumpDirectionStr;
 
 
+public function dumpSolvedEqns "
+
+This function prints a system of equation in XML format.
+The output is:
+<Content DIMENSION=..>
+  ...
+</Content>
+"
+  input list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> eqns;
+  input Integer inCount;
+  input String inContent;
+  input Boolean addMathMLCode;
+  input Boolean dumpResiduals;
+  input Boolean dumpSolved;
+algorithm
+  _:=
+  match (eqns,inCount,inContent,addMathMLCode,dumpResiduals,dumpSolved)
+    local
+      Boolean addMMLCode;
+      Integer len;
+      list<BackendDAE.Equation> eqnsLst;
+      list<BackendDAE.Var> varLst;
+      list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> rest;
+    case ({},_,_,_,_,_) then ();
+    case (({},_)::rest,_,_,_,_,_)
+      equation
+        dumpSolvedEqns(rest, inCount, inContent, addMathMLCode,dumpResiduals,dumpSolved);
+      then();
+    case ((eqnsLst,varLst)::rest,_,_,addMMLCode,_,_)
+      equation
+        len = listLength(eqnsLst);
+        len >= 1 = true;
+        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
+        dumpEqns2(eqnsLst, varLst, inCount, addMMLCode,dumpResiduals,dumpSolved);
+        dumpStrCloseTag(inContent);
+        dumpSolvedEqns(rest, inCount+1, inContent, addMathMLCode,dumpResiduals,dumpSolved);
+      then ();
+  end match;
+end dumpSolvedEqns;
+
 public function dumpEqns "
 
 This function prints a system of equation in XML format.
@@ -1226,24 +1420,25 @@ The output is:
   input String inContent;
   input Boolean addMathMLCode;
   input Boolean dumpResiduals;
+  input Boolean dumpSolved;
 algorithm
   _:=
-  matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals)
+  matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals,dumpSolved)
     local
       Boolean addMMLCode;
       Integer len;
-    case ({},_,_,_) then ();
-    case (_,_,_,_)
+    case ({},_,_,_,_) then ();
+    case (_,_,_,_,_)
       equation
         len = listLength(eqns);
         len >= 1 = false;
       then();
-    case (_,_,addMMLCode,_)
+    case (_,_,addMMLCode,_,_)
       equation
         len = listLength(eqns);
         len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
-        dumpEqns2(eqns, 1,addMMLCode,dumpResiduals);
+        dumpEqns2(eqns, {}, 1,addMMLCode,dumpResiduals,dumpSolved);
         dumpStrCloseTag(inContent);
       then ();
   end matchcontinue;
@@ -1254,24 +1449,30 @@ protected function dumpEqns2 "
   Helper function to dumpEqns
 "
   input list<BackendDAE.Equation> inEquationLst;
+  input list<BackendDAE.Var> inVarLst;
   input Integer inInteger;
   input Boolean addMathMLCode;
   input Boolean dumpResiduals;
+  input Boolean dumpSolved;
 algorithm
   _:=
-  match (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
+  matchcontinue (inEquationLst,inVarLst,inInteger,addMathMLCode,dumpResiduals,dumpSolved)
     local
       Integer index;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
+      BackendDAE.Var var;
+      list<BackendDAE.Var> vars;
       Boolean addMMLCode;
-    case ({},_,_,_) then ();
-    case ((eqn :: eqns),index,addMMLCode,false)
+      DAE.ComponentRef cref;
+      DAE.Exp varexp;
+    case ({},_,_,_,_,_) then ();
+    case ((eqn :: eqns),_,index,addMMLCode,false,false)
       equation
         dumpEquation(eqn, intString(index),addMMLCode);
-        dumpEqns2(eqns, index+1,addMMLCode,false);
+        dumpEqns2(eqns, inVarLst, index+1,addMMLCode, false, false);
       then ();
-    case ((eqn :: eqns),index,addMMLCode,true)
+    case ((eqn :: eqns),_,index,addMMLCode,true,false)
       equation
         //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
         //This should be done as above. The problem is that the BackendEquation.equationToResidualForm(eqn) method
@@ -1287,9 +1488,23 @@ algorithm
         dumpResidual(eqn, intString(index),addMMLCode);
         //will be substituted with:
         //dumpEquation(BackendEquation.equationToResidualForm(eqn), intString(index),addMMLCode);
-        dumpEqns2(eqns, index+1,addMMLCode,true);
+        dumpEqns2(eqns, inVarLst, index+1,addMMLCode,true,false);
       then ();
-  end match;
+    case ((eqn :: eqns),(var :: vars),index,addMMLCode,false,true)
+      equation
+        cref = BackendVariable.varCref(var);
+        varexp = Expression.crefExp(cref);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
+        eqn = BackendEquation.solveEquation(eqn, varexp);
+        dumpEquation(eqn, intString(index),addMMLCode);
+        dumpEqns2(eqns, vars, index+1, addMMLCode, false, true);
+      then ();
+    case ((eqn :: eqns),(var :: vars),index,addMMLCode,false,true)
+      equation
+        dumpEquation(eqn, intString(index),addMMLCode);
+        dumpEqns2(eqns, vars, index+1, addMMLCode, false, true);
+      then ();
+  end matchcontinue;
 end dumpEqns2;
 
 
@@ -3737,7 +3952,6 @@ algorithm
       then ();
   end match;
 end dumpResidual;
-
 
 public function unaryopSymbol "
 function: unaryopSymbol

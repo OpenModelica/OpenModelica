@@ -4313,7 +4313,7 @@ algorithm
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -4337,7 +4337,7 @@ algorithm
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -4359,14 +4359,35 @@ algorithm
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
-        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
         (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
-
+        
+    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="stateSpace"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
+      equation
+        //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
+        Error.clearMessages() "Clear messages";
+        compileDir = System.pwd() +& System.pathDelimiter();
+        cname_str = Absyn.pathString(classname);
+        filenameprefix = Util.if_(filenameprefix ==& "<default>", cname_str, filenameprefix);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(filenameprefix));
+        indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
+        xml_filename = stringAppendList({filenameprefix,".xml"});
+        Print.clearBuf();
+        XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
+        xml_contents = Print.getString();
+        Print.clearBuf();
+        System.writeFile(xml_filename,xml_contents);
+        compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
+      then
+        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
   end match;
 end dumpXMLDAE;
 
