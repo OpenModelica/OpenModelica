@@ -6429,18 +6429,12 @@ algorithm
     case (DAE.SCONST(string = _),_) then true;
     case (DAE.ENUM_LITERAL(name = _),_) then true;
 
-    /* A bit torn if we should simplify ranges or not */
-    case (DAE.RANGE(start=e1,step=NONE(),stop=e2),_) then isConstWork(e1,isConstWork(e2,true));
-    case (DAE.RANGE(start=e,step=SOME(e1),stop=e2),_) then isConstWork(e,isConstWork(e1,isConstWork(e2,true)));
-
     case (DAE.ARRAY(array = ae),_) then isConstValueWorkList(ae,true);
 
     case (DAE.MATRIX(matrix = matrix),_)
       equation
         res = List.fold(matrix,isConstValueWorkList,true);
       then res;
-
-    case (DAE.TUPLE(PR = ae),_) then isConstWorkList(ae,true);
 
     else false;
 
