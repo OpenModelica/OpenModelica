@@ -161,265 +161,26 @@ important topics are written in bold
 Modelica language extension
 \end_layout
 
-\begin_layout Itemize
+\begin_layout Standard
 
 \series bold
-Allow writing equations independent on particular domain and also coordinate
- system?
+Coordinates
+\end_layout
+
+\begin_layout Itemize
+Should be some coordinate system defined by default within the domain deffinitio
+n? (Perhaps cartesian by default and others defined extra by user if needed?)
+ 
 \end_layout
 
 \begin_deeper
 \begin_layout Itemize
-perhaps yes 
-\end_layout
-
-\begin_deeper
-\begin_layout Itemize
-using coordinate free differential operators 
-\family typewriter
-(grad, div
-\family default
- etc.) 
-\end_layout
-
-\begin_layout Itemize
-or using 
-\family typewriter
-dom
-\family default
- (as 
-\family typewriter
-this
-\family default
- in oop
-\family typewriter
-, described later)
-\family default
- to addres domain generaly in differentiation 
-\end_layout
-
-\begin_layout Itemize
-or using 
-\family typewriter
-replaceable
-\family default
- and 
-\family typewriter
-redeclare
-\family default
- on domain class
+I would say no.
+ If yes, user should have option to give them a name, so that they are not
+ always x, y, z.
 \end_layout
 
 \end_deeper
-\begin_layout Itemize
-but how to define fields in a domain independent way?
-\end_layout
-
-\begin_layout Itemize
-how to applay domain independetly written equations on particular domain?
-\end_layout
-
-\begin_layout Itemize
-Write also boundary conditions domain independent?
-\end_layout
-
-\begin_layout Itemize
-Notation for normal vector to domain boundaries e.g.
- 
-\family typewriter
-omega.left.n.
-
-\family default
- How to write normal vector domain-independently? -- perhaps keyword 
-\family typewriter
-region
-\end_layout
-
-\end_deeper
-\begin_layout Itemize
-
-\series bold
-How to deal with (name) coordinate (independent) 
-\series default
-variables, so that it doesn't meddle with other variables (ODE)? Should
- it be fixed or defined within the domain deffinition? (Or cartesian fixed
- and others defined extra by user if needed?) Some approaches (possibly
- good ideas underlined):
-\end_layout
-
-\begin_deeper
-\begin_layout Itemize
-
-\family typewriter
-\bar under
-in domain_name.region_name
-\family default
- opens scope.
- Use keyword 
-\family typewriter
-domain
-\family default
- (or just 
-\family typewriter
-dom
-\family default
-), similarly as 
-\family typewriter
-this
-\family default
- in oop to address coordinate variables defined within this domain.
- Than coordinate names may be fixed.
-\begin_inset Newline newline
-\end_inset
-
-E.g.
- 
-\family typewriter
-pder(u, dom.x)=0
-\begin_inset space \quad{}
-\end_inset
-
-in omega.left
-\begin_inset Newline newline
-\end_inset
-
-can be used in combination with fixed or user-defined coordinate names
-\end_layout
-
-\begin_layout Itemize
-
-\bar under
-name by user (use some special data type (
-\family typewriter
-Coordinate
-\family default
- or 
-\family typewriter
-Independent
-\family default
-) to define independent variables within domain record (or class) -- see
- 
-\begin_inset CommandInset ref
-LatexCommand ref
-reference "domainDeffinitions"
-
-\end_inset
-
-
-\end_layout
-
-\begin_deeper
-\begin_layout Itemize
-in this case shall we have nevertheless some coordinates defined by default
- (perhaps cartesian)?
-\end_layout
-
-\end_deeper
-\begin_layout Itemize
-NO.
- avoid coordinate variables at all
-\end_layout
-
-\begin_deeper
-\begin_layout Itemize
-
-\bar under
-allow writing equations coordinate-free, using only 
-\family typewriter
-pder(u,time), grad, div,
-\family default
- ...
- operators (does it mean, we need no coordinates defined in domain?).
-\end_layout
-
-\begin_layout Itemize
-use operators 
-\family typewriter
-pderx(u)
-\family default
-, 
-\family typewriter
-pdert(u) or
-\end_layout
-
-\end_deeper
-\begin_layout Itemize
-NO.
-
-\family typewriter
- domain_name.variable_name
-\family default
- (
-\family typewriter
-e.g.
- omega.x
-\family default
-).
- -- This makes equation domain dependent.
-\end_layout
-
-\begin_layout Itemize
-NO.
- Fixed names 
-\family typewriter
-x, y, z
-\family default
- used stand-alone.
- If they meddle with other variable, infere which one is it from tha fact
- that we differentiate with respect to this variable and from the actual
- domain (indicated with 
-\family typewriter
-in
-\family default
- op.).
- -- Makes model confusing.
-\end_layout
-
-\begin_layout Itemize
-NO.
- fixed names and approach ODE variables from PDE in some special way.
-\end_layout
-
-\begin_layout Itemize
-NO.
- use longer name for coordinate variables (e.g.
- 
-\family typewriter
-spaceX
-\family default
- ...)
-\end_layout
-
-\end_deeper
-\begin_layout Itemize
-
-\series bold
-Allow other independent variables than space variables? It would require
- not to define x, y, z coordinates (independent variables) by default but
- define independent variables always in the domain deffinition as discused
- above.
-\end_layout
-
-\begin_layout Itemize
-How to map shape function return values on particular space variables (e.g.
- 
-\family typewriter
-x, y, z
-\family default
-) when they are not ordered? And what if there are more coordinate systems
- defined (e.g.
- cartesian and polar)? The same problem holds for functions that set start
- values to fields.
-\end_layout
-
-\begin_layout Itemize
-How to define general differential operators (as 
-\family typewriter
-grad, div
-\family default
- ...) , if we use user defined coordinates?
-\end_layout
-
 \begin_layout Itemize
 How to call atribute of Coordinate variable saying the type of the coordinate
  (now called 
@@ -447,6 +208,133 @@ cartesian
 \end_layout
 
 \begin_layout Itemize
+Is needed 
+\family typewriter
+Coordinate
+\family default
+ type?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Could be used just 
+\family typewriter
+Real
+\family default
+ instead and compiler would infer that it is coordinate as it distinguishes
+ e.g.
+ state and algebraic variable now? How it may be infered? If domain is defined
+ using coordinate equations -- coordinate variables are either in region
+ deffinitions (e.g.
+ 
+\family typewriter
+Region1D interior(x in (a,b));
+\family default
+) or appear in equations with these variables.
+\end_layout
+
+\begin_layout Itemize
+or should it be 
+\family typewriter
+coordinate Real x;
+\family default
+ or 
+\family typewriter
+coordinate x;
+\family default
+? Coordinate isn't actualy a data type, as it doesn't hold any data, it
+ has no value.
+ It is symbolic stuff.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Should coordinates of one system be placed in an array so that they are
+ ordered? Than individual elements could have alieses with the usual name.
+ E.g.
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+cartesian[1] = x; cartesian[2] = y;
+\end_layout
+
+\begin_layout Itemize
+How to map shape function return values on particular space variables (e.g.
+ 
+\family typewriter
+x, y, z
+\family default
+) when they are not ordered? And what if there are more coordinate systems
+ defined (e.g.
+ cartesian and polar)? The same problem holds for functions that set start
+ values to fields.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Other
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+How to define domain: using boundary description, shape-function or shape-equati
+ons?
+\end_layout
+
+\begin_layout Itemize
+Should be built-in 
+\family typewriter
+class Domain
+\family default
+ empty, or contain perhaps 
+\family typewriter
+interior
+\family default
+ and 
+\family typewriter
+boundary
+\family default
+ regions? 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+perhaps it should contain 
+\family typewriter
+replaceable interior
+\family default
+ of general type 
+\family typewriter
+Region
+\family default
+.
+ Ut would be redeclared to 
+\family typewriter
+Region1D, Region2D, 
+\family default
+or 
+\family typewriter
+Region3D 
+\family default
+later
+\family typewriter
+.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+How to define general differential operators (as 
+\family typewriter
+grad, div
+\family default
+ ...) , if we use user defined coordinates?
+\end_layout
+
+\begin_layout Itemize
 
 \series bold
 How to write equations (boundary conditions) that combine field variables
@@ -457,7 +345,7 @@ How to write equations (boundary conditions) that combine field variables
 
 \begin_deeper
 \begin_layout Itemize
-Using a ragion that is is subset of both domains -- how to write this?
+Using a region that is subset of both domains -- how to write this?
 \end_layout
 
 \begin_layout Itemize
@@ -486,6 +374,46 @@ I dislike usage of arguments in equations.
 \end_layout
 
 \end_deeper
+\begin_layout Itemize
+addition of regions (operator +)
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+the meaning is unintuitive, it is not clear thet regions are treated as
+ sets
+\end_layout
+
+\begin_layout Itemize
+the resulting type is doubtable, should it be realy region as well? In 1D
+ it is completly strange.
+ In Rectangle2D e.g the 
+\family typewriter
+left
+\family default
+ and 
+\family typewriter
+top
+\family default
+ regions are defined using the same shape-functon, but shape-function of
+ 
+\family typewriter
+left + right
+\family default
+ is different, and complicated -- requires conditions.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Atribut 
+\family typewriter
+interval
+\family default
+ in region constructor is assigned an interval value or a single constant.
+ The letter is strange.
+ Should be done in different way.
+\end_layout
+
 \begin_layout Itemize
 Initialization.
 \end_layout
@@ -536,8 +464,55 @@ n using some coordinates.
 \end_layout
 
 \begin_layout Itemize
-Is allowed passing functions as variable? It is used in setting start value
- to fields.
+is OK := op in fields?
+\end_layout
+
+\begin_layout Itemize
+Allow higer derivatives? Perhaps allow only higher space derivatives, not
+ time? Why are higher derivatives not allowed in current Modelica?
+\end_layout
+
+\begin_layout Itemize
+Allow some of this shortcuts to 
+\family typewriter
+pder(u,dom.x) = ...
+ in omega.interior
+\family default
+:
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+pder(u,dom.x) = ...
+ in omega //if no region specified, interior used implicitly
+\begin_inset Newline newline
+\end_inset
+
+pder(u,omega.x) = ...
+ //in omega ommited, information inferd from omega.x
+\end_layout
+
+\begin_layout Itemize
+Field variables and equations written within domains?
+\end_layout
+
+\begin_layout Itemize
+Multiple inheritance of domains -- should it be allowd, what is the meaning?
+\end_layout
+
+\begin_layout Itemize
+Normal vector -- should it be written rather in function-like way, 
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+normal(omega.region1)
+\family default
+ rather than 
+\family typewriter
+omega.region1.n
 \end_layout
 
 \begin_layout Standard
@@ -556,6 +531,140 @@ height "1pt"
 Solved problems:
 \end_layout
 
+\begin_layout Itemize
+
+\series bold
+How to deal with (name of) coordinate (independent) 
+\series default
+variables, so that it doesn't meddle with other variables (ODE)?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+coordinates are defined within the domain class.
+ This solves the problem.
+ Inside this class they may be addressed directly, outside 
+\family typewriter
+className.coordName
+\family default
+ as other class members are accesed.
+ In equation may be used shortcut keywords 
+\family typewriter
+domain
+\family default
+ (or 
+\family typewriter
+dom
+\family default
+?) (and 
+\family typewriter
+region
+\family default
+) to address domain (and region) specified with 
+\family typewriter
+in
+\family default
+ operator.
+
+\family typewriter
+ E.g.
+\begin_inset Newline newline
+\end_inset
+
+pder(u, domain.x)=0
+\begin_inset space \quad{}
+\end_inset
+
+in omega.left
+\end_layout
+
+\begin_layout Itemize
+NO.
+ avoid coordinate variables at all
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\bar under
+allow writing equations coordinate-free, using only 
+\family typewriter
+pder(u,time), grad, div,
+\family default
+ ...
+ operators (does it mean, we need no coordinates defined in domain?).
+\end_layout
+
+\begin_layout Itemize
+use operators 
+\family typewriter
+pderx(u)
+\family default
+, 
+\family typewriter
+pdert(u) or
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+NO.
+ Fixed names 
+\family typewriter
+x, y, z
+\family default
+ used stand-alone.
+ If they meddle with other variable, infere which one is it from tha fact
+ that we differentiate with respect to this variable and from the actual
+ domain (indicated with 
+\family typewriter
+in
+\family default
+ op.).
+ -- Makes model confusing.
+\end_layout
+
+\begin_layout Itemize
+NO.
+ fixed names and approach ODE variables from PDE in some special way.
+\end_layout
+
+\begin_layout Itemize
+NO.
+ use longer name for coordinate variables (e.g.
+ 
+\family typewriter
+spaceX
+\family default
+ ...)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+Allow writing equations independent on particular domain and also coordinate
+ system?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+yes, using 
+\family typewriter
+replaceable
+\family default
+ and 
+\family typewriter
+redeclare
+\family default
+ on domain class and using coordinate free differential operators if we
+ even don't know the dimension 
+\family typewriter
+(grad, div
+\family default
+ etc.) 
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 Rename ranges to intervals?
 \end_layout

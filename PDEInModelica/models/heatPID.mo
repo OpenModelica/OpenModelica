@@ -23,9 +23,8 @@ model heatPID
   1/(c*rho)*diverg(W) = - pder(T,t)    in room.interior;
   W = -lambda*grad(T)                  in room.interior;
 //TODO: use normal vector:
-  W[1] = P/(lx*ly)                     in room.left;
-  W[2] = 0                             in room.front + room.rare;
-  W[3] = 0                             in room.top + room.bottom;
+  W*region.n = P/(lx*ly)               in room.left;
+  W*region.n = 0                             in room.front + room.rare + room.top + room.bottom;
   W[1] = kappa*(T - Tout)              in room.right;
   Ts = T                               in room.sensorPosition;
   e = Td - Ts;

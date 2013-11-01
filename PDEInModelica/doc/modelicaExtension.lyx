@@ -367,7 +367,7 @@ record FieldCircular2DGrid
 
 \begin_layout Plain Layout
 
-	parameter FieldType start = zeros(domain.nx,domain.ny,domain.nz.);
+	parameter FieldType start = zeros(domain.nx,domain.ny,domain.nz);
 \end_layout
 
 \begin_layout Plain Layout
@@ -377,7 +377,7 @@ record FieldCircular2DGrid
 
 \begin_layout Plain Layout
 
-end FieldCircularZDGrid; 
+end FieldCircular2DGrid; 
 \end_layout
 
 \end_inset
@@ -717,17 +717,44 @@ domain
 \begin_inset space ~
 \end_inset
 
-records
-\begin_inset space ~
-\end_inset
-
-(or
-\begin_inset space ~
-\end_inset
-
-class) 
+class Any domain class extends built-in 
 \family typewriter
-DomainLineSegment1D
+class Domain
+\family default
+, that has one member 
+\family typewriter
+replaceable Region interior;
+\family default
+.
+ Other domains extends this general domain and redeclares 
+\family typewriter
+Region interior
+\family default
+ into 
+\family typewriter
+Region1D
+\family default
+, 
+\family typewriter
+2D
+\family default
+ or 
+\family typewriter
+3D
+\family default
+.
+ During translation are domains treated in different way than usual classes.
+
+\family typewriter
+ 
+\family default
+There will be packege 
+\family typewriter
+PDEDomains
+\family default
+ containing common domains
+\family typewriter
+ DomainLineSegment1D
 \family default
 , 
 \family typewriter
@@ -741,28 +768,26 @@ DomainCircular2D
 \family typewriter
 DomainBlock3D
 \family default
- ...
- defined within 
-\family typewriter
-PDE
-\family default
- package, user can define his/her own domain records.
- Domain record contains at least one region member 
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-and coordinate definition?
-\end_layout
-
-\end_inset
-
-.
- During translation is treated in different way than usual records.
+ and others.
+ User can define other new domain classes.
+ 
 \begin_inset Newline newline
 \end_inset
 
 Needs OMC modification.
+\end_layout
+
+\begin_layout Description
+
+\family typewriter
+Coordinate
+\family default
+ type to define new coordinates - design of concept unfinished.
+ 
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description
@@ -933,11 +958,7 @@ stateSelect
 \family typewriter
 start
 \family default
- can be assigned constant value or function of type (Real×Real×...)
-\begin_inset Formula $\rightarrow$
-\end_inset
-
-typeOfField, number of arguments is same as dimension of fields domain.
+ can be assigned constant value or a field literal.
  Start attribute can be treated as scalar or as array to assign initial
  values also to derivatives.
  E.g.
@@ -968,6 +989,50 @@ reference "String-equation-(1D)"
 
 \family default
 New language element.
+\end_layout
+
+\begin_layout Description
+\align left
+field
+\begin_inset space ~
+\end_inset
+
+literal
+\begin_inset space ~
+\end_inset
+
+constructor 
+\begin_inset Quotes sld
+\end_inset
+
+field
+\begin_inset Quotes srd
+\end_inset
+
+ 
+\begin_inset Quotes sld
+\end_inset
+
+(” expr1 ”in” expr2 ”)”, 
+\begin_inset Newline newline
+\end_inset
+
+or just shortcut 
+\begin_inset Newline newline
+\end_inset
+
+”{” expr1 ”in” expr2 ”}”
+\begin_inset Newline newline
+\end_inset
+
+e.g.
+ 
+\family typewriter
+
+\begin_inset Newline newline
+\end_inset
+
+field Real f = field(2*dom.x+dom.y in omega.interior);
 \end_layout
 
 \begin_layout Description
@@ -1017,7 +1082,7 @@ operator for partial and directional derivative of real field.
 \family typewriter
 pder(u,omega.x,omega.x,omega.y)
 \family default
- means
+ means 
 \begin_inset Formula $\frac{\partial^{3}u}{\partial x^{2}y}$
 \end_inset
 
@@ -1038,6 +1103,30 @@ pder
  operator not 
 \family typewriter
 der.
+\end_layout
+
+\begin_layout Description
+normal
+\begin_inset space ~
+\end_inset
+
+vector implicitly defined for all N-1 dimensional regions in N dimensional
+ domain.
+ (e.g.
+ 
+\family typewriter
+omega.left.n
+\family default
+) Used in boundary condition equations.
+ How to write domain and region independently - perhaps 
+\family typewriter
+region.n
+\family default
+?
+\begin_inset Newline newline
+\end_inset
+
+New language element.
 \end_layout
 
 \begin_layout Description
@@ -1249,30 +1338,6 @@ New language element.
 \end_layout
 
 \begin_layout Description
-normal
-\begin_inset space ~
-\end_inset
-
-vector implicitly defined for all N-1 dimensional regions in N dimensional
- domain.
- (e.g.
- 
-\family typewriter
-omega.left.n
-\family default
-) Used in boundary condition equations.
- How to write domain and region independently - perhaps 
-\family typewriter
-region.n
-\family default
-?
-\begin_inset Newline newline
-\end_inset
-
-New language element.
-\end_layout
-
-\begin_layout Description
 vector
 \begin_inset space ~
 \end_inset
@@ -1292,19 +1357,6 @@ div,
 \end_inset
 
 rot
-\end_layout
-
-\begin_layout Description
-
-\family typewriter
-Coordinate
-\family default
- type to define new coordinates - design of concept unfinished.
- 
-\begin_inset Newline newline
-\end_inset
-
-New language element.
 \end_layout
 
 \end_body

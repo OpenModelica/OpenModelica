@@ -1,7 +1,10 @@
-//approach 1:
+
+
 package PDEDomains
   import C = Modelica.Constants;
-  record DomainLineSegment1D
+//approach 1:
+  class DomainLineSegment1D
+    extends Domain;
     parameter Real l = 1;
     parameter Real a = 0;
     function shapeFunc
@@ -12,11 +15,12 @@ package PDEDomains
     Region1D interior(shape = shapeFunc, interval = {0,1});
     Region0D left(shape = shapeFunc, interval = 0);
     Region0D right(shape = shapeFunc, interval = 1);
-    Region0D boundary = left + right;
+    Region0D boundary = left + right; {left, right};
   end DomainLineSegment1D;
 
 //approach 2:
-  record DomainLineSegment1D
+  class DomainLineSegment1D
+    extends Domain;
     parameter Real l = 1;
     parameter Real a = 0;
     parameter Real b = a + l;
@@ -28,7 +32,8 @@ package PDEDomains
   end DomainLineSegment1D;
 
 //approach 1:
-class DomainRectangle2D
+  class DomainRectangle2D
+    extends Domain;
     parameter Real Lx = 1;
     parameter Real Ly = 1;
     parameter Real ax = 0;
@@ -39,21 +44,23 @@ class DomainRectangle2D
     end shapeFunc;
     Coordinate x (name = "cartesian");
     Coordinate y (name = "cartesian");
-//    Coordinate r (name = "polar");
-//    Coordinate theta (name = "polar");
-//    equation
-//      r = sqrt(x^2 + y^2);
-//      theta = arctg(y/x);
+    Coordinate r (name = "polar");
+    Coordinate theta (name = "polar");
+    equation
+      r = sqrt(x^2 + y^2);
+      theta = arctg(y/x);
     Region2D interior(shape = shapeFunc, interval = {{0,1},{0,1}});
     Region1D right(shape = shapeFunc, interval = {1,{0,1}});
-    Region1D bottom(shape = shapeFunc, interval = {{0,1},0});
+    Region1D bottom(shape = shapeFunc, interval = {{0,2},0});
     Region1D left(shape = shapeFunc, interval = {0,{0,1}});
     Region1D top(shape = shapeFunc, interval = {{0,1},1});
     Region1D boundary = right + bottom + left + top;
+    Region1D boundary(union = {right,  bottom, left, top});
   end DomainRectangle2D;
 
 //approach 2:
   class DomainRectangle2D
+    extends Domain;
     Coordinate x (name = "cartesian");
     Coordinate y (name = "cartesian");
 //    Coordinate r (name = "polar");
@@ -77,6 +84,7 @@ class DomainRectangle2D
 
 //approach 1:
   class DomainCircular2D
+    extends Domain;
     parameter Real radius = 1;
     parameter Real cx = 0;
     parameter Real cy = 0;
@@ -89,21 +97,21 @@ class DomainRectangle2D
     end shapeFunc;
     Coordinate x (name="cartesian");
     Coordinate y (name="cartesian";
-    Coordinate r (name="polar");
-    Coordinate theta (name="polar");
-    equation
-      r = sqrt(x^2 + y^2);
-      theta = arctg(y/x);
+    // Coordinate r (name="polar");
+    // Coordinate theta (name="polar");
+    // equation
+    //   r = sqrt(x^2 + y^2);
+    //   theta = arctg(y/x);
     Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});
     Region1D boundary(shape = shapeFunc, interval = {1,{0,1}});
   end DomainCircular2D;
 
 //approach 2:
   class DomainCircular2D
+    extends Domain;
     parameter Real radius = 1;
     parameter Real cx = 0;
     parameter Real cy = 0;
-    Real u,v;
     Coordinate x (name="cartesian");
     Coordinate y (name="cartesian";
     Coordinate r (name="polar");
@@ -116,7 +124,8 @@ class DomainRectangle2D
   end DomainCircular2D;
 
 //approach 1:
-  record DomainBlock3D
+  class DomainBlock3D
+    extends Domain;
     parameter Real Lx = 1, Ly = 1, Lz = 1;
     parameter Real ax = 0, ay = 0, az = 0;
     function shapeFunc
