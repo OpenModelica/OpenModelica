@@ -213,6 +213,7 @@ AC_MSG_RESULT([yes])
 fi
 else
   rmlhome=CONFIGUREDWITHOUTRMLDONTTRYTHISMAKEFILETARGETAGAIN
+  OMCTARGET=omc-bootstrapped
 fi
 
 dnl Checks for libraries.
