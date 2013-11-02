@@ -36,6 +36,7 @@ import json
 import logging
 import sys
 import time
+import hashlib
 from optparse import OptionParser
 
 import svgwrite
@@ -1035,7 +1036,8 @@ def generateSvg(filename, iconGraphics):
     height = maxY - minY
 
     dwg = svgwrite.Drawing(filename, size=(width, height), viewBox="0 0 " + str(width) + " " + str(height))
-    dwg.add(svgwrite.base.Desc(iconGraphics[-1]['className']))
+    # Makes hashing not work
+    # dwg.add(svgwrite.base.Desc(iconGraphics[-1]['className']))
 
     for iconGraphic in iconGraphics:
         for graphics in iconGraphic['graphics']:
@@ -1062,7 +1064,11 @@ def generateSvg(filename, iconGraphics):
             group.add(port_info)
 
             dwg.add(group)
-    dwg.save()
+    hashName = hashlib.sha1(dwg.tostring()).hexdigest() + ".svg"
+    hashPath = os.path.join(os.path.dirname(filename),hashName)
+    if not os.path.exists(hashPath):
+      dwg.saveas(hashPath)
+    os.symlink(hashName, filename)
 
     return dwg
 

@@ -49,6 +49,8 @@ runScript("loadModel.mos");
 getErrorString();
 getClassNames();
 
+// should we keep readable names (nice online), or use the hashed names in the links (nice if you want a zipped version to work on Windows)
+readSymlinks := false;
 // should we generate documentation for OM built-in functions?
 genBuiltin := true;
 // should we generate MetaModelica documentation?
@@ -111,14 +113,23 @@ function svgIcon
   input String file;
   input String link;
   input String cssClass;
+  input Boolean readSymlinks;
   output String tag;
+protected
+  String hashedName;
 algorithm
-  tag := if OpenModelica.Scripting.regularFileExists(file) then \"<a href=\\\"\" + link + \"\\\"><img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ file +\"\\\" /></a> \" else \"\";
+  if OpenModelica.Scripting.regularFileExists(file) then
+    hashedName := if readSymlinks then OpenModelica.Scripting.dirname(file) + \"/\" + OpenModelica.Scripting.basename(OpenModelica.Scripting.realpath(file)) else file;
+    tag := \"<a href=\\\"\" + (if link == file then hashedName else link) + \"\\\"><img class=\\\"\"+cssClass+\"\\\" src=\\\"\"+ hashedName +\"\\\" /></a> \";
+  else
+    tag := \"\";
+  end if;
 end svgIcon;
 
 function head
   input String strs[:];
   input String svgFile;
+  input Boolean readSymlinks;
   output String head;
 protected
   String compound := \"\", file;
@@ -130,7 +141,7 @@ algorithm
   <title>\"+sum(s + \".\" for s in strs[1:end-1])+strs[end]+\"</title>
   </head>
   <body>
-  <h1>\" + svgIcon(\"Icons/\" + svgFile,\"Icons/\" + svgFile,\"svgiconhead\") + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
+  <h1>\" + svgIcon(\"Icons/\" + svgFile,\"Icons/\" + svgFile,\"svgiconhead\",readSymlinks=readSymlinks) + \"<a class=\\\"omc-h1-a\\\" href=\\\"index.html\\\">.</a>\";
   for ident in strs[1:end-1] loop
     compound := if compound == \"\" then ident else compound+\".\"+ident;
     file := filename(compound+\".html\");
@@ -180,11 +191,11 @@ end Item;
 echo(false);
 items:={Item(
       filename(OpenModelica.Scripting.typeNameString(c))+".html",
-      head(OpenModelica.Scripting.typeNameStrings(c),filename(OpenModelica.Scripting.typeNameString(c))+".svg"),
+      head(OpenModelica.Scripting.typeNameStrings(c),filename(OpenModelica.Scripting.typeNameString(c))+".svg",readSymlinks=readSymlinks),
       OpenModelica.Scripting.getDocumentationAnnotation(c),
       preSuffixIfNotEmpty(
         "<h2>Contents</h2>\n<table><tr><th>Name</th><th>Description</th></tr>",
-        sum("<tr><td>"+ svgIcon("Icons/" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameString(cl)) + ".html","svgiconsmall") +"<a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
+        sum("<tr><td>"+ svgIcon("Icons/" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".svg",filename(OpenModelica.Scripting.typeNameString(cl)) + ".html","svgiconsmall",readSymlinks=readSymlinks) +"<a href=\"" + filename(OpenModelica.Scripting.typeNameString(cl)) + ".html\">" +
              last(OpenModelica.Scripting.typeNameStrings(cl)) + "</a></td>" + "<td>" +
              toHtml(OpenModelica.Scripting.getClassComment(cl)) +
              "</td></tr>\n"
@@ -225,7 +236,7 @@ for cl in classNames loop
     end if;
     comment := OpenModelica.Scripting.stringReplace(getClassComment(cl),"&","&amp;"); // let's escape "&" on the fly
     fileName := filename(contentStr);
-    writeFile(filetmp, "<tr><td>" + svgIcon("Icons/" + fileName + ".svg",fileName + ".html","svgiconsmall") + "<a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
+    writeFile(filetmp, "<tr><td>" + svgIcon("Icons/" + fileName + ".svg",fileName + ".html","svgiconsmall",readSymlinks=readSymlinks) + "<a href=\"" + fileName + ".html\">" + contentStr + "</a></td><td>" + comment + "</td><td>" + modelVersion + "</td></tr>", append = true);
   end if;
 end for;
 writeFile(filetmp, "</table>\n", append = true);
