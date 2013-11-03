@@ -310,18 +310,18 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
 
 using namespace std;
 
-static pthread_mutex_t omc_corba_lock;
-static pthread_mutex_t omc_corba_clientlock;
+pthread_mutex_t omc_corba_lock;
+pthread_mutex_t omc_corba_clientlock;
 
 // Condition variable for keeping omc waiting for client requests
-static pthread_cond_t omc_waitformsg;
-static pthread_mutex_t omc_waitlock;
-static bool omc_waiting=false;
+pthread_cond_t omc_waitformsg;
+pthread_mutex_t omc_waitlock;
+bool omc_waiting=false;
 
 // Condition variable for keeping corba waiting for returnvalue from omc
-static pthread_cond_t corba_waitformsg;
-static pthread_mutex_t corba_waitlock;
-static bool corba_waiting=false;
+pthread_cond_t corba_waitformsg;
+pthread_mutex_t corba_waitlock;
+bool corba_waiting=false;
 
 void* runOrb(void* arg)
 {
