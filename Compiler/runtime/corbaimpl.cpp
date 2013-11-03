@@ -57,7 +57,7 @@ CORBA::Object_var poaobj;
 PortableServer::POAManager_var mgr;
 PortableServer::POA_var omcpoa;
 CORBA::PolicyList pl;
-CORBA::Object_var ref;
+CORBA::Object_var omc_ref;
 CORBA::String_var str;
 #if defined(__MINGW32__) || defined(_MSC_VER)
 PortableServer::ObjectId_var *oid;
@@ -265,18 +265,18 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
     /*
      * build the reference to store in the file
      */
-    ref = omcpoa->id_to_reference (oid->in());
+    omc_ref = omcpoa->id_to_reference (oid->in());
     objref_file << tempPath << "/openmodelica.objid." << corbaSessionName;
   }
   else /* we don't have a session name, start OMC normaly */
   {
       server = new OmcCommunication_impl();
       oid = new PortableServer::ObjectId_var(poa->activate_object(server));
-      ref = poa->id_to_reference (oid->in());
+      omc_ref = poa->id_to_reference (oid->in());
       objref_file << tempPath << "/openmodelica.objid";
   }
 
-  str = (const char*)orb->object_to_string (ref.in());
+  str = (const char*)orb->object_to_string (omc_ref.in());
   /* Write reference to file */
   ofstream of (objref_file.str().c_str());
   of << str.in() << endl;
@@ -310,18 +310,18 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
 
 using namespace std;
 
-pthread_mutex_t lock;
-pthread_mutex_t clientlock;
+static pthread_mutex_t omc_corba_lock;
+static pthread_mutex_t omc_corba_clientlock;
 
 // Condition variable for keeping omc waiting for client requests
-pthread_cond_t omc_waitformsg;
-pthread_mutex_t omc_waitlock;
-bool omc_waiting=false;
+static pthread_cond_t omc_waitformsg;
+static pthread_mutex_t omc_waitlock;
+static bool omc_waiting=false;
 
 // Condition variable for keeping corba waiting for returnvalue from omc
-pthread_cond_t corba_waitformsg;
-pthread_mutex_t corba_waitlock;
-bool corba_waiting=false;
+static pthread_cond_t corba_waitformsg;
+static pthread_mutex_t corba_waitlock;
+static bool corba_waiting=false;
 
 void* runOrb(void* arg)
 {
@@ -378,7 +378,7 @@ int CorbaImpl__initialize()
   pthread_cond_init(&corba_waitformsg,NULL);
   pthread_mutex_init(&corba_waitlock,NULL);
   pthread_mutex_init(&omc_waitlock,NULL);
-  pthread_mutex_init(&clientlock, NULL);
+  pthread_mutex_init(&omc_corba_clientlock, NULL);
 
   char **argv = construct_dummy_args(argc, dummyArgv);
 #if defined(USE_OMNIORB)
@@ -424,18 +424,18 @@ int CorbaImpl__initialize()
     /*
      * build the reference to store in the file
      */
-    ref = omcpoa->id_to_reference (oid.in());
+    omc_ref = omcpoa->id_to_reference (oid.in());
     objref_file << tmpDir << "/openmodelica." << user << ".objid." << corbaSessionName;
   }
   else /* we don't have a session name, start OMC normaly */
   {
       server = new OmcCommunication_impl();
       oid = poa->activate_object(server);
-      ref = poa->id_to_reference (oid.in());
+      omc_ref = poa->id_to_reference (oid.in());
       objref_file << tmpDir << "/openmodelica." << user << ".objid";
   }
 
-  str = orb->object_to_string (ref.in());
+  str = orb->object_to_string (omc_ref.in());
   /* Write reference to file */
   ofstream of (objref_file.str().c_str());
   of << str.in() << endl;
@@ -477,7 +477,7 @@ const char* CorbaImpl__waitForCommand()
 #if defined(__MINGW32__) || defined(_MSC_VER)
   EnterCriticalSection(&lock); // Lock so no other tread can talk to omc.
 #else
-  pthread_mutex_lock(&lock); // Lock so no other tread can talk to omc.
+  pthread_mutex_lock(&omc_corba_lock); // Lock so no other tread can talk to omc.
 #endif
 #endif // NOMICO
   return omc_cmd_message;
@@ -501,7 +501,7 @@ void CorbaImpl__sendreply(const char *msg)
   pthread_cond_signal(&corba_waitformsg);
   pthread_mutex_unlock(&corba_waitlock);
 
-  pthread_mutex_unlock(&lock); // Unlock, so other threads can ask omc stuff.
+  pthread_mutex_unlock(&omc_corba_lock); // Unlock, so other threads can ask omc stuff.
 #endif
 #endif // NOMICO
 }
