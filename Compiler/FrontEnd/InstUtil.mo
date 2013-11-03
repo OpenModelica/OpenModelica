@@ -5898,6 +5898,7 @@ algorithm
       list<Absyn.Exp> rest;
       Env.Cache cache;
       Prefix.Prefix pre;
+      DAE.ComponentRef cr;
     case (cache,_,{},impl,st,_,_) then (cache,{},{},st);
     case (cache,env,(e :: rest),impl,st,pre,_)
       equation

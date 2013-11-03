@@ -5163,6 +5163,7 @@ template functionBodyExternalFunction(Function fn, Boolean inFunc)
 match fn
 case efn as EXTERNAL_FUNCTION(__) then
   let()= System.tmpTickReset(1)
+  let()= System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let fname = underscorePath(name)
   let retType = if outVars then '<%fname%>_rettype' else "void"
   let &preExp = buffer "" /*BUFD*/
@@ -5176,8 +5177,7 @@ case efn as EXTERNAL_FUNCTION(__) then
             varInit(var, retVar, i1, &varDecls /*BUFD*/, &outputAlloc /*BUFC*/, &varFrees /*BUFF*/)
             ; empty /* increase the counter! */
           )
-
-
+  let &varDecls += addRootsTempArray()
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   let fnBody = <<
   <%retType%> omc_<%fname%>(threadData_t *threadData<%funArgs |> arg => ', <%
@@ -8302,6 +8302,9 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name = "mmc_unbox_record"), expLst={s1}, attr=CALL_ATTR(ty=ty)) then
     let argStr = daeExp(s1, context, &preExp, &varDecls)
     unboxRecord(argStr, ty, &preExp, &varDecls)
+
+  case CALL(path=IDENT(name = "threadData")) then
+    "threadData"
 
   case exp as CALL(attr=attr as CALL_ATTR(tailCall=tail as TAIL(__))) then
     let &postExp = buffer ""

@@ -268,6 +268,7 @@ typedef struct {
 
 extern omc_alloc_interface_t omc_alloc_interface;
 extern omc_alloc_interface_t omc_alloc_interface_pooled;
+typedef threadData_t* OpenModelica_threadData_ThreadData;
 
 #if defined(__cplusplus)
 } /* end extern "C" */

@@ -723,6 +723,16 @@ type VariableNames "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a sin
 
 end $Code;
 
+function threadData
+  output ThreadData threadData;
+protected
+  record ThreadData
+  end ThreadData;
+external "builtin" annotation(Documentation(info="<html>
+<p>Used to access thread-specific data in external functions.</p>
+</html>"));
+end threadData;
+
 package Internal "Contains internal implementations, e.g. overloaded builtin functions"
 
   type BuiltinType "Integer,Real,String,enumeration or array of some kind"

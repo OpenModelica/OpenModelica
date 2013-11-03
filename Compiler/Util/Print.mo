@@ -43,92 +43,78 @@ encapsulated package Print
 
  public function saveAndClearBuf "saves and clears content of buffer and return a handle to the saved buffer so it can be restored by restorBuf later on"
   output Integer handle;
-  external "C" handle = Print_saveAndClearBuf() annotation(Library = "omcruntime");
+  external "C" handle = Print_saveAndClearBuf(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end saveAndClearBuf;
 
 public function restoreBuf
   input Integer handle;
-  external "C" Print_restoreBuf(handle) annotation(Library = "omcruntime");
+  external "C" Print_restoreBuf(OpenModelica.threadData(),handle) annotation(Library = "omcruntime");
 end restoreBuf;
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function setBufSize
-  input Integer newSize;
-
-  external "C" Print_setBufSize(newSize) annotation(Library = "omcruntime");
-end setBufSize;*/
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function unSetBufSize
-  input Integer newSize "not used, this is a debuging func";
-
-  external "C" Print_unSetBufSize(newSize) annotation(Library = "omcruntime");
-end unSetBufSize;*/
 
 public function printErrorBuf
   input String inString;
 
-  external "C" Print_printErrorBuf(inString) annotation(Library = "omcruntime");
+  external "C" Print_printErrorBuf(OpenModelica.threadData(),inString) annotation(Library = "omcruntime");
 end printErrorBuf;
 
 public function clearErrorBuf
 
-  external "C" Print_clearErrorBuf() annotation(Library = "omcruntime");
+  external "C" Print_clearErrorBuf(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end clearErrorBuf;
 
 public function getErrorString
   output String outString;
 
-  external "C" outString = Print_getErrorString() annotation(Library = "omcruntime");
+  external "C" outString = Print_getErrorString(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getErrorString;
 
 public function printBuf
   input String inString;
 
-  external "C" Print_printBuf(inString) annotation(Library = "omcruntime");
+  external "C" Print_printBuf(OpenModelica.threadData(),inString) annotation(Library = "omcruntime");
 end printBuf;
 
 public function clearBuf
 
-  external "C" Print_clearBuf() annotation(Library = "omcruntime");
+  external "C" Print_clearBuf(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end clearBuf;
 
 public function getString "Does not clear the buffer"
   output String outString;
 
-  external "C" outString = Print_getString() annotation(Library = "omcruntime");
+  external "C" outString = Print_getString(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getString;
 
 public function writeBuf
   input String inString;
 
-  external "C" Print_writeBuf(inString) annotation(Library = "omcruntime");
+  external "C" Print_writeBuf(OpenModelica.threadData(),inString) annotation(Library = "omcruntime");
 end writeBuf;
 
 public function writeBufConvertLines
   "Writes the print buffer to the filename, with /*#modelicaLine...*/ directives converted to #line C preprocessor macros"
   input String filename;
-  external "C" Print_writeBufConvertLines(filename) annotation(Library = "omcruntime");
+  external "C" Print_writeBufConvertLines(OpenModelica.threadData(),filename) annotation(Library = "omcruntime");
 end writeBufConvertLines;
 
 public function getBufLength
 "Gets the actual length of the filled space in the print buffer."
   output Integer outBufFilledLength;
 
-  external "C" outBufFilledLength = Print_getBufLength() annotation(Library = "omcruntime");
+  external "C" outBufFilledLength = Print_getBufLength(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getBufLength;
 
 public function printBufSpace
 "Prints the given number of spaces to the print buffer."
   input Integer inNumOfSpaces;
 
-  external "C" Print_printBufSpace(inNumOfSpaces) annotation(Library = "omcruntime");
+  external "C" Print_printBufSpace(OpenModelica.threadData(),inNumOfSpaces) annotation(Library = "omcruntime");
 end printBufSpace;
 
 public function printBufNewLine
 "Prints one new line character to the print buffer."
 
-  external "C" Print_printBufNewLine() annotation(Library = "omcruntime");
+  external "C" Print_printBufNewLine(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end printBufNewLine;
 
 public function hasBufNewLineAtEnd
@@ -136,9 +122,7 @@ public function hasBufNewLineAtEnd
  It is a (temporary) workaround to stringLength()'s O(n) cost."
   output Boolean outHasNewLineAtEnd ;
 
-  external "C" outHasNewLineAtEnd = Print_hasBufNewLineAtEnd() annotation(Library = "omcruntime");
+  external "C" outHasNewLineAtEnd = Print_hasBufNewLineAtEnd(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end hasBufNewLineAtEnd;
 
 end Print;
-
-

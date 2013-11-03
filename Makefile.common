@@ -58,7 +58,7 @@ docs: mkbuilddirs
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
 	cp -p ./SimulationRuntime/interactive/README.txt $(builddir_doc)/omc/OpenModelica-InteractiveSimulation-README.txt
 	# man pages
-	(cd doc/manpages/ && for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
+	(cd doc/manpages/ && for f in *.1; do cp -p $$f ../../$(builddir_man)/man1/ && gzip -f ../../$(builddir_man)/man1/$$f ; done)
 
 GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h
 libgc-dev: /usr/include/gc/gc_inline.h
