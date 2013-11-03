@@ -155,7 +155,10 @@ fi # End x86-specific CFLAGS
 
 dnl check for environment variables
 
-AC_ARG_WITH(omc,  [  --with-omc=[omc]       (the installed omc path which we will use to compile omc)],[OMC=`readlink "$withval"`],[OMC=`which omc`;OMC=`readlink "$OMC"`])
+AC_ARG_WITH(omc,  [  --with-omc=[omc]       (the installed omc path which we will use to compile omc)],[OMC="$withval"],[OMC=`which omc`])
+while test -h "$OMC"; do
+  OMC=`readlink "$OMC"`
+done
 
 AC_MSG_CHECKING([for omc])
 
@@ -829,6 +832,7 @@ date=`date "+%Y-%m-%d %H:%M:%S"`
 
 GENERATED_AUTOCONF_FILES="Makefile \
 Compiler/Makefile \
+Compiler/Template/Makefile \
 Compiler/omc_release/Makefile \
 Compiler/runtime/Makefile \
 Compiler/modpar/Makefile \

@@ -1,7 +1,5 @@
 .PHONY : all
 
-OMC = OPENMODELICAHOME=`pwd`/../../build/ ../../build/bin/omc +d=failtrace
-
 all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenFMUCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo
 
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo

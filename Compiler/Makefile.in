@@ -111,7 +111,7 @@ reallyclean:
 report:
 	@(cd report ; $(MAKE))
 
-ifeq ($(wildcard ../build/bin/omc),)
+ifeq ($(wildcard @OMC@),)
 simcode:
 	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
 else
@@ -119,7 +119,7 @@ simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C susan_codegen/
 	$(MAKE) -C Template/
 OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/Interactive.mo FrontEnd/Values.mo Util/Error.mo Util/Util.mo Util/FMI.mo GenerateOMCHeader.mos Template/Unparsing.mo
-	OPENMODELICAHOME=../build ../build/bin/omc +g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
+	@OMC@ +g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
 	@mv $@.new $@
 endif
 $(SUSANMO): simcode

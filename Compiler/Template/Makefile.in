@@ -1,0 +1,3 @@
+OMC=@OMC@ +d=failtrace
+
+include Makefile.common
