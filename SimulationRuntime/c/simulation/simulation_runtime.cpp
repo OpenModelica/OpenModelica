@@ -480,6 +480,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   const char* lintime = omc_flagValue[FLAG_L];
 
   /* activated measure time option with LOG_STATS */
+  int measure_time_flag_previous = measure_time_flag;
   if(ACTIVE_STREAM(LOG_STATS) || (omc_flag[FLAG_CPU] && !measure_time_flag))
   {
     measure_time_flag = 1;
@@ -608,13 +609,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     INFO(LOG_STDOUT, "Linear model is created!");
   }
 
-  /* disable measure_time_flag to prevent producing
-   * all profiling files, since measure_time_flag
-   * was not activated while compiling, it was
-   * just used for measure simulation time for LOG_STATS.
+  /* Use the saved state of measure_time_flag.
+   * measure_time_flag is set to active when LOG_STATS is ON.
+   * So before doing the profiling reset the measure_time_flag to measure_time_flag_previous state.
    */
-  if(measureSimTime)
-    measure_time_flag = 0;
+  measure_time_flag = measure_time_flag_previous;
 
   if(0 == retVal && measure_time_flag)
   {
