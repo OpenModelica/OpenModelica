@@ -8625,15 +8625,14 @@ public function pushStructuralParameters
   input Env.Cache cache;
   output Env.Cache ocache;
 protected
-  Option<array<Env.EnvCache>> ec;
   Option<Env.Env> ie;
   array<DAE.FunctionTree> f;
   HashTable.HashTable ht;
   list<list<DAE.ComponentRef>> crs;
   Absyn.Path p;
 algorithm
-  Env.CACHE(ec,ie,f,(ht,crs),p) := cache;
-  ocache := Env.CACHE(ec,ie,f,(ht,{}::crs),p);
+  Env.CACHE(ie,f,(ht,crs),p) := cache;
+  ocache := Env.CACHE(ie,f,(ht,{}::crs),p);
 end pushStructuralParameters;
 
 public function popStructuralParameters
@@ -8642,7 +8641,6 @@ public function popStructuralParameters
   input Prefix.Prefix pre;
   output Env.Cache ocache;
 protected
-  Option<array<Env.EnvCache>> ec;
   Option<Env.Env> ie;
   array<DAE.FunctionTree> f;
   HashTable.HashTable ht;
@@ -8650,9 +8648,9 @@ protected
   list<list<DAE.ComponentRef>> crss;
   Absyn.Path p;
 algorithm
-  Env.CACHE(ec,ie,f,(ht,crs::crss),p) := cache;
+  Env.CACHE(ie,f,(ht,crs::crss),p) := cache;
   ht := prefixAndAddCrefsToHt(cache,ht,pre,crs);
-  ocache := Env.CACHE(ec,ie,f,(ht,crss),p);
+  ocache := Env.CACHE(ie,f,(ht,crss),p);
 end popStructuralParameters;
 
 protected function prefixAndAddCrefsToHt

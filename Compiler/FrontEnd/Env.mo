@@ -126,27 +126,12 @@ public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,p
 
 public uniontype Cache
   record CACHE
-    Option<array<EnvCache>> envCache "The cache contains of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
     array<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
     StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
     Absyn.Path modelName "name of the model being instantiated";
   end CACHE;
 end Cache;
-
-public uniontype EnvCache
-  record ENVCACHE "Cache for environments. The cache consists of a tree of environments from which lookup can be performed."
-    CacheTree envTree;
-  end ENVCACHE;
-end EnvCache;
-
-public uniontype CacheTree
-  record CACHETREE
-    Ident  name;
-    Env env;
-    list<CacheTree> children;
-  end CACHETREE;
-end CacheTree;
 
 public uniontype ScopeType
   record FUNCTION_SCOPE end FUNCTION_SCOPE;
@@ -270,21 +255,16 @@ uniontype Item
   
 end Item;
 
-public function emptyCache
+public function emptyCache 
 "returns an empty cache"
   output Cache cache;
- protected
-  Option<array<EnvCache>> envCache;
-  array<EnvCache> arr;
+protected
   array<DAE.FunctionTree> instFuncs;
   StructuralParameters ht;
 algorithm
-  //print("EMPTYCACHE\n");
-  arr := arrayCreate(1, ENVCACHE(CACHETREE("$global",emptyEnv,{})));
-  envCache := Util.if_(Flags.getConfigBool(Flags.ENV_CACHE),SOME(arr),NONE());
   instFuncs := arrayCreate(1, DAE.emptyFuncTree);
   ht := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
-  cache := CACHE(envCache,NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
+  cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
 
 // functions for dealing with the environment
@@ -2034,13 +2014,11 @@ public function setCachedInitialEnv "set the initial environment in the cache"
 algorithm
   outCache := match(inCache,env)
     local
-      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       StructuralParameters ht;
       Absyn.Path p;
 
-    case (CACHE(envCache,_,ef,ht,p),_)
-      then CACHE(envCache,SOME(env),ef,ht,p);
+    case (CACHE(_,ef,ht,p),_) then CACHE(SOME(env),ef,ht,p);
   end match;
 end setCachedInitialEnv;
 
@@ -2049,290 +2027,15 @@ public function setCachedFunctionTree
   input DAE.FunctionTree inFunctions;
   output Cache outCache;
 protected
-  Option<array<EnvCache>> envCache;
   Option<Env> env;
   array<DAE.FunctionTree> ef;
   StructuralParameters ht;
   Absyn.Path p;
 algorithm
-  CACHE(envCache, env, _, ht, p) := inCache;
+  CACHE(env, _, ht, p) := inCache;
   ef := arrayCreate(1, inFunctions);
-  outCache := CACHE(envCache, env, ef, ht, p);
+  outCache := CACHE(env, ef, ht, p);
 end setCachedFunctionTree;
-
-public function cacheGet "Get an environment from the cache."
-  input Absyn.Path scope;
-  input Absyn.Path path;
-  input Cache cache;
-  output Env env;
-algorithm
-  env:= match (scope,path,cache)
-    local
-      CacheTree tree;
-      array<EnvCache> arr;
-   case (_,_,CACHE(envCache=SOME(arr)))
-      equation
-        ENVCACHE(tree) = arr[1];
-        env = cacheGetEnv(scope,path,tree);
-        // print("got cached env for ");print(Absyn.pathString(path)); print("\n");
-      then env;
-  end match;
-end cacheGet;
-
-public function cacheAdd "Add an environment to the cache."
-  input Absyn.Path fullpath "Fully qualified path to the environment";
-  input Cache inCache ;
-  input Env env "environment";
-  output Cache outCache;
-algorithm
-  outCache := matchcontinue(fullpath,inCache,env)
-  local CacheTree tree;
-    array<EnvCache> arr;
-
-    case (_,CACHE(envCache=NONE()),_) then inCache;
-
-    case (_,CACHE(envCache=SOME(arr)),_)
-      equation
-        ENVCACHE(tree)=arr[1];
-        // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
-        tree = cacheAddEnv(fullpath,tree,env);
-
-        //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
-        //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
-        arr = arrayUpdate(arr,1,ENVCACHE(tree));
-      then inCache /*CACHE(SOME(arr),ie,ef)*/;
-    case (_,_,_)
-      equation
-        print("cacheAdd failed\n");
-      then fail();
-  end matchcontinue;
-end cacheAdd;
-
-// moved from Inst as is more natural to be here!
-public function addCachedEnv
-"add a new environment in the cache obtaining a new cache"
-  input Cache inCache;
-  input String id;
-  input Env env;
-  output Cache outCache;
-algorithm
-  outCache := matchcontinue(inCache,id,env)
-    local
-      Absyn.Path path;
-
-    // +d=noCache
-    case (_,_,_)
-      equation
-        false = Flags.isSet(Flags.CACHE);
-      then
-        inCache;
-
-    case (CACHE(envCache=NONE()),_,_) then inCache;
-
-    case (_,_,_)
-      equation
-        SOME(path) = getEnvPath(env);
-        outCache = cacheAdd(path,inCache,env);
-      then outCache;
-
-    case(_,_,_)
-      equation
-        // this should be placed in the global environment
-        // how do we do that??
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("<<<< Env.addCachedEnv - failed to add env to cache for: " +& printEnvPathStr(env) +& " [" +& id +& "]");
-      then inCache;
-
-  end matchcontinue;
-end addCachedEnv;
-
-protected function cacheGetEnv "get an environment from the tree cache."
-  input Absyn.Path scope;
-  input Absyn.Path path;
-  input CacheTree tree;
-  output Env env;
-algorithm
-  env := match(scope,path,tree)
-  local
-      Absyn.Path path2;
-
-      // Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
-    case (path2,_,_)
-      equation
-        env = cacheGetEnv2(path2,path,tree);
-        //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
-        //print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
-      then env;
-  end match;
-end cacheGetEnv;
-
-protected function cacheGetEnv2 "Help function to cacheGetEnv. Searches in one scope by
-  first looking up the scope and then search from there."
-  input Absyn.Path scope;
-  input Absyn.Path path;
-  input CacheTree tree;
-  output Env env;
-algorithm
-  env := matchcontinue(scope,path,tree)
-    local
-      Env env2;
-      Ident id1,id2;
-      list<CacheTree> children,children2;
-      Absyn.Path path2;
-
-    //  Simple name found in children, search for model from this scope.
-    case (Absyn.IDENT(id1),_,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
-      equation
-        true = stringEq(id1, id2);
-        //print("found (1) ");print(id); print("\n");
-        env = cacheGetEnv3(path,children2);
-      then
-        env;
-
-    //  Simple name. try next.
-    case (Absyn.IDENT(id1),_,CACHETREE(id2,env2,_::children))
-      equation
-        //print("try next ");print(id);print("\n");
-        env = cacheGetEnv2(scope,path,CACHETREE(id2,env2,children));
-      then
-        env;
-
-    // for qualified name, found first matching identifier in child
-     case (Absyn.QUALIFIED(id1,path2),_,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
-       equation
-         true = stringEq(id1, id2);
-         //print("found qualified (1) ");print(id);print("\n");
-         env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
-       then env;
-
-   // for qualified name, try next.
-   /*
-   case (Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, _ :: children))
-     equation
-       env = cacheGetEnv2(Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, children));
-     then env;*/
-  end matchcontinue;
-end cacheGetEnv2;
-
-protected function cacheGetEnv3 "Help function to cacheGetEnv2, searches down in tree for env."
-  input Absyn.Path inPath;
-  input list<CacheTree> inChildren;
-  output Env env;
-algorithm
-  env := match (inPath,inChildren)
-    local
-      Ident id1, id2;
-      Absyn.Path path1,path2,path;
-      list<CacheTree> children1,children2,children;
-      Boolean b;
-
-    // found matching simple name
-    case (Absyn.IDENT(id1),CACHETREE(id2,env,_)::children)
-      then Debug.bcallret2(not stringEq(id1, id2), cacheGetEnv3, inPath, children, env);
-
-    // found matching qualified name
-    case (path2 as Absyn.QUALIFIED(id1,path1),CACHETREE(id2,_,children1)::children2)
-      equation
-        b = stringEq(id1, id2);
-        path = Util.if_(b,path1,path2);
-        children = Util.if_(b,children1,children2);
-      then cacheGetEnv3(path,children);
-  end match;
-end cacheGetEnv3;
-
-public function cacheAddEnv "Add an environment to the cache"
-  input Absyn.Path fullpath "Fully qualified path to the environment";
-  input CacheTree tree ;
-  input Env env "environment";
-  output CacheTree outTree;
-algorithm
-  outTree := matchcontinue(fullpath,tree,env)
-    local
-      Ident id1,globalID,id2;
-      Absyn.Path path;
-      Env globalEnv,oldEnv;
-      list<CacheTree> children,children2;
-      CacheTree child;
-
-    // simple names already added
-    case (Absyn.IDENT(id1),(CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),_)
-      equation
-        // print(id);print(" already added\n");
-        true = stringEq(id1, id2);
-        // shouldn't we replace it?
-      then tree;
-
-    // simple names try next
-    case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,child::children),_)
-      equation
-        CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,children),env);
-      then CACHETREE(globalID,globalEnv,child::children);
-
-    // Simple names, not found
-    case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,{}),_)
-      then CACHETREE(globalID,globalEnv,{CACHETREE(id1,env,{})});
-
-    // Qualified names.
-    case (path as Absyn.QUALIFIED(_,_),CACHETREE(globalID,globalEnv,children),_)
-      equation
-        children=cacheAddEnv2(path,children,env);
-      then CACHETREE(globalID,globalEnv,children);
-
-    // failure
-    case (path,_,_)
-      equation
-        print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
-      then fail();
-  end matchcontinue;
-end cacheAddEnv;
-
-protected function cacheAddEnv2
-  input Absyn.Path inPath;
-  input list<CacheTree> inChildren;
-  input Env env;
-  output list<CacheTree> outChildren;
-algorithm
-  outChildren := matchcontinue(inPath,inChildren,env)
-    local
-      Ident id1,id2;
-      list<CacheTree> children,children2;
-      CacheTree child;
-      Env env2;
-      Absyn.Path path;
-
-    // qualified name, found matching
-    case(Absyn.QUALIFIED(id1,path),CACHETREE(id2,env2,children2)::children,_)
-      equation
-        true = stringEq(id1, id2);
-        children2 = cacheAddEnv2(path,children2,env);
-      then CACHETREE(id2,env2,children2)::children;
-
-    // simple name, found matching
-    case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,_)
-      equation
-        true = stringEq(id1, id2);
-      then CACHETREE(id2,env2,children2)::children;
-
-    // try next
-    case(path,child::children,_)
-      equation
-        //print("try next\n");
-        children = cacheAddEnv2(path,children,env);
-      then child::children;
-
-    // qualified name no child found, create one.
-    case (Absyn.QUALIFIED(id1,path),{},_)
-      equation
-        children = cacheAddEnv2(path,{},env);
-      then {CACHETREE(id1,emptyEnv,children)};
-
-    // simple name no child found, create one.
-    case (Absyn.IDENT(id1),{},_)
-      then {CACHETREE(id1,env,{})};
-
-    else equation print("cacheAddEnv2 failed\n"); then fail();
-  end matchcontinue;
-end cacheAddEnv2;
 
 public function printCacheStr
   input Cache cache;
@@ -2340,44 +2043,21 @@ public function printCacheStr
 algorithm
   str := matchcontinue(cache)
     local
-      CacheTree tree;
-      array<EnvCache> arr;
       array<DAE.FunctionTree> ef;
-      String s,s2;
+      String s;
 
     // some cache present
-    case CACHE(envCache=SOME(arr),functions=ef)
+    case CACHE(functions=ef)
       equation
-        ENVCACHE(tree) = arr[1];
-        s = printCacheTreeStr(tree,1);
-        str = stringAppendList({"Cache:\n",s,"\n"});
-        s2 = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
-        str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
+        s = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
+        str = "Instantiated funcs: " +& s +&"\n";
       then str;
+    
     // empty cache
     else "EMPTY CACHE\n";
+  
   end matchcontinue;
 end printCacheStr;
-
-protected function printCacheTreeStr
-  input CacheTree tree;
-  input Integer indent;
-  output String str;
-algorithm
-  str:= matchcontinue(tree,indent)
-    local
-      Ident id;
-      list<CacheTree> children;
-      String s,s1;
-
-    case (CACHETREE(id,_,children),_)
-      equation
-        s = stringDelimitList(List.map1(children,printCacheTreeStr,indent+1),"\n");
-        s1 = stringAppendList(List.fill(" ",indent));
-        str = stringAppendList({s1,id,"\n",s});
-      then str;
-  end matchcontinue;
-end printCacheTreeStr;
 
 /* AVL impementation */
 public type AvlKey = String;
@@ -3168,23 +2848,25 @@ This guards against recursive functions."
 algorithm
   outCache := matchcontinue(cache,func)
     local
-      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
       StructuralParameters ht;
       Absyn.Path p;
-      /* Don't overwrite SOME() with NONE() */
+    
+    // Don't overwrite SOME() with NONE()
     case (_, _)
       equation
         checkCachedInstFuncGuard(cache, func);
       then cache;
 
-    case (CACHE(envCache,ienv,ef,ht,p),Absyn.FULLYQUALIFIED(_))
+    case (CACHE(ienv,ef,ht,p),Absyn.FULLYQUALIFIED(_))
       equation
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
-      then CACHE(envCache,ienv,ef,ht,p);
+      then CACHE(ienv,ef,ht,p);
+    
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (_,_) then (cache);
+  
   end matchcontinue;
 end addCachedInstFuncGuard;
 
@@ -3196,15 +2878,16 @@ public function addDaeFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
       StructuralParameters ht;
       Absyn.Path p;
-    case (CACHE(envCache,ienv,ef,ht,p),_)
+    
+    case (CACHE(ienv,ef,ht,p),_)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
-      then CACHE(envCache,ienv,ef,ht,p);
+      then CACHE(ienv,ef,ht,p);
+  
   end match;
 end addDaeFunction;
 
@@ -3216,15 +2899,16 @@ public function addDaeExtFunction
 algorithm
   outCache := match(inCache,funcs)
     local
-      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       Option<Env> ienv;
       StructuralParameters ht;
       Absyn.Path p;
-    case (CACHE(envCache,ienv,ef,ht,p),_)
+    
+    case (CACHE(ienv,ef,ht,p),_)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
-      then CACHE(envCache,ienv,ef,ht,p);
+      then CACHE(ienv,ef,ht,p);
+  
   end match;
 end addDaeExtFunction;
 
@@ -3306,18 +2990,18 @@ public function addEvaluatedCref
 algorithm
   ocache := match (cache,var,cr)
     local
-      Option<array<EnvCache>> envCache;
       Option<Env> initialEnv;
       array<DAE.FunctionTree> functions;
       HashTable.HashTable ht;
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
       Absyn.Path p;
-    case (CACHE(envCache,initialEnv,functions,(ht,crs::st),p),SCode.PARAM(),_)
-      equation
-        // str = ComponentReference.printComponentRefStr(cr);
-      then CACHE(envCache,initialEnv,functions,(ht,(cr::crs)::st),p);
+    
+    case (CACHE(initialEnv,functions,(ht,crs::st),p),SCode.PARAM(),_)
+      then CACHE(initialEnv,functions,(ht,(cr::crs)::st),p);
+    
     else cache;
+  
   end match;
 end addEvaluatedCref;
 
@@ -3344,13 +3028,12 @@ public function setCacheClassName
 algorithm
   outCache := match(inCache,p)
     local
-      Option<array<EnvCache>> envCache;
       array<DAE.FunctionTree> ef;
       StructuralParameters ht;
       Option<Env> ienv;
 
-    case (CACHE(envCache,ienv,ef,ht,_),_)
-      then CACHE(envCache,ienv,ef,ht,p);
+    case (CACHE(ienv,ef,ht,_),_)
+      then CACHE(ienv,ef,ht,p);
   end match;
 end setCacheClassName;
 

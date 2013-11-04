@@ -422,20 +422,6 @@ algorithm
       String id,pack;
       Option<Env.Frame> optFrame;
 
-    // First look in cache for environment. If found look up class in that environment.
-    case (cache,env,path,prevFrames,_,_)
-      equation
-        // Debug.traceln("lookupClass " +& Absyn.pathString(path) +& " s:" +& Env.printEnvPathStr(env));
-        scope = Env.getEnvName(env);
-        f::fs = Env.cacheGet(scope,path,cache);
-        Util.setStatefulBoolean(inState,true);
-        id = Absyn.pathLastIdent(path);
-        (cache,c,env,prevFrames) = lookupClassInEnv(cache,fs,id,{},inState,msg);
-        //print("HIT:");print(Absyn.pathString(path));print(" scope");print(Absyn.pathString(scope));print("\n");
-        //print(Env.printCacheStr(cache));
-      then
-        (cache,c,env,prevFrames);
-
     // Fully qualified names are looked up in top scope. With previous frames remembered.
     case (cache,env,Absyn.FULLYQUALIFIED(path),{},_,_)
       equation
@@ -498,18 +484,6 @@ algorithm
         Util.setStatefulBoolean(inState,true);
         env = frame::env;
         (cache,c,env,prevFrames) = lookupClass2(cache,env,path,prevFrames,inState,msg);
-      then
-        (cache,c,env,prevFrames);
-
-    // Qualified names first identifier cached
-    case (cache,env,_,_,NONE(),prevFrames,_,_)
-      equation
-        // false = Util.getStatefulBoolean(inState); ???
-        scope = Env.getEnvName(env);
-        env = Env.cacheGet(scope,Absyn.IDENT(id),cache);
-        Util.setStatefulBoolean(inState,true);
-        (cache,c,env,prevFrames) = lookupClass2(cache,env,path,{},inState,msg);
-        //print("Qualified cache hit on ");print(Absyn.pathString(p));print("\n");
       then
         (cache,c,env,prevFrames);
 
@@ -810,15 +784,6 @@ algorithm
       list<Absyn.Import> rest;
       Env.Cache cache;
 
-    // Look in cache
-    case (cache,Absyn.UNQUAL_IMPORT(path = path) :: rest,env,ident)
-      equation
-        firstIdent = Absyn.pathFirstIdent(path);
-        f :: _ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,_,_) = lookupClass(cache,{f}, Absyn.IDENT(ident), false);
-      then
-        (cache, true);
-
     // Not found, instantiate
     case (cache,Absyn.UNQUAL_IMPORT(path = path) :: rest,env,ident)
       equation
@@ -832,13 +797,15 @@ algorithm
       then
         (cache, true);
 
-    // look in the parent scope
+    // Look in the parent scope
     case (cache,_ :: rest,env,ident)
       equation
         (cache, res) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
       then
         (cache, res);
+    
     case (cache,{},_,_) then (cache,false);
+  
   end matchcontinue;
 end moreLookupUnqualifiedImportedClassInFrame;
 
@@ -869,17 +836,6 @@ algorithm
       Env.Cache cache;
       Absyn.Ident firstIdent;
 
-    // Look in cache, unique
-    case (cache,Absyn.UNQUAL_IMPORT(path = path) :: rest,env,ident)
-      equation
-        firstIdent = Absyn.pathFirstIdent(path);
-        env2 = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,c_1,env2,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(ident),{},Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
-        (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
-        unique = boolNot(more);
-      then
-        (cache,c_1,env2,prevFrames,unique);
-
     // Not in cache, instantiate, unique
     case (cache,Absyn.UNQUAL_IMPORT(path = path) :: rest,env,ident)
       equation
@@ -898,12 +854,13 @@ algorithm
       then
         (cache,c_1,env2,prevFrames,unique);
 
-    // look in the parent scope
+    // Look in the parent scope
     case (cache,_ :: rest,env,ident)
       equation
         (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache, rest, env, ident);
       then
         (cache,c,env_1,prevFrames,unique);
+  
   end matchcontinue;
 end lookupUnqualifiedImportedClassInFrame;
 
@@ -1231,21 +1188,6 @@ algorithm
         (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name) = lookupVarInPackages(cache,f::env,cref,prevFrames,inState);
       then
         (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
-
-    // lookup of constants on form A.B in packages. First look in cache.
-    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_) /* First part of name is a class. */
-      equation
-        (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
-        scope = Env.getEnvName(env);
-        path = ComponentReference.crefToPath(cr);
-        id = Absyn.pathLastIdent(path);
-        path = Absyn.stripLast(path);
-        f::fs = Env.cacheGet(scope,path,cache);
-        Util.setStatefulBoolean(inState,true);
-        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv,name) = lookupVarLocal(cache,f::fs, ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
-        //print("found ");print(ComponentReference.printComponentRefStr(cr));print(" in cache\n");
-      then
-        (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData,componentEnv,name);
 
     /*/ lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,_)

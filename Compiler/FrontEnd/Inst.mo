@@ -1256,7 +1256,6 @@ algorithm
         // b=realGt(time,0.05);
         // s = realString(time);
         // Debug.fprintln(Flags.INSTTR, " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& Env.printEnvPathStr(env) +& " mods: " +& Mod.printModStr(mods));
-        cache = Env.addCachedEnv(cache,n,env_1);
         dae = Util.if_(SCode.isFunction(c) and not impl, DAE.DAE({}), dae);
         ErrorExt.delCheckpoint("instClassParts");
       then

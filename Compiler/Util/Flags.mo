@@ -727,48 +727,44 @@ constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(34,
   "translateDAEString", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
   Util.notrans(""));
 
-constant ConfigFlag ENV_CACHE = CONFIG_FLAG(35,
-  "envCache", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.notrans(""));
-
-constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(36,
+constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(35,
   "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Turns on labeled SimCode generation for reduction algorithms."));
 
-constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(37,
+constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(36,
   "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Turns on reducing terms for reduction algorithms."));
 
-constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(38, "reductionMethod",
+constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(37, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
     Util.gettext("Sets the reduction method to be used."));
 
-constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(39, "plotSilent",
+constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(38, "plotSilent",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."));
 
-constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(40, "locale",
+constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(39, "locale",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Override the locale from the environment."));
 
-constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(41, "defaultOCLDevice",
+constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(40, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
 
-constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(42, "maxTraversals",
+constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(41, "maxTraversals",
   NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
   Util.gettext("Maximal traversals to find simple equations in the acausal system."));
 
-constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(43, "dumpTarget",
+constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(42, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Redirect the dump to file. If the file ends with .html HTML code is generated."));
 
-constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(44, "delayBreakLoop",
+constant ConfigFlag DELAY_BREAK_LOOP = CONFIG_FLAG(43, "delayBreakLoop",
   NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
   Util.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
 
-constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(45, "tearingMethod",
+constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   NONE(), EXTERNAL(), STRING_FLAG("omcTearing"),
   SOME(STRING_DESC_OPTION({
     ("noTearing", Util.gettext("Skip tearing.")),
@@ -779,31 +775,31 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(45, "tearingMethod",
     ("steward", Util.gettext("Steward tearing."))})),
     Util.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 
-constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(46, "scalarizeMinMax",
+constant ConfigFlag SCALARIZE_MINMAX = CONFIG_FLAG(45, "scalarizeMinMax",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Scalarizes the builtin min/max reduction operators if true."));
 
-constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(47, "wsm-testsuite",
+constant ConfigFlag RUNNING_WSM_TESTSUITE = CONFIG_FLAG(46, "wsm-testsuite",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Used when running the WSM testsuite."));
 
-constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(48, "correctCrefTypes",
+constant ConfigFlag CORRECT_CREF_TYPES = CONFIG_FLAG(47, "correctCrefTypes",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Set to true to set correct types in component references. Doesn't work for OpenModelica backend."));
 
-constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(49, "scalarizeBindings",
+constant ConfigFlag SCALARIZE_BINDINGS = CONFIG_FLAG(48, "scalarizeBindings",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Always scalarizes bindings if set."));
 
-constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(50, "corbaObjectReferenceFilePath",
+constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(49, "corbaObjectReferenceFilePath",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the path for corba object reference file if +d=interactiveCorba is used."));
 
-constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(51, "hpcomScheduler",
+constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(50, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the scheduler for task graph scheduling. Default: list scheduling."));
   
-constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(52, "tearingHeuristic",
+constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("cellier"),
   SOME(STRING_DESC_OPTION({
     ("cellier", Util.gettext("Original cellier with consideration of impossible assignments.")),
@@ -853,7 +849,6 @@ constant list<ConfigFlag> allConfigFlags = {
   CEVAL_EQUATION,
   UNIT_CHECKING,
   TRANSLATE_DAE_STRING,
-  ENV_CACHE,
   GENERATE_LABELED_SIMCODE,
   REDUCE_TERMS,
   REDUCTION_METHOD,
