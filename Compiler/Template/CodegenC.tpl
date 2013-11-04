@@ -8831,7 +8831,7 @@ case exp as MATCHEXPRESSION(__) then
       error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>')
     else tempDecl('mmc_switch_type', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
-  let onPatternFail = match exp.matchType case MATCHCONTINUE(__) then "MMC_THROW_INTERNAL()" case MATCH(__) then "break"
+  let onPatternFail = 'goto <%prefix%>_end'
   let &preExp +=
       <<
       <%endModelicaLine()%>
@@ -8852,7 +8852,9 @@ case exp as MATCHEXPRESSION(__) then
             <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,startIndexOutputs,prefix,startIndexInputs,exp.inputs,onPatternFail,done,context,&varDecls)%>
             }
 
-            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH_INTERNAL(mmc_jumper)" %>
+            goto <%prefix%>_end;
+            <%prefix%>_end: ;
+            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH_INTERNAL(mmc_jumper);" %>
           }
 
           if (!<%done%>) MMC_THROW_INTERNAL();
