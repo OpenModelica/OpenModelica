@@ -404,6 +404,11 @@ system("python Tidy.py 2> tidy.err");
 "FilterTidy.sh";
 system("bash FilterTidy.sh");
 
+system("rm -f Icons/*.json"); 
+if readSymlinks then
+  system("for symlink in `find -type l`; do rm $symlink;  done"); 
+end if;
+
 "FindFiles.sh";
 system("bash FindFiles.sh");
 system("rm -f ModelicaDocumentation.tar.xz");
