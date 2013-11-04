@@ -39,7 +39,7 @@ void Print_5finit(void)
 
 RML_BEGIN_LABEL(Print__saveAndClearBuf)
 {
-  long handle = PrintImpl__saveAndClearBuf();
+  long handle = PrintImpl__saveAndClearBuf(NULL);
   if (handle < 0)
     RML_TAILCALLK(rmlFC);
   rmlA0 = mk_icon(handle);
@@ -49,7 +49,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__restoreBuf)
 {
-  if (PrintImpl__restoreBuf((long)RML_UNTAGFIXNUM(rmlA0)))
+  if (PrintImpl__restoreBuf(NULL,(long)RML_UNTAGFIXNUM(rmlA0)))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -58,21 +58,21 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__setBufSize)
 {
   long newSize = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
-  PrintImpl__setBufSize(newSize);
+  PrintImpl__setBufSize(NULL,newSize);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__unSetBufSize)
 {
-  PrintImpl__unSetBufSize();
+  PrintImpl__unSetBufSize(NULL);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__printErrorBuf)
 {
-  if (PrintImpl__printErrorBuf(RML_STRINGDATA(rmlA0)))
+  if (PrintImpl__printErrorBuf(NULL,RML_STRINGDATA(rmlA0)))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -80,14 +80,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__clearErrorBuf)
 {
-  PrintImpl__clearErrorBuf();
+  PrintImpl__clearErrorBuf(NULL);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getErrorString)
 {
-  const char* str = PrintImpl__getErrorString();
+  const char* str = PrintImpl__getErrorString(NULL);
   rml_uint_t nbytes = strlen(str);
   struct rml_string *retval;
   if (str == NULL)
@@ -103,7 +103,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__printBuf)
 {
-  if (PrintImpl__printBuf(RML_STRINGDATA(rmlA0)))
+  if (PrintImpl__printBuf(NULL,RML_STRINGDATA(rmlA0)))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -112,14 +112,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__clearBuf)
 {
-  PrintImpl__clearBuf();
+  PrintImpl__clearBuf(NULL);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getString)
 {
-  const char* str = PrintImpl__getString();
+  const char* str = PrintImpl__getString(NULL);
   rml_uint_t nbytes = strlen(str);
   struct rml_string *retval;
   if (str == NULL)
@@ -134,7 +134,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__writeBuf)
 {
-  if (PrintImpl__writeBuf(RML_STRINGDATA(rmlA0)))
+  if (PrintImpl__writeBuf(NULL,RML_STRINGDATA(rmlA0)))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -142,7 +142,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__writeBufConvertLines)
 {
-  if (PrintImpl__writeBufConvertLines(RML_STRINGDATA(rmlA0)))
+  if (PrintImpl__writeBufConvertLines(NULL,RML_STRINGDATA(rmlA0)))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -150,14 +150,14 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__getBufLength)
 {
-  rmlA0 = mk_icon(PrintImpl__getBufLength());
+  rmlA0 = mk_icon(PrintImpl__getBufLength(NULL));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__printBufSpace)
 {
-  if (PrintImpl__printBufSpace((long)RML_UNTAGFIXNUM(rmlA0)))
+  if (PrintImpl__printBufSpace(NULL,(long)RML_UNTAGFIXNUM(rmlA0)))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -166,7 +166,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__printBufNewLine)
 {
-  if (PrintImpl__printBufNewLine())
+  if (PrintImpl__printBufNewLine(NULL))
     RML_TAILCALLK(rmlFC);
   RML_TAILCALLK(rmlSC);
 }
@@ -175,7 +175,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__hasBufNewLineAtEnd)
 {
-  rmlA0 = PrintImpl__hasBufNewLineAtEnd() ? RML_TRUE : RML_FALSE;
+  rmlA0 = PrintImpl__hasBufNewLineAtEnd(NULL) ? RML_TRUE : RML_FALSE;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -35,20 +35,23 @@
   extern "C" {
 #endif
 
+#include <openmodelica.h>
+
 enum enumErrorType {ErrorType_syntax=0,ErrorType_grammar,ErrorType_translation,ErrorType_symbolic,ErrorType_runtime,ErrorType_scripting};
 enum enumErrorLevel {ErrorLevel_error=0,ErrorLevel_warning,ErrorLevel_notification};
 typedef enum enumErrorType ErrorType;
 typedef enum enumErrorLevel ErrorLevel;
 const char* ErrorLevel_toStr(int ix);
 const char* ErrorType_toStr(int ix);
+int showErrorMessages(threadData_t *threadData);
 
-void c_add_message(int errorID,
+void c_add_message(threadData_t *threadData,int errorID,
        ErrorType type,
        ErrorLevel severity,
        const char* message,
        const char** ctokens,
        int nTokens);
-void c_add_source_message(int errorID,
+void c_add_source_message(threadData_t *threadData,int errorID,
        ErrorType type,
        ErrorLevel severity,
        const char* message,
@@ -60,12 +63,10 @@ void c_add_source_message(int errorID,
        int endCol,
        int isReadOnly,
        const char* filename);
-void ErrorImpl__setCheckpoint(const char* id);
-void ErrorImpl__delCheckpoint(const char* id);
-void ErrorImpl__rollBack(const char* id);
-char* ErrorImpl__rollBackAndPrint(const char* id); // Returns the error string that we rolled back. free this resource
-
-extern int showErrorMessages;
+void ErrorImpl__setCheckpoint(threadData_t *threadData,const char* id);
+void ErrorImpl__delCheckpoint(threadData_t *threadData,const char* id);
+void ErrorImpl__rollBack(threadData_t *threadData,const char* id);
+char* ErrorImpl__rollBackAndPrint(threadData_t *threadData,const char* id); // Returns the error string that we rolled back. free this resource
 
 #ifdef __cplusplus
   }
@@ -76,13 +77,13 @@ extern int showErrorMessages;
 #include <string>
 #include <list>
 
-  void add_message(int errorID,
+  void add_message(threadData_t *threadData,int errorID,
        const char* type,
        const char* severity,
        const char* message,
        std::list<std::string> tokens);
 
-  void add_source_message(int errorID,
+  void add_source_message(threadData_t *threadData,int errorID,
         const char* type,
         const char* severity,
         const char* message,

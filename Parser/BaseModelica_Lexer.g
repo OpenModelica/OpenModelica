@@ -186,7 +186,7 @@ IDENT;
 T_ALGORITHM : 'algorithm';
 T_AND : 'and' | '&&' {
             ModelicaParser_lexerError = ANTLR3_TRUE;
-            c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Please use 'and' for logical and since '&&' is not a valid Modelica construct.",
+            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Please use 'and' for logical and since '&&' is not a valid Modelica construct.",
                NULL, 0, $line, $pos+1, $line, $pos+3,
                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
      };
@@ -225,7 +225,7 @@ LOOP : 'loop';
 MODEL : 'model';
 T_NOT : 'not' | '!' {
             ModelicaParser_lexerError = ANTLR3_TRUE;
-            c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Please use 'not' for logical not since '!' is not a valid Modelica construct.",
+            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Please use 'not' for logical not since '!' is not a valid Modelica construct.",
                NULL, 0, $line, $pos+1, $line, $pos+2,
                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
      };
@@ -234,7 +234,7 @@ OPERATOR : 'operator';
 OVERLOAD : '$overload'; // OpenModelica extension
 T_OR : 'or' | '||' {
             ModelicaParser_lexerError = ANTLR3_TRUE;
-            c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Please use 'or' for logical or since '||' is not a valid Modelica construct.",
+            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Please use 'or' for logical or since '||' is not a valid Modelica construct.",
                NULL, 0, $line, $pos+1, $line, $pos+3,
                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
      };
@@ -342,7 +342,7 @@ STRING : '"' STRING_GUTS '"'
              }
              strs[0] = (const char*) buf;
              strs[1] = ModelicaParser_encoding;
-             c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "The file was not encoded in \%s:\n  \"\%s\".\n"
+             c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "The file was not encoded in \%s:\n  \"\%s\".\n"
   "  Defaulting to 7-bit ASCII with unknown characters replaced by '?'.\n"
   "  To change encoding when loading a file: loadFile(encoding=\"ISO-XXXX-YY\").\n"
   "  To change it in a package: add a file package.encoding at the top-level.\n"
@@ -371,7 +371,7 @@ SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' 
     char chars[2] = {LA(1),'\0'};
     const char *str = chars;
     int len = strlen((char*)$text->chars);
-    c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since \\\%s is not a valid Modelica escape sequence.",
+    c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since \\\%s is not a valid Modelica escape sequence.",
           &str, 1, $line, $pos+1, $line, $pos+len+1,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
   });
@@ -426,7 +426,7 @@ UNSIGNED_INTEGER :
             const char *strs[2] = {(char*)$text->chars,(char*)$text->chars};
             int len = strlen((char*)$text->chars);
             $type = UNSIGNED_REAL;
-            c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "Treating \%s as 0\%s. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.",
+            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Treating \%s as 0\%s. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.",
                strs, 2, $line, $pos+1, $line, $pos+len+1,
                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
            } 

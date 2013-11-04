@@ -1817,7 +1817,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__forkCall)
 {
-  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available when OpenModelica is compiled using RML"),NULL,0);
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available when OpenModelica is compiled using RML"),NULL,0);
   RML_TAILCALLK(rmlFC);
 }
 RML_END_LABEL

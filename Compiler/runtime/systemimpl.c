@@ -287,7 +287,7 @@ extern int SystemImpl__regularFileExists(const char* str)
     if (strlen(str) >= MAXPATHLEN)
     {
       const char *c_tokens[1]={str};
-      c_add_message(85, /* error opening file */
+      c_add_message(NULL,85, /* error opening file */
         ErrorType_scripting,
         ErrorLevel_error,
         gettext("Error opening file: %s."),
@@ -328,7 +328,7 @@ static char* SystemImpl__readFile(const char* filename)
 
   if (res != 0) {
     const char *c_tokens[1]={filename};
-    c_add_message(85, /* ERROR_OPENING_FILE */
+    c_add_message(NULL,85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error opening file: %s."),
@@ -341,7 +341,7 @@ static char* SystemImpl__readFile(const char* filename)
 #ifndef _LP64
   if (statstr.st_size > (pow((double)2, (double)22) * 4)) {
     const char *c_tokens[1]={filename};
-    c_add_message(85, /* ERROR_OPENING_FILE */
+    c_add_message(NULL,85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("File too large to fit into a MetaModelica string: %s."),
@@ -388,7 +388,7 @@ int SystemImpl__writeFile(const char* filename, const char* data)
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};
-    c_add_message(21, /* WRITING_FILE_ERROR */
+    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error writing to file %s."),
@@ -406,7 +406,7 @@ int SystemImpl__writeFile(const char* filename, const char* data)
   if (1 != fwrite(data, len, 1, file))
   {
     const char *c_tokens[1]={filename};
-    c_add_message(21, /* WRITING_FILE_ERROR */
+    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error writing to file %s."),
@@ -431,7 +431,7 @@ int SystemImpl__appendFile(const char* filename, const char *data)
 
   if(file == NULL) {
     const char *c_tokens[1] = {filename};
-    c_add_message(21, /* WRITING_FILE_ERROR */
+    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting, ErrorLevel_error,
       gettext("Error appending to file %s."),
       c_tokens,
@@ -534,13 +534,13 @@ int SystemImpl__systemCall(const char* str)
     _exit(1);
   } else if (pID < 0) {
     const char *tokens[2] = {strerror(errno),str};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
+    c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
     return -1;
   } else {
 
     if (waitpid(pID, &status, 0) == -1) {
       const char *tokens[2] = {strerror(errno),str};
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error, gettext("system(%s) failed: %s"),tokens,2);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error, gettext("system(%s) failed: %s"),tokens,2);
     }
   }
 #endif
@@ -648,7 +648,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
     _exit(1);
   } else if (pID < 0) {
     const char *tokens[2] = {strerror(errno),str};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
+    c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
     return -1;
   }
   ret_val = 0;
@@ -941,7 +941,7 @@ extern char* SystemImpl__readFileNoNumeric(const char* filename)
 
   if(res!=0) {
     const char *c_tokens[1]={filename};
-    c_add_message(85, /* ERROR_OPENING_FILE */
+    c_add_message(NULL,85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error opening file %s."),
@@ -1089,7 +1089,7 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
-    c_add_message(-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
+    c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
 
@@ -1510,7 +1510,7 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
     decodeUri(uri+strlen(modelicaUri),name,path);
     if (!**name) {
       msg[0] = uri;
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Modelica URI lacks classname: %s"),msg,1);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Modelica URI lacks classname: %s"),msg,1);
       return 1;
     }
     return 0;
@@ -1519,16 +1519,16 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
     decodeUri(uri+strlen(fileUri),name,path);
     if (!**path) {
       msg[0] = uri;
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("File URI has no path: %s"),msg,1);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("File URI has no path: %s"),msg,1);
       return 1;
     } else if (**name) {
       msg[0] = uri;
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("File URI using hostnames is not supported: %s"),msg,1);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("File URI using hostnames is not supported: %s"),msg,1);
       return 1;
     }
     return 0;
   }
-  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Unknown uri: %s"),&uri,1);
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Unknown uri: %s"),&uri,1);
   return 1;
 }
 
@@ -1939,7 +1939,7 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   file = freopen(filename,mode,file);
   if (file==NULL) {
     const char *tokens[4] = {strerror(errno),streamName,mode,filename};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("freopen(%s,%s,%s) failed: %s"),tokens,4);
+    c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("freopen(%s,%s,%s) failed: %s"),tokens,4);
     return 0;
   }
   return 1;
@@ -1978,7 +1978,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
     if (printError) {
       char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
     }
     return (char*) "";
   }
@@ -1991,13 +1991,13 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
     if (printError) {
       char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
     }
     return (char*) "";
   }
   buf[(buflen-1)-out_sz] = 0;
   if (strlen(buf) != (buflen-1)-out_sz) {
-    if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
+    if (printError) c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
     return (char*) "";
   }
   return GC_strdup(buf);
@@ -2142,7 +2142,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
     const char* fmt = "System.realpath failed on %s with errno: %d";
     char* msg = (char*)GC_malloc_atomic(strlen(path) + strlen(fmt) + 10);
     sprintf(msg, fmt, path, errno);
-    c_add_message(6000,
+    c_add_message(NULL,6000,
       ErrorType_scripting,
       ErrorLevel_warning,
       msg,
@@ -2293,7 +2293,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
     const char* fmt = "System.realpath failed on %s with errno: %d";
     char* msg = (char*)malloc(strlen(path) + strlen(fmt) + 10);
     sprintf(msg, fmt, path, errno);
-    c_add_message(6000,
+    c_add_message(NULL,6000,
       ErrorType_scripting,
       ErrorLevel_warning,
       msg,
@@ -2371,7 +2371,7 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
   struct stat buf1, buf2;
   if (stat(file1, &buf1)) {
     const char *c_tokens[2]={strerror(errno),file1};
-    c_add_message(85,
+    c_add_message(NULL,85,
         ErrorType_scripting,
         ErrorLevel_error,
         gettext("Could not access file %s: %s."),
@@ -2381,7 +2381,7 @@ int SystemImpl__fileIsNewerThan(const char *file1, const char *file2)
   }
   if (stat(file2, &buf2)) {
     const char *c_tokens[2]={strerror(errno),file2};
-    c_add_message(85,
+    c_add_message(NULL,85,
         ErrorType_scripting,
         ErrorLevel_error,
         gettext("Could not access file %s: %s."),

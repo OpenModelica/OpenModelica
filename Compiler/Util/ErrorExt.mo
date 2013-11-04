@@ -51,7 +51,7 @@ public function updateCurrentComponent
   input Integer rowend;
   input Integer colstart;
   input Integer colend;
-  external "C" ErrorImpl__updateCurrentComponent(str,writeable,fileName,rowstart,rowend,colstart,colend) annotation(Library = "omcruntime");
+  external "C" ErrorImpl__updateCurrentComponent(OpenModelica.threadData(),str,writeable,fileName,rowstart,rowend,colstart,colend) annotation(Library = "omcruntime");
 end updateCurrentComponent;
 
 public function addMessage
@@ -61,7 +61,7 @@ public function addMessage
   input String msg;
   input list<String> msg_tokens;
 
-  external "C" Error_addMessage(id,msg_type,msg_severity,msg,msg_tokens) annotation(Library = "omcruntime");
+  external "C" Error_addMessage(OpenModelica.threadData(),id,msg_type,msg_severity,msg,msg_tokens) annotation(Library = "omcruntime");
 end addMessage;
 
 public function addSourceMessage
@@ -77,53 +77,41 @@ public function addSourceMessage
   input String msg;
   input list<String> tokens;
 
-  external "C" Error_addSourceMessage(id,msg_type,msg_severity,sline,scol,eline,ecol,read_only,filename,msg,tokens) annotation(Library = "omcruntime");
+  external "C" Error_addSourceMessage(OpenModelica.threadData(),id,msg_type,msg_severity,sline,scol,eline,ecol,read_only,filename,msg,tokens) annotation(Library = "omcruntime");
 end addSourceMessage;
 
 public function printMessagesStr
   output String outString;
 
-  external "C" outString=Error_printMessagesStr() annotation(Library = "omcruntime");
+  external "C" outString=Error_printMessagesStr(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end printMessagesStr;
 
 public function getNumMessages
   output Integer num;
 
-  external "C" num=Error_getNumMessages() annotation(Library = "omcruntime");
+  external "C" num=Error_getNumMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getNumMessages;
 
 public function getNumErrorMessages
   output Integer num;
 
-  external "C" num=ErrorImpl__getNumErrorMessages() annotation(Library = "omcruntime");
+  external "C" num=ErrorImpl__getNumErrorMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getNumErrorMessages;
 
 public function getMessages
   output list<Error.TotalMessage> res;
 
-  external "C" res=Error_getMessages() annotation(Library = "omcruntime");
+  external "C" res=Error_getMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getMessages;
 
 public function clearMessages
-  external "C" ErrorImpl__clearMessages() annotation(Library = "omcruntime");
+  external "C" ErrorImpl__clearMessages(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end clearMessages;
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function errorOff
-
-  external "C" Error_errorOff() annotation(Library = "omcruntime");
-end errorOff;*/
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function errorOn
-
-  external "C" Error_errorOn() annotation(Library = "omcruntime");
-end errorOn;*/
 
 public function setCheckpoint "sets a checkpoint for the error messages, so error messages can be rolled back (i.e. deleted) up to this point
 A unique identifier for this checkpoint must be provided. It is checked when doing rollback or deletion"
   input String id "uniqe identifier for the checkpoint (up to the programmer to guarantee uniqueness)";
-  external "C" ErrorImpl__setCheckpoint(id) annotation(Library = "omcruntime");
+  external "C" ErrorImpl__setCheckpoint(OpenModelica.threadData(),id) annotation(Library = "omcruntime");
 end setCheckpoint;
 
 public function delCheckpoint "deletes the checkpoint at the top of the stack without
@@ -132,19 +120,19 @@ If the checkpoint id doesn't match, the application exits with -1.
 "
 
   input String id "unique identifier";
-  external "C" ErrorImpl__delCheckpoint(id) annotation(Library = "omcruntime");
+  external "C" ErrorImpl__delCheckpoint(OpenModelica.threadData(),id) annotation(Library = "omcruntime");
 end delCheckpoint;
 
 public function printErrorsNoWarning
   output String outString;
-  external "C" outString=Error_printErrorsNoWarning() annotation(Library = "omcruntime");
+  external "C" outString=Error_printErrorsNoWarning(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end printErrorsNoWarning;
 
 public function rollBack "rolls back error messages until the latest checkpoint,
 deleting all error messages added since that point in time. A unique identifier for the checkpoint must be provided
 The application will exit with return code -1 if this identifier does not match."
   input String id "unique identifier";
-  external "C" ErrorImpl__rollBack(id) annotation(Library = "omcruntime");
+  external "C" ErrorImpl__rollBack(OpenModelica.threadData(),id) annotation(Library = "omcruntime");
 end rollBack;
 
 public function isTopCheckpoint
@@ -154,23 +142,12 @@ public function isTopCheckpoint
   not sure that it exists (due to MetaModelica backtracking)."
   input String id "unique identifier";
   output Boolean isThere "tells us if the checkpoint exists (true) or doesn't (false)";
-  external "C" isThere=ErrorImpl__isTopCheckpoint(id) annotation(Library = "omcruntime");
+  external "C" isThere=ErrorImpl__isTopCheckpoint(OpenModelica.threadData(),id) annotation(Library = "omcruntime");
 end isTopCheckpoint;
-
-/* TODO: Implement an external C function for bootstrapped omc or remove me. DO NOT SIMPLY REMOVE THIS COMMENT
-public function getLastDeletedCheckpoint
-"@author: adrpo
-  This function returns the last deleted checkpoint id.
-  Is needed to see if the previous phase generated some
-  error messages or not"
-  output String lastCheckpoint ;
-  external "C" lastCheckpoint=Error_getLastDeletedCheckpoint() annotation(Library = "omcruntime");
-end getLastDeletedCheckpoint;*/
 
 public function setShowErrorMessages
   input Boolean inShow;
-  external "C" Error_setShowErrorMessages(inShow) annotation(Library = "omcruntime");
+  external "C" Error_setShowErrorMessages(OpenModelica.threadData(),inShow) annotation(Library = "omcruntime");
 end setShowErrorMessages;
 
 end ErrorExt;
-

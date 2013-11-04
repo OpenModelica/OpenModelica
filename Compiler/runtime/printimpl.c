@@ -87,13 +87,22 @@ static void make_key()
   pthread_key_create(&printimplKey,free_printimpl);
 }
 
-static print_members* getMembers()
+static print_members* getMembers(threadData_t *threadData)
 {
+  if (threadData && threadData->localRoots[LOCAL_ROOT_PRINT_MO]) {
+    return threadData->localRoots[LOCAL_ROOT_PRINT_MO];
+  }
   pthread_once(&printimpl_once_create_key,make_key);
   print_members *res = (print_members*) pthread_getspecific(printimplKey);
   if (res != NULL) return res;
   res = (print_members*) calloc(1,sizeof(print_members));
   pthread_setspecific(printimplKey,res);
+  if (threadData) {
+    /* Still use pthreads API to free the buffer on thread exit even though we pass this thing around
+     * We could change this to storing the free function in MMC_CATCH_TOP, but this might be faster if we pool threads
+     */
+    threadData->localRoots[LOCAL_ROOT_PRINT_MO] = res;
+  }
   return res;
 }
 
@@ -108,9 +117,9 @@ static print_members* getMembers()
 #define savedCurSize members->savedCurSize
 #define savedNfilled members->savedNfilled
 
-static int increase_buffer(void)
+static int increase_buffer(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   char *new_buf;
   int new_size;
   if (cursize == 0) {
@@ -132,9 +141,9 @@ static int increase_buffer(void)
   return 0;
 }
 
-static int increase_buffer_fixed(int increase)
+static int increase_buffer_fixed(threadData_t *threadData,int increase)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   char * new_buf;
   int new_size;
 
@@ -159,9 +168,9 @@ static int increase_buffer_fixed(int increase)
   return 0;
 }
 
-static int error_increase_buffer(void)
+static int error_increase_buffer(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   char * new_buf;
   int new_size;
 
@@ -183,16 +192,16 @@ static int error_increase_buffer(void)
   return 0;
 }
 
-static int print_error_buf_impl(const char *str)
+static int print_error_buf_impl(threadData_t *threadData,const char *str)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
 
   if (str == NULL) {
     return -1;
   }
   while (errorNfilled + strlen(str)+1 > errorCursize) {
-    if (error_increase_buffer() != 0) {
+    if (error_increase_buffer(threadData) != 0) {
       return -1;
     }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
@@ -203,39 +212,39 @@ static int print_error_buf_impl(const char *str)
   return 0;
 }
 
-static void PrintImpl__setBufSize(long newSize)
+static void PrintImpl__setBufSize(threadData_t *threadData,long newSize)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   if (newSize > 0) {
     printf(" setting init_size to: %ld\n",newSize);
-    increase_buffer_fixed(newSize);
+    increase_buffer_fixed(threadData,newSize);
   }
 }
 
-static void PrintImpl__unSetBufSize(void)
+static void PrintImpl__unSetBufSize(threadData_t *threadData)
 {
-  increase_buffer_fixed(INITIAL_BUFSIZE);
+  increase_buffer_fixed(threadData,INITIAL_BUFSIZE);
 }
 
 /* Returns 0 on success; 1 on failure */
-static int PrintImpl__printErrorBuf(const char* str)
+static int PrintImpl__printErrorBuf(threadData_t *threadData,const char* str)
 {
-  if (showErrorMessages) /* adrpo: should we show error messages while they happen? */
+  if (showErrorMessages(threadData)) /* adrpo: should we show error messages while they happen? */
   {
     fprintf(stderr, "%s", str);
     fflush(stderr);
   }
 
-  if (print_error_buf_impl(str) != 0) {
+  if (print_error_buf_impl(threadData,str) != 0) {
     return 1;
   }
 
   return 0;
 }
 
-static void PrintImpl__clearErrorBuf(void)
+static void PrintImpl__clearErrorBuf(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   errorNfilled=0;
   if (errorBuf != 0) {
     /* adrpo 2008-12-15 free the error buffer as it might have got quite big meantime */
@@ -246,11 +255,11 @@ static void PrintImpl__clearErrorBuf(void)
 }
 
 /* returns NULL on failure */
-static const char* PrintImpl__getErrorString(void)
+static const char* PrintImpl__getErrorString(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   if (errorBuf == 0) {
-    if(error_increase_buffer() != 0) {
+    if(error_increase_buffer(threadData) != 0) {
       return NULL;
     }
   }
@@ -258,14 +267,14 @@ static const char* PrintImpl__getErrorString(void)
 }
 
 /* returns 0 on success */
-static int PrintImpl__printBuf(const char* str)
+static int PrintImpl__printBuf(threadData_t *threadData,const char* str)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   long len = strlen(str);
   /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
 
   while (nfilled + len + 1 > cursize) {
-    if(increase_buffer()!= 0) {
+    if(increase_buffer(threadData)!= 0) {
       return 1;
     }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled); */
@@ -282,9 +291,9 @@ static int PrintImpl__printBuf(const char* str)
   return 0;
 }
 
-static void PrintImpl__clearBuf(void)
+static void PrintImpl__clearBuf(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   nfilled=0;
   if (buf != 0) {
     /* adrpo 2008-12-15 free the print buffer as it might have got quite big meantime */
@@ -295,14 +304,14 @@ static void PrintImpl__clearBuf(void)
 }
 
 /* returns NULL on failure */
-static const char* PrintImpl__getString(void)
+static const char* PrintImpl__getString(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   if(buf == NULL || buf[0]=='\0' || cursize==0){
     return "";
   }
   if (buf == 0) {
-    if (increase_buffer() != 0) {
+    if (increase_buffer(threadData) != 0) {
       return NULL;
     }
   }
@@ -310,9 +319,9 @@ static const char* PrintImpl__getString(void)
 }
 
 /* returns 0 on success */
-static int PrintImpl__writeBuf(const char* filename)
+static int PrintImpl__writeBuf(threadData_t *threadData,const char* filename)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
 #else
@@ -325,7 +334,7 @@ static int PrintImpl__writeBuf(const char* filename)
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};
-    c_add_message(21, /* WRITING_FILE_ERROR */
+    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error writing to file %s."),
@@ -344,7 +353,7 @@ static int PrintImpl__writeBuf(const char* filename)
   if (1 != fwrite(buf, nfilled, 1,  file))
   {
     const char *c_tokens[1]={filename};
-    c_add_message(21, /* WRITING_FILE_ERROR */
+    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error writing to file %s."),
@@ -365,9 +374,9 @@ static int PrintImpl__writeBuf(const char* filename)
 #include <regex.h>
 
 /* returns 0 on success */
-static int PrintImpl__writeBufConvertLines(const char *filename)
+static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *filename)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
 #if defined(__MINGW32__) || defined(_MSC_VER)
   const char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
 #else
@@ -397,7 +406,7 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
   /* First, compile the regular expressions */
   if (regcomp(&re_begin, re_str[0], REG_EXTENDED) || regcomp(&re_end, re_str[1], 0)) {
     const char *c_tokens[1]={filename};
-    c_add_message(21, /* WRITING_FILE_ERROR */
+    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error compiling regular expression: %s or %s."),
@@ -412,7 +421,7 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
   file = fopen(filename,fileOpenMode);
   if (file == NULL) {
     const char *c_tokens[1]={filename};
-    c_add_message(21, /* WRITING_FILE_ERROR */
+    c_add_message(NULL,21, /* WRITING_FILE_ERROR */
       ErrorType_scripting,
       ErrorLevel_error,
       gettext("Error writing to file %s."),
@@ -492,19 +501,19 @@ static int PrintImpl__writeBufConvertLines(const char *filename)
   return 0;
 }
 
-static long PrintImpl__getBufLength(void)
+static long PrintImpl__getBufLength(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   return nfilled;
 }
 
 /* returns 0 on success */
-static int PrintImpl__printBufSpace(long nSpaces)
+static int PrintImpl__printBufSpace(threadData_t *threadData,long nSpaces)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   if (nSpaces > 0) {
    while (nfilled + nSpaces + 1 > cursize) {
-     if(increase_buffer()!= 0) {
+     if(increase_buffer(threadData)!= 0) {
        return 1;
      }
    }
@@ -516,11 +525,11 @@ static int PrintImpl__printBufSpace(long nSpaces)
 }
 
 /* returns 0 on success */
-static int PrintImpl__printBufNewLine(void)
+static int PrintImpl__printBufNewLine(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   while (nfilled + 1+1 > cursize) {
-    if(increase_buffer()!= 0) {
+    if(increase_buffer(threadData)!= 0) {
       return 1;
     }
   }
@@ -530,15 +539,15 @@ static int PrintImpl__printBufNewLine(void)
   return 0;
 }
 
-static int PrintImpl__hasBufNewLineAtEnd(void)
+static int PrintImpl__hasBufNewLineAtEnd(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   return (nfilled > 0 && buf[nfilled-1] == '\n') ? 1 : 0;
 }
 
-static int PrintImpl__restoreBuf(long handle)
+static int PrintImpl__restoreBuf(threadData_t *threadData,long handle)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   if (handle < 0 || handle > MAXSAVEDBUFFERS-1) {
     fprintf(stderr,"Internal error, handle %ld out of range. Should be in [%d,%d]\n",handle,0,MAXSAVEDBUFFERS-1);
     return 1;
@@ -558,12 +567,12 @@ static int PrintImpl__restoreBuf(long handle)
   }
 }
 
-static long PrintImpl__saveAndClearBuf()
+static long PrintImpl__saveAndClearBuf(threadData_t *threadData)
 {
-  print_members* members = getMembers();
+  print_members* members = getMembers(threadData);
   long freeHandle,foundHandle=0;
   if (!buf) {
-    increase_buffer();
+    increase_buffer(threadData);
   }
   if (! savedBuffers) {
     savedBuffers = (char**)calloc(MAXSAVEDBUFFERS,sizeof(char*));
@@ -598,7 +607,7 @@ static long PrintImpl__saveAndClearBuf()
     return -1;
   }
   if (!buf) {
-    increase_buffer(); /* Initialize it; the saved buffers cannot handle NULL */
+    increase_buffer(threadData); /* Initialize it; the saved buffers cannot handle NULL */
   }
   savedBuffers[freeHandle] = buf;
   savedCurSize[freeHandle] = cursize;

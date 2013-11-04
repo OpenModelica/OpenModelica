@@ -61,7 +61,7 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
   ifstream stream(filename);
 
   if (!stream) {
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "Error opening result file %s.", &filename, 1);
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, "Error opening result file %s.", &filename, 1);
     return NULL;
   }
 
@@ -75,11 +75,11 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
     datasize = readIntervalSize;
   } else {
     if( readIntervalSize == 0) {
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "could not read interval size.", NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, "could not read interval size.", NULL, 0);
       return NULL;
     }
     if (readIntervalSize != datasize) {
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "interval size not matching data size.", NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, "interval size not matching data size.", NULL, 0);
       return NULL;
     }
   }
@@ -97,7 +97,7 @@ void * read_ptolemy_dataset(const char*filename, void* vars,int datasize)
     while( string(buf).find(var) == string(buf).npos || strlen(buf) > var.length()) {
       if (!stream.getline(buf,255)) {
         // if we reached end of file return..
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, "Variable %s not found in simulation result.", &cvar, 1);
+        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, "Variable %s not found in simulation result.", &cvar, 1);
         return NULL;
       }
     }

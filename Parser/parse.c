@@ -167,9 +167,9 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   line = lexer->getLine(lexer);
   offset = lexer->getCharPositionInLine(lexer)+1;
   if (*chars[1] && !ModelicaParser_lexerError) {
-    c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Lexer got '%s' but failed to recognize the rest: '%s'", (const char**) chars, 2, line, offset, line, offset, false, ModelicaParser_filename_C_testsuiteFriendly);
+    c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Lexer got '%s' but failed to recognize the rest: '%s'", (const char**) chars, 2, line, offset, line, offset, false, ModelicaParser_filename_C_testsuiteFriendly);
   } else if (!ModelicaParser_lexerError) {
-    c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Lexer failed to recognize '%s'", (const char**) chars, 1, line, offset, line, offset, false, ModelicaParser_filename_C_testsuiteFriendly);
+    c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Lexer failed to recognize '%s'", (const char**) chars, 1, line, offset, line, offset, false, ModelicaParser_filename_C_testsuiteFriendly);
   }
   ModelicaParser_lexerError = ANTLR3_TRUE;
   free(chars[0]);
@@ -235,22 +235,22 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
       token_text[0] = lookupTokenName(token->type,tokenNames);
       token_text[1] = token->type == ANTLR3_TOKEN_EOF ? "" : (const char*) str->chars;
       token_text[2] = lookupTokenName(ex->expecting,tokenNames);
-      c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Expected token of type %s, got '%s' of type %s", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
+      c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Expected token of type %s, got '%s' of type %s", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
       break;
     }
   case ANTLR3_MISSING_TOKEN_EXCEPTION:
     token_text[0] = lookupTokenName(ex->expecting,tokenNames);
-    c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Missing token: %s", token_text, 1, p_line, p_offset, p_line, p_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
+    c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Missing token: %s", token_text, 1, p_line, p_offset, p_line, p_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
     break;
   case ANTLR3_NO_VIABLE_ALT_EXCEPTION:
     token_text[0] = preToken->type == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*)preToken->getText(preToken)->chars;
     if (preToken->type == ANTLR3_TOKEN_EOF) n_offset = p_offset;
-    c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "No viable alternative near token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
+    c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "No viable alternative near token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
     break;
   case ModelicaParserException:
     {
       fileinfo* info = (fileinfo*) ex->custom;
-      c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Parse error: %s", token_text+1, 1, info->line1, info->offset1, info->line2, info->offset2, false, ModelicaParser_filename_C_testsuiteFriendly);
+      c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Parse error: %s", token_text+1, 1, info->line1, info->offset1, info->line2, info->offset2, false, ModelicaParser_filename_C_testsuiteFriendly);
       free(info);
       ex->custom = 0;
       break;
@@ -263,7 +263,7 @@ static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
     token_text[1] = preToken->type == ANTLR3_TOKEN_EOF ? "" : (const char*)preToken->getText(preToken)->chars;
     token_text[0] = lookupTokenName(preToken->type,tokenNames);
     if (preToken->type == ANTLR3_TOKEN_EOF) n_offset = p_offset;
-    c_add_source_message(2, ErrorType_syntax, ErrorLevel_error, "Parser error: %s near: %s (%s)", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
+    c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_error, "Parser error: %s near: %s (%s)", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C_testsuiteFriendly);
     break;
   }
 

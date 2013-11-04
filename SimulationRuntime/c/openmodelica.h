@@ -229,9 +229,25 @@ struct type_desc_s {
 #include <setjmp.h>
 /* Thread-specific data passed around in most functions.
  * It is also possible to fetch it using pthread_getspecific (mostly for external functions that were not passed the pointer) */
+enum {
+  LOCAL_ROOT_USER_DEFINED_0,
+  LOCAL_ROOT_USER_DEFINED_1,
+  LOCAL_ROOT_USER_DEFINED_2,
+  LOCAL_ROOT_USER_DEFINED_3,
+  LOCAL_ROOT_USER_DEFINED_4,
+  LOCAL_ROOT_USER_DEFINED_5,
+  LOCAL_ROOT_USER_DEFINED_6,
+  LOCAL_ROOT_USER_DEFINED_7,
+  LOCAL_ROOT_USER_DEFINED_8,
+  LOCAL_ROOT_ERROR_MO,
+  LOCAL_ROOT_PRINT_MO,
+  MAX_LOCAL_ROOTS
+};
+#define MAX_LOCAL_ROOTS 16
 typedef struct threadData_s {
   jmp_buf *mmc_jumper;
   jmp_buf *mmc_stack_overflow_jumper;
+  void *localRoots[MAX_LOCAL_ROOTS];
 } threadData_t;
 
 /* math functions (-lm)*/

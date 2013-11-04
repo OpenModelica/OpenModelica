@@ -683,7 +683,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     snprintf(buf,WARNINGBUFFSIZE,"Resultfile and Reference have different end time points!\n"
     "Reffile[%d]=%f\n"
     "File[%d]=%f\n",timeref.n,timeref.data[timeref.n-1],time.n,time.data[time.n-1]);
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, buf, NULL, 0);
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, buf, NULL, 0);
   }
   var1=NULL;
   var2=NULL;
@@ -715,7 +715,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
       if (dataref.n==0) {
         msg[0] = runningTestsuite ? SystemImpl__basename(reffilename) : reffilename;
         msg[1] = var;
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
+        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
         ngetfailedvars++;
         continue;
       }
@@ -730,7 +730,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
         if (data.data) free(data.data);
         msg[0] = runningTestsuite ? SystemImpl__basename(filename) : filename;
         msg[1] = var;
-        c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
+        c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get data of variable %s from file %s failed!\n"), msg, 2);
         ngetfailedvars++;
         continue;
       }
@@ -750,7 +750,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
 
   if (isResultCmp) {
     if (writeLogFile(resultfilename,&ddf,filename,reffilename,reltol,abstol)) {
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Cannot write to the difference (.csv) file!\n"), msg, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Cannot write to the difference (.csv) file!\n"), msg, 0);
     }
 
     if ((ddf.n > 0) || (ngetfailedvars > 0) || vardiffindx > 0){
@@ -761,7 +761,7 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
         res = (void*)mk_cons(mk_scon(cmpdiffvars[i]),res);
       }
       res = mk_cons(mk_scon("Files not Equal!"),res);
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Files not Equal\n"), msg, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("Files not Equal\n"), msg, 0);
     } else {
       res = mk_cons(mk_scon("Files Equal!"),res);
     }

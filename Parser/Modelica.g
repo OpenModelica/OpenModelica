@@ -858,7 +858,7 @@ assign_clause_a returns [void* ast]
               "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
               assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
           if (looks_like_der_cr && !metamodelica_enabled()) {
-            c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.",
+            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "der(cr) := exp is not legal Modelica code. OpenModelica accepts it for interoperability with non-standards-compliant Modelica tools. There is no way to suppress this warning.",
               NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
           }
@@ -1208,7 +1208,7 @@ primary returns [void* ast]
         errno = 0;
         d = strtod(chars,&endptr);
         modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to represent as a long or double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
-        c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "\%s-bit signed integers! Transforming: \%s into a real",
+        c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "\%s-bit signed integers! Transforming: \%s into a real",
           args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
         $ast = Absyn__REAL(mk_rcon(d));
@@ -1219,7 +1219,7 @@ primary returns [void* ast]
           long lt = ((long)1<<(RML_SIZE_INT == 8 ? 62 : 30))-1;
           if (l > lt) {
             const char *msg = RML_SIZE_INT != 8 ? "\%s-bit signed integers! Truncating integer: \%s to 1073741823" : "\%s-bit signed integers! Truncating integer: \%s to 4611686018427387903";
-            c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, msg,
+            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, msg,
                                  args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                  ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
             $ast = Absyn__INTEGER(RML_IMMEDIATE(RML_TAGFIXNUM(lt)));
@@ -1629,7 +1629,7 @@ cases2 returns [void* ast]
   ( (el=ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? th=THEN)? exp=expression SEMICOLON)?
     {
       if (es != NULL)
-        c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
+        c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                              NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                              ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
       if ($th) $el = $th;
@@ -1650,7 +1650,7 @@ onecase returns [void* ast]
   (CASE pat=pattern (GUARD guard=expression)? cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? th=THEN exp=expression SEMICOLON)
     {
         if (es != NULL)
-          c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
+          c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                                NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
         $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),or_nil(eqs),exp,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));

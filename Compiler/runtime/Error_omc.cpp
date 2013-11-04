@@ -44,7 +44,7 @@ extern "C" {
 
 extern "C" {
 
-void Error_addMessage(int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
+void Error_addMessage(threadData_t *threadData,int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
 {
   ErrorMessage::TokenList tokens;
   while (MMC_GETHDR(tokenlst) != MMC_NILHDR) {
@@ -52,50 +52,50 @@ void Error_addMessage(int errorID, void *msg_type, void *severity, const char* m
     tokens.push_back(string(token));
     tokenlst=MMC_CDR(tokenlst);
   }
-  add_message(errorID,
+  add_message(threadData,errorID,
               (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
               (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
               message,tokens);
 }
 
-extern void* Error_getMessages()
+extern void* Error_getMessages(threadData_t *threadData)
 {
-  return listReverse(ErrorImpl__getMessages());
+  return listReverse(ErrorImpl__getMessages(threadData));
 }
 
-extern const char* Error_printErrorsNoWarning()
+extern const char* Error_printErrorsNoWarning(threadData_t *threadData)
 {
-  std::string res = ErrorImpl__printErrorsNoWarning();
-  return strcpy(ModelicaAllocateString(res.size()), res.c_str());
+  std::string res = ErrorImpl__printErrorsNoWarning(threadData);
+  return GC_strdup(res.c_str());
 }
 
-extern const char* Error_printMessagesStr()
+extern const char* Error_printMessagesStr(threadData_t *threadData)
 {
-  std::string res = ErrorImpl__printMessagesStr();
-  return strcpy(ModelicaAllocateString(res.size()), res.c_str());
+  std::string res = ErrorImpl__printMessagesStr(threadData);
+  return GC_strdup(res.c_str());
 }
 
-extern void Error_addSourceMessage(int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
+extern void Error_addSourceMessage(threadData_t *threadData,int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
 {
   ErrorMessage::TokenList tokens;
   while(MMC_GETHDR(tokenlst) != MMC_NILHDR) {
     tokens.push_back(string(MMC_STRINGDATA(MMC_CAR(tokenlst))));
     tokenlst=MMC_CDR(tokenlst);
   }
-  add_source_message(_id,
+  add_source_message(threadData,_id,
                      (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
                      (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
                      _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
 }
 
-extern int Error_getNumMessages()
+extern int Error_getNumMessages(threadData_t *threadData)
 {
-  return getMembers()->errorMessageQueue->size();
+  return getMembers(threadData)->errorMessageQueue->size();
 }
 
-void Error_setShowErrorMessages(int *show)
+void Error_setShowErrorMessages(threadData_t *threadData,int show)
 {
-  showErrorMessages = show ? 1 : 0;
+  getMembers(threadData)->showErrorMessages = show ? 1 : 0;
 }
 
 }

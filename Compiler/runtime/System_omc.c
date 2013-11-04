@@ -718,7 +718,7 @@ static int System_forkCallJoin(int *statuses, int *ids, int len, int *working)
     id = wait(&status);
     if (id == -1) {
       const char *tokens[1] = {strerror(errno)};
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Failed to wait for forked process to return: %s"),tokens,1);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Failed to wait for forked process to return: %s"),tokens,1);
       MMC_THROW();
     }
     if (WIFEXITED(status)) {
@@ -767,7 +767,7 @@ extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(threadDat
     pid_t id = fork();
     if (id == -1) {
       const char *tokens[1] = {strerror(errno)};
-      c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("fork() failed: %s"),tokens,1);
+      c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("fork() failed: %s"),tokens,1);
       MMC_THROW();
     } else if (id == 0) {
       int exitstatus = 1;
