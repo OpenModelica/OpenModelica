@@ -54,7 +54,6 @@
 #include "MessagesWidget.h"
 #include "LibraryTreeWidget.h"
 #include "DocumentationWidget.h"
-#include "VariablesWidget.h"
 #include "SimulationDialog.h"
 #include "GUI/Containers/PlotWindowContainer.h"
 #include "ModelWidgetContainer.h"
@@ -95,6 +94,7 @@ public:
   QDockWidget* getDocumentationDockWidget();
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
+  SimulationDialog* getSimulationDialog();
   PlotWindowContainer* getPlotWindowContainer();
   //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
   ModelWidgetContainer* getModelWidgetContainer();

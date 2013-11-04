@@ -36,6 +36,7 @@
  */
 
 #include "LibraryTreeWidget.h"
+#include "VariablesWidget.h"
 
 ItemDelegate::ItemDelegate(QObject *pParent)
   : QItemDelegate(pParent)
@@ -130,6 +131,14 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     icon.paint(painter, decorationRect, option.decorationAlignment, QIcon::Normal, QIcon::Off);
   else
     drawDecoration(painter, opt, decorationRect, pixmap);
+  if (parent() && qobject_cast<VariablesTreeView*>(parent()))
+  {
+    if ((index.column() == 1) && (index.flags() & Qt::ItemIsEditable))
+    {
+      /* The display rect is slightly larger than the area because it include the outer line. */
+      painter->drawRect(displayRect.adjusted(0, 0, -1, -1));
+    }
+  }
   painter->restore();
 }
 

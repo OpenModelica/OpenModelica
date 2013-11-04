@@ -39,44 +39,108 @@
 #define VARIABLESWIDGET_H
 
 #include "MainWindow.h"
+#include "SimulationDialog.h"
 #include "PlotWindow.h"
 
 class MainWindow;
-
-class VariableTreeItem : public QTreeWidgetItem
+class SimulationOptions;
+class VariablesTreeItem
 {
 public:
-  VariableTreeItem(QString text, QString parentName, QString nameStructure, QString fileName, QString filePath, QString tooltip,
-                   QTreeWidget *parent = 0);
-  QIcon getVariableTreeItemIcon(QString name);
-  void setName(QString name);
-  QString getName();
-  void setParentName(QString parentName);
-  QString getParentName();
-  void setNameStructure(QString nameStructure);
-  QString getNameStructure();
-  void setFileName(QString fileName);
-  QString getFileName();
-  void setFilePath(QString filePath);
-  QString getFilePath();
+  VariablesTreeItem(const QVector<QVariant> &variableItemData, VariablesTreeItem *pParent = 0, bool isRootItem = false);
+  ~VariablesTreeItem();
+  QList<VariablesTreeItem*> getChildren() const {return mChildren;}
+  bool isRootItem() {return mIsRootItem;}
+  QString getFilePath() {return mFilePath;}
+  QString getFileName() {return mFileName;}
   QString getPlotVariable();
+  QString getVariableName() {return mVariableName;}
+  bool isChecked() const {return mChecked;}
+  void setChecked(bool set) {mChecked = set;}
+  bool isEditable() const {return mEditable;}
+  void setEditable(bool set) {mEditable = set;}
+  SimulationOptions getSimulationOptions() {return mSimulationOptions;}
+  void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
+  QIcon getVariableTreeItemIcon(QString name) const;
+  void insertChild(int position, VariablesTreeItem *pVariablesTreeItem);
+  VariablesTreeItem *child(int row);
+  int childCount() const;
+  void removeChildren();
+  void removeChild(VariablesTreeItem *pVariablesTreeItem);
+  int columnCount() const;
+  bool setData(int column, const QVariant &value, int role = Qt::EditRole);
+  QVariant data(int column, int role = Qt::DisplayRole) const;
+  int row() const;
+  VariablesTreeItem *parent();
 private:
-  QString mName;
-  QString mParentName;
-  QString mNameStructure;
-  QString mFileName;
+  QList<VariablesTreeItem*> mChildren;
+  VariablesTreeItem *mpParentVariablesTreeItem;
+  bool mIsRootItem;
   QString mFilePath;
+  QString mFileName;
+  QString mVariableName;
+  QString mDisplayVariableName;
+  QString mValue;
+  QString mDescription;
+  QString mToolTip;
+  bool mChecked;
+  bool mEditable;
+  SimulationOptions mSimulationOptions;
 };
 
-class VariablesWidget;
-
-class VariablesTreeWidget : public QTreeWidget
+class VariablesTreeView;
+class VariablesTreeModel : public QAbstractItemModel
 {
   Q_OBJECT
 public:
-  VariablesTreeWidget(VariablesWidget *pParent);
-  VariableTreeItem* getVariableTreeItem(QString name);
-  VariablesWidget* getVariablesWidget();
+  VariablesTreeModel(VariablesTreeView *pVariablesTreeView = 0);
+  VariablesTreeItem* getRootVariablesTreeItem() {return mpRootVariablesTreeItem;}
+  int columnCount(const QModelIndex &parent = QModelIndex()) const;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+  QModelIndex parent(const QModelIndex & index) const;
+  bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  Qt::ItemFlags flags(const QModelIndex &index) const;
+  VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *root) const;
+  QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
+  QModelIndex VariablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
+                                            const QModelIndex &parentIndex) const;
+  void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
+  QStringList makeVariableParts(QString variable);
+  bool removeVariableTreeItem(QString variable);
+  void unCheckVariables(VariablesTreeItem *pVariablelsTreeItem);
+private:
+  VariablesTreeView *mpVariablesTreeView;
+  VariablesTreeItem *mpRootVariablesTreeItem;
+  VariablesTreeItem* getVariablesTreeItem(const QModelIndex &index) const;
+  QString getVariableValue(QString variableToFind, QDomDocument xmlDocument, bool *found);
+  QString getVariableDescription(QString variableToFind, QDomDocument xmlDocument);
+signals:
+  void itemChecked(const QModelIndex &index);
+  void variableTreeItemRemoved(QString variable);
+public slots:
+  void removeVariableTreeItem();
+};
+
+class VariableTreeProxyModel : public QSortFilterProxyModel
+{
+  Q_OBJECT
+public:
+  VariableTreeProxyModel(QObject *parent = 0);
+  void clearfilter();
+protected:
+  bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+};
+
+class VariablesWidget;
+class VariablesTreeView : public QTreeView
+{
+  Q_OBJECT
+public:
+  VariablesTreeView(VariablesWidget *pVariablesWidget);
+  VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
 private:
   VariablesWidget *mpVariablesWidget;
 };
@@ -85,30 +149,32 @@ class VariablesWidget : public QWidget
 {
   Q_OBJECT
 public:
-  VariablesWidget(MainWindow *pParent);
-  void createActions();
-  void addPlotVariablestoTree(QString fileName, QString filePath, QStringList plotVariablesList);
-  void addPlotVariableToTree(QString fileName, QString filePath, QString parentStructure, QString childName,
-                             QString fullStructure = QString(), bool derivative = false);
+  VariablesWidget(MainWindow *pMainWindow);
+  MainWindow* getMainWindow() {return mpMainWindow;}
+  VariableTreeProxyModel* getVariableTreeProxyModel() {return mpVariableTreeProxyModel;}
+  void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
+  void variablesUpdated();
+  void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
-  void unHideChildItems(QTreeWidgetItem *pItem);
+  void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName, QDomDocument xmlDocument);
+  void findVariableAndUpdateValue(QString variableToFind, QString value, QDomDocument xmlDocument);
 private:
   MainWindow *mpMainWindow;
   QLineEdit *mpFindVariablesTextBox;
-  VariablesTreeWidget *mpVariablesTreeWidget;
+  QComboBox *mpFindSyntaxComboBox;
+  QCheckBox *mpFindCaseSensitiveCheckBox;
+  VariableTreeProxyModel *mpVariableTreeProxyModel;
+  VariablesTreeModel *mpVariablesTreeModel;
+  VariablesTreeView *mpVariablesTreeView;
   QList<QStringList> mPlotParametricVariables;
   QString mFileName;
-  VariableTreeItem *mSelectedPlotTreeItem;
-  QAction *mpDeleteResultAction;
-signals:
-  void resultFileRemoved(VariableTreeItem *item);
-  void resultFileUpdated(VariablesTreeWidget *pVariablesTreeWidget);
+  QMdiSubWindow *mpLastActiveSubWindow;
 public slots:
-  void plotVariables(QTreeWidgetItem *item, int column, OMPlot::PlotWindow *pPlotWindow = 0);
-  void updatePlotVariablesTree(QMdiSubWindow *window);
+  void plotVariables(const QModelIndex &index, OMPlot::PlotWindow *pPlotWindow = 0);
+  void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);
-  void deleteVariablesTreeItem();
   void findVariables();
+  void reSimulate();
 };
 
 #endif // VARIABLESWIDGET_H

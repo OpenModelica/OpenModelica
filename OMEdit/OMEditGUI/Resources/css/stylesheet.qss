@@ -8,27 +8,36 @@ QMainWindow::separator {
 }
 
 /* Library Widget Styles */
-QTreeWidget::branch {
-    border-image: url(:/Resources/icons/vline.png) 0;
+QTreeWidget::branch,
+QTreeView::branch {
+  border-image: url(:/Resources/icons/vline.png) 0;
 }
-QTreeWidget::branch:has-siblings:adjoins-item {
-    /*border-image: url(:/Resources/icons/branch-more.png) 0;*/
-    border-image: url(:/Resources/icons/vline.png) 0;
-    image: url(:/Resources/icons/branch-more.png);
+QTreeWidget::branch:has-siblings:adjoins-item,
+QTreeView::branch:has-siblings:adjoins-item {
+  border-image: url(:/Resources/icons/vline.png) 0;
+  image: url(:/Resources/icons/branch-more.png);
 }
-QTreeWidget::branch:!has-children:!has-siblings:adjoins-item {
-    border-image: url(:/Resources/icons/branch-end.png) 0;
+QTreeWidget::branch:!has-children:!has-siblings:adjoins-item,
+QTreeView::branch:!has-children:!has-siblings:adjoins-item {
+  border-image: url(:/Resources/icons/branch-end.png) 0;
 }
-QTreeWidget::branch:has-children:!has-siblings:closed, QTreeWidget::branch:closed:has-children:has-siblings {
-    border-image: none;
-    image: url(:/Resources/icons/branch-closed.png);
+QTreeWidget::branch:has-children:!has-siblings:closed,
+QTreeWidget::branch:closed:has-children:has-siblings,
+QTreeView::branch:has-children:!has-siblings:closed,
+QTreeView::branch:closed:has-children:has-siblings {
+  border-image: none;
+  image: url(:/Resources/icons/branch-closed.png);
 }
-QTreeWidget::branch:open:has-children:!has-siblings, QTreeWidget::branch:open:has-children:has-siblings  {
-    border-image: none;
-    image: url(:/Resources/icons/branch-open.png);
+QTreeWidget::branch:open:has-children:!has-siblings,
+QTreeWidget::branch:open:has-children:has-siblings,
+QTreeView::branch:open:has-children:!has-siblings,
+QTreeView::branch:open:has-children:has-siblings {
+  border-image: none;
+  image: url(:/Resources/icons/branch-open.png);
 }
-QTreeWidget::item {
-    height: 22px;
+QTreeWidget::item,
+QTreeView::item {
+  height: 22px;
 }
 QTreeWidget#SystemLibrariesTree::branch, QTreeWidget#UserLibrariesTree::branch, QTreeWidget#MessagesTree::branch, QTreeWidget#SearchedItemsTree::branch {
     border-image: none;

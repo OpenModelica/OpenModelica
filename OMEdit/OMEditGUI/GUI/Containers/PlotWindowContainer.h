@@ -39,12 +39,9 @@
 #define PLOTWINDOWCONTAINER_H
 
 #include "MainWindow.h"
-#include "VariablesWidget.h"
 #include "Plot.h"
 
 class MainWindow;
-class VariablesTreeWidget;
-class VariableTreeItem;
 
 class PlotWindowContainer : public MdiArea
 {
@@ -58,8 +55,7 @@ public slots:
   void addPlotWindow();
   void addPlotParametricWindow();
   void clearPlotWindow();
-  void updatePlotWindows(VariableTreeItem *pItem);
-  void updatePlotWindows(VariablesTreeWidget *pVariablesTreeWidget);
+  void updatePlotWindows(QString variable);
 };
 
 #endif // PLOTWINDOWCONTAINER_H

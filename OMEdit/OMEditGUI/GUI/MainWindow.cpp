@@ -38,6 +38,7 @@
 #include <QtSvg/QSvgGenerator>
 
 #include "MainWindow.h"
+#include "VariablesWidget.h"
 #include "Helper.h"
 
 MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
@@ -291,6 +292,11 @@ VariablesWidget* MainWindow::getVariablesWidget()
 QDockWidget* MainWindow::getVariablesDockWidget()
 {
   return mpVariablesDockWidget;
+}
+
+SimulationDialog* MainWindow::getSimulationDialog()
+{
+  return mpSimulationDialog;
 }
 
 PlotWindowContainer* MainWindow::getPlotWindowContainer()
@@ -617,7 +623,7 @@ void MainWindow::openResultFiles(QStringList fileNames)
     // close the simulation result file.
     mpOMCProxy->closeSimulationResultFile();
     mpPerspectiveTabbar->setCurrentIndex(2);
-    mpVariablesWidget->addPlotVariablestoTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list);
+    mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
     mpVariablesDockWidget->show();
   }
   mpOMCProxy->changeDirectory(currentDirectory);

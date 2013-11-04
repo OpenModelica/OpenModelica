@@ -40,9 +40,59 @@
 
 #include "MainWindow.h"
 
+class SimulationOptions
+{
+public:
+  SimulationOptions()
+  {
+    mClassName = "";
+    mOutputFileName = "";
+    mSimulationFlags = QStringList();
+    mShowGeneratedFiles = false;
+    mValid = false;
+    mReSimulate = false;
+    mProfiling = false;
+    mWorkingDirectory = "";
+  }
+  SimulationOptions(QString className, QString outputFileName, QStringList simulationFlags, bool showGeneratedFiles, bool profiling,
+                    QString workingDirectory)
+  {
+    mClassName = className;
+    mOutputFileName = outputFileName;
+    mSimulationFlags = simulationFlags;
+    mShowGeneratedFiles = showGeneratedFiles;
+    mValid = true;
+    mReSimulate = false;
+    mProfiling = profiling;
+    mWorkingDirectory = workingDirectory;
+  }
+  operator QVariant() const
+  {
+    return QVariant::fromValue(*this);
+  }
+  QString getClassName() {return mClassName;}
+  QString getOutputFileName() {return mOutputFileName;}
+  QStringList getSimulationFlags() {return mSimulationFlags;}
+  bool getShowGeneratedFiles() {return mShowGeneratedFiles;}
+  bool isValid() {return mValid;}
+  void setReSimuate(bool set) {mReSimulate = set;}
+  bool isReSimulate() {return mReSimulate;}
+  bool isProfiling() {return mProfiling;}
+  QString getWorkingDirectory() {return mWorkingDirectory;}
+private:
+  QString mClassName;
+  QString mOutputFileName;
+  QStringList mSimulationFlags;
+  bool mShowGeneratedFiles;
+  bool mValid;
+  bool mReSimulate;
+  bool mProfiling;
+  QString mWorkingDirectory;
+};
+Q_DECLARE_METATYPE(SimulationOptions)
+
 class MainWindow;
 class ProgressDialog;
-
 class SimulationDialog : public QDialog
 {
   Q_OBJECT
@@ -137,6 +187,7 @@ private:
   QPushButton *mpCancelButton;
   QPushButton *mpSimulateButton;
   QDialogButtonBox *mpButtonBox;
+  SimulationOptions mSimulationOptions;
   QString mSimulationParameters;
   QStringList mSimulationFlags;
   bool mIsCancelled;
@@ -156,12 +207,11 @@ private:
   void initializeFields();
   void translateModel();
   void compileModel();
-  void setProcessEnvironment(QProcess *pProcess);
-  void runSimulationExecutable();
   void saveSimulationOptions();
   void writeCompilationOutput(QString output, QColor color);
   void writeSimulationOutput(QString output, QColor color);
 public slots:
+  void runSimulationExecutable(SimulationOptions simulationOptions);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
   void simulate();
