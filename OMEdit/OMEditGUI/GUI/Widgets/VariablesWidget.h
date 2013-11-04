@@ -107,6 +107,8 @@ public:
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
   QModelIndex VariablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
                                             const QModelIndex &parentIndex) const;
+  QList<QMap<QString, QString> > parseInitXml(QXmlStreamReader &xmlReader);
+  QMap<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   QStringList makeVariableParts(QString variable);
   bool removeVariableTreeItem(QString variable);
@@ -115,8 +117,8 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem* getVariablesTreeItem(const QModelIndex &index) const;
-  QString getVariableValue(QString variableToFind, QDomDocument xmlDocument, bool *found);
-  QString getVariableDescription(QString variableToFind, QDomDocument xmlDocument);
+  QString getVariableValueAndDescription(QString variableToFind, QList<QMap<QString, QString> > scalarVariables, bool *found,
+                                         QString *description);
 signals:
   void itemChecked(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
@@ -156,8 +158,9 @@ public:
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
-  void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName, QDomDocument xmlDocument);
-  void findVariableAndUpdateValue(QString variableToFind, QString value, QDomDocument xmlDocument);
+  void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
+                                 QHash<QString, QMap<QString, QString> > *variables);
+  void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QMap<QString, QString> > variables);
 private:
   MainWindow *mpMainWindow;
   QLineEdit *mpFindVariablesTextBox;

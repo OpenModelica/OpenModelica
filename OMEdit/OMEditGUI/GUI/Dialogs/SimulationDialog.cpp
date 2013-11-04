@@ -456,13 +456,13 @@ void SimulationDialog::compileModel()
   const char *omdev = getenv("OMDEV");
   if (QString(omdev).isEmpty())
   {
-    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW\\bin"));
-    mCompilationProcessPath = QString(Helper::OpenModelicaHome).append("MinGW\\bin\\mingw32-make.exe");
+    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW/bin"));
+    mCompilationProcessPath = QString(Helper::OpenModelicaHome).append("MinGW/bin/mingw32-make.exe");
   }
   else
   {
-    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin"));
-    mCompilationProcessPath = QString(omdev).append(QDir::separator()).append("tools\\mingw\\bin\\mingw32-make.exe");
+    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools/mingw/bin"));
+    mCompilationProcessPath = QString(omdev).append(QDir::separator()).append("tools/mingw/bin/mingw32-make.exe");
   }
   mpCompilationProcess->setProcessEnvironment(environment);
 #endif
