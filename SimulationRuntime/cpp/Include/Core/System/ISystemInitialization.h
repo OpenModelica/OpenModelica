@@ -23,6 +23,7 @@ public:
 
   /// (Re-) initialize the system of equations and bounded parameters
   virtual void initialize() = 0;
+  virtual void initEquations() = 0;
   //sets the initial status
   virtual void setInitial(bool) = 0;
   //returns the intial status

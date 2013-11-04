@@ -2163,7 +2163,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   bool getCondition(unsigned int index);
   private:
     //Methods:
-     void initEquations();
+    
   
     
      /*
@@ -2541,6 +2541,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual void setInitial(bool);
     /// (Re-) initialize the system of equations and bounded parameters
     virtual void initialize();
+    virtual  void initEquations();
  // Returns the history object to query simulation results
    virtual IHistory* getHistory();
    virtual void stepCompleted(double time);
@@ -6411,11 +6412,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    void <%lastIdentOfPath(modelInfo.name)%>::setInitial(bool status)
     {
       _initial = status;
-    if(_initial)
+   if(_initial)
         _callType = IContinuous::DISCRETE;
       else
        _callType = IContinuous::CONTINUOUS;
-       
+   
   
     }
   >>

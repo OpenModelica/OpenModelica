@@ -29,14 +29,14 @@ void Initialization::initializeSystem()
    while((restart /*|| cond_restart*/) && !(iter++ > 15))
    {
     event_system->getConditions(conditions0);
-    continous_system->evaluate(IContinuous::ALL);    // vxworksupdate
+    _system->initEquations();    // vxworksupdate
     restart = event_system->checkForDiscreteEvents();
     event_system->getConditions(conditions1);
+    event_system->saveDiscreteVars();
     cond_restart = !std::equal (conditions1, conditions1+dim,conditions0);
    }
 
    mixed_system->saveAll();
-  continous_system->evaluate(IContinuous::ALL);    // vxworksupdate
-  _system->setInitial(false);
+   _system->setInitial(false);
 
 }
