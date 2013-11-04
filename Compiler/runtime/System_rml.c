@@ -1842,3 +1842,17 @@ RML_BEGIN_LABEL(System__initGarbageCollector)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__fileContentsEqual)
+{
+  rmlA0 = mk_icon(SystemImpl__fileContentsEqual(RML_STRINGDATA(rmlA0), RML_STRINGDATA(rmlA1)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__rename)
+{
+  rmlA0 = mk_icon(SystemImpl__rename(RML_STRINGDATA(rmlA0), RML_STRINGDATA(rmlA1)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

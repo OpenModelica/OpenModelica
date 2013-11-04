@@ -987,6 +987,20 @@ public function fileIsNewerThan
   external "C" result = System_fileIsNewerThan(file1,file2) annotation(Library = {"omcruntime"});
 end fileIsNewerThan;
 
+public function fileContentsEqual
+  input String file1;
+  input String file2;
+  output Boolean result;
+  external "C" result = SystemImpl__fileContentsEqual(file1,file2) annotation(Library = {"omcruntime"});
+end fileContentsEqual;
+
+public function rename
+  input String source;
+  input String dest;
+  output Boolean result;
+  external "C" result = SystemImpl__rename(source,dest) annotation(Library = {"omcruntime"});
+end rename;
+
 public function numProcessors
   output Integer result;
   external "C" result = System_numProcessors() annotation(Library = {"omcruntime"});

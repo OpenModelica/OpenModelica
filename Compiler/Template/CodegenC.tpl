@@ -6916,10 +6916,10 @@ case STMT_FAILURE(__) then
     ;separator="\n")
   <<
   <%tmp%> = 0; /* begin failure */
-  MMC_TRY()
+  MMC_TRY_INTERNAL(mmc_jumper)
     <%stmtBody%>
     <%tmp%> = 1;
-  MMC_CATCH()
+  MMC_CATCH_INTERNAL(mmc_jumper)
   if (<%tmp%>) MMC_THROW_INTERNAL(); /* end failure */
   >>
 end algStmtFailure;
@@ -8846,13 +8846,13 @@ case exp as MATCHEXPRESSION(__) then
           case MATCH(switch=SOME(_)) then '<%done%> = 0;<%\n%>{'
           else 'for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {'
           %>
-            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY()" %>
+            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY_INTERNAL(mmc_jumper)" %>
 
             switch (MMC_SWITCH_CAST(<%ix%>)) {
             <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,startIndexOutputs,prefix,startIndexInputs,exp.inputs,onPatternFail,done,context,&varDecls)%>
             }
 
-            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH()" %>
+            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH_INTERNAL(mmc_jumper)" %>
           }
 
           if (!<%done%>) MMC_THROW_INTERNAL();

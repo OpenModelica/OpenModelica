@@ -1824,6 +1824,17 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
+    case (cache,env,"compareFilesAndMove",{Values.STRING(str1),Values.STRING(str2)},st,_)
+      equation
+        true = System.regularFileExists(str1);
+        b = System.regularFileExists(str2) and System.fileContentsEqual(str1,str2);
+        b = Debug.bcallret2(not b,System.rename,str1,str2,b);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,"compareFilesAndMove",_,st,_)
+      then (cache,Values.BOOL(false),st);
+
     case (cache,env,"readFileNoNumeric",{Values.STRING(str)},st,_)
       equation
         str_1 = System.readFileNoNumeric(str);

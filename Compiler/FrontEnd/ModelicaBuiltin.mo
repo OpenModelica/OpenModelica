@@ -1371,6 +1371,16 @@ external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end writeFile;
 
+function compareFilesAndMove
+  input String newFile;
+  input String oldFile;
+  output Boolean success;
+external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+<p>Compares <i>newFile</i> and <i>oldFile</i>. If they differ, overwrite <i>oldFile</i> with <i>newFile</i></p>
+<p>Basically: test -f ../oldFile && cmp newFile oldFile || mv newFile oldFile</p>
+</html>"));
+end compareFilesAndMove;
+
 function regex  "Sets the error buffer and returns -1 if the regex does not compile.
 
   The returned result is the same as POSIX regex():

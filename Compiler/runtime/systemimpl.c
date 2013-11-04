@@ -2398,6 +2398,45 @@ void SystemImpl__initGarbageCollector(void)
   GC_init();
 }
 
+int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
+{
+  char buf1[8192],buf2[8192];
+  FILE *f1,*f2;
+  int i1,i2,totalread=0,error=0;
+#if !defined(_MSC_VER)
+  struct stat stbuf1;
+  struct stat stbuf2;
+  if (stat(file1, &stbuf1)) return 0;
+  if (stat(file2, &stbuf2)) return 0;
+  if (stbuf1.st_size != stbuf2.st_size) return 0;
+#endif
+  f1 = fopen(file1,"rb");
+  if (f1 == NULL) {
+    return 0;
+  }
+  f2 = fopen(file2,"rb");
+  if (f2 == NULL) {
+    fclose(f1);
+    return 0;
+  }
+  do {
+    i1 = fread(buf1,1,8192,f1);
+    i2 = fread(buf2,1,8192,f2);
+    if (i1 != i2 || strncmp(buf1,buf2,i1)) {
+      error = 1;
+    }
+    totalread += i1;
+  } while(i1 != 0 && error == 0);
+  fclose(f1);
+  fclose(f2);
+  return !error;
+}
+
+int SystemImpl__rename(const char *source, const char *dest)
+{
+  return 0==rename(source,dest);
+}
+
 #ifdef __cplusplus
 }
 #endif
