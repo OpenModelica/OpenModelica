@@ -740,10 +740,10 @@ static int System_forkCallJoin(int *statuses, int *ids, int len, int *working)
 extern void* System_forkCall(int numThreads, void *dataLst, void (*fn)(threadData_t*,void*))
 {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available on Windows"),NULL,0);  
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not available on Windows"),NULL,0);
   MMC_THROW();
 #elif defined(__APPLE_CC__)
-  c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not safe to use on OSX"),NULL,0);  
+  c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Fork is not safe to use on OSX"),NULL,0);
   MMC_THROW();
 #else
   threadData_t *threadData = (threadData_t *) pthread_getspecific(mmc_thread_data_key);
