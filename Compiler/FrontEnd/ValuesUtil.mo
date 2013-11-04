@@ -859,7 +859,7 @@ public function valueExp "Transforms a Value into an Exp"
   input Values.Value inValue;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inValue)
+  outExp := match (inValue)
     local
       Integer dim;
       list<DAE.Exp> explist;
@@ -869,7 +869,6 @@ algorithm
       Values.Value v;
       list<Values.Value> xs,xs2,vallist;
       list<DAE.Type> typelist;
-      list<list<DAE.Exp>> mexpl;
       list<Integer> int_dims;
       DAE.Dimensions dims;
       Integer i;
@@ -892,48 +891,7 @@ algorithm
     case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
     case (Values.ENUM_LITERAL(name = path, index = i)) then DAE.ENUM_LITERAL(path, i);
 
-    case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT,false,{});
-    case (Values.ARRAY(valueLst = {}, dimLst = int_dims))
-      equation
-        dims = List.map(int_dims, Expression.intDimension);
-      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, dims, DAE.emptyTypeSource),false,{});
-
-    // Matrix
-    case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = dim::int_dims))
-      equation
-        failure(Values.ARRAY(valueLst = _) = v);
-        explist = List.map((v :: xs), valueExp);
-        DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
-        t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
-      then
-        DAE.MATRIX(t,dim,explist::mexpl);
-
-    // Matrix last row
-    case(Values.ARRAY(valueLst = {Values.ARRAY(valueLst=v::xs)}))
-      equation
-        failure(Values.ARRAY(valueLst = _) = v);
-        dim = listLength(v::xs);
-        explist = List.map((v :: xs), valueExp);
-        vt = Types.typeOfValue(v);
-        t = Types.simplifyType(vt);
-        dim = listLength(v::xs);
-        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
-      then
-        DAE.MATRIX(t,dim,{explist});
-
-    // Generic array
-    case (Values.ARRAY(valueLst = (v :: xs)))
-      equation
-        explist = List.map((v :: xs), valueExp);
-        vt = Types.typeOfValue(v);
-        t = Types.simplifyType(vt);
-        dim = listLength(v::xs);
-        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
-        b = Types.isArray(vt,{});
-        b = boolNot(b);
-      then
-        DAE.ARRAY(t,b,explist);
+    case (Values.ARRAY(valueLst = vallist, dimLst = int_dims)) then valueExpArray(vallist,int_dims);
 
     case (Values.TUPLE(valueLst = vallist))
       equation
@@ -1015,9 +973,68 @@ algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then
         fail();
-  end matchcontinue;
+  end match;
 end valueExp;
 
+protected function valueExpArray
+  input list<Values.Value> values;
+  input list<Integer> inDims;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue (values,inDims)
+    local
+      Values.Value v;
+      list<Values.Value> xs,xs2;
+      list<DAE.Exp> explist;
+      DAE.Dimensions dims;
+      list<Integer> int_dims;
+      DAE.Type t,vt;
+      Integer dim,i;
+      Boolean b;
+      list<list<DAE.Exp>> mexpl;
+    case ({},{}) then DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT,false,{});
+    case ({},_)
+      equation
+        dims = List.map(inDims, Expression.intDimension);
+      then DAE.ARRAY(DAE.T_ARRAY(DAE.T_UNKNOWN_DEFAULT, dims, DAE.emptyTypeSource),false,{});
+
+    // Matrix
+    case(Values.ARRAY(valueLst=v::xs)::xs2,dim::int_dims)
+      equation
+        failure(Values.ARRAY(valueLst = _) = v);
+        explist = List.map((v :: xs), valueExp);
+        DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
+        t = Expression.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
+      then
+        DAE.MATRIX(t,dim,explist::mexpl);
+
+    // Matrix last row
+    case({Values.ARRAY(valueLst=v::xs)},_)
+      equation
+        failure(Values.ARRAY(valueLst = _) = v);
+        dim = listLength(v::xs);
+        explist = List.map((v :: xs), valueExp);
+        vt = Types.typeOfValue(v);
+        t = Types.simplifyType(vt);
+        dim = listLength(v::xs);
+        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(1));
+      then
+        DAE.MATRIX(t,dim,{explist});
+
+    // Generic array
+    case (v :: xs,_)
+      equation
+        explist = List.map((v :: xs), valueExp);
+        vt = Types.typeOfValue(v);
+        t = Types.simplifyType(vt);
+        dim = listLength(v::xs);
+        t = Expression.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        b = Types.isArray(vt,{});
+        b = boolNot(b);
+      then DAE.ARRAY(t,b,explist);
+  end matchcontinue;
+end valueExpArray;
 
 public function valueReal "
   Return the real value of a Value. If the value is an integer,
