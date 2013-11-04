@@ -48,15 +48,15 @@ static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t l
   switch (log_level) {
     case jm_log_level_fatal:
     case jm_log_level_error:
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("module = %s, log level = %s: %s"), tokens, 3);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("module = %s, log level = %s: %s"), tokens, 3);
       break;
     case jm_log_level_warning:
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("module = %s, log level = %s: %s"), tokens, 3);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_warning, gettext("module = %s, log level = %s: %s"), tokens, 3);
       break;
     case jm_log_level_info:
     case jm_log_level_verbose:
     case jm_log_level_debug:
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_notification, gettext("module = %s, log level = %s: %s"), tokens, 3);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_notification, gettext("module = %s, log level = %s: %s"), tokens, 3);
       break;
     default:
       printf("module = %s, log level = %d: %s\n", module, log_level, message);fflush(NULL);
@@ -635,7 +635,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   if ((version <= fmi_version_unknown_enu) || (version >= fmi_version_unsupported_enu)) {
     fmi_import_free_context(context);
     const char* tokens[1] = {fmi_version_to_string(version)};
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("The FMU version is %s. Unknown/Unsupported FMU version."), tokens, 1);
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("The FMU version is %s. Unknown/Unsupported FMU version."), tokens, 1);
     return 0;
   }
   if (version == 1) {
@@ -653,7 +653,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     fmi = fmi1_import_parse_xml(context, working_directory);
     if(!fmi) {
       fmi_import_free_context(context);
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
       return 0;
     }
     *fmiInstance = mk_some(fmi);
@@ -663,7 +663,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     if (status == jm_status_error) {
       fmi1_import_free(fmi);
       fmi_import_free_context(context);
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
       return 0;
     }
     FMIImpl__initializeFMI1Import(fmi, fmiInfo, version, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
@@ -682,7 +682,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     fmi = fmi2_import_parse_xml(context, working_directory, NULL);
     if(!fmi) {
       fmi_import_free_context(context);
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
       return 0;
     }
     *fmiInstance = mk_some(fmi);
@@ -692,7 +692,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     if (status == jm_status_error) {
       fmi2_import_free(fmi);
       fmi_import_free_context(context);
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
+      c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
       return 0;
     }
     FMIImpl__initializeFMI2Import(fmi, fmiInfo, version, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);

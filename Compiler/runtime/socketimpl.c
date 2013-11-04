@@ -129,13 +129,13 @@ extern int Socket_waitforconnect(int port)
   serversocket = make_socket(port);
   if (serversocket==0) {
     const char *tokens[1] = {strerror(errno)};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"make_socket failed: %s",tokens,1);
+    c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,"make_socket failed: %s",tokens,1);
     return -1;
   }
 
   if (listen(serversocket,5)==-1) { /* Listen, pending client list length = 1 */
     const char *tokens[1] = {strerror(errno)};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"listen failed: %s",tokens,1);
+    c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,"listen failed: %s",tokens,1);
     return -1;
   }
 
@@ -143,7 +143,7 @@ extern int Socket_waitforconnect(int port)
 
   if (ns < 0) {
     const char *tokens[1] = {strerror(errno)};
-    c_add_message(-1,ErrorType_scripting,ErrorLevel_error,"accept failed: %s",tokens,1);
+    c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,"accept failed: %s",tokens,1);
     return -1;
   }
   return ns;
