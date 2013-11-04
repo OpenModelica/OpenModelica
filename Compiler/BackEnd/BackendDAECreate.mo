@@ -2985,13 +2985,12 @@ algorithm
       DAE.ComponentRef cref;
       list<DAE.Exp> expLst;
       BackendDAE.Variables variables;
-      BackendDAE.Var var;
-      list<BackendDAE.Var> varLst;
+      list<BackendDAE.Var> vars, varLst;
     case({}, _) then {};
     case(DAE.CREF(componentRef=cref)::expLst, variables) equation
-      ((var::_), _) = BackendVariable.getVar(cref, variables);
+      (vars, _) = BackendVariable.getVar(cref, variables);
       varLst = getVarsFromExp(expLst, variables);
-    then var::varLst;
+    then listAppend(vars,varLst);
     case(_::expLst, variables) equation
       varLst = getVarsFromExp(expLst, variables);
     then varLst;
