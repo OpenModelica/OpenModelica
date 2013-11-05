@@ -361,15 +361,27 @@ algorithm
 end instGetStore;
 
 public function emptyInstStore "returns an empty InstStore"
-output UnitAbsyn.InstStore st;
-protected
-  UnitAbsyn.Store s;
-  HashTable.HashTable ht;
+  output UnitAbsyn.InstStore st;
 algorithm
-  s := emptyStore();
-  ht := HashTable.emptyHashTable();
-  st := UnitAbsyn.INSTSTORE(s,ht,NONE());
+  st := emptyInstStore2(Flags.getConfigBool(Flags.UNIT_CHECKING));
 end emptyInstStore;
+
+protected function emptyInstStore2 "returns an empty InstStore"
+  input Boolean wantInstStore;
+  output UnitAbsyn.InstStore st;
+algorithm
+  st := match wantInstStore
+    local
+      UnitAbsyn.Store s;
+      HashTable.HashTable ht;
+    case true
+      equation
+        s = emptyStore();
+        ht = HashTable.emptyHashTable();
+      then UnitAbsyn.INSTSTORE(s,ht,NONE());
+    else UnitAbsyn.noStore;
+  end match;
+end emptyInstStore2;
 
 public function emptyStore "Returns an empty store with 10 empty array elements"
 output UnitAbsyn.Store st;
@@ -689,10 +701,6 @@ algorithm
       HashTable.HashTable ht;
       UnitAbsyn.UnitTerms terms2;
       Option<UnitAbsyn.UnitCheckResult> res;
-    case(_,_,_,_)
-      equation
-        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
-      then(UnitAbsyn.noStore,{});
     case (_,_,_,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
     case(_,_,_,UnitAbsyn.INSTSTORE(st,ht,res))
       equation
@@ -743,29 +751,29 @@ algorithm
       UnitAbsyn.InstStore store;
       DAE.Type tp;
 
-    case(store,_,_) equation
-      false = Flags.getConfigBool(Flags.UNIT_CHECKING);
-    then UnitAbsyn.noStore;
+    case(UnitAbsyn.NOSTORE(),_,_)
+      then istore;
 
-    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_) equation
-      unit = str2unit(unitStr,NONE());
-      unit = Util.if_(0 == stringCompare(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
-      (st,indx) = add(unit,st);
-       ht = BaseHashTable.add((cr,indx),ht);
-    then UnitAbsyn.INSTSTORE(st,ht,res);
-    case(store,DAE.T_REAL(_::vs,ts),_) equation
+    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = DAE.TYPES_VAR(name="unit",binding = DAE.EQBOUND(exp=DAE.SCONST(unitStr)))::_),_)
+      equation
+        unit = str2unit(unitStr,NONE());
+        unit = Util.if_(0 == stringCompare(unitStr,""),UnitAbsyn.UNSPECIFIED(),unit);
+        (st,indx) = add(unit,st);
+        ht = BaseHashTable.add((cr,indx),ht);
+      then UnitAbsyn.INSTSTORE(st,ht,res);
+    case(store,DAE.T_REAL(_::vs,ts),_)
      then instAddStore(store,DAE.T_REAL(vs,ts),cr);
 
       /* No unit available. */
-    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = {}),_) equation
-      (st,indx) = add(UnitAbsyn.UNSPECIFIED(),st);
-       ht = BaseHashTable.add((cr,indx),ht);
-    then UnitAbsyn.INSTSTORE(st,ht,res);
+    case(UnitAbsyn.INSTSTORE(st,ht,res),DAE.T_REAL(varLst = {}),_)
+      equation
+        (st,indx) = add(UnitAbsyn.UNSPECIFIED(),st);
+        ht = BaseHashTable.add((cr,indx),ht);
+      then UnitAbsyn.INSTSTORE(st,ht,res);
 
-    case(store,DAE.T_SUBTYPE_BASIC(complexType=tp),_) equation
-       store = instAddStore(store,tp,cr);
-    then store;
-    case(store,_,_) then store;
+    case(store,DAE.T_SUBTYPE_BASIC(complexType=tp),_)
+      then instAddStore(store,tp,cr);
+    else istore;
   end matchcontinue;
 end instAddStore;
 
