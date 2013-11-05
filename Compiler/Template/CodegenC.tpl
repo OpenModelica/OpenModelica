@@ -8829,7 +8829,7 @@ case exp as MATCHEXPRESSION(__) then
       '<%matchInputVar%>'
     case MATCH(switch=SOME(_)) then
       error(sourceInfo(), 'Unknown switch: <%printExpStr(exp)%>')
-    else tempDecl('mmc_switch_type', &varDeclsInner)
+    else tempDecl('volatile mmc_switch_type', &varDeclsInner)
   let done = tempDecl('int', &varDeclsInner)
   let onPatternFail = 'goto <%prefix%>_end'
   let &preExp +=
@@ -8844,19 +8844,38 @@ case exp as MATCHEXPRESSION(__) then
           <%preExpInner%>
           <%match exp.matchType
           case MATCH(switch=SOME(_)) then '<%done%> = 0;<%\n%>{'
-          else 'for (<%ix%> = 0, <%done%> = 0; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {'
+          else 
+          <<
+          <%ix%> = 0;
+          <%done%> = 0;
+          <% match exp.matchType case MATCHCONTINUE(__) then
+          /* One additional MMC_TRY_INTERNAL() for each caught exception
+           * You would expect you could do the setjmp only once, but some counters I guess are stored in registers and would need to become volatile
+           * This is still a lot faster than doing MMC_TRY_INTERNAL() inside the for-loop
+           */
+          <<
+          MMC_TRY_INTERNAL(mmc_jumper)
+          <%prefix%>_top:
+          threadData->mmc_jumper = &new_mmc_jumper;
+          >>
           %>
-            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_TRY_INTERNAL(mmc_jumper)" %>
-
+          for (; <%ix%> < <%listLength(exp.cases)%> && !<%done%>; <%ix%>++) {
+          >>
+          %>
             switch (MMC_SWITCH_CAST(<%ix%>)) {
             <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,startIndexOutputs,prefix,startIndexInputs,exp.inputs,onPatternFail,done,context,&varDecls)%>
             }
-
             goto <%prefix%>_end;
             <%prefix%>_end: ;
-            <% match exp.matchType case MATCHCONTINUE(__) then "MMC_CATCH_INTERNAL(mmc_jumper);" %>
           }
-
+          <% match exp.matchType case MATCHCONTINUE(__) then 
+          <<
+          MMC_CATCH_INTERNAL(mmc_jumper);
+          if (!<%done%> && ++<%ix%> < <%listLength(exp.cases)%>) {
+            goto <%prefix%>_top;
+          }
+          >>
+          %>
           if (!<%done%>) MMC_THROW_INTERNAL();
         }
       }
