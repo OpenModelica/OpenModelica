@@ -8616,7 +8616,7 @@ algorithm
         used_slots = List.filter1OnTrue(inSlots, isSlotUsed, used_args);
 
         // Create DAE.Vars from the slots.
-        cache = Env.emptyCache();
+        cache = Env.noCache();
         vars = List.map2(used_slots, makeVarFromSlot, inEnv, cache);
 
         // Use a dummy SCode.Element, because we're only interested in the DAE.Vars.

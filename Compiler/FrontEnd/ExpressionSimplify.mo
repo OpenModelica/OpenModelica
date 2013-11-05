@@ -972,7 +972,7 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT("fill"), expLst = e::expl))
       equation
         valueLst = List.map(expl, ValuesUtil.expValue);
-        (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, DAE.T_UNKNOWN_DEFAULT, valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, Absyn.dummyInfo);
+        (_,outExp,_) = Static.elabBuiltinFill2(Env.noCache(), Env.emptyEnv, e, DAE.T_UNKNOWN_DEFAULT, valueLst, DAE.C_CONST(), Prefix.NOPRE(), {}, Absyn.dummyInfo);
       then
         outExp;
 

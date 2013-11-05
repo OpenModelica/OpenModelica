@@ -1170,7 +1170,7 @@ algorithm
       UnitAbsyn.Store store;
 
     case(_,_,_,_,_,_,store) equation
-       (_,functp,_) = Lookup.lookupType(Env.emptyCache(),env,path,NONE());
+       (_,functp,_) = Lookup.lookupType(Env.noCache(),env,path,NONE());
        funcInstId=tick();
        (store,formalParamIndxs) = buildFuncTypeStores(functp,funcInstId,store);
        (actTermLst,extraTerms,store) = buildTermExpList(env,expl,ht,store);

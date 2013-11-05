@@ -336,14 +336,14 @@ public function prefixCrefNoContext "Prefix a ComponentRef variable by adding th
   input DAE.ComponentRef inCref;
   output DAE.ComponentRef outCref;
 algorithm
-  (_, outCref) := prefixToCref2(Env.emptyCache(), {}, InnerOuter.emptyInstHierarchy, inPre, SOME(inCref));
+  (_, outCref) := prefixToCref2(Env.noCache(), {}, InnerOuter.emptyInstHierarchy, inPre, SOME(inCref));
 end prefixCrefNoContext;
 
 public function prefixToCref "Convert a prefix to a component reference."
   input Prefix.Prefix pre;
   output DAE.ComponentRef cref_1;
 algorithm
-  (_,cref_1) := prefixToCref2(Env.emptyCache(),{},InnerOuter.emptyInstHierarchy,pre, NONE());
+  (_,cref_1) := prefixToCref2(Env.noCache(),{},InnerOuter.emptyInstHierarchy,pre, NONE());
 end prefixToCref;
 
 protected function prefixToCref2 "Convert a prefix to a component reference. Converting Prefix.NOPRE with no

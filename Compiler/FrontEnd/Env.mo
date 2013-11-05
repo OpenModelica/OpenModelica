@@ -131,6 +131,8 @@ public uniontype Cache
     StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
     Absyn.Path modelName "name of the model being instantiated";
   end CACHE;
+  record NO_CACHE
+  end NO_CACHE;
 end Cache;
 
 public uniontype ScopeType
@@ -266,6 +268,13 @@ algorithm
   ht := (HashTable.emptyHashTableSized(BaseHashTable.lowBucketSize),{});
   cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
+
+
+public function noCache "returns an empty cache"
+  output Cache cache;
+algorithm
+  cache := NO_CACHE();
+end noCache;
 
 // functions for dealing with the environment
 public function newEnvironment
@@ -2019,6 +2028,7 @@ algorithm
       Absyn.Path p;
 
     case (CACHE(_,ef,ht,p),_) then CACHE(SOME(env),ef,ht,p);
+    else inCache;
   end match;
 end setCachedInitialEnv;
 
@@ -2032,9 +2042,13 @@ protected
   StructuralParameters ht;
   Absyn.Path p;
 algorithm
-  CACHE(env, _, ht, p) := inCache;
-  ef := arrayCreate(1, inFunctions);
-  outCache := CACHE(env, ef, ht, p);
+  outCache := match (inCache,inFunctions)
+    case (CACHE(env, _, ht, p), _)
+      equation
+        ef = arrayCreate(1, inFunctions);
+      then CACHE(env, ef, ht, p);
+    else inCache;
+  end match;
 end setCachedFunctionTree;
 
 public function printCacheStr
@@ -2832,11 +2846,13 @@ public function getFunctionTree
 "Selector function"
   input Cache cache;
   output DAE.FunctionTree ft;
-protected
-  array<DAE.FunctionTree> ef;
 algorithm
-  CACHE(functions = ef) := cache;
-  ft := arrayGet(ef, 1);
+  ft := match cache
+    local
+      array<DAE.FunctionTree> ef;
+    case CACHE(functions = ef) then arrayGet(ef, 1);
+    else DAE.emptyFuncTree;
+  end match;
 end getFunctionTree;
 
 public function addCachedInstFuncGuard
@@ -2887,6 +2903,7 @@ algorithm
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
       then CACHE(ienv,ef,ht,p);
+    else inCache;
   
   end match;
 end addDaeFunction;
@@ -2908,6 +2925,7 @@ algorithm
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
       then CACHE(ienv,ef,ht,p);
+    else inCache;
   
   end match;
 end addDaeExtFunction;
@@ -3034,6 +3052,7 @@ algorithm
 
     case (CACHE(ienv,ef,ht,_),_)
       then CACHE(ienv,ef,ht,p);
+    else inCache;
   end match;
 end setCacheClassName;
 
@@ -3694,4 +3713,3 @@ algorithm
 end isIdentOnlyInTop;
 
 end Env;
-

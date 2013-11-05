@@ -2004,15 +2004,6 @@ algorithm
         cr_str = ComponentReference.printComponentRefStr(cr);
       then
         (cache,Values.RECORD(cname,(value::vals),(cr_str::names),ix));
-    /*
-    case (cache,env,cname,(DAE.EQUATION(exp = DAE.CREF(componentRef = cr),scalar = rhs)::rest),impl)
-      equation
-        (cache, value,_) = Ceval.ceval(Env.emptyCache(),{}, rhs, impl,NONE(), NONE(), Absyn.MSG());
-        (cache, Values.RECORD(cname,vals,names,ix)) = daeToRecordValue(cache, env, cname, rest, impl);
-        cr_str = ComponentReference.printComponentRefStr(cr);
-      then
-        (cache,Values.RECORD(cname,(value::vals),(cr_str::names),ix));
-    */
     case (cache,env,_,el::_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);

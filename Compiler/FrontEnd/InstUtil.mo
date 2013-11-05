@@ -8624,15 +8624,17 @@ public function pushStructuralParameters
   "Cannot be part of Env due to RML issues"
   input Env.Cache cache;
   output Env.Cache ocache;
-protected
-  Option<Env.Env> ie;
-  array<DAE.FunctionTree> f;
-  HashTable.HashTable ht;
-  list<list<DAE.ComponentRef>> crs;
-  Absyn.Path p;
 algorithm
-  Env.CACHE(ie,f,(ht,crs),p) := cache;
-  ocache := Env.CACHE(ie,f,(ht,{}::crs),p);
+  ocache := match cache
+    local
+      Option<Env.Env> ie;
+      array<DAE.FunctionTree> f;
+      HashTable.HashTable ht;
+      list<list<DAE.ComponentRef>> crs;
+      Absyn.Path p;
+    case Env.CACHE(ie,f,(ht,crs),p) then Env.CACHE(ie,f,(ht,{}::crs),p);
+    else cache;
+  end match;
 end pushStructuralParameters;
 
 public function popStructuralParameters
@@ -8640,17 +8642,21 @@ public function popStructuralParameters
   input Env.Cache cache;
   input Prefix.Prefix pre;
   output Env.Cache ocache;
-protected
-  Option<Env.Env> ie;
-  array<DAE.FunctionTree> f;
-  HashTable.HashTable ht;
-  list<DAE.ComponentRef> crs;
-  list<list<DAE.ComponentRef>> crss;
-  Absyn.Path p;
 algorithm
-  Env.CACHE(ie,f,(ht,crs::crss),p) := cache;
-  ht := prefixAndAddCrefsToHt(cache,ht,pre,crs);
-  ocache := Env.CACHE(ie,f,(ht,crss),p);
+  ocache := match (cache,pre)
+    local
+      Option<Env.Env> ie;
+      array<DAE.FunctionTree> f;
+      HashTable.HashTable ht;
+      list<DAE.ComponentRef> crs;
+      list<list<DAE.ComponentRef>> crss;
+      Absyn.Path p;
+    case (Env.CACHE(ie,f,(ht,crs::crss),p),_)
+      equation
+        ht = prefixAndAddCrefsToHt(cache,ht,pre,crs);
+      then Env.CACHE(ie,f,(ht,crss),p);
+    case (Env.NO_CACHE(),_) then cache;
+  end match;
 end popStructuralParameters;
 
 protected function prefixAndAddCrefsToHt

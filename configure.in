@@ -162,13 +162,13 @@ done
 
 AC_MSG_CHECKING([for omc])
 
-if test "$WANT_OMC" = "no" ; then
-  AC_MSG_RESULT([building it through bootstrapping (not recommended since you might end up unable to recompile omc)])
+if test "$OMC" = "no" ; then
+  AC_MSG_RESULT([building it through bootstrapping (you might end up unable to recompile omc if you modify source code)])
   OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
 elif "$OMC" ++v >& /dev/null; then
   AC_MSG_RESULT([$OMC])
 else
-  AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (not recommended since you might end up unable to recompile omc).])
+  AC_MSG_RESULT([failed (tried $OMC). Building it through bootstrapping (you might end up unable to recompile omc if you modify source code).])
   OMC="$ac_pwd$ac_dir_suffix/build/bin/omc"
 fi
 
