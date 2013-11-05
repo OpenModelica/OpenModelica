@@ -622,9 +622,9 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
   const char *omdev = getenv("OMDEV");
   if (QString(omdev).isEmpty())
-    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW/bin"));
+    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW/bin") + ";" + environment.value("PATH"));
   else
-    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools/mingw/bin"));
+    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools/mingw/bin") + ";" + environment.value("PATH"));
   mpSimulationProcess->setProcessEnvironment(environment);
 #endif
   mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
@@ -1032,9 +1032,12 @@ void SimulationDialog::simulationProcessFinished(int exitCode, QProcess::ExitSta
     QStringList list = pOMCProxy->readSimulationResultVars(mSimulationOptions.getOutputFileName());
     // close the simulation result file.
     pOMCProxy->closeSimulationResultFile();
-    mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
-    pVariablesWidget->insertVariablesItemsToTree(mSimulationOptions.getOutputFileName(), workingDirectory, list, mSimulationOptions);
-    mpMainWindow->getVariablesDockWidget()->show();
+    if (list.size() > 0)
+    {
+      mpMainWindow->getPerspectiveTabBar()->setCurrentIndex(2);
+      pVariablesWidget->insertVariablesItemsToTree(mSimulationOptions.getOutputFileName(), workingDirectory, list, mSimulationOptions);
+      mpMainWindow->getVariablesDockWidget()->show();
+    }
   }
 }
 
