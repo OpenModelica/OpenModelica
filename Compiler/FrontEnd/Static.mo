@@ -6495,7 +6495,6 @@ algorithm
         ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
-        fnstr = Dump.printComponentRefStr(fn);
         ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
       then
         (cache,e,prop,st);
@@ -6504,7 +6503,6 @@ algorithm
     case (cache,env,fn,args,nargs,(impl as false),st,pre,_,_)
       equation
         false = hasBuiltInHandler(fn);
-        fnstr = Dump.printComponentRefStr(fn);
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st,pre,info);
       then
