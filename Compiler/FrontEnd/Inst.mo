@@ -4388,7 +4388,7 @@ algorithm
   //crefsStr := stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
   //Debug.fprintln(Flags.DEBUG,"start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,_):=
-    updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTable(), NONE());
+    updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTableSized(BaseHashTable.lowBucketSize), NONE());
   //Debug.fprintln(Flags.DEBUG,"finished update comps" +& myTick);
   //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
 end updateComponentsInEnv;
