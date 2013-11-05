@@ -77,7 +77,7 @@ static int value_to_type_desc(void *value, type_description *desc)
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
     int len = RML_HDRSTRLEN(RML_GETHDR(data));
     desc->type = TYPE_DESC_STRING;
-    desc->data.string = init_modelica_string(RML_STRINGDATA(data));
+    desc->data.string = GC_strdup(RML_STRINGDATA(data));
   }; break;
   case Values__ARRAY_3dBOX2: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET];
@@ -344,27 +344,27 @@ static int mmc_to_value(void* mmc, void** res)
   unsigned ctor;
   int i;
   void* t;
-  if (0 == ((long)mmc & 1)) {
-    *res = Values__INTEGER(mmc);
+  if (MMC_IS_INTEGER(mmc)) {
+    *res = Values__INTEGER(mk_icon(MMC_UNTAGFIXNUM(mmc)));
     return 0;
   }
-  hdr = RML_GETHDR(mmc);
-  if (hdr == RML_REALHDR) {
+  hdr = MMC_GETHDR(mmc);
+  if (hdr == MMC_REALHDR) {
     *res = Values__REAL(mk_rcon(mmc_unbox_real(mmc)));
     return 0;
   }
-  if (RML_HDRISSTRING(hdr)) {
+  if (MMC_HDRISSTRING(hdr)) {
     MMC_CHECK_STRING(mmc);
     // We need to duplicate the string because literals may not be accessible anymore... Bleh
     *res = Values__STRING(mk_scon(MMC_STRINGDATA(mmc)));
     return 0;
   }
-  if (hdr == RML_NILHDR) {
+  if (hdr == MMC_NILHDR) {
     *res = Values__LIST(mk_nil());
     return 0;
   }
 
-  numslots = RML_HDRSLOTS(hdr);
+  numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
 
 
@@ -381,10 +381,10 @@ static int mmc_to_value(void* mmc, void** res)
   if (numslots>0 && ctor > 1) { /* RECORD */
     void *namelst = (void *) mk_nil();
     void *varlst = (void *) mk_nil();
-    struct record_description* desc = (struct record_description*) RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),1));
+    struct record_description* desc = (struct record_description*) MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1));
     assert(desc != NULL);
     for (i=numslots; i>1; i--) {
-      assert(0 == mmc_to_value(RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),i)),&t));
+      assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i)),&t));
       varlst = mk_cons(t, varlst);
       t = (void*) desc->fieldNames[i-2];
       namelst = mk_cons(mk_scon(t != NULL ? (const char*) t : "(null)"), namelst);
@@ -397,7 +397,7 @@ static int mmc_to_value(void* mmc, void** res)
   if (numslots>0 && ctor == 0) { /* TUPLE */
     void *varlst = (void *) mk_nil();
     for (i=numslots; i>0; i--) {
-      assert(0 == mmc_to_value(RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),i)),&t));
+      assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i)),&t));
       varlst = mk_cons(t, varlst);
     }
     *res = (void *) Values__META_5fTUPLE(varlst);
@@ -410,7 +410,7 @@ static int mmc_to_value(void* mmc, void** res)
   }
 
   if (numslots==1 && ctor==1) /* SOME(x) */ {
-    assert(0 == mmc_to_value(RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),1)),&t));
+    assert(0 == mmc_to_value(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1)),&t));
     *res = Values__OPTION(mk_some(t));
     return 0;
   }
@@ -437,10 +437,12 @@ static void *value_to_mmc(void* value)
 {
   switch (RML_HDRCTOR(RML_GETHDR(value))) {
   case Values__INTEGER_3dBOX1:
-  case Values__BOOL_3dBOX1:
+  case Values__BOOL_3dBOX1: {
+    return mmc_mk_icon(RML_UNTAGFIXNUM(RML_STRUCTDATA(value)[UNBOX_OFFSET+0]));
+  };
   case Values__STRING_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
-    return data;
+    return mmc_mk_scon(RML_STRINGDATA(data));
   };
   case Values__REAL_3dBOX1: {
     void *data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
@@ -463,7 +465,7 @@ static void *value_to_mmc(void* value)
       fprintf(stderr, "[dynload]: value_to_mmc: malloc failed\n");
       return 0;
     }
-    while (!MMC_NILTEST(tmp)) {
+    while (RML_GETHDR(tmp) != RML_NILHDR) {
       i++; tmp = RML_CDR(tmp);
     }
     /* duplicate string? will this give problems with GC? */
@@ -473,9 +475,9 @@ static void *value_to_mmc(void* value)
     data_mmc = (void**) malloc((i+1)*sizeof(void*));
     i=0;
     data_mmc[0] = desc;
-    while (!MMC_NILTEST(names)) {
+    while (RML_GETHDR(names) != RML_NILHDR) {
       desc->fieldNames[i] = RML_STRINGDATA(RML_CAR(names));
-      names = MMC_CDR(names);
+      names = RML_CDR(names);
       data_mmc[i+1] = value_to_mmc(RML_CAR(data));
       i++;
       data = MMC_CDR(data);
@@ -491,9 +493,9 @@ static void *value_to_mmc(void* value)
   case Values__LIST_3dBOX1: {
     void* data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
     void* tmp = mmc_mk_nil();
-    while (!MMC_NILTEST(data)) {
-      tmp = mmc_mk_cons(value_to_mmc(MMC_CAR(data)), tmp);
-      data = MMC_CDR(data);
+    while (RML_GETHDR(data) != RML_NILHDR) {
+      tmp = mmc_mk_cons(value_to_mmc(RML_CAR(data)), tmp);
+      data = RML_CDR(data);
     }
     /* Transform list by first reversing it to preserve the order */
     return listReverse(tmp);
@@ -501,9 +503,9 @@ static void *value_to_mmc(void* value)
   case Values__META_5fARRAY_3dBOX1: {
     void* data = RML_STRUCTDATA(value)[UNBOX_OFFSET+0];
     void* tmp = mmc_mk_nil();
-    while (!MMC_NILTEST(data)) {
-      tmp = mmc_mk_cons(value_to_mmc(MMC_CAR(data)), tmp);
-      data = MMC_CDR(data);
+    while (RML_GETHDR(data) != RML_NILHDR) {
+      tmp = mmc_mk_cons(value_to_mmc(RML_CAR(data)), tmp);
+      data = RML_CDR(data);
     }
     return listArray(listReverse(tmp));
   };
@@ -514,13 +516,13 @@ static void *value_to_mmc(void* value)
     void **data_mmc;
     void *res;
 
-    while (!MMC_NILTEST(tmp)) {
+    while (RML_GETHDR(tmp) != RML_NILHDR) {
       len++; tmp = RML_CDR(tmp);
     }
     data_mmc = (void**) malloc(len*sizeof(void*));
     len = 0;
     tmp = data;
-    while (!MMC_NILTEST(tmp)) {
+    while (RML_GETHDR(tmp) != RML_NILHDR) {
       data_mmc[len++] = value_to_mmc(RML_CAR(tmp));
       tmp = RML_CDR(tmp);
     }

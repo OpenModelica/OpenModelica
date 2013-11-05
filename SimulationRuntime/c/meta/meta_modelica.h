@@ -128,8 +128,26 @@ typedef int mmc_switch_type;
 
 #endif
 
+#define RML_STYLE_TAGPTR
+#ifdef RML_STYLE_TAGPTR
+
+/* RML-style tagged pointers */
 #define MMC_TAGPTR(p)             ((void*)((char*)(p) + 3))
 #define MMC_UNTAGPTR(x)           ((void*)((char*)(x) - 3))
+#define MMC_IS_INTEGER(X)         (0 == ((mmc_sint_t) X & 1))
+#define MMC_TAGFIXNUM(i)          (((i) << 1)+0)
+#define MMC_UNTAGFIXNUM(X)        (((mmc_sint_t) (X)) >> 1)
+
+#else
+
+#define MMC_TAGPTR(p)             ((void*)((char*)(p) + 0))
+#define MMC_UNTAGPTR(x)           ((void*)((char*)(x) - 0))
+#define MMC_IS_INTEGER(X)         (1 == ((mmc_sint_t) X & 1))
+#define MMC_TAGFIXNUM(i)          (((i) << 1)+1)
+#define MMC_UNTAGFIXNUM(X)        (((mmc_sint_t) (X-1)) >> 1)
+
+#endif
+
 #define MMC_STRUCTHDR(slots,ctor) (((slots) << 10) + (((ctor) & 255) << 2))
 #define MMC_NILHDR                MMC_STRUCTHDR(0,0)
 #define MMC_CONSHDR               MMC_STRUCTHDR(2,1)
@@ -140,9 +158,7 @@ typedef int mmc_switch_type;
 #define MMC_CDR(X)                MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(X),2))
 #define MMC_NILTEST(x)            (MMC_GETHDR(x) == MMC_NILHDR)
 #define MMC_IMMEDIATE(i)          ((void*)(i))
-#define MMC_IS_IMMEDIATE(x)       (!((mmc_uint_t)(x) & 1))
-#define MMC_TAGFIXNUM(i)          ((i) << 1)
-#define MMC_UNTAGFIXNUM(X)        (((mmc_sint_t) X) >> 1)
+#define MMC_IS_IMMEDIATE(x)       (MMC_IS_INTEGER(x))
 #define MMC_REALHDR               (((MMC_SIZE_DBL/MMC_SIZE_INT) << 10) + 9)
 #define MMC_HDR_IS_FORWARD(hdr)   (((hdr) & 3) == 3)
 /*
@@ -281,7 +297,11 @@ static inline void* mmc_mk_scon(const char *s)
       unsigned char c = *s;
       return mmc_strings_len1[(unsigned int)c];
     }
+#if defined(RML_STYLE_TAGPTR)
     p = (struct mmc_string *) mmc_alloc_words(nwords);
+#else
+    p = (struct mmc_string *) mmc_alloc_words_atomic(nwords);
+#endif
     p->header = header;
     memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     res = MMC_TAGPTR(p);

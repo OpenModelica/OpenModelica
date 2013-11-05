@@ -112,8 +112,13 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
     return 1;
   }
 
-  if ((0 == ((mmc_sint_t)lhs & 1)) && (0 == ((mmc_sint_t)rhs & 1))) {
-    return lhs == rhs;
+  if (MMC_IS_INTEGER(lhs) != MMC_IS_INTEGER(rhs)) {
+    /* Should trigger an assertion for most code */
+    return 0;
+  }
+
+  if (MMC_IS_INTEGER(lhs)) {
+    return 0;
   }
 
   h_lhs = MMC_GETHDR(lhs);
@@ -230,7 +235,7 @@ inline static int anyStringWork(void* any, int ix)
   struct record_description *desc;
   /* char buf[34] = {0}; */
 
-  if (MMC_IS_IMMEDIATE(any)) {
+  if (MMC_IS_INTEGER(any)) {
     checkAnyStringBufSize(ix,40);
     ix += sprintf(anyStringBuf+ix, "%ld", (signed long) MMC_UNTAGFIXNUM(any));
     return ix;

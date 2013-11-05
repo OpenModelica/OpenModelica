@@ -127,6 +127,7 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
 #define mmc_GC_init_default(void) GC_INIT()
 #define mmc_GC_clear(void)
 #define mmc_GC_collect(local_GC_state)
+#define mmc_alloc_words_atomic(nwords) GC_malloc_atomic(nwords * sizeof(void*))
 
 #else /* NO_GC */
 
