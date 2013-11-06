@@ -137,6 +137,11 @@ protected import ClassInf;
 
 
   protected constant String INDEX = "index";
+  protected constant String INTERVAL = "interval";
+  protected constant String START = "start";
+  protected constant String VALUE = "value";
+  protected constant String ELSE_WHEN_CLAUSE = "elseWhenClause";
+  
 
   protected constant String LIST_ = "List";
 
@@ -145,6 +150,11 @@ protected import ClassInf;
   //Is the reference attribute for an element.
   protected constant String ID                     = "id";
   protected constant String ID_                    = "Id";
+  protected constant String CONDITION              = "Condition";
+  
+  protected constant String REINIT                 = "reinit";
+  protected constant String ASSERT                 = "assert";
+  protected constant String TERMINATE              = "terminate";
 
   //This is the String attribute for the textual representation of the expressions.
   protected constant String EXP_STRING               = "string";
@@ -278,6 +288,9 @@ protected import ClassInf;
   protected constant String WHEN         = "when";
   protected constant String WHEN_        = "When";
   protected constant String WHEN_CLAUSES = "WhenClauses";
+  protected constant String WHEN_CLAUSE = "WhenClause";
+  protected constant String WHEN_OPERATORS = "WhenOperators";
+  protected constant String WHEN_OPERATOR = "WhenOperator";
   protected constant String RESIDUAL     = "residual";
   protected constant String RESIDUAL_    = "Residual";
 
@@ -1100,7 +1113,7 @@ algorithm
                                 zeroCrossingLst = zc), _)
       equation
         dumpSamples(sampleLookup, stringAppend(SAMPLES, LIST_), addMML);
-        // dumpWhenClauses(whenClauseLst, stringAppend(WHEN_CLAUSES, LIST_), addMML);
+        dumpWhenClauses(whenClauseLst, stringAppend(WHEN_CLAUSES, LIST_), addMML);
         dumpZeroCrossing(zc, stringAppend(ZERO_CROSSING, LIST_), addMML);
       then
         ();
@@ -1715,11 +1728,11 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         
-        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         Print.printBuf("\n");
         Print.printBuf(is);
         dumpExp(e1, true);
-        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
@@ -1732,7 +1745,7 @@ algorithm
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
-        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);        
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);        
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
     
@@ -1779,7 +1792,6 @@ algorithm
   
   end match;
 end dumpEquation;
-
 
 public function dumpExp
 "This function prints a complete expression
@@ -2832,6 +2844,30 @@ algorithm
   end match;
 end dumpOptExp;
 
+public function dumpOptInteger "
+This function print to a new line the content of
+a Optional<Integer> in a XML element like:
+<Content index = intString(e)/>. 
+"
+  input Option<Integer> inOption;
+  input String Content;
+  input Boolean addMathMLCode;
+algorithm
+  _:=
+  match (inOption,Content,addMathMLCode)
+    local
+      Integer i;
+    
+    case (NONE(),_,_) then ();
+    
+    case (SOME(i),_,_)
+      equation
+        dumpStrOpenTagAttr(Content,INDEX,intString(i));
+        dumpStrCloseTag(Content);
+      then ();
+  
+  end match;
+end dumpOptInteger;
 
 public function dumpOptionDAEStateSelect "
 This function is used to print in a new line
@@ -3577,6 +3613,7 @@ algorithm
       String error_msg;
 
     case ({},_,_,_) then ();
+    
     case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
@@ -3604,6 +3641,7 @@ algorithm
         var_1 = varno+1;
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then ();
+    
     case (v::xs,_,varno,_)
       equation
         error_msg = "in XMLDump.dumpVarsAdds2 - Unknown var: ";
@@ -3613,8 +3651,226 @@ algorithm
         dumpVarsAdds2(xs,crefIdxLstArr,var_1,addMMLCode);
       then
         ();
+  
   end match;
 end dumpVarsAdds2;
+
+public function dumpWhenClauses "
+This function prints the list of WhenClauses 
+elements in a XML format. It takes also as input
+a string in order to know what is the content of
+the zero crossing list. The output is:
+<WhenClauses DIMENSION=...>
+...
+</WhenClauses>
+"
+  input list<BackendDAE.WhenClause> inWhenClauseLst;
+  input String inContent;
+  input Boolean addMathMLCode;
+algorithm
+  _:=
+  matchcontinue (inWhenClauseLst,inContent,addMathMLCode)
+    local
+      Integer len;
+      list<BackendDAE.WhenClause> lst;
+      
+    case ({},_,_) then ();
+    
+    case (lst, _, _)
+      equation
+        len = listLength(lst);
+        len >= 1 = false;
+      then ();
+    
+    case (lst, _, _)
+      equation
+        len = listLength(lst);
+        len >= 1 = true;
+        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
+        dumpWhenClauseLst(lst, 1, addMathMLCode);
+        dumpStrCloseTag(inContent);
+      then ();
+  
+  end matchcontinue;
+end dumpWhenClauses;
+
+protected function dumpWhenClauseLst "
+This function prints the content of a when clause
+ "
+  input list<BackendDAE.WhenClause> inWhenClauseLst;
+  input Integer inIndex;
+  input Boolean addMathMLCode;
+algorithm
+  _:=
+  match (inWhenClauseLst,inIndex,addMathMLCode)
+    local
+      DAE.Exp condition;
+      list<BackendDAE.WhenClause> lst;
+      list<BackendDAE.WhenOperator> whenOperators;
+      Option<Integer> elseClause;
+      String str;
+    
+    case ({}, _, _) then ();
+    
+    case (BackendDAE.WHEN_CLAUSE(condition = condition, reinitStmtLst = whenOperators, elseClause = elseClause) :: lst, _, _)
+      equation
+        str = printExpStr(condition);
+        
+        dumpStrOpenTagAttr(WHEN_CLAUSE, INDEX, intString(inIndex));
+        
+        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpExp(condition, addMathMLCode);
+        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
+        
+        dumpWhenOperators(whenOperators, stringAppend(WHEN_OPERATORS, LIST_), addMathMLCode);
+        
+        dumpOptInteger(elseClause, ELSE_WHEN_CLAUSE, addMathMLCode);
+        
+        dumpStrCloseTag(WHEN_CLAUSE);
+        
+        dumpWhenClauseLst(lst, inIndex + 1, addMathMLCode);
+      
+      then 
+        ();
+  
+  end match;
+end dumpWhenClauseLst;
+
+public function dumpWhenOperators "
+This function prints the list of WhenClauses 
+elements in a XML format. It takes also as input
+a string in order to know what is the content of
+the zero crossing list. The output is:
+<WhenOperators DIMENSION=...>
+...
+</WhenOperators>
+"
+  input list<BackendDAE.WhenOperator> inWhenOperators;
+  input String inContent;
+  input Boolean addMathMLCode;
+algorithm
+  _:=
+  matchcontinue (inWhenOperators,inContent,addMathMLCode)
+    local
+      Integer len;
+      DAE.Exp condition;
+      list<BackendDAE.WhenOperator> lst;
+      Option<Integer> elseClause;
+      
+    case ({},_,_) then ();
+    
+    case (lst, _, _)
+      equation
+        len = listLength(lst);
+        len >= 1 = false;
+      then ();
+    
+    case (lst, _, _)
+      equation
+        len = listLength(lst);
+        len >= 1 = true;
+        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
+        dumpWhenOperatorLst(lst, addMathMLCode);
+        dumpStrCloseTag(inContent);
+      then ();
+  
+  end matchcontinue;
+end dumpWhenOperators;
+
+protected function dumpWhenOperatorLst "
+This function prints the content of a when clause
+ "
+  input list<BackendDAE.WhenOperator> inWhenOperators;
+  input Boolean addMathMLCode;
+algorithm
+  _:=
+  match (inWhenOperators,addMathMLCode)
+    local
+      DAE.ComponentRef stateVar;
+      DAE.Exp cond, msg, level, e, value, call;
+      list<DAE.Exp> exps;
+      list<BackendDAE.WhenOperator> lst;
+      String str;
+      Absyn.Path fn;
+    
+    case ({}, _) then ();
+    
+    case (BackendDAE.REINIT(stateVar, value, _) :: lst, _)
+      equation
+        e = Expression.makeCrefExp(stateVar, DAE.T_UNKNOWN_DEFAULT);
+        call = DAE.CALL(
+          Absyn.IDENT(REINIT), {e, value}, 
+          DAE.callAttrBuiltinOther); 
+        str = printExpStr(call);
+        
+        dumpStrOpenTag(WHEN_OPERATOR);
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpExp(call, addMathMLCode);
+        dumpStrCloseTag(WHEN_OPERATOR);
+        
+        dumpWhenOperatorLst(lst, addMathMLCode);
+      
+      then 
+        ();
+  
+    case (BackendDAE.ASSERT(cond, msg, level, _) :: lst, _)
+      equation
+        call = DAE.CALL(
+          Absyn.IDENT(ASSERT), {cond, msg, level}, 
+          DAE.callAttrBuiltinOther); 
+        str = printExpStr(call);
+        
+        dumpStrOpenTag(WHEN_OPERATOR);
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpExp(call, addMathMLCode);
+        dumpStrCloseTag(WHEN_OPERATOR);
+        
+        dumpWhenOperatorLst(lst, addMathMLCode);
+      
+      then 
+        ();
+  
+    case (BackendDAE.TERMINATE(msg, _) :: lst, _)
+      equation
+        call = DAE.CALL(
+          Absyn.IDENT(TERMINATE), {msg}, 
+          DAE.callAttrBuiltinOther); 
+        str = printExpStr(call);
+        
+        dumpStrOpenTag(WHEN_OPERATOR);
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpExp(call, addMathMLCode);
+        dumpStrCloseTag(WHEN_OPERATOR);
+        
+        dumpWhenOperatorLst(lst, addMathMLCode);
+      
+      then 
+        ();
+        
+    case (BackendDAE.NORETCALL(fn, exps, _) :: lst, _)
+      equation
+        call = DAE.CALL(
+          fn, exps, 
+          DAE.callAttrBuiltinOther); 
+        str = printExpStr(call);
+        dumpStrOpenTag(WHEN_OPERATOR);
+        Print.printBuf("\n");
+        Print.printBuf(str);
+        dumpExp(call, addMathMLCode);
+        dumpStrCloseTag(WHEN_OPERATOR);
+        
+        dumpWhenOperatorLst(lst, addMathMLCode);
+      
+      then 
+        ();
+  
+  end match;
+end dumpWhenOperatorLst;
 
 public function dumpSamples "
 This function prints the list of Samples
@@ -3635,12 +3891,15 @@ algorithm
       Integer len;
       list<tuple<Integer, .DAE.Exp, .DAE.Exp>> samples;
       
+    
     case (BackendDAE.SAMPLE_LOOKUP(lookup = {}),_,_) then ();
+    
     case (BackendDAE.SAMPLE_LOOKUP(lookup = samples),_,_)
       equation
         len = listLength(samples);
         len >= 1 = false;
       then();
+    
     case (BackendDAE.SAMPLE_LOOKUP(lookup = samples),_,_)
       equation
         len = listLength(samples);
@@ -3659,8 +3918,8 @@ of elements, including the information regarding the origin
 of the zero crossing elements in XML format. The output is:
 <stringAppend(Samples,ELEMENT_)>
   <index value = i>
-  <start expstring = exp>
-  <interval expstring = exp>
+  <start string = exp>
+  <interval string = exp>
 </stringAppend(Samples,ELEMENT_)>
  "
   input list<tuple<Integer, .DAE.Exp, .DAE.Exp>> inSamples;
@@ -3679,12 +3938,19 @@ algorithm
     case ((i, e1, e2) :: lst,addMMLCode)
       equation
         dumpStrOpenTag(stringAppend(SAMPLES,ELEMENT_));
-        dumpStrOpenTagAttr("index","value",intString(i));
+        
+        dumpStrOpenTagAttr(INDEX, VALUE, intString(i));
         dumpExp(e1,addMMLCode);
-        dumpStrOpenTagAttr("start",EXP_STRING,printExpStr(e1));
+        dumpStrCloseTag(INDEX);
+        
+        dumpStrOpenTagAttr(START, EXP_STRING, printExpStr(e1));
         dumpExp(e1,addMMLCode);
-        dumpStrOpenTagAttr("interval",EXP_STRING,printExpStr(e2));
+        dumpStrCloseTag(START);
+        
+        dumpStrOpenTagAttr(INTERVAL, EXP_STRING, printExpStr(e2));
         dumpExp(e2,addMMLCode);
+        dumpStrCloseTag(INTERVAL);
+        
         dumpStrCloseTag(stringAppend(SAMPLES,ELEMENT_));
         dumpSampleLst(lst,addMMLCode);
       then ();
@@ -3758,7 +4024,9 @@ algorithm
       Boolean addMMLCode;
       list<Integer> eq,wc;
       list<BackendDAE.ZeroCrossing> zcLst;
+    
     case ({},_) then ();
+    
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)
       equation
         dumpStrOpenTagAttr(stringAppend(ZERO_CROSSING,ELEMENT_),EXP_STRING,printExpStr(e));
@@ -3768,6 +4036,7 @@ algorithm
         dumpStrCloseTag(stringAppend(ZERO_CROSSING,ELEMENT_));
         dumpZcLst(zcLst,addMMLCode);
       then ();
+  
   end match;
 end dumpZcLst;
 
@@ -4038,11 +4307,11 @@ algorithm
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
         
-        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         Print.printBuf("\n");
         Print.printBuf(is);
         dumpExp(e1, true);
-        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION));
         
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
@@ -4055,7 +4324,7 @@ algorithm
         res = stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
-        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),CONDITION),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
     
