@@ -9573,6 +9573,9 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   case PAT_META_TUPLE(__)
     then
       (patterns |> p hasindex i1 fromindex 1 =>
+        match p
+        case PAT_WILD(__) then ""
+        else
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i1%>));
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
@@ -9580,6 +9583,9 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   case PAT_CALL_TUPLE(__)
     then
       (patterns |> p hasindex i1 fromindex 1 =>
+        match p
+        case PAT_WILD(__) then ""
+        else
         let nrhs = '<%rhs%>.c<%i1%>'
         patternMatch(p,nrhs,onPatternFail,&varDecls,&assignments)
         ; empty /* increase the counter even if no output is produced */
@@ -9587,6 +9593,9 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
   case PAT_CALL_NAMED(__)
     then
       <<<%patterns |> (p,n,t) =>
+        match p
+        case PAT_WILD(__) then ""
+        else
         let tvar = tempDecl(expTypeModelica(t), &varDecls)
         <<<%tvar%> = <%rhs%>._<%n%>;
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
@@ -9596,6 +9605,9 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     then
       <<<%if not knownSingleton then 'if (mmc__uniontype__metarecord__typedef__equal(<%rhs%>,<%index%>,<%listLength(patterns)%>) == 0) <%onPatternFail%>;<%\n%>'%><%
       (patterns |> p hasindex i2 fromindex 2 =>
+        match p
+        case PAT_WILD(__) then ""
+        else
         let tvar = tempDecl("modelica_metatype", &varDecls)
         <<<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%rhs%>), <%i2%>));
         <%patternMatch(p,tvar,onPatternFail,&varDecls,&assignments)%>
