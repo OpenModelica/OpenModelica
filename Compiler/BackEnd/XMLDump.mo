@@ -267,17 +267,19 @@ protected import ClassInf;
   protected constant String SIMPLE             = "simple";
   protected constant String INITIAL            = "initial";
   protected constant String ZERO_CROSSING      = "zeroCrossing";
+  protected constant String SAMPLES            = "Samples";
   protected constant String ARRAY_OF_EQUATIONS = "arrayOfEquations";//This is used also in the dumpEquation method.
   protected constant String COMPLEX_EQUATION   = "complexequations";
 
-  protected constant String EQUATION  = "equation";
-  protected constant String EQUATION_ = "Equation";
-  protected constant String SOLVED    = "solved";
-  protected constant String SOLVED_   = "Solved";
-  protected constant String WHEN      = "when";
-  protected constant String WHEN_     = "When";
-  protected constant String RESIDUAL  = "residual";
-  protected constant String RESIDUAL_ = "Residual";
+  protected constant String EQUATION     = "equation";
+  protected constant String EQUATION_    = "Equation";
+  protected constant String SOLVED       = "solved";
+  protected constant String SOLVED_      = "Solved";
+  protected constant String WHEN         = "when";
+  protected constant String WHEN_        = "When";
+  protected constant String WHEN_CLAUSES = "WhenClauses";
+  protected constant String RESIDUAL     = "residual";
+  protected constant String RESIDUAL_    = "Residual";
 
   /*
   This String constant is used in:
@@ -983,7 +985,6 @@ algorithm
       BackendDAE.EquationArray reqns,ieqns;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
-      list<BackendDAE.ZeroCrossing> zc;
 
       list<DAE.Function> functionsElems;
 
@@ -994,13 +995,16 @@ algorithm
       DAE.FunctionTree funcs;
       
       list<tuple<list<BackendDAE.Equation>, list<BackendDAE.Var>>> eqnsVarsinOrderLst;
+      BackendDAE.EventInfo eventInfo;
 
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
                  vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars), 
-                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
+                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,
+                 eventInfo,
+                 extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,false)
       equation
 
         knvars  = BackendVariable.varList(vars_knownVars);
@@ -1021,10 +1025,11 @@ algorithm
         eqnsl = List.fold(systs,getEqsList,{});
         dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes, false);
         reqnsl = BackendEquation.equationList(reqns);
-        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes,false);
+        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes, false);
         ieqnsl = BackendEquation.equationList(ieqns);
-        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes,false);
-        dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
+        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes, false);
+        
+        dumpEventInfo(eventInfo, addMML);
 
         dumpConstraints(constrs);
         functionsElems = DAEUtil.getFunctionList(funcs);
@@ -1032,12 +1037,14 @@ algorithm
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inBackendDAE);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
+    
     case (BackendDAE.DAE(systs,
                  BackendDAE.SHARED(
                  vars_knownVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
                  vars_aliasVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_aliasVars,varArr=varArr_aliasVars,bucketSize=bucketSize_aliasVars,numberOfVars=numberOfVars_aliasVars), 
-                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
+                 ieqns,reqns,constrs,clsAttrs,_,_,funcs,
+                 eventInfo,extObjCls,btp,symjacs,_)),addOrInMatrix,addSolInfo,addMML,dumpRes,true)
       equation
 
         knvars  = BackendVariable.varList(vars_knownVars);
@@ -1058,10 +1065,11 @@ algorithm
         eqnsVarsinOrderLst = List.fold(systs,getOrderedEqsandVars,{});
         dumpSolvedEqns(eqnsVarsinOrderLst,1,EQUATIONS,addMML,dumpRes, true);
         reqnsl = BackendEquation.equationList(reqns);
-        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes,false);
+        dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes, false);
         ieqnsl = BackendEquation.equationList(ieqns);
-        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes,false);
-        dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
+        dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes, false);
+        
+        dumpEventInfo(eventInfo, addMML);
 
         dumpConstraints(constrs);
         functionsElems = DAEUtil.getFunctionList(funcs);
@@ -1076,6 +1084,29 @@ algorithm
         fail();
   end matchcontinue;
 end dumpBackendDAE;
+
+protected function dumpEventInfo
+  input BackendDAE.EventInfo inEventInfo;
+  input Boolean addMML;
+algorithm
+  _ := match(inEventInfo, addMML)
+    local
+      BackendDAE.SampleLookup sampleLookup;
+      list<BackendDAE.WhenClause> whenClauseLst;
+      list<BackendDAE.ZeroCrossing> zc;
+    
+    case (BackendDAE.EVENT_INFO(sampleLookup = sampleLookup, 
+                                whenClauseLst = whenClauseLst, 
+                                zeroCrossingLst = zc), _)
+      equation
+        dumpSamples(sampleLookup, stringAppend(SAMPLES, LIST_), addMML);
+        // dumpWhenClauses(whenClauseLst, stringAppend(WHEN_CLAUSES, LIST_), addMML);
+        dumpZeroCrossing(zc, stringAppend(ZERO_CROSSING, LIST_), addMML);
+      then
+        ();
+  
+  end match;
+end dumpEventInfo;
 
 
 protected function getOrderedVars
@@ -1570,6 +1601,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
+    
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -1579,6 +1611,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
+    
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),indexS,true)
       equation
         s1 = printExpStr(e1);
@@ -1596,6 +1629,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
       then ();
+    
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -1605,6 +1639,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(ARRAY_OF_EQUATIONS);
       then ();
+    
     case (BackendDAE.COMPLEX_EQUATION(left = e1,right = e2),indexS,true)
       equation
         s1 = printExpStr(e1);
@@ -1622,6 +1657,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
+    
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,addMMLCode)
       equation
         s1 = printExpStr(e1);
@@ -1631,6 +1667,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1649,6 +1686,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1658,6 +1696,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
+    
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1675,9 +1714,16 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
-        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
+        
+        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        Print.printBuf("\n");
+        Print.printBuf(is);
+        dumpExp(e1, true);
+        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
+    
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -1686,9 +1732,10 @@ algorithm
         res = stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
         Print.printBuf(res);
-        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
+        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);        
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
+    
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
         s1 = printExpStr(e);
@@ -1706,6 +1753,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
+    
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
         s1 = printExpStr(e);
@@ -1714,18 +1762,21 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
+    
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
       equation
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
       then ();
+    
     else
       equation
         res = "in XMLDump.dumpEquation - Unknown equation";
         Error.addMessage(Error.INTERNAL_ERROR, {res});
       then
         fail();
+  
   end match;
 end dumpEquation;
 
@@ -3565,15 +3616,90 @@ algorithm
   end match;
 end dumpVarsAdds2;
 
+public function dumpSamples "
+This function prints the list of Samples
+elements in a XML format. It takes also as input
+a string in order to know what is the content of
+the zero crossing list. The output is:
+<Samples DIMENSION=...>
+...
+</Samples>
+"
+  input BackendDAE.SampleLookup inSamples;
+  input String inContent;
+  input Boolean addMathMLCode;
+algorithm
+  _:=
+  matchcontinue (inSamples,inContent,addMathMLCode)
+    local
+      Integer len;
+      list<tuple<Integer, .DAE.Exp, .DAE.Exp>> samples;
+      
+    case (BackendDAE.SAMPLE_LOOKUP(lookup = {}),_,_) then ();
+    case (BackendDAE.SAMPLE_LOOKUP(lookup = samples),_,_)
+      equation
+        len = listLength(samples);
+        len >= 1 = false;
+      then();
+    case (BackendDAE.SAMPLE_LOOKUP(lookup = samples),_,_)
+      equation
+        len = listLength(samples);
+        len >= 1 = true;
+        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
+        dumpSampleLst(samples, addMathMLCode);
+        dumpStrCloseTag(inContent);
+      then ();
+  
+  end matchcontinue;
+end dumpSamples;
+
+protected function dumpSampleLst "
+This function prints the content of a Samples list
+of elements, including the information regarding the origin
+of the zero crossing elements in XML format. The output is:
+<stringAppend(Samples,ELEMENT_)>
+  <index value = i>
+  <start expstring = exp>
+  <interval expstring = exp>
+</stringAppend(Samples,ELEMENT_)>
+ "
+  input list<tuple<Integer, .DAE.Exp, .DAE.Exp>> inSamples;
+  input Boolean addMathMLCode;
+algorithm
+  _:=
+  match (inSamples,addMathMLCode)
+    local
+      DAE.Exp e1, e2;
+      Integer i;
+      Boolean addMMLCode;
+      list<tuple<Integer, .DAE.Exp, .DAE.Exp>> lst;
+    
+    case ({},_) then ();
+    
+    case ((i, e1, e2) :: lst,addMMLCode)
+      equation
+        dumpStrOpenTag(stringAppend(SAMPLES,ELEMENT_));
+        dumpStrOpenTagAttr("index","value",intString(i));
+        dumpExp(e1,addMMLCode);
+        dumpStrOpenTagAttr("start",EXP_STRING,printExpStr(e1));
+        dumpExp(e1,addMMLCode);
+        dumpStrOpenTagAttr("interval",EXP_STRING,printExpStr(e2));
+        dumpExp(e2,addMMLCode);
+        dumpStrCloseTag(stringAppend(SAMPLES,ELEMENT_));
+        dumpSampleLst(lst,addMMLCode);
+      then ();
+  
+  end match;
+end dumpSampleLst;
 
 public function dumpZeroCrossing "
 This function prints the list of ZeroCrossing
 elements in a XML format. It takes also as input
 a string in order to know what is the content of
 the zero crossing list. The output is:
-<ZeroCrossings DIMENSION=...>
+<zeroCrossings DIMENSION=...>
 ...
-</ZeroCrossings>
+</zeroCrossings>
 "
   input list<BackendDAE.ZeroCrossing> zeroCross;
   input String inContent;
@@ -3599,7 +3725,6 @@ algorithm
       then ();
   end matchcontinue;
 end dumpZeroCrossing;
-
 
 protected function dumpZcLst "
 This function prints the content of a ZeroCrossing list
@@ -3784,6 +3909,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(EQUATION);
       then ();
+    
     case (BackendDAE.EQUATION(exp = e1,scalar = e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -3793,6 +3919,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(EQUATION);
       then ();
+    
     case (BackendDAE.ARRAY_EQUATION(left = e1,right = e2),indexS,true)
       equation
         s1 = printExpStr(e1);
@@ -3814,6 +3941,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(ARRAY_EQUATION);
       then ();
+    
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -3844,6 +3972,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
+    
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2),indexS,false)
       equation
         s1 = printExpStr(e1);
@@ -3853,6 +3982,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(COMPLEX_EQUATION);
       then ();
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -3875,6 +4005,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
+    
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e2),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -3884,6 +4015,7 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(SOLVED,EQUATION_));
       then ();
+    
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,true)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -3905,9 +4037,16 @@ algorithm
         dumpStrCloseTag(MathMLApply);
         dumpStrCloseTag(MATH);
         dumpStrCloseTag(MathML);
-        dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
+        
+        dumpStrOpenTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        Print.printBuf("\n");
+        Print.printBuf(is);
+        dumpExp(e1, true);
+        dumpStrCloseTag(stringAppend(stringAppend(WHEN,EQUATION_),ID_));
+        
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
+    
     case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition = e1,left = cr,right = e2)),indexS,false)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
@@ -3919,6 +4058,7 @@ algorithm
         dumpStrTagContent(stringAppend(stringAppend(WHEN,EQUATION_),ID_),is);
         dumpStrCloseTag(stringAppend(WHEN,EQUATION_));
       then ();
+    
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,true)
       equation
         s1 = printExpStr(e);
@@ -3936,6 +4076,7 @@ algorithm
         dumpStrCloseTag(MathML);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
+    
     case (BackendDAE.RESIDUAL_EQUATION(exp = e),indexS,false)
       equation
         s1 = printExpStr(e);
@@ -3944,12 +4085,14 @@ algorithm
         Print.printBuf(res);
         dumpStrCloseTag(stringAppend(RESIDUAL,EQUATION_));
       then ();
+    
     case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(stmts),source=source),indexS,_)
       equation
         dumpStrOpenTagAttr(ALGORITHM,ID,indexS);
         Print.printBuf(Util.xmlEscape(DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)})));
         dumpStrCloseTag(ALGORITHM);
       then ();
+  
   end match;
 end dumpResidual;
 
