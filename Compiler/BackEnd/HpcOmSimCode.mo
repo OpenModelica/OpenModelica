@@ -246,7 +246,7 @@ algorithm
       //criticalPaths = {{}};
       //criticalPathsWoC = {{}};
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
-      //HpcOmScheduler.printSchedule(schedule);
+      //HpcOmScheduler.printSchedule(taskSchedule);
       
       //print("Parallel informations:\n");
       //printParInformation(hpcOmParInformation);
@@ -321,23 +321,15 @@ protected function createSchedule
 protected
   String flagValue;
   Integer numProc;
-  list<Integer> lst;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix)
     case(_,_,_,_)
       equation
-        true = arrayLength(iTaskGraph) == 0;
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
-        print("The ODE-TaskGraph is empty. This is maybe just an algebraic system.\n");
-      then
-        HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_)
-      equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
-        //print("Using level Scheduler\n");
+        print("Using level Scheduler\n");
       then HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
     case(_,_,_,_)
       equation
@@ -358,13 +350,6 @@ algorithm
         true = stringEq(flagValue, "list");
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_)
-      equation
-        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
-        true = stringEq(flagValue, "mcp");
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
-        //print("Using Modified Critical Path Scheduler\n");
-      then HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
     case(_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);

@@ -1339,7 +1339,7 @@ algorithm
 end getTupleFirst;
 
   
-public function tupleToString "author: marcusw
+protected function tupleToString "author: marcusw
   Returns the given tuple as string." 
   input tuple<Integer,Integer> inTuple;
   output String result;
@@ -1899,7 +1899,7 @@ algorithm
 end getCompInComps;
 
 
-public function getChildNodes "gets the successor nodes for a list of parent nodes.
+protected function getChildNodes "gets the successor nodes for a list of parent nodes.
 author: waurich TUD 2013-06"
   input array<list<Integer>> adjacencyLstIn;
   input list<Integer> parents;
@@ -2573,23 +2573,21 @@ algorithm
   end matchcontinue;
 end addDepToGraph;
 
-public function getCommunicationCost " gets the communication cost for an edge from parent node to child node.
- REMARK: use the primal indeces!!!!!!
+protected function getCommunicationCost " gets the communication cost for an edge from parent node to child node.
   author: waurich TUD 2013-06."
-  input Integer childIdx;
   input Integer parentIdx;
+  input Integer childIdx;
   input array<list<tuple<Integer,Integer,Integer>>> commCosts; 
-  output tuple<Integer,Integer,Integer> tplOut;
+  output Integer numOfVarsOut;
+  output Integer costOut;
 protected
   list<tuple<Integer,Integer,Integer>> commRow;
   tuple<Integer,Integer,Integer> commEntry;
-  Integer cost, numOfVars;
 algorithm
   //print("Try to get comm cost for edge from " +& intString(parentIdx) +& " to " +& intString(childIdx) +& "\n");
   commRow := arrayGet(commCosts,parentIdx);
   commEntry := getTupleByFirstEntry(commRow,childIdx);
-  //(_,numOfVars,cost) := commEntry;  
-  tplOut := commEntry;
+  (_,numOfVarsOut,costOut) := commEntry;  
 end getCommunicationCost;
 
 
@@ -2620,7 +2618,7 @@ algorithm
         head;
     case({},_)
       equation
-        print("getTupleByFirstEntry (possibly in getCommunicationCosts) failed! - the value "+&intString(valueIn)+&" can not be found in the list of edges\n");
+        print("getCommunicationCosts failed! - the value "+&intString(valueIn)+&" can not be found in the list of edges\n");
       then
         fail(); 
   end matchcontinue;
@@ -5186,7 +5184,7 @@ algorithm
         primalChild = listGet(primalChildLst,1);
         primalParent = listGet(primalParentLst,1);
         ((_,costs)) = arrayGet(exeCosts,primalChild);
-        ((_,_,commCost)) = getCommunicationCost(primalChild, primalParent ,commCosts);
+        (_,commCost) = getCommunicationCost(primalParent ,primalChild ,commCosts);
         costs = costs +. intReal(commCost);
       then
         costs;
