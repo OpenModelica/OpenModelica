@@ -3558,24 +3558,6 @@ algorithm
         true = realEq(r1,r2) and realEq(r1,2.0);
         true = Expression.expEqual(e1,e2);
       then DAE.RCONST(1.0);
-        
-    // (a+b)c1 => ac1+bc1, for constant c1 and a or b
-    case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty2),exp2 = e2),e3)
-      equation
-        true = Expression.isConst(e3);
-        true = Expression.isConst(e1) or Expression.isConst(e2);
-        res = DAE.BINARY(DAE.BINARY(e3,DAE.MUL(ty),e1),DAE.ADD(ty2),DAE.BINARY(e3,DAE.MUL(ty),e2));
-      then
-        res;
-
-    // (a-b)c1 => a/c1-b/c1, for constant c1 and a or b
-    case (DAE.MUL(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty2),exp2 = e2),e3)
-      equation
-        true = Expression.isConst(e3);
-        true = Expression.isConst(e1) or Expression.isConst(e2);
-        res = DAE.BINARY(DAE.BINARY(e3,DAE.MUL(ty),e1),DAE.SUB(ty2),DAE.BINARY(e3,DAE.MUL(ty),e2));
-      then
-        res;
 
     // a+(-b)
     case (DAE.ADD(ty = tp),e1,DAE.UNARY(operator = DAE.UMINUS(ty = tp2),exp = e2))
