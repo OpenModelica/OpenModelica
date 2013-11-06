@@ -486,7 +486,6 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       count++;
     }
   }
-  mpVariablesTreeView->collapseAll();
   QModelIndex idx = variablesTreeItemIndex(pTopVariablesTreeItem);
   idx = mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->mapFromSource(idx);
   mpVariablesTreeView->expand(idx);
@@ -637,6 +636,10 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   mpFindSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
   mpFindSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
   connect(mpFindSyntaxComboBox, SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
+  // expand all button
+  mpExpandAllButton = new QPushButton(tr("Expand All"));
+  // collapse all button
+  mpCollapseAllButton = new QPushButton(tr("Collapse All"));
   // create variables tree widget
   mpVariablesTreeView = new VariablesTreeView(this);
   mpVariablesTreeModel = new VariablesTreeModel(mpVariablesTreeView);
@@ -652,8 +655,12 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   pMainLayout->addWidget(mpFindVariablesTextBox, 0, 0, 1, 2);
   pMainLayout->addWidget(mpFindCaseSensitiveCheckBox, 1, 0);
   pMainLayout->addWidget(mpFindSyntaxComboBox, 1, 1);
-  pMainLayout->addWidget(mpVariablesTreeView, 2, 0, 1, 2);
+  pMainLayout->addWidget(mpExpandAllButton, 2, 0);
+  pMainLayout->addWidget(mpCollapseAllButton, 2, 1);
+  pMainLayout->addWidget(mpVariablesTreeView, 3, 0, 1, 2);
   setLayout(pMainLayout);
+  connect(mpExpandAllButton, SIGNAL(clicked()), mpVariablesTreeView, SLOT(expandAll()));
+  connect(mpCollapseAllButton, SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
   connect(mpVariablesTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
   connect(mpVariablesTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
   connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex)), SLOT(plotVariables(QModelIndex)));
@@ -1078,6 +1085,9 @@ void VariablesWidget::findVariables()
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpFindSyntaxComboBox->itemData(mpFindSyntaxComboBox->currentIndex()).toInt());
   QRegExp regExp(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegExp(regExp);
+  /* expand all so that the filtered items can be seen. */
+  if (!findText.isEmpty())
+    mpVariablesTreeView->expandAll();
 }
 
 void VariablesWidget::reSimulate()

@@ -168,6 +168,8 @@ private:
   QLineEdit *mpFindVariablesTextBox;
   QComboBox *mpFindSyntaxComboBox;
   QCheckBox *mpFindCaseSensitiveCheckBox;
+  QPushButton *mpExpandAllButton;
+  QPushButton *mpCollapseAllButton;
   VariableTreeProxyModel *mpVariableTreeProxyModel;
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
