@@ -617,6 +617,20 @@ public function tmpTickResetIndex
   external "C" SystemImpl_tmpTickResetIndex(start,index) annotation(Library = "omcruntime");
 end tmpTickResetIndex;
 
+public function tmpTickSetIndex
+  "sets the index, like tmpTickResetIndex, but does not reset the maximum counter"
+  input Integer start;
+  input Integer index;
+  external "C" SystemImpl_tmpTickSetIndex(start,index) annotation(Library = "omcruntime");
+end tmpTickSetIndex;
+
+public function tmpTickMaximum
+  "returns the max tick since the last reset"
+  input Integer index;
+  output Integer maxIndex;
+  external "C" maxIndex=SystemImpl_tmpTickMaximum(index) annotation(Library = "omcruntime");
+end tmpTickMaximum;
+
 public function getRTLibs
 "Returns a string containing the compiler flags used for real-time libraries"
   output String libs;

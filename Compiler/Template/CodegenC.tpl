@@ -8863,7 +8863,8 @@ case exp as MATCHEXPRESSION(__) then
           >>
           %>
             switch (MMC_SWITCH_CAST(<%ix%>)) {
-            <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,startIndexOutputs,prefix,startIndexInputs,exp.inputs,onPatternFail,done,context,&varDecls)%>
+            <%daeExpMatchCases(exp.cases,tupleAssignExps,exp.matchType,ix,res,startIndexOutputs,prefix,startIndexInputs,exp.inputs,
+                               onPatternFail,done,context,&varDecls,System.tmpTickIndexReserve(1,0) /* Returns the current MM tick */)%>
             }
             goto <%prefix%>_end;
             <%prefix%>_end: ;
@@ -8883,9 +8884,10 @@ case exp as MATCHEXPRESSION(__) then
   res
 end daeExpMatch2;
 
-template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text startIndexOutputs, Text prefix, Text startIndexInputs, list<Exp> inputs, Text onPatternFail, Text done, Context context, Text &varDecls)
+template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.MatchType ty, Text ix, Text res, Text startIndexOutputs, Text prefix, Text startIndexInputs, list<Exp> inputs, Text onPatternFail, Text done, Context context, Text &varDecls, Integer startTmpTickIndex)
 ::=
   cases |> c as CASE(__) hasindex i0 =>
+  let() = System.tmpTickSetIndex(startTmpTickIndex,1)
   let &varDeclsCaseInner = buffer ""
   let &preExpCaseInner = buffer ""
   let &assignments = buffer ""
@@ -10080,7 +10082,7 @@ end ScalarVariableTypeRealMaxAttribute;
 template addRootsTempArray()
 ::=
   let() = System.tmpTickResetIndex(0, 2)
-  match System.tmpTickIndex(1)
+  match System.tmpTickMaximum(1)
     case 0 then ""
     case i then
       <<

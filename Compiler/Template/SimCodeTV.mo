@@ -850,6 +850,16 @@ package System
     input Integer index;
   end tmpTickResetIndex;
 
+  function tmpTickSetIndex
+    input Integer start;
+    input Integer index;
+  end tmpTickSetIndex;
+
+  function tmpTickMaximum
+    input Integer index;
+    output Integer maxIndex;
+  end tmpTickMaximum;
+
   function getCurrentTimeStr
     output String timeStr;
   end getCurrentTimeStr;

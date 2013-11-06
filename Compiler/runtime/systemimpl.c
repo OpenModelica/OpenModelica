@@ -1879,18 +1879,14 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
 }
 
 #define MAX_TMP_TICK 50
+static inline int intMax(int a, int b)
+{
+  return a > b ? a : b;
+}
+
 static modelica_integer tmp_tick_no[MAX_TMP_TICK] = {0};
+static modelica_integer tmp_tick_max_no[MAX_TMP_TICK] = {0};
 static modelica_integer parfor_tick_no = 0;
-
-extern int SystemImpl_tmpTick(void)
-{
-  return tmp_tick_no[0]++;
-}
-
-extern void SystemImpl_tmpTickReset(int start)
-{
-  tmp_tick_no[0] = start;
-}
 
 extern int SystemImpl_parForTick(void)
 {
@@ -1904,18 +1900,20 @@ extern void SystemImpl_parForTickReset(int start)
 
 extern int SystemImpl_tmpTickIndex(int index)
 {
+  int res = tmp_tick_no[index];
   assert(index < MAX_TMP_TICK && index >= 0);
-  /* fprintf(stderr, "tmpTickIndex %d => %d\n", index, tmp_tick_no[index]); */
-  return tmp_tick_no[index]++;
+  tmp_tick_no[index] += 1;
+  tmp_tick_max_no[index] = intMax(tmp_tick_no[index],tmp_tick_max_no[index]);
+  return res;
 }
 
 extern int SystemImpl_tmpTickIndexReserve(int index, int reserve)
 {
-  int tmp = tmp_tick_no[index];
-  tmp_tick_no[index] += reserve;
+  int res = tmp_tick_no[index];
   assert(index < MAX_TMP_TICK && index >= 0);
-  /* fprintf(stderr, "tmpTickIndex %d => %d\n", index, tmp_tick_no[index]); */
-  return tmp;
+  tmp_tick_no[index] += reserve;
+  tmp_tick_max_no[index] = intMax(tmp_tick_no[index],tmp_tick_max_no[index]);
+  return res;
 }
 
 extern void SystemImpl_tmpTickResetIndex(int start, int index)
@@ -1923,6 +1921,32 @@ extern void SystemImpl_tmpTickResetIndex(int start, int index)
   assert(index < MAX_TMP_TICK && index >= 0);
   /* fprintf(stderr, "tmpTickResetIndex %d => %d\n", index, start); */
   tmp_tick_no[index] = start;
+  tmp_tick_max_no[index] = start;
+}
+
+extern void SystemImpl_tmpTickSetIndex(int start, int index)
+{
+  assert(index < MAX_TMP_TICK && index >= 0);
+  /* fprintf(stderr, "tmpTickResetIndex %d => %d\n", index, start); */
+  tmp_tick_no[index] = start;
+  tmp_tick_max_no[index] = intMax(start,tmp_tick_max_no[index]);
+}
+
+/* If you use negative reserve or set, the maximum can be different from the tick */
+extern int SystemImpl_tmpTickMaximum(int index)
+{
+  assert(index < MAX_TMP_TICK && index >= 0);
+  return tmp_tick_max_no[index];
+}
+
+extern int SystemImpl_tmpTick(void)
+{
+  return SystemImpl_tmpTickIndex(0);
+}
+
+extern void SystemImpl_tmpTickReset(int start)
+{
+  return SystemImpl_tmpTickResetIndex(start,0);
 }
 
 extern int SystemImpl__reopenStandardStream(int id,const char *filename)

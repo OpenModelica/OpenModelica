@@ -773,6 +773,20 @@ RML_BEGIN_LABEL(System__tmpTickResetIndex)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__tmpTickSetIndex)
+{
+  SystemImpl_tmpTickSetIndex(RML_UNTAGFIXNUM(rmlA0),RML_UNTAGFIXNUM(rmlA1));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__tmpTickMaximum)
+{
+  rmlA0 = (void*) mk_icon(SystemImpl_tmpTickMaximum(RML_UNTAGFIXNUM(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__systemCall)
 {
   const char* str = RML_STRINGDATA(rmlA0);
