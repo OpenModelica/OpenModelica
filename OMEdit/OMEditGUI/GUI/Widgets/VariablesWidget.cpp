@@ -62,6 +62,7 @@ VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, 
   mVariableName = variableItemData[2].toString();
   mDisplayVariableName = variableItemData[3].toString();
   mValue = variableItemData[4].toString();
+  mValueChanged = false;
   mDescription = variableItemData[5].toString();
   mToolTip = variableItemData[6].toString();
   mChecked = false;
@@ -134,7 +135,11 @@ bool VariablesTreeItem::setData(int column, const QVariant &value, int role)
   }
   else if (column == 1 && role == Qt::EditRole)
   {
-    mValue = value.toString();
+    if (mValue.compare(value.toString()) != 0)
+    {
+      mValueChanged = true;
+      mValue = value.toString();
+    }
     return true;
   }
   return false;
@@ -334,9 +339,9 @@ QModelIndex VariablesTreeModel::VariablesTreeItemIndexHelper(const VariablesTree
   return QModelIndex();
 }
 
-QList<QMap<QString, QString> > VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader)
+void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader)
 {
-  QList<QMap<QString, QString> > scalarVariables;
+  mScalarVariablesList.clear();
   /* We'll parse the XML until we reach end of it.*/
   while(!xmlReader.atEnd() && !xmlReader.hasError())
   {
@@ -351,19 +356,18 @@ QList<QMap<QString, QString> > VariablesTreeModel::parseInitXml(QXmlStreamReader
       /* If it's named ScalarVariable, we'll dig the information from there.*/
       if(xmlReader.name() == "ScalarVariable")
       {
-        QMap<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
+        QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
         if (scalarVariable["useStart"].compare("true") == 0)
-          scalarVariables.append(scalarVariable);
+          mScalarVariablesList.insert(scalarVariable.value("name"),scalarVariable);
       }
     }
   }
   xmlReader.clear();
-  return scalarVariables;
 }
 
-QMap<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlReader)
+QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader &xmlReader)
 {
-  QMap<QString, QString> scalarVariable;
+  QHash<QString, QString> scalarVariable;
   /* Let's check that we're really getting a ScalarVariable. */
   if(xmlReader.tokenType() != QXmlStreamReader::StartElement && xmlReader.name() == "ScalarVariable")
     return scalarVariable;
@@ -405,11 +409,10 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   /* open the model_init.xml file for reading */
   QString initFileName = QString(fileName).replace(resultTypeRegExp, "_init.xml");
   QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
-  QList<QMap<QString,QString> > scalarVariables;
   if (initFile.open(QIODevice::ReadOnly))
   {
     QXmlStreamReader initXmlReader(&initFile);
-    scalarVariables = parseInitXml(initXmlReader);
+    parseInitXml(initXmlReader);
     initFile.close();
   }
   else
@@ -464,7 +467,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* get the variable value */
       QString value, description;
       bool found = false;
-      value = getVariableValueAndDescription(variableToFind, scalarVariables, &found, &description);
+      value = getVariableValueAndDescription(variableToFind, &found, &description);
       variableData << StringHandler::unparse(QString("\"").append(value).append("\""));
       /* get the variable description */
       variableData << StringHandler::unparse(QString("\"").append(description).append("\""));
@@ -530,18 +533,14 @@ VariablesTreeItem* VariablesTreeModel::getVariablesTreeItem(const QModelIndex &i
   return mpRootVariablesTreeItem;
 }
 
-QString VariablesTreeModel::getVariableValueAndDescription(QString variableToFind, QList<QMap<QString, QString> > scalarVariables,
-                                                           bool *found, QString *description)
+QString VariablesTreeModel::getVariableValueAndDescription(QString variableToFind, bool *found, QString *description)
 {
-  for (int i = 0 ; i < scalarVariables.size() ; i++)
+  QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
+  if (hash["name"].compare(variableToFind) == 0)
   {
-    QMap<QString, QString> map = scalarVariables.at(i);
-    if (map["name"].compare(variableToFind) == 0)
-    {
-      *found = true;
-      *description = map["description"];
-      return map["start"];
-    }
+    *found = true;
+    *description = hash["description"];
+    return hash["start"];
   }
   *description = "";
   return "";
@@ -795,40 +794,48 @@ bool VariablesWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 
 void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
-                                                QHash<QString, QMap<QString, QString> > *variables)
+                                                QHash<QString, QHash<QString, QString> > *variables)
 {
   for (int i = 0 ; i < pVariablesTreeItem->childCount() ; i++)
   {
     VariablesTreeItem *pChildVariablesTreeItem = pVariablesTreeItem->child(i);
-    if (pChildVariablesTreeItem->isEditable())
+    if (pChildVariablesTreeItem->isEditable() && pChildVariablesTreeItem->isValueChanged())
     {
       QString value = pChildVariablesTreeItem->data(1, Qt::DisplayRole).toString();
       QString variableToFind = pChildVariablesTreeItem->getVariableName();
       variableToFind.remove(QRegExp(outputFileName + "."));
-      QMap<QString, QString> map;
-      map["name"] = variableToFind;
-      map["value"] = value;
-      variables->insert(variableToFind, map);
+      QHash<QString, QString> hash;
+      hash["name"] = variableToFind;
+      hash["value"] = value;
+      variables->insert(variableToFind, hash);
     }
     readVariablesAndUpdateXML(pChildVariablesTreeItem, outputFileName, variables);
   }
 }
 
-void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QMap<QString, QString> > variables)
+void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables)
 {
+  /* if no variables are changed. */
+  if (variables.empty())
+    return;
+  /* update the variables */
+  int count = 0;
   QDomNodeList scalarVariable = xmlDocument.elementsByTagName("ScalarVariable");
   for (int i = 0; i < scalarVariable.size(); i++)
   {
+    if (count >= variables.size())
+      break;
     QDomElement element = scalarVariable.at(i).toElement();
     if (!element.isNull())
     {
-      QMap<QString, QString> map = variables.value(element.attribute("name"));
-      if (element.attribute("name").compare(map["name"]) == 0)
+      QHash<QString, QString> hash = variables.value(element.attribute("name"));
+      if (element.attribute("name").compare(hash["name"]) == 0)
       {
+        count++;
         QDomElement el = scalarVariable.at(i).firstChild().toElement();
         if (!el.isNull())
         {
-          el.setAttribute("start", map["value"]);
+          el.setAttribute("start", hash["value"]);
         }
       }
     }
@@ -1095,7 +1102,7 @@ void VariablesWidget::reSimulate()
                                                                            mpVariablesTreeModel->getRootVariablesTreeItem());
         if (pTopVariableTreeItem)
         {
-          QHash<QString, QMap<QString, QString> > variables;
+          QHash<QString, QHash<QString, QString> > variables;
           readVariablesAndUpdateXML(pTopVariableTreeItem, simulationOptions.getOutputFileName(), &variables);
           findVariableAndUpdateValue(initXmlDocument, variables);
         }

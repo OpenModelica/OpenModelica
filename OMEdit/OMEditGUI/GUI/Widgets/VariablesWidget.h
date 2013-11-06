@@ -55,6 +55,7 @@ public:
   QString getFileName() {return mFileName;}
   QString getPlotVariable();
   QString getVariableName() {return mVariableName;}
+  bool isValueChanged() {return mValueChanged;}
   bool isChecked() const {return mChecked;}
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}
@@ -81,6 +82,7 @@ private:
   QString mVariableName;
   QString mDisplayVariableName;
   QString mValue;
+  bool mValueChanged;
   QString mDescription;
   QString mToolTip;
   bool mChecked;
@@ -107,8 +109,8 @@ public:
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
   QModelIndex VariablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
                                             const QModelIndex &parentIndex) const;
-  QList<QMap<QString, QString> > parseInitXml(QXmlStreamReader &xmlReader);
-  QMap<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
+  void parseInitXml(QXmlStreamReader &xmlReader);
+  QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   QStringList makeVariableParts(QString variable);
   bool removeVariableTreeItem(QString variable);
@@ -116,9 +118,9 @@ public:
 private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
+  QHash<QString, QHash<QString,QString> > mScalarVariablesList;
   VariablesTreeItem* getVariablesTreeItem(const QModelIndex &index) const;
-  QString getVariableValueAndDescription(QString variableToFind, QList<QMap<QString, QString> > scalarVariables, bool *found,
-                                         QString *description);
+  QString getVariableValueAndDescription(QString variableToFind, bool *found, QString *description);
 signals:
   void itemChecked(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
@@ -159,8 +161,8 @@ public:
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   void readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
-                                 QHash<QString, QMap<QString, QString> > *variables);
-  void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QMap<QString, QString> > variables);
+                                 QHash<QString, QHash<QString, QString> > *variables);
+  void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
 private:
   MainWindow *mpMainWindow;
   QLineEdit *mpFindVariablesTextBox;
