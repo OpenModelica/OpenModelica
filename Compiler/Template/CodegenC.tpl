@@ -6234,7 +6234,9 @@ end extractParFors_impl;
 template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an algorithm statement."
 ::=
-  let res = match stmt
+  match System.tmpTickIndexReserve(1, 0) /* Remember the old tmpTick */
+  case oldIndex
+  then let res = (match stmt
   case s as STMT_ASSIGN(exp1=PATTERN(__)) then algStmtAssignPattern(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSIGN(__)         then algStmtAssign(s, context, &varDecls /*BUFD*/)
   case s as STMT_ASSIGN_ARR(__)     then algStmtAssignArr(s, context, &varDecls /*BUFD*/)
@@ -6254,7 +6256,8 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls /*BUFP
   case s as STMT_RETURN(__)         then 'goto _return;<%\n%>'
   case s as STMT_NORETCALL(__)      then algStmtNoretcall(s, context, &varDecls /*BUFD*/)
   case s as STMT_REINIT(__)         then algStmtReinit(s, context, &varDecls /*BUFD*/)
-  else error(sourceInfo(), 'ALG_STATEMENT NYI')
+  else error(sourceInfo(), 'ALG_STATEMENT NYI'))
+  let () = System.tmpTickSetIndex(oldIndex,1)
   <<
   <%modelicaLine(getElementSourceFileInfo(getStatementSource(stmt)))%>
   <%res%>
@@ -8894,6 +8897,7 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let &preRes = buffer ""
   let &varFrees = buffer "" /*BUFF*/
   let patternMatching = (c.patterns |> lhs hasindex i0 => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>',onPatternFail,&varDeclsCaseInner,&assignments); empty)
+  let() = System.tmpTickSetIndex(startTmpTickIndex,1)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner); separator="\n")
   let &preGuardCheck = buffer ""
   let guardCheck = (match patternGuard case SOME(exp) then 'if (!<%daeExp(exp,context,&preGuardCheck,&varDeclsCaseInner)%>) <%onPatternFail%>;<%\n%>')
