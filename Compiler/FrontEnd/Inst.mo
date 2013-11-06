@@ -4388,15 +4388,24 @@ algorithm
   //crefsStr := stringDelimitList(List.map(crefs, Dump.printComponentRefStr),",");
   //Debug.fprintln(Flags.DEBUG,"start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,_):=
-    updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,HashTable5.emptyHashTableSized(BaseHashTable.lowBucketSize), NONE());
+    updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,impl,NONE(),NONE());
   //Debug.fprintln(Flags.DEBUG,"finished update comps" +& myTick);
   //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
 end updateComponentsInEnv;
 
+protected function getUpdatedCompsHashTable
+  "Routine to lazily create the hashtable as it usually unused"
+  input Option<HashTable5.HashTable> optHT;
+  output HashTable5.HashTable ht;
+algorithm
+  ht := match optHT
+    case SOME(ht) then ht;
+    else HashTable5.emptyHashTableSized(BaseHashTable.lowBucketSize);
+  end match;
+end getUpdatedCompsHashTable;
+
 protected function updateComponentInEnv
-"author: PA
-  Helper function to updateComponentsInEnv.
-  Does the work for one variable."
+  "Helper function to updateComponentsInEnv. Does the work for one variable."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InnerOuter.InstHierarchy inIH;
@@ -4405,12 +4414,12 @@ protected function updateComponentInEnv
   input Absyn.ComponentRef cref;
   input ClassInf.State inCIState;
   input Boolean impl;
-  input HashTable5.HashTable inUpdatedComps;
+  input Option<HashTable5.HashTable> inUpdatedComps;
   input Option<Absyn.ComponentRef> currentCref "The cref that caused this call to updateComponentInEnv.";
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
-  output HashTable5.HashTable outUpdatedComps;
+  output Option<HashTable5.HashTable> outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
   matchcontinue (inCache,inEnv,inIH,pre,mod,cref,inCIState,impl,inUpdatedComps,currentCref)
@@ -4453,7 +4462,7 @@ algorithm
       ClassInf.State ci_state;
 
     // if there are no modifications, return the same!
-    //case (cache,env,ih,pre,DAE.NOMOD(),cref,ci_state,csets,impl,updatedComps)
+    //case (cache,env,ih,pre,DAE.NOMOD(),cref,ci_state,csets,impl,_)
     //  then
     //    (cache,env,ih,csets,updatedComps);
 
@@ -4465,7 +4474,7 @@ algorithm
              prefixes = prefixes as SCode.PREFIXES(visibility = visibility),
              attributes = attributes,
              modifications = smod,
-             typeSpec=tsNew, info = info),_)}),_,_,_,updatedComps,_)
+             typeSpec=tsNew, info = info),_)}),_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         true = stringEq(id, name);
@@ -4500,6 +4509,7 @@ algorithm
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
         //Debug.traceln("got class " +& SCodeDump.printClassStr(cl));
+        updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         (mods,cmod,m) = InstUtil.noModForUpdatedComponents(var1,updatedComps,cref,mods,cmod,m);
         crefs = InstUtil.getCrefFromMod(m);
         crefs2 = InstUtil.getCrefFromDim(ad);
@@ -4507,15 +4517,15 @@ algorithm
         crefs_1 = listAppend(listAppend(crefs, crefs2),crefs3);
         crefs_2 = InstUtil.removeCrefFromCrefs(crefs_1, cref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
-        (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, updatedComps, SOME(cref));
+        (cache,env2,ih,SOME(updatedComps)) = updateComponentsInEnv2(cache, env, ih, pre, DAE.NOMOD(), crefs_2, ci_state, impl, SOME(updatedComps), SOME(cref));
         (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(ct,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
 
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env_1) +& "\n");
       then
-        (cache,env_1,ih,updatedComps);
+        (cache,env_1,ih,SOME(updatedComps));
 
     // redeclare class!
-    case (cache,env,ih,_,mods as DAE.REDECL(_, _, {(compNew as SCode.CLASS(name = name),_)}),_,_,_,updatedComps,_)
+    case (cache,env,ih,_,mods as DAE.REDECL(_, _, {(compNew as SCode.CLASS(name = name),_)}),_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         true = stringEq(name, id);
@@ -4523,21 +4533,22 @@ algorithm
         (cl, _) = Lookup.lookupClassLocal(env, name);
         compNew = SCode.mergeWithOriginal(compNew, cl);
         env = Env.updateFrameC(env, compNew, env);
+        updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
       then
-        (cache,env,ih,updatedComps);
+        (cache,env,ih,SOME(updatedComps));
 
     // Variable with NONE() element is already instantiated.
-    case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
+    case (cache,env,ih,_,mods,_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,_,_,_,is,idENV) = Lookup.lookupIdent(cache,env,id);
         true = Env.isTyped(is) "If InstStatus is typed, return";
       then
-        (cache,env,ih,updatedComps);
+        (cache,env,ih,inUpdatedComps);
 
     // the default case
-    case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
+    case (cache,env,ih,_,mods,_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,tyVar,
@@ -4553,6 +4564,7 @@ algorithm
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
         //Debug.traceln("got class " +& SCodeDump.printClassStr(cl));
+        updatedComps = getUpdatedCompsHashTable(inUpdatedComps);
         (mods,cmod,m) = InstUtil.noModForUpdatedComponents(var1,updatedComps,cref,mods,cmod,m);
         crefs = InstUtil.getCrefFromMod(m);
         crefs2 = InstUtil.getCrefFromDim(ad);
@@ -4565,20 +4577,20 @@ algorithm
         // infinite loops.
         crefs_2 = InstUtil.removeOptCrefFromCrefs(crefs_2, currentCref);
         updatedComps = BaseHashTable.add((cref,0),updatedComps);
-        (cache,env2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, updatedComps, SOME(cref));
+        (cache,env2,ih,SOME(updatedComps)) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, impl, SOME(updatedComps), SOME(cref));
         (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(ct,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
       then
-        (cache,env_1,ih,updatedComps);
+        (cache,env_1,ih,SOME(updatedComps));
 
     // If first part of ident is a class, e.g StateSelect.None, nothing to update
-    case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
+    case (cache,env,ih,_,mods,_,_,_,_,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
       then
-        (cache,env,ih,updatedComps);
+        (cache,env,ih,inUpdatedComps);
     // report an error!
-    case (cache,env,ih,_,_,_,_,_,updatedComps,_)
+    case (cache,env,ih,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Inst.updateComponentInEnv failed, cref = " +& Dump.printComponentRefStr(cref));
@@ -5723,12 +5735,12 @@ protected function updateComponentsInEnv2
   input list<Absyn.ComponentRef> crefs;
   input ClassInf.State ci_state;
   input Boolean impl;
-  input HashTable5.HashTable inUpdatedComps;
+  input Option<HashTable5.HashTable> inUpdatedComps;
   input Option<Absyn.ComponentRef> currentCref;
   output Env.Cache outCache;
   output Env.Env outEnv;
   output InnerOuter.InstHierarchy outIH;
-  output HashTable5.HashTable outUpdatedComps;
+  output Option<HashTable5.HashTable> outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
   matchcontinue (inCache,inEnv,inIH,pre,mod,crefs,ci_state,impl,inUpdatedComps,currentCref)
@@ -5740,7 +5752,7 @@ algorithm
       InstanceHierarchy ih;
       String n;
       DAE.Binding binding;
-      HashTable5.HashTable updatedComps;
+      Option<HashTable5.HashTable> updatedComps;
       Env.Cache cache;
       Env.Env env;
 
