@@ -787,45 +787,55 @@ void changeStdStreamBuffer(void) {
   setbuf(stderr, NULL);
 }
 
-unsigned long mmc_prim_hash(void *p)
+static inline unsigned long djb2_hash_iter(const unsigned char *str /* data; not null-terminated */, int len, unsigned long hash /* start at 5381 */)
 {
-  unsigned long hash = 0;
+  int c,i;
+  for (i=0; i<len; i++) {
+    hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+  }
+  return hash;
+}
+
+unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
+{
   void **pp = NULL;
   mmc_uint_t phdr = 0;
-  mmc_uint_t slots = 0;
 
   mmc_prim_hash_tail_recur:
-  if ((0 == ((mmc_sint_t)p & 1)))
+  if (MMC_IS_INTEGER(p))
   {
-    return hash + (unsigned long)MMC_UNTAGFIXNUM(p);
+    unsigned long l = (unsigned long)MMC_UNTAGFIXNUM(p);
+    return djb2_hash_iter((char*)&l, sizeof(unsigned long), hash);
   }
 
   phdr = MMC_GETHDR(p);
-  hash += (unsigned long)phdr;
 
   if( phdr == MMC_REALHDR )
-  {
-    return hash + (unsigned long)mmc_unbox_real(p);
+  { 
+    double d = mmc_unbox_real(p);
+    return djb2_hash_iter((char*)&d, sizeof(double), hash);
   }
 
   if( MMC_HDRISSTRING(phdr) )
   {
-    return hash + (unsigned long)stringHashDjb2(p);
+    return djb2_hash_iter(MMC_STRINGDATA(p),MMC_STRLEN(p),hash);
   }
 
   if( MMC_HDRISSTRUCT(phdr) )
   {
-    slots = MMC_HDRSLOTS(phdr);
+    int i;
+    int slots = MMC_HDRSLOTS(phdr);
+    int ctor = MMC_HDRCTOR(phdr);
+    int is_record = slots>0 && ctor > 1 ? 1 : 0;
     pp = MMC_STRUCTDATA(p);
-    hash += MMC_HDRCTOR(phdr);
+    hash = djb2_hash_iter((char*)&ctor, sizeof(int), hash);
     if (slots == 0)
       return hash;
 
-    while ( --slots > 0)
-    {
-       hash += mmc_prim_hash(*pp++);
+    for (i=2; i<slots; i++) {
+      hash = mmc_prim_hash(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(p),i)),hash);
     }
-    p = *pp;
+    p = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(p),slots));
     goto mmc_prim_hash_tail_recur;
   }
   return hash;
@@ -833,13 +843,13 @@ unsigned long mmc_prim_hash(void *p)
 
 modelica_integer valueHashMod(void *p, modelica_integer mod)
 {
-  modelica_integer res = mmc_prim_hash(p) % (unsigned long) mod;
+  modelica_integer res = mmc_prim_hash(p,5381) % (unsigned long) mod;
   return res;
 }
 
 void* boxptr_valueHashMod(threadData_t *threadData,void *p, void *mod)
 {
-  return mmc_mk_icon(mmc_prim_hash(p) % (unsigned long) mmc_unbox_integer(mod));
+  return mmc_mk_icon(mmc_prim_hash(p,5381) % (unsigned long) mmc_unbox_integer(mod));
 }
 
 pthread_once_t mmc_init_once = PTHREAD_ONCE_INIT;

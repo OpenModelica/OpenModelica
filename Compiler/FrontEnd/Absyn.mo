@@ -2760,8 +2760,28 @@ public function pathHashMod "Hashes a path."
   input Integer mod;
   output Integer hash;
 algorithm
-  hash := System.stringHashDjb2Mod(pathString(path),mod);
+// hash := valueHashMod(path,mod);
+// print(pathString(path) +& " => " +& intString(hash) +& "\n");
+// hash := System.stringHashDjb2Mod(pathString(path),mod);
+// TODO: stringHashDjb2 is missing a default value for the seed; add this once we bootstrapped omc so we can use that function instead of our own hack
+  hash := intAbs(intMod(pathHashModWork(path,5381),mod));
 end pathHashMod;
+
+protected function pathHashModWork "Hashes a path."
+  input Path path;
+  input Integer acc;
+  output Integer hash;
+algorithm
+  hash := match (path,acc)
+    local
+      Path p;
+      String s;
+      Integer i,i2;
+    case (FULLYQUALIFIED(p),_) then pathHashModWork(p, acc*31 + 46 /* '.' */);
+    case (QUALIFIED(s,p),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then pathHashModWork(p, i2*31 + i);
+    case (IDENT(s),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then i2*31 + i;
+  end match;
+end pathHashModWork;
 
 public function optPathString "Returns a path converted to string or an empty string if nothing exist"
   input Option<Path> inPathOption;
