@@ -608,7 +608,6 @@ void SimulationDialog::writeSimulationOutput(QString output, QColor color)
 void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptions)
 {
   mSimulationOptions = simulationOptions;
-  mLastModifiedDateTime = QDateTime::currentDateTime();
   QFileInfo resultFileInfo(QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName()));
   if (resultFileInfo.exists())
   {
