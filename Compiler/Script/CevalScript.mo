@@ -3040,7 +3040,7 @@ algorithm
 
     case (cache,env,"dumpXMLDAE",vals,st,_)
       equation
-        (cache,st,xml_contents,xml_filename) = dumpXMLDAE(cache,env,vals,st, msg);
+        (cache,st,xml_filename) = dumpXMLDAE(cache,env,vals,st, msg);
       then
         (cache,ValuesUtil.makeTuple({Values.BOOL(true),Values.STRING(xml_filename)}),st);
 
@@ -4292,10 +4292,9 @@ protected function dumpXMLDAE " author: fildo
   input Absyn.Msg inMsg;
   output Env.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable3;
-  output String xml_contents;
   output String xml_filename;
 algorithm
-  (outCache,outInteractiveSymbolTable3,xml_contents,xml_filename) :=
+  (outCache,outInteractiveSymbolTable3,xml_filename) :=
   match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
     local
       String cname_str,filenameprefix,compileDir;
@@ -4325,12 +4324,11 @@ algorithm
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
-        xml_contents = Print.getString();
+        Print.writeBuf(xml_filename);
         Print.clearBuf();
-        System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
+        (cache,st,stringAppendList({compileDir,xml_filename}));
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="optimiser"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -4349,12 +4347,11 @@ algorithm
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
         XMLDump.dumpBackendDAE(dlow_1,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
-        xml_contents = Print.getString();
+        Print.writeBuf(xml_filename);
         Print.clearBuf();
-        System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
+        (cache,st,stringAppendList({compileDir,xml_filename}));
 
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="backEnd"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -4371,12 +4368,11 @@ algorithm
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,false);
-        xml_contents = Print.getString();
+        Print.writeBuf(xml_filename);
         Print.clearBuf();
-        System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
+        (cache,st,stringAppendList({compileDir,xml_filename}));
         
     case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),Values.STRING(string="stateSpace"),Values.BOOL(addOriginalIncidenceMatrix),Values.BOOL(addSolvingInfo),Values.BOOL(addMathMLCode),Values.BOOL(dumpResiduals),Values.STRING(filenameprefix)},(st as GlobalScript.SYMBOLTABLE(ast = p)),msg)
       equation
@@ -4393,12 +4389,12 @@ algorithm
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();
         XMLDump.dumpBackendDAE(indexed_dlow,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,true);
-        xml_contents = Print.getString();
+        Print.writeBuf(xml_filename);
         Print.clearBuf();
-        System.writeFile(xml_filename,xml_contents);
         compileDir = Util.if_(Config.getRunningTestsuite(),"",compileDir);
       then
-        (cache,st,xml_contents,stringAppendList({compileDir,xml_filename}));
+        (cache,st,stringAppendList({compileDir,xml_filename}));
+  
   end match;
 end dumpXMLDAE;
 

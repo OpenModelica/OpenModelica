@@ -85,10 +85,10 @@ public function getString "Does not clear the buffer"
   external "C" outString = Print_getString(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end getString;
 
-public function writeBuf
-  input String inString;
+public function writeBuf "Writes the buffer to a file"
+  input String filename;
 
-  external "C" Print_writeBuf(OpenModelica.threadData(),inString) annotation(Library = "omcruntime");
+  external "C" Print_writeBuf(OpenModelica.threadData(), filename) annotation(Library = "omcruntime");
 end writeBuf;
 
 public function writeBufConvertLines
