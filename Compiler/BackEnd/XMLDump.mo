@@ -1076,7 +1076,11 @@ algorithm
         dumpExtObjCls(extObjCls,stringAppend(EXTERNAL,CLASSES_));
         dumpStrCloseTag(VARIABLES);
         eqnsVarsinOrderLst = List.fold(systs,getOrderedEqsandVars,{});
+
+        dumpStrOpenTagAttr(EQUATIONS, DIMENSION, intString(listLength(eqnsVarsinOrderLst)));
         dumpSolvedEqns(eqnsVarsinOrderLst,1,EQUATIONS,addMML,dumpRes, true);
+        dumpStrCloseTag(EQUATIONS);
+
         reqnsl = BackendEquation.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes, false);
         ieqnsl = BackendEquation.equationList(ieqns);
@@ -1444,9 +1448,7 @@ algorithm
       equation
         len = listLength(eqnsLst);
         len >= 1 = true;
-        dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpEqns2(eqnsLst, varLst, inCount, addMMLCode,dumpResiduals,dumpSolved);
-        dumpStrCloseTag(inContent);
         dumpSolvedEqns(rest, inCount+1, inContent, addMathMLCode,dumpResiduals,dumpSolved);
       then ();
   end match;
