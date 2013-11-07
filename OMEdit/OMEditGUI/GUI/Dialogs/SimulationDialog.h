@@ -100,6 +100,7 @@ public:
   SimulationDialog(MainWindow *pParent = 0);
   ~SimulationDialog();
   void show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive);
+  void directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive);
 private:
   MainWindow *mpMainWindow;
   Label *mpSimulationHeading;

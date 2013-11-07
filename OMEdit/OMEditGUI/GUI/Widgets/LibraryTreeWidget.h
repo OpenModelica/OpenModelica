@@ -180,7 +180,8 @@ private:
   QAction *mpNewModelicaClassAction;
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
-  QAction *mpSimulationAction;
+  QAction *mpSimulateAction;
+  QAction *mpSimulationSetupAction;
   QAction *mpUnloadClassAction;
   QAction *mpRefreshAction;
   QAction *mpExportFMUAction;
@@ -198,6 +199,7 @@ public slots:
   void createNewModelicaClass();
   void viewDocumentation();
   void simulate();
+  void simulationSetup();
   void instantiateModel();
   void checkModel();
   void unloadClass();

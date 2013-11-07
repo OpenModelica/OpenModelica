@@ -146,6 +146,8 @@ QString Helper::unloadClass;
 QString Helper::unloadClassTip;
 QString Helper::simulate;
 QString Helper::simulateTip;
+QString Helper::simulationSetup;
+QString Helper::simulationSetupTip;
 QString Helper::simulation;
 QString Helper::interactiveSimulation;
 QString Helper::options;
@@ -264,6 +266,8 @@ void Helper::initHelperVariables()
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulate the Modelica class");
+  Helper::simulationSetup = tr("Simulation Setup");
+  Helper::simulationSetupTip = tr("Setup simulation settings");
   Helper::simulation = tr("Simulation");
   Helper::interactiveSimulation = tr("Interactive Simulation");
   Helper::options = tr("Options");

@@ -389,9 +389,14 @@ QAction* MainWindow::getZoomOutAction()
   return mpZoomOutAction;
 }
 
-QAction* MainWindow::getSimulationAction()
+QAction* MainWindow::getSimulateModelAction()
 {
-  return mpSimulationAction;
+  return mpSimulateModelAction;
+}
+
+QAction* MainWindow::getSimulationSetupAction()
+{
+  return mpSimulationSetupAction;
 }
 
 QAction* MainWindow::getInstantiateModelAction()
@@ -630,6 +635,17 @@ void MainWindow::openResultFiles(QStringList fileNames)
 }
 
 void MainWindow::simulate(LibraryTreeNode *pLibraryTreeNode)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeNode->getModelWidget())
+  {
+    if (!pLibraryTreeNode->getModelWidget()->getModelicaTextWidget()->getModelicaTextEdit()->validateModelicaText())
+      return;
+  }
+  mpSimulationDialog->directSimulate(pLibraryTreeNode, false);
+}
+
+void MainWindow::simulationSetup(LibraryTreeNode *pLibraryTreeNode)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeNode->getModelWidget())
@@ -1139,7 +1155,7 @@ void MainWindow::checkModel()
 }
 
 //! Open Simulation Window
-void MainWindow::openSimulationDialog()
+void MainWindow::simulateModel()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget)
@@ -1147,6 +1163,18 @@ void MainWindow::openSimulationDialog()
     LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
     if (pLibraryTreeNode)
       simulate(pLibraryTreeNode);
+  }
+}
+
+//! Open Simulation Window
+void MainWindow::openSimulationDialog()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget)
+  {
+    LibraryTreeNode *pLibraryTreeNode = pModelWidget->getLibraryTreeNode();
+    if (pLibraryTreeNode)
+      simulationSetup(pLibraryTreeNode);
   }
 }
 
@@ -1656,11 +1684,16 @@ void MainWindow::createActions()
   mpCheckModelAction->setEnabled(false);
   connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
   // simulate action
-  mpSimulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
-  mpSimulationAction->setStatusTip(Helper::simulateTip);
-  mpSimulationAction->setShortcut(QKeySequence("Ctrl+b"));
-  mpSimulationAction->setEnabled(false);
-  connect(mpSimulationAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
+  mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
+  mpSimulateModelAction->setStatusTip(Helper::simulateTip);
+  mpSimulateModelAction->setShortcut(QKeySequence("Ctrl+b"));
+  mpSimulateModelAction->setEnabled(false);
+  connect(mpSimulateModelAction, SIGNAL(triggered()), SLOT(simulateModel()));
+  // simulation setup action
+  mpSimulationSetupAction = new QAction(Helper::simulationSetup, this);
+  mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
+  mpSimulationSetupAction->setEnabled(false);
+  connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
   // FMI Menu
   // export FMU action
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
@@ -1882,7 +1915,8 @@ void MainWindow::createMenus()
   // add actions to Simulation menu
   pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpCheckModelAction);
-  pSimulationMenu->addAction(mpSimulationAction);
+  pSimulationMenu->addAction(mpSimulateModelAction);
+  pSimulationMenu->addAction(mpSimulationSetupAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
   // FMI menu
@@ -2026,7 +2060,7 @@ void MainWindow::createToolbars()
   // add actions to Simulation Toolbar
   mpSimulationToolBar->addAction(mpInstantiateModelAction);
   mpSimulationToolBar->addAction(mpCheckModelAction);
-  mpSimulationToolBar->addAction(mpSimulationAction);
+  mpSimulationToolBar->addAction(mpSimulateModelAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");

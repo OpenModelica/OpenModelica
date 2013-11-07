@@ -152,6 +152,8 @@ public:
   static QString unloadClassTip;
   static QString simulate;
   static QString simulateTip;
+  static QString simulationSetup;
+  static QString simulationSetupTip;
   static QString simulation;
   static QString interactiveSimulation;
   static QString options;

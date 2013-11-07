@@ -553,10 +553,14 @@ void LibraryTreeWidget::createActions()
   mpCheckModelAction = new QAction(QIcon(":/Resources/icons/check.png"), Helper::checkModel, this);
   mpCheckModelAction->setStatusTip(Helper::checkModelTip);
   connect(mpCheckModelAction, SIGNAL(triggered()), SLOT(checkModel()));
-  // simulation Action
-  mpSimulationAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
-  mpSimulationAction->setStatusTip(Helper::simulateTip);
-  connect(mpSimulationAction, SIGNAL(triggered()), SLOT(simulate()));
+  // simulate Action
+  mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
+  mpSimulateAction->setStatusTip(Helper::simulateTip);
+  connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
+  // simulation setup Action
+  mpSimulationSetupAction = new QAction(Helper::simulationSetup, this);
+  mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
+  connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(simulationSetup()));
   // unload Action
   mpUnloadClassAction = new QAction(QIcon(":/Resources/icons/delete.png"), Helper::unloadClass, this);
   mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
@@ -1298,7 +1302,8 @@ void LibraryTreeWidget::showContextMenu(QPoint point)
     menu.addSeparator();
     menu.addAction(mpInstantiateModelAction);
     menu.addAction(mpCheckModelAction);
-    menu.addAction(mpSimulationAction);
+    menu.addAction(mpSimulateAction);
+    menu.addAction(mpSimulationSetupAction);
     /* If item is OpenModelica or part of it or is search tree item then don't show the unload for it. */
     if (!((StringHandler::getFirstWordBeforeDot(pLibraryTreeNode->getNameStructure()).compare("OpenModelica") == 0)  || isSearchedTree()))
     {
@@ -1350,6 +1355,16 @@ void LibraryTreeWidget::simulate()
   LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
   if (pLibraryTreeNode)
     mpMainWindow->simulate(pLibraryTreeNode);
+}
+
+void LibraryTreeWidget::simulationSetup()
+{
+  QList<QTreeWidgetItem*> selectedItemsList = selectedItems();
+  if (selectedItemsList.isEmpty())
+    return;
+  LibraryTreeNode *pLibraryTreeNode = dynamic_cast<LibraryTreeNode*>(selectedItemsList.at(0));
+  if (pLibraryTreeNode)
+    mpMainWindow->simulationSetup(pLibraryTreeNode);
 }
 
 void LibraryTreeWidget::instantiateModel()

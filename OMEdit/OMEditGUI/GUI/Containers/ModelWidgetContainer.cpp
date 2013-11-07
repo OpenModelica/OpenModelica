@@ -3030,7 +3030,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   getMainWindow()->getResetZoomAction()->setEnabled(enabled);
   getMainWindow()->getZoomInAction()->setEnabled(enabled);
   getMainWindow()->getZoomOutAction()->setEnabled(enabled);
-  getMainWindow()->getSimulationAction()->setEnabled(enabled);
+  getMainWindow()->getSimulateModelAction()->setEnabled(enabled);
+  getMainWindow()->getSimulationSetupAction()->setEnabled(enabled);
   getMainWindow()->getInstantiateModelAction()->setEnabled(enabled);
   getMainWindow()->getCheckModelAction()->setEnabled(enabled);
   getMainWindow()->getExportFMUAction()->setEnabled(enabled);

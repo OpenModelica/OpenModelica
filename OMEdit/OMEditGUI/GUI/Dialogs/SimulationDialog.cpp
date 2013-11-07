@@ -69,7 +69,7 @@ SimulationDialog::~SimulationDialog()
 /*!
   Reimplementation of QDialog::show method.
   \param pLibraryTreeNode - pointer to LibraryTreeNode
-  \param isInteractive - true indicates that the simulation is interacive.
+  \param isInteractive - true indicates that the simulation is interactive.
   */
 void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isInteractive)
 {
@@ -77,6 +77,19 @@ void SimulationDialog::show(LibraryTreeNode *pLibraryTreeNode, bool isInteractiv
   mpLibraryTreeNode = pLibraryTreeNode;
   initializeFields();
   setVisible(true);
+}
+
+/*!
+  Directly simulates the model without showing the simulation dialog.
+  \param pLibraryTreeNode - pointer to LibraryTreeNode
+  \param isInteractive - true indicates that the simulation is interactive.
+  */
+void SimulationDialog::directSimulate(LibraryTreeNode *pLibraryTreeNode, bool isInteractive)
+{
+  mIsInteractive = isInteractive;
+  mpLibraryTreeNode = pLibraryTreeNode;
+  initializeFields();
+  simulate();
 }
 
 /*!

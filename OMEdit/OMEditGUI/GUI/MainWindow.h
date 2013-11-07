@@ -113,7 +113,8 @@ public:
   QAction* getResetZoomAction();
   QAction* getZoomInAction();
   QAction* getZoomOutAction();
-  QAction* getSimulationAction();
+  QAction* getSimulateModelAction();
+  QAction* getSimulationSetupAction();
   QAction* getInstantiateModelAction();
   QAction* getCheckModelAction();
   QAction* getExportFMUAction();
@@ -139,6 +140,7 @@ public:
   void openDroppedFile(QDropEvent *event);
   void openResultFiles(QStringList fileNames);
   void simulate(LibraryTreeNode *pLibraryTreeNode);
+  void simulationSetup(LibraryTreeNode *pLibraryTreeNode);
   void instantiatesModel(LibraryTreeNode *pLibraryTreeNode);
   void checkModel(LibraryTreeNode *pLibraryTreeNode);
   void exportModelFMU(LibraryTreeNode *pLibraryTreeNode);
@@ -204,7 +206,8 @@ private:
   // Simulation Menu
   QAction *mpInstantiateModelAction;
   QAction *mpCheckModelAction;
-  QAction *mpSimulationAction;
+  QAction *mpSimulateModelAction;
+  QAction *mpSimulationSetupAction;
   // FMI Menu
   QAction *mpExportFMUAction;
   QAction *mpImportFMUAction;
@@ -266,6 +269,7 @@ public slots:
   void zoomOut();
   void instantiatesModel();
   void checkModel();
+  void simulateModel();
   void openSimulationDialog();
   void openInteractiveSimulation();
   void showFindReplaceDialog();
