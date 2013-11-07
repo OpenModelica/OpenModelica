@@ -553,31 +553,26 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
   if (pMainWindow->getOMCProxy()->addConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure(),
                                                 QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation())))
   {
-    // Check if both ports connected are compatible or not.
-    if (pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getLibraryTreeNode()->getNameStructure()))
-    {
-      setIsCreatingConnection(false);
-      mpConnectionLineAnnotation->setStartComponentName(startComponentName);
-      mpConnectionLineAnnotation->setEndComponentName(endComponentName);
-      Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
-      if (pEndComponent->getParentComponent())
-        pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
-      else
-        pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
-      // update the last point to the center of component
-      QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
-      mpConnectionLineAnnotation->updateEndPoint(newPos);
-      mpConnectionLineAnnotation->update();
-      mConnectionsList.append(mpConnectionLineAnnotation);
-      // make the model modified
-      mpModelWidget->setModelModified();
-    }
+    /* Ticket #2450
+       If both ports are not compitable just report it to the user instead of removing the connection.
+      */
+    pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getLibraryTreeNode()->getNameStructure());
+    /* complete the connection */
+    setIsCreatingConnection(false);
+    mpConnectionLineAnnotation->setStartComponentName(startComponentName);
+    mpConnectionLineAnnotation->setEndComponentName(endComponentName);
+    Component *pEndComponent = mpConnectionLineAnnotation->getEndComponent();
+    if (pEndComponent->getParentComponent())
+      pEndComponent->getParentComponent()->addConnectionDetails(mpConnectionLineAnnotation);
     else
-    {
-      removeConnection();
-      // remove the connection from model
-      pMainWindow->getOMCProxy()->deleteConnection(startComponentName, endComponentName, mpModelWidget->getLibraryTreeNode()->getNameStructure());
-    }
+      pEndComponent->addConnectionDetails(mpConnectionLineAnnotation);
+    // update the last point to the center of component
+    QPointF newPos = pEndComponent->mapToScene(pEndComponent->boundingRect().center());
+    mpConnectionLineAnnotation->updateEndPoint(newPos);
+    mpConnectionLineAnnotation->update();
+    mConnectionsList.append(mpConnectionLineAnnotation);
+    // make the model modified
+    mpModelWidget->setModelModified();
   }
 }
 
