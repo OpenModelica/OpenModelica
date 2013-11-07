@@ -635,7 +635,7 @@ algorithm
       DAE.MatchType elabMatchTy;
       Env.Cache cache;
       Env.Env env;
-
+      Integer hashSize;
 
     case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,st,_,pre,_,_)
       equation
@@ -653,8 +653,10 @@ algorithm
         // Do DCE before converting mc to m
         matchTy = optimizeContinueToMatch(matchTy,elabCases,info);
         elabCases = optimizeContinueJumps(matchTy, elabCases);
-        ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et));
-        (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTable());
+        // hashSize = Util.nextPowerOf2(listLength(matchDecls)) + 1; // faster, but unstable in RML
+        hashSize = Util.nextPrime(listLength(matchDecls));
+        ht = getUsedLocalCrefs(Flags.isSet(Flags.PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS),DAE.MATCHEXPRESSION(DAE.MATCHCONTINUE(),elabExps,matchDecls,elabCases,et),hashSize);
+        (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
         elabCases = filterUnusedAsBindings(elabCases,ht);
         (elabExps,elabCases) = filterUnusedPatterns(elabExps,elabCases) "filterUnusedPatterns() Then again to filter out the last parts.";
         elabMatchTy = optimizeMatchToSwitch(matchTy,elabCases,info);
@@ -893,18 +895,19 @@ end filterUnusedPatterns2;
 protected function getUsedLocalCrefs
   input Boolean skipFilterUnusedAsBindings "if true, traverse the whole expression; else only the bodies and results";
   input DAE.Exp exp;
+  input Integer hashSize;
   output HashTableStringToPath.HashTable ht;
 algorithm
-  ht := match (skipFilterUnusedAsBindings,exp)
+  ht := match (skipFilterUnusedAsBindings,exp,hashSize)
     local
       list<DAE.MatchCase> cases;
-    case (true,_)
+    case (true,_,_)
       equation
-        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, HashTableStringToPath.emptyHashTable());
+        ((_,ht)) = Expression.traverseExp(exp, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
       then ht;
-    case (false,DAE.MATCHEXPRESSION(cases=cases))
+    case (false,DAE.MATCHEXPRESSION(cases=cases),_)
       equation
-        (_,ht) = traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTable());
+        (_,ht) = traverseCases(cases, addLocalCref, HashTableStringToPath.emptyHashTableSized(hashSize));
       then ht;
   end match;
 end getUsedLocalCrefs;

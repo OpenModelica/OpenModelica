@@ -205,6 +205,65 @@ algorithm
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end intGt;
 
+function intBitNot
+  input Integer i;
+  output Integer o;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Bit-wise and (like C, ~i).</p>
+</html>"));
+end intBitNot;
+
+function intBitAnd
+  input Integer i1;
+  input Integer i2;
+  output Integer o;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Bit-wise and (like C, i1 &amp; i2).</p>
+</html>"));
+end intBitAnd;
+
+function intBitOr
+  input Integer i1;
+  input Integer i2;
+  output Integer o;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Bit-wise or (like C, i1 | i2).</p>
+</html>"));
+end intBitOr;
+
+function intBitXor
+  input Integer i1;
+  input Integer i2;
+  output Integer o;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Bit-wise exclusive or (like C, i1 ^ i2).</p>
+</html>"));
+end intBitXor;
+
+function intBitLShift
+  input Integer i;
+  input Integer s;
+  output Integer o;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Bit-wise left shift (like C, i << s).</p>
+</html>"));
+end intBitLShift;
+
+function intBitRShift
+  input Integer i;
+  input Integer s;
+  output Integer o;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Bit-wise right shift (like C, i << s).</p>
+</html>"));
+end intBitRShift;
+
 function intReal
   input Integer i;
   output Real r;

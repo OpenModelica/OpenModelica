@@ -8309,6 +8309,26 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name = "threadData")) then
     "threadData"
 
+  case CALL(path=IDENT(name = "intBitNot"),expLst={e}) then
+    let e1 = daeExp(e, context, &preExp, &varDecls)
+    '(~<%e1%>)'
+
+  case CALL(path=IDENT(name = name as "intBitNot"),expLst={e1,e2})
+  case CALL(path=IDENT(name = name as "intBitAnd"),expLst={e1,e2})
+  case CALL(path=IDENT(name = name as "intBitOr"),expLst={e1,e2})
+  case CALL(path=IDENT(name = name as "intBitXor"),expLst={e1,e2})
+  case CALL(path=IDENT(name = name as "intBitLShift"),expLst={e1,e2})
+  case CALL(path=IDENT(name = name as "intBitRShift"),expLst={e1,e2}) then
+    let i1 = daeExp(e1, context, &preExp, &varDecls)
+    let i2 = daeExp(e1, context, &preExp, &varDecls)
+    let op = (match name
+      case "intBitAnd" then "&"
+      case "intBitOr" then "|"
+      case "intBitXor" then "^"
+      case "intBitLShift" then "<<"
+      case "intBitRShift" then ">>")
+    '((<%i1%>) <%op%> (<%i2%>))'
+
   case exp as CALL(attr=attr as CALL_ATTR(tailCall=tail as TAIL(__))) then
     let &postExp = buffer ""
     let tail = daeExpTailCall(expLst,tail.vars,context,&preExp,&postExp,&varDecls)

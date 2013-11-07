@@ -4096,4 +4096,18 @@ algorithm
   outBool := createDirectoryTreeH(inString,parentDir,parentDirExists);
 end createDirectoryTree;
 
+public function nextPowerOf2
+  "Rounds up to the nearest power of 2"
+  input Integer i;
+  output Integer v;
+algorithm
+  v := i-1;
+  v := intBitOr(v, intBitLShift(v, 1));
+  v := intBitOr(v, intBitLShift(v, 2));
+  v := intBitOr(v, intBitLShift(v, 4));
+  v := intBitOr(v, intBitLShift(v, 8));
+  v := intBitOr(v, intBitLShift(v, 16));
+  v := v + 1;
+end nextPowerOf2;
+
 end Util;
