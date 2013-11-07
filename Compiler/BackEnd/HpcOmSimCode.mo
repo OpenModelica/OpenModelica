@@ -246,7 +246,7 @@ algorithm
       //criticalPaths = {{}};
       //criticalPathsWoC = {{}};
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
-      //HpcOmScheduler.printSchedule(taskSchedule);
+      //HpcOmScheduler.printSchedule(schedule);
       
       //print("Parallel informations:\n");
       //printParInformation(hpcOmParInformation);
@@ -321,6 +321,7 @@ protected function createSchedule
 protected
   String flagValue;
   Integer numProc;
+  list<Integer> lst;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
 algorithm
@@ -350,6 +351,13 @@ algorithm
         true = stringEq(flagValue, "list");
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
+    case(_,_,_,_)
+      equation
+        flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
+        true = stringEq(flagValue, "mcp");
+        numProc = Flags.getConfigInt(Flags.NUM_PROC);
+        print("Using Modified Critical Path Scheduler\n");
+      then HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
     case(_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);

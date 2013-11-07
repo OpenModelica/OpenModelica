@@ -38,6 +38,8 @@ encapsulated package HpcOmScheduler
 
 public import HpcOmTaskGraph;
 
+protected import BackendDAEUtil;
+protected import Debug;
 protected import HpcOmSchedulerExt;
 protected import List;
 protected import Util;
@@ -80,6 +82,9 @@ public uniontype ScheduleSimCode //Schedule-structure for sim code
     list<String> lockIdc;
   end THREADSCHEDULESC;
 end ScheduleSimCode;
+
+public type TaskAssignment = array<Integer>; //the information which node <idx> is assigned to which processor <value>
+
 
 //----------------
 // List Scheduling
@@ -679,7 +684,8 @@ algorithm
         primalComp = listGet(components,1);
         nodeMark = arrayGet(nodeMarks,primalComp);
         //nodeMark = nodeMark * (-1); //switch from LLP to HLP
-        ((_,exeCost)) = arrayGet(exeCosts,iNodeIdx);
+        //((_,exeCost)) = arrayGet(exeCosts,iNodeIdx);
+        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(iNodeIdx,iTaskGraphMeta);
       then CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
     else
       equation
@@ -948,8 +954,8 @@ protected
   String lockId;
 algorithm
   oString := match(iTask)
-    case(CALCTASK(weighting=weighting, index=index))
-      then ("Calculation task with index " +& intString(index) +& " and weighting " +& intString(weighting) +& "\n");
+    case(CALCTASK(weighting=weighting, index=index, eqIdc=eqIdc))
+      then ("Calculation task with index " +& intString(index) +& " and the equations: "+&stringDelimitList(List.map(eqIdc,intString),", ")+& " and weighting " +& intString(weighting) +& "\n");
     case(ASSIGNLOCKTASK(lockId=lockId))
       then ("Assign lock task with id " +& lockId +& "\n");
     case(RELEASELOCKTASK(lockId=lockId))
@@ -1381,6 +1387,603 @@ algorithm
       then fail();
   end matchcontinue;
 end createExtSchedule1;
+
+//-----------------------
+// Modified Critical Path
+//-----------------------
+
+public function createMCPschedule "scheduler Modified Critical Path.
+computes the ALAP i.e. latest possible start time  for every task. The task with the smallest values gets the highest priority.
+author: Waurich TUD 2013-10 "
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;  
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input Integer numProc;
+  input array<list<Integer>> iSccSimEqMapping;
+  output Schedule oSchedule;
+protected
+  Integer size;
+  array<list<Task>> threads;
+  array<list<Integer>> taskGraphT;
+  array<Real> alapArray;  // this is the latest possible starting time of every node
+  list<Real> alapLst, alapSorted, priorityLst;
+  list<Integer> order;
+  array<Integer> taskAss; //<idx>=task, <value>=processor
+  array<list<Integer>> procAss; //<idx>=processor, <value>=task; 
+  array<list<Task>> threadTask;
+  Schedule schedule;
+algorithm
+  //compute the ALAP
+  size := arrayLength(iTaskGraph);
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size); 
+  alapArray := computeALAP(iTaskGraph,iTaskGraphMeta);
+  print("the ALAP: \n"+&stringDelimitList(arrayList(Util.arrayMap(alapArray,realString))," / ")+&"\n");
+  alapLst := arrayList(alapArray);
+  // get the order of the task, assign to processors
+  (priorityLst,order) := quicksortWithOrder(alapLst);  
+  print("order: \n"+&stringDelimitList(List.map(order,intString)," / ")+&"\n");
+  (taskAss,procAss) := getTaskAssignmentMCP(order,alapArray,numProc,iTaskGraph,iTaskGraphMeta);
+  // create the schedule
+  threadTask := arrayCreate(numProc,{});
+  schedule := THREADSCHEDULE(threadTask,{});
+  schedule := createSchedulerFromAssignments(taskAss,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,schedule);
+  oSchedule := schedule;
+end createMCPschedule;
+
+
+protected function createSchedulerFromAssignments  
+  input array<Integer> taskAss;
+  input array<list<Integer>> procAss;
+  input Option<list<Integer>> orderOpt;
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraph taskGraphTIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  input array<list<Integer>> SccSimEqMappingIn;
+  input Schedule scheduleIn;
+  output Schedule scheduleOut;
+algorithm
+  scheduleOut := match(taskAss,procAss,orderOpt,taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,scheduleIn)
+    local
+      Integer node,proc,mark;
+      Real exeCost,commCost;
+      list<Integer> order, rest, components, simEqIdc, parentNodes,childNodes, sameProcTasks, otherParents, otherChildren;
+      list<String> assLockIdc,relLockIdc,lockIdc;
+      array<Integer> nodeMark;
+      array<list<Integer>> inComps;
+      array<tuple<Integer,Real>> exeCosts;
+      array<list<tuple<Integer,Integer,Integer>>> commCosts;
+      array<list<Task>> threadTasks;
+      list<Task> taskLst1,taskLst,taskLstAss,taskLstRel;
+      Schedule schedule;
+      Task task;
+    case(_,_,SOME({}),_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+      equation
+        print("the final locks: "+&stringDelimitList(lockIdc,",")+&"\n");
+        //lockIdc = List.unique(lockIdc);
+        schedule = THREADSCHEDULE(threadTasks,lockIdc);  
+      then
+        schedule; 
+    case(_,_,SOME(order),_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+      equation
+        (node::rest) = order;
+        print("ANALYZE NODE "+&intString(node)+&"\n");
+        proc = arrayGet(taskAss,node);
+        taskLst = arrayGet(threadTasks, proc);
+        // get the locks
+        parentNodes = arrayGet(taskGraphTIn,node);
+        childNodes = arrayGet(taskGraphIn,node);
+        sameProcTasks = arrayGet(procAss,proc);
+        //print("parentNodes "+&stringDelimitList(List.map(parentNodes,intString),",")+&"\n");
+        //print("childNodes "+&stringDelimitList(List.map(childNodes,intString),",")+&"\n");
+        //print("sam2ProcTasks "+&stringDelimitList(List.map(sameProcTasks,intString),",")+&"\n");
+        (_,otherParents,_) = List.intersection1OnTrue(parentNodes,sameProcTasks,intEq);
+        (_,otherChildren,_) = List.intersection1OnTrue(childNodes,sameProcTasks,intEq);
+        assLockIdc = List.map1(otherParents,getAssignLockString,node);
+        taskLstAss = List.map(assLockIdc,getAssignLockTask);
+        relLockIdc = List.map1(otherChildren,getReleaseLockString,node);
+        taskLstRel = List.map(relLockIdc,getReleaseLockTask);
+        //print("the assignlocks: "+&stringDelimitList(assLockIdc,",")+&"\n");
+        //print("the releaseLocks: "+&stringDelimitList(relLockIdc,",")+&"\n");
+        //build the calcTask          
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark) = taskGraphMetaIn;
+        components = arrayGet(inComps,node);
+        mark = arrayGet(nodeMark,node); 
+        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);  
+        simEqIdc = List.map(List.map1(components,getSccSimEqMappingByIndex,SccSimEqMappingIn), List.last);     
+        simEqIdc = listReverse(simEqIdc);
+        task = CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
+        taskLst1 = task::taskLstRel;
+        taskLst1 = listAppend(taskLstAss,taskLst1);
+        taskLst = listAppend(taskLst,taskLst1);     
+        //update schedule
+        threadTasks = arrayUpdate(threadTasks,proc,taskLst);
+        lockIdc = listAppend(lockIdc,assLockIdc);
+        schedule = THREADSCHEDULE(threadTasks,lockIdc);  
+        schedule = createSchedulerFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,schedule);
+      then
+        schedule;     
+    case(_,_,NONE(),_,_,_,_,THREADSCHEDULE(threadTasks=threadTasks, lockIdc=lockIdc))
+      equation
+        print("createSchedulerFromAssignments failed.implement this!\n");
+      then
+        fail();       
+  end match;      
+end createSchedulerFromAssignments;
+
+
+protected function getAssignLockTask "outputs a AssignLockTsk for the given lockId.
+author:Waurich TUD 2013-11"
+  input String lockId;
+  output Task taskOut;
+algorithm
+  taskOut := ASSIGNLOCKTASK(lockId);
+end getAssignLockTask;
+
+
+protected function getReleaseLockTask "outputs a ReleaseLockTsk for the given lockId.
+author:Waurich TUD 2013-11"
+  input String lockId;
+  output Task taskOut;
+algorithm
+  taskOut := RELEASELOCKTASK(lockId);
+end getReleaseLockTask;
+
+
+protected function getAssignLockString
+  input Integer predecessor;
+  input Integer taskIdx;
+  output String lockId;
+algorithm
+  lockId := intString(taskIdx)+&"_"+&intString(predecessor);  
+end getAssignLockString;
+
+
+protected function getReleaseLockString
+  input Integer successor;
+  input Integer taskIdx;
+  output String lockId;
+algorithm
+  lockId := intString(successor)+&"_"+&intString(taskIdx);  
+end getReleaseLockString;
+
+
+protected function getTaskAssignmentMCP "gets the assignment which nodes is computed of which processor for the MCP algorithm.
+author:Waurich TUD 2013-10"
+  input list<Integer> orderIn;
+  input array<Real> alapIn;
+  input Integer numProc;
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  output array<Integer> taskAssOut;
+  output array<list<Integer>> procAssOut;  
+protected
+  list<Real> processorTime;
+  array<Integer> taskAss;
+  array<list<Integer>> procAss;  
+algorithm
+  processorTime := List.fill(0.0,numProc);
+  taskAss := arrayCreate(listLength(orderIn),0);
+  procAss := arrayCreate(numProc,{});
+  (taskAssOut,procAssOut) := getTaskAssignmentMCP1(orderIn,taskAss,procAss,processorTime,taskGraphIn,taskGraphMetaIn);
+end getTaskAssignmentMCP;
+
+
+protected function getTaskAssignmentMCP1
+  input list<Integer> orderIn;
+  input array<Integer> taskAssIn;
+  input array<list<Integer>> procAssIn;  
+  input list<Real> processorTimeIn;
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  output array<Integer> taskAssOut;
+  output array<list<Integer>> procAssOut;  
+algorithm
+  (taskAssOut,procAssOut) := matchcontinue(orderIn,taskAssIn,procAssIn,processorTimeIn,taskGraphIn,taskGraphMetaIn)
+    local
+      Integer node,processor;
+      Real eft,exeCost, newTime;  //eft: earliest finishing time
+      list<Integer>rest,taskLst;
+      list<Real> processorTime;
+      array<Integer> taskAss;
+      array<list<Integer>> procAss; 
+    case({},_,_,_,_,_)
+      equation
+      then
+        (taskAssIn,procAssIn);
+    case(node::rest,_,_,_,_,_)
+      equation
+        //print("check node"+&intString(node)+&"\n");
+        //print("processorTimeIn: \n");
+        //print(stringDelimitList(List.map(processorTimeIn,realString),",")+&"\n");
+        eft = List.fold(processorTimeIn,realMin,listGet(processorTimeIn,1));
+        processor = List.position(eft,processorTimeIn)+1;
+        //print("assign to processor "+&intString(processor)+&"\n");
+        taskAss = arrayUpdate(taskAssIn,node,processor);
+        taskLst = arrayGet(procAssIn,processor);
+        taskLst = node::taskLst;
+        procAss = arrayUpdate(procAssIn,processor,taskLst);
+        // update the processorTimes
+        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
+        newTime = eft +. exeCost;        
+        //print("exe cost of node"+&realString(exeCost)+&"\n");
+        processorTime = List.replaceAt(newTime,processor-1,processorTimeIn);
+        //print("processorTime: \n");
+        //print(stringDelimitList(List.map(processorTime,realString),",")+&"\n");
+        // next node
+        (taskAss,procAss) = getTaskAssignmentMCP1(rest,taskAss,procAss,processorTime,taskGraphIn,taskGraphMetaIn);
+      then
+        (taskAss,procAss);
+    else
+      equation
+        print("getTaskAssignmentMCP1 failed!\n");
+      then
+        fail();
+  end matchcontinue;    
+end getTaskAssignmentMCP1;
+
+
+protected function quicksortWithOrder "sorts a list of Reals with the quicksort algorithm and outputs an additional list with the changed order of the original indeces.
+author: Waurich TUD 2013-11"
+  input list<Real> lstIn;
+  output list<Real> lstOut;
+  output list<Integer> orderOut;
+algorithm
+  (lstOut,orderOut) := matchcontinue(lstIn)
+    local
+      Integer length, pivotIdx;
+      Real r1, r2, r3, pivotValue;
+      list<Integer> orderTmp;
+      list<Real> lstTmp;
+    case(_)
+      equation
+        //print("the list before: "+&stringDelimitList(List.map(lstIn,realString),",")+&"\n");
+        length = listLength(lstIn);
+        orderTmp = List.intRange(length);
+        r1 = List.first(lstIn);
+        r2 = List.last(lstIn);
+        r3 = listGet(lstIn,intDiv(length,2));
+        (pivotValue,_) = getMedian3(r1,r2,r3);  // the pivot element.
+        pivotIdx = List.position(pivotValue,lstIn)+1;
+        (lstTmp,orderTmp) = quicksortWithOrder1(lstIn,orderTmp,pivotIdx,lstIn,length);
+        //print("the list sorted: "+&stringDelimitList(List.map(lstOut,realString),",")+&"\n");
+        //print("the order sorted: "+&stringDelimitList(List.map(orderOut,intString),",")+&"\n");
+      then
+        (lstTmp,orderTmp);
+    case({r1})
+      equation
+      then
+        ({r1},{1});
+  end matchcontinue;
+end quicksortWithOrder;
+
+
+protected function quicksortWithOrder1
+  input list<Real> lstIn;
+  input list<Integer> orderIn;
+  input Integer pivotIdx;
+  input list<Real> markedIn;
+  input Integer size;
+  output list<Real> lstOut;
+  output list<Integer> orderOut;
+algorithm
+  (lstOut,orderOut) := match(lstIn,orderIn,pivotIdx,markedIn,size)
+    local
+      Boolean b1,b2,b3;
+      Integer lIdx,rIdx,pivot;
+      Real e,p,l,r,b;
+      list<Integer> orderTmp;
+      list<Real> marked;
+      list<Real> lstTmp,leftLst,rightLst;
+    case({},_,_,_,_)
+      equation
+      then ({},{});
+    case({e},_,_,_,_)
+      equation
+      then ({e},{1});
+    case(_,_,_,{},_)
+      equation
+      //print("no more elements to check\n");
+      then (lstIn,orderIn);
+    else
+      equation
+        p = listGet(lstIn,pivotIdx);
+        (leftLst,rightLst)= List.split(lstIn,pivotIdx);
+        //print("the leftlist: "+&stringDelimitList(List.map(leftLst,realString)," , ")+&"\n");
+        rightLst = listReverse(rightLst);
+        //print("the rightList: "+&stringDelimitList(List.map(rightLst,realString)," , ")+&"\n");
+        (l,lIdx,b1) = getMemberOnTrueWithIdx(p,leftLst,realLt);
+        (r,rIdx,b2) = getMemberOnTrueWithIdx(p,rightLst,realGt);
+        rIdx = size+1-rIdx;
+                
+        //print("found the pivot: "+&realString(p)+&" the left value "+&realString(l)+&" the rigth value "+&realString(r)+&"\n");        
+        //print("the list: "+&stringDelimitList(List.map(lstIn,realString),",")+&"\n");
+                
+        lstTmp = Debug.bcallret3(b1,swapEntriesInList,pivotIdx,lIdx,lstIn,lstIn);
+        lstTmp = Debug.bcallret3(b2,swapEntriesInList,pivotIdx,rIdx,lstTmp,lstTmp);
+        
+        //print("the list2 after swapping: "+&stringDelimitList(List.map(lstTmp,realString)," , ")+&"\n");
+        
+        orderTmp = Debug.bcallret3(b1,swapEntriesInList,pivotIdx,lIdx,orderIn,orderIn);
+        orderTmp = Debug.bcallret3(b2,swapEntriesInList,pivotIdx,rIdx,orderTmp,orderTmp);
+        b3 = boolNot(boolAnd(b1,b2));
+        //print(" pivot is in correct place: "+&boolString(b3)+&"\n");
+        //print("num of elements to check:"+&intString(listLength(markedIn))+&"\n\n");
+        ((marked,pivot)) = Debug.bcallret3(b3,getNextPivot,lstTmp,markedIn,pivotIdx,((markedIn,pivotIdx)));
+        
+        (lstTmp,orderTmp) = quicksortWithOrder1(lstTmp,orderTmp,pivot,marked,size);       
+      then 
+        (lstTmp,orderTmp);        
+  end match;
+end quicksortWithOrder1;
+
+
+protected function getNextPivot "removes the pivot from the markedLst and computes a new one.
+author:Waurich TUD 2013-11"
+  input list<Real> lstIn;
+  input list<Real> markedLstIn;
+  input Integer pivotIdx;
+  output tuple<list<Real>,Integer> tplOut;
+algorithm
+  tplOut := match(lstIn,markedLstIn,pivotIdx)
+    local
+      Integer newIdx,midIdx;
+      Real pivotElement,r1,r2,r3,e;
+      list<Real> marked,rest;
+    case(_,{e},_)
+      then
+        (({},0));
+    case(_,e::rest,_)
+      equation
+        pivotElement = listGet(lstIn,pivotIdx);
+        marked = List.deleteMember(markedLstIn,pivotElement);
+        r1 = List.first(marked);
+        r2 = List.last(marked);
+        midIdx = intDiv(listLength(marked),2);
+        midIdx = Util.if_(intEq(midIdx,0),1,midIdx);
+        r3 = listGet(marked,midIdx);
+        //print("r1 "+&realString(r1)+&" r2  "+&realString(r2)+&" r3 "+&realString(r3)+&"\n");
+        (pivotElement,_) = getMedian3(r1,r2,r3);
+        newIdx = List.position(pivotElement,lstIn)+1;
+      then
+        ((marked,newIdx));
+  end match;
+end getNextPivot;
+
+
+protected function getMemberOnTrueWithIdx "same as getMemberOnTrue, but with index of the found element and a Boolean, if the element was found.!function does not fail!
+author:Waurich TUD 2013-11"
+  input Real inValue;
+  input list<Real> inList;
+  input CompFunc inCompFunc;
+  output Real outElement;
+  output Integer outIdx;
+  output Boolean found;
+  partial function CompFunc
+    input Real inValue;
+    input Real inElement;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  (outElement,outIdx,found) := getMemberOnTrueWithIdx1(1,inValue,inList,inCompFunc);
+end getMemberOnTrueWithIdx;
+
+
+public function getMemberOnTrueWithIdx1 "implementation of getMemberOnTrueWithIdx.
+author:Waurich TUD 2013-11"
+  input Integer inIdx;
+  input Real inValue;
+  input list<Real> inList;
+  input CompFunc inCompFunc;
+  output Real outElement;
+  output Integer outIdx;
+  output Boolean found;
+  partial function CompFunc
+    input Real inValue;
+    input Real inElement;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  (outElement,outIdx,found) := matchcontinue(inIdx,inValue,inList,inCompFunc)
+    local
+      Real e,value;
+      list<Real> rest,lst;
+      Integer idx;
+      Boolean b;
+    case(_,_,{},_)
+      equation
+      then
+        (0.0,0,false);
+    case (_,_, e :: _, _)
+      equation
+        b = inCompFunc(inValue, e);
+        true = b;
+      then
+        (e,inIdx,b);
+    case (_,_, _ :: rest, _)
+      equation
+        (value,idx,b) = getMemberOnTrueWithIdx1(inIdx+1,inValue, rest, inCompFunc);      
+      then (value,idx,b);
+  end matchcontinue;
+end getMemberOnTrueWithIdx1;
+
+
+protected function swapEntriesInList"swaps the entries given by the indeces.
+author:Waurich TUD 2013-11"
+  replaceable type ElementType subtypeof Any;
+  input Integer idx1;
+  input Integer idx2;
+  input list<ElementType> lstIn;
+  output list<ElementType> lstOut;
+protected
+  ElementType r1,r2;
+  list<ElementType> lstTmp;
+algorithm
+  r1 := listGet(lstIn,idx1);
+  r2 := listGet(lstIn,idx2);
+  lstTmp := List.replaceAt(r1,idx2-1,lstIn);
+  lstOut := List.replaceAt(r2,idx1-1,lstTmp);
+end swapEntriesInList;
+
+
+protected function getMedian3 "gets the median of the 3 reals and the info which of the inputs is the median"
+  input Real r1;
+  input Real r2;
+  input Real r3;
+  output Real rOut;
+  output Integer which;
+protected
+  list<Real> r;
+algorithm
+  r := List.sort({r1,r2,r3},realGt);
+  rOut := listGet(r,2);
+  which := List.position(rOut,{r1,r2,r3})+1;
+end getMedian3;
+
+
+protected function computeALAP "computes the latest possible start time (As Late As Possible) for every node in the task graph.
+author:Waurich TUD 2013-10"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;  
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  output array<Real> alapOut;
+protected
+  Integer size;
+  Real cp;
+  list<Integer> endNodes;
+  list<tuple<Integer,Integer>> edges;
+  array<Real> alap;
+  array<list<Integer>> taskGraphT;
+algorithm
+  size := arrayLength(iTaskGraph);
+  // traverse the taskGraph topdown to get the alap times
+  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size); 
+  endNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+  alap := arrayCreate(size,0.0);
+  edges := List.map1(endNodes,Util.makeTuple,0);
+  alap := computeALAP1(iTaskGraph,taskGraphT,edges,iTaskGraphMeta,alap);
+  cp := Util.arrayFold(alap,realMax,0.0);
+  alap := Util.arrayMap1(alap,realSubr,cp);
+  // order the tasks starting with the smallest alap
+  alapOut := alap;
+end computeALAP;
+
+
+protected function realSubr 
+  input Real r1;
+  input Real r2;
+  output Real r3;
+algorithm
+  r3 := realSub(r2,r1);
+end realSubr;
+
+protected function computeALAP1 "traverses the taskGraph topdown starting with the end nodes of the original non-transposed graph.
+after each checked node add more edges that can be analysed
+author: Waurich TUD 2013-10"
+  input HpcOmTaskGraph.TaskGraph iTaskGraph; 
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT; 
+  input list<tuple<Integer,Integer>> iEdges; //the edges from 1st integer to 2nd integer that can be analysed!
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input array<Real> alapIn;
+  output array<Real> alapOut;
+algorithm
+  alapOut := matchcontinue(iTaskGraph,iTaskGraphT,iEdges,iTaskGraphMeta,alapIn)
+    local
+      Boolean notChecked;
+      Integer node,child;
+      Real exeCost1,exeCost2;
+      array<Real> alap;
+      tuple<Integer,Integer> edge;
+      list<tuple<Integer,Integer>> edgeLst1, edgeLst2;
+      list<Integer> rest, parentLst;
+      list<Real> parentCosts;   
+  case(_,_,_,_,_)
+    equation
+      (edge::edgeLst1) = iEdges;
+      (node,child) = edge;
+      true = child <> 0;
+      //print("check the node "+&intString(node)+&"\n");
+      exeCost1 = getAlapAndCommCostToParent(node,child,alapIn,iTaskGraphMeta);
+      ((_,exeCost2)) = HpcOmTaskGraph.getExeCost(node, iTaskGraphMeta);
+      exeCost2 = realAdd(exeCost1,exeCost2);
+      notChecked = realEqRound(arrayGet(alapIn,node),0.0,0.5);
+      alap = arrayUpdate(alapIn,node,exeCost2);
+      edgeLst2 = Util.if_(notChecked,addParentEdges(iTaskGraphT,node,edgeLst1),edgeLst1);
+      //print("rest edges: "+&stringDelimitList(List.map(edgeLst2,HpcOmTaskGraph.tupleToString),",")+&"\n");
+      alap = computeALAP1(iTaskGraph,iTaskGraphT,edgeLst2,iTaskGraphMeta,alap);   
+    then alapIn;
+            
+  case(_,_,_,_,_)
+    equation
+      (edge::edgeLst1) = iEdges;
+      (node,child) = edge;
+      true  = child == 0;
+      //print("check the endnode "+&intString(node)+&"\n");
+      ((_,exeCost2)) = HpcOmTaskGraph.getExeCost(node, iTaskGraphMeta);
+      notChecked = realEqRound(arrayGet(alapIn,node),0.0,0.5);
+      alap = arrayUpdate(alapIn,node,exeCost2);  
+      edgeLst2 = Util.if_(notChecked,addParentEdges(iTaskGraphT,node,edgeLst1),edgeLst1);
+      //print("rest edges: "+&stringDelimitList(List.map(edgeLst2,HpcOmTaskGraph.tupleToString),",")+&"\n");
+      alap = computeALAP1(iTaskGraph,iTaskGraphT,edgeLst2,iTaskGraphMeta,alap);     
+    then alap;
+         
+  case(_,_,{},_,_)
+    equation
+      //print("done with ALAP\n");
+    then alapIn;
+            
+  else
+    equation
+      print("computeALAP1 failed!\n");
+    then fail();
+      
+  end matchcontinue;  
+end computeALAP1;
+
+
+protected function getAlapAndCommCostToParent "gets the alap time for the parentNodes of the childNode and adds the commCost to the alap time of the parentNode.
+author: Waurich TUD 2013-10"
+  input Integer parent;
+  input Integer child;
+  input array<Real> allALAPTimesIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  output Real alapTimeOut;
+protected
+  Real alapTime, commCostR; 
+  Integer node, commCostInt;
+algorithm
+  //print("get the alap costs for the childNode"+&intString(child)+&"of the node "+&intString(parent)+&"\n");
+  alapTime := arrayGet(allALAPTimesIn,child);
+  ((_,_,commCostInt)) := HpcOmTaskGraph.getCommCostBetweenNodes(parent,child,taskGraphMetaIn); //TODO: think about whether we need the highest commCost, or just the cost from last parent to firs tchild
+  commCostR := intReal(commCostInt);
+  alapTimeOut := realAdd(alapTime,commCostR);
+end getAlapAndCommCostToParent;
+
+
+protected function addParentEdges "creates a list of tuples(parent,node) and appends it to the given edgeLst"
+  input HpcOmTaskGraph.TaskGraph iTaskGraphT;
+  input Integer node;
+  input list<tuple<Integer,Integer>> edgeLstIn;
+  output list<tuple<Integer,Integer>> edgeLstOut;
+protected
+  list<Integer> parentLst;
+  list<tuple<Integer,Integer>> edgeLst;
+algorithm
+  parentLst := arrayGet(iTaskGraphT,node);
+  edgeLst := List.map1(parentLst,Util.makeTuple,node);
+  edgeLstOut := listAppend(edgeLstIn,edgeLst);
+end addParentEdges;
+
+
+protected function realEqRound
+  input Real r1;
+  input Real r2;
+  input Real tolerance;
+  output Boolean b;
+protected
+  Real r;
+algorithm
+  r := realSub(r1,r2);
+  r := realAbs(r);
+  b := realLt(r,tolerance);
+end realEqRound;
 
 //-----
 // Util
