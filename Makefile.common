@@ -83,7 +83,7 @@ build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h
 build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 	cp -pP $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
-	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(GC_THREADS) --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
+	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(GC_THREADS) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
 
 build/lib/omc/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
