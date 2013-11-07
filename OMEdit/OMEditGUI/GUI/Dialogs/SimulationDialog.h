@@ -193,7 +193,6 @@ private:
   bool mIsCancelled;
   ProgressDialog *mpProgressDialog;
   QProcess *mpCompilationProcess;
-  QString mCompilationProcessPath;
   bool mIsCompilationProcessRunning;
   QProcess *mpSimulationProcess;
   QList<QWidget*> mSimulationOutputWidgetsList;

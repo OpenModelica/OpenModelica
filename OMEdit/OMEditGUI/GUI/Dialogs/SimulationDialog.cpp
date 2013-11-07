@@ -131,9 +131,6 @@ void SimulationDialog::setUpForm()
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
   mpNumberOfProcessorsSpinBox = new QSpinBox;
   mpNumberOfProcessorsSpinBox->setSpecialValueText("<Auto>");
-#ifdef WIN32
-  mpNumberOfProcessorsSpinBox->setValue(1);
-#endif
   mpNumberOfProcessorsNoteLabel = new Label(tr("Note: Use 1 processor if you encounter problems during compilation."));
   // set General Tab Layout
   QGridLayout *pGeneralTabLayout = new QGridLayout;
@@ -451,18 +448,25 @@ void SimulationDialog::translateModel()
 void SimulationDialog::compileModel()
 {
   mpCompilationProcess = new QProcess;
+  QString compilationProcessPath;
 #ifdef WIN32
-  QProcessEnvironment environment;  /* take a fresh copy of the environment so that mingw32-make doesn't get confused with other make commands. */
-  const char *omdev = getenv("OMDEV");
-  if (QString(omdev).isEmpty())
+  QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+  const char *OMDEV = getenv("OMDEV");
+  if (QString(OMDEV).isEmpty())
   {
-    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW/bin"));
-    mCompilationProcessPath = QString(Helper::OpenModelicaHome).append("MinGW/bin/mingw32-make.exe");
+    QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
+    QString MinGWBin = OMHOME + "\\MinGW\\bin";
+    QString MinGWLibExec = OMHOME + "\\MinGW\\libexec\\gcc\\mingw32\\4.4.0";
+    environment.insert("PATH", MinGWBin + ";" + MinGWLibExec);
+    compilationProcessPath = "\"" + OMHOME + "\\MinGW\\bin\\mingw32-make.exe" + "\"";
   }
   else
   {
-    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools/mingw/bin"));
-    mCompilationProcessPath = QString(omdev).append(QDir::separator()).append("tools/mingw/bin/mingw32-make.exe");
+    QString qOMDEV = QString(OMDEV).replace("/", "\\");
+    QString MinGWBin = qOMDEV + "\\tools\\mingw\\bin";
+    QString MinGWLibExec = qOMDEV + "\\tools\\mingw\\libexec\\gcc\\mingw32\\4.4.0";
+    environment.insert("PATH", MinGWBin + ";" + MinGWLibExec);
+    compilationProcessPath = "\"" + qOMDEV + "\\tools\\mingw\\bin\\mingw32-make.exe" + "\"";
   }
   mpCompilationProcess->setProcessEnvironment(environment);
 #endif
@@ -502,8 +506,8 @@ void SimulationDialog::compileModel()
   args << "-f" << fileName + ".makefile";
   mIsCompilationProcessRunning = true;
 #ifdef WIN32
-  mpCompilationProcess->start(mCompilationProcessPath, args);
-  writeCompilationOutput(QString("%1 %2\n").arg(mCompilationProcessPath).arg(args.join(" ")), Qt::blue);
+  mpCompilationProcess->start(compilationProcessPath, args);
+  writeCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
 #else
   mpCompilationProcess->start("make", args);
   writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
@@ -617,13 +621,20 @@ void SimulationDialog::runSimulationExecutable(SimulationOptions simulationOptio
   // start the process
   mpSimulationProcess = new QProcess();
 #ifdef WIN32
-  /* Append to the system environment so that the system commands used in the simulation executable can work. */
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
-  const char *omdev = getenv("OMDEV");
-  if (QString(omdev).isEmpty())
-    environment.insert("PATH", QString(Helper::OpenModelicaHome).append("MinGW/bin") + ";" + environment.value("PATH"));
+  const char *OMDEV = getenv("OMDEV");
+  if (QString(OMDEV).isEmpty())
+  {
+    QString OMHOME = QString(Helper::OpenModelicaHome).replace("/", "\\");
+    QString MinGWBin = OMHOME + "\\MinGW\\bin";
+    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
+  }
   else
-    environment.insert("PATH", QString(omdev).append(QDir::separator()).append("tools/mingw/bin") + ";" + environment.value("PATH"));
+  {
+    QString qOMDEV = QString(OMDEV).replace("/", "\\");
+    QString MinGWBin = qOMDEV + "\\tools\\mingw\\bin";
+    environment.insert("PATH", MinGWBin + ";" + environment.value("PATH"));
+  }
   mpSimulationProcess->setProcessEnvironment(environment);
 #endif
   mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
