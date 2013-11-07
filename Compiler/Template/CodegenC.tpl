@@ -8104,27 +8104,30 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
      then
        'sqrt(<%argStr%>)'
      else
-       let ass = '(<%argStr%> >= 0.0)'
+       let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
+       let ass = '(<%tmp%> >= 0.0)'
        let &preExpMsg = buffer ""
-       let retPre = assertCommonVar(ass,'"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%argStr%>', context, &preExpMsg, &varDecls, dummyInfo)
-       let &preExp += '<%retPre%>'
-       'sqrt(<%argStr%>)')
+       let retPre = assertCommonVar(ass,'"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be >= 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
+       let &preExp += '<%tmp%> = <%argStr%>; <%\n%><%retPre%>'
+       'sqrt(<%tmp%>)')
 
   case CALL(path=IDENT(name="log"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let ass = '(<%argStr%> > 0.0)'
+    let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
+    let ass = '(<%tmp%> > 0.0)'
     let &preExpMsg = buffer ""
-    let retPre = assertCommonVar(ass,'"Model error: Argument of log(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%argStr%>', context, &preExpMsg, &varDecls, dummyInfo)
-    let &preExp += '<%retPre%>'
-    'log(<%argStr%>)'
+    let retPre = assertCommonVar(ass,'"Model error: Argument of log(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
+    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    'log(<%tmp%>)'
 
   case CALL(path=IDENT(name="log10"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let ass = '(<%argStr%> > 0.0)'
+    let tmp = tempDecl(expTypeFromExpModelica(e1),&varDecls)
+    let ass = '(<%tmp%> > 0.0)'
     let &preExpMsg = buffer ""
-    let retPre = assertCommonVar(ass,'"Model error: Argument of log10(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%argStr%>', context, &preExpMsg, &varDecls, dummyInfo)
-    let &preExp += '<%retPre%>'
-    'log10(<%argStr%>)'
+    let retPre = assertCommonVar(ass,'"Model error: Argument of log10(<%Util.escapeModelicaStringToCString(printExpStr(e1))%>) was %g should be > 0", <%tmp%>', context, &preExpMsg, &varDecls, dummyInfo)
+    let &preExp += '<%tmp%> = <%argStr%>;<%retPre%>'
+    'log10(<%tmp%>)'
 
   /* Begin code generation of event triggering math functions */
 
