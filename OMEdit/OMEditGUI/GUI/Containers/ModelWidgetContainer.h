@@ -53,6 +53,7 @@
 #include "ModelicaTextWidget.h"
 
 class ModelWidget;
+class ComponentInfo;
 class LineAnnotation;
 class PolygonAnnotation;
 class RectangleAnnotation;
@@ -163,8 +164,8 @@ public:
   QAction* getFlipHorizontalAction();
   QAction* getFlipVerticalAction();
   bool addComponent(QString className, QPointF position);
-  void addComponentToView(QString name, QString className, QString transformationString, QPointF point, StringHandler::ModelicaClasses type,
-                          bool addObject = true, bool openingClass = false, bool inheritedClass = false,
+  void addComponentToView(QString name, QString className, QString transformationString, QPointF point, ComponentInfo *pComponentInfo,
+                          StringHandler::ModelicaClasses type, bool addObject = true, bool openingClass = false, bool inheritedClass = false,
                           QString inheritedClassName = QString());
   void addComponentObject(Component *pComponent);
   void deleteComponentObject(Component *pComponent);

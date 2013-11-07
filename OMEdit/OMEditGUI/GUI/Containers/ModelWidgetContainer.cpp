@@ -399,14 +399,14 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       {
         if (type == StringHandler::Connector)
         {
-          addComponentToView(name, className, "", position, type, false);
-          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, type);
+          addComponentToView(name, className, "", position, 0, type, false);
+          mpModelWidget->getIconGraphicsView()->addComponentToView(name, className, "", position, 0, type);
           /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
           pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
         }
         else
         {
-          addComponentToView(name, className, "", position, type);
+          addComponentToView(name, className, "", position, 0, type);
         }
         return true;
       }
@@ -424,8 +424,8 @@ bool GraphicsView::addComponent(QString className, QPointF position)
       // if item is a connector. then we can drop it to the graphicsview
       if (type == StringHandler::Connector)
       {
-        addComponentToView(name, className, "", position, type, false);
-        mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, type);
+        addComponentToView(name, className, "", position, 0, type, false);
+        mpModelWidget->getDiagramGraphicsView()->addComponentToView(name, className, "", position, 0, type);
         /* When something is added in the icon layer then update the LibraryTreeNode in the Library Browser */
         pMainWindow->getLibraryTreeWidget()->loadLibraryComponent(mpModelWidget->getLibraryTreeNode());
         return true;
@@ -442,8 +442,8 @@ bool GraphicsView::addComponent(QString className, QPointF position)
 }
 
 void GraphicsView::addComponentToView(QString name, QString className, QString transformationString, QPointF point,
-                                      StringHandler::ModelicaClasses type, bool addObject, bool openingClass, bool inheritedClass,
-                                      QString inheritedClassName)
+                                      ComponentInfo *pComponentInfo, StringHandler::ModelicaClasses type, bool addObject, bool openingClass,
+                                      bool inheritedClass, QString inheritedClassName)
 {
   MainWindow *pMainWindow = mpModelWidget->getModelWidgetContainer()->getMainWindow();
   QString annotation;
@@ -452,8 +452,8 @@ void GraphicsView::addComponentToView(QString name, QString className, QString t
     annotation = pMainWindow->getOMCProxy()->getDiagramAnnotation(className);
   else
     annotation = pMainWindow->getOMCProxy()->getIconAnnotation(className);
-  Component *pComponent = new Component(annotation, name, className, type, transformationString, point, inheritedClass, inheritedClassName,
-                                        pMainWindow->getOMCProxy(), this);
+  Component *pComponent = new Component(annotation, name, className, pComponentInfo, type, transformationString, point, inheritedClass,
+                                        inheritedClassName, pMainWindow->getOMCProxy(), this);
   if (!openingClass)
   {
     // unselect all items
@@ -554,9 +554,9 @@ void GraphicsView::createConnection(QString startComponentName, QString endCompo
                                                 QString("annotate=").append(mpConnectionLineAnnotation->getShapeAnnotation())))
   {
     /* Ticket #2450
-       If both ports are not compitable just report it to the user instead of removing the connection.
+       Do not check for the ports compatibility via instantiatemodel. Just let the user create the connection.
+       //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getLibraryTreeNode()->getNameStructure());
       */
-    pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getLibraryTreeNode()->getNameStructure());
     /* complete the connection */
     setIsCreatingConnection(false);
     mpConnectionLineAnnotation->setStartComponentName(startComponentName);
@@ -901,14 +901,12 @@ void GraphicsView::addConnection(Component *pComponent)
     else
     {
       bool showConnectionArrayDialog = false;
-      if (pStartComponent->getParentComponent())
-        if (pStartComponent->getComponentInfo())
-          if (pStartComponent->getComponentInfo()->isArray())
-            showConnectionArrayDialog = true;
-      if (pComponent->getParentComponent())
-        if (pComponent->getComponentInfo())
-          if (pComponent->getComponentInfo()->isArray())
-            showConnectionArrayDialog = true;
+      if (pStartComponent->getComponentInfo())
+        if (pStartComponent->getComponentInfo()->isArray())
+          showConnectionArrayDialog = true;
+      if (pComponent->getComponentInfo())
+        if (pComponent->getComponentInfo()->isArray())
+          showConnectionArrayDialog = true;
       if (showConnectionArrayDialog)
       {
         ConnectionArray *pConnectionArray = new ConnectionArray(this, mpConnectionLineAnnotation,
@@ -2177,12 +2175,12 @@ void ModelWidget::getModelComponents(QString className, bool inheritedCycle)
     if (!transformation.isEmpty())
     {
       mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                                QPointF(0.0, 0.0), type, false, true, inheritedCycle, className);
+                                                QPointF(0.0, 0.0), pComponentInfo, type, false, true, inheritedCycle, className);
       if (type == StringHandler::Connector && !pComponentInfo->getProtected())
       {
         // add the component to the icon view.
         mpIconGraphicsView->addComponentToView(pComponentInfo->getName(), pComponentInfo->getClassName(), transformation,
-                                               QPointF(0.0, 0.0), type, false, true, inheritedCycle, className);
+                                               QPointF(0.0, 0.0), pComponentInfo, type, false, true, inheritedCycle, className);
       }
     }
     i++;

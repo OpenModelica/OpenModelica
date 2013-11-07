@@ -38,11 +38,11 @@
 #include "Component.h"
 #include "ComponentProperties.h"
 
-Component::Component(QString annotation, QString name, QString className, StringHandler::ModelicaClasses type, QString transformation,
-                     QPointF position, bool inheritedComponent, QString inheritedClassName, OMCProxy *pOMCProxy,
-                     GraphicsView *pGraphicsView, Component *pParent)
-  : QGraphicsItem(pParent), mName(name), mClassName(className), mType(type), mpOMCProxy(pOMCProxy), mpGraphicsView(pGraphicsView),
-    mpParentComponent(pParent)
+Component::Component(QString annotation, QString name, QString className, ComponentInfo *pComponentInfo,
+                     StringHandler::ModelicaClasses type, QString transformation, QPointF position, bool inheritedComponent,
+                     QString inheritedClassName, OMCProxy *pOMCProxy, GraphicsView *pGraphicsView, Component *pParent)
+  : QGraphicsItem(pParent), mName(name), mClassName(className), mpComponentInfo(pComponentInfo), mType(type), mpOMCProxy(pOMCProxy),
+    mpGraphicsView(pGraphicsView), mpParentComponent(pParent)
 {
   setZValue(2000);
   mIsLibraryComponent = false;
@@ -50,7 +50,6 @@ Component::Component(QString annotation, QString name, QString className, String
   mInheritedClassName = inheritedClassName;
   mComponentType = Component::Root;
   initialize();
-  mpComponentInfo = 0;
   setComponentFlags();
   setAcceptHoverEvents(true);
   getClassInheritedComponents(true);
