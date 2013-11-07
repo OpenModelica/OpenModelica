@@ -2458,6 +2458,9 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 
 int SystemImpl__rename(const char *source, const char *dest)
 {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return MoveFileEx(source, dest, MOVEFILE_REPLACE_EXISTING);
+#endif
   return 0==rename(source,dest);
 }
 

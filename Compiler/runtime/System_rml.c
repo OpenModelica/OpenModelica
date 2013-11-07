@@ -518,13 +518,6 @@ RML_BEGIN_LABEL(System__removeFile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__renameFile)
-{
-  rmlA0 = (void*) mk_icon(rename(RML_STRINGDATA(rmlA0),RML_STRINGDATA(rmlA1)));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 double next_realelt(double *arr)
 {
   static int curpos;

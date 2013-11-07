@@ -175,8 +175,6 @@ algorithm
   m := BackendDAEUtil.absIncidenceMatrix(m);
   mT := BackendDAEUtil.absIncidenceMatrix(mT);
   // try to match
-  ass1 := arrayCreate(nVars,-1);
-  ass2 := arrayCreate(nEqns,-1);
   outSyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets);
   // do matching
   (outSyst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),_,_) := matchingFunc(outSyst,iShared,true,(BackendDAE.INDEX_REDUCTION(),eqnConstr),foundSingularSystem,arg);
