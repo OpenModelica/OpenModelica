@@ -151,11 +151,11 @@ public uniontype FmiImport
     String fmuWorkingDirectory;
     Integer fmiLogLevel;
     Boolean fmiDebugOutput;
-    Integer fmiContext;
-    Integer fmiInstance;
+    Option<Integer> fmiContext;
+    Option<Integer> fmiInstance;
     Info fmiInfo;
     ExperimentAnnotation fmiExperimentAnnotation;
-    Integer fmiModelVariablesInstance;
+    Option<Integer> fmiModelVariablesInstance;
     list<ModelVariables> fmiModelVariablesList;
     Boolean generateInputConnectors;
     Boolean generateOutputConnectors;

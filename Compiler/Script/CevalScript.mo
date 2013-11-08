@@ -853,7 +853,8 @@ algorithm
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr_1;
       Integer size,resI,i,n, curveStyle;
-      Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel;
+      Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
+      Integer fmiLogLevel;
       list<Integer> is;
       list<FMI.ModelVariables> fmiModelVariablesList, fmiModelVariablesList1;
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
@@ -1580,7 +1581,7 @@ algorithm
         true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
         /* Initialize FMI objects */
-        (b, SOME(fmiContext), SOME(fmiInstance), fmiInfo, fmiExperimentAnnotation, SOME(fmiModelVariablesInstance), fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
+        (b, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true = b; /* if something goes wrong while initializing */
         fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
         s1 = System.tolower(System.platform());
@@ -1593,7 +1594,7 @@ algorithm
         filename_1 = Util.if_(b1,stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}),stringAppendList({str1,"_",str2,"_FMU.mo"}));
         System.writeFile(outputFile, str);
         /* Release FMI objects */
-        FMIExt.releaseFMIImport(SOME(fmiModelVariablesInstance), SOME(fmiInstance), SOME(fmiContext), str3);
+        FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
       then
         (cache,Values.STRING(filename_1),st);
 
