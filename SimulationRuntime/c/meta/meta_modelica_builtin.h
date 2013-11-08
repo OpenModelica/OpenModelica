@@ -92,7 +92,7 @@ extern modelica_metatype boxptr_stringHashSdmb(threadData_t*,modelica_metatype s
 
 /* List Operations */
 #define listReverse(X) boxptr_listReverse(NULL,X)
-#define listMember(X,Y) boxptr_listMember(NULL,X,Y)
+#define listMember(X,Y) mmc_unbox_integer(boxptr_listMember(NULL,X,Y))
 #define listAppend(X,Y) boxptr_listAppend(NULL,X,Y)
 extern modelica_integer listLength(modelica_metatype);
 #define listGet(X,Y) boxptr_listGet(threadData,X,mmc_mk_icon(Y))
@@ -108,7 +108,7 @@ extern modelica_metatype boxptr_listAppend(threadData_t*,modelica_metatype,model
 extern modelica_metatype boxptr_listFirst(threadData_t*,modelica_metatype);
 extern modelica_metatype boxptr_listRest(threadData_t*,modelica_metatype);
 extern modelica_metatype boxptr_listReverse(threadData_t*,modelica_metatype);
-extern modelica_boolean boxptr_listMember(threadData_t*,modelica_metatype, modelica_metatype);
+extern modelica_metatype boxptr_listMember(threadData_t*,modelica_metatype, modelica_metatype);
 
 /* Option Operations */
 #define optionNone(x) (0==MMC_HDRSLOTS(MMC_GETHDR(x)) ? 1 : 0)

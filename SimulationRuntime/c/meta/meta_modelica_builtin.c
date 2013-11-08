@@ -482,15 +482,16 @@ modelica_integer listLength(modelica_metatype lst)
   return res;
 }
 
-modelica_boolean boxptr_listMember(threadData_t *threadData,modelica_metatype obj, modelica_metatype lst)
+modelica_metatype boxptr_listMember(threadData_t *threadData,modelica_metatype obj, modelica_metatype lst)
 {
   while (!MMC_NILTEST(lst))
   {
-    if (valueEq(MMC_CAR(lst), obj))
-      return 1;
+    if (valueEq(MMC_CAR(lst), obj)) {
+      return mmc_mk_icon(1);
+    }
     lst = MMC_CDR(lst);
   }
-  return 0;
+  return mmc_mk_icon(0);
 }
 
 modelica_metatype boxptr_listGet(threadData_t *threadData,modelica_metatype lst, modelica_metatype ii)

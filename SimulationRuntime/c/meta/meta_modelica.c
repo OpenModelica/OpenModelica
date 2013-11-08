@@ -53,7 +53,11 @@ void* mmc_mk_rcon(double d)
 */
 void* mmc_mk_rcon(double d)
 {
+#if defined(RML_STYLE_TAGPTR)
     struct mmc_real *p = (struct mmc_real*)mmc_alloc_words(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
+#else
+    struct mmc_real *p = (struct mmc_real*)mmc_alloc_words_atomic(MMC_SIZE_DBL/MMC_SIZE_INT + 1);
+#endif
     mmc_prim_set_real(p, d);
     p->header = MMC_REALHDR;
 #ifdef MMC_MK_DEBUG
@@ -145,17 +149,18 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
   ctor = 255 & (h_lhs >> 2);
 
   if (numslots>0 && ctor > 1) { /* RECORD */
-    lhs_desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1));
+    /* lhs_desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),1));
     rhs_desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),1));
-    /* Slow; not needed
+    Slow; not needed
     if (0 != strcmp(lhs_desc->name,rhs_desc->name))
       return 0;
     */
     for (i=2; i<=numslots; i++) {
       lhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(lhs),i));
       rhs_data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(rhs),i));
-      if (0 == valueEq(lhs_data,rhs_data))
+      if (0 == valueEq(lhs_data,rhs_data)) {
         return 0;
+      }
     }
     return 1;
   }
