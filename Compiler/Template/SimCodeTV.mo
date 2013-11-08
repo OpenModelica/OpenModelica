@@ -450,6 +450,7 @@ package SimCode
       Causality causality;
       Option<Integer> variable_index;
       list<String> numArrayElement;
+      Boolean isValueChangeable;
     end SIMVAR;
   end SimVar;
   

@@ -251,7 +251,7 @@ algorithm
         /*Todo: This also generates an error for example itearation variables, so i commented  out 
         Error.addMessage(Error.INTERNAL_ERROR, {errstr});*/
       then
-         SimCode.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.INTERNAL(), NONE(), {});
+         SimCode.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.INTERNAL(), NONE(), {}, false);
   end matchcontinue;
 end cref2simvar;
 
@@ -1780,7 +1780,7 @@ algorithm
       Option<DAE.Exp> minValue, maxValue, initialValue, nominalValue;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       Option<DAE.ComponentRef> arrayCref;
       SimCode.AliasVariable aliasvar;
       DAE.ElementSource source;
@@ -1789,46 +1789,46 @@ algorithm
       list<String> numArrayElement;
      case({}, _, _, _, _, _, _, _, _) then (numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars);     
      case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_ as DAE.T_INTEGER(varLst=_), 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)::rest, _, _, _, _, _, _, _, _)
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable)::rest, _, _, _, _, _, _, _, _)
        equation
          var = SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, numIntAlgVars, minValue, maxValue, initialValue, nominalValue, isFixed, type_, 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars) = 
          addTempVars1(rest, numAlgVars, algVars, numIntAlgVars+1, var::intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars);
        then
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars);
      case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_ as DAE.T_ENUMERATION(path=_), 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)::rest, _, _, _, _, _, _, _, _)
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable)::rest, _, _, _, _, _, _, _, _)
        equation
          var = SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, numIntAlgVars, minValue, maxValue, initialValue, nominalValue, isFixed, type_, 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars) = 
          addTempVars1(rest, numAlgVars, algVars, numIntAlgVars+1, var::intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars);
        then
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars);
      case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_ as DAE.T_BOOL(varLst=_), 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)::rest, _, _, _, _, _, _, _, _)
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable)::rest, _, _, _, _, _, _, _, _)
        equation
          var = SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, numBoolAlgVars, minValue, maxValue, initialValue, nominalValue, isFixed, type_, 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars) = 
          addTempVars1(rest, numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars+1, var::boolAlgVars, numStringAlgVars, stringAlgVars);
        then
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars); 
      case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_ as DAE.T_STRING(varLst=_), 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)::rest, _, _, _, _, _, _, _, _)
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable)::rest, _, _, _, _, _, _, _, _)
        equation
          var = SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, numStringAlgVars, minValue, maxValue, initialValue, nominalValue, isFixed, type_, 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars) = 
          addTempVars1(rest, numAlgVars, algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars+1, var::stringAlgVars);
        then
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars);                 
      case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)::rest, _, _, _, _, _, _, _, _)
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable)::rest, _, _, _, _, _, _, _, _)
        equation
          var = SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, numAlgVars, minValue, maxValue, initialValue, nominalValue, isFixed, type_, 
-          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
+          isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
          (onumAlgVars, oalgVars, onumIntAlgVars, ointAlgVars, onumBoolAlgVars, oboolAlgVars, onumStringAlgVars, ostringAlgVars) = 
          addTempVars1(rest, numAlgVars+1, var::algVars, numIntAlgVars, intAlgVars, numBoolAlgVars, boolAlgVars, numStringAlgVars, stringAlgVars);
        then
@@ -3184,7 +3184,7 @@ algorithm
     case(_, _, DAE.CREF(cr, ty)::rest, _)
       equation
         slst = List.map(dims, intString);
-        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), slst);
+        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), slst, false);
         tempvars = greateTempVarsforCrefs(rest, {var}); 
       then
         listAppend(listReverse(tempvars), itempvars);
@@ -3206,7 +3206,7 @@ algorithm
 
     case(DAE.CREF(cr, ty)::rest, _)
       equation
-        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {});
+        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
       then
         greateTempVarsforCrefs(rest, var::itempvars); 
   end match;
@@ -3236,7 +3236,7 @@ algorithm
     case(DAE.TYPES_VAR(name=name, ty=ty)::rest, _, _)
       equation
         cr = ComponentReference.crefPrependIdent(inCrefPrefix, name, {}, ty);
-        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {});
+        var = SimCode.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
       then
         greateTempVars(rest, inCrefPrefix, var::itempvars); 
   end match;
@@ -5238,27 +5238,27 @@ algorithm
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {});
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars);
       
     case(BackendDAE.VAR(varName=currVar)::restVar, cref, _, _, _, _) equation
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {});
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "", "", "", inIndex, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName, r1::iVars); 
  
      case(BackendDAE.VAR(varName=currVar, varKind=BackendDAE.STATE(index=_))::restVar, cref, _, _, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {});
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
       
     case(BackendDAE.VAR(varName=currVar)::restVar, cref, _, _, _, _) equation
       derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {});
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.NONECAUS(), NONE(), {}, false);
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName, r1::iVars);
  
@@ -7489,21 +7489,21 @@ algorithm
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       DAE.ComponentRef arrayCref;
       DAE.ElementSource source;
       list<String> numArrayElement;
-    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, NONE(), _, source, _, NONE(), numArrayElement))
+    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, NONE(), _, source, _, NONE(), numArrayElement, isValueChangeable))
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement);
-    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), _, source, _, NONE(), numArrayElement))
+        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement, isValueChangeable);
+    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), _, source, _, NONE(), numArrayElement, isValueChangeable))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement);
+        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement, isValueChangeable);
   end match;
 end derVarFromStateVar;
 
@@ -7713,7 +7713,7 @@ algorithm
       Option<DAE.Exp> minValue, maxValue, initialValue, nominalValue;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       SimCode.AliasVariable aliasvar;
       DAE.ElementSource source;
       SimCode.Causality causality;
@@ -7722,12 +7722,12 @@ algorithm
     case (SimCode.SIMVAR(name=cr, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, index=index, 
                          minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, 
                          isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, aliasvar=aliasvar, source=source, 
-                         causality=causality, variable_index=variable_index, numArrayElement=numArrayElement), _)
+                         causality=causality, variable_index=variable_index, numArrayElement=numArrayElement, isValueChangeable=isValueChangeable), _)
       then
         SimCode.SIMVAR(cr, varKind, comment, unit, displayUnit, index, 
                          minValue, maxValue, initialValue, nominalValue, 
                          isFixed, type_, isDiscrete, SOME(arrayCref), aliasvar, source, 
-                         causality, variable_index, numArrayElement);
+                         causality, variable_index, numArrayElement, isValueChangeable);
   end match;
 end addSimVarArrayCref;
 
@@ -8132,7 +8132,7 @@ algorithm
       Option<DAE.Exp> initVal, nomVal;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       Option<DAE.ComponentRef> arrayCref;
       Integer index_;
       SimCode.AliasVariable aliasvar;
@@ -8144,8 +8144,8 @@ algorithm
       SimCode.SimVar var;
       
     case ({}, _, _) then listReverse(inAcc);
-    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement)::rest, index_, _)
-      then rewriteIndexWork(rest, index_ + 1, SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement)::inAcc);
+    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable)::rest, index_, _)
+      then rewriteIndexWork(rest, index_ + 1, SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index_, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, NONE(), numArrayElement, isValueChangeable)::inAcc);
   end match;
 end rewriteIndexWork;
 
@@ -8847,13 +8847,43 @@ algorithm
       Option<DAE.Exp> nomVal;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       Option<DAE.ComponentRef> arrayCref;
       SimCode.AliasVariable aliasvar;
       DAE.ElementSource source;
       BackendDAE.Variables vars;
       SimCode.Causality caus;
-    case ((BackendDAE.VAR(varName = cr, 
+      BackendDAE.Var v;
+    case ((v as BackendDAE.VAR(varName = cr, 
+      varKind = kind as BackendDAE.PARAM(), 
+      varDirection = dir,
+      arryDim = inst_dims, 
+      values = dae_var_attr, 
+      comment = comment, 
+      varType = tp, 
+      source = source)), _, vars)
+      equation
+        commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
+        (unit, displayUnit) = extractVarUnit(dae_var_attr);
+        (minValue, maxValue) = getMinMaxValues(dlowVar);
+        initVal = getInitialValue(dlowVar);
+        nomVal = getNominalValue(dlowVar);
+        checkInitVal(initVal, source);
+        isFixed = BackendVariable.varFixed(dlowVar);
+        type_ = tp;
+        isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
+        arrayCref = getArrayCref(cr);
+        aliasvar = getAliasVar(dlowVar, optAliasVars);
+        caus = getCausality(dlowVar, vars);
+        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
+        // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
+        // check if the variable has changeable value
+        // parameter which are final = true or Evaluate Annotation are not
+        isValueChangeable = not BackendVariable.hasVarEvaluateAnnotationOrFinal(v) and BackendVariable.varHasConstantBindExp(v);
+      then
+        SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */, 
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable);
+    case ((v as BackendDAE.VAR(varName = cr, 
       varKind = kind, 
       varDirection = dir, 
       arryDim = inst_dims, 
@@ -8878,7 +8908,7 @@ algorithm
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */, 
-        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement);
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, false);
   end match;
 end dlowvarToSimvar;
 
@@ -10949,7 +10979,7 @@ algorithm (outSimVar):= match(stateVars, dae_low)
     Option<DAE.Exp> maxValue;
     Option<DAE.Exp> initialValue;
     Option<DAE.Exp> nominalValue;
-    Boolean isFixed, isDiscrete;
+    Boolean isFixed, isDiscrete, isValueChangeable;
     DAE.Type type_;
     // arrayCref is the name of the array if this variable is the first in that
     // array
@@ -10960,14 +10990,14 @@ algorithm (outSimVar):= match(stateVars, dae_low)
     Option<Integer> variable_index;
     list<String> numArrayElement;
     BackendDAE.EqSystems eqsystems;
-  case(SimCode.SIMVAR(name=name, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, index=index, minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source, causality=causality, variable_index=variable_index, numArrayElement=numArrayElement), BackendDAE.DAE(eqs=eqsystems))
+  case(SimCode.SIMVAR(name=name, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, index=index, minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source, causality=causality, variable_index=variable_index, numArrayElement=numArrayElement, isValueChangeable=isValueChangeable), BackendDAE.DAE(eqs=eqsystems))
      equation
       Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStr, (" search index for state variable ", name, "\n"));
       ordered_states=setVariableDerIndex(dae_low, eqsystems);
       new_index=stateindex(name, ordered_states);
            
     then 
-     SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, new_index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
+     SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, new_index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
 end match;
 end stateindex2;
 
@@ -11021,7 +11051,7 @@ algorithm
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       // arrayCref is the name of the array if this variable is the first in that
       // array
       Option<DAE.ComponentRef> arrayCref;
@@ -11032,11 +11062,11 @@ algorithm
       list<SimCode.SimVar> rest, indexed_vector;
       list<String> numArrayElement;
     case({}, _) then {};
-    case(SimCode.SIMVAR(name=name, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source, causality=causality, variable_index=variable_index, numArrayElement=numArrayElement) :: rest, _)
+    case(SimCode.SIMVAR(name=name, varKind=varKind, comment=comment, unit=unit, displayUnit=displayUnit, minValue=minValue, maxValue=maxValue, initialValue=initialValue, nominalValue=nominalValue, isFixed=isFixed, type_=type_, isDiscrete=isDiscrete, arrayCref=arrayCref, aliasvar=aliasvar, source=source, causality=causality, variable_index=variable_index, numArrayElement=numArrayElement, isValueChangeable=isValueChangeable) :: rest, _)
       equation
         indexed_vector = setStatesVectorIndex2(rest, index+1);
       then 
-        SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index), numArrayElement)::indexed_vector;
+        SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index), numArrayElement, isValueChangeable)::indexed_vector;
   end match;
 end setStatesVectorIndex2;
 
@@ -11134,7 +11164,7 @@ algorithm
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       // arrayCref is the name of the array if this variable is the first in that
       // array
       Option<DAE.ComponentRef> arrayCref;
@@ -11169,13 +11199,13 @@ algorithm
       then
         SimCode.SIMVAR(cr_1, varKind, comment, unit, displayUnit, 2, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
        */
-     case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, i, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)) 
+     case(SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, i, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable)) 
       equation
         name_str = ComponentReference.printComponentRefStr(name);
         id_str = stringAppendList({DAE.derivativeNamePrefix, ".", name_str});
         cr_1 = ComponentReference.makeCrefIdent(id_str, DAE.T_REAL_DEFAULT, {});
       then
-        SimCode.SIMVAR(cr_1, varKind, comment, unit, displayUnit, i, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement);
+        SimCode.SIMVAR(cr_1, varKind, comment, unit, displayUnit, i, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement, isValueChangeable);
     /*case (SimCode.SIMVAR(name, _, _, _, _, i, _, _, _, _, _, _, _, _, _, _, _))
       equation
         name_str = ComponentReference.printComponentRefStr(name);
@@ -11210,7 +11240,7 @@ algorithm
       Option<DAE.Exp> nominalValue;
       Boolean isFixed;
       DAE.Type type_;
-      Boolean isDiscrete;
+      Boolean isDiscrete, isValueChangeable;
       Option<DAE.ComponentRef> arrayCref;
       SimCode.AliasVariable aliasvar;
       DAE.ElementSource source;
@@ -11219,13 +11249,13 @@ algorithm
       Integer variable_index1;
       SimCode.SimVar v, newvar1;
       list<String> numArrayElement;
-  case((v as SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)), SimCode.SIMVAR(name=name1, index=index1, variable_index=SOME(variable_index1))::_)    
+  case((v as SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement,isValueChangeable)), SimCode.SIMVAR(name=name1, index=index1, variable_index=SOME(variable_index1))::_)    
     equation
       Debug.fcall(Flags.FAILTRACE, BackendDump.debugStrCrefStrCrefStr, (" compare variable ", name, "with ", name1, "\n"));
       true = ComponentReference.crefEqual(name, name1);
     then 
-      SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, variable_index1, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index1), numArrayElement);
-  case((v as SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, index, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, variable_index, numArrayElement)), _::rest1)
+      SimCode.SIMVAR(name, varKind, comment, unit, displayUnit, variable_index1, minValue, maxValue, initialValue, nominalValue, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality, SOME(index1), numArrayElement,isValueChangeable);
+  case( v, _::rest1)
     equation
        newvar1=replaceindex(v, rest1);
     then newvar1;

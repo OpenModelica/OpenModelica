@@ -119,7 +119,7 @@ public function evaluateEvaluateParameters
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_ ) := evaluateParameters(inDAE,hasEvaluateAnnotation);
+  (outDAE,_ ) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotation);
 end evaluateEvaluateParameters;
 
 public function evaluateFinalEvaluateParameters
@@ -128,7 +128,7 @@ public function evaluateFinalEvaluateParameters
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outDAE,_ ) := evaluateParameters(inDAE,hasEvaluateAnnotationOrFinal);
+  (outDAE,_ ) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinal);
 end evaluateFinalEvaluateParameters;
 
 public function evaluateReplaceFinalParameters
@@ -151,7 +151,7 @@ public function evaluateReplaceEvaluateParameters
 protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,hasEvaluateAnnotation);
+  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotation);
   outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
 end evaluateReplaceEvaluateParameters;
 
@@ -162,7 +162,7 @@ public function evaluateReplaceFinalEvaluateParameters "author: Frenkel TUD
 protected
   BackendVarTransform.VariableReplacements repl;
 algorithm
-  (outDAE,repl) := evaluateParameters(inDAE,hasEvaluateAnnotationOrFinal);
+  (outDAE,repl) := evaluateParameters(inDAE,BackendVariable.hasVarEvaluateAnnotationOrFinal);
   outDAE := replaceEvaluatedParametersEqns(BackendVarTransform.replacementEmpty(repl),outDAE,repl);
 end evaluateReplaceFinalEvaluateParameters;
 
@@ -231,27 +231,6 @@ algorithm
   end match;
 end evaluateParameters;
 
-
-protected function hasEvaluateAnnotationOrFinal
-  input BackendDAE.Var inVar;
-  output Boolean select;
-algorithm
-  select := BackendVariable.isFinalVar(inVar) or hasEvaluateAnnotation(inVar);
-end hasEvaluateAnnotationOrFinal;
-
-protected function hasEvaluateAnnotation
-  input BackendDAE.Var inVar;
-  output Boolean select;
-algorithm
-  select := match(inVar)
-    local
-      SCode.Annotation anno;
-    // Parameter with evaluate=true
-    case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(anno))))
-      then SCode.hasBooleanNamedAnnotation({anno},"Evaluate");
-    else then false;
-  end match;
-end hasEvaluateAnnotation;
 
 protected function getParameterIncidenceMatrix
   input tuple<BackendDAE.Var,tuple<BackendDAE.Variables,Integer,selectParameterFunc,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix,BackendDAE.IncidenceMatrixT>> inTp;

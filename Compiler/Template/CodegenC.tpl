@@ -9986,7 +9986,7 @@ template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String class
       valueReference = "<%valueReference%>"
       <%description%>
       variability = "<%variability%>" isDiscrete = "<%isDiscrete%>"
-      causality = "<%caus%>"
+      causality = "<%caus%>" isValueChangeable = "<%isValueChangeable%>"
       alias = <%alias%>
       classIndex = "<%classIndex%>" classType = "<%classType%>"
       <%getInfoArgs(info)%>

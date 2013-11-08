@@ -251,6 +251,7 @@ uniontype SimVar "Information about a variable in a Modelica model."
     Causality causality;
     Option<Integer> variable_index;
     list<String> numArrayElement;
+    Boolean isValueChangeable;
   end SIMVAR;
 end SimVar;
 

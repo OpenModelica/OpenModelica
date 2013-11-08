@@ -494,6 +494,19 @@ algorithm
    end match;
 end varBindExp;
 
+public function varHasConstantBindExp
+"Returns the true if the bindExp is constant otherwise false."
+  input BackendDAE.Var v;
+  output Boolean  out;
+algorithm
+  out := match(v)
+    local DAE.Exp e;
+    case (BackendDAE.VAR(bindExp = SOME(e)))
+      then Expression.isConst(e);
+    else false;
+   end match;
+end varHasConstantBindExp;
+
 public function varBindExpStartValue
 "author: Frenkel TUD 2010-12
   Returns the bindExp or the start value if no bind is there of a variable."
@@ -1610,6 +1623,28 @@ algorithm
   BackendDAE.VAR(values = attr) := v;
   prot := DAEUtil.getProtectedAttr(attr);
 end isProtectedVar;
+
+public function hasVarEvaluateAnnotationOrFinal
+  input BackendDAE.Var inVar;
+  output Boolean select;
+algorithm
+  select := isFinalVar(inVar) or hasVarEvaluateAnnotation(inVar);
+end hasVarEvaluateAnnotationOrFinal;
+
+public function hasVarEvaluateAnnotation
+  input BackendDAE.Var inVar;
+  output Boolean select;
+algorithm
+  select := match(inVar)
+    local
+      SCode.Annotation anno;
+    // Parameter with evaluate=true
+    case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_=SOME(anno))))
+      then SCode.hasBooleanNamedAnnotation({anno},"Evaluate");
+    else then false;
+  end match;
+end hasVarEvaluateAnnotation;
+
 
 public function createpDerVar "author: wbraun
   Create variable with $pDER.v as cref for jacobian variables."
