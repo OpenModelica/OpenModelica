@@ -614,7 +614,7 @@ algorithm
         kind = daeKindtoBackendDAEKind(daekind);
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
-        minValue, maxValue, NONE(), nomVal, false, type_, false, arrayCref, SimCode.NOALIAS(), source, SimCode.NONECAUS(),NONE(),numArrayElement)::ivars;
+        minValue, maxValue, NONE(), nomVal, false, type_, false, arrayCref, SimCode.NOALIAS(), source, SimCode.NONECAUS(),NONE(),numArrayElement, false)::ivars;
   end match;
 end generateVar;
 
