@@ -357,7 +357,7 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader)
       if(xmlReader.name() == "ScalarVariable")
       {
         QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
-        if (scalarVariable["useStart"].compare("true") == 0)
+        if (scalarVariable["isValueChangeable"].compare("true") == 0)
           mScalarVariablesList.insert(scalarVariable.value("name"),scalarVariable);
       }
     }
@@ -376,6 +376,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
   /* Read the ScalarVariable attributes. */
   scalarVariable["name"] = attributes.value("name").toString();
   scalarVariable["description"] = attributes.value("description").toString();
+  scalarVariable["isValueChangeable"] = attributes.value("isValueChangeable").toString();
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
   while(!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable"))
@@ -383,7 +384,6 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
     if(xmlReader.tokenType() == QXmlStreamReader::StartElement)
     {
       QXmlStreamAttributes attributes = xmlReader.attributes();
-      scalarVariable["useStart"] = attributes.value("useStart").toString();
       scalarVariable["start"] = attributes.value("start").toString();
     }
     xmlReader.readNext();
