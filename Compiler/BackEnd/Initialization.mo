@@ -1055,7 +1055,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.BackendDAE inDAE;
       BackendDAE.Shared shared;
-      String msg, eqn_str;
+      String eqn_str;
       array<Integer> vec1, vec2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -1073,10 +1073,10 @@ algorithm
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intGt(nEqns, nVars);
-      Debug.fcall2(Flags.INITIALIZATION, BackendDump.dumpEqSystem, isyst, "Trying to fix over-determined initial system");
-      msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
-      Error.addCompilerWarning(msg);
+      Error.addCompilerWarning("Trying to fix over-determined initial system with " +& intString(nVars) +& " variables and " +& intString(nEqns) +& " equations... [not implemented yet!]");
 
+      true = Flags.isSet(Flags.INITIALIZATION);
+      
       // analyze system
       funcs = BackendDAEUtil.getFunctions(shared);
       (system, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), SOME(funcs));
@@ -1103,8 +1103,7 @@ algorithm
       //vars = List.fold1(unmatched, getAssignedVars, inAssignments1, vars);
       //vars = List.select1(vars, intLe, n);
       //var_str = BackendDump.dumpMarkedVars(isyst, vars);
-      msg = "System is over-determined in Equations " +& eqn_str;
-      Error.addCompilerWarning(msg);
+      Error.addCompilerWarning("System is over-determined in Equations " +& eqn_str);
     then fail();
 
     // under-determined system
