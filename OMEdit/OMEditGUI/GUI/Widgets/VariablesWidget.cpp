@@ -367,8 +367,7 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader)
       if(xmlReader.name() == "ScalarVariable")
       {
         QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
-        if (scalarVariable["isValueChangeable"].compare("true") == 0)
-          mScalarVariablesList.insert(scalarVariable.value("name"),scalarVariable);
+        mScalarVariablesList.insert(scalarVariable.value("name"),scalarVariable);
       }
     }
   }
@@ -477,8 +476,8 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableToFind.remove(QRegExp(pTopVariablesTreeItem->getVariableName() + "."));
       /* get the variable information i.e value, displayunit, description */
       QString value, displayUnit, description;
-      bool found = false;
-      value = getVariableInformation(variableToFind, &found, &displayUnit, &description);
+      bool changeAble = false;
+      getVariableInformation(variableToFind, &value, &changeAble, &displayUnit, &description);
       variableData << StringHandler::unparse(QString("\"").append(value).append("\""));
       /* set the variable displayUnit */
       variableData << StringHandler::unparse(QString("\"").append(displayUnit).append("\""));
@@ -487,7 +486,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* construct tooltip text */
       variableData << tr("File: %1/%2\nVariable: %3").arg(filePath).arg(fileName).arg(variableToFind);
       VariablesTreeItem *pVariablesTreeItem = new VariablesTreeItem(variableData, pParentVariablesTreeItem);
-      pVariablesTreeItem->setEditable(found);
+      pVariablesTreeItem->setEditable(changeAble);
       int row = rowCount(index);
       beginInsertRows(index, row, row);
       pParentVariablesTreeItem->insertChild(row, pVariablesTreeItem);
@@ -499,6 +498,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       count++;
     }
   }
+  mpVariablesTreeView->collapseAll();
   QModelIndex idx = variablesTreeItemIndex(pTopVariablesTreeItem);
   idx = mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->mapFromSource(idx);
   mpVariablesTreeView->expand(idx);
@@ -545,18 +545,17 @@ VariablesTreeItem* VariablesTreeModel::getVariablesTreeItem(const QModelIndex &i
   return mpRootVariablesTreeItem;
 }
 
-QString VariablesTreeModel::getVariableInformation(QString variableToFind, bool *found, QString *displayUnit, QString *description)
+void VariablesTreeModel::getVariableInformation(QString variableToFind, QString *value, bool *changeAble, QString *displayUnit,
+                                                QString *description)
 {
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0)
   {
-    *found = true;
+    *value = hash["start"];
+    *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
     *displayUnit = hash["displayUnit"];
     *description = hash["description"];
-    return hash["start"];
   }
-  *description = "";
-  return "";
 }
 
 void VariablesTreeModel::removeVariableTreeItem()

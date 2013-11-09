@@ -121,7 +121,7 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
   VariablesTreeItem* getVariablesTreeItem(const QModelIndex &index) const;
-  QString getVariableInformation(QString variableToFind, bool *found, QString *displayUnit, QString *description);
+  void getVariableInformation(QString variableToFind, QString *value, bool *changeAble, QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
