@@ -83,6 +83,7 @@ private:
   QString mDisplayVariableName;
   QString mValue;
   bool mValueChanged;
+  QString mDisplayUnit;
   QString mDescription;
   QString mToolTip;
   bool mChecked;
@@ -120,7 +121,7 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
   VariablesTreeItem* getVariablesTreeItem(const QModelIndex &index) const;
-  QString getVariableValueAndDescription(QString variableToFind, bool *found, QString *description);
+  QString getVariableInformation(QString variableToFind, bool *found, QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
