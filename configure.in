@@ -547,28 +547,24 @@ elif test ! "$WANT_ORBIT2" = "no"; then
   AC_MSG_ERROR([ORBIT2 is not supported yet])
 elif test ! "$WANT_OMNIORB" = "no"; then
   if test "$WANT_OMNIORB" = "yes"; then
-    WANT_OMNIORB="/usr";
-    IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
-    IDLPYTHONCMD="omniidl -bpython";
+    OMNIORB_LDFLAGS="";
+    IDLPATH="omniidl";
   else
     CORBA_QMAKE_INCLUDES="$WANT_OMNIORB/include";
     CORBACFLAGS="-I$CORBA_QMAKE_INCLUDES";
-    AC_MSG_CHECKING([for $WANT_OMNIORB/bin/omniidl]);
-    if test -f "$WANT_OMNIORB/bin/omniidl"; then
-    AC_MSG_RESULT([ok])
-    else
-    AC_MSG_ERROR([not found])
-    fi
-    IDLCMD="$WANT_OMNIORB/bin/omniidl -bcxx -Wbh=.h -Wbs=.cc";
-    IDLPYTHONCMD="$WANT_OMNIORB/bin/omniidl -bpython";
+    IDLPATH="$WANT_OMNIORB/bin/omniidl"
+    OMNIORB_LDFLAGS="-L'$WANT_OMNIORB/lib'";
   fi
-  USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
+  AC_PATH_PROG(IDLPATH,$IDLPATH,[no])
+  if test "$IDLPATH" = "no"; then
+    AC_MSG_ERROR([failed to find $IDLPATH])
+  fi
+  USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB"
+  # Cannot search for libs (C++ symbols) or includes (automatically generated; may differ between platforms)
+  IDLCMD="$IDLPATH -bcxx -Wbh=.h -Wbs=.cc";
+  IDLPYTHONCMD="$IDLPATH -bpython";
   QT_USE_CORBA="USE_OMNIORB"
-  if test "Darwin" = `uname`; then
-    CORBALIBS="$WANT_OMNIORB/lib/libomniORB4.a $WANT_OMNIORB/lib/libomnithread.a -lpthread"
-  else
-    CORBALIBS="-L'$WANT_OMNIORB/lib' -lomniORB4 -lomnithread -lpthread"
-  fi
+  CORBALIBS="$LIBS -lomniORB4 -lomnithread -lpthread"
   DESIRED_CORBA="omniorb"
   PYTHON_INTERFACE="yes"
 else
