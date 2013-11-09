@@ -551,8 +551,11 @@ void VariablesTreeModel::getVariableInformation(QString variableToFind, QString 
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0)
   {
-    *value = hash["start"];
     *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
+    if (*changeAble)
+      *value = hash["start"];
+    else
+      *value = "";
     *displayUnit = hash["displayUnit"];
     *description = hash["description"];
   }
