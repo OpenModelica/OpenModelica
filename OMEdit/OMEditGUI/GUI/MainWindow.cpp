@@ -1267,7 +1267,7 @@ void MainWindow::importModelfromOMNotebook()
   if (!file.open(QIODevice::ReadOnly))
   {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Error opening the file"), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName), Helper::ok);
     hideProgressBar();
     return;
   }

@@ -367,6 +367,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Error has occurred while loading the file/library <b>%1</b>. Unable to load the file/library.");
     case FILE_NOT_FOUND:
       return tr("The file <b>%1</b> not found.");
+    case ERROR_OPENING_FILE:
+      return tr("Error opening the file <b>%1</b>. %2");
     case UNABLE_TO_LOAD_MODEL:
       return tr("Error has occurred while loading the model : \n%1.");
     case DELETE_AND_LOAD:

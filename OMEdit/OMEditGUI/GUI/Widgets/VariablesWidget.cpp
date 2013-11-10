@@ -36,6 +36,7 @@
  */
 
 #include "VariablesWidget.h"
+#include "../../SimulationRuntime/c/util/read_matlab4.h"
 
 using namespace OMPlot;
 
@@ -429,8 +430,24 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   {
     MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
     pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                        tr("Unable to open the file %1").arg(initFile.fileName()), Helper::scriptingKind,
-                                                        Helper::errorLevel, 0, pMessagesWidget->getMessagesTreeWidget()));
+                                                        GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName()),
+                                                        Helper::scriptingKind, Helper::errorLevel, 0, pMessagesWidget->getMessagesTreeWidget()));
+  }
+  /* open the .mat file */
+  ModelicaMatReader matReader;
+  matReader.fileName = "";
+  const char *msg[] = {""};
+  if (fileName.endsWith(".mat"))
+    {
+    //Read in mat file
+    if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toStdString().c_str(), &matReader)))
+    {
+      MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
+      pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
+                                                          .arg(QString(msg[0])), Helper::scriptingKind, Helper::errorLevel, 0,
+                                                          pMessagesWidget->getMessagesTreeWidget()));
+    }
   }
   QStringList variables;
   foreach (QString plotVariable, variablesList)
@@ -477,7 +494,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* get the variable information i.e value, displayunit, description */
       QString value, displayUnit, description;
       bool changeAble = false;
-      getVariableInformation(variableToFind, &value, &changeAble, &displayUnit, &description);
+      getVariableInformation(&matReader, variableToFind, &value, &changeAble, &displayUnit, &description);
       variableData << StringHandler::unparse(QString("\"").append(value).append("\""));
       /* set the variable displayUnit */
       variableData << StringHandler::unparse(QString("\"").append(displayUnit).append("\""));
@@ -497,6 +514,12 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         parentVariable += "." + variable;
       count++;
     }
+  }
+  /* close the .mat file */
+  if (fileName.endsWith(".mat"))
+  {
+    if (matReader.file)
+      omc_free_matlab4_reader(&matReader);
   }
   mpVariablesTreeView->collapseAll();
   QModelIndex idx = variablesTreeItemIndex(pTopVariablesTreeItem);
@@ -545,19 +568,44 @@ VariablesTreeItem* VariablesTreeModel::getVariablesTreeItem(const QModelIndex &i
   return mpRootVariablesTreeItem;
 }
 
-void VariablesTreeModel::getVariableInformation(QString variableToFind, QString *value, bool *changeAble, QString *displayUnit,
-                                                QString *description)
+void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble,
+                                                QString *displayUnit, QString *description)
 {
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0)
   {
     *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
     if (*changeAble)
+    {
       *value = hash["start"];
-    else
-      *value = "";
+    }
     *displayUnit = hash["displayUnit"];
     *description = hash["description"];
+  }
+  /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
+  if (!*changeAble)
+  {
+    if (pMatReader->file && pMatReader->fileName != "")
+    {
+      *value = "";
+      if (variableToFind.compare("time") == 0)
+      {
+        *value = QString::number(omc_matlab4_stopTime(pMatReader));
+      }
+      else
+      {
+        ModelicaMatVariable_t *var;
+        if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toStdString().c_str())))
+        {
+          qDebug() << QString("%1 not found in %2").arg(variableToFind).arg(pMatReader->fileName);
+        }
+        double res;
+        if (!omc_matlab4_val(&res, pMatReader, var, omc_matlab4_stopTime(pMatReader)))
+        {
+          *value = QString::number(res);
+        }
+      }
+    }
   }
 }
 
@@ -1152,8 +1200,8 @@ void VariablesWidget::reSimulate()
     {
       MessagesWidget *pMessagesWidget = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getMessagesWidget();
       pMessagesWidget->addGUIMessage(new MessagesTreeItem("", false, 0, 0, 0, 0,
-                                                          tr("Unable to open the file %1").arg(initFile.fileName()), Helper::scriptingKind,
-                                                          Helper::errorLevel, 0, pMessagesWidget->getMessagesTreeWidget()));
+                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName()),
+                                                          Helper::scriptingKind, Helper::errorLevel, 0, pMessagesWidget->getMessagesTreeWidget()));
     }
     mpMainWindow->getSimulationDialog()->runSimulationExecutable(simulationOptions);
   }
