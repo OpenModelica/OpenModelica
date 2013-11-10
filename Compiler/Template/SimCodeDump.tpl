@@ -17,7 +17,7 @@ template dumpSimCodeToC(SimCode code, Boolean withOperations)
   match code
   case sc as SIMCODE(modelInfo=mi as MODELINFO(vars=vars as SIMVARS(__))) then
   let res =
-  'data->modelData.modelDataXml.infoXMLData = "<%Util.escapeModelicaStringToCString(dumpSimCodeBase(code,withOperations))%>";'
+  'data->modelData.modelDataXml.infoXMLData = <% strtok(dumpSimCodeBase(code,withOperations),"\n") |> str => '"<%Util.escapeModelicaStringToCString(str)%>\n"' ; separator = "\n" %>;'
   let() = textFile(res,'<%fileNamePrefix%>_info.c')
   '<%fileNamePrefix%>_info'
 end dumpSimCodeToC;
@@ -51,21 +51,31 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
     <%dumpVars(vars.extObjVars,withOperations)%>
     <%dumpVars(vars.constVars,withOperations)%>
   </variables>
-  <equations>
-    <%dumpEqs(SimCodeUtil.sortEqSystems(
-        listAppend(collectAllJacobianEquations(jacobianMatrixes),
-        listAppend(residualEquations,
-        listAppend(inlineEquations,
-        listAppend(startValueEquations,
-        listAppend(parameterEquations,
-        listAppend(initialEquations,
-        listAppend(algorithmAndEquationAsserts,
-        allEquations)))))))),withOperations)%>
+  <jacobian-equations>
+    <%dumpEqs(collectAllJacobianEquations(jacobianMatrixes),withOperations)%>
+  </jacobian-equations>
+  <initial-equations size="<%listLength(initialEquations)%>">
+    <%dumpEqs(SimCodeUtil.sortEqSystems(initialEquations),withOperations)%>
+  </initial-equations>
+  <residual-equations size="<%listLength(residualEquations)%>">
+    <%dumpEqs(residualEquations,withOperations)%>
+  </residual-equations>
+  <equations size="<%intAdd(listLength(inlineEquations),listLength(allEquations))%>">
+    <%dumpEqs(SimCodeUtil.sortEqSystems(listAppend(inlineEquations,allEquations)),withOperations)%>
   </equations>
-  <literals>
+  <start-equations size="<%listLength(startValueEquations)%>">
+    <%dumpEqs(startValueEquations,withOperations)%>
+  </start-equations>
+  <parameter-equations size="<%listLength(parameterEquations)%>">
+    <%dumpEqs(parameterEquations,withOperations)%>
+  </parameter-equations>
+  <assertions size="<%listLength(algorithmAndEquationAsserts)%>">
+    <%dumpEqs(algorithmAndEquationAsserts,withOperations)%>
+  </assertions>
+  <literals size="<%listLength(literals)%>">
     <% literals |> exp => '<exp><%printExpStrEscaped(exp)%></exp>' ; separator="\n" %>
   </literals>
-  <functions>
+  <functions size="<%listLength(mi.functions)%>">
     <% mi.functions |> func => match func
       case FUNCTION(__)
       case EXTERNAL_FUNCTION(__)

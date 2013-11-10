@@ -1581,12 +1581,13 @@ algorithm
       highestSimEqIndex = uniqueEqIndex;
       modelInfo = addTempVars(tempvars, modelInfo);
 
+      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+
       // Assertions and crap
       // create parameter equations
       ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}));
       ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
       (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization);
-      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
 
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});

@@ -894,6 +894,12 @@ package System
   function os
     output String str;
   end os;
+  
+  function strtok
+    input String s1;
+    input String s2;
+    output list<String> tokens;
+  end strtok;
 end System;
 
 
