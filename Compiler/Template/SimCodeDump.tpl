@@ -58,7 +58,7 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
     <%dumpEqs(SimCodeUtil.sortEqSystems(initialEquations),withOperations)%>
   </initial-equations>
   <residual-equations size="<%listLength(residualEquations)%>">
-    <%dumpEqs(residualEquations,withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(residualEquations),withOperations)%>
   </residual-equations>
   <equations size="<%intAdd(listLength(inlineEquations),listLength(allEquations))%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(listAppend(inlineEquations,allEquations)),withOperations)%>
@@ -67,7 +67,7 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
     <%dumpEqs(startValueEquations,withOperations)%>
   </start-equations>
   <parameter-equations size="<%listLength(parameterEquations)%>">
-    <%dumpEqs(parameterEquations,withOperations)%>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(parameterEquations),withOperations)%>
   </parameter-equations>
   <assertions size="<%listLength(algorithmAndEquationAsserts)%>">
     <%dumpEqs(algorithmAndEquationAsserts,withOperations)%>
