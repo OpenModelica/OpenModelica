@@ -579,33 +579,37 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     {
       *value = hash["start"];
     }
-    *displayUnit = hash["displayUnit"];
-    *description = hash["description"];
-  }
-  /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
-  if (!*changeAble)
-  {
-    if (pMatReader->file && pMatReader->fileName != "")
+    /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
+    else
     {
-      *value = "";
-      if (variableToFind.compare("time") == 0)
+      if (pMatReader->file && pMatReader->fileName != "")
       {
-        *value = QString::number(omc_matlab4_stopTime(pMatReader));
-      }
-      else
-      {
-        ModelicaMatVariable_t *var;
-        if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toStdString().c_str())))
+        *value = "";
+        if (variableToFind.compare("time") == 0)
         {
-          qDebug() << QString("%1 not found in %2").arg(variableToFind).arg(pMatReader->fileName);
+          *value = QString::number(omc_matlab4_stopTime(pMatReader));
         }
-        double res;
-        if (!omc_matlab4_val(&res, pMatReader, var, omc_matlab4_stopTime(pMatReader)))
+        else
         {
-          *value = QString::number(res);
+          ModelicaMatVariable_t *var;
+          if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toStdString().c_str())))
+          {
+            qDebug() << QString("%1 not found in %2").arg(variableToFind).arg(pMatReader->fileName);
+          }
+          double res;
+          if (var && !omc_matlab4_val(&res, pMatReader, var, omc_matlab4_stopTime(pMatReader)))
+          {
+            *value = QString::number(res);
+          }
         }
       }
     }
+    *displayUnit = hash["displayUnit"];
+    *description = hash["description"];
+  }
+  else if ((variableToFind.compare("time") == 0) && pMatReader->file && pMatReader->fileName != "")
+  {
+    *value = QString::number(omc_matlab4_stopTime(pMatReader));
   }
 }
 
