@@ -165,8 +165,6 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   Q_UNUSED(widget);
   if (mVisible)
     drawTextAnnotaion(painter);
-//  painter->scale(1.0, -1.0);
-//  painter->drawText(boundingRect(), "Adeel A");
 }
 
 void TextAnnotation::drawTextAnnotaion(QPainter *painter)
