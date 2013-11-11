@@ -7498,13 +7498,13 @@ algorithm
       equation
         name = ComponentReference.crefPrefixDer(name);
       then
-        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement, isValueChangeable);
+        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, NONE(), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement, false);
     case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), _, source, _, NONE(), numArrayElement, isValueChangeable))
       equation
         name = ComponentReference.crefPrefixDer(name);
         arrayCref = ComponentReference.crefPrefixDer(arrayCref);
       then
-        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement, isValueChangeable);
+        SimCode.SIMVAR(name, BackendDAE.STATE_DER(), comment, unit, displayUnit, index, minVal, maxVal, NONE(), nomVal, isFixed, type_, isDiscrete, SOME(arrayCref), SimCode.NOALIAS(), source, SimCode.INTERNAL(), NONE(), numArrayElement, false);
   end match;
 end derVarFromStateVar;
 
@@ -8884,6 +8884,33 @@ algorithm
       then
         SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */, 
         minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, isValueChangeable);
+    // Start value of states may be changeable
+    case ((v as BackendDAE.VAR(varName = cr, 
+      varKind = kind as BackendDAE.STATE(index=_), 
+      varDirection = dir,
+      arryDim = inst_dims, 
+      values = dae_var_attr, 
+      comment = comment, 
+      varType = tp, 
+      source = source)), _, vars)
+      equation
+        commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
+        (unit, displayUnit) = extractVarUnit(dae_var_attr);
+        (minValue, maxValue) = getMinMaxValues(dlowVar);
+        initVal = getInitialValue(dlowVar);
+        nomVal = getNominalValue(dlowVar);
+        checkInitVal(initVal, source);
+        isFixed = BackendVariable.varFixed(dlowVar);
+        type_ = tp;
+        isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
+        arrayCref = getArrayCref(cr);
+        aliasvar = getAliasVar(dlowVar, optAliasVars);
+        caus = getCausality(dlowVar, vars);
+        numArrayElement = List.map(inst_dims, ExpressionDump.subscriptString);
+        // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
+      then
+        SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */, 
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus, NONE(), numArrayElement, true);
     case ((v as BackendDAE.VAR(varName = cr, 
       varKind = kind, 
       varDirection = dir, 
