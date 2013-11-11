@@ -810,7 +810,7 @@ unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
   if (MMC_IS_INTEGER(p))
   {
     unsigned long l = (unsigned long)MMC_UNTAGFIXNUM(p);
-    return djb2_hash_iter((char*)&l, sizeof(unsigned long), hash);
+    return djb2_hash_iter((unsigned char*)&l, sizeof(unsigned long), hash);
   }
 
   phdr = MMC_GETHDR(p);
@@ -818,7 +818,7 @@ unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
   if( phdr == MMC_REALHDR )
   { 
     double d = mmc_unbox_real(p);
-    return djb2_hash_iter((char*)&d, sizeof(double), hash);
+    return djb2_hash_iter((unsigned char*)&d, sizeof(double), hash);
   }
 
   if( MMC_HDRISSTRING(phdr) )
@@ -833,7 +833,7 @@ unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
     int ctor = MMC_HDRCTOR(phdr);
     int is_record = slots>0 && ctor > 1 ? 1 : 0;
     pp = MMC_STRUCTDATA(p);
-    hash = djb2_hash_iter((char*)&ctor, sizeof(int), hash);
+    hash = djb2_hash_iter((unsigned char*)&ctor, sizeof(int), hash);
     if (slots == 0)
       return hash;
 
