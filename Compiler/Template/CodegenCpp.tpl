@@ -5122,7 +5122,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
      case IDENT(name="array") then
      <<
      <%arrIndex%> = 1;
-     simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);
+     <%res%>.resize(boost::extents[<%length%>]);
+     <%res%>.reindex(1);
      >>
      else if ri.defaultValue then
      <<
@@ -5159,6 +5160,12 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
       else 
        '<%loopVar%> = <%rangeExp%>;'
        end match
+  
+    let assign_res = match ri.path
+     case IDENT(name="array")  then
+        'assign_array(<% resTmp %>, <% res %>);'
+        else
+         '<% resTmp %> = <% res %>;'
   let &preExp += <<
   {
     <%&tmpVarDecls%>
@@ -5178,7 +5185,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
       <%loopTail%>
     <% if not ri.defaultValue then 'if (!<%foundFirst%>) MMC_THROW();' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
-    <% resTmp %> = <% res %>;
+   <%assign_res%>
   }<%\n%>
   >>
   resTmp
@@ -5892,7 +5899,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls)
     let arraytpye =  'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
     let &preExp += match context
-                        case FUNCTION_CONTEXT(__) then 'array_assign(<%retVar%>,<%funName%>(<%argStr%>));<%\n%>'
+                        case FUNCTION_CONTEXT(__) then 'assign_array(<%retVar%>,<%funName%>(<%argStr%>));<%\n%>'
                         else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'
 
 
@@ -6261,7 +6268,7 @@ template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
       case SLICE(__) then
         let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
         let tmp = tempDecl("int", &varDecls /*BUFD*/)
-        let &preExp += '<%tmp%> = size_of_dimension_integer_array(<%expPart%>, 1);<%\n%>'
+        let &preExp += '<%tmp%> = <%expPart%>.shape()[0]'
         <<
         (int) <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'
         >>
@@ -6928,7 +6935,7 @@ end expType;
 template expTypeArrayIf(DAE.Type ty)
  "Generate type helper."
 ::=
-  expTypeFlag(ty, 4)
+  expTypeFlag(ty, 6)
 end expTypeArrayIf;
 
 template expTypeArray1(DAE.Type ty, Integer dims) ::=
@@ -8358,14 +8365,14 @@ case STMT_ASSIGN_ARR(exp=RANGE(__), componentRef=cr, type_=t) then
 case STMT_ASSIGN_ARR(exp=e as CALL(__), componentRef=cr, type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode)
-  let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  /*let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   if ispec then
     <<
     STMT_ASSIGN_ARR CALL ispec
     <%preExp%>
     indexedAssign(t, expPart, cr, ispec, context, &varDecls)
     >>
-  else
+  else*/
   let cref = contextArrayCref(cr, context)
     <<
      <%preExp%>
@@ -8374,14 +8381,14 @@ case STMT_ASSIGN_ARR(exp=e as CALL(__), componentRef=cr, type_=t) then
 case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode)
-  let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  /*let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
   if ispec then
     <<
     STMT_ASSIGN_ARR cr ispec
     <%preExp%>
     indexedAssign(t, expPart, cr, ispec, context, &varDecls)
     >>
-  else
+  else*/
     <<
     <%preExp%>
     <%arrayCrefStr(cr)%> = <%expPart%>;
