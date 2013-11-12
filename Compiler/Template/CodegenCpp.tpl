@@ -2949,23 +2949,35 @@ case MODELINFO(vars=SIMVARS(__)) then
 template MemberVariableDefine(String type,SimVar simVar, String arrayName)
 ::=
 match simVar
-      case SIMVAR(numArrayElement={}) then
+      
+     case SIMVAR(numArrayElement={},arrayCref=NONE(),name=CREF_IDENT(subscriptLst=_::_)) then
+      <<
+      //<%variableType(type_)%> <%cref(name)%> ;
+      >>  
+    case SIMVAR(numArrayElement={},arrayCref=NONE()) then
       <<
       <%type%> <%cref(name)%>;
       >>
-    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) then
+    case v as SIMVAR(name=CREF_IDENT(__),arrayCref=SOME(_),numArrayElement=num) 
+    then
+      let &dims = buffer "" /*BUFD*/
+      let arrayName = arraycref2(name,dims)
       <<
-      multi_array<<%variableType(type_)%>,<%listLength(numArrayElement)%>> <%arraycref(name)%>;
+      multi_array<<%variableType(type_)%>,<%dims%>>  <%arrayName%>;
       >>
     case v as SIMVAR(name=CREF_QUAL(__),arrayCref=SOME(_),numArrayElement=num) then
+      let &dims = buffer "" /*BUFD*/
+      let arrayName = arraycref2(name,dims)
       <<
-      multi_array<<%variableType(type_)%>,<%listLength(numArrayElement)%>> <%arraycref(name)%>;
+      multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>; 
       >>
-       case SIMVAR(numArrayElement=_::_) then
+    case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
-      match dims case "0" then  '<%varType%> <%varName%>;'
+      match dims
+        case "0" then  '<%varType%> <%varName%>;'
+        else '/* <%varType%> <%varName%>; */'
 end MemberVariableDefine;
 
 template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre)
@@ -3026,7 +3038,7 @@ match simVar
       let &dims = buffer "" /*BUFD*/
       let arrayName = arraycref2(name,dims)
       <<
-      multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>;
+      multi_array<<%variableType(type_)%>,<%dims%>> <%arrayName%>; 
       >>
    /*special case for varibales that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
