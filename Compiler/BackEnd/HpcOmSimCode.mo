@@ -41,6 +41,7 @@ public import Absyn;
 public import BackendDAE;
 public import DAE;
 public import HashTableExpToIndex;
+public import HpcOmScheduler;
 public import SimCode;
 
 // protected imports
@@ -57,7 +58,6 @@ protected import Error;
 protected import Expression;
 protected import Flags;
 protected import GlobalScript;
-protected import HpcOmScheduler;
 protected import HpcOmTaskGraph;
 protected import List;
 protected import Matching;
@@ -147,10 +147,11 @@ algorithm
       HpcOmTaskGraph.TaskGraphMeta taskGraphData;
       HpcOmTaskGraph.TaskGraphMeta taskGraphDataOde;
       String fileName, fileNamePrefix;
+      Integer numProc;
       HpcOmTaskGraph.TaskGraphMeta taskGraphData1;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
-      Real cpCosts, cpCostsWoC;
+      Real cpCosts, cpCostsWoC, serTime, parTime, speedUp;
       
       //Additional informations to append SimCode
       list<DAE.Exp> simCodeLiterals;
@@ -174,6 +175,7 @@ algorithm
     
       //Setup
       //-----
+      numProc = Flags.getConfigInt(Flags.NUM_PROC);
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);  
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
@@ -235,6 +237,9 @@ algorithm
       //Create schedule
       //---------------
       schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix);
+      (serTime,parTime,speedUp) = HpcOmScheduler.predictExecutionTime(schedule,numProc,taskGraph1,taskGraphData1);
+      //print("The predicted SpeedUp with "+&intString(numProc)+&" processors is "+&realString(speedUp)+&".\n");
+      
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
       
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
@@ -640,6 +645,7 @@ algorithm
         targetSize = listLength(List.flatten(odeEqsIn));
         actualSize = arrayLength(taskGraphOdeIn);
         true = intEq(targetSize,actualSize);
+        //print("the ODE-system size is correct: "+&intString(targetSize)+&"\n");
         print("the ODE-system size is correct\n");
         then
           ();
