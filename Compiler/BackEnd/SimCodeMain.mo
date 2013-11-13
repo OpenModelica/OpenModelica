@@ -607,6 +607,10 @@ algorithm
         (daeElements,literals) = SimCodeUtil.findLiterals(daeElements);
         (fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
         makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
+        // remove OpenModelica.threadData.ThreadData
+        fns = removeThreadDataFunction(fns, {});
+        extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});
+        
         fnCode = SimCode.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
@@ -614,6 +618,72 @@ algorithm
         ();
   end match;
 end translateFunctions;
+
+protected function removeThreadDataRecord
+"remove OpenModelica.threadData.ThreadData 
+ as is already defined in openmodelica.h"
+  input list<SimCode.RecordDeclaration> inRecs;
+  input list<SimCode.RecordDeclaration> inAcc;
+  output list<SimCode.RecordDeclaration> outRecs;
+algorithm
+  outRecs := match(inRecs, inAcc)
+    local 
+      Absyn.Path p;
+      list<SimCode.RecordDeclaration> acc, rest;
+      SimCode.RecordDeclaration r;
+      
+    case ({}, _) then listReverse(inAcc);
+    
+    case (SimCode.RECORD_DECL_FULL(name = "OpenModelica_threadData_ThreadData")::rest, _)
+     equation
+       acc = removeThreadDataRecord(rest, inAcc); 
+     then 
+       acc;
+
+    case (SimCode.RECORD_DECL_DEF(path = Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData"))))::rest, _)
+     equation
+       acc = removeThreadDataRecord(rest, inAcc); 
+     then 
+       acc;
+
+    case (r::rest, _)
+     equation
+       acc = removeThreadDataRecord(rest, r::inAcc); 
+     then 
+       acc;
+  
+  end match;
+end removeThreadDataRecord;
+
+protected function removeThreadDataFunction
+"remove OpenModelica.threadData.ThreadData 
+ as is already defined in openmodelica.h"
+  input list<SimCode.Function> inFuncs;
+  input list<SimCode.Function> inAcc;
+  output list<SimCode.Function> outFuncs;
+algorithm
+  outFuncs := match(inFuncs, inAcc)
+    local 
+      Absyn.Path p;
+      list<SimCode.Function> acc, rest;
+      SimCode.Function f;
+      
+    case ({}, _) then listReverse(inAcc);
+    
+    case (SimCode.RECORD_CONSTRUCTOR(name = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("threadData",Absyn.IDENT("ThreadData")))))::rest, _)
+     equation
+       acc = removeThreadDataFunction(rest, inAcc); 
+     then 
+       acc;
+
+    case (f::rest, _)
+     equation
+       acc = removeThreadDataFunction(rest, f::inAcc); 
+     then 
+       acc;
+  
+  end match;
+end removeThreadDataFunction;
 
 public function getCalledFunctionsInFunction
 "Goes through the given DAE, finds the given function and collects

@@ -328,15 +328,18 @@ uniontype Function
 end Function;
 
 uniontype RecordDeclaration
+  
   record RECORD_DECL_FULL
     String name "struct (record) name ? encoded";
     Absyn.Path defPath "definition path";
     list<Variable> variables "only name and type";
   end RECORD_DECL_FULL;
+  
   record RECORD_DECL_DEF
     Absyn.Path path "definition path .. encoded?";
     list<String> fieldNames;
   end RECORD_DECL_DEF;
+
 end RecordDeclaration;
 
 uniontype SimExtArg
