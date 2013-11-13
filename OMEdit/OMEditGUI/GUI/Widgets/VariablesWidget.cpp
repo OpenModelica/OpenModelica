@@ -438,7 +438,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   matReader.fileName = "";
   const char *msg[] = {""};
   if (fileName.endsWith(".mat"))
-    {
+  {
     //Read in mat file
     if (0 != (msg[0] = omc_new_matlab4_reader(QString(filePath + "/" + fileName).toStdString().c_str(), &matReader)))
     {
@@ -1128,7 +1128,7 @@ void VariablesWidget::showContextMenu(QPoint point)
     pDeleteResultAction->setStatusTip(tr("Delete the result"));
     connect(pDeleteResultAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(removeVariableTreeItem()));
     /* re-simulate action */
-    QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.png"), Helper::simulate, this);
+    QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.png"), tr("Re-simulate"), this);
     pReSimulateAction->setData(pVariablesTreeItem->getSimulationOptions());
     pReSimulateAction->setStatusTip(Helper::simulateTip);
     pReSimulateAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid());
