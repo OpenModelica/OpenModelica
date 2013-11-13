@@ -3646,7 +3646,7 @@ algorithm
       BackendDAE.IncidenceMatrix  m;
       BackendDAE.IncidenceMatrixT  mt;
       BackendDAE.StrongComponent comp, comp1;
-      Integer index, uniqueEqIndex;
+      Integer index, uniqueEqIndex, uniqueEqIndexMapping;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       String msg;
@@ -3731,8 +3731,9 @@ algorithm
       disc_var = List.map1r(ivars, BackendVariable.getVarAt, vars);
       (_, {equation_}, uniqueEqIndex, tempvars) = createEquations(true, false, false, skipDiscInAlgorithm, false, syst, shared, {comp1}, iuniqueEqIndex, itempvars);
       simVarsDisc = List.map2(disc_var, dlowvarToSimvar, NONE(), knvars);
+      uniqueEqIndexMapping = uniqueEqIndex;
       (discEqs,uniqueEqIndex) = extractDiscEqs(disc_eqn, disc_var, uniqueEqIndex);
-      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndexMapping - 1), appendSccIdx, isccIndex, ieqSccMapping);
       // was madness        
     then ({SimCode.SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs, 0)}, {equation_}, uniqueEqIndex+1, tempvars, tmpEqSccMapping);
      
