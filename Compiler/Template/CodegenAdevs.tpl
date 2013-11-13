@@ -1035,6 +1035,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       }
       bound_params();
       // Calculate new state variable derivatives and algebraic variables
+      selectStateVars();
       calc_vars(NULL,true);
       // Calculate the new value of the objective function
       <%initialResidualEqns(residualEquations)%>
