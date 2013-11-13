@@ -3451,6 +3451,12 @@ algorithm
     case (DAE.GREATER(ty=_),_,_)
       then not simplifyRelationConst(DAE.LESSEQ(DAE.T_REAL_DEFAULT),e1,e2);
 
+    case (DAE.GREATEREQ(ty=_),_,_)
+      then not simplifyRelationConst(DAE.LESS(DAE.T_REAL_DEFAULT),e1,e2);
+
+    case(DAE.GREATER(ty=_),DAE.BCONST(false),DAE.BCONST(true))
+      then not simplifyRelationConst(DAE.LESSEQ(DAE.T_REAL_DEFAULT),e1,e2);
+
     case(DAE.GREATEREQ(ty=_),DAE.BCONST(false),DAE.BCONST(true))
       then not simplifyRelationConst(DAE.LESS(DAE.T_REAL_DEFAULT),e1,e2);
 
