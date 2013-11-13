@@ -1420,7 +1420,7 @@ algorithm
   size := arrayLength(iTaskGraph);
   taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size); 
   alapArray := computeALAP(iTaskGraph,iTaskGraphMeta);
-  printALAP(alapArray);
+  //printALAP(alapArray);
   alapLst := arrayList(alapArray);
   // get the order of the task, assign to processors
   (priorityLst,order) := quicksortWithOrder(alapLst);  
@@ -1828,7 +1828,6 @@ algorithm
   endNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
   alap := arrayCreate(size,0.0);
   alap := computeALAP1(iTaskGraph,taskGraphT,{},endNodes,iTaskGraphMeta,alap);
-  printALAP(alap);
   cp := Util.arrayFold(alap,realMax,0.0);
   alap := Util.arrayMap1(alap,realSubr,cp);
   alapOut := alap;
@@ -2079,7 +2078,7 @@ algorithm
         taskIdcs = arrayCreate(arrayLength(threadTasks),1);  // the TaskIdcs to be checked for every thread
         taskGraphT = BackendDAEUtil.transposeMatrix(taskGraphIn,arrayLength(taskGraphIn));
         checkedTasks = arrayCreate(arrayLength(taskGraphIn),TASKEMPTY());
-        threadTasksNew = computeTimeFinished(threadTasks,taskIdcs,1,checkedTasks,taskGraphIn,taskGraphT,taskGraphMetaIn,numProc,0);
+        threadTasksNew = computeTimeFinished(threadTasks,taskIdcs,1,checkedTasks,taskGraphIn,taskGraphT,taskGraphMetaIn,numProc,{});
         finTimes = Util.arrayMap(threadTasksNew,getTimeFinishedOfLastTask);
         finTime = Util.arrayFold(finTimes,realMax,0.0);
         schedule = THREADSCHEDULE(threadTasksNew,lockIdc);
@@ -2134,14 +2133,15 @@ author:Waurich TUD 2013-11"
   input HpcOmTaskGraph.TaskGraph taskGraphTIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   input Integer numProc;
-  input Integer numReadyThreads;
+  input list<Integer> closedThreads;
   output array<list<Task>> threadTasksOut;
 algorithm
-  threadTasksOut := matchcontinue(threadTasksIn,taskIdcsIn,threadIdxIn,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,numReadyThreads)
+  threadTasksOut := matchcontinue(threadTasksIn,taskIdcsIn,threadIdxIn,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads)
     local
       Boolean isCalc, isComputable;
-      Integer taskIdx,nextThreadIdx;
+      Integer taskIdx, nextThreadIdx, nextTaskIdx;
       array<Integer> taskIdcs;
+      list<Integer> closedThreads1;
       Task task;
       array<list<Task>> threadTasks;
       array<Task> checkedTasks;
@@ -2155,10 +2155,10 @@ algorithm
         true = taskIdx <= listLength(thread);
         task = listGet(thread,taskIdx); 
         //compute timeFinished for the task
-        (threadTasks,checkedTasks) = updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
-        taskIdcs = arrayUpdate(taskIdcsIn,threadIdxIn,taskIdx+1);
-        nextThreadIdx = Util.if_(intGe(threadIdxIn,numProc),1,threadIdxIn+1);
-        threadTasks = computeTimeFinished(threadTasks,taskIdcs,nextThreadIdx,checkedTasks,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,numReadyThreads);
+        (threadTasks,checkedTasks,nextTaskIdx) = updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
+        taskIdcs = arrayUpdate(taskIdcsIn,threadIdxIn,nextTaskIdx);
+        nextThreadIdx = getNextThreadIdx(threadIdxIn,closedThreads,numProc);
+        threadTasks = computeTimeFinished(threadTasks,taskIdcs,nextThreadIdx,checkedTasks,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads);
       then
         threadTasks;
     case(_,_,_,_,_,_,_,_,_)
@@ -2166,7 +2166,7 @@ algorithm
         // next thread
         true = threadIdxIn > arrayLength(taskIdcsIn);
         nextThreadIdx = Util.if_(intGe(threadIdxIn,numProc),1,threadIdxIn+1);
-        threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,numReadyThreads);
+        threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads);
       then 
         threadTasks;
     case(_,_,_,_,_,_,_,_,_)
@@ -2176,15 +2176,17 @@ algorithm
         taskIdx = arrayGet(taskIdcsIn,threadIdxIn); 
         thread = arrayGet(threadTasksIn,threadIdxIn);
         true = taskIdx > listLength(thread);
-        false = numReadyThreads == numProc;
+        false = listLength(closedThreads) == numProc;
         nextThreadIdx = Util.if_(intGe(threadIdxIn,numProc),1,threadIdxIn+1);
-        threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,numReadyThreads+1);
+        closedThreads1 = threadIdxIn::closedThreads;
+        closedThreads1 = List.unique(closedThreads1);
+        threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads1);
       then 
         threadTasks;
     case(_,_,_,_,_,_,_,_,_)
       equation
         // done with all threads
-        true = numReadyThreads == numProc;
+        true = listLength(closedThreads) == numProc;
       then 
         threadTasksIn;
     else
@@ -2194,6 +2196,24 @@ algorithm
         fail();      
   end matchcontinue;
 end computeTimeFinished;
+
+
+protected function getNextThreadIdx "computes the index of the next thread that should be analysed.
+The closed threads are not possible and if the last thread is input, the first is chosen.
+author:Waurich TUD 2013-11"
+  input Integer threadId;
+  input list<Integer> closedThreads;
+  input Integer numThreads;
+  output Integer nextThreadOut;
+protected
+  Boolean isLastThread, isClosed;
+  Integer nextThread;
+algorithm
+  isLastThread := intEq(threadId,numThreads);
+  nextThread := Util.if_(isLastThread,1,threadId+1);
+  isClosed := List.isMemberOnTrue(nextThread,closedThreads,intEq);
+  nextThreadOut := Debug.bcallret3(isClosed, getNextThreadIdx, nextThread, closedThreads, numThreads, nextThread);
+end getNextThreadIdx;
 
 
 protected function updateFinishingTime "updates the finishing times.
@@ -2207,11 +2227,12 @@ author:Waurich TUD 2013-11"
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   output array<list<Task>> threadTasksOut;
   output array<Task> checkedTasksOut;
+  output Integer taskIdxOut;
 algorithm
-  (threadTasksOut,checkedTasksOut) := match(taskIn,taskIdxIn,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn)
+  (threadTasksOut,checkedTasksOut,taskIdxOut) := match(taskIn,taskIdxIn,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn)
     local
       Boolean isComputable;
-      Integer taskID;
+      Integer taskID, taskIdxNew;
       Real finishingTime;
       list<Integer> parentLst;
       Task latestTask,startTask;
@@ -2223,20 +2244,23 @@ algorithm
         // gets the parentIdcs which are not yet checked and computes the latest finishingTime of all parentNodes
         ((parentLst, latestTask)) = List.fold1(parentLst, updateFinishingTime1, checkedTasksIn, ({},TASKEMPTY()));   
         isComputable = List.isEmpty(parentLst);
+        taskIdxNew = Util.if_(isComputable,taskIdxIn+1,taskIdxIn);
         //update the threadTasks and checked Tasks
         ((threadTasks,checkedTasks)) = Debug.bcallret1(isComputable, computeFinishingTimeForOneTask, (threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn),(threadTasksIn,checkedTasksIn));
       then 
-        (threadTasks,checkedTasks);
+        (threadTasks,checkedTasks,taskIdxNew);
     case(ASSIGNLOCKTASK(lockId=_),_,_,_,_,_,_)
       equation
         //skip the assignlock
+        taskIdxNew = taskIdxIn+1;
       then
-        (threadTasksIn,checkedTasksIn);
+        (threadTasksIn,checkedTasksIn,taskIdxNew);
     case(RELEASELOCKTASK(lockId=_),_,_,_,_,_,_)
       equation
         //skip the releaselock
+        taskIdxNew = taskIdxIn+1;
       then
-        (threadTasksIn,checkedTasksIn);
+        (threadTasksIn,checkedTasksIn,taskIdxNew);
   end match;
 end updateFinishingTime;
 
@@ -2249,7 +2273,7 @@ author:Waurich TUD 2013-11"
   output tuple<list<Integer>,Task> tplOut;
 protected
   Boolean isCalc;
-  Real finishingTime, finishingTimeIn;
+  Real finishingTime, finishingTime1, finishingTimeIn;
   list<Integer> parentLst, parentLstIn;
   Task task, taskIn;
 algorithm
@@ -2275,9 +2299,9 @@ algorithm
       array<list<Task>> threadTasks,threadTasksIn;
       array<Task> checkedTasksIn, checkedTasks;
       Integer commCost, taskIdx,taskIdxLatest, taskNum, threadIdx, threadIdxLatest;
-      Real finishingTime, finishingTimeComm, exeCost, commCostR;
+      Real finishingTime, finishingTime1, finishingTimeComm, exeCost, commCostR;
       HpcOmTaskGraph.TaskGraphMeta taskGraphMeta;
-      Task task, latestTask;
+      Task task, latestTask, preTask;
       list<Task> thread;
     case((threadTasksIn,checkedTasksIn,taskNum,threadIdx,latestTask,taskGraphMeta))
       // a rootNode
@@ -2286,8 +2310,8 @@ algorithm
         thread = arrayGet(threadTasksIn,threadIdx);
         task = listGet(thread,taskNum);
         threadIdx = getThreadId(task);
-        latestTask = getPredecessorCalcTask(thread,taskNum);
-        finishingTime = getTimeFinished(latestTask);
+        preTask = getPredecessorCalcTask(thread,taskNum);
+        finishingTime = getTimeFinished(preTask);
         taskIdx = getTaskIdx(task);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
         finishingTime = finishingTime +. exeCost;
@@ -2307,12 +2331,19 @@ algorithm
         thread = arrayGet(threadTasksIn,threadIdx);
         task = listGet(thread,taskNum);
         taskIdx = getTaskIdx(task);
+        // get the costs for the node which is computed after the latest parent and decide whether to take commCost into account or not
         ((_,_,commCost)) = HpcOmTaskGraph.getCommCostBetweenNodes(taskIdxLatest,taskIdx,taskGraphMeta);
         commCostR = intReal(commCost);
         ((_,exeCost)) = HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
         finishingTime = finishingTime +. exeCost;
         finishingTimeComm = finishingTime +. commCostR;
         finishingTime = Util.if_(intEq(threadIdxLatest,threadIdx),finishingTime,finishingTimeComm);
+        // choose if the parentTask or the preTask(task on the same processor) is later.
+        preTask = getPredecessorCalcTask(thread,taskNum);
+        finishingTime1 = getTimeFinished(preTask);
+        finishingTime1 = finishingTime1 +. exeCost;
+        finishingTime = realMax(finishingTime,finishingTime1);
+        // update
         task = updateTimeFinished(task, finishingTime);
         thread = List.replaceAt(task,taskNum-1,thread);
         threadTasks = arrayUpdate(threadTasksIn,threadIdx,thread);
