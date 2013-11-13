@@ -53,6 +53,7 @@
  */
 #include "rtclock.h"
 #include "omc_error.h"
+#include "options.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>
@@ -146,6 +147,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   solverInfo->didEventStep = 0;
   solverInfo->stateEvents = 0;
   solverInfo->sampleEvents = 0;
+  solverInfo->stepPrecision = 15;
 
   if(solverInfo->solverMethod == 2)
   {
@@ -421,7 +423,11 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   {
     data->simulationInfo.terminal = 1;
     updateDiscreteSystem(data);
-    sim_result.emit(&sim_result,data);
+    
+    /* prevent emit if noeventemit flag is used */
+    if (!(omc_flag[FLAG_NOEVENTEMIT]))
+      sim_result.emit(&sim_result,data);
+
     data->simulationInfo.terminal = 0;
   }
   communicateStatus("Finished", 1);
@@ -597,12 +603,20 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   modelica_real* stateDer = sDataOld->realVars + data->modelData.nStates;
 
+   /* adjust next time step by rounding. No rounding, 
+   * when time event is activated, since then currectStepSize is exact */
+  if (data->simulationInfo.sampleActivated){
+    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
+  } else {
+    solverInfo->currentTime = _omc_round(sDataOld->timeValue + solverInfo->currentStepSize, solverInfo->stepPrecision);
+    solverInfo->currentStepSize = solverInfo->currentTime - sDataOld->timeValue;
+  }
+
   for(i = 0; i < data->modelData.nStates; i++)
   {
     sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
   }
-  sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
-  solverInfo->currentTime += solverInfo->currentStepSize;
+  sData->timeValue = solverInfo->currentTime;
   return 0;
 }
 
@@ -617,6 +631,14 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
   modelica_real* stateDer = sData->realVars + data->modelData.nStates;
   modelica_real* stateDerOld = sDataOld->realVars + data->modelData.nStates;
 
+  /* adjust next time step by rounding. No rounding, 
+   * when time event is activated, since then currectStepSize is exact */
+  if (data->simulationInfo.sampleActivated){
+    solverInfo->currentTime = sDataOld->timeValue + solverInfo->currentStepSize;
+  } else {
+    solverInfo->currentTime = _omc_round(sDataOld->timeValue + solverInfo->currentStepSize, solverInfo->stepPrecision);
+    solverInfo->currentStepSize = solverInfo->currentTime - sDataOld->timeValue;
+  }
 
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
@@ -648,8 +670,7 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
     }
     sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * sum;
   }
-  sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
-  solverInfo->currentTime += solverInfo->currentStepSize;
+  sData->timeValue = solverInfo->currentTime;
   return 0;
 }
 

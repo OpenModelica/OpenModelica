@@ -31,6 +31,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./openmodelica.h \
 ./simulation_data.h \
 ./simulation/modelinfo.h \
+./simulation/options.h \
 ./simulation/simulation_info_xml.h \
 ./simulation/simulation_runtime.h \
 ./simulation/solver/delay.h \
@@ -57,6 +58,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./util/real_array.h \
 ./util/ringbuffer.h \
 ./util/rtclock.h \
+./util/simulation_options.h \
 ./util/string_array.h \
 ./util/utility.h \
 ./util/varinfo.h \

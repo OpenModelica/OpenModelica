@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
+#include <math.h>
 
 #include "simulation_data.h"
 #include "openmodelica_func.h"
@@ -1177,5 +1178,18 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
 }
 
 
-
+/*! \fn _omc_round
+ *
+ *  \param [in]  [x]
+ *  \param [in]  [precision]
+ *
+ * Returns a round value of x with a certain presision.
+ */
+modelica_real _omc_round(modelica_real x, modelica_integer precision)
+{
+  ASSERT(precision<20, "_omc_round fails with presision > 19");
+  double p = (double) pow(10, precision);
+  double trunc = round(x * p);
+  return (modelica_real) (trunc / p);
+}
 

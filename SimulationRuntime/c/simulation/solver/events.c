@@ -30,6 +30,7 @@
 
 #include "events.h"
 #include "omc_error.h"
+#include "options.h"
 #include "simulation_data.h"
 #include "simulation_result.h"
 #include "openmodelica.h"         /* for modelica types */
@@ -192,7 +193,9 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
   long i;
   LIST_NODE* it;
 
-  sim_result.emit(&sim_result,data);
+  /* prevent emit if noeventemit flag is used */
+  if (!(omc_flag[FLAG_NOEVENTEMIT]))
+    sim_result.emit(&sim_result,data);
 
   /* time event */
   if(data->simulationInfo.sampleActivated)

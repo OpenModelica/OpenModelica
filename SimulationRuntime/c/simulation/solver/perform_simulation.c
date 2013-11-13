@@ -40,6 +40,7 @@
 #include "openmodelica_func.h"
 
 #include "omc_error.h"
+#include "options.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>
@@ -274,7 +275,13 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
           fmt = NULL;
         }
       }
-      sim_result.emit(&sim_result,data);
+      /* prevent emit if noeventemit flag is used, if it's an event */
+      if ((omc_flag[FLAG_NOEVENTEMIT])){
+        if (solverInfo->didEventStep == 0)
+          sim_result.emit(&sim_result,data);
+      } else {
+        sim_result.emit(&sim_result,data);
+      }
 
       printAllVarsDebug(data, 0, LOG_DEBUG);  /* ??? */
 
