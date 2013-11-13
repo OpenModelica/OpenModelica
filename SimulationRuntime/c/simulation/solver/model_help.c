@@ -1183,13 +1183,14 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
  *  \param [in]  [x]
  *  \param [in]  [precision]
  *
- * Returns a round value of x with a certain presision.
+ * Returns a round value of x with a certain precision.
  */
 modelica_real _omc_round(modelica_real x, modelica_integer precision)
 {
-  ASSERT(precision<20, "_omc_round fails with presision > 19");
-  double p = (double) pow(10, precision);
-  double trunc = round(x * p);
+  double p, trunc;
+  ASSERT(precision < 20, "_omc_round fails with precision > 19");
+  p = (double) pow(10, precision);
+  trunc = round(x * p);
   return (modelica_real) (trunc / p);
 }
 
