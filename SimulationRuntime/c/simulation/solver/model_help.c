@@ -40,6 +40,8 @@
 #include "varinfo.h"
 #include "model_help.h"
 #include "simulation_info_xml.h"
+#include "omc_msvc.h" /* for freaking round! */
+
 
 static const int IterationMax = 200;
 const size_t SIZERINGBUFFER = 3;

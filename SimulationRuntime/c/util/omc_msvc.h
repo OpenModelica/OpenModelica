@@ -56,7 +56,7 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define WIN32
 #endif
 
-#define round(dbl) (dbl >= 0.0 ? (int)(dbl + 0.5) : ((dbl - (double)(int)dbl) <= -0.5 ? (int)dbl : (int)(dbl - 0.5)))
+#define round(dbl) ((dbl) < 0.0 ? ceil((dbl) - 0.5) : floor((dbl) + 0.5))
 #define geteuid(void) (-1)
 
 #if defined(_WIN32) || defined(_WIN64)
