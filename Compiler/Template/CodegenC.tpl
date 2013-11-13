@@ -1882,30 +1882,138 @@ template functionXXX_system_HPCOM(list<SimEqSystem> derivativEquations, String n
       }
       >>
    case SOME(hpcOmSchedule as THREADSCHEDULESC(__)) then
-      let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks)
-      let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx); separator="\n"
-      let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx); separator="\n"
-      let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx); separator="\n"
-      <<
-      static int initialized = 0;
-      static void function<%name%>_system<%n%>(DATA *data)
-      {
-        omp_set_dynamic(0);
-        //create locks
-        <%locks%>
-        if(!initialized)
-        {
-            <%initlocks%>
+      let type = getConfigString(HPCOM_CODE)
+      
+      let locks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_createLock(idx, "lock", type); separator="\n"
+      let initlocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_initializeLock(idx, "lock", type); separator="\n"
+      let assignLocks = hpcOmSchedule.lockIdc |> idx => function_HPCOM_assignLock(idx, "lock", type); separator="\n"
+      match type 
+        case ("openmp") then
+          let taskEqs = functionXXX_system0_HPCOM_Thread(derivativEquations,name,hpcOmSchedule.threadTasks, type); separator="\n"
+          <<
+          //using type: <%type%>
+          static int initialized = 0;
+          static void function<%name%>_system<%n%>(DATA *data)
+          {
+            omp_set_dynamic(0);
+            //create locks
+            <%locks%>
+            if(!initialized)
+            {
+                <%initlocks%>
+                
+                //set locks
+                <%assignLocks%>
+                
+                initialized = 1;
+            }
             
-            //set locks
-            <%assignLocks%>
+            <%taskEqs%>
+          }
+          >>
+        case ("pthreads") then
+          let threadDecl = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
+          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0); separator="\n"
+          let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
+          let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
+          
+          let threadLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock", type); separator="\n"
+          let threadLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock1", type); separator="\n"
+          let threadLocksInit = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", type); separator="\n"
+          let threadLocksInit1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock1", type); separator="\n"
+          let threadAssignLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock", type); separator="\n"
+          let threadAssignLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock1", type); separator="\n"
+          let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", type); separator="\n"
+          
+          <<
+          <%threadDecl%>
+          
+          <%locks%>
+          
+          <%threadLocks%>
+          <%threadLocks1%>
+          
+          <%threadFuncs%>
+          
+          //using type: <%type%>
+          static int initialized = 0;
+          static void function<%name%>_system<%n%>(DATA *data)
+          {
+            if(!initialized)
+            {
+                <%initlocks%>
+                <%threadLocksInit%>
+                <%threadLocksInit1%>
+                
+                //set locks
+                <%assignLocks%>
+                
+                <%threadAssignLocks%>
+                <%threadAssignLocks1%>
+                
+                <%threadFuncCalls%>
+                initialized = 1;
+            }
             
-            initialized = 1;
-        }
-        
-        <%taskEqs%>
-      }
-      >>      
+            //Start the threads
+            <%threadReleaseLocks%>
+            
+            //"join"
+            <%threadAssignLocks1%>
+          }
+          >>
+        case ("pthreads_spin") then
+          let threadDecl = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_decl(i0); separator="\n"
+          let threadFuncs = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_func(derivativEquations, name, n, hpcOmSchedule.threadTasks, type, i0); separator="\n"
+          let threadFuncCalls = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_call(name, n, i0); separator="\n"
+          let threadStart = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => functionXXX_system0_HPCOM_PThread_start(i0); separator="\n"
+          
+          let threadLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_createLock(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadLocksInit = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock", "pthreads"); separator="\n"
+          let threadLocksInit1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_initializeLock(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadAssignLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock", "pthreads"); separator="\n"
+          let threadAssignLocks1 = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_assignLock(i0, "th_lock1", "pthreads"); separator="\n"
+          let threadReleaseLocks = hpcOmSchedule.threadTasks |> tt hasindex i0 fromindex 0 => function_HPCOM_releaseLock(i0, "th_lock", "pthreads"); separator="\n"
+          
+          <<
+          <%threadDecl%>
+          
+          <%locks%>
+          
+          <%threadLocks%>
+          <%threadLocks1%>
+          
+          <%threadFuncs%>
+          
+          //using type: <%type%>
+          static int initialized = 0;
+          static void function<%name%>_system<%n%>(DATA *data)
+          {
+            if(!initialized)
+            {
+                <%initlocks%>
+                <%threadLocksInit%>
+                <%threadLocksInit1%>
+                
+                //set locks
+                <%assignLocks%>
+                
+                <%threadAssignLocks%>
+                <%threadAssignLocks1%>
+                
+                <%threadFuncCalls%>
+                initialized = 1;
+            }
+            
+            //Start the threads
+            <%threadReleaseLocks%>
+            
+            //"join"
+            <%threadAssignLocks1%>
+          }
+          >>
+   
 end functionXXX_system_HPCOM;
 
 template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, String name, list<Integer> eqsOfLevel)
@@ -1920,29 +2028,50 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, S
   >>
 end functionXXX_system0_HPCOM_Level;
 
-template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks)
+template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, String name, list<list<Task>> threadTasks, String iType)
 ::=
-  let odeEqs = threadTasks |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt); separator="\n"
-  <<
-  #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
-  {
-     <%odeEqs%>
-  }
-  >>
+  let odeEqs = threadTasks |> tt => functionXXX_system0_HPCOM_Thread0(derivativEquations,name,tt,iType); separator="\n"
+  match iType 
+    case ("openmp") then
+      <<
+      #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
+      {
+         <%odeEqs%>
+      }
+      >>
+    case ("pthreads") then
+      <<
+      //not implemented
+      >>
+    case ("pthreads_spin") then
+      <<
+      //not implemented
+      >>
+
 end functionXXX_system0_HPCOM_Thread;
 
-template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations, String name, list<Task> threadTaskList)
+template functionXXX_system0_HPCOM_Thread0(list<SimEqSystem> derivativEquations, String name, list<Task> threadTaskList, String iType)
 ::=
-  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(derivativEquations,name,tt); separator="\n"
-  <<
-  #pragma omp section
-  {
-    <%threadTasks%>
-  }
-  >>
+  let threadTasks = threadTaskList |> tt => function_HPCOM_Task(derivativEquations,name,tt,iType); separator="\n"
+  match iType 
+    case ("openmp") then
+      <<
+      #pragma omp section
+      {
+        <%threadTasks%>
+      }
+      >>
+    case ("pthreads") then
+      <<
+      <%threadTasks%>
+      >>
+    case ("pthreads_spin") then
+      <<
+      <%threadTasks%>
+      >>
 end functionXXX_system0_HPCOM_Thread0;
 
-template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, Task iTask)
+template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, Task iTask, String iType)
 ::=
   match iTask 
     case (task as CALCTASK(__)) then
@@ -1953,37 +2082,125 @@ template function_HPCOM_Task(list<SimEqSystem> derivativEquations, String name, 
       // End Task <%task.index%>
       >>
     case (task as ASSIGNLOCKTASK(__)) then
+      let assLck = function_HPCOM_assignLock(task.lockId, "lock", iType); separator="\n"
       <<
       //Assign lock <%task.lockId%>
-      omp_set_lock(&lock_<%task.lockId%>);
+      <%assLck%>
       >>
     case (task as RELEASELOCKTASK(__)) then
+      let relLck = function_HPCOM_releaseLock(task.lockId, "lock", iType); separator="\n"
       <<
       //Release lock <%task.lockId%>
-      omp_unset_lock(&lock_<%task.lockId%>);
+      <%relLck%>
       >>
 end function_HPCOM_Task;
 
-template function_HPCOM_initializeLock(String lockIdx)
+template function_HPCOM_initializeLock(String lockIdx, String lockPrefix, String iType)
 ::=
-  <<
-  omp_init_lock(&lock_<%lockIdx%>);
-  >>
+  match iType 
+    case ("openmp") then
+      <<
+      omp_init_lock(&<%lockPrefix%>_<%lockIdx%>);
+      >>
+    case ("pthreads") then
+      <<
+      pthread_mutex_init(&<%lockPrefix%>_<%lockIdx%>, NULL);
+      >>
+    case ("pthreads_spin") then
+      <<
+      pthread_spin_init(&<%lockPrefix%>_<%lockIdx%>, 0);
+      >>
 end function_HPCOM_initializeLock;
 
-template function_HPCOM_createLock(String lockIdx)
+template function_HPCOM_createLock(String lockIdx, String prefix, String iType)
 ::=
-  <<
-  static omp_lock_t lock_<%lockIdx%>;
-  >>
+  match iType 
+    case ("openmp") then
+      <<
+      static omp_lock_t <%prefix%>_<%lockIdx%>;
+      >>
+    case ("pthreads") then
+      <<
+      static pthread_mutex_t <%prefix%>_<%lockIdx%>;
+      >>
+    case ("pthreads_spin") then
+      <<
+      static pthread_spinlock_t <%prefix%>_<%lockIdx%>;
+      >>
 end function_HPCOM_createLock;
 
-template function_HPCOM_assignLock(String lockIdx)
+template function_HPCOM_assignLock(String lockIdx, String prefix, String iType)
+::=
+  match iType 
+    case ("openmp") then
+      <<
+      omp_set_lock(&<%prefix%>_<%lockIdx%>);
+      >>
+    case ("pthreads") then
+      <<
+      pthread_mutex_lock(&<%prefix%>_<%lockIdx%>);
+      >>
+    case ("pthreads_spin") then
+      <<
+      pthread_spin_lock(&<%prefix%>_<%lockIdx%>);
+      >>
+end function_HPCOM_assignLock;
+
+template function_HPCOM_releaseLock(String lockIdx, String prefix, String iType)
+::=
+  match iType 
+    case ("openmp") then
+      <<
+      omp_unset_lock(&<%prefix%>_<%lockIdx%>);
+      >>
+    case ("pthreads") then
+      <<
+      pthread_mutex_unlock(&<%prefix%>_<%lockIdx%>);
+      >>
+    case ("pthreads_spin") then
+      <<
+      pthread_spin_unlock(&<%prefix%>_<%lockIdx%>);
+      >>
+end function_HPCOM_releaseLock;
+
+template functionXXX_system0_HPCOM_PThread_func(list<SimEqSystem> derivativEquations, String name, Integer n, list<list<Task>> threadTasks, String iType, Integer idx)
+::=
+  let taskEqs = functionXXX_system0_HPCOM_Thread0(derivativEquations, name, listNth(threadTasks,idx), iType); separator="\n"
+  let assLock = function_HPCOM_assignLock(idx, "th_lock", "pthreads"); separator="\n"
+  let relLock = function_HPCOM_releaseLock(idx, "th_lock1", "pthreads"); separator="\n"
+  <<
+  static void function<%name%>_system<%n%>_thread_<%idx%>(DATA *data)
+  { 
+    while(1)
+    {
+      <%assLock%>
+      <%taskEqs%>
+      <%relLock%>
+    }
+  }
+  >>
+end functionXXX_system0_HPCOM_PThread_func;
+
+template functionXXX_system0_HPCOM_PThread_call(String name, Integer n, Integer idx)
 ::=
   <<
-  omp_set_lock(&lock_<%lockIdx%>);
+  pthread_create(&odeThread_<%idx%>, NULL, function<%name%>_system<%n%>_thread_<%idx%>, data);
   >>
-end function_HPCOM_assignLock;
+end functionXXX_system0_HPCOM_PThread_call;
+
+template functionXXX_system0_HPCOM_PThread_decl(Integer idx)
+::=
+  <<
+  static pthread_t odeThread_<%idx%>;
+  >>
+end functionXXX_system0_HPCOM_PThread_decl;
+
+template functionXXX_system0_HPCOM_PThread_start(Integer idx)
+::=
+  <<
+  pthread_mutex_lock(&th_unlock_<%idx%>);
+  >>
+end functionXXX_system0_HPCOM_PThread_start;
 
 template equationNamesHPCOM_Thread_(Integer idx, list<SimEqSystem> derivativEquations, Context context)
  "Generates an equation.
@@ -1998,17 +2215,20 @@ case SIMULATION_CONTEXT(genDiscrete=true) then
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
-  #pragma omp section
-  {
-  #ifdef _OMC_MEASURE_TIME
-   //SIM_PROF_TICK_EQEXT(<%ix%>);
-  #endif
   eqFunction_<%ix%>(data);
-  #ifdef _OMC_MEASURE_TIME
-   //SIM_PROF_ACC_EQEXT(<%ix%>);
-  #endif
-  }
   >>
+  //<<
+  //#pragma omp section
+  //{
+  //#ifdef _OMC_MEASURE_TIME
+  //  SIM_PROF_TICK_EQEXT(<%ix%>);
+  //#endif
+  //eqFunction_<%ix%>(data);
+  //#ifdef _OMC_MEASURE_TIME
+  //  SIM_PROF_ACC_EQEXT(<%ix%>);
+  //#endif
+  //}
+  //>>
 else
  match getSimCodeEqByIndex(derivativEquations, idx)
   case e as SES_ALGORITHM(statements={})
@@ -2016,14 +2236,17 @@ else
   else
   let ix = equationIndex(getSimCodeEqByIndex(derivativEquations, idx))
   <<
-  #ifdef _OMC_MEASURE_TIME
-   //SIM_PROF_TICK_EQEXT(<%ix%>);
-  #endif
   eqFunction_<%ix%>(data);
-  #ifdef _OMC_MEASURE_TIME
-   //SIM_PROF_ACC_EQEXT(<%ix%>);
-  #endif
   >>
+  //<<
+  //#ifdef _OMC_MEASURE_TIME
+  //  SIM_PROF_TICK_EQEXT(<%ix%>);
+  //#endif
+  //eqFunction_<%ix%>(data);
+  //#ifdef _OMC_MEASURE_TIME
+  //  SIM_PROF_ACC_EQEXT(<%ix%>);
+  //#endif
+  //>>
 end equationNamesHPCOM_Thread_;
 
 template equationNamesHPCOM_(Integer idx, list<SimEqSystem> derivativEquations, Context context)

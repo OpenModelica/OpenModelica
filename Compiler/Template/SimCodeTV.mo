@@ -2556,6 +2556,7 @@ package Flags
   constant DebugFlag GEN_DEBUG_SYMBOLS;
   constant DebugFlag WRITE_TO_BUFFER;
   constant ConfigFlag NUM_PROC;
+  constant ConfigFlag HPCOM_CODE;
 
   function isSet
     input DebugFlag inFlag;
@@ -2566,6 +2567,11 @@ package Flags
     input ConfigFlag inFlag;
     output Integer outValue;
   end getConfigInt;
+  
+  function getConfigString
+    input ConfigFlag inFlag;
+    output String outValue;
+  end getConfigString;
   
   function configuredWithClang
     output Boolean yes;

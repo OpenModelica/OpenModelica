@@ -811,6 +811,10 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
   ("cellier7", Util.gettext("Modified cellier4, Two rounds, choose better potentials-set."))})),
     Util.gettext("Sets the tearing heuristic to use for Cellier-tearing."));  
 
+constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
+  NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
+  Util.gettext("Sets the code-type produced by hpcom. Default: openmp."));
+
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
@@ -865,7 +869,8 @@ constant list<ConfigFlag> allConfigFlags = {
   SCALARIZE_BINDINGS,
   CORBA_OBJECT_REFERENCE_FILE_PATH,
   HPCOM_SCHEDULER,
-  TEARING_HEURISTIC
+  TEARING_HEURISTIC,
+  HPCOM_CODE
 };
 
 public function new
