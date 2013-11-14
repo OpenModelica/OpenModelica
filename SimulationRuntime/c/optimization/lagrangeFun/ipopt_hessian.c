@@ -119,7 +119,14 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     {
       for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
       {
-      hessian_ode(x, iData->time[p], iData,ll);
+         if(!p)
+          {
+            for(j = 0; j<iData->nx; ++j)
+              iData->sh[j] = iData->d1[4]*(ll[j] - ll[j + iData->nx]) + ll[j + 2*iData->nx];
+            hessian_ode(x, iData->time[p], iData,iData->sh);
+          }else{
+             hessian_ode(x, iData->time[p], iData,ll);
+          }
 
         if(iData->lagrange)
            hessian_lagrange(x, iData->time[p], iData,obj_factor);

@@ -97,7 +97,7 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   iData->a3_ = (double**) malloc(deg1 * sizeof(double*));
 
   iData->sv = (double*)malloc(iData->nv*sizeof(double));
-  iData->sh = (double*)malloc(iData->nv*sizeof(double));
+  iData->sh = (double*)malloc(iData->nx*sizeof(double));
 
   for(i = 0; i < deg1; i++)
   {
