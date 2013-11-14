@@ -333,6 +333,13 @@ algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix)
     case(_,_,_,_)
       equation
+        true = arrayLength(iTaskGraph) == 0;
+        print("There is no ODE system that can be parallelized!\n");
+        // just did this because this works fine. TODO: make something reasonable here and do not use a scheduler.
+      then
+        HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
+    case(_,_,_,_)
+      equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
         print("Using level Scheduler\n");
