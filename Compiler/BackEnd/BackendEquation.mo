@@ -1642,29 +1642,7 @@ public function equationNth0 "author: PA
   input Integer pos;
   output BackendDAE.Equation outEquation;
 algorithm
-  outEquation:=
-  matchcontinue (inEquationArray,pos)
-    local
-      BackendDAE.Equation e;
-      Integer n;
-      array<Option<BackendDAE.Equation>> arr;
-      String str;
-
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,equOptArr = arr),_)
-      equation
-        true = intLe(pos,n);
-        SOME(e) = arr[pos+1];
-      then
-        e;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n),_)
-      equation
-        str = "equationNth0 failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
-        print(str +& "\n");
-        Error.addMessage(Error.INTERNAL_ERROR,{str});
-      then
-        fail();
-
-  end matchcontinue;
+  outEquation := equationNth1(inEquationArray, pos+1);
 end equationNth0;
 
 public function equationNth1 "author: PA
