@@ -51,9 +51,6 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
     <%dumpVars(vars.extObjVars,withOperations)%>
     <%dumpVars(vars.constVars,withOperations)%>
   </variables>
-  <jacobian-equations>
-    <%dumpEqs(SimCodeUtil.sortEqSystems(collectAllJacobianEquations(jacobianMatrixes)),withOperations)%>
-  </jacobian-equations>
   <initial-equations size="<%listLength(initialEquations)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(initialEquations),withOperations)%>
   </initial-equations>
@@ -72,6 +69,9 @@ template dumpSimCodeBase(SimCode code, Boolean withOperations)
   <assertions size="<%listLength(algorithmAndEquationAsserts)%>">
     <%dumpEqs(SimCodeUtil.sortEqSystems(algorithmAndEquationAsserts),withOperations)%>
   </assertions>
+  <jacobian-equations>
+    <%dumpEqs(SimCodeUtil.sortEqSystems(collectAllJacobianEquations(jacobianMatrixes)),withOperations)%>
+  </jacobian-equations>
   <literals size="<%listLength(literals)%>">
     <% literals |> exp => '<exp><%printExpStrEscaped(exp)%></exp>' ; separator="\n" %>
   </literals>

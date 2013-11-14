@@ -1553,12 +1553,8 @@ algorithm
       sampleZC = getSamples(dlow);
       zeroCrossings = Util.if_(ifcpp, listAppend(zeroCrossings, sampleZC), zeroCrossings);
 
-      // state set stuff
-      tempvars = {};
-      (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow, {}, uniqueEqIndex, tempvars);
-
       // inline solver stuff
-      (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars);
+      (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, {});
 
       // initialization stuff
       (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow, initDAE, uniqueEqIndex, tempvars);
@@ -1573,13 +1569,10 @@ algorithm
                                                         functionTree=functionTree, 
                                                         symjacs=symJacs)) = dlow;
 
-      // Add model info
-      modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
 
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, tempvars, equationSccMapping) = createEquationsForSystems(systs, shared, uniqueEqIndex, {}, {}, {}, tempvars, 1, {});
       highestSimEqIndex = uniqueEqIndex;
-      modelInfo = addTempVars(tempvars, modelInfo);
 
       ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
 
@@ -1599,6 +1592,14 @@ algorithm
       
       algebraicEquations = listAppend(algebraicEquations, removedEquations::{});
       allEquations = listAppend(allEquations, removedEquations);
+      
+      // state set stuff
+      (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow, {}, uniqueEqIndex, tempvars);
+      
+      // create model info
+      modelInfo = createModelInfo(class_, dlow, functions, {}, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
+      modelInfo = addTempVars(tempvars, modelInfo);
+
       
       // update indexNonLinear in SES_NONLINEAR and count
       SymbolicJacs = {};
@@ -1628,7 +1629,8 @@ algorithm
       odeEquations = List.mapList1_1(odeEquations, setSystemIndexMap, systemIndexMap);
       algebraicEquations = List.mapList1_1(algebraicEquations, setSystemIndexMap, systemIndexMap);
       numberofEqns = uniqueEqIndex; /* This is a *much* better estimate than the guessed number of equations */
-      
+
+      // create model info        
       modelInfo = addNumEqnsandNumofSystems(modelInfo, numberofEqns, numberofLinearSys, numberofNonLinearSys, numberofMixedSys);
 
       // replace div operator with div operator with check of Division by zero
