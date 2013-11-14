@@ -875,7 +875,7 @@ algorithm
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
         /*  vlst = getUnnassignedFromArray(1,arrayLength(mt),ass1,vars,BackendVariable.getVarAt,0,{});
-          elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendDAEUtil.equationNth,-1,{});
+          elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendEquation.equationNth0,-1,{});
           vars1 = BackendVariable.listVar1(vlst);
           eqns1 = BackendEquation.listEquation(elst);
           subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
@@ -903,7 +903,7 @@ algorithm
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
 
         /*  vlst = getUnnassignedFromArray(1,arrayLength(mt),ass1,vars,BackendVariable.getVarAt,0,{});
-          elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendDAEUtil.equationNth,-1,{});
+          elst = getUnnassignedFromArray(1,arrayLength(m),ass2,eqns,BackendEquation.equationNth0,-1,{});
           vars1 = BackendVariable.listVar1(vlst);
           eqns1 = BackendEquation.listEquation(elst);
           subsyst = BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());

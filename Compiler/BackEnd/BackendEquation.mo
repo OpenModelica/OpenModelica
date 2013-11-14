@@ -1626,13 +1626,51 @@ public function getEqns "author: Frenkel TUD 2011-05
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := List.map1r(inIndxes, equationNth, inEquationArray);
+  outEqns := List.map1r(inIndxes, equationNth1, inEquationArray);
 end getEqns;
 
-public function equationNth "author: PA
+public function equationNth0 "author: PA
 
-  Return the n:th equation from the expandable equation array
-  indexed from 1..n.
+  Return the n-th equation from the expandable equation array
+  indexed from 0..N-1.
+
+  inputs:  (EquationArray, int /* n */)
+  outputs:  Equation
+
+"
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer pos;
+  output BackendDAE.Equation outEquation;
+algorithm
+  outEquation:=
+  matchcontinue (inEquationArray,pos)
+    local
+      BackendDAE.Equation e;
+      Integer n;
+      array<Option<BackendDAE.Equation>> arr;
+      String str;
+
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,equOptArr = arr),_)
+      equation
+        true = intLe(pos,n);
+        SOME(e) = arr[pos+1];
+      then
+        e;
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n),_)
+      equation
+        str = "equationNth0 failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
+        print(str +& "\n");
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
+      then
+        fail();
+
+  end matchcontinue;
+end equationNth0;
+
+public function equationNth1 "author: PA
+
+  Return the n-th equation from the expandable equation array
+  indexed from 1..N.
 
   inputs:  (EquationArray, int /* n */)
   outputs:  Equation
@@ -1658,13 +1696,13 @@ algorithm
         e;
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n),_)
       equation
-        str = "BackendDAEUtil.equationNth failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
+        str = "BackendEquation.equationNth1 failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
         print(str +& "\n");
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
   end matchcontinue;
-end equationNth;
+end equationNth1;
 
 public function equationDelete "author: Frenkel TUD 2010-12
   Delets the equations from the list of Integers."
@@ -1994,7 +2032,7 @@ protected
   BackendDAE.EquationArray eqns;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs = eqns) := syst;
-  source := equationSource(BackendDAEUtil.equationNth(eqns,i-1));
+  source := equationSource(equationNth0(eqns,i-1));
 end markedEquationSource;
 
 public function equationSource "Retrieve the source from a BackendDAE.BackendDAE equation"

@@ -1691,7 +1691,7 @@ algorithm
     case (e::_,_,_)
       equation
         len = listLength(ass[e]);
-        size = BackendEquation.equationSize(BackendDAEUtil.equationNth(eqnsarr, e-1));
+        size = BackendEquation.equationSize(BackendEquation.equationNth0(eqnsarr, e-1));
         true = intLt(len,size);
       then
         e;
@@ -2141,7 +2141,7 @@ algorithm
     case ((r,c,BackendDAE.RESIDUAL_EQUATION(exp = e))::rest,_,_,_,_,_,_)
       equation
         i = mapIncRowEqn[r];
-        eqn = BackendDAEUtil.equationNth(eqns, i-1);
+        eqn = BackendEquation.equationNth0(eqns, i-1);
         b1 = BackendEquation.isArrayEquation(eqn);
         b = func(e);
         lst = List.consOnTrue(b and b1, c, m[r]);
@@ -2371,7 +2371,7 @@ protected
 algorithm
  (eqns,vars,ass2,eqnssort,varssort) := inTpl;
  // get Eqn
- e := BackendDAEUtil.equationNth(eqns,indx-1);
+ e := BackendEquation.equationNth0(eqns,indx-1);
  // add equation
  eqnssort := BackendEquation.equationAdd(e, eqnssort);
  // get vars of equations

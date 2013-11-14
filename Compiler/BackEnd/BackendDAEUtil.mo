@@ -1753,44 +1753,6 @@ algorithm
   end match;
 end rangeIntExprs;
 
-public function equationNth "author: PA
-
-  Return the n:th equation from the expandable equation array
-  indexed from 0..1.
-
-  inputs:  (EquationArray, int /* n */)
-  outputs:  Equation
-
-"
-  input BackendDAE.EquationArray inEquationArray;
-  input Integer inInteger;
-  output BackendDAE.Equation outEquation;
-algorithm
-  outEquation:=
-  matchcontinue (inEquationArray,inInteger)
-    local
-      BackendDAE.Equation e;
-      Integer n,pos;
-      array<Option<BackendDAE.Equation>> arr;
-      String str;
-
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,equOptArr = arr),pos)
-      equation
-        (pos < n) = true;
-        SOME(e) = arr[pos + 1];
-      then
-        e;
-    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n),pos)
-      equation
-        str = "BackendDAEUtil.equationNth failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
-        print(str +& "\n");
-        Error.addMessage(Error.INTERNAL_ERROR,{str});
-      then
-        fail();
-
-  end matchcontinue;
-end equationNth;
-
 public function daeSize
 "author: Frenkel TUD
   Returns the size of the dae system, wich corsopndens to the number of variables."
@@ -3091,7 +3053,7 @@ algorithm
     // i < n
     case (_, _, iArr, iArrT, _, _, true, _, _) equation
       // get the equation
-      e = equationNth(inEqsArr, index);
+      e = BackendEquation.equationNth0(inEqsArr, index);
       // compute the row
       (row, _) = incidenceRow(e, vars, inIndexType, functionTree, {});
       i1 = index+1;
@@ -3140,7 +3102,7 @@ algorithm
     case (_, _, iArr, iArrT, _, _, true, _, _, _, _, _)
       equation
         // get the equation
-        e = equationNth(inEqsArr, index);
+        e = BackendEquation.equationNth0(inEqsArr, index);
         // compute the row
         (row,size) = incidenceRow(e, vars, inIndexType, functionTree, {});
         rowSize = inRowSize + size;
@@ -3956,7 +3918,7 @@ algorithm
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
-        eqn = equationNth(daeeqns, e_1);
+        eqn = BackendEquation.equationNth0(daeeqns, e_1);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         oldvars = getOldVars(m,abse);
         m_1 = Util.arrayReplaceAtWithFill(abse,row,{},m);
@@ -4068,7 +4030,7 @@ algorithm
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
-        eqn = equationNth(daeeqns, e_1);
+        eqn = BackendEquation.equationNth0(daeeqns, e_1);
         size = BackendEquation.equationSize(eqn);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         scalarindxs = iMapEqnIncRow[abse];
@@ -4118,7 +4080,7 @@ algorithm
         false = intGt(index,n);
         abse = intAbs(index);
         e_1 = abse - 1;
-        eqn = equationNth(daeeqns, e_1);
+        eqn = BackendEquation.equationNth0(daeeqns, e_1);
         rowsize = BackendEquation.equationSize(eqn);
         (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         new_size = size+rowsize;
@@ -4622,7 +4584,7 @@ algorithm
     case (_, _, iArr, _, _, _, true, _, _, _, _ , _)
       equation
         // get the equation
-        e = equationNth(eqArr, index);
+        e = BackendEquation.equationNth0(eqArr, index);
         // compute the row
         i1 = index+1;
         (row,size) = adjacencyRowEnhanced(vars, e, i1, rowmark, kvars);
@@ -4711,7 +4673,7 @@ algorithm
     case (_, _, _, _, _, _, true, _, _)
       equation
         // get the equation
-        e = equationNth(eqArr, index);
+        e = BackendEquation.equationNth0(eqArr, index);
         // compute the row
         i1 = index+1;
         (row,_) = adjacencyRowEnhanced(vars, e, i1, rowmark, kvars);

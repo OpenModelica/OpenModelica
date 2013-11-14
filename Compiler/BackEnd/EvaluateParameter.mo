@@ -85,7 +85,6 @@ protected import Flags;
 protected import HashSet;
 protected import List;
 protected import Util;
-protected import SCode;
 protected import Values;
 protected import ValuesUtil;
 

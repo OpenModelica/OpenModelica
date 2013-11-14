@@ -47,10 +47,9 @@ public import Absyn;
 public import Util;
 public import ExpressionDump;
 public import Expression;
-public import BackendDAEUtil;
 public import HpcOmScheduler;
 
-
+protected import BackendEquation;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import List;
@@ -521,7 +520,7 @@ algorithm
         Integer p;
        case (_,{h},_,_,_,_,true,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_BOOL(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_BOOL(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
          s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s = stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(1.0));
@@ -530,7 +529,7 @@ algorithm
        then s;
        case (_,{h},_,_,_,_,true,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_INTEGER(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty = DAE.T_INTEGER(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
          s = stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s = stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(1.0));
@@ -540,7 +539,7 @@ algorithm
 
        case (_,{h},_,_,_,_,true,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");
@@ -552,7 +551,7 @@ algorithm
 
        case (_,{h},_,_,_,_,false,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_BOOL(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_BOOL(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
          s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s= stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
@@ -562,7 +561,7 @@ algorithm
        then s;
        case (_,{h},_,_,_,_,false,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_INTEGER(_,_)),scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp as DAE.CREF(ty=DAE.T_INTEGER(_,_)),scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
          s= stringAppend("",ExpressionDump.printExpStr(replaceVars(exp,states,disc,algs)));
          s= stringAppend(s," := ");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
@@ -572,7 +571,7 @@ algorithm
        then s;
        case (_,{h},_,_,_,_,false,_,_)
        equation
-         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
+         BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendEquation.equationNth0(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
          s = stringAppend(s,ExpressionDump.printExpStr(condition));
          s = stringAppend(s,"*/\n");
@@ -978,7 +977,7 @@ algorithm
     case (_,{}) then {};
     case (_,p::tail)
     equation
-      eq = BackendDAEUtil.equationNth(eqsdae,p);
+      eq = BackendEquation.equationNth0(eqsdae,p);
       res = listAppend({eq},getEquations(eqsdae,tail));
     then res;
   end match;

@@ -49,9 +49,9 @@ public import BackendDAE;
 public import SCode;
 
 protected import Absyn;
-protected import BackendDAEUtil;
-protected import BackendVariable;
 protected import BackendDAETransform;
+protected import BackendEquation;
+protected import BackendVariable;
 protected import ComponentReference;
 protected import DAE;
 protected import DAEUtil;
@@ -65,7 +65,7 @@ protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
 
-public function buildTaskgraph ""
+public function buildTaskgraph
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.StrongComponents inComps;
 algorithm
@@ -308,7 +308,7 @@ algorithm
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
       equation
         e_1 = e - 1 "Solving for non-states" ;
-        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.equationNth0(eqns, e_1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
@@ -336,7 +336,7 @@ algorithm
  */
       equation
         e_1 = e - 1 "Solving nonlinear" ;
-        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.equationNth0(eqns, e_1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
@@ -648,7 +648,7 @@ algorithm
     case ((dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{})),(e :: reste),(v_1 :: restv),tid)
       equation
         e_1 = e - 1;
-        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns, e_1);
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.equationNth0(eqns, e_1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
         cr1 = Expression.extractCrefsFromExp(e1);
         cr2 = Expression.extractCrefsFromExp(e2);

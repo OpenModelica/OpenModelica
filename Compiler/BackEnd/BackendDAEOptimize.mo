@@ -788,7 +788,7 @@ algorithm
         // try to solve the equation
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
-        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        eqn = BackendEquation.equationNth0(eqns,pos_1);
         BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
@@ -808,7 +808,7 @@ algorithm
         // try to solve the equation
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
-        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        eqn = BackendEquation.equationNth0(eqns,pos_1);
         BackendDAE.EQUATION(exp=e1,scalar=e2,source=source) = eqn;
         // variable time not there
         knvars = BackendVariable.daeKnVars(shared);
@@ -823,7 +823,7 @@ algorithm
       equation
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
-        eqn = BackendDAEUtil.equationNth(eqns,pos_1);
+        eqn = BackendEquation.equationNth0(eqns,pos_1);
         (cr,_,_,_,_) = BackendEquation.derivativeEquation(eqn);
         // select candidate
         vars = BackendVariable.daeVars(syst);
@@ -834,7 +834,7 @@ algorithm
       equation
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
-        (eqn as BackendDAE.EQUATION(source=source)) = BackendDAEUtil.equationNth(eqns,pos_1);
+        (eqn as BackendDAE.EQUATION(source=source)) = BackendEquation.equationNth0(eqns,pos_1);
         _ = BackendEquation.aliasEquation(eqn);
       then ();
   end matchcontinue;
@@ -1194,7 +1194,7 @@ algorithm
         // check number of vars in eqns
         _::_ = elem;
         pos_1 = pos-1;
-        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns,pos_1);
+        BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendEquation.equationNth0(eqns,pos_1);
         // BackendDump.debugStrExpStrExpStr(("Test ",e1," = ",e2,"\n"));
         (ecr,exp) = functionCallEqn(e1,e2,vars);
         // TODO: Handle this with alias-equations instead?; at least they don't replace back to the original expression...
@@ -1317,7 +1317,7 @@ algorithm
     case (pos::rest,_,_,_,_)
       equation
         pos_1 = pos-1;
-        eqn = BackendDAEUtil.equationNth(inEqns,pos_1);
+        eqn = BackendEquation.equationNth0(inEqns,pos_1);
         //BackendDump.printEquationList({eqn});
         //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
         (eqn1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr,inExp,0));
@@ -5106,7 +5106,7 @@ algorithm
       equation
         ix = ixs[n];
         lst = ea[ix];
-        eq = BackendDAEUtil.equationNth(arr,n-1);
+        eq = BackendEquation.equationNth0(arr,n-1);
         lst = eq::lst;
         // print("adding eq " +& intString(n) +& " to group " +& intString(ix) +& "\n");
         _ = arrayUpdate(ea,ix,lst);
@@ -5390,7 +5390,7 @@ algorithm
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest,_,_,_)
       equation
         eqns = BackendEquation.daeEqns(isyst);
-        eqn = BackendDAEUtil.equationNth(eqns, e-1);
+        eqn = BackendEquation.equationNth0(eqns, e-1);
         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
@@ -5418,31 +5418,31 @@ algorithm
         countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEARRAY(eqn=e)::rest,_,_,_)
       equation
-         eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         eqn = BackendEquation.equationNth0(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEIFEQUATION(eqn=e)::rest,_,_,_)
       equation
-         eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         eqn = BackendEquation.equationNth0(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest,_,_,_)
       equation
-         eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         eqn = BackendEquation.equationNth0(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_,_)
       equation
-         eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         eqn = BackendEquation.equationNth0(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEWHENEQUATION(eqn=e)::rest,_,_,_)
       equation
-         eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         eqn = BackendEquation.equationNth0(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then
          countOperationstraverseComps(rest,isyst,ishared,tpl);

@@ -241,7 +241,7 @@ algorithm
         comp = List.fold2(comp,uniqueComp,imark,markarray,{});
         //comp = List.unique(comp);
         eqngetlst = List.map1(comp,intSub,1);
-        eqn_lst = List.map1r(eqngetlst,BackendDAEUtil.equationNth,eqns);
+        eqn_lst = List.map1r(eqngetlst,BackendEquation.equationNth0,eqns);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);
       then
         (compX,imark+1);
@@ -680,7 +680,7 @@ algorithm
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),eqns,vars)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         var = BackendVariable.getVarAt(vars, v);
       then
         ({eqn},{var},e);
@@ -704,35 +704,35 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst),eqns,vars)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
         ({eqn},varlst,e);
     case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst),eqns,vars)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
         ({eqn},varlst,e);
     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst),eqns,vars)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
         ({eqn},varlst,e);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst),eqns,vars)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
         ({eqn},varlst,e);
     case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst),eqns,vars)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
         ({eqn},varlst,e);
@@ -779,7 +779,7 @@ algorithm
     case (e,eqns,vars,ass2) /* equation no. assignments2 */
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         v = ass2[e];
         var = BackendVariable.getVarAt(vars, v);
       then

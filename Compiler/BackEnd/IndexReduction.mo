@@ -729,7 +729,7 @@ algorithm
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         true = BackendEquation.isDifferentiated(eqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skipp allready differentiated equation\n",eqn,"\n"));
       then
@@ -737,7 +737,7 @@ algorithm
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
         eqn_1 = Derive.differentiateEquationTime(eqn, vars, ishared);
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
@@ -836,7 +836,7 @@ algorithm
     case (e::es,_,_,_,_)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         true = BackendEquation.isDifferentiated(eqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skipp allready differentiated equation\n",eqn,"\n"));
       then
@@ -844,7 +844,7 @@ algorithm
     case (e::es,_,_,_,_)
       equation
         e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        eqn = BackendEquation.equationNth0(eqns, e_1);
         // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
         eqn_1 = Derive.differentiateEquationTime(eqn, vars, ishared);
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
@@ -1212,7 +1212,7 @@ algorithm
   (eqns,changedEqns,repl) := inTpl;
   // get the equation
   e1 := e-1;
-  eqn := BackendDAEUtil.equationNth(eqns, e1);
+  eqn := BackendEquation.equationNth0(eqns, e1);
   // reaplace final vars
   (eqn,(_,b,repl)) := BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceFinalVarsEqn,(vars,false,repl));
   // if replaced set eqn
@@ -1320,7 +1320,7 @@ algorithm
       equation
         // replace in eqn
         pos_1 = pos-1;
-        eqn = BackendDAEUtil.equationNth(inEqns,pos_1);
+        eqn = BackendEquation.equationNth0(inEqns,pos_1);
         (eqn1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceAliasStateExp,(inACr,inCrExp,indCrExp));
         eqns =  BackendEquation.equationSetnth(inEqns,pos_1,eqn1);
         //  print("Replace in Eqn:\n" +& BackendDump.equationString(eqn) +& "\nto\n" +& BackendDump.equationString(eqn1) +& "\n");
@@ -2786,8 +2786,8 @@ algorithm
         true = flag[e];
         true = intGt(vec1[e],0);
         e1 = inMapIncRowEqn[e];
-        // print("BackendDAEUtil.equationNth " +& intString(e1) +& "\n");
-        eqn = BackendDAEUtil.equationNth(iEqnsArr,e1-1);
+        // print("BackendEquation.equationNth0 " +& intString(e1) +& "\n");
+        eqn = BackendEquation.equationNth0(iEqnsArr,e1-1);
         eqnarr = BackendEquation.equationRemove(e1,iEqnsArr);
         eqns = inMapEqnIncRow[e1];
         _ = List.fold1r(eqns,arrayUpdate,false,flag);
@@ -5356,7 +5356,7 @@ algorithm
   outGraph := match(inNode, eqns, mapIncRowEqn, numberMode, inGraph)
     case(_,_,_,false,_)
       equation
-        eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
+        eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
         str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
@@ -5364,7 +5364,7 @@ algorithm
       then GraphML.addNode("n" +& intString(inNode),str,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),NONE(),{},{},inGraph);
     case(_,_,_,true,_)
       equation
-        eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
+        eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
         str = BackendDump.equationString(eqn);
         //str := intString(inNode);
         //str = intString(inNode) +& ": " +& BackendDump.equationString(eqn);
@@ -5411,7 +5411,7 @@ algorithm
       equation
         e = mapIncRowEqn[inNode];
         false = eqnsflag[e];
-       eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
+       eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
        str = BackendDump.equationString(eqn);
        str = intString(e) +& ": " +&  str;
        //str = intString(inNode);
@@ -5423,7 +5423,7 @@ algorithm
       equation
         e = mapIncRowEqn[inNode];
         false = eqnsflag[e];
-       eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
+       eqn = BackendEquation.equationNth0(eqns, mapIncRowEqn[inNode]-1);
        str = BackendDump.equationString(eqn);
        //str = intString(e) +& ": " +&  str;
        //str = intString(inNode);

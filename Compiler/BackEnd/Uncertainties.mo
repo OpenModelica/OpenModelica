@@ -221,8 +221,8 @@ algorithm
         setS=List.map1r(setS,listGet,arrayList(mapIncRowEqn));
         setS=List.unique(List.map1(setS,intAdd,-1));
 
-        setC_eq=List.map1r(setC,BackendDAEUtil.equationNth,allEqs);
-        setS_eq=List.map1r(setS,BackendDAEUtil.equationNth,allEqs);
+        setC_eq=List.map1r(setC,BackendEquation.equationNth0,allEqs);
+        setS_eq=List.map1r(setS,BackendEquation.equationNth0,allEqs);
 
        //eqnLst = BackendEquation.equationList(eqns);
 
@@ -344,7 +344,7 @@ protected function equationsToMathematicaGrid
   list<Integer> eqns;
 algorithm
   eqns:=List.unique(List.map1r(equIndices,listGet,arrayList(mapIncRowEqn)));
-  eqList:=List.map1r(List.map1(eqns,intAdd,-1),BackendDAEUtil.equationNth,allEqs);
+  eqList:=List.map1r(List.map1(eqns,intAdd,-1),BackendEquation.equationNth0,allEqs);
   eqsString:=List.map1(eqList,MathematicaDump.printMmaEqnStr,(variables,knownVariables));
   out:="Grid[{"+&numerateListIndex(eqsString,eqns)+&"},Frame -> All]";
 end equationsToMathematicaGrid;
@@ -402,7 +402,7 @@ out:=matchcontinue(equations,allEqs,variables,knownVariables,mapIncRowEqn)
     then s::r;
   case(eqn::eqn_t,_,_,_,_)
     equation
-      e = BackendDAEUtil.equationNth(allEqs,eqn-1);
+      e = BackendEquation.equationNth0(allEqs,eqn-1);
       r = getEquationStringOrNothing(eqn_t,allEqs,variables,knownVariables,mapIncRowEqn);
       s = MathematicaDump.printMmaEqnStr(e,(variables,knownVariables));
     then s::r;

@@ -94,7 +94,6 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
-protected import Debug;
 protected import Dump;
 protected import Error;
 protected import Flags;
