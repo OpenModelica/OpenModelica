@@ -45,17 +45,35 @@ int mat_element_length(int type)
 void omc_free_matlab4_reader(ModelicaMatReader *reader)
 {
   unsigned int i;
-  fclose(reader->file);
-  free(reader->fileName); reader->fileName=NULL;
+  if (reader->file) {
+    fclose(reader->file);
+    reader->file = 0;
+  }
+  if (reader->fileName) {
+    free(reader->fileName);
+    reader->fileName=NULL;
+  }
   for(i=0; i<reader->nall; i++) {
     free(reader->allInfo[i].name);
     free(reader->allInfo[i].descr);
   }
-  free(reader->allInfo); reader->allInfo=NULL;
-  free(reader->params); reader->params=NULL;
-  for(i=0; i<reader->nvar*2; i++)
-    if(reader->vars[i]) free(reader->vars[i]);
-  free(reader->vars); reader->vars=NULL;
+  reader->nall = 0;
+  if (reader->file) {
+    free(reader->allInfo);
+    reader->allInfo=NULL;
+  }
+  if (reader->params) {
+    free(reader->params);
+    reader->params=NULL;
+  }
+  for(i=0; i<reader->nvar*2; i++) {
+    if (reader->vars[i]) free(reader->vars[i]);
+  }
+  reader->nvar = 0;
+  if (reader->vars) {
+    free(reader->vars);
+    reader->vars=NULL;
+  }
 }
 
 void remSpaces(char *ch){
@@ -80,6 +98,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   const int matrixTypes[6]={51,51,51,20,0,0};
   int i;
   char binTrans = 1;
+  memset(reader, 0, sizeof(ModelicaMatReader));
   reader->file = fopen(filename, "rb");
   if(!reader->file) return strerror(errno);
   reader->fileName = strdup(filename);
@@ -304,8 +323,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     case 5: { /* "data_2" */
       if(binTrans==1) {
         reader->nrows = hdr.ncols;
-        reader->nvar = hdr.mrows;
         if(reader->nrows < 2) return "Too few rows in data_2 matrix";
+        reader->nvar = hdr.mrows;
         reader->var_offset = ftell(reader->file);
         reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
         if(-1==fseek(reader->file,matrix_length,SEEK_CUR)) return "Corrupt header: data_2 matrix";
@@ -313,8 +332,8 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==0) {
         unsigned int k,j;
         reader->nrows = hdr.mrows;
-        reader->nvar = hdr.ncols;
         if(reader->nrows < 2) return "Too few rows in data_2 matrix";
+        reader->nvar = hdr.ncols;
         reader->var_offset = ftell(reader->file);
         reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
         if(reader->doublePrecision==1)
