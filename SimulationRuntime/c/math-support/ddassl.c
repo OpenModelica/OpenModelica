@@ -13,6 +13,7 @@
 #include <openmodelica.h>
 #include <stdio.h>
 #include "f2c.h"
+#include "omc_error.h"
 
 
 /* Common Block Declarations */
@@ -3748,28 +3749,41 @@ L100:
 
 
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
-    if(ipar[1]){
-       nrow = npdm1;
-        i__1 = *neq;
-        i__2 = *neq;
-        printf("cj: %g and the states\n", *cj);
-        for(k=0;k<*neq;k++) {
-            printf("%g ", y[k+1]);
-        }
+    if(ipar[1])
+    {
+      nrow = npdm1;
+      i__1 = *neq;
+      i__2 = *neq;
+      char buffer[20*nrow];
+      
+      INFO1(LOG_JAC, "at point in time: %g", *x);
+      INDENT(LOG_JAC);
+      
+      INFO1(LOG_JAC, "cj: %g", *cj);
+      INFO(LOG_JAC, "states");
+      INDENT(LOG_JAC);
+      for(k=0;k<*neq;k++)
+      {
+        INFO2(LOG_JAC, "[%d] %g", k+1, y[k+1]);
+      }
+      RELEASE(LOG_JAC);
 
-
-        printf("analytical jacobian\n");
-        printf("at point in time : ");
-        printf("%g \n", *x);
-        for(i__ = 1; i__ <= i__1; ++i__) {
-                 wm[nrow+i__] += *cj;
-                 for(l = 1; l <= i__2; ++l) {
-                     printf("%g  ",wm[nrow + l]);
-                 }
-                 wm[nrow+i__] -= *cj;
-                 printf("\n");
-                 nrow += *neq;
+      INFO(LOG_JAC, "analytical Jacobian");
+      INDENT(LOG_JAC);
+      for(i__ = 1; i__ <= i__1; ++i__)
+      {
+        wm[nrow+i__] += *cj;
+        sprintf(buffer, "");
+        for(l = 1; l <= i__2; ++l)
+        {
+          sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
         }
+        INFO1(LOG_JAC, "%s", buffer);
+        wm[nrow+i__] -= *cj;
+        nrow += *neq;
+      }
+      RELEASE(LOG_JAC);
+      RELEASE(LOG_JAC);
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
@@ -3813,28 +3827,41 @@ L200:
 /* L210: */
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
-    if(ipar[1] ){
-            nrow = npdm1;
-            i__1 = *neq;
-            i__2 = *neq;
-            printf("cj: %g and the states\n", *cj);
-            for(k=0;k<*neq;k++) {
-                printf("%g ", y[k+1]);
-            }
+    if(ipar[1])
+    {
+      nrow = npdm1;
+      i__1 = *neq;
+      i__2 = *neq;
+      char buffer[20*nrow];
+      
+      INFO1(LOG_JAC, "at point in time: %g", *x);
+      INDENT(LOG_JAC);
+      
+      INFO1(LOG_JAC, "cj: %g", *cj);
+      INFO(LOG_JAC, "states");
+      INDENT(LOG_JAC);
+      for(k=0;k<*neq;k++)
+      {
+        INFO2(LOG_JAC, "[%d] %g", k+1, y[k+1]);
+      }
+      RELEASE(LOG_JAC);
 
-
-            printf("numerical jacobian\n");
-            printf("at point in time : ");
-            printf("%g \n",*x);
-            for(i__ = 1; i__ <= i__1; ++i__) {
-                    wm[nrow+i__] += *cj;
-                    for(l = 1; l <= i__1; ++l) {
-                            printf("%g  ",wm[nrow + l]);
-                    }
-                    wm[nrow+i__] -= *cj;
-                    printf("\n");
-                    nrow += *neq;
-            }
+      INFO(LOG_JAC, "numerical Jacobian");
+      INDENT(LOG_JAC);
+      for(i__ = 1; i__ <= i__1; ++i__)
+      {
+        wm[nrow+i__] += *cj;
+        sprintf(buffer, "");
+        for(l = 1; l <= i__2; ++l)
+        {
+          sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
+        }
+        INFO1(LOG_JAC, "%s", buffer);
+        wm[nrow+i__] -= *cj;
+        nrow += *neq;
+      }
+      RELEASE(LOG_JAC);
+      RELEASE(LOG_JAC);
     }
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 

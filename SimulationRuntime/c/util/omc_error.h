@@ -107,7 +107,6 @@ enum LOG_STREAM
   LOG_UTIL,
   LOG_ZEROCROSSINGS,
 
-
   LOG_MAX
 };
 

@@ -46,24 +46,22 @@
 #include "f2c.h"
 
 static const char *dasslMethodStr[DASSL_MAX] = {"unknown",
-                                          "dassl",
-                                          "dasslwort",
-                                          "dasslSymJac",
-                                          "dasslNumJac",
-                                          "dasslColorSymJac",
-                                          "dasslInternalNumJac",
-                                          "dassltest",
-                                         };
+                                                "dassl",
+                                                "dasslwort",
+                                                "dasslSymJac",
+                                                "dasslNumJac",
+                                                "dasslColorSymJac",
+                                                "dasslInternalNumJac",
+                                                "dassltest"};
 
 static const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown",
-                                                "dassl with colored numerical jacobian, with interval root finding",
-                                                "dassl without internal root finding",
-                                                "dassl with symbolic jacobian",
-                                                "dassl with numerical jacobian",
-                                                "dassl with colored symbolic jacobian",
-                                                "dassl with internal numerical jacobian",
-                                                "dassl for debug propose"
-                                               };
+                                                       "dassl with colored numerical jacobian, with interval root finding",
+                                                       "dassl without internal root finding",
+                                                       "dassl with symbolic jacobian",
+                                                       "dassl with numerical jacobian",
+                                                       "dassl with colored symbolic jacobian",
+                                                       "dassl with internal numerical jacobian",
+                                                       "dassl for debug propose"};
 
 
 
@@ -831,9 +829,7 @@ int jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *de
   double* delta_hh = dasslData->delta_hh;
   double* ysave = dasslData->ysave;
 
-
   int i,j,l,k,ii;
-
 
   for(i = 0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
   {
