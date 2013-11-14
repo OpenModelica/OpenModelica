@@ -683,6 +683,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
      <%(vars.boolAliasVars |> SIMVAR(__) =>
        '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.paramVars |> SIMVAR(__) =>
+       '_PRE<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
      <%makeSaveDelays(delayedExps)%>
    }
    >>
@@ -733,6 +735,8 @@ case MODELINFO(vars = SIMVARS(__)) then
      '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
    <%(vars.boolAliasVars |> SIMVAR(__) =>
      '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
+     <%(vars.paramVars |> SIMVAR(__) =>
+       '<%cref(name)%>=_PRE<%cref(name)%>;') ;separator="\n"%>
  }
  >>
 end makeRestoreMemberVariables;
@@ -770,12 +774,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        // Calculate any equations that provide initial values
        <%makeInitialEqns(startValueEquations)%>
        bound_params();
-       // Calculate derived values
-       calc_vars();
-       if (selectStateVars())
-           calc_vars();
        // Solve for any remaining unknowns
        solve_for_initial_unknowns();
+       selectStateVars(); 
        calc_vars();
        save_vars();
        <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
@@ -798,6 +799,25 @@ template makeInitialEqns(list<SimEqSystem> startValueEquations)
   >>
 end makeInitialEqns;
 
+template initialResidualFixedVars(list<SimVar> varsLst) ::=
+  let res = (varsLst |> SIMVAR(__) =>
+    if isFixed then
+       'r=<%cref(name)%>-_PRE<%cref(name)%>; *f+=r*r;'
+    ;separator="\n")
+  <<
+  <%res%>
+  >>
+end initialResidualFixedVars;
+
+template selectInitialFreeVars(list<SimVar> varsLst) ::=
+  let res = (varsLst |> SIMVAR(__) =>
+    if not isFixed then
+       'init_unknown_vars.push_back(&<%cref(name)%>);'
+    ;separator="\n")
+  <<
+  <%res%>
+  >>
+end selectInitialFreeVars;
 
 template initVals(list<SimVar> varsLst) ::=
   varsLst |> SIMVAR(__) =>
@@ -1033,28 +1053,24 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
           if (w[i] != w[i]) MODELICA_TERMINATE("could not initialize unknown reals");
           *(init_unknown_vars[i]) = w[i];
       }
-      bound_params();
       // Calculate new state variable derivatives and algebraic variables
+      bound_params();
       selectStateVars();
       calc_vars(NULL,true);
       // Calculate the new value of the objective function
       <%initialResidualEqns(residualEquations)%>
+      <%initialResidualFixedVars(vars.stateVars)%>
+      <%initialResidualFixedVars(vars.derivativeVars)%>
+      <%initialResidualFixedVars(vars.algVars)%>
+      <%initialResidualFixedVars(vars.paramVars)%>
   }
 
   void <%lastIdentOfPath(modelInfo.name)%>::solve_for_initial_unknowns()
   {
-    <%(vars.stateVars |> SIMVAR(__) =>
-        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
-      ;separator="\n"%>
-    <%(vars.derivativeVars |> SIMVAR(__) =>
-        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
-      ;separator="\n"%>
-    <%(vars.algVars |> SIMVAR(__) =>
-        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
-      ;separator="\n"%>
-    <%(vars.paramVars |> SIMVAR(__) =>
-        'if (!<%globalDataFixedInt(isFixed)%>) init_unknown_vars.push_back(&<%cref(name)%>);')
-      ;separator="\n"%>
+    <%selectInitialFreeVars(vars.stateVars)%>
+    <%selectInitialFreeVars(vars.derivativeVars)%>
+    <%selectInitialFreeVars(vars.algVars)%>
+    <%selectInitialFreeVars(vars.paramVars)%>
     if (!init_unknown_vars.empty())
     {
         long N = init_unknown_vars.size();
@@ -1107,14 +1123,6 @@ template lastIdentOfPath(Path modelName) ::=
 end lastIdentOfPath;
 
 // Below here is from the C template but modified in many instances
-
-template globalDataFixedInt(Boolean isFixed)
- "Generates integer for use in arrays in global data section."
-::=
-  match isFixed
-  case true  then "1"
-  case false then "0"
-end globalDataFixedInt;
 
 template functionBoundParameters(list<SimEqSystem> parameterEquations)
  "Generates function in simulation file."
@@ -1367,17 +1375,6 @@ else <<
 <%simvars |> var => match var case SIMVAR(name = cr as CREF_QUAL(ident = "$DER")) then 'inline_integrate(<%cref(cr)%>);' ;separator="\n"%>
 >>
 end inlineVars;
-
-
-template inlineCrefs(Context context, list<ComponentRef> crefs)
-::= match context case INLINE_CONTEXT(__) then match crefs
-case {} then ''
-else <<
-
-<%crefs |> cr => match cr case CREF_QUAL(ident = "$DER") then 'inline_integrate(<%cref(cr)%>);' ;separator="\n"%>
->>
-end inlineCrefs;
-
 
 template inlineCref(Context context, ComponentRef cr)
 ::= match context case INLINE_CONTEXT(__) then match cr case CREF_QUAL(ident = "$DER") then <<
