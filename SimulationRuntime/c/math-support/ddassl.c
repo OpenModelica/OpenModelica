@@ -3751,10 +3751,11 @@ L100:
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if(ipar[1])
     {
+      char *buffer = NULL;
       nrow = npdm1;
       i__1 = *neq;
       i__2 = *neq;
-      char buffer[20*nrow];
+      buffer = (char*)malloc(20*nrow*sizeof(char));
       
       INFO1(LOG_JAC, "at point in time: %g", *x);
       INDENT(LOG_JAC);
@@ -3764,7 +3765,7 @@ L100:
       INDENT(LOG_JAC);
       for(k=0;k<*neq;k++)
       {
-        INFO2(LOG_JAC, "[%d] %g", k+1, y[k+1]);
+        INFO2(LOG_JAC, "[%ld] %g", k+1, y[k+1]);
       }
       RELEASE(LOG_JAC);
 
@@ -3773,7 +3774,7 @@ L100:
       for(i__ = 1; i__ <= i__1; ++i__)
       {
         wm[nrow+i__] += *cj;
-        sprintf(buffer, "");
+        sprintf(buffer, "%c", '\0');
         for(l = 1; l <= i__2; ++l)
         {
           sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
@@ -3784,6 +3785,7 @@ L100:
       }
       RELEASE(LOG_JAC);
       RELEASE(LOG_JAC);
+      free(buffer);
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
@@ -3829,10 +3831,11 @@ L200:
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if(ipar[1])
     {
+      char *buffer = NULL;
       nrow = npdm1;
       i__1 = *neq;
       i__2 = *neq;
-      char buffer[20*nrow];
+      buffer = (char*)malloc(20*nrow*sizeof(char));
       
       INFO1(LOG_JAC, "at point in time: %g", *x);
       INDENT(LOG_JAC);
@@ -3842,7 +3845,7 @@ L200:
       INDENT(LOG_JAC);
       for(k=0;k<*neq;k++)
       {
-        INFO2(LOG_JAC, "[%d] %g", k+1, y[k+1]);
+        INFO2(LOG_JAC, "[%ld] %g", k+1, y[k+1]);
       }
       RELEASE(LOG_JAC);
 
@@ -3851,7 +3854,7 @@ L200:
       for(i__ = 1; i__ <= i__1; ++i__)
       {
         wm[nrow+i__] += *cj;
-        sprintf(buffer, "");
+        sprintf(buffer, "%c", '\0');
         for(l = 1; l <= i__2; ++l)
         {
           sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
@@ -3862,6 +3865,7 @@ L200:
       }
       RELEASE(LOG_JAC);
       RELEASE(LOG_JAC);
+      free(buffer);
     }
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
