@@ -4,3 +4,8 @@ QMAKE_LINK = @CXX@
 
 LIBS += -lqwt@with_qwt_suffix@
 INCLUDEPATH += @with_qwt@
+
+QMAKE_CFLAGS = @CFLAGS@
+QMAKE_CXXFLAGS = @CFLAGS@
+QMAKE_LFLAGS += @LDFLAGS@
+
