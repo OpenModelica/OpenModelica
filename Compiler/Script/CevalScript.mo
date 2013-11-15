@@ -1103,8 +1103,8 @@ algorithm
 
         ºF = (ºC - (255.37 - 273.15))*(1.8/1.0)
         */
-        scaleFactor = scaleFactor2 / scaleFactor1;
-        offset = offset2 - offset1;
+        scaleFactor = realDiv(scaleFactor2, scaleFactor1);
+        offset = realSub(offset2,offset1);
       then
         (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
 
