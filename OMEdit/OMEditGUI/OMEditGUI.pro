@@ -86,6 +86,7 @@ SOURCES += main.cpp\
     GUI/Widgets/VariablesWidget.cpp \
     GUI/Dialogs/NotificationsDialog.cpp \
     GUI/Dialogs/ShapePropertiesDialog.cpp \
+    Util/OMDumpXML.cpp \
     Util/Utilities.cpp
 
 HEADERS  += backtrace.h \
@@ -118,6 +119,7 @@ HEADERS  += backtrace.h \
     GUI/Widgets/VariablesWidget.h \
     GUI/Dialogs/NotificationsDialog.h \
     GUI/Dialogs/ShapePropertiesDialog.h \
+    Util/OMDumpXML.cpp \
     Util/Utilities.h
 
 # Windows libraries and includes
