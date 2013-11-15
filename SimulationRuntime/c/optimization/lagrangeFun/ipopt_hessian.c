@@ -117,9 +117,6 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
     for(ii = 0; ii <1; ++ii)
     {
-     for(j = 0; j<iData->nx; ++j)
-        iData->sh[j] = iData->d1[4]*(lambda[j] - lambda[j + iData->nx]) + lambda[j + 2*iData->nx];
-
       for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
       {
          mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
@@ -127,7 +124,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
          if(p){
            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
          }else{
-           num_hessian(x, iData->time[p], iData, iData->sh,iData->lagrange,mayer_yes,obj_factor);
+           num_hessian(x, iData->time[p], iData, ll + 2*iData->nx,iData->lagrange,mayer_yes,obj_factor);
          }
 
         for(i=0;i< iData->nv;++i)
