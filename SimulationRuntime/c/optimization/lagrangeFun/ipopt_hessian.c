@@ -190,7 +190,7 @@ static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, in
     sum += iData->mH[i][j];
 
   *erg = (double) sum;
-  
+  return 0;
 }
 
 /*!
@@ -251,6 +251,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     }
 
   }
+  return 0;
 }
 
 
