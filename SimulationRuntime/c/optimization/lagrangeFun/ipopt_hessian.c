@@ -43,6 +43,8 @@
 
 static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor);
 static int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *dF, int this_it);
+static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes,double *F1, double *F2);
+static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, short mayer_yes);
 
 /*!
  *  calc hessian
@@ -107,7 +109,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     int ii;
     int c,r,p,id,l;
     double t;
-    long double sum;
+    double sum;
     long double mayer_term;
     short mayer_yes;
     r = 0;
@@ -123,22 +125,14 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
               iData->sh[j] = iData->d1[4]*(ll[j] - ll[j + iData->nx]) + ll[j + 2*iData->nx];
             num_hessian(x, iData->time[p], iData,iData->sh,iData->lagrange,0,obj_factor);
           }else{
-             num_hessian(x, iData->time[p], iData, ll, iData->lagrange, 0, obj_factor);
+            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,0,obj_factor);
           }
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
           {
-            sum = 0.0;
-            for(l = 0; l<iData->nx; ++l)
-              sum += iData->H[l][i][j];
-
-            if(iData->lagrange)
-              sum += iData->bl[p]*iData->oH[i][j];
-
-            sum = iData->dt[ii]*sum;
-
-            values[k++] = (double) sum;
+            sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
+            values[k++] =  sum;
           }
         r += iData->nv;
         c += iData->nv;
@@ -160,18 +154,8 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
           {
-            sum = 0.0;
-            for(l = 0; l<iData->nx; ++l)
-              sum += iData->H[l][i][j];
-
-           if(iData->lagrange)
-             sum += iData->br[p-1]*iData->oH[i][j];
-
-           sum = iData->dt[ii]*sum;
-           if(mayer_yes)
-             sum += iData->mH[i][j];
-
-            values[k++] = (double)sum;
+            sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
+            values[k++] = sum;
           }
         r += iData->nv;
         c += iData->nv;
@@ -187,7 +171,31 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 }
 
 /*!
- *  cal hessian (mayer part)
+ *  cal lamda^\top \cdot H + sigma*((?)dd_lagrange + (?)dd_mayer)
+ *  autor: Vitalij Ruge
+ **/
+static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, short mayer_yes)
+{
+  long double sum;
+  int l;
+
+  sum = 0.0;
+  for(l = 0; l<iData->nx; ++l)
+    sum += iData->H[l][i][j];
+
+  if(iData->lagrange)
+    sum += iData->br[p-1]*iData->oH[i][j];
+
+  sum = iData->dt[ii]*sum;
+  if(mayer_yes)
+    sum += iData->mH[i][j];
+
+  *erg = (double) sum;
+  
+}
+
+/*!
+ *  cal numerical hessian
  *  autor: Vitalij Ruge
  **/
 static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor)
@@ -195,16 +203,13 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
   long double v_save;
   long double h;
   int i, j, l;
+  short upCost;
 
   diff_functionODE(v, t , iData, iData->J0);
-  if(lagrange_yes || mayer_yes)
-    functionAlgebraics(iData->data);
+  upCost = (lagrange_yes || mayer_yes) && (obj_factor!=0);   
 
-  if(lagrange_yes)
-    diff_symColoredObject_hess(v, t, iData, iData->gradF0, iData->lagrange_index);
-
-  if(mayer_yes)
-    diff_symColoredObject_hess(v, t, iData, iData->gradF00, iData->mayer_index);
+  if(upCost)
+    updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->gradF0, iData->gradF00);
 
   for(i = 0; i<iData->nv; ++i)
   {
@@ -213,14 +218,8 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
     v[i] += h;
     diff_functionODE(v, t , iData, iData->J);
 
-    if(lagrange_yes || mayer_yes)
-      functionAlgebraics(iData->data);
-
-    if(lagrange_yes)
-      diff_symColoredObject_hess(v, t, iData, iData->gradF, iData->lagrange_index);
-
-    if(mayer_yes)
-      diff_symColoredObject_hess(v, t, iData, iData->gradF_, iData->mayer_index);
+    if(upCost)
+      updateCost(v,t,iData,lagrange_yes,mayer_yes, iData->gradF, iData->gradF_);
 
     v[i] = v_save;
     for(l = 0; l< iData->nx; ++l)
@@ -234,6 +233,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
         iData->H[l][j][i] = iData->H[l][i][j];
       }
     }
+
     if(lagrange_yes){
       for(j = i; j < iData->nv; ++j)
       {
@@ -241,6 +241,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
        iData->oH[j][i]  = iData->oH[i][j] ; 
       }
     }
+
     if(mayer_yes){
       for(j = i; j < iData->nv; ++j)
       {
@@ -248,9 +249,27 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
        iData->mH[j][i]  = iData->mH[i][j] ; 
       }
     }
+
   }
 }
 
+
+
+/*
+ *  function update goal function 
+ *  author: vitalij
+ */
+static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes, double *F1, double *F2)
+{
+  functionAlgebraics(iData->data);
+  if(lagrange_yes)
+    diff_symColoredObject_hess(v, t, iData, F1, iData->lagrange_index);
+
+  if(mayer_yes)
+    diff_symColoredObject_hess(v, t, iData, F2, iData->mayer_index);
+  
+  return 0;
+}
 
 /*
  *  function calculates a symbolic colored gradient "matrix" only for hess
@@ -280,7 +299,6 @@ int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *
     else
       lagrange(iData->data, &dF[k],1);
 
-    /*printf("\tdF[%i] = %g\t",k,dF[k]);*/
     }
   }
   if(iData->matrixD ==0){
@@ -293,7 +311,6 @@ int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *
       mayer(iData->data, &dF[k],2);
     else
       lagrange(iData->data, &dF[k],2);
-    /*printf("dF[%i] = %g\t",k,dF[k]);*/
     }
   }
 
