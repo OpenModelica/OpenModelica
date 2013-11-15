@@ -440,6 +440,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
 
   if(ACTIVE_STREAM(LOG_STATS))
   {
+    char * contextRun;
     rt_accumulate(SIM_TIMER_TOTAL);
 
     INFO(LOG_STATS, "### STATISTICS ###");
@@ -452,7 +453,14 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     INFO2(LOG_STATS, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     INFO2(LOG_STATS, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     INFO2(LOG_STATS, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    INFO2(LOG_STATS, "%12gs [%5.1f%%] simulation", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+
+    if(solverInfo->solverMethod != S_OPTIMIZATION)
+      contextRun = "simulation";
+    else
+      contextRun = "optimization";
+
+    INFO3(LOG_STATS, "%12gs [%5.1f%%] %s", contextRun, rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+
     INFO2(LOG_STATS, "%12gs [%5.1f%%] total", rt_accumulated(SIM_TIMER_TOTAL), rt_accumulated(SIM_TIMER_TOTAL)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     RELEASE(LOG_STATS);
     
@@ -476,7 +484,7 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
       INFO1(LOG_STATS, "%5d error test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[3]);
       INFO1(LOG_STATS, "%5d convergence test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[4]);
     }
-    else
+    else if(solverInfo->solverMethod != S_OPTIMIZATION)
     {
       INFO(LOG_STATS, "sorry - no solver statistics available. [not yet implemented]");
     }

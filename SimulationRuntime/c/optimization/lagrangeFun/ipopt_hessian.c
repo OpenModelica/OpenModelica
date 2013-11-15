@@ -103,7 +103,6 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
   }
   else
   {
-    /*obj_factor*/
     double *x;
     double *ll;
     int ii;
@@ -115,19 +114,21 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     r = 0;
     c = 0;
     k = 0;
+
     for(ii = 0; ii <1; ++ii)
     {
+     for(j = 0; j<iData->nx; ++j)
+        iData->sh[j] = iData->d1[4]*(lambda[j] - lambda[j + iData->nx]) + lambda[j + 2*iData->nx];
+
       for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
       {
          mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
-         if(!p)
-          {
-            for(j = 0; j<iData->nx; ++j)
-              iData->sh[j] = iData->d1[4]*(ll[j] - ll[j + iData->nx]) + ll[j + 2*iData->nx];
-            num_hessian(x, iData->time[p], iData,iData->sh,iData->lagrange,mayer_yes,obj_factor);
-          }else{
-            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
-          }
+
+         if(p){
+           num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
+         }else{
+           num_hessian(x, iData->time[p], iData, iData->sh,iData->lagrange,mayer_yes,obj_factor);
+         }
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
@@ -135,12 +136,12 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
             sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
             values[k++] =  sum;
           }
+
         r += iData->nv;
         c += iData->nv;
 
-        if(p >0)
+        if(p)
           ll += iData->nx;
-
       }
 
     }
@@ -231,6 +232,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
           iData->H[l][i][j]  = lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
         else
           iData->H[l][i][j] = (long double) 0.0;
+
         iData->H[l][j][i] = iData->H[l][i][j];
       }
     }
