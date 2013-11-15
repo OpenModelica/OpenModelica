@@ -20,7 +20,7 @@
 </xsl:function>
 
 <xsl:template match="equation/assign">
-  <h3 title="{@type}assignment index={../@index}"><script type="text/javascript">document.write(replaceSharedLiteral('<xsl:value-of select="simcodedump:escapeJS(lhs)"/> = <xsl:value-of select="simcodedump:escapeJS(rhs)"/>'));</script></h3>
+  <h3 title="{@type}assignment index={../@index}"><script type="text/javascript">document.write(replaceSharedLiteral('<xsl:value-of select="simcodedump:escapeJS(defines/@name)"/> = <xsl:value-of select="simcodedump:escapeJS(rhs)"/>'));</script></h3>
 </xsl:template>
 
 <xsl:template match="equation/mixed">
@@ -38,7 +38,7 @@
     <xsl:value-of select="."/>
   </xsl:for-each>
   then
-  <xsl:value-of select="lhs"/> = <xsl:value-of select="rhs"/>
+  <xsl:value-of select="defines/@name"/> = <xsl:value-of select="rhs"/>
   </h3>
 </xsl:template>
 
@@ -53,7 +53,7 @@
 
 <xsl:template match="equation/nonlinear">
   <h3>Nonlinear System (index <xsl:value-of select="../@index"/>)</h3>
-  <p>Solves for variables (<xsl:value-of select="count(var)"/> variables, <xsl:value-of select="count(equation)"/> equations): <xsl:for-each select="var">
+  <p>Solves for variables (<xsl:value-of select="count(defines)"/> variables, <xsl:value-of select="count(equation)"/> equations): <xsl:for-each select="defines">
     <xsl:if test="not(position() = 1)">, </xsl:if>
     <a href="#var_{@name}"><xsl:value-of select="@name"/></a>
   </xsl:for-each></p>
@@ -99,7 +99,7 @@
 
 <xsl:template match="equation/linear">
   <h3>Linear equation (index <xsl:value-of select="../@index"/>)</h3>
-  Solves for variables (<xsl:value-of select="count(var)"/>): <xsl:for-each select="var">
+  Solves for variables (<xsl:value-of select="count(defines)"/>): <xsl:for-each select="defines">
     <xsl:if test="not(position() = 1)">, </xsl:if>
     <a href="#var_{@name}"><xsl:value-of select="@name"/></a>
   </xsl:for-each>
@@ -107,7 +107,7 @@
     <tr>
        <xsl:call-template name="linear-matrix">
          <xsl:with-param name="i" select="0"/>
-         <xsl:with-param name="stop" select="count(var)"/>
+         <xsl:with-param name="stop" select="count(defines)"/>
        </xsl:call-template>
     </tr>
   </table>
@@ -158,19 +158,19 @@
 
 <xsl:template match="operations/op-residual">
   <p><span title="make an equality equation into residual form">Operation <xsl:number count="*" /> Residual: </span>
-    <script type="text/javascript">show_diff('<xsl:value-of select="lhs"/> = <xsl:value-of select="rhs"/>','0.0 = <xsl:value-of select="result"/>');</script>
+    <script type="text/javascript">show_diff('<xsl:value-of select="defines/@name"/> = <xsl:value-of select="rhs"/>','0.0 = <xsl:value-of select="result"/>');</script>
   </p>
 </xsl:template>
 
 <xsl:template match="operations/solve">
   <p><span title="solve equation">Operation <xsl:number count="*" /> Solve: </span>
-    <script type="text/javascript">show_diff('<xsl:value-of select="old/lhs"/> = <xsl:value-of select="old/rhs"/>','<xsl:value-of select="new/lhs"/> = <xsl:value-of select="new/rhs"/>');</script>
+    <script type="text/javascript">show_diff('<xsl:value-of select="old/defines/@name"/> = <xsl:value-of select="old/rhs"/>','<xsl:value-of select="new/defines/@name"/> = <xsl:value-of select="new/rhs"/>');</script>
     <xsl:if test="assertions/assertion">assertion...</xsl:if></p>
 </xsl:template>
 
 <xsl:template match="operations/solved">
   <p><span title="already solved equation">Operation <xsl:number count="*" /> Solved: </span>
-    <xsl:value-of select="lhs"/><xsl:text> = </xsl:text><xsl:value-of select="rhs"/>
+    <xsl:value-of select="defines/@name"/><xsl:text> = </xsl:text><xsl:value-of select="rhs"/>
   </p>
 </xsl:template>
 

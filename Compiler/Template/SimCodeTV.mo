@@ -2496,6 +2496,11 @@ package Expression
     output Boolean outBoolean;
   end isPositiveOrZero;
 
+  function extractUniqueCrefsFromExp
+    input DAE.Exp inExp;
+    output list<DAE.ComponentRef> ocrefs;
+  end extractUniqueCrefsFromExp;
+
 end Expression;
 
 package ExpressionDump

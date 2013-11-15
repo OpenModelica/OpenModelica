@@ -5177,17 +5177,16 @@ Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
   input DAE.Exp inExp;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
-  ocrefs := match(inExp)
-    local
-      list<DAE.ComponentRef> crefs;
-
-    case _
-      equation
-        ((_,crefs)) = traverseExp(inExp, traversingComponentRefFinder, {});
-      then
-        crefs;
-  end match;
+  ((_,ocrefs)) := traverseExp(inExp, traversingComponentRefFinder, {});
 end extractCrefsFromExp;
+
+public function extractUniqueCrefsFromExp
+  "Extracts all unique ComponentRef from an Expression."
+  input DAE.Exp inExp;
+  output list<DAE.ComponentRef> ocrefs;
+algorithm
+  ocrefs := List.unique(extractCrefsFromExp(inExp));
+end extractUniqueCrefsFromExp;
 
 public function expHasCrefs "
 @author: adrpo 2011-04-29
