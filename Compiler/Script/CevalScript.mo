@@ -61,6 +61,7 @@ public import Interactive;
 public import Dependency;
 public import Values;
 public import SimCode;
+public import UnitAbsyn;
 
 // protected imports
 protected import AbsynDep;
@@ -132,6 +133,8 @@ protected import FMIExt;
 protected import ErrorExt;
 protected import FGraphEnv;
 protected import FGraph;
+protected import UnitAbsynBuilder;
+protected import UnitParserExt;
 
 protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
@@ -860,7 +863,7 @@ algorithm
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs;
-      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r, linearizeTime, curveWidth;
+      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
       list<GlobalScript.Statements> istmtss;
       Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors;
@@ -889,6 +892,7 @@ algorithm
       HashSetString.HashSet hashSetString;
       list<Boolean> blst;
       list<Error.TotalMessage> messages;
+      UnitAbsyn.Unit u1,u2;
    
     Real stoptime,starttime,tol,stepsize;
     Integer interval;
@@ -1086,6 +1090,23 @@ algorithm
         newst = GlobalScript.SYMBOLTABLE(p,aDep,fp,{},iv,cf,lf);
       then
         (cache,Values.BOOL(true),newst);
+
+    case (cache,env,"convertUnits",{Values.STRING(str1),Values.STRING(str2)},st,_)
+      equation
+        UnitParserExt.initSIUnits();
+        (u1,scaleFactor1,offset1) = UnitAbsynBuilder.str2unitWithScaleFactor(str1,NONE());
+        (u2,scaleFactor2,offset2) = UnitAbsynBuilder.str2unitWithScaleFactor(str2,NONE());
+        b = valueEq(u1,u2);
+        /* How to calculate the final scale factor and offset?
+        ºF = (ºK - 273.15)* 1.8000 + 32.00 = (ºK - 255.37)* 1.8000
+        ºC = (ºK - 273.15)
+
+        ºF = (ºC - (255.37 - 273.15))*(1.8/1.0)
+        */
+        scaleFactor = scaleFactor2 / scaleFactor1;
+        offset = offset2 - offset1;
+      then
+        (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(scaleFactor),Values.REAL(offset)}),st);
 
     case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.ENUM_LITERAL(name=path)},(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
       equation

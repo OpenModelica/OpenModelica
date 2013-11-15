@@ -16,6 +16,7 @@ extern "C"
 
 void UnitParserExtImpl__initSIUnits(void)
 {
+  unitParser->initSIUnits();
 }
 
 void UnitParserExtImpl__checkpoint(void)

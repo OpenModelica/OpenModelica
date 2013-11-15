@@ -1826,6 +1826,21 @@ external "builtin";
 annotation(preferredView="text");
 end dumpXMLDAE;
 
+function convertUnits
+  input String s1;
+  input String s2;
+  output Boolean unitsCompatible;
+  output Real scaleFactor1;
+  output Real offset1;
+  output Real scaleFactor2;
+  output Real offset2;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Returns the scale factor and offsets used when converting two units.</p>
+<p>Returns false if the types are not compatible and should not be converted.</p>
+</html>"));
+end convertUnits;
+
 function listVariables "Lists the names of the active variables in the scripting environment."
   output TypeName variables[:];
 external "builtin";

@@ -1,11 +1,11 @@
 /* External interface for UnitParserExt module */
 #include "unitparser.h"
 #include "unitparserext.cpp"
+#include <math.h>
 
 extern "C"
 {
 #include "rml.h"
-
 
 void UnitParserExt_5finit(void)
 {
@@ -151,6 +151,8 @@ RML_BEGIN_LABEL(UnitParserExt__str2unit)
     rmlA2 = (void*)tpnoms;
     rmlA3 = (void*)tpdenoms;
     rmlA4 = (void*)tpstrs;
+    rmlA5 = mk_rcon(unit.scaleFactor.toReal() * pow(10,unit.prefixExpo.toReal()));
+    rmlA6 = mk_rcon(unit.offset.toReal());
     RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

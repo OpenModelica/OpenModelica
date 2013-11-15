@@ -38,7 +38,7 @@ const char* UnitParserExt_unit2str(void *nums, void *denoms, void *tpnoms, void 
   return strcpy(ModelicaAllocateString(res.size()), res.c_str());
 }
 
-void UnitParserExt_str2unit(const char *inStr, void **nums, void **denoms, void **tpnoms, void **tpdenoms, void **tpstrs)
+void UnitParserExt_str2unit(const char *inStr, void **nums, void **denoms, void **tpnoms, void **tpdenoms, void **tpstrs, double *scaleFactor, double *offset)
 {
   string str = string(inStr);
   Unit unit;
@@ -55,6 +55,9 @@ void UnitParserExt_str2unit(const char *inStr, void **nums, void **denoms, void 
   *tpdenoms = mmc_mk_nil();
   *tpstrs   = mmc_mk_nil();
   /* baseunits */
+  *scaleFactor = unit.scaleFactor.toReal() * pow(10,unit.prefixExpo.toReal());
+  *offset = unit.offset.toReal();
+
   vector<Rational>::reverse_iterator rii;
   for(rii=unit.unitVec.rbegin(); rii!=unit.unitVec.rend(); ++rii) {
     *nums = mmc_mk_cons(mmc_mk_icon(rii->num),*nums);

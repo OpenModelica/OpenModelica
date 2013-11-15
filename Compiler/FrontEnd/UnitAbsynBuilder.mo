@@ -1574,7 +1574,21 @@ public function str2unit "Translate a unit string to a unit"
 protected
    list<Integer> nums,denoms,tpnoms,tpdenoms;
    list<String> tpstrs;
-   Real scaleFactor,offset;
+   list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
+   list<MMath.Rational> units;
+algorithm
+  (unit,_,_) := str2unitWithScaleFactor(res,funcInstIdOpt);
+end str2unit;
+
+public function str2unitWithScaleFactor "Translate a unit string to a unit"
+  input String res;
+  input Option<Integer> funcInstIdOpt;
+  output UnitAbsyn.Unit unit;
+  output Real scaleFactor;
+  output Real offset;
+protected
+   list<Integer> nums,denoms,tpnoms,tpdenoms;
+   list<String> tpstrs;
    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
    list<MMath.Rational> units;
 algorithm
@@ -1582,7 +1596,7 @@ algorithm
   units := joinRationals(nums,denoms);
   typeParams := joinTypeParams(tpnoms,tpdenoms,tpstrs,funcInstIdOpt);
   unit := UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(typeParams,units));
-end str2unit;
+end str2unitWithScaleFactor;
 
 /* Tests  */
 
