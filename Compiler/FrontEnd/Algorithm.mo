@@ -258,7 +258,9 @@ algorithm
       list<DAE.Properties> rest_lhs_prop, rest_rhs_prop;
       DAE.Statement ass;
       list<DAE.Statement> rest_ass;
-    case ({}, {}, {}, {}, _, _, _) then {};
+    case ({}, {}, _, _, _, _, _) then {}; /* rhs does not need to be empty */
+    case (DAE.CREF(componentRef=DAE.WILD()) :: rest_lhs, _ :: rest_lhs_prop, _ :: rest_rhs, _ :: rest_rhs_prop, _, _, _)
+      then makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, attributes, initial_, source);
     case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop,
           rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
       equation
