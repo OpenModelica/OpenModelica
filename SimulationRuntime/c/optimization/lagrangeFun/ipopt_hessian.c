@@ -41,10 +41,8 @@
 
 #ifdef WITH_IPOPT
 
-static int hessian_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda);
-static int hessian_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_factor);
-static int hessian_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_factor);
-
+static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor);
+static int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *dF, int this_it);
 
 /*!
  *  calc hessian
@@ -123,13 +121,10 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
           {
             for(j = 0; j<iData->nx; ++j)
               iData->sh[j] = iData->d1[4]*(ll[j] - ll[j + iData->nx]) + ll[j + 2*iData->nx];
-            hessian_ode(x, iData->time[p], iData,iData->sh);
+            num_hessian(x, iData->time[p], iData,iData->sh,iData->lagrange,0,obj_factor);
           }else{
-             hessian_ode(x, iData->time[p], iData,ll);
+             num_hessian(x, iData->time[p], iData, ll, iData->lagrange, 0, obj_factor);
           }
-
-        if(iData->lagrange)
-           hessian_lagrange(x, iData->time[p], iData,obj_factor);
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
@@ -159,13 +154,8 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     {
       for(p = 1;p <iData->deg +1;++p,x += iData->nv)
       {
-        hessian_ode(x, iData->time[ii*iData->deg + p], iData,ll);
-
-        if(iData->lagrange)
-         hessian_lagrange(x, iData->time[ii*iData->deg + p], iData, obj_factor);
         mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
-        if(mayer_yes)
-         hessian_mayer(x, iData->time[ii*iData->deg + p], iData,obj_factor);
+        num_hessian(x, iData->time[p], iData,ll,iData->lagrange,mayer_yes,obj_factor);
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
@@ -196,81 +186,42 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
   return TRUE;
 }
 
-
 /*!
  *  cal hessian (mayer part)
  *  autor: Vitalij Ruge
  **/
-static int hessian_mayer(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
-{
-  long double v_save;
-  long double h;
-  long int i, j, l;
-  diff_symColoredObject(v, t, iData, iData->gradF0, iData->mayer_index);
-  for(i = 0; i<iData->nv; ++i)
-  {
-    v_save = (long double)v[i];
-    h = (long double)DF_STEP(v_save, iData->vnom[i]);
-    v[i] += h;
-    diff_symColoredObject(v, t, iData, iData->gradF, iData->mayer_index);
-    v[i] = v_save;
-
-    for(j = i; j < iData->nv; ++j)
-    {
-     iData->mH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
-     iData->mH[j][i]  = iData->mH[i][j] ; 
-    }
-  }
-
-  return 0;
-
-}
-
-/*!
- *  cal hessian (lagrange part)
- *  autor: Vitalij Ruge
- **/
-static int hessian_lagrange(double *v, double t, IPOPT_DATA_ *iData, double obj_factor)
-{
-  long double v_save;
-  long double h;
-  long int i, j, l;
-  diff_symColoredObject(v, t, iData, iData->gradF0, iData->lagrange_index);
-  for(i = 0; i<iData->nv; ++i)
-  {
-    v_save = (long double)v[i];
-    h = (long double)DF_STEP(v_save, iData->vnom[i]);
-    v[i] += h;
-    diff_symColoredObject(v, t, iData, iData->gradF, iData->lagrange_index);
-    v[i] = v_save;
-
-    for(j = i; j < iData->nv; ++j)
-    {
-     iData->oH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
-     iData->oH[j][i]  = iData->oH[i][j] ; 
-    }
-  }
-
-  return 0;
-}
-
-/*!
- *  cal hessian (mayer part)
- *  autor: Vitalij Ruge
- **/
-static int hessian_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda)
+static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor)
 {
   long double v_save;
   long double h;
   int i, j, l;
 
   diff_functionODE(v, t , iData, iData->J0);
+  if(lagrange_yes || mayer_yes)
+    functionAlgebraics(iData->data);
+
+  if(lagrange_yes)
+    diff_symColoredObject_hess(v, t, iData, iData->gradF0, iData->lagrange_index);
+
+  if(mayer_yes)
+    diff_symColoredObject_hess(v, t, iData, iData->gradF00, iData->mayer_index);
+
   for(i = 0; i<iData->nv; ++i)
   {
     v_save = (long double)v[i];
     h = (long double)DF_STEP(v_save, iData->vnom[i]);
     v[i] += h;
     diff_functionODE(v, t , iData, iData->J);
+
+    if(lagrange_yes || mayer_yes)
+      functionAlgebraics(iData->data);
+
+    if(lagrange_yes)
+      diff_symColoredObject_hess(v, t, iData, iData->gradF, iData->lagrange_index);
+
+    if(mayer_yes)
+      diff_symColoredObject_hess(v, t, iData, iData->gradF_, iData->mayer_index);
+
     v[i] = v_save;
     for(l = 0; l< iData->nx; ++l)
     {
@@ -281,20 +232,72 @@ static int hessian_ode(double *v, double t, IPOPT_DATA_ *iData, double *lambda)
         else
           iData->H[l][i][j] = (long double) 0.0;
         iData->H[l][j][i] = iData->H[l][i][j];
-/*
-        tmp = (double) iData->H[l][j][i];
-        printf("H[%i][%i][%i] = %g \tindex = %i \t",l,j,i,(double)tmp, (int)(iData->knowedJ[l][j] + iData->knowedJ[l][i]));
-        printf("h = %g", (double) h);
-        printf("lambda[%i] = %g", l,(double) lambda[l]);
-        printf("\tv_save = %g\n", (double)v_save);
-        printf("\tlhs = %g\n", iData->J[l][j]);
-        printf("\trhs = %g\n", iData->J0[l][j]);
-        tmp = lambda[l]*(iData->J[l][j] - iData->J0[l][j])/h;
-        printf("\tlhs - rhs = %g\n", (double) tmp);
-*/
+      }
+    }
+    if(lagrange_yes){
+      for(j = i; j < iData->nv; ++j)
+      {
+       iData->oH[i][j]  = (long double) obj_factor/h* (iData->gradF[j] - iData->gradF0[j]);
+       iData->oH[j][i]  = iData->oH[i][j] ; 
+      }
+    }
+    if(mayer_yes){
+      for(j = i; j < iData->nv; ++j)
+      {
+       iData->mH[i][j]  = (long double) obj_factor/h* (iData->gradF_[j] - iData->gradF00[j]);
+       iData->mH[j][i]  = iData->mH[i][j] ; 
       }
     }
   }
+}
+
+
+/*
+ *  function calculates a symbolic colored gradient "matrix" only for hess
+ *  author: vitalij
+ */
+int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *dF, int this_it)
+{
+  DATA * data = iData->data;
+  const int index1 = 3;
+  const int index2 = 4;
+  double*x,*u;
+
+  int i,k;
+
+  x = v;
+  u = x + iData->nx;
+  
+
+  if(iData->matrixC ==0){
+    for(i= 0, k = 0; i<iData->nx; ++i, ++k)
+    {
+    data->simulationInfo.analyticJacobians[index1].seedVars[i] = 1.0;
+    functionJacC_column(data);
+    data->simulationInfo.analyticJacobians[index1].seedVars[i] = 0.0;
+    if(this_it ==0)
+      mayer(iData->data, &dF[k],1);
+    else
+      lagrange(iData->data, &dF[k],1);
+
+    /*printf("\tdF[%i] = %g\t",k,dF[k]);*/
+    }
+  }
+  if(iData->matrixD ==0){
+    for(k =iData->nx, i = 0 ; i<iData->nu; ++i, ++k)
+    {
+    data->simulationInfo.analyticJacobians[index2].seedVars[i] = 1.0;
+    functionJacD_column(data);
+    data->simulationInfo.analyticJacobians[index2].seedVars[i] = 0.0;
+    if(this_it ==0)
+      mayer(iData->data, &dF[k],2);
+    else
+      lagrange(iData->data, &dF[k],2);
+    /*printf("dF[%i] = %g\t",k,dF[k]);*/
+    }
+  }
+
+  return 0;
 }
 
 

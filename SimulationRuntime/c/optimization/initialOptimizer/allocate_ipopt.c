@@ -90,7 +90,9 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
     iData->J[i] = (double*) calloc(iData->nv, sizeof(double));
 
   iData->gradF = (double*) calloc(iData->nv, sizeof(double));
+  iData->gradF_ = (double*) calloc(iData->nv, sizeof(double));
   iData->gradF0 = (double*) calloc(iData->nv, sizeof(double));
+  iData->gradF00 = (double*) calloc(iData->nv, sizeof(double));
 
   iData->a1_ = (double**) malloc(deg1 * sizeof(double*));
   iData->a2_ = (double**) malloc(deg1 * sizeof(double*));
@@ -167,7 +169,9 @@ int freeIpoptData(IPOPT_DATA_ *iData)
   free(iData->H);
 
   free(iData->gradF);
+  free(iData->gradF_);
   free(iData->gradF0);
+  free(iData->gradF00);
   free(iData->gmin);
   free(iData->gmax);
   free(iData->mult_g);

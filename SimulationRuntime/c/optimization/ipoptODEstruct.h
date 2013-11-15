@@ -156,7 +156,9 @@ typedef struct IPOPT_DATA_
   double **J0;
   double **J;
   double * gradF;
+  double * gradF_;
   double * gradF0;
+  double * gradF00;
   int **knowedJ;
   double **numJ;
   long double ***H;
