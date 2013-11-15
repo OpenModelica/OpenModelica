@@ -119,19 +119,20 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
     {
       for(p = 0, x= v, ll = lambda;p <iData->deg+1;++p, x += iData->nv)
       {
+         mayer_yes = iData->mayer && ii+1 == iData->nsi && p == iData->deg;
          if(!p)
           {
             for(j = 0; j<iData->nx; ++j)
               iData->sh[j] = iData->d1[4]*(ll[j] - ll[j + iData->nx]) + ll[j + 2*iData->nx];
-            num_hessian(x, iData->time[p], iData,iData->sh,iData->lagrange,0,obj_factor);
+            num_hessian(x, iData->time[p], iData,iData->sh,iData->lagrange,mayer_yes,obj_factor);
           }else{
-            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,0,obj_factor);
+            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
           }
 
         for(i=0;i< iData->nv;++i)
           for(j = 0; j< i+1; ++j)
           {
-            sumLagrange(iData, &sum, ii, i, j,  p,  mayer_yes);
+            sumLagrange(iData, &sum, ii, i, j,  p, mayer_yes);
             values[k++] =  sum;
           }
         r += iData->nv;
@@ -171,7 +172,7 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 }
 
 /*!
- *  cal lamda^\top \cdot H + sigma*((?)dd_lagrange + (?)dd_mayer)
+ *  lamda^\top \cdot H + sigma*((?)dd_lagrange + (?)dd_mayer)
  *  autor: Vitalij Ruge
  **/
 static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, short mayer_yes)
