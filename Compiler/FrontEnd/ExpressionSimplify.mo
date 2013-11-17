@@ -1791,6 +1791,20 @@ algorithm
         a1 = Expression.makeConstZero(tp);
       then a1;
 
+    case (e1,op as DAE.DIV_ARR(ty = _),e2)
+      equation
+        true = Expression.isZero(e1);
+        tp = Expression.typeof(e1);
+        (a1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then a1;
+
+    case (e1,op as DAE.DIV_ARRAY_SCALAR(ty = _),e2)
+      equation
+        true = Expression.isZero(e1);
+        tp = Expression.typeof(e1);
+        (a1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then a1;
+
   end matchcontinue;
 end simplifyBinaryArray;
 
