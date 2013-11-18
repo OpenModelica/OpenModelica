@@ -6197,4 +6197,49 @@ algorithm
   end matchcontinue;
 end getNamedAnnotationStr;
 
+public function mapCrefParts
+  "This function splits each part of a cref into CREF_IDENTs and applies the
+   given function to each part. If the given cref is a qualified cref then the
+   map function is expected to also return CREF_IDENT, so that the split cref
+   can be reconstructed. Otherwise the map function is free to return whatever
+   it wants."
+  input ComponentRef inCref;
+  input MapFunc inMapFunc;
+  output ComponentRef outCref;
+
+  partial function MapFunc
+    input ComponentRef inCref;
+    output ComponentRef outCref;
+  end MapFunc;
+algorithm
+  outCref := match(inCref, inMapFunc)
+    local
+      Ident name;
+      list<Subscript> subs;
+      ComponentRef rest_cref;
+      ComponentRef cref;
+
+    case (CREF_QUAL(name, subs, rest_cref), _)
+      equation
+        cref = CREF_IDENT(name, subs);
+        CREF_IDENT(name, subs) = inMapFunc(cref);
+        rest_cref = mapCrefParts(rest_cref, inMapFunc);
+      then
+        CREF_QUAL(name, subs, rest_cref);
+
+    case (CREF_FULLYQUALIFIED(cref), _)
+      equation
+        cref = mapCrefParts(cref, inMapFunc);
+      then
+        CREF_FULLYQUALIFIED(cref);
+
+    else
+      equation
+        cref = inMapFunc(inCref);
+      then
+        cref;
+
+  end match;
+end mapCrefParts;
+
 end Absyn;

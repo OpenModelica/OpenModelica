@@ -14828,6 +14828,15 @@ protected function replaceEnd
   It uses a couple of stacks and crap to handle all of this :)."
   input Absyn.ComponentRef cr;
   output Absyn.ComponentRef ocr;
+algorithm
+  ocr := Absyn.mapCrefParts(cr, replaceEnd2);
+end replaceEnd;
+
+protected function replaceEnd2
+  "Single pass traversal that replaces end-expressions with the correct size-expression.
+  It uses a couple of stacks and crap to handle all of this :)."
+  input Absyn.ComponentRef cr;
+  output Absyn.ComponentRef ocr;
 protected
   Absyn.ComponentRef stripcr;
 algorithm
@@ -14836,6 +14845,6 @@ algorithm
   // print("stripCref        " +& Dump.printExpStr(Absyn.CREF(stripcr)) +& "\n");
   (ocr,_) := Absyn.traverseExpBidirCref(cr,(replaceEndEnter,replaceEndExit,({Absyn.CREF(stripcr)},{0},{true})));
   // print("replaceEnd  end  " +& Dump.printExpStr(Absyn.CREF(ocr)) +& "\n");
-end replaceEnd;
+end replaceEnd2;
 
 end Static;
