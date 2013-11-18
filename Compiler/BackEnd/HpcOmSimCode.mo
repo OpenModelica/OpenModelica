@@ -151,7 +151,7 @@ algorithm
       HpcOmTaskGraph.TaskGraphMeta taskGraphData1;
       list<list<Integer>> parallelSets;
       list<list<Integer>> criticalPaths, criticalPathsWoC;
-      Real cpCosts, cpCostsWoC, serTime, parTime, speedUp;
+      Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       
       //Additional informations to append SimCode
       list<DAE.Exp> simCodeLiterals;
@@ -237,24 +237,19 @@ algorithm
       //Create schedule
       //---------------
       schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix);
-      (serTime,parTime,speedUp) = HpcOmScheduler.predictExecutionTime(schedule,numProc,taskGraph1,taskGraphData1);
-      //print("The predicted SpeedUp with "+&intString(numProc)+&" processors is "+&realString(speedUp)+&".\n");
       
-      taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
-      
-      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
-      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
-
+      (serTime,parTime,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(schedule,SOME(cpCostsWoC),numProc,taskGraph1,taskGraphData1);
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-      //criticalPathInfo = "";
-      //criticalPaths = {{}};
-      //criticalPathsWoC = {{}};
+      
+      
+      taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
+      schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
+      
+      
+      fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
       //HpcOmScheduler.printSchedule(schedule);
-      
-      //print("Parallel informations:\n");
-      //printParInformation(hpcOmParInformation);
       
       SimCode.SIMCODE(modelInfo, simCodeLiterals, simCodeRecordDecls, simCodeExternalFunctionIncludes, allEquations, odeEquations, algebraicEquations, residualEquations, useSymbolicInitialization, useHomotopy, initialEquations, startValueEquations, 
                  parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, stateSets, constraints, classAttributes, zeroCrossings, relations, sampleLookup, whenClauses, 

@@ -2014,28 +2014,55 @@ end printSchedule;
 
 
 public function predictExecutionTime  "computes the theoretically execution time for the serial simulation and the parallel. a speedup ratio is determined by su=serTime/parTime.
+the max speedUp is computed via the serTime/criticalPathCosts.
 author:Waurich TUD 2013-11"
   input Schedule scheduleIn;
+  input Option<Real> cpCostsOption;
   input Integer numProc;
   input HpcOmTaskGraph.TaskGraph taskGraphIn;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   output Real serialTimeOut;
   output Real parallelTimeOut;
-  output Real speedupOut;
-protected
-  Boolean isODE;
-  Real parTime, serTime, speedUp;
-  Schedule schedule;
+  output Real speedUpOut;
+  output Real speedUpMaxOut;
 algorithm
-  isODE := intNe(arrayLength(taskGraphIn),0);
-  schedule := Util.if_(isODE,scheduleIn,EMPTYSCHEDULE());
-  (_,parTime) := getFinishingTimesForSchedule(schedule,numProc,taskGraphIn,taskGraphMetaIn);
-  serTime := getSerialExecutionTime(taskGraphMetaIn);
-  speedUp := serTime /. parTime;
-  serialTimeOut := serTime;
-  parallelTimeOut := parTime;
-  speedupOut := speedUp;
-  end predictExecutionTime;
+  (serialTimeOut,parallelTimeOut,speedUpOut,speedUpMaxOut) := matchcontinue(scheduleIn,cpCostsOption,numProc,taskGraphIn,taskGraphMetaIn)
+    local
+      Boolean isODE;
+      Real parTime, serTime, speedUp, speedUpMax, cpCosts;
+      String isOkString, isNotOkString;
+      Schedule schedule;
+    case(_,NONE(),_,_,_)
+      equation
+        true = intNe(arrayLength(taskGraphIn),0); //is an ODE system
+        (_,parTime) = getFinishingTimesForSchedule(scheduleIn,numProc,taskGraphIn,taskGraphMetaIn);
+        serTime = getSerialExecutionTime(taskGraphMetaIn);
+        speedUp = serTime /. parTime;
+        print("The predicted SpeedUp with "+&intString(numProc)+&" processors is "+&realString(speedUp)+&".\n");
+      then
+        (serTime,parTime,speedUp,-1.0);
+    case(_,SOME(cpCosts),_,_,_)
+      equation
+        true = intNe(arrayLength(taskGraphIn),0);  //is an ODE system
+        (_,parTime) = getFinishingTimesForSchedule(scheduleIn,numProc,taskGraphIn,taskGraphMetaIn);
+        serTime = getSerialExecutionTime(taskGraphMetaIn);
+        speedUp = serTime /. parTime;
+        speedUpMax = serTime /. cpCosts;
+        isOkString = "The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+&realString(speedUp)+&". With a theoretical maxmimum speedUp of: "+&realString(speedUpMax)+&"\n";
+        isNotOkString = "Something is weird. The predicted SpeedUp is "+&realString(speedUp)+&" and the theoretical maximum speedUp is "+&realString(speedUpMax)+&"\n";
+        Debug.bcall(realGt(speedUp,speedUpMax),print,isNotOkString);
+        Debug.bcall(realLe(speedUp,speedUpMax),print,isOkString);
+        //print("the serialCosts: "+&realString(serTime)+&"\n");
+        //print("the parallelCosts: "+&realString(parTime)+&"\n");
+        //print("the cpCosts: "+&realString(cpCosts)+&"\n");
+      then
+        (serTime,parTime,speedUp,speedUpMax); 
+    case(_,_,_,_,_)
+      equation
+      then
+        (0.0,0.0,0.0,0.0);
+  end matchcontinue;
+end predictExecutionTime;
 
 
 protected function getSerialExecutionTime  "computes thes serial execution time by summing up all exeCosts of all tasks.
@@ -2043,12 +2070,17 @@ author:Waurich TUD 2013-11"
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   output Real serialTimeOut;
 protected
+  list<Integer> odeComps;
+  list<Real> exeCostsReal;
   array<Real> exeCosts1;
+  array<list<Integer>> inComps;
   array<tuple<Integer, Real>> exeCosts;
 algorithm
-  HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts) := taskGraphMetaIn;
+  HpcOmTaskGraph.TASKGRAPHMETA(exeCosts=exeCosts, inComps=inComps) := taskGraphMetaIn;
+  odeComps := Util.arrayFold(inComps,listAppend,{});
   exeCosts1 := Util.arrayMap(exeCosts,Util.tuple22);
-  serialTimeOut := Util.arrayFold(exeCosts1,realAdd,0.0);
+  exeCostsReal := List.map1(odeComps,Util.arrayGetIndexFirst,exeCosts1);
+  serialTimeOut := List.fold(exeCostsReal,realAdd,0.0);
 end getSerialExecutionTime;
 
 
