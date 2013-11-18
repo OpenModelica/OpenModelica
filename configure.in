@@ -463,7 +463,7 @@ LIBS=""
 if ! test "$NO_IPOPT" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
   WITH_IPOPT="#define WITH_IPOPT"
-  IPOPT_LDFLAGS=`PKG_CONFIG_PATH=-I$(top_builddir)/3rdParty/lis-1.4.12/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs ipopt`
+  IPOPT_LDFLAGS=`PKG_CONFIG_PATH=-I$(top_builddir)/3rdParty/Ipopt-3.11.6/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs ipopt`
 else
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: No"
   WITH_IPOPT="/* Without IPOPT */"
