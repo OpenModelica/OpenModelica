@@ -150,7 +150,7 @@ BinaryTree.mo \
 BinaryTreeInt.mo \
 Causalize.mo \
 DAEQuery.mo \
-Derive.mo \
+Differentiate.mo \
 DumpHTML.mo \
 EvaluateParameter.mo \
 ExpressionSolve.mo \

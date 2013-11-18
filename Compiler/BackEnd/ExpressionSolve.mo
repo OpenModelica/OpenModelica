@@ -46,7 +46,7 @@ public import DAE;
 // protected imports
 protected import ComponentReference;
 protected import Debug;
-protected import Derive;
+protected import Differentiate;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -115,24 +115,6 @@ algorithm
       then
         (res,asserts);
 
-    // solving linear equation system using newton iteration ( converges directly )
-    case (_,_,DAE.CREF(componentRef = _),_)
-      equation
-        (res,asserts) = solve2(inExp1, inExp2, inExp3, linearExps);
-        (res,_) = ExpressionSimplify.simplify1(res);
-      then
-        (res,asserts);
-    case (_,_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),_)
-      equation
-        cr1 = ComponentReference.crefPrefixDer(cr);
-        crexp = Expression.crefExp(cr1);
-        ((lhs,_)) = Expression.replaceExp(inExp1, inExp3, crexp);
-        ((rhs,_)) = Expression.replaceExp(inExp2, inExp3, crexp);
-        (res,asserts) = solve2(lhs, rhs, crexp, linearExps);
-        (res,_) = ExpressionSimplify.simplify1(res);
-      then
-        (res,asserts);
-
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
       equation
         (lhs,asserts) = solve_work(inExp1,e2,inExp3,linearExps);
@@ -150,6 +132,25 @@ algorithm
         asserts2 = listAppend(asserts,asserts1);
       then
         (res,asserts2);
+
+    // solving linear equation system using newton iteration ( converges directly )
+    case (_,_,DAE.CREF(componentRef = _),_)
+      equation
+        (res,asserts) = solve2(inExp1, inExp2, inExp3, linearExps);
+        (res,_) = ExpressionSimplify.simplify1(res);
+      then
+        (res,asserts);
+
+    case (_,_,DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),_)
+      equation
+        cr1 = ComponentReference.crefPrefixDer(cr);
+        crexp = Expression.crefExp(cr1);
+        ((lhs,_)) = Expression.replaceExp(inExp1, inExp3, crexp);
+        ((rhs,_)) = Expression.replaceExp(inExp2, inExp3, crexp);
+        (res,asserts) = solve2(lhs, rhs, crexp, linearExps);
+        (res,_) = ExpressionSimplify.simplify1(res);
+      then
+        (res,asserts);
 /*
     case(_,_,_,_)
       equation
@@ -326,7 +327,7 @@ protected function solve2
 algorithm
   (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3,linearExps)
     local
-      DAE.Exp dere,zeroe,rhs,e,z,a;
+      DAE.Exp dere,rhs,e,z,a;
       DAE.ComponentRef cr;
       DAE.Exp invCr;
       DAE.Type tp;
@@ -338,15 +339,15 @@ algorithm
       equation
         false = hasOnlyFactors(inExp1,inExp2);
         e = Expression.makeDiff(inExp1,inExp2);
-        dere = Derive.differentiateExp(e, cr, linearExps, NONE());
+        dere = Differentiate.differentiateExpSolve(e, cr);
         (dere,_) = ExpressionSimplify.simplify(dere);
         false = Expression.isZero(dere);
         false = Expression.expHasCrefNoPreorDer(dere, cr);
         tp = Expression.typeof(inExp3);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        ((zeroe,_)) = Expression.replaceExp(e, inExp3, z);
-        (zeroe,_) = ExpressionSimplify.simplify(zeroe);
-        rhs = Expression.negate(Expression.makeDiv(zeroe,dere));
+        ((e,_)) = Expression.replaceExp(e, inExp3, z);
+        (e,_) = ExpressionSimplify.simplify(e);
+        rhs = Expression.negate(Expression.makeDiv(e,dere));
       then
         (rhs,{});
 

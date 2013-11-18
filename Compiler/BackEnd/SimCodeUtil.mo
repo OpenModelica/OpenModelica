@@ -71,6 +71,7 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import Config;
 protected import DAEDump;
+protected import DAEDumpTpl;
 protected import DAEUtil;
 protected import Debug;
 protected import Error;
@@ -745,7 +746,7 @@ algorithm
       type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes=funAttrs), 
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
       equation
-        
+
         DAE.FUNCTION_ATTRIBUTES(_, _, _, _, DAE.FP_NON_PARALLEL()) = funAttrs;
         
         outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
@@ -837,7 +838,7 @@ algorithm
         (KERNEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), rt_1, recordDecls, includes, includeDirs, libs);
 */
         
-        // External functions.
+    // External functions.
     case (_, DAE.FUNCTION(path = fpath, source = source, 
       functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
       type_ = (tp as DAE.T_FUNCTION(funcArg = args, funcResultType = restype))), rt, recordDecls, includes, includeDirs, libs)
@@ -3706,7 +3707,7 @@ algorithm
       eqns_1 = BackendEquation.listEquation(eqn_lst);
       syst = BackendDAE.EQSYSTEM(vars_1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
       (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
-      jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, false, ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+      (jac, _) = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, false, ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
       (jac_tp,_) = BackendDAEUtil.analyzeJacobian(vars_1, eqns_1, jac);
       // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
       jac_tp = changeJactype(jac_tp);
@@ -4099,7 +4100,7 @@ algorithm
         eqns = BackendEquation.listEquation(inEqns);
         syst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
         (m, _) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
-        jac = BackendDAEUtil.calculateJacobian(vars, eqns, m, false, ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        (jac, _) = BackendDAEUtil.calculateJacobian(vars, eqns, m, false, ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         (jac_tp,_) = BackendDAEUtil.analyzeJacobian(vars, eqns, jac);
       then
         (jac, jac_tp);          
@@ -4664,6 +4665,8 @@ algorithm
   
     String errorMessage;
     
+    DAE.FunctionTree funcs;
+    
     case(_, _, _, _, _, _, _, _, _, _, _)
       equation
         Debug.fcall(Flags.JAC_DUMP2, print, "---+++ create analytical jacobian +++---");
@@ -4730,7 +4733,7 @@ algorithm
         dependentVarsLst = BackendVariable.varList(dependentVars);
         dependentVarsComRefs = List.map(dependentVarsLst, BackendVariable.varCref);
 
-        (symJacBDAE as (jacBackendDAE, _, _, _, _), (sparsepatternComRefs, (independentComRefs, dependentVarsComRefs)), sparseColoring) =
+        (symJacBDAE as (jacBackendDAE, _, _, _, _), (sparsepatternComRefs, (independentComRefs, dependentVarsComRefs)), sparseColoring, funcs) =
         BackendDAEOptimize.createJacobian(backendDAE, 
                                           independentVarsLst, 
                                           emptyVars, 
@@ -4917,6 +4920,8 @@ algorithm
     list<SimCode.SimVar> seedVars, indexVars;
   
     String errorMessage;
+    
+    DAE.FunctionTree funcs;
     case(_, _, _, _, _, _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
@@ -4979,7 +4984,7 @@ algorithm
         dependentVarsLst = BackendVariable.varList(dependentVars);
         dependentVarsComRefs = List.map(dependentVarsLst, BackendVariable.varCref);
         
-        (symJacBDAE as (jacBackendDAE, _, _, _, _), (sparsepatternComRefs, (independentComRefs, dependentVarsComRefs)), sparseColoring) = 
+        (symJacBDAE as (jacBackendDAE, _, _, _, _), (sparsepatternComRefs, (independentComRefs, dependentVarsComRefs)), sparseColoring, funcs) = 
         BackendDAEOptimize.createJacobian(backendDAE, 
                                           independentVarsLst, 
                                           emptyVars, 

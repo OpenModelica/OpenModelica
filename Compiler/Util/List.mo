@@ -5398,7 +5398,7 @@ public function mapFoldList
     input ElementInType inElem;
     input FoldType inArg;
     output ElementOutType outResult;
-    output ArgType1 outArg;
+    output FoldType outArg;
   end FuncType;
 algorithm
   (outListList, outArg) := mapFoldList_tail(inListList, inFunc, inArg, {});
@@ -5438,6 +5438,73 @@ algorithm
         (rest_res, arg);
   end match;
 end mapFoldList_tail;
+
+public function map3FoldList
+  "Takes a list of lists, an extra argument, and a function.  The function will
+  be applied to each element in the list, and the extra argument will be passed
+  to the function and updated for each element."
+  input list<list<ElementInType>> inListList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input ArgType3 inConstArg3;
+  input FoldType inArg;
+  output list<list<ElementOutType>> outListList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input ArgType3 inConstArg3;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outListList, outArg) := map3FoldList_tail(inListList, inFunc, inConstArg, inConstArg2, inConstArg3, inArg, {});
+end map3FoldList;
+
+protected function map3FoldList_tail
+  "Tail recursive implementation of mapFoldList."
+  input list<list<ElementInType>> inListList;
+  input FuncType inFunc;
+  input ArgType1 inConstArg;
+  input ArgType2 inConstArg2;
+  input ArgType3 inConstArg3;
+  input FoldType inArg;
+  input list<list<ElementOutType>> inAccumList;
+  output list<list<ElementOutType>> outListList;
+  output FoldType outArg;
+
+  partial function FuncType
+    input ElementInType inElem;
+    input ArgType1 inConstArg;
+    input ArgType2 inConstArg2;
+    input ArgType3 inConstArg3;
+    input FoldType inArg;
+    output ElementOutType outResult;
+    output FoldType outArg;
+  end FuncType;
+algorithm
+  (outListList, outArg) := match(inListList, inFunc, inConstArg, inConstArg2, inConstArg3, inArg, inAccumList)
+    local
+      list<ElementInType> lst;
+      list<list<ElementInType>> rest_lst;
+      list<ElementOutType> res;
+      list<list<ElementOutType>> rest_res, accum;
+      FoldType arg;
+
+    case ({}, _, _, _, _, _, _) then (listReverse(inAccumList), inArg);
+    case (lst :: rest_lst, _, _, _, _, _, _)
+      equation
+        (res, arg) = map3Fold(lst, inFunc, inConstArg, inConstArg2, inConstArg3, inArg);
+        accum = res :: inAccumList;
+        (rest_res, arg) = map3FoldList_tail(rest_lst, inFunc, inConstArg, inConstArg2, inConstArg3, arg, accum);
+      then
+        (rest_res, arg);
+  end match;
+end map3FoldList_tail;
 
 public function mapFoldListTuple
   "Takes a list of lists, an extra argument and a function. The function will be

@@ -2689,6 +2689,24 @@ algorithm
   outType := DAE.T_FUNCTION(fargs,rettype,functionAttributes,{p});
 end makeFunctionType;
 
+public function extendsFunctionTypeArgs
+ "function: extandFunctionType
+  Extends function argument list adding var for element list."
+  input DAE.Type inType;
+  input list<DAE.Element> inElementLst;
+  output DAE.Type outType;
+protected
+  DAE.TypeSource tysrc;
+  list<DAE.FuncArg> fargs, newfargs;
+  DAE.Type rettype;
+  DAE.FunctionAttributes functionAttributes;
+algorithm
+  DAE.T_FUNCTION(fargs,rettype,functionAttributes,tysrc) := inType;
+  newfargs := List.map(inElementLst, makeElementFarg);
+  newfargs := listAppend(fargs, newfargs);
+  outType := DAE.T_FUNCTION(newfargs,rettype,functionAttributes,tysrc);
+end extendsFunctionTypeArgs;
+
 public function makeEnumerationType
   "Creates an enumeration type from a name and an enumeration type containing
   the literal variables."
@@ -3121,6 +3139,30 @@ algorithm
       then ((n,ty,c,p,oexp));
   end match;
 end makeFarg;
+
+protected function makeElementFarg
+  "Makes a function argument list from a variable."
+  input DAE.Element inElement;
+  output DAE.FuncArg farg;
+algorithm
+  farg := match (inElement)
+    local
+      String name;
+      DAE.VarKind varKind;
+      Type ty;
+      DAE.Const c;
+      Option<DAE.Exp> binding;
+      DAE.ComponentRef cref;
+      DAE.VarParallelism parallelism;
+    
+    case (DAE.VAR(componentRef=cref, kind = varKind, ty = ty, parallelism = parallelism, binding = binding))
+      equation
+        name = ComponentReference.crefLastIdent(cref);
+        c = varKindToConst(varKind);
+    then
+      ((name, ty, c, parallelism, binding));
+  end match;
+end makeElementFarg;
 
 protected function makeReturnType "author: LS
   Create a return type from a list of output variables.
@@ -7301,6 +7343,18 @@ algorithm
   end match;
 end variabilityToConst;
 
+public function varKindToConst "translates an DAE.varKind to a DAE.Const"
+  input DAE.VarKind varKind;
+  output DAE.Const const;
+algorithm
+  const := match(varKind)
+    case(DAE.VARIABLE()) then DAE.C_VAR();
+    case(DAE.DISCRETE()) then DAE.C_VAR();
+    case(DAE.PARAM())    then DAE.C_PARAM();
+    case(DAE.CONST())    then DAE.C_CONST();
+  end match;
+end varKindToConst;
+  
 public function isValidFunctionVarType
   input DAE.Type inType;
   output Boolean outIsValid;

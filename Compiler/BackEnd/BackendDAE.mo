@@ -563,6 +563,7 @@ public constant Integer SymbolicJacobianDIndex = 4;
 public constant Integer SymbolicJacobianGIndex = 5;
 
 public constant String partialDerivativeNamePrefix = "$pDER";
+public constant String functionDerivativeNamePrefix = "$funDER";
 
 public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
@@ -582,5 +583,42 @@ type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRe
 
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // coloring
+
+
+public 
+uniontype DifferentiateInputData
+  record DIFFINPUTDATA
+    Option<Variables> independenentVars;           // Independent variables
+    Option<Variables> dependenentVars;             // Dependent variables
+    Option<Variables> knownVars;                   // known variables (e.g. parameter, constants, ...)  
+    Option<Variables> allVars;                     // all variables
+    Option<list< Var>> controlVars;               // variables to save control vars of for algorithm  
+    Option<list< .DAE.ComponentRef>> diffCrefs;   // all crefs to differentiate, needed for generic gradient
+    Option<String> matrixName;                    // name to create tempory vars, needed for generic gradient
+  end DIFFINPUTDATA;
+end DifferentiateInputData;
+
+public constant DifferentiateInputData noInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+
+public
+type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DiffentiationType, .DAE.FunctionTree>;
+
+public
+uniontype DiffentiationType "Define the behavoir of differentation method for (e.g. index reduction, ...)"
+  record DIFFERENTATION_TIME "Used for index reduction differentation w.r.t. time (e.g. create dummy derivative variables)"
+  end DIFFERENTATION_TIME;
+
+  record SIMPLE_DIFFERENTAION "Used to solve expression for a cref or by the older jacobian generation, differation w.r.t. a given cref"
+  end SIMPLE_DIFFERENTAION;
+
+  record DIFFERENTAION_FUNCTION "Used to solve expression for a cref or by the older jacobian generation, differation w.r.t. a given cref"
+  end DIFFERENTAION_FUNCTION;
+  
+  record FULL_JACOBIAN "Used to generate a full jacobian matrix"
+  end FULL_JACOBIAN;
+
+  record GENERIC_GRADIENT "Used to generate a generic gradient for generation the jacobian matrix while the runtime."
+  end GENERIC_GRADIENT;
+end DiffentiationType;
 
 end BackendDAE;

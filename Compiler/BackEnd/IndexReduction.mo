@@ -53,9 +53,10 @@ protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import ComponentReference;
+protected import DAEDumpTpl;
 protected import DAEUtil;
 protected import Debug;
-protected import Derive;
+protected import Differentiate;
 protected import Env;
 protected import Error;
 protected import ErrorExt;
@@ -73,6 +74,7 @@ protected import List;
 protected import Matching;
 protected import SCode;
 protected import System;
+protected import Tpl;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
@@ -113,6 +115,7 @@ algorithm
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      
     case (_::_,_,_,_,_,_,_)
       equation
         //  BackendDump.printEqSystem(isyst);
@@ -127,7 +130,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\n");
         markarr = arrayCreate(size,-1);
         (syst,shared,ass1,ass2,arg,_) =
-         pantelidesIndexReduction1(unassignedStates,unassignedEqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,1,markarr,inArg,{});
+         pantelidesIndexReduction1(unassignedStates,unassignedEqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,1,markarr,inArg,{});      
         ErrorExt.rollBack("Pantelides");
         // get from eqns indexes the scalar indexes
         newsize = BackendDAEUtil.systemSize(syst);
@@ -263,6 +266,7 @@ algorithm
       BackendDAE.Variables vars;
       list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqnstpl;
       list<tuple<list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
+      
     case (_,_,_,_::_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqnsarray),_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_)
       equation
         // get from scalar eqns indexes the indexes in the equation array
@@ -280,8 +284,8 @@ algorithm
         // remove allready diffed equations
         //_ = List.fold1r(ueqns1,arrayUpdate,mark,markarr);
         //eqnstpl = differentiateSetEqns(ueqns1,{},vars,eqnsarray,inAssignments1,mapIncRowEqn,mark,markarr,ishared,{});
-        eqnstpl = differentiateEqnsLst(eqns1,vars,eqnsarray,ishared,{});
-        (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,notDiffableMSS) = differentiateEqns(eqnstpl,eqns1,unassignedStates,unassignedEqns,isyst,ishared,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
+        (eqnstpl, shared) = differentiateEqnsLst(eqns1,vars,eqnsarray,ishared,{});
+        (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,notDiffableMSS) = differentiateEqns(eqnstpl,eqns1,unassignedStates,unassignedEqns,isyst, shared,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
       then
         (syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns),notDiffableMSS);
     else
@@ -363,9 +367,9 @@ algorithm
     
     case (ilst::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("Eqns " +& stringDelimitList(List.map(ilst,intString),", ") +& "\n");
+        // print("Eqns " +& stringDelimitList(List.map(ilst,intString),", ") +& "\n");
         ((unassignedEqns,eqnsLst,discEqns)) = List.fold2(ilst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},inDiscEqnsAcc));
-        //  print("unassignedEqns " +& stringDelimitList(List.map(unassignedEqns,intString),", ") +& "\n");
+        // print("unassignedEqns " +& stringDelimitList(List.map(unassignedEqns,intString),", ") +& "\n");
         stateIndxs = List.fold2(ilst,statesInEquations,(m,statemark,mark),inAssignments1,{});
         // print("stateIndxs " +& stringDelimitList(List.map(stateIndxs,intString),", ") +& "\n");
         b = intGe(listLength(stateIndxs),listLength(unassignedEqns));
@@ -712,44 +716,49 @@ protected function differentiateSetEqns
   input BackendDAE.Shared ishared;
   input list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> inEqnTpl;
   output list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> outEqnTpl;
+  output BackendDAE.Shared oshared;
 algorithm
-  outEqnTpl := matchcontinue (inEqns,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,inEqnTpl)
+  (outEqnTpl, oshared) := matchcontinue (inEqns,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,inEqnTpl)
     local
       Integer e_1,e;
       BackendDAE.Equation eqn,eqn_1;
       list<Integer> es,elst;
       list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqntpl;
-    case ({},{},_,_,_,_,_,_,_,_) then inEqnTpl;
+      BackendDAE.Shared shared;
+    case ({},{},_,_,_,_,_,_,_,_) then (inEqnTpl, ishared);
     case ({},_,_,_,_,_,_,_,_,_)
-      //equation
-      //  Debug.fcall(Flags.BLT_DUMP, print, "marked equations: ");
-      //  Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (inNextEqns,intString," ","\n"));
+      equation
+      Debug.fcall(Flags.BLT_DUMP, print, "marked equations: ");
+      Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (inNextEqns,intString," ","\n"));
+      (eqntpl, shared) = differentiateSetEqns(inNextEqns,{},vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,inEqnTpl);
       then
-        differentiateSetEqns(inNextEqns,{},vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,inEqnTpl);
+        (eqntpl, shared);  
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendEquation.equationNth0(eqns, e_1);
         true = BackendEquation.isDifferentiated(eqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skipp allready differentiated equation\n",eqn,"\n"));
+        (eqntpl, shared) = differentiateSetEqns(es,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,(e,NONE(),eqn)::inEqnTpl);
       then
-        differentiateSetEqns(es,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,(e,NONE(),eqn)::inEqnTpl);
+        (eqntpl, shared);
     case (e::es,_,_,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendEquation.equationNth0(eqns, e_1);
-        // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
-        eqn_1 = Derive.differentiateEquationTime(eqn, vars, ishared);
-        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
+        //Debug.fcall(Flags.BLT_DUMP, print, "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
+        (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, ishared);
+        //Debug.fcall(Flags.BLT_DUMP, print, "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
         eqn = BackendEquation.markDifferentiated(eqn);
         // get needed der(variables) from equation
        (_,(_,_,elst)) = BackendEquation.traverseBackendDAEExpsEqn(eqn_1, getDerVars, (vars,ass1,{}));
        elst = List.map1r(elst,arrayGet,mapIncRowEqn);
        elst = List.fold2(elst, addUnMarked, mark, markarr, inNextEqns);
+       (eqntpl, shared) = differentiateSetEqns(es,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,shared,(e,SOME(eqn_1),eqn)::inEqnTpl);
       then
-        differentiateSetEqns(es,inNextEqns,vars,eqns,ass1,mapIncRowEqn,mark,markarr,ishared,(e,SOME(eqn_1),eqn)::inEqnTpl);
+        (eqntpl, shared);
     // failcase return empty list
-    case (_,_,_,_,_,_,_,_,_,_) then {};
+    case (_,_,_,_,_,_,_,_,_,_) then ({}, ishared);
   end matchcontinue;
 end differentiateSetEqns;
 
@@ -826,32 +835,37 @@ protected function differentiateEqnsLst
   input BackendDAE.Shared ishared;
   input list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> inEqnTpl;
   output list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> outEqnTpl;
+  output BackendDAE.Shared oshared;
 algorithm
-  outEqnTpl := matchcontinue (inEqns,vars,eqns,ishared,inEqnTpl)
+  (outEqnTpl, oshared) := matchcontinue (inEqns,vars,eqns,ishared,inEqnTpl)
     local
       Integer e_1,e;
       BackendDAE.Equation eqn,eqn_1;
       list<Integer> es;
-    case ({},_,_,_,_) then inEqnTpl;
+      BackendDAE.Shared shared;
+      list<tuple<Integer,Option<BackendDAE.Equation>,BackendDAE.Equation>> eqntpl;
+    case ({},_,_,_,_) then (inEqnTpl, ishared);
     case (e::es,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendEquation.equationNth0(eqns, e_1);
         true = BackendEquation.isDifferentiated(eqn);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skipp allready differentiated equation\n",eqn,"\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skip already differentiated equation\n",eqn,"\n"));
+        (eqntpl, shared) = differentiateEqnsLst(es,vars,eqns,ishared,(e,NONE(),eqn)::inEqnTpl);
       then
-        differentiateEqnsLst(es,vars,eqns,ishared,(e,NONE(),eqn)::inEqnTpl);
+        (eqntpl, shared);
     case (e::es,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendEquation.equationNth0(eqns, e_1);
-        // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
-        eqn_1 = Derive.differentiateEquationTime(eqn, vars, ishared);
-        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
+        // Debug.fcall(Flags.BLT_DUMP, print, "differentiate equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
+        (eqn_1, shared) = Differentiate.differentiateEquationTime(eqn, vars, ishared);
+        // Debug.fcall(Flags.BLT_DUMP, print, "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
         eqn = BackendEquation.markDifferentiated(eqn);
+        (eqntpl, shared) = differentiateEqnsLst(es,vars,eqns,shared,(e,SOME(eqn_1),eqn)::inEqnTpl);
       then
-        differentiateEqnsLst(es,vars,eqns,ishared,(e,SOME(eqn_1),eqn)::inEqnTpl);
-    case (_,_,_,_,_) then {};
+        (eqntpl, shared);
+    case (_,_,_,_,_) then ({}, ishared);
   end matchcontinue;
 end differentiateEqnsLst;
 
@@ -4421,7 +4435,7 @@ end splitEqnsinConstraintAndOther;
 /*****************************************
  calculation of the determinant of a square matrix .
  *****************************************/
-
+/*
 public function tryDeterminant
 "author: Frenkel TUD 2012-06"
   input BackendDAE.BackendDAE inDAE;
@@ -4468,7 +4482,7 @@ algorithm
         (syst,(shared,false));
   end matchcontinue;
 end tryDeterminant0;
-
+*/
 
 public function determinant
 "author: Frenkel TUD 2012-06"

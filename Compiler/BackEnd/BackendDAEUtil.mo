@@ -72,7 +72,7 @@ protected import Config;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
-protected import Derive;
+protected import Differentiate;
 protected import Error;
 protected import EvaluateParameter;
 protected import Expression;
@@ -727,6 +727,35 @@ algorithm
   
   end match;
 end addBackendDAEFunctionTree;
+
+public function addFunctionTree
+" function: addBackendDAEFunctionTree
+  That function replace the FunctionTree in shared object.
+  author:  wbraun"
+  input DAE.FunctionTree inFunctionTree;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
+algorithm
+  outShared := match (inFunctionTree, inShared)
+    local
+      BackendDAE.Variables knvars,exobj,av;
+      EquationArray remeqns,inieqns;
+      list<DAE.Constraint> constrs;
+      list<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;
+      BackendDAE.EventInfo einfo;
+      ExternalObjectClasses eoc;
+      BackendDAEType btp;
+      BackendDAE.SymbolicJacobians symjacs;
+      EqSystems eqs;
+      BackendDAE.ExtraInfo ei;
+      
+    case (_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,_,einfo,eoc,btp,symjacs,ei))
+      then BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,inFunctionTree,einfo,eoc,btp,symjacs,ei);
+  
+  end match;
+end addFunctionTree;
 
 public function addVarsToEqSystem
   input BackendDAE.EqSystem syst;
@@ -2366,6 +2395,16 @@ public function getFunctions
 algorithm
   BackendDAE.SHARED(functionTree=functionTree) := shared;
 end getFunctions;
+
+public function getknvars
+"function: getFunctions
+  author: Frenkel TUD 2011-11
+  This function returns known variable of a BackendDAE."
+  input BackendDAE.Shared shared;
+  output BackendDAE.Variables vars;
+algorithm
+  BackendDAE.SHARED(knownVars=vars) := shared;
+end getknvars;
 
 /************************************
   stuff that deals with extendArrExp
@@ -5137,12 +5176,13 @@ algorithm
     local
       Integer r,rabs;
       list<Integer> rest;
-      DAE.Exp de;
+      DAE.Exp de,detmp, e;
       DAE.ComponentRef cr,cr1,crarr;
       BackendDAE.Solvability solvab;
       list<DAE.ComponentRef> crlst;
       Absyn.Path path,path1;
       list<DAE.Exp> explst;
+      Boolean b;
     case({},_,_,_,_,_,_,_) then inRow;
 /*    case(r::rest,_,_,_,_,_,_,_)
       equation
@@ -5340,9 +5380,9 @@ algorithm
         // de/dvar
         BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(index=_)) = BackendVariable.getVarAt(vars, r);
         cr1 = ComponentReference.crefPrefixDer(cr);
-        de = Expression.crefExp(cr);
-        ((de,_)) = Expression.replaceExp(Expression.expSub(e1,e2), DAE.CALL(Absyn.IDENT("der"),{de},DAE.callAttrBuiltinReal), Expression.crefExp(cr1));
-        de = Derive.differentiateExp(de, cr1, true , NONE());
+        e = Expression.crefExp(cr);
+        ((e,_)) = Expression.replaceExp(Expression.expSub(e1,e2), DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), Expression.crefExp(cr1));
+        de = Differentiate.differentiateExpSolve(e, cr1);
         (de,_) = ExpressionSimplify.simplify(de);
         ((_,crlst)) = Expression.traverseExp(de, Expression.traversingComponentRefFinder, {});
         solvab = adjacencyRowEnhanced2(cr1,de,crlst,vars,kvars);
@@ -5355,7 +5395,8 @@ algorithm
         false = intEq(rowmark[rabs],-mark);
         // de/dvar
         BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, rabs);
-        de = Derive.differentiateExp(Expression.expSub(e1,e2), cr, true , NONE());
+        e = Expression.expSub(e1,e2);
+        de = Differentiate.differentiateExpSolve(e, cr);
         (de,_) = ExpressionSimplify.simplify(de);
         ((_,crlst)) = Expression.traverseExpTopDown(de, Expression.traversingComponentRefFinderNoPreDer, {});
         solvab = adjacencyRowEnhanced2(cr,de,crlst,vars,kvars);
@@ -5922,8 +5963,9 @@ public function calculateJacobian "This function takes an array of equations and
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   input BackendDAE.Shared iShared;
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outTplIntegerIntegerEquationLstOption;
+  output BackendDAE.Shared oShared;
 algorithm
-  outTplIntegerIntegerEquationLstOption:=
+  (outTplIntegerIntegerEquationLstOption, oShared):=
   matchcontinue (inVariables,inEquationArray,inIncidenceMatrix,differentiateIfExp,iShared)
     local
       list<BackendDAE.Equation> eqn_lst;
@@ -5931,13 +5973,14 @@ algorithm
       BackendDAE.Variables vars;
       EquationArray eqns;
       BackendDAE.IncidenceMatrix m;
+      BackendDAE.Shared shared;
     case (vars,eqns,m,_,_)
       equation
         eqn_lst = BackendEquation.equationList(eqns);
-        jac = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,iShared,varsInEqn,{});
+        (jac, shared) = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,iShared,varsInEqn,{});
       then
-        SOME(jac);
-    else then NONE();  /* no analytic jacobian available */
+        (SOME(jac),shared);
+    else then (NONE(), iShared);  /* no analytic jacobian available */
   end matchcontinue;
 end calculateJacobian;
 
@@ -5949,19 +5992,21 @@ public function calculateJacobianEnhanced "This function takes an array of equat
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   input BackendDAE.Shared iShared;
   output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outTplIntegerIntegerEquationLstOption;
+  output BackendDAE.Shared oShared;
 algorithm
-  outTplIntegerIntegerEquationLstOption:=
+  (outTplIntegerIntegerEquationLstOption, oShared):=
   matchcontinue (vars,eqns,m,differentiateIfExp,iShared)
     local
       list<BackendDAE.Equation> eqn_lst;
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+      BackendDAE.Shared shared;
     case (_,_,_,_,_)
       equation
         eqn_lst = BackendEquation.equationList(eqns);
-        jac = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,iShared,varsInEqnEnhanced,{});
+        (jac, shared) = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,iShared,varsInEqnEnhanced,{});
       then
-        SOME(jac);
-    else then NONE();  /* no analytic jacobian available */
+        (SOME(jac), shared);
+    else then (NONE(), iShared);  /* no analytic jacobian available */
   end matchcontinue;
 end calculateJacobianEnhanced;
 
@@ -6021,24 +6066,27 @@ protected function calculateJacobianRows "author: PA
   input varsInEqnFunc varsInEqn;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
+  output BackendDAE.Shared oShared;
   partial function varsInEqnFunc
     input Type_a m;
     input Integer indx;
     output list<Integer> outIntegerLst;
   end varsInEqnFunc;
 algorithm
-  outLst:= match (inEquationLst,vars,m,eqn_indx,scalar_eqn_indx,differentiateIfExp,iShared,varsInEqn,iAcc)
+  (outLst, oShared) := match (inEquationLst,vars,m,eqn_indx,scalar_eqn_indx,differentiateIfExp,iShared,varsInEqn,iAcc)
     local
       list<tuple<Integer, Integer, BackendDAE.Equation>> res;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
       Integer size;
-    case ({},_,_,_,_,_,_,_,_) then listReverse(iAcc);
+      BackendDAE.Shared shared;
+    case ({},_,_,_,_,_,_,_,_) then (listReverse(iAcc), iShared);
     case (eqn::eqns,_,_,_,_,_,_,_,_)
       equation
-        (res,size) = calculateJacobianRow(eqn, vars,  m, eqn_indx, scalar_eqn_indx,differentiateIfExp,iShared,varsInEqn,iAcc);
+        (res, size, shared) = calculateJacobianRow(eqn, vars,  m, eqn_indx, scalar_eqn_indx,differentiateIfExp,iShared,varsInEqn,iAcc);
+        (res, shared) = calculateJacobianRows(eqns, vars, m, eqn_indx + 1, scalar_eqn_indx + size,differentiateIfExp,shared,varsInEqn,res);
       then
-        calculateJacobianRows(eqns, vars, m, eqn_indx + 1, scalar_eqn_indx + size,differentiateIfExp,iShared,varsInEqn,res);
+        (res, shared);
   end match;
 end calculateJacobianRows;
 
@@ -6062,13 +6110,14 @@ protected function calculateJacobianRow "author: PA
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
   output Integer size;
+  output BackendDAE.Shared oShared;
   partial function varsInEqnFunc
     input Type_a m;
     input Integer indx;
     output list<Integer> outIntegerLst;
   end varsInEqnFunc;
 algorithm
-  (outLst,size):=  match (inEquation,vars,m,eqn_indx,scalar_eqn_indx,differentiateIfExp,iShared,fvarsInEqn,iAcc)
+  (outLst, size, oShared):=  match (inEquation,vars,m,eqn_indx,scalar_eqn_indx,differentiateIfExp,iShared,fvarsInEqn,iAcc)
     local
       list<Integer> var_indxs,var_indxs_1,ds;
       list<Option<Integer>> ad;
@@ -6080,24 +6129,27 @@ algorithm
       DAE.ElementSource source;
       DAE.ComponentRef cr;
       String str;
+      BackendDAE.Shared shared;
     // residual equations
     case (BackendDAE.EQUATION(exp = e1,scalar=e2,source=source),_,_,_,_,_,_,_,_)
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         var_indxs_1 = List.sort(var_indxs_1,intGt);
-        eqns = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
+        (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
-        (eqns,1);
+        (eqns, 1, shared);
+
     // residual equations
     case (BackendDAE.RESIDUAL_EQUATION(exp=e,source=source),_,_,_,_,_,_,_,_)
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         var_indxs_1 = List.sort(var_indxs_1,intGt);
-        eqns = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
+        (eqns, shared) = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
-        (eqns,1);
+        (eqns, 1, shared);
+        
     // solved equations
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2,source=source),_,_,_,_,_,_,_,_)
       equation
@@ -6105,9 +6157,10 @@ algorithm
         var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         var_indxs_1 = List.sort(var_indxs_1,intGt);
-        eqns = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
+        (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
-        (eqns,1);
+        (eqns, 1, shared);
+        
     // array equations
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2,source=source),_,_,_,_,_,_,_,_)
       equation
@@ -6121,10 +6174,11 @@ algorithm
         var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
         var_indxs_1 = List.sort(var_indxs_1,intGt);
-        eqns = calculateJacobianRowLst(expl, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
+        (eqns, shared) = calculateJacobianRowLst(expl, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
         size = List.fold(ds,intMul,1);
       then
-        (eqns,size);
+        (eqns, size, shared);
+        
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6222,18 +6276,21 @@ protected function calculateJacobianRowLst "author: Frenkel TUD 2012-06
   input DAE.ElementSource source;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
+  output BackendDAE.Shared oShared;
 algorithm
-  outLst := match(inExps,vars,eqn_indx,inIntegerLst,differentiateIfExp,iShared,source,iAcc)
+  (outLst, oShared) := match(inExps,vars,eqn_indx,inIntegerLst,differentiateIfExp,iShared,source,iAcc)
     local
       DAE.Exp e;
       list<DAE.Exp> elst;
       list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
-    case ({},_,_,_,_,_,_,_) then iAcc;
+      BackendDAE.Shared shared;
+    case ({},_,_,_,_,_,_,_) then (iAcc, iShared);
     case (e::elst,_,_,_,_,_,_,_)
       equation
-        eqns = calculateJacobianRow2(e,vars,eqn_indx,inIntegerLst,differentiateIfExp,iShared,source,iAcc);
+        (eqns, shared) = calculateJacobianRow2(e,vars,eqn_indx,inIntegerLst,differentiateIfExp,iShared,source,iAcc);
+        (eqns, shared) = calculateJacobianRowLst(elst,vars,eqn_indx+1,inIntegerLst,differentiateIfExp,shared,source,eqns);
       then
-        calculateJacobianRowLst(elst,vars,eqn_indx+1,inIntegerLst,differentiateIfExp,iShared,source,eqns);
+        (eqns, shared);
   end match;
 end calculateJacobianRowLst;
 
@@ -6254,8 +6311,9 @@ protected function calculateJacobianRow2 "author: PA
   input DAE.ElementSource source;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
+  output BackendDAE.Shared oShared;
 algorithm
-  outLst := matchcontinue (inExp,vars,eqn_indx,inIntegerLst,differentiateIfExp,iShared,source,iAcc)
+  (outLst, oShared) := matchcontinue (inExp,vars,eqn_indx,inIntegerLst,differentiateIfExp,iShared,source,iAcc)
     local
       DAE.Exp e,e_1,e_2,dcrexp;
       Var v;
@@ -6265,7 +6323,9 @@ algorithm
       list<Integer> vindxs;
       String str;
       DAE.FunctionTree ft;
-    case (_,_,_,{},_,_,_,_) then iAcc;
+      BackendDAE.Shared shared;
+      Boolean b;
+    case (_,_,_,{},_,_,_,_) then (iAcc, iShared);
     case (_,_,_,vindx::vindxs,_,_,_,_)
       equation
         v = BackendVariable.getVarAt(vars, vindx);
@@ -6276,21 +6336,25 @@ algorithm
         dcrexp = DAE.CALL(Absyn.IDENT("der"),{dcrexp},DAE.callAttrBuiltinReal);
         ((e,_)) = Expression.replaceExp(inExp, dcrexp, Expression.crefExp(dcr));
         ft = getFunctions(iShared);
-        e_1 = Derive.differentiateExp(e, dcr, differentiateIfExp , SOME(ft));
+        (e_1, shared) = Differentiate.differentiateExpCref(e, dcr, vars, iShared);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
+        (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
       then
-        calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp,iShared,source,es);
+        (es, shared);
+        
     case (_,_,_,vindx::vindxs,_,_,_,_)
       equation
         v = BackendVariable.getVarAt(vars, vindx);
         cr = BackendVariable.varCref(v);
         ft = getFunctions(iShared);
-        e_1 = Derive.differentiateExp(inExp, cr, differentiateIfExp, SOME(ft));
+        (e_1, shared) = Differentiate.differentiateExpCref(inExp, cr, vars, iShared);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
+        (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
       then
-        calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp,iShared,source,es);
+        (es, shared);
+        
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -6714,17 +6778,24 @@ algorithm
         sources = List.consN(BackendEquation.equationSize(eqn), source, sources);
       then ((eqn,(v,explst,sources,funcs,repl)));
 
+    case ((eqn as BackendDAE.SOLVED_EQUATION(source=source),_))
+      equation
+        str = BackendDump.equationString(eqn);
+        str = "BackendDAEUtil.equationToExp failed for solved equation: " +& str;
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
+      then fail();
+
     case ((eqn as BackendDAE.COMPLEX_EQUATION(source=source),_))
       equation
         str = BackendDump.equationString(eqn);
-        str = "BackendEquation.equationToExp failed for complex equation: " +& str;
+        str = "BackendDAEUtil.equationToExp failed for complex equation: " +& str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
       then fail();
 
     case ((eqn,_))
       equation
         str = BackendDump.equationString(eqn);
-        str = "BackendEquation.equationToExp failed: " +& str;
+        str = "BackendDAEUtil.equationToExp failed: " +& str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},BackendEquation.equationInfo(eqn));
       then
         fail();
@@ -6772,7 +6843,8 @@ protected function getEqnsysRhsExp1
 algorithm
   outTplExpBoolTypeA := match(inTplExpTypeA)
     local
-      DAE.Exp cond,t,f,e,e1;
+      DAE.Exp cond,t,f,e, e1, e2, zero;
+      DAE.Type tp;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Variables vars;
       Boolean b,b1;
@@ -6797,6 +6869,16 @@ algorithm
       then
         ((e,true,(repl,vars,funcs,b)));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(repl,vars,funcs,b)))
+      then
+        ((e,false,(repl,vars,funcs,b)));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "semiLinear"), expLst={cond,t,f}),(repl,vars,funcs,b)))
+       equation
+        tp = Expression.typeof(e);
+        (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        e1 = Expression.expMul(cond,t);
+        e2 = Expression.expMul(cond,f);
+        e = DAE.IFEXP(DAE.RELATION(cond, DAE.GREATEREQ(tp), zero, -1, NONE()), e1, e2); 
+        ((e, (_, _, _, b))) = Expression.traverseExpTopDown(e, getEqnsysRhsExp1, (repl, vars, funcs, b));
       then
         ((e,false,(repl,vars,funcs,b)));
     case ((e as DAE.CALL(expLst=expLst),(repl,vars,funcs,b)))

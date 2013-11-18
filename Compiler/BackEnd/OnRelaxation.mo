@@ -48,7 +48,7 @@ protected import BackendDAETransform;
 protected import BaseHashSet;
 protected import ComponentReference;
 protected import Debug;
-protected import Derive;
+protected import Differentiate;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
@@ -340,7 +340,7 @@ algorithm
         (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));
         //  BackendDump.dumpEqSystem(subsyst);
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml");
-        SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,ishared);
+        (SOME(jac),_) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true, ishared);
         (beqs,_) = BackendDAEUtil.getEqnSysRhs(eqns,vars,SOME(funcs));
         beqs = listReverse(beqs);
         //  print("Jacobian:\n");
@@ -3711,7 +3711,7 @@ algorithm
         cr = BackendVariable.varCref(v);
         (_,i::_) = BackendVariable.getVar(cr,vars);
         false = intGt(vec1[i],0);
-        e1 = Derive.differentiateExp(e, cr, false, NONE());
+        e1 = Differentiate.differentiateExpSolve(e, cr);
         (e2,_) = ExpressionSimplify.simplify(e1);
         true = Expression.isConstOne(e2) or Expression.isConstMinusOne(e2);
       then

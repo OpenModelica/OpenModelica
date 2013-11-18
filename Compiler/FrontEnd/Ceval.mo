@@ -66,7 +66,7 @@ protected import CevalScript;
 protected import ComponentReference;
 protected import Config;
 protected import Debug;
-protected import Derive;
+protected import Differentiate;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -3901,7 +3901,7 @@ algorithm
     case (cache,env,{exp1,DAE.CREF(componentRef = cr)},impl,st,msg,_)
       equation
         ft = Env.getFunctionTree(cache);
-        differentiated_exp = Derive.differentiateExpCont(exp1, cr,SOME(ft));
+        differentiated_exp = Differentiate.differentiateExpCrefFunction(exp1, cr, ft);
         (differentiated_exp_1,_) = ExpressionSimplify.simplify(differentiated_exp);
         /*
          this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp

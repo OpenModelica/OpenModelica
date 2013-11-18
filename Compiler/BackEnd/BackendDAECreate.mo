@@ -70,6 +70,7 @@ protected import Inline;
 protected import List;
 protected import SCode;
 protected import System;
+protected import Types;
 protected import Util;
 
 protected type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
@@ -500,6 +501,54 @@ end transformBuiltinExpression;
 /*
  *  lower all variables
  */
+ 
+public function lowerVars
+
+  input list<DAE.Element> inElements;
+  input DAE.FunctionTree functionTree;
+  input BackendDAE.Variables inVars "The time depend Variables";
+  input BackendDAE.Variables inKnVars "The time independend Variables";
+  input BackendDAE.Variables inExVars "The external Variables";
+  input list<BackendDAE.Equation> inEqnsLst "The dynamic Equations/Algoritms";
+  output BackendDAE.Variables outVariables;
+  output BackendDAE.Variables outKnownVariables;
+  output BackendDAE.Variables outExternalVariables;
+  output list<BackendDAE.Equation> oEqnsLst;
+algorithm
+  (outVariables, outKnownVariables, outExternalVariables, oEqnsLst) := 
+  matchcontinue (inElements, functionTree, inVars, inKnVars, inExVars, inEqnsLst)
+    local
+      list<DAE.Element> rest, newVars;
+      DAE.Element elem;
+      DAE.Type tp, arrtp;
+      DAE.ComponentRef cref;
+      list<DAE.ComponentRef> crefs;
+      BackendDAE.Variables vars, knvars, exvars;
+      list<BackendDAE.Equation> eqns;
+      String str;
+      case ({}, _, _, _, _, _) then (inVars, inKnVars, inExVars, inEqnsLst);
+      case ((elem as DAE.VAR(componentRef = cref, ty = tp as DAE.T_ARRAY(ty = arrtp)))::rest,  _, _, _, _, _)
+        equation
+          crefs = ComponentReference.expandCref(cref, false);
+          elem = DAEUtil.replaceTypeInVar(arrtp, elem);
+          newVars = List.map1(crefs, DAEUtil.replaceCrefInVar, elem);
+          (vars, knvars, exvars, eqns) = lowerVars(newVars, functionTree, inVars, inKnVars, inExVars, inEqnsLst);
+          //(vars, knvars, exvars, eqns, _) = lowerVar(elem, functionTree, vars, knvars, exvars, eqns, HashTableExpToExp.emptyHashTable());
+          (vars, knvars, exvars, eqns) = lowerVars(rest, functionTree, vars, knvars, exvars, eqns);
+        then (vars, knvars, exvars, eqns);
+      case ((elem as DAE.VAR(componentRef = _))::rest,  _, _, _, _, _)
+        equation
+          (vars, knvars, exvars, eqns, _) = lowerVar(elem, functionTree, inVars, inKnVars, inExVars, inEqnsLst, HashTableExpToExp.emptyHashTable());
+          (vars, knvars, exvars, eqns) = lowerVars(rest, functionTree, vars, knvars, exvars, eqns);
+        then (vars, knvars, exvars, eqns);
+      case (elem::rest,  _, _, _, _, _)
+       equation
+        str = "BackendDAECreate.lowerVars failed for " +& DAEDump.dumpElementsStr({elem});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();     
+        
+  end matchcontinue;
+end lowerVars;
 
 protected function lowerVar
 "Transforms a DAE variable to DAE variable.
@@ -553,6 +602,15 @@ algorithm
         e1 = Expression.crefExp(cr);
       then
         (vars, inKnVars, inExVars, BackendDAE.EQUATION(e1, e2, source, false)::inEqnsLst, iInlineHT);
+
+    // variables: states and algebraic variables with NO binding equation
+    case (DAE.VAR(binding=NONE(), source = source), _, _, _, _, _, _)
+      equation
+        true = isStateOrAlgvar(inElement);
+        (backendVar1) = lowerDynamicVar(inElement, functionTree);
+        vars = BackendVariable.addVar(backendVar1, inVars);
+      then
+        (vars, inKnVars, inExVars, inEqnsLst, iInlineHT);
 
     // variables: states and algebraic variables with NO binding equation
     case (DAE.VAR(binding=NONE(), source = source), _, _, _, _, _, _)
@@ -1025,7 +1083,11 @@ algorithm
     case (DAE.T_ENUMERATION(names = _)) then inType;
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_)))
       then inType;
-    else equation print("lowerType failed\n"); then fail();
+    case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path=_)))
+      then inType;
+    case (DAE.T_ARRAY(ty = _))
+      then inType;
+    else equation print("lowerType: " +& Types.printTypeStr(inType) +& " failed\n"); then fail();
   end matchcontinue;
 end lowerType;
 

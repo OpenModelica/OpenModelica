@@ -1032,6 +1032,90 @@ algorithm
   end match;
 end setUnitAttr;
 
+public function setElementVarVisibility "
+  This function takes a VAR elemets and sets var visibility."
+  input DAE.Element elt;
+  input DAE.VarVisibility inVisibility;
+  output DAE.Element outElt;
+algorithm
+  outElt := match (elt,inVisibility)
+    local
+      DAE.ComponentRef cr;
+      DAE.VarKind kind;
+      DAE.VarDirection dir;
+      DAE.VarParallelism prl;
+      DAE.Type tp;
+      DAE.InstDims dim;
+      DAE.ConnectorType ct;
+      DAE.VarVisibility prot;
+      Option<DAE.Exp> bind;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment;
+      Absyn.Path newtype;
+      Absyn.InnerOuter io;
+      DAE.ElementSource source "the element origin";
+
+    case (DAE.VAR(componentRef = cr,
+               kind = kind,
+               direction = dir,
+               parallelism = prl,
+               protection = prot,
+               ty = tp,
+               binding = bind,
+               dims = dim,
+               connectorType = ct,
+               source = source,
+               variableAttributesOption = dae_var_attr,
+               absynCommentOption = comment,
+               innerOuter=io),_)
+      then
+        DAE.VAR(cr,kind,dir,prl,inVisibility,tp,bind,dim,ct,source,dae_var_attr,comment,io);
+    else elt;
+  end match;
+end setElementVarVisibility;
+
+public function setElementVarDirection "
+  This function takes a VAR elemets and sets var direction."
+  input DAE.Element elt;
+  input DAE.VarDirection inDirection;
+  output DAE.Element outElt;
+algorithm
+  outElt := match (elt, inDirection)
+    local
+      DAE.ComponentRef cr;
+      DAE.VarKind kind;
+      DAE.VarDirection dir;
+      DAE.VarParallelism prl;
+      DAE.Type tp;
+      DAE.InstDims dim;
+      DAE.ConnectorType ct;
+      DAE.VarVisibility prot;
+      Option<DAE.Exp> bind;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment;
+      Absyn.Path newtype;
+      Absyn.InnerOuter io;
+      DAE.ElementSource source "the element origin";
+
+    case (DAE.VAR(componentRef = cr,
+               kind = kind,
+               direction = dir,
+               parallelism = prl,
+               protection = prot,
+               ty = tp,
+               binding = bind,
+               dims = dim,
+               connectorType = ct,
+               source = source,
+               variableAttributesOption = dae_var_attr,
+               absynCommentOption = comment,
+               innerOuter=io),_)
+      then
+        DAE.VAR(cr,kind,inDirection,prl,prot,tp,bind,dim,ct,source,dae_var_attr,comment,io);
+    else elt;
+  end match;
+end setElementVarDirection;
+
 public function setProtectedAttr "
   sets the start attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;
@@ -1703,6 +1787,23 @@ algorithm
   end matchcontinue;
 end getVariableList;
 
+public function getVariableType
+"function: getVariableType
+  Return the type of a variable, otherwise fails.
+"
+  input DAE.Element inElement;
+  output DAE.Type outType;
+algorithm
+  outType := match (inElement)
+    local
+      DAE.Type tp;
+
+    case (DAE.VAR(ty = tp)) then tp;
+
+    else then fail();
+  end match;
+end getVariableType;
+
 protected function getBindingsStr "
   Retrive the bindings from a list of Elements and output to a string.
 "
@@ -2242,6 +2343,79 @@ algorithm
   end match;
 end replaceCrefInVar;
 
+public function replaceTypeInVar "
+Author BZ
+ Function for updating the Type of the Var"
+  input DAE.Type newType;
+  input DAE.Element inelem;
+  output DAE.Element outelem;
+algorithm
+  outelem := match(newType, inelem)
+    local
+      DAE.ComponentRef a1; DAE.VarKind a2;
+      DAE.VarDirection a3; DAE.VarParallelism prl;
+      DAE.VarVisibility a4;
+      DAE.Type a5; DAE.InstDims a7; DAE.ConnectorType ct;
+      Option<DAE.Exp> a6;
+      DAE.ElementSource source;
+      Option<DAE.VariableAttributes> a11;
+      Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+
+    case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13))
+      then DAE.VAR(a1,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13);
+  end match;
+end replaceTypeInVar;
+
+public function replaceCrefandTypeInVar "
+Author BZ
+ Function for updating the Component Ref and the Type of the Var"
+  input DAE.ComponentRef newCr;
+  input DAE.Type newType;
+  input DAE.Element inelem;
+  output DAE.Element outelem;
+algorithm
+  outelem := match(newCr, newType, inelem)
+    local
+      DAE.ComponentRef a1; DAE.VarKind a2;
+      DAE.VarDirection a3; DAE.VarParallelism prl;
+      DAE.VarVisibility a4;
+      DAE.Type a5; DAE.InstDims a7; DAE.ConnectorType ct;
+      Option<DAE.Exp> a6;
+      DAE.ElementSource source;
+      Option<DAE.VariableAttributes> a11;
+      Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+
+    case(_, _, DAE.VAR(a1,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13))
+      equation
+        outelem = DAE.VAR(newCr,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13);
+      then outelem;
+  end match;
+end replaceCrefandTypeInVar;
+
+
+public function replaceBindungInVar "
+Author BZ
+ Function for updating the Component Ref of the Var"
+  input DAE.Exp newBindung;
+  input DAE.Element inelem;
+  output DAE.Element outelem;
+algorithm
+  outelem := match(newBindung, inelem)
+    local
+      DAE.ComponentRef a1; DAE.VarKind a2;
+      DAE.VarDirection a3; DAE.VarParallelism prl;
+      DAE.VarVisibility a4;
+      DAE.Type a5; DAE.InstDims a7; DAE.ConnectorType ct;
+      Option<DAE.Exp> a6;
+      DAE.ElementSource source;
+      Option<DAE.VariableAttributes> a11;
+      Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      
+    case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13))
+      then DAE.VAR(a1,a2,a3,prl,a4,a5,SOME(newBindung),a7,ct,source,a11,a12,a13);
+  end match;
+end replaceBindungInVar;
+
 protected function toModelicaFormExpOpt "Helper function to toMdelicaFormElts."
   input Option<DAE.Exp> inExpExpOption;
   output Option<DAE.Exp> outExpExpOption;
@@ -2423,6 +2597,88 @@ algorithm
     case DAE.RECORD_CONSTRUCTOR(path = _) then {};
   end match;
 end getFunctionElements;
+
+public function getFunctionType
+  input DAE.Function fn;
+  output DAE.Type outType;
+algorithm
+  outType := match fn
+    local
+      list<DAE.Element> elements;
+    case DAE.FUNCTION(type_ = outType) then outType;
+    case DAE.FUNCTION(type_ = outType) then outType;
+    case DAE.RECORD_CONSTRUCTOR(type_ = outType) then outType;
+  end match;
+end getFunctionType;
+
+public function getFunctionInputVars
+  input DAE.Function fn;
+  output list<DAE.Element> outEls;
+protected
+  list<DAE.Element> elements;
+algorithm
+  elements := getFunctionElements(fn);
+  outEls := List.filter(elements, isInputVar);
+end getFunctionInputVars;
+
+public function getFunctionOutputVars
+  input DAE.Function fn;
+  output list<DAE.Element> outEls;
+protected
+  list<DAE.Element> elements;
+algorithm
+  elements := getFunctionElements(fn);
+  outEls := List.filter(elements, isOutputVar);
+end getFunctionOutputVars;
+
+public function getFunctionProtectedVars
+  input DAE.Function fn;
+  output list<DAE.Element> outEls;
+protected
+  list<DAE.Element> elements;
+algorithm
+  elements := getFunctionElements(fn);
+  outEls := List.filter(elements, assertProtectedVar);
+end getFunctionProtectedVars;
+
+public function getFunctionAlgorithms
+  input DAE.Function fn;
+  output list<DAE.Element> outEls;
+protected
+  list<DAE.Element> elements;
+algorithm
+  elements := getFunctionElements(fn);
+  outEls := List.filter(elements, isAlgorithm);
+end getFunctionAlgorithms;
+
+public function getFunctionAlgorithmStmts
+  input DAE.Function fn;
+  output list<DAE.Statement> bodyStmts;
+protected
+  list<DAE.Element> elements;
+algorithm
+  elements := getFunctionElements(fn);
+  bodyStmts := List.mapFlat(List.filter(elements, isAlgorithm), getStatement);
+end getFunctionAlgorithmStmts;
+
+protected function getStatement
+  input DAE.Element inElement;
+  output list<DAE.Statement> outStatements;
+algorithm
+  (outStatements):=
+  matchcontinue (inElement)
+    local
+      list<DAE.Statement> stmts;
+    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)))
+    then
+      stmts;
+    case (_)
+      equation
+        Debug.fprint(Flags.FAILTRACE, "- Differentiatte.getStatement failed\n");
+      then
+        fail();
+  end matchcontinue;
+end getStatement;
 
 protected function crefToExp "
   Makes an expression from a ComponentRef.
@@ -5652,6 +5908,33 @@ algorithm
 
   end matchcontinue;
 end addDaeFunction;
+
+public function addFunctionDefinition 
+"adds a functionDefinition to a function. can be used to add function_der_mapper to a function"
+  input DAE.Function ifunc;
+  input DAE.FunctionDefinition iFuncDef;
+  output DAE.Function ofunc;
+algorithm
+  ofunc := match(ifunc, iFuncDef)
+    local
+      Absyn.Path path;
+      list<DAE.FunctionDefinition> functions;
+      DAE.Type type_;
+      Boolean partialPrefix;
+      Boolean isImpure;
+      DAE.InlineType inlineType;
+      DAE.ElementSource source;
+      Option<SCode.Comment> comment;
+
+
+    case (DAE.FUNCTION(path=path, functions=functions, type_=type_, partialPrefix=partialPrefix, isImpure=isImpure, inlineType=inlineType, source=source, comment=comment), _)
+      equation
+        functions = listAppend(functions, {iFuncDef});
+      then 
+        DAE.FUNCTION(path, functions, type_, partialPrefix, isImpure, inlineType, source, comment);
+    case (_, _) then ifunc;
+  end match;
+end addFunctionDefinition;
 
 public function addDaeExtFunction "
   add extermal functions present in the element list to the function tree

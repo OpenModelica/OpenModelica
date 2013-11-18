@@ -180,6 +180,10 @@ extern void mul_real_vector_matrix(const real_array_t * a, const real_array_t * 
 extern void mul_alloc_real_matrix_product_smart(const real_array_t * a, const real_array_t * b,
                                          real_array_t* dest);
 
+extern void div_real_array(const real_array_t *a,const real_array_t *b,real_array_t* dest);
+extern void div_alloc_real_array(const real_array_t *a,const real_array_t *b,real_array_t *dest);
+
+
 extern void div_real_array_scalar(const real_array_t * a,modelica_real b,real_array_t* dest);
 extern void div_alloc_real_array_scalar(const real_array_t * a,modelica_real b,
                                  real_array_t* dest);

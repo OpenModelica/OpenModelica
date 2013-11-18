@@ -2830,6 +2830,26 @@ algorithm outCrefExp := match(inVar,inCrefPrefix)
  end match;
 end generateCrefsExpFromExpVar;
 
+public function generateCrefsFromExpVar "
+Author: Frenkel TUD 2010-05"
+  input DAE.Var inVar;
+  input DAE.ComponentRef inCrefPrefix;
+  output DAE.ComponentRef outCref;
+algorithm outCref := match(inVar,inCrefPrefix)
+  local
+    String name;
+    DAE.Type ty;
+    DAE.ComponentRef cr;
+    DAE.Exp e;
+
+  case (DAE.TYPES_VAR(name=name,ty=ty),_)
+  equation
+    cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
+  then
+    cr;
+ end match;
+end generateCrefsFromExpVar;
+
 public function makeArray
   input list<DAE.Exp> inElements;
   input DAE.Type inType;

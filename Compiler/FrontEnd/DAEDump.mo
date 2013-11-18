@@ -1525,7 +1525,7 @@ protected function dumpFunction
 algorithm
   _ := matchcontinue (inElement)
     local
-      String fstr,inlineTypeStr, ext_decl_str, parallelism_str, impureStr;
+      String fstr, inlineTypeStr, ext_decl_str, parallelism_str, impureStr, typeStr;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
@@ -1537,6 +1537,8 @@ algorithm
     case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),
                       type_ = t,isImpure = isImpure,comment = c)
       equation
+        typeStr = Types.printTypeStr(t);
+        Print.printBuf(typeStr);
         parallelism_str = dumpParallelismStr(t);
         Print.printBuf(parallelism_str);
         impureStr = Util.if_(isImpure, "impure ", "");

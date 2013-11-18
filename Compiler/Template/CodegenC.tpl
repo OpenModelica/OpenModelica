@@ -7842,7 +7842,13 @@ case BINARY(__) then
     let var = tempDecl(type, &varDecls /*BUFD*/)
     let &preExp += 'mul_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
-  case DIV_ARR(__) then  error(sourceInfo(),'Code generation does not support DIV_ARR <%printExpStr(exp)%>')
+  case DIV_ARR(__) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
+    let var = tempDecl(type, &varDecls /*BUFD*/)
+    let &preExp += 'div_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
+    '<%var%>'
   case MUL_ARRAY_SCALAR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
@@ -8248,6 +8254,19 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     let var3 = Util.escapeModelicaStringToCString(string)
     'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
+
+  case CALL(attr=CALL_ATTR(ty=ty),
+            path=IDENT(name="DIVISION_ARRAY_SCALAR"),
+            expLst={e1, e2, e3 as  DAE.SCONST(string=string)}) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
+                        else "real_array"
+    let var = tempDecl(type, &varDecls)
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    let var3 = Util.escapeModelicaStringToCString(string)
+    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, <%var3%>);<%\n%>'
+    '<%var%>'
 
   case CALL(attr=CALL_ATTR(ty=ty),
             path=IDENT(name="DIVISION_ARRAY_SCALAR"),

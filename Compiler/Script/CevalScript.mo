@@ -1155,7 +1155,7 @@ algorithm
         (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
         vars = BackendVariable.daeVars(syst);
         eqnarr = BackendEquation.daeEqns(syst);
-        jac = BackendDAEUtil.calculateJacobian(vars, eqnarr, m, false,shared);
+        (jac, _) = BackendDAEUtil.calculateJacobian(vars, eqnarr, m, false,shared);
         res = BackendDump.dumpJacobianStr(jac);
       then
         (cache,Values.STRING(res),GlobalScript.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));

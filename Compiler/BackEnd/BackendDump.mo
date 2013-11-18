@@ -1851,6 +1851,8 @@ algorithm
       then
         str;
     case DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)) then "ExternalObject ";
+    case DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)) then "Record ";
+    case DAE.T_ARRAY(ty = _) then "Array ";
   end match;
 end dumpTypeStr;
 
