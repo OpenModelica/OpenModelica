@@ -57,6 +57,8 @@ StringHandler::~StringHandler()
 
 }
 
+const QString StringHandler::errorLevelToString[] = {tr("Notification"), tr("Warning"), tr("Error"), tr("Unknown")};
+
 QString StringHandler::getModelicaClassType(int type)
 {
   switch (type)

@@ -322,20 +322,20 @@ void MessagesTreeWidget::selectAllMessages()
   */
 void MessagesTreeWidget::copyMessages()
 {
-  QString textToCopy;
+  QStringList textToCopy;
   foreach (QTreeWidgetItem *pItem, selectedItems())
   {
     MessagesTreeItem *pMessagesTreeItem = dynamic_cast<MessagesTreeItem*>(pItem);
     if (pMessagesTreeItem)
     {
-      textToCopy.append(pMessagesTreeItem->text(0)).append("\t");
-      textToCopy.append(pMessagesTreeItem->text(1)).append("\t");
-      textToCopy.append(pMessagesTreeItem->text(2)).append("\t");
-      textToCopy.append(pMessagesTreeItem->text(3)).append("\t");
-      textToCopy.append(pMessagesTreeItem->getMessage()).append("\n");
+      QString file = pMessagesTreeItem->text(2);
+      QString line = pMessagesTreeItem->text(3);
+      QString level = pMessagesTreeItem->getLevel();
+      QString message = pMessagesTreeItem->getMessage();
+      textToCopy.append(QString("[%1:%2] %3: %4").arg(file).arg(line).arg(level).arg(message));
     }
   }
-  QApplication::clipboard()->setText(textToCopy);
+  QApplication::clipboard()->setText(textToCopy.join("\n"));
 }
 
 /*!
@@ -601,9 +601,9 @@ QString MessagesTreeItem::getKind()
   */
 void MessagesTreeItem::setLevel(QString level)
 {
-  mLevel = level;
   // set the error type
   QMap<QString, StringHandler::OpenModelicaErrors>::iterator it;
+
   for (it = mErrorsMap.begin(); it != mErrorsMap.end(); ++it)
   {
     if (it.key().compare(level) == 0)
@@ -621,7 +621,7 @@ void MessagesTreeItem::setLevel(QString level)
   */
 QString MessagesTreeItem::getLevel()
 {
-  return mLevel;
+  return StringHandler::errorLevelToString[mType];
 }
 
 /*!
