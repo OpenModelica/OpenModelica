@@ -29,6 +29,7 @@ LINK=@LINK@
 MSL_EXTRA_ARGS=@MSL_EXTRA_ARGS@
 GC_THREADS=--enable-threads=posix
 LIBFMILIB=@LIBFMILIB@
+LD_LAPACK=@LD_LAPACK@
 LAPACK_TARGET=@LAPACK_TARGET@
 OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@
 # We don't want the shared version, but symbols are not exported if we use the static version

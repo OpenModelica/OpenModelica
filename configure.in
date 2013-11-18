@@ -389,7 +389,7 @@ fi
 fi
 
 # Cannot use AX_LAPACK since it assumes a Fortran compiler is used
-AC_ARG_WITH(lapack,  [  --with-lapack=[openblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture)],[LD_LAPACK="$withval"],[LD_LAPACK="openblas"])
+AC_ARG_WITH(lapack,  [  --with-lapack=[-llapack -lblas]    (use -llapack -lblas to use system-provided version instead of OpenBLAS. Use openblas for automatically detected OpenBLAS. Use --with-lapack=openblas-NEHALEM or other OpenBLAS target to compile against a certain architecture)],[LD_LAPACK="$withval"],[LD_LAPACK="-llapack -lblas"])
 AC_MSG_CHECKING([LAPACK flags])
 if echo "$LD_LAPACK" | grep -oq "^openblas"; then
   LD_LAPACK=`echo $LD_LAPACK | sed s/"^openblas-//"`
@@ -460,35 +460,10 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 
 LIBS=""
 
-dnl should we use ipopt?
-
-AC_ARG_WITH(ipopt, [  --with-ipopt=DIR                 use Ipopt for optimization], 
-[
-  WANT_IPOPT="$withval"
-], [
-  WANT_IPOPT="yes"
-])
-
-if test "$NO_SUNDIALS" = "yes"; then
-  NO_IPOPT="yes"
-elif test "$WANT_IPOPT" = "yes"; then
-  AC_CHECK_HEADERS(coin/IpStdCInterface.h, [IPOPT_LDFLAGS=`pkg-config --libs ipopt`; IPOPT_CFLAGS=""], [NO_IPOPT="yes"])
-elif test "$WANT_IPOPT" = "no"; then
-  NO_IPOPT="yes"
-else
-  IPOPT_DIR="$withval"
-  AC_CHECK_HEADERS($IPOPT_DIR/include/coin/IpStdCInterface.h, [AC_MSG_RESULT(ipopt directory: $IPOPT_DIR); IPOPT_LDFLAGS=`PKG_CONFIG_PATH=$IPOPT_DIR/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs ipopt`; IPOPT_CFLAGS="-I'"$IPOPT_DIR"/include'"], [NO_IPOPT="yes"])
-fi
-
-if test "$NO_IPOPT" != "yes" -a "$WANT_IPOPT" = "yes"; then
-  LIBS=$IPOPT_LDFLAGS
-  AC_SEARCH_LIBS(CreateIpoptProblem,ipopt,,[NO_IPOPT="yes"])
-  LIBS=""
-fi
-
 if ! test "$NO_IPOPT" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: Yes"
   WITH_IPOPT="#define WITH_IPOPT"
+  IPOPT_LDFLAGS="-lipopt -lcoinmumps"
 else
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use IPOPT: No"
   WITH_IPOPT="/* Without IPOPT */"

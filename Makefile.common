@@ -46,7 +46,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis $(LAPACK_TARGET)
+interactive: .testvariables mkbuilddirs boehm-gc fmil msl-external-libs lis ipopt
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
@@ -84,6 +84,17 @@ build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 	cp -pP $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
 	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(GC_THREADS) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
+
+3rdParty/Ipopt-3.11.6/Makefile: $(LAPACK_TARGET)
+	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" LDFLAGS=-L${abs_top_builddir}/build/lib/omc --with-lapack="$(LD_LAPACK)" --with-blas="")
+
+build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
+	$(MAKE) -C 3rdParty/Ipopt-3.11.6
+	$(MAKE) -C 3rdParty/Ipopt-3.11.6 install
+	cp -pP 3rdParty/Ipopt-3.11.6/lib/*.* build/lib/omc
+	cp -rp 3rdParty/Ipopt-3.11.6/include/coin build/include/omc
+
+ipopt: build/lib/omc/libipopt.la
 
 build/lib/omc/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
@@ -240,6 +251,7 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean
+	$(MAKE) -C 3rdParty/Ipopt-3.11.6 clean || true
 	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
