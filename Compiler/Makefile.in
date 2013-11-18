@@ -64,32 +64,7 @@ nodepend:
 	(cd omc_release && $(MAKE))
 
 omc_release: simcode builtin
-	(cd omc_release && $(MAKE))
-
-omc_debug: simcode builtin
-	(cd omc_debug && $(MAKE))
-
-omc_profiler: simcode builtin
-	(cd omc_profiler && $(MAKE))
-
-#vctarget:
-#	@(cd omc_debug ; $(MAKE) vctarget)
-
-vctarget:
-	@(cd omc_release ; $(MAKE) vctarget)
-
-
-test:
-	@(cd $(top_builddir)/testsuite ; $(MAKE))
-
-
-#ast/libast.a:
-#	@(cd ast ; $(MAKE) libast.a)
-
-#subdirs:
-#	@for d in $(SUBDIRS); do \
-#		(cd $$d ; $(MAKE)) \
-#	done
+	(cd omc_release && $(MAKE) DAE.c && $(MAKE))
 
 clean:
 	@for d in $(SUBDIRS); do \
