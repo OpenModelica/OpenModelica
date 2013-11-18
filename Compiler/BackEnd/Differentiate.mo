@@ -1530,8 +1530,8 @@ algorithm
         (res2,  funcs);
 
     // der(semiLinear(x,a,b)) = if (x>=0) then a*x else b*x -> if (x>=0) then da*x+a*dx else db*x+b*dx
-		case ("semiLinear", {e,e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
-		  equation
+    case ("semiLinear", {e,e1,e2}, DAE.CALL_ATTR(ty=tp), _, _, _, _)
+      equation
         (res, funcs) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (res1, funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, funcs);
         (res2, funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
@@ -1539,8 +1539,8 @@ algorithm
         res2 = Expression.expAdd(Expression.expMul(res2, e),Expression.expMul(e2, res));
         (res, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         res = DAE.RELATION(e, DAE.GREATEREQ(tp), res, -1, NONE());
-		  then
-		    (DAE.IFEXP(res, res1, res2), funcs);
+      then
+        (DAE.IFEXP(res, res1, res2), funcs);
 
     case ("transpose", expl, DAE.CALL_ATTR(ty=tp), _, _, _, _)
       equation
