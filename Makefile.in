@@ -108,7 +108,6 @@ omc-bootstrapped:
 bootstrap-from-tarball:
 	$(MAKE) bootstrap-dependencies
 	time $(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-tarball
-	OPENMODELICAHOME=`pwd`/build time $(MAKE) bootstrap-from-compiled
 	$(MAKE) omlibrary
 
 # configure --without-rml works using this target, but requires a compiled omc (either from bootstrap or regular one)
