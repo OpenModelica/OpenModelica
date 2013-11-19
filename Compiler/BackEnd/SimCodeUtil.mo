@@ -2157,16 +2157,17 @@ algorithm
     local
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents restComps;
-      Integer e, index, vindex, uniqueEqIndex;
+      Integer e, index, vindex, uniqueEqIndex, firstEqIndex;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       BackendDAE.Var v;
       BackendDAE.Equation eqn;
+      SimCode.SimEqSystem firstSES;
       list<BackendDAE.Equation> eqnlst;
       list<BackendDAE.Var> varlst;
       list<Integer> eqnslst;
       list<SimCode.SimEqSystem> equations1, noDiscEquations1;
-      Boolean bwhen, bdisc, bdynamic;
+      Boolean bwhen, bdisc, bdynamic, isEqSys;
       list<SimCode.SimVar> tempvars;
       String message;
       list<tuple<Integer,Integer>> tmpEqSccMapping;
@@ -2186,9 +2187,12 @@ algorithm
         bdisc = BackendVariable.isVarDiscrete(v);
         // block is dynamic, belong in dynamic section
         bdynamic = BackendDAEUtil.blockIsDynamic({index}, stateeqnsmark);
-        
         (equations1, uniqueEqIndex, tempvars) = createEquation(index, vindex, syst, shared, false, false, iuniqueEqIndex, itempvars);
-        tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+        firstSES = List.first(equations1);  // check if the all equations occure with this index in the c file
+        isEqSys = isSimEqSys(firstSES);
+        firstEqIndex = Util.if_(isEqSys,uniqueEqIndex-1,iuniqueEqIndex);
+        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+        tmpEqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
         (odeEquations, algebraicEquations, allEquations, uniqueEqIndex, tempvars, tmpEqSccMapping) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, uniqueEqIndex, tempvars, isccIndex+1, tmpEqSccMapping);
         odeEquations = Debug.bcallret2(bdynamic and (not bwhen), listAppend, equations1, odeEquations, odeEquations);
         algebraicEquations = Debug.bcallret2((not bdynamic) and (not bwhen), listAppend, equations1, algebraicEquations, algebraicEquations);
@@ -2296,8 +2300,7 @@ algorithm
         (eqnslst, _) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         bdynamic = BackendDAEUtil.blockIsDynamic(eqnslst, stateeqnsmark);        
         (equations1, noDiscEquations1, uniqueEqIndex, tempvars, tmpEqSccMapping) = createOdeSystem(true, false, false, syst, shared, comp, iuniqueEqIndex, itempvars, isccIndex, ieqSccMapping);
-        
-        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);        
+       //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);        
         
         (odeEquations, algebraicEquations, allEquations, uniqueEqIndex, tempvars, tmpEqSccMapping) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, uniqueEqIndex, tempvars, isccIndex+1, tmpEqSccMapping);
         odeEquations = Debug.bcallret2(bdynamic, listAppend, noDiscEquations1, odeEquations, odeEquations);
@@ -5421,6 +5424,21 @@ end createInitialMatrices;
 // 
 // TODO: clean up this section ;)
 // =============================================================================
+
+protected function isSimEqSys  "checks if the given SES needs an additional equationsystem for the simulation and therefore skips an simEqIdx in the c-file.
+this is used to get the right simCode-eq-mapping for hpcm.
+add more cases here if you know for which cases this happens.
+author: Waurich TUD 2013-11 "
+  input SimCode.SimEqSystem simEqSysIn;
+  output Boolean isEqSys;
+algorithm
+  isEqSys := match(simEqSysIn)
+  case(SimCode.SES_NONLINEAR(index=_, eqs=_, crefs=_, indexNonLinearSystem=_, jacobianMatrix=_, linearTearing=_))
+    then true;
+  else
+    then false;
+  end match;
+end isSimEqSys;
 
 protected function collectDelayExpressions
 "Put expression into a list if it is a call to delay().

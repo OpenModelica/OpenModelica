@@ -647,8 +647,7 @@ algorithm
         targetSize = listLength(List.flatten(odeEqsIn));
         actualSize = arrayLength(taskGraphOdeIn);
         true = intEq(targetSize,actualSize);
-        //print("the ODE-system size is correct: "+&intString(targetSize)+&"\n");
-        print("the ODE-system size is correct\n");
+        print("the ODE-system size is correct("+&intString(actualSize)+&")\n");
         then
           ();
     case(_,_)
@@ -657,7 +656,7 @@ algorithm
         actualSize = arrayLength(taskGraphOdeIn);
         true = intEq(targetSize,1) and intEq(actualSize,0);
         // there is a dummyDER in the simcode
-        print("the ODE-system size is correct\n");
+        print("the ODE-system size is correct(0)\n");
         then
           ();
     else
