@@ -9,4 +9,6 @@ USE_CORBA = @QT_USE_CORBA@
 PLOTLIBS = -lqwt@with_qwt_suffix@ -L../../OMPlot/bin/ -lOMPlot
 PLOTINC = @with_qwt@ ../../OMPlot/OMPlotGUI
 
+QMAKE_CFLAGS = @CFLAGS@ @CPPFLAGS@
+QMAKE_CXXFLAGS = @CFLAGS@ @CPPFLAGS@
 QMAKE_LFLAGS += @LDFLAGS@
