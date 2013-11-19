@@ -387,6 +387,15 @@ algorithm
       Integer numProc;
       BackendDAE.BackendDAE backendDAE2;
       SimCode.SimCode tmpSimCode;
+      
+    case(_, _, _, _, _, _, _, _, _, _, _, _) equation
+      true = Flags.isSet(Flags.HPCOM);
+      numProc = Flags.getConfigInt(Flags.NUM_PROC);
+      true = numProc == 0;
+      print("\nWARNING: When using hpcom, you need to set the number of processors with the flag +n= !\n\n");
+      backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmSimCode.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
+    then HpcOmSimCode.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
+      
     case(_, _, _, _, _, _, _, _, _, _, _, _) equation
       true = Flags.isSet(Flags.HPCOM);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
