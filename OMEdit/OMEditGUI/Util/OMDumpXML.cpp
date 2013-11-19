@@ -232,6 +232,7 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
     for (int i=0; i<equationTypeSize; i++) {
       currentVariable.usedIn[i].clear();
     }
+    currentVariable.types.clear();
   } else if (qName == "info") {
     currentInfo.file = atts.value("file");
     currentInfo.lineStart = atts.value("lineStart").toLong();
@@ -272,7 +273,9 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
 
 bool MyHandler::endElement( const QString & namespaceURI, const QString & localName, const QString & qName)
 {
-  if (operationExpTags.contains(qName) || equationPartTags.contains(qName)) {
+  if (qName == "type") {
+    currentVariable.types.append(currentText);
+  } else if (operationExpTags.contains(qName) || equationPartTags.contains(qName)) {
     texts.append(currentText.trimmed());
   }
   if (qName == "variable") {
@@ -290,6 +293,10 @@ bool MyHandler::endElement( const QString & namespaceURI, const QString & localN
     }
     equations.append(currentEquation);
     foreach (QString def, currentEquation.defines) {
+      if (!variables.contains(def)) {
+        qDebug() << "Defines " << def << " not found in variables.";
+        continue;
+      }
       int prev = variables[def].definedIn[currentEquation.kind];
       if (prev) {
         qDebug() << "failing: multiple define of " << def << ": " << prev << " and " << currentEquation.index << " for kind: " << currentEquation.kind;
@@ -298,7 +305,10 @@ bool MyHandler::endElement( const QString & namespaceURI, const QString & localN
       variables[def].definedIn[currentEquation.kind] = currentEquation.index;
     }
     foreach (QString def, currentEquation.depends) {
-      variables[def].usedIn[currentEquation.kind].append(currentEquation.index);
+      if (variables.contains(def))
+        variables[def].usedIn[currentEquation.kind].append(currentEquation.index);
+      else
+        qDebug() << "Depends " << def << " not found in variables.";
     }
   } else if (equationTags.contains(qName)) {
     currentEquation.text = texts;

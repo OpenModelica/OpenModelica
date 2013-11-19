@@ -144,6 +144,7 @@ struct OMVariable {
   QString name;
   QString comment;
   OMInfo info;
+  QStringList types;
   int definedIn[equationTypeSize];
   QList<int> usedIn[equationTypeSize];
   QList<OMOperation*> ops;
