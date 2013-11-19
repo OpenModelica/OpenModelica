@@ -5,7 +5,7 @@ import os
 import re
 
 def removeall(path):
-    if not os.path.isdir(path):
+    if os.path.islink(path) or not os.path.isdir(path):
         os.remove(path)
         return
     files=os.listdir(path)
