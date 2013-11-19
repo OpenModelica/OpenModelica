@@ -105,11 +105,6 @@ VariablesTreeItem* VariablesTreeItem::child(int row)
   return mChildren.value(row);
 }
 
-int VariablesTreeItem::childCount() const
-{
-  return mChildren.count();
-}
-
 void VariablesTreeItem::removeChildren()
 {
   qDeleteAll(mChildren);
@@ -240,7 +235,7 @@ int VariablesTreeModel::rowCount(const QModelIndex &parent) const
     pParentVariablesTreeItem = mpRootVariablesTreeItem;
   else
     pParentVariablesTreeItem = static_cast<VariablesTreeItem*>(parent.internalPointer());
-  return pParentVariablesTreeItem->childCount();
+  return pParentVariablesTreeItem->getChildren().size();
 }
 
 QVariant VariablesTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -284,7 +279,9 @@ QModelIndex VariablesTreeModel::parent(const QModelIndex &index) const
 
 bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-  VariablesTreeItem *pVariablesTreeItem = getVariablesTreeItem(index);
+  VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
+  if (!pVariablesTreeItem)
+    return false;
   bool result = pVariablesTreeItem->setData(index.column(), value, role);
   if (index.column() == 0 && role == Qt::CheckStateRole)
   {
@@ -311,9 +308,9 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
 
   VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
-  if (index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->childCount() == 0)
+  if (index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->getChildren().size() == 0)
     flags |= Qt::ItemIsUserCheckable;
-  else if (index.column() == 1 && pVariablesTreeItem && pVariablesTreeItem->childCount() == 0 && pVariablesTreeItem->isEditable())
+  else if (index.column() == 1 && pVariablesTreeItem && pVariablesTreeItem->getChildren().size() == 0 && pVariablesTreeItem->isEditable())
     flags |= Qt::ItemIsEditable;
 
   return flags;
@@ -538,10 +535,11 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
   VariablesTreeItem *pVariablesTreeItem = findVariablesTreeItem(variable, mpRootVariablesTreeItem);
   if (pVariablesTreeItem)
   {
-    beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem), 0, pVariablesTreeItem->childCount());
+    beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem), 0, pVariablesTreeItem->getChildren().size());
     pVariablesTreeItem->removeChildren();
     VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
     pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
+    delete pVariablesTreeItem;
     endRemoveRows();
     return true;
   }
@@ -556,16 +554,6 @@ void VariablesTreeModel::unCheckVariables(VariablesTreeItem *pVariablesTreeItem)
     items[i]->setData(0, Qt::Unchecked, Qt::CheckStateRole);
     unCheckVariables(items[i]);
   }
-}
-
-VariablesTreeItem* VariablesTreeModel::getVariablesTreeItem(const QModelIndex &index) const
-{
-  if (index.isValid()) {
-    VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-    if (pVariablesTreeItem)
-      return pVariablesTreeItem;
-  }
-  return mpRootVariablesTreeItem;
 }
 
 void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble,
@@ -847,9 +835,8 @@ void VariablesWidget::updateVariablesTreeHelper(QMdiSubWindow *pSubWindow)
     }
   }
   mpVariablesTreeModel->blockSignals(state);
-  /* call QAbstractItemModel::setData so the treeview is updated. */
+  /* invalidate the view so that the items show the updated values. */
   mpVariableTreeProxyModel->invalidate();
-  mpVariablesTreeModel->setData(QModelIndex(), QVariant());
 }
 
 bool VariablesWidget::eventFilter(QObject *pObject, QEvent *pEvent)
@@ -872,7 +859,7 @@ bool VariablesWidget::eventFilter(QObject *pObject, QEvent *pEvent)
 void VariablesWidget::readVariablesAndUpdateXML(VariablesTreeItem *pVariablesTreeItem, QString outputFileName,
                                                 QHash<QString, QHash<QString, QString> > *variables)
 {
-  for (int i = 0 ; i < pVariablesTreeItem->childCount() ; i++)
+  for (int i = 0 ; i < pVariablesTreeItem->getChildren().size() ; i++)
   {
     VariablesTreeItem *pChildVariablesTreeItem = pVariablesTreeItem->child(i);
     if (pChildVariablesTreeItem->isEditable() && pChildVariablesTreeItem->isValueChanged())
@@ -933,7 +920,9 @@ void VariablesWidget::plotVariables(const QModelIndex &index, PlotWindow *pPlotW
     // if pPlotWindow is 0 then create a new plot window.
     if (!pPlotWindow)
     {
+      bool state = mpMainWindow->getPlotWindowContainer()->blockSignals(true);
       mpMainWindow->getPlotWindowContainer()->addPlotWindow();
+      mpMainWindow->getPlotWindowContainer()->blockSignals(state);
       pPlotWindow = mpMainWindow->getPlotWindowContainer()->getCurrentWindow();
     }
     // if still pPlotWindow is 0 then return.

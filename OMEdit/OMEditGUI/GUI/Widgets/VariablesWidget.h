@@ -65,7 +65,6 @@ public:
   QIcon getVariableTreeItemIcon(QString name) const;
   void insertChild(int position, VariablesTreeItem *pVariablesTreeItem);
   VariablesTreeItem *child(int row);
-  int childCount() const;
   void removeChildren();
   void removeChild(VariablesTreeItem *pVariablesTreeItem);
   int columnCount() const;
@@ -120,7 +119,6 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
-  VariablesTreeItem* getVariablesTreeItem(const QModelIndex &index) const;
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *displayUnit,
                               QString *description);
 signals:
