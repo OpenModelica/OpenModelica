@@ -116,7 +116,7 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   QFrame *pVariablesFrame = new QFrame;
   pVariablesFrame->setLayout(pVariablesGridLayout);
   /* types tree widget */
-  Label *pTypesLabel = new Label(tr("Types"));
+  Label *pTypesLabel = new Label(tr("Variable Types"));
   mpTypesTreeWidget = new QTreeWidget;
   mpTypesTreeWidget->setItemDelegate(new ItemDelegate(mpTypesTreeWidget));
   mpTypesTreeWidget->setObjectName("TypesTree");
@@ -124,7 +124,7 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   mpTypesTreeWidget->setColumnCount(1);
   mpTypesTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpTypesTreeWidget->setSortingEnabled(true);
-  mpTypesTreeWidget->setHeaderLabel(tr("Variable Types"));
+  mpTypesTreeWidget->setHeaderLabel(tr("Types"));
   QGridLayout *pTypesGridLayout = new QGridLayout;
   pTypesGridLayout->setContentsMargins(0, 0, 0, 0);
   pTypesGridLayout->addWidget(pTypesLabel, 0, 0);

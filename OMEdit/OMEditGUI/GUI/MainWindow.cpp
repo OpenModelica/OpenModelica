@@ -1995,6 +1995,7 @@ void MainWindow::switchToWelcomePerspective()
   mpModelSwitcherToolButton->setEnabled(false);
   mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
+  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   //mpInteractiveSimualtionTabWidget->setVisible(false);
 }
@@ -2007,6 +2008,7 @@ void MainWindow::switchToModelingPerspective()
   mpModelSwitcherToolButton->setEnabled(true);
   mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
+  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   //mpInteractiveSimualtionTabWidget->setVisible(false);
 }
@@ -2022,6 +2024,7 @@ void MainWindow::switchToPlottingPerspective()
     mpPlotWindowContainer->addPlotWindow();
   mpPlotWindowContainer->setVisible(true);
   mpVariablesDockWidget->show();
+  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(true);
   //mpInteractiveSimualtionTabWidget->setVisible(false);
 }
@@ -2034,6 +2037,7 @@ void MainWindow::switchToInteractiveSimulationPerspective()
   mpModelSwitcherToolButton->setEnabled(false);
   mpPlotWindowContainer->setVisible(false);
   mpVariablesDockWidget->hide();
+  mpTransformationsDockWidget->hide();
   mpPlotToolBar->setEnabled(false);
   //mpInteractiveSimualtionTabWidget->setVisible(true);
 }
