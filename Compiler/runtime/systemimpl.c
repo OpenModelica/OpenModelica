@@ -2103,11 +2103,12 @@ void SystemImpl__gettextInit(const char *locale)
   char *old_ctype = GC_strdup(old_ctype_default);
   int old_ctype_is_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
 
-  int res = *locale == 0 ? setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, ""):
-    (setlocale(LC_MESSAGES, locale3) && setlocale(LC_CTYPE, locale3))  ||
-    (setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
-    (setlocale(LC_MESSAGES, locale) && setlocale(LC_CTYPE, locale));
-  if (!res) {
+  int res =
+    (*locale == 0 && setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, "")) ||
+    (*locale != 0 && setlocale(LC_MESSAGES, locale3) && setlocale(LC_CTYPE, locale3))  ||
+    (*locale != 0 && setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
+    (*locale != 0 && setlocale(LC_MESSAGES, locale) && setlocale(LC_CTYPE, locale));
+  if (!res && *locale) {
     fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
   }
   clocale = setlocale(LC_CTYPE, NULL);

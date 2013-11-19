@@ -86,7 +86,7 @@ build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(GC_THREADS) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
 
 3rdParty/Ipopt-3.11.6/Makefile: $(LAPACK_TARGET)
-	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS=-L${abs_top_builddir}/build/lib/omc --with-lapack="$(LD_LAPACK)" --with-blas="")
+	(cd 3rdParty/Ipopt-3.11.6 && ./configure --with-pic "CC=$(CC)" CXX="$(CXX)" F77="$(FC)" LDFLAGS=-L${abs_top_builddir}/build/lib/omc --with-lapack="$(LD_LAPACK)" --with-blas="$(LD_LAPACK)" --without-metis)
 
 build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6
