@@ -218,7 +218,7 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
 {
   mpVariablesTreeView = pVariablesTreeView;
   QVector<QVariant> headers;
-  headers << "" << "" << "Variables" << tr("Variables") << tr("Value") << tr("Unit") << tr("Description") << "";
+  headers << "" << "" << "Variables" << Helper::variables << tr("Value") << tr("Unit") << Helper::description << "";
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
 }
 
@@ -331,19 +331,19 @@ VariablesTreeItem* VariablesTreeModel::findVariablesTreeItem(const QString &name
 
 QModelIndex VariablesTreeModel::variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const
 {
-  return VariablesTreeItemIndexHelper(pVariablesTreeItem, mpRootVariablesTreeItem, QModelIndex());
+  return variablesTreeItemIndexHelper(pVariablesTreeItem, mpRootVariablesTreeItem, QModelIndex());
 }
 
-QModelIndex VariablesTreeModel::VariablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem,
-                                                               const VariablesTreeItem *pParentVariablesTreeItem,
-                                                               const QModelIndex &parentIndex) const
+QModelIndex VariablesTreeModel::variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem,
+                                                             const VariablesTreeItem *pParentVariablesTreeItem,
+                                                             const QModelIndex &parentIndex) const
 {
   if (pVariablesTreeItem == pParentVariablesTreeItem)
     return parentIndex;
   for (int i = pParentVariablesTreeItem->getChildren().size(); --i >= 0; ) {
     const VariablesTreeItem *childItem = pParentVariablesTreeItem->getChildren().at(i);
     QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = VariablesTreeItemIndexHelper(pVariablesTreeItem, childItem, childIndex);
+    QModelIndex index = variablesTreeItemIndexHelper(pVariablesTreeItem, childItem, childIndex);
     if (index.isValid())
       return index;
   }

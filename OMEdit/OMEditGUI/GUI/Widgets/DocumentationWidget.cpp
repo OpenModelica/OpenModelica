@@ -55,7 +55,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   // create previous and next buttons for documentation navigation
   // create the previous button
   mpPreviousToolButton = new QToolButton;
-  mpPreviousToolButton->setText(tr("Previous"));
+  mpPreviousToolButton->setText(Helper::previous);
   mpPreviousToolButton->setToolTip(tr("click to go on previous (backspace)"));
   mpPreviousToolButton->setIcon(QIcon(":/Resources/icons/previous.png"));
   mpPreviousToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -63,7 +63,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   connect(mpPreviousToolButton, SIGNAL(clicked()), SLOT(previousDocumentation()));
   // create the next button
   mpNextToolButton = new QToolButton;
-  mpNextToolButton->setText(tr("Next"));
+  mpNextToolButton->setText(Helper::next);
   mpNextToolButton->setToolTip(tr("click to go on next (shift+backspace)"));
   mpNextToolButton->setIcon(QIcon(":/Resources/icons/next.png"));
   mpNextToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);

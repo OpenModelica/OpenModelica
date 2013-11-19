@@ -211,6 +211,12 @@ public:
   static QString viewDocumentationTip;
   static QString dontShowThisMessageAgain;
   static QString clickAndDragToResize;
+  static QString variables;
+  static QString description;
+  static QString previous;
+  static QString next;
+  static QString index;
+  static QString equation;
 };
 
 class GUIMessages : public QObject

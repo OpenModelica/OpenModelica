@@ -124,6 +124,15 @@ MainWindow::MainWindow(QSplashScreen *pSplashScreen, QWidget *parent)
   addDockWidget(Qt::RightDockWidgetArea, mpVariablesDockWidget);
   setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
   mpVariablesDockWidget->hide();
+  // create an object of TransformationsWidget
+  mpTransformationsWidget = new TransformationsWidget(this);
+  // Create TransformationsDockWidget dock
+  mpTransformationsDockWidget = new QDockWidget(tr("Transformations Browser"), this);
+  mpTransformationsDockWidget->setObjectName("Transformations");
+  mpTransformationsDockWidget->setAllowedAreas(Qt::TopDockWidgetArea);
+  mpTransformationsDockWidget->setWidget(mpTransformationsWidget);
+  addDockWidget(Qt::TopDockWidgetArea, mpTransformationsDockWidget);
+  mpTransformationsDockWidget->hide();
   //Create Actions, Toolbar and Menus
   pSplashScreen->showMessage(tr("Creating Widgets"), Qt::AlignRight, Qt::white);
   setAcceptDrops(true);
@@ -292,6 +301,11 @@ VariablesWidget* MainWindow::getVariablesWidget()
 QDockWidget* MainWindow::getVariablesDockWidget()
 {
   return mpVariablesDockWidget;
+}
+
+TransformationsWidget* MainWindow::getTransformationsWidget()
+{
+  return mpTransformationsWidget;
 }
 
 SimulationDialog* MainWindow::getSimulationDialog()
@@ -958,6 +972,16 @@ void MainWindow::showOpenResultFileDialog()
   openResultFiles(fileNames);
 }
 
+void MainWindow::showOpenTransformationFileDialog()
+{
+  QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                         NULL, Helper::xmlFileTypes, NULL);
+  if (fileName.isEmpty())
+    return;
+  mpTransformationsWidget->showTransformations(fileName);
+  mpTransformationsDockWidget->show();
+}
+
 void MainWindow::loadSystemLibrary()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
@@ -1574,7 +1598,7 @@ void MainWindow::createActions()
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
   mpOpenModelicaFileAction->setStatusTip(tr("Opens the Modelica file(s)"));
   connect(mpOpenModelicaFileAction, SIGNAL(triggered()), SLOT(openModelicaFile()));
-  // open Modelica file action
+  // open Modelica file with encoding action
   mpOpenModelicaFileWithEncodingAction = new QAction(Helper::openConvertModelicaFiles, this);
   mpOpenModelicaFileWithEncodingAction->setStatusTip(tr("Opens and converts the Modelica file(s) with encoding"));
   connect(mpOpenModelicaFileWithEncodingAction, SIGNAL(triggered()), SLOT(showOpenModelicaFileDialog()));
@@ -1587,6 +1611,10 @@ void MainWindow::createActions()
   mpOpenResultFileAction->setShortcut(QKeySequence("Ctrl+shift+o"));
   mpOpenResultFileAction->setStatusTip(tr("Opens the OpenModelica Result file"));
   connect(mpOpenResultFileAction, SIGNAL(triggered()), SLOT(showOpenResultFileDialog()));
+  // open transformations file action
+  mpOpenTransformationFileAction = new QAction(tr("Open Transformations File"), this);
+  mpOpenTransformationFileAction->setStatusTip(tr("Opens the class transformations file"));
+  connect(mpOpenTransformationFileAction, SIGNAL(triggered()), SLOT(showOpenTransformationFileDialog()));
   // save file action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.png"), tr("Save"), this);
   mpSaveAction->setShortcut(QKeySequence("Ctrl+s"));
@@ -1825,6 +1853,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   pFileMenu->addAction(mpLoadModelicaLibraryAction);
   pFileMenu->addAction(mpOpenResultFileAction);
+  pFileMenu->addAction(mpOpenTransformationFileAction);
   pFileMenu->addAction(mpSaveAction);
   pFileMenu->addAction(mpSaveAsAction);
   //menuFile->addAction(saveAllAction);
@@ -1901,6 +1930,7 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpTransformationsDockWidget->toggleViewAction());
   pViewMenu->addAction(pViewWindowsMenu->menuAction());
   pViewMenu->addSeparator();
   pViewMenu->addAction(mpShowGridLinesAction);

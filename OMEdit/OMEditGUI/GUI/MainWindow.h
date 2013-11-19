@@ -52,6 +52,7 @@
 #include "ModelicaClassDialog.h"
 #include "StringHandler.h"
 #include "MessagesWidget.h"
+#include "TransformationsWidget.h"
 #include "LibraryTreeWidget.h"
 #include "DocumentationWidget.h"
 #include "SimulationDialog.h"
@@ -63,6 +64,7 @@
 class OMCProxy;
 class OptionsDialog;
 class MessagesWidget;
+class TransformationsWidget;
 class SearchClassWidget;
 class LibraryTreeWidget;
 class DocumentationWidget;
@@ -94,6 +96,7 @@ public:
   QDockWidget* getDocumentationDockWidget();
   VariablesWidget* getVariablesWidget();
   QDockWidget* getVariablesDockWidget();
+  TransformationsWidget* getTransformationsWidget();
   SimulationDialog* getSimulationDialog();
   PlotWindowContainer* getPlotWindowContainer();
   //InteractiveSimulationTabWidget* getInteractiveSimulationTabWidget();
@@ -164,6 +167,8 @@ private:
   QDockWidget *mpDocumentationDockWidget;
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
+  TransformationsWidget *mpTransformationsWidget;
+  QDockWidget *mpTransformationsDockWidget;
   FindReplaceDialog *mpFindReplaceDialog;
   SimulationDialog *mpSimulationDialog;
   PlotWindowContainer *mpPlotWindowContainer;
@@ -184,6 +189,7 @@ private:
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
   QAction *mpOpenResultFileAction;
+  QAction *mpOpenTransformationFileAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
@@ -258,6 +264,7 @@ public slots:
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
   void showOpenResultFileDialog();
+  void showOpenTransformationFileDialog();
   void loadSystemLibrary();
   void focusSearchClassWidget(bool visible);
   void openRecentFile();

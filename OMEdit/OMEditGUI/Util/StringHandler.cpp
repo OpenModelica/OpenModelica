@@ -953,7 +953,7 @@ QStringList StringHandler::unparseArrays(QString value)
         i++;
         if (value.at(i) == '"' && value.at(i+1) != ',')
           if (value.at(i+1) != '}')
-            i++;
+            i+2;
       }
     }
   }
@@ -1088,7 +1088,7 @@ QString StringHandler::createTooltip(QStringList info, QString name, QString pat
   {
     QString tooltip = QString(Helper::type).append(": ").append(info[0]).append("<br />")
         .append(Helper::name).append(" ").append(name).append("<br />")
-        .append(tr("Description")).append(": ").append(info[1]).append("<br />");
+        .append(Helper::description).append(": ").append(info[1]).append("<br />");
     if (QString(info[2]).compare("<interactive>") == 0)
       tooltip.append(Helper::errorLocation).append(": ").append("<br />");
     else

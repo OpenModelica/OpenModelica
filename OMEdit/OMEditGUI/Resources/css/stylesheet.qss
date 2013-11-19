@@ -39,51 +39,55 @@ QTreeWidget::item,
 QTreeView::item {
   height: 22px;
 }
-QTreeWidget#SystemLibrariesTree::branch, QTreeWidget#UserLibrariesTree::branch, QTreeWidget#MessagesTree::branch, QTreeWidget#SearchedItemsTree::branch {
-    border-image: none;
-    image : none;
+QTreeWidget#SystemLibrariesTree::branch,
+QTreeWidget#UserLibrariesTree::branch,
+QTreeWidget#MessagesTree::branch,
+QTreeWidget#SearchedItemsTree::branch,
+QTreeWidget#VariablesTree::branch {
+  border-image: none;
+  image : none;
 }
 /* End of Library Widget Styles */
 
 QLineEdit {
-    border: 1px solid gray;
+  border: 1px solid gray;
 }
 
 QPlainTextEdit#ModelicaTextEdit {
-    selection-background-color: #3399FF;
-    selection-color: white;
+  selection-background-color: #3399FF;
+  selection-color: white;
 }
 
 QStatusBar#ModelStatusBar {
-    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
-    border: 1px solid gray;
+  background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #d2d2d2, stop: 1 lightGray);
+  border: 1px solid gray;
 }
 QStatusBar#ModelStatusBar::item {
-    margin-top: -5px;
-    padding: 0px;
-    border-left: 1px solid gray;
+  margin-top: -5px;
+  padding: 0px;
+  border-left: 1px solid gray;
 }
 QStatusBar#ModelStatusBar QLabel {
-    margin: 0px;
-    padding: 0px 0px 0px 1px;
+  margin: 0px;
+  padding: 0px 0px 0px 1px;
 }
 
 QToolButton#InteractiveSimulationButtons {
-    padding: 3px;
+  padding: 3px;
 }
 
 QListWidget#RecentItemsList::item:hover, QListWidget#LatestNewsList::item:hover{
-    border: 1px solid gray;
-    color: blue;
+  border: 1px solid gray;
+  color: blue;
 }
 
 QTabBar::scroller { /* the width of the scroll buttons */
-    width: 15px;
+  width: 15px;
 }
 QTabBar QToolButton { /* the scroll buttons are tool buttons */
-    background-color: palette(window);
+  background-color: palette(window);
 }
 
 QToolButton#ShapePointsButton {
-    padding: 3px;
+  padding: 3px;
 }

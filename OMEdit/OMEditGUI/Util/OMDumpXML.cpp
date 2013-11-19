@@ -27,6 +27,13 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+/*
+ *
+ * @author Martin Sjölund <martin.sjolund@liu.se>
+ *
+ * RCS: $Id$
+ *
+ */
 
 #include <QDebug>
 #include <QXmlStreamReader>
@@ -199,6 +206,15 @@ MyHandler::MyHandler(QFile &file)
   if (!ok) {
     throw QString("Parsing failed: %1").arg(file.fileName());
   }
+}
+
+OMEquation MyHandler::getOMEquation(int index)
+{
+  foreach (OMEquation eq, equations) {
+    if (eq.index == index)
+      return eq;
+  }
+  return OMEquation();
 }
 
 bool MyHandler::startDocument()

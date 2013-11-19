@@ -1680,7 +1680,6 @@ WelcomePageWidget::WelcomePageWidget(MainWindow *parent)
   recentFilesFrameVBLayout->addWidget(mpRecentFilesLabel);
   recentFilesFrameVBLayout->addWidget(mpNoRecentFileLabel);
   recentFilesFrameVBLayout->addWidget(mpRecentItemsList);
-  mpRecentFilesFrame->setLayout(recentFilesFrameVBLayout);
   QHBoxLayout *recentFilesHBLayout = new QHBoxLayout;
   recentFilesHBLayout->addWidget(mpClearRecentFilesListButton, 0, Qt::AlignLeft);
   recentFilesFrameVBLayout->addLayout(recentFilesHBLayout);

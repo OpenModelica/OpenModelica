@@ -108,8 +108,8 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const;
   VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *root) const;
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
-  QModelIndex VariablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
-                                            const QModelIndex &parentIndex) const;
+  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
+                                           const QModelIndex &parentIndex) const;
   void parseInitXml(QXmlStreamReader &xmlReader);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);

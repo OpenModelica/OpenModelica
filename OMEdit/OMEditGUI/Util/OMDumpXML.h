@@ -27,6 +27,13 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
+/*
+ *
+ * @author Martin Sjölund <martin.sjolund@liu.se>
+ *
+ * RCS: $Id$
+ *
+ */
 
 #ifndef OMDUMPXML_H
 #define OMDUMPXML_H
@@ -168,6 +175,7 @@ public:
   QHash<QString,OMVariable> variables;
   QList<OMEquation> equations;
   MyHandler(QFile &file);
+  OMEquation getOMEquation(int index);
 private:
   OMVariable currentVariable;
   OMEquation currentEquation;
