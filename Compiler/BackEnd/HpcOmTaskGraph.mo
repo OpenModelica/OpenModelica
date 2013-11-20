@@ -4734,8 +4734,6 @@ protected
   list<tuple<Real,list<Integer>>> criticalPaths;
   array<tuple<Integer,Real>> exeCosts;
   array<list<Integer>> inComps;
-  list<tuple<Real,list<Integer>>> criticalPaths;
-  
 algorithm
   criticalPathOut := matchcontinue(iNode, iGraph, iGraphData, iHandleCommCosts, iNodeCriticalPaths)
     case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
