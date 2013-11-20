@@ -49,6 +49,7 @@
 #include <iomanip>
 #include <map>
 #include <list>
+#include <limits>
 #include <string>
 #include <string.h>
 #include <expat.h>
@@ -99,10 +100,15 @@ typedef std::map<std::string, std::string> omc_CommandLineOverrides;
 // function to handle command line settings override
 void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override, const char* overrideFile);
 
+static double REAL_MIN = -std::numeric_limits<double>::max();
+static double REAL_MAX = std::numeric_limits<double>::max();
+static double INTEGER_MIN = std::numeric_limits<modelica_integer>::min();
+static double INTEGER_MAX = std::numeric_limits<modelica_integer>::max();
+
 /* reads double value from a string */
-void read_value(std::string s, modelica_real* res);
+void read_value(std::string s, modelica_real* res, modelica_real default_value);
 /* reads integer value from a string */
-void read_value(std::string s, modelica_integer* res);
+void read_value(std::string s, modelica_integer* res, modelica_integer default_value = 0);
 /* reads integer value from a string */
 void read_value(std::string s, int* res);
 /* reads std::string value from a string */
@@ -307,16 +313,16 @@ void read_input_xml(MODEL_DATA* modelData,
   INFO(LOG_SOLVER, "read all the DefaultExperiment values:");
   INDENT(LOG_SOLVER);
 
-  read_value(mi.de["startTime"], &(simulationInfo->startTime));
+  read_value(mi.de["startTime"], &(simulationInfo->startTime), 0);
   INFO1(LOG_SOLVER, "startTime = %g", simulationInfo->startTime);
 
-  read_value(mi.de["stopTime"], &(simulationInfo->stopTime));
+  read_value(mi.de["stopTime"], &(simulationInfo->stopTime), 1.0);
   INFO1(LOG_SOLVER, "stopTime = %g", simulationInfo->stopTime);
 
-  read_value(mi.de["stepSize"], &(simulationInfo->stepSize));
+  read_value(mi.de["stepSize"], &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
   INFO1(LOG_SOLVER, "stepSize = %g", simulationInfo->stepSize);
 
-  read_value(mi.de["tolerance"], &(simulationInfo->tolerance));
+  read_value(mi.de["tolerance"], &(simulationInfo->tolerance), 1e-5);
   INFO1(LOG_SOLVER, "tolerance = %g", simulationInfo->tolerance);
 
   read_value(mi.de["solver"], &simulationInfo->solverMethod);
@@ -407,12 +413,12 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var attribute */
     read_value(mi.rSta[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[i].attribute.useStart));
-    read_value(mi.rSta[i]["start"], &(modelData->realVarsData[i].attribute.start));
+    read_value(mi.rSta[i]["start"], &(modelData->realVarsData[i].attribute.start), 0);
     read_value(mi.rSta[i]["fixed"], (modelica_boolean*)&(modelData->realVarsData[i].attribute.fixed));
     read_value(mi.rSta[i]["useNominal"], (modelica_boolean*)&(modelData->realVarsData[i].attribute.useNominal));
-    read_value(mi.rSta[i]["nominal"], &(modelData->realVarsData[i].attribute.nominal));
-    read_value(mi.rSta[i]["min"], &(modelData->realVarsData[i].attribute.min));
-    read_value(mi.rSta[i]["max"], &(modelData->realVarsData[i].attribute.max));
+    read_value(mi.rSta[i]["nominal"], &(modelData->realVarsData[i].attribute.nominal), 1);
+    read_value(mi.rSta[i]["min"], &(modelData->realVarsData[i].attribute.min), REAL_MIN);
+    read_value(mi.rSta[i]["max"], &(modelData->realVarsData[i].attribute.max), REAL_MAX);
 
     INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[i].info.name, (modelData->realVarsData[i].attribute.useStart)?"":"{", modelData->realVarsData[i].attribute.start, (modelData->realVarsData[i].attribute.useStart)?"":"}", (modelData->realVarsData[i].attribute.fixed)?"true":"false", (modelData->realVarsData[i].attribute.useNominal)?"":"{", modelData->realVarsData[i].attribute.nominal, (modelData->realVarsData[i].attribute.useNominal)?"":"}", modelData->realVarsData[i].attribute.min, modelData->realVarsData[i].attribute.max);
 
@@ -456,12 +462,12 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var attribute */
     read_value(mi.rDer[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[modelData->nStates+i].attribute.useStart));
-    read_value(mi.rDer[i]["start"], &(modelData->realVarsData[modelData->nStates+i].attribute.start));
+    read_value(mi.rDer[i]["start"], &(modelData->realVarsData[modelData->nStates+i].attribute.start), 0);
     read_value(mi.rDer[i]["fixed"], (modelica_boolean*)&(modelData->realVarsData[modelData->nStates+i].attribute.fixed));
     read_value(mi.rDer[i]["useNominal"], (modelica_boolean*)&(modelData->realVarsData[modelData->nStates+i].attribute.useNominal));
-    read_value(mi.rDer[i]["nominal"], &(modelData->realVarsData[modelData->nStates+i].attribute.nominal));
-    read_value(mi.rDer[i]["min"], &(modelData->realVarsData[modelData->nStates+i].attribute.min));
-    read_value(mi.rDer[i]["max"], &(modelData->realVarsData[modelData->nStates+i].attribute.max));
+    read_value(mi.rDer[i]["nominal"], &(modelData->realVarsData[modelData->nStates+i].attribute.nominal), 1);
+    read_value(mi.rDer[i]["min"], &(modelData->realVarsData[modelData->nStates+i].attribute.min), REAL_MIN);
+    read_value(mi.rDer[i]["max"], &(modelData->realVarsData[modelData->nStates+i].attribute.max), REAL_MAX);
 
     INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[modelData->nStates+i].info.name, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.start, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"}", (modelData->realVarsData[modelData->nStates+i].attribute.fixed)?"true":"false", (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.nominal, (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"}", modelData->realVarsData[modelData->nStates+i].attribute.min, modelData->realVarsData[modelData->nStates+i].attribute.max);
 
@@ -507,12 +513,12 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var attribute */
     read_value(mi.rAlg[i]["useStart"], (modelica_boolean*)&(modelData->realVarsData[j].attribute.useStart));
-    read_value(mi.rAlg[i]["start"], &(modelData->realVarsData[j].attribute.start));
+    read_value(mi.rAlg[i]["start"], &(modelData->realVarsData[j].attribute.start), 0);
     read_value(mi.rAlg[i]["fixed"], (modelica_boolean*)&(modelData->realVarsData[j].attribute.fixed));
     read_value(mi.rAlg[i]["useNominal"], (modelica_boolean*)&(modelData->realVarsData[j].attribute.useNominal));
-    read_value(mi.rAlg[i]["nominal"], &(modelData->realVarsData[j].attribute.nominal));
-    read_value(mi.rAlg[i]["min"], &(modelData->realVarsData[j].attribute.min));
-    read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max));
+    read_value(mi.rAlg[i]["nominal"], &(modelData->realVarsData[j].attribute.nominal), 0);
+    read_value(mi.rAlg[i]["min"], &(modelData->realVarsData[j].attribute.min), REAL_MIN);
+    read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max), REAL_MAX);
 
     INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[j].info.name, (modelData->realVarsData[j].attribute.useStart)?"":"{", modelData->realVarsData[j].attribute.start, (modelData->realVarsData[j].attribute.useStart)?"":"}", (modelData->realVarsData[j].attribute.fixed)?"true":"false", (modelData->realVarsData[j].attribute.useNominal)?"":"{", modelData->realVarsData[j].attribute.nominal, (modelData->realVarsData[j].attribute.useNominal)?"":"}", modelData->realVarsData[j].attribute.min, modelData->realVarsData[j].attribute.max);
 
@@ -556,10 +562,10 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var attribute */
     read_value(mi.iAlg[i]["useStart"], &(modelData->integerVarsData[i].attribute.useStart));
-    read_value(mi.iAlg[i]["start"], &(modelData->integerVarsData[i].attribute.start));
+    read_value(mi.iAlg[i]["start"], &(modelData->integerVarsData[i].attribute.start), 0);
     read_value(mi.iAlg[i]["fixed"], &(modelData->integerVarsData[i].attribute.fixed));
-    read_value(mi.iAlg[i]["min"], &(modelData->integerVarsData[i].attribute.min));
-    read_value(mi.iAlg[i]["max"], &(modelData->integerVarsData[i].attribute.max));
+    read_value(mi.iAlg[i]["min"], &(modelData->integerVarsData[i].attribute.min), INTEGER_MIN);
+    read_value(mi.iAlg[i]["max"], &(modelData->integerVarsData[i].attribute.max), INTEGER_MAX);
 
     INFO7(LOG_DEBUG, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerVarsData[i].info.name, (modelData->integerVarsData[i].attribute.useStart)?"":"{", modelData->integerVarsData[i].attribute.start, (modelData->integerVarsData[i].attribute.useStart)?"":"}", (modelData->integerVarsData[i].attribute.fixed)?"true":"false", modelData->integerVarsData[i].attribute.min, modelData->integerVarsData[i].attribute.max);
 
@@ -695,12 +701,12 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var attribute */
     read_value(mi.rPar[i]["useStart"], &(modelData->realParameterData[i].attribute.useStart));
-    read_value(mi.rPar[i]["start"], &(modelData->realParameterData[i].attribute.start));
+    read_value(mi.rPar[i]["start"], &(modelData->realParameterData[i].attribute.start), 0);
     read_value(mi.rPar[i]["fixed"], &(modelData->realParameterData[i].attribute.fixed));
     read_value(mi.rPar[i]["useNominal"], &(modelData->realParameterData[i].attribute.useNominal));
-    read_value(mi.rPar[i]["nominal"], &(modelData->realParameterData[i].attribute.nominal));
-    read_value(mi.rPar[i]["min"], &(modelData->realParameterData[i].attribute.min));
-    read_value(mi.rPar[i]["max"], &(modelData->realParameterData[i].attribute.max));
+    read_value(mi.rPar[i]["nominal"], &(modelData->realParameterData[i].attribute.nominal), 1);
+    read_value(mi.rPar[i]["min"], &(modelData->realParameterData[i].attribute.min), REAL_MIN);
+    read_value(mi.rPar[i]["max"], &(modelData->realParameterData[i].attribute.max), REAL_MAX);
 
     INFO10(LOG_DEBUG, "parameter Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.useStart?"":"{", modelData->realParameterData[i].attribute.start, modelData->realParameterData[i].attribute.useStart?"":"}", modelData->realParameterData[i].attribute.fixed?"true":"false", modelData->realParameterData[i].attribute.useNominal?"":"{", modelData->realParameterData[i].attribute.nominal, modelData->realParameterData[i].attribute.useNominal?"":"}", modelData->realParameterData[i].attribute.min, modelData->realParameterData[i].attribute.max);
 
@@ -744,10 +750,10 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var attribute */
     read_value(mi.iPar[i]["useStart"], (modelica_boolean*)&(modelData->integerParameterData[i].attribute.useStart));
-    read_value(mi.iPar[i]["start"], &(modelData->integerParameterData[i].attribute.start));
+    read_value(mi.iPar[i]["start"], &(modelData->integerParameterData[i].attribute.start), 0);
     read_value(mi.iPar[i]["fixed"], (modelica_boolean*)&(modelData->integerParameterData[i].attribute.fixed));
-    read_value(mi.iPar[i]["min"], &(modelData->integerParameterData[i].attribute.min));
-    read_value(mi.iPar[i]["max"], &(modelData->integerParameterData[i].attribute.max));
+    read_value(mi.iPar[i]["min"], &(modelData->integerParameterData[i].attribute.min), REAL_MIN);
+    read_value(mi.iPar[i]["max"], &(modelData->integerParameterData[i].attribute.max), REAL_MAX);
 
     INFO7(LOG_DEBUG, "parameter Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerParameterData[i].info.name, modelData->integerParameterData[i].attribute.useStart?"":"{", modelData->integerParameterData[i].attribute.start, modelData->integerParameterData[i].attribute.useStart?"":"}", modelData->integerParameterData[i].attribute.fixed?"true":"false", modelData->integerParameterData[i].attribute.min, modelData->integerParameterData[i].attribute.max);
 
@@ -1150,14 +1156,17 @@ inline void read_value(std::string s, modelica_string* str)
 }
 
 /* reads double value from a string */
-inline void read_value(std::string s, modelica_real* res)
+inline void read_value(std::string s, modelica_real* res, modelica_real default_value)
 {
-  if(s.compare("true") == 0)
+  if(s.compare("") == 0) {
+    *res = default_value;
+  } else if(s.compare("true") == 0) {
     *res = 1.0;
-  else if(s.compare("false") == 0)
+  } else if(s.compare("false") == 0) {
     *res = 0.0;
-  else
+  } else {
     *res = atof(s.c_str());
+  }
 }
 
 /* reads boolean value from a string */
@@ -1172,14 +1181,17 @@ inline void read_value(std::string s, modelica_boolean* res)
 }
 
 /* reads integer value from a string */
-inline void read_value(std::string s, modelica_integer* res)
+inline void read_value(std::string s, modelica_integer* res, modelica_integer default_value)
 {
-  if(s.compare("true") == 0)
+  if(s.compare("") == 0) {
+    *res = default_value;
+  } if(s.compare("true") == 0) {
     *res = 1;
-  else if(s.compare("false") == 0)
+  } else if(s.compare("false") == 0) {
     *res = 0;
-  else
+  } else {
     *res = atol(s.c_str());
+  }
 }
 
 /* reads integer value from a string */

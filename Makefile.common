@@ -77,11 +77,11 @@ build/lib/omc/libgc.a: 3rdParty/gc-7.2/.libs/libgc.a mkbuilddirs
 3rdParty/gc-7.2/.libs/libgc.a: 3rdParty/gc-7.2/Makefile
 	$(MAKE) -C 3rdParty/gc-7.2/
 build/include/omc/gc.h: 3rdParty/gc-7.2/include/gc.h mkbuilddirs
-	cp -pP $< $@
+	cp -pPR $< $@
 build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h mkbuilddirs
-	cp -pP $< $@
+	cp -pPR $< $@
 build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
-	cp -pP $< $@
+	cp -pPR $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
 	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(GC_THREADS) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")
 
@@ -91,8 +91,10 @@ build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 build/lib/omc/libipopt.la: 3rdParty/Ipopt-3.11.6/Makefile
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6
 	$(MAKE) -C 3rdParty/Ipopt-3.11.6 install
-	cp -pP 3rdParty/Ipopt-3.11.6/lib/*.* build/lib/omc
-	cp -rp 3rdParty/Ipopt-3.11.6/include/coin build/include/omc
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.1.9.6.dylib 3rdParty/Ipopt-3.11.6/lib/libipopt.1.9.6.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.4.11.dylib 3rdParty/Ipopt-3.11.6/lib/libcoinmumps.1.4.11.dylib
+	cp -pPR 3rdParty/Ipopt-3.11.6/lib/*.* build/lib/omc
+	cp -pPR 3rdParty/Ipopt-3.11.6/include/coin build/include/omc
 
 ipopt: build/lib/omc/libipopt.la
 
@@ -103,7 +105,7 @@ openblas: build/lib/omc/libopenblas_openmodelica.a
 
 fmi: interactive
 	$(MAKE) -C SimulationRuntime/fmi/import -f $(defaultMakefileTarget)
-	(cp -p SimulationRuntime/fmi/import/fmuWrapper.h SimulationRuntime/fmi/import/xmlparser.h $(builddir_inc))
+	(cp -pPR SimulationRuntime/fmi/import/fmuWrapper.h SimulationRuntime/fmi/import/xmlparser.h $(builddir_inc))
 	
 fmiclean: 
 	$(MAKE) -C SimulationRuntime/fmi/import/ -f $(defaultMakefileTarget) clean
@@ -125,6 +127,15 @@ runtimeCPP:
 
 runtimeCPPinstall: 
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib build/lib/omc/cpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib build/lib/omc/cpp/libOMCppDataExchange.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppEuler.dylib build/lib/omc/cpp/libOMCppEuler.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppNewton.dylib build/lib/omc/cpp/libOMCppNewton.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSimulationSettings.dylib build/lib/omc/cpp/libOMCppSimulationSettings.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppSolver.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppSystem.dylib build/lib/omc/cpp/libOMCppSystem.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppCVode.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/cpp/libOMCppSolver.dylib build/lib/omc/cpp/libOMCppEuler.dylib
 
 omc-diff: mkbuilddirs 
 	$(MAKE) -C testsuite/ -f Makefile omc-diff
@@ -147,7 +158,7 @@ fmil:
 	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
 	test ! -f 3rdParty/FMIL/build/libfmilib_shared.so || cp -up 3rdParty/FMIL/build/libfmilib_shared.so 3rdParty/FMIL/build/libfmilib.so
-	cp -p 3rdParty/FMIL/build/$(LIBFMILIB) $(builddir_lib)/omc/
+	cp -pPR 3rdParty/FMIL/build/$(LIBFMILIB) $(builddir_lib)/omc/
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	#cp -rp 3rdParty/FMIL/install/include/* $(builddir_inc)
 

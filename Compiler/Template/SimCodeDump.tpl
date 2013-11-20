@@ -106,12 +106,15 @@ end dumpVarsShort;
 template dumpVars(list<SimVar> vars, Boolean withOperations)
 ::=
   vars |> v as SIMVAR(__) =>
+  let variability = getVariablity(varKind)
   <<
-  <variable name="<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>">
+  <variable name="<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>" variability = "<%variability%>" isDiscrete = "<%isDiscrete%>">
+    <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
     <%dumpAlias(v.aliasvar)%>
     <%dumpElementSource(v.source,withOperations)%>
   </variable><%\n%>
-  <variable name="$PRE._<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>">
+  <variable name="$PRE.<%Util.escapeModelicaStringToXmlString(crefStrNoUnderscore(v.name))%>" comment="<%escapeModelicaStringToXmlString(v.comment)%>" variability = "<%variability%>" isDiscrete = "true">
+    <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
     <%dumpAlias(v.aliasvar)%>
     <%dumpElementSource(v.source,withOperations)%>
   </variable><%\n%>
@@ -271,7 +274,7 @@ template dumpElementSource(ElementSource source, Boolean withOperations)
         <%s.partOfLst |> w => '<part-of><%dumpWithin(w)%></part-of>' %>
         <%s.instanceOptLst |> SOME(cr) => '<instance><%crefStrNoUnderscore(cr)%></instance>' %>
         <%s.connectEquationOptLst |> p => "<connect-equation />"%>
-        <%s.typeLst |> p => '<type><%dotPath(p)%></type>' ; separator = "\n" %>
+        <%s.typeLst |> p => '<type><%escapeModelicaStringToXmlString(dotPath(p))%></type>' ; separator = "\n" %>
       </source>
       <% if withOperations then <<
       <operations>
