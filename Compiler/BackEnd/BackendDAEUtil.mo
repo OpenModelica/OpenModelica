@@ -4373,7 +4373,7 @@ algorithm
     case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1, exp = e)::xs),_,extraArg)
       equation
         ((_, extraArg)) = func((e, extraArg));
-        ((_, extraArg)) = Expression.traverseExpList(expl1,func,extraArg);
+        extraArg = traverseStmtsExpList(expl1,func,extraArg);
       then
         traverseStmts(xs, func, extraArg);
 
@@ -4531,6 +4531,34 @@ algorithm
 end match;
 end traverseStmtsElse;
 
+protected function traverseStmtsExpList "
+Author: Frenkel TUD 2012-06
+Helper function for traverseStmts
+"
+  input list<DAE.Exp> inExpList;
+  input FuncExpType func;
+  input Type_a iextraArg;
+  output Type_a oextraArg;
+  partial function FuncExpType
+    input tuple<DAE.Exp,Type_a> arg;
+    output tuple<DAE.Exp,Type_a> oarg;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  oextraArg := match(inExpList,func,iextraArg)
+  local
+    DAE.Exp e;
+    list<DAE.Exp> rest;
+    Type_a extraArg;
+  case ({},_,extraArg) then extraArg;
+  case (e::rest,_,extraArg)
+    equation
+      ((_,extraArg)) = func((e, extraArg));
+    then
+      traverseStmtsExpList(rest,func,extraArg);
+end match;
+end traverseStmtsExpList;
+
 /******************************************************************
  stuff to calculate enhanced Adjacency matrix
 
@@ -4577,7 +4605,7 @@ algorithm
 
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.getAdjacencyMatrixEnhanced failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.getAdjacencyMatrixEnhancedScalar failed"});
       then
         fail();
   end matchcontinue;
@@ -4921,7 +4949,7 @@ algorithm
     else
       equation
         eqnstr = BackendDump.equationString(inEquation);
-        eqnstr = stringAppendList({"BackendDAE.adjacencyRowEnhancedd failed for eqn:\n",eqnstr,"\n"});
+        eqnstr = stringAppendList({"BackendDAE.adjacencyRowEnhanced failed for eqn:\n",eqnstr,"\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{eqnstr});
       then
         fail();
