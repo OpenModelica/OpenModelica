@@ -3765,7 +3765,9 @@ algorithm
       vars_1 = BackendVariable.listVar1(var_lst_1);
       eqns_1 = BackendEquation.listEquation(eqn_lst);
       (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1, knvars, eqns_1, jac, jac_tp, funcs, vars, iuniqueEqIndex, itempvars, ei);
-      tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+      uniqueEqIndexMapping = uniqueEqIndex-1; //a system with this index is created that contains all the equations with the indeces from iuniqueEqIndex to uniqueEqIndex-2
+      //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+      tmpEqSccMapping = List.fold1(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
     then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping);
         
     // TORNSYSTEM
