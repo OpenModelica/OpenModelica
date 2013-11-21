@@ -7087,10 +7087,12 @@ algorithm
       Absyn.Import imp;
       Absyn.Info info;
       String str;
-    case SCode.IMPORT(imp=Absyn.NAMED_IMPORT(path=Absyn.IDENT(name))) then name;
-    case SCode.IMPORT(imp=Absyn.QUAL_IMPORT(path=Absyn.IDENT(name))) then name;
-    case SCode.IMPORT(imp=Absyn.UNQUAL_IMPORT(path=Absyn.IDENT(name))) then name;
-    case SCode.IMPORT(imp=Absyn.GROUP_IMPORT(prefix=Absyn.IDENT(name))) then name;
+      Absyn.Path path;
+    case SCode.IMPORT(imp=Absyn.NAMED_IMPORT(path=path)) then Absyn.pathFirstIdent(path);
+    case SCode.IMPORT(imp=Absyn.NAMED_IMPORT(path=path)) then Absyn.pathFirstIdent(path);
+    case SCode.IMPORT(imp=Absyn.QUAL_IMPORT(path=path)) then Absyn.pathFirstIdent(path);
+    case SCode.IMPORT(imp=Absyn.UNQUAL_IMPORT(path=path)) then Absyn.pathFirstIdent(path);
+    case SCode.IMPORT(imp=Absyn.GROUP_IMPORT(prefix=path)) then Absyn.pathFirstIdent(path);
     case SCode.IMPORT(imp=imp,info=info)
       equation
         str = "CevalScript.importDepenency could not handle:" +& Dump.unparseImportStr(imp);
@@ -7150,11 +7152,14 @@ algorithm
   b := match elt
     local
       list<SCode.Element> elts;
+      String name;
     case SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts))
       then List.exist(elts, containsPublicInterface2);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.containsPublicInterface failed"});
+        name = SCode.elementName(elt);
+        name = "CevalScript.containsPublicInterface failed: " +& name;
+        Error.addMessage(Error.INTERNAL_ERROR, {name});
       then fail();
   end match;
 end containsPublicInterface;
