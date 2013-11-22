@@ -103,27 +103,12 @@ qtclean: qtclean-common
 	$(MAKE) -C OMOptimBasis/build -f Makefile.unix clean
 endif
 
-omc-bootstrapped:
-	if test -f @OMC@; then $(MAKE) bootstrap-from-compiled; else $(MAKE) bootstrap-from-tarball; fi
-
-# configure --without-rml works using this target
-bootstrap-from-tarball:
-	$(MAKE) bootstrap-dependencies
-	time $(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-tarball
-	$(MAKE) omlibrary
-
 # configure --without-rml works using this target, but requires a compiled omc (either from bootstrap or regular one)
 bootstrap-from-compiled:
 	test -f @OMC@
 	$(MAKE) bootstrap-dependencies
 	$(MAKE) -C testsuite/openmodelica/bootstrapping -f LinkMain.makefile bootstrap-from-compiled
 	$(MAKE) omlibrary
-
-bootstrap-dependencies: omc-diff interactive docs fmi fmil opencl_rt lis
-	$(MAKE) -C Compiler/runtime install
-	$(MAKE) -C Compiler builtin install_scripts
-	$(MAKE) -C Parser install
-	$(MAKE) -C Compiler/modpar install
 
 modelica3d:
 ifeq (@MODELICA3D@,)
