@@ -241,6 +241,8 @@ int main(int argc, char *argv[])
   QLocale settingsLocale = QLocale(settings.value("language").toString());
   settingsLocale = settingsLocale.name() == "C" ? settings.value("language").toLocale() : settingsLocale;
   QString locale = settingsLocale.name().isEmpty() ? QLocale::system().name() : settingsLocale.name();
+  /* set the default locale of the application so that QSpinBox etc show values according to the locale. */
+  QLocale::setDefault(settingsLocale);
   QString translationDirectory = omhome + QString("/share/omedit/nls");
   // install Qt's default translations
   QTranslator qtTranslator;
