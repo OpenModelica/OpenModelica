@@ -710,7 +710,7 @@ if test "Darwin" = `uname`; then
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
-  LIBFMILIB=libfmilib.dylib
+  LIBFMILIB=libfmilib_shared.dylib
   FMILIB_SHARED=ON
   RT_LDFLAGS="$RT_LDFLAGS -liconv -lgc -lexpat $OPENMP"
   LINK="cp -fr"
@@ -747,7 +747,7 @@ else
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
-  LIBFMILIB=libfmilib.so
+  LIBFMILIB=libfmilib_shared.so
   FMILIB_SHARED=ON
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc -lexpat $OPENMP"
   LINK="cp -frl"
