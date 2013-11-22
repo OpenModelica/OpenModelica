@@ -123,8 +123,11 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
 
          if(p){
            num_hessian(x, iData->time[p], iData, ll,iData->lagrange,mayer_yes,obj_factor);
+	   ll += iData->nx;
          }else{
-           num_hessian(x, iData->time[p], iData, ll + 2*iData->nx,iData->lagrange,mayer_yes,obj_factor);
+           for(i = 0; i< iData->nx; ++i)
+	    iData->sh[i] = iData->d1[4]*(ll[i] - ll[i + iData->nx] + iData->invd1_4*ll[i+2*iData->nx]);
+           num_hessian(x, iData->time[p], iData, iData->sh ,iData->lagrange,mayer_yes,obj_factor);
          }
 
         for(i=0;i< iData->nv;++i)
@@ -137,8 +140,6 @@ Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lam
         r += iData->nv;
         c += iData->nv;
 
-        if(p)
-          ll += iData->nx;
       }
 
     }

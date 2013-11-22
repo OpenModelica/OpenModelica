@@ -129,7 +129,7 @@ typedef struct IPOPT_DATA_
   double *d1;
   double *d2;
   double *d3;
-
+  double invd1_4;
   double **d1_;
   double **d2_;
   double **d3_;
