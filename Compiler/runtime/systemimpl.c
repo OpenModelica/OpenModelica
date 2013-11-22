@@ -1084,7 +1084,7 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   void *h = NULL;
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   const char* ctokens[2];
-  snprintf(libname, MAXPATHLEN, "./%s.so", str);
+  snprintf(libname, MAXPATHLEN, "./%s" CONFIG_DLL_EXT, str);
   h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
   if (h == NULL) {
     ctokens[0] = dlerror();
