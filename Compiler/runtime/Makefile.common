@@ -64,9 +64,7 @@ Print_omc.o : printimpl.c
 Error_rml.o : errorext.cpp ErrorMessage.hpp
 Error_omc.o : errorext.cpp ErrorMessage.hpp ../OpenModelicaBootstrappingHeader.h
 System_rml.o : System_rml.c systemimpl.c config.h errorext.h $(configUnix)
-	$(OMPCC) -c -o $@ $(CPPFLAGS) $(CFLAGS) $<
 System_omc.o : System_omc.c systemimpl.c config.h errorext.h $(configUnix) $(RML_COMPAT)
-	$(OMPCC) -c -o $@ $(CPPFLAGS) $(CFLAGS) $<
 Lapack_rml.o : lapackimpl.c config.h $(configUnix)
 Lapack_omc.o : lapackimpl.c config.h $(configUnix) $(RML_COMPAT)
 IOStreamExt_rml.o : IOStreamExt.c

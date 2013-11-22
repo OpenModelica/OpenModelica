@@ -594,6 +594,28 @@ int System_numProcessors(void)
 #endif
 }
 
+struct systemCallWorkerThreadArgs {
+  pthread_mutex_t *mutex;
+  int *current;
+  int size;
+  char **calls;
+  int *results;
+};
+
+static void* systemCallWorkerThread(void *argVoid)
+{
+  struct systemCallWorkerThreadArgs *arg = (struct systemCallWorkerThreadArgs *) argVoid;
+  while (1) {
+    int i;
+    pthread_mutex_lock(arg->mutex);
+    i = arg->current++;
+    pthread_mutex_unlock(arg->mutex);
+    if (i >= arg->size) break;
+    arg->results[i] = SystemImpl__systemCall(arg->calls[i]);
+  };
+  return NULL;
+}
+
 void* SystemImpl__systemCallParallel(void *lst, int numThreads)
 {
   void *tmp = lst;
@@ -605,26 +627,43 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     tmp = RML_CDR(tmp);
   }
   if (sz == 0) return mk_nil();
-  calls = (char**) GC_malloc(sz*sizeof(char*));
+  calls = (char**) GC_malloc(sz*sizeof(char*)+1);
   assert(calls);
   results = (int*) GC_malloc_atomic(sz*sizeof(int));
   assert(results);
   tmp = lst;
   sz = 0;
+  if (numThreads > sz) {
+    numThreads = sz;
+  }
   while (RML_NILHDR != RML_GETHDR(tmp)) {
     calls[sz++] = RML_STRINGDATA(RML_CAR(tmp));
     tmp = RML_CDR(tmp);
   }
-#pragma omp parallel for private(i) schedule(dynamic) num_threads(numThreads)
-  for (i=0; i<sz; i++) {
-     /* fprintf(stderr, "Starting call %s\n", calls[i]); */
-    results[i] = SystemImpl__systemCall(calls[i]);
-     /* fprintf(stderr, "Finished call %d %s=%d\n", i, calls[i], results[i]); */
+  if (sz == 1) {
+    results[i] = SystemImpl__systemCall(calls[0]);
+  } else {
+    int index;
+    pthread_mutex_t mutex;
+    struct systemCallWorkerThreadArgs args = {&mutex,&index,sz,calls,results};
+    pthread_mutex_init(&mutex,NULL);
+    pthread_t *th = GC_malloc(numThreads);
+    /* Last element is NULL from GC_malloc */
+    for (i=0; i<numThreads; i++) {
+      GC_pthread_create(&th[i],&args,systemCallWorkerThread,calls);
+    }
+    for (i=0; i<numThreads; i++) {
+      GC_pthread_join(th[i], NULL);
+    }
+    GC_free(th);
+    pthread_mutex_destroy(&mutex);
   }
+  GC_free(calls);
   tmp = mk_nil();
   for (i=sz-1; i>=0; i--) {
     tmp = mk_cons(mk_icon(results[i]),tmp);
   }
+  GC_free(results);
   return tmp;
 }
 
