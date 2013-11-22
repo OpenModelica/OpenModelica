@@ -670,6 +670,33 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
   sortByColumn(0, Qt::AscendingOrder);
 }
 
+/*!
+  Reimplementation of QTreeView::mouseReleaseEvent\n
+  Checks if user clicks on the first column then check/uncheck the corresponsing checkbox of the column.\n
+  Otherwise calls the QTreeView::mouseReleaseEvent
+  */
+void VariablesTreeView::mouseReleaseEvent(QMouseEvent *event)
+{
+  QModelIndex index = indexAt(event->pos());
+  if (index.isValid() && index.column() == 0)
+  {
+    if (visualRect(index).contains(event->pos()))
+    {
+      index = mpVariablesWidget->getVariableTreeProxyModel()->mapToSource(index);
+      VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
+      if (pVariablesTreeItem)
+      {
+        if (pVariablesTreeItem->isChecked())
+          mpVariablesWidget->getVariablesTreeModel()->setData(index, Qt::Unchecked, Qt::CheckStateRole);
+        else
+          mpVariablesWidget->getVariablesTreeModel()->setData(index, Qt::Checked, Qt::CheckStateRole);
+      }
+      return;
+    }
+  }
+  QTreeView::mouseReleaseEvent(event);
+}
+
 VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   : QWidget(pMainWindow)
 {

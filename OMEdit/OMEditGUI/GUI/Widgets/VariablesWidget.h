@@ -147,6 +147,8 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
 private:
   VariablesWidget *mpVariablesWidget;
+protected:
+  virtual void mouseReleaseEvent(QMouseEvent *event);
 };
 
 class VariablesWidget : public QWidget
@@ -156,6 +158,7 @@ public:
   VariablesWidget(MainWindow *pMainWindow);
   MainWindow* getMainWindow() {return mpMainWindow;}
   VariableTreeProxyModel* getVariableTreeProxyModel() {return mpVariableTreeProxyModel;}
+  VariablesTreeModel* getVariablesTreeModel() {return mpVariablesTreeModel;}
   void insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void variablesUpdated();
   void updateVariablesTreeHelper(QMdiSubWindow *pSubWindow);
