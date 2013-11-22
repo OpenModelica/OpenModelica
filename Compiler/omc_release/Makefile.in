@@ -11,7 +11,7 @@ USE_CORBA = @USE_CORBA@
 
 SHELL	= /bin/sh
 CC	= @CC@
-CXX	= @CXX@
+OMPCC = @OMPCC@
 CFLAGS	= @CFLAGS@
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
@@ -43,4 +43,4 @@ include $(srcdir)/Makefile.compiler_subdirs.common
 	# You're using the proper Unix Makefile. Thanks for making my life easier.
 
 $(PROG): $(SRCO) $(SUBDIRS)
-	$(CXX) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(FMILIB)
+	$(OMPCC) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(FMILIB) -lstdc++

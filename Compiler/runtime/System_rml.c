@@ -384,6 +384,15 @@ RML_BEGIN_LABEL(System__getCXXCompiler)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getOMPCCompiler)
+{
+  if (omp_cc == NULL)
+    RML_TAILCALLK(rmlFC);
+  rmlA0 = (void*) mk_scon(omp_cc);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__setLinker)
 {
   const char* str = RML_STRINGDATA(rmlA0);

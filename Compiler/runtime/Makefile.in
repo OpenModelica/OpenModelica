@@ -14,7 +14,7 @@ endif
 
 FMIINCLUDE = ../../3rdParty/FMIL/install/include
 CFLAGS = @CFLAGS@ $(USE_CORBA)
-OPENMP = @OPENMP@
+OMPCC = @OMPCC@
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp Corba_rml.cpp

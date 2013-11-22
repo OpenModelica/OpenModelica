@@ -202,6 +202,12 @@ public function getCXXCompiler
   external "C" outString=System_getCXXCompiler() annotation(Library = "omcruntime");
 end getCXXCompiler;
 
+public function getOMPCCompiler
+  output String outString;
+
+  external "C" outString=System_getOMPCCompiler() annotation(Library = "omcruntime");
+end getOMPCCompiler;
+
 public function setLinker
   input String inString;
 

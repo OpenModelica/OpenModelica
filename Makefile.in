@@ -103,6 +103,9 @@ qtclean: qtclean-common
 	$(MAKE) -C OMOptimBasis/build -f Makefile.unix clean
 endif
 
+omc-bootstrapped:
+	if test -f @OMC@; then $(MAKE) bootstrap-from-compiled; else $(MAKE) bootstrap-from-tarball; fi
+
 # configure --without-rml works using this target, but requires a compiled omc (either from bootstrap or regular one)
 bootstrap-from-compiled:
 	test -f @OMC@

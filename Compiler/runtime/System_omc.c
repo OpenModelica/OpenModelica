@@ -122,27 +122,32 @@ extern const char* System_getRTLibs()
 
 extern const char* System_getCCompiler()
 {
-  return strcpy(ModelicaAllocateString(strlen(cc)), cc);
+  return GC_strdup(cc);
 }
 
 extern const char* System_getCXXCompiler()
 {
-  return strcpy(ModelicaAllocateString(strlen(cxx)), cxx);
+  return GC_strdup(cxx);
+}
+
+extern const char* System_getOMPCCompiler()
+{
+  return GC_strdup(omp_cc);
 }
 
 extern const char* System_getLinker()
 {
-  return strcpy(ModelicaAllocateString(strlen(linker)), linker);
+  return GC_strdup(linker);
 }
 
 extern const char* System_getLDFlags()
 {
-  return strcpy(ModelicaAllocateString(strlen(ldflags)), ldflags);
+  return GC_strdup(ldflags);
 }
 
 extern const char* System_getCFlags()
 {
-  return strcpy(ModelicaAllocateString(strlen(cflags)), cflags);
+  return GC_strdup(cflags);
 }
 
 extern const char* System_getExeExt()

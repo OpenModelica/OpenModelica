@@ -43,7 +43,7 @@ AC_SUBST(OMSHELL_TERMINAL)
 AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
 AC_SUBST(OMC_LIBS)
-AC_SUBST(OPENMP)
+AC_SUBST(OMPCC)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
@@ -310,9 +310,19 @@ return 0;
 dnl Check if OpenMP is available
 AC_MSG_CHECKING([for OpenMP])
 
+CC_OLD="$CC"
 CFLAGS_OLD="$CFLAGS"
-CFLAGS="$CFLAGS -fopenmp"
+if test -z "$OMPCC"; then
+  CFLAGS=" -fopenmp"
+else
+  CC="$OMPCC"
+  CFLAGS=""
+fi
+
 AC_TRY_LINK([
+#if !defined(_OPENMP)
+  #error "Not an OpenMP compiler"
+#endif
 #include <omp.h>
 #include <stdio.h>
 ], [int main() {
@@ -322,8 +332,18 @@ AC_TRY_LINK([
     printf("Thread %d\n", i);
   return 0;
 }
-], [AC_MSG_RESULT([yes]); OPENMP=-fopenmp; CONFIG_WITH_OPENMP=1],
-      [AC_MSG_RESULT([no]); CONFIG_WITH_OPENMP=0])
+], [OMPCC="$CC$CFLAGS"; AC_MSG_RESULT([$OMPCC]); CONFIG_WITH_OPENMP=1],
+  [
+  if test -z "$OMPCC"; then
+    OMPCC="$CC_OLD"
+    AC_MSG_RESULT([no]);
+  else
+    AC_MSG_ERROR([failed (user gave $OMPCC)]);
+  fi
+  CONFIG_WITH_OPENMP=0
+  ]
+)
+CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
 dnl check for lpsolve55
@@ -756,8 +776,6 @@ else
   AR_SH="$AR -ru"
   BOOTSTRAP_TARGET="main-shared"
 fi
-
-dnl should we compile modpar
 
 AC_ARG_WITH(MODPAR, [  --with-MODPAR                    Compile with automatic parallelization, requires boost],
 [

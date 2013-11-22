@@ -40,9 +40,6 @@ mkbuilddirs:
 
 release: omc-diff omc
 
-omc-bootstrapped:
-	if test -f @OMC@; then $(MAKE) bootstrap-from-compiled; else $(MAKE) bootstrap-from-tarball; fi
-
 # configure --without-rml works using this target
 bootstrap-from-tarball:
 	$(MAKE) bootstrap-dependencies

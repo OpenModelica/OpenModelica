@@ -144,12 +144,14 @@ static void free_function(modelica_ptr_t func);
 
 static const char def_cc[]     = DEFAULT_CC;
 static const char def_cxx[]    = DEFAULT_CXX;
+static const char def_ompcc[]  = DEFAULT_OMPCC;
 static const char def_linker[] = DEFAULT_LINKER;
 static const char def_cflags[] = DEFAULT_CFLAGS;
 static const char def_ldflags[]= DEFAULT_LDFLAGS;
 
 static char *cc     = (char *)def_cc;
 static char *cxx    = (char *)def_cxx;
+static char *omp_cc = (char *)def_ompcc;
 static char *linker = (char *)def_linker;
 static char *cflags = (char *)def_cflags;
 static char *ldflags= (char *)def_ldflags;

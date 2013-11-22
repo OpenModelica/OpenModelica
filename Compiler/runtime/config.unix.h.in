@@ -9,6 +9,7 @@
 
 #define DEFAULT_CC "@CC@"
 #define DEFAULT_CXX "@CXX@"
+#define DEFAULT_OMPCC "@OMPCC@"
 #define DEFAULT_MAKE "@MAKE@"
 
 #if defined(__sparc__)
