@@ -39,7 +39,7 @@ SUBDIRS	= runtime modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h
-.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release simcode builtin
+.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release simcode builtin OpenModelicaBootstrappingHeader.h
 
 #all : debug
 all : release
@@ -89,6 +89,9 @@ report:
 ifeq ($(wildcard @OMC@),)
 simcode:
 	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
+OpenModelicaBootstrappingHeader.h:
+	@test -f $@ || (echo OpenModelica has not been compiled and $@ is missing. Compilation will fail. ; false)
+	@echo OpenModelica has not been compiled yet. Using previously generated $@.
 else
 simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C susan_codegen/
