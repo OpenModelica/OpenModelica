@@ -657,7 +657,8 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
       return 0;
     }
     *fmiInstance = mk_some(fmi);
-    // Load the binary (dll/so)
+    /* Loading the binary (dll/so) can mess up the compiler, and the information is unused in the compiler */
+#if 0
     jm_status_enu_t status;
     status = fmi1_import_create_dllfmu(fmi, fmi1_callback_functions, 0);
     if (status == jm_status_error) {
@@ -666,6 +667,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
       return 0;
     }
+#endif
     FMIImpl__initializeFMI1Import(fmi, fmiInfo, version, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
   } else if (version == 2) {
     static int init_fmi2_callback_functions = 0;
@@ -686,7 +688,8 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
       return 0;
     }
     *fmiInstance = mk_some(fmi);
-    // Load the binary (dll/so)
+    /* Loading the binary (dll/so) can mess up the compiler, and the information is unused in the compiler */
+#if 0
     jm_status_enu_t status;
     status = fmi2_import_create_dllfmu(fmi, fmi2_import_get_fmu_kind(fmi), &fmi2_callback_functions);
     if (status == jm_status_error) {
@@ -695,6 +698,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
       return 0;
     }
+#endif
     FMIImpl__initializeFMI2Import(fmi, fmiInfo, version, experimentAnnotation, modelVariablesInstance, modelVariablesList, input_connectors, output_connectors);
   }
   /* everything is OK return success */

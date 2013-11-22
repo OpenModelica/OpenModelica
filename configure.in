@@ -59,6 +59,7 @@ AC_SUBST(LIBSIMULATION)
 AC_SUBST(LIBRUNTIME)
 AC_SUBST(LIBFMIRUNTIME)
 AC_SUBST(LIBFMILIB)
+AC_SUBST(FMILIB_SHARED)
 AC_SUBST(SHREXT)
 AC_SUBST(LINK)
 AC_SUBST(RPATH)
@@ -709,7 +710,8 @@ if test "Darwin" = `uname`; then
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
-  LIBFMILIB=libfmilib.a
+  LIBFMILIB=libfmilib.dylib
+  FMILIB_SHARED=ON
   RT_LDFLAGS="$RT_LDFLAGS -liconv -lgc -lexpat $OPENMP"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/omc'"
@@ -728,6 +730,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib.a
+  FMILIB_SHARED=OFF
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc -lexpat $OPENMP"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
@@ -744,7 +747,8 @@ else
   LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
-  LIBFMILIB=libfmilib.a
+  LIBFMILIB=libfmilib.so
+  FMILIB_SHARED=ON
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc -lexpat $OPENMP"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"

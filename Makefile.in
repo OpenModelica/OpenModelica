@@ -36,8 +36,9 @@ OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@
 IPOPT_TARGET=ipopt
 # We don't want the shared version, but symbols are not exported if we use the static version
 # This compiles the shared and static versions, but we only copy the static version...
-FMILIB_SHARED = OFF
+FMILIB_SHARED = @FMILIB_SHARED@
 MODELICA_SPEC_PLATFORM=@MODELICA_SPEC_PLATFORM@
+SHREXT = @SHREXT@
 
 include Makefile.common
 
