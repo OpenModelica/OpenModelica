@@ -102,10 +102,14 @@ public:
      void initialize();
     /// Set current integration time
      void setTime(const double& t);
-  
+    
 protected:
      void Assert(bool cond,string msg);
      void Terminate(string msg);
+     void intDelay(vector<unsigned int> expr);
+     void storeDelay(unsigned int expr_id,double expr_value);
+     void storeTime(double time);
+     double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
     template<class T>
     T getStartValue(T variable,string key)
     {
@@ -150,5 +154,10 @@ protected:
     bool _initial;    
     SValuesMap _start_values;
     EventHandling _event_handling;
+   
+    typedef boost::circular_buffer<double> buffer_type;
+    map<unsigned int,buffer_type> _delay_buffer;
+    buffer_type _time_buffer;
+    
 };
 

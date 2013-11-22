@@ -284,7 +284,7 @@ void Cvode::CVodeCore()
     _idid = CVodeGetLastStep(_cvodeMem,&_h);
     //Ausgabe
     writeCVodeOutput(_tCurrent,_h,_locStps);
-
+    /*_continuous_system->stepCompleted(_tCurrent);   */
      /*ToDo 
      if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
     {

@@ -32,6 +32,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
 //vxworks #include <boost/algorithm/string.hpp>
+#include <boost/circular_buffer.hpp>
 #include <boost/foreach.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/any.hpp>
@@ -50,7 +51,8 @@ using namespace std;
 using boost::shared_ptr;
 using boost::weak_ptr;
 using boost::get;
-using boost::unordered_map;
+using boost::circular_buffer;
+
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;

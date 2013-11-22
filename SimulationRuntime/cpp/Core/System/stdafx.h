@@ -32,7 +32,7 @@
 #include <boost/weak_ptr.hpp>
 //#include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
-
+#include <boost/circular_buffer.hpp>
 #include <boost/any.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -49,7 +49,7 @@ using namespace std;
 using boost::shared_ptr;
 using boost::weak_ptr;
 using boost::get;
-
+using boost::circular_buffer;
 typedef ublas::shallow_array_adaptor<double> adaptor_t;
 typedef ublas::vector<double, adaptor_t> shared_vector_t;
 typedef ublas::matrix<double, adaptor_t> shared_matrix_t;

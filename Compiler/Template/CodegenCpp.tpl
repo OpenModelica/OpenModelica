@@ -384,6 +384,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          '<%preExp%>__xd[<%i0%>] = <%expPart%>;'
 
        ;separator="\n")
+       
 
   <<
   void <%modelname%>Algloop<%index%>::evaluate(const IContinuous::UPDATETYPE command)
@@ -1618,6 +1619,9 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     }
   //initialAnalyticJacobian();
   saveAll();
+ 
+  <%functionInitDelay(delayedExps)%>
+  
     }
   
    void <%lastIdentOfPath(modelInfo.name)%>::initEquations()
@@ -4220,6 +4224,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
   
     unsigned int dim<%index%> =   _algLoop<%index%>->getDimReal();
     double* algloop<%index%>Vars = new double[dim<%index%>];
+    // boost::shared_ptr<double[dim<%index%>]>  algloop<%index%>Vars(new double[dim<%index%>]);
     _algLoop<%index%>->getReal(algloop<%index%>Vars );
     try
       {
@@ -4250,7 +4255,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              }
               
        } 
-
+     delete[] algloop<%index%>Vars; 
    
      
       >>
@@ -4328,14 +4333,15 @@ template generateStepCompleted(list<SimEqSystem> allEquations,SimCode simCode)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let algloopsolver =   generateStepCompleted2(allEquations,simCode)
-  
   match simCode
 case SIMCODE(modelInfo = MODELINFO(__))
 then
+let store_delay_expr = functionStoreDelay(delayedExps,simCode)
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::stepCompleted(double time)
   {
    <%algloopsolver%>
+     <%store_delay_expr%>
    saveAll();
    }
   >>
@@ -5869,7 +5875,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = delay(<%index%>, <%var1%>,  <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="integer"),
@@ -7587,6 +7593,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
     ;separator="\n";empty)
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then
+ 
   <<
 
   bool <%lastIdentOfPath(modelInfo.name)%>::evaluate(const UPDATETYPE command)
@@ -7597,6 +7604,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
 
       <%all_equations%>
     <%reinit%>
+   
     return state_var_reinitialized;
   }
   >>
@@ -8416,6 +8424,48 @@ case CREF_IDENT(subscriptLst=subs as (_ :: _)) then
   daeExpCrefRhsIndexSpec(subs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
 end indexSpecFromCref;
 
+
+
+
+template functionInitDelay(DelayedExpression delayed)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let delay_id = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+     '<%id%>';separator=","))
+   
+  if delay_id then
+   <<
+    //init delay expressions
+    vector<unsigned int> delay_ids;
+    delay_ids+= <%delay_id%>;
+    intDelay(delay_ids);
+    
+  >>
+  else " "
+end functionInitDelay;
+
+
+template functionStoreDelay(DelayedExpression delayed,SimCode simCode)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+   let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+      let &preExp = buffer "" /*BUFD*/
+      let eRes = daeExp(e, contextSimulationNonDiscrete,
+                      &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+     <<
+      <%preExp%>
+       storeDelay(<%id%>, <%eRes%>);<%\n%>
+      >>
+    ))
+  <<
+  
+    <%varDecls%>
+    storeTime(_simTime);
+    <%storePart%>
+  >>
+end functionStoreDelay;
 // generate Member Function get Real
 
 template giveVariables(ModelInfo modelInfo)
