@@ -122,6 +122,10 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
 
 #define LARGE_CONFIG
 #include <gc.h>
+#include <pthread.h>
+/* gc.h doesn't include this by default; and the actual header redirects dlopen, which does not have an implementation */
+int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
+int GC_pthread_join(pthread_t, void **);
 
 #define mmc_GC_init(settings) GC_INIT()
 #define mmc_GC_init_default(void) GC_INIT()

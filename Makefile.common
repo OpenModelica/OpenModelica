@@ -74,7 +74,7 @@ docs: mkbuilddirs
 	# man pages
 	(cd doc/manpages/ && for f in *.1; do cp -p $$f ../../$(builddir_man)/man1/ && gzip -f ../../$(builddir_man)/man1/$$f ; done)
 
-GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h
+GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h gc_pthread_redirects.h
 libgc-dev: /usr/include/gc/gc_inline.h
 libgc-dev: /usr/include/gc/gc_mark.h
 libgc-dev: /usr/include/gc/gc_pthread_redirects.h
@@ -85,7 +85,7 @@ libgc-dev: /usr/include/gc/leak_detector.h
 libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
-boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/gc.h build/include/omc/gc_config_macros.h build/include/omc/gc_version.h
+boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/gc.h build/include/omc/gc_config_macros.h build/include/omc/gc_version.h build/include/omc/gc_pthread_redirects.h
 build/lib/omc/libgc.a: 3rdParty/gc-7.2/.libs/libgc.a mkbuilddirs
 	cp -p $< $@
 3rdParty/gc-7.2/.libs/libgc.a: 3rdParty/gc-7.2/Makefile
@@ -95,6 +95,8 @@ build/include/omc/gc.h: 3rdParty/gc-7.2/include/gc.h mkbuilddirs
 build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h mkbuilddirs
 	cp -pPR $< $@
 build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
+	cp -pPR $< $@
+build/include/omc/gc_pthread_redirects.h: 3rdParty/gc-7.2/include/gc_pthread_redirects.h mkbuilddirs
 	cp -pPR $< $@
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
 	(cd 3rdParty/gc-7.2 && ./configure "--host=$(host)" $(GC_THREADS) --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DTHREAD_LOCAL_ALLOC")

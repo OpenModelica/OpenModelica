@@ -608,7 +608,8 @@ static void* systemCallWorkerThread(void *argVoid)
   while (1) {
     int i;
     pthread_mutex_lock(arg->mutex);
-    i = arg->current++;
+    i = (*arg->current);
+    *arg->current+=1;
     pthread_mutex_unlock(arg->mutex);
     if (i >= arg->size) break;
     arg->results[i] = SystemImpl__systemCall(arg->calls[i]);
@@ -627,15 +628,15 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     tmp = RML_CDR(tmp);
   }
   if (sz == 0) return mk_nil();
-  calls = (char**) GC_malloc(sz*sizeof(char*)+1);
+  calls = (char**) GC_malloc(sz*sizeof(char*));
   assert(calls);
   results = (int*) GC_malloc_atomic(sz*sizeof(int));
   assert(results);
   tmp = lst;
-  sz = 0;
   if (numThreads > sz) {
     numThreads = sz;
   }
+  sz=0;
   while (RML_NILHDR != RML_GETHDR(tmp)) {
     calls[sz++] = RML_STRINGDATA(RML_CAR(tmp));
     tmp = RML_CDR(tmp);
@@ -643,14 +644,14 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
   if (sz == 1) {
     results[i] = SystemImpl__systemCall(calls[0]);
   } else {
-    int index;
+    int index = 0;
     pthread_mutex_t mutex;
     struct systemCallWorkerThreadArgs args = {&mutex,&index,sz,calls,results};
     pthread_mutex_init(&mutex,NULL);
-    pthread_t *th = GC_malloc(numThreads);
+    pthread_t *th = GC_malloc(sizeof(pthread_t)*numThreads);
     /* Last element is NULL from GC_malloc */
     for (i=0; i<numThreads; i++) {
-      GC_pthread_create(&th[i],&args,systemCallWorkerThread,calls);
+      GC_pthread_create(&th[i],NULL,systemCallWorkerThread,&args);
     }
     for (i=0; i<numThreads; i++) {
       GC_pthread_join(th[i], NULL);
