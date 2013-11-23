@@ -727,7 +727,7 @@ if test "Darwin" = `uname`; then
   EXE=".app"
   SHREXT=".dylib"
   LIBGC="build/lib/omc/libgc.a"
-  LIBSIMULATION=libSimulationRuntimeC.a
+  LIBSIMULATION=libSimulationRuntimeC.dylib
   LIBRUNTIME=libOpenModelicaRuntimeC.a
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib_shared.dylib
@@ -764,7 +764,7 @@ else
   EXE=""
   SHREXT=".so"
   LIBGC="build/lib/omc/libgc.so"
-  LIBSIMULATION=libSimulationRuntimeC.a
+  LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
   LIBFMILIB=libfmilib_shared.so

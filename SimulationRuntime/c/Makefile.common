@@ -93,7 +93,11 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 
 libSimulationRuntimeC.so: $(ALL_OBJS)
 	@rm -f $@
-	$(CC) -shared -o $@ $(ALL_OBJS)
+	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS)
+
+libSimulationRuntimeC.dylib: $(ALL_OBJS)
+	@rm -f $@
+	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
 
 libSimulationRuntimeC.bc: $(ALL_OBJS)
 	@rm -f $@
