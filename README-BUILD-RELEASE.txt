@@ -19,10 +19,6 @@ The following step-by-step guides explain how to
 build the OpenModelica release .msi file on Windows
 using the Microsoft Visual Studio .NET 2010
 
-NOTE: for checkout of any of the SVN directories you will need this user/pass:
-      user: anonymous
-      pass: none      <- write "none" without quotes here
-
 BIG NOTE WARNING!
  - DO NOT ADD MinGW and omclibrary to the Setup project ever again
    as it takes *FOREVER* to delete them from it. Instead save the project
@@ -77,7 +73,7 @@ BIG NOTE WARNING!
     - take qtlibs from:
       https://www.ida.liu.se/~adrpo/omc/omdev/qtlibs/
       unpack it, point it by environment variable QTHOME
-    - svn checkout https://openmodelica.org/svn/OpenModelica/installers/windows/OMDev/tools/mingw
+    - svn checkout https://openmodelica.org/svn/OpenModelicaExternal/trunk/tools/windows/OMDev
       -> to \trunk\build\MinGW
       Clean up (to be easy to add MinGW to the Setup.vdproj, otherwise it takes forever!):
        REMOVE all .svn directories from it! Search .svn, select all .svn directories, Delete!

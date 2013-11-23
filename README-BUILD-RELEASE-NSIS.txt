@@ -11,10 +11,6 @@ The following step-by-step guides explain how
 to build the OpenModelica setup file on Windows
 using the NullSoft Scriptable Install System(NSIS)
 
-NOTE: for checkout of any of the SVN directories you will need this user/pass:
-      user: anonymous
-      pass: none      <- write "none" without quotes here
-
 00. Checkout the sources from Subversion:
       https://openmodelica.org/svn/OpenModelica/trunk -> trunk
 
