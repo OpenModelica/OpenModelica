@@ -2435,7 +2435,7 @@ algorithm
         prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
         s1 = printSubs1Str(subs);
         s1_1 = stringDelimitList(s1, ", ");
-        s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
+        s1_1 = Util.if_(List.isNotEmpty(subs)," {" +& s1_1 +& "} ",s1_1);
         s2 = printEqmodStr(eq);
         str = stringAppendList({prefix,s1_1,s2});
       then
@@ -3255,7 +3255,7 @@ algorithm
       equation
         //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");
         redecls = removeRedeclareMods(redecls,componentModified);
-        outmod = Util.if_(listLength(redecls) > 0,DAE.REDECL(f,e,redecls), DAE.NOMOD());
+        outmod = Util.if_(List.isNotEmpty(redecls),DAE.REDECL(f,e,redecls), DAE.NOMOD());
         //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" after" +& Mod.printModStr(outmod) +& "\n");
       then
         outmod;

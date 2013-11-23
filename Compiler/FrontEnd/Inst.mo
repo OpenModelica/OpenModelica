@@ -3005,7 +3005,7 @@ algorithm
     /* Inherits baseclass -and- has components */
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},_,mods,inst_dims,_,_,_)
       equation
-        true = (listLength(inSCodeElementLst3) > 0);
+        true = (List.isNotEmpty(inSCodeElementLst3));
         ErrorExt.setCheckpoint("instBasictypeBaseclass2") "rolled back or deleted inside call below";
         instBasictypeBaseclass2(cache,env,ih,store,inSCodeElementLst2,inSCodeElementLst3,mods,inst_dims,className,info,stopInst);
       then

@@ -274,7 +274,7 @@ algorithm
     case ((exp,(vars,lstExpCrefs)))
       equation
         ((_,(_,crefs))) = Expression.traverseExp(exp,traversecheckBackendDAEExp,(vars,{}));
-        lstExpCrefs1 = Util.if_(listLength(crefs)>0,(exp,crefs)::lstExpCrefs,lstExpCrefs);
+        lstExpCrefs1 = Util.if_(List.isNotEmpty(crefs),(exp,crefs)::lstExpCrefs,lstExpCrefs);
        then
         ((exp,(vars,lstExpCrefs1)));
     case _ then inTpl;

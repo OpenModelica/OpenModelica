@@ -178,7 +178,7 @@ algorithm
         //get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, iAllTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, iAllTasks);
-        true = intGt(listLength(predecessors), 0); //in this case the node has predecessors
+        true = List.isNotEmpty(predecessors); //in this case the node has predecessors
         //print("Handle task " +& intString(index) +& " with " +& intString(listLength(predecessors)) +& " child nodes and " +& intString(listLength(successorIdc)) +& " parent nodes.\n");
         
         //get last child finished time
@@ -1327,7 +1327,7 @@ algorithm
         //get all predecessors (childs)
         (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, iAllTasks);
         (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, iAllTasks);
-        true = intGt(listLength(predecessors), 0); //in this case the node has predecessors
+        true = List.isNotEmpty(predecessors); //in this case the node has predecessors
         //print("Handle task " +& intString(index) +& " with " +& intString(listLength(predecessors)) +& " child nodes and " +& intString(listLength(successorIdc)) +& " parent nodes.\n");
 
         //find thread for scheduling

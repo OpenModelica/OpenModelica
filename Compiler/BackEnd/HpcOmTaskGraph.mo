@@ -479,7 +479,7 @@ algorithm
         (adjLst,rootNodes);
     case(_,_,_,_,_)
       equation
-        true = listLength(parentLst) == 0;
+        true = List.isEmpty(parentLst);
         rootNodes = childNode::rootNodesIn;
       then
         (adjLstIn,rootNodes);
@@ -1689,7 +1689,7 @@ algorithm
       BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
       varLst = BackendVariable.varList(orderedVars);
       stateVars = getStates(varLst,{},1);    
-      true = listLength(stateVars) >= 1;
+      true = List.isNotEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
       stateNodes = matchWithAssignments(stateVars,varSccMapping);
       stateNodes = List.map3(stateNodes,getCompInComps,1,inComps,arrayCreate(arrayLength(inComps),0));
@@ -1702,7 +1702,7 @@ algorithm
       BackendDAE.EQSYSTEM(orderedVars=orderedVars) = systIn;
       varLst = BackendVariable.varList(orderedVars);
       stateVars = getStates(varLst,{},1);
-      true = listLength(stateVars) == 0;
+      true = List.isEmpty(stateVars);
       varOffsetNew = listLength(varLst)+varOffset;      
       then
         ((stateNodesIn,varOffsetNew));
@@ -3127,7 +3127,7 @@ algorithm
   oneChildren := List.removeOnTrue(1,compareListLengthOnTrue,oneChildren);  // remove paths of length 1
   //oneChildren := List.fold1(List.intRange(listLength(oneChildren)),checkParentNode,graphIn,oneChildren);  // deletes the lists with just one entry that have more than one parent
   (graphOut,graphDataOut) := contractNodesInGraph(oneChildren,graphIn,graphDataIn);
-  oChanged := intGt(listLength(oneChildren), 0);
+  oChanged := List.isNotEmpty(oneChildren);
 end mergeSimpleNodes;
 
 
@@ -3145,7 +3145,7 @@ algorithm
   iGraphT := transposeTaskGraph(iGraph);
   mergedNodes := mergeParentNodes0(iGraph, iGraphT, iGraphData, 1, {});
   (oGraph,oGraphData) := contractNodesInGraph(mergedNodes, iGraph, iGraphData);
-  oChanged := intGt(listLength(mergedNodes),0);
+  oChanged := List.isNotEmpty(mergedNodes);
 end mergeParentNodes;
 
 protected function mergeParentNodes0
@@ -4744,7 +4744,7 @@ algorithm
     case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
       equation //critical path of node is currently unknown -> calculate it
         childNodes = arrayGet(iGraph, iNode);
-        true = intGt(listLength(childNodes),0); //has children
+        true = List.isNotEmpty(childNodes); //has children
         criticalPaths = List.map4(childNodes, getCriticalPath1, iGraph, iGraphData, iHandleCommCosts, iNodeCriticalPaths);
         criticalPathIdx = getCriticalPath2(criticalPaths, 1, -1.0, -1);
         ((cpCalcTime, criticalPathChild)) = listGet(criticalPaths, criticalPathIdx);
@@ -4760,7 +4760,7 @@ algorithm
     case(_,_,TASKGRAPHMETA(inComps=inComps,exeCosts=exeCosts),_,_)
       equation //critical path of node is currently unknown -> calculate it
         childNodes = arrayGet(iGraph, iNode);
-        false = intGt(listLength(childNodes),0); //has no children
+        false = List.isNotEmpty(childNodes); //has no children
         criticalPath = iNode :: {};
         nodeComps = arrayGet(inComps, iNode);
         calcTime = addUpExeCostsForNode(nodeComps, exeCosts, 0.0); //sum up calc times of all components
@@ -5530,7 +5530,7 @@ algorithm
       equation
         commCosts = arrayGet(iCommCosts, iParentComp);
         filteredCommCosts = List.filter1OnTrue(commCosts, getCommCostBetweenNodes1, iChildComps);
-        true = intGt(listLength(filteredCommCosts), 0);
+        true = List.isNotEmpty(filteredCommCosts);
         highestCommCost = getHighestCommCost(filteredCommCosts, (-1,-1,-1));
       then SOME(highestCommCost);
     else then NONE();
@@ -5724,7 +5724,7 @@ end sumUpExecCosts1;
 //       //print("for "+&intString(childNodeIn)+&" the parents "+&stringDelimitList(List.map(parents,intString),",")+&"\n");
 //       //print("collected Nodes "+&stringDelimitList(List.map(collectedNodes,intString),",")+&"\n");
 //       (_,parents,_) = List.intersection1OnTrue(parents,childNodeIn::collectedNodes,intEq);
-//       true = listLength(parents) == 0;
+//       true = List.isEmpty(parents);
 //     then
 //       childNodeIn;
 //   else

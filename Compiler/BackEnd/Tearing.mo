@@ -946,7 +946,7 @@ algorithm
       equation
         (_,states) = BackendVariable.getAllStateVarIndexFromVariables(vars);
         states = List.removeOnTrue(ass1, isAssigned, states);
-        true = intGt(listLength(states),0);
+        true = List.isNotEmpty(states);
         tvar = selectVarWithMostEqns(states,ass2,mt,-1,-1);
       then
         tvar;
@@ -956,7 +956,7 @@ algorithm
     case(_,_,_,_,_)
       equation
         unsolvables = getUnsolvableVarsConsiderMatching(1,BackendVariable.varsSize(vars),mt,ass1,ass2,{});
-    false = listLength(unsolvables)==0;
+    false = List.isEmpty(unsolvables);
     tvar = listGet(unsolvables,1);
            Debug.fcall(Flags.TEARING_DUMP,print,"tVar: " +& intString(tvar) +& " (unsolvable in omcTearingSelectTearingVar)\n\n");
       then
@@ -2465,13 +2465,13 @@ algorithm
    case(_,_,_,_,_,_,_,_,_,_,false)
      equation
      ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
-       false = 0 == listLength(unassigned);
+       false = List.isEmpty(unassigned);
           Debug.fcall(Flags.TEARING_DUMP, print,"\nnoncausal\n");
      then (ass1In,ass2In,mIn,mtIn,orderIn,false);
    case(_,_,_,_,_,_,_,_,_,_,false)
      equation
        ((_,unassigned)) = List.fold(ass1In,getUnassigned,(1,{}));
-       true = 0 == listLength(unassigned);
+       true = List.isEmpty(unassigned);
           Debug.fcall(Flags.TEARING_DUMP, print,"\ncausal\n");
        subOrder = listGet(orderIn,1);
        subOrder = listReverse(subOrder);
@@ -2555,7 +2555,7 @@ algorithm
     list<Integer> order;
     case(_,_,_,_,_,_,_,_,_,_,_)
       equation
-        true = listLength(assEq_coll) > 0;
+        true = List.isNotEmpty(assEq_coll);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assign from m\n");
         ((eq_coll,eqns,vars)) = getpossibleEqnorVar((assEq_coll,m,me,listArray(ass1),listArray(ass2),mapEqnIncRow,1));
         order = listGet(orderIn,1);
@@ -2564,8 +2564,8 @@ algorithm
       then (eqns,vars,orderOut,true);
     case(_,_,_,_,_,_,_,_,_,_,_)
       equation
-        true = listLength(assEq_coll) == 0;
-        true = listLength(assVar) > 0;
+        true = List.isEmpty(assEq_coll);
+        true = List.isNotEmpty(assVar);
            Debug.fcall(Flags.TEARING_DUMPVERBOSE, print,"assign from mt\n");
         ((_,vars,eqns)) = getpossibleEqnorVar((assVar,mt,met,listArray(ass1),listArray(ass2),mapEqnIncRow,2));
     eq = listGet(eqns,1);
@@ -3223,7 +3223,7 @@ algorithm
       then loopsOut;
     case(_,_,_,_,currLoop,_,_)
       equation
-        true = listLength(currLoop) > 0;
+        true = List.isNotEmpty(currLoop);
         true = indxCol == listLength(arrayGet(aIn,indxRow));
         parent = indxRow;
         child = listGet(arrayGet(aIn,indxRow),indxCol);
@@ -3416,7 +3416,7 @@ algorithm
     case(_,_,_,_,_,_)
       equation
         selfLoops = checkSelfLoop(sIn);
-        true = listLength(selfLoops)<> 0;
+        true = List.isNotEmpty(selfLoops);
         vertex = listGet(selfLoops,1);
         //print("selfloop vertex "+&intString(vertex)+&"\n");
         parentLst = arrayGet(stIn,vertex);
@@ -3541,7 +3541,7 @@ author: Waurich TUD 2012-11"
      list<Integer> row;
      case(_,_,_,_,_,_)
        equation
-         true = listLength(parentLst) == 0;
+         true = List.isEmpty(parentLst);
          true = indx <= listLength(childLst);
          child = listGet(childLst,indx);
          sOut = Util.arrayReplaceAtWithFill(vertex,{},{},sIn);
@@ -3553,13 +3553,13 @@ author: Waurich TUD 2012-11"
            (sOut,stOut);
      case(_,_,_,_,_,_)
        equation
-         true = listLength(parentLst) == 0;
+         true = List.isEmpty(parentLst);
          true = indx > listLength(childLst);
          then
            (sIn,stIn);
      case(_,_,_,_,_,_)
        equation
-         true = listLength(childLst) == 0;
+         true = List.isEmpty(childLst);
          true = indx <= listLength(parentLst);
          parent = listGet(parentLst,indx);
          stOut = Util.arrayReplaceAtWithFill(vertex,{},{},stIn);
@@ -3571,7 +3571,7 @@ author: Waurich TUD 2012-11"
            (sOut,stOut);
      case(_,_,_,_,_,_)
        equation
-         true = listLength(childLst) == 0;
+         true = List.isEmpty(childLst);
          true = indx > listLength(parentLst);
          then
            (sIn,stIn);
@@ -3604,7 +3604,7 @@ algorithm
           Var = indxVar;
           possibleEq = arrayGet(mt,Var);
           (_,_,possibleEq) = List.intersection1OnTrue(ass2In,possibleEq,intEq);
-          true = listLength(possibleEq)>0;
+          true = List.isNotEmpty(possibleEq);
           Eq = listGet(possibleEq,1);
           //print("assign \n");
           //print("Var"+&intString(Var)+&" Eq"+&intString(Eq)+&"\n");
@@ -3621,7 +3621,7 @@ algorithm
           Var = indxVar;
           possibleEq = arrayGet(mt,Var);
           (_,_,possibleEq) = List.intersection1OnTrue(ass2In,possibleEq,intEq);
-          true = listLength(possibleEq)==0;
+          true = List.isEmpty(possibleEq);
           //print("reassign \n");
           Eq = listGet(arrayGet(mt,Var),1);
           //print("1\n");

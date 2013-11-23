@@ -1030,7 +1030,7 @@ algorithm
       equation
         lst = List.map(inComps, Util.tuple21);
         lst = extractConstantPlusDeps2(lst, ocr, allComps, className, {});
-        true = listLength(lst) >= 1;
+        true = List.isNotEmpty(lst);
         lst = listReverse(lst);
         oel = List.filter1OnTrue(inComps, elementNameMember, lst);
       then
@@ -1082,7 +1082,7 @@ algorithm
     case(_, SOME(cr), _, _)
       equation
         outComps = extractConstantPlusDeps2(inComps, ocr, allComps, className,{});
-        true = listLength(outComps) >= 1;
+        true = List.isNotEmpty(outComps);
         outComps = listReverse(outComps);
       then
         outComps;

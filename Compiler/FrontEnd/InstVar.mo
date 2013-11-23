@@ -1001,7 +1001,7 @@ algorithm
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
-        mod = Util.if_(listLength(inSubscripts) > 0 and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings(),DAE.NOMOD(),inMod);
+        mod = Util.if_(List.isNotEmpty(inSubscripts) and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)) and not Config.scalarizeBindings(),DAE.NOMOD(),inMod);
         opt_binding = InstBinding.makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName, source);
         start = InstBinding.instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
 
