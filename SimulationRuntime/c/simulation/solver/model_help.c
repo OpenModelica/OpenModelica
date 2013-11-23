@@ -1001,51 +1001,43 @@ void setZCtol(double relativeTol)
   INFO1(LOG_EVENTS_V, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 }
 
-extern inline
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
   double eps = (direction)? tolZC*fabs(b)+tolZC : tolZC*fabs(a)+tolZC;
   return (direction)? (a - b <= eps):(a - b <= -eps);
 }
 
-extern inline
 modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 {
   return (!GreaterZC(a, b, !direction));
 }
 
-extern inline
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
   double eps = (direction)? tolZC*fabs(a)+tolZC : tolZC*fabs(b)+tolZC;
   return (direction)? (a - b >= -eps ):(a - b >= eps);
 }
 
-extern inline
 modelica_boolean GreaterEqZC(double a, double b, modelica_boolean direction)
 {
   return (!LessZC(a, b, !direction));
 }
 
-extern inline
 modelica_boolean Less(double a, double b)
 {
   return a < b;
 }
 
-extern inline
 modelica_boolean LessEq(double a, double b)
 {
   return a <= b;
 }
 
-extern inline
 modelica_boolean Greater(double a, double b)
 {
   return a > b;
 }
 
-extern inline
 modelica_boolean GreaterEq(double a, double b)
 {
   return a >= b;
