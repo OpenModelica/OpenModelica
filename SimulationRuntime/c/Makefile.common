@@ -95,9 +95,9 @@ libSimulationRuntimeC.so: $(ALL_OBJS)
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS)
 
-libSimulationRuntimeC.dylib: $(ALL_OBJS)
+libSimulationRuntimeC.dylib: $(ALL_OBJS) install-f2c
 	@rm -f $@
-	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
+	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS) -lf2c -undefined dynamic_lookup -install_name '@rpath/$@'
 
 libSimulationRuntimeC.bc: $(ALL_OBJS)
 	@rm -f $@
@@ -160,11 +160,13 @@ simulation/libf2c/libf2c.a:
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 endif
 
-install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS)
+install-f2c: simulation/libf2c/libf2c.a
+	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
+
+install: $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) simulation/libf2c/libf2c.a $(ALL_OBJS) install-f2c
 	# copy libraries
 	cp -p $(LIBSIMULATION) $(LIBRUNTIME) $(LIBFMIRUNTIME) \
 	   ../interactive/libinteractive.a $(builddir_lib)
-	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	test ! -f simulation/libf2c/libf2c.bc || cp simulation/libf2c/libf2c.bc $(builddir_lib)/emcc/libf2c.so
 	# copy interactive sample client
