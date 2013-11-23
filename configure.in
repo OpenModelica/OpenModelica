@@ -764,9 +764,9 @@ else
   EXE=""
   SHREXT=".so"
   LIBGC="build/lib/omc/libgc.so"
-  LIBSIMULATION=libSimulationRuntimeC.so
+  LIBSIMULATION=libSimulationRuntimeC.a
   LIBRUNTIME=libOpenModelicaRuntimeC.so
-  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.so
+  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib_shared.so
   FMILIB_SHARED=ON
   RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc -lexpat $OPENMP"
