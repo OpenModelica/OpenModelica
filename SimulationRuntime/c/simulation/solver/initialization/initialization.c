@@ -49,6 +49,10 @@
 #include "stateset.h"
 
 #include "initialization_data.h"
+#include "mixedSystem.h"
+#include "linearSystem.h"
+#include "nonlinearSystem.h"
+#include "delay.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,11 +103,11 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
 
   updateSimData(initData);
 
-  updateBoundParameters(data);
+  data->callback->updateBoundParameters(data);
   /*functionODE(data);*/
-  functionDAE(data);
-  functionAlgebraics(data);
-  initial_residual(data, initData->initialResiduals);
+  data->callback->functionDAE(data);
+  data->callback->functionAlgebraics(data);
+  data->callback->initial_residual(data, initData->initialResiduals);
 
   for(i=0; i<data->modelData.nInitResiduals; ++i)
   {
@@ -166,7 +170,7 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
  *
  *  \author lochel
  */
-void dumpInitialization(INIT_DATA *initData)
+void dumpInitialization(DATA *data, INIT_DATA *initData)
 {
   long i;
   double fValueScaled = leastSquareWithLambda(initData, 1.0);
@@ -207,9 +211,9 @@ void dumpInitialization(INIT_DATA *initData)
   INDENT(LOG_INIT);
   for(i=0; i<initData->nInitResiduals; ++i)
     if(initData->residualScalingCoefficients)
-      INFO4(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initialResidualDescription[i], initData->residualScalingCoefficients[i]);
+      INFO4(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], data->callback->initialResidualDescription(i), initData->residualScalingCoefficients[i]);
     else
-      INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->initialResiduals[i], initialResidualDescription[i]);
+      INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->initialResiduals[i], data->callback->initialResidualDescription(i));
   RELEASE(LOG_INIT); RELEASE(LOG_INIT);
 }
 
@@ -355,7 +359,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
     else if(optiMethod == IOM_KINSOL_SCALED)
       retVal = kinsol_initialization(initData);
     else if(optiMethod == IOM_IPOPT)
-      retVal = ipopt_initialization(initData, 0);
+      retVal = ipopt_initialization(data, initData, 0);
     else
       THROW("unsupported option -iom");
 
@@ -376,7 +380,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
       for(i=0; i<initData->nVars; i++)
         bestZ[i] = initData->vars[i];
       INFO(LOG_INIT, "updating bestZ");
-      dumpInitialization(initData);
+      dumpInitialization(data,initData);
     }
     else if(retVal >= 0 && funcValue == bestFuncValue)
     {
@@ -423,7 +427,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
     INFO(LOG_INIT, "no variables to initialize");
     /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
     if(data->modelData.nInitResiduals == 0)
-      initial_residual(data, initData->initialResiduals);
+      data->callback->initial_residual(data, initData->initialResiduals);
     free(initData);
     return 0;
   }
@@ -433,7 +437,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
   {
     INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
     /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
-    initial_residual(data, initData->initialResiduals);
+    data->callback->initial_residual(data, initData->initialResiduals);
     free(initData);
     return 0;
   }
@@ -545,7 +549,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
 
     initialize2(initData, optiMethod, 1, lambda_steps);
 
-    dumpInitialization(initData);
+    dumpInitialization(data,initData);
 
     for(i=0; i<initData->nVars; ++i)
       initData->start[i] = initData->vars[i];
@@ -576,7 +580,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
     initialize2(initData, optiMethod, 0, lambda_steps);
 
     /* dump final solution */
-    dumpInitialization(initData);
+    dumpInitialization(data,initData);
 
     funcValue = leastSquareWithLambda(initData, 1.0);
   }
@@ -585,7 +589,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
 
   INFO(LOG_INIT, "### FINAL INITIALIZATION RESULTS ###");
   INDENT(LOG_INIT);
-  dumpInitialization(initData);
+  dumpInitialization(data,initData);
   retVal = reportResidualValue(initData);
   RELEASE(LOG_INIT);
   freeInitData(initData);
@@ -654,8 +658,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
   /* do pivoting for dynamic state selection */
   stateSelection(data, 0, 1);
 
-  if(useHomotopy && numLambdaSteps > 1)
-  {
+  if (data->callback->useHomotopy && numLambdaSteps > 1) {
     long i;
     char buffer[4096];
     FILE *pFile = NULL;
@@ -699,7 +702,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
       if(data->simulationInfo.lambda > 1.0)
         data->simulationInfo.lambda = 1.0;
 
-      functionInitialEquations(data);
+      data->callback->functionInitialEquations(data);
 
       INFO1(LOG_INIT, "lambda = %g done", data->simulationInfo.lambda);
 
@@ -740,7 +743,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
   else
   {
     data->simulationInfo.lambda = 1.0;
-    functionInitialEquations(data);
+    data->callback->functionInitialEquations(data);
   }
 
   /* update saved value for
@@ -750,7 +753,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
   /* do pivoting for dynamic state selection if selection changed try again an */
   if(stateSelection(data, 1, 1) == 1)
   {
-    functionInitialEquations(data);
+    data->callback->functionInitialEquations(data);
     updateHysteresis(data);
 
     /* report a warning about strange start values */
@@ -982,7 +985,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
  */
 int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime, int lambda_steps)
 {
-  int initMethod = useSymbolicInitialization ? IIM_SYMBOLIC : IIM_NUMERIC;  /* default method */
+  int initMethod = data->callback->useSymbolicInitialization ? IIM_SYMBOLIC : IIM_NUMERIC;  /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;                                      /* default method */
   int retVal = -1;
   int i;
@@ -1001,8 +1004,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   if(!(pInitFile && strcmp(pInitFile, "")))
   {
-    updateBoundParameters(data);
-    updateBoundStartValues(data);
+    data->callback->updateBoundParameters(data);
+    data->callback->updateBoundStartValues(data);
   }
 
   /* if there are user-specified options, use them! */

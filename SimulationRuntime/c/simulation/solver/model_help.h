@@ -142,25 +142,17 @@ modelica_real _omc_round(modelica_real x, modelica_integer prec);
 /* functions used for relation which
  * are not used as zero-crossings
  */
-inline
 modelica_boolean Less(double a, double b);
-inline
 modelica_boolean LessEq(double a, double b);
-inline
 modelica_boolean Greater(double a, double b);
-inline
 modelica_boolean GreaterEq(double a, double b);
 
 /* functions used to evaluate relation in
  * zero-crossing with hysteresis effect
  */
-inline
 modelica_boolean LessZC(double a, double b, modelica_boolean);
-inline
 modelica_boolean LessEqZC(double a, double b, modelica_boolean);
-inline
 modelica_boolean GreaterZC(double a, double b, modelica_boolean);
-inline
 modelica_boolean GreaterEqZC(double a, double b, modelica_boolean);
 
 #ifdef __cplusplus

@@ -38,6 +38,7 @@
 
 #include "../ipoptODEstruct.h"
 #include "../OptimizationFlags.h"
+#include "../localFunction.h"
 
 #ifdef WITH_IPOPT
 
@@ -107,7 +108,7 @@ Bool goal_func_mayer(double* vn, double *obj_value, IPOPT_DATA_ *iData)
   double *u = vn + iData->nx;
   
   refreshSimData(x, u, iData->tf, iData);
-  functionAlgebraics(iData->data);
+  iData->data->callback->functionAlgebraics(iData->data);
   mayer(iData->data, obj_value, 0);
   
   return TRUE;
@@ -123,7 +124,7 @@ Bool goal_func_lagrange(double* vn, double *obj_value, double t, IPOPT_DATA_ *iD
   double *u = vn + iData->nx;
   
   refreshSimData(x, u, iData->tf, iData);
-  functionAlgebraics(iData->data);
+  iData->data->callback->functionAlgebraics(iData->data);
   lagrange(iData->data, obj_value, 0);
   
   return TRUE;
@@ -212,13 +213,13 @@ int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *dF, i
   x = v;
   u = x + iData->nx;
   refreshSimData(x,u,t,iData);
-  functionAlgebraics(iData->data);
+  data->callback->functionAlgebraics(iData->data);
 
   if(iData->matrixC ==0){
     for(i= 0, k = 0; i<iData->nx; ++i, ++k)
     {
     data->simulationInfo.analyticJacobians[index1].seedVars[i] = 1.0;
-    functionJacC_column(data);
+    data->callback->functionJacC_column(data);
     data->simulationInfo.analyticJacobians[index1].seedVars[i] = 0.0;
     if(this_it ==0)
       mayer(iData->data, &dF[k],1);
@@ -232,7 +233,7 @@ int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *dF, i
     for(k =iData->nx, i = 0 ; i<iData->nu; ++i, ++k)
     {
     data->simulationInfo.analyticJacobians[index2].seedVars[i] = 1.0;
-    functionJacD_column(data);
+    data->callback->functionJacD_column(data);
     data->simulationInfo.analyticJacobians[index2].seedVars[i] = 0.0;
     if(this_it ==0)
       mayer(iData->data, &dF[k],2);

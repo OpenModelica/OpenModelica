@@ -47,6 +47,40 @@ package CodegenUtil
 
 import interface SimCodeTV;
 
+template replaceDotAndUnderscore(String str)
+ "Replace _ with __ and dot in identifiers with _"
+::=
+  match str
+  case name then
+    let str_dots = System.stringReplace(name,".", "_")
+    let str_underscores = System.stringReplace(str_dots, "_", "__")
+    System.unquoteIdentifier(str_underscores)
+end replaceDotAndUnderscore;
+
+template underscorePath(Path path)
+ "Generate paths with components separated by underscores.
+  Replaces also the . in identifiers with _.
+  The dot might happen for world.gravityAccleration"
+::=
+  match path
+  case QUALIFIED(__) then
+    '<%replaceDotAndUnderscore(name)%>_<%underscorePath(path)%>'
+  case IDENT(__) then
+    replaceDotAndUnderscore(name)
+  case FULLYQUALIFIED(__) then
+    underscorePath(path)
+end underscorePath;
+
+template modelNamePrefix(SimCode simCode)
+::=
+  match simCode
+  case simCode as SIMCODE(__) then
+    System.stringReplace(fileNamePrefix,".", "_")
+  // underscorePath(mi.name)
+  // case simCode as SIMCODE(modelInfo=mi as MODELINFO(__)) then
+  // underscorePath(mi.name)
+end modelNamePrefix;
+
 template crefStr(ComponentRef cr)
  "Generates the name of a variable for variable name array. Uses undersocres for qualified names.
  a._b not a.b"

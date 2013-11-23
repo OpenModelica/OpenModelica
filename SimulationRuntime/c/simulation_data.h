@@ -512,6 +512,9 @@ typedef struct DATA
   MODEL_DATA modelData;                /* static stuff */
   SIMULATION_INFO simulationInfo;
   threadData_t *threadData; /* NOTE: Each thread needs to have its own version of DATA */
+  struct OpenModelicaGeneratedFunctionCallbacks *callback;
 } DATA;
+
+#include "openmodelica_func.h"
 
 #endif

@@ -38,6 +38,7 @@
 
 #include"../ipoptODEstruct.h"
 #include "../OptimizationFlags.h"
+#include "../localFunction.h"
 
 #ifdef WITH_IPOPT
 
@@ -263,7 +264,7 @@ static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, 
  */
 static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes, double *F1, double *F2)
 {
-  functionAlgebraics(iData->data);
+  iData->data->callback->functionAlgebraics(iData->data);
   if(lagrange_yes)
     diff_symColoredObject_hess(v, t, iData, F1, iData->lagrange_index);
 
@@ -294,7 +295,7 @@ int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *
     for(i= 0, k = 0; i<iData->nx; ++i, ++k)
     {
     data->simulationInfo.analyticJacobians[index1].seedVars[i] = 1.0;
-    functionJacC_column(data);
+    data->callback->functionJacC_column(data);
     data->simulationInfo.analyticJacobians[index1].seedVars[i] = 0.0;
     if(this_it ==0)
       mayer(iData->data, &dF[k],1);
@@ -307,7 +308,7 @@ int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *
     for(k =iData->nx, i = 0 ; i<iData->nu; ++i, ++k)
     {
     data->simulationInfo.analyticJacobians[index2].seedVars[i] = 1.0;
-    functionJacD_column(data);
+    data->callback->functionJacD_column(data);
     data->simulationInfo.analyticJacobians[index2].seedVars[i] = 0.0;
     if(this_it ==0)
       mayer(iData->data, &dF[k],2);

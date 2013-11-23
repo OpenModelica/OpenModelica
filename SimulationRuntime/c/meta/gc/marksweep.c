@@ -588,7 +588,9 @@ void *mmc_alloc_words(unsigned nwords)
 
 #elif defined(_MMC_USE_BOEHM_GC_) /* use the BOEHM Garbage collector */
 
+#if !defined(LARGE_CONFIG)
 #define LARGE_CONFIG 1
+#endif
 #include <gc.h>
 
 static mmc_GC_state_type x_mmc_GC_state;

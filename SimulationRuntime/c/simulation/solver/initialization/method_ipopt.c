@@ -52,10 +52,11 @@
 
   typedef struct IPOPT_DATA
   {
+    DATA *data;
     INIT_DATA *initData;
     int useScaling;
     int useSymbolic;
-  }IPOPT_DATA;
+  } IPOPT_DATA;
 
   /*! \fn ipopt_f
    *
@@ -145,7 +146,7 @@
   {
     int color, seedVar, i, l, k=0;
 
-    int index = INDEX_JAC_G;
+    int index = data->callback->INDEX_JAC_G;
     const int maxColor = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors;
     const int numSeedVars = data->simulationInfo.analyticJacobians[index].sizeCols;
 
@@ -155,7 +156,7 @@
         if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
           data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
 
-      functionJacG_column(data);
+      data->callback->functionJacG_column(data);
 
       for(seedVar=0; seedVar<numSeedVars; seedVar++)
       {
@@ -201,7 +202,7 @@
                           int *iRow, int *jCol, double *values, void *user_data)
   {
     IPOPT_DATA *ipopt_data = (IPOPT_DATA*)user_data;
-
+    DATA *data = ipopt_data->data;
     if(values == NULL)
     {
       int i, j;
@@ -220,9 +221,9 @@
           for(i=0; i<n; ++i)
           {
             printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
             {
-              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx])
               {
                 idx++;
                 printf("*");
@@ -240,9 +241,9 @@
         idx = 0;
         for(i=0; i<n; ++i)
         {
-          for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+          for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
           {
-            if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+            if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx])
             {
               jCol[idx] = i;
               iRow[idx] = j;
@@ -288,9 +289,9 @@
           for(i=0; i<n; ++i)
           {
             printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
             {
-              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx])
               {
                 printf("%10.5g ", values[idx]);
                 idx++;
@@ -383,7 +384,7 @@
    *
    *  \author lochel
    */
-  int ipopt_initialization(INIT_DATA *initData, int useScaling)
+  int ipopt_initialization(DATA *data,INIT_DATA *initData, int useScaling)
   {
     int n = initData->nVars;             /* number of variables */
     int m = (initData->nInitResiduals > initData->nVars) ? 0 : initData->nInitResiduals;    /* number of constraints */
@@ -407,14 +408,15 @@
 
     IPOPT_DATA ipopt_data;
 
+    ipopt_data.data = data;
     ipopt_data.initData = initData;
     ipopt_data.useScaling = useScaling;
-    ipopt_data.useSymbolic = (initialAnalyticJacobianG(initData->simData) == 0 ? 1 : 0);
+    ipopt_data.useSymbolic = (data->callback->initialAnalyticJacobianG(initData->simData) == 0 ? 1 : 0);
 
     if(ipopt_data.useSymbolic == 1)
     {
       /* sparse */
-      nele_jac = initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[n-1];
+      nele_jac = initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[n-1];
       INFO1(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
       INFO1(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
     }
@@ -507,7 +509,7 @@
     free(mult_x_U);
 
     /* debug output */
-    dumpInitialization(initData);
+    dumpInitialization(data,initData);
 
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
       THROW("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");

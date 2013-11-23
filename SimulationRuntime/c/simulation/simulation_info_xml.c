@@ -28,13 +28,17 @@
  *
  */
 
+#ifndef _GNU_SOURCE
+  #define _GNU_SOURCE /* for asprintf */
+#endif
+
 #include "simulation_info_xml.h"
 #include "omc_msvc.h" /* for asprintf */
 #include <expat.h>
 #include <errno.h>
 #include <string.h>
-#include <stdio.h>
 #include "uthash.h"
+#include <stdio.h>
 
 typedef struct hash_variable
 {
@@ -204,14 +208,14 @@ static void XMLCALL endElement(void *userData, const char *name)
   }
   if(0 == strcmp("linear", name))
   {
-    asprintf(&xml->equationInfo[curIndex].name, "Linear function (index %ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
+    asprintf((char**)&xml->equationInfo[curIndex].name, "Linear function (index %ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
     xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
     ((void**)userData)[2] = (void*) (curProfileIndex+1);
     return;
   }
   if(0 == strcmp("nonlinear", name))
   {
-    asprintf(&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
+    asprintf((char**)&xml->equationInfo[curIndex].name, "Nonlinear function (residualFunc%ld, size %d)", curIndex, xml->equationInfo[curIndex].numVar);
     xml->equationInfo[curIndex].profileBlockIndex = curProfileIndex;
     ((void**)userData)[2] = (void*) (curProfileIndex+1);
     return;

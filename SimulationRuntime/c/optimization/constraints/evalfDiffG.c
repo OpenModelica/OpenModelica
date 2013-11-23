@@ -37,6 +37,7 @@
  */
 
 #include "../ipoptODEstruct.h"
+#include "../localFunction.h"
 
 #ifdef WITH_IPOPT
 

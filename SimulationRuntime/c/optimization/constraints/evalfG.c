@@ -41,6 +41,7 @@
 
 #include "../ipoptODEstruct.h"
 #include "../OptimizationFlags.h"
+#include "../localFunction.h"
 
 #ifdef WITH_IPOPT
 
@@ -218,8 +219,8 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
   for(index=index1; index<index2+1; ++index)
   {
     nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-    cC =  data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-    lindex = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+    cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+    lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
 
     k = (index == index1) ? 0 : iData->nx;
 
@@ -234,9 +235,9 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
       }
 
       if(index == index1)
-        functionJacA_column(data);
+        data->callback->functionJacA_column(data);
       else
-        functionJacB_column(data);
+        data->callback->functionJacB_column(data);
 
       for(ii = 0; ii < nx; ii++)
       {

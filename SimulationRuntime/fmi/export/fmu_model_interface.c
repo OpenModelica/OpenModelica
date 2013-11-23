@@ -30,6 +30,13 @@
  */
 #include "simulation_data.h"
 #include "stateset.h"
+#include "model_help.h"
+#include "nonlinearSystem.h"
+#include "linearSystem.h"
+#include "mixedSystem.h"
+#include "delay.h"
+#include "simulation_info_xml.h"
+#include "simulation_input_xml.h"
 
 // array of value references of states
 #if NUMBER_OF_STATES>0
@@ -127,7 +134,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   if (comp->loggingOn) comp->functions.logger(NULL, instanceName, fmiOK, "log",
       "fmiInstantiateModel: GUID=%s", GUID);
   /* intialize modelData */
-  setupDataStruc(comp->fmuData);
+  fmu_model_interface_setupDataStruc(comp->fmuData);
   initializeDataStruc(comp->fmuData);
 
   /* setup model data with default start data */
@@ -466,7 +473,7 @@ fmiStatus fmiGetDerivatives(fmiComponent c, fmiReal derivatives[], size_t nx) {
     return fmiError;
   if (nullPointer(comp, "fmiGetDerivatives", "derivatives[]", derivatives))
     return fmiError;
-  functionODE(comp->fmuData);
+  comp->fmuData->callback->functionODE(comp->fmuData);
 #if (NUMBER_OF_STATES>0)
   for (i=0; i<nx; i++) {
     fmiValueReference vr = vrStatesDerivatives[i];
@@ -486,7 +493,7 @@ fmiStatus fmiGetEventIndicators(fmiComponent c, fmiReal eventIndicators[], size_
   if (invalidNumber(comp, "fmiGetEventIndicators", "ni", ni, NUMBER_OF_EVENT_INDICATORS))
     return fmiError;
 #if NUMBER_OF_EVENT_INDICATORS>0
-  function_ZeroCrossings(comp->fmuData,comp->fmuData->simulationInfo.zeroCrossings,&(comp->fmuData->localData[0]->timeValue));
+  comp->fmuData->callback->function_ZeroCrossings(comp->fmuData,comp->fmuData->simulationInfo.zeroCrossings,&(comp->fmuData->localData[0]->timeValue));
   for (i=0; i<ni; i++) {
     /* retVal = getEventIndicator(comp, i, eventIndicators[i]); // to be implemented by the includer of this file
      * getEventIndicator(comp, eventIndicators); // to be implemented by the includer of this file */
@@ -525,7 +532,7 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   /* read input vars */
   //input_function(comp->fmuData);
   /* initial sample and delay before initial the system */
-  callExternalObjectConstructors(comp->fmuData);
+  comp->fmuData->callback->callExternalObjectConstructors(comp->fmuData);
 
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(comp->fmuData);
@@ -620,7 +627,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       }
   }
 
-  functionDAE(comp->fmuData);
+  comp->fmuData->callback->functionDAE(comp->fmuData);
 
 
   /* sample event */
@@ -644,7 +651,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   }
 
 
-  if(checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->stateValuesChanged){
+  if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData) || eventInfo->stateValuesChanged){
     intermediateResults = fmiTrue;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiEventUpdate: Need to iterate(discrete changes)!");
@@ -695,8 +702,8 @@ fmiStatus fmiCompletedIntegratorStep(fmiComponent c, fmiBoolean* callEventUpdate
     return fmiError;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiCompletedIntegratorStep");
-  functionAlgebraics(comp->fmuData);
-  function_storeDelayed(comp->fmuData);
+  comp->fmuData->callback->functionAlgebraics(comp->fmuData);
+  comp->fmuData->callback->function_storeDelayed(comp->fmuData);
   *callEventUpdate  = fmiFalse;
   /******** check state selection ********/
   if (stateSelection(comp->fmuData,1, 0))
@@ -717,7 +724,7 @@ fmiStatus fmiTerminate(fmiComponent c){
       "fmiTerminate");
 
   /* deinitDelay(comp->fmuData); */
-  callExternalObjectDestructors(comp->fmuData);
+  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData);
   /* free nonlinear system data */
   freeNonlinearSystem(comp->fmuData);
   /* free mixed system data */

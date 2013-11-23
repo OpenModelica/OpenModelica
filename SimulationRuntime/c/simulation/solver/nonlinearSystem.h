@@ -46,10 +46,6 @@ extern "C" {
 #undef VOID
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 enum NONLINEAR_SOLVER
 {
   NLS_NONE = 0,
@@ -75,5 +71,9 @@ double extraPolate(DATA *data, double old1, double old2);
 
 /* nonlinear JumpBuffer */
 extern jmp_buf nonlinearJmpbuf;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

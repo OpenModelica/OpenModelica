@@ -67,7 +67,7 @@ static int findTime(double time, RINGBUFFER *delayStruct)
   do
   {
     int i = (start + end) / 2;
-    t = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->time;
+    t = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
     INFO4(LOG_EVENTS, "time(%d, %d)[%d] = %e", start, end, i, t);
     if(t > time)
       end = i;
@@ -88,7 +88,7 @@ void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double
   ASSERT1(0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
   ASSERT(data->simulationInfo.tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
-  tpl.time = time;
+  tpl.t = time;
   tpl.value = exprValue;
   appendRingData(data->simulationInfo.delayStructure[exprNumber], &tpl);
   INFO4(LOG_EVENTS, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo.delayStructure[exprNumber]));
@@ -159,11 +159,11 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     ASSERT1(0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
 
     /* find the row for the lower limit */
-    if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time)
+    if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t)
     {
-      INFO2(LOG_EVENTS, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time);
+      INFO2(LOG_EVENTS, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t);
       /* delay between the last accepted time step and the current time */
-      time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time;
+      time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->value;
       time1 = time;
       value1 = exprValue;
@@ -174,7 +174,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     {
       i = findTime(timeStamp, delayStruct);
       ASSERT2(i < length, "%d = i < length = %d", i, length);
-      time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->time;
+      time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
 
       /* was it the last value? */
@@ -182,7 +182,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
       {
         return value0;
       }
-      time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->time;
+      time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->t;
       value1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->value;
     }
     /* was it an exact match?*/

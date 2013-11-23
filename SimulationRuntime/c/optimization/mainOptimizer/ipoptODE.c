@@ -71,10 +71,10 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->mayer = (short) (mayer(data, &obj, -1) >= 0);
   iData->lagrange = (short) (lagrange(data, &obj, -1) >= 0);
 
-  iData->matrixA = initialAnalyticJacobianA((void*) iData->data);
-  iData->matrixB = initialAnalyticJacobianB((void*) iData->data);
-  iData->matrixC = initialAnalyticJacobianC((void*) iData->data);
-  iData->matrixD = initialAnalyticJacobianD((void*) iData->data);
+  iData->matrixA = data->callback->initialAnalyticJacobianA((void*) iData->data);
+  iData->matrixB = data->callback->initialAnalyticJacobianB((void*) iData->data);
+  iData->matrixC = data->callback->initialAnalyticJacobianC((void*) iData->data);
+  iData->matrixD = data->callback->initialAnalyticJacobianD((void*) iData->data);
 
   loadDAEmodel(data, iData);
   iData->index_debug_iter=0;
@@ -171,7 +171,7 @@ int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData)
 
   sData->timeValue = t;
   /* updateContinuousSystem(iData->data); */
-  functionODE(data);
+  data->callback->functionODE(data);
 
   return 0;
 }
@@ -240,7 +240,7 @@ static int res2file(IPOPT_DATA_ *iData,SOLVER_INFO* solverInfo)
     sData->timeValue = solverInfo->currentTime;
 
     data->simulationInfo.terminal = 1;
-    functionDAE(data);
+    data->callback->functionDAE(data);
     sim_result.emit(&sim_result,data);
     data->simulationInfo.terminal = 0;
   }

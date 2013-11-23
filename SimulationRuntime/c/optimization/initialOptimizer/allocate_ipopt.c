@@ -41,6 +41,8 @@
 
 #ifdef WITH_IPOPT
 
+#include "../localFunction.h"
+
 static int local_jac_struct(IPOPT_DATA_ *iData);
 
 /*!
@@ -488,8 +490,8 @@ int local_jac_struct(IPOPT_DATA_ *iData)
   for(index=index1; index<index2+1; ++index)
   {
     nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-    cC =  data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-    lindex = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+    cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+    lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
 
     k = (index == index1) ? 0: iData->nx;
 

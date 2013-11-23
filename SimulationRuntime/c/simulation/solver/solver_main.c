@@ -44,6 +44,7 @@
 #include "varinfo.h"
 #include "stateset.h"
 #include "radau.h"
+#include "model_help.h"
 
 #include "interfaceOptimization.h"
 #include "simulation_inline_solver.h"
@@ -94,7 +95,7 @@ int solver_main_step(DATA* data, SOLVER_INFO* solverInfo)
     return dasrt_step(data, solverInfo);
 
   case 4:
-    functionODE_inline(data, solverInfo->currentStepSize);
+    data->callback->functionODE_inline(data, solverInfo->currentStepSize);
     solverInfo->currentTime = data->localData[0]->timeValue;
     return 0;
 #ifdef WITH_IPOPT
@@ -336,12 +337,12 @@ int initializeModel(DATA* data, const char* init_initMethod,
   copyStartValuestoInitValues(data);
 
   /* read input vars */
-  input_function(data);
+  data->callback->input_function(data);
 
   data->localData[0]->timeValue = simInfo->startTime;
 
   /* instance all external Objects */
-  callExternalObjectConstructors(data);
+  data->callback->callExternalObjectConstructors(data);
 
   /* allocate memory for state selection */
   initializeStateSetJacobians(data);
@@ -361,8 +362,8 @@ int initializeModel(DATA* data, const char* init_initMethod,
 
     storePreValues(data);
     storeOldValues(data);
-    function_storeDelayed(data);
-    function_updateRelations(data, 1);
+    data->callback->function_storeDelayed(data);
+    data->callback->function_updateRelations(data, 1);
     storeRelations(data);
     updateHysteresis(data);
     saveZeroCrossings(data);
@@ -662,7 +663,7 @@ static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
       sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
     }
     sData->timeValue = sDataOld->timeValue + rungekutta_c[j] * solverInfo->currentStepSize;
-    functionODE(data);
+    data->callback->functionODE(data);
     for(i = 0; i < data->modelData.nStates; i++)
     {
       k[j][i] = stateDer[i];

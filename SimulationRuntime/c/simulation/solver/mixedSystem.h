@@ -38,6 +38,10 @@
 
 #include "simulation_data.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum MIXED_SOLVER
 {
   MIXED_NONE = 0,
@@ -51,5 +55,9 @@ int allocatemixedSystem(DATA *data);
 int freemixedSystem(DATA *data);
 int solve_mixed_system(DATA *data, int sysNumber);
 int check_mixed_solutions(DATA *data, int printFailingSystems);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

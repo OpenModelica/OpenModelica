@@ -37,6 +37,7 @@
 #include "openmodelica_func.h"    /* for modelica fucntion */
 #include "simulation_runtime.h"
 #include "solver_main.h"
+#include "model_help.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -67,7 +68,7 @@ void initSample(DATA* data, double startTime, double stopTime)
 {
   long i;
 
-  function_initSample(data);                              /* set-up sample */
+  data->callback->function_initSample(data);                              /* set-up sample */
   data->simulationInfo.nextSampleEvent = stopTime + 1.0;  /* should never be reached */
   for(i=0; i<data->modelData.nSamples; ++i)
   {
@@ -218,7 +219,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     /* time = data->localData[0]->timeValue; */
 
     for(it = listFirstNode(eventLst); it; it = listNextNode(it))
-      INFO2(LOG_EVENTS, "[%ld] %s", *((long*) listNodeData(it)), zeroCrossingDescription[*((long*) listNodeData(it))]);
+      INFO2(LOG_EVENTS, "[%ld] %s", *((long*) listNodeData(it)), data->callback->zeroCrossingDescription(*((long*) listNodeData(it))));
 
     listClear(eventLst);
     solverInfo->stateEvents++;
@@ -415,10 +416,10 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     }
 
     /*calculates Values dependents on new states*/
-    functionODE(data);
-    functionAlgebraics(data);
+    data->callback->functionODE(data);
+    data->callback->functionAlgebraics(data);
 
-    function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
+    data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
 
     if(checkZeroCrossings(data, tmpEventList, eventList))  /* If Zerocrossing in left Section */
     {
@@ -508,7 +509,7 @@ void saveZeroCrossingsAfterEvent(DATA *data)
 
   INFO(LOG_ZEROCROSSINGS, "save all zerocrossings after an event"); /* ??? */
 
-  function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
+  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
   for(i=0; i<data->modelData.nZeroCrossings; i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 }

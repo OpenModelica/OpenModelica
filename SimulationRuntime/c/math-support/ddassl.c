@@ -3765,7 +3765,7 @@ L100:
       INDENT(LOG_JAC);
       for(k=0;k<*neq;k++)
       {
-        INFO2(LOG_JAC, "[%ld] %g", k+1, y[k+1]);
+        INFO2(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
       }
       RELEASE(LOG_JAC);
 
@@ -3845,7 +3845,7 @@ L200:
       INDENT(LOG_JAC);
       for(k=0;k<*neq;k++)
       {
-        INFO2(LOG_JAC, "[%ld] %g", k+1, y[k+1]);
+        INFO2(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
       }
       RELEASE(LOG_JAC);
 

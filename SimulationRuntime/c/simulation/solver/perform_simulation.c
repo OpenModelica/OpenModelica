@@ -38,6 +38,9 @@
 #include "simulation_runtime.h"
 #include "simulation_result.h"
 #include "openmodelica_func.h"
+#include "linearSystem.h"
+#include "nonlinearSystem.h"
+#include "mixedSystem.h"
 
 #include "omc_error.h"
 #include "options.h"
@@ -62,11 +65,11 @@
  */
 void updateContinuousSystem(DATA *data)
 {
-  input_function(data);
-  functionODE(data);
-  functionAlgebraics(data);
-  output_function(data);
-  function_storeDelayed(data);
+  data->callback->input_function(data);
+  data->callback->functionODE(data);
+  data->callback->functionAlgebraics(data);
+  data->callback->output_function(data);
+  data->callback->function_storeDelayed(data);
   storePreValues(data);
 }
 
@@ -234,7 +237,7 @@ int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       }
 
       /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
-      checkForAsserts(data);
+      data->callback->checkForAsserts(data);
 
       if(retry)
       {

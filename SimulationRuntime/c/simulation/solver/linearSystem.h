@@ -46,10 +46,6 @@ extern "C" {
 #undef VOID
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 enum LINEAR_SOLVER
 {
   LS_NONE = 0,
@@ -67,4 +63,9 @@ int check_linear_solutions(DATA *data, int printFailingSystems);
 
 void setAElementLAPACK(int row, int col, double value, int nth, void *data );
 void setAElementLis(int row, int col, double value, int nth, void *data );
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

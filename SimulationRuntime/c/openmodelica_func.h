@@ -54,19 +54,11 @@ extern "C" {
 #include "division.h"
 #include "utility.h"
 
-#include "model_help.h"
-#include "delay.h"
-#include "linearSystem.h"
-#include "mixedSystem.h"
-#include "nonlinearSystem.h"
-
-/* DATA* initializeDataStruc(); */ /*create in model code */
-extern void setupDataStruc(DATA *data);
-
+struct OpenModelicaGeneratedFunctionCallbacks {
 /* Function for calling external object constructors */
-extern void callExternalObjectConstructors(DATA *data);
+void (*callExternalObjectConstructors)(DATA *data);
 /* Function for calling external object deconstructors */
-extern void callExternalObjectDestructors(DATA *_data);
+void (*callExternalObjectDestructors)(DATA *_data);
 
 /*! \fn initialNonLinearSystem
  *
@@ -74,7 +66,7 @@ extern void callExternalObjectDestructors(DATA *_data);
  *
  *  \param [ref] [data]
  */
-extern void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA *data);
+void (*initialNonLinearSystem)(NONLINEAR_SYSTEM_DATA *data);
 
 /*! \fn initialLinearSystem
  *
@@ -82,7 +74,7 @@ extern void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA *data);
  *
  *  \param [ref] [data]
  */
-extern void initialLinearSystem(LINEAR_SYSTEM_DATA *data);
+void (*initialLinearSystem)(LINEAR_SYSTEM_DATA *data);
 
 /*! \fn initialNonLinearSystem
  *
@@ -90,7 +82,7 @@ extern void initialLinearSystem(LINEAR_SYSTEM_DATA *data);
  *
  *  \param [ref] [data]
  */
-extern void initialMixedSystem(MIXED_SYSTEM_DATA *data);
+void (*initialMixedSystem)(MIXED_SYSTEM_DATA *data);
 
 /*! \fn initialNonLinearSystem
  *
@@ -98,32 +90,32 @@ extern void initialMixedSystem(MIXED_SYSTEM_DATA *data);
  *
  *  \param [ref] [data]
  */
-extern void initializeStateSets(STATE_SET_DATA* statesetData, DATA *data);
+void (*initializeStateSets)(STATE_SET_DATA* statesetData, DATA *data);
 
 /* functionODE contains those equations that are needed
  * to calculate the dynamic part of the system */
-extern int functionODE(DATA *data);
+int (*functionODE)(DATA *data);
 
 /* functionAlgebraics contains all continuous equations that
  * are not part of the dynamic part of the system */
-extern int functionAlgebraics(DATA *data);
+int (*functionAlgebraics)(DATA *data);
 
 /* function for calculating all equation sorting order
    uses in EventHandle  */
-extern int functionDAE(DATA *data);
+int (*functionDAE)(DATA *data);
 
 /* functions for input and output */
-extern int input_function(DATA*);
-extern int output_function(DATA*);
+int (*input_function)(DATA*);
+int (*output_function)(DATA*);
 
 /* function for storing value histories of delayed expressions
  * called from functionDAE_output()
  */
-extern int function_storeDelayed(DATA *data);
+int (*function_storeDelayed)(DATA *data);
 
 /* function for calculating states on explicit ODE form */
 /*used in functionDAE_res function*/
-extern int functionODE_inline(DATA *data, double stepsize);
+int (*functionODE_inline)(DATA *data, double stepsize);
 
 /*! \fn updateBoundStartValues
  *
@@ -133,13 +125,13 @@ extern int functionODE_inline(DATA *data, double stepsize);
  *
  *  \param [ref] [data]
  */
-extern int updateBoundStartValues(DATA *data);
+int (*updateBoundStartValues)(DATA *data);
 
 /*! \var initialResidualDescription
  *
  * This variable contains a description string for each initial residual.
  */
-extern const char *initialResidualDescription[];
+const char *(*initialResidualDescription)(int i);
 
 /*! \fn initial_residual
  *
@@ -148,19 +140,19 @@ extern const char *initialResidualDescription[];
  *  \param [in]  [data]
  *  \param [ref] [initialResiduals]
  */
-extern int initial_residual(DATA *data, double* initialResiduals);
+int (*initial_residual)(DATA *data, double* initialResiduals);
 
 /*! \var useSymbolicInitialization
  *
  * is 1 if a system to solve the initial problem symbolically is generated, otherwise 0
  */
-extern const int useSymbolicInitialization;
+const int useSymbolicInitialization;
 
 /*! \var useHomotopy
  *
  * is 1 if homotopy(...) is used during initialization, otherwise 0
  */
-extern const int useHomotopy;
+const int useHomotopy;
 
 /*! \fn functionInitialEquations
  *
@@ -168,7 +160,7 @@ extern const int useHomotopy;
  *
  *  \param [ref] [data]
  */
-extern int functionInitialEquations(DATA *data);
+int (*functionInitialEquations)(DATA *data);
 
 /*! \fn updateBoundParameters
  *
@@ -178,10 +170,10 @@ extern int functionInitialEquations(DATA *data);
  *
  *  \param [ref] [data]
  */
-extern int updateBoundParameters(DATA *data);
+int (*updateBoundParameters)(DATA *data);
 
 /* function for checking for asserts and terminate */
-extern int checkForAsserts(DATA *data);
+int (*checkForAsserts)(DATA *data);
 
 /*! \fn function_ZeroCrossings
  *
@@ -191,7 +183,7 @@ extern int checkForAsserts(DATA *data);
  *  \param [ref] [gout]
  *  \param [ref] [t]
  */
-extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
+int (*function_ZeroCrossings)(DATA *data, double* gout, double* t);
 
 /*! \fn function_updateRelations
  *
@@ -201,7 +193,7 @@ extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
  *  \param [in]  [evalZeroCross] flag for evaluating Relation with hysteresis
  *                              function or without
  */
-extern int function_updateRelations(DATA *data, int evalZeroCross);
+int (*function_updateRelations)(DATA *data, int evalZeroCross);
 
 /*! \fn checkForDiscreteChanges
  *
@@ -209,19 +201,19 @@ extern int function_updateRelations(DATA *data, int evalZeroCross);
  *
  *  \param [ref] [data]
  */
-extern int checkForDiscreteChanges(DATA *data);
+int (*checkForDiscreteChanges)(DATA *data);
 
 /*! \var zeroCrossingDescription
  *
  * This variable contains a description string for zero crossing condition.
  */
-extern const char *zeroCrossingDescription[];
+const char *(*zeroCrossingDescription)(int i);
 
 /*! \var relationDescription
  *
  * This variable contains a description string for continuous relations.
  */
-extern const char *relationDescription[];
+const char *(*relationDescription)(int i);
 
 /*! \fn function_initSample
  *
@@ -229,57 +221,40 @@ extern const char *relationDescription[];
  *
  *  \param [ref] [data]
  */
-extern void function_initSample(DATA *data);
+void (*function_initSample)(DATA *data);
 
 /* function for calculation Jacobian */
 /*#ifdef D_OMC_JACOBIAN*/
-extern const int INDEX_JAC_G;
-extern const int INDEX_JAC_A;
-extern const int INDEX_JAC_B;
-extern const int INDEX_JAC_C;
-extern const int INDEX_JAC_D;
+const int INDEX_JAC_G;
+const int INDEX_JAC_A;
+const int INDEX_JAC_B;
+const int INDEX_JAC_C;
+const int INDEX_JAC_D;
 
 /*
  * These functions initialize specific jacobians.
  * Return-value 0: jac is present
  * Return-value 1: jac is not present
  */
-extern int initialAnalyticJacobianG(void* data);
-extern int initialAnalyticJacobianA(void* data);
-extern int initialAnalyticJacobianB(void* data);
-extern int initialAnalyticJacobianC(void* data);
-extern int initialAnalyticJacobianD(void* data);
+int (*initialAnalyticJacobianG)(void* data);
+int (*initialAnalyticJacobianA)(void* data);
+int (*initialAnalyticJacobianB)(void* data);
+int (*initialAnalyticJacobianC)(void* data);
+int (*initialAnalyticJacobianD)(void* data);
 
 /*
  * These functions calculate specific jacobian column.
  */
-extern int functionJacG_column(void* data);
-extern int functionJacA_column(void* data);
-extern int functionJacB_column(void* data);
-extern int functionJacC_column(void* data);
-extern int functionJacD_column(void* data);
-/*
- * These functions calculate specific jacobians using sparsity pattern.
- * Output array jac contains each element of the matrix and must be filled with zeros before calling.
- */
-extern int functionJacG_dense(DATA* data, double* jac);
-extern int functionJacA_dense(DATA* data, double* jac);
-extern int functionJacB_dense(DATA* data, double* jac);
-extern int functionJacC_dense(DATA* data, double* jac);
-extern int functionJacD_dense(DATA* data, double* jac);
+int (*functionJacG_column)(void* data);
+int (*functionJacA_column)(void* data);
+int (*functionJacB_column)(void* data);
+int (*functionJacC_column)(void* data);
+int (*functionJacD_column)(void* data);
 
-/*
- * These functions calculate specific jacobians using sparsity pattern.
- * Output array jac contains only the nonzeros.
- */
-extern int functionJacG_sparse(DATA* data, double* jac);
-extern int functionJacA_sparse(DATA* data, double* jac);
-extern int functionJacB_sparse(DATA* data, double* jac);
-extern int functionJacC_sparse(DATA* data, double* jac);
-extern int functionJacD_sparse(DATA* data, double* jac);
 /*#endif*/
 
-extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
+const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
+};
 
 #ifdef __cplusplus
 }

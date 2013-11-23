@@ -41,7 +41,10 @@
 #include "model_help.h"
 #include "simulation_info_xml.h"
 #include "omc_msvc.h" /* for freaking round! */
-
+#include "nonlinearSystem.h"
+#include "linearSystem.h"
+#include "mixedSystem.h"
+#include "delay.h"
 
 static const int IterationMax = 200;
 const size_t SIZERINGBUFFER = 3;
@@ -60,7 +63,7 @@ void updateDiscreteSystem(DATA *data)
   modelica_boolean relationChanged = 0;
   data->simulationInfo.needToIterate = 0;
 
-  function_updateRelations(data, 1);
+  data->callback->function_updateRelations(data, 1);
   storeRelations(data);
   updateHysteresis(data);
 
@@ -68,13 +71,13 @@ void updateDiscreteSystem(DATA *data)
    * printRelations(data, LOG_EVENTS_V);
    */
 
-  functionDAE(data);
+  data->callback->functionDAE(data);
   DEBUG(LOG_EVENTS_V, "updated discrete System");
 
   printRelations(data, LOG_EVENTS_V);
 
   relationChanged = checkRelations(data);
-  discreteChanged = checkForDiscreteChanges(data);
+  discreteChanged = data->callback->checkForDiscreteChanges(data);
   while(!initial() && (discreteChanged || data->simulationInfo.needToIterate || relationChanged))
   {
     if(data->simulationInfo.needToIterate)
@@ -89,14 +92,14 @@ void updateDiscreteSystem(DATA *data)
     
     printRelations(data, LOG_EVENTS_V);
 
-    functionDAE(data);
+    data->callback->functionDAE(data);
 
     IterationNum++;
     if(IterationNum > IterationMax)
       THROW("ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
 
     relationChanged = checkRelations(data);
-    discreteChanged = checkForDiscreteChanges(data);
+    discreteChanged = data->callback->checkForDiscreteChanges(data);
   }
   updateHysteresis(data);
 }
@@ -142,7 +145,7 @@ void saveZeroCrossings(DATA* data)
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 
-  function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
+  data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
 }
 
 /*! \fn copyStartValuestoInitValues
@@ -356,7 +359,7 @@ void printRelations(DATA *data, int stream)
   INDENT(stream);
 
   for(i=0; i<data->modelData.nRelations; i++)
-    INFO5(stream, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+    INFO5(stream, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
 
   RELEASE(stream);
 }
@@ -643,7 +646,7 @@ void printHysteresisRelations(DATA *data)
   INDENT(LOG_STDOUT);
   for(i=0; i<data->modelData.nRelations; i++)
   {
-    INFO5(LOG_STDOUT, "[%ld] %s = %c | relation(%s) = %c", i, relationDescription[i], data->simulationInfo.hysteresisEnabled[i]>0 ? 'T' : 'F', relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F');
+    INFO5(LOG_STDOUT, "[%ld] %s = %c | relation(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.hysteresisEnabled[i]>0 ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F');
   }
   RELEASE(LOG_STDOUT);
 }
@@ -804,19 +807,19 @@ void initializeDataStruc(DATA *data)
 
   /* buffer for mixed systems */
   data->simulationInfo.mixedSystemData = (MIXED_SYSTEM_DATA*) malloc(data->modelData.nMixedSystems*sizeof(MIXED_SYSTEM_DATA));
-  initialMixedSystem(data->simulationInfo.mixedSystemData);
+  data->callback->initialMixedSystem(data->simulationInfo.mixedSystemData);
 
   /* buffer for linear systems */
   data->simulationInfo.linearSystemData = (LINEAR_SYSTEM_DATA*) malloc(data->modelData.nLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
-  initialLinearSystem(data->simulationInfo.linearSystemData);
+  data->callback->initialLinearSystem(data->simulationInfo.linearSystemData);
 
   /* buffer for non-linear systems */
   data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
-  initialNonLinearSystem(data->simulationInfo.nonlinearSystemData);
+  data->callback->initialNonLinearSystem(data->simulationInfo.nonlinearSystemData);
 
   /* buffer for state sets */
   data->simulationInfo.stateSetData = (STATE_SET_DATA*) malloc(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
-  initializeStateSets(data->simulationInfo.stateSetData, data);
+  data->callback->initializeStateSets(data->simulationInfo.stateSetData, data);
 
   /* buffer for analytical jacobains */
   data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));

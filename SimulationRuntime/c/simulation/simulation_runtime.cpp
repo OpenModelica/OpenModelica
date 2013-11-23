@@ -935,7 +935,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
     freelinearSystem(data);       /* free linear system data */
     freeNonlinearSystem(data);    /* free nonlinear system data */
 
-    callExternalObjectDestructors(data);
+    data->callback->callExternalObjectDestructors(data);
     deInitializeDataStruc(data);
     fflush(NULL);
   }

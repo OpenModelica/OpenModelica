@@ -125,7 +125,7 @@ template simulationHeaderFile(SimCode simCode, String guid)
   end match
 end simulationHeaderFile;
 
-template generateSimulationFiles(SimCode simCode, String guid, String fileNamePrefix)
+template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix)
 "Generates code in different C files for the simulation target.
  To make the compilation faster we split the simulation files into several"
 ::=
@@ -177,9 +177,9 @@ template simulationFile_exo(SimCode simCode, String guid)
     /* External objects file */
     <%simulationFileHeader(simCode)%>    
     
-    <%functionCallExternalObjectConstructors(extObjInfo)%>
+    <%functionCallExternalObjectConstructors(extObjInfo, modelNamePrefix(simCode))%>
 
-    <%functionCallExternalObjectDestructors(extObjInfo)%>
+    <%functionCallExternalObjectDestructors(extObjInfo, modelNamePrefix(simCode))%>
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -195,12 +195,13 @@ template simulationFile_nls(SimCode simCode, String guid)
     /* Non Linear Systems */
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #include "delay.h"
     <%functionNonLinearResiduals(initialEquations)%>
     <%functionNonLinearResiduals(inlineEquations)%>
     <%functionNonLinearResiduals(parameterEquations)%>
     <%functionNonLinearResiduals(allEquations)%>
 
-    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations)%>    
+    <%functionInitialNonLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, modelNamePrefix(simCode))%>
     
     <%\n%>
     >>
@@ -220,7 +221,7 @@ template simulationFile_lsy(SimCode simCode, String guid)
 
     <%functionSetupLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
     
-    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
+    <%functionInitialLinearSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes), modelNamePrefix(simCode))%>
     
     <%\n%>
     >>
@@ -238,7 +239,7 @@ template simulationFile_set(SimCode simCode, String guid)
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
     #include "<%simCode.fileNamePrefix%>_12jac.h"
-    <%functionInitialStateSets(stateSets)%>
+    <%functionInitialStateSets(stateSets, modelNamePrefix(simCode))%>
     
     <%\n%>
     >>
@@ -255,13 +256,13 @@ template simulationFile_evt(SimCode simCode, String guid)
     /* Events: Sample, Zero Crossings, Relations, Discrete Changes */
     <%simulationFileHeader(simCode)%>
 
-    <%functionInitSample(sampleLookup)%>
+    <%functionInitSample(sampleLookup, modelNamePrefix(simCode))%>
     
-    <%functionZeroCrossing(zeroCrossings)%>
+    <%functionZeroCrossing(zeroCrossings, modelNamePrefix(simCode))%>
 
-    <%functionRelations(relations)%>
+    <%functionRelations(relations, modelNamePrefix(simCode))%>
 
-    <%functionCheckForDiscreteChanges(discreteModelVars)%>
+    <%functionCheckForDiscreteChanges(discreteModelVars, modelNamePrefix(simCode))%>
     
     <%\n%>
     >>
@@ -279,11 +280,14 @@ template simulationFile_inz(SimCode simCode, String guid)
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #include "linearSystem.h"
+    #include "nonlinearSystem.h"
+    #include "mixedSystem.h"
     
-    <%functionInitialResidual(residualEquations)%>
-    <%functionInitialEquations(useSymbolicInitialization, useHomotopy, initialEquations)%>    
+    <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
+    <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>    
 
-    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes))%>
+    <%functionInitialMixedSystems(initialEquations, inlineEquations, parameterEquations, allEquations, collectAllJacobianEquations(jacobianMatrixes), modelNamePrefix(simCode))%>
     
     <%\n%>
     >>
@@ -299,8 +303,9 @@ template simulationFile_dly(SimCode simCode, String guid)
     <<
     /* Delay */
     <%simulationFileHeader(simCode)%>
+    #include <delay.h>
     
-    <%functionStoreDelayed(delayedExps)%>
+    <%functionStoreDelayed(delayedExps, modelNamePrefix(simCode))%>
         
     <%\n%>
     >>
@@ -334,9 +339,9 @@ template simulationFile_bnd(SimCode simCode, String guid)
     /* Update Bound StartValues/Parameters */
     <%simulationFileHeader(simCode)%>
     
-    <%functionUpdateBoundStartValues(startValueEquations)%>
+    <%functionUpdateBoundStartValues(startValueEquations, modelNamePrefix(simCode))%>
 
-    <%functionUpdateBoundParameters(parameterEquations)%>
+    <%functionUpdateBoundParameters(parameterEquations, modelNamePrefix(simCode))%>
         
     <%\n%>
     >>
@@ -357,7 +362,7 @@ template simulationFile_alg(SimCode simCode, String guid)
     extern "C" {
     #endif
     
-    <%functionAlgebraic(algebraicEquations)%>    
+    <%functionAlgebraic(algebraicEquations, modelNamePrefix(simCode))%>    
     
     #ifdef __cplusplus
     }
@@ -377,7 +382,7 @@ template simulationFile_asr(SimCode simCode, String guid)
     /* Asserts */
     <%simulationFileHeader(simCode)%>
 
-    <%functionAssertsforCheck(algorithmAndEquationAsserts)%>    
+    <%functionAssertsforCheck(algorithmAndEquationAsserts, modelNamePrefix(simCode))%>    
         
     <%\n%>
     >>
@@ -411,8 +416,7 @@ template simulationFile_jac(SimCode simCode, String guid)
     /* Jacobians */
     <%simulationFileHeader(simCode)%>
     #include "<%fileNamePrefix%>_12jac.h"
-    <%variableDefinitionsJacobians_def(jacobianMatrixes)%>
-    <%functionAnalyticJacobians(jacobianMatrixes)%>
+    <%functionAnalyticJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
         
     <%\n%>
     >>
@@ -427,7 +431,7 @@ template simulationFile_jac_header(SimCode simCode, String guid)
     case simCode as SIMCODE(__) then
     <<
     /* Jacobians */
-    <%variableDefinitionsJacobians(jacobianMatrixes)%>
+    <%variableDefinitionsJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
     <%\n%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -462,7 +466,7 @@ template simulationFile_lnz(SimCode simCode, String guid)
     /* Linearization */
     <%simulationFileHeader(simCode)%>
 
-    <%functionlinearmodel(modelInfo)%>    
+    <%functionlinearmodel(modelInfo, modelNamePrefix(simCode))%>    
         
     <%\n%>
     >>
@@ -475,11 +479,13 @@ template simulationFile(SimCode simCode, String guid)
 ::=
   match simCode
     case simCode as SIMCODE(__) then
+    let modelNamePrefixStr = modelNamePrefix(simCode)
     <<
     /* Main Simulation File */    
     <%simulationFileHeader(simCode)%>  
 
     #include <perform_simulation.c>
+    #include <delay.h>
 
     /* dummy VARINFO and FILEINFO */
     const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
@@ -493,38 +499,123 @@ template simulationFile(SimCode simCode, String guid)
     int measure_time_flag = 0;
     #endif
 
-    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
+    <%functionInput(modelInfo, modelNamePrefixStr)%>
 
-    <%functionInput(modelInfo)%>
+    <%functionOutput(modelInfo, modelNamePrefixStr)%>
 
-    <%functionOutput(modelInfo)%>
+    <%functionDAE(allEquations, whenClauses, modelNamePrefixStr)%>
 
-    <%functionDAE(allEquations, whenClauses)%>
-
-    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""),hpcOmSchedule)%>
+    <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""),hpcOmSchedule, modelNamePrefixStr)%>
     
+    /* forward the main in the simulation runtime */
+    extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
+
+    #include "<%simCode.fileNamePrefix%>_12jac.h"
+    extern void <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>(DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>(DATA *_data);
+    extern void <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>(NONLINEAR_SYSTEM_DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"initialLinearSystem")%>(LINEAR_SYSTEM_DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"initialMixedSystem")%>(MIXED_SYSTEM_DATA *data);
+    extern void <%symbolName(modelNamePrefixStr,"initializeStateSets")%>(STATE_SET_DATA* statesetData, DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"updateBoundStartValues")%>(DATA *data);
+    extern const char* <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>(int);
+    extern int <%symbolName(modelNamePrefixStr,"initial_residual")%>(DATA *data, double* initialResiduals);
+    extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"checkForAsserts")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>(DATA *data, double* gout, double* t);
+    extern int <%symbolName(modelNamePrefixStr,"function_updateRelations")%>(DATA *data, int evalZeroCross);
+    extern int <%symbolName(modelNamePrefixStr,"checkForDiscreteChanges")%>(DATA *data);
+    extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i);
+    extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
+    extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data);
+    extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
+
+    struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
+       <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>,
+       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
+       <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,
+       <%symbolName(modelNamePrefixStr,"initialLinearSystem")%>,
+       <%symbolName(modelNamePrefixStr,"initialMixedSystem")%>,
+       <%symbolName(modelNamePrefixStr,"initializeStateSets")%>,
+       <%symbolName(modelNamePrefixStr,"functionODE")%>,
+       <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
+       <%symbolName(modelNamePrefixStr,"functionDAE")%>,
+       <%symbolName(modelNamePrefixStr,"input_function")%>,
+       <%symbolName(modelNamePrefixStr,"output_function")%>,
+       <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
+       <%symbolName(modelNamePrefixStr,"functionODE_inline")%>,
+       <%symbolName(modelNamePrefixStr,"updateBoundStartValues")%>,
+       <%symbolName(modelNamePrefixStr,"initialResidualDescription")%>,
+       <%symbolName(modelNamePrefixStr,"initial_residual")%>,
+       <%if useSymbolicInitialization then '1' else '0'%> /* useSymbolicInitialization */,
+       <%if useHomotopy then '1' else '0'%> /* useHomotopy */,
+       <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
+       <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
+       <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
+       <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>,
+       <%symbolName(modelNamePrefixStr,"function_updateRelations")%>,
+       <%symbolName(modelNamePrefixStr,"checkForDiscreteChanges")%>,
+       <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>,
+       <%symbolName(modelNamePrefixStr,"relationDescription")%>,
+       <%symbolName(modelNamePrefixStr,"function_initSample")%>,
+       <%symbolName(modelNamePrefixStr,"INDEX_JAC_G")%>,
+       <%symbolName(modelNamePrefixStr,"INDEX_JAC_A")%>,
+       <%symbolName(modelNamePrefixStr,"INDEX_JAC_B")%>,
+       <%symbolName(modelNamePrefixStr,"INDEX_JAC_C")%>,
+       <%symbolName(modelNamePrefixStr,"INDEX_JAC_D")%>,
+       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>,
+       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>,
+       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>,
+       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>,
+       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>,
+       <%symbolName(modelNamePrefixStr,"functionJacG_column")%>,
+       <%symbolName(modelNamePrefixStr,"functionJacA_column")%>,
+       <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
+       <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
+       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
+       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>
+    };
+
+    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps, modelNamePrefixStr)%>
+
     #ifdef __cplusplus
     }
     #endif
-
-    /* forward the main in the simulation runtime */
-    extern int _main_SimulationRuntime(int argc, char**argv, DATA *data);
 
     /* call the simulation runtime main from our main! */
     int main(int argc, char**argv)
     {
       int res;
       DATA data;
-      setupDataStruc(&data);
+      <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&data);
       <%if Flags.isSet(HPCOM) then 'omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>'%>omc_alloc_interface.init();
       res = _main_SimulationRuntime(argc, argv, &data);
       return res;
     }
     <%\n%>
     >>
-    /* adrpo: leave a newline at the end of file to get rid of the warning */
+    /* adrpo: leave a newline at the end of file to get ridsymbolName(String fileNamePrefix of the warning */
   end match
 end simulationFile;
+
+template symbolName(String modelNamePrefix, String symbolName)
+  "Creates a unique name for the function"
+::=
+  modelNamePrefix + "_" + symbolName
+end symbolName;
 
 template simulationFileHeader(SimCode simCode)
   "Generates header part of simulation file."
@@ -628,13 +719,14 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   end match
 end populateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   <<
-  void setupDataStruc(DATA *data)
+  void <%symbolName(modelNamePrefix,"setupDataStruc")%>(DATA *data)
   {
     ASSERT(data, "Error while initialize Data");
+    data->callback = &<%symbolName(modelNamePrefix,"callback")%>;
     <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed)%>
   }
   >>
@@ -872,7 +964,7 @@ template globalDataAliasVarArray(String _type, String _name, list<SimVar> items)
   end match
 end globalDataAliasVarArray;
 
-template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "template variableDefinitionsJacobians
+template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
   let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
@@ -882,9 +974,9 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "te
     #if defined(_MSC_VER)
     extern "C" {
     #endif
-      extern const int INDEX_JAC_<%name%>;
-      int functionJac<%name%>_column(void* data);
-      int initialAnalyticJacobian<%name%>(void* data);
+      #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%index0%>
+      int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(void* data);
+      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(void* data);
     #if defined(_MSC_VER)
     }
     #endif
@@ -899,14 +991,6 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "te
 
   >>
 end variableDefinitionsJacobians;
-
-template variableDefinitionsJacobians_def(list<JacobianMatrix> JacobianMatrixes) "Generates defines for jacobian vars."
-::=
-  JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
-  'const int INDEX_JAC_<%name%> = <%index0%>;'
-  ;separator="\n";
-  empty
-end variableDefinitionsJacobians_def;
 
 template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name) "template variableDefinitionsJacobians2
   Generates Matrixes for Linear Model."
@@ -993,7 +1077,7 @@ template aliasVarNameType(AliasVariable var)
   end match
 end aliasVarNameType;
 
-template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
+template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   match extObjInfo
@@ -1014,7 +1098,7 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
 
     <<
     /* Has to be performed after _init.xml file has been read */
-    void callExternalObjectConstructors(DATA *data)
+    void <%symbolName(modelNamePrefix,"callExternalObjectConstructors")%>(DATA *data)
     {
       <%varDecls%>
       /* data->simulationInfo.extObjs = NULL; */
@@ -1027,13 +1111,13 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
   end match
 end functionCallExternalObjectConstructors;
 
-template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo)
+template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   match extObjInfo
   case extObjInfo as EXTOBJINFO(__) then
     <<
-    void callExternalObjectDestructors(DATA *data)
+    void <%symbolName(modelNamePrefix,"callExternalObjectDestructors")%>(DATA *data)
     {
       if(data->simulationInfo.extObjs)
       {
@@ -1046,13 +1130,13 @@ template functionCallExternalObjectDestructors(ExtObjInfo extObjInfo)
   end match
 end functionCallExternalObjectDestructors;
 
-template functionInput(ModelInfo modelInfo)
+template functionInput(ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
     <<
-    int input_function(DATA *data)
+    int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data)
     {
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
         '<%cref(name)%> = data->simulationInfo.inputVars[<%i0%>];'
@@ -1063,13 +1147,13 @@ template functionInput(ModelInfo modelInfo)
   end match
 end functionInput;
 
-template functionOutput(ModelInfo modelInfo)
+template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   match modelInfo
   case MODELINFO(vars=SIMVARS(__)) then
     <<
-    int output_function(DATA *data)
+    int <%symbolName(modelNamePrefix,"output_function")%>(DATA *data)
     {
       <%vars.outputVars |> SIMVAR(__) hasindex i0 =>
         'data->simulationInfo.outputVars[<%i0%>] = <%cref(name)%>;'
@@ -1080,7 +1164,7 @@ template functionOutput(ModelInfo modelInfo)
   end match
 end functionOutput;
 
-template functionInitSample(BackendDAE.SampleLookup sampleLookup)
+template functionInitSample(BackendDAE.SampleLookup sampleLookup, String modelNamePrefix)
   "Generates function initSample() in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -1088,7 +1172,7 @@ template functionInitSample(BackendDAE.SampleLookup sampleLookup)
   <<
   /* Initializes the raw time events of the simulation using the now
      calcualted parameters. */
-  void function_initSample(DATA *data)
+  void <%symbolName(modelNamePrefix,"function_initSample")%>(DATA *data)
   {
     long i=0;
     <%varDecls%>
@@ -1113,7 +1197,7 @@ template functionInitSample(BackendDAE.SampleLookup sampleLookup)
 end functionInitSample;
 
 
-template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
+template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialMixedSystemsTemp(initialEquations)
@@ -1123,7 +1207,7 @@ template functionInitialMixedSystems(list<SimEqSystem> initialEquations, list<Si
   let jacobianbody = functionInitialMixedSystemsTemp(jacobianEquations)
   <<
   /* funtion initialize mixed systems */
-  void initialMixedSystem(MIXED_SYSTEM_DATA* mixedSystemData)
+  void <%symbolName(modelNamePrefix,"initialMixedSystem")%>(MIXED_SYSTEM_DATA* mixedSystemData)
   {
     /* initial mixed systems */
     <%initbody%>
@@ -1216,7 +1300,7 @@ template functionSetupMixedSystemsTemp(list<SimEqSystem> allEquations, Text &hea
 end functionSetupMixedSystemsTemp;
 
 
-template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations)
+template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, list<SimEqSystem> jacobianEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialLinearSystemsTemp(initialEquations)
@@ -1226,7 +1310,7 @@ template functionInitialLinearSystems(list<SimEqSystem> initialEquations, list<S
   let jacobianbody = functionInitialLinearSystemsTemp(jacobianEquations)
   <<
   /* funtion initialize linear systems */
-  void initialLinearSystem(LINEAR_SYSTEM_DATA* linearSystemData)
+  void <%symbolName(modelNamePrefix,"initialLinearSystem")%>(LINEAR_SYSTEM_DATA* linearSystemData)
   {
     /* initial linear systems */
     <%initbody%>
@@ -1322,16 +1406,16 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> allEquations)
    ;separator="\n\n")
 end functionSetupLinearSystemsTemp;
 
-template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations)
+template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations, String modelNamePrefix)
   "Generates functions in simulation file."
 ::=
-  let initbody = functionInitialNonLinearSystemsTemp(initialEquations)
-  let inlinebody = functionInitialNonLinearSystemsTemp(inlineEquations)
-  let parambody = functionInitialNonLinearSystemsTemp(parameterEquations)
-  let body = functionInitialNonLinearSystemsTemp(allEquations)
+  let initbody = functionInitialNonLinearSystemsTemp(initialEquations,modelNamePrefix)
+  let inlinebody = functionInitialNonLinearSystemsTemp(inlineEquations,modelNamePrefix)
+  let parambody = functionInitialNonLinearSystemsTemp(parameterEquations,modelNamePrefix)
+  let body = functionInitialNonLinearSystemsTemp(allEquations,modelNamePrefix)
   <<
   /* funtion initialize non-linear systems */
-  void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
+  void <%symbolName(modelNamePrefix,"initialNonLinearSystem")%>(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
     <%initbody%>
     <%inlinebody%>
@@ -1341,18 +1425,18 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   >>
 end functionInitialNonLinearSystems;
 
-template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
+template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations, String modelPrefixName)
   "Generates functions in simulation file."
 ::=
   (allEquations |> eqn => (match eqn
-     case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1))
+     case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1), modelPrefixName)
      case eq as SES_NONLINEAR(__) then
      let size = listLength(crefs)
      let newtonStep = if linearTearing then '1' else '0'
-     let generatedJac = match jacobianMatrix case SOME(__) then 'functionJacNLSJac<%eq.index%>_column' case NONE() then 'NULL'
-     let initialJac = match jacobianMatrix case SOME(__) then 'initialAnalyticJacobianNLSJac<%eq.index%>' case NONE() then 'NULL'
-     let jacIndex = match jacobianMatrix case SOME(__) then 'INDEX_JAC_NLSJac<%eq.index%>' case NONE() then '-1'
-     let innerEqs = functionInitialNonLinearSystemsTemp(eqs)
+     let generatedJac = match jacobianMatrix case SOME(__) then '<%symbolName(modelPrefixName,"functionJacNLSJac")%><%eq.index%>_column' case NONE() then 'NULL'
+     let initialJac = match jacobianMatrix case SOME(__) then '<%symbolName(modelPrefixName,"initialAnalyticJacobianNLSJac")%><%eq.index%>' case NONE() then 'NULL'
+     let jacIndex = match jacobianMatrix case SOME(__) then '<%symbolName(modelPrefixName,"INDEX_JAC_NLSJac")%><%eq.index%>' case NONE() then '-1'
+     let innerEqs = functionInitialNonLinearSystemsTemp(eqs, modelPrefixName)
      <<
      <%innerEqs%>
      nonLinearSystemData[<%indexNonLinearSystem%>].equationIndex = <%index%>;
@@ -1451,14 +1535,14 @@ end functionNonLinearResiduals;
 //   - void initializeStateSets(STATE_SET_DATA* statesetData, DATA *data)
 // =============================================================================
 
-template functionInitialStateSets(list<StateSet> stateSets)
+template functionInitialStateSets(list<StateSet> stateSets, String modelNamePrefix)
   "Generates functions in simulation file to initialize the stateset data."
 ::=
      let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
        case set as SES_STATESET(__) then
-       let generatedJac = 'functionJacStateSetJac<%set.index%>_column'
-       let initialJac = 'initialAnalyticJacobianStateSetJac<%set.index%>'
-       let jacIndex = 'INDEX_JAC_StateSetJac<%set.index%>'
+       let generatedJac = '<%symbolName(modelNamePrefix,"functionJacStateSetJac")%><%set.index%>_column'
+       let initialJac = '<%symbolName(modelNamePrefix,"initialAnalyticJacobianStateSetJac")%><%set.index%>'
+       let jacIndex = '<%symbolName(modelNamePrefix,"INDEX_JAC_StateSetJac")%><%set.index%>'
        let statesvars = (states |> s hasindex i2 fromindex 0 => 'statesetData[<%i1%>].states[<%i2%>] = &<%cref(s)%>__varInfo;' ;separator="\n")
        let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%cref(cstate)%>__varInfo;' ;separator="\n")
        <<
@@ -1482,7 +1566,7 @@ template functionInitialStateSets(list<StateSet> stateSets)
    ;separator="\n\n")
   <<
   /* funtion initialize state sets */
-  void initializeStateSets(STATE_SET_DATA* statesetData, DATA *data)
+  void <%symbolName(modelNamePrefix,"initializeStateSets")%>(STATE_SET_DATA* statesetData, DATA *data)
   {
     <%body%>
   }
@@ -1499,7 +1583,7 @@ end functionInitialStateSets;
 //   - int functionInitialEquations(DATA *data)
 // =============================================================================
 
-template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
+template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -1510,7 +1594,7 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
 
   <<
   <%&tmp%>
-  int updateBoundStartValues(DATA *data)
+  int <%symbolName(modelNamePrefix,"updateBoundStartValues")%>(DATA *data)
   {
     <%varDecls%>
 
@@ -1531,7 +1615,7 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
   >>
 end functionUpdateBoundStartValues;
 
-template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
+template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -1548,7 +1632,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
     ;separator="\n")
   <<
   <%&tmp%>
-  int updateBoundParameters(DATA *data)
+  int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data)
   {
     <%varDecls%>
     <%body%>
@@ -1558,7 +1642,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   >>
 end functionUpdateBoundParameters;
 
-template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
+template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs, String modelNamePrefix)
  "Generates an equation."
 ::=
   match eq
@@ -1571,7 +1655,7 @@ template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Te
       let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>initialResiduals[i++] = <%expPart%>;
-      INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
+      INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, <%symbolName(modelNamePrefix,"initialResidualDescription")%>(i-1), initialResiduals[i-1]);
       >>
     end match
   else
@@ -1579,7 +1663,7 @@ template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Te
   end match
 end functionInitialResidualBody;
 
-template functionInitialResidual(list<SimEqSystem> residualEquations)
+template functionInitialResidual(list<SimEqSystem> residualEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -1589,28 +1673,33 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
       case DAE.SCONST(__) then
         '"0", '
       else
-        '"<%ExpressionDump.printExpStr(exp)%>", '
-        ;separator="\n")
+        '"<%ExpressionDump.printExpStr(exp)%>"'
+        ;separator=",\n")
 
   let body = (residualEquations |> eq2 =>
-       functionInitialResidualBody(eq2, &varDecls /*BUFD*/, &tmp)
+       functionInitialResidualBody(eq2, &varDecls /*BUFD*/, &tmp, modelNamePrefix)
      ;separator="\n")
-  let desc = if resDesc then
+  let desc = match residualEquations
+             case {} then
                <<
-               const char *initialResidualDescription[] =
+               const char *<%symbolName(modelNamePrefix,"initialResidualDescription")%>(int i)
                {
-                 <%resDesc%>
-               };
+                 return "empty";
+               }
                >>
              else
                <<
-               const char *initialResidualDescription[1] = {"empty"};
+               const char *<%symbolName(modelNamePrefix,"initialResidualDescription")%>(int i)
+               {
+                 const char *res[] = {<%resDesc%>};
+                 return res[i];
+               };
                >>
   <<
   <%desc%>
 
   <%tmp%>
-  int initial_residual(DATA *data, double *initialResiduals)
+  int <%symbolName(modelNamePrefix,"initial_residual")%>(DATA *data, double *initialResiduals)
   {
     int i = 0;
     <%varDecls%>
@@ -1625,7 +1714,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   >>
 end functionInitialResidual;
 
-template functionInitialEquations(Boolean useSymbolicInitialization, Boolean useHomotopy, list<SimEqSystem> initalEquations)
+template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -1637,15 +1726,11 @@ template functionInitialEquations(Boolean useSymbolicInitialization, Boolean use
       >>
     ;separator="\n")
 
-  let useSymbolicInitializationToInt = if useSymbolicInitialization then '1' else '0'
-  let useHomotopyToInt = if useHomotopy then '1' else '0'
   let errorMsg = if not useSymbolicInitialization then 'ERROR0(LOG_INIT, "The symbolic initialization was not generated.");'
 
   <<
   <%&tmp%>
-  const int useSymbolicInitialization = <%useSymbolicInitializationToInt%>; /* <%useSymbolicInitialization%> */
-  const int useHomotopy = <%useHomotopyToInt%>; /* <%useHomotopy%> */
-  int functionInitialEquations(DATA *data)
+  int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data)
   {
     <%varDecls%>
 
@@ -1688,7 +1773,7 @@ template functionInlineEquations(list<SimEqSystem> inlineEquations)
   >>
 end functionInlineEquations;
 
-template functionStoreDelayed(DelayedExpression delayed)
+template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -1704,7 +1789,7 @@ template functionStoreDelayed(DelayedExpression delayed)
       >>
     ))
   <<
-  int function_storeDelayed(DATA *data)
+  int <%symbolName(modelNamePrefix,"function_storeDelayed")%>(DATA *data)
   {
     <%varDecls%>
     <%storePart%>
@@ -2351,7 +2436,7 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     >>
 end functionXXX_systems;
 
-template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule)
+template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Option<HpcOmScheduler.ScheduleSimCode> hpcOmSchedule, String modelNamePrefix)
  "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -2369,7 +2454,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   <%tmp%>
   <%systems%>
 
-  int functionODE(DATA *data)
+  int <%symbolName(modelNamePrefix,"functionODE")%>(DATA *data)
   {
   #ifdef _OMC_MEASURE_TIME
     rt_tick(SIM_TIMER_FUNCTION_ODE);
@@ -2397,7 +2482,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
    * we need to access the inline define that we compiled the simulation with
    * from the simulation runtime.
    */
-  int functionODE_inline(DATA* data, double stepSize)
+  int <%symbolName(modelNamePrefix,"functionODE_inline")%>(DATA* data, double stepSize)
   {
     <%varDecls2%>
     data->simulationInfo.discreteCall = 0;
@@ -2410,7 +2495,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   >>
   else
   <<
-  int functionODE_inline(DATA* data, double stepSize)
+  int <%symbolName(modelNamePrefix,"functionODE_inline")%>(DATA* data, double stepSize)
   {
     return 0;
   }
@@ -2419,7 +2504,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   >>
 end functionODE;
 
-template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations)
+template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
@@ -2428,7 +2513,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations)
   <<
   <%systems%>
   /* for continuous time variables */
-  int functionAlgebraics(DATA *data)
+  int <%symbolName(modelNamePrefix,"functionAlgebraics")%>(DATA *data)
   {
     <%varDecls%>
     data->simulationInfo.discreteCall = 0;
@@ -2460,7 +2545,7 @@ template functionAliasEquation(list<SimEqSystem> removedEquations)
   >>
 end functionAliasEquation;
 
-template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses)
+template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, String modelNamePrefix)
   "Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
@@ -2475,7 +2560,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
 
   <<
   <%&tmp%>
-  int functionDAE(DATA *data)
+  int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data)
   {
     <%varDecls%>
     data->simulationInfo.needToIterate = 0;
@@ -2488,7 +2573,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause>
   >>
 end functionDAE;
 
-template functionZeroCrossing(list<ZeroCrossing> zeroCrossings)
+template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, String modelNamePrefix)
 "template functionZeroCrossing
   Generates function for ZeroCrossings in simulation file.
   This is a helper of template simulationFile."
@@ -2496,26 +2581,30 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings)
   let &varDecls = buffer "" /*BUFD*/
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFD*/)
 
-  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>", '
-    ;separator="\n")
+  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>"'
+    ;separator=",\n")
 
   let desc = match zeroCrossings
              case {} then
                <<
-               const char *zeroCrossingDescription[1] = {"empty"};
+               const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i)
+               {
+                 return "empty";
+               }
                >>
              else
                <<
-               const char *zeroCrossingDescription[] =
+               const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i)
                {
-                 <%resDesc%>
-               };
+                 const char *res[] = {<%resDesc%>};
+                 return res[i];
+               }
                >>
 
   <<
   <%desc%>
 
-  int function_ZeroCrossings(DATA *data, double *gout, double *t)
+  int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, double *gout, double *t)
   {
     <%varDecls%>
 
@@ -2599,7 +2688,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end zeroCrossingTpl;
 
-template functionRelations(list<ZeroCrossing> relations) "template functionRelations
+template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix) "template functionRelations
   Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
@@ -2607,26 +2696,30 @@ template functionRelations(list<ZeroCrossing> relations) "template functionRelat
   let relationsCode = relationsTpl(relations, contextZeroCross, &varDecls /*BUFD*/)
   let relationsCodeElse = relationsTpl(relations, contextOther, &varDecls /*BUFD*/)
 
-  let resDesc = (relations |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>", '
-    ;separator="\n")
+  let resDesc = (relations |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>"'
+    ;separator=",\n")
 
   let desc = match relations
              case {} then
                <<
-               const char *relationDescription[1] = {"empty"};
+               const char *<%symbolName(modelNamePrefix,"relationDescription")%>(int i)
+               {
+                 return "empty";
+               }
                >>
              else
                <<
-               const char *relationDescription[] =
+               const char *<%symbolName(modelNamePrefix,"relationDescription")%>(int i)
                {
-                 <%resDesc%>
+                 const char *res[] = {<%resDesc%>};
+                 return res[i];
                };
                >>
 
   <<
   <%desc%>
 
-  int function_updateRelations(DATA *data, int evalforZeroCross)
+  int <%symbolName(modelNamePrefix,"function_updateRelations")%>(DATA *data, int evalforZeroCross)
   {
     <%varDecls%>
 
@@ -2670,7 +2763,7 @@ template relationTpl(Integer index1, Exp relation, Context context, Text &varDec
     >>
 end relationTpl;
 
-template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "template functionCheckForDiscreteChanges
+template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, String modelNamePrefix) "template functionCheckForDiscreteChanges
   Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
@@ -2688,7 +2781,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "
       ;separator="\n")
 
   <<
-  int checkForDiscreteChanges(DATA *data)
+  int <%symbolName(modelNamePrefix,"checkForDiscreteChanges")%>(DATA *data)
   {
     int needToIterate = 0;
 
@@ -2723,7 +2816,7 @@ template crefType(ComponentRef cr) "template crefType
   end match
 end crefType;
 
-template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations) "template functionAssertsforCheck
+template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, String modelNamePrefix) "template functionAssertsforCheck
   Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
@@ -2736,7 +2829,7 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations) "te
   <<
   <%&tmp%>
   /* function to check assert after a step is done */
-  int checkForAsserts(DATA *data)
+  int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data)
   {
     <%varDecls%>
 
@@ -2756,7 +2849,7 @@ template defvars(SimVar item) "template defvars
     <<<%cref(name)%> = 0;>>
 end defvars;
 
-template functionlinearmodel(ModelInfo modelInfo) "template functionlinearmodel
+template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "template functionlinearmodel
   Generates function in simulation file."
 ::=
   match modelInfo
@@ -2770,8 +2863,9 @@ template functionlinearmodel(ModelInfo modelInfo) "template functionlinearmodel
     let vectorY = genVector("y", varInfo.numOutVars, 2)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0); \n  output Real y[<%varInfo.numOutVars%>]; \n");
     <<
-    const char *linear_model_frame =
-      "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n"
+    const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
+    {
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states \n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs \n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs \n"
       "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
       "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
       <%matrixA%>
@@ -2782,8 +2876,8 @@ template functionlinearmodel(ModelInfo modelInfo) "template functionlinearmodel
       <%vectorU%>
       <%vectorY%>
       "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%>  <% getVarName(vars.inputVars, "u", varInfo.numInVars) %>  <%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
-      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%underscorePath(name)%>;\n"
-    ;
+      "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%underscorePath(name)%>;\n";
+    }
     >>
   end match
 end functionlinearmodel;
@@ -2849,13 +2943,13 @@ template genVector(String name, Integer numIn, Integer flag) "template genVector
   end match
 end genVector;
 
-template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes) "template functionAnalyticJacobians
+template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
   let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor) =>
-    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor); separator="\n")
+    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor, modelNamePrefix); separator="\n")
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor) =>
-    generateMatrix(mat, vars, name) ;separator="\n")
+    generateMatrix(mat, vars, name, modelNamePrefix) ;separator="\n")
 
   <<
   <%initialjacMats%>
@@ -2865,7 +2959,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes) "templ
 end functionAnalyticJacobians;
 
 
-template mkSparseFunction(String matrixname, String matrixIndex, DAE.ComponentRef cref, list<DAE.ComponentRef> indexes)
+template mkSparseFunction(String matrixname, String matrixIndex, DAE.ComponentRef cref, list<DAE.ComponentRef> indexes, String modelNamePrefix)
 "generate "
 ::=
 match matrixname
@@ -2878,7 +2972,7 @@ match matrixname
       ;separator="\n")
     
     <<
-    static void initialAnalyticJacobian<%matrixname%>_<%matrixIndex%>(DATA* data, int index)
+    static void <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%matrixIndex%>(DATA* data, int index)
     {
       int i;
       /* write index for cref: <%cref(cref)%> */
@@ -2889,7 +2983,7 @@ match matrixname
 end match
 end mkSparseFunction;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList, Integer maxColor)
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList, Integer maxColor, String modelNamePrefix)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -2897,7 +2991,7 @@ template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimV
 match seedVars
 case {} then
 <<
-int initialAnalyticJacobian<%matrixname%>(void* inData)
+int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
 {
   return 1;
 }
@@ -2906,7 +3000,7 @@ case _ then
   match sparsepattern
   case {(_,{})} then
     <<
-    int initialAnalyticJacobian<%matrixname%>(void* inData)
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
     {
       return 1;
     }
@@ -2921,9 +3015,9 @@ case _ then
       >>
       ;separator="\n")
       let indexElems = ( sparsepattern |> (cref,indexes) hasindex index0 =>
-        let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes) 
+        let &eachCrefParts += mkSparseFunction(matrixname, index0, cref, indexes, modelNamePrefix) 
         <<
-        initialAnalyticJacobian<%matrixname%>_<%index0%>(data, index);
+        <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>_<%index0%>(data, index);
         >>
       ;separator="\n")
       let colorArray = (colorList |> (indexes) hasindex index0 =>
@@ -2939,10 +3033,10 @@ case _ then
       
       <%eachCrefParts%>
       
-      int initialAnalyticJacobian<%matrixname%>(void* inData)
+      int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData)
       {
         DATA* data = ((DATA*)inData);
-        int index = INDEX_JAC_<%matrixname%>;
+        int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixname%>;
 
         int i;
 
@@ -2976,7 +3070,7 @@ case _ then
 end match
 end initialAnalyticJacobians;
 
-template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname)
+template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, String modelNamePrefix)
   "This template generates source code for a single jacobian in dense format and sparse format.
   This is a helper of template functionAnalyticJacobians"
 ::=
@@ -2984,7 +3078,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   match indxColumn
   case "0" then
     <<
-    int functionJac<%matrixname%>_column(void* data)
+    int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(void* data)
     {
       return 0;
     }
@@ -2993,14 +3087,14 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     match seedVars
      case {} then
         <<
-        int functionJac<%matrixname%>_column(void* data)
+        int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(void* data)
         {
           return 0;
         }
         >>
       case _ then
         let jacMats = (jacobianColumn |> (eqs,vars,indxColumn) =>
-          functionJac(eqs, vars, indxColumn, matrixname)
+          functionJac(eqs, vars, indxColumn, matrixname, modelNamePrefix)
           ;separator="\n")
         let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
           indxColumn
@@ -3012,7 +3106,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   end match
 end generateMatrix;
 
-template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, String columnLength, String matrixName) "template functionJac
+template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, String columnLength, String matrixName, String modelNamePrefix) "template functionJac
   This template generates functions for each column of a single jacobian.
   This is a helper of generateMatrix."
 ::=
@@ -3023,10 +3117,10 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
 
   <<
   <%&tmp%>
-  int functionJac<%matrixName%>_column(void* inData)
+  int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(void* inData)
   {
     DATA* data = ((DATA*)inData);
-    int index = INDEX_JAC_<%matrixName%>;
+    int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
     <%varDecls%>
     <%eqns_%>
     return 0;
@@ -3975,9 +4069,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%> -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME
+  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%makefileParams.includes ; separator=" "%> -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME
   LIBSIMULATIONRUNTIMEC=<% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-Wl,-whole-archive "%>-lSimulationRuntimeC <% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then " -Wl,-no-whole-archive"%> <% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%>
-  LDFLAGS=<%
+  LDFLAGS=<%dirExtra%> <%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -lf2c -s TOTAL_MEMORY=536870912 -s MAX_SETJMPS=20000 -s OUTLINING_LIMIT=20000 --pre-js <%makefileParams.omhome%>/lib/omc/emcc/pre.js>>
   else <<-L"<%makefileParams.omhome%>/lib/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%match System.os() case "OSX" then "-lf2c -llis" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis"%>>>
   %> -lstdc++ -lm
@@ -4390,31 +4484,6 @@ template crefFunctionName(ComponentRef cr)
   case CREF_QUAL(__) then
     '<%System.stringReplace(unquoteIdentifier(ident), "_", "__")%>_<%crefFunctionName(componentRef)%>'
 end crefFunctionName;
-
-template replaceDotAndUnderscore(String str)
- "Replace _ with __ and dot in identifiers with _"
-::=
-  match str
-  case name then
-    let str_dots = System.stringReplace(name,".", "_")
-    let str_underscores = System.stringReplace(str_dots, "_", "__")
-    System.unquoteIdentifier(str_underscores)
-end replaceDotAndUnderscore;
-
-template underscorePath(Path path)
- "Generate paths with components separated by underscores.
-  Replaces also the . in identifiers with _.
-  The dot might happen for world.gravityAccleration"
-::=
-  match path
-  case QUALIFIED(__) then
-    '<%replaceDotAndUnderscore(name)%>_<%underscorePath(path)%>'
-  case IDENT(__) then
-    replaceDotAndUnderscore(name)
-  case FULLYQUALIFIED(__) then
-    underscorePath(path)
-end underscorePath;
-
 
 template externalFunctionIncludes(list<String> includes)
  "Generates external includes part in function files."

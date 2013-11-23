@@ -39,9 +39,9 @@
 
 typedef struct TIME_AND_VALUE
 {
-  double time;
+  double t; /* time; not named that due to macros */
   double value;
-}TIME_AND_VALUE;
+} TIME_AND_VALUE;
 
 typedef struct EXPRESSION_DELAY_BUFFER
 {
@@ -55,8 +55,8 @@ typedef struct EXPRESSION_DELAY_BUFFER
 #endif
 
   void initDelay(DATA* data, double startTime);
-  double delayImpl(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
-  void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax);
+  double delayImpl(DATA* data, int exprNumber, double exprValue, double t, double delayTime, double maxDelay);
+  void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double t, double delayTime, double delayMax);
 
 #ifdef __cplusplus
   }

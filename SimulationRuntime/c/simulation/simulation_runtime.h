@@ -67,8 +67,6 @@ extern int initializeResultData(DATA* simData, std::string result_file_cstr, int
 
 extern int measure_time_flag;
 
-extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
-
 extern int modelTermination; /* Becomes non-zero when simulation terminates. */
 extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
 extern int terminationAssert; /* Becomes non-zero when model call assert simulation. */

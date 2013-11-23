@@ -823,7 +823,7 @@ unsigned long mmc_prim_hash(void *p,unsigned long hash /* start at 5381 */)
 
   if( MMC_HDRISSTRING(phdr) )
   {
-    return djb2_hash_iter(MMC_STRINGDATA(p),MMC_STRLEN(p),hash);
+    return djb2_hash_iter((const unsigned char *) MMC_STRINGDATA(p),MMC_STRLEN(p),hash);
   }
 
   if( MMC_HDRISSTRUCT(phdr) )

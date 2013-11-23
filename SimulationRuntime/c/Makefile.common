@@ -33,6 +33,7 @@ RUNTIME_HEADERS = $(LIBF2CHEADER) \
 ./simulation/modelinfo.h \
 ./simulation/options.h \
 ./simulation/simulation_info_xml.h \
+./simulation/simulation_input_xml.h \
 ./simulation/simulation_runtime.h \
 ./simulation/solver/delay.h \
 ./simulation/solver/mixedSystem.h \

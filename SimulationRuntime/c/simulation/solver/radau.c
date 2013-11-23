@@ -44,7 +44,12 @@
 #include "radau.h"
 #ifdef WITH_SUNDIALS
 
-extern int functionODE(DATA *data);
+#include <kinsol/kinsol.h>
+#include <kinsol/kinsol_dense.h>
+#include <kinsol/kinsol_spgmr.h>
+#include <kinsol/kinsol_sptfqmr.h>
+#include <sundials/sundials_types.h>
+#include <sundials/sundials_math.h>
 
 #ifdef __cplusplus  /* wrapper to enable C++ usage */
 extern "C" {
@@ -62,7 +67,7 @@ static int allocateKINSOLODE(KINODE *kinOde);
 
 static void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data);
 
-static void kinsol_infoHandler(int error_code, const char* module, const char* function, char* msg, void* user_data);
+static void kinsol_infoHandler(const char* module, const char* function, char* msg, void* user_data);
 
 static int freeImOde(void *nlpode, int N);
 static int freeKinsol(void * kOde);
@@ -183,7 +188,7 @@ static void kinsol_errorHandler(int error_code, const char* module, const char* 
       if(msg)WARNING1(LOG_SOLVER, "%s", msg);
   }
 
-static void kinsol_infoHandler(int error_code, const char* module, const char* function, char* msg, void* user_data)
+static void kinsol_infoHandler(const char* module, const char* function, char* msg, void* user_data)
   {
     INFO2(LOG_SOLVER, " %s: %s ", module, function);
     if(msg)INFO1(LOG_SOLVER, "%s", msg);
@@ -438,7 +443,7 @@ static int refreshModell(DATA* data, double* x, double time)
 
   memcpy(sData->realVars, x, sizeof(double)*data->modelData.nStates);
   sData->timeValue = time;
-  functionODE(data);
+  data->callback->functionODE(data);
 
   return 0;
 }

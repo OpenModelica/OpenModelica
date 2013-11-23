@@ -42,11 +42,7 @@
 #ifdef WITH_SUNDIALS
   #include <math.h>
   #include "omc_error.h"
-  #include <kinsol/kinsol.h>
-  #include <kinsol/kinsol_dense.h>
   #include <nvector/nvector_serial.h>
-  #include <sundials/sundials_types.h>
-  #include <sundials/sundials_math.h>
 
   #ifdef __cplusplus
   extern "C"
