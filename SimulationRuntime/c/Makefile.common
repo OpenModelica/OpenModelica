@@ -92,7 +92,7 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 
 	ranlib $@
 
-libSimulationRuntimeC.so: $(ALL_OBJS)
+libSimulationRuntimeC.so: $(ALL_OBJS) install-f2c
 	@rm -f $@
 	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM)
 
@@ -123,11 +123,11 @@ libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH)
 	$(AR) $@ $(FMILIB) $(FMIOBJSPATH)
 	ranlib $@
 
-libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH)
+libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH) install-f2c
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS)
 
-libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH)
+libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) install-f2c
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
