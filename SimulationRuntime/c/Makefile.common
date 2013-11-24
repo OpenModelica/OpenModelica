@@ -116,7 +116,7 @@ libOpenModelicaRuntimeC.so: $(BASE_OBJS)
 
 libOpenModelicaRuntimeC.dylib: $(BASE_OBJS)
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -install_name '@rpath/$@'
+	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS) -undefined dynamic_lookup -install_name '@rpath/$@'
 
 libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH)
 	@rm -f $@
