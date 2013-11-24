@@ -122,7 +122,7 @@ algorithm
 
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
 
-        true = intEq(0,listLength(eqsyslist));
+        true = List.isEmpty(eqsyslist);
         mExt=getExtIncidenceMatrix(m);
 
         //dumpExtIncidenceMatrix(mExt);
@@ -208,7 +208,7 @@ algorithm
 
         (setC,removed_equations_squared)=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS,allEqs,allVars,sharedVars,mapIncRowEqn);
 
-        print(Util.if_(listLength(removed_equations_squared)>0,"Warning: the system is ill-posed. One or more equations have been removed from squared system of knowns.\n",""));
+        print(Util.if_(List.isNotEmpty(removed_equations_squared),"Warning: the system is ill-posed. One or more equations have been removed from squared system of knowns.\n",""));
               printSep(getMathematicaText("Equations removed from squared blocks (with more than one equation)"));
               printSep(equationsToMathematicaGrid(removed_equations_squared,allEqs,allVars,sharedVars,mapIncRowEqn));
 
@@ -728,7 +728,7 @@ algorithm
         //print("Cleaning up system of knowns..");
         knownsSystem = removeEquations(m,setS);
         knownsSystem = removeUnrelatedEquations(knownsSystem,knowns);
-        true=intEq(listLength(knownsSystem),0);
+        true = List.isEmpty(knownsSystem);
         print("Warning: The system is ill-posed. There are no remaining equations containing the knowns.\n");
     then
       ({},{});    
@@ -1228,12 +1228,12 @@ mOut:=matchcontinue(m,set,acc)
   case((eq,vars)::t,_,_)
       equation
         newVars = List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
-        true = intEq(listLength(newVars),0);
+        true = List.isEmpty(newVars);
       then removeVarsNotInSet(t,set,acc);
   case((eq,vars)::t,_,_)
       equation
         newVars = List.filter1OnTrue(vars,removeVarsNotInSet_helper,set);
-        false = intEq(listLength(newVars),0);
+        false = List.isEmpty(newVars);
       then removeVarsNotInSet(t,set,(eq,newVars)::acc);
 end matchcontinue;
 end removeVarsNotInSet;
@@ -1331,7 +1331,7 @@ algorithm
         then ();
         case(_,h::t,_)
             equation
-                true=intEq(listLength(removeUnrelatedEquations(m,{h})),0);
+                true=List.isEmpty(removeUnrelatedEquations(m,{h}));
                 not_found_var=BackendVariable.getVarAt(variables,h);
                 str = ComponentReference.crefStr(BackendVariable.varCref(not_found_var));
                 print("Warning: The variable '"+&str+&"' was not found in the system of knowns\n");
@@ -1339,7 +1339,7 @@ algorithm
             then ();
         case(_,h::t,_)
             equation
-               false=intEq(listLength(removeUnrelatedEquations(m,{h})),0);
+               false=List.isEmpty(removeUnrelatedEquations(m,{h}));
                 checkSystemContainsVars(m,t,variables);
             then ();
     end matchcontinue;
@@ -1583,7 +1583,7 @@ protected function containsAny
   protected list<Integer> m3;
 algorithm
   m3:=List.intersectionOnTrue(m1,m2,intEq);
-  out:=listLength(m3)>0;
+  out:=List.isNotEmpty(m3);
 end containsAny;
 
 protected function containsAll
