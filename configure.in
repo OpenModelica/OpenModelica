@@ -229,6 +229,13 @@ fi
 
 dnl Checks for libraries.
 
+if test ! "Darwin" = `uname`; then
+  LIBS=""
+  AC_SEARCH_LIBS(clock_gettime,rt,[],[AC_MSG_ERROR([clock_gettime missing])])
+  LIBRT="$LIBS"
+  LIBS=""
+fi
+
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
@@ -815,8 +822,8 @@ else
   FMILIB_SHARED=ON
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
-  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc -lexpat $OPENMP -lpthread -lm -ldl"
-  RT_LDFLAGS_SIM="$RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lstdc++ -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lm -ldl"
+  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc -lexpat $OPENMP $LIBRT -lpthread -lm -ldl"
+  RT_LDFLAGS_SIM="$RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $LIBRT -linteractive -llis -lstdc++ -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lm -ldl"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm"
   RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm $OPENMP"
