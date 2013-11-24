@@ -55,6 +55,7 @@ extern "C" {
 #include "utility.h"
 
 struct OpenModelicaGeneratedFunctionCallbacks {
+int (*performSimulation)(DATA* data, void* solverInfo);
 /* Function for calling external object constructors */
 void (*callExternalObjectConstructors)(DATA *data);
 /* Function for calling external object deconstructors */

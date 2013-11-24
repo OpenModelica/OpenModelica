@@ -82,7 +82,7 @@ void updateContinuousSystem(DATA *data)
  *
  *  This function performs the simulation controlled by solverInfo.
  */
-int performSimulation(DATA* data, SOLVER_INFO* solverInfo)
+int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 {
 
   int retValIntegrator = 0;

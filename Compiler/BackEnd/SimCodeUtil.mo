@@ -1585,7 +1585,7 @@ algorithm
 
       ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
       discreteModelVars = BackendDAEUtil.foldEqSystem(dlow, extractDiscreteModelVars, {});
-      makefileParams = createMakefileParams(includeDirs, libs);
+      makefileParams = createMakefileParams(includeDirs, libs, false);
       (delayedExps, maxDelayedExpIndex) = extractDelayedExpressions(dlow);
 
       // append removed equation to all equations, since these are actually 
@@ -5510,6 +5510,7 @@ end extractIdAndExpFromDelayExp;
 public function createMakefileParams
   input list<String> includes;
   input list<String> libs;
+  input Boolean isFunction;
   output SimCode.MakefileParams makefileParams;
 protected
   String omhome, ccompiler, cxxcompiler, linker, exeext, dllext, cflags, ldflags, rtlibs, platform, fopenmp;
@@ -5526,7 +5527,7 @@ algorithm
   cflags := System.getCFlags();
   cflags := Util.if_(stringEq(Config.simCodeTarget(),"JavaScript"),"-Os -Wno-warn-absolute-paths",cflags);
   ldflags := System.getLDFlags();
-  rtlibs := System.getRTLibs();
+  rtlibs := Util.if_(isFunction, System.getRTLibs(), System.getRTLibsSim());
   platform := System.modelicaPlatform();
   makefileParams := SimCode.MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext, 
         omhome, cflags, ldflags, rtlibs, includes, libs, platform);

@@ -94,11 +94,11 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 
 libSimulationRuntimeC.so: $(ALL_OBJS)
 	@rm -f $@
-	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS)
+	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM)
 
 libSimulationRuntimeC.dylib: $(ALL_OBJS) install-f2c
 	@rm -f $@
-	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS) -lf2c -undefined dynamic_lookup -install_name '@rpath/$@'
+	$(CC) -shared -o $@ $(ALL_OBJS) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
 libSimulationRuntimeC.bc: $(ALL_OBJS)
 	@rm -f $@
@@ -112,7 +112,7 @@ libOpenModelicaRuntimeC.a: $(BASE_OBJS)
 
 libOpenModelicaRuntimeC.so: $(BASE_OBJS)
 	@rm -f $@
-	$(CC) -shared -o $@ $(BASE_OBJS)
+	$(CC) -shared -o $@ $(BASE_OBJS) $(LDFLAGS)
 
 libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH)
 	@rm -f $@
@@ -121,7 +121,11 @@ libOpenModelicaFMIRuntimeC.a: $(FMIOBJSPATH)
 
 libOpenModelicaFMIRuntimeC.so: $(FMIOBJSPATH)
 	@rm -f $@
-	$(CC) -shared -o $@ $(FMIOBJSPATH)
+	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS)
+
+libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH)
+	@rm -f $@
+	$(CC) -shared -o $@ $(FMIOBJSPATH) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
 $(METAOBJSPATH):%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH) -I$(UTILPATH)

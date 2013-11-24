@@ -1,37 +1,33 @@
 /* @configure_input@ */
 #define CONFIGURE_COMMANDLINE "Configured @date@ using arguments: '@CONFIGURE_ARGS@'"
-#define LDFLAGS_RT "@LDFLAGS@ @RT_LDFLAGS@ @SUNDIALS_LDFLAGS@ @IPOPT_LDFLAGS@ -lpthread"
+#define LDFLAGS_RT "@LDFLAGS@ @RT_LDFLAGS_GENERATED_CODE@"
+#define LDFLAGS_RT_SIM "@LDFLAGS@ @RT_LDFLAGS_GENERATED_CODE_SIM@"
 #define CONFIG_EXE_EXT ""
 #define CONFIG_DLL_EXT "@SHREXT@"
 #define CONFIG_PLATFORM "Unix"
 #define CONFIG_MODELICA_SPEC_PLATFORM "@MODELICA_SPEC_PLATFORM@"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "@OPENMODELICA_SPEC_PLATFORM@"
 
-#define DEFAULT_CC "@CC@"
+#define DEFAULT_CC "@RUNTIMECC@"
 #define DEFAULT_CXX "@CXX@"
 #define DEFAULT_OMPCC "@OMPCC@"
 #define DEFAULT_MAKE "@MAKE@"
 
 #if defined(__sparc__)
-  #define DEFAULT_LINKER "@CC@ -G"
+  #define DEFAULT_LINKER "@RUNTIMECC@ -G"
 #elif defined(__APPLE_CC__)
-  #define DEFAULT_LINKER "@CC@ -single_module -dynamiclib -flat_namespace"
+  #define DEFAULT_LINKER "@RUNTIMECC@ -single_module -dynamiclib -flat_namespace"
 #elif defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  #define DEFAULT_LINKER "@CC@ -shared"
+  #define DEFAULT_LINKER "@RUNTIMECC@ -shared"
 #else
-  #define DEFAULT_LINKER "@CC@ -shared"
+  #define DEFAULT_LINKER "@RUNTIMECC@ -shared"
 #endif
 
+#define DEFAULT_CFLAGS "@RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
 #ifdef __APPLE_CC__
-  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
   #define CONFIG_OS "OSX"
 #else
-  #if defined(__x86_64__)
-  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -march=native -mfpmath=sse -fPIC ${MODELICAUSERCFLAGS}"
-  #else
-  #define DEFAULT_CFLAGS "${SIM_OR_DYNLOAD_OPT_LEVEL} -falign-functions -march=native -mfpmath=sse ${MODELICAUSERCFLAGS}"
-  #endif
   #define CONFIG_OS "linux"
 #endif
 

@@ -604,7 +604,7 @@ algorithm
         (daeElements,literals) = SimCodeUtil.findLiterals(daeMainFunction::daeElements);
         (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
         SimCodeUtil.checkValidMainFunction(name, mainFunction);
-        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
+        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs, true);
         fnCode = SimCode.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
@@ -615,7 +615,7 @@ algorithm
         // Create SimCode.FunctionCode
         (daeElements,literals) = SimCodeUtil.findLiterals(daeElements);
         (fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
-        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
+        makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs, true);
         // remove OpenModelica.threadData.ThreadData
         fns = removeThreadDataFunction(fns, {});
         extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});

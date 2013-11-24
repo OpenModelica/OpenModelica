@@ -1403,6 +1403,13 @@ RML_BEGIN_LABEL(System__getRTLibs)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getRTLibsSim)
+{
+  rmlA0 = (void*) mk_scon(LDFLAGS_RT_SIM);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__getCorbaLibs)
 {
   rmlA0 = (void*) mk_scon(CONFIG_CORBALIBS);

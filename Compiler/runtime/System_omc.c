@@ -120,6 +120,11 @@ extern const char* System_getRTLibs()
   return LDFLAGS_RT;
 }
 
+extern const char* System_getRTLibsSim()
+{
+  return LDFLAGS_RT_SIM;
+}
+
 extern const char* System_getCCompiler()
 {
   return GC_strdup(cc);

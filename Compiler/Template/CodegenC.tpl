@@ -195,7 +195,6 @@ template simulationFile_nls(SimCode simCode, String guid)
     /* Non Linear Systems */
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
-    #include "delay.h"
     <%functionNonLinearResiduals(initialEquations)%>
     <%functionNonLinearResiduals(inlineEquations)%>
     <%functionNonLinearResiduals(parameterEquations)%>
@@ -303,7 +302,6 @@ template simulationFile_dly(SimCode simCode, String guid)
     <<
     /* Delay */
     <%simulationFileHeader(simCode)%>
-    #include <delay.h>
     
     <%functionStoreDelayed(delayedExps, modelNamePrefix(simCode))%>
         
@@ -484,8 +482,8 @@ template simulationFile(SimCode simCode, String guid)
     /* Main Simulation File */    
     <%simulationFileHeader(simCode)%>  
 
+    #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #include <perform_simulation.c>
-    #include <delay.h>
 
     /* dummy VARINFO and FILEINFO */
     const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
@@ -544,6 +542,7 @@ template simulationFile(SimCode simCode, String guid)
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
+       <%symbolName(modelNamePrefixStr,"performSimulation")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
        <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,
@@ -632,6 +631,7 @@ template simulationFileHeader(SimCode simCode)
     #include "simulation_runtime.h"
     #include "omc_error.h"
     #include "model_help.h"
+    #include "delay.h"
 
     #include <assert.h>
     #include <string.h>
@@ -4070,11 +4070,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%makefileParams.includes ; separator=" "%> -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME
-  LIBSIMULATIONRUNTIMEC=<% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-Wl,-whole-archive "%>-lSimulationRuntimeC <% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then " -Wl,-no-whole-archive"%> <% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%>
   LDFLAGS=<%dirExtra%> <%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -lf2c -s TOTAL_MEMORY=536870912 -s MAX_SETJMPS=20000 -s OUTLINING_LIMIT=20000 --pre-js <%makefileParams.omhome%>/lib/omc/emcc/pre.js>>
-  else <<-L"<%makefileParams.omhome%>/lib/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> <%match System.os() case "OSX" then "-lf2c -llis" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic -llis"%>>>
-  %> -lstdc++ -lm
+  else <<-L"<%makefileParams.omhome%>/lib/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if stringEq(makefileParams.platform, "win32") then "--stack,0x2000000,"%>-rpath,"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>>>
+  %>
   MAINFILE=<%fileNamePrefix%>.c
   MAINOBJ=<%fileNamePrefix%>.o
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
@@ -4309,7 +4308,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lOpenModelicaRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
+  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   MAINFILE=<%name%>.c
 

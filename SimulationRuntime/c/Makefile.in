@@ -15,7 +15,8 @@ CXX = @CXX@
 CONFIG_CPPFLAGS = @CPPFLAGS@
 CONFIG_CFLAGS = @CFLAGS@ @IPOPT_CFLAGS@
 FPMATHFORTRAN = @FPMATHFORTRAN@
-LDFLAGS=-L$(top_builddir)/build/lib/omc -L../interactive @LDFLAGS@ @RT_LDFLAGS@ @SUNDIALS_LDFLAGS@ @IPOPT_LDFLAGS@ -linteractive -llis -lpthread -lstdc++
+LDFLAGS=-L$(top_builddir)/build/lib/omc @LDFLAGS@ @RT_LDFLAGS@ 
+LDFLAGS_SIM=-L$(top_builddir)/build/lib/omc -L../interactive@RT_LDFLAGS_SIM@
 
 LIBMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"

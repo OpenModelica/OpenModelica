@@ -31,6 +31,9 @@ AC_SUBST(USE_MODPAR)
 AC_SUBST(BOOSTHOME)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
 AC_SUBST(RT_LDFLAGS)
+AC_SUBST(RT_LDFLAGS_SIM)
+AC_SUBST(RT_LDFLAGS_GENERATED_CODE)
+AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(IPOPT_LDFLAGS)
 AC_SUBST(IPOPT_CFLAGS)
@@ -44,6 +47,8 @@ AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
 AC_SUBST(OMC_LIBS)
 AC_SUBST(OMPCC)
+AC_SUBST(RUNTIMECC)
+AC_SUBST(RUNTIMECFLAGS)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
@@ -137,7 +142,7 @@ if echo $CFLAGS | grep -q -- -fPIC; then
 else
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -fPIC -Werror"
-  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"], [AC_MSG_RESULT([don't need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
+  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"], [AC_MSG_RESULT([don't need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
 fi
 
 fi
@@ -310,6 +315,8 @@ return 0;
 dnl Check if OpenMP is available
 AC_MSG_CHECKING([for OpenMP])
 
+AC_ARG_VAR(OMPCC, [Selects a compiler to be used to compile OpenMP code. Useful if the main CC does not support OpenMP.])
+
 CC_OLD="$CC"
 CFLAGS_OLD="$CFLAGS"
 if test -z "$OMPCC"; then
@@ -343,6 +350,36 @@ AC_TRY_LINK([
   CONFIG_WITH_OPENMP=0
   ]
 )
+CC="$CC_OLD"
+CFLAGS="$CFLAGS_OLD"
+
+AC_ARG_VAR(RUNTIMECC, [Selects a compiler to be used to compile generated code. It is more important to compile fast than to generate fast code for the runtime compiler.])
+AC_ARG_VAR(RUNTIMECFLAGS, [CFLAGS for the selected runtime compiler (defaults to -O0 -falign-functions -march=native -mfpmath=sse -fPIC as long as neither gives warnings to the CC). Note that heavy optimisations may cause the run-time to be faster while increasing compile-time. -O0 is often best.])
+
+CC_OLD="$CC"
+CFLAGS_OLD="$CFLAGS"
+if test ! -z "$RUNTIMECC"; then
+  CC="$RUNTIMECC"
+else
+  RUNTIMECC="$CC"
+fi
+AC_MSG_CHECKING([runtime compiler])
+if test -z "$RUNTIMECFLAGS"; then
+  CFLAGS="$FPIC -Werror"
+  AC_TRY_LINK([], [return 0;], [AC_MSG_RESULT($CC ok);],[AC_MSG_ERROR($CC failed)])
+  CFLAGS="$FPIC"
+  AC_MSG_CHECKING([runtime compiler CFLAGS])
+  for flag in -O0 -falign-functions -march=native -mfpmath=sse; do
+    RUNTIMECFLAGS="$CFLAGS"
+    CFLAGS="$RUNTIMECFLAGS $flag -Werror"
+    AC_TRY_LINK([], [int main() {return 0;}], [CFLAGS="$RUNTIMECFLAGS $flag"],[CFLAGS="$RUNTIMECFLAGS"])
+  done
+else
+  CFLAGS="$RUNTIMECFLAGS $FPIC -Werror"
+  AC_TRY_LINK([], [return 0;], [RUNTIMECFLAGS="$RUNTIMECFLAGS $FPIC"],[AC_MSG_ERROR([$CC $CFLAGS -Werror failed])])
+fi
+AC_MSG_RESULT([$RUNTIMECFLAGS])
+
 CC="$CC_OLD"
 CFLAGS="$CFLAGS_OLD"
 
@@ -728,11 +765,15 @@ if test "Darwin" = `uname`; then
   SHREXT=".dylib"
   LIBGC="build/lib/omc/libgc.a"
   LIBSIMULATION=libSimulationRuntimeC.dylib
-  LIBRUNTIME=libOpenModelicaRuntimeC.a
-  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
+  LIBRUNTIME=libOpenModelicaRuntimeC.dylib
+  LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.dylib
   LIBFMILIB=libfmilib_shared.dylib
   FMILIB_SHARED=ON
-  RT_LDFLAGS="$RT_LDFLAGS -liconv -lgc -lexpat $OPENMP"
+  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -liconv -lgc -lexpat $OPENMP -lpthread -lm -ldl"
+  RT_LDFLAGS_SIM="$RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lstdc++ -lf2c -lexpat -lm -ldl"
+  # All libraries are dynamically linked; we don't need anything else
+  RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm"
+  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm $OPENMP"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/omc'"
   MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
@@ -751,7 +792,10 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib.a
   FMILIB_SHARED=OFF
-  RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc -lexpat $OPENMP"
+  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc -lexpat $OPENMP -lpthread -lm"
+  RT_LDFLAGS_SIM="$RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lstdc++ -lf2c -lexpat -lm"
+  RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $RT_LDFLAGS"
+  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $RT_LDFLAGS_SIM $OPENMP"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="windows"
@@ -764,12 +808,18 @@ else
   EXE=""
   SHREXT=".so"
   LIBGC="build/lib/omc/libgc.so"
-  LIBSIMULATION=libSimulationRuntimeC.a
+  LIBSIMULATION=libSimulationRuntimeC.so
   LIBRUNTIME=libOpenModelicaRuntimeC.so
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib_shared.so
   FMILIB_SHARED=ON
-  RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc -lexpat $OPENMP"
+  # For static runtime on Linux:
+  # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
+  RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc -lexpat $OPENMP -lpthread -lm -ldl"
+  RT_LDFLAGS_SIM="$RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lstdc++ -Wl,-Bstatic -lf2c -Wl,-Bdynamic -lexpat -lm -ldl"
+  # All libraries are dynamically linked; we don't need anything else
+  RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm"
+  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm $OPENMP"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="linux"

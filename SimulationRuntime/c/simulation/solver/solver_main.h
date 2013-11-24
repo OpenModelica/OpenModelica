@@ -155,9 +155,6 @@ extern int initializeModel(DATA* data, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
     int lambda_steps);
 
-/* Defined in perform_simulation.c and omp_perform_simulation.c */
-extern int performSimulation(DATA* data, SOLVER_INFO* solverInfo);
-
 extern int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVariablesAtEnd);
 
 extern int solver_main_step(DATA* data, SOLVER_INFO* solverInfo);

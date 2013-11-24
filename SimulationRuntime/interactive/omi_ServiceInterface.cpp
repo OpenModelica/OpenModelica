@@ -610,7 +610,7 @@ int performSolverStepFromOM(double start, double stop, double stepSize)
   simInfo->stopTime = stop;
 
   /* starts the simulation main loop */
-  retVal = performSimulation(globalData, solverInfo);
+  retVal = globalData->callback->performSimulation(globalData, solverInfo);
 
   gdMutex.Unlock();
   return retVal;

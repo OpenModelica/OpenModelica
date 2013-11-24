@@ -388,22 +388,6 @@ int initializeModel(DATA* data, const char* init_initMethod,
 }
 
 
-/*! \fn performSimulation(DATA* data, SOLVER_INFO* solverInfo)
- *
- *  \param [ref] [data]
- *  \param [ref] [solverInfo]
- *
- *  This function performs the simulation controlled by solverInfo.
- */
-
-/*! 
- *  Moved to perform_simulation.c and omp_perform_simulation.c
- *  and included in the generrated code. The things we do for
- *  OPENMP.
- */ 
-/* int performSimulation(DATA* data, SOLVER_INFO* solverInfo) */
-
-
 /*! \fn finishSimulation(DATA* data, SOLVER_INFO* solverInfo)
  *
  *  \param [ref] [data]
@@ -591,7 +575,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
 
     INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
-    retVal = performSimulation(data, &solverInfo);
+    retVal = data->callback->performSimulation(data, &solverInfo);
     omc_alloc_interface.collect_a_little();
     /* terminate the simulation */
     finishSimulation(data, &solverInfo, outputVariablesAtEnd);
