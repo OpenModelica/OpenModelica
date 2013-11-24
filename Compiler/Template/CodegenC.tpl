@@ -10371,9 +10371,17 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         if(i == 0)
          *res =  $P$TMP_mayerTerm;
          else if(i == 1)
-          *res =  $P$TMP_mayerTerm$pDERC$PdummyVarC;
+          #ifdef $P$TMP_mayerTerm$pDERC$PdummyVarC
+          *res = $P$TMP_mayerTerm$pDERC$PdummyVarC;
+          #else
+          *res = 0.0;
+          #endif
          else if(i == 2)
-          *res = $P$TMP_mayerTerm$pDERD$PdummyVarD;
+          #ifdef $P$TMP_mayerTerm$pDERC$PdummyVarD
+          *res = $P$TMP_mayerTerm$pDERC$PdummyVarD;
+          #else
+          *res = 0.0;
+          #endif
         return 0;
         >>
 
@@ -10382,9 +10390,17 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         if(i == 0)
           *res =  $P$TMP_lagrangeTerm;
          else if(i == 1)
+           #ifdef $P$TMP_lagrangeTerm$pDERC$PdummyVarC
            *res =  $P$TMP_lagrangeTerm$pDERC$PdummyVarC;
+           #else
+           *res = 0.0;
+           #endif
          else if(i == 2)
+           #ifdef $P$TMP_lagrangeTerm$pDERD$PdummyVarD
            *res = $P$TMP_lagrangeTerm$pDERD$PdummyVarD;
+           #else
+           *res = 0.0;
+           #endif
         return 0;   
         >>
       let listConstraintsLength = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then listLength(constraints)  
