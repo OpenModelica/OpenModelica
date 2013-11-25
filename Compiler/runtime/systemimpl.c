@@ -526,12 +526,12 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
   if (*outFile) {
-    const char *command = malloc(strlen(str) + strlen(outFile) + 9):
+    const char *command = malloc(strlen(str) + strlen(outFile) + 9);
     sprintf(command, "%s > %s 2>&1");
     status = system(command);
     free(command);
   } else {
-    status = system(command);
+    status = system(str);
   }
 #else
   pid_t pID = vfork();
