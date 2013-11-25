@@ -44,7 +44,7 @@
 #include "../localFunction.h"
 
 static int local_jac_struct(IPOPT_DATA_ *iData);
-
+static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0);
 /*!
  *  allocate
  *  author: Vitalij Ruge
@@ -317,16 +317,8 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   for(i =0;i<iData->nx;++i)
   {
-    if(data->modelData.realVarsData[i].attribute.nominal)
-      iData->vnom[i] = fmax(fabs(data->modelData.realVarsData[i].attribute.nominal),1e-16);
-    else
-    {
-      iData->vnom[i] = 0.5*(fabs(data->modelData.realVarsData[i].attribute.max) + fabs(data->modelData.realVarsData[i].attribute.min));
-      if(iData->vnom[i] > 1e12)
-        iData->vnom[i] = fabs(iData->x0[i]);
-      iData->vnom[i] = fmax(iData->vnom[i],1e-16);
-    }
-    /* printf("\nvnom[%i] = %g",i,iData->vnom[i]); */
+    check_nominal(iData, data->modelData.realVarsData[i].attribute.min, data->modelData.realVarsData[i].attribute.max, data->modelData.realVarsData[i].attribute.nominal, data->modelData.realVarsData[i].attribute.useNominal, i, fabs(iData->x0[i]));
+
     iData->scalVar[i] = 1.0 / iData->vnom[i];
     iData->scalf[i] = iData->scalVar[i];
 
@@ -338,7 +330,8 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   for(i =0,j = iData->nx;i<iData->nu;++i,++j)
   {
-    iData->vnom[j] = fmax(fabs(data->modelData.realVarsData[id +i].attribute.nominal),1e-16);
+    check_nominal(iData, data->modelData.realVarsData[id +i].attribute.min, data->modelData.realVarsData[id +i].attribute.max, data->modelData.realVarsData[id +i].attribute.nominal, data->modelData.realVarsData[id +i].attribute.useNominal, j, fabs(iData->x0[j]));
+
     iData->scalVar[j] = 1.0 / iData->vnom[j];
     iData->umin[i] = data->modelData.realVarsData[id +i].attribute.min*iData->scalVar[j];
     iData->umax[i] = data->modelData.realVarsData[id +i].attribute.max*iData->scalVar[j];
@@ -551,6 +544,36 @@ int local_jac_struct(IPOPT_DATA_ *iData)
     }
   }
 
+  return 0;
+}
+
+/*!
+ *  heuristic for nominal value
+ *  author: Vitalij Ruge
+ **/
+static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0)
+{
+  if(set)
+      iData->vnom[i] = fmax(fabs(nominal),1e-16);
+    else
+    {
+      double amax, amin;
+      amax = fabs(max);
+      amin = fabs(min);
+      iData->vnom[i] = 0.5*(amax + amin);
+      if(iData->vnom[i] > 1e12)
+        {
+          double tmp = fmin(amax,amin);
+          if(tmp<1e12)
+            iData->vnom[i] = tmp;
+          else
+            {
+            iData->vnom[i] = 1 + x0;
+            }
+        }
+        
+      iData->vnom[i] = fmax(iData->vnom[i],1e-16);
+    }
   return 0;
 }
 

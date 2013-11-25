@@ -92,9 +92,9 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
 
   if(ACTIVE_STREAM(LOG_IPOPT)){
   for(i=0; i<iData->nx; i++)
-    printf("\nx[%i] = %s = %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i]);
+    printf("\nx[%i] = %s = %g | %g",i, iData->data->modelData.realVarsData[i].info.name,iData->v[i],iData->vnom[i]);
     for(; i<iData->nv; ++i)
-      printf("\nu[%i] = %s = %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i]);
+      printf("\nu[%i] = %s = %g| %g",i, iData->data->modelData.realVarsData[iData->index_u + i-iData->nx].info.name,iData->v[i],iData->vnom[i]);
   }
 
   ipoptDebuge(iData,iData->v);
