@@ -2269,7 +2269,7 @@ end functionXXX_system0_HPCOM_PThread_func;
 template functionXXX_system0_HPCOM_PThread_call(String name, Integer n, Integer idx)
 ::=
   <<
-  pthread_create(&odeThread_<%idx%>, NULL, function<%name%>_system<%n%>_thread_<%idx%>, data);
+  GC_pthread_create(&odeThread_<%idx%>, NULL, function<%name%>_system<%n%>_thread_<%idx%>, data);
   >>
 end functionXXX_system0_HPCOM_PThread_call;
 
