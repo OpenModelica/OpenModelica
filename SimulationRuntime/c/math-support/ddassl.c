@@ -3755,7 +3755,7 @@ L100:
       nrow = npdm1;
       i__1 = *neq;
       i__2 = *neq;
-      buffer = (char*)malloc(20*nrow*sizeof(char));
+      buffer = (char*)malloc(20*(*neq)*sizeof(char));
       
       INFO1(LOG_JAC, "at point in time: %g", *x);
       INDENT(LOG_JAC);
@@ -3835,7 +3835,7 @@ L200:
       nrow = npdm1;
       i__1 = *neq;
       i__2 = *neq;
-      buffer = (char*)malloc(20*nrow*sizeof(char));
+      buffer = (char*)malloc(20*(*neq)*sizeof(char));
       
       INFO1(LOG_JAC, "at point in time: %g", *x);
       INDENT(LOG_JAC);
