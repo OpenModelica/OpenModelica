@@ -565,7 +565,7 @@ static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nomi
         {
           double tmp = fmin(amax,amin);
           if(tmp<1e12)
-            iData->vnom[i] = tmp;
+            iData->vnom[i] = fmax(tmp,x0);
           else
             {
             iData->vnom[i] = 1 + x0;
