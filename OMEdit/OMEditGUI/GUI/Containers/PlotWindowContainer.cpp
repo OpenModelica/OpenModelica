@@ -80,10 +80,7 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
 bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
   PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
-  if (!pPlotWindow)
-    return QMdiArea::eventFilter(pObject, pEvent);
-
-  if (pEvent->type() == QEvent::Paint)
+  if (pPlotWindow && pEvent->type() == QEvent::Paint)
   {
     QPainter painter (pPlotWindow);
     painter.setPen(Qt::gray);
