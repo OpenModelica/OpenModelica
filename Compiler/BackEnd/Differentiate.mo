@@ -318,6 +318,7 @@ algorithm
   (outEquation,outFunctionTree) := match(inEquation, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
+      DAE.ComponentRef cref;
       BackendDAE.Variables timevars;
       DAE.ElementSource source,sourceStmt;
       Integer size;
@@ -349,7 +350,24 @@ algorithm
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
         (BackendDAE.EQUATION(e1_2,e2_2,source,false), funcs);
+
+    // solved equations
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cref, exp = e2,source=source),_,_,_,_)
+      equation
+        e1 = Expression.crefExp(cref);
         
+        (e1_1,funcs) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
+        (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+        
+        (e2_1,funcs) = differentiateExp(e2, inDiffwrtCref, inInputData, inDiffType, funcs);
+        (e2_2,_) = ExpressionSimplify.simplify(e2_1);
+        
+        op1 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e1,e1_2);
+        op2 = DAE.OP_DIFFERENTIATE(inDiffwrtCref,e2,e2_2);
+        source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
+      then
+        (BackendDAE.EQUATION(e1_2,e2_2,source,false), funcs);
+                
     // RESIDUAL_EQUATION
     case (BackendDAE.RESIDUAL_EQUATION(exp = e1,source=source),_,_,_,_)
       equation
