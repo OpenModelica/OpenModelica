@@ -792,7 +792,8 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__systemCall)
 {
   const char* str = RML_STRINGDATA(rmlA0);
-  rmlA0 = (void*) mk_icon(SystemImpl__systemCall(str));
+  const char* outFile = RML_STRINGDATA(rmlA1);
+  rmlA0 = (void*) mk_icon(SystemImpl__systemCall(str,outFile));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

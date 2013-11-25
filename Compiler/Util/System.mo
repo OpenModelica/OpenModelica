@@ -301,9 +301,10 @@ public function readFile
 end readFile;
 
 public function systemCall
-  input String inString;
+  input String command;
+  input String outFile := "" "empty file means no redirection unless it is part of the command";
   output Integer outInteger;
-  external "C" outInteger=SystemImpl__systemCall(inString) annotation(Library = "omcruntime");
+  external "C" outInteger=SystemImpl__systemCall(command,outFile) annotation(Library = "omcruntime");
 end systemCall;
 
 public function systemCallParallel

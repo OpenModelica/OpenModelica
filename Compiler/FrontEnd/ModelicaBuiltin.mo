@@ -966,6 +966,7 @@ end loadFileInteractive;
 
 function system "Similar to system(3). Executes the given command in the system shell."
   input String callStr "String to call: sh -c $callStr";
+  input String filename := "" "The output is redirected to this file (unless already done by callStr)";
   output Integer retval "Return value of the system call; usually 0 on success";
 external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");

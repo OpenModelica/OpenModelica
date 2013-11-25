@@ -157,8 +157,7 @@ algorithm
   compileWrapperCommand := System.readFile(getFullShareFileName(cStrWrapperCompileCmd));
   compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%wrapperName%>", lastClassName +& cStrWrapperSuffix);
   compileWrapperCommand := System.stringReplace(compileWrapperCommand,"<%currentDirectory%>", System.pwd());
-  compileWrapperCommand := compileWrapperCommand +& " > " +& lastClassName +& cStrWrapperSuffix +& ".log" +& " 2>&1";
-  runCommand(compileWrapperCommand);
+  runCommand(compileWrapperCommand, lastClassName +& cStrWrapperSuffix +& ".log");
 end generateWrapperLibrary;
 
 protected function generateXMLFile "generates the xml file for the OpenTURNS wrapper"
@@ -713,7 +712,7 @@ algorithm
         cmdFile = inStrPythonScriptFile +& ".bat";
         System.writeFile(cmdFile, cmdContents);
         logFile = inStrPythonScriptFile +& ".log";
-        runCommand(cmdFile +& " > " +& logFile +& " 2>&1");
+        runCommand(cmdFile, logFile);
       then
         logFile;
   end match;
@@ -721,15 +720,16 @@ end runPythonScript;
 
 protected function runCommand
   input String cmd;
+  input String logFile;
 algorithm
-  _ := matchcontinue(cmd)
-    case _
+  _ := matchcontinue(cmd,logFile)
+    case (_,_)
       equation
-        print("running: " +& cmd +& "\n");
-        0 = System.systemCall(cmd);
+        print("running: " +& cmd +& " to logFile: " +& logFile +& "\n");
+        0 = System.systemCall(cmd,logFile);
       then
         ();
-    case _
+    else
       equation
         print("running: " +& cmd +& "\n\tfailed!\nCheck the log file!\n");
       then

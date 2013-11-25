@@ -2487,29 +2487,6 @@ algorithm
   end matchcontinue;
 end writeFileOrErrorMsg;
 
-public function systemCallWithErrorMsg "
-  This function executes a command with System.systemCall
-  if System.systemCall does not return 0 then the msg
-  is outputed to errorBuf and the function fails."
-  input String inString1;
-  input String inString2;
-algorithm
-  _:=
-  matchcontinue (inString1,inString2)
-    local String s_call,e_msg;
-    case (s_call,_) /* command errorMsg to errorBuf if fail */
-      equation
-        0 = System.systemCall(s_call);
-      then
-        ();
-    case (_,e_msg)
-      equation
-        Print.printErrorBuf(e_msg);
-      then
-        fail();
-  end matchcontinue;
-end systemCallWithErrorMsg;
-
 public function strncmp "Compare two strings up to the nth character
   Returns true if they are equal."
   input String inString1;

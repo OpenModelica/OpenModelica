@@ -86,7 +86,7 @@ extern char* SystemImpl__pwd(void);
 extern int SystemImpl__regularFileExists(const char* str);
 extern int SystemImpl__removeFile(const char* filename);
 extern const char* SystemImpl__basename(const char *str);
-extern int SystemImpl__systemCall(const char* str);
+extern int SystemImpl__systemCall(const char* str, const char* outFile);
 extern void* SystemImpl__systemCallParallel(void *lst, int numThreads);
 extern int SystemImpl__spawnCall(const char* path, const char* str);
 extern double SystemImpl__time(void);

@@ -542,7 +542,7 @@ template simulationFile(SimCode simCode, String guid)
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
-       <%symbolName(modelNamePrefixStr,"performSimulation")%>,
+       (int (*)(DATA *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectConstructors")%>,
        <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
        <%symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,

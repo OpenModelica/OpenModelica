@@ -82,6 +82,7 @@ typedef void* iconv_t;
 #define getFunctionPointerFromDLL dlsym
 #define FreeLibraryFromHandle dlclose
 #define GetLastError(X) 1L
+#include <fcntl.h>
 #endif
 
 /*
@@ -514,7 +515,7 @@ const char* SystemImpl__basename(const char *str)
   return res;
 }
 
-int SystemImpl__systemCall(const char* str)
+int SystemImpl__systemCall(const char* str, const char* outFile)
 {
   int status = -1,ret_val = -1;
   const int debug = 0;
@@ -524,11 +525,33 @@ int SystemImpl__systemCall(const char* str)
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  status = system(str);
+  if (*outFile) {
+    const char *command = malloc(strlen(str) + strlen(outFile) + 9):
+    sprintf(command, "%s > %s 2>&1");
+    status = system(command);
+    free(command);
+  } else {
+    status = system(command);
+  }
 #else
   pid_t pID = vfork();
   if (pID == 0) { // child
-    execl("/bin/sh", "/bin/sh", "-c", str, NULL);
+    if (*outFile) {
+      /* redirect stdout, stderr in the fork'ed process */
+      int fd = open(outFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      dup2(fd, 1);
+      dup2(fd, 2);
+#if defined(__APPLE_CC__)
+      /* OSX likes to not redirect the Segmentation Fault: messages unless the command is in a subshell */
+      char command[strlen(str)+3];
+      sprintf(command, "(%s)", str);
+      execl("/bin/sh", "/bin/sh", "-c", command, NULL);
+#else
+      execl("/bin/sh", "/bin/sh", "-c", str, NULL);
+#endif
+    } else {
+      execl("/bin/sh", "/bin/sh", "-c", str, NULL);
+    }
     if (debug) {
       fprintf(stderr, "System.systemCall: execl failed %s\n", strerror(errno));
       fflush(NULL);
@@ -612,7 +635,7 @@ static void* systemCallWorkerThread(void *argVoid)
     *arg->current+=1;
     pthread_mutex_unlock(arg->mutex);
     if (i >= arg->size) break;
-    arg->results[i] = SystemImpl__systemCall(arg->calls[i]);
+    arg->results[i] = SystemImpl__systemCall(arg->calls[i],"");
   };
   return NULL;
 }
@@ -642,7 +665,7 @@ void* SystemImpl__systemCallParallel(void *lst, int numThreads)
     tmp = RML_CDR(tmp);
   }
   if (sz == 1) {
-    results[i] = SystemImpl__systemCall(calls[0]);
+    results[i] = SystemImpl__systemCall(calls[0],"");
   } else {
     int index = 0;
     pthread_mutex_t mutex;

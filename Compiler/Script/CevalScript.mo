@@ -1435,10 +1435,10 @@ algorithm
         // we should really have different log files for simulation/compilation!
         // as the buildModel log file will be deleted here and that gives less information to the user!
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
-        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > ",logFile," 2>&1"});
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2});
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-        resI = System.systemCall(sim_call);
+        resI = System.systemCall(sim_call,logFile);
         timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
         (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
@@ -1525,10 +1525,10 @@ algorithm
         logFile = stringAppend(executable1,".log");
         0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
         strlinearizeTime = realString(linearizeTime);
-        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags," > ",logFile," 2>&1"});
+        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l=",strlinearizeTime," ",simflags});
         System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-        0 = System.systemCall(sim_call);
+        0 = System.systemCall(sim_call,logFile);
 
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
@@ -1588,7 +1588,7 @@ algorithm
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
         // create the list of arguments for fmigenerator
         call = str +& " " +& "--fmufile=\"" +& filename +& "\" --outputdir=\"" +& workdir +& "\"";
-        0 = System.systemCall(call);
+        0 = System.systemCall(call,"");
       then
         (cache,Values.BOOL(true),st);
 
@@ -1789,9 +1789,9 @@ algorithm
       then
         (cache,Values.STRING(str_1),st);
 
-    case (cache,env,"system",{Values.STRING(str)},st,_)
+    case (cache,env,"system",{Values.STRING(str),Values.STRING(filename)},st,_)
       equation
-        resI = System.systemCall(str);
+        resI = System.systemCall(str,filename);
       then
         (cache,Values.INTEGER(resI),st);
 
@@ -2405,17 +2405,17 @@ algorithm
         touch_file = "omc.checksettings.create_file_test";
         usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
         workdir = System.pwd();
-        touch_res = 0 == System.systemCall("touch " +& touch_file);
-        uname_res = 0 == System.systemCall("uname -a > " +& touch_file);
+        touch_res = 0 == System.systemCall("touch " +& touch_file, "");
+        uname_res = 0 == System.systemCall("uname -a", touch_file);
         uname = System.readFile(touch_file);
-        rm_res = 0 == System.systemCall("rm " +& touch_file);
+        rm_res = 0 == System.systemCall("rm " +& touch_file, "");
         platform = System.platform();
         senddata = System.getRTLibs();
         gcc = System.getCCompiler();
         have_corba = Corba.haveCorba();
-        gcc_res = 0 == System.systemCall(gcc +& " -v > " +& touch_file +& " 2>&1");
+        gcc_res = 0 == System.systemCall(gcc +& " -v", touch_file);
         gccVersion = System.readFile(touch_file);
-        _ = System.systemCall("rm " +& touch_file);
+        _ = System.systemCall("rm " +& touch_file, "");
         confcmd = System.configureCommandLine();
         vals = {Values.STRING(omhome),
                 Values.STRING(omlib),
@@ -4055,7 +4055,7 @@ algorithm
         make = System.getMakeCommand();
         numParallel = Util.if_(Config.getRunningTestsuite(), 1, Config.noProc());
         numParallelStr = intString(numParallel);
-        make_call = stringAppendList({make," -j",numParallelStr," -f ",fileprefix,".makefile > ",fileprefix,".log 2>&1"});
+        make_call = stringAppendList({make," -j",numParallelStr," -f ",fileprefix,".makefile"});
         s_call = Util.if_(isWindows, win_call, make_call);
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: running " +& s_call);
 
@@ -4068,7 +4068,7 @@ algorithm
         0 = Debug.bcallret1(System.regularFileExists(fileLOG),System.removeFile,fileLOG,0);
 
         // call the system command to compile the model!
-        0 = System.systemCall(s_call);
+        0 = System.systemCall(s_call,Util.if_(isWindows,"",fileLOG));
         Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(),
           fileEXE +& "\n" +& fileDLL +& "\n" +& fileLOG +& "\n" +& fileprefix +& ".o\n" +& fileprefix +& ".libs\n" +&
           fileprefix +& "_records.o\n" +& fileprefix +& "_res.mat\n");

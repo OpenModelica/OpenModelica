@@ -1515,7 +1515,7 @@ algorithm
             fileNameGraphViz +& "','file',null,null);txtview('off');";
         Debug.traceln("Running command: " +& "lefty -e " +& leftyCMD +& " > " +& fileNameTraceRemovedConnections);
         // execute lefty
-        leftyExitStatus = System.systemCall("lefty -e " +& leftyCMD +& " > " +& fileNameTraceRemovedConnections);
+        leftyExitStatus = System.systemCall("lefty -e " +& leftyCMD, fileNameTraceRemovedConnections);
         // show the exit status
         Debug.traceln("GraphViz *lefty* exited with status:" +& intString(leftyExitStatus));
         brokenConnects = System.readFile(fileNameTraceRemovedConnections);
