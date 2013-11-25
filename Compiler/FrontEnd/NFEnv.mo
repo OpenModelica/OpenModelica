@@ -66,8 +66,8 @@ protected function encapsulatedToScopeType
   output ScopeType outScopeType;
 algorithm
   outScopeType := match(inEncapsulated)
-    case SCode.ENCAPSULATED() then NFInstTypes.ENCAPSULATED_SCOPE();
-    else NFInstTypes.NORMAL_SCOPE();
+    case SCode.ENCAPSULATED() then NFInstTypes.NORMAL_SCOPE(true);
+    else NFInstTypes.NORMAL_SCOPE(false);
   end match;
 end encapsulatedToScopeType;
 
@@ -783,7 +783,7 @@ public function isScopeEncapsulated
   output Boolean outIsEncapsulated;
 algorithm
   outIsEncapsulated := match(inEnv)
-    case NFInstTypes.FRAME(scopeType = NFInstTypes.ENCAPSULATED_SCOPE()) :: _ then true;
+    case NFInstTypes.FRAME(scopeType = NFInstTypes.NORMAL_SCOPE(true)) :: _ then true;
     else false;
   end match;
 end isScopeEncapsulated;
@@ -895,10 +895,8 @@ algorithm
       String name;
       Env env;
 
-    case (NFInstTypes.FRAME(name = SOME(name), scopeType = NFInstTypes.NORMAL_SCOPE()) :: env, _)
-      then scopeNames2(env, name :: inAccumNames);
-
-    case (NFInstTypes.FRAME(name = SOME(name), scopeType = NFInstTypes.ENCAPSULATED_SCOPE()) :: env, _)
+    case (NFInstTypes.FRAME(name = SOME(name),
+        scopeType = NFInstTypes.NORMAL_SCOPE(isEncapsulated = _)) :: env, _)
       then scopeNames2(env, name :: inAccumNames);
 
     case (_ :: env, _) then scopeNames2(env, inAccumNames);
@@ -907,34 +905,55 @@ algorithm
   end match;
 end scopeNames2;
 
+public function stripImplicitScopes
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := match(inEnv)
+    local
+      Env rest_env;
+
+    case NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE(iterIndex = _)) :: rest_env
+      then stripImplicitScopes(rest_env);
+
+    else inEnv;
+  end match;
+end stripImplicitScopes;
+
 public function envPath
   input Env inEnv;
   output Absyn.Path outPath;
+protected
+  String name;
+  Env rest_env;
 algorithm
-  outPath := match(inEnv)
+  NFInstTypes.FRAME(name = SOME(name)) :: rest_env := stripImplicitScopes(inEnv);
+  outPath := envPath2(rest_env, Absyn.IDENT(name));
+end envPath;
+
+protected function envPath2
+  input Env inEnv;
+  input Absyn.Path inAccumPath;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inEnv, inAccumPath)
     local
       String name;
       Absyn.Path path;
       Env env;
 
-    case (NFInstTypes.FRAME(name = SOME(name)) :: NFInstTypes.FRAME(scopeType = NFInstTypes.TOP_SCOPE()) :: _)
-      then Absyn.IDENT(name);
+    case (NFInstTypes.FRAME(name = SOME(name),
+        scopeType = NFInstTypes.NORMAL_SCOPE(isEncapsulated = _)) :: env, _)
+      then envPath2(env, Absyn.QUALIFIED(name, inAccumPath));
 
-    case (NFInstTypes.FRAME(name = SOME(name)) :: NFInstTypes.FRAME(scopeType = NFInstTypes.BUILTIN_SCOPE()) :: _)
-      then Absyn.IDENT(name);
+    case (NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE(iterIndex =_)) :: env, _)
+      then envPath2(env, inAccumPath);
 
-    case (NFInstTypes.FRAME(scopeType = NFInstTypes.IMPLICIT_SCOPE(iterIndex = _)) :: env)
-      then envPath(env);
-
-    case (NFInstTypes.FRAME(name = SOME(name)) :: env)
-      equation
-        path = envPath(env);
-      then
-        Absyn.QUALIFIED(name, path);
+    else inAccumPath;
 
   end match;
-end envPath;
-      
+end envPath2;
+
 public function prefixIdentWithEnv
   input String inIdent;
   input Env inEnv;
@@ -1039,7 +1058,6 @@ protected
   SCode.Program prog, builtin;
 algorithm
   env := openScope(NONE(), NFInstTypes.BUILTIN_SCOPE(), emptyEnv);
-  env := insertElement(NFBuiltin.BUILTIN_TIME, env);
   (builtin, prog) := List.splitOnTrue(inProgram, SCode.isBuiltinElement);
   env := List.fold1(builtin, insertElementWithOrigin, {NFInstTypes.BUILTIN_ORIGIN()}, env);
   env := openScope(NONE(), NFInstTypes.TOP_SCOPE(), env);

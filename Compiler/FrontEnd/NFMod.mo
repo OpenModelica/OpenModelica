@@ -61,6 +61,7 @@ public type Entry = NFEnv.Entry;
 public type EntryOrigin = NFEnv.EntryOrigin;
 public type Prefix = NFInstTypes.Prefix;
 public type Modifier = NFInstTypes.Modifier;
+public type ConstrainingClass = NFInstTypes.ConstrainingClass;
 
 public function translateMod
   input SCode.Mod inMod;
@@ -108,6 +109,8 @@ algorithm
       SCode.Element el;
       SCode.Mod smod;
       Modifier mod;
+      SCode.Replaceable repl;
+      Option<ConstrainingClass> cc;
 
     case (SCode.NOMOD(), _, _, _, _) then NFInstTypes.NOMOD();
 
@@ -121,16 +124,42 @@ algorithm
     case (SCode.REDECL(fp, ep, el), _, _, _, _)
       equation
         smod = SCode.elementMod(el);
+        el = SCode.setElementMod(el, SCode.NOMOD());
         mod = translateMod2(smod, "", inDimensions, inPrefix, inEnv);
+        repl = SCode.prefixesReplaceable(SCode.elementPrefixes(el));
+        cc = translateConstrainingClass(repl, inPrefix, inEnv);
       then
-        NFInstTypes.REDECLARE(fp, ep, el, inEnv, mod);
+        NFInstTypes.REDECLARE(fp, ep, el, inEnv, mod, cc);
 
   end match;
 end translateMod2;
 
+protected function translateConstrainingClass
+  input SCode.Replaceable inReplaceable;
+  input Prefix inPrefix;
+  input Env inEnv;
+  output Option<ConstrainingClass> outConstrainingClass;
+algorithm
+  outConstrainingClass := match(inReplaceable, inPrefix, inEnv)
+    local
+      SCode.ConstrainClass cc;
+      Absyn.Path path;
+      SCode.Mod smod;
+      Modifier mod;
+
+    case (SCode.REPLACEABLE(cc = SOME(cc)), _, _)
+      equation
+        SCode.CONSTRAINCLASS(constrainingClass = path, modifier = smod) = cc;
+        mod = translateMod2(smod, "", 0, inPrefix, inEnv);
+      then
+        SOME(NFInstTypes.CONSTRAINING_CLASS(path, mod));
+
+    else NONE();
+
+  end match;
+end translateConstrainingClass;
+
 protected function translateSubMods
-
-
   input list<SCode.SubMod> inSubMods;
   input SCode.Each inEach;
   input Integer inDimensions;
@@ -447,6 +476,7 @@ algorithm
       SCode.Element el;
       Env env;
       Modifier mod;
+      Option<ConstrainingClass> cc;
 
     // One of the modifiers is NOMOD, return the other.
     case (NFInstTypes.NOMOD(), _) then inInnerMod;
@@ -482,10 +512,34 @@ algorithm
       then
         NFInstTypes.MODIFIER(name, fp, ep, binding, submods2, info1);
 
-    case (NFInstTypes.MODIFIER(name = _), NFInstTypes.REDECLARE(element = _))
-      then inOuterMod;
+    // Both modifiers are redeclares, but the inner does not have a constraining
+    // class. Keep only the outer redeclare.
+    //case (NFInstTypes.REDECLARE(element = _),
+    //      NFInstTypes.REDECLARE(constrainingClass = NONE()))
+    //  then inOuterMod;
 
-    case (NFInstTypes.REDECLARE(element = _), _) then inInnerMod;
+    case (NFInstTypes.REDECLARE(element = _),
+          NFInstTypes.REDECLARE(element = _))
+      equation
+        // Merge outer modifier with outer constraining class.
+        // Merge outer modifier with inner constraining class.
+      then
+        inOuterMod;
+
+    case (NFInstTypes.MODIFIER(name = _),
+      NFInstTypes.REDECLARE(fp, ep, el, env, mod, cc))
+      equation
+        mod = mergeMod(inOuterMod, mod);
+        // Merge outer modifier with inner modifier.
+      then
+        NFInstTypes.REDECLARE(fp, ep, el, env, mod, cc);
+
+    case (NFInstTypes.REDECLARE(fp, ep, el, env, mod, cc),
+          NFInstTypes.MODIFIER(name = _))
+      equation
+        mod = mergeMod(mod, inInnerMod);
+      then
+        NFInstTypes.REDECLARE(fp, ep, el, env, mod, cc);
 
     else
       equation
@@ -636,14 +690,6 @@ algorithm
 end compactMod;
 
 protected function compactSubMods
-
-
-
-
-
-
-
-
   input list<Modifier> inSubMods;
   input Prefix inPrefix;
   output list<Modifier> outSubMods;
@@ -655,7 +701,6 @@ algorithm
 end compactSubMods;
 
 protected function compactSubMod
-
   input Modifier inSubMod;
   input Prefix inPrefix;
   input list<tuple<String, Modifier>> inAccumMods;
@@ -667,7 +712,6 @@ algorithm
       list<tuple<String, Modifier>> mods;
       Boolean found;
 
-
     case (NFInstTypes.NOMOD(), _, _) then inAccumMods;
 
     else
@@ -678,12 +722,8 @@ algorithm
       then
         List.consOnTrue(not found, (name, inSubMod), mods);
 
-
-
   end match;
 end compactSubMod;
-        
-
 
 protected function compactSubMod2
   input tuple<String, Modifier> inExistingMod;
@@ -776,7 +816,6 @@ algorithm
         NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info2);
 
     // Both modifiers have bindings, show duplicate modification error.
-
     else
       equation
         info1 = modifierInfo(inMod1);
@@ -943,7 +982,7 @@ algorithm
       then
         "MOD(" +& fstr +& estr +& "{" +& submod_str +& "})" +& bind_str;
 
-    case NFInstTypes.REDECLARE(fp, ep, el, _, _)
+    case NFInstTypes.REDECLARE(fp, ep, el, _, _, _)
       equation
         fstr = SCodeDump.finalStr(fp);
         estr = SCodeDump.eachStr(ep);

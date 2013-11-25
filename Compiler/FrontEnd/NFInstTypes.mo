@@ -238,11 +238,19 @@ public uniontype Modifier
     SCode.Element element;
     Env env;
     Modifier mod;
+    Option<ConstrainingClass> constrainingClass;
   end REDECLARE;
 
   record NOMOD end NOMOD;
 end Modifier;
 
+public uniontype ConstrainingClass
+  record CONSTRAINING_CLASS
+    Absyn.Path classPath;
+    Modifier mod;
+  end CONSTRAINING_CLASS;
+end ConstrainingClass;
+    
 public uniontype Prefixes
   record NO_PREFIXES end NO_PREFIXES;
 
@@ -474,8 +482,9 @@ end Entry;
 public uniontype ScopeType
   record BUILTIN_SCOPE end BUILTIN_SCOPE;
   record TOP_SCOPE end TOP_SCOPE;
-  record NORMAL_SCOPE end NORMAL_SCOPE;
-  record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
+  record NORMAL_SCOPE 
+    Boolean isEncapsulated;
+  end NORMAL_SCOPE;
   record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
 end ScopeType;
 

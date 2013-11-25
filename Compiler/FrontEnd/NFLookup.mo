@@ -64,6 +64,8 @@ protected constant Entry BOOL_TYPE_ENTRY = NFInstTypes.ENTRY(
     "Boolean", NFBuiltin.BUILTIN_BOOLEAN, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
 protected constant Entry STRING_TYPE_ENTRY = NFInstTypes.ENTRY(
     "String", NFBuiltin.BUILTIN_STRING, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
+protected constant Entry TIME_COMP_ENTRY = NFInstTypes.ENTRY(
+    "time", NFBuiltin.BUILTIN_TIME, NOMOD, {NFInstTypes.BUILTIN_ORIGIN()});
 
 protected uniontype LookupState
   "LookupState is used by the name lookup to keep track of what state it's in,
@@ -76,18 +78,9 @@ protected uniontype LookupState
   record STATE_PACKAGE "Found name is package." end STATE_PACKAGE;
   record STATE_CLASS "Found name is class." end STATE_CLASS;
   record STATE_FUNC "Found name is function." end STATE_FUNC;
+  record STATE_PREDEF_COMP "Found name is predefined component." end STATE_PREDEF_COMP;
+  record STATE_PREDEF_CLASS "Found name is predefined class." end STATE_PREDEF_CLASS;
 end LookupState;
-
-public function lookupNameSilent
-  "Looks up a name, but doesn't print an error message if it fails."
-  input Absyn.Path inName;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  output Entry outEntry;
-  output Env outEnv;
-algorithm
-  (outEntry, outEnv, _) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo, NONE());
-end lookupNameSilent;
 
 public function lookupClassName
   "Calls lookupName with the 'Class not found' error message."
@@ -96,28 +89,12 @@ public function lookupClassName
   input Absyn.Info inInfo;
   output Entry outEntry;
   output Env outEnv;
+protected
+  LookupState state;
 algorithm
-  (outEntry, outEnv) := matchcontinue(inName, inEnv, inInfo)
-    local
-      Entry entry;
-      Env env;
-      String name;
-      LookupState state;
-
-    case (Absyn.IDENT(name = name), _, _)
-      equation
-        (entry, env) = lookupBuiltinType(name, inEnv);
-      then
-        (entry, env);
-
-    else
-      equation
-        (entry, env, state) = lookupName(inName, inEnv, STATE_BEGIN(), inInfo, SOME(Error.LOOKUP_ERROR));
-        validateEndState(state, STATE_CLASS(), inName, inInfo);
-      then
-        (entry, env);
-
-  end matchcontinue;
+  (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo, 
+    Error.LOOKUP_ERROR);
+  validateEndState(state, STATE_CLASS(), inName, inInfo);
 end lookupClassName;
 
 public function lookupBaseClassName
@@ -127,31 +104,12 @@ public function lookupBaseClassName
   input Absyn.Info inInfo;
   output Entry outEntry;
   output Env outEnv;
+protected
+  LookupState state;
 algorithm
-  (outEntry, outEnv) := matchcontinue(inName, inEnv, inInfo)
-    local
-      Env env;
-      Entry entry;
-      String name;
-      LookupState state;
-
-    // Extending a builtin type.
-    case (Absyn.IDENT(name = name), _, _)
-      equation
-        (entry, env) = lookupBuiltinType(name, inEnv);
-      then
-        (entry, env);
-
-    // Normal baseclass.
-    else
-      equation
-        (entry, env, state) = lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
-          SOME(Error.LOOKUP_BASECLASS_ERROR));
-        validateEndState(state, STATE_CLASS(), inName, inInfo);
-      then
-        (entry, env);
-
-  end matchcontinue;
+  (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
+      Error.LOOKUP_BASECLASS_ERROR);
+  validateEndState(state, STATE_CLASS(), inName, inInfo);
 end lookupBaseClassName;
 
 public function lookupVariableName
@@ -165,7 +123,7 @@ protected
   LookupState state;
 algorithm
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
-    SOME(Error.LOOKUP_VARIABLE_ERROR));
+    Error.LOOKUP_VARIABLE_ERROR);
   validateEndState(state, STATE_COMP(), inName, inInfo);
 end lookupVariableName;
 
@@ -181,7 +139,7 @@ protected
 algorithm
   /* TODO: Handle Integer and String also. */
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
-    SOME(Error.LOOKUP_FUNCTION_ERROR));
+    Error.LOOKUP_FUNCTION_ERROR);
   validateEndState(state, STATE_FUNC(), inName, inInfo);
 end lookupFunctionName;
 
@@ -272,34 +230,50 @@ algorithm
     SCode.noComment, Absyn.dummyInfo);
 end makeDummyMetaType;
 
-protected function lookupBuiltinType
-  input String inName;
+protected function lookupBuiltinName
+  input Absyn.Path inName;
   input Env inEnv;
   output Entry outEntry;
   output Env outEnv;
+  output LookupState outState;
 algorithm
-  outEntry := lookupBuiltinType2(inName);
-  outEnv := NFEnv.builtinScope(inEnv);
-end lookupBuiltinType;
+  (outEntry, outEnv, outState) := match(inName, inEnv)
+    local
+      String name;
+      Entry entry;
+      Env env;
+      LookupState state;
 
-protected function lookupBuiltinType2
+    case (Absyn.IDENT(name = name), _)
+      equation
+        (entry, state) = lookupBuiltinName2(name);
+        env = NFEnv.builtinScope(inEnv);
+      then
+        (entry, env, state);
+
+  end match;
+end lookupBuiltinName;
+
+protected function lookupBuiltinName2
   input String inName;
   output Entry outEntry;
+  output LookupState outState;
 algorithm
-  outEntry := match(inName)
-    case "Real" then REAL_TYPE_ENTRY;
-    case "Integer" then INT_TYPE_ENTRY;
-    case "Boolean" then BOOL_TYPE_ENTRY;
-    case "String" then STRING_TYPE_ENTRY;
+  (outEntry, outState) := match(inName)
+    case "Real" then (REAL_TYPE_ENTRY, STATE_PREDEF_CLASS());
+    case "Integer" then (INT_TYPE_ENTRY, STATE_PREDEF_CLASS());
+    case "Boolean" then (BOOL_TYPE_ENTRY, STATE_PREDEF_CLASS());
+    case "String" then (STRING_TYPE_ENTRY, STATE_PREDEF_CLASS());
+    case "time" then (TIME_COMP_ENTRY, STATE_PREDEF_COMP());
   end match;
-end lookupBuiltinType2;
+end lookupBuiltinName2;
 
 protected function lookupName
   input Absyn.Path inName;
   input Env inEnv;
   input LookupState inState;
   input Absyn.Info inInfo;
-  input Option<Error.Message> inErrorType;
+  input Error.Message inErrorType;
   output Entry outEntry;
   output Env outEnv;
   output LookupState outState;
@@ -310,9 +284,14 @@ algorithm
       Absyn.Path path;
       Entry entry;
       Env env;
-      Error.Message error_id;
       String name_str, env_str;
       LookupState state;
+
+    case (_, _, _, _, _)
+      equation
+        (entry, env, state) = lookupBuiltinName(inName, inEnv);
+      then
+        (entry, env, state);
 
     case (Absyn.IDENT(name = name), _, _, _, _)
       equation
@@ -336,11 +315,11 @@ algorithm
       then
         (entry, env, state);
 
-    case (_, _, _, _, SOME(error_id))
+    else
       equation
         name_str = Absyn.pathString(inName);
         env_str = NFEnv.printEnvPathStr(inEnv);
-        Error.addSourceMessage(error_id, {name_str, env_str}, inInfo);
+        Error.addSourceMessage(inErrorType, {name_str, env_str}, inInfo);
       then
         fail();
 
@@ -386,12 +365,14 @@ algorithm
       String name, found_str, expected_str;
 
     // Found the expected kind of element.
-    case (STATE_COMP(),      STATE_COMP(), _, _) then ();
-    case (STATE_COMP_COMP(), STATE_COMP(), _, _) then ();
-    case (STATE_PACKAGE(),   STATE_CLASS(), _, _) then ();
-    case (STATE_CLASS(),     STATE_CLASS(), _, _) then ();
-    case (STATE_FUNC(),      STATE_FUNC(), _, _) then ();
-    case (STATE_COMP_FUNC(), STATE_FUNC(), _, _) then ();
+    case (STATE_COMP(),         STATE_COMP(), _, _) then ();
+    case (STATE_COMP_COMP(),    STATE_COMP(), _, _) then ();
+    case (STATE_PREDEF_COMP(),  STATE_COMP(), _, _) then ();
+    case (STATE_PACKAGE(),      STATE_CLASS(), _, _) then ();
+    case (STATE_CLASS(),        STATE_CLASS(), _, _) then ();
+    case (STATE_PREDEF_CLASS(), STATE_CLASS(), _, _) then ();
+    case (STATE_FUNC(),         STATE_FUNC(), _, _) then ();
+    case (STATE_COMP_FUNC(),    STATE_FUNC(), _, _) then ();
     
     // Found a class via a component, but expected a function.
     case (STATE_COMP_CLASS(), STATE_FUNC(), _, _)
@@ -441,6 +422,8 @@ algorithm
     case STATE_PACKAGE() then System.gettext("package");
     case STATE_CLASS() then System.gettext("class");
     case STATE_FUNC() then System.gettext("function");
+    case STATE_PREDEF_COMP() then System.gettext("component");
+    case STATE_PREDEF_CLASS() then System.gettext("class");
   end match;
 end lookupStateString;
 
@@ -551,7 +534,11 @@ protected function nextState2
          |                |      
          v(FUNC)          |
     [COMP_FUNC]<----------+
-"
+
+  There's also STATE_PREDEF_COMP and STATE_PREDEF_CLASS for the predefined types
+  and components, e.g. Real, time, etc., which are handled as special cases in
+  lookupName and bypasses this state machine.
+  "
   input LookupState inElementState;
   input LookupState inCurrentState;
   input SCode.Element inElement;
@@ -826,15 +813,32 @@ public function isNameGlobal
   output Boolean outIsGlobal;
   output Entry outEntry;
   output Env outEnv;
-protected
-  Boolean is_local;
-  Env env;
 algorithm
-  // Look up the name unresolved and check if it's a local name.
-  (outEntry, env) := lookupSimpleName_impl(inName, inEnv);  
-  outIsGlobal := not referenceEq(env, inEnv);
-  // Then resolve the entry and check if it refers to a class.
-  (outEntry, outEnv) := NFEnv.resolveEntry(outEntry, env);
+  (outIsGlobal, outEntry, outEnv) := matchcontinue(inName, inEnv)
+    local
+      Boolean is_global;
+      Env env;
+      Entry entry;
+
+    case (_, _)
+      equation
+        (entry, _) = lookupBuiltinName2(inName);
+        env = NFEnv.builtinScope(inEnv);
+      then
+        (false, entry, env);
+
+    else
+      equation
+        // Look up the name unresolved and check if it's a local name.
+        (entry, env) = lookupSimpleName_impl(inName, inEnv);  
+        is_global = not referenceEq(env, inEnv);
+        // Then resolve the entry and check if it refers to a class.
+        (entry, env) = NFEnv.resolveEntry(entry, env);
+        is_global = is_global or NFEnv.isClassEntry(entry); 
+      then
+        (is_global, entry, env);
+
+  end matchcontinue;
 end isNameGlobal;
 
 public function enterEntryScope
@@ -962,6 +966,8 @@ algorithm
       Absyn.TypeSpec ty;
       SCode.Element el;
       list<Modifier> ext_mods;
+      SCode.Mod smod;
+      Modifier mod;
 
     case (SCode.PARTS(elementLst = elems), _, _, _, _, _, _, env)
       equation
@@ -988,16 +994,21 @@ algorithm
       then
         (env, ext_mods);
 
-    case (SCode.DERIVED(typeSpec = ty), _, _, _, _, _, _, _)
+    case (SCode.DERIVED(typeSpec = ty, modifications = smod), _, _, _, _, _, _, _)
       equation
+        // Apply the modifier from the derived declaration.
+        // TODO: The prefix and dimensions are wrong.
+        mod = NFMod.translateMod(smod, "", 0, NFInstTypes.emptyPrefix, inEnv);
+        mod = NFMod.mergeMod(inModifier, mod);
+
         (entry, env) = lookupTypeSpec(ty, inEnv, inInfo);
         (el as SCode.CLASS(classDef = cdef)) = NFEnv.entryElement(entry);
         // TODO: Only create this environment if needed, i.e. if the cdef
         // contains extends.
         env = openClassScope(el, env);
-        (env, _) = populateEnvWithClassDef(cdef, inModifier, inVisibility,
+        (env, _) = populateEnvWithClassDef(cdef, mod, inVisibility,
           inOrigins, env, elementSplitterExtends, inInfo, inAccumEnv);
-        (env, ext_mods) = populateEnvWithClassDef(cdef, inModifier,
+        (env, ext_mods) = populateEnvWithClassDef(cdef, mod,
           inVisibility, inOrigins, env, inSplitFunc, inInfo, inAccumEnv);
       then
         (env, ext_mods);
@@ -1274,8 +1285,8 @@ algorithm
         (el as SCode.CLASS(classDef = cdef)) = NFEnv.entryElement(entry);
         mod = NFMod.translateMod(smod, "", 0, NFInstTypes.emptyPrefix, inEnv);
         env = openClassScope(el, env);
-        (env, _) = populateEnvWithClassDef(cdef, mod, SCode.PUBLIC(), {}, env,
-          elementSplitterExtends, info, env);
+        (env, _) = populateEnvWithClassDef(cdef, mod,
+          SCode.PUBLIC(), {}, env, elementSplitterExtends, info, env);
         // Populate the accumulated environment with the inherited elements.
         origin = NFEnv.makeInheritedOrigin(inExtends, inIndex, env);
         origins = origin :: inOrigins;

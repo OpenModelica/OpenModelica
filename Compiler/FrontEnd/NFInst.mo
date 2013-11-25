@@ -93,14 +93,10 @@ public type Prefix = NFInstTypes.Prefix;
 public type Statement = NFInstTypes.Statement;
 
 protected type Entry = NFEnv.Entry;
+protected type EntryOrigin = NFInstTypes.EntryOrigin;
 protected type FunctionSlot = NFInstTypes.FunctionSlot;
 protected type SymbolTable = NFInstSymbolTable.SymbolTable;
 protected type Globals = tuple<SymbolTable, FunctionHashTable>;
-
-protected uniontype InstPolicy
-  record INST_ALL end INST_ALL;
-  record INST_ONLY_CONST end INST_ONLY_CONST;
-end InstPolicy;
 
 public uniontype ExtendsState
   record NO_EXTENDS end NO_EXTENDS;
@@ -145,7 +141,7 @@ algorithm
         constants = NFInstSymbolTable.create();
         (cls, _, _, (constants, functions)) = instClassEntry(inClassPath, top_cls,
           NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(), env,
-          NFInstTypes.EMPTY_PREFIX(SOME(inClassPath)), INST_ALL(), (constants, functions));
+          NFInstTypes.EMPTY_PREFIX(SOME(inClassPath)), (constants, functions));
 
         //builtin_el = instBuiltinElements((constants, functions));
 
@@ -234,7 +230,6 @@ protected function instClassEntry
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
   input Globals inGlobals;
   output Class outClass;
   output DAE.Type outType;
@@ -246,7 +241,7 @@ algorithm
   el := NFEnv.entryElement(inEntry);
   (outClass, outType, outPrefixes, outGlobals) :=
     instClassEntry_impl(inTypePath, el, inEntry, inClassMod, inPrefixes, inEnv,
-      inPrefix, inInstPolicy, inGlobals);
+      inPrefix, inGlobals);
 end instClassEntry;
 
 protected function instClassEntry_impl
@@ -257,7 +252,6 @@ protected function instClassEntry_impl
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
   input Globals inGlobals;
   output Class outClass;
   output DAE.Type outType;
@@ -265,7 +259,7 @@ protected function instClassEntry_impl
   output Globals outGlobals;
 algorithm
   (outClass, outType, outPrefixes, outGlobals) := match(inTypePath, inElement, inEntry,
-      inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inGlobals)
+      inClassMod, inPrefixes, inEnv, inPrefix, inGlobals)
     local
       Absyn.ArrayDim dims;
       Absyn.Info info;
@@ -278,7 +272,6 @@ algorithm
       Env env;
       ExtendsState es;
       Globals globals;
-      InstPolicy ip;
       Integer dim_count;
       list<DAE.Var> vars;
       list<Element> elems;
@@ -298,7 +291,7 @@ algorithm
 
     // A builtin type (only builtin types can be PARTS).
     case (_, SCode.CLASS(name = name, restriction = SCode.R_TYPE(),
-          classDef = SCode.PARTS(elementLst = _)), _, _, _, _, _, ip, globals)
+          classDef = SCode.PARTS(elementLst = _)), _, _, _, _, _, globals)
       equation
         (vars, globals) = instBasicTypeAttributes(inClassMod, name, globals);
         ty = instBasicType(name, vars);
@@ -308,17 +301,17 @@ algorithm
     // A class with parts, instantiate all elements in it.
     case (_, SCode.CLASS(name = name, restriction = res,
           classDef = cdef as SCode.PARTS(elementLst = el), info = info), _, _,
-        _, _, _, ip, globals)
+        _, _, _, globals)
       equation
         // Enter the class scope.
         (env, ext_mods) = NFLookup.enterEntryScope(inEntry, inClassMod, inEnv);
 
         // Instantiate the class' elements.
         (elems, es, globals) = instElementList(el, ext_mods, inPrefixes, env,
-          inTypePath, inPrefix, ip, globals);
+          inPrefix, globals);
 
         // Instantiate all equation and algorithm sections.
-        (eq, ieq, alg, ialg, globals) = instSections(cdef, env, inPrefix, ip, globals);
+        (eq, ieq, alg, ialg, globals) = instSections(cdef, env, inPrefix, globals);
 
         // Flatten the class parts.
         cls = NFInstTypes.COMPLEX_CLASS(inTypePath, elems, eq, ieq, alg, ialg);
@@ -333,7 +326,7 @@ algorithm
     // A derived class, look up the inherited class and instantiate it.
     case (_, SCode.CLASS(name = name, classDef = SCode.DERIVED(modifications = smod,
           typeSpec = dty, attributes = attr), restriction = res, info = info),
-        _, _, _, _, _, ip, globals)
+        _, _, _, _, _, globals)
       equation
         // Look up the inherited class.
         (entry, env) = NFLookup.lookupTypeSpec(dty, inEnv, info);
@@ -353,7 +346,7 @@ algorithm
         //
 
         (cls, ty, prefs, globals) = instClassEntry(inTypePath, entry, mod,
-          inPrefixes, env, inPrefix, ip, globals);
+          inPrefixes, env, inPrefix, globals);
 
         // Merge the attributes of this class and the attributes of the
         // inherited class.
@@ -369,15 +362,15 @@ algorithm
         (cls, ty, prefs, globals);
 
     case (_, SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)),
-        _, _, _, _, _, ip, globals)
+        _, _, _, _, _, globals)
       equation
         (cls, ty, globals) =
-          instClassExtends(inElement, inClassMod, inPrefixes, inEnv, inPrefix, ip, globals);
+          instClassExtends(inElement, inClassMod, inPrefixes, inEnv, inPrefix, globals);
       then
         (cls, ty, NFInstTypes.NO_PREFIXES(), globals);
 
     case (_, SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = enums), info = info),
-        _, _, _, _, _, _, globals)
+        _, _, _, _, _, globals)
       equation
         ty = NFInstUtil.makeEnumType(enums, inTypePath);
       then
@@ -399,23 +392,21 @@ protected function instClassExtends
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
   input Globals inGlobals;
   output Class outClass;
   output DAE.Type outType;
   output Globals outGlobals;
 algorithm
   (outClass, outType, outGlobals) := matchcontinue(inClassExtends, inMod,
-      inPrefixes, inEnv, inPrefix, inInstPolicy, inGlobals)
+      inPrefixes, inEnv, inPrefix, inGlobals)
     local
       SCode.ClassDef cdef;
       SCode.Mod mod;
-      InstPolicy ip;
       Globals globals;
       String name;
 
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod,
-        composition = cdef)), _, _, _, _, ip, globals)
+        composition = cdef)), _, _, _, _, globals)
       equation
         print("instClassExtends");
       then
@@ -439,7 +430,6 @@ end instClassExtends;
 //  input Env inClassEnv;
 //  input Env inEnv;
 //  input Prefix inPrefix;
-//  input InstPolicy inInstPolicy;
 //  input Globals inGlobals;
 //  output Class outClass;
 //  output DAE.Type outType;
@@ -447,7 +437,7 @@ end instClassExtends;
 //algorithm
 //  (outClass, outType, outGlobals) :=
 //  matchcontinue(inClassExtends, inMod, inPrefixes, inClassEnv, inEnv, inPrefix,
-//      inInstPolicy, inGlobals)
+//      inGlobals)
 //    local
 //      SCode.ClassDef cdef;
 //      SCode.Mod mod;
@@ -457,20 +447,19 @@ end instClassExtends;
 //      String name;
 //      Item item;
 //      Env base_env, ext_env;
-//      InstPolicy ip;
 //      Class base_cls, ext_cls, comp_cls;
 //      DAE.Type base_ty, ext_ty, comp_ty;
 //      Globals globals;
 //
 //    case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod,
-//        composition = cdef)), _, _, _, _, _, ip, globals)
+//        composition = cdef)), _, _, _, _, _, globals)
 //      equation
 //        (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
 //        ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
 //        cdef = SCode.addElementToCompositeClassDef(ext, cdef);
 //        scls = SCode.setElementClassDefinition(cdef, inClassExtends);
 //        item = NFSCodeEnv.CLASS(scls, inClassEnv, NFSCodeEnv.CLASS_EXTENDS());
-//        (comp_cls, comp_ty, _, globals) = instClassItem(bc_path, item, inMod, inPrefixes, inEnv, inPrefix, ip, globals);
+//        (comp_cls, comp_ty, _, globals) = instClassItem(bc_path, item, inMod, inPrefixes, inEnv, inPrefix, globals);
 //      then
 //        (comp_cls, comp_ty, globals);
 //
@@ -668,16 +657,14 @@ protected function instElementList
   input list<Modifier> inExtendsMods;
   input Prefixes inPrefixes;
   input Env inEnv;
-  input Absyn.Path inTypePath;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
   input Globals inGlobals;
   output list<Element> outElements;
   output ExtendsState outExtendsState;
   output Globals outGlobals;
 algorithm
   (outElements, outExtendsState, outGlobals) := instElementList2(inElements,
-    inExtendsMods, inPrefixes, inEnv, inPrefix, inInstPolicy, {}, NO_EXTENDS(), inGlobals);
+    inExtendsMods, inPrefixes, inEnv, inPrefix, {}, NO_EXTENDS(), inGlobals);
 end instElementList;
 
 protected function instElementList2
@@ -686,7 +673,6 @@ protected function instElementList2
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input ExtendsState inExtendsState;
   input Globals inGlobals;
@@ -695,7 +681,7 @@ protected function instElementList2
   output Globals outGlobals;
 algorithm
   (outElements, outExtendsState, outGlobals) := match(inElements, inExtendsMods, inPrefixes,
-      inEnv, inPrefix, inInstPolicy, inAccumEl, inExtendsState, inGlobals)
+      inEnv, inPrefix, inAccumEl, inExtendsState, inGlobals)
     local
       SCode.Element elem;
       list<SCode.Element> rest_el;
@@ -706,58 +692,27 @@ algorithm
       Env env;
       list<Modifier> ext_mods;
 
-    case (elem :: rest_el, _, _, env, _, _, accum_el, es, globals)
+    case (elem :: rest_el, _, _, env, _, accum_el, es, globals)
       equation
-        (elem, mod, env) = resolveElement(elem, env);
-        (accum_el, ext_mods, es, globals) = instElement(elem, mod, inExtendsMods,
-          inPrefixes, env, inPrefix, inInstPolicy, accum_el, es, globals);
-          (accum_el, es, globals) = instElementList2(rest_el, ext_mods, inPrefixes,
-          inEnv, inPrefix, inInstPolicy, accum_el, es, globals);
+        (accum_el, ext_mods, es, globals) = instElement(elem, inExtendsMods,
+          inPrefixes, env, inPrefix, accum_el, es, globals);
+        (accum_el, es, globals) = instElementList2(rest_el, ext_mods, inPrefixes,
+          inEnv, inPrefix, accum_el, es, globals);
       then
         (accum_el, es, globals);
 
-    case ({}, _, _, _, _, _, _, es, globals)
+    case ({}, _, _, _, _, _, es, globals)
       then (listReverse(inAccumEl), es, globals);
 
   end match;
 end instElementList2;
 
-protected function resolveElement
-  input SCode.Element inElement;
-  input Env inEnv;
-  output SCode.Element outElement;
-  output Modifier outModifier;
-  output Env outEnv;
-algorithm
-  (outElement, outModifier, outEnv) := match(inElement, inEnv)
-    local
-      String name;
-      Entry entry;
-      SCode.Element elem;
-      Modifier mod;
-      Env env;
-
-    case (SCode.COMPONENT(name = name), _)
-      equation
-        (entry, env) = NFLookup.lookupInLocalScope(name, inEnv);
-        elem = NFEnv.entryElement(entry);
-        mod = NFEnv.entryModifier(entry);
-      then
-        (elem, mod, env);
-
-    else (inElement, NFInstTypes.NOMOD(), inEnv);
-
-  end match;
-end resolveElement;
-
 protected function instElement
   input SCode.Element inElement;
-  input Modifier inModifier;
   input list<Modifier> inExtendsMods;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input ExtendsState inExtendsState;
   input Globals inGlobals;
@@ -767,52 +722,46 @@ protected function instElement
   output Globals outGlobals;
 algorithm
   (outElements, outExtendsMods, outExtendsState, outGlobals) :=
-  match(inElement, inModifier, inExtendsMods, inPrefixes, inEnv, inPrefix,
-      inInstPolicy, inAccumEl, inExtendsState, inGlobals)
+  match(inElement, inExtendsMods, inPrefixes, inEnv, inPrefix,
+      inAccumEl, inExtendsState, inGlobals)
     local
       Globals globals;
       ExtendsState es;
       Element res;
       Option<Element> ores;
       list<Element> accum_el;
-      InstPolicy ip;
       String name;
       Modifier mod;
       list<Modifier> ext_mods;
+      Entry entry;
+      SCode.Element el;
+      Env env;
+      tuple<SCode.Mod, Env> orig_mod;
 
-    // A component when we're in 'instantiate everything' mode.
-    case (SCode.COMPONENT(name = _), _, _, _, _, _, INST_ALL(), _, es, globals)
+    // A component.
+    case (SCode.COMPONENT(name = name), _, _, _, _, _, _, globals)
       equation
-        (res, globals) = instComponent(inElement, inModifier, inPrefixes,
-          inEnv, inPrefix, inInstPolicy, globals);
+        (entry, _) = NFLookup.lookupInLocalScope(name, inEnv);
+        (res, globals) = instComponentEntry(entry, inPrefixes, inEnv, inPrefix, inGlobals);
       then
-        (res :: inAccumEl, inExtendsMods, es, globals);
-
-    // A constant when we're in 'instantiate only constants' mode.
-    case (SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), _, _, _, _, _, INST_ONLY_CONST(), _, es, globals)
-      equation
-        (res, globals) = instComponent(inElement, inModifier, inPrefixes,
-          inEnv, inPrefix, inInstPolicy, globals);
-      then
-        (res :: inAccumEl, inExtendsMods, es, globals);
-
+        (res :: inAccumEl, inExtendsMods, inExtendsState, globals);
+        
     // An extends clause.
-    case (SCode.EXTENDS(baseClassPath = _), _, mod :: ext_mods, _, _, _, ip, _, es, globals)
+    case (SCode.EXTENDS(baseClassPath = _), mod :: ext_mods, _, _, _, _, es, globals)
       equation
         (res, es, globals) = instExtends(inElement, mod, inPrefixes, inEnv,
-          inPrefix, es, ip, globals);
+          inPrefix, es, globals);
       then
         (res :: inAccumEl, ext_mods, es, globals);
 
     // A package which might contain constants we should instantiate.
-    case (SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        _, _, _, _, _, ip, _, es, globals)
-      equation
-        (ores, globals) = instPackageConstants(inElement, inEnv, inPrefix, globals);
-        accum_el = List.consOption(ores, inAccumEl);
-      then
-        (accum_el, inExtendsMods, es, globals);
+    //case (SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
+    //    _, _, _, _, _, es, globals)
+    //  equation
+    //    (ores, globals) = instPackageConstants(inElement, inEnv, inPrefix, globals);
+    //    accum_el = List.consOption(ores, inAccumEl);
+    //  then
+    //    (accum_el, inExtendsMods, es, globals);
 
     // Ignore everything else.
     else (inAccumEl, inExtendsMods, inExtendsState, inGlobals);
@@ -820,125 +769,124 @@ algorithm
   end match;
 end instElement;
 
-protected function instComponent
+protected function getRedeclaredModifier
   input SCode.Element inElement;
+  output SCode.Mod outModifier;
+algorithm
+  outModifier := match(inElement)
+    local
+      SCode.Mod mod;
+
+    case SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix =
+      SCode.REPLACEABLE(cc = SOME(SCode.CONSTRAINCLASS(modifier = mod))))) then mod;
+
+    case SCode.COMPONENT(modifications = mod) then mod;
+
+  end match;
+end getRedeclaredModifier;
+
+protected function redeclareComponent
+  input Entry inEntry;
   input Modifier inModifier;
+  input Env inEnv;
+  output Entry outEntry;
+  output tuple<SCode.Mod, Env> outOriginalMod;
+  output Env outEnv;
+algorithm
+  (outEntry, outOriginalMod, outEnv) := match(inEntry, inModifier, inEnv)
+    local
+      SCode.Element el, orig_el;
+      Env env;
+      Modifier mod;
+      SCode.Mod smod;
+      String name;
+      EntryOrigin origin;
+
+    case (_, NFInstTypes.REDECLARE(element = el, env = env, mod = mod), _)
+      equation
+        orig_el = NFEnv.entryElement(inEntry);
+        name = SCode.elementName(orig_el);
+        smod = getRedeclaredModifier(orig_el);
+        origin = NFInstTypes.REDECLARED_ORIGIN(inEntry, inEnv);
+      then
+        (NFInstTypes.ENTRY(name, el, mod, {origin}), (smod, inEnv), env);
+
+    else
+      equation
+        orig_el = NFEnv.entryElement(inEntry);
+        name = SCode.elementName(orig_el);
+        smod = getRedeclaredModifier(orig_el);
+      then
+        (inEntry, (smod, inEnv), inEnv);
+      
+  end match;
+end redeclareComponent;
+    
+protected function instComponentEntry
+  input Entry inEntry;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
+  input Globals inGlobals;
+  output Element outElement;
+  output Globals outGlobals;
+protected
+  String name;
+  Entry entry;
+  Modifier mod;
+  tuple<SCode.Mod, Env> orig_mod;
+  SCode.Element el;
+  Env env;
+algorithm
+  mod := NFEnv.entryModifier(inEntry);
+  (entry, orig_mod, env) := redeclareComponent(inEntry, mod, inEnv);
+  el := NFEnv.entryElement(entry);
+  mod := NFEnv.entryModifier(entry);
+  (outElement, outGlobals) := instComponentElement(el, orig_mod, mod,
+    inPrefixes, inEnv, inPrefix, inGlobals);
+end instComponentEntry;
+
+protected function instComponentElement
+  input SCode.Element inElement;
+  input tuple<SCode.Mod, Env> inElementModifier;
+  input Modifier inOuterModifier;
+  input Prefixes inPrefixes;
+  input Env inEnv;
+  input Prefix inPrefix;
   input Globals inGlobals;
   output Element outElement;
   output Globals outGlobals;
 algorithm
-  (outElement, outGlobals) := match(inElement, inModifier, inPrefixes, inEnv,
-      inPrefix, inInstPolicy, inGlobals)
+  (outElement, outGlobals) := match(inElement, inElementModifier,
+      inOuterModifier, inPrefixes, inEnv, inPrefix, inGlobals)
     local
-      String name, enum_idx_str;
-      Absyn.ArrayDim ad;
-      Absyn.Info info;
-      Absyn.Path tpath, path;
-      SCode.Mod smod;
-      InstPolicy ip;
       Globals globals;
-      Entry cls_entry;
-      Env env;
-      list<DAE.Dimension> dims;
-      Prefix prefix;
-      Integer dim_count, enum_idx;
-      Modifier mod, cmod;
-      Prefixes prefs, cls_prefs;
-      DAE.Type ty;
-      ParamType pty;
-      Binding binding;
-      array<Dimension> dim_arr;
-      Class cls;
-      Component comp;
+      Element el;
 
-    // an outer component
-    case (SCode.COMPONENT(name = name,
-        typeSpec = Absyn.TPATH(path = tpath),
-        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, globals)
+    // An outer component.
+    case (SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())),
+        _, _, _, _, _, _)
       equation
-        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
-        path = NFInstUtil.prefixToPath(prefix);
-        comp = NFInstTypes.OUTER_COMPONENT(path, NONE());
+        el = instComponentOuter(inElement, inOuterModifier, inPrefixes, inEnv, inPrefix);
       then
-        (NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(tpath)), globals);
+        (el, inGlobals);
 
-    case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path =
-        Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
-        _, _, _, _, ip, globals)
+    // A component that's part of an enumeration, i.e. an enumeration literal.
+    case (SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
+        Absyn.QUALIFIED(name = "$EnumType"))), _, _, _, _, _, _)
       equation
-        Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
-        enum_idx = stringInt(enum_idx_str);
-
-        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
-        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-
-        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
-          inPrefixes, env, inPrefix, ip, globals);
-
-        binding = NFInstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
-        comp = NFInstTypes.TYPED_COMPONENT(path, ty, NONE(),
-          NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info);
+        (el, globals) = instComponentEnum(inElement, inOuterModifier,
+          inPrefixes, inEnv, inPrefix, inGlobals);
       then
-        (NFInstTypes.ELEMENT(comp, cls), globals);
-
-    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
-        typeSpec = Absyn.TPATH(path = tpath), modifications = smod,
-        condition = NONE(), info = info), _, _, _, _, ip, globals)
+        (el, globals);
+        
+    // A normal component.
+    case (SCode.COMPONENT(condition = NONE()), _, _, _, _, _, _)
       equation
-        // Lookup the class of the component.
-        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
-
-        // NFSCodeCheck.checkPartialInstance(cls_entry, info);
-
-        // Instantiate array dimensions and add them to the prefix.
-        (dims, globals) = instDimensions(ad, inEnv, inPrefix, info, globals);
-        prefix = NFInstUtil.addPrefix(name, dims, inPrefix);
-
-        // Check that it's legal to instantiate the class.
-        //NFSCodeCheck.checkInstanceRestriction(cls_entry, prefix, info);
-
-        // Translate the component's modification.
-        dim_count = listLength(ad);
-        mod = NFMod.translateMod(smod, name, dim_count, prefix, inEnv);
-
-        // Merge the modifier from the class with this element's modifications.
-        //cmod = NFMod.getModFromTable(name, inModifiers);
-        //cmod = NFMod.propagateMod(cmod, dim_count);
-        cmod = NFMod.propagateMod(inModifier, dim_count);
-        mod = NFMod.mergeMod(cmod, mod);
-
-        // Merge prefixes from the instance hierarchy.
-        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-        prefs = NFInstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
-        pty = NFInstUtil.paramTypeFromPrefixes(prefs);
-
-        // TODO: Check that constants do not have fixed = false.
-
-        //redecl = NFMod.extractRedeclares(smod);
-
-        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, mod,
-          prefs, env, prefix, ip, globals);
-
-        prefs = NFInstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
-
-        // Add dimensions from the class type.
-        (dims, dim_count) = addDimensionsFromType(dims, ty);
-        ty = NFInstUtil.arrayElementType(ty);
-        dim_arr = NFInstUtil.makeDimensionArray(dims);
-
-        // Instantiate the binding.
-        mod = NFMod.propagateMod(mod, dim_count);
-        binding = NFMod.modifierBinding(mod);
-        (binding, globals) = instBinding(binding, dim_count, globals);
-
-        // Create the component and add it to the program.
-        comp = NFInstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
+        (el, globals) = instComponent(inElement, inElementModifier,
+          inOuterModifier, inPrefixes, inEnv, inPrefix, inGlobals);
       then
-        (NFInstTypes.ELEMENT(comp, cls), globals);
+        (el, globals);
 
 //    // A conditional component, save it for later.
 //    case (SCode.COMPONENT(name = name, condition = SOME(cond_exp), info = info),
@@ -960,6 +908,172 @@ algorithm
         fail();
 
   end match;
+end instComponentElement;
+
+protected function instComponentOuter
+  input SCode.Element inElement;
+  input Modifier inOuterModifier;
+  input Prefixes inPrefixes;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Element outElement;
+algorithm
+  outElement := match(inElement, inOuterModifier, inPrefixes, inEnv, inPrefix)
+    local
+      Prefix prefix;
+      Absyn.Path path, tpath; 
+      Component comp;
+      String name;
+
+    // TODO: Error if an outer component has a modifier.
+
+    case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path = tpath)), _, _, _, _)
+      equation
+        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+        path = NFInstUtil.prefixToPath(prefix);
+        comp = NFInstTypes.OUTER_COMPONENT(path, NONE());
+      then
+        NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(tpath));
+
+  end match;
+end instComponentOuter;
+  
+protected function instComponentEnum
+  input SCode.Element inElement;
+  input Modifier inOuterModifier;
+  input Prefixes inPrefixes;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input Globals inGlobals;
+  output Element outElement;
+  output Globals outGlobals;
+algorithm
+  (outElement, outGlobals) := match(inElement, inOuterModifier, inPrefixes,
+      inEnv, inPrefix, inGlobals)
+    local
+      String enum_idx_str, name;
+      Absyn.Path tpath, path;
+      Absyn.Info info;
+      Integer enum_idx;
+      Entry cls_entry;
+      Env env;
+      DAE.Type ty;
+      Prefixes cls_prefs;
+      Globals globals;
+      Binding binding;
+      Component comp;
+      Class cls;
+
+    case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path =
+        Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
+        _, _, _, _, globals)
+      equation
+        Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
+        enum_idx = stringInt(enum_idx_str);
+
+        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
+        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+
+        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
+          inPrefixes, env, inPrefix, globals);
+
+        binding = NFInstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
+        comp = NFInstTypes.TYPED_COMPONENT(path, ty, NONE(),
+          NFInstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info);
+      then
+        (NFInstTypes.ELEMENT(comp, cls), globals);
+
+  end match;
+end instComponentEnum;
+
+protected function instComponent
+  input SCode.Element inElement;
+  input tuple<SCode.Mod, Env> inElementModifier;
+  input Modifier inOuterModifier;
+  input Prefixes inPrefixes;
+  input Env inEnv;
+  input Prefix inPrefix;
+  input Globals inGlobals;
+  output Element outElement;
+  output Globals outGlobals;
+algorithm
+  (outElement, outGlobals) := match(inElement, inElementModifier,
+      inOuterModifier, inPrefixes, inEnv, inPrefix, inGlobals)
+    local
+      String name;
+      Absyn.ArrayDim ad;
+      Absyn.Path path, tpath;
+      Absyn.Info info;
+      SCode.Mod smod;
+      Env env, mod_env;
+      Globals globals;
+      Entry cls_entry;
+      list<DAE.Dimension> dims;
+      Prefix prefix;
+      Integer dim_count;
+      Modifier emod, omod, mod;
+      Prefixes prefs, cls_prefs;
+      ParamType pty;
+      DAE.Type ty;
+      array<Dimension> dim_arr;
+      Binding binding;
+      Component comp;
+      Class cls;
+
+    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
+        typeSpec = Absyn.TPATH(path = tpath), condition = NONE(), info = info),
+        (smod, mod_env), _, _, _, _, globals)
+      equation
+        // Lookup the class of the component.
+        (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
+        //(cls_entry, env) = redeclareElement(cls_entry, env);
+
+        // NFSCodeCheck.checkPartialInstance(cls_entry, info);
+
+        // Instantiate array dimensions and add them to the prefix.
+        (dims, globals) = instDimensions(ad, inEnv, inPrefix, info, globals);
+        prefix = NFInstUtil.addPrefix(name, dims, inPrefix);
+
+        // Check that it's legal to instantiate the class.
+        //NFSCodeCheck.checkInstanceRestriction(cls_entry, prefix, info);
+
+        // Translate the component's modification.
+        dim_count = listLength(ad);
+        emod = NFMod.translateMod(smod, name, dim_count, prefix, mod_env);
+        omod = NFMod.propagateMod(inOuterModifier, dim_count);
+
+        // TODO: Update inElementMod with prefix and dim_count. Need to get
+        // dimensions from type?
+        mod = NFMod.mergeMod(omod, emod);
+
+        // Merge prefixes from the instance hierarchy.
+        path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+        prefs = NFInstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
+        pty = NFInstUtil.paramTypeFromPrefixes(prefs);
+
+        // TODO: Check that constants do not have fixed = false.
+
+        (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, mod,
+          prefs, env, prefix, globals);
+
+        prefs = NFInstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
+
+        // Add dimensions from the class type.
+        (dims, dim_count) = addDimensionsFromType(dims, ty);
+        ty = NFInstUtil.arrayElementType(ty);
+        dim_arr = NFInstUtil.makeDimensionArray(dims);
+
+        // Instantiate the binding.
+        mod = NFMod.propagateMod(mod, dim_count);
+        binding = NFMod.modifierBinding(mod);
+        (binding, globals) = instBinding(binding, dim_count, globals);
+
+        // Create the component and add it to the program.
+        comp = NFInstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
+      then
+        (NFInstTypes.ELEMENT(comp, cls), globals);
+
+  end match;
 end instComponent;
 
 protected function instExtends
@@ -969,14 +1083,13 @@ protected function instExtends
   input Env inEnv;
   input Prefix inPrefix;
   input ExtendsState inExtendsState;
-  input InstPolicy inInstPolicy;
   input Globals inGlobals;
   output Element outElement;
   output ExtendsState outExtendsState;
   output Globals outGlobals;
 algorithm
   (outElement, outExtendsState, outGlobals) := match(inExtends, inModifier,
-      inPrefixes, inEnv, inPrefix, inExtendsState, inInstPolicy, inGlobals)
+      inPrefixes, inEnv, inPrefix, inExtendsState, inGlobals)
     local
       Absyn.Path path;
       Absyn.Info info;
@@ -985,7 +1098,6 @@ algorithm
       Class cls;
       DAE.Type ty;
       ExtendsState es;
-      InstPolicy ip;
       Prefixes prefs;
       Globals globals;
       SCode.Mod smod;
@@ -993,7 +1105,7 @@ algorithm
       Boolean special_ext;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, _, _, _, es, ip, globals)
+        _, _, _, _, es, globals)
       equation
         // Look up the base class in the environment.
         (entry, env) = NFLookup.lookupBaseClassName(path, inEnv, info);
@@ -1002,7 +1114,7 @@ algorithm
         mod = NFMod.mergeMod(inModifier, mod);
 
         (cls, ty, _, globals) =
-          instClassEntry(path, entry, mod, prefs, env, inPrefix, ip, globals);
+          instClassEntry(path, entry, mod, prefs, env, inPrefix, globals);
 
         special_ext = NFInstUtil.isSpecialExtends(ty);
         es = updateExtendsState(es, special_ext);
@@ -1085,7 +1197,7 @@ algorithm
         (entry, env) = NFLookup.lookupInLocalScope(name, inEnv);
         prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
         (cls, _, _, globals) = instClassEntry(Absyn.IDENT(name), entry, NFInstTypes.NOMOD(),
-          NFInstTypes.NO_PREFIXES(), env, prefix, INST_ONLY_CONST(), globals);
+          NFInstTypes.NO_PREFIXES(), env, prefix, globals);
         oel = makeConstantsPackage(prefix, cls);
       then
         (oel, globals);
@@ -1189,7 +1301,7 @@ end makeConstantsPackage;
 //        (stateselect_cls, _, _, _) = instClassItem(Absyn.IDENT("StateSelect"),
 //          NFLookup.BUILTIN_STATESELECT, NFInstTypes.NOMOD(),
 //          NFInstTypes.NO_PREFIXES(), {}, NFInstTypes.EMPTY_PREFIX(NONE()),
-//          INST_ALL(), inGlobals);
+//          inGlobals);
 //      then
 //        stateselect_cls;
 //
@@ -2429,7 +2541,7 @@ algorithm
 
     //    prefix = NFInstUtil.restPrefix(NFInstUtil.pathPrefix(inName));
     //    (elem, (consts, funcs)) = instElement(selem, NFInstTypes.NOMOD(), NFInstTypes.NOMOD(),
-    //      NFInstTypes.NO_PREFIXES(), env, prefix, INST_ALL(), inGlobals);
+    //      NFInstTypes.NO_PREFIXES(), env, prefix, inGlobals);
 
     //    consts = NFInstSymbolTable.addElement(elem, consts);
     //  then
@@ -2439,13 +2551,13 @@ algorithm
       equation
         (entry, env) = NFLookup.lookupLocalName(inName, inEnv);
 
+        elem = NFEnv.entryElement(entry);
+        (prefix, name, cref) = makePackageConstantPrefix(inName, inCref, elem, env, inEnv);
+
         //print("Instantiating " +& Absyn.pathString(inName) +& "\n");
         //print("Env: " +& NFEnv.printEnvPathStr(inEnv) +& "\n");
         //print("Found env: " +& NFEnv.printEnvPathStr(env) +& "\n");
         //print("Result: " +& Absyn.pathString(name) +& "\n");
-
-        elem = NFEnv.entryElement(entry);
-        (prefix, name, cref) = makePackageConstantPrefix(inName, inCref, elem, env, inEnv);
 
         //print("Adding " +& Absyn.pathString(name) +& "\n");
         globals = instPackageConstant2(name, elem, entry, env, prefix, inGlobals);
@@ -2492,20 +2604,22 @@ algorithm
       then
         (prefix, path, cref);
 
-    case (_, _, SCode.CLASS(name = name), _, _)
+    //case (_, _, SCode.CLASS(name = name), _, _)
+    else
       equation
+        name = SCode.elementName(inElement);
         prefix = NFInstUtil.envPrefix(inFoundEnv);
         path = NFEnv.prefixIdentWithEnv(name, inFoundEnv);
         cref = ComponentReference.pathToCref(path);
       then
         (prefix, path, cref);
 
-    else
-      equation
-        prefix = NFInstUtil.envPrefix(inOriginEnv);
-        NFInstTypes.PREFIX(restPrefix = prefix) = NFInstUtil.addPathPrefix(inName, prefix);
-      then
-        (prefix, inName, inCref);
+    //else
+    //  equation
+    //    prefix = NFInstUtil.envPrefix(inOriginEnv);
+    //    NFInstTypes.PREFIX(restPrefix = prefix) = NFInstUtil.addPathPrefix(inName, prefix);
+    //  then
+    //    (prefix, inName, inCref);
 
   end match;
 end makePackageConstantPrefix;
@@ -2541,20 +2655,20 @@ algorithm
       then
         inGlobals;
 
-    case (_, SCode.COMPONENT(typeSpec =
-        Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType"))), _, env, _, _)
-      equation
-        (elem, (consts, funcs)) = instComponent(inElement, NFInstTypes.NOMOD(),
-          NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
-        consts = NFInstSymbolTable.addElement(elem, consts);
-      then
-        ((consts, funcs));
+    //case (_, SCode.COMPONENT(typeSpec =
+    //    Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType"))), _, env, _, _)
+    //  equation
+    //    (elem, (consts, funcs)) = instComponent(inElement, NFInstTypes.NOMOD(),
+    //      NFInstTypes.NO_PREFIXES(), env, inPrefix, inGlobals);
+    //    consts = NFInstSymbolTable.addElement(elem, consts);
+    //  then
+    //    ((consts, funcs));
 
-    // A normal package constant.
+    //// A normal package constant.
     case (_, SCode.COMPONENT(name = _), _, env, _, _)
       equation
-        (elem, (consts, funcs)) = instComponent(inElement, NFInstTypes.NOMOD(),
-          NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
+        (elem, (consts, funcs)) = instComponentEntry(inEntry,
+          NFInstTypes.NO_PREFIXES(), env, inPrefix, inGlobals);
 
         NFInstTypes.ELEMENT(component = comp) = elem;
         name = NFInstUtil.getComponentName(comp);
@@ -2563,23 +2677,23 @@ algorithm
       then
         ((consts, funcs));
 
-    // An enumeration type used as a value.
-    case (_, SCode.CLASS(name = cls_name, info = info), _, _, _, _)
-      equation
-        // Instantiate the enumeration type to get its type.
-        (_, ty, _, (consts, funcs)) = instClassEntry(inName, inEntry,
-          NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(),
-          inEnv, NFInstTypes.emptyPrefix, INST_ALL(), inGlobals);
-        /*********************************************************************/
-        // TODO: Check the type, make sure it's an enumeration! Any other types
-        // allowed to be used here?
-        /*********************************************************************/
+    //// An enumeration type used as a value.
+    //case (_, SCode.CLASS(name = cls_name, info = info), _, _, _, _)
+    //  equation
+    //    // Instantiate the enumeration type to get its type.
+    //    (_, ty, _, (consts, funcs)) = instClassEntry(inName, inEntry,
+    //      NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(),
+    //      inEnv, NFInstTypes.emptyPrefix, inGlobals);
+    //    /*********************************************************************/
+    //    // TODO: Check the type, make sure it's an enumeration! Any other types
+    //    // allowed to be used here?
+    //    /*********************************************************************/
 
-        comp = NFInstTypes.TYPED_COMPONENT(inName, ty, NONE(),
-          NFInstTypes.NO_DAE_PREFIXES(), NFInstTypes.UNBOUND(), info);
-        consts = NFInstSymbolTable.addComponent(comp, consts);
-      then
-        ((consts, funcs));
+    //    comp = NFInstTypes.TYPED_COMPONENT(inName, ty, NONE(),
+    //      NFInstTypes.NO_DAE_PREFIXES(), NFInstTypes.UNBOUND(), info);
+    //    consts = NFInstSymbolTable.addComponent(comp, consts);
+    //  then
+    //    ((consts, funcs));
 
   end matchcontinue;
 end instPackageConstant2;
@@ -2746,7 +2860,7 @@ algorithm
       equation
         (cls, ty, _, globals) = instClassEntry(inPath, inEntry,
           NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(), inEnv,
-          NFInstTypes.functionPrefix, INST_ALL(), inGlobals);
+          NFInstTypes.functionPrefix, inGlobals);
       then
         (cls, ty, globals);
 
@@ -3587,7 +3701,6 @@ protected function instSections
   input SCode.ClassDef inClassDef;
   input Env inEnv;
   input Prefix inPrefix;
-  input InstPolicy inInstPolicy;
   input Globals inGlobals;
   output list<Equation> outEquations;
   output list<Equation> outInitialEquations;
@@ -3596,7 +3709,7 @@ protected function instSections
   output Globals outGlobals;
 algorithm
   (outEquations, outInitialEquations, outStatements, outInitialStatements, outGlobals) :=
-  match(inClassDef, inEnv, inPrefix, inInstPolicy, inGlobals)
+  match(inClassDef, inEnv, inPrefix, inGlobals)
     local
       list<SCode.Equation> snel, siel;
       list<SCode.AlgorithmSection> snal, sial;
@@ -3604,8 +3717,8 @@ algorithm
       list<list<Statement>> inal, iial;
       Globals globals;
 
-    case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel, normalAlgorithmLst = snal, initialAlgorithmLst = sial), _,
-        _, INST_ALL(), globals)
+    case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel,
+                      normalAlgorithmLst = snal, initialAlgorithmLst = sial), _, _, globals)
       equation
         (inel, globals) = instEquations(snel, inEnv, inPrefix, globals);
         (iiel, globals) = instEquations(siel, inEnv, inPrefix, globals);
@@ -3613,8 +3726,6 @@ algorithm
         (iial, globals) = instAlgorithmSections(sial, inEnv, inPrefix, globals);
       then
         (inel, iiel, inal, iial, globals);
-
-    case (_, _, _, INST_ONLY_CONST(), _) then ({}, {}, {}, {}, inGlobals);
 
   end match;
 end instSections;
@@ -4160,7 +4271,7 @@ end instWhenBranch;
 //        // instElement will just add it as a conditional component again.
 //        sel = SCode.removeComponentCondition(inElement);
 //        // Instantiate the element and update the symbol table.
-//        (el, globals) = instElement(sel, inMod, NFInstTypes.NOMOD(), inPrefixes, inEnv, inPrefix, INST_ALL(), globals);
+//        (el, globals) = instElement(sel, inMod, NFInstTypes.NOMOD(), inPrefixes, inEnv, inPrefix, globals);
 //        (st, added) = NFInstSymbolTable.addInstCondElement(el, st);
 //        // Recursively instantiate any conditional components in this element.
 //        (oel, st, globals) = instConditionalElementOnTrue(added, el, st, globals);

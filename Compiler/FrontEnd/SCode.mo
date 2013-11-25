@@ -4638,6 +4638,63 @@ algorithm
   end match;
 end elementMod;
 
+public function setElementMod
+  "Sets the modifier of an element, or fails if the element is not capable of
+   having a modifier."
+  input Element inElement;
+  input Mod inMod;
+  output Element outElement;
+algorithm
+  outElement := match(inElement, inMod)
+    local
+      Ident n;
+      Prefixes pf;
+      Attributes attr;
+      Absyn.TypeSpec ty;
+      Comment cmt;
+      Option<Absyn.Exp> cnd;
+      Absyn.Info i;
+      Encapsulated ep;
+      Partial pp;
+      Restriction res;
+      ClassDef cdef;
+      Absyn.Path bc;
+      Visibility vis;
+      Option<Annotation> ann;
+
+    case (COMPONENT(n, pf, attr, ty, _, cmt, cnd, i), _)
+      then COMPONENT(n, pf, attr, ty, inMod, cmt, cnd, i);
+
+    case (CLASS(n, pf, ep, pp, res, cdef, cmt, i), _)
+      equation
+        cdef = setClassDefMod(cdef, inMod);
+      then
+        CLASS(n, pf, ep, pp, res, cdef, cmt, i);
+
+    case (EXTENDS(bc, vis, _, ann, i), _)
+      then EXTENDS(bc, vis, inMod, ann, i);
+
+  end match;
+end setElementMod;
+
+protected function setClassDefMod
+  input ClassDef inClassDef;
+  input Mod inMod;
+  output ClassDef outClassDef;
+algorithm
+  outClassDef := match(inClassDef, inMod)
+    local
+      Ident bc;
+      ClassDef cdef;
+      Absyn.TypeSpec ty;
+      Attributes attr;
+
+    case (DERIVED(ty, _, attr), _) then DERIVED(ty, inMod, attr);
+    case (CLASS_EXTENDS(bc, _, cdef), _) then CLASS_EXTENDS(bc, inMod, cdef);
+
+  end match;
+end setClassDefMod;
+
 public function isBuiltinElement
   input Element inElement;
   output Boolean outIsBuiltin;
