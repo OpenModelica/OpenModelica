@@ -126,6 +126,8 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     else
       AddIpoptStrOption(nlp, "linear_solver", "mumps");
 
+     AddIpoptStrOption(nlp,"nlp_scaling_method","gradient-based");
+     AddIpoptNumOption(nlp,"mu_init",1e-6);
      /*AddIpoptStrOption(nlp, "derivative_test", "second-order"); */
      /*AddIpoptStrOption(nlp, "derivative_test_print_all", "yes");*/
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
