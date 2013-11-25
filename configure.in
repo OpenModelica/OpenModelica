@@ -780,7 +780,7 @@ if test "Darwin" = `uname`; then
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -liconv -lgc -lpthread -lm -ldl -lstdc++"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
-  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm"
+  RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lgc"
   LINK="cp -fr"
   RPATH="-Wl,-rpath,'@loader_path/../lib/omc'"
   MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
@@ -799,7 +799,7 @@ elif test "$host" = "i586-pc-mingw32msvc"; then
   LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
   LIBFMILIB=libfmilib.a
   FMILIB_SHARED=OFF
-  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lstdc++ -lf2c -lexpat -lm"
+  RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS $SUNDIALS_LDFLAGS $IPOPT_LDFLAGS -linteractive -llis -lstdc++ -lf2c -lgc -lexpat -lm"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS $LD_LAPACK -lgc -lexpat -lpthread -lm"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $RT_LDFLAGS_SIM"
@@ -826,7 +826,7 @@ else
   RT_LDFLAGS="$RT_LDFLAGS $LD_LAPACK -lgc $LIBRT -lpthread -lm -ldl -lstdc++"
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="-lOpenModelicaRuntimeC $LD_LAPACK -lm"
-  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm"
+  RT_LDFLAGS_GENERATED_CODE_SIM="-lSimulationRuntimeC $LD_LAPACK -lm -lgc"
   LINK="cp -frl"
   RPATH="-Wl,-rpath,'\$\$ORIGIN/../lib/omc'"
   OS_TARGET="linux"
