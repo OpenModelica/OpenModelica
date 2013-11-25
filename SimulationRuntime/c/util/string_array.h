@@ -49,6 +49,7 @@ extern void simple_alloc_1d_string_array(string_array_t* dest, int n);
 extern void simple_alloc_2d_string_array(string_array_t *dest, int r, int c);
 
 extern void alloc_string_array(string_array_t *dest, int ndims, ...);
+extern void fill_alloc_string_array(string_array_t* dest, modelica_string_t value, int ndims, ...);
 
 /* Allocation of string data */
 extern void alloc_string_array_data(string_array_t* a);

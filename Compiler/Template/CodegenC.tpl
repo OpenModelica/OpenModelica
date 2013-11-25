@@ -279,9 +279,6 @@ template simulationFile_inz(SimCode simCode, String guid)
     <%simulationFileHeader(simCode)%>
     #include "<%simCode.fileNamePrefix%>_11mix.h"
     #include "<%simCode.fileNamePrefix%>_12jac.h"
-    #include "linearSystem.h"
-    #include "nonlinearSystem.h"
-    #include "mixedSystem.h"
     
     <%functionInitialResidual(residualEquations, modelNamePrefix(simCode))%>
     <%functionInitialEquations(useSymbolicInitialization, initialEquations, modelNamePrefix(simCode))%>    
@@ -632,6 +629,9 @@ template simulationFileHeader(SimCode simCode)
     #include "omc_error.h"
     #include "model_help.h"
     #include "delay.h"
+    #include "linearSystem.h"
+    #include "nonlinearSystem.h"
+    #include "mixedSystem.h"
 
     #include <assert.h>
     #include <string.h>
@@ -3287,8 +3287,9 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
     then equationAlgorithm(e, context, &varD /*BUFD*/)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD /*BUFD*/)
-  case e as SES_NONLINEAR(__)
-    then equationNonlinear(e, context, &varD /*BUFD*/)
+  case e as SES_NONLINEAR(__) then
+    let &tempeqns += (e.eqs |> eq => 'void eqFunction_<%equationIndex(eq)%>(DATA*);' ; separator = "\n")
+    equationNonlinear(e, context, &varD /*BUFD*/)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD /*BUFD*/)
   case e as SES_RESIDUAL(__)
