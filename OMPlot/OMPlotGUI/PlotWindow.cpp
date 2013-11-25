@@ -44,6 +44,11 @@ using namespace OMPlot;
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent)
   : QMainWindow(parent)
 {
+  /* set the widget background white. so that the plot is more useable in books and publications. */
+  QPalette p(palette());
+  p.setColor(QPalette::Background, Qt::white);
+  setAutoFillBackground(true);
+  setPalette(p);
   // setup the main window widget
   setUpWidget();
   // initialize plot by reading all parameters passed to it
@@ -853,17 +858,24 @@ void PlotWindow::exportDocument()
       mpPlot->print(generator);
 #else
       QwtPlotRenderer plotRenderer;
-      plotRenderer.renderDocument(mpPlot, fileName, "svg", mpPlot->rect().size());
+      plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);  /* removes the gray widget background when OMPlot is used as library. */
+      plotRenderer.renderDocument(mpPlot, fileName, QSizeF(mpPlot->widthMM(), mpPlot->heightMM()));
 #endif
     }
     // export png, bmp, jpg
     else
     {
+#if QWT_VERSION < 0x060000
       QPixmap pixmap(mpPlot->size());
       mpPlot->render(&pixmap);
       if (!pixmap.save(fileName)) {
         QMessageBox::critical(this, "Error", "Failed to save image " + fileName);
       }
+#else
+      QwtPlotRenderer plotRenderer;
+      plotRenderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);  /* removes the gray widget background when OMPlot is used as library. */
+      plotRenderer.renderDocument(mpPlot, fileName, QSizeF(mpPlot->widthMM(), mpPlot->heightMM()));
+#endif
     }
   }
 }
