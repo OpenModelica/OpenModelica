@@ -59,6 +59,7 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   double obj;
   int res;
   char *cflags;
+  double tmp;
 
   IpoptProblem nlp = NULL;
   IPOPT_DATA_ *iData = ((IPOPT_DATA_*)solverInfo->solverData);
@@ -133,7 +134,16 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
     /* AddIpoptNumOption(nlp,"derivative_test_perturbation",1e-6); */
     AddIpoptIntOption(nlp, "max_iter", 5000);
 
-    res = IpoptSolve(nlp, (*iData).v, NULL, &obj, (*iData).mult_g, (*iData).mult_x_L, (*iData).mult_x_U, (void*)iData);
+    for(i=0, tmp = 1;i<=4;++i){
+        res = IpoptSolve(nlp, (*iData).v, NULL, &obj, (*iData).mult_g, (*iData).mult_x_L, (*iData).mult_x_U, (void*)iData);
+        if(res!= Solve_Succeeded)
+          {
+            AddIpoptNumOption(nlp,"mu_init",tmp);
+            tmp *=10.0;
+            AddIpoptIntOption(nlp, "max_iter", 500);
+          }else {break;}
+    }
+    
     FreeIpoptProblem(nlp);
 
     if(ACTIVE_STREAM(LOG_IPOPT))
