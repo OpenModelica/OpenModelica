@@ -2193,7 +2193,11 @@ template function_HPCOM_initializeLock(String lockIdx, String lockPrefix, String
       >>
     case ("pthreads_spin") then
       <<
+      #ifdef __APPLE__
+      <%lockPrefix%>_<%lockIdx%> = OS_SPINLOCK_INIT;
+      #else
       pthread_spin_init(&<%lockPrefix%>_<%lockIdx%>, 0);
+      #endif
       >>
 end function_HPCOM_initializeLock;
 
@@ -2210,7 +2214,11 @@ template function_HPCOM_createLock(String lockIdx, String prefix, String iType)
       >>
     case ("pthreads_spin") then
       <<
+      #ifdef __APPLE__
+      static OSSpinLock <%prefix%>_<%lockIdx%>;
+      #else
       static pthread_spinlock_t <%prefix%>_<%lockIdx%>;
+      #endif
       >>
 end function_HPCOM_createLock;
 
@@ -2227,7 +2235,11 @@ template function_HPCOM_assignLock(String lockIdx, String prefix, String iType)
       >>
     case ("pthreads_spin") then
       <<
+      #ifdef __APPLE__
+      OSSpinLockLock(&<%prefix%>_<%lockIdx%>);
+      #else
       pthread_spin_lock(&<%prefix%>_<%lockIdx%>);
+      #endif
       >>
 end function_HPCOM_assignLock;
 
@@ -2244,7 +2256,11 @@ template function_HPCOM_releaseLock(String lockIdx, String prefix, String iType)
       >>
     case ("pthreads_spin") then
       <<
+      #ifdef __APPLE__
+      OSSpinLockUnlock(&<%prefix%>_<%lockIdx%>);
+      #else
       pthread_spin_unlock(&<%prefix%>_<%lockIdx%>);
+      #endif
       >>
 end function_HPCOM_releaseLock;
 
