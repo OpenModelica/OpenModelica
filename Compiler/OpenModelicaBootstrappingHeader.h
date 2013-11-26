@@ -327,6 +327,22 @@ extern struct record_description Config_LanguageStandard_MODELICA__LATEST__desc;
 static const MMC_DEFSTRUCTLIT(Config__MODELICA_5fLATEST__struct,1,9) {&Config_LanguageStandard_MODELICA__LATEST__desc}};
 static void *Config__MODELICA_5fLATEST = MMC_REFSTRUCTLIT(Config__MODELICA_5fLATEST__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Error_Severity_INTERNAL__desc_added
+#define Error_Severity_INTERNAL__desc_added
+ADD_METARECORD_DEFINITIONS const char* Error_Severity_INTERNAL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_INTERNAL__desc = {
+  "Error_Severity_INTERNAL",
+  "Error.Severity.INTERNAL",
+  Error_Severity_INTERNAL__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_Severity_INTERNAL__desc;
+#endif
+#define Error__INTERNAL_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Error__INTERNAL__struct,1,3) {&Error_Severity_INTERNAL__desc}};
+static void *Error__INTERNAL = MMC_REFSTRUCTLIT(Error__INTERNAL__struct);
+#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Error_Severity_ERROR__desc_added
 #define Error_Severity_ERROR__desc_added
 ADD_METARECORD_DEFINITIONS const char* Error_Severity_ERROR__desc__fields[1] = {"no fields"};
@@ -339,8 +355,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_ERROR__desc 
 #else /* Only use the file as a header */
 extern struct record_description Error_Severity_ERROR__desc;
 #endif
-#define Error__ERROR_3dBOX0 3
-static const MMC_DEFSTRUCTLIT(Error__ERROR__struct,1,3) {&Error_Severity_ERROR__desc}};
+#define Error__ERROR_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Error__ERROR__struct,1,4) {&Error_Severity_ERROR__desc}};
 static void *Error__ERROR = MMC_REFSTRUCTLIT(Error__ERROR__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Error_Severity_WARNING__desc_added
@@ -355,8 +371,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_WARNING__des
 #else /* Only use the file as a header */
 extern struct record_description Error_Severity_WARNING__desc;
 #endif
-#define Error__WARNING_3dBOX0 4
-static const MMC_DEFSTRUCTLIT(Error__WARNING__struct,1,4) {&Error_Severity_WARNING__desc}};
+#define Error__WARNING_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(Error__WARNING__struct,1,5) {&Error_Severity_WARNING__desc}};
 static void *Error__WARNING = MMC_REFSTRUCTLIT(Error__WARNING__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Error_Severity_NOTIFICATION__desc_added
@@ -371,8 +387,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_NOTIFICATION
 #else /* Only use the file as a header */
 extern struct record_description Error_Severity_NOTIFICATION__desc;
 #endif
-#define Error__NOTIFICATION_3dBOX0 5
-static const MMC_DEFSTRUCTLIT(Error__NOTIFICATION__struct,1,5) {&Error_Severity_NOTIFICATION__desc}};
+#define Error__NOTIFICATION_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(Error__NOTIFICATION__struct,1,6) {&Error_Severity_NOTIFICATION__desc}};
 static void *Error__NOTIFICATION = MMC_REFSTRUCTLIT(Error__NOTIFICATION__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Error_MessageType_SYNTAX__desc_added

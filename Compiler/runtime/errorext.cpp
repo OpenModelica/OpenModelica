@@ -50,8 +50,8 @@ struct absyn_info {
   int ce;
 };
 const char* ErrorLevel_toStr(int ix) {
-  const char* toStr[3] = {"Error","Warning","Notification"};
-  if (ix<0 || ix>=3) return "#Internal Error: Unknown ErrorLevel#";
+  const char* toStr[4] = {"Internal error","Error","Warning","Notification"};
+  if (ix<0 || ix>=4) return "#Internal Error: Unknown ErrorLevel#";
   return toStr[ix];
 }
 
@@ -135,7 +135,7 @@ static void push_message(threadData_t *threadData,ErrorMessage *msg)
   }
   // adrpo: ALWAYS PUSH THE ERROR MESSAGE IN THE QUEUE, even if we have showErrorMessages because otherwise the numErrorMessages is completely wrong!
   members->errorMessageQueue->push(msg);
-  if (msg->getSeverity() == ErrorLevel_error) members->numErrorMessages++;
+  if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages++;
 }
 
 /* pop the top of the message stack (and any duplicate messages that have also been added) */
@@ -145,7 +145,7 @@ static void pop_message(threadData_t *threadData, bool rollback)
   bool pop_more;
   do {
     ErrorMessage *msg = members->errorMessageQueue->top();
-    if (msg->getSeverity() == ErrorLevel_error) members->numErrorMessages--;
+    if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages--;
     members->errorMessageQueue->pop();
     pop_more = (members->errorMessageQueue->size() > 0 && !(rollback && members->errorMessageQueue->size() <= members->checkPoints->back().first) && msg->getFullMessage() == members->errorMessageQueue->top()->getFullMessage());
     delete msg;
@@ -415,6 +415,7 @@ extern void* ErrorImpl__getMessages(threadData_t *threadData)
     void *id = mk_icon(members->errorMessageQueue->top()->getID());
     void *ty,*severity;
     switch (members->errorMessageQueue->top()->getSeverity()) {
+    case ErrorLevel_internal: severity=Error__INTERNAL; break;
     case ErrorLevel_error: severity=Error__ERROR; break;
     case ErrorLevel_warning: severity=Error__WARNING; break;
     case ErrorLevel_notification: severity=Error__NOTIFICATION; break;
@@ -452,7 +453,8 @@ extern std::string ErrorImpl__printErrorsNoWarning(threadData_t *threadData)
   std::string res("");
   while(!members->errorMessageQueue->empty()) {
     //if(strncmp(errorMessageQueue->top()->getSeverity(),"Error")==0){
-    if(members->errorMessageQueue->top()->getSeverity() == ErrorLevel_error) {
+    if(members->errorMessageQueue->top()->getSeverity() == ErrorLevel_error
+        || members->errorMessageQueue->top()->getSeverity() == ErrorLevel_internal) {
       res = members->errorMessageQueue->top()->getMessage()+string("\n")+res;
       members->numErrorMessages--;
     }

@@ -54,7 +54,7 @@ void Error_addMessage(threadData_t *threadData,int errorID, void *msg_type, void
   }
   add_message(threadData,errorID,
               (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-              (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+              (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__INTERNAL_3dBOX0),
               message,tokens);
 }
 
@@ -84,7 +84,7 @@ extern void Error_addSourceMessage(threadData_t *threadData,int _id, void *msg_t
   }
   add_source_message(threadData,_id,
                      (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-                     (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__ERROR_3dBOX0),
+                     (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__INTERNAL_3dBOX0),
                      _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
 }
 

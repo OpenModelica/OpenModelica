@@ -38,7 +38,7 @@
 #include <openmodelica.h>
 
 enum enumErrorType {ErrorType_syntax=0,ErrorType_grammar,ErrorType_translation,ErrorType_symbolic,ErrorType_runtime,ErrorType_scripting};
-enum enumErrorLevel {ErrorLevel_error=0,ErrorLevel_warning,ErrorLevel_notification};
+enum enumErrorLevel {ErrorLevel_internal=0,ErrorLevel_error,ErrorLevel_warning,ErrorLevel_notification};
 typedef enum enumErrorType ErrorType;
 typedef enum enumErrorLevel ErrorLevel;
 const char* ErrorLevel_toStr(int ix);

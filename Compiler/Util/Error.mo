@@ -71,7 +71,9 @@ public import Util;
 
 public
 uniontype Severity "severity of message"
-  record ERROR "Error when tool can not succed in translation" end ERROR;
+  record INTERNAL "Error because of a failure in the tool" end INTERNAL;
+
+  record ERROR "Error when tool can not succed in translation because of a user error" end ERROR;
 
   record WARNING "Warning when tool succeds but with warning" end WARNING;
 
@@ -1010,6 +1012,7 @@ public function severityStr "
   output String outString;
 algorithm
   outString := match(inSeverity)
+    case (INTERNAL()) then "Internal error";
     case (ERROR()) then "Error";
     case (WARNING()) then "Warning";
     case (NOTIFICATION()) then "Notification";
