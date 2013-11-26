@@ -3460,9 +3460,11 @@ algorithm
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
       assLst = arrayList(ass2);
       diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(knownVars), SOME(orderedVars), SOME({}), SOME(comref_diffvars), SOME(matrixName));
-      eqns = BackendEquation.equationList(orderedEqs);      
-      (derivedEquations, functions) = deriveAll(BackendEquation.equationList(orderedEqs), arrayList(ass2), x, diffData, {}, functions);
-      //derivedEquations = List.flatten(derivedEquationslst);
+      eqns = BackendEquation.equationList(orderedEqs);
+      (derivedEquations, functions) = deriveAll(eqns, arrayList(ass2), x, diffData, {}, functions);
+      
+      // replace all der(x), since ExpressionSolve can't handle der(x) proper
+      derivedEquations = BackendDAETransform.replaceDerOpInEquationList(derivedEquations);
       Debug.fcall(Flags.JAC_DUMP2, print, "*** analytical Jacobians -> created all derived equation time: " +& realString(clock()) +& "\n");
 
       // create BackendDAE.DAE with derivied vars and equations

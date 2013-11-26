@@ -5177,11 +5177,13 @@ algorithm
         vars = BackendVariable.listVar1(diffedVars);
         columnVars = creatallDiffedVars(alldiffedVars, x, vars, 0, (name, false), {});
         
+        /*
         knvars = BackendVariable.daeKnVars(shared);
         empty = BackendVariable.emptyVars();
         ((columnVarsKn, _)) =  BackendVariable.traverseBackendDAEVars(knvars, traversingdlowvarToSimvar, ({}, empty));
-        columnVars = listAppend(columnVars, columnVarsKn);
+        columnVars = List.unique(columnVars, columnVarsKn);
         columnVars = listReverse(columnVars);
+        */
 
         Debug.fcall(Flags.JAC_DUMP2, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
               

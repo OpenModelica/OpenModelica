@@ -593,7 +593,7 @@ algorithm
   end match;
 end transformXToXd;
 
-protected function replaceDerOpInEquationList
+public function replaceDerOpInEquationList
   "Replaces all der(cref) with $DER.cref in a list of equations."
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
