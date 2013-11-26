@@ -330,7 +330,7 @@ int loadDAEmodel(DATA *data, IPOPT_DATA_ *iData)
 
   for(i =0,j = iData->nx;i<iData->nu;++i,++j)
   {
-    check_nominal(iData, data->modelData.realVarsData[id +i].attribute.min, data->modelData.realVarsData[id +i].attribute.max, data->modelData.realVarsData[id +i].attribute.nominal, data->modelData.realVarsData[id +i].attribute.useNominal, j, fabs(iData->x0[j]));
+    check_nominal(iData, data->modelData.realVarsData[id +i].attribute.min, data->modelData.realVarsData[id +i].attribute.max, data->modelData.realVarsData[id +i].attribute.nominal, data->modelData.realVarsData[id +i].attribute.useNominal, j, fabs(data->modelData.realVarsData[id+i].attribute.start));
 
     iData->scalVar[j] = 1.0 / iData->vnom[j];
     iData->umin[i] = data->modelData.realVarsData[id +i].attribute.min*iData->scalVar[j];
@@ -553,27 +553,25 @@ int local_jac_struct(IPOPT_DATA_ *iData)
  **/
 static int check_nominal(IPOPT_DATA_ *iData, double min, double max, double nominal, short set, int i, double x0)
 {
-  if(set)
-      iData->vnom[i] = fmax(fabs(nominal),1e-16);
-    else
-    {
-      double amax, amin;
-      amax = fabs(max);
-      amin = fabs(min);
-      iData->vnom[i] = fmax(amax,amin);
-      if(iData->vnom[i] > 1e12)
-        {
-          double tmp = fmin(amax,amin);
-          if(tmp<1e12)
-            iData->vnom[i] = fmax(tmp,x0);
-          else
-            {
-            iData->vnom[i] = 1 + x0;
-            }
+  if(set){
+    iData->vnom[i] = fmax(fabs(nominal),1e-16);
+  }else{
+    double amax, amin;
+    amax = fabs(max);
+    amin = fabs(min);
+    iData->vnom[i] = fmax(amax,amin);
+    if(iData->vnom[i] > 1e12)
+      {
+        double tmp = fmin(amax,amin);
+        if(tmp<1e12){
+          iData->vnom[i] = fmax(tmp,x0);
+        }else{
+          iData->vnom[i] = 1.0 + x0;
         }
-        
-      iData->vnom[i] = fmax(iData->vnom[i],1e-16);
-    }
+      }
+      
+    iData->vnom[i] = fmax(iData->vnom[i],1e-16);
+  }
   return 0;
 }
 
