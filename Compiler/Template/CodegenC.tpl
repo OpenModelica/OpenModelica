@@ -2776,7 +2776,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
       <<
       if(<%cref(var)%> != $P$PRE<%cref(var)%>)
       {
-        DEBUG2(LOG_EVENTS, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);
+        INFO2(LOG_EVENTS_V, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);
         needToIterate = 1;
       }
       >>
@@ -2787,10 +2787,10 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
   {
     int needToIterate = 0;
 
-    DEBUG(LOG_EVENTS, "check for discrete changes");
-    INDENT(LOG_EVENTS);
+    INFO(LOG_EVENTS_V, "check for discrete changes");
+    INDENT(LOG_EVENTS_V);
     <%changediscreteVars%>
-    RELEASE(LOG_EVENTS);
+    RELEASE(LOG_EVENTS_V);
 
     return needToIterate;
   }
