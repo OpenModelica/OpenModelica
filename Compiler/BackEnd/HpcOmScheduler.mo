@@ -2048,7 +2048,7 @@ algorithm
         serTime = getSerialExecutionTime(taskGraphMetaIn);
         speedUp = serTime /. parTime;
         speedUpMax = serTime /. cpCosts;
-        isOkString = "The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+&realString(speedUp)+&". With a theoretical maxmimum speedUp of: "+&realString(speedUpMax)+&"\n";
+        isOkString = "The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+&realString(speedUp)+&" With a theoretical maxmimum speedUp of: "+&realString(speedUpMax)+&"\n";
         isNotOkString = "Something is weird. The predicted SpeedUp is "+&realString(speedUp)+&" and the theoretical maximum speedUp is "+&realString(speedUpMax)+&"\n";
         Debug.bcall(realGt(speedUp,speedUpMax),print,isNotOkString);
         Debug.bcall(realLe(speedUp,speedUpMax),print,isOkString);
