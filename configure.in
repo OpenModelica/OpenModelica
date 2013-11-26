@@ -131,6 +131,13 @@ AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([n
 fi
 fi
 
+# GCC 4.8 generates bad code with some optimisation flags. Let's try to disable them.
+for flag in  -fno-tree-ch -fno-tree-vrp -fno-tree-pre; do
+  OLD_CFLAGS="$CFLAGS"
+  CFLAGS="$RUNTIMECFLAGS $flag -Werror"
+  AC_TRY_LINK([], [int main() {return 0;}], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
+done
+
 if test "Darwin" != `uname`; then
 
 if test "`getconf LONG_BIT`" = "64"; then
@@ -216,7 +223,7 @@ rmlinc=$rmlhome/include/plain/
 
 AC_MSG_CHECKING([if the user wants RML -trace support])
 RML_TRACE=",-ftrace"
-AC_ARG_ENABLE(rml-trace,        [  --enable-rml-trace[[=yes]]         RML -trace support],[test "xno" = x"$enableval" && RML_TRACE=""])
+AC_ARG_ENABLE(rml-trace,        [  --disable-rml-trace           RML -trace support (enabled by default)],[test "xno" = x"$enableval" && RML_TRACE=""])
 if test -z "$RML_TRACE" ; then
 AC_MSG_RESULT([no])
 else
@@ -256,7 +263,7 @@ fi
 
 AC_MSG_CHECKING([if the user wants to compile OMShell-terminal])
 OMSHELL_TERMINAL="mosh"
-AC_ARG_ENABLE(omshell-terminal, [  --enable-omshell-terminal[[=yes]]  Enables compilation of OMShell-terminal],[test "xno" = x"$enableval" && OMSHELL_TERMINAL=""])
+AC_ARG_ENABLE(omshell-terminal, [  --disable-omshell-terminal    Disables compilation of OMShell-terminal (enabled by default)],[test "xno" = x"$enableval" && OMSHELL_TERMINAL=""])
 if test -z "$OMSHELL_TERMINAL" ; then
   AC_MSG_RESULT([no])
 else
@@ -621,7 +628,7 @@ AC_MSG_CHECKING([for CORBA]);
 AC_MSG_RESULT([$DESIRED_CORBA]);
 
 AC_MSG_CHECKING([if the user wants to use the Python interface])
-AC_ARG_ENABLE(python-interface, [  --enable-python-interface        Python interface to omc. Enabled by default if omniORB is enabled.],[test "xno" = x"$enableval" && PYTHON_INTERFACE=""])
+AC_ARG_ENABLE(python-interface, [  --disable-python-interface    Python interface to omc. Enabled by default if CORBA is enabled.],[test "xno" = x"$enableval" && PYTHON_INTERFACE=""])
 if test -z "$PYTHON_INTERFACE" ; then
 AC_MSG_RESULT([no])
 else
@@ -629,7 +636,7 @@ AC_MSG_RESULT([yes])
 fi
 
 AC_MSG_CHECKING([if the user wants Modelica3D])
-AC_ARG_ENABLE(modelica3d, [  --enable-modelica3d[=yes]          Modelica3D library (dependencies checked by cmake later on)],[test "xno" = x"$enableval" && MODELICA3D=""],[MODELICA3D="yes"])
+AC_ARG_ENABLE(modelica3d, [  --disable-modelica3d          Modelica3D library (dependencies checked by cmake later on; enabled by default)],[test "xno" = x"$enableval" && MODELICA3D=""],[MODELICA3D="yes"])
 if test -z "$MODELICA3D" ; then
 AC_MSG_RESULT([no])
 else
@@ -703,7 +710,7 @@ if test -n "$QMAKE"; then
   fi
 
   AC_MSG_CHECKING([if the user wants OMNotebook])
-  AC_ARG_ENABLE(omnotebook, [  --enable-omnotebook[=yes]          OMNotebook is a notebook for Modelica],[test "xno" = x"$enableval" && OMNOTEBOOK=""],[OMNOTEBOOK="omnotebook"])
+  AC_ARG_ENABLE(omnotebook, [  --disable-omnotebook          OMNotebook is a notebook for Modelica. Enabled by default if CORBA is enabled. Does not work on OSX.],[test "xno" = x"$enableval" && OMNOTEBOOK=""],[OMNOTEBOOK="omnotebook"])
   if test -z "$OMNOTEBOOK" ; then
   AC_MSG_RESULT([no])
   FINAL_MESSAGES="$FINAL_MESSAGES\nBuild OMNotebook: No"
