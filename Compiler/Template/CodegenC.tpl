@@ -1865,7 +1865,7 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
         if not initialCall then
           "data->simulationInfo.needToIterate = 1;"         
       <<
-      INFO1(LOG_EVENTS, "|        | reinit <%cref(stateVar)%>  = %f", <%val%>);
+      INFO1(LOG_EVENTS, "reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
       <%lhs%>
       <%needToIterate%>
