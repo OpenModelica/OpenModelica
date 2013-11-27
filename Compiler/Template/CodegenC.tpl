@@ -597,7 +597,7 @@ template simulationFile(SimCode simCode, String guid)
       int res;
       DATA data;
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&data);
-      <%if Flags.isSet(HPCOM) then 'omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>'%>omc_alloc_interface.init();
+      <%if boolAnd(Flags.isSet(HPCOM), boolNot(stringEq(getConfigString(HPCOM_CODE),"pthreads_spin"))) then 'omc_alloc_interface = omc_alloc_interface_pooled;<%\n%>'%>omc_alloc_interface.init();
       res = _main_SimulationRuntime(argc, argv, &data);
       return res;
     }
