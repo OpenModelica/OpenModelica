@@ -2131,7 +2131,7 @@ algorithm
         (entry, base_env) = NFLookup.lookupSimpleNameUnresolved(name_str, inEnv);
         is_class = NFEnv.isClassEntry(entry);
         opt_prefix = NFEnv.scopePrefixOpt(base_env);
-        prefix = makeCrefPrefix(opt_prefix, base_env);
+        prefix = makeNamePrefix(opt_prefix, base_env);
 
         // Look up the whole cref and prefix it.
         (entry, env) = NFLookup.lookupVariableName(inCrefPath, inEnv, inInfo);
@@ -2147,9 +2147,9 @@ algorithm
   end matchcontinue;
 end prefixCref;
 
-protected function makeCrefPrefix
-  "Creates a cref prefix given the prefix from the environment where the first
-   part of the cref was found."
+protected function makeNamePrefix
+  "Creates a name prefix given the prefix from the environment where the first
+    part of the name was found."
   input Option<Prefix> inPrefix;
   input Env inEnv;
   output Prefix outPrefix;
@@ -2164,7 +2164,7 @@ algorithm
     case (NONE(), _) then NFInstUtil.envPrefix(inEnv);
 
   end match;
-end makeCrefPrefix;
+end makeNamePrefix;
 
 protected function prefixCref2
   input DAE.ComponentRef inCref;
@@ -2266,6 +2266,36 @@ algorithm
   end match;
 end instPackageConstant;
         
+protected function prefixPath
+  input Absyn.Path inPath;
+  input Env inCurrentEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inPath, inCurrentEnv)
+    local
+      String first_id;
+      Option<Prefix> opt_prefix;
+      Prefix prefix;
+      Env env;
+      Entry entry;
+      Absyn.Path path;
+
+    case (Absyn.FULLYQUALIFIED(_), _) then inPath;
+
+    else
+      equation
+        first_id = Absyn.pathFirstIdent(inPath);
+        (entry, env) = NFLookup.lookupSimpleNameUnresolved(first_id, inCurrentEnv);
+
+        opt_prefix = NFEnv.scopePrefixOpt(env);
+        prefix = makeNamePrefix(opt_prefix, env);
+        path = NFInstUtil.prefixPath(inPath, prefix);
+      then
+        path;
+
+  end match;
+end prefixPath;
+
 protected function instFunctionCall
   input Absyn.ComponentRef inName;
   input list<Absyn.Exp> inPositionalArgs;
@@ -2374,8 +2404,7 @@ algorithm
         path = Absyn.crefToPath(inName);
         (entry, env) = NFLookup.lookupFunctionName(path, inEnv, inInfo);
         is_builtin = NFEnv.entryHasBuiltinOrigin(entry);
-        prefix = NFEnv.scopePrefix(inEnv);
-        path = instFunctionName(path, is_builtin, inEnv, prefix);
+        path = instFunctionName(path, is_builtin, inEnv);
         (cls, ty, (consts, functions)) =
           instFunctionEntry(path, entry, is_builtin, env, inGlobals);
         is_record = Types.isRecord(ty);
@@ -2398,13 +2427,11 @@ protected function instFunctionName
   input Absyn.Path inPath;
   input Boolean inBuiltin;
   input Env inEnv;
-  input Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath := match(inPath, inBuiltin, inEnv, inPrefix)
-    case (_, true, _, _) then inPath; // Don't prefix builtin functions.
-    //else prefixPath(inPath, inPrefix, inEnv);
-    else inPath;
+  outPath := match(inPath, inBuiltin, inEnv)
+    case (_, true, _) then inPath; // Don't prefix builtin functions.
+    else prefixPath(inPath, inEnv);
   end match;
 end instFunctionName;
 
