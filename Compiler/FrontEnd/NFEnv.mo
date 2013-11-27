@@ -57,6 +57,7 @@ public type Frame = NFInstTypes.Frame;
 public type Env = NFInstTypes.Env;
 public type AvlTree = NFEnvAvlTree.AvlTree;
 public type Modifier = NFInstTypes.Modifier;
+public type Prefix = NFInstTypes.Prefix;
 
 public constant Env emptyEnv = {};
 public constant Integer tmpTickIndex = 2;
@@ -77,7 +78,7 @@ public function openScope
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := NFInstTypes.FRAME(inScopeName, inScopeType, NFEnvAvlTree.emptyAvlTree) :: inEnv;
+  outEnv := NFInstTypes.FRAME(inScopeName, NONE(), inScopeType, NFEnvAvlTree.emptyAvlTree) :: inEnv;
 end openScope;
 
 public function openClassScope
@@ -89,7 +90,7 @@ protected
   ScopeType st;
 algorithm
   st := encapsulatedToScopeType(inEncapsulated);
-  outEnv := NFInstTypes.FRAME(SOME(inClassName), st, NFEnvAvlTree.emptyAvlTree) :: inEnv;
+  outEnv := NFInstTypes.FRAME(SOME(inClassName), NONE(), st, NFEnvAvlTree.emptyAvlTree) :: inEnv;
 end openClassScope;
 
 public function exitScope
@@ -211,13 +212,14 @@ public function insertEntry
   output Env outEnv;
 protected
   Option<String> name;
+  Option<Prefix> prefix;
   ScopeType ty;
   AvlTree entries;
   Env rest_env;
 algorithm
-  NFInstTypes.FRAME(name, ty, entries) :: rest_env := inEnv;
+  NFInstTypes.FRAME(name, prefix, ty, entries) :: rest_env := inEnv;
   entries := NFEnvAvlTree.add(entries, entryName(inEntry), inEntry, mergeEntry);
-  outEnv := NFInstTypes.FRAME(name, ty, entries) :: rest_env;
+  outEnv := NFInstTypes.FRAME(name, prefix, ty, entries) :: rest_env;
 end insertEntry;
 
 protected function mergeEntry
@@ -583,17 +585,18 @@ public function replaceEntry
   output Boolean outWasReplaced;
 protected
   Option<String> name;
+  Option<Prefix> prefix;
   ScopeType ty;
   AvlTree entries;
   Env rest_env;
   String entry_name;
   Option<Entry> uentry;
 algorithm
-  NFInstTypes.FRAME(name, ty, entries) :: rest_env := inEnv;
+  NFInstTypes.FRAME(name, prefix, ty, entries) :: rest_env := inEnv;
   entry_name := entryName(inReplacement);
   (entries, uentry) :=
     NFEnvAvlTree.update(entries, entry_name, replaceEntry2, (inReplacement, inOriginEnv));
-  outEnv := NFInstTypes.FRAME(name, ty, entries) :: rest_env;
+  outEnv := NFInstTypes.FRAME(name, prefix, ty, entries) :: rest_env;
   outWasReplaced := Util.isSome(uentry);
 end replaceEntry;
 
@@ -628,14 +631,15 @@ public function updateEntry
   replaceable type ArgType subtypeof Any;
 protected
   Option<String> name;
+  Option<Prefix> prefix;
   ScopeType st;
   AvlTree entries;
   Env rest_env;
 algorithm
-  NFInstTypes.FRAME(name, st, entries) :: rest_env := inEnv;
+  NFInstTypes.FRAME(name, prefix, st, entries) :: rest_env := inEnv;
   (entries, outUpdatedEntry) :=
     NFEnvAvlTree.update(entries, inName, inUpdateFunc, inArg);
-  outEnv := NFInstTypes.FRAME(name, st, entries) :: rest_env;
+  outEnv := NFInstTypes.FRAME(name, prefix, st, entries) :: rest_env;
 end updateEntry;
 
 public function mapScope
@@ -650,13 +654,14 @@ public function mapScope
   end MapFunc;
 protected
   Option<String> name;
+  Option<Prefix> prefix;
   ScopeType st;
   AvlTree entries;
   Env rest_env;
 algorithm
-  NFInstTypes.FRAME(name, st, entries) :: rest_env := inEnv;
+  NFInstTypes.FRAME(name, prefix, st, entries) :: rest_env := inEnv;
   entries := NFEnvAvlTree.map(entries, inMapFunc);
-  outEnv := NFInstTypes.FRAME(name, st, entries) :: rest_env;
+  outEnv := NFInstTypes.FRAME(name, prefix, st, entries) :: rest_env;
 end mapScope;
 
 public function foldScope
@@ -692,7 +697,7 @@ protected
   Frame frame;
 algorithm
   tree := List.fold(inIterators, insertIterator, NFEnvAvlTree.emptyAvlTree);
-  frame := NFInstTypes.FRAME(SOME("$for$"), NFInstTypes.IMPLICIT_SCOPE(inIterIndex), tree);
+  frame := NFInstTypes.FRAME(SOME("$for$"), NONE(), NFInstTypes.IMPLICIT_SCOPE(inIterIndex), tree);
   outEnv := frame :: inEnv;
 end insertIterators;
 
@@ -1049,6 +1054,48 @@ algorithm
   scopes := scopeNames(inEnv);
   outString := stringDelimitList(scopes, ".");
 end printEnvPathStr;
+
+public function scopePrefixOpt
+  input Env inEnv;
+  output Option<Prefix> outPrefix;
+protected
+  Env env;
+algorithm
+  env := stripImplicitScopes(inEnv);
+  NFInstTypes.FRAME(prefix = outPrefix) :: _ := inEnv;
+end scopePrefixOpt;
+
+public function scopePrefix
+  input Env inEnv;
+  output Prefix outPrefix;
+protected
+  Option<Prefix> prefix;
+algorithm
+  prefix := scopePrefixOpt(inEnv);
+  outPrefix := Util.getOptionOrDefault(prefix, NFInstTypes.emptyPrefix);
+end scopePrefix;
+
+public function setScopePrefix
+  input Prefix inPrefix;
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := setScopePrefixOpt(SOME(inPrefix), inEnv);
+end setScopePrefix;
+  
+public function setScopePrefixOpt
+  input Option<Prefix> inPrefix;
+  input Env inEnv;
+  output Env outEnv;
+protected
+  Option<String> name;
+  ScopeType st;
+  AvlTree entries;
+  Env rest_env;
+algorithm
+  NFInstTypes.FRAME(name, _, st, entries) :: rest_env := inEnv;
+  outEnv := NFInstTypes.FRAME(name, inPrefix, st, entries) :: rest_env;
+end setScopePrefixOpt;
 
 public function buildInitialEnv
   input SCode.Program inProgram;

@@ -53,6 +53,7 @@ public type Env = NFEnv.Env;
 public type Entry = NFEnv.Entry;
 public type EntryOrigin = NFEnv.EntryOrigin;
 public type Modifier = NFInstTypes.Modifier;
+public type Prefix = NFInstTypes.Prefix;
 
 protected constant Modifier NOMOD = NFInstTypes.NOMOD();
 
@@ -229,6 +230,13 @@ algorithm
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), 
     SCode.noComment, Absyn.dummyInfo);
 end makeDummyMetaType;
+
+public function lookupBuiltinSimpleName
+  input String inName;
+  output Entry outEntry;
+algorithm
+  (outEntry, _) := lookupBuiltinName2(inName);
+end lookupBuiltinSimpleName;
 
 protected function lookupBuiltinName
   input Absyn.Path inName;
@@ -668,6 +676,15 @@ algorithm
   outEntry := inEntry;
 end isValidPackageElement;
 
+public function lookupSimpleNameUnresolved
+  input String inName;
+  input Env inEnv;
+  output Entry outEntry;
+  output Env outEnv;
+algorithm
+  (outEntry, outEnv) := lookupSimpleName_impl(inName, inEnv);
+end lookupSimpleNameUnresolved;
+
 protected function lookupSimpleName
   input String inName;
   input Env inEnv;
@@ -729,7 +746,7 @@ protected
   Env env;
 algorithm
   env := NFEnv.topScope(inEnv);
-  (outEntry, outEnv, outState) := lookupNameInPackage(inName, inEnv, STATE_BEGIN());
+  (outEntry, outEnv, outState) := lookupNameInPackage(inName, env, STATE_BEGIN());
 end lookupFullyQualified;
 
 public function lookupInLocalScope
@@ -797,7 +814,7 @@ algorithm
 
     case (_, _, _, _)
       equation
-        (env, _) = enterEntryScope(inEntry, NFInstTypes.NOMOD(), inEnv);
+        (env, _) = enterEntryScope(inEntry, NFInstTypes.NOMOD(), NONE(), inEnv);
         (entry, env, state) = lookupNameInPackage(inName, env, inState);
       then
         (entry, env, state);
@@ -844,6 +861,7 @@ end isNameGlobal;
 public function enterEntryScope
   input Entry inEntry;
   input Modifier inModifier;
+  input Option<Prefix> inPrefix;
   input Env inEnv;
   output Env outEnv;
   output list<Modifier> outExtendsMods;
@@ -854,17 +872,18 @@ algorithm
   el := NFEnv.entryElement(inEntry);
   mod := NFEnv.entryModifier(inEntry);
   mod := NFMod.mergeMod(inModifier, mod);
-  (outEnv, outExtendsMods) := enterEntryScope_impl(el, mod, inEnv);
+  (outEnv, outExtendsMods) := enterEntryScope_impl(el, mod, inPrefix, inEnv);
 end enterEntryScope;
 
 public function enterEntryScope_impl
   input SCode.Element inElement;
   input Modifier inModifier;
+  input Option<Prefix> inPrefix;
   input Env inEnv;
   output Env outEnv;
   output list<Modifier> outExtendsMods;
 algorithm
-  (outEnv, outExtendsMods) := match(inElement, inModifier, inEnv)
+  (outEnv, outExtendsMods) := match(inElement, inModifier, inPrefix, inEnv)
     local
       Env env;
       SCode.ClassDef cdef;
@@ -873,18 +892,18 @@ algorithm
       Entry entry;
       list<Modifier> ext_mods;
 
-    case (SCode.CLASS(classDef = cdef, info = info), _, _)
+    case (SCode.CLASS(classDef = cdef, info = info), _, _, _)
       equation
-        env = openClassScope(inElement, inEnv);
+        env = openClassScope(inElement, inPrefix, inEnv);
         (env, ext_mods) = populateEnvWithClassDef(cdef, inModifier,
           SCode.PUBLIC(), {}, env, elementSplitterRegular, info, env);
       then
         (env, ext_mods);
 
-    case (SCode.COMPONENT(typeSpec = ty, info = info), _, _)
+    case (SCode.COMPONENT(typeSpec = ty, info = info), _, _, _)
       equation
         (entry, env) = lookupTypeSpec(ty, inEnv, info);
-        (env, ext_mods) = enterEntryScope(entry, inModifier, env);
+        (env, ext_mods) = enterEntryScope(entry, inModifier, inPrefix, env);
       then
         (env, ext_mods);
 
@@ -893,6 +912,7 @@ end enterEntryScope_impl;
 
 protected function openClassScope
   input SCode.Element inClass;
+  input Option<Prefix> inPrefix;
   input Env inEnv;
   output Env outEnv;
 protected
@@ -901,6 +921,7 @@ protected
 algorithm
   SCode.CLASS(name = name, encapsulatedPrefix = ep) := inClass;
   outEnv := NFEnv.openClassScope(name, ep, inEnv);
+  outEnv := NFEnv.setScopePrefixOpt(inPrefix, outEnv);
 end openClassScope;
 
 protected function elementSplitterRegular
@@ -1005,7 +1026,7 @@ algorithm
         (el as SCode.CLASS(classDef = cdef)) = NFEnv.entryElement(entry);
         // TODO: Only create this environment if needed, i.e. if the cdef
         // contains extends.
-        env = openClassScope(el, env);
+        env = openClassScope(el, NONE(), env);
         (env, _) = populateEnvWithClassDef(cdef, mod, inVisibility,
           inOrigins, env, elementSplitterExtends, inInfo, inAccumEnv);
         (env, ext_mods) = populateEnvWithClassDef(cdef, mod,
@@ -1284,7 +1305,7 @@ algorithm
         // Create an environment for the base class if needed.
         (el as SCode.CLASS(classDef = cdef)) = NFEnv.entryElement(entry);
         mod = NFMod.translateMod(smod, "", 0, NFInstTypes.emptyPrefix, inEnv);
-        env = openClassScope(el, env);
+        env = openClassScope(el, NONE(), env);
         (env, _) = populateEnvWithClassDef(cdef, mod,
           SCode.PUBLIC(), {}, env, elementSplitterExtends, info, env);
         // Populate the accumulated environment with the inherited elements.

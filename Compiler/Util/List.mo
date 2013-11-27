@@ -9326,4 +9326,73 @@ algorithm
   end match;
 end allReferenceEq;
 
+public function removeEqualPrefix
+  "Takes two lists and a comparison function and removes the heads from both
+   lists as long as they are equal. Ex:
+     removeEqualPrefix({1, 2, 3, 5, 7}, {1, 2, 3, 9, 7}) => ({5, 7}, {9, 7})"
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input CompFunc inCompFunc;
+  output list<ElementType1> outList1;
+  output list<ElementType2> outList2;
+
+  partial function CompFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  (outList1, outList2) := match(inList1, inList2, inCompFunc)
+    local
+      ElementType1 e1;
+      ElementType2 e2;
+      Boolean is_eq;
+      list<ElementType1> res1;
+      list<ElementType2> res2;
+
+    case (e1 :: _, e2 :: _, _)
+      equation
+        is_eq = inCompFunc(e1, e2);
+        (res1, res2) = removeEqualPrefix2(is_eq, inList1, inList2, inCompFunc);
+      then
+        (res1, res2);
+
+    else (inList1, inList2);
+
+  end match;
+end removeEqualPrefix;
+
+public function removeEqualPrefix2
+  "Helper function to removeEqualPrefix."
+  input Boolean inIsEqual;
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input CompFunc inCompFunc;
+  output list<ElementType1> outList1;
+  output list<ElementType2> outList2;
+
+  partial function CompFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    output Boolean outIsEqual;
+  end CompFunc;
+algorithm
+  (outList1, outList2) := match(inIsEqual, inList1, inList2, inCompFunc)
+    local
+      ElementType1 e1;
+      ElementType2 e2;
+      list<ElementType1> rest_e1;
+      list<ElementType2> rest_e2;
+
+    case (true, _ :: rest_e1, _ :: rest_e2, _)
+      equation
+        (rest_e1, rest_e2) = removeEqualPrefix(rest_e1, rest_e2, inCompFunc);
+      then
+        (rest_e1, rest_e2);
+
+    else (inList1, inList2);
+
+  end match;
+end removeEqualPrefix2;
+
 end List;

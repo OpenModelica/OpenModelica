@@ -491,6 +491,7 @@ end ScopeType;
 public uniontype Frame
   record FRAME
     Option<String> name;
+    Option<Prefix> prefix;
     ScopeType scopeType;
     AvlTree entries;
   end FRAME;
