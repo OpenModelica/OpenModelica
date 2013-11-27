@@ -66,11 +66,11 @@ const int rungekutta_s = 4;
 const double rungekutta_b[4] = { 1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0 };
 const double rungekutta_c[4] = { 0.0, 0.5, 0.5, 1.0 };
 
-typedef struct RK4
+typedef struct RK4_DATA
 {
   double** work_states;
   int work_states_ndims;
-}RK4;
+}RK4_DATA;
 
 
 static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
@@ -153,7 +153,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   if(solverInfo->solverMethod == 2)
   {
     /* Allocate RK work arrays */
-    RK4* rungeData = (RK4*) malloc(sizeof(RK4));
+    RK4_DATA* rungeData = (RK4_DATA*) malloc(sizeof(RK4_DATA));
     rungeData->work_states_ndims = rungekutta_s;
     rungeData->work_states = (double**) malloc((rungeData->work_states_ndims + 1) * sizeof(double*));
     for(i = 0; i < rungeData->work_states_ndims + 1; i++)
@@ -246,10 +246,10 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   if(solverInfo->solverMethod == 2)
   {
     /* free RK work arrays */
-    for(i = 0; i < ((RK4*)(solverInfo->solverData))->work_states_ndims + 1; i++)
-      free(((RK4*)(solverInfo->solverData))->work_states[i]);
-    free(((RK4*)(solverInfo->solverData))->work_states);
-    free((RK4*)solverInfo->solverData);
+    for(i = 0; i < ((RK4_DATA*)(solverInfo->solverData))->work_states_ndims + 1; i++)
+      free(((RK4_DATA*)(solverInfo->solverData))->work_states[i]);
+    free(((RK4_DATA*)(solverInfo->solverData))->work_states);
+    free((RK4_DATA*)solverInfo->solverData);
   }
   else if(solverInfo->solverMethod == 3)
   {
@@ -620,7 +620,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 /***************************************    RK4      ***********************************/
 static int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
 {
-  double** k = ((RK4*)(solverInfo->solverData))->work_states;
+  double** k = ((RK4_DATA*)(solverInfo->solverData))->work_states;
   double sum;
   int i,j;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
