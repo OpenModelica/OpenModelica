@@ -210,9 +210,9 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       {
         currectJumpState = ERROR_EVENTSEARCH;
         INFO2(LOG_EVENTS, "%s event at time %g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
-        INDENT(LOG_EVENTS);
+        INDENT(LOG_EVENTS); INDENT(LOG_EVENTS_V);
         handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-        RELEASE(LOG_EVENTS);
+        RELEASE(LOG_EVENTS); RELEASE(LOG_EVENTS_V);
         currectJumpState = ERROR_SIMULATION;
 
         solverInfo->didEventStep = 1;

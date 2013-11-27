@@ -406,8 +406,12 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   /* Last step with terminal()=true */
   if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION)
   {
+
+    INFO1(LOG_EVENTS_V, "terminal event at stop time %g", solverInfo->currentTime);
     data->simulationInfo.terminal = 1;
+    INDENT(LOG_EVENTS_V);
     updateDiscreteSystem(data);
+    RELEASE(LOG_EVENTS_V);
     
     /* prevent emit if noeventemit flag is used */
     if (!(omc_flag[FLAG_NOEVENTEMIT]))
