@@ -246,7 +246,9 @@ fi
 dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
-AC_CHECK_HEADERS(f2c.h, [], [LIBF2C=libf2c/libf2c.a])
+# OSX and other systems might have different sizes in f2c headers. Let's always use our own...
+# AC_CHECK_HEADERS(f2c.h, [], [LIBF2C=libf2c/libf2c.a])
+LIBF2C=libf2c/libf2c.a
 
 AC_MSG_CHECKING([for antlr.Tool support])
 omc_antlr_jar=build/share/omc/java/antlr-3.1.3.jar

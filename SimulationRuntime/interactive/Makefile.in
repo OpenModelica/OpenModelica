@@ -13,14 +13,8 @@ CC = @CC@
 CXX = @CXX@
 CFLAGS	+= @CFLAGS@
 CXXFLAGS = $(CFLAGS)
-CPPFLAGS = -I.. -Wall -I../c/simulation/results/ -I../c/linearization -I../c/simulation/solver/ -I../c/util/ -I../c/ -I../c/simulation/ -I../c/math-support/ $(LIBF2CINC)
+CPPFLAGS = -I.. -Wall -I../c/simulation/results/ -I../c/linearization -I../c/simulation/solver/ -I../c/util/ -I../c/ -I../c/simulation/ -I../c/math-support/
 LDFLAGS = @LDFLAGS@
-
-LIBF2C=@LIBF2C@
-ifeq ($(LIBF2C),)
-else
-LIBF2CINC=-I../c/simulation/libf2c/
-endif
 
 OBJ = $(CPPSRC:.cpp=.o)
 
