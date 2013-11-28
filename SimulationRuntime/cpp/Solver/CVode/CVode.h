@@ -105,7 +105,7 @@ private:
   int
     _outStps,                  ///< Output      - Total number of output-steps
     *_zeroSign;
-	
+  
   
   double
     *_z,            ///< Output      - (Current) State vector
@@ -116,9 +116,9 @@ private:
     _hOut;            ///< Temp      - Ouput step size for dense output
    
    unsigned int 
-		_event_n;
+    _event_n;
 double
-	_tLastEvent;
+  _tLastEvent;
 
   double 
     _tOut,            ///< Output      - Time for dense output
