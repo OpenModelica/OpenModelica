@@ -482,9 +482,12 @@ protected function setFileNamePrefixInSimulationOptions
   output GlobalScript.SimulationOptions outSimOpt;
 protected
   DAE.Exp startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, options, outputFormat, variableFilter, measureTime, cflags, simflags;
+  Boolean UseOtimica;  
 algorithm
+  UseOtimica := Config.acceptOptimicaGrammar();
   GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, measureTime, cflags, simflags) := inSimOpt;
-  outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, measureTime, cflags, simflags);
+  method := Util.if_(UseOtimica, DAE.SCONST("optimization"),method);
+  outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, measureTime, cflags, simflags); 
 end setFileNamePrefixInSimulationOptions;
 
 protected function getConst
@@ -897,7 +900,6 @@ algorithm
     Real stoptime,starttime,tol,stepsize;
     Integer interval;
     String stoptime_str,stepsize_str,starttime_str,tol_str,num_intervalls_str;
-  
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -1544,6 +1546,55 @@ algorithm
           DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
           Values.STRING(result_file), Env.emptyEnv, st);
         //Reset PostOptModules flags
+        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStringsOrg);
+      then
+        (cache,simValue,newst);
+        
+   case (cache,env,"optimize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
+      equation
+
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        // ensure that generateSymbolicLinearization has been activated.
+        //we need to ensure that linearization is done before
+        //we remove all unsued equations.
+        postOptModStringsOrg = Flags.getConfigStringList(Flags.POST_OPT_MODULES);
+        postOptModStrings = List.deleteMember(postOptModStringsOrg, "removeUnusedFunctions");
+        postOptModStrings = Util.if_(List.notMember("generateSymbolicLinearization",postOptModStrings),
+                                     listAppend(postOptModStrings,{"generateSymbolicLinearization", "removeUnusedFunctions"}),
+                                     postOptModStrings);                         
+        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStrings);
+
+        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        cit = winCitation();
+        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
+        ifmsvc = Util.equal(Config.simulationCodeTarget(),"msvc");
+        exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);
+        libDir= Settings.getInstallationDirectoryPath();
+        libDir = Util.if_(ifmsvc, libDir +& "/lib/omc/cpp/msvc",libDir+& "/lib/omc/cpp");
+        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg); 
+        SimCode.SIMULATION_SETTINGS(startTime=starttime,stopTime=stoptime,tolerance=tol,numberOfIntervals=interval,stepSize=stepsize,method = method_str, outputFormat = outputFormat_str) = simSettings;   
+        configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
+        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        starttime_str = realString(starttime);
+        stoptime_str = realString(stoptime);
+        stepsize_str = realString(stepsize);
+        num_intervalls_str = intString(interval);
+        tol_str = realString(tol);
+        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir," ","-s ",starttime_str," ","-e ",stoptime_str," ","-f ", stepsize_str," ","-i ",method_str, " ","-v ",num_intervalls_str, " ","-y ",tol_str  }), simflags);
+        executable1=Util.if_(ifcpp,"OMCppSimulation",executable);
+        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
+        logFile = stringAppend(executable1,".log");
+        // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+        // we should really have different log files for simulation/compilation!
+        // as the buildModel log file will be deleted here and that gives less information to the user!
+        0 = Debug.bcallret1(System.regularFileExists(logFile),System.removeFile,logFile,0);
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2});
+        System.realtimeTick(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+        resI = System.systemCall(sim_call,logFile);
+        timeSimulation = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(GlobalScript.RT_CLOCK_SIMULATE_TOTAL);
+        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
         Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStringsOrg);
       then
         (cache,simValue,newst);

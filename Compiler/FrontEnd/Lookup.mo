@@ -1106,7 +1106,7 @@ algorithm
     // If not in top scope, look in top scope for builtin variables, e.g. time.
     case (cache, fs as _::_::_, ref, InstTypes.SEARCH_ALSO_BUILTIN())
       equation
-        true = Builtin.variableIsBuiltin(ref);
+        true = Builtin.variableIsBuiltin(ref, Config.acceptOptimicaGrammar());
         (f as Env.FRAME(clsAndVars = ht)) = Env.topFrame(fs);
         (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv,name) = lookupVarF(cache, ht, ref);
       then

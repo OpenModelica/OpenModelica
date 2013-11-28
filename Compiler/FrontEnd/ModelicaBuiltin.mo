@@ -2158,6 +2158,32 @@ annotation(Documentation(info="<html>
 </html>"),preferredView="text");
 end linearize;
 
+function optimize "optimize a modelica/optimica model by generating c code, build it and run the optimization executable.
+ The only required argument is the className, while all others have some default values.
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [fileNamePrefix], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ Example command:
+  simulate(A);"
+  input TypeName className "the class that should simulated";
+  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
+  input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
+  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method := DAE.SCONST("optimization") "optimize a modelica/optimica model.";
+  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
+  input Boolean storeInTemp := false "storeInTemp. <default> = false";
+  input Boolean noClean := false "noClean. <default> = false";
+  input String options := "<default>" "options. <default> = \"\"";
+  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input Boolean measureTime := false "creates a html file with proffiling data for model optimization. <default> = false";
+  input String cflags := "<default>" "cflags. <default> = \"\"";
+  input String simflags := "<default>" "simflags. <default> = \"\"";
+  output String optimizationResults;
+external "builtin";
+annotation(preferredView="text");
+end optimize;
+
 function getSourceFile "Returns the filename of the class."
   input TypeName class_;
   output String filename "empty on failure";
