@@ -16,6 +16,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings& global
 ,_conditions(NULL)
 ,_time_conditions(NULL)
 ,_time_event_counter(NULL)
+,_start_time(0.0)
 {
 
  
@@ -108,7 +109,7 @@ void SystemDefaultImplementation::initialize()
    memset(_time_conditions,false,(_dimTimeEvent)*sizeof(bool));
     memset(_time_event_counter,0,(_dimTimeEvent)*sizeof(int));
   }
-  
+  _start_time =0.0;
   
 };
 
@@ -243,7 +244,7 @@ void SystemDefaultImplementation::getRHS(double* f)
       f[i] = __zDot[i];
 
 };
-void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr)
+void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr,vector<double> delay_max)
 {
    _time_buffer.set_capacity(1024);
    unsigned int expr_id;
@@ -252,21 +253,39 @@ void  SystemDefaultImplementation::intDelay(vector<unsigned int> expr)
       buffer_type delay_buffer(1024);
      _delay_buffer[expr_id]=delay_buffer;
    }
+   vector<double>::iterator iter = std::max_element(delay_max.begin(),delay_max.end());
+   _delay_max =  *iter;
 }
-void SystemDefaultImplementation::storeDelay(unsigned int expr_id,double expr_value)
+void SystemDefaultImplementation::storeDelay(unsigned int expr_id,double expr_value,double time)
 {
     map<unsigned int,buffer_type>::iterator iter;
     if((iter = _delay_buffer.find(expr_id))!=_delay_buffer.end())
     {
     
         iter->second.push_back(expr_value);
+        //buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater<double>(),time-(_delay_max+UROUND)));
+        //if(pos!=_time_buffer.end()) 
+        //{
+        //   buffer_type::iterator first = _time_buffer.begin(); // first time entry
+        //   unsigned int n = std::distance(first,pos); 
+        //   iter->second.erase_begin(n-1);
+        //}
+        
     }
+    else
+        throw  std::invalid_argument("invalid delay expression id"); 
 }
  void SystemDefaultImplementation::storeTime(double time)
  {
  
     _time_buffer.push_back(time);
-  
+    // buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater<double>(),time-(_delay_max+UROUND)));
+    //if(pos!=_time_buffer.end()) 
+    //{
+    //  buffer_type::iterator first = _time_buffer.begin(); // first time entry
+    //  unsigned int n = std::distance(first,pos); 
+    //   _time_buffer.erase_begin(n-1);
+    //}
  }
  
 double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value,double delayTime, double delayMax)
@@ -280,12 +299,14 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
       {
         throw std::invalid_argument("Negative delay requested");
       }
-      if(_time_buffer.size()==0)
+      if(_time_buffer.size()==0) //occurs in the initialization phase
       {
-        /*  This occurs in the initialization phase */
+      
         return expr_value;
       }
-      
+      if(_simTime<=_start_time)
+        return expr_value;
+        
       double ts; //difference of current time and delay time
       double tl; //last buffer entry
       double res0, res1, t0, t1;
@@ -310,29 +331,35 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
         else
         {
          //find posion in value buffer for queried time
-           buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater<double>(),ts));
+           buffer_type::iterator pos = find_if(_time_buffer.begin(),_time_buffer.end(),bind2nd(std::greater_equal<double>(),ts));
           
            if(pos!=_time_buffer.end()) 
            {
                 buffer_type::iterator first = _time_buffer.begin(); // first time entry
-                unsigned int index = std::distance(first,pos); //found time 
+                unsigned int index = std::distance(first,pos); //index of found time 
                 t0 = *pos;
                 res0 = iter->second[index];
+                unsigned int length = _time_buffer.size();
                 if(index+ 1  == _time_buffer.size())
                     return res0;
                 t1 = _time_buffer[index+1];
+                double time_e = _time_buffer.back();
                 res1 = iter->second[index+1];
+                
            }
            else
-                throw std::invalid_argument("time im delay buffer not found");
+           {
+               double test = _time_buffer.back();
+               throw std::invalid_argument("time im delay buffer not found");
+           }
         }
-        if(t0==ts)
-         return res0;
+        if(t0==ts)//found exact time
+            return res0;
         else if(t1==ts)
-         return res1;
-        else
+            return res1;
+        else //linear interpolation
         {
-          /* linear interpolation */
+          
           double timedif = t1 - t0;
           double dt0 = t1 - ts;
           double dt1 = ts - t0;
@@ -342,7 +369,7 @@ double SystemDefaultImplementation::delay(unsigned int expr_id,double expr_value
       }
   }
   else
-    throw  std::invalid_argument("invalid expression id"); 
+    throw  std::invalid_argument("invalid delay expression id"); 
   
   
 }

@@ -202,8 +202,7 @@ void SolverDefaultImplementation::writeToFile(const int& stp, const double& t, c
     if(_outputCommand & IMixedSystem::WRITEOUT)
     {
         _system->writeOutput(_outputCommand);
-        dynamic_cast<IContinuous*>(_system)->stepCompleted(_tCurrent);     
-        
+      
     }
 }
 void SolverDefaultImplementation::updateEventState()

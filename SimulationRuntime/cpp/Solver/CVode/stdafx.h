@@ -15,6 +15,7 @@
 #include <boost/ref.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
+#include <boost/lexical_cast.hpp>
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include <boost/numeric/ublas/storage.hpp> 
 #include <boost/numeric/ublas/vector.hpp>

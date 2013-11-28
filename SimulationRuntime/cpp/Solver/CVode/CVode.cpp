@@ -16,6 +16,8 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
   , _tOut          (0.0)  
   , _zeroSign        (NULL)
   ,_cvode_initialized(false)
+  ,_tLastEvent(0.0)
+  ,_event_n(0)
 {
   _data = ((void*)this);
 }
@@ -48,7 +50,8 @@ void Cvode::initialize()
   // Kennzeichnung, dass initialize()() (vor der Integration) aufgerufen wurde
   _idid = 5000;
 
-
+   _tLastEvent=0.0;
+   _event_n=0;
   SolverDefaultImplementation::initialize();
   _dimSys    = _continuous_system->getDimContinuousStates();
   _dimZeroFunc = _event_system->getDimZeroFunc();
@@ -284,13 +287,14 @@ void Cvode::CVodeCore()
     _idid = CVodeGetLastStep(_cvodeMem,&_h);
     //Ausgabe
     writeCVodeOutput(_tCurrent,_h,_locStps);
+     _continuous_system->stepCompleted(_tCurrent);     
     /*_continuous_system->stepCompleted(_tCurrent);   */
      /*ToDo 
      if(dynamic_cast<IStepEvent*>(_system)->isStepEvent())
     {
       _cv_rt = 2;
     }*/
-
+    
     _zeroFound = false;
 
     // Check, ob Schritt erfolgreich
@@ -304,6 +308,25 @@ void Cvode::CVodeCore()
     if(_cv_rt == CV_ROOT_RETURN)
     {
       _zeroFound = true;
+      if((abs(_tLastEvent - _tCurrent)<1e-3) &&   _event_n==0)
+      {
+        _tLastEvent=_tCurrent;
+        _event_n++;
+      }
+      else if((abs(_tLastEvent - _tCurrent)<1e-3) && (_event_n>=1 && _event_n<500))
+      {
+            _event_n++;
+      }
+      else if((abs(_tLastEvent - _tCurrent)>=1e-3) )
+      {
+        //restart event counter
+        _tLastEvent=_tCurrent;
+        _event_n=0;
+      }
+      else
+      {
+            throw std::runtime_error("Number of events exceeded  in time interval " + boost::lexical_cast<string>(abs(_tLastEvent - _tCurrent)));
+      }
       _time_system->setTime(_tCurrent);
       _continuous_system->setContinuousStates(NV_DATA_S(_CV_y));
       _continuous_system->evaluate(IContinuous::CONTINUOUS );

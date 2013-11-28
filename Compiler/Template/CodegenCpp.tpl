@@ -1620,7 +1620,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
   //initialAnalyticJacobian();
   saveAll();
  
-  <%functionInitDelay(delayedExps)%>
+  <%functionInitDelay(delayedExps,simCode)%>
   
     }
   
@@ -4199,64 +4199,93 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     case  ALGLOOP_CONTEXT(genInitialisation=true)
     then
     <<
-
+     
+      bool* conditions0<%index%> = new bool[_dimZeroFunc];
+      bool* conditions1<%index%> = new bool[_dimZeroFunc];
+      bool restart<%index%>=true;
+       unsigned int iterations<%index%> = 0;
       try
       {
-         _algLoopSolver<%index%>->initialize();
-         _algLoop<%index%>->evaluate();
-         for(int i=0;i<_dimZeroFunc;i++)
+        _algLoopSolver<%index%>->initialize();
+        _algLoop<%index%>->evaluate();
+      
+         unsigned int iterations = 0;
+          if( _callType == IContinuous::DISCRETE )
           {
-             getCondition(i);
+             while(restart<%index%> && !(iterations<%index%>++>500))
+             {
+             
+              getConditions(conditions0<%index%>);
+              _algLoopSolver<%index%>->solve();
+            
+              for(int i=0;i<_dimZeroFunc;i++)
+              {
+                 getCondition(i);
+              }
+             
+              getConditions(conditions1<%index%>);
+              restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
+            }
           }
-          IContinuous::UPDATETYPE calltype = _callType;
-         _callType = IContinuous::CONTINUOUS;
-         _algLoopSolver<%index%>->solve(); 
-         _callType = calltype;
+          else
+             _algLoopSolver<%index%>->solve();
       }
       catch(std::exception &ex)
       {
+          delete[] conditions0<%index%>;
+          delete[] conditions1<%index%>;
           throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
-      } 
+      }
+      delete[] conditions0<%index%>;
+      delete[] conditions1<%index%>; 
+      if(restart<%index%> && iterations<%index%> > 0)
+        throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) ); 
     >>
     else
     <<
 
-  
-    unsigned int dim<%index%> =   _algLoop<%index%>->getDimReal();
-    double* algloop<%index%>Vars = new double[dim<%index%>];
-    // boost::shared_ptr<double[dim<%index%>]>  algloop<%index%>Vars(new double[dim<%index%>]);
-    _algLoop<%index%>->getReal(algloop<%index%>Vars );
+    bool restart<%index%>=true;
+    bool* conditions0<%index%> = new bool[_dimZeroFunc];
+    bool* conditions1<%index%> = new bool[_dimZeroFunc];
+    unsigned int iterations<%index%> = 0;
     try
       {
         
          _algLoop<%index%>->evaluate();
-         for(int i=0;i<_dimZeroFunc;i++)
+       
+       
+          if( _callType == IContinuous::DISCRETE )
           {
-             getCondition(i);
+             while(restart<%index%> && !(iterations<%index%>++>500))
+             {
+             
+              getConditions(conditions0<%index%>);
+              _algLoopSolver<%index%>->solve();
+            
+              for(int i=0;i<_dimZeroFunc;i++)
+              {
+                 getCondition(i);
+              }
+             
+              getConditions(conditions1<%index%>);
+              restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
+            }
           }
-          IContinuous::UPDATETYPE calltype = _callType;
-         _callType = IContinuous::CONTINUOUS;
-         _algLoopSolver<%index%>->solve(command);
-         _callType = calltype;     
+          else
+             _algLoopSolver<%index%>->solve();
+      
       }
       catch(std::exception &ex)
        {
-             try
-             {  //try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
-                IContinuous::UPDATETYPE calltype = _callType;
-               _callType = IContinuous::DISCRETE;
-                 _algLoop<%index%>->setReal(algloop<%index%>Vars );
-                _algLoopSolver<%index%>->solve(command);
-               _callType = calltype;   
-             }
-             catch(std::exception &ex)
-             {
-                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
-             }
-              
+          delete[] conditions0<%index%>;
+          delete[] conditions1<%index%>;
+          throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+                         
        } 
-     delete[] algloop<%index%>Vars; 
-   
+       delete[] conditions0<%index%>;
+       delete[] conditions1<%index%>;
+       if(restart<%index%>&& iterations<%index%> > 0)
+        throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) ); 
      
       >>
     end match
@@ -8427,19 +8456,26 @@ end indexSpecFromCref;
 
 
 
-template functionInitDelay(DelayedExpression delayed)
+template functionInitDelay(DelayedExpression delayed,SimCode simCode)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+   let &preExp = buffer "" /*BUFD*/
   let delay_id = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
      '<%id%>';separator=","))
-   
+  let delay_max = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+     '<%delayExpMax%>';separator=","))  
   if delay_id then
    <<
     //init delay expressions
-    vector<unsigned int> delay_ids;
+     <%varDecls%>
+    <%preExp%>
+    vector<double> delay_max;
+    vector<unsigned int > delay_ids;
     delay_ids+= <%delay_id%>;
-    intDelay(delay_ids);
+    delay_max+=<%delay_max%>;
+    intDelay(delay_ids,delay_max);
     
   >>
   else " "
@@ -8455,14 +8491,15 @@ template functionStoreDelay(DelayedExpression delayed,SimCode simCode)
       let eRes = daeExp(e, contextSimulationNonDiscrete,
                       &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
      <<
+    
       <%preExp%>
-       storeDelay(<%id%>, <%eRes%>);<%\n%>
+       storeDelay(<%id%>, <%eRes%>,time);<%\n%>
       >>
     ))
   <<
   
     <%varDecls%>
-    storeTime(_simTime);
+    storeTime(time);
     <%storePart%>
   >>
 end functionStoreDelay;

@@ -138,7 +138,7 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
     //save discrete varibales
     event_system->saveDiscreteVars(); // store values of discrete vars vor next check
   
-  int dim = event_system->getDimZeroFunc();
+    unsigned int dim = event_system->getDimZeroFunc();
     bool* conditions0 = new bool[dim];
     bool* conditions1 = new bool[dim];
     event_system->getConditions(conditions0);
@@ -153,7 +153,8 @@ bool EventHandling::IterateEventQueue(bool& state_vars_reinitialized)
     
     event_system->getConditions(conditions1);
     bool crestart = !std::equal (conditions1, conditions1+dim,conditions0);
-  
+    delete[] conditions0;
+    delete [] conditions1;
     return((drestart||crestart)); //returns true if new events occured
 }
 

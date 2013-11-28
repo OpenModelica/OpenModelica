@@ -106,8 +106,8 @@ public:
 protected:
      void Assert(bool cond,string msg);
      void Terminate(string msg);
-     void intDelay(vector<unsigned int> expr);
-     void storeDelay(unsigned int expr_id,double expr_value);
+     void intDelay(vector<unsigned int> expr,vector<double> delay_max);
+     void storeDelay(unsigned int expr_id,double expr_value,double time);
      void storeTime(double time);
      double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
     template<class T>
@@ -158,6 +158,8 @@ protected:
     typedef boost::circular_buffer<double> buffer_type;
     map<unsigned int,buffer_type> _delay_buffer;
     buffer_type _time_buffer;
+    double _delay_max;
+    double _start_time;
     
 };
 
