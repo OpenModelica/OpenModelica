@@ -1194,45 +1194,35 @@ algorithm
         (inEquations,inREquations,eqns);
     
     // Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c)
+    
     case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
       equation
-       (eqns,reqns,ieqns) = 
-         lowerAlgorithm(
-           DAE.ALGORITHM(
-             DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
-             source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
+        (DAE.EQUALITY_EXPS(e1,e2), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
+        eqns = lowerExtendedRecordEqn(DAE.TUPLE(explst),e2,source,functionTree,inEquations);
       then
-        (eqns,reqns,ieqns);
-    
+        (eqns,inREquations,inIEquations);
+
     case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = 
-          lowerAlgorithm(
-            DAE.ALGORITHM(
-              DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
-              source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
+        (DAE.EQUALITY_EXPS(e1,e2), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
+        eqns = lowerExtendedRecordEqn(e1,e2,source,functionTree,inEquations);
       then
-        (eqns,reqns,ieqns);
+        (eqns,inREquations,inIEquations);
 
     // Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c)
     case(DAE.INITIALEQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_)
       equation
-       (eqns,reqns,ieqns) = 
-         lowerAlgorithm(
-           DAE.INITIALALGORITHM(
-             DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
-             source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
+        (DAE.EQUALITY_EXPS(e1,e2), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
+        eqns = lowerExtendedRecordEqn(e1,e2,source,functionTree,inIEquations);
       then
-        (eqns,reqns,ieqns);
+        (inEquations,inREquations,eqns);
+        
     case(DAE.INITIALEQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_)
       equation
-        (eqns,reqns,ieqns) = 
-          lowerAlgorithm(
-            DAE.INITIALALGORITHM(
-              DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),
-              source),functionTree,inEquations,inREquations,inIEquations,DAE.NOT_EXPAND());
+        (DAE.EQUALITY_EXPS(e1,e2), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(DAE.TUPLE(explst),e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.NO_INLINE()}), source);
+        eqns = lowerExtendedRecordEqn(e1,e2,source,functionTree,inIEquations);
       then
-        (eqns,reqns,ieqns);
+        (inEquations,inREquations,eqns);
 
     case (DAE.EQUATION(exp = e1,scalar = e2,source = source),_,_,_,_)
       equation
@@ -1658,7 +1648,8 @@ algorithm
       Integer size;
       DAE.Dimensions dims;
       list<DAE.Exp> explst1, explst2;
-      Boolean b1, b2;
+      Boolean b1, b2, b3;
+      DAE.Exp exp;
     // a, Record(), CAST(Record())
     case (_, _, _, _, _)
       equation
@@ -1675,7 +1666,7 @@ algorithm
         size = Expression.sizeOf(tp);
       then
         BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, false)::inEqns;
-
+        
     // array types to array equations
     case (_, _, _, _, _)
       equation
@@ -1684,13 +1675,24 @@ algorithm
         dims = Expression.arrayDimension(tp);
       then
         lowerArrayEqn(dims, inExp1, inExp2, source, inEqns);
+
+    // tuple types to complex equations
+    case (_, _, _, _, _)
+      equation
+        tp = Expression.typeof(inExp1);
+        true = Types.isTuple(tp);
+        size = Expression.sizeOf(tp);
+      then
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, false)::inEqns;
+
     // other types
     case (_, _, _, _, _)
       equation
         tp = Expression.typeof(inExp1);
         b1 = DAEUtil.expTypeComplex(tp);
         b2 = DAEUtil.expTypeArray(tp);
-        false = b1 or b2;
+        b3 = Types.isTuple(tp);
+        false = b1 or b2 or b3;
         //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
         BackendDAE.EQUATION(inExp1, inExp2, source, false)::inEqns;

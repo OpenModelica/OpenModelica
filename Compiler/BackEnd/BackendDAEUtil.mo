@@ -5209,7 +5209,7 @@ algorithm
       BackendDAE.Solvability solvab;
       list<DAE.ComponentRef> crlst;
       Absyn.Path path,path1;
-      list<DAE.Exp> explst;
+      list<DAE.Exp> explst,crexplst, explst2;
       Boolean b;
     case({},_,_,_,_,_,_,_) then inRow;
 /*    case(r::rest,_,_,_,_,_,_,_)
@@ -5398,6 +5398,21 @@ algorithm
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
         true = expCrefLstHasCref(explst,cr1);
         false = Expression.expHasCrefNoPreorDer(e1,cr1);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);        
+    case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(path=path,expLst=explst2),_,_,_,_,_)
+      equation
+        rabs = intAbs(r);
+        // if not negatet rowmark then
+        false = intEq(rowmark[rabs],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs); 
+        explst = List.flatten(List.map1(explst, Expression.generateCrefsExpLstFromExp, NONE()));
+        crlst = List.map(explst, Expression.expCref);
+        crlst = List.flatten(List.map1(crlst, ComponentReference.expandCref, true));
+        crexplst = List.map(crlst, Expression.crefExp);
+        true = expCrefLstHasCref(crexplst,cr1);
+        false = Expression.expHasCrefNoPreorDer(e2,cr1);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
     case(r::rest,_,_,_,_,_,_,_)

@@ -2850,6 +2850,85 @@ algorithm outCref := match(inVar,inCrefPrefix)
  end match;
 end generateCrefsFromExpVar;
 
+public function generateCrefsExpFromExp
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCrefPrefix;
+  output DAE.Exp outCrefExp;
+algorithm 
+  outCrefExp := match(inExp,inCrefPrefix)
+    local
+      String name;
+      DAE.Type ty;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+      Absyn.Path p1,p2;
+      list<DAE.Exp> explst;
+      Boolean b;
+      DAE.CallAttributes attr;
+      
+    case (DAE.CREF(componentRef=DAE.WILD()), _) then inExp;
+      
+    case (DAE.ARRAY(ty=ty, scalar=b, array=explst), _) 
+      equation 
+        explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);  
+      then DAE.ARRAY(ty, b, explst);
+        
+    case (DAE.CALL(path=p1,expLst=explst,attr=attr as DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
+      equation
+        true = Absyn.pathEqual(p1,p2) "is record constructor";
+        explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
+      then
+        DAE.CALL(p1,explst,attr);
+        
+    case (DAE.CREF(componentRef=cr,ty=ty),_)
+      equation
+        name = ComponentReference.crefModelicaStr(cr);
+        cr = ComponentReference.crefPrependIdent(inCrefPrefix,name,{},ty);
+        e = makeCrefExp(cr, ty);
+      then
+        e;
+  end match;
+end generateCrefsExpFromExp;
+
+public function generateCrefsExpLstFromExp
+  input DAE.Exp inExp;
+  input Option<DAE.ComponentRef> inCrefPrefix;
+  output list<DAE.Exp> outCrefExpList;
+algorithm 
+  outCrefExpList := match(inExp,inCrefPrefix)
+    local
+      String name;
+      DAE.Type ty;
+      DAE.ComponentRef cr, incref;
+      DAE.Exp e;
+      Absyn.Path p1,p2;
+      list<DAE.Exp> explst;
+      Boolean b;
+      
+    case (DAE.ARRAY(ty=ty, scalar=b, array=explst), _) 
+      equation 
+        explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));  
+      then explst;
+        
+    case (DAE.CALL(path=p1,expLst=explst,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
+      equation
+        true = Absyn.pathEqual(p1,p2) "is record constructor";
+        explst = List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
+      then
+        explst;
+        
+    case (DAE.CREF(componentRef=cr,ty=ty),SOME(incref))
+      equation
+        name = ComponentReference.crefModelicaStr(cr);
+        cr = ComponentReference.crefPrependIdent(incref,name,{},ty);
+        e = makeCrefExp(cr, ty);
+      then
+        {e};
+        
+    case (DAE.CREF(componentRef=cr,ty=ty),NONE()) then {inExp};
+  end match;
+end generateCrefsExpLstFromExp;
+
 public function makeArray
   input list<DAE.Exp> inElements;
   input DAE.Type inType;
