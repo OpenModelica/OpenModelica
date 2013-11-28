@@ -4200,46 +4200,27 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     then
     <<
      
-      bool* conditions0<%index%> = new bool[_dimZeroFunc];
-      bool* conditions1<%index%> = new bool[_dimZeroFunc];
-      bool restart<%index%>=true;
-       unsigned int iterations<%index%> = 0;
+     
+    
       try
       {
         _algLoopSolver<%index%>->initialize();
         _algLoop<%index%>->evaluate();
-      
-         unsigned int iterations = 0;
-          if( _callType == IContinuous::DISCRETE )
+         for(int i=0;i<_dimZeroFunc;i++)
           {
-             while(restart<%index%> && !(iterations<%index%>++>500))
-             {
-             
-              getConditions(conditions0<%index%>);
-              _algLoopSolver<%index%>->solve();
-            
-              for(int i=0;i<_dimZeroFunc;i++)
-              {
-                 getCondition(i);
-              }
-             
-              getConditions(conditions1<%index%>);
-              restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
-            }
+             getCondition(i);
           }
-          else
-             _algLoopSolver<%index%>->solve();
+          IContinuous::UPDATETYPE calltype = _callType;
+         _callType = IContinuous::CONTINUOUS;
+        _algLoopSolver<%index%>->solve();
+          _callType = calltype;
       }
       catch(std::exception &ex)
       {
-          delete[] conditions0<%index%>;
-          delete[] conditions1<%index%>;
+       
           throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what()); 
       }
-      delete[] conditions0<%index%>;
-      delete[] conditions1<%index%>; 
-      if(restart<%index%> && iterations<%index%> > 0)
-        throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) ); 
+  
     >>
     else
     <<
@@ -4252,7 +4233,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
       {
         
          _algLoop<%index%>->evaluate();
-       
+     
        
           if( _callType == IContinuous::DISCRETE )
           {
@@ -4260,13 +4241,14 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
              {
              
               getConditions(conditions0<%index%>);
+                _callType = IContinuous::CONTINUOUS;
               _algLoopSolver<%index%>->solve();
-            
+             _callType = IContinuous::DISCRETE;
               for(int i=0;i<_dimZeroFunc;i++)
               {
                  getCondition(i);
               }
-             
+          
               getConditions(conditions1<%index%>);
               restart<%index%> = !std::equal (conditions1<%index%>, conditions1<%index%>+_dimZeroFunc,conditions0<%index%>);
             }
