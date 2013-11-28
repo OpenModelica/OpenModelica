@@ -279,7 +279,7 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean lis-clean
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean
-	$(MAKE) -C 3rdParty/Ipopt-3.11.6 clean || true
+	if test -f 3rdParty/Ipopt-3.11.6/Makefile; then $(MAKE) -C 3rdParty/Ipopt-3.11.6 clean; fi
 	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
