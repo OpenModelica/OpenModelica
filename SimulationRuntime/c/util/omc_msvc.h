@@ -52,6 +52,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
  */
 #if defined(_MSC_VER)
 
+/* get rid of inline for MSVC */
+#define OMC_INLINE 
+
 #ifndef WIN32
 #define WIN32
 #endif
@@ -69,10 +72,20 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 char *realpath(const char *path, char *resolved_path);
 int asprintf(char **strp, const char *fmt, ...);
 
-#endif
+#else /* not msvc */
+
+/* define inline for non-MSVC */
+#define OMC_INLINE inline
+
+#endif /* end msvc */
 
 #if defined(__MINGW32__)
 char *realpath(const char *path, char *resolved_path);
+#endif
+
+/* for non GNU compilers */
+#ifndef __GNUC__
+#define __attribute__(x)
 #endif
 
 #endif

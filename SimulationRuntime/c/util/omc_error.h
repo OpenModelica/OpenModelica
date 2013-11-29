@@ -33,20 +33,10 @@
 #ifndef OMC_ERROR_H
 #define OMC_ERROR_H
 
-/* for non GNU compilers */
-#ifndef __GNUC__
-#define __attribute__(x)
-#endif
+#include "omc_msvc.h"
 
 #include <setjmp.h>
 #include <stdio.h>
-
-/* get rid of inline for MSVC */
-#if defined(_MSC_VER)
-#define OMC_INLINE 
-#else
-#define OMC_INLINE inline
-#endif
 
 #ifdef __cplusplus
 extern "C" {
