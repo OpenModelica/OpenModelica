@@ -33,7 +33,9 @@
 #ifndef OMC_ERROR_H
 #define OMC_ERROR_H
 
+#if defined(_MSC_VER)
 #include "omc_msvc.h"
+#endif
 
 #include <setjmp.h>
 #include <stdio.h>
