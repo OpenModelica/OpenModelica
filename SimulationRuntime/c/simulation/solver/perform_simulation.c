@@ -106,7 +106,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
     fmt = fopen(filename, "wb");
     if(!fmt)
     {
-      WARNING2(LOG_SOLVER, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      warningStreamPrint(LOG_SOLVER, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
       fclose(fmt);
       fmt = NULL;
     }
@@ -157,7 +157,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         solverInfo->offset = solverInfo->currentTime - solverInfo->laststep;
         if(solverInfo->offset + DBL_EPSILON > simInfo->stepSize)
           solverInfo->offset = 0;
-        INFO1(LOG_SOLVER, "offset value for the next step: %.10f", solverInfo->offset);
+        infoStreamPrint(LOG_SOLVER, "offset value for the next step: %.10f", solverInfo->offset);
       } else {
         solverInfo->offset = 0;
       }
@@ -171,7 +171,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
 
       /* check for next time event */
       checkForSampleEvent(data, solverInfo);
-      INFO3(LOG_SOLVER, "call solver from %g to %g (stepSize: %g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
+      infoStreamPrint(LOG_SOLVER, "call solver from %g to %g (stepSize: %g)", solverInfo->currentTime, solverInfo->currentTime + solverInfo->currentStepSize, solverInfo->currentStepSize);
 
       /*
        * integration step
@@ -209,7 +209,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       if(eventType > 0)
       {
         currectJumpState = ERROR_EVENTSEARCH;
-        INFO2(LOG_EVENTS, "%s event at time %g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
+        infoStreamPrint(LOG_EVENTS, "%s event at time %g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
         INDENT(LOG_EVENTS); INDENT(LOG_EVENTS_V);
         handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
         RELEASE(LOG_EVENTS); RELEASE(LOG_EVENTS_V);
@@ -273,7 +273,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         }
         rt_accumulate(SIM_TIMER_OVERHEAD);
         if (!flag) {
-          WARNING1(LOG_SOLVER, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
+          warningStreamPrint(LOG_SOLVER, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
           fclose(fmt);
           fmt = NULL;
         }
@@ -302,7 +302,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       {
         printInfo(stdout, TermInfo);
         fputc('\n', stdout);
-        INFO2(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+        infoStreamPrint(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
         simInfo->stopTime = solverInfo->currentTime;
       }
 
@@ -320,27 +320,27 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         if(retValIntegrator)
         {
           retValue = -1 + retValIntegrator;
-          INFO1(LOG_STDOUT, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
+          infoStreamPrint(LOG_STDOUT, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo->currentTime);
         }
         else if(check_nonlinear_solutions(data, 0))
         {
           retValue = -2;
-          INFO1(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+          infoStreamPrint(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
         }
         else if(check_linear_solutions(data, 0))
         {
           retValue = -3;
-          INFO1(LOG_STDOUT, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+          infoStreamPrint(LOG_STDOUT, "model terminate | linear system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
         }
         else if(check_mixed_solutions(data, 0))
         {
           retValue = -3;
-          INFO1(LOG_STDOUT, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
+          infoStreamPrint(LOG_STDOUT, "model terminate | mixed system solver failed. | Simulation terminated at time %g", solverInfo->currentTime);
         }
         else
         {
           retValue = -1;
-          INFO1(LOG_STDOUT, "model terminate | probably a strong component solver failed. For more information use flags -lv LOG_NLS, LOG_LS. | Simulation terminated at time %g", solverInfo->currentTime);
+          infoStreamPrint(LOG_STDOUT, "model terminate | probably a strong component solver failed. For more information use flags -lv LOG_NLS, LOG_LS. | Simulation terminated at time %g", solverInfo->currentTime);
         }
         break;
       }
@@ -358,7 +358,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         restoreOldValues(data);
         solverInfo->currentTime = data->localData[0]->timeValue;
         overwriteOldSimulationData(data);
-        WARNING(LOG_STDOUT, "Integrator attempt to handle a problem with a called assert.");
+        warningStreamPrint(LOG_STDOUT, "Integrator attempt to handle a problem with a called assert.");
         retry = 1;
         solverInfo->didEventStep = 1;
         RELEASE(LOG_SOLVER);
@@ -366,7 +366,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
       else
       {
         retValue =  -1;
-        INFO1(LOG_STDOUT, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
+        infoStreamPrint(LOG_STDOUT, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
         break;
       }
     }

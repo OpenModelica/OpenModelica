@@ -90,8 +90,8 @@
   {
     if(ACTIVE_STREAM(LOG_INIT))
     {
-      WARNING3(LOG_INIT, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
-      WARNING1(LOG_INIT, "%s", msg);
+      warningStreamPrint(LOG_INIT, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+      warningStreamPrint(LOG_INIT, "%s", msg);
     }
   }
 
@@ -119,34 +119,34 @@
     void *kmem = NULL;
     int error_code = -1;
 
-    ASSERT(initData->simData->modelData.nInitResiduals == initData->nVars, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
+    assertStreamPrint(initData->simData->modelData.nInitResiduals == initData->nVars, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
 
     do /* Try it first with KIN_NONE. If that fails, try it with KIN_LINESEARCH. */
     {
       if(mset == 1 && glstr == KIN_NONE)
-        INFO(LOG_INIT, "using exact Newton");
+        infoStreamPrint(LOG_INIT, "using exact Newton");
       else if(mset == 1)
-        INFO(LOG_INIT, "using exact Newton with line search");
+        infoStreamPrint(LOG_INIT, "using exact Newton with line search");
       else if(glstr == KIN_NONE)
-        INFO(LOG_INIT, "using modified Newton");
+        infoStreamPrint(LOG_INIT, "using modified Newton");
       else
-        INFO(LOG_INIT, "using modified Newton with line search");
+        infoStreamPrint(LOG_INIT, "using modified Newton with line search");
 
-      INFO1(LOG_INIT, "| mset               = %10ld", mset);
-      INFO1(LOG_INIT, "| function tolerance = %10.6g", fnormtol);
-      INFO1(LOG_INIT, "| step tolerance     = %10.6g", scsteptol);
+      infoStreamPrint(LOG_INIT, "| mset               = %10ld", mset);
+      infoStreamPrint(LOG_INIT, "| function tolerance = %10.6g", fnormtol);
+      infoStreamPrint(LOG_INIT, "| step tolerance     = %10.6g", scsteptol);
 
       z = N_VNew_Serial(3*initData->nVars);
-      ASSERT(z, "out of memory");
+      assertStreamPrint(0 != z, "out of memory");
 
       sVars = N_VNew_Serial(3*initData->nVars);
-      ASSERT(sVars, "out of memory");
+      assertStreamPrint(0 != sVars, "out of memory");
 
       sEqns = N_VNew_Serial(3*initData->nVars);
-      ASSERT(sEqns, "out of memory");
+      assertStreamPrint(0 != sEqns, "out of memory");
 
       c = N_VNew_Serial(3*initData->nVars);
-      ASSERT(c, "out of memory");
+      assertStreamPrint(0 != c, "out of memory");
 
       /* initial guess */
       for(i=0; i<initData->nVars; ++i)
@@ -175,7 +175,7 @@
       }
 
       kmem = KINCreate();
-      ASSERT(kmem, "out of memory");
+      assertStreamPrint(0 != kmem, "out of memory");
 
       KINSetErrHandlerFn(kmem, kinsol_errorHandler, NULL);
       KINSetUserData(kmem, initData);
@@ -205,11 +205,11 @@
       for(i=0; i<initData->nVars; ++i)
         initData->vars[i] = NV_Ith_S(z, i);
 
-      INFO(LOG_INIT, "final kinsol statistics");
-      INFO1(LOG_INIT, "| KINGetNumNonlinSolvIters = %5ld", nni);
-      INFO1(LOG_INIT, "| KINGetNumFuncEvals       = %5ld", nfe);
-      INFO1(LOG_INIT, "| KINDlsGetNumJacEvals     = %5ld", nje);
-      INFO1(LOG_INIT, "| KINDlsGetNumFuncEvals    = %5ld", nfeD);
+      infoStreamPrint(LOG_INIT, "final kinsol statistics");
+      infoStreamPrint(LOG_INIT, "| KINGetNumNonlinSolvIters = %5ld", nni);
+      infoStreamPrint(LOG_INIT, "| KINGetNumFuncEvals       = %5ld", nfe);
+      infoStreamPrint(LOG_INIT, "| KINDlsGetNumJacEvals     = %5ld", nje);
+      infoStreamPrint(LOG_INIT, "| KINDlsGetNumFuncEvals    = %5ld", nfeD);
 
       /* Free memory */
       N_VDestroy_Serial(z);
@@ -224,7 +224,7 @@
 
     if(error_code < 0)
     {
-      INFO(LOG_STDOUT, "kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
+      infoStreamPrint(LOG_STDOUT, "kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
       return error_code;
     }
 
@@ -233,6 +233,6 @@
 #else
   int kinsol_initialization(INIT_DATA *initData)
   {
-    THROW("no sundials/kinsol support activated");
+    throwStreamPrint("no sundials/kinsol support activated");
   }
 #endif

@@ -141,12 +141,12 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
     if(InterpolationTable_compare(interpolationTables[i],fileName,tableName,table))
     {
 #ifdef INFOS
-      INFO1("Table id = %d",i);
+      infoStreamPrint("Table id = %d",i);
 #endif
       return i;
     }
 #ifdef INFOS
-  INFO1("Table id = %d",ninterpolationTables);
+  infoStreamPrint("Table id = %d",ninterpolationTables);
 #endif
   /* increase array */
   tmp = (InterpolationTable**)malloc((ninterpolationTables+1)*sizeof(InterpolationTable*));
@@ -173,7 +173,7 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 void omcTableTimeIpoClose(int tableID)
 {
 #ifdef INFOS
-  INFO1("Close Table[%d]",tableID);
+  infoStreamPrint("Close Table[%d]",tableID);
 #endif
   if(tableID >= 0 && tableID < (int)ninterpolationTables)
   {
@@ -189,7 +189,7 @@ void omcTableTimeIpoClose(int tableID)
 double omcTableTimeIpo(int tableID, int icol, double timeIn)
 {
 #ifdef INFOS
-  INFO3("Interpolate Table[%d][%d] add Time %f",tableID,icol,timeIn);
+  infoStreamPrint("Interpolate Table[%d][%d] add Time %f",tableID,icol,timeIn);
 #endif
   if(tableID >= 0 && tableID < (int)ninterpolationTables)
   {
@@ -203,7 +203,7 @@ double omcTableTimeIpo(int tableID, int icol, double timeIn)
 double omcTableTimeTmax(int tableID)
 {
 #ifdef INFOS
-  INFO1("Time max from Table[%d]",tableID);
+  infoStreamPrint("Time max from Table[%d]",tableID);
 #endif
   if(tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_maxTime(interpolationTables[tableID]);
@@ -215,7 +215,7 @@ double omcTableTimeTmax(int tableID)
 double omcTableTimeTmin(int tableID)
 {
 #ifdef INFOS
-  INFO1("Time min from Table[%d]",tableID);
+  infoStreamPrint("Time min from Table[%d]",tableID);
 #endif
   if(tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_minTime(interpolationTables[tableID]);
@@ -230,19 +230,19 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
   size_t i=0;
   InterpolationTable2D** tmp = NULL;
 #ifdef INFOS
-  INFO7("Init Table \n ipoType %f \n tableName %f \n fileName %d \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", ipoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
+  infoStreamPrint("Init Table \n ipoType %f \n tableName %f \n fileName %d \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", ipoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
 #endif
   /* if table is already initialized, find it */
   for(i = 0; i < ninterpolationTables2D; ++i)
     if(InterpolationTable2D_compare(interpolationTables2D[i],fileName,tableName,table))
     {
 #ifdef INFOS
-      INFO1("Table id = %d",i);
+      infoStreamPrint("Table id = %d",i);
 #endif
       return i;
     }
 #ifdef INFOS
-  INFO1("Table id = %d",ninterpolationTables2D);
+  infoStreamPrint("Table id = %d",ninterpolationTables2D);
 #endif
   /* increase array */
   tmp = (InterpolationTable2D**)malloc((ninterpolationTables2D+1)*sizeof(InterpolationTable2D*));
@@ -266,7 +266,7 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
 void omcTable2DIpoClose(int tableID)
 {
 #ifdef INFOS
-  INFO1("Close Table[%d]",tableID);
+  infoStreamPrint("Close Table[%d]",tableID);
 #endif
   if(tableID >= 0 && tableID < (int)ninterpolationTables2D)
   {
@@ -282,7 +282,7 @@ void omcTable2DIpoClose(int tableID)
 double omcTable2DIpo(int tableID,double u1_, double u2_)
 {
 #ifdef INFOS
-  INFO3("Interpolate Table[%d][%d] add Time %f",tableID,u1_,u2_);
+  infoStreamPrint("Interpolate Table[%d][%d] add Time %f",tableID,u1_,u2_);
 #endif
   if(tableID >= 0 && tableID < (int)ninterpolationTables2D)
     return InterpolationTable2D_interpolate(interpolationTables2D[tableID], u1_, u2_);
@@ -891,7 +891,7 @@ static void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size
   /* WHY DOES THIS NOT WORK
   if(fseek ( f->fp , f->data , SEEK_CUR ))
   {
-    THROW("Cannot set File Position! from File %s, no data is readed",f->filename);
+    throwStreamPrint("Cannot set File Position! from File %s, no data is readed",f->filename);
   }
   */
   while(!feof(f->fp))

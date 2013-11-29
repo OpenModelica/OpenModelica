@@ -727,7 +727,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   <<
   void <%symbolName(modelNamePrefix,"setupDataStruc")%>(DATA *data)
   {
-    ASSERT(data, "Error while initialize Data");
+    assertStreamPrint(0!=data, "Error while initialize Data");
     data->callback = &<%symbolName(modelNamePrefix,"callback")%>;
     <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed)%>
   }
@@ -1104,10 +1104,10 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo, String mo
     {
       <%varDecls%>
       /* data->simulationInfo.extObjs = NULL; */
-      INFO(LOG_DEBUG, "call external Object Constructors");
+      infoStreamPrint(LOG_DEBUG, "call external Object Constructors");
       <%ctorCalls%>
       <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
-      INFO(LOG_DEBUG, "call external Object Constructors finished");
+      infoStreamPrint(LOG_DEBUG, "call external Object Constructors finished");
     }
     >>
   end match
@@ -1191,7 +1191,7 @@ template functionInitSample(BackendDAE.SampleLookup sampleLookup, String modelNa
           data->modelData.samplesInfo[i].index = <%index%>;
           data->modelData.samplesInfo[i].start = <%e1%>;
           data->modelData.samplesInfo[i].interval = <%e2%>;
-          ASSERT(data->modelData.samplesInfo[i].interval > 0.0, "sample-interval <= 0.0");
+          assertStreamPrint(data->modelData.samplesInfo[i].interval > 0.0, "sample-interval <= 0.0");
           i++;
           >>)%>
   }
@@ -1602,11 +1602,11 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, S
 
     <%eqPart%>
 
-    INFO(LOG_INIT, "updating start-values");
+    infoStreamPrint(LOG_INIT, "updating start-values");
     INDENT(LOG_INIT);
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
-      INFO2(LOG_INIT, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
+      infoStreamPrint(LOG_INIT, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
         $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;
       >>
     ;separator="\n"%>
@@ -1657,7 +1657,7 @@ template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Te
       let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>initialResiduals[i++] = <%expPart%>;
-      INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, <%symbolName(modelNamePrefix,"initialResidualDescription")%>(i-1), initialResiduals[i-1]);
+      infoStreamPrint(LOG_RES_INIT, "[%d]: %s = %g", i, <%symbolName(modelNamePrefix,"initialResidualDescription")%>(i-1), initialResiduals[i-1]);
       >>
     end match
   else
@@ -1706,7 +1706,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations, String mod
     int i = 0;
     <%varDecls%>
 
-    INFO(LOG_RES_INIT, "updating initial residuals");
+    infoStreamPrint(LOG_RES_INIT, "updating initial residuals");
     INDENT(LOG_RES_INIT);
     <%body%>
     RELEASE(LOG_RES_INIT);
@@ -1728,7 +1728,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
       >>
     ;separator="\n")
 
-  let errorMsg = if not useSymbolicInitialization then 'ERROR0(LOG_INIT, "The symbolic initialization was not generated.");'
+  let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, "The symbolic initialization was not generated.");'
 
   <<
   <%&tmp%>
@@ -1865,7 +1865,7 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
         if not initialCall then
           "data->simulationInfo.needToIterate = 1;"         
       <<
-      INFO1(LOG_EVENTS, "reinit <%cref(stateVar)%>  = %f", <%val%>);
+      infoStreamPrint(LOG_EVENTS, "reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
       <%lhs%>
       <%needToIterate%>
@@ -2776,7 +2776,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
       <<
       if(<%cref(var)%> != $P$PRE<%cref(var)%>)
       {
-        INFO2(LOG_EVENTS_V, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);
+        infoStreamPrint(LOG_EVENTS_V, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);
         needToIterate = 1;
       }
       >>
@@ -2787,7 +2787,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
   {
     int needToIterate = 0;
 
-    INFO(LOG_EVENTS_V, "check for discrete changes");
+    infoStreamPrint(LOG_EVENTS_V, "check for discrete changes");
     INDENT(LOG_EVENTS_V);
     <%changediscreteVars%>
     RELEASE(LOG_EVENTS_V);
@@ -7336,7 +7336,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <<
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
-    INFO1(LOG_EVENTS, "reinit <%expPart1%> = %f", <%expPart1%>);
+    infoStreamPrint(LOG_EVENTS, "reinit <%expPart1%> = %f", <%expPart1%>);
     data->simulationInfo.needToIterate = 1;
     >>
 end algStmtReinit;

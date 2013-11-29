@@ -80,16 +80,19 @@
     int eqSystemNumber = nlsData->equationIndex;
     NLS_KINSOL_DATA *kinsolData;
 
-    INFO1(LOG_NLS, "allocate memory for %s", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name);
-    INDENT(LOG_NLS);
-    for(i=0; i<size; ++i)
-      INFO2(LOG_NLS, "[%d] %s", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name);
-    RELEASE(LOG_NLS);
+    if (useStream[LOG_NLS]) {
+      infoStreamPrint(LOG_NLS, "allocate memory for %s", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name);
+      INDENT(LOG_NLS);
+      for(i=0; i<size; ++i) {
+        infoStreamPrint(LOG_NLS, "[%d] %s", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name);
+      }
+      RELEASE(LOG_NLS);
+    }
 
     /* allocate system data */
     nlsData->solverData = malloc(sizeof(NLS_KINSOL_DATA));
     kinsolData = (NLS_KINSOL_DATA*) nlsData->solverData;
-    ASSERT(kinsolData, "out of memory");
+    assertStreamPrint(0 != kinsolData, "out of memory");
 
     kinsolData->fnormtol  = 1.e-12;     /* function tolerance */
     kinsolData->scsteptol = 1.e-12;     /* step tolerance */
@@ -152,11 +155,11 @@
 
     if(ACTIVE_STREAM(LOG_NLS))
     {
-      WARNING1(LOG_NLS, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name);
+      warningStreamPrint(LOG_NLS, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name);
       INDENT(LOG_NLS);
 
-      WARNING3(LOG_NLS, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
-      WARNING1(LOG_NLS, "%s", msg);
+      warningStreamPrint(LOG_NLS, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+      warningStreamPrint(LOG_NLS, "%s", msg);
 
       RELEASE(LOG_NLS);
     }
@@ -186,16 +189,16 @@
     int error_code = -1;
 
     z = N_VNew_Serial(3*size);
-    ASSERT(z, "out of memory");
+    assertStreamPrint(0 != z, "out of memory");
 
     sVars = N_VNew_Serial(3*size);
-    ASSERT(sVars, "out of memory");
+    assertStreamPrint(0 != sVars, "out of memory");
 
     sEqns = N_VNew_Serial(3*size);
-    ASSERT(sEqns, "out of memory");
+    assertStreamPrint(0 != sEqns, "out of memory");
 
     c = N_VNew_Serial(3*size);
-    ASSERT(c, "out of memory");
+    assertStreamPrint(0 != c, "out of memory");
 
     /* initial guess */
     for(i=0; i<size; ++i)
@@ -224,7 +227,7 @@
     }
 
     kmem = KINCreate();
-    ASSERT(kmem, "out of memory");
+    assertStreamPrint(0 != kmem, "out of memory");
 
     KINSetErrHandlerFn(kmem, nls_kinsol_errorHandler, kinsolData);
     KINSetUserData(kmem, kinsolData);
@@ -251,18 +254,18 @@
     KINDlsGetNumFuncEvals(kmem, &nfeD);
 
     /* solution */
-    INFO2(LOG_NLS, "solution for %s at t=%g", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name, kinsolData->data->localData[0]->timeValue);
+    infoStreamPrint(LOG_NLS, "solution for %s at t=%g", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name, kinsolData->data->localData[0]->timeValue);
     INDENT(LOG_NLS);
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      INFO3(LOG_NLS, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  kinsolData->nlsData->nlsx[i]);
+      infoStreamPrint(LOG_NLS, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  kinsolData->nlsData->nlsx[i]);
     }
 
-    INFO1(LOG_NLS, "KINGetNumNonlinSolvIters = %5ld", nni);
-    INFO1(LOG_NLS, "KINGetNumFuncEvals       = %5ld", nfe);
-    INFO1(LOG_NLS, "KINDlsGetNumJacEvals     = %5ld", nje);
-    INFO1(LOG_NLS, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
+    infoStreamPrint(LOG_NLS, "KINGetNumNonlinSolvIters = %5ld", nni);
+    infoStreamPrint(LOG_NLS, "KINGetNumFuncEvals       = %5ld", nfe);
+    infoStreamPrint(LOG_NLS, "KINDlsGetNumJacEvals     = %5ld", nje);
+    infoStreamPrint(LOG_NLS, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
     RELEASE(LOG_NLS);
 
     /* free memory */
@@ -276,23 +279,23 @@
     {
       if(error_code == KIN_LINESEARCH_NONCONV)
       {
-        WARNING(LOG_NLS, "kinsol failed. The linesearch algorithm was unable to find an iterate sufficiently distinct from the current iterate.");
+        warningStreamPrint(LOG_NLS, "kinsol failed. The linesearch algorithm was unable to find an iterate sufficiently distinct from the current iterate.");
         return 0;
       }
       else if(error_code == KIN_MAXITER_REACHED)
       {
-        WARNING(LOG_NLS, "kinsol failed. The maximum number of nonlinear iterations has been reached.");
+        warningStreamPrint(LOG_NLS, "kinsol failed. The maximum number of nonlinear iterations has been reached.");
         return 0;
       }
       else if(error_code < 0)
       {
-        WARNING1(LOG_NLS, "kinsol failed [error_code=%d]", error_code);
+        warningStreamPrint(LOG_NLS, "kinsol failed [error_code=%d]", error_code);
         return 0;
       }
     }
     else if(error_code < 0)
     {
-      WARNING(LOG_STDOUT, "kinsol failed. Use [-lv LOG_NLS] for more output.");
+      warningStreamPrint(LOG_STDOUT, "kinsol failed. Use [-lv LOG_NLS] for more output.");
       return 0;
     }
 
@@ -303,19 +306,19 @@
 
   int nls_kinsol_allocate(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData)
   {
-    THROW("no sundials/kinsol support activated");
+    throwStreamPrint("no sundials/kinsol support activated");
     return 0;
   }
 
   int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData)
   {
-    THROW("no sundials/kinsol support activated");
+    throwStreamPrint("no sundials/kinsol support activated");
     return 0;
   }
 
   int nonlinearSolve_kinsol(DATA *data, int sysNumber)
   {
-    THROW("no sundials/kinsol support activated");
+    throwStreamPrint("no sundials/kinsol support activated");
     return 0;
   }
 

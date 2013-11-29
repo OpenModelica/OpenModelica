@@ -60,7 +60,9 @@ void* getProAdr(FMI* fmi, const char* mid, const char* funName){
 void* loadFMUDll(void* in_fmi, const char* pathFMUDll,const char* mid){
   FMI* fmi = (FMI*) in_fmi;
   char* pathFMUSO;
+#ifdef _DEBUG_
   char* err_dlopen;
+#endif
   int pathLen;
   pathLen = strlen(pathFMUDll);
   pathFMUSO = (char*)calloc(pathLen+2, sizeof(char));

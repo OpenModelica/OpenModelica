@@ -76,7 +76,7 @@ int allocatelinearSystem(DATA *data)
       allocateLisData(size, size, nnz, &linsys[i].solverData);
       break;
     default:
-      THROW("unrecognized linear solver");
+      throwStreamPrint("unrecognized linear solver");
     }
   }
   return 0;
@@ -108,7 +108,7 @@ int freelinearSystem(DATA *data)
       freeLisData(&linsys[i].solverData);
       break;
     default:
-      THROW("unrecognized linear solver");
+      throwStreamPrint("unrecognized linear solver");
     }
 
     free(linsys[i].solverData);
@@ -137,7 +137,7 @@ int solve_linear_system(DATA *data, int sysNumber)
     success = solveLis(data, sysNumber);
     break;
   default:
-    THROW("unrecognized linear solver");
+    throwStreamPrint("unrecognized linear solver");
   }
   linsys[sysNumber].solved = success;
 
@@ -164,10 +164,10 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
       retVal = 1;
       if(printFailingSystems)
       {
-        WARNING2(LOG_LS, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).name, data->localData[0]->timeValue);
+        warningStreamPrint(LOG_LS, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).name, data->localData[0]->timeValue);
         INDENT(LOG_LS);
         for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).numVar; ++j)
-          WARNING2(LOG_LS, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
+          warningStreamPrint(LOG_LS, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
         RELEASE(LOG_LS);
       }
     }

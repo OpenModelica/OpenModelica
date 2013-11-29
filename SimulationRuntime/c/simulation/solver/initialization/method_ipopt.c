@@ -214,10 +214,10 @@
          * SPARSE
          *
          */
-        INFO(LOG_INIT, "ipopt using symbolic sparse jacobian G");
+        infoStreamPrint(LOG_INIT, "ipopt using symbolic sparse jacobian G");
         if(ACTIVE_STREAM(LOG_INIT))
         {
-          INFO(LOG_INIT, "sparsity pattern");
+          infoStreamPrint(LOG_INIT, "sparsity pattern");
           for(i=0; i<n; ++i)
           {
             printf("        | | column %3d: [ ", i+1);
@@ -258,7 +258,7 @@
          * DENSE
          *
          */
-        INFO(LOG_INIT, "ipopt using numeric dense jacobian G");
+        infoStreamPrint(LOG_INIT, "ipopt using numeric dense jacobian G");
         idx = 0;
         for(i=0; i<n; ++i)
         {
@@ -276,7 +276,7 @@
     else
     {
       /* return the values of the jacobian of the constraints */
-      INFO(LOG_DEBUG, "ipopt jacobian G");
+      infoStreamPrint(LOG_DEBUG, "ipopt jacobian G");
 
       if(ipopt_data->useSymbolic == 1)
       {
@@ -417,8 +417,8 @@
     {
       /* sparse */
       nele_jac = initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[n-1];
-      INFO1(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
-      INFO1(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
+      infoStreamPrint(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
+      infoStreamPrint(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
     }
 
     /* allocate space for the variable bounds */
@@ -464,7 +464,7 @@
         &ipopt_jac_g,   /* Callback function for evaluating Jacobian of constraint functions */
         &ipopt_h);      /* Callback function for evaluating Hessian of Lagrangian function */
 
-    ASSERT(nlp, "creating of ipopt problem has failed");
+    assertStreamPrint(0 != nlp, "creating of ipopt problem has failed");
 
     /* We can free the memory now - the values for the bounds have been
        copied internally in CreateIpoptProblem */
@@ -512,7 +512,7 @@
     dumpInitialization(data,initData);
 
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
-      THROW("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
+      throwStreamPrint("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
 
     /* return (int)status; */
     return reportResidualValue(initData);
@@ -530,7 +530,7 @@
    */
   int ipopt_initialization(INIT_DATA *initData, int useScaling)
   {
-    THROW("no ipopt support activated");
+    throwStreamPrint("no ipopt support activated");
     return 0;
   }
 #endif

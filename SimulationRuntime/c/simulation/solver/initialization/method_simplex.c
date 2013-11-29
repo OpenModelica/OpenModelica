@@ -114,8 +114,8 @@ int simplex_initialization(INIT_DATA* initData)
 
   double *STEP = (double*)malloc(initData->nVars * sizeof(double));
   double *VAR = (double*)malloc(initData->nVars * sizeof(double));
-  ASSERT(STEP, "out of memory");
-  ASSERT(VAR, "out of memory");
+  assertStreamPrint(0 != STEP, "out of memory");
+  assertStreamPrint(0 != VAR, "out of memory");
 
   /* Start with stepping .5 in each direction. */
   for(ind = 0; ind<initData->nVars; ind++)
@@ -162,33 +162,33 @@ int simplex_initialization(INIT_DATA* initData)
   }
   else
   {
-    INFO1(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
+    infoStreamPrint(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
   funcValue = leastSquareWithLambda(initData, 1.0);
-  INFO1(LOG_INIT, "leastSquare=%g", funcValue);
+  infoStreamPrint(LOG_INIT, "leastSquare=%g", funcValue);
 
   if(IFAULT == 1)
   {
     if(SIMP < funcValue)
     {
-      WARNING1(LOG_INIT, "Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
+      warningStreamPrint(LOG_INIT, "Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
       return -1;
     }
   }
   else if(IFAULT == 2)
   {
-    WARNING(LOG_INIT, "Error in initialization. Inconsistent initial conditions.");
+    warningStreamPrint(LOG_INIT, "Error in initialization. Inconsistent initial conditions.");
     return -2;
   }
   else if(IFAULT == 3)
   {
-    WARNING(LOG_INIT, "Error in initialization. Number of initial values to calculate < 1");
+    warningStreamPrint(LOG_INIT, "Error in initialization. Number of initial values to calculate < 1");
     return -3;
   }
   else if(IFAULT == 4)
   {
-    WARNING(LOG_INIT, "Error in initialization. Internal error, NLOOP < 1.");
+    warningStreamPrint(LOG_INIT, "Error in initialization. Internal error, NLOOP < 1.");
     return -4;
   }
   return reportResidualValue(initData);

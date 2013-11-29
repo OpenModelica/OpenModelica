@@ -64,7 +64,7 @@ int allocateMixedSearchData(int size, void** voiddata)
 {
   DATA_SEARCHMIXED_SOLVER* data = (DATA_SEARCHMIXED_SOLVER*) malloc(sizeof(DATA_SEARCHMIXED_SOLVER));
   *voiddata = (void*)data;
-  ASSERT(data, "allocationHybrdData() failed!");
+  assertStreamPrint(0 != data, "allocationHybrdData() failed!");
 
   data->iterationVars = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
   data->iterationVars2 = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
@@ -72,7 +72,7 @@ int allocateMixedSearchData(int size, void** voiddata)
 
   data->stateofSearch = (modelica_boolean*) malloc(size*sizeof(modelica_boolean));
 
-  ASSERT(*voiddata, "allocateMixedSearchData() voiddata failed!");
+  assertStreamPrint(0 != *voiddata, "allocateMixedSearchData() voiddata failed!");
   return 0;
 }
 
@@ -185,7 +185,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
   int mixedIterations = 0;
   int success = 0;
 
-  DEBUG1(LOG_NLS, "\n####  Start solver mixed equation system at time %f.", data->localData[0]->timeValue);
+  debugStreamPrint(LOG_NLS, "\n####  Start solver mixed equation system at time %f.", data->localData[0]->timeValue);
   INDENT(LOG_NLS);
 
   memset(solverData->stateofSearch, 0, systemData->size);
@@ -213,14 +213,14 @@ int solveMixedSearch(DATA *data, int sysNumber)
 
 
     found_solution = systemData->continuous_solution;
-    DEBUG1(LOG_NLS, "####  continuous system solution status = %d", found_solution);
+    debugStreamPrint(LOG_NLS, "####  continuous system solution status = %d", found_solution);
 
     /* restart if any relation has changed */
     if(checkRelations(data))
     {
       storeRelations(data);
       systemData->updateIterationExps(data);
-      DEBUG(LOG_NLS, "#### System relation changed restart iteration");
+      debugStreamPrint(LOG_NLS, "#### System relation changed restart iteration");
       if(mixedIterations++ > 200)
         found_solution = -4; /* mixedIterations++ > 200 */
     }
@@ -229,21 +229,21 @@ int solveMixedSearch(DATA *data, int sysNumber)
     {
       /* system of equations failed */
       found_solution = -2;
-      DEBUG(LOG_NLS, "####  NO SOLUTION ");
+      debugStreamPrint(LOG_NLS, "####  NO SOLUTION ");
     }
     else
     {
       found_solution = 1;
       for(i = 0; i < systemData->size; i++)
       {
-        DEBUG3(LOG_NLS, " check iterationVar[%d] = %d <-> %d", i, solverData->iterationVars[i], solverData->iterationVars2[i]);
+        debugStreamPrint(LOG_NLS, " check iterationVar[%d] = %d <-> %d", i, solverData->iterationVars[i], solverData->iterationVars2[i]);
         if(solverData->iterationVars[i] != solverData->iterationVars2[i])
         {
           found_solution  = 0;
           break;
         }
       }
-      DEBUG1(LOG_NLS, "#### SOLUTION = %c", found_solution  ? 'T' : 'F');
+      debugStreamPrint(LOG_NLS, "#### SOLUTION = %c", found_solution  ? 'T' : 'F');
     }
 
     if(!found_solution )
@@ -251,7 +251,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
       /* try next set of values*/
       if(nextVar(solverData->stateofSearch, systemData->size))
       {
-        DEBUG(LOG_NLS, "#### set next STATE ");
+        debugStreamPrint(LOG_NLS, "#### set next STATE ");
         for(i = 0; i < systemData->size; i++)
           *(systemData->iterationVarsPtr[i]) = *(systemData->iterationPreVarsPtr[i]) != solverData->stateofSearch[i];
 
@@ -263,7 +263,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
           {
             ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
             __name = data->modelData.booleanVarsData[ix].info.name;
-            DEBUG3(LOG_NLS, "%s changed : %d -> %d", __name, solverData->iterationVars[i], *(systemData->iterationVarsPtr[i]));
+            debugStreamPrint(LOG_NLS, "%s changed : %d -> %d", __name, solverData->iterationVars[i], *(systemData->iterationVarsPtr[i]));
           }
         }
       }
@@ -272,7 +272,7 @@ int solveMixedSearch(DATA *data, int sysNumber)
         /* while the initialization it's okay not a solution */
         if(!data->simulationInfo.initial)
         {
-          WARNING2(LOG_STDOUT,
+          warningStreamPrint(LOG_STDOUT,
               "Error solving mixed equation system with index %d at time %e",
               eqSystemNumber, data->localData[0]->timeValue);
         }
@@ -288,12 +288,12 @@ int solveMixedSearch(DATA *data, int sysNumber)
       if(ACTIVE_STREAM(LOG_NLS))
       {
         const char * __name;
-        DEBUG1(LOG_NLS, "#### SOLUTION FOUND! (system %d)", eqSystemNumber);
+        debugStreamPrint(LOG_NLS, "#### SOLUTION FOUND! (system %d)", eqSystemNumber);
         for(i = 0; i < systemData->size; i++)
         {
           ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
           __name = data->modelData.booleanVarsData[ix].info.name;
-          DEBUG4(LOG_NLS, "%s = %d  pre(%s)= %d", __name, *systemData->iterationVarsPtr[i], __name,
+          debugStreamPrint(LOG_NLS, "%s = %d  pre(%s)= %d", __name, *systemData->iterationVarsPtr[i], __name,
               *systemData->iterationPreVarsPtr[i]);
         }
       }
@@ -305,6 +305,6 @@ int solveMixedSearch(DATA *data, int sysNumber)
   }while(!found_solution);
 
   RELEASE(LOG_NLS);
-  DEBUG1(LOG_NLS, "####  Finished mixed equation system in steps %d.\n", stepCount);
+  debugStreamPrint(LOG_NLS, "####  Finished mixed equation system in steps %d.\n", stepCount);
   return success;
 }

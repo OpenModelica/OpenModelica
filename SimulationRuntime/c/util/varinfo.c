@@ -39,19 +39,19 @@ void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time)
   switch(err)
   {
   case ERROR_AT_TIME:
-    WARNING2(LOG_NLS, "Error solving nonlinear system %s at time %g", eq.name, time);
+    warningStreamPrint(LOG_NLS, "Error solving nonlinear system %s at time %g", eq.name, time);
     break;
   case NO_PROGRESS_START_POINT:
-    WARNING2(LOG_NLS, "Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)", eq.name, time);
+    warningStreamPrint(LOG_NLS, "Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)", eq.name, time);
     break;
   case NO_PROGRESS_FACTOR:
-    WARNING2(LOG_NLS, "Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g", eq.name, time);
+    warningStreamPrint(LOG_NLS, "Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g", eq.name, time);
     break;
   case IMPROPER_INPUT:
-    WARNING2(LOG_NLS, "improper input parameters to nonlinear eq. syst: %s at time %g", eq.name, time);
+    warningStreamPrint(LOG_NLS, "improper input parameters to nonlinear eq. syst: %s at time %g", eq.name, time);
     break;
   default:
-    WARNING3(LOG_NLS, "Unknown equation system error: %d %s %g", err, eq.name, time);
+    warningStreamPrint(LOG_NLS, "Unknown equation system error: %d %s %g", err, eq.name, time);
     break;
   }
 }

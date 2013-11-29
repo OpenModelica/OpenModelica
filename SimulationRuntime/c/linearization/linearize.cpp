@@ -75,7 +75,7 @@ int functionJacA(DATA* data, double* jac){
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
       {
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+        infoStreamPrint(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
       }
     }
 
@@ -84,14 +84,14 @@ int functionJacA(DATA* data, double* jac){
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
-      INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
+      infoStreamPrint(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
-    INFO(LOG_JAC,"Print jac:");
+    infoStreamPrint(LOG_JAC,"Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++) {
@@ -116,7 +116,7 @@ int functionJacB(DATA* data, double* jac){
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
       {
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+        infoStreamPrint(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
       }
     }
 
@@ -125,14 +125,14 @@ int functionJacB(DATA* data, double* jac){
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
-      INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
+      infoStreamPrint(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
-    INFO(LOG_JAC, "Print jac:");
+    infoStreamPrint(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -155,7 +155,7 @@ int functionJacC(DATA* data, double* jac){
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+        infoStreamPrint(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
     }
 
     data->callback->functionJacC_column(data);
@@ -163,14 +163,14 @@ int functionJacC(DATA* data, double* jac){
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
-      INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
+      infoStreamPrint(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
-    INFO(LOG_JAC, "Print jac:");
+    infoStreamPrint(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -192,8 +192,9 @@ int functionJacD(DATA* data, double* jac){
     if(ACTIVE_STREAM(LOG_JAC))
     {
       printf("Caluculate one col:\n");
-      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        INFO2(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++) {
+        infoStreamPrint(LOG_JAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+      }
     }
 
     data->callback->functionJacD_column(data);
@@ -201,14 +202,14 @@ int functionJacD(DATA* data, double* jac){
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
-      INFO6(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
+      infoStreamPrint(LOG_JAC,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
-    INFO(LOG_JAC, "Print jac:");
+    infoStreamPrint(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -234,36 +235,32 @@ int linearize(DATA* data)
     double* matrixD = (double*)calloc(size_Outputs*size_Inputs,sizeof(double));
     string strA, strB, strC, strD, strX, strU, filename, linearModel;
 
-    ASSERT(matrixA,"Calloc");
-    ASSERT(matrixB,"Calloc");
-    ASSERT(matrixC,"Calloc");;
-    ASSERT(matrixD,"Calloc");
+    assertStreamPrint(0!=matrixA,"calloc failed");
+    assertStreamPrint(0!=matrixB,"calloc failed");
+    assertStreamPrint(0!=matrixC,"calloc failed");;
+    assertStreamPrint(0!=matrixD,"calloc failed");
 
     /* Determine Matrix A */
     if(!data->callback->initialAnalyticJacobianA(data)){
-      if(functionJacA(data, matrixA))
-        THROW("Error, can not get Matrix A ");
+      assertStreamPrint(0==functionJacA(data, matrixA),"Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
     if(!data->callback->initialAnalyticJacobianB(data)){
-      if(functionJacB(data, matrixB))
-        THROW("Error, can not get Matrix B ");
+      assertStreamPrint(0==functionJacB(data, matrixB),"Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
 
     /* Determine Matrix C */
     if(!data->callback->initialAnalyticJacobianC(data)){
-      if(functionJacC(data, matrixC))
-        THROW("Error, can not get Matrix C ");
+      assertStreamPrint(0==functionJacC(data, matrixC),"Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
 
     /* Determine Matrix D */
     if(!data->callback->initialAnalyticJacobianD(data)){
-      if(functionJacD(data, matrixD))
-        THROW("Error, can not get Matrix D ");
+      assertStreamPrint(0==functionJacD(data, matrixD),"Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
 
@@ -288,10 +285,11 @@ int linearize(DATA* data)
     filename = "linear_" + string(data->modelData.modelName) + ".mo";
 
     FILE *fout = fopen(filename.c_str(),"wb");
-    ASSERT1(fout,"Cannot open File %s",filename.c_str());
+    assertStreamPrint(0!=fout,"Cannot open File %s",filename.c_str());
     fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
-    if(ACTIVE_STREAM(LOG_STATS))
-      INFO6(LOG_STATS, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+    if(ACTIVE_STREAM(LOG_STATS)) {
+      infoStreamPrint(LOG_STATS, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
+    }
     fflush(fout);
     fclose(fout);
 

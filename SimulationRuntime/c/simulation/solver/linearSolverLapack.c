@@ -63,7 +63,7 @@ int allocateLapackData(int size, void** voiddata)
   DATA_LAPACK* data = (DATA_LAPACK*) malloc(sizeof(DATA_LAPACK));
 
   data->ipiv = (integer*) malloc(size*sizeof(modelica_integer));
-  ASSERT(data->ipiv, "Could not allocate data for linear solver lapack.");
+  assertStreamPrint(0 != data->ipiv, "Could not allocate data for linear solver lapack.");
   data->nrhs = 1;
   data->info = 0;
 
@@ -119,12 +119,12 @@ int solveLapack(DATA *data, int sysNumber)
 
   if(solverData->info < 0)
   {
-    WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
+    warningStreamPrint(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
     success = 0;
   }
   else if(solverData->info > 0)
   {
-    WARNING4(LOG_STDOUT,
+    warningStreamPrint(LOG_STDOUT,
         "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
         (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
@@ -135,24 +135,24 @@ int solveLapack(DATA *data, int sysNumber)
       long int k = 0;
       char buffer[4096];
       INDENT(LOG_LS);
-      DEBUG(LOG_LS, "Matrix U:");
+      debugStreamPrint(LOG_LS, "Matrix U:");
       for(l = 0; l < systemData->size; l++)
       {
         buffer[0] = 0;
         for(k = 0; k < systemData->size; k++)
           sprintf(buffer, "%s%10g ", buffer, systemData->A[l + k*systemData->size]);
-        DEBUG1(LOG_LS, "%s", buffer);
+        debugStreamPrint(LOG_LS, "%s", buffer);
       }
-      DEBUG(LOG_LS, "Solution x:");
+      debugStreamPrint(LOG_LS, "Solution x:");
       buffer[0] = 0;
       for(k = 0; k < systemData->size; k++)
         sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
-      DEBUG1(LOG_LS, "%s", buffer);
-      DEBUG(LOG_LS, "Solution x:");
+      debugStreamPrint(LOG_LS, "%s", buffer);
+      debugStreamPrint(LOG_LS, "Solution x:");
       buffer[0] = 0;
       for(k = 0; k < systemData->size; k++)
         sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
-      DEBUG1(LOG_LS, "%s", buffer);
+      debugStreamPrint(LOG_LS, "%s", buffer);
       RELEASE(LOG_LS);
     }
 

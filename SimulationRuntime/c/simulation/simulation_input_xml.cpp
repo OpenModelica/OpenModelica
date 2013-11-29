@@ -178,10 +178,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
     mi->lastCT = ct.compare("sPar") ? mi->lastCT : &mi->sPar;
     mi->lastCT = ct.compare("sAli") ? mi->lastCT : &mi->sAli;
 
-    if(mi->lastCT == NULL)
-    {
-      ASSERT2(0, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),(v["name"]).c_str());
-    }
+    assertStreamPrint(NULL != mi->lastCT, "simulation_input_xml.cpp: error reading the xml file, found unknown class: %s  for variable: %s",ct.c_str(),(v["name"]).c_str());
 
     /* add the ScalarVariable map to the correct map! */
     (*mi->lastCT)[mi->lastCI] = v;
@@ -239,7 +236,7 @@ void read_input_xml(MODEL_DATA* modelData,
     file = fopen(filename.c_str(), "r");
     if(!file)
     {
-      THROW1("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
+      throwStreamPrint("simulation_input_xml.cpp: Error: can not read file %s as setup file to the generated simulation code.",filename.c_str());
     }
   }
   /* create the XML parser */
@@ -247,7 +244,7 @@ void read_input_xml(MODEL_DATA* modelData,
   if(!parser)
   {
     fclose(file);
-    THROW("simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
+    throwStreamPrint("simulation_input_xml.cpp: Error: couldn't allocate memory for the XML parser!");
   }
   /* set our user data */
   XML_SetUserData(parser, &mi);
@@ -262,12 +259,12 @@ void read_input_xml(MODEL_DATA* modelData,
       if(XML_STATUS_ERROR == XML_Parse(parser, buf, len, done))
       {
         fclose(file);
-        WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
+        warningStreamPrint(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML file %s: %s at line %lu\n",
             filename.c_str(),
             XML_ErrorString(XML_GetErrorCode(parser)),
             XML_GetCurrentLineNumber(parser));
         XML_ParserFree(parser);
-        THROW("see last warning");
+        throwStreamPrint("see last warning");
       }
     }while(!done);
     fclose(file);
@@ -275,12 +272,12 @@ void read_input_xml(MODEL_DATA* modelData,
   else if(XML_STATUS_ERROR == XML_Parse(parser, modelData->initXMLData, strlen(modelData->initXMLData), 1))
   { /* Got the full string already */
     fprintf(stderr, "%s, %s %lu\n", modelData->initXMLData, XML_ErrorString(XML_GetErrorCode(parser)), XML_GetCurrentLineNumber(parser));
-    WARNING3(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML data %s: %s at line %lu\n",
+    warningStreamPrint(LOG_STDOUT, "simulation_input_xml.cpp: Error: failed to read the XML data %s: %s at line %lu\n",
              modelData->initXMLData,
              XML_ErrorString(XML_GetErrorCode(parser)),
              XML_GetCurrentLineNumber(parser));
     XML_ParserFree(parser);
-    THROW("see last warning");
+    throwStreamPrint("see last warning");
   }
 
   /* now we should have all the data inside omc_ModelInput mi. */
@@ -290,18 +287,18 @@ void read_input_xml(MODEL_DATA* modelData,
      ARE WE READING THE OLD XML FILE?? */
   if(mi.md.find("guid") == mi.md.end())
   {
-     WARNING2(LOG_STDOUT, "The Model GUID: %s is not set in file: %s",
+     warningStreamPrint(LOG_STDOUT, "The Model GUID: %s is not set in file: %s",
         modelData->modelGUID,
         filename.c_str());
   }
   else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
   {
     XML_ParserFree(parser);
-    WARNING3(LOG_STDOUT, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
+    warningStreamPrint(LOG_STDOUT, "Error, the GUID: %s from input data file: %s does not match the GUID compiled in the model: %s",
         mi.md["guid"].c_str(),
         filename.c_str(),
         modelData->modelGUID);
-    THROW("see last warning");
+    throwStreamPrint("see last warning");
   }
 
   // deal with override
@@ -310,32 +307,32 @@ void read_input_xml(MODEL_DATA* modelData,
   doOverride(mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
-  INFO(LOG_SOLVER, "read all the DefaultExperiment values:");
+  infoStreamPrint(LOG_SOLVER, "read all the DefaultExperiment values:");
   INDENT(LOG_SOLVER);
 
   read_value(mi.de["startTime"], &(simulationInfo->startTime), 0);
-  INFO1(LOG_SOLVER, "startTime = %g", simulationInfo->startTime);
+  infoStreamPrint(LOG_SOLVER, "startTime = %g", simulationInfo->startTime);
 
   read_value(mi.de["stopTime"], &(simulationInfo->stopTime), 1.0);
-  INFO1(LOG_SOLVER, "stopTime = %g", simulationInfo->stopTime);
+  infoStreamPrint(LOG_SOLVER, "stopTime = %g", simulationInfo->stopTime);
 
   read_value(mi.de["stepSize"], &(simulationInfo->stepSize), (simulationInfo->stopTime - simulationInfo->startTime) / 500);
-  INFO1(LOG_SOLVER, "stepSize = %g", simulationInfo->stepSize);
+  infoStreamPrint(LOG_SOLVER, "stepSize = %g", simulationInfo->stepSize);
 
   read_value(mi.de["tolerance"], &(simulationInfo->tolerance), 1e-5);
-  INFO1(LOG_SOLVER, "tolerance = %g", simulationInfo->tolerance);
+  infoStreamPrint(LOG_SOLVER, "tolerance = %g", simulationInfo->tolerance);
 
   read_value(mi.de["solver"], &simulationInfo->solverMethod);
-  INFO1(LOG_SOLVER, "solver method: %s", simulationInfo->solverMethod);
+  infoStreamPrint(LOG_SOLVER, "solver method: %s", simulationInfo->solverMethod);
 
   read_value(mi.de["outputFormat"], &(simulationInfo->outputFormat));
-  INFO1(LOG_SOLVER, "output format: %s", simulationInfo->outputFormat);
+  infoStreamPrint(LOG_SOLVER, "output format: %s", simulationInfo->outputFormat);
 
   read_value(mi.de["variableFilter"], &(simulationInfo->variableFilter));
-  INFO1(LOG_SOLVER, "variable filter: %s", simulationInfo->variableFilter);
+  infoStreamPrint(LOG_SOLVER, "variable filter: %s", simulationInfo->variableFilter);
 
   read_value(mi.md["OPENMODELICAHOME"], &simulationInfo->OPENMODELICAHOME);
-  INFO1(LOG_SOLVER, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
+  infoStreamPrint(LOG_SOLVER, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
   RELEASE(LOG_SOLVER);
 
   modelica_integer nxchk, nychk, npchk;
@@ -366,17 +363,17 @@ void read_input_xml(MODEL_DATA* modelData,
     || npstrchk != modelData->nParametersString
     || nystrchk != modelData->nVariablesString)
   {
-    WARNING(LOG_SIMULATION, "Error, input data file does not match model.");
+    warningStreamPrint(LOG_SIMULATION, "Error, input data file does not match model.");
     INDENT(LOG_SIMULATION);
-    WARNING2(LOG_SIMULATION, "nx in setup file: %ld from model code: %d", nxchk, (int)modelData->nStates);
-    WARNING2(LOG_SIMULATION, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
-    WARNING2(LOG_SIMULATION, "np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
-    WARNING2(LOG_SIMULATION, "npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);
-    WARNING2(LOG_SIMULATION, "nyint in setup file: %ld from model code: %ld", nyintchk, modelData->nVariablesInteger);
-    WARNING2(LOG_SIMULATION, "npbool in setup file: %ld from model code: %ld", npboolchk, modelData->nParametersBoolean);
-    WARNING2(LOG_SIMULATION, "nybool in setup file: %ld from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
-    WARNING2(LOG_SIMULATION, "npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
-    WARNING2(LOG_SIMULATION, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
+    warningStreamPrint(LOG_SIMULATION, "nx in setup file: %ld from model code: %d", nxchk, (int)modelData->nStates);
+    warningStreamPrint(LOG_SIMULATION, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
+    warningStreamPrint(LOG_SIMULATION, "np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
+    warningStreamPrint(LOG_SIMULATION, "npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);
+    warningStreamPrint(LOG_SIMULATION, "nyint in setup file: %ld from model code: %ld", nyintchk, modelData->nVariablesInteger);
+    warningStreamPrint(LOG_SIMULATION, "npbool in setup file: %ld from model code: %ld", npboolchk, modelData->nParametersBoolean);
+    warningStreamPrint(LOG_SIMULATION, "nybool in setup file: %ld from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
+    warningStreamPrint(LOG_SIMULATION, "npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
+    warningStreamPrint(LOG_SIMULATION, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
     RELEASE(LOG_SIMULATION);
     XML_ParserFree(parser);
     EXIT(-1);
@@ -384,31 +381,31 @@ void read_input_xml(MODEL_DATA* modelData,
 
   /* read all static data from File for every variable */
   /* read states static data */
-  INFO(LOG_DEBUG, "read xml file for states");
+  infoStreamPrint(LOG_DEBUG, "read xml file for states");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nStates; i++)
   {
     /* read var info */
     read_value(mi.rSta[i]["name"], &(modelData->realVarsData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file", modelData->realVarsData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file", modelData->realVarsData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.rSta[i]["valueReference"], &(modelData->realVarsData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.id);
     read_value(mi.rSta[i]["description"], &(modelData->realVarsData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s description \"%s\" from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s description \"%s\" from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.comment);
     read_value(mi.rSta[i]["fileName"], (modelica_string*)&(modelData->realVarsData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.filename);
     read_value(mi.rSta[i]["startLine"], (modelica_integer*)&(modelData->realVarsData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.lineStart);
     read_value(mi.rSta[i]["startColumn"], (modelica_integer*)&(modelData->realVarsData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.colStart);
     read_value(mi.rSta[i]["endLine"], (modelica_integer*)&(modelData->realVarsData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.lineEnd);
     read_value(mi.rSta[i]["endColumn"], (modelica_integer*)&(modelData->realVarsData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.colEnd);
     read_value(mi.rSta[i]["fileWritable"], (modelica_integer*)&(modelData->realVarsData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file", modelData->realVarsData[i].info.name, modelData->realVarsData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -420,7 +417,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.rSta[i]["min"], &(modelData->realVarsData[i].attribute.min), REAL_MIN);
     read_value(mi.rSta[i]["max"], &(modelData->realVarsData[i].attribute.max), REAL_MAX);
 
-    INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[i].info.name, (modelData->realVarsData[i].attribute.useStart)?"":"{", modelData->realVarsData[i].attribute.start, (modelData->realVarsData[i].attribute.useStart)?"":"}", (modelData->realVarsData[i].attribute.fixed)?"true":"false", (modelData->realVarsData[i].attribute.useNominal)?"":"{", modelData->realVarsData[i].attribute.nominal, (modelData->realVarsData[i].attribute.useNominal)?"":"}", modelData->realVarsData[i].attribute.min, modelData->realVarsData[i].attribute.max);
+    infoStreamPrint(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[i].info.name, (modelData->realVarsData[i].attribute.useStart)?"":"{", modelData->realVarsData[i].attribute.start, (modelData->realVarsData[i].attribute.useStart)?"":"}", (modelData->realVarsData[i].attribute.fixed)?"true":"false", (modelData->realVarsData[i].attribute.useNominal)?"":"{", modelData->realVarsData[i].attribute.nominal, (modelData->realVarsData[i].attribute.useNominal)?"":"}", modelData->realVarsData[i].attribute.min, modelData->realVarsData[i].attribute.max);
 
     /* filter internal variables */
     if(modelData->realVarsData[i].info.name[0] == '$')
@@ -428,36 +425,36 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[i].info.name)] = i;
-    DEBUG2(LOG_DEBUG, "real states: mapAlias[%s] = %ld", modelData->realVarsData[i].info.name, i);
+    debugStreamPrint(LOG_DEBUG, "real states: mapAlias[%s] = %ld", modelData->realVarsData[i].info.name, i);
   }
   RELEASE(LOG_DEBUG);
 
   /* read stateDerivatives static data */
-  INFO(LOG_DEBUG, "read xml file for stateDerivatives");
+  infoStreamPrint(LOG_DEBUG, "read xml file for stateDerivatives");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nStates; i++)
   {
     /* read var info */
     read_value(mi.rDer[i]["name"], &(modelData->realVarsData[modelData->nStates + i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realVarsData[modelData->nStates+i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->realVarsData[modelData->nStates+i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.rDer[i]["valueReference"], &(modelData->realVarsData[modelData->nStates+i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.id);
     read_value(mi.rDer[i]["description"], &(modelData->realVarsData[modelData->nStates+i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.comment);
     read_value(mi.rDer[i]["fileName"], (modelica_string*)&(modelData->realVarsData[modelData->nStates+i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.filename);
     read_value(mi.rDer[i]["startLine"], (modelica_integer*) &(modelData->realVarsData[modelData->nStates+i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.lineStart);
     read_value(mi.rDer[i]["startColumn"], (modelica_integer*) &(modelData->realVarsData[modelData->nStates+i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.colStart);
     read_value(mi.rDer[i]["endLine"], (modelica_integer*) &(modelData->realVarsData[modelData->nStates+i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.lineEnd);
     read_value(mi.rDer[i]["endColumn"], (modelica_integer*) &(modelData->realVarsData[modelData->nStates+i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.colEnd);
     read_value(mi.rDer[i]["fileWritable"], (modelica_integer*) &(modelData->realVarsData[modelData->nStates+i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realVarsData[modelData->nStates+i].info.name,modelData->realVarsData[modelData->nStates+i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -469,7 +466,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.rDer[i]["min"], &(modelData->realVarsData[modelData->nStates+i].attribute.min), REAL_MIN);
     read_value(mi.rDer[i]["max"], &(modelData->realVarsData[modelData->nStates+i].attribute.max), REAL_MAX);
 
-    INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[modelData->nStates+i].info.name, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.start, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"}", (modelData->realVarsData[modelData->nStates+i].attribute.fixed)?"true":"false", (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.nominal, (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"}", modelData->realVarsData[modelData->nStates+i].attribute.min, modelData->realVarsData[modelData->nStates+i].attribute.max);
+    infoStreamPrint(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[modelData->nStates+i].info.name, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.start, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"}", (modelData->realVarsData[modelData->nStates+i].attribute.fixed)?"true":"false", (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.nominal, (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"}", modelData->realVarsData[modelData->nStates+i].attribute.min, modelData->realVarsData[modelData->nStates+i].attribute.max);
 
     /* filter internal variables */
     if(modelData->realVarsData[modelData->nStates+i].info.name[0] == '$')
@@ -477,12 +474,12 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[modelData->nStates+i].info.name)] = modelData->nStates+i;
-    DEBUG2(LOG_DEBUG, "real stateDerivatives: mapAlias[%s] = %ld", modelData->realVarsData[modelData->nStates+i].info.name, modelData->nStates+i);
+    debugStreamPrint(LOG_DEBUG, "real stateDerivatives: mapAlias[%s] = %ld", modelData->realVarsData[modelData->nStates+i].info.name, modelData->nStates+i);
   }
   RELEASE(LOG_DEBUG);
 
   /* read real algebraics static data */
-  INFO(LOG_DEBUG, "read xml file for real algebraic");
+  infoStreamPrint(LOG_DEBUG, "read xml file for real algebraic");
   INDENT(LOG_DEBUG);
   for(long i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
   {
@@ -490,25 +487,25 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* read var info */
     read_value(mi.rAlg[i]["name"], &(modelData->realVarsData[j].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realVarsData[j].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->realVarsData[j].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.rAlg[i]["valueReference"], &(modelData->realVarsData[j].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.id);
     read_value(mi.rAlg[i]["description"], &(modelData->realVarsData[j].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.comment);
     read_value(mi.rAlg[i]["fileName"], (modelica_string*)&(modelData->realVarsData[j].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.filename);
     read_value(mi.rAlg[i]["startLine"], (modelica_integer*) &(modelData->realVarsData[j].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.lineStart);
     read_value(mi.rAlg[i]["startColumn"], (modelica_integer*) &(modelData->realVarsData[j].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.colStart);
     read_value(mi.rAlg[i]["endLine"], (modelica_integer*) &(modelData->realVarsData[j].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.lineEnd);
     read_value(mi.rAlg[i]["endColumn"], (modelica_integer*) &(modelData->realVarsData[j].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.colEnd);
     read_value(mi.rAlg[i]["fileWritable"], (modelica_integer*) &(modelData->realVarsData[j].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realVarsData[j].info.name,modelData->realVarsData[j].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -520,7 +517,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.rAlg[i]["min"], &(modelData->realVarsData[j].attribute.min), REAL_MIN);
     read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max), REAL_MAX);
 
-    INFO10(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[j].info.name, (modelData->realVarsData[j].attribute.useStart)?"":"{", modelData->realVarsData[j].attribute.start, (modelData->realVarsData[j].attribute.useStart)?"":"}", (modelData->realVarsData[j].attribute.fixed)?"true":"false", (modelData->realVarsData[j].attribute.useNominal)?"":"{", modelData->realVarsData[j].attribute.nominal, (modelData->realVarsData[j].attribute.useNominal)?"":"}", modelData->realVarsData[j].attribute.min, modelData->realVarsData[j].attribute.max);
+    infoStreamPrint(LOG_DEBUG, "Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[j].info.name, (modelData->realVarsData[j].attribute.useStart)?"":"{", modelData->realVarsData[j].attribute.start, (modelData->realVarsData[j].attribute.useStart)?"":"}", (modelData->realVarsData[j].attribute.fixed)?"true":"false", (modelData->realVarsData[j].attribute.useNominal)?"":"{", modelData->realVarsData[j].attribute.nominal, (modelData->realVarsData[j].attribute.useNominal)?"":"}", modelData->realVarsData[j].attribute.min, modelData->realVarsData[j].attribute.max);
 
     /* filter internal variables */
     if(modelData->realVarsData[j].info.name[0] == '$')
@@ -528,36 +525,36 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[modelData->realVarsData[j].info.name] = j;
-    DEBUG2(LOG_DEBUG, "real algebraics: mapAlias[%s] = %ld", modelData->realVarsData[j].info.name, j);
+    debugStreamPrint(LOG_DEBUG, "real algebraics: mapAlias[%s] = %ld", modelData->realVarsData[j].info.name, j);
   }
   RELEASE(LOG_DEBUG);
 
   /* read integer variables static data */
-  INFO(LOG_DEBUG, "read xml file for integer algebraic");
+  infoStreamPrint(LOG_DEBUG, "read xml file for integer algebraic");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nVariablesInteger; i++)
   {
     /* read var info */
     read_value(mi.iAlg[i]["name"], &(modelData->integerVarsData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->integerVarsData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->integerVarsData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.iAlg[i]["valueReference"], &(modelData->integerVarsData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.id);
     read_value(mi.iAlg[i]["description"], &(modelData->integerVarsData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.comment);
     read_value(mi.iAlg[i]["fileName"], (modelica_string*)&(modelData->integerVarsData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.filename);
     read_value(mi.iAlg[i]["startLine"], (modelica_integer*) &(modelData->integerVarsData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.lineStart);
     read_value(mi.iAlg[i]["startColumn"], (modelica_integer*) &(modelData->integerVarsData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.colStart);
     read_value(mi.iAlg[i]["endLine"], (modelica_integer*) &(modelData->integerVarsData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.lineEnd);
     read_value(mi.iAlg[i]["endColumn"], (modelica_integer*) &(modelData->integerVarsData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.colEnd);
     read_value(mi.iAlg[i]["fileWritable"], (modelica_integer*) &(modelData->integerVarsData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerVarsData[i].info.name,modelData->integerVarsData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -567,7 +564,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.iAlg[i]["min"], &(modelData->integerVarsData[i].attribute.min), INTEGER_MIN);
     read_value(mi.iAlg[i]["max"], &(modelData->integerVarsData[i].attribute.max), INTEGER_MAX);
 
-    INFO7(LOG_DEBUG, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerVarsData[i].info.name, (modelData->integerVarsData[i].attribute.useStart)?"":"{", modelData->integerVarsData[i].attribute.start, (modelData->integerVarsData[i].attribute.useStart)?"":"}", (modelData->integerVarsData[i].attribute.fixed)?"true":"false", modelData->integerVarsData[i].attribute.min, modelData->integerVarsData[i].attribute.max);
+    infoStreamPrint(LOG_DEBUG, "Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerVarsData[i].info.name, (modelData->integerVarsData[i].attribute.useStart)?"":"{", modelData->integerVarsData[i].attribute.start, (modelData->integerVarsData[i].attribute.useStart)?"":"}", (modelData->integerVarsData[i].attribute.fixed)?"true":"false", modelData->integerVarsData[i].attribute.min, modelData->integerVarsData[i].attribute.max);
 
     /* filter internal variables */
     if(modelData->integerVarsData[i].info.name[0] == '$')
@@ -575,36 +572,36 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[modelData->integerVarsData[i].info.name] = i;
-    DEBUG2(LOG_DEBUG, "integer variables: mapAlias[%s] = %ld", modelData->integerVarsData[i].info.name, i);
+    debugStreamPrint(LOG_DEBUG, "integer variables: mapAlias[%s] = %ld", modelData->integerVarsData[i].info.name, i);
   }
   RELEASE(LOG_DEBUG);
 
   /* read boolean variables static data */
-  INFO(LOG_DEBUG, "read xml file for boolean algebraic");
+  infoStreamPrint(LOG_DEBUG, "read xml file for boolean algebraic");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nVariablesBoolean; i++)
   {
     /* read var info */
     read_value(mi.bAlg[i]["name"], &(modelData->booleanVarsData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->booleanVarsData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->booleanVarsData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.bAlg[i]["valueReference"], &(modelData->booleanVarsData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.id);
     read_value(mi.bAlg[i]["description"], &(modelData->booleanVarsData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.comment);
     read_value(mi.bAlg[i]["fileName"], (modelica_string*)&(modelData->booleanVarsData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.filename);
     read_value(mi.bAlg[i]["startLine"], (modelica_integer*) &(modelData->booleanVarsData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.lineStart);
     read_value(mi.bAlg[i]["startColumn"], (modelica_integer*) &(modelData->booleanVarsData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.colStart);
     read_value(mi.bAlg[i]["endLine"], (modelica_integer*) &(modelData->booleanVarsData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.lineEnd);
     read_value(mi.bAlg[i]["endColumn"], (modelica_integer*) &(modelData->booleanVarsData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.colEnd);
     read_value(mi.bAlg[i]["fileWritable"], (modelica_integer*) &(modelData->booleanVarsData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->booleanVarsData[i].info.name,modelData->booleanVarsData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -612,7 +609,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.bAlg[i]["start"], &(modelData->booleanVarsData[i].attribute.start));
     read_value(mi.bAlg[i]["fixed"], &(modelData->booleanVarsData[i].attribute.fixed));
 
-    INFO5(LOG_DEBUG, "Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.useStart?"":"{", modelData->booleanVarsData[i].attribute.start?"true":"false", modelData->booleanVarsData[i].attribute.useStart?"":"}", modelData->booleanVarsData[i].attribute.fixed?"true":"false");
+    infoStreamPrint(LOG_DEBUG, "Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.useStart?"":"{", modelData->booleanVarsData[i].attribute.start?"true":"false", modelData->booleanVarsData[i].attribute.useStart?"":"}", modelData->booleanVarsData[i].attribute.fixed?"true":"false");
 
     /* filter internal variables */
     if(modelData->booleanVarsData[i].info.name[0] == '$')
@@ -620,43 +617,43 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[modelData->booleanVarsData[i].info.name] = i;
-    DEBUG2(LOG_DEBUG, "boolean variables: mapAlias[%s] = %ld", modelData->booleanVarsData[i].info.name, i);
+    debugStreamPrint(LOG_DEBUG, "boolean variables: mapAlias[%s] = %ld", modelData->booleanVarsData[i].info.name, i);
   }
   RELEASE(LOG_DEBUG);
 
   /* read string variables static data */
-  INFO(LOG_DEBUG, "read xml file for string algebraic");
+  infoStreamPrint(LOG_DEBUG, "read xml file for string algebraic");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nVariablesString; i++)
   {
     /* read var info */
     read_value(mi.sAlg[i]["name"], &(modelData->stringVarsData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->stringVarsData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->stringVarsData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.sAlg[i]["valueReference"], &(modelData->stringVarsData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.id);
     read_value(mi.sAlg[i]["description"], &(modelData->stringVarsData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.comment);
     read_value(mi.sAlg[i]["fileName"], (modelica_string*)&(modelData->stringVarsData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.filename);
     read_value(mi.sAlg[i]["startLine"], (modelica_integer*) &(modelData->stringVarsData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.lineStart);
     read_value(mi.sAlg[i]["startColumn"], (modelica_integer*) &(modelData->stringVarsData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.colStart);
     read_value(mi.sAlg[i]["endLine"], (modelica_integer*) &(modelData->stringVarsData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.lineEnd);
     read_value(mi.sAlg[i]["endColumn"], (modelica_integer*) &(modelData->stringVarsData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.colEnd);
     read_value(mi.sAlg[i]["fileWritable"], (modelica_integer*) &(modelData->stringVarsData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringVarsData[i].info.name,modelData->stringVarsData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.sAlg[i]["useStart"], &(modelData->stringVarsData[i].attribute.useStart));
     read_value(mi.sAlg[i]["start"], &(modelData->stringVarsData[i].attribute.start));
 
-    INFO4(LOG_DEBUG, "String %s(%sstart=%s%s)", modelData->stringVarsData[i].info.name, (modelData->stringVarsData[i].attribute.useStart)?"":"{", modelData->stringVarsData[i].attribute.start, (modelData->stringVarsData[i].attribute.useStart)?"":"}");
+    infoStreamPrint(LOG_DEBUG, "String %s(%sstart=%s%s)", modelData->stringVarsData[i].info.name, (modelData->stringVarsData[i].attribute.useStart)?"":"{", modelData->stringVarsData[i].attribute.start, (modelData->stringVarsData[i].attribute.useStart)?"":"}");
 
     /* filter internal variables */
     if(modelData->stringVarsData[i].info.name[0] == '$')
@@ -664,7 +661,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[modelData->stringVarsData[i].info.name] = i;
-    DEBUG2(LOG_DEBUG, "string variables: mapAlias[%s] = %ld", modelData->stringVarsData[i].info.name, i);
+    debugStreamPrint(LOG_DEBUG, "string variables: mapAlias[%s] = %ld", modelData->stringVarsData[i].info.name, i);
   }
   RELEASE(LOG_DEBUG);
 
@@ -672,31 +669,31 @@ void read_input_xml(MODEL_DATA* modelData,
    * real all parameters
    */
   /* read Parameters static data */
-  INFO(LOG_DEBUG, "read xml file for real parameters");
+  infoStreamPrint(LOG_DEBUG, "read xml file for real parameters");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nParametersReal; i++)
   {
     /* read var info */
     read_value(mi.rPar[i]["name"], &(modelData->realParameterData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realParameterData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->realParameterData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.rPar[i]["valueReference"], &(modelData->realParameterData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.id);
     read_value(mi.rPar[i]["description"], &(modelData->realParameterData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.comment);
     read_value(mi.rPar[i]["fileName"], (modelica_string*)&(modelData->realParameterData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.filename);
     read_value(mi.rPar[i]["startLine"], (modelica_integer*) &(modelData->realParameterData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.lineStart);
     read_value(mi.rPar[i]["startColumn"], (modelica_integer*) &(modelData->realParameterData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.colStart);
     read_value(mi.rPar[i]["endLine"], (modelica_integer*) &(modelData->realParameterData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.lineEnd);
     read_value(mi.rPar[i]["endColumn"], (modelica_integer*) &(modelData->realParameterData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.colEnd);
     read_value(mi.rPar[i]["fileWritable"], (modelica_integer*) &(modelData->realParameterData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realParameterData[i].info.name,modelData->realParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -708,7 +705,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.rPar[i]["min"], &(modelData->realParameterData[i].attribute.min), REAL_MIN);
     read_value(mi.rPar[i]["max"], &(modelData->realParameterData[i].attribute.max), REAL_MAX);
 
-    INFO10(LOG_DEBUG, "parameter Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.useStart?"":"{", modelData->realParameterData[i].attribute.start, modelData->realParameterData[i].attribute.useStart?"":"}", modelData->realParameterData[i].attribute.fixed?"true":"false", modelData->realParameterData[i].attribute.useNominal?"":"{", modelData->realParameterData[i].attribute.nominal, modelData->realParameterData[i].attribute.useNominal?"":"}", modelData->realParameterData[i].attribute.min, modelData->realParameterData[i].attribute.max);
+    infoStreamPrint(LOG_DEBUG, "parameter Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.useStart?"":"{", modelData->realParameterData[i].attribute.start, modelData->realParameterData[i].attribute.useStart?"":"}", modelData->realParameterData[i].attribute.fixed?"true":"false", modelData->realParameterData[i].attribute.useNominal?"":"{", modelData->realParameterData[i].attribute.nominal, modelData->realParameterData[i].attribute.useNominal?"":"}", modelData->realParameterData[i].attribute.min, modelData->realParameterData[i].attribute.max);
 
     /* filter internal variables */
     if(modelData->realParameterData[i].info.name[0] == '$')
@@ -716,36 +713,36 @@ void read_input_xml(MODEL_DATA* modelData,
 
     /* create a mapping for Alias variable to get the correct index */
     mapAliasParam[modelData->realParameterData[i].info.name] = i;
-    DEBUG2(LOG_DEBUG, "real parameters: mapAlias[%s] = %ld", modelData->realParameterData[i].info.name, i);
+    debugStreamPrint(LOG_DEBUG, "real parameters: mapAlias[%s] = %ld", modelData->realParameterData[i].info.name, i);
   }
   RELEASE(LOG_DEBUG);
 
   /* read integer parameters static data */
-  INFO(LOG_DEBUG, "read xml file for integer parameters");
+  infoStreamPrint(LOG_DEBUG, "read xml file for integer parameters");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nParametersInteger; i++)
   {
     /* read var info */
     read_value(mi.iPar[i]["name"], &(modelData->integerParameterData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->integerParameterData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->integerParameterData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.iPar[i]["valueReference"], &(modelData->integerParameterData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.id);
     read_value(mi.iPar[i]["description"], &(modelData->integerParameterData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.comment);
     read_value(mi.iPar[i]["fileName"], (modelica_string*)&(modelData->integerParameterData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.filename);
     read_value(mi.iPar[i]["startLine"], (modelica_integer*) &(modelData->integerParameterData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.lineStart);
     read_value(mi.iPar[i]["startColumn"], (modelica_integer*) &(modelData->integerParameterData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.colStart);
     read_value(mi.iPar[i]["endLine"], (modelica_integer*) &(modelData->integerParameterData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.lineEnd);
     read_value(mi.iPar[i]["endColumn"], (modelica_integer*) &(modelData->integerParameterData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.colEnd);
     read_value(mi.iPar[i]["fileWritable"], (modelica_integer*) &(modelData->integerParameterData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerParameterData[i].info.name,modelData->integerParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -755,7 +752,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.iPar[i]["min"], &(modelData->integerParameterData[i].attribute.min), REAL_MIN);
     read_value(mi.iPar[i]["max"], &(modelData->integerParameterData[i].attribute.max), REAL_MAX);
 
-    INFO7(LOG_DEBUG, "parameter Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerParameterData[i].info.name, modelData->integerParameterData[i].attribute.useStart?"":"{", modelData->integerParameterData[i].attribute.start, modelData->integerParameterData[i].attribute.useStart?"":"}", modelData->integerParameterData[i].attribute.fixed?"true":"false", modelData->integerParameterData[i].attribute.min, modelData->integerParameterData[i].attribute.max);
+    infoStreamPrint(LOG_DEBUG, "parameter Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerParameterData[i].info.name, modelData->integerParameterData[i].attribute.useStart?"":"{", modelData->integerParameterData[i].attribute.start, modelData->integerParameterData[i].attribute.useStart?"":"}", modelData->integerParameterData[i].attribute.fixed?"true":"false", modelData->integerParameterData[i].attribute.min, modelData->integerParameterData[i].attribute.max);
 
     /* filter internal variables */
     if(modelData->integerParameterData[i].info.name[0] == '$')
@@ -767,31 +764,31 @@ void read_input_xml(MODEL_DATA* modelData,
   RELEASE(LOG_DEBUG);
 
   /* read boolean parameters static data */
-  INFO(LOG_DEBUG, "read xml file for boolean parameters");
+  infoStreamPrint(LOG_DEBUG, "read xml file for boolean parameters");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nParametersBoolean; i++)
   {
     /* read var info */
     read_value(mi.bPar[i]["name"], &(modelData->booleanParameterData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file", modelData->booleanParameterData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file", modelData->booleanParameterData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.bPar[i]["valueReference"], &(modelData->booleanParameterData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.id);
     read_value(mi.bPar[i]["description"], &(modelData->booleanParameterData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.comment);
     read_value(mi.bPar[i]["fileName"], (modelica_string*)&(modelData->booleanParameterData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.filename);
     read_value(mi.bPar[i]["startLine"], (modelica_integer*)&(modelData->booleanParameterData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.lineStart);
     read_value(mi.bPar[i]["startColumn"], (modelica_integer*)&(modelData->booleanParameterData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.colStart);
     read_value(mi.bPar[i]["endLine"], (modelica_integer*)&(modelData->booleanParameterData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.lineEnd);
     read_value(mi.bPar[i]["endColumn"], (modelica_integer*)&(modelData->booleanParameterData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.colEnd);
     read_value(mi.bPar[i]["fileWritable"], (modelica_integer*)&(modelData->booleanParameterData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
@@ -799,7 +796,7 @@ void read_input_xml(MODEL_DATA* modelData,
     read_value(mi.bPar[i]["start"], &(modelData->booleanParameterData[i].attribute.start));
     read_value(mi.bPar[i]["fixed"], &(modelData->booleanParameterData[i].attribute.fixed));
 
-    INFO5(LOG_DEBUG, "parameter Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].attribute.useStart?"":"{", modelData->booleanParameterData[i].attribute.start?"true":"false", modelData->booleanParameterData[i].attribute.useStart?"":"}", modelData->booleanParameterData[i].attribute.fixed?"true":"false");
+    infoStreamPrint(LOG_DEBUG, "parameter Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].attribute.useStart?"":"{", modelData->booleanParameterData[i].attribute.start?"true":"false", modelData->booleanParameterData[i].attribute.useStart?"":"}", modelData->booleanParameterData[i].attribute.fixed?"true":"false");
 
     /* filter internal variables */
     if(modelData->booleanParameterData[i].info.name[0] == '$')
@@ -811,38 +808,38 @@ void read_input_xml(MODEL_DATA* modelData,
   RELEASE(LOG_DEBUG);
 
   /* read string parameters static data */
-  INFO(LOG_DEBUG, "read xml file for string parameters");
+  infoStreamPrint(LOG_DEBUG, "read xml file for string parameters");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nParametersString; i++)
   {
     /* read var info */
     read_value(mi.sPar[i]["name"], &(modelData->stringParameterData[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->stringParameterData[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->stringParameterData[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.sPar[i]["valueReference"], &(modelData->stringParameterData[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.id);
     read_value(mi.sPar[i]["description"], &(modelData->stringParameterData[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.comment);
     read_value(mi.sPar[i]["fileName"], (modelica_string*)&(modelData->stringParameterData[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.filename);
     read_value(mi.sPar[i]["startLine"], (modelica_integer*) &(modelData->stringParameterData[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.lineStart);
     read_value(mi.sPar[i]["startColumn"], (modelica_integer*) &(modelData->stringParameterData[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.colStart);
     read_value(mi.sPar[i]["endLine"], (modelica_integer*) &(modelData->stringParameterData[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.lineEnd);
     read_value(mi.sPar[i]["endColumn"], (modelica_integer*) &(modelData->stringParameterData[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.colEnd);
     read_value(mi.sPar[i]["fileWritable"], (modelica_integer*) &(modelData->stringParameterData[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringParameterData[i].info.name,modelData->stringParameterData[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     /* read var attribute */
     read_value(mi.sPar[i]["useStart"], &(modelData->stringParameterData[i].attribute.useStart));
     read_value(mi.sPar[i]["start"], &(modelData->stringParameterData[i].attribute.start));
 
-    INFO4(LOG_DEBUG, "parameter String %s(%sstart=%s%s)", modelData->stringParameterData[i].info.name, modelData->stringParameterData[i].attribute.useStart?"":"{", modelData->stringParameterData[i].attribute.start, modelData->stringParameterData[i].attribute.useStart?"":"}");
+    infoStreamPrint(LOG_DEBUG, "parameter String %s(%sstart=%s%s)", modelData->stringParameterData[i].info.name, modelData->stringParameterData[i].attribute.useStart?"":"{", modelData->stringParameterData[i].attribute.start, modelData->stringParameterData[i].attribute.useStart?"":"}");
 
     /* filter internal variables */
     if(modelData->stringParameterData[i].info.name[0] == '$')
@@ -856,31 +853,31 @@ void read_input_xml(MODEL_DATA* modelData,
   /*
    * real all alias vars
    */
-  INFO(LOG_DEBUG, "read xml file for real alias vars");
+  infoStreamPrint(LOG_DEBUG, "read xml file for real alias vars");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nAliasReal; i++)
   {
     /* read var info */
     read_value(mi.rAli[i]["name"], &(modelData->realAlias[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->realAlias[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->realAlias[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.rAli[i]["valueReference"], &(modelData->realAlias[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",(modelData->realAlias[i].info.name),modelData->realAlias[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",(modelData->realAlias[i].info.name),modelData->realAlias[i].info.id);
     read_value(mi.rAli[i]["description"], &(modelData->realAlias[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.comment);
     read_value(mi.rAli[i]["fileName"], (modelica_string*)&(modelData->realAlias[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.filename);
     read_value(mi.rAli[i]["startLine"], (modelica_integer*) &(modelData->realAlias[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.lineStart);
     read_value(mi.rAli[i]["startColumn"], (modelica_integer*) &(modelData->realAlias[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.colStart);
     read_value(mi.rAli[i]["endLine"], (modelica_integer*) &(modelData->realAlias[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.lineEnd);
     read_value(mi.rAli[i]["endColumn"], (modelica_integer*) &(modelData->realAlias[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.colEnd);
     read_value(mi.rAli[i]["fileWritable"], (modelica_integer*) &(modelData->realAlias[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->realAlias[i].info.name,modelData->realAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     string aliasTmp;
@@ -890,7 +887,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
       modelData->realAlias[i].negate = 0;
 
-    INFO2(LOG_DEBUG, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
+    infoStreamPrint(LOG_DEBUG, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
     /* filter internal variables */
     if(modelData->realAlias[i].info.name[0] == '$')
@@ -916,9 +913,9 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Real Alias variable " + aliasTmp + " not found.";
-      THROW1("%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
-    DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
+    debugStreamPrint(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
                 modelData->realAlias[i].info.name,
                 modelData->realAlias[i].nameID,
                 modelData->realAlias[i].aliasType ? ((modelData->realAlias[i].aliasType==2) ? "time" : "real parameters") : "real variables");
@@ -928,31 +925,31 @@ void read_input_xml(MODEL_DATA* modelData,
   /*
    * integer all alias vars
    */
-  INFO(LOG_DEBUG, "read xml file for integer alias vars");
+  infoStreamPrint(LOG_DEBUG, "read xml file for integer alias vars");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nAliasInteger; i++)
   {
     /* read var info */
     read_value(mi.iAli[i]["name"], &(modelData->integerAlias[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->integerAlias[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->integerAlias[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.iAli[i]["valueReference"], &(modelData->integerAlias[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.id);
     read_value(mi.iAli[i]["description"], &(modelData->integerAlias[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.comment);
     read_value(mi.iAli[i]["fileName"], (modelica_string*)&(modelData->integerAlias[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.filename);
     read_value(mi.iAli[i]["startLine"], (modelica_integer*) &(modelData->integerAlias[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.lineStart);
     read_value(mi.iAli[i]["startColumn"], (modelica_integer*) &(modelData->integerAlias[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.colStart);
     read_value(mi.iAli[i]["endLine"], (modelica_integer*) &(modelData->integerAlias[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.lineEnd);
     read_value(mi.iAli[i]["endColumn"], (modelica_integer*) &(modelData->integerAlias[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.colEnd);
     read_value(mi.iAli[i]["fileWritable"], (modelica_integer*) &(modelData->integerAlias[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     string aliasTmp;
@@ -962,7 +959,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
       modelData->integerAlias[i].negate = 0;
 
-    INFO2(LOG_DEBUG, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
+    infoStreamPrint(LOG_DEBUG, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
     /* filter internal variables */
     if(modelData->integerAlias[i].info.name[0] == '$')
@@ -986,9 +983,9 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Integer Alias variable " + aliasTmp + " not found.";
-      THROW1("%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
-    DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
+    debugStreamPrint(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
                 modelData->integerAlias[i].info.name,
                 modelData->integerAlias[i].nameID,
                 modelData->integerAlias[i].aliasType?"integer parameters":"integer variables");
@@ -998,31 +995,31 @@ void read_input_xml(MODEL_DATA* modelData,
   /*
    * boolean all alias vars
    */
-  INFO(LOG_DEBUG, "read xml file for boolean alias vars");
+  infoStreamPrint(LOG_DEBUG, "read xml file for boolean alias vars");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nAliasBoolean; i++)
   {
     /* read var info */
     read_value(mi.bAli[i]["name"], &(modelData->booleanAlias[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->booleanAlias[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->booleanAlias[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.bAli[i]["valueReference"], &(modelData->booleanAlias[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.id);
     read_value(mi.bAli[i]["description"], &(modelData->booleanAlias[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.comment);
     read_value(mi.bAli[i]["fileName"], (modelica_string*)&(modelData->booleanAlias[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.filename);
     read_value(mi.bAli[i]["startLine"], (modelica_boolean*) &(modelData->booleanAlias[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.lineStart);
     read_value(mi.bAli[i]["startColumn"], (modelica_boolean*) &(modelData->booleanAlias[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.colStart);
     read_value(mi.bAli[i]["endLine"], (modelica_boolean*) &(modelData->booleanAlias[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.lineEnd);
     read_value(mi.bAli[i]["endColumn"], (modelica_boolean*) &(modelData->booleanAlias[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.colEnd);
     read_value(mi.bAli[i]["fileWritable"], (modelica_boolean*) &(modelData->booleanAlias[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->booleanAlias[i].info.name,modelData->booleanAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     std::string aliasTmp;
@@ -1032,7 +1029,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
       modelData->booleanAlias[i].negate = 0;
 
-    INFO2(LOG_DEBUG, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
+    infoStreamPrint(LOG_DEBUG, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
     /* filter internal variables */
     if(modelData->booleanAlias[i].info.name[0] == '$')
@@ -1056,9 +1053,9 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "Boolean Alias variable " + aliasTmp + " not found.";
-      THROW1("%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
-    DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
+    debugStreamPrint(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
                 modelData->booleanAlias[i].info.name,
                 modelData->booleanAlias[i].nameID,
                 modelData->booleanAlias[i].aliasType ? "boolean parameters" : "boolean variables");
@@ -1068,31 +1065,31 @@ void read_input_xml(MODEL_DATA* modelData,
   /*
    * string all alias vars
    */
-  INFO(LOG_DEBUG, "read xml file for string alias vars");
+  infoStreamPrint(LOG_DEBUG, "read xml file for string alias vars");
   INDENT(LOG_DEBUG);
   for(long i=0; i<modelData->nAliasString; i++)
   {
     /* read var info */
     read_value(mi.sAli[i]["name"], &(modelData->stringAlias[i].info.name));
-    DEBUG1(LOG_DEBUG, "read var %s from setup file",modelData->stringAlias[i].info.name);
+    debugStreamPrint(LOG_DEBUG, "read var %s from setup file",modelData->stringAlias[i].info.name);
 
     INDENT(LOG_DEBUG);
     read_value(mi.sAli[i]["valueReference"], &(modelData->stringAlias[i].info.id));
-    DEBUG2(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.id);
+    debugStreamPrint(LOG_DEBUG, "read for %s id %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.id);
     read_value(mi.sAli[i]["description"], &(modelData->stringAlias[i].info.comment));
-    DEBUG2(LOG_DEBUG, "read for %s comment %s from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.comment);
+    debugStreamPrint(LOG_DEBUG, "read for %s comment %s from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.comment);
     read_value(mi.sAli[i]["fileName"], (modelica_string*)&(modelData->stringAlias[i].info.info.filename));
-    DEBUG2(LOG_DEBUG, "read for %s filename %s from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.filename);
+    debugStreamPrint(LOG_DEBUG, "read for %s filename %s from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.filename);
     read_value(mi.sAli[i]["startLine"], (modelica_string*) &(modelData->stringAlias[i].info.info.lineStart));
-    DEBUG2(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.lineStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineStart %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.lineStart);
     read_value(mi.sAli[i]["startColumn"], (modelica_string*) &(modelData->stringAlias[i].info.info.colStart));
-    DEBUG2(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.colStart);
+    debugStreamPrint(LOG_DEBUG, "read for %s colStart %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.colStart);
     read_value(mi.sAli[i]["endLine"], (modelica_string*) &(modelData->stringAlias[i].info.info.lineEnd));
-    DEBUG2(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.lineEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s lineEnd %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.lineEnd);
     read_value(mi.sAli[i]["endColumn"], (modelica_string*) &(modelData->stringAlias[i].info.info.colEnd));
-    DEBUG2(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.colEnd);
+    debugStreamPrint(LOG_DEBUG, "read for %s colEnd %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.colEnd);
     read_value(mi.sAli[i]["fileWritable"], (modelica_string*) &(modelData->stringAlias[i].info.info.readonly));
-    DEBUG2(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.readonly);
+    debugStreamPrint(LOG_DEBUG, "read for %s readonly %d from setup file",modelData->stringAlias[i].info.name,modelData->stringAlias[i].info.info.readonly);
     RELEASE(LOG_DEBUG);
 
     std::string aliasTmp;
@@ -1102,7 +1099,7 @@ void read_input_xml(MODEL_DATA* modelData,
     else
       modelData->stringAlias[i].negate = 0;
 
-    INFO2(LOG_DEBUG, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
+    infoStreamPrint(LOG_DEBUG, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
     /* filter internal variables */
     if(modelData->stringAlias[i].info.name[0] == '$')
@@ -1126,9 +1123,9 @@ void read_input_xml(MODEL_DATA* modelData,
     else
     {
       std::string msg = "String Alias variable " + aliasTmp + " not found.";
-      THROW1("%s", msg.c_str());
+      throwStreamPrint("%s", msg.c_str());
     }
-    DEBUG3(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
+    debugStreamPrint(LOG_DEBUG, "read for %s aliasID %d from %s from setup file",
                 modelData->stringAlias[i].info.name,
                 modelData->stringAlias[i].nameID,
                 modelData->stringAlias[i].aliasType ? "string parameters" : "string variables");
@@ -1149,7 +1146,7 @@ inline void read_value(std::string s, modelica_string* str)
 {
   if(str == NULL)
   {
-    WARNING(LOG_SIMULATION, "error read_value, no data allocated for storing string");
+    warningStreamPrint(LOG_SIMULATION, "error read_value, no data allocated for storing string");
     return;
   }
   *str = strdup(s.c_str());
@@ -1212,7 +1209,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
   char* overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL))
   {
-    THROW("simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
+    throwStreamPrint("simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
   }
 
   if(override != NULL)
@@ -1223,13 +1220,13 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
   if(overrideFile != NULL)
   {
     /* read override values from file */
-    INFO1(LOG_SOLVER, "read override values from file: %s", overrideFile);
+    infoStreamPrint(LOG_SOLVER, "read override values from file: %s", overrideFile);
     std::ifstream infile;
 
     infile.open(overrideFile, ifstream::in);
     if(infile.is_open() == false)
     {
-      THROW1("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
+      throwStreamPrint("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile);
     }
 
     std::string line;
@@ -1250,7 +1247,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
   {
     std::string key, value;
     /* read override values */
-    INFO1(LOG_SOLVER, "read override values: %s", overrideStr);
+    infoStreamPrint(LOG_SOLVER, "read override values: %s", overrideStr);
     char *p = strtok(overrideStr, ",");
     while(p)
     {
@@ -1274,7 +1271,7 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
         // map[key]=value
         mOverrides[key] = value;
 
-        INFO2(LOG_SOLVER, "override %s = %s", key.c_str(), value.c_str());
+        infoStreamPrint(LOG_SOLVER, "override %s = %s", key.c_str(), value.c_str());
 
         // move to next
         p = strtok(NULL, ",");
@@ -1345,11 +1342,11 @@ void doOverride(omc_ModelInput& mi, MODEL_DATA* modelData, const char* override,
     {
       mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? mOverrides[mi.sAli[i]["name"]] : mi.sAli[i]["start"];
     }
-    INFO(LOG_SOLVER, "override done!");
+    infoStreamPrint(LOG_SOLVER, "override done!");
   }
   else
   {
-    INFO(LOG_SOLVER, "NO override given on the command line.");
+    infoStreamPrint(LOG_SOLVER, "NO override given on the command line.");
   }
 }
 

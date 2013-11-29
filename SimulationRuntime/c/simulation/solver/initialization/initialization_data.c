@@ -52,7 +52,7 @@ INIT_DATA *initializeInitData(DATA *simData)
   INIT_DATA *initData = NULL;
 
   initData = (INIT_DATA*)malloc(sizeof(INIT_DATA));
-  ASSERT(initData, "out of memory");
+  assertStreamPrint(0 != initData, "out of memory");
 
   initData->nVars = 0;
   initData->nStates = 0;
@@ -97,26 +97,26 @@ INIT_DATA *initializeInitData(DATA *simData)
   }
 
   initData->vars = (double*)calloc(initData->nVars, sizeof(double));
-  ASSERT(initData->vars, "out of memory");
+  assertStreamPrint(0 != initData->vars, "out of memory");
 
   initData->start = (double*)calloc(initData->nVars, sizeof(double));
-  ASSERT(initData->start, "out of memory");
+  assertStreamPrint(0 != initData->start, "out of memory");
 
   initData->min = (double*)calloc(initData->nVars, sizeof(double));
-  ASSERT(initData->min, "out of memory");
+  assertStreamPrint(0 != initData->min, "out of memory");
 
   initData->max = (double*)calloc(initData->nVars, sizeof(double));
-  ASSERT(initData->max, "out of memory");
+  assertStreamPrint(0 != initData->max, "out of memory");
 
   initData->nominal = (double*)calloc(initData->nVars, sizeof(double));
-  ASSERT(initData->nominal, "out of memory");
+  assertStreamPrint(0 != initData->nominal, "out of memory");
 
   initData->name = (char**)calloc(initData->nVars, sizeof(char*));
-  ASSERT(initData->name, "out of memory");
+  assertStreamPrint(0 != initData->name, "out of memory");
 
   /* setup initData */
-  INFO(LOG_INIT, "initial problem:");
-  INFO4(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters + %ld discrete reals)", initData->nVars, initData->nStates, initData->nParameters, initData->nDiscreteReal);
+  infoStreamPrint(LOG_INIT, "initial problem:");
+  infoStreamPrint(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters + %ld discrete reals)", initData->nVars, initData->nStates, initData->nParameters, initData->nDiscreteReal);
 
   /* i: all states; j: all unfixed vars */
   for(i=0, j=0; i<simData->modelData.nStates; ++i)
@@ -132,7 +132,7 @@ INIT_DATA *initializeInitData(DATA *simData)
          *                  warning | (null)(nominal=0)
          *                          | nominal value is set to 1.0
          * put it back when everything works fine.
-         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+         * warningStreamPrint("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
          * WARNING_AL("nominal value is set to 1.0");
          */
         initData->nominal[j] = 1.0;
@@ -143,7 +143,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realVarsData[i].attribute.min;
       initData->max[j] = simData->modelData.realVarsData[i].attribute.max;
 
-      INFO5(LOG_INIT, "| | [%ld] Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      infoStreamPrint(LOG_INIT, "| | [%ld] Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -162,7 +162,7 @@ INIT_DATA *initializeInitData(DATA *simData)
          *                  warning | (null)(nominal=0)
          *                          | nominal value is set to 1.0
          * put it back when everything works fine.
-         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+         * warningStreamPrint("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
          * WARNING_AL("nominal value is set to 1.0");
          */
         initData->nominal[j] = 1.0;
@@ -173,7 +173,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realParameterData[i].attribute.min;
       initData->max[j] = simData->modelData.realParameterData[i].attribute.max;
 
-      INFO5(LOG_INIT, "| | [%ld] parameter Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      infoStreamPrint(LOG_INIT, "| | [%ld] parameter Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -192,7 +192,7 @@ INIT_DATA *initializeInitData(DATA *simData)
          *                  warning | (null)(nominal=0)
          *                          | nominal value is set to 1.0
          * put it back when everything works fine.
-         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+         * warningStreamPrint("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
          * WARNING_AL("nominal value is set to 1.0");
          */
         initData->nominal[j] = 1.0;
@@ -203,7 +203,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realVarsData[i].attribute.min;
       initData->max[j] = simData->modelData.realVarsData[i].attribute.max;
 
-      INFO5(LOG_INIT, "| | [%ld] discrete Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      infoStreamPrint(LOG_INIT, "| | [%ld] discrete Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -225,22 +225,24 @@ INIT_DATA *initializeInitData(DATA *simData)
     if(simData->modelData.realVarsData[i].attribute.useStart && !simData->modelData.realVarsData[i].attribute.fixed)
       initData->nStartValueResiduals++;
 
-  INFO3(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
-  INFO1(LOG_INIT, "| number of start value residuals: %ld", initData->nStartValueResiduals);
+  infoStreamPrint(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
+  infoStreamPrint(LOG_INIT, "| number of start value residuals: %ld", initData->nStartValueResiduals);
 
   initData->initialResiduals = (double*)calloc(initData->nInitResiduals, sizeof(double));
-  ASSERT(initData->initialResiduals, "out of memory");
+  assertStreamPrint(0 != initData->initialResiduals, "out of memory");
 
   initData->residualScalingCoefficients = (double*)malloc(initData->nInitResiduals * sizeof(double));
-  ASSERT(initData->residualScalingCoefficients, "out of memory");
+  assertStreamPrint(0 != initData->residualScalingCoefficients, "out of memory");
 
   initData->startValueResidualScalingCoefficients = (double*)malloc(initData->nStartValueResiduals * sizeof(double));
-  ASSERT(initData->startValueResidualScalingCoefficients, "out of memory");
+  assertStreamPrint(0 != initData->startValueResidualScalingCoefficients, "out of memory");
 
-  for(i=0; i<initData->nInitResiduals; ++i)
+  for(i=0; i<initData->nInitResiduals; ++i) {
     initData->residualScalingCoefficients[i] = 1.0;
-  for(i=0; i<initData->nStartValueResiduals; ++i)
+  }
+  for(i=0; i<initData->nStartValueResiduals; ++i) {
     initData->startValueResidualScalingCoefficients[i] = 1.0;
+  }
 
   return initData;
 }
@@ -371,7 +373,7 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     if(residualScalingCoefficients[i] < 1e-42)
     {
       initData->residualScalingCoefficients[i] = 1.0;
-      INFO1(LOG_INIT, "| | [%ld] residual is ineffective (scaling coefficient is set to 1.0)", i+1);
+      infoStreamPrint(LOG_INIT, "| | [%ld] residual is ineffective (scaling coefficient is set to 1.0)", i+1);
     }
     else
       initData->residualScalingCoefficients[i] = residualScalingCoefficients[i];
@@ -383,7 +385,7 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     {
       initData->startValueResidualScalingCoefficients[i] = 1.0;
       /* TODO invent new log-system
-       * INFO1(LOG_INIT, "| | [%ld] start-value residual is ineffective (scaling coefficient is set to 1.0)", i+1);
+       * infoStreamPrint(LOG_INIT, "| | [%ld] start-value residual is ineffective (scaling coefficient is set to 1.0)", i+1);
        */
     }
     else
@@ -398,14 +400,14 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
   free(startValueResidualScalingCoefficients);
 
   /* TODO invent new log-system
-   * INFO(LOG_INIT, "scaling coefficients:");
-   * INFO(LOG_INIT, "| initial residuals");
+   * infoStreamPrint(LOG_INIT, "scaling coefficients:");
+   * infoStreamPrint(LOG_INIT, "| initial residuals");
    * for(i=0; i<initData->nInitResiduals; ++i)
-   *   INFO2(LOG_INIT, "| | [%ld] %g", i+1, initData->residualScalingCoefficients[i]);
+   *   infoStreamPrint(LOG_INIT, "| | [%ld] %g", i+1, initData->residualScalingCoefficients[i]);
    *
-   * INFO(LOG_INIT, "| start value residuals");
+   * infoStreamPrint(LOG_INIT, "| start value residuals");
    * for(i=0; i<initData->nStartValueResiduals; ++i)
-   *   INFO2(LOG_INIT, "| | [%ld] %g", i+1, initData->startValueResidualScalingCoefficients[i]);
+   *   infoStreamPrint(LOG_INIT, "| | [%ld] %g", i+1, initData->startValueResidualScalingCoefficients[i]);
    */
 }
 

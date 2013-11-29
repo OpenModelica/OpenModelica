@@ -623,7 +623,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       if(comp->fmuData->simulationInfo.nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue)
       {
         comp->fmuData->simulationInfo.samples[i] = 1;
-        INFO3(LOG_EVENTS, "[%ld] sample(%g, %g)", comp->fmuData->modelData.samplesInfo[i].index, comp->fmuData->modelData.samplesInfo[i].start, comp->fmuData->modelData.samplesInfo[i].interval);
+        infoStreamPrint(LOG_EVENTS, "[%ld] sample(%g, %g)", comp->fmuData->modelData.samplesInfo[i].index, comp->fmuData->modelData.samplesInfo[i].start, comp->fmuData->modelData.samplesInfo[i].interval);
       }
   }
 

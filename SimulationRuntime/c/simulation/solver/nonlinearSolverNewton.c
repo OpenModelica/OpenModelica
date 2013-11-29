@@ -90,7 +90,7 @@ int allocateNewtonData(int size, void** voiddata)
   DATA_NEWTON* data = (DATA_NEWTON*) malloc(sizeof(DATA_NEWTON));
 
   *voiddata = (void*)data;
-  ASSERT(data, "allocationNewtonData() failed!");
+  assertStreamPrint(0 != data, "allocationNewtonData() failed!");
 
   data->initialized = 0;
   data->resScaling = (double*) malloc(size*sizeof(double));
@@ -108,7 +108,7 @@ int allocateNewtonData(int size, void** voiddata)
   data->rwork = (double*) malloc((size)*sizeof(double));
   data->iwork = (integer*) malloc(size*sizeof(integer));
 
-  ASSERT(*voiddata, "allocationNewtonData() voiddata failed!");
+  assertStreamPrint(0 != *voiddata, "allocationNewtonData() voiddata failed!");
   return 0;
 }
 
@@ -236,7 +236,7 @@ int solveNewton(DATA *data, int sysNumber)
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS))
   {
-    INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %g with Newton Solver",
+    infoStreamPrint(LOG_NLS, "Start solving Non-Linear System %s at time %g with Newton Solver",
         modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name,
         data->localData[0]->timeValue);
 
@@ -244,9 +244,9 @@ int solveNewton(DATA *data, int sysNumber)
     for(i = 0; i < solverData->n; i++)
     {
       INDENT(LOG_NLS);
-      INFO2(LOG_NLS, "x[%d] = %.15e", i, systemData->nlsx[i]);
+      infoStreamPrint(LOG_NLS, "x[%d] = %.15e", i, systemData->nlsx[i]);
       INDENT(LOG_NLS);
-      INFO3(LOG_NLS, "scaling = %f +++ old = %e +++ extrapolated = %e",
+      infoStreamPrint(LOG_NLS, "scaling = %f +++ old = %e +++ extrapolated = %e",
             systemData->nominal[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
       RELEASE(LOG_NLS);
       RELEASE(LOG_NLS);
@@ -289,10 +289,10 @@ int solveNewton(DATA *data, int sysNumber)
       nfunc_evals += solverData->nfev;
       if(ACTIVE_STREAM(LOG_NLS))
       {
-        INFO1(LOG_NLS, "*** System solved ***\n%d restarts", retries);
-        INFO3(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
+        infoStreamPrint(LOG_NLS, "*** System solved ***\n%d restarts", retries);
+        infoStreamPrint(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
         for(i = 0; i < solverData->n; i++)
-          INFO3(LOG_NLS, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
+          infoStreamPrint(LOG_NLS, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
       }
     /* Then try with old values (instead of extrapolating )*/
     }
@@ -303,7 +303,7 @@ int solveNewton(DATA *data, int sysNumber)
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      INFO(LOG_NLS, " - iteration making no progress:\t try old values.");
+      infoStreamPrint(LOG_NLS, " - iteration making no progress:\t try old values.");
     /* try to vary the initial values */
     }
     else if(retries < 2)
@@ -313,7 +313,7 @@ int solveNewton(DATA *data, int sysNumber)
       retries++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      INFO(LOG_NLS, " - iteration making no progress:\t vary solution point by 1%%.");
+      infoStreamPrint(LOG_NLS, " - iteration making no progress:\t vary solution point by 1%%.");
       /* try to vary the initial values */
       }
       else if(retries < 2)
@@ -323,18 +323,18 @@ int solveNewton(DATA *data, int sysNumber)
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        INFO(LOG_NLS, " - iteration making no progress:\t try nominal values as initial solution.");
+        infoStreamPrint(LOG_NLS, " - iteration making no progress:\t try nominal values as initial solution.");
     }
     else
     {
       printErrorEqSyst(ERROR_AT_TIME, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber), data->localData[0]->timeValue);
       if(ACTIVE_STREAM(LOG_NLS))
       {
-        INFO1(LOG_NLS, "### No Solution! ###\n after %d restarts", retries);
-        INFO3(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
+        infoStreamPrint(LOG_NLS, "### No Solution! ###\n after %d restarts", retries);
+        infoStreamPrint(LOG_NLS, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", nfunc_evals, xerror, xerror_scaled);
         if(ACTIVE_STREAM(LOG_NLS))
           for(i = 0; i < solverData->n; i++)
-            INFO3(LOG_NLS, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
+            infoStreamPrint(LOG_NLS, "x[%d] = %.15e\n\tresidual = %e", i, solverData->x[i], solverData->fvec[i]);
       }
     }
   }
@@ -426,15 +426,15 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
   if(ACTIVE_STREAM(LOG_NLS_V))
   {
-    INFO1(LOG_NLS_V, "######### Start Newton maxfev: %d #########", (int)*maxfev);
+    infoStreamPrint(LOG_NLS_V, "######### Start Newton maxfev: %d #########", (int)*maxfev);
     for(i=0; i<*n; i++)
-      INFO2(LOG_NLS_V, "x[%d]: %e ", i, x[i]);
+      infoStreamPrint(LOG_NLS_V, "x[%d]: %e ", i, x[i]);
   }
   *info = 1;
 
   while(*info >= 0)
   {
-    DEBUG1(LOG_NLS_V, "**** start Iteration: %d  *****", *maxfev-l);
+    debugStreamPrint(LOG_NLS_V, "**** start Iteration: %d  *****", *maxfev-l);
     /* calculate the function values */
     (*f)(n, x, fvec, &iflag, userdata,currentSys);
     (*nfev)++;
@@ -442,7 +442,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     /*  Debug output */
     if(ACTIVE_STREAM(LOG_NLS_V))
       for(i=0; i<*n; i++)
-        DEBUG2(LOG_NLS_V, "fvec[%d]: %e: ", i, fvec[i]);
+        debugStreamPrint(LOG_NLS_V, "fvec[%d]: %e: ", i, fvec[i]);
 
     /* calculate jacobian */
     if(systemData->jacobianIndex != -1){
@@ -457,14 +457,14 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     {
       char buffer[4096];
 
-      INFO2(LOG_NLS_JAC, "jacobian matrix [%dx%d]", (int)*n, (int)*n);
+      infoStreamPrint(LOG_NLS_JAC, "jacobian matrix [%dx%d]", (int)*n, (int)*n);
       INDENT(LOG_NLS_JAC);
       for(i=0; i<solverData->n;i++)
       {
         buffer[0] = 0;
         for(j=0; j<solverData->n; j++)
           sprintf(buffer, "%s%10g ", buffer, fjac[i*(*n)+j]);
-        INFO1(LOG_NLS_JAC, "%s", buffer);
+        infoStreamPrint(LOG_NLS_JAC, "%s", buffer);
       }
       RELEASE(LOG_NLS_JAC);
     }
@@ -488,8 +488,8 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
     /* calculate error by 2-norm */
     scaledError_f = enorm_(n, solverData->fvecScaled);
     error_f = enorm_(n, fvec);
-    DEBUG1(LOG_NLS_V, "scaled error = %e", scaledError_f);
-    DEBUG1(LOG_NLS_V, "error = %e", error_f);
+    debugStreamPrint(LOG_NLS_V, "scaled error = %e", scaledError_f);
+    debugStreamPrint(LOG_NLS_V, "error = %e", error_f);
     if(scaledError_f <= tol_f) break;
     if(error_f <= tol_f) break;
 
@@ -498,20 +498,20 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
     if(ACTIVE_STREAM(LOG_NLS_V))
     {
-      DEBUG(LOG_NLS_V, "Solved J*x=b");
+      debugStreamPrint(LOG_NLS_V, "Solved J*x=b");
       for(i=0; i<*n; i++)
-        DEBUG2(LOG_NLS_V, "b[%d] = %e ", i, fvec[i]);
+        debugStreamPrint(LOG_NLS_V, "b[%d] = %e ", i, fvec[i]);
     }
 
     if(lapackinfo > 0)
     {
       *info = -1;
-      WARNING(LOG_NLS, "Jacobian Matrix singular!");
+      warningStreamPrint(LOG_NLS, "Jacobian Matrix singular!");
     }
     else if(lapackinfo < 0)
     {
       *info = -1;
-      WARNING1(LOG_NLS, "illegal  input in argument %d", (int)lapackinfo);
+      warningStreamPrint(LOG_NLS, "illegal  input in argument %d", (int)lapackinfo);
     }
     else
     {
@@ -527,7 +527,7 @@ static int _omc_newton(integer* n, double *x, double *fvec, double* eps, double*
 
     if(ACTIVE_STREAM(LOG_NLS_V))
       for(i=0; i<*n; i++)
-        DEBUG2(LOG_NLS_V, "x[%d] = %e ", i, x[i]);
+        debugStreamPrint(LOG_NLS_V, "x[%d] = %e ", i, x[i]);
 
     /* check if maximum iteration is reached */
     l--;

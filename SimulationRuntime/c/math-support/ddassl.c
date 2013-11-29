@@ -3757,19 +3757,19 @@ L100:
       i__2 = *neq;
       buffer = (char*)malloc(20*(*neq)*sizeof(char));
       
-      INFO1(LOG_JAC, "at point in time: %g", *x);
+      infoStreamPrint(LOG_JAC, "at point in time: %g", *x);
       INDENT(LOG_JAC);
       
-      INFO1(LOG_JAC, "cj: %g", *cj);
-      INFO(LOG_JAC, "states");
+      infoStreamPrint(LOG_JAC, "cj: %g", *cj);
+      infoStreamPrint(LOG_JAC, "states");
       INDENT(LOG_JAC);
       for(k=0;k<*neq;k++)
       {
-        INFO2(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
+        infoStreamPrint(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
       }
       RELEASE(LOG_JAC);
 
-      INFO(LOG_JAC, "analytical Jacobian");
+      infoStreamPrint(LOG_JAC, "analytical Jacobian");
       INDENT(LOG_JAC);
       for(i__ = 1; i__ <= i__1; ++i__)
       {
@@ -3779,7 +3779,7 @@ L100:
         {
           sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
         }
-        INFO1(LOG_JAC, "%s", buffer);
+        infoStreamPrint(LOG_JAC, "%s", buffer);
         wm[nrow+i__] -= *cj;
         nrow += *neq;
       }
@@ -3837,19 +3837,19 @@ L200:
       i__2 = *neq;
       buffer = (char*)malloc(20*(*neq)*sizeof(char));
       
-      INFO1(LOG_JAC, "at point in time: %g", *x);
+      infoStreamPrint(LOG_JAC, "at point in time: %g", *x);
       INDENT(LOG_JAC);
       
-      INFO1(LOG_JAC, "cj: %g", *cj);
-      INFO(LOG_JAC, "states");
+      infoStreamPrint(LOG_JAC, "cj: %g", *cj);
+      infoStreamPrint(LOG_JAC, "states");
       INDENT(LOG_JAC);
       for(k=0;k<*neq;k++)
       {
-        INFO2(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
+        infoStreamPrint(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
       }
       RELEASE(LOG_JAC);
 
-      INFO(LOG_JAC, "numerical Jacobian");
+      infoStreamPrint(LOG_JAC, "numerical Jacobian");
       INDENT(LOG_JAC);
       for(i__ = 1; i__ <= i__1; ++i__)
       {
@@ -3859,7 +3859,7 @@ L200:
         {
           sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
         }
-        INFO1(LOG_JAC, "%s", buffer);
+        infoStreamPrint(LOG_JAC, "%s", buffer);
         wm[nrow+i__] -= *cj;
         nrow += *neq;
       }

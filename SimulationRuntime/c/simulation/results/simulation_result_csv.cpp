@@ -115,7 +115,7 @@ void csv_init(simulation_result *self, DATA *data)
   const char* format = "\"%s\",";
   FILE *fout = fopen(self->filename, "w");
 
-  ASSERT2(fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
+  assertStreamPrint(0!=fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
 
   fprintf(fout, format, "time");
   if(self->cpuTime)

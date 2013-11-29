@@ -112,7 +112,7 @@ int newuoa_initialization(INIT_DATA *initData)
   long NPT = 2*initData->nVars+1;
 
   double *W = (double*)calloc((NPT+13)*(NPT+initData->nVars)+3*initData->nVars*(initData->nVars+3)/2, sizeof(double));
-  ASSERT(W, "out of memory");
+  assertStreamPrint(0 != W, "out of memory");
 
   globalData = initData->simData;
   globalInitialResiduals = initData->initialResiduals;

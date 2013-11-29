@@ -73,12 +73,12 @@ int reportResidualValue(INIT_DATA *initData)
 
   if(1e-5 < funcValue)
   {
-    INFO1(LOG_INIT, "error in initialization. System of initial equations are not consistent\n(least square function value is %g)", funcValue);
+    infoStreamPrint(LOG_INIT, "error in initialization. System of initial equations are not consistent\n(least square function value is %g)", funcValue);
 
     INDENT(LOG_INIT);
     for(i=0; i<initData->nInitResiduals; i++)
       if(1e-5 < fabs(initData->initialResiduals[i]))
-        INFO2(LOG_INIT, "residual[%ld] = %g", i+1, initData->initialResiduals[i]);
+        infoStreamPrint(LOG_INIT, "residual[%ld] = %g", i+1, initData->initialResiduals[i]);
     RELEASE(LOG_INIT);
 
     return 1;
@@ -179,41 +179,41 @@ void dumpInitialization(DATA *data, INIT_DATA *initData)
   for(i=0; i<initData->nInitResiduals; ++i)
     fValue += initData->initialResiduals[i] * initData->initialResiduals[i];
 
-  INFO(LOG_INIT, "initialization status");
+  infoStreamPrint(LOG_INIT, "initialization status");
   INDENT(LOG_INIT);
   if(initData->residualScalingCoefficients)
-    INFO2(LOG_INIT, "least square value: %g [scaled: %g]", fValue, fValueScaled);
+    infoStreamPrint(LOG_INIT, "least square value: %g [scaled: %g]", fValue, fValueScaled);
   else
-    INFO1(LOG_INIT, "least square value: %g", fValue);
+    infoStreamPrint(LOG_INIT, "least square value: %g", fValue);
 
-  INFO(LOG_INIT, "unfixed variables");
+  infoStreamPrint(LOG_INIT, "unfixed variables");
   INDENT(LOG_INIT);
   for(i=0; i<initData->nStates; ++i)
     if(initData->nominal)
-      INFO4(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
-      INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->vars[i], initData->name[i]);
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->vars[i], initData->name[i]);
 
   for(; i<initData->nStates+initData->nParameters; ++i)
     if(initData->nominal)
-      INFO4(LOG_INIT, "[%ld] [%15g] := %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
-      INFO3(LOG_INIT, "[%ld] [%15g] := %s (parameter)", i+1, initData->vars[i], initData->name[i]);
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s (parameter)", i+1, initData->vars[i], initData->name[i]);
 
   for(; i<initData->nVars; ++i)
     if(initData->nominal)
-      INFO4(LOG_INIT, "[%ld] [%15g] := %s (discrete) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s (discrete) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
-      INFO3(LOG_INIT, "[%ld] [%15g] := %s (discrete)", i+1, initData->vars[i], initData->name[i]);
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s (discrete)", i+1, initData->vars[i], initData->name[i]);
   RELEASE(LOG_INIT);
 
-  INFO(LOG_INIT, "initial residuals");
+  infoStreamPrint(LOG_INIT, "initial residuals");
   INDENT(LOG_INIT);
   for(i=0; i<initData->nInitResiduals; ++i)
     if(initData->residualScalingCoefficients)
-      INFO4(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], data->callback->initialResidualDescription(i), initData->residualScalingCoefficients[i]);
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], data->callback->initialResidualDescription(i), initData->residualScalingCoefficients[i]);
     else
-      INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->initialResiduals[i], data->callback->initialResidualDescription(i));
+      infoStreamPrint(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->initialResiduals[i], data->callback->initialResidualDescription(i));
   RELEASE(LOG_INIT); RELEASE(LOG_INIT);
 }
 
@@ -230,14 +230,14 @@ void dumpInitialSolution(DATA *simData)
   const MODEL_DATA      *mData = &(simData->modelData);
   const SIMULATION_INFO *sInfo = &(simData->simulationInfo);
 
-  INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
+  infoStreamPrint(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
 
-  INFO(LOG_SOTI, "states variables");
+  infoStreamPrint(LOG_SOTI, "states variables");
   INDENT(LOG_SOTI);
   for(i=0; i<mData->nStates; ++i)
   {
-    INFO6(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
+    infoStreamPrint(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
                                                                           mData->realVarsData[i].info.name,
                                                                           mData->realVarsData[i].attribute.start,
                                                                           mData->realVarsData[i].attribute.nominal,
@@ -246,22 +246,22 @@ void dumpInitialSolution(DATA *simData)
   }
   RELEASE(LOG_SOTI);
 
-  INFO(LOG_SOTI, "derivatives variables");
+  infoStreamPrint(LOG_SOTI, "derivatives variables");
   INDENT(LOG_SOTI);
   for(i=mData->nStates; i<2*mData->nStates; ++i)
   {
-    INFO4(LOG_SOTI, "[%ld] Real %s = %g (pre: %g)", i+1,
+    infoStreamPrint(LOG_SOTI, "[%ld] Real %s = %g (pre: %g)", i+1,
                                                     mData->realVarsData[i].info.name,
                                                     simData->localData[0]->realVars[i],
                                                     sInfo->realVarsPre[i]);
   }
   RELEASE(LOG_SOTI);
 
-  INFO(LOG_SOTI, "other real variables");
+  infoStreamPrint(LOG_SOTI, "other real variables");
   INDENT(LOG_SOTI);
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
   {
-    INFO6(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
+    infoStreamPrint(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g (pre: %g)", i+1,
                                                                           mData->realVarsData[i].info.name,
                                                                           mData->realVarsData[i].attribute.start,
                                                                           mData->realVarsData[i].attribute.nominal,
@@ -270,11 +270,11 @@ void dumpInitialSolution(DATA *simData)
   }
   RELEASE(LOG_SOTI);
 
-  INFO(LOG_SOTI, "integer variables");
+  infoStreamPrint(LOG_SOTI, "integer variables");
   INDENT(LOG_SOTI);
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
-    INFO5(LOG_SOTI, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1,
+    infoStreamPrint(LOG_SOTI, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1,
                                                                     mData->integerVarsData[i].info.name,
                                                                     mData->integerVarsData[i].attribute.start,
                                                                     simData->localData[0]->integerVars[i],
@@ -282,11 +282,11 @@ void dumpInitialSolution(DATA *simData)
   }
   RELEASE(LOG_SOTI);
 
-  INFO(LOG_SOTI, "boolean variables");
+  infoStreamPrint(LOG_SOTI, "boolean variables");
   INDENT(LOG_SOTI);
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
-    INFO5(LOG_SOTI, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
+    infoStreamPrint(LOG_SOTI, "[%ld] Boolean %s(start=%s) = %s (pre: %s)", i+1,
                                                                  mData->booleanVarsData[i].info.name,
                                                                  mData->booleanVarsData[i].attribute.start ? "true" : "false",
                                                                  simData->localData[0]->booleanVars[i] ? "true" : "false",
@@ -294,11 +294,11 @@ void dumpInitialSolution(DATA *simData)
   }
   RELEASE(LOG_SOTI);
 
-  INFO(LOG_SOTI, "string variables");
+  infoStreamPrint(LOG_SOTI, "string variables");
   INDENT(LOG_SOTI);
   for(i=0; i<mData->nVariablesString; ++i)
   {
-    INFO5(LOG_SOTI, "[%ld] String %s(start=%s) = %s (pre: %s)", i+1,
+    infoStreamPrint(LOG_SOTI, "[%ld] String %s(start=%s) = %s (pre: %s)", i+1,
                                                                 mData->stringVarsData[i].info.name,
                                                                 mData->stringVarsData[i].attribute.start,
                                                                 simData->localData[0]->stringVars[i],
@@ -343,7 +343,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
 
   for(j=1; j<=200 && STOPCR < funcValue; j++)
   {
-    INFO1(LOG_INIT, "initialization-nr. %ld", j);
+    infoStreamPrint(LOG_INIT, "initialization-nr. %ld", j);
 
     if(useScaling)
       computeInitialResidualScalingCoefficients(initData);
@@ -361,7 +361,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
     else if(optiMethod == IOM_IPOPT)
       retVal = ipopt_initialization(data, initData, 0);
     else
-      THROW("unsupported option -iom");
+      throwStreamPrint("unsupported option -iom");
 
     /*storePreValues(data);*/                       /* save pre-values */
     overwriteOldSimulationData(data);           /* if there are non-linear equations */
@@ -379,23 +379,23 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling, int 
       bestFuncValue = funcValue;
       for(i=0; i<initData->nVars; i++)
         bestZ[i] = initData->vars[i];
-      INFO(LOG_INIT, "updating bestZ");
+      infoStreamPrint(LOG_INIT, "updating bestZ");
       dumpInitialization(data,initData);
     }
     else if(retVal >= 0 && funcValue == bestFuncValue)
     {
-      /* WARNING("local minimum"); */
-      INFO(LOG_INIT, "not updating bestZ");
+      /* warningStreamPrint("local minimum"); */
+      infoStreamPrint(LOG_INIT, "not updating bestZ");
       break;
     }
     else
-      INFO(LOG_INIT, "not updating bestZ");
+      infoStreamPrint(LOG_INIT, "not updating bestZ");
   }
 
   setZ(initData, bestZ);
   free(bestZ);
 
-  INFO1(LOG_INIT, "optimization-calls: %ld", j-1);
+  infoStreamPrint(LOG_INIT, "optimization-calls: %ld", j-1);
 
   return retVal;
 }
@@ -424,7 +424,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
   /* no initial values to calculate */
   if(initData->nVars == 0)
   {
-    INFO(LOG_INIT, "no variables to initialize");
+    infoStreamPrint(LOG_INIT, "no variables to initialize");
     /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
     if(data->modelData.nInitResiduals == 0)
       data->callback->initial_residual(data, initData->initialResiduals);
@@ -435,7 +435,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
   /* no initial equations given */
   if(data->modelData.nInitResiduals == 0)
   {
-    INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
+    infoStreamPrint(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
     /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
     data->callback->initial_residual(data, initData->initialResiduals);
     free(initData);
@@ -444,7 +444,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
 
   if(initData->nInitResiduals < initData->nVars)
   {
-    INFO(LOG_INIT, "under-determined");
+    infoStreamPrint(LOG_INIT, "under-determined");
     INDENT(LOG_INIT);
 
     z_f = (double*)malloc(initData->nVars * sizeof(double));
@@ -472,7 +472,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
     }
 
     k = 0;
-    INFO(LOG_INIT, "setting fixed=true for:");
+    infoStreamPrint(LOG_INIT, "setting fixed=true for:");
     INDENT(LOG_INIT);
     for(i=0; i<data->modelData.nStates; ++i)
     {
@@ -481,7 +481,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realVarsData[i].attribute.fixed = 1;
-          INFO2(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+          infoStreamPrint(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
         }
         k++;
       }
@@ -493,7 +493,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realParameterData[i].attribute.fixed = 1;
-          INFO2(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+          infoStreamPrint(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
         }
         k++;
       }
@@ -504,7 +504,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realParameterData[i].attribute.fixed = 1;
-          INFO2(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+          infoStreamPrint(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
         }
         k++;
       }
@@ -521,22 +521,22 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
     /* no initial values to calculate. (not possible to be here) */
     if(initData->nVars == 0)
     {
-      INFO(LOG_INIT, "no initial values to calculate");
+      infoStreamPrint(LOG_INIT, "no initial values to calculate");
       free(initData);
       return 0;
     }
   }
   else if(data->modelData.nInitResiduals > initData->nVars)
   {
-    INFO(LOG_INIT, "over-determined");
+    infoStreamPrint(LOG_INIT, "over-determined");
 
     /*
-     * INFO("initial problem is [over-determined]");
+     * infoStreamPrint("initial problem is [over-determined]");
      * if(optiMethod == IOM_KINSOL)
      * {
      *   optiMethod = IOM_NELDER_MEAD_EX;
-     *   INFO("kinsol-method is unable to solve over-determined problems.");
-     *   INFO2("| using %-15s [%s]", OPTI_METHOD_NAME[optiMethod], OPTI_METHOD_DESC[optiMethod]);
+     *   infoStreamPrint("kinsol-method is unable to solve over-determined problems.");
+     *   infoStreamPrint("| using %-15s [%s]", OPTI_METHOD_NAME[optiMethod], OPTI_METHOD_DESC[optiMethod]);
      * }
     */
   }
@@ -545,7 +545,7 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
   if(optiMethod == IOM_KINSOL_SCALED ||
      optiMethod == IOM_NELDER_MEAD_EX)
   {
-    INFO(LOG_INIT, "start with scaling");
+    infoStreamPrint(LOG_INIT, "start with scaling");
 
     initialize2(initData, optiMethod, 1, lambda_steps);
 
@@ -585,9 +585,9 @@ static int initialize(DATA *data, int optiMethod, int lambda_steps)
     funcValue = leastSquareWithLambda(initData, 1.0);
   }
   else
-    INFO(LOG_INIT, "skip w/o scaling");
+    infoStreamPrint(LOG_INIT, "skip w/o scaling");
 
-  INFO(LOG_INIT, "### FINAL INITIALIZATION RESULTS ###");
+  infoStreamPrint(LOG_INIT, "### FINAL INITIALIZATION RESULTS ###");
   INDENT(LOG_INIT);
   dumpInitialization(data,initData);
   retVal = reportResidualValue(initData);
@@ -669,10 +669,10 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
     modelica_string* stringVars = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
     MODEL_DATA *mData = &(data->modelData);
 
-    ASSERT(realVars, "out of memory");
-    ASSERT(integerVars, "out of memory");
-    ASSERT(booleanVars, "out of memory");
-    ASSERT(stringVars, "out of memory");
+    assertStreamPrint(0 != realVars, "out of memory");
+    assertStreamPrint(0 != integerVars, "out of memory");
+    assertStreamPrint(0 != booleanVars, "out of memory");
+    assertStreamPrint(0 != stringVars, "out of memory");
 
     for(i=0; i<mData->nVariablesReal; ++i)
       realVars[i] = mData->realVarsData[i].attribute.start;
@@ -693,7 +693,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
       fprintf(pFile, "\n");
     }
 
-    INFO(LOG_INIT, "homotopy process");
+    infoStreamPrint(LOG_INIT, "homotopy process");
     INDENT(LOG_INIT);
     for(step=0; step<numLambdaSteps; ++step)
     {
@@ -704,7 +704,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
 
       data->callback->functionInitialEquations(data);
 
-      INFO1(LOG_INIT, "lambda = %g done", data->simulationInfo.lambda);
+      infoStreamPrint(LOG_INIT, "lambda = %g done", data->simulationInfo.lambda);
 
       if(ACTIVE_STREAM(LOG_INIT))
       {
@@ -758,7 +758,7 @@ static int symbolic_initialization(DATA *data, long numLambdaSteps)
 
     /* report a warning about strange start values */
     if(stateSelection(data, 1, 1) == 1)
-      WARNING(LOG_STDOUT, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
+      warningStreamPrint(LOG_STDOUT, "Cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
   }
 
   return 0;
@@ -846,126 +846,112 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
   MODEL_DATA *mData = &(data->modelData);
   long i;
 
-  INFO2(LOG_INIT, "import start values\nfile: %s\ntime: %g", pInitFile, initTime);
+  infoStreamPrint(LOG_INIT, "import start values\nfile: %s\ntime: %g", pInitFile, initTime);
 
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
   {
-    ASSERT2(0, "unable to read input-file <%s> [%s]", pInitFile, pError);
+    throwStreamPrint("unable to read input-file <%s> [%s]", pInitFile, pError);
     return 1;
-  }
-  else
-  {
-    INFO(LOG_INIT, "import real variables");
-    for(i=0; i<mData->nVariablesReal; ++i)
-    {
+  } else {
+    infoStreamPrint(LOG_INIT, "import real variables");
+    for(i=0; i<mData->nVariablesReal; ++i) {
       pVar = omc_matlab4_find_var(&reader, mData->realVarsData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->realVarsData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
-        INFO2(LOG_INIT, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
-      }
-      else
-      {
+        infoStreamPrint(LOG_INIT, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
+      } else {
         /* skipp warnings about self generated variables */
-        if(((strncmp (mData->realVarsData[i].info.name,"$ZERO.",6) != 0) && (strncmp (mData->realVarsData[i].info.name,"$pDER.",6) != 0)) || ACTIVE_STREAM(LOG_INIT))
-          WARNING1(LOG_INIT, "unable to import real variable %s from given file", mData->realVarsData[i].info.name);
+        if(((strncmp (mData->realVarsData[i].info.name,"$ZERO.",6) != 0) && (strncmp (mData->realVarsData[i].info.name,"$pDER.",6) != 0)) || ACTIVE_STREAM(LOG_INIT)) {
+          warningStreamPrint(LOG_INIT, "unable to import real variable %s from given file", mData->realVarsData[i].info.name);
+        }
       }
     }
 
-    INFO(LOG_INIT, "import real parameters");
+    infoStreamPrint(LOG_INIT, "import real parameters");
     for(i=0; i<mData->nParametersReal; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
-        INFO2(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+        infoStreamPrint(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+      } else {
+        warningStreamPrint(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
       }
-      else
-        WARNING1(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
     }
 
-    INFO(LOG_INIT, "import real discrete");
+    infoStreamPrint(LOG_INIT, "import real discrete");
     for(i=mData->nVariablesReal-mData->nDiscreteReal; i<mData->nDiscreteReal; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->realParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
-        INFO2(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+        infoStreamPrint(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+      } else {
+        warningStreamPrint(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
       }
-      else
-        WARNING1(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
-      }
+    }
 
 
-    INFO(LOG_INIT, "import integer parameters");
+    infoStreamPrint(LOG_INIT, "import integer parameters");
     for(i=0; i<mData->nParametersInteger; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->integerParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->integerParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
-        INFO2(LOG_INIT, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        infoStreamPrint(LOG_INIT, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+      } else {
+        warningStreamPrint(LOG_INIT, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
       }
-      else
-        WARNING1(LOG_INIT, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
     }
 
-    INFO(LOG_INIT, "import boolean parameters");
+    infoStreamPrint(LOG_INIT, "import boolean parameters");
     for(i=0; i<mData->nParametersBoolean; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->booleanParameterData[i].info.name);
 
-      if(!pVar)
-      {
+      if(!pVar) {
         newVarname = mapToDymolaVars(mData->booleanParameterData[i].info.name);
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
 
-      if(pVar)
-      {
+      if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
-        INFO2(LOG_INIT, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
+        infoStreamPrint(LOG_INIT, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
+      } else {
+        warningStreamPrint(LOG_INIT, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
       }
-      else
-        WARNING1(LOG_INIT, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
     }
     omc_free_matlab4_reader(&reader);
   }
@@ -990,11 +976,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   int retVal = -1;
   int i;
 
-  INFO(LOG_INIT, "### START INITIALIZATION ###");
+  infoStreamPrint(LOG_INIT, "### START INITIALIZATION ###");
 
   /* import start values from extern mat-file */
-  if(pInitFile && strcmp(pInitFile, ""))
-  {
+  if(pInitFile && strcmp(pInitFile, "")) {
     importStartValues(data, pInitFile, initTime);
   }
 
@@ -1002,56 +987,54 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   setAllParamsToStart(data);
   setAllVarsToStart(data);
 
-  if(!(pInitFile && strcmp(pInitFile, "")))
-  {
+  if(!(pInitFile && strcmp(pInitFile, ""))) {
     data->callback->updateBoundParameters(data);
     data->callback->updateBoundStartValues(data);
   }
 
   /* if there are user-specified options, use them! */
-  if(pInitMethod && strcmp(pInitMethod, ""))
-  {
+  if(pInitMethod && strcmp(pInitMethod, "")) {
     initMethod = IIM_UNKNOWN;
 
-    for(i=1; i<IIM_MAX; ++i)
-    {
-      if(!strcmp(pInitMethod, INIT_METHOD_NAME[i]))
+    for(i=1; i<IIM_MAX; ++i) {
+      if(!strcmp(pInitMethod, INIT_METHOD_NAME[i])) {
         initMethod = i;
+      }
     }
 
-    if(initMethod == IIM_UNKNOWN)
-    {
-      WARNING1(LOG_STDOUT, "unrecognized option -iim %s", pInitMethod);
-      WARNING(LOG_STDOUT, "current options are:");
-      for(i=1; i<IIM_MAX; ++i)
-        WARNING2(LOG_STDOUT, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
-      THROW("see last warning");
+    if(initMethod == IIM_UNKNOWN) {
+      warningStreamPrint(LOG_STDOUT, "unrecognized option -iim %s", pInitMethod);
+      warningStreamPrint(LOG_STDOUT, "current options are:");
+      for(i=1; i<IIM_MAX; ++i) {
+        warningStreamPrint(LOG_STDOUT, "| %-15s [%s]", INIT_METHOD_NAME[i], INIT_METHOD_DESC[i]);
+      }
+      throwStreamPrint("see last warning");
     }
   }
 
-  if(pOptiMethod && strcmp(pOptiMethod, ""))
-  {
+  if(pOptiMethod && strcmp(pOptiMethod, "")) {
     optiMethod = IOM_UNKNOWN;
 
-    for(i=1; i<IOM_MAX; ++i)
-    {
-      if(!strcmp(pOptiMethod, OPTI_METHOD_NAME[i]))
+    for(i=1; i<IOM_MAX; ++i) {
+      if(!strcmp(pOptiMethod, OPTI_METHOD_NAME[i])) {
         optiMethod = i;
+      }
     }
 
-    if(optiMethod == IOM_UNKNOWN)
-    {
-      WARNING1(LOG_STDOUT, "unrecognized option -iom %s", pOptiMethod);
-      WARNING(LOG_STDOUT, "current options are:");
-      for(i=1; i<IOM_MAX; ++i)
-        WARNING2(LOG_STDOUT, "| %-15s [%s]", OPTI_METHOD_NAME[i], OPTI_METHOD_DESC[i]);
-      THROW("see last warning");
+    if(optiMethod == IOM_UNKNOWN) {
+      warningStreamPrint(LOG_STDOUT, "unrecognized option -iom %s", pOptiMethod);
+      warningStreamPrint(LOG_STDOUT, "current options are:");
+      for(i=1; i<IOM_MAX; ++i) {
+        warningStreamPrint(LOG_STDOUT, "| %-15s [%s]", OPTI_METHOD_NAME[i], OPTI_METHOD_DESC[i]);
+      }
+      throwStreamPrint("see last warning");
     }
   }
 
-  INFO2(LOG_INIT, "initialization method: %-15s [%s]", INIT_METHOD_NAME[initMethod], INIT_METHOD_DESC[initMethod]);
-  if(initMethod == IIM_NUMERIC)
-    INFO2(LOG_INIT, "optimization method:   %-15s [%s]", OPTI_METHOD_NAME[optiMethod], OPTI_METHOD_DESC[optiMethod]);
+  infoStreamPrint(LOG_INIT, "initialization method: %-15s [%s]", INIT_METHOD_NAME[initMethod], INIT_METHOD_DESC[initMethod]);
+  if(initMethod == IIM_NUMERIC) {
+    infoStreamPrint(LOG_INIT, "optimization method:   %-15s [%s]", OPTI_METHOD_NAME[optiMethod], OPTI_METHOD_DESC[optiMethod]);
+  }
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
@@ -1059,37 +1042,42 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   /* initialize all (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
-  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
     data->simulationInfo.nonlinearSystemData[i].solved = 1;
-  for(i=0; i<data->modelData.nLinearSystems; ++i)
+  }
+  for(i=0; i<data->modelData.nLinearSystems; ++i) {
     data->simulationInfo.linearSystemData[i].solved = 1;
-  for(i=0; i<data->modelData.nMixedSystems; ++i)
+  }
+  for(i=0; i<data->modelData.nMixedSystems; ++i) {
     data->simulationInfo.mixedSystemData[i].solved = 1;
+  }
   /* end workaround */
 
   /* select the right initialization-method */
-  if(initMethod == IIM_NONE)
+  if(initMethod == IIM_NONE) {
     retVal = 0;
-  else if(initMethod == IIM_NUMERIC)
+  } else if(initMethod == IIM_NUMERIC) {
     retVal = numeric_initialization(data, optiMethod, lambda_steps);
-  else if(initMethod == IIM_SYMBOLIC)
+  } else if(initMethod == IIM_SYMBOLIC) {
     retVal = symbolic_initialization(data, lambda_steps);
-  else
-    THROW("unsupported option -iim");
+  } else {
+    throwStreamPrint("unsupported option -iim");
+  }
 
   /* check for unsolved (nonlinear|linear|mixed) systems
    * This is a workaround and should be removed as soon as possible.
    */
-  if(check_nonlinear_solutions(data, 1))
+  if(check_nonlinear_solutions(data, 1)) {
     retVal = -2;
-  else if(check_linear_solutions(data, 1))
+  } else if(check_linear_solutions(data, 1)) {
     retVal = -3;
-  else if(check_mixed_solutions(data, 1))
+  } else if(check_mixed_solutions(data, 1)) {
     retVal = -4;
+  }
   /* end workaround */
 
   dumpInitialSolution(data);
-  INFO(LOG_INIT, "### END INITIALIZATION ###");
+  infoStreamPrint(LOG_INIT, "### END INITIALIZATION ###");
 
   data->simulationInfo.initial = 0;
 

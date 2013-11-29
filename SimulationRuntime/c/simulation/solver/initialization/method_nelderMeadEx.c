@@ -115,12 +115,12 @@ static void NelderMeadOptimization(INIT_DATA* initData,
   }
 
   /* check Memory */
-  ASSERT(simplex, "out of memory");
-  ASSERT(fvalues, "out of memory");
-  ASSERT(xr, "out of memory");
-  ASSERT(xe, "out of memory");
-  ASSERT(xk, "out of memory");
-  ASSERT(xbar, "out of memory");
+  assertStreamPrint(0 != simplex, "out of memory");
+  assertStreamPrint(0 != fvalues, "out of memory");
+  assertStreamPrint(0 != xr, "out of memory");
+  assertStreamPrint(0 != xe, "out of memory");
+  assertStreamPrint(0 != xk, "out of memory");
+  assertStreamPrint(0 != xbar, "out of memory");
 
   /* initialize simplex */
   if(initData->nominal)
@@ -214,7 +214,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-      INFO4(LOG_INIT, "lambda is %-3g in step=%6d at f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
+      infoStreamPrint(LOG_INIT, "lambda is %-3g in step=%6d at f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
 
     if(sigma < g)
     {
@@ -224,7 +224,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
         if(lambda > 1.0)
           lambda = 1.0;
 
-        INFO3(LOG_INIT, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
+        infoStreamPrint(LOG_INIT, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
         if(pFile)
         {
           fprintf(pFile, "%ld,", iteration);
@@ -327,10 +327,10 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     else
     {
       /* not possible to be here */
-      WARNING1(LOG_INIT, "fxr = %g", fxr);
-      WARNING1(LOG_INIT, "fxk = %g", fxk);
+      warningStreamPrint(LOG_INIT, "fxr = %g", fxr);
+      warningStreamPrint(LOG_INIT, "fxk = %g", fxk);
 
-      THROW("undefined error in NelderMeadOptimization");
+      throwStreamPrint("undefined error in NelderMeadOptimization");
     }
   }while(1.0);
 
@@ -379,10 +379,10 @@ int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda, long lambda
   long iteration = 0;
   int retVal;
 
-  INFO(LOG_INIT, "NelderMeadOptimization");
+  infoStreamPrint(LOG_INIT, "NelderMeadOptimization");
   INDENT(LOG_INIT);
   NelderMeadOptimization(initData, lambda_steps, STOPCR, NLOOP, ACTIVE_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
-  INFO1(LOG_INIT, "iterations: %ld", iteration);
+  infoStreamPrint(LOG_INIT, "iterations: %ld", iteration);
   RELEASE(LOG_INIT);
 
   if(*lambda < 1.0)
@@ -391,7 +391,7 @@ int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda, long lambda
   retVal = reportResidualValue(initData);
   
   if(0 != retVal)
-    WARNING(LOG_INIT, "try -ils to activate start value homotopy");
+    warningStreamPrint(LOG_INIT, "try -ils to activate start value homotopy");
     
   return retVal;
 }

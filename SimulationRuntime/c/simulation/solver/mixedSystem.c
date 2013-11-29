@@ -65,7 +65,7 @@ int allocatemixedSystem(DATA *data)
       allocateMixedSearchData(size, &system[i].solverData);
       break;
     default:
-      THROW("unrecognized mixed solver");
+      throwStreamPrint("unrecognized mixed solver");
     }
   }
   return 0;
@@ -95,7 +95,7 @@ int freemixedSystem(DATA *data)
       freeMixedSearchData(&system[i].solverData);
       break;
     default:
-      THROW("unrecognized mixed solver");
+      throwStreamPrint("unrecognized mixed solver");
     }
 
     free(system[i].solverData);
@@ -123,7 +123,7 @@ int solve_mixed_system(DATA *data, int sysNumber)
     success = solveMixedSearch(data, sysNumber);
     break;
   default:
-    THROW("unrecognized mixed solver");
+    throwStreamPrint("unrecognized mixed solver");
   }
   system[sysNumber].solved = success;
 
@@ -150,10 +150,10 @@ int check_mixed_solutions(DATA *data, int printFailingSystems)
       retVal = 1;
       if(printFailingSystems)
       {
-        WARNING2(LOG_NLS, "mixed system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).name, data->localData[0]->timeValue);
+        warningStreamPrint(LOG_NLS, "mixed system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).name, data->localData[0]->timeValue);
         INDENT(LOG_NLS);
         for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).numVar; ++j)
-          WARNING2(LOG_NLS, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).vars[j]->name);
+          warningStreamPrint(LOG_NLS, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, system->equationIndex).vars[j]->name);
         RELEASE(LOG_NLS);
       }
     }

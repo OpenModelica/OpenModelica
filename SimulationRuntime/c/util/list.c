@@ -58,7 +58,7 @@ struct LIST
 LIST *allocList(unsigned int itemSize)
 {
   LIST *list = (LIST*)malloc(sizeof(LIST));
-  ASSERT(list, "out of memory");
+  assertStreamPrint(0 != list, "out of memory");
 
   list->first = NULL;
   list->last = NULL;
@@ -80,13 +80,13 @@ void freeList(LIST *list)
 void listPushFront(LIST *list, void *data)
 {
   LIST_NODE *tmpNode = NULL;
-  ASSERT(list, "invalid list-pointer");
+  assertStreamPrint(0 != list, "invalid list-pointer");
 
   tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
-  ASSERT(tmpNode, "out of memory");
+  assertStreamPrint(0 != tmpNode, "out of memory");
 
   tmpNode->data = malloc(list->itemSize);
-  ASSERT(tmpNode->data, "out of memory");
+  assertStreamPrint(0 != tmpNode->data, "out of memory");
 
   memcpy(tmpNode->data, data, list->itemSize);
   tmpNode->next = list->first;
@@ -100,13 +100,13 @@ void listPushFront(LIST *list, void *data)
 void listPushBack(LIST *list, void *data)
 {
   LIST_NODE *tmpNode = NULL;
-  ASSERT(list, "invalid list-pointer");
+  assertStreamPrint(0 != list, "invalid list-pointer");
 
   tmpNode = (LIST_NODE*)malloc(sizeof(LIST_NODE));
-  ASSERT(tmpNode, "out of memory");
+  assertStreamPrint(0 != tmpNode, "out of memory");
 
   tmpNode->data = malloc(list->itemSize);
-  ASSERT(tmpNode->data, "out of memory");
+  assertStreamPrint(0 != tmpNode->data, "out of memory");
 
   memcpy(tmpNode->data, data, list->itemSize);
   tmpNode->next = NULL;
@@ -123,21 +123,21 @@ void listPushBack(LIST *list, void *data)
 
 int listLen(LIST *list)
 {
-  ASSERT(list, "invalid list-pointer");
+  assertStreamPrint(0 != list, "invalid list-pointer");
   return list->length;
 }
 
 void *listFirstData(LIST *list)
 {
-  ASSERT(list, "invalid list-pointer");
-  ASSERT(list->first, "empty list");
+  assertStreamPrint(0 != list, "invalid list-pointer");
+  assertStreamPrint(0 != list->first, "empty list");
   return list->first->data;
 }
 
 void *listLastData(LIST *list)
 {
-  ASSERT(list, "invalid list-pointer");
-  ASSERT(list->last, "empty list");
+  assertStreamPrint(0 != list, "invalid list-pointer");
+  assertStreamPrint(0 != list->last, "empty list");
   return list->last->data;
 }
 
@@ -182,14 +182,14 @@ void listClear(LIST *list)
 
 LIST_NODE *listFirstNode(LIST *list)
 {
-  ASSERT(list, "invalid list-pointer");
-  ASSERT(list->first, "invalid fist list-pointer");
+  assertStreamPrint(0 != list, "invalid list-pointer");
+  assertStreamPrint(0 != list->first, "invalid fist list-pointer");
   return list->first;
 }
 
 LIST_NODE *listNextNode(LIST_NODE *node)
 {
-  ASSERT(node, "invalid list-node");
+  assertStreamPrint(0 != node, "invalid list-node");
   if(node)
     return node->next;
   return NULL;
@@ -197,7 +197,7 @@ LIST_NODE *listNextNode(LIST_NODE *node)
 
 void *listNodeData(LIST_NODE *node)
 {
-  ASSERT(node, "invalid list-node");
-  ASSERT(node->data, "invalid data node");
+  assertStreamPrint(0 != node, "invalid list-node");
+  assertStreamPrint(0 != node->data, "invalid data node");
   return node->data;
 }
