@@ -6379,7 +6379,7 @@ algorithm
         dcrexp = DAE.CALL(Absyn.IDENT("der"),{dcrexp},DAE.callAttrBuiltinReal);
         ((e,_)) = Expression.replaceExp(inExp, dcrexp, Expression.crefExp(dcr));
         ft = getFunctions(iShared);
-        (e_1, shared) = Differentiate.differentiateExpCref(e, dcr, vars, iShared);
+        (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(e, dcr, vars, iShared);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
         (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
@@ -6391,7 +6391,7 @@ algorithm
         v = BackendVariable.getVarAt(vars, vindx);
         cr = BackendVariable.varCref(v);
         ft = getFunctions(iShared);
-        (e_1, shared) = Differentiate.differentiateExpCref(inExp, cr, vars, iShared);
+        (e_1, shared) = Differentiate.differentiateExpCrefFullJacobian(inExp, cr, vars, iShared);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
         (es, shared) = calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp, shared, source, es);
@@ -6980,6 +6980,7 @@ algorithm
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b)))
       then
         ((e,false,(vars,b)));
+
     // found ?
     case ((e as DAE.CREF(componentRef = cr),(vars,_)))
       equation

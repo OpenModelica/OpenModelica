@@ -255,6 +255,46 @@ algorithm
   end matchcontinue;
 end differentiateExpCrefFunction;
 
+
+public function differentiateExpCrefFullJacobian "function: differentiateEquationTime
+  Differentiates an equation with respect to the time variable."
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inVariables;
+  input BackendDAE.Shared ishared;
+  output DAE.Exp outExp;
+  output BackendDAE.Shared oshared;
+algorithm
+  (outExp, oshared) := matchcontinue(inExp, inCref, inVariables, ishared)
+  local
+    String msg;
+    BackendDAE.Shared shared;
+    DAE.Exp dexp;
+    DAE.FunctionTree funcs;
+    BackendDAE.DifferentiateInputData diffData;
+    BackendDAE.Variables knvars;
+    case (_, _, _, _)
+    equation
+      funcs = BackendDAEUtil.getFunctions(ishared);
+      knvars = BackendDAEUtil.getknvars(ishared);
+      diffData = BackendDAE.DIFFINPUTDATA(NONE(), SOME(inVariables), SOME(knvars), NONE(), SOME({}), NONE(), NONE());
+      (dexp, funcs) = differentiateExp(inExp, inCref, diffData, BackendDAE.FULL_JACOBIAN(), funcs);
+      oshared = BackendDAEUtil.addFunctionTree(funcs, ishared);
+      then (dexp, oshared);
+    else
+    equation
+        // expandDerOperator expectes sometime that differentiate fails, 
+        // so the calling function need to take care of the error messages.
+        // TODO: change that in expandDerOperator
+        //Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(DAE.emptyElementSource)); 
+
+        true = Flags.isSet(Flags.FAILTRACE);
+        msg = "\nDifferentiate.differentiateExpTime failed for " +& ExpressionDump.printExpStr(inExp) +& "\n\n";
+        Debug.fprint(Flags.FAILTRACE, msg);
+      then fail();
+      
+  end matchcontinue;
+end differentiateExpCrefFullJacobian;
 // =============================================================================
 // further interface functions to differentiation
 //  - differentiateEquation
@@ -1027,6 +1067,14 @@ algorithm
       then
         (zero, inFunctionTree);
 
+    // D(y)/dx => 0
+    case (DAE.CREF(componentRef = cr, ty = tp), _, _, BackendDAE.FULL_JACOBIAN(), _)
+      equation
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        
+        //print("\nExp-Cref\n d(x)/d(x) = 1");
+      then
+        (zero, inFunctionTree);
     // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs 
     case ((e as DAE.CREF(componentRef = cr, ty = tp)), _, BackendDAE.DIFFINPUTDATA(knownVars=SOME(knvars)), _, _) 
       equation
@@ -1919,7 +1967,8 @@ algorithm
     case (e as DAE.CALL(path = path,expLst = expl,attr=DAE.CALL_ATTR(tuple_=b,builtin=false,isImpure=isImpure,ty=ty,tailCall=tc)), _, _, _, _)
       equation
         //s1 = ExpressionDump.printExpStr(e);
-        //print("\nExp-CALL\n build-funcs force-inline: " +& s1);        
+        //print("\nExp-CALL\n build-funcs force-inline: " +& s1);
+        failure(BackendDAE.FULL_JACOBIAN() = inDiffType);
         (e,_,true) = Inline.forceInlineExp(e,(SOME(inFunctionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource);
         e = Expression.addNoEventToRelations(e);
         (e, functions) = differentiateExp(e, inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
@@ -1932,6 +1981,7 @@ algorithm
         // TODO: FIXIT! expressionSolve and analyticJacobian don't 
         // return  new functionTree, so we can't differentiate functions then.
         failure(BackendDAE.SIMPLE_DIFFERENTAION() = inDiffType);
+        failure(BackendDAE.FULL_JACOBIAN() = inDiffType);
         
         // get algorithm of the function
         SOME(func) = DAEUtil.avlTreeGet(inFunctionTree,path);
