@@ -2108,7 +2108,7 @@ template functionXXX_system0_HPCOM_Level(list<SimEqSystem> derivativEquations, S
   //let odeEqs = "#pragma omp parallel sections\n{"
   let odeEqs = eqsOfLevel |> eq => equationNamesHPCOM_(eq,derivativEquations,contextSimulationNonDiscrete); separator="\n"
   <<
-  #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
+  #pragma omp parallel sections
   {
      <%odeEqs%>
   }
@@ -2121,7 +2121,7 @@ template functionXXX_system0_HPCOM_Thread(list<SimEqSystem> derivativEquations, 
   match iType 
     case ("openmp") then
       <<
-      #pragma omp parallel sections num_threads(<%getConfigInt(NUM_PROC)%>)
+      #pragma omp parallel sections num_threads(<%listLength(threadTasks)%>)
       {
          <%odeEqs%>
       }
