@@ -3867,12 +3867,17 @@ algorithm
       HashSet.HashSet hs;
       DAE.ComponentRef cr;
       DAE.Exp e;
+    case((e as DAE.CREF(componentRef=DAE.WILD()), hs))
+      then
+        inExp;
+
     case((e as DAE.CREF(componentRef=cr), hs))
       equation
         cr = ComponentReference.crefStripLastSubs(cr);
         hs = BaseHashSet.add(cr, hs);
       then
         ((e, hs ));
+    // let WILD pass
     case _ then inExp;
   end match;
 end addUnreplaceableFromEqnsExp;
