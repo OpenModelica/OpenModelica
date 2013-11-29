@@ -56,6 +56,7 @@ protected import ComponentReference;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import Flags;
 protected import GlobalScript;
 protected import HpcOmTaskGraph;
@@ -175,7 +176,6 @@ algorithm
     
       //Setup
       //-----
-      numProc = Flags.getConfigInt(Flags.NUM_PROC);
       System.realtimeTick(GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);  
       (simCode,(lastEqMappingIdx,equationSccMapping)) = SimCodeUtil.createSimCode(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
       (allComps,_) = HpcOmTaskGraph.getSystemComponents(inBackendDAE);
@@ -188,6 +188,8 @@ algorithm
       sccSimEqMapping = convertToSccSimEqMapping(equationSccMapping, listLength(allComps));
       simEqSccMapping = convertToSimEqSccMapping(equationSccMapping, lastEqMappingIdx);
       Debug.execStat("hpcom setup", GlobalScript.RT_CLOCK_EXECSTAT_HPCOM_MODULES);      
+      
+      //dumpSccSimEqMapping(sccSimEqMapping);
 
       //Create TaskGraph
       //----------------
@@ -236,7 +238,9 @@ algorithm
       
       //Create schedule
       //---------------
-      schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix);
+      numProc = Flags.getConfigInt(Flags.NUM_PROC);
+      numProc = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);
+      schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc);
       
       (serTime,parTime,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(schedule,SOME(cpCostsWoC),numProc,taskGraph1,taskGraphData1);
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
@@ -268,6 +272,44 @@ algorithm
     then fail();
   end matchcontinue;
 end createSimCode;
+
+
+protected function setNumProc "sets the number of processors. its upper limit is the number of processsors provided by the system.
+if no n-flag is set, a ideal number is chosen
+author: Waurich TUD 2013-11"
+  input Integer numProcFlag;
+  input Real cpCosts;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  output Integer numProcOut;
+algorithm
+  numProcOut := match(numProcFlag,cpCosts,taskGraphMetaIn)
+    local
+      Integer numProcSys, numProc, numProcSched;
+      Real serCosts, maxSpeedUp;
+      String string1, string2;
+    case(0,_,_)
+      equation
+        serCosts = HpcOmScheduler.getSerialExecutionTime(taskGraphMetaIn);
+        maxSpeedUp = realDiv(serCosts,cpCosts);
+        numProcSched = realInt(realAdd(maxSpeedUp,1.0));
+        numProcSys = System.numProcessors();
+        numProc = intMin(numProcSched,numProcSys);
+        string1 = "Your system provides only"+&intString(numProcSys)+&" processors. You could achieve more speedup with "+&intString(numProcSched)+&"!\n";
+        string2 = "The model is simulated using"+&intString(numProcSched)+&"because thats the ideal number of threads\n";
+        string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);             
+        print(string1);
+      then
+        numProc;
+    else
+      equation
+        numProcSys = System.numProcessors();
+        numProc = Util.if_(intGt(numProcFlag,numProcSys),numProcSys,numProcFlag); // the system does not provide so many cores
+        Debug.bcall(intGt(numProcFlag,numProcSys),print,"Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
+      then
+        numProc;
+  end match;
+end setNumProc;
+
 
 protected function applyFiltersToGraph
   input HpcOmTaskGraph.TaskGraph iTaskGraph;  
@@ -317,59 +359,54 @@ protected function createSchedule
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input array<list<Integer>> iSccSimEqMapping;
   input String iFilenamePrefix;
+  input Integer numProc;
   output HpcOmScheduler.Schedule oSchedule;
 protected
   String flagValue;
-  Integer numProc;
   list<Integer> lst;
   HpcOmTaskGraph.TaskGraph taskGraph1;
   HpcOmTaskGraph.TaskGraphMeta taskGraphMeta1;
 algorithm
-  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix)
-    case(_,_,_,_)
+  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping,iFilenamePrefix,numProc)
+    case(_,_,_,_,_)
       equation
         true = arrayLength(iTaskGraph) == 0;
         print("There is no ODE system that can be parallelized!\n");
         // just did this because this works fine. TODO: make something reasonable here and do not use a scheduler.
       then
         HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "level");
         print("Using level Scheduler\n");
       then HpcOmScheduler.createLevelSchedule(iTaskGraphMeta,iSccSimEqMapping);
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "ext");
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
         print("Using external Scheduler\n");
       then HpcOmScheduler.createExtSchedule(iTaskGraph, iTaskGraphMeta, numProc, iSccSimEqMapping, "taskGraph" +& iFilenamePrefix +& "_ext.graphml");
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "listr");
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
       then HpcOmScheduler.createListScheduleReverse(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "list");
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         true = stringEq(flagValue, "mcp");
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
         print("Using Modified Critical Path Scheduler\n");
       then HpcOmScheduler.createMCPschedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
-    case(_,_,_,_)
+    case(_,_,_,_,_)
       equation
         flagValue = Flags.getConfigString(Flags.HPCOM_SCHEDULER);
         print("HpcOmScheduler.createSchedule warning: The scheduler '" +& flagValue +& "' is unknown. The list-scheduling algorithm is used instead.\n");
-        numProc = Flags.getConfigInt(Flags.NUM_PROC);
       then HpcOmScheduler.createListSchedule(iTaskGraph,iTaskGraphMeta,numProc,iSccSimEqMapping);
     else
       equation
@@ -634,6 +671,7 @@ end removeDummyStateFromMapping1;
 //------------------------------------------
 
 protected function checkOdeSystemSize " compares the size of the ode-taskgraph with the number of ode-equations in the simCode.
+Remark: this can occure when asserts are added to the ode-system.
 author:Waurich TUD 2013-07"
   input HpcOmTaskGraph.TaskGraph taskGraphOdeIn;
   input list<list<SimCode.SimEqSystem>> odeEqsIn;
@@ -791,6 +829,7 @@ algorithm
         comp = listGet(compsIn,compIdx);
         BackendDAE.TORNSYSTEM(tearingvars = tvarIdcs, residualequations = resEqIdcs, otherEqnVarTpl = otherEqnVarTpl, linear = linear) = comp;
         true = linear;
+        print("handle linear torn systems of size: "+&intString(listLength(tvarIdcs)+listLength(otherEqnVarTpl))+&"\n");
            //print("handle tornsystem with compnumber:"+&intString(compIdx)+&"\n");
            //BackendDump.dumpEqSystem(systIn,"the original system");
         // build the new components, the new variables and the new equations
@@ -809,7 +848,7 @@ algorithm
         eqLst = List.fold2(List.intRange(listLength(resEqIdcs)),replaceAtPositionFromList,resEqs,resEqIdcs,eqLst);  // replaces the old residualEquations with the new ones
         vars = BackendVariable.listVar1(varLst);  // !!! BackendVariable.listVar outputs the reversed order therefore listVar1
         eqs = BackendEquation.listEquation(eqLst);      
-        
+        print("number of equations added: "+&intString(listLength(eqLst))+&" and the size of the linear torn system: "+&intString(listLength(tvarIdcs))+&"\n");
         //print("new systemsize:"+&intString(listLength(varLst))+&" vars. and "+&intString(listLength(eqLst))+&" eqs\n");
                 
         // build the matching
@@ -2055,7 +2094,7 @@ algorithm
         (eqLstIn,varLstIn,replIn,false);        
   end matchcontinue;
 end handleConstantSide;
-      
+
 
 protected function checkForAlias "checks if the there are alias variables for the new vars from varLstIn.
 author: Waurich TUD 2013-10"
@@ -2071,13 +2110,15 @@ author: Waurich TUD 2013-10"
   output BackendVarTransform.VariableReplacements replOut;
   output Boolean changedOut;
 algorithm
-  (eqLstOut,varLstOut,replOut,changedOut) := matchcontinue(exp1,exp2,op,eqIdx,eqLstIn,varLstIn,replIn)
+  (eqLstOut,varLstOut,replOut,changedOut) := match(exp1,exp2,op,eqIdx,eqLstIn,varLstIn,replIn)
     local
       Boolean changed;
+      BackendDAE.Variables vars;
       BackendVarTransform.VariableReplacements repl;
       DAE.ComponentRef cref1,cref2;
       list<BackendDAE.Equation> eqLst;
       list<BackendDAE.Var> varLst;
+      DAE.Exp newExp, unaryExp;
     case(_,_,DAE.ADD(_),_,_,_,_)
       equation
         true = Expression.isCref(exp1);
@@ -2094,11 +2135,37 @@ algorithm
         (eqLst,varLst,repl,changed) = checkForPosAlias(exp1,exp2,eqIdx,eqLstIn,varLstIn,replIn);
       then
         (eqLst,varLst,repl,changed);
+    case((DAE.CREF(componentRef = cref1)),_,DAE.DIV(_),_,_,_,_)
+      equation
+        // a/otherVar = 0  replace: a --> 0  
+        vars = BackendVariable.listVar(varLstIn);
+        true = BackendVariable.existsVar(cref1,vars,false);
+        vars = BackendVariable.removeCref(cref1,vars);
+        varLst = BackendVariable.varList(vars);
+        eqLst = listDelete(eqLstIn, eqIdx-1);
+        newExp = DAE.RCONST(0.0);
+        repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
+      then
+        (eqLst,varLst,repl,true);
+    case((DAE.UNARY(operator=_,exp=unaryExp)),_,DAE.DIV(_),_,_,_,_)
+      equation
+        true = Expression.isCref(unaryExp);
+        DAE.CREF(componentRef = cref1) = unaryExp;
+        // a/otherVar = 0  replace: a --> 0  
+        vars = BackendVariable.listVar(varLstIn);
+        true = BackendVariable.existsVar(cref1,vars,false);
+        vars = BackendVariable.removeCref(cref1,vars);
+        varLst = BackendVariable.varList(vars);
+        eqLst = listDelete(eqLstIn, eqIdx-1);
+        newExp = DAE.RCONST(0.0);
+        repl = BackendVarTransform.addReplacement(replIn,cref1,newExp,NONE());
+      then
+        (eqLst,varLst,repl,true);
     else
       equation
       then
         (eqLstIn,varLstIn,replIn,false);
-  end matchcontinue;
+  end match;
 end checkForAlias;
 
 

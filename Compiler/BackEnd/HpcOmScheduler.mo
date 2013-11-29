@@ -2065,7 +2065,7 @@ algorithm
 end predictExecutionTime;
 
 
-protected function getSerialExecutionTime  "computes thes serial execution time by summing up all exeCosts of all tasks.
+public function getSerialExecutionTime  "computes thes serial execution time by summing up all exeCosts of all tasks.
 author:Waurich TUD 2013-11"
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   output Real serialTimeOut;

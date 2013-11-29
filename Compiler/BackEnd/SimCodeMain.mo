@@ -392,7 +392,7 @@ algorithm
       true = Flags.isSet(Flags.HPCOM);
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
-      print("\nWARNING: When using hpcom, you need to set the number of processors with the flag +n= !\n\n");
+      print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
       backendDAE2 = Debug.fcallret3(Flags.PARTLINTORNSYSTEM, HpcOmSimCode.traverseEqSystemsWithIndex, 1,1, inBackendDAE, inBackendDAE);
     then HpcOmSimCode.createSimCode(backendDAE2, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
       

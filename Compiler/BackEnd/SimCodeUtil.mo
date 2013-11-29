@@ -7723,6 +7723,95 @@ algorithm
    end matchcontinue;
 end dumpVar;
 
+
+public function dumpSimEqSystemLst
+  input list<SimCode.SimEqSystem> eqSysLstIn;
+  output String sOut;
+protected
+  list<String> sLst;
+algorithm
+  sLst := List.map(eqSysLstIn,dumpSimEqSystem);
+  sLst := List.map1(sLst,stringAppend,"\n");
+  sOut := List.fold(sLst,stringAppend,"");
+end dumpSimEqSystemLst;
+
+
+public function dumpSimEqSystem "dumps a string of the given SimEqSystem. NOT YET FINISHED.FEEL FREE TO BUILD THE MISSING STRINGS
+author:Waurich TUD 2013-11"
+  input SimCode.SimEqSystem eqSysIn;
+  output String outString;
+algorithm
+  outString := match(eqSysIn)
+    local
+      Boolean partMixed,lin,initCall;
+      Integer idx,idxLS,idxNLS,idxMS;
+      String s;
+      list<String> sLst;
+      DAE.Exp exp,right;
+      DAE.ElementSource source;
+      DAE.ComponentRef cref,left;
+      SimCode.SimEqSystem cont;
+      list<DAE.ComponentRef> crefs,conds;
+      list<DAE.Statement> stmts;
+      list<SimCode.SimEqSystem> elsebranch,discEqs,eqs;
+      list<SimCode.SimVar> vars,discVars;
+      list<DAE.Exp> beqs;
+      list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
+      list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
+      Option<SimCode.JacobianMatrix> jac;
+      Option<SimCode.SimEqSystem> elseWhen;
+      
+    case(SimCode.SES_RESIDUAL(index=idx,exp=exp,source=source))
+      equation
+        s = intString(idx) +&": "+& ExpressionDump.printExpStr(exp)+&" (RESIDUAL)";
+    then (s);
+      
+    case(SimCode.SES_SIMPLE_ASSIGN(index=idx,cref=cref,exp=exp,source=source))
+      equation
+        s = intString(idx) +&": "+& ComponentReference.printComponentRefStr(cref) +& "=" +& ExpressionDump.printExpStr(exp);
+      then (s);
+        
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(index=idx,componentRef=cref,exp=exp,source=source))
+      equation
+        s = intString(idx) +&": "+& ComponentReference.printComponentRefStr(cref) +& "=" +& ExpressionDump.printExpStr(exp);
+    then (s);
+      
+      case(SimCode.SES_IFEQUATION(index=idx,ifbranches=ifbranches,elsebranch=elsebranch,source=source))
+      equation
+        s = intString(idx) +&": "+& " (IF)";
+        print(s);
+    then (s);
+      
+    case(SimCode.SES_ALGORITHM(index=idx,statements=stmts))
+      equation
+        sLst = List.map(stmts,DAEDump.ppStatementStr);
+        sLst = List.map1(sLst, stringAppend, "\n");
+        s = intString(idx) +&": "+& List.fold(sLst,stringAppend,"");
+    then (s);
+      
+    case(SimCode.SES_LINEAR(index=idx,partOfMixed=partMixed,vars=vars,beqs=beqs,simJac=simJac,indexLinearSystem=idxLS))
+      equation
+        s = intString(idx) +&": "+& " (LINEAR)";
+    then (s);
+      
+    case(SimCode.SES_NONLINEAR(index=idx,eqs=eqs,crefs=crefs,indexNonLinearSystem=idxNLS,jacobianMatrix=jac,linearTearing=lin))
+      equation
+        s = intString(idx) +&": "+& " (NONLINEAR)";
+    then (s);
+      
+    case(SimCode.SES_MIXED(index=idx,cont=cont,discVars=discVars,discEqs=discEqs,indexMixedSystem=idxMS))
+      equation
+        s = intString(idx) +&": "+& " (MIXED)";
+    then (s);
+      
+    case(SimCode.SES_WHEN(index=idx,conditions=conds,initialCall=initCall,left=left,right=right,elseWhen=elseWhen,source=source))
+      equation
+        s = intString(idx) +&": "+& " (WHEN)";
+    then (s);
+  end match;
+end dumpSimEqSystem; 
+
+
 protected function isAliasVar
   input SimCode.SimVar var;
   output Boolean res;
