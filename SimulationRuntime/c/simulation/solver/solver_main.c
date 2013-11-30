@@ -524,13 +524,13 @@ int solver_main(DATA* data, const char* init_initMethod,
   case S_LOBATTO2:
   case S_LOBATTO4:
   case S_LOBATTO6:
-    warningStreamPrint(LOG_STDOUT, "Sundial/kinsol is needed but not available. Please choose other solver.");
+    warningStreamPrint(LOG_STDOUT, 0, "Sundial/kinsol is needed but not available. Please choose other solver.");
     return 1;
 #endif
 
 #ifndef WITH_IPOPT
   case S_OPTIMIZATION:
-    warningStreamPrint(LOG_STDOUT, "Ipopt is needed but not available.");
+    warningStreamPrint(LOG_STDOUT, 0, "Ipopt is needed but not available.");
     return 1;
 #endif
     
