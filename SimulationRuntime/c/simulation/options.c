@@ -80,9 +80,8 @@ int checkCommandLineArguments(int argc, char **argv)
     {
       if((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j], 1, argv+i))
       {
-        if(omc_flag[j])
-        {
-          warningStreamPrint(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
+        if(omc_flag[j]) {
+          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
 
@@ -90,18 +89,13 @@ int checkCommandLineArguments(int argc, char **argv)
         found=1;
 
 #ifdef USE_DEBUG_OUTPUT
-        INDENT(LOG_STDOUT);
-        debugStreamPrint(LOG_STDOUT, "-%s", FLAG_NAME[j]);
-        RELEASE(LOG_STDOUT);
+        debugStreamPrint(LOG_STDOUT, 0, "-%s", FLAG_NAME[j]);
 #endif
 
         break;
-      }
-      else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc))
-      {
-        if(omc_flag[j])
-        {
-          warningStreamPrint(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
+      } else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc)) {
+        if(omc_flag[j]) {
+          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
 
@@ -111,18 +105,13 @@ int checkCommandLineArguments(int argc, char **argv)
         found=1;
 
 #ifdef USE_DEBUG_OUTPUT
-        INDENT(LOG_STDOUT);
-        debugStreamPrint(LOG_STDOUT, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
-        RELEASE(LOG_STDOUT);
+        debugStreamPrint(LOG_STDOUT, 0, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
 #endif
 
         break;
-      }
-      else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && optionSet(FLAG_NAME[j], 1, argv+i))
-      {
-        if(omc_flag[j])
-        {
-          warningStreamPrint(LOG_STDOUT, "each command line option can only be used once: %s", argv[i]);
+      } else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && optionSet(FLAG_NAME[j], 1, argv+i)) {
+        if(omc_flag[j]) {
+          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
 
@@ -131,17 +120,14 @@ int checkCommandLineArguments(int argc, char **argv)
         found=1;
 
 #ifdef USE_DEBUG_OUTPUT
-        INDENT(LOG_STDOUT);
-        debugStreamPrint(LOG_STDOUT, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
-        RELEASE(LOG_STDOUT);
+        debugStreamPrint(LOG_STDOUT, 0, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
 #endif
         break;
       }
     }
 
-    if(!found)
-    {
-      warningStreamPrint(LOG_STDOUT, "invalid command line option: %s", argv[i]);
+    if(!found) {
+      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: %s", argv[i]);
       return 1;
     }
   }
@@ -152,10 +138,10 @@ int checkCommandLineArguments(int argc, char **argv)
 static int flagSet(const char *option, int argc, char** argv)
 {
   int i;
-  for(i=0; i<argc; i++)
-  {
-    if((argv[i][0] == '-') && (0 == strcmp(option, argv[i]+1)))
+  for(i=0; i<argc; i++) {
+    if((argv[i][0] == '-') && (0 == strcmp(option, argv[i]+1))) {
       return 1;
+    }
   }
   return 0;
 }
@@ -169,10 +155,10 @@ static int optionSet(const char *option, int argc, char** argv)
 static const char* getOption(const char *option, int argc, char **argv)
 {
   int optLen = strlen(option), i;
-  for(i=0; i<argc; i++)
-  {
-    if((argv[i][0] == '-') && (0 == strncmp(option, argv[i]+1, optLen)) && (argv[i][optLen+1] == '='))
+  for(i=0; i<argc; i++) {
+    if((argv[i][0] == '-') && (0 == strncmp(option, argv[i]+1, optLen)) && (argv[i][optLen+1] == '=')) {
       return argv[i] + optLen + 2;
+    }
   }
   return NULL;
 }
@@ -181,10 +167,10 @@ static const char* getOption(const char *option, int argc, char **argv)
 static const char* getFlagValue(const char *option, int argc, char **argv)
 {
   int i;
-  for(i=0; i<argc; i++)
-  {
-    if((argv[i][0] == '-') && (0 == strcmp(option, argv[i]+1)))
+  for(i=0; i<argc; i++) {
+    if((argv[i][0] == '-') && (0 == strcmp(option, argv[i]+1))) {
       return argv[i+1];
+    }
   }
   return NULL;
 }

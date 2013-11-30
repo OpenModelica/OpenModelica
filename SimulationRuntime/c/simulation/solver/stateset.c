@@ -232,7 +232,7 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
       unsigned int firstrealid = data->modelData.realVarsData[0].info.id;
       unsigned int id = statecandidates[col]->id-firstrealid;
       unsigned int sid = states[row]->id-firstrealid;
-      infoStreamPrint(LOG_DSS, "select %s", statecandidates[col]->name);
+      infoStreamPrint(LOG_DSS, 0, "select %s", statecandidates[col]->name);
       /* set A[row, col] */
       A[row + col * nStates] = 1;
       /* reinit state */
@@ -279,10 +279,9 @@ static int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, 
     {
       if(switchStates)
       {
-        infoStreamPrint(LOG_DSS, "select new states at time %f", data->localData[0]->timeValue);
-        INDENT(LOG_DSS);
+        infoStreamPrint(LOG_DSS, 1, "select new states at time %f", data->localData[0]->timeValue);
         setAMatrix(newEnable, nCandidates, nStates, A, states, statecandidates, data);
-        RELEASE(LOG_DSS);
+        if (ACTIVE_STREAM(LOG_DSS)) messageClose(LOG_DSS);
       }
       ret = -1;
       break;
@@ -329,19 +328,18 @@ int stateSelection(DATA *data, char reportError, int switchStates)
       /* error, report the matrix and the time */
       char buffer[4096];
 
-      warningStreamPrint(LOG_DSS, "jacobian %dx%d [id: %ld]", data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
-      INDENT(LOG_DSS);
+      warningStreamPrint(LOG_DSS, 1, "jacobian %dx%d [id: %ld]", data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
       for(i=0; i < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows; i++)
       {
         buffer[0] = 0;
         for(j=0; j < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols; j++)
           sprintf(buffer, "%s%.5e ", buffer, set->J[i*data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols+j]);
-        warningStreamPrint(LOG_DSS, "%s", buffer);
+        warningStreamPrint(LOG_DSS, 0, "%s", buffer);
       }
 
       for(i=0; i<set->nCandidates; i++)
-        warningStreamPrint(LOG_DSS, "%s", set->statescandidates[i]->name);
-      RELEASE(LOG_DSS);
+        warningStreamPrint(LOG_DSS, 0, "%s", set->statescandidates[i]->name);
+      messageClose(LOG_DSS);
 
       throwStreamPrint("Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSS_JAC to get the Jacobian", data->localData[0]->timeValue);
     }

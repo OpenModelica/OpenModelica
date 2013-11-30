@@ -179,17 +179,16 @@ void omc_terminate_function(FILE_INFO info, const char *msg, ...)
 static void printEscapedXML(const char *msg)
 {
   while (*msg) {
-    if (*msg == '&') puts("&amp;");
-    else if (*msg == '<') puts("&lt;");
-    else if (*msg == '>') puts("&gt;");
+    if (*msg == '&') fputs("&amp;", stdout);
+    else if (*msg == '<') fputs("&lt;", stdout);
+    else if (*msg == '>') fputs("&gt;", stdout);
     else fputc(*msg, stdout);
     msg++;
   }
 }
 
-void Message(int type, int stream, char *msg, int subline)
+void messageText(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
 {
-#if 1
   int i;
 
   printf("%-17s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_NAME[stream]);
@@ -206,53 +205,100 @@ void Message(int type, int stream, char *msg, int subline)
     {
       msg[i] = '\0';
       printf("%s\n", msg);
-      Message(type, stream, &msg[i+1], 1);
+      messageText(type, stream, 0, &msg[i+1], 1, indexes);
       return;
     }
   }
 
   printf("%s\n", msg);
   fflush(NULL);
-#else
+  if (indentNext) level[stream]++;
+}
+
+void messageXML(int type, int stream, int indentNext, char *msg, int subline, const int *indexes)
+{
   int i;
 
-  printf("<message stream=\"%s\" type=\"%s\">", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
+  printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
   printEscapedXML(msg);
-  printf("</message>\n");
+  if (indexes) {
+    printf("\">");
+    for (i=1; i<=*indexes; i++) {
+      printf("<used index=\"%d\" />", indexes[i]);
+    }
+    printf("</message>\n");
+  } else {
+    fputs(indentNext ? "\">\n" : "\" />\n", stdout);
+  }
   fflush(stdout);
-#endif
+}
+
+static void messageCloseText(int stream)
+{
+  level[stream]--;
+}
+
+static void messageCloseXML(int stream)
+{
+  fputs("</message>\n", stdout);
+  fflush(stdout);
+}
+
+static void (*messageFunction)(int type, int stream, int indentNext, char *msg, int subline, const int *indexes) = messageText;
+void (*messageClose)(int stream) = messageCloseText;
+
+void setStreamPrintXML(int isXML)
+{
+  if (isXML) {
+    messageFunction = messageXML;
+    messageClose = messageCloseXML;
+  } else {
+    messageFunction = messageText;
+    messageClose = messageCloseText;
+  }
 }
 
 #define SIZE_LOG_BUFFER 2048
-void infoStreamPrint(int stream, const char *format, ...)
+void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
 {
   if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    Message(LOG_TYPE_INFO, stream, logBuffer, 0);
+    messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, indexes);
   }
 }
 
-void warningStreamPrint(int stream, const char *format, ...)
+void infoStreamPrint(int stream, int indentNext, const char *format, ...)
 {
-  if (showAllWarnings || useStream[stream]) {
+  if (useStream[stream]) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    Message(LOG_TYPE_WARNING, stream, logBuffer, 0);
+    messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, NULL);
   }
 }
 
-void errorStreamPrint(int stream, const char *format, ...)
+void warningStreamPrint(int stream, int indentNext, const char *format, ...)
+{
+  if (ACTIVE_WARNING_STREAM(stream)) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, NULL);
+  }
+}
+
+void errorStreamPrint(int stream, int indentNext, const char *format, ...)
 {
   char logBuffer[SIZE_LOG_BUFFER];
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  Message(LOG_TYPE_ERROR, stream, logBuffer, 0);
+  messageFunction(LOG_TYPE_ERROR, stream, indentNext, logBuffer, 0, NULL);
 }
 
 void assertStreamPrint(int cond, const char *format, ...)
@@ -262,19 +308,19 @@ void assertStreamPrint(int cond, const char *format, ...)
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    Message(LOG_TYPE_ASSERT, LOG_ASSERT, logBuffer, 0);
+    messageFunction(LOG_TYPE_ASSERT, LOG_ASSERT, 0, logBuffer, 0, NULL);
   }
 }
 
 #ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int cond, const char *format, ...)
+void debugStreamPrint(int cond, int indentNext, const char *format, ...)
 {
   if (!cond) {
     char logBuffer[SIZE_LOG_BUFFER];
     va_list args;
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    Message(LOG_TYPE_DEBUG, LOG_ASSERT, logBuffer, 0);
+    messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, indentNext, logBuffer, 0, NULL);
     longjmp(globalJmpbuf, 1);
   }
 }
@@ -286,6 +332,6 @@ void throwStreamPrint(const char *format, ...)
   va_list args;
   va_start(args, format);
   vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-  Message(LOG_TYPE_DEBUG, LOG_ASSERT, logBuffer, 0);
+  messageFunction(LOG_TYPE_DEBUG, LOG_ASSERT, 0, logBuffer, 0, NULL);
   longjmp(globalJmpbuf, 1);
 }

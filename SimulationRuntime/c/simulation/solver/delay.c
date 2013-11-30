@@ -63,18 +63,18 @@ static int findTime(double time, RINGBUFFER *delayStruct)
   double t;
 
 
-  infoStreamPrint(LOG_EVENTS, "findTime %e", time);
+  infoStreamPrint(LOG_EVENTS, 0, "findTime %e", time);
   do
   {
     int i = (start + end) / 2;
     t = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
-    infoStreamPrint(LOG_EVENTS, "time(%d, %d)[%d] = %e", start, end, i, t);
+    infoStreamPrint(LOG_EVENTS, 0, "time(%d, %d)[%d] = %e", start, end, i, t);
     if(t > time)
       end = i;
     else
       start = i;
   }while(t != time && end > start + 1);
-  infoStreamPrint(LOG_EVENTS, "return time[%d, %d] = %e", start, end, t);
+  infoStreamPrint(LOG_EVENTS, 0, "return time[%d, %d] = %e", start, end, t);
   return (start);
 }
 
@@ -91,13 +91,13 @@ void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double
   tpl.t = time;
   tpl.value = exprValue;
   appendRingData(data->simulationInfo.delayStructure[exprNumber], &tpl);
-  infoStreamPrint(LOG_EVENTS, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo.delayStructure[exprNumber]));
+  infoStreamPrint(LOG_EVENTS, 0, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo.delayStructure[exprNumber]));
 
   /* dequeue not longer needed values */
   i = findTime(time-delayMax+DBL_EPSILON,data->simulationInfo.delayStructure[exprNumber]);
   if(i > 0){
     dequeueNFirstRingDatas(data->simulationInfo.delayStructure[exprNumber], i-1);
-    infoStreamPrint(LOG_EVENTS, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, time-delayMax+DBL_EPSILON, delayTime);
+    infoStreamPrint(LOG_EVENTS, 0, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, time-delayMax+DBL_EPSILON, delayTime);
   }
 }
 
@@ -107,7 +107,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
   RINGBUFFER* delayStruct = data->simulationInfo.delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);
 
-  infoStreamPrint(LOG_EVENTS, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
+  infoStreamPrint(LOG_EVENTS, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
 
   /* Check for errors */
 
@@ -116,20 +116,19 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
 
   if(time <= data->simulationInfo.tStart)
   {
-    infoStreamPrint(LOG_EVENTS, "delayImpl: Entered at time < starting time: %g.", exprValue);
+    infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Entered at time < starting time: %g.", exprValue);
     return (exprValue);
   }
 
   if(delayTime < 0.0)
   {
-    assertStreamPrint(0.0 < delayTime, "Negative delay requested: delayTime = %g", delayTime);
-    throwStreamPrint("Negative delay requested");
+    throwStreamPrint("Negative delay requested %g", delayTime);
   }
 
   if(length == 0)
   {
     /*  This occurs in the initialization phase */
-    infoStreamPrint(LOG_EVENTS, "delayImpl: Missing initial value, using argument value %g instead.", exprValue);
+    infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Missing initial value, using argument value %g instead.", exprValue);
     return (exprValue);
   }
 
@@ -146,7 +145,7 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
   if(time <= data->simulationInfo.tStart + delayTime)
   {
     double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
-    infoStreamPrint(LOG_EVENTS, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);
+    infoStreamPrint(LOG_EVENTS, 0, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);
     return res;
   }
   else
@@ -156,19 +155,19 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     double time0, time1, value0, value1;
     int i;
 
-    assertStreamPrint(0.0 <= delayTime, "Negative delay requested: delayTime = %g", delayTime);
+    assertStreamPrint(0.0 <= delayTime, 0, "Negative delay requested: delayTime = %g", delayTime);
 
     /* find the row for the lower limit */
     if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t)
     {
-      infoStreamPrint(LOG_EVENTS, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t);
+      infoStreamPrint(LOG_EVENTS, 0, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t);
       /* delay between the last accepted time step and the current time */
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->value;
       time1 = time;
       value1 = exprValue;
-      infoStreamPrint(LOG_EVENTS, "delayImpl: times %g and %g", time0, time1);
-      infoStreamPrint(LOG_EVENTS, "delayImpl: values %g and  %g", value0, value1);
+      infoStreamPrint(LOG_EVENTS, 0, "delayImpl: times %g and %g", time0, time1);
+      infoStreamPrint(LOG_EVENTS, 0, "delayImpl: values %g and  %g", value0, value1);
     }
     else
     {
@@ -187,11 +186,11 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     }
     /* was it an exact match?*/
     if(time0 == timeStamp){
-      infoStreamPrint(LOG_EVENTS, "delayImpl: Exact match at %g = %g", timeStamp, value0);
+      infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Exact match at %g = %g", timeStamp, value0);
 
       return value0;
     } else if(time1 == timeStamp) {
-      infoStreamPrint(LOG_EVENTS, "delayImpl: Exact match at %g = %g", timeStamp, value1);
+      infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Exact match at %g = %g", timeStamp, value1);
 
       return value1;
     } else {
@@ -200,8 +199,8 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
       double dt0 = time1 - timeStamp;
       double dt1 = timeStamp - time0;
       double retVal = (value0 * dt0 + value1 * dt1) / timedif;
-      infoStreamPrint(LOG_EVENTS, "delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
-      infoStreamPrint(LOG_EVENTS, "delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
+      infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
+      infoStreamPrint(LOG_EVENTS, 0, "delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
       return retVal;
     }
   }

@@ -84,9 +84,9 @@ void initSample(DATA* data, double startTime, double stopTime)
   }
 
   if(stopTime < data->simulationInfo.nextSampleEvent) {
-    debugStreamPrint(LOG_EVENTS, "there are no sample-events");
+    debugStreamPrint(LOG_EVENTS, 0, "there are no sample-events");
   } else {
-    debugStreamPrint(LOG_EVENTS, "first sample-event at t = %g", data->simulationInfo.nextSampleEvent);
+    debugStreamPrint(LOG_EVENTS, 0, "first sample-event at t = %g", data->simulationInfo.nextSampleEvent);
   }
 }
 
@@ -126,29 +126,29 @@ int checkForStateEvent(DATA* data, LIST *eventList)
 {
   long i=0;
 
-  debugStreamPrint(LOG_EVENTS, "check state-event zerocrossing at time %g",  data->localData[0]->timeValue);
-  INDENT(LOG_EVENTS);
+  debugStreamPrint(LOG_EVENTS, 1, "check state-event zerocrossing at time %g",  data->localData[0]->timeValue);
 
   for(i=0; i<data->modelData.nZeroCrossings; i++)
   {
-    debugStreamPrint(LOG_EVENTS, "%s", data->callback->zeroCrossingDescription(i));
-    INDENT(LOG_EVENTS);
-    if((data->simulationInfo.zeroCrossings[i] == 1 && data->simulationInfo.zeroCrossingsPre[i] == -1) ||
-       (data->simulationInfo.zeroCrossings[i] == -1 && data->simulationInfo.zeroCrossingsPre[i] == 1))
-    {
-      debugStreamPrint(LOG_EVENTS, "changed:   %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0) ? "TRUE" : "FALSE", (data->simulationInfo.zeroCrossings[i]>0) ? "TRUE" : "FALSE");
-      listPushFront(eventList, &(data->simulationInfo.zeroCrossingIndex[i]));
-    }
-    else
-    {
-      debugStreamPrint(LOG_EVENTS, "unchanged: %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0) ? "TRUE" : "FALSE", (data->simulationInfo.zeroCrossings[i]>0) ? "TRUE" : "FALSE");
-    }
-    RELEASE(LOG_EVENTS);
-  }
-  RELEASE(LOG_EVENTS);
+    const int *eq_indexes;
+    const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
+    debugStreamPrintWithEquationIndexes(LOG_EVENTS, 1, eq_indexes, "%s", exp_str);
 
-  if(listLen(eventList) > 0)
+    if((data->simulationInfo.zeroCrossings[i] == 1 && data->simulationInfo.zeroCrossingsPre[i] == -1) ||
+       (data->simulationInfo.zeroCrossings[i] == -1 && data->simulationInfo.zeroCrossingsPre[i] == 1)) {
+      debugStreamPrint(LOG_EVENTS, 0, "changed:   %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0) ? "TRUE" : "FALSE", (data->simulationInfo.zeroCrossings[i]>0) ? "TRUE" : "FALSE");
+      listPushFront(eventList, &(data->simulationInfo.zeroCrossingIndex[i]));
+    } else {
+      debugStreamPrint(LOG_EVENTS, 0, "unchanged: %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0) ? "TRUE" : "FALSE", (data->simulationInfo.zeroCrossings[i]>0) ? "TRUE" : "FALSE");
+    }
+  }
+  if (DEBUG_STREAM(LOG_EVENTS)) {
+    messageClose(LOG_EVENTS);
+  }
+
+  if(listLen(eventList) > 0) {
     return 1;
+  }
   return 0;
 }
 
@@ -208,7 +208,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
       if(data->simulationInfo.nextSampleTimes[i] <= time + eps)
       {
         data->simulationInfo.samples[i] = 1;
-        infoStreamPrint(LOG_EVENTS, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
+        infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
       }
   }
 
@@ -218,8 +218,14 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
     data->localData[0]->timeValue = *eventTime;
     /* time = data->localData[0]->timeValue; */
 
-    for(it = listFirstNode(eventLst); it; it = listNextNode(it))
-      infoStreamPrint(LOG_EVENTS, "[%ld] %s", *((long*) listNodeData(it)), data->callback->zeroCrossingDescription(*((long*) listNodeData(it))));
+    if (useStream[LOG_EVENTS]) {
+      for(it = listFirstNode(eventLst); it; it = listNextNode(it)) {
+        long ix = *((long*) listNodeData(it));
+        const int *eq_indexes;
+        const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
+        infoStreamPrintWithEquationIndexes(LOG_EVENTS, 0, eq_indexes, "[%ld] %s", ix, exp_str);
+      }
+    }
 
     listClear(eventLst);
     solverInfo->stateEvents++;
@@ -249,9 +255,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
 
     data->simulationInfo.sampleActivated = 0;
 
-    INDENT(LOG_EVENTS);
-    debugStreamPrint(LOG_EVENTS, "next sample-event at t = %g", data->simulationInfo.nextSampleEvent);
-    RELEASE(LOG_EVENTS);
+    debugStreamPrint(LOG_EVENTS, 0, "next sample-event at t = %g", data->simulationInfo.nextSampleEvent);
 
     solverInfo->sampleEvents++;
   }
@@ -283,12 +287,9 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   assert(states_right);
   assert(states_left);
 
-  INDENT(LOG_ZEROCROSSINGS);
-  for(it=listFirstNode(eventList); it; it=listNextNode(it))
-  {
-    infoStreamPrint(LOG_ZEROCROSSINGS, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
+  for(it=listFirstNode(eventList); it; it=listNextNode(it)) {
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "search for current event. Events in list: %ld", *((long*)listNodeData(it)));
   }
-  RELEASE(LOG_ZEROCROSSINGS);
 
   /* write states to work arrays */
   for(i=0; i < data->modelData.nStates; i++)
@@ -310,50 +311,40 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
         value = fvalue;
       }
     }
-    infoStreamPrint(LOG_ZEROCROSSINGS, "Minimum value: %e", value);
+    infoStreamPrint(LOG_ZEROCROSSINGS, 0, "Minimum value: %e", value);
     for(it = listFirstNode(eventList); it; it = listNextNode(it))
     {
       if(value == fabs(data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]))
       {
         listPushBack(tmpEventList, listNodeData(it));
-        infoStreamPrint(LOG_ZEROCROSSINGS, "added tmp event : %ld", *((long*) listNodeData(it)));
+        infoStreamPrint(LOG_ZEROCROSSINGS, 0, "added tmp event : %ld", *((long*) listNodeData(it)));
       }
     }
   }
 
   listClear(eventList);
 
-  if(ACTIVE_STREAM(LOG_EVENTS))
-  {
-    if(listLen(tmpEventList) > 0)
-    {
-      debugStreamPrint(LOG_EVENTS, "found events: ");
-    }
-    else
-    {
-      debugStreamPrint(LOG_EVENTS, "found event: ");
+  if(ACTIVE_STREAM(LOG_EVENTS)) {
+    if(listLen(tmpEventList) > 0) {
+      debugStreamPrint(LOG_EVENTS, 0, "found events: ");
+    } else {
+      debugStreamPrint(LOG_EVENTS, 0, "found event: ");
     }
   }
-  while(listLen(tmpEventList) > 0)
-  {
+  while(listLen(tmpEventList) > 0) {
     event_id = *((long*)listFirstData(tmpEventList));
     listPopFront(tmpEventList);
 
-    infoStreamPrint(LOG_EVENTS, "%ld ", event_id);
-
-    if(listLen(tmpEventList) > 0)
-      debugStreamPrint(LOG_EVENTS, ", ");
+    infoStreamPrint(LOG_EVENTS, 0, "%ld ", event_id);
 
     listPushFront(eventList, &event_id);
   }
-  debugStreamPrint(LOG_EVENTS, "\n");
 
   *eventTime = time_right;
-  debugStreamPrint(LOG_EVENTS, "time: %.10e", *eventTime);
+  debugStreamPrint(LOG_EVENTS, 0, "time: %.10e", *eventTime);
 
   data->localData[0]->timeValue = time_left;
-  for(i=0; i < data->modelData.nStates; i++)
-  {
+  for(i=0; i < data->modelData.nStates; i++) {
     data->localData[0]->realVars[i] = states_left[i];
   }
 
@@ -401,8 +392,8 @@ double bisection(DATA* data, double* a, double* b, double* states_a, double* sta
     backup_gout[i] = data->simulationInfo.zeroCrossings[i];
   }
 
-  infoStreamPrint(LOG_ZEROCROSSINGS, "bisection method starts in interval [%e, %e]", *a, *b);
-  infoStreamPrint(LOG_ZEROCROSSINGS, "TTOL is set to: %e", TTOL);
+  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection method starts in interval [%e, %e]", *a, *b);
+  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "TTOL is set to: %e", TTOL);
 
   while(fabs(*b - *a) > TTOL)
   {
@@ -474,7 +465,7 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
   LIST_NODE *it;
 
   listClear(tmpEventList);
-  infoStreamPrint(LOG_ZEROCROSSINGS, "bisection checks for condition changes");
+  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "bisection checks for condition changes");
 
   for(it = listFirstNode(eventList); it; it = listNextNode(it))
   {
@@ -484,7 +475,7 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
        (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == 1 &&
         data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
     {
-      infoStreamPrint(LOG_ZEROCROSSINGS, "%ld changed from %s to current %s",
+      infoStreamPrint(LOG_ZEROCROSSINGS, 0, "%ld changed from %s to current %s",
             *((long*) listNodeData(it)),
             (data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE",
             (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]>0) ? "TRUE" : "FALSE");
@@ -507,7 +498,7 @@ void saveZeroCrossingsAfterEvent(DATA *data)
 {
   long i=0;
 
-  infoStreamPrint(LOG_ZEROCROSSINGS, "save all zerocrossings after an event"); /* ??? */
+  infoStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event"); /* ??? */
 
   data->callback->function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
   for(i=0; i<data->modelData.nZeroCrossings; i++)

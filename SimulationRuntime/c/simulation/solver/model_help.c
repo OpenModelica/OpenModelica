@@ -72,7 +72,7 @@ void updateDiscreteSystem(DATA *data)
    */
 
   data->callback->functionDAE(data);
-  debugStreamPrint(LOG_EVENTS_V, "updated discrete System");
+  debugStreamPrint(LOG_EVENTS_V, 0, "updated discrete System");
 
   printRelations(data, LOG_EVENTS_V);
 
@@ -81,11 +81,11 @@ void updateDiscreteSystem(DATA *data)
   while(!initial() && (discreteChanged || data->simulationInfo.needToIterate || relationChanged))
   {
     if(data->simulationInfo.needToIterate)
-      debugStreamPrint(LOG_EVENTS_V, "reinit() call. Iteration needed!");
+      debugStreamPrint(LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
     if(relationChanged)
-      debugStreamPrint(LOG_EVENTS_V, "relations changed. Iteration needed.");
+      debugStreamPrint(LOG_EVENTS_V, 0, "relations changed. Iteration needed.");
     if(discreteChanged)
-      debugStreamPrint(LOG_EVENTS_V, "discrete Variable changed. Iteration needed.");
+      debugStreamPrint(LOG_EVENTS_V, 0, "discrete Variable changed. Iteration needed.");
 
     storePreValues(data);
     storeRelations(data);
@@ -140,7 +140,7 @@ void saveZeroCrossings(DATA* data)
 {
   long i = 0;
 
-  debugStreamPrint(LOG_ZEROCROSSINGS, "save all zerocrossings"); /* ??? */
+  debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zerocrossings"); /* ??? */
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
@@ -179,46 +179,47 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  infoStreamPrint(stream, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-  INDENT(stream);
+  if (!ACTIVE_STREAM(stream)) return;
 
-  infoStreamPrint(stream, "states variables");
-  INDENT(stream);
-  for(i=0; i<mData->nStates; ++i)
-    infoStreamPrint(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
 
-  infoStreamPrint(stream, "derivatives variables");
-  INDENT(stream);
-  for(i=mData->nStates; i<2*mData->nStates; ++i)
-    infoStreamPrint(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "states variables");
+  for(i=0; i<mData->nStates; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  }
+  messageClose(stream);
 
-  infoStreamPrint(stream, "other real values");
-  INDENT(stream);
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-    infoStreamPrint(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "derivatives variables");
+  for(i=mData->nStates; i<2*mData->nStates; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  }
+  messageClose(stream);
 
-  infoStreamPrint(stream, "integer variables");
-  INDENT(stream);
-  for(i=0; i<mData->nVariablesInteger; ++i)
-    infoStreamPrint(stream, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "other real values");
+  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
+  }
+  messageClose(stream);
 
-  infoStreamPrint(stream, "boolean variables");
-  INDENT(stream);
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-    infoStreamPrint(stream, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "integer variables");
+  for(i=0; i<mData->nVariablesInteger; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+  }
+  messageClose(stream);
 
-  infoStreamPrint(stream, "string variables");
-  INDENT(stream);
-  for(i=0; i<mData->nVariablesString; ++i)
-    infoStreamPrint(stream, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "boolean variables");
+  for(i=0; i<mData->nVariablesBoolean; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
+  }
+  messageClose(stream);
 
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "string variables");
+  for(i=0; i<mData->nVariablesString; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
+  }
+  messageClose(stream);
+
+  messageClose(stream);
 }
 
 #ifdef USE_DEBUG_OUTPUT
@@ -292,34 +293,35 @@ void printParameters(DATA *data, int stream)
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  infoStreamPrint(stream, "parameter values");
-  INDENT(stream);
+  if (!ACTIVE_STREAM(stream)) return;
 
-  infoStreamPrint(stream, "real parameters");
-  INDENT(stream);
-  for(i=0; i<mData->nParametersReal; ++i)
-    infoStreamPrint(stream, "%ld: %s = %g", i+1, mData->realParameterData[i].info.name, data->simulationInfo.realParameter[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "parameter values");
 
-  infoStreamPrint(stream, "integer parameters");
-  INDENT(stream);
-  for(i=0; i<mData->nParametersInteger; ++i)
-    infoStreamPrint(stream, "%ld: %s = %ld", i+1, mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "real parameters");
+  for(i=0; i<mData->nParametersReal; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %g", i+1, mData->realParameterData[i].info.name, data->simulationInfo.realParameter[i]);
+  }
+  messageClose(stream);
 
-  infoStreamPrint(stream, "boolean parameters");
-  INDENT(stream);
-  for(i=0; i<mData->nParametersBoolean; ++i)
-    infoStreamPrint(stream, "%ld: %s = %s", i+1, mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i] ? "true" : "false");
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "integer parameters");
+  for(i=0; i<mData->nParametersInteger; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %ld", i+1, mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
+  }
+  messageClose(stream);
 
-  infoStreamPrint(stream, "string parameters");
-  INDENT(stream);
-  for(i=0; i<mData->nParametersString; ++i)
-    infoStreamPrint(stream, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "boolean parameters");
+  for(i=0; i<mData->nParametersBoolean; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %s", i+1, mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i] ? "true" : "false");
+  }
+  messageClose(stream);
 
-  RELEASE(stream);
+  infoStreamPrint(stream, 1, "string parameters");
+  for(i=0; i<mData->nParametersString; ++i) {
+    infoStreamPrint(stream, 0, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
+  }
+  messageClose(stream);
+
+  messageClose(stream);
 }
 
 #ifdef USE_DEBUG_OUTPUT
@@ -355,13 +357,13 @@ void printRelations(DATA *data, int stream)
 {
   long i;
 
-  infoStreamPrint(stream, "status of relations");
-  INDENT(stream);
+  if (!ACTIVE_STREAM(stream)) return;
+  infoStreamPrint(stream, 1, "status of relations");
 
-  for(i=0; i<data->modelData.nRelations; i++)
-    infoStreamPrint(stream, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
-
-  RELEASE(stream);
+  for(i=0; i<data->modelData.nRelations; i++) {
+    infoStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+  }
+  messageClose(stream);
 }
 
 /*! \fn overwriteOldSimulationData
@@ -433,22 +435,22 @@ void setAllVarsToStart(DATA *data)
   for(i=0; i<mData->nVariablesReal; ++i)
   {
     sData->realVars[i] = mData->realVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
     sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    debugStreamPrint(LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
   for(i=0; i<mData->nVariablesString; ++i)
   {
     sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
 
@@ -466,29 +468,30 @@ void setAllStartToVars(DATA *data)
   MODEL_DATA      *mData = &(data->modelData);
   long i;
 
-  debugStreamPrint(LOG_DEBUG, "the start-attribute of all variables to their current values:");
-  INDENT(LOG_DEBUG);
+  debugStreamPrint(LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
   for(i=0; i<mData->nVariablesReal; ++i)
   {
     mData->realVarsData[i].attribute.start = sData->realVars[i];
-    debugStreamPrint(LOG_DEBUG, "Real var %s(start=%g)", mData->realVarsData[i].info.name, sData->realVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "Real var %s(start=%g)", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     mData->integerVarsData[i].attribute.start = sData->integerVars[i];
-    debugStreamPrint(LOG_DEBUG, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
     mData->booleanVarsData[i].attribute.start = sData->booleanVars[i];
-    debugStreamPrint(LOG_DEBUG, "Boolean var %s(start=%s)", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    debugStreamPrint(LOG_DEBUG, 0, "Boolean var %s(start=%s)", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
   for(i=0; i<mData->nVariablesString; ++i)
   {
     mData->stringVarsData[i].attribute.start = sData->stringVars[i];
-    debugStreamPrint(LOG_DEBUG, "String var %s(start=%s)", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
-  RELEASE(LOG_DEBUG);
+  if (ACTIVE_STREAM(LOG_DEBUG)) {
+    messageClose(LOG_DEBUG);
+  }
 }
 
 /*! \fn setAllParamsToStart
@@ -508,22 +511,22 @@ void setAllParamsToStart(DATA *data)
   for(i=0; i<mData->nParametersReal; ++i)
   {
     sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
     sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    debugStreamPrint(LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, "set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
+    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
 
@@ -642,13 +645,14 @@ void printHysteresisRelations(DATA *data)
 {
   long i;
 
-  infoStreamPrint(LOG_STDOUT, "Status of hysteresisEnabled:");
-  INDENT(LOG_STDOUT);
-  for(i=0; i<data->modelData.nRelations; i++)
-  {
-    infoStreamPrint(LOG_STDOUT, "[%ld] %s = %c | relation(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.hysteresisEnabled[i]>0 ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F');
+  if (ACTIVE_STREAM(LOG_STDOUT)) {
+    infoStreamPrint(LOG_STDOUT, 1, "Status of hysteresisEnabled:");
+    for(i=0; i<data->modelData.nRelations; i++)
+    {
+      infoStreamPrint(LOG_STDOUT, 0, "[%ld] %s = %c | relation(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo.hysteresisEnabled[i]>0 ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo.relations[i] ? 'T' : 'F');
+    }
+    messageClose(LOG_STDOUT);
   }
-  RELEASE(LOG_STDOUT);
 }
 
 /*! \fn activateHysteresis
@@ -702,7 +706,7 @@ void updateHysteresis(DATA* data){
 double getNextSampleTimeFMU(DATA *data)
 {
   if(0 < data->modelData.nSamples){
-    infoStreamPrint(LOG_EVENTS, "Next event time = %f", data->simulationInfo.nextSampleEvent);
+    infoStreamPrint(LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo.nextSampleEvent);
     return data->simulationInfo.nextSampleEvent;
   }
 
@@ -998,7 +1002,7 @@ static double tolZC = 1e-10;
 void setZCtol(double relativeTol)
 {
   tolZC = 1e-4*relativeTol;
-  infoStreamPrint(LOG_EVENTS_V, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
+  infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 }
 
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)

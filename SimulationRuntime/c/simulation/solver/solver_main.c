@@ -164,7 +164,7 @@ int initializeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   {
     /* Initial DASSL solver */
     DASSL_DATA* dasslData = (DASSL_DATA*) malloc(sizeof(DASSL_DATA));
-    infoStreamPrint(LOG_SOLVER, "Initializing DASSL");
+    infoStreamPrint(LOG_SOLVER, 0, "Initializing DASSL");
     retValue = dasrt_initial(data, solverInfo, dasslData);
     solverInfo->solverData = dasslData;
   }
@@ -355,7 +355,7 @@ int initializeModel(DATA* data, const char* init_initMethod,
   /* try */
   if(!setjmp(simulationJmpbuf)) {
     if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time, lambda_steps)) {
-      warningStreamPrint(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
+      warningStreamPrint(LOG_STDOUT, 0, "Error in initialization. Storing results and exiting.\nUse -lv=LOG_INIT -w for more information.");
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
     }
@@ -369,12 +369,12 @@ int initializeModel(DATA* data, const char* init_initMethod,
     saveZeroCrossings(data);
   } else { /* catch */
     retValue =  -1;
-    infoStreamPrint(LOG_STDOUT, "model terminate | Simulation terminated by an assert at initialization");
+    infoStreamPrint(LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at initialization");
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result.writeParameterData(&sim_result,data);
-  infoStreamPrint(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
+  infoStreamPrint(LOG_SOLVER, 0, "Wrote parameters to the file after initialization (for output formats that support this)");
   if (ACTIVE_STREAM(LOG_DEBUG)) {
     printParameters(data, LOG_DEBUG);
   }
@@ -407,11 +407,9 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
   if(solverInfo->currentTime >= simInfo->stopTime && solverInfo->solverMethod != S_OPTIMIZATION)
   {
 
-    infoStreamPrint(LOG_EVENTS_V, "terminal event at stop time %g", solverInfo->currentTime);
+    infoStreamPrint(LOG_EVENTS_V, 0, "terminal event at stop time %g", solverInfo->currentTime);
     data->simulationInfo.terminal = 1;
-    INDENT(LOG_EVENTS_V);
     updateDiscreteSystem(data);
-    RELEASE(LOG_EVENTS_V);
     
     /* prevent emit if noeventemit flag is used */
     if (!(omc_flag[FLAG_NOEVENTEMIT]))
@@ -432,54 +430,51 @@ int finishSimulation(DATA* data, SOLVER_INFO* solverInfo, const char* outputVari
     char * contextRun;
     rt_accumulate(SIM_TIMER_TOTAL);
 
-    infoStreamPrint(LOG_STATS, "### STATISTICS ###");
+    infoStreamPrint(LOG_STATS, 0, "### STATISTICS ###");
 
-    infoStreamPrint(LOG_STATS, "timer");
-    INDENT(LOG_STATS);
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] pre-initialization", rt_accumulated(SIM_TIMER_PREINIT), rt_accumulated(SIM_TIMER_PREINIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] initialization", rt_accumulated(SIM_TIMER_INIT), rt_accumulated(SIM_TIMER_INIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] steps", rt_accumulated(SIM_TIMER_STEP), rt_accumulated(SIM_TIMER_STEP)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    infoStreamPrint(LOG_STATS, 1, "timer");
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] pre-initialization", rt_accumulated(SIM_TIMER_PREINIT), rt_accumulated(SIM_TIMER_PREINIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] initialization", rt_accumulated(SIM_TIMER_INIT), rt_accumulated(SIM_TIMER_INIT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] steps", rt_accumulated(SIM_TIMER_STEP), rt_accumulated(SIM_TIMER_STEP)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
 
     if(solverInfo->solverMethod != S_OPTIMIZATION)
       contextRun = "simulation";
     else
       contextRun = "optimization";
 
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] %s", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0, contextRun);
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] %s", rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT), (rt_accumulated(SIM_TIMER_TOTAL)-rt_accumulated(SIM_TIMER_OVERHEAD)-rt_accumulated(SIM_TIMER_EVENT)-rt_accumulated(SIM_TIMER_OUTPUT)-rt_accumulated(SIM_TIMER_STEP)-rt_accumulated(SIM_TIMER_INIT)-rt_accumulated(SIM_TIMER_PREINIT))/rt_accumulated(SIM_TIMER_TOTAL)*100.0, contextRun);
 
-    infoStreamPrint(LOG_STATS, "%12gs [%5.1f%%] total", rt_accumulated(SIM_TIMER_TOTAL), rt_accumulated(SIM_TIMER_TOTAL)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    RELEASE(LOG_STATS);
+    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] total", rt_accumulated(SIM_TIMER_TOTAL), rt_accumulated(SIM_TIMER_TOTAL)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
+    messageClose(LOG_STATS);
     
-    infoStreamPrint(LOG_STATS, "events");
-    INDENT(LOG_STATS);
-    infoStreamPrint(LOG_STATS, "%5ld state events", solverInfo->stateEvents);
-    infoStreamPrint(LOG_STATS, "%5ld time events", solverInfo->sampleEvents);
-    RELEASE(LOG_STATS);
+    infoStreamPrint(LOG_STATS, 1, "events");
+    infoStreamPrint(LOG_STATS, 0, "%5ld state events", solverInfo->stateEvents);
+    infoStreamPrint(LOG_STATS, 0, "%5ld time events", solverInfo->sampleEvents);
+    messageClose(LOG_STATS);
 
-    infoStreamPrint(LOG_STATS, "solver");
-    INDENT(LOG_STATS);
+    infoStreamPrint(LOG_STATS, 1, "solver");
     if(solverInfo->solverMethod == 3) /* dassl */
     {
       /* save dassl stats before print */
       for(ui = 0; ui < numStatistics; ui++)
         ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo->solverData)->dasslStatisticsTmp[ui];
 
-      infoStreamPrint(LOG_STATS, "%5d steps taken", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[0]);
-      infoStreamPrint(LOG_STATS, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[1]);
-      infoStreamPrint(LOG_STATS, "%5d evaluations of jacobian", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[2]);
-      infoStreamPrint(LOG_STATS, "%5d error test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[3]);
-      infoStreamPrint(LOG_STATS, "%5d convergence test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[4]);
+      infoStreamPrint(LOG_STATS, 0, "%5d steps taken", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[0]);
+      infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[1]);
+      infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[2]);
+      infoStreamPrint(LOG_STATS, 0, "%5d error test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[3]);
+      infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", ((DASSL_DATA*)solverInfo->solverData)->dasslStatistics[4]);
     }
     else if(solverInfo->solverMethod != S_OPTIMIZATION)
     {
-      infoStreamPrint(LOG_STATS, "sorry - no solver statistics available. [not yet implemented]");
+      infoStreamPrint(LOG_STATS, 0, "sorry - no solver statistics available. [not yet implemented]");
     }
-    RELEASE(LOG_STATS);
+    messageClose(LOG_STATS);
 
-    infoStreamPrint(LOG_STATS, "### END STATISTICS ###");
+    infoStreamPrint(LOG_STATS, 0, "### END STATISTICS ###");
 
     rt_tick(SIM_TIMER_TOTAL);
   }
@@ -543,7 +538,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   case S_INLINE_EULER:
     if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-euler"))
     {
-      infoStreamPrint(LOG_SOLVER, "Recognized solver: inline-euler, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.");
+      infoStreamPrint(LOG_SOLVER, 0, "Recognized solver: inline-euler, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.");
       return 1;
     }
     break;
@@ -551,7 +546,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   case S_INLINE_RUNGEKUTTA:
     if(!_omc_force_solver || strcmp(_omc_force_solver, "inline-rungekutta"))
     {
-      infoStreamPrint(LOG_SOLVER, "Recognized solver: inline-rungekutta, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.");
+      infoStreamPrint(LOG_SOLVER, 0, "Recognized solver: inline-rungekutta, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.");
       return 1;
     }
     solverInfo.solverMethod = S_INLINE_EULER;
@@ -578,7 +573,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       overwriteOldSimulationData(data);
     }
 
-    infoStreamPrint(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
+    infoStreamPrint(LOG_SOLVER, 0, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
     retVal = data->callback->performSimulation(data, &solverInfo);
     omc_alloc_interface.collect_a_little();
     /* terminate the simulation */

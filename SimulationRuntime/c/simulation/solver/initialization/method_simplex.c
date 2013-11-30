@@ -162,33 +162,33 @@ int simplex_initialization(INIT_DATA* initData)
   }
   else
   {
-    infoStreamPrint(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
+    infoStreamPrint(LOG_INIT, 0, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
   funcValue = leastSquareWithLambda(initData, 1.0);
-  infoStreamPrint(LOG_INIT, "leastSquare=%g", funcValue);
+  infoStreamPrint(LOG_INIT, 0, "leastSquare=%g", funcValue);
 
   if(IFAULT == 1)
   {
     if(SIMP < funcValue)
     {
-      warningStreamPrint(LOG_INIT, "Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
+      warningStreamPrint(LOG_INIT, 0, "Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
       return -1;
     }
   }
   else if(IFAULT == 2)
   {
-    warningStreamPrint(LOG_INIT, "Error in initialization. Inconsistent initial conditions.");
+    warningStreamPrint(LOG_INIT, 0, "Error in initialization. Inconsistent initial conditions.");
     return -2;
   }
   else if(IFAULT == 3)
   {
-    warningStreamPrint(LOG_INIT, "Error in initialization. Number of initial values to calculate < 1");
+    warningStreamPrint(LOG_INIT, 0, "Error in initialization. Number of initial values to calculate < 1");
     return -3;
   }
   else if(IFAULT == 4)
   {
-    warningStreamPrint(LOG_INIT, "Error in initialization. Internal error, NLOOP < 1.");
+    warningStreamPrint(LOG_INIT, 0, "Error in initialization. Internal error, NLOOP < 1.");
     return -4;
   }
   return reportResidualValue(initData);

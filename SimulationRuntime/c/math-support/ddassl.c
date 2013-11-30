@@ -3751,41 +3751,38 @@ L100:
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if(ipar[1])
     {
-      char *buffer = NULL;
       nrow = npdm1;
       i__1 = *neq;
       i__2 = *neq;
-      buffer = (char*)malloc(20*(*neq)*sizeof(char));
-      
-      infoStreamPrint(LOG_JAC, "at point in time: %g", *x);
-      INDENT(LOG_JAC);
-      
-      infoStreamPrint(LOG_JAC, "cj: %g", *cj);
-      infoStreamPrint(LOG_JAC, "states");
-      INDENT(LOG_JAC);
-      for(k=0;k<*neq;k++)
-      {
-        infoStreamPrint(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
-      }
-      RELEASE(LOG_JAC);
-
-      infoStreamPrint(LOG_JAC, "analytical Jacobian");
-      INDENT(LOG_JAC);
-      for(i__ = 1; i__ <= i__1; ++i__)
-      {
-        wm[nrow+i__] += *cj;
-        sprintf(buffer, "%c", '\0');
-        for(l = 1; l <= i__2; ++l)
+      if (ACTIVE_STREAM(LOG_JAC)) {
+        char *buffer = (char*)malloc(20*(*neq)*sizeof(char));
+        infoStreamPrint(LOG_JAC, 1, "at point in time: %g", *x);
+        
+        infoStreamPrint(LOG_JAC, 0, "cj: %g", *cj);
+        infoStreamPrint(LOG_JAC, 1, "states");
+        for(k=0;k<*neq;k++)
         {
-          sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
+          infoStreamPrint(LOG_JAC, 0, "[%ld] %g", (long) k+1, y[k+1]);
         }
-        infoStreamPrint(LOG_JAC, "%s", buffer);
-        wm[nrow+i__] -= *cj;
-        nrow += *neq;
+        messageClose(LOG_JAC);
+
+        infoStreamPrint(LOG_JAC, 1, "analytical Jacobian");
+        for(i__ = 1; i__ <= i__1; ++i__)
+        {
+          wm[nrow+i__] += *cj;
+          sprintf(buffer, "%c", '\0');
+          for(l = 1; l <= i__2; ++l)
+          {
+            sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
+          }
+          infoStreamPrint(LOG_JAC, 0, "%s", buffer);
+          wm[nrow+i__] -= *cj;
+          nrow += *neq;
+        }
+        messageClose(LOG_JAC);
+        messageClose(LOG_JAC);
+        free(buffer);
       }
-      RELEASE(LOG_JAC);
-      RELEASE(LOG_JAC);
-      free(buffer);
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
@@ -3831,41 +3828,38 @@ L200:
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
     if(ipar[1])
     {
-      char *buffer = NULL;
       nrow = npdm1;
       i__1 = *neq;
       i__2 = *neq;
-      buffer = (char*)malloc(20*(*neq)*sizeof(char));
       
-      infoStreamPrint(LOG_JAC, "at point in time: %g", *x);
-      INDENT(LOG_JAC);
-      
-      infoStreamPrint(LOG_JAC, "cj: %g", *cj);
-      infoStreamPrint(LOG_JAC, "states");
-      INDENT(LOG_JAC);
-      for(k=0;k<*neq;k++)
-      {
-        infoStreamPrint(LOG_JAC, "[%ld] %g", (long) k+1, y[k+1]);
-      }
-      RELEASE(LOG_JAC);
-
-      infoStreamPrint(LOG_JAC, "numerical Jacobian");
-      INDENT(LOG_JAC);
-      for(i__ = 1; i__ <= i__1; ++i__)
-      {
-        wm[nrow+i__] += *cj;
-        sprintf(buffer, "%c", '\0');
-        for(l = 1; l <= i__2; ++l)
+      if (ACTIVE_STREAM(LOG_JAC)) {
+        char *buffer = (char*)malloc(20*(*neq)*sizeof(char));
+        infoStreamPrint(LOG_JAC, 1, "at point in time: %g", *x);
+        infoStreamPrint(LOG_JAC, 0, "cj: %g", *cj);
+        infoStreamPrint(LOG_JAC, 1, "states");
+        for(k=0;k<*neq;k++)
         {
-          sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
+          infoStreamPrint(LOG_JAC, 0, "[%ld] %g", (long) k+1, y[k+1]);
         }
-        infoStreamPrint(LOG_JAC, "%s", buffer);
-        wm[nrow+i__] -= *cj;
-        nrow += *neq;
+        messageClose(LOG_JAC);
+
+        infoStreamPrint(LOG_JAC, 1, "numerical Jacobian");
+        for(i__ = 1; i__ <= i__1; ++i__)
+        {
+          wm[nrow+i__] += *cj;
+          sprintf(buffer, "%c", '\0');
+          for(l = 1; l <= i__2; ++l)
+          {
+            sprintf(buffer, "%s%g ", buffer, wm[nrow + l]);
+          }
+          infoStreamPrint(LOG_JAC, 0, "%s", buffer);
+          wm[nrow+i__] -= *cj;
+          nrow += *neq;
+        }
+        messageClose(LOG_JAC);
+        messageClose(LOG_JAC);
+        free(buffer);
       }
-      RELEASE(LOG_JAC);
-      RELEASE(LOG_JAC);
-      free(buffer);
     }
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 

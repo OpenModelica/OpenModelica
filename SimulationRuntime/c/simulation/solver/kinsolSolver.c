@@ -81,12 +81,11 @@
     NLS_KINSOL_DATA *kinsolData;
 
     if (useStream[LOG_NLS]) {
-      infoStreamPrint(LOG_NLS, "allocate memory for %s", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name);
-      INDENT(LOG_NLS);
+      infoStreamPrint(LOG_NLS, 1, "allocate memory for %s", modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).name);
       for(i=0; i<size; ++i) {
-        infoStreamPrint(LOG_NLS, "[%d] %s", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name);
+        infoStreamPrint(LOG_NLS, 0, "[%d] %s", i+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml,eqSystemNumber).vars[i]->name);
       }
-      RELEASE(LOG_NLS);
+      messageClose(LOG_NLS);
     }
 
     /* allocate system data */
@@ -155,13 +154,12 @@
 
     if(ACTIVE_STREAM(LOG_NLS))
     {
-      warningStreamPrint(LOG_NLS, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name);
-      INDENT(LOG_NLS);
+      warningStreamPrint(LOG_NLS, 1, "kinsol failed for %s", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name);
 
-      warningStreamPrint(LOG_NLS, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
-      warningStreamPrint(LOG_NLS, "%s", msg);
+      warningStreamPrint(LOG_NLS, 0, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+      warningStreamPrint(LOG_NLS, 0, "%s", msg);
 
-      RELEASE(LOG_NLS);
+      messageClose(LOG_NLS);
     }
   }
 
@@ -254,19 +252,18 @@
     KINDlsGetNumFuncEvals(kmem, &nfeD);
 
     /* solution */
-    infoStreamPrint(LOG_NLS, "solution for %s at t=%g", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name, kinsolData->data->localData[0]->timeValue);
-    INDENT(LOG_NLS);
+    infoStreamPrint(LOG_NLS, 1, "solution for %s at t=%g", modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).name, kinsolData->data->localData[0]->timeValue);
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      infoStreamPrint(LOG_NLS, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  kinsolData->nlsData->nlsx[i]);
+      infoStreamPrint(LOG_NLS, 0, "[%ld] %s = %g", i+1, modelInfoXmlGetEquation(&kinsolData->data->modelData.modelDataXml,eqSystemNumber).vars[i]->name,  kinsolData->nlsData->nlsx[i]);
     }
 
-    infoStreamPrint(LOG_NLS, "KINGetNumNonlinSolvIters = %5ld", nni);
-    infoStreamPrint(LOG_NLS, "KINGetNumFuncEvals       = %5ld", nfe);
-    infoStreamPrint(LOG_NLS, "KINDlsGetNumJacEvals     = %5ld", nje);
-    infoStreamPrint(LOG_NLS, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
-    RELEASE(LOG_NLS);
+    infoStreamPrint(LOG_NLS, 0, "KINGetNumNonlinSolvIters = %5ld", nni);
+    infoStreamPrint(LOG_NLS, 0, "KINGetNumFuncEvals       = %5ld", nfe);
+    infoStreamPrint(LOG_NLS, 0, "KINDlsGetNumJacEvals     = %5ld", nje);
+    infoStreamPrint(LOG_NLS, 0, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
+    if (ACTIVE_STREAM(LOG_NLS)) messageClose(LOG_NLS);
 
     /* free memory */
     N_VDestroy_Serial(z);
@@ -279,23 +276,23 @@
     {
       if(error_code == KIN_LINESEARCH_NONCONV)
       {
-        warningStreamPrint(LOG_NLS, "kinsol failed. The linesearch algorithm was unable to find an iterate sufficiently distinct from the current iterate.");
+        warningStreamPrint(LOG_NLS, 0, "kinsol failed. The linesearch algorithm was unable to find an iterate sufficiently distinct from the current iterate.");
         return 0;
       }
       else if(error_code == KIN_MAXITER_REACHED)
       {
-        warningStreamPrint(LOG_NLS, "kinsol failed. The maximum number of nonlinear iterations has been reached.");
+        warningStreamPrint(LOG_NLS, 0, "kinsol failed. The maximum number of nonlinear iterations has been reached.");
         return 0;
       }
       else if(error_code < 0)
       {
-        warningStreamPrint(LOG_NLS, "kinsol failed [error_code=%d]", error_code);
+        warningStreamPrint(LOG_NLS, 0, "kinsol failed [error_code=%d]", error_code);
         return 0;
       }
     }
     else if(error_code < 0)
     {
-      warningStreamPrint(LOG_STDOUT, "kinsol failed. Use [-lv LOG_NLS] for more output.");
+      warningStreamPrint(LOG_STDOUT, 0, "kinsol failed. Use [-lv LOG_NLS] for more output.");
       return 0;
     }
 

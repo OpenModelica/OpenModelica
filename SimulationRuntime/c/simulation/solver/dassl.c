@@ -134,13 +134,16 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   }
 
   if(dasslData->dasslMethod == DASSL_UNKNOWN) {
-    warningStreamPrint(LOG_SOLVER, "unrecognized solver method %s", simInfo->solverMethod);
-    warningStreamPrint(LOG_SOLVER, "current options are:");
-    for(i=1; i < DASSL_MAX; ++i)
-      warningStreamPrint(LOG_SOLVER, "  %-15s [%s]", dasslMethodStr[i], dasslMethodStrDescStr[i]);
-    throwStreamPrint("see last warning");
+    if (ACTIVE_WARNING_STREAM(LOG_SOLVER)) {
+      warningStreamPrint(LOG_SOLVER, 1, "unrecognized solver method %s, current options are:", simInfo->solverMethod);
+      for(i=1; i < DASSL_MAX; ++i) {
+        warningStreamPrint(LOG_SOLVER, 0, "  %-15s [%s]", dasslMethodStr[i], dasslMethodStrDescStr[i]);
+      }
+      messageClose(LOG_SOLVER);
+    }
+    throwStreamPrint("unrecognized dassl solver method %s", simInfo->solverMethod);
   } else {
-    infoStreamPrint(LOG_SOLVER, "| solver | Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
+    infoStreamPrint(LOG_SOLVER, 0, "| solver | Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
   }
 
 
@@ -193,10 +196,11 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
       dasslData->dasslMethod == DASSL_TEST){
     if (simData->callback->initialAnalyticJacobianA(simData)){
       /* TODO: check that the one states is dummy */
-      if(simData->modelData.nStates == 1)
-        infoStreamPrint(LOG_SOLVER,"No SparsePattern, since there are no states! Switch back to normal.");
-      else
-        infoStreamPrint(LOG_STDOUT,"Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+      if(simData->modelData.nStates == 1) {
+        infoStreamPrint(LOG_SOLVER, 0, "No SparsePattern, since there are no states! Switch back to normal.");
+      } else {
+        infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+      }
       dasslData->dasslMethod = DASSL_INTERNALNUMJAC;
     }else{
       dasslData->info[4] = 1; /* use sub-routine JAC */
@@ -257,7 +261,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   /* If an event is triggered and processed restart dassl. */
   if(solverInfo->didEventStep)
   {
-    debugStreamPrint(LOG_EVENTS_V, "Event-management forced reset of DDASRT");
+    debugStreamPrint(LOG_EVENTS_V, 0, "Event-management forced reset of DDASRT");
     /* obtain reset */
     dasslData->info[0] = 0;
     dasslData->idid = 0;
@@ -279,8 +283,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
    * else will dassl get in trouble. If that is the case we skip the current step. */
   if(solverInfo->currentTime - tout >= -1e-13)
   {
-    infoStreamPrint(LOG_DDASRT, "Desired step to small try next one");
-    infoStreamPrint(LOG_DDASRT, "Interpolate linear");
+    infoStreamPrint(LOG_DDASRT, 0, "Desired step to small try next one");
+    infoStreamPrint(LOG_DDASRT, 0, "Interpolate linear");
 
     for(i = 0; i < simData->modelData.nStates; i++)
     {
@@ -294,10 +298,10 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     return retVal;
   }
 
-  infoStreamPrint(LOG_DDASRT, "Calling DDASRT from %.15g to %.15g", solverInfo->currentTime, tout);
+  infoStreamPrint(LOG_DDASRT, 0, "Calling DDASRT from %.15g to %.15g", solverInfo->currentTime, tout);
   do
   {
-    infoStreamPrint(LOG_SOLVER, "Start step %.15g to %.15g", solverInfo->currentTime, tout);
+    infoStreamPrint(LOG_SOLVER, 0, "Start step %.15g to %.15g", solverInfo->currentTime, tout);
     if(dasslData->idid == 1)
     {
       /* rotate RingBuffer before step is calculated */
@@ -367,15 +371,15 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     if(dasslData->idid == -1) {
       fflush(stderr);
       fflush(stdout);
-      warningStreamPrint(LOG_DDASRT, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
-      infoStreamPrint(LOG_DDASRT, "DASSL will try again...");
+      warningStreamPrint(LOG_DDASRT, 0, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
+      infoStreamPrint(LOG_DDASRT, 0, "DASSL will try again...");
       dasslData->info[0] = 1; /* try again */
     } else if(dasslData->idid < 0) {
       fflush(stderr);
       fflush(stdout);
       retVal = continue_DASRT(&dasslData->idid, &simData->simulationInfo.tolerance);
       simData->callback->functionODE(simData);
-      warningStreamPrint(LOG_STDOUT, "can't continue. time = %f", sData->timeValue);
+      warningStreamPrint(LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
       return retVal;
     } else if(dasslData->idid == 4) {
       currectJumpState = ERROR_EVENTSEARCH;
@@ -387,19 +391,18 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   sData->timeValue = solverInfo->currentTime;
 
   if(ACTIVE_STREAM(LOG_DDASRT)) {
-    infoStreamPrint(LOG_DDASRT, "dassl call staistics: ");
-    INDENT(LOG_DDASRT);
-    infoStreamPrint(LOG_DDASRT, "value of idid: %d", (int)dasslData->idid);
-    infoStreamPrint(LOG_DDASRT, "current time value: %0.4g", solverInfo->currentTime);
-    infoStreamPrint(LOG_DDASRT, "current integration time value: %0.4g", dasslData->rwork[3]);
-    infoStreamPrint(LOG_DDASRT, "step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
-    infoStreamPrint(LOG_DDASRT, "step size used on last successful step: %0.4g", dasslData->rwork[6]);
-    infoStreamPrint(LOG_DDASRT, "number of steps taken so far: %d", (int)dasslData->iwork[10]);
-    infoStreamPrint(LOG_DDASRT, "number of calls of functionODE() : %d", (int)dasslData->iwork[11]);
-    infoStreamPrint(LOG_DDASRT, "number of calculation of jacobian : %d", (int)dasslData->iwork[12]);
-    infoStreamPrint(LOG_DDASRT, "total number of convergence test failures: %d", (int)dasslData->iwork[13]);
-    infoStreamPrint(LOG_DDASRT, "total number of error test failures: %d", (int)dasslData->iwork[14]);
-    RELEASE(LOG_DDASRT);
+    infoStreamPrint(LOG_DDASRT, 1, "dassl call staistics: ");
+    infoStreamPrint(LOG_DDASRT, 0, "value of idid: %d", (int)dasslData->idid);
+    infoStreamPrint(LOG_DDASRT, 0, "current time value: %0.4g", solverInfo->currentTime);
+    infoStreamPrint(LOG_DDASRT, 0, "current integration time value: %0.4g", dasslData->rwork[3]);
+    infoStreamPrint(LOG_DDASRT, 0, "step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
+    infoStreamPrint(LOG_DDASRT, 0, "step size used on last successful step: %0.4g", dasslData->rwork[6]);
+    infoStreamPrint(LOG_DDASRT, 0, "number of steps taken so far: %d", (int)dasslData->iwork[10]);
+    infoStreamPrint(LOG_DDASRT, 0, "number of calls of functionODE() : %d", (int)dasslData->iwork[11]);
+    infoStreamPrint(LOG_DDASRT, 0, "number of calculation of jacobian : %d", (int)dasslData->iwork[12]);
+    infoStreamPrint(LOG_DDASRT, 0, "total number of convergence test failures: %d", (int)dasslData->iwork[13]);
+    infoStreamPrint(LOG_DDASRT, 0, "total number of error test failures: %d", (int)dasslData->iwork[14]);
+    messageClose(LOG_DDASRT);
   }
 
   /* save dassl stats */
@@ -408,7 +411,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     dasslData->dasslStatisticsTmp[ui] = dasslData->iwork[10 + ui];
   }
 
-  infoStreamPrint(LOG_DDASRT, "Finished DDASRT step.");
+  infoStreamPrint(LOG_DDASRT, 0, "Finished DDASRT step.");
 
   return retVal;
 }
@@ -426,11 +429,11 @@ continue_DASRT(fortran_integer* idid, double* atol)
     /* 1-4 means success */
     break;
   case -1:
-    warningStreamPrint(LOG_DDASRT, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
+    warningStreamPrint(LOG_DDASRT, 0, "A large amount of work has been expended.(About 500 steps). Trying to continue ...");
     retValue = 1; /* adrpo: try to continue */
     break;
   case -2:
-    warningStreamPrint(LOG_STDOUT, "The error tolerances are too stringent");
+    warningStreamPrint(LOG_STDOUT, 0, "The error tolerances are too stringent");
     retValue = -2;
     break;
   case -3:
@@ -439,35 +442,35 @@ continue_DASRT(fortran_integer* idid, double* atol)
     retValue = -3;
     break;
   case -6:
-    warningStreamPrint(LOG_STDOUT, "DDASSL had repeated error test failures on the last attempted step.");
+    warningStreamPrint(LOG_STDOUT, 0, "DDASSL had repeated error test failures on the last attempted step.");
     retValue = -6;
     break;
   case -7:
-    warningStreamPrint(LOG_STDOUT, "The corrector could not converge.");
+    warningStreamPrint(LOG_STDOUT, 0, "The corrector could not converge.");
     retValue = -7;
     break;
   case -8:
-    warningStreamPrint(LOG_STDOUT, "The matrix of partial derivatives is singular.");
+    warningStreamPrint(LOG_STDOUT, 0, "The matrix of partial derivatives is singular.");
     retValue = -8;
     break;
   case -9:
-    warningStreamPrint(LOG_STDOUT, "The corrector could not converge. There were repeated error test failures in this step.");
+    warningStreamPrint(LOG_STDOUT, 0, "The corrector could not converge. There were repeated error test failures in this step.");
     retValue = -9;
     break;
   case -10:
-    warningStreamPrint(LOG_STDOUT, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_DDASRT");
+    warningStreamPrint(LOG_STDOUT, 0, "A Modelica assert prevents the integrator to continue. For more information use -lv LOG_DDASRT");
     retValue = -10;
     break;
   case -11:
-    warningStreamPrint(LOG_STDOUT, "IRES equal to -2 was encountered and control is being returned to the calling program.");
+    warningStreamPrint(LOG_STDOUT, 0, "IRES equal to -2 was encountered and control is being returned to the calling program.");
     retValue = -11;
     break;
   case -12:
-    warningStreamPrint(LOG_STDOUT, "DDASSL failed to compute the initial YPRIME.");
+    warningStreamPrint(LOG_STDOUT, 0, "DDASSL failed to compute the initial YPRIME.");
     retValue = -12;
     break;
   case -33:
-    warningStreamPrint(LOG_STDOUT, "The code has encountered trouble from which it cannot recover.");
+    warningStreamPrint(LOG_STDOUT, 0, "The code has encountered trouble from which it cannot recover.");
     retValue = -33;
     break;
   }

@@ -283,8 +283,9 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 #else
   plotCommands = popen("gnuplot", "w");
 #endif
-  if(!plotCommands)
-    warningStreamPrint(LOG_UTIL, "Plots of profiling data were disabled: %s\n", strerror(errno));
+  if (!plotCommands) {
+    warningStreamPrint(LOG_UTIL, 0, "Plots of profiling data were disabled: %s\n", strerror(errno));
+  }
 
   assertStreamPrint(0 != fout, "Failed to open %s: %s\n", filename, strerror(errno));
 
@@ -308,13 +309,13 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   ]>\n");
   if(time(&t) < 0)
   {
-    warningStreamPrint(LOG_UTIL, "time() failed: %s", strerror(errno));
+    warningStreamPrint(LOG_UTIL, 0, "time() failed: %s", strerror(errno));
     fclose(fout);
     return 1;
   }
   if(!strftime(buf, 250, "%Y-%m-%d %H:%M:%S", localtime(&t)))
   {
-    warningStreamPrint(LOG_UTIL, "strftime() failed");
+    warningStreamPrint(LOG_UTIL, 0, "strftime() failed");
     fclose(fout);
     return 1;
   }
@@ -405,12 +406,12 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
 #endif
       fclose(plotCommands);
       if(0 != system(buf)) {
-        warningStreamPrint(LOG_UTIL, "Plot command failed: %s\n", buf);
+        warningStreamPrint(LOG_UTIL, 0, "Plot command failed: %s\n", buf);
       }
     }
 #else
     if(0 != pclose(plotCommands)) {
-      warningStreamPrint(LOG_UTIL, "Warning: Plot command failed\n");
+      warningStreamPrint(LOG_UTIL, 0, "Warning: Plot command failed\n");
     }
 #endif
     if(omhome)
@@ -435,9 +436,9 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     }
     if(genHtmlRes)
     {
-      warningStreamPrint(LOG_STDOUT, "Failed to generate html version of profiling results: %s\n", buf);
+      warningStreamPrint(LOG_STDOUT, 0, "Failed to generate html version of profiling results: %s\n", buf);
     }
-    infoStreamPrint(LOG_STDOUT, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);
+    infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData.modelFilePrefix, data->modelData.modelFilePrefix);
     free(buf);
   }
   return 0;

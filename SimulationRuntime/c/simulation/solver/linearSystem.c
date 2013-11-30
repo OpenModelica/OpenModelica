@@ -162,13 +162,12 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
     if(linsys[i].solved == 0)
     {
       retVal = 1;
-      if(printFailingSystems)
+      if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_LS))
       {
-        warningStreamPrint(LOG_LS, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).name, data->localData[0]->timeValue);
-        INDENT(LOG_LS);
+        warningStreamPrint(LOG_LS, 1, "linear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).name, data->localData[0]->timeValue);
         for(j=0; j<modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).numVar; ++j)
-          warningStreamPrint(LOG_LS, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
-        RELEASE(LOG_LS);
+          warningStreamPrint(LOG_LS, 0, "[%d] %s", j+1, modelInfoXmlGetEquation(&data->modelData.modelDataXml, linsys->equationIndex).vars[j]->name);
+        messageClose(LOG_LS);
       }
     }
 

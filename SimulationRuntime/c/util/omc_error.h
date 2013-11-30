@@ -135,12 +135,10 @@ extern int lastStream;
 extern int showAllWarnings;
 extern char logBuffer[2048];
 
-void Message(int type, int stream, char *msg, int subline);
+void setStreamPrintXML(int isXML);
 
-#define INDENT(stream)           do{level[stream]++;}while(0)
-#define RELEASE(stream)          do{level[stream]--; if(level[stream] < 0) level[stream] = 0;}while(0)
-#define RESET_INDENTION(stream)  do{level[stream] = 0;}while(0)
 #define ACTIVE_STREAM(stream)    (useStream[stream])
+#define ACTIVE_WARNING_STREAM(stream)    (showAllWarnings || useStream[stream])
 
 #ifdef USE_DEBUG_OUTPUT
   #define DEBUG_STREAM(stream)    (useStream[stream])
@@ -148,17 +146,22 @@ void Message(int type, int stream, char *msg, int subline);
   #define DEBUG_STREAM(stream)    (0)
 #endif
 
-extern void infoStreamPrint(int stream, const char *format, ...) __attribute__ ((format (printf, 2, 3)));;
-extern void warningStreamPrint(int stream, const char *format, ...) __attribute__ ((format (printf, 2, 3)));;
-extern void errorStreamPrint(int stream, const char *format, ...) __attribute__ ((format (printf, 2, 3)));;
-extern void assertStreamPrint(int cond, const char *format, ...) __attribute__ ((format (printf, 2, 3)));;
-extern void throwStreamPrint(const char *format, ...) __attribute__ ((format (printf, 1, 2)));;
+extern void (*messageClose)(int stream);
+extern void infoStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+extern void infoStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
+extern void warningStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+extern void errorStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+extern void assertStreamPrint(int cond, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+extern void throwStreamPrint(const char *format, ...) __attribute__ ((format (printf, 1, 2), noreturn));
 
 #ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int stream, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
 #else
-static OMC_INLINE void debugStreamPrint(int stream, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
-static OMC_INLINE void debugStreamPrint(int stream, const char *format, ...) {/* Do nothing */}
+static OMC_INLINE void debugStreamPrint(int stream, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
+static OMC_INLINE void debugStreamPrint(int stream, int indentNext, const char *format, ...) {/* Do nothing */}
+static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 4, 5)));
+static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)  {/* Do nothing */}
 #endif
 
 #ifdef __cplusplus

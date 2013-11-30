@@ -119,41 +119,39 @@ int solveLapack(DATA *data, int sysNumber)
 
   if(solverData->info < 0)
   {
-    warningStreamPrint(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
+    warningStreamPrint(LOG_STDOUT, 0, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
     success = 0;
   }
   else if(solverData->info > 0)
   {
-    warningStreamPrint(LOG_STDOUT,
+    warningStreamPrint(LOG_STDOUT, 0,
         "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
         (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
     /* debug output */
-    if(ACTIVE_STREAM(LOG_LS))
+    if (ACTIVE_STREAM(LOG_LS))
     {
       long int l = 0;
       long int k = 0;
       char buffer[4096];
-      INDENT(LOG_LS);
-      debugStreamPrint(LOG_LS, "Matrix U:");
+      debugStreamPrint(LOG_LS, 0, "Matrix U:");
       for(l = 0; l < systemData->size; l++)
       {
         buffer[0] = 0;
         for(k = 0; k < systemData->size; k++)
           sprintf(buffer, "%s%10g ", buffer, systemData->A[l + k*systemData->size]);
-        debugStreamPrint(LOG_LS, "%s", buffer);
+        debugStreamPrint(LOG_LS, 0, "%s", buffer);
       }
-      debugStreamPrint(LOG_LS, "Solution x:");
+      debugStreamPrint(LOG_LS, 0, "Solution x:");
       buffer[0] = 0;
       for(k = 0; k < systemData->size; k++)
         sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
-      debugStreamPrint(LOG_LS, "%s", buffer);
-      debugStreamPrint(LOG_LS, "Solution x:");
+      debugStreamPrint(LOG_LS, 0, "%s", buffer);
+      debugStreamPrint(LOG_LS, 0, "Solution x:");
       buffer[0] = 0;
       for(k = 0; k < systemData->size; k++)
         sprintf(buffer, "%s%10g ", buffer, systemData->b[k]);
-      debugStreamPrint(LOG_LS, "%s", buffer);
-      RELEASE(LOG_LS);
+      debugStreamPrint(LOG_LS, 0, "%s", buffer);
     }
 
     success = 0;

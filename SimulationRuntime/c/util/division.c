@@ -39,15 +39,17 @@
 modelica_real division_error_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow)
 {
   if(noThrow){
-    warningStreamPrint(LOG_UTIL, "division by zero in partial equation: %s", division_str);
-    warningStreamPrint(LOG_UTIL, "at Time=%f", time);
-    warningStreamPrint(LOG_UTIL,  "solver will try to handle that.");
+    warningStreamPrint(LOG_UTIL, 0,
+      "division by zero in partial equation: %s\n"
+      "at Time=%f\n"
+      "solver will try to handle that.", division_str, time);
   } else {
-    warningStreamPrint(LOG_STDOUT, "division by zero in partial equation: %s", division_str);
-    warningStreamPrint(LOG_STDOUT, "at Time=%f", time);
-    warningStreamPrint(LOG_STDOUT, "[line] %ld | [file] %s", line, file);
+    warningStreamPrint(LOG_STDOUT, 0,
+      "division by zero in partial equation: %s\n"
+      "at Time=%f\n"
+      "[line] %ld | [file] %s", division_str, time, line, file);
 #ifndef __APPLE_CC__
-    throwStreamPrint("division by zero");
+    throwStreamPrint(0,"division by zero");
 #endif
   }
   return b;
@@ -55,9 +57,7 @@ modelica_real division_error_time(modelica_real b, const char* division_str, mod
 
 modelica_real division_warning_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line)
 {
-  warningStreamPrint(LOG_STDOUT, "division by zero in partial equation: %s", division_str);
-  warningStreamPrint(LOG_STDOUT, "at Time=%f", time);
-
+  warningStreamPrint(LOG_STDOUT, 0, "division by zero in partial equation: %s\nat Time=%f", division_str, time);
   return b;
 }
 
@@ -65,10 +65,10 @@ modelica_real division_warning_time(modelica_real b, const char* division_str, m
 
 modelica_real division_error(modelica_real b, const char* division_str, const char* file, long line)
 {
-  warningStreamPrint(LOG_STDOUT, "division by zero in partial equation: %s", division_str);
-  warningStreamPrint(LOG_STDOUT, "[line] %ld | [file] %s", line, file);
+  warningStreamPrint(LOG_STDOUT, 0, "division by zero in partial equation: %s\n"
+                                 "[line] %ld | [file] %s", division_str, line, file);
 #ifndef __APPLE_CC__
-  throwStreamPrint("division by zero");
+  throwStreamPrint(0,"division by zero");
 #endif
   return b;
 }
@@ -82,10 +82,10 @@ modelica_real isnan_error(modelica_real b, const char* division_str, const char*
 {
   if(isnan(b))
   {
-    warningStreamPrint(LOG_STDOUT, "division result in NAN in partial equation: %s", division_str);
-    warningStreamPrint(LOG_STDOUT, "[line] %ld | [file] %s", line, file);
+    warningStreamPrint(LOG_STDOUT, 0, "division result in NAN in partial equation: %s\n"
+                                      "[line] %ld | [file] %s", division_str, line, file);
 #ifndef __APPLE_CC__
-    throwStreamPrint("division by zero");
+    throwStreamPrint(0,"division by zero");
 #endif
   }
   return b;

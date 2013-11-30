@@ -115,8 +115,8 @@ INIT_DATA *initializeInitData(DATA *simData)
   assertStreamPrint(0 != initData->name, "out of memory");
 
   /* setup initData */
-  infoStreamPrint(LOG_INIT, "initial problem:");
-  infoStreamPrint(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters + %ld discrete reals)", initData->nVars, initData->nStates, initData->nParameters, initData->nDiscreteReal);
+  infoStreamPrint(LOG_INIT, 0, "initial problem:");
+  infoStreamPrint(LOG_INIT, 0, "number of unfixed variables:  %ld (%ld states + %ld parameters + %ld discrete reals)", initData->nVars, initData->nStates, initData->nParameters, initData->nDiscreteReal);
 
   /* i: all states; j: all unfixed vars */
   for(i=0, j=0; i<simData->modelData.nStates; ++i)
@@ -143,7 +143,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realVarsData[i].attribute.min;
       initData->max[j] = simData->modelData.realVarsData[i].attribute.max;
 
-      infoStreamPrint(LOG_INIT, "| | [%ld] Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      infoStreamPrint(LOG_INIT, 0, "[%ld] Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -173,7 +173,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realParameterData[i].attribute.min;
       initData->max[j] = simData->modelData.realParameterData[i].attribute.max;
 
-      infoStreamPrint(LOG_INIT, "| | [%ld] parameter Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      infoStreamPrint(LOG_INIT, 0, "[%ld] parameter Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -203,7 +203,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realVarsData[i].attribute.min;
       initData->max[j] = simData->modelData.realVarsData[i].attribute.max;
 
-      infoStreamPrint(LOG_INIT, "| | [%ld] discrete Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      infoStreamPrint(LOG_INIT, 0, "[%ld] discrete Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -225,8 +225,8 @@ INIT_DATA *initializeInitData(DATA *simData)
     if(simData->modelData.realVarsData[i].attribute.useStart && !simData->modelData.realVarsData[i].attribute.fixed)
       initData->nStartValueResiduals++;
 
-  infoStreamPrint(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
-  infoStreamPrint(LOG_INIT, "| number of start value residuals: %ld", initData->nStartValueResiduals);
+  infoStreamPrint(LOG_INIT, 0, "number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
+  infoStreamPrint(LOG_INIT, 0, "number of start value residuals: %ld", initData->nStartValueResiduals);
 
   initData->initialResiduals = (double*)calloc(initData->nInitResiduals, sizeof(double));
   assertStreamPrint(0 != initData->initialResiduals, "out of memory");
@@ -373,7 +373,7 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     if(residualScalingCoefficients[i] < 1e-42)
     {
       initData->residualScalingCoefficients[i] = 1.0;
-      infoStreamPrint(LOG_INIT, "| | [%ld] residual is ineffective (scaling coefficient is set to 1.0)", i+1);
+      infoStreamPrint(LOG_INIT, 0, "[%ld] residual is ineffective (scaling coefficient is set to 1.0)", i+1);
     }
     else
       initData->residualScalingCoefficients[i] = residualScalingCoefficients[i];

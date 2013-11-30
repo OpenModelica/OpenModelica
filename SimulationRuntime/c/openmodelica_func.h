@@ -208,7 +208,7 @@ int (*checkForDiscreteChanges)(DATA *data);
  *
  * This variable contains a description string for zero crossing condition.
  */
-const char *(*zeroCrossingDescription)(int i);
+const char *(*zeroCrossingDescription)(int i, const int **out_EquationIndexes);
 
 /*! \var relationDescription
  *

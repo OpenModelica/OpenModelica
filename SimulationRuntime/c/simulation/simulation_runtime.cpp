@@ -204,11 +204,10 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
       if(error)
       {
-        warningStreamPrint(LOG_STDOUT, "current options are:");
-        INDENT(LOG_STDOUT);
+        warningStreamPrint(LOG_STDOUT, 1, "current options are:");
         for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
-          warningStreamPrint(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
-        RELEASE(LOG_STDOUT);
+          warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
+        messageClose(LOG_STDOUT);
         throwStreamPrint("unrecognized option -lv %s", flags->c_str());
       }
     }while(pos != string::npos);
@@ -262,11 +261,10 @@ int getNonlinearSolverMethod(int argc, char**argv)
     if(*method == NLS_NAME[i])
       return i;
 
-  warningStreamPrint(LOG_STDOUT, "unrecognized option -nls=%s", method->c_str());
-  warningStreamPrint(LOG_STDOUT, "current options are:");
-  INDENT(LOG_STDOUT);
+  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -nls=%s, current options are:", method->c_str());
   for(i=1; i<NLS_MAX; ++i)
-    warningStreamPrint(LOG_STDOUT, "%-18s [%s]", NLS_NAME[i], NLS_DESC[i]);
+    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[i], NLS_DESC[i]);
+  messageClose(LOG_STDOUT);
   throwStreamPrint("see last warning");
 
   return NLS_NONE;
@@ -286,11 +284,10 @@ int getlinearSolverMethod(int argc, char**argv)
   if(*method == string("lis"))
     return LS_LIS;
 
-  warningStreamPrint(LOG_STDOUT, "unrecognized option -ls %s", method->c_str());
-  warningStreamPrint(LOG_STDOUT, "current options are:");
-  INDENT(LOG_STDOUT);
-  warningStreamPrint(LOG_STDOUT, "%-18s [%s]", "lapack", "default method");
-  warningStreamPrint(LOG_STDOUT, "%-18s [%s]", "lis", "Lis");
+  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -ls %s, current options are:", method->c_str());
+  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lapack", "default method");
+  warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", "lis", "Lis");
+  messageClose(LOG_STDOUT);
   throwStreamPrint("see last warning");
   return LS_NONE;
 }
@@ -509,12 +506,12 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
       }
       else
       {
-        warningStreamPrint(LOG_STDOUT, "[unknown clock-type] got %s, expected CPU|RT|CYC. Defaulting to RT.", clockName);
+        warningStreamPrint(LOG_STDOUT, 0, "[unknown clock-type] got %s, expected CPU|RT|CYC. Defaulting to RT.", clockName);
       }
     }
     if(rt_set_clock(clock))
     {
-      warningStreamPrint(LOG_STDOUT, "Chosen clock-type: %s not available for the current platform. Defaulting to real-time.", clockName);
+      warningStreamPrint(LOG_STDOUT, 0, "Chosen clock-type: %s not available for the current platform. Defaulting to real-time.", clockName);
     }
   }
 
@@ -536,7 +533,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
       data->simulationInfo.stopTime = data->simulationInfo.startTime;
     else
       data->simulationInfo.stopTime = atof(lintime);
-    infoStreamPrint(LOG_STDOUT, "Linearization will performed at point of time: %f", data->simulationInfo.stopTime);
+    infoStreamPrint(LOG_STDOUT, 0, "Linearization will performed at point of time: %f", data->simulationInfo.stopTime);
   }
 
   if(omc_flag[FLAG_S])
@@ -545,7 +542,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     if(method)
     {
       data->simulationInfo.solverMethod = method->c_str();
-      infoStreamPrint(LOG_SOLVER, "overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
+      infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
     }
   }
 
@@ -606,7 +603,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_tick(SIM_TIMER_LINEARIZE);
     retVal = linearize(data);
     rt_accumulate(SIM_TIMER_LINEARIZE);
-    infoStreamPrint(LOG_STDOUT, "Linear model is created!");
+    infoStreamPrint(LOG_STDOUT, 0, "Linear model is created!");
   }
 
   /* Use the saved state of measure_time_flag.
@@ -664,7 +661,7 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
     return 1;
   }
   sim_result.init(&sim_result, simData);
-  infoStreamPrint(LOG_SOLVER, "Allocated simulation result data storage for method '%s' and file='%s'", simData->simulationInfo.outputFormat, sim_result.filename);
+  infoStreamPrint(LOG_SOLVER, 0, "Allocated simulation result data storage for method '%s' and file='%s'", simData->simulationInfo.outputFormat, sim_result.filename);
   return 0;
 }
 
@@ -702,17 +699,17 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 
   if(S_UNKNOWN == solverID)
   {
-    warningStreamPrint(LOG_STDOUT, "unrecognized option -s %s", simData->simulationInfo.solverMethod);
-    warningStreamPrint(LOG_STDOUT, "current options are:");
+    warningStreamPrint(LOG_STDOUT, 0, "unrecognized option -s %s", simData->simulationInfo.solverMethod);
+    warningStreamPrint(LOG_STDOUT, 0, "current options are:");
     for(i=1; i<S_MAX; ++i) {
-      warningStreamPrint(LOG_STDOUT, "| %-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
+      warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[i], SOLVER_METHOD_DESC[i]);
     }
     throwStreamPrint("see last warning");
     retVal = 1;
   }
   else
   {
-    infoStreamPrint(LOG_SOLVER, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
+    infoStreamPrint(LOG_SOLVER, 0, "recognized solver: %s", SOLVER_METHOD_NAME[solverID]);
     /* special solvers */
 #ifdef _OMC_QSS_LIB
     if(S_QSS == solverID)
@@ -742,25 +739,34 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 
   if(helpFlagSet(argc, argv) || checkCommandLineArguments(argc, argv))
   {
-    infoStreamPrint(LOG_STDOUT, "usage: %s", argv[0]);
-    INDENT(LOG_STDOUT);
+    infoStreamPrint(LOG_STDOUT, 1, "usage: %s", argv[0]);
 
     for(i=1; i<FLAG_MAX; ++i)
     {
-      if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
-        infoStreamPrint(LOG_STDOUT, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
-      else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-        infoStreamPrint(LOG_STDOUT, "<-%s=value> or <-%s value>\n  %s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DESC[i]);
-      else
-        warningStreamPrint(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+      if(FLAG_TYPE[i] == FLAG_TYPE_FLAG) {
+        infoStreamPrint(LOG_STDOUT, 0, "<-%s>\n  %s", FLAG_NAME[i], FLAG_DESC[i]);
+      } else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
+        infoStreamPrint(LOG_STDOUT, 0, "<-%s=value> or <-%s value>\n  %s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DESC[i]);
+      } else {
+        warningStreamPrint(LOG_STDOUT, 0, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+      }
     }
 
-    RELEASE(LOG_STDOUT);
+    messageClose(LOG_STDOUT);
     EXIT(0);
   }
+  if (omc_flag[FLAG_LOG_FORMAT]) {
+    if (0==strcmp(omc_flagValue[FLAG_LOG_FORMAT],"xml")) {
+      setStreamPrintXML(1);
+    } else if (0==strcmp(omc_flagValue[FLAG_LOG_FORMAT],"text")) {
+      setStreamPrintXML(0);
+    } else {
+      warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -logFormat=%s, expected text or xml", omc_flagValue[FLAG_LOG_FORMAT]);
+      EXIT(0);
+    }
+  }
 
-  if(omc_flag[FLAG_HELP])
-  {
+  if(omc_flag[FLAG_HELP]) {
     std::string option = omc_flagValue[FLAG_HELP];
 
     for(i=1; i<FLAG_MAX; ++i)
@@ -768,45 +774,44 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
       if(option == std::string(FLAG_NAME[i]))
       {
         if(FLAG_TYPE[i] == FLAG_TYPE_FLAG)
-          infoStreamPrint(LOG_STDOUT, "detaild flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+          infoStreamPrint(LOG_STDOUT, 1, "detailed flag-description for: <-%s>\n%s", FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else if(FLAG_TYPE[i] == FLAG_TYPE_OPTION)
-          infoStreamPrint(LOG_STDOUT, "detaild flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
+          infoStreamPrint(LOG_STDOUT, 1, "detailed flag-description for: <-%s=value> or <-%s value>\n%s", FLAG_NAME[i], FLAG_NAME[i], FLAG_DETAILED_DESC[i]);
         else
-          warningStreamPrint(LOG_STDOUT, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
+          warningStreamPrint(LOG_STDOUT, 1, "[unknown flag-type] <-%s>", FLAG_NAME[i]);
 
         /* detailed information for some flags */
-        INDENT(LOG_STDOUT);
         switch(i)
         {
         case FLAG_LV:
           for(j=firstOMCErrorStream; j<LOG_MAX; ++j)
-            infoStreamPrint(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
           break;
 
         case FLAG_IIM:
           for(j=1; j<IIM_MAX; ++j)
-            infoStreamPrint(LOG_STDOUT, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
+            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
           break;
 
         case FLAG_IOM:
           for(j=1; j<IOM_MAX; ++j)
-            infoStreamPrint(LOG_STDOUT, "%-18s [%s]", OPTI_METHOD_NAME[j], OPTI_METHOD_DESC[j]);
+            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", OPTI_METHOD_NAME[j], OPTI_METHOD_DESC[j]);
           break;
 
         case FLAG_S:
           for(j=1; j<S_MAX; ++j) {
-            infoStreamPrint(LOG_STDOUT, "| %-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);
+            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);
           }
           break;
         }
-        RELEASE(LOG_STDOUT);
+        messageClose(LOG_STDOUT);
 
         EXIT(0);
       }
     }
 
-    warningStreamPrint(LOG_STDOUT, "invalid command line option: -help=%s", option.c_str());
-    warningStreamPrint(LOG_STDOUT, "use %s -help for a list of all command-line flags", argv[0]);
+    warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -help=%s", option.c_str());
+    warningStreamPrint(LOG_STDOUT, 0, "use %s -help for a list of all command-line flags", argv[0]);
     EXIT(0);
   }
 

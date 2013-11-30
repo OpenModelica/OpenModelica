@@ -1104,10 +1104,10 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo, String mo
     {
       <%varDecls%>
       /* data->simulationInfo.extObjs = NULL; */
-      infoStreamPrint(LOG_DEBUG, "call external Object Constructors");
+      infoStreamPrint(LOG_DEBUG, 0, "call external Object Constructors");
       <%ctorCalls%>
       <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
-      infoStreamPrint(LOG_DEBUG, "call external Object Constructors finished");
+      infoStreamPrint(LOG_DEBUG, 0, "call external Object Constructors finished");
     }
     >>
   end match
@@ -1602,15 +1602,14 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations, S
 
     <%eqPart%>
 
-    infoStreamPrint(LOG_INIT, "updating start-values");
-    INDENT(LOG_INIT);
+    infoStreamPrint(LOG_INIT, 1, "updating start-values");
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
       <<
-      infoStreamPrint(LOG_INIT, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
+      infoStreamPrint(LOG_INIT, 0, "%s(start=<%crefToPrintfArg(cref)%>)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
         $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;
       >>
     ;separator="\n"%>
-    RELEASE(LOG_INIT);
+    if (ACTIVE_STREAM(LOG_INIT)) messageClose(LOG_INIT);
 
     return 0;
   }
@@ -1657,7 +1656,7 @@ template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Te
       let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>initialResiduals[i++] = <%expPart%>;
-      infoStreamPrint(LOG_RES_INIT, "[%d]: %s = %g", i, <%symbolName(modelNamePrefix,"initialResidualDescription")%>(i-1), initialResiduals[i-1]);
+      infoStreamPrint(LOG_RES_INIT, 0, "[%d]: %s = %g", i, <%symbolName(modelNamePrefix,"initialResidualDescription")%>(i-1), initialResiduals[i-1]);
       >>
     end match
   else
@@ -1706,10 +1705,9 @@ template functionInitialResidual(list<SimEqSystem> residualEquations, String mod
     int i = 0;
     <%varDecls%>
 
-    infoStreamPrint(LOG_RES_INIT, "updating initial residuals");
-    INDENT(LOG_RES_INIT);
+    infoStreamPrint(LOG_RES_INIT, 1, "updating initial residuals");
     <%body%>
-    RELEASE(LOG_RES_INIT);
+    if (ACTIVE_STREAM(LOG_RES_INIT)) messageClose(LOG_RES_INIT);
 
     return 0;
   }
@@ -1728,7 +1726,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
       >>
     ;separator="\n")
 
-  let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, "The symbolic initialization was not generated.");'
+  let errorMsg = if not useSymbolicInitialization then 'errorStreamPrint(LOG_INIT, 0, "The symbolic initialization was not generated.");'
 
   <<
   <%&tmp%>
@@ -1865,7 +1863,7 @@ template functionWhenReinitStatementThen(Boolean initialCall, list<WhenOperator>
         if not initialCall then
           "data->simulationInfo.needToIterate = 1;"         
       <<
-      infoStreamPrint(LOG_EVENTS, "reinit <%cref(stateVar)%>  = %f", <%val%>);
+      infoStreamPrint(LOG_EVENTS, 0, "reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
       <%lhs%>
       <%needToIterate%>
@@ -2589,16 +2587,21 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, String modelName
   let desc = match zeroCrossings
              case {} then
                <<
-               const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i)
+               const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes)
                {
+                 *out_EquationIndexes = NULL;
                  return "empty";
                }
                >>
              else
                <<
-               const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i)
+               const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes)
                {
                  const char *res[] = {<%resDesc%>};
+                 <%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+                   'const int occurEqs<%i0%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
+                 const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'occurEqs<%i0%>' ; separator = ","%>};
+                 *out_EquationIndexes = occurEqs[i];
                  return res[i];
                }
                >>
@@ -2776,7 +2779,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
       <<
       if(<%cref(var)%> != $P$PRE<%cref(var)%>)
       {
-        infoStreamPrint(LOG_EVENTS_V, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);
+        infoStreamPrint(LOG_EVENTS_V, 0, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);
         needToIterate = 1;
       }
       >>
@@ -2787,10 +2790,9 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, S
   {
     int needToIterate = 0;
 
-    infoStreamPrint(LOG_EVENTS_V, "check for discrete changes");
-    INDENT(LOG_EVENTS_V);
+    infoStreamPrint(LOG_EVENTS_V, 1, "check for discrete changes");
     <%changediscreteVars%>
-    RELEASE(LOG_EVENTS_V);
+    if (ACTIVE_STREAM(LOG_EVENTS_V)) messageClose(LOG_EVENTS_V);
 
     return needToIterate;
   }
@@ -7336,7 +7338,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <<
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
-    infoStreamPrint(LOG_EVENTS, "reinit <%expPart1%> = %f", <%expPart1%>);
+    infoStreamPrint(LOG_EVENTS, 0, "reinit <%expPart1%> = %f", <%expPart1%>);
     data->simulationInfo.needToIterate = 1;
     >>
 end algStmtReinit;

@@ -214,7 +214,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-      infoStreamPrint(LOG_INIT, "lambda is %-3g in step=%6d at f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
+      infoStreamPrint(LOG_INIT, 0, "lambda is %-3g in step=%6d at f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
 
     if(sigma < g)
     {
@@ -224,7 +224,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
         if(lambda > 1.0)
           lambda = 1.0;
 
-        infoStreamPrint(LOG_INIT, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
+        infoStreamPrint(LOG_INIT, 0, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
         if(pFile)
         {
           fprintf(pFile, "%ld,", iteration);
@@ -327,8 +327,8 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     else
     {
       /* not possible to be here */
-      warningStreamPrint(LOG_INIT, "fxr = %g", fxr);
-      warningStreamPrint(LOG_INIT, "fxk = %g", fxk);
+      warningStreamPrint(LOG_INIT, 0, "fxr = %g", fxr);
+      warningStreamPrint(LOG_INIT, 0, "fxk = %g", fxk);
 
       throwStreamPrint("undefined error in NelderMeadOptimization");
     }
@@ -379,19 +379,19 @@ int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda, long lambda
   long iteration = 0;
   int retVal;
 
-  infoStreamPrint(LOG_INIT, "NelderMeadOptimization");
-  INDENT(LOG_INIT);
+  infoStreamPrint(LOG_INIT, 1, "NelderMeadOptimization");
   NelderMeadOptimization(initData, lambda_steps, STOPCR, NLOOP, ACTIVE_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
-  infoStreamPrint(LOG_INIT, "iterations: %ld", iteration);
-  RELEASE(LOG_INIT);
+  infoStreamPrint(LOG_INIT, 0, "iterations: %ld", iteration);
+  messageClose(LOG_INIT);
 
   if(*lambda < 1.0)
     return -1;
 
   retVal = reportResidualValue(initData);
   
-  if(0 != retVal)
-    warningStreamPrint(LOG_INIT, "try -ils to activate start value homotopy");
+  if(0 != retVal) {
+    warningStreamPrint(LOG_INIT, 0, "try -ils to activate start value homotopy");
+  }
     
   return retVal;
 }

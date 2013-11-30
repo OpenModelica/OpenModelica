@@ -214,22 +214,18 @@
          * SPARSE
          *
          */
-        infoStreamPrint(LOG_INIT, "ipopt using symbolic sparse jacobian G");
-        if(ACTIVE_STREAM(LOG_INIT))
-        {
-          infoStreamPrint(LOG_INIT, "sparsity pattern");
-          for(i=0; i<n; ++i)
-          {
+        infoStreamPrint(LOG_INIT, 0, "ipopt using symbolic sparse jacobian G");
+        if(ACTIVE_STREAM(LOG_INIT)) {
+          infoStreamPrint(LOG_INIT, 0, "sparsity pattern");
+          for(i=0; i<n; ++i) {
             printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
-            {
-              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx])
-              {
+            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j) {
+              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx]) {
                 idx++;
                 printf("*");
-              }
-              else
+              } else {
                 printf("0");
+              }
             }
             for(; j<m; ++j)
               printf("0");
@@ -239,26 +235,21 @@
         }
 
         idx = 0;
-        for(i=0; i<n; ++i)
-        {
-          for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
-          {
-            if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx])
-            {
+        for(i=0; i<n; ++i) {
+          for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[i]; ++j) {
+            if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.index[idx]) {
               jCol[idx] = i;
               iRow[idx] = j;
               idx++;
             }
           }
         }
-      }
-      else
-      {
+      } else {
         /*
          * DENSE
          *
          */
-        infoStreamPrint(LOG_INIT, "ipopt using numeric dense jacobian G");
+        infoStreamPrint(LOG_INIT, 0, "ipopt using numeric dense jacobian G");
         idx = 0;
         for(i=0; i<n; ++i)
         {
@@ -276,7 +267,7 @@
     else
     {
       /* return the values of the jacobian of the constraints */
-      infoStreamPrint(LOG_DEBUG, "ipopt jacobian G");
+      infoStreamPrint(LOG_DEBUG, 0, "ipopt jacobian G");
 
       if(ipopt_data->useSymbolic == 1)
       {
@@ -417,8 +408,8 @@
     {
       /* sparse */
       nele_jac = initData->simData->simulationInfo.analyticJacobians[data->callback->INDEX_JAC_G].sparsePattern.leadindex[n-1];
-      infoStreamPrint(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
-      infoStreamPrint(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
+      infoStreamPrint(LOG_INIT, 0, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
+      infoStreamPrint(LOG_INIT, 0, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
     }
 
     /* allocate space for the variable bounds */
