@@ -234,9 +234,9 @@ int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
       if(cC[ii] == i)
       {
         if(ii == 0)
-        	j = 0;
+          j = 0;
         else
-        	j = lindex[ii-1];
+          j = lindex[ii-1];
         
         for(; j<lindex[ii]; ++j)
         {

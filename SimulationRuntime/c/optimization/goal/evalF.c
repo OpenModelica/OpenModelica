@@ -211,9 +211,9 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
 #if 1
   for(i = 0; i<iData->nv; ++i)
   {
-	  data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-	  data->callback->functionJacC_column(data);
-	  data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
+    data->callback->functionJacC_column(data);
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
       dF[i] = data->simulationInfo.analyticJacobians[index].resultVars[this_it];
   }
 
@@ -243,7 +243,7 @@ int diff_symColoredObject(IPOPT_DATA_ *iData, double *dF, int this_it)
         if(ii == 0) j = 0;
         else j = lindex[ii-1];
         if(j<lindex[ii])
-        	dF[ii] = data->simulationInfo.analyticJacobians[index].resultVars[this_it];
+          dF[ii] = data->simulationInfo.analyticJacobians[index].resultVars[this_it];
       }
     }
 
