@@ -10373,40 +10373,14 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
       let objectiveFunction = match objetiveE
         case SOME(exp) then
         <<
-        if(i == 0)
          *res =  $P$TMP_mayerTerm;
-         else if(i == 1)
-          #ifdef $P$TMP_mayerTerm$pDERC$PdummyVarC
-          *res = $P$TMP_mayerTerm$pDERC$PdummyVarC;
-          #else
-          *res = 0.0;
-          #endif
-         else if(i == 2)
-          #ifdef $P$TMP_mayerTerm$pDERC$PdummyVarD
-          *res = $P$TMP_mayerTerm$pDERC$PdummyVarD;
-          #else
-          *res = 0.0;
-          #endif
-        return 0;
+         return 0;
         >>
 
       let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
         <<
-        if(i == 0)
-          *res =  $P$TMP_lagrangeTerm;
-         else if(i == 1)
-           #ifdef $P$TMP_lagrangeTerm$pDERC$PdummyVarC
-           *res =  $P$TMP_lagrangeTerm$pDERC$PdummyVarC;
-           #else
-           *res = 0.0;
-           #endif
-         else if(i == 2)
-           #ifdef $P$TMP_lagrangeTerm$pDERD$PdummyVarD
-           *res = $P$TMP_lagrangeTerm$pDERD$PdummyVarD;
-           #else
-           *res = 0.0;
-           #endif
-        return 0;   
+         *res =  $P$TMP_lagrangeTerm;
+         return 0;
         >>
       let listConstraintsLength = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then listLength(constraints)  
      
@@ -10414,7 +10388,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         <<
             /* objectiveFunction */
 
-           int mayer(DATA* data, modelica_real* res, int i)
+           int mayer(DATA* data, modelica_real* res)
             {
               <%varDecls%>
               <%preExp%>
@@ -10423,7 +10397,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
             }
  
             /* objectiveIntegrand */
-            int lagrange(DATA* data, modelica_real* res, int i)
+            int lagrange(DATA* data, modelica_real* res)
             {
               <%varDecls1%>
               <%preExp1%>

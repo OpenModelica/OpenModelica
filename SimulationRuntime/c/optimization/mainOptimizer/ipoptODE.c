@@ -69,13 +69,13 @@ int startIpopt(DATA* data, SOLVER_INFO* solverInfo, int flag)
   iData->mayer_index = 0;
   iData->lagrange_index = 1;
 
-  iData->mayer = (short) (mayer(data, &obj, -1) >= 0);
-  iData->lagrange = (short) (lagrange(data, &obj, -1) >= 0);
+  iData->mayer = (short) (mayer(data, &obj) >= 0);
+  iData->lagrange = (short) (lagrange(data, &obj) >= 0);
 
   iData->matrixA = data->callback->initialAnalyticJacobianA((void*) iData->data);
   iData->matrixB = data->callback->initialAnalyticJacobianB((void*) iData->data);
   iData->matrixC = data->callback->initialAnalyticJacobianC((void*) iData->data);
-  iData->matrixD = data->callback->initialAnalyticJacobianD((void*) iData->data);
+  iData->matrixD = 0/*data->callback->initialAnalyticJacobianD((void*) iData->data)*/;
 
   loadDAEmodel(data, iData);
   iData->index_debug_iter=0;

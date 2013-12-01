@@ -125,6 +125,10 @@ int allocateIpoptData(IPOPT_DATA_ *iData)
   for(i = 0; i < iData->nx; i++)
     iData->J0[i] = (double*) calloc(iData->nv, sizeof(double));
 
+  iData->gradFomc = (double**) malloc((iData->nx+2) * sizeof(double*));
+  for(i = 0; i < iData->nx; i++)
+    iData->gradFomc[i] = (double*) calloc(iData->nv, sizeof(double));
+
   iData->numJ = (double**) malloc(iData->nx * sizeof(double*));
   for(i = 0; i < iData->nx; i++)
     iData->numJ[i] = (double*) calloc(iData->nv, sizeof(double));
@@ -465,12 +469,10 @@ int move_grid(IPOPT_DATA_ *iData)
 int local_jac_struct(IPOPT_DATA_ *iData)
 {
   DATA * data = iData->data;
-  const int index1 = 1;
-  const int index2 = 2;
-  int index;
+  const int index = 2;
   int **J;
 
-  int i,j,l,ii,nx,k;
+  int i,j,l,ii,nx;
   int *cC,*lindex;
 
   iData->nlocalJac = 0;
@@ -480,51 +482,47 @@ int local_jac_struct(IPOPT_DATA_ *iData)
 
   J = iData->knowedJ;
 
-  for(index=index1; index<index2+1; ++index)
+  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
+  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+
+  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
   {
-    nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-    cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-    lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
-
-    k = (index == index1) ? 0: iData->nx;
-
-    for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
+    for(ii = 0; ii<nx; ++ii)
     {
-      for(ii = 0; ii<nx; ++ii)
+      if(cC[ii] == i)
       {
-        if(cC[ii] == i)
-        {
-          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
-        }
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
       }
+    }
 
-      for(ii = 0; ii < nx; ii++)
+    for(ii = 0; ii < nx; ii++)
+    {
+      if(cC[ii] == i)
       {
-        if(cC[ii] == i)
-        {
-          if(0 == ii)
-            j = 0;
-          else
-            j = lindex[ii-1];
+        if(0 == ii)
+          j = 0;
+        else
+          j = lindex[ii-1];
 
-          for(; j<lindex[ii]; ++j)
-          {
-            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-            J[l][ii + k] = 1;
-            ++iData->nlocalJac;
-          }
-        }
-      }
-
-      for(ii = 0; ii<nx; ++ii)
-      {
-        if(cC[ii] == i)
+        for(; j<lindex[ii]; ++j)
         {
-          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+          J[l][ii] = 1;
+          ++iData->nlocalJac;
         }
       }
     }
+
+    for(ii = 0; ii<nx; ++ii)
+    {
+      if(cC[ii] == i)
+      {
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+      }
+    }
   }
+
 
   for(ii = 0; ii < iData->nx; ii++)
   {

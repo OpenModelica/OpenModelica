@@ -43,7 +43,6 @@
 #ifdef WITH_IPOPT
 
 static int num_hessian(double *v, double t, IPOPT_DATA_ *iData, double *lambda, short lagrange_yes, short mayer_yes, double obj_factor);
-static int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *dF, int this_it);
 static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_yes, short mayer_yes,double *F1, double *F2);
 static int sumLagrange(IPOPT_DATA_ *iData, double * erg,int ii, int i, int j, int p, short mayer_yes);
 
@@ -266,57 +265,11 @@ static int updateCost(double *v, double t, IPOPT_DATA_ *iData, short lagrange_ye
 {
   iData->data->callback->functionAlgebraics(iData->data);
   if(lagrange_yes)
-    diff_symColoredObject_hess(v, t, iData, F1, iData->lagrange_index);
+    diff_symColoredObject(iData, F1, iData->lagrange_index);
 
   if(mayer_yes)
-    diff_symColoredObject_hess(v, t, iData, F2, iData->mayer_index);
+    diff_symColoredObject(iData, F2, iData->mayer_index);
   
-  return 0;
-}
-
-/*
- *  function calculates a symbolic colored gradient "matrix" only for hess
- *  author: vitalij
- */
-int diff_symColoredObject_hess(double *v, double t, IPOPT_DATA_ *iData, double *dF, int this_it)
-{
-  DATA * data = iData->data;
-  const int index1 = 3;
-  const int index2 = 4;
-  double*x,*u;
-
-  int i,k;
-
-  x = v;
-  u = x + iData->nx;
-  
-
-  if(iData->matrixC ==0){
-    for(i= 0, k = 0; i<iData->nx; ++i, ++k)
-    {
-    data->simulationInfo.analyticJacobians[index1].seedVars[i] = 1.0;
-    data->callback->functionJacC_column(data);
-    data->simulationInfo.analyticJacobians[index1].seedVars[i] = 0.0;
-    if(this_it ==0)
-      mayer(iData->data, &dF[k],1);
-    else
-      lagrange(iData->data, &dF[k],1);
-
-    }
-  }
-  if(iData->matrixD ==0){
-    for(k =iData->nx, i = 0 ; i<iData->nu; ++i, ++k)
-    {
-    data->simulationInfo.analyticJacobians[index2].seedVars[i] = 1.0;
-    data->callback->functionJacD_column(data);
-    data->simulationInfo.analyticJacobians[index2].seedVars[i] = 0.0;
-    if(this_it ==0)
-      mayer(iData->data, &dF[k],2);
-    else
-      lagrange(iData->data, &dF[k],2);
-    }
-  }
-
   return 0;
 }
 

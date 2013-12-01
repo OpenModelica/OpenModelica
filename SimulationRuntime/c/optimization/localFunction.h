@@ -70,14 +70,14 @@ Bool ipopt_h(int n, double *x, Bool new_x, double obj_factor, int m, double *lam
 int diff_functionODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
 int diff_functionODE0(double *v, double t, IPOPT_DATA_ *iData);
 int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J);
-int diff_symColoredObject(double *v, double t, IPOPT_DATA_ *iData, double *gradF, int this_it);
+int diff_symColoredObject(IPOPT_DATA_ *iData, double *gradF, int this_it);
 
 /*model*/
 int functionODE_(double * x, double *u, double t, double * dotx, IPOPT_DATA_ *iData);
 int refreshSimData(double *x, double *u, double t, IPOPT_DATA_ *iData);
 
-extern int mayer(DATA* data, modelica_real* res, int i);
-extern int lagrange(DATA* data, modelica_real* res, int i);
+extern int mayer(DATA* data, modelica_real* res);
+extern int lagrange(DATA* data, modelica_real* res);
 extern int pathConstraints(DATA* data, modelica_real* res, int* N);
 
 /*allocate*/

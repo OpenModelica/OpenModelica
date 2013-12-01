@@ -45,8 +45,6 @@
 
 #ifdef WITH_IPOPT
 
-static int functionJacASym_ode(IPOPT_DATA_* data, double** jac);
-static int functionJacBSym_ode(IPOPT_DATA_* data, double** jac);
 int diff_functionODE_debug(double* v, double t, IPOPT_DATA_ *iData);
 
 /*!
@@ -205,65 +203,58 @@ int diff_functionODE0(double* v, double t, IPOPT_DATA_ *iData)
 int diff_symColoredODE(double *v, double t, IPOPT_DATA_ *iData, double **J)
 {
   DATA * data = iData->data;
-  const int index1 = 1;
-  const int index2 = 2;
-  int index;
+  const int index = 2;
   double*x,*u;
 
-  int i,j,l,ii,nx,k;
+  int i,j,l,ii,nx;
   int *cC,*lindex;
 
   x = v;
   u = x + iData->nx;
 
-  for(index=index1; index<index2+1; ++index)
+
+  nx = data->simulationInfo.analyticJacobians[index].sizeCols;
+  cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
+  lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
+
+  for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
   {
-    nx = data->simulationInfo.analyticJacobians[index].sizeCols;
-    cC =  (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols;
-    lindex = (int*)data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex;
-
-    k = (index == index1) ? 0 : iData->nx;
-
-    for(i = 1; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors + 1; ++i)
+    for(ii = 0; ii<nx; ++ii)
     {
-      for(ii = 0; ii<nx; ++ii)
+      if(cC[ii] == i)
       {
-        if(cC[ii] == i)
-        {
-          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
-        }
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
       }
+    }
 
-      if(index == index1)
-        data->callback->functionJacA_column(data);
-      else
-        data->callback->functionJacB_column(data);
+    data->callback->functionJacB_column(data);
 
-      for(ii = 0; ii < nx; ii++)
+    for(ii = 0; ii < nx; ii++)
+    {
+      if(cC[ii] == i)
       {
-        if(cC[ii] == i)
+        if(ii == 0)
+        	j = 0;
+        else
+        	j = lindex[ii-1];
+        
+        for(; j<lindex[ii]; ++j)
         {
-          if(ii == 0)
-            j = 0;
-          else j = lindex[ii-1];
-          
-          for(; j<lindex[ii]; ++j)
-          {
-            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
-            J[l][ii + k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-          }
-        }
-      }
-
-      for(ii = 0; ii<nx; ++ii)
-      {
-        if(cC[ii] == i)
-        {
-          data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+          l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[j];
+          J[l][ii] = data->simulationInfo.analyticJacobians[index].resultVars[l];
         }
       }
     }
+
+    for(ii = 0; ii<nx; ++ii)
+    {
+      if(cC[ii] == i)
+      {
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+      }
+    }
   }
+
 
   return 0;
 }
