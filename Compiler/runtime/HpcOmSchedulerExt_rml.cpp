@@ -49,7 +49,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(HpcOmSchedulerExt__scheduleAdjList)
 {
   int nelts = (int)RML_HDRSLOTS(RML_GETHDR(rmlA0)); //number of elements in array
-  std::list<long int> adjLsts[nelts];
+  std::list<std::list<long int> > adjLsts = std::list<std::list<long int> >();
 
   std::cerr << "element count: " << nelts << std::endl;
 
@@ -66,7 +66,7 @@ RML_BEGIN_LABEL(HpcOmSchedulerExt__scheduleAdjList)
       adjLstE = RML_CDR(adjLstE);
     }
 
-    adjLsts[i] = adjLst;
+    adjLsts.push_back(adjLst);
   }
 
   rmlA0 = HpcOmSchedulerExtImpl__scheduleAdjList(adjLsts);

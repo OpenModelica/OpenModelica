@@ -15,7 +15,7 @@ extern void* HpcOmSchedulerExt_readScheduleFromGraphMl(const char *filename)
 extern void* HpcOmSchedulerExt_scheduleAdjList(modelica_metatype adjList)
 {
   int nelts = (int)MMC_HDRSLOTS(MMC_GETHDR(adjList));
-  std::list<long int> adjLsts[nelts];
+  std::list<std::list<long int> > adjLsts = std::list<std::list<long int> >();
 
   for(int i=0; i<nelts; ++i)
   {
@@ -28,7 +28,7 @@ extern void* HpcOmSchedulerExt_scheduleAdjList(modelica_metatype adjList)
         adjLstE = MMC_CDR(adjLstE);
       }
 
-      adjLsts[i] = adjLst;
+      adjLsts.push_back(adjLst);
   }
 
   return HpcOmSchedulerExtImpl__scheduleAdjList(adjLsts);
