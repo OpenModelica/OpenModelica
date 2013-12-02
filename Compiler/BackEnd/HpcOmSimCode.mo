@@ -162,7 +162,7 @@ algorithm
       list<SimCode.RecordDeclaration> simCodeRecordDecls;
       list<String> simCodeExternalFunctionIncludes;
       
-      Boolean taskGraphMetaValid;
+      Boolean taskGraphMetaValid, numFixed;
       String taskGraphMetaMessage, criticalPathInfo;
       array<tuple<Integer,Integer>> schedulerInfo;
       HpcOmScheduler.Schedule schedule;
@@ -239,10 +239,12 @@ algorithm
       //Create schedule
       //---------------
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
-      numProc = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);
+      (numProc,numFixed) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);
       schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc);
+      (schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
       
       (serTime,parTime,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(schedule,SOME(cpCostsWoC),numProc,taskGraph1,taskGraphData1);
+      HpcOmScheduler.printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProc);
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       
@@ -274,6 +276,88 @@ algorithm
 end createSimCode;
 
 
+protected function repeatScheduleWithOtherNumProc"checks if the scheduling with the given numProc is fine.
+ if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
+ author:Waurich TUD 2013-011"
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  input array<list<Integer>> sccSimEqMappingIn;
+  input String fileNamePrefix;
+  input Real cpCostsWoC;
+  input HpcOmScheduler.Schedule scheduleIn;
+  input Integer numProcIn;
+  input Boolean numFixed;
+  output HpcOmScheduler.Schedule scheduleOut;
+  output Integer numProcOut;
+protected
+  Integer maxNumProc, maxIter;
+  Real maxDiff;
+algorithm
+  maxNumProc := System.numProcessors();
+  maxIter := 3;
+  maxDiff := 0.5;
+  (scheduleOut,numProcOut,_) := repeatScheduleWithOtherNumProc1(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,scheduleIn,numProcIn,numFixed,maxNumProc,maxDiff,maxIter);
+end repeatScheduleWithOtherNumProc;
+
+
+protected function repeatScheduleWithOtherNumProc1"checks if the scheduling with the given numProc is fine.
+ if n=auto, more cores are available and more speedup could be achieved repeat schedule with increased num of procs.
+ author:Waurich TUD 2013-011"
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  input array<list<Integer>> sccSimEqMappingIn;
+  input String fileNamePrefix;
+  input Real cpCostsWoC;
+  input HpcOmScheduler.Schedule scheduleIn;
+  input Integer numProcIn;
+  input Boolean numFixed;
+  input Integer maxNumProc;
+  input Real maxDiff;
+  input Integer numIterIn;
+  output HpcOmScheduler.Schedule scheduleOut;
+  output Integer numProcOut;
+  output Integer numIterOut;
+algorithm
+  (scheduleOut,numProcOut,numIterOut) := matchcontinue(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,scheduleIn,numProcIn,numFixed,maxNumProc,maxDiff,numIterIn)
+    local
+      Boolean scheduleAgain;
+      Integer numProc, numIt;
+      Real serTime,parTime,speedup,speedUp,speedUpMax,diff;
+      HpcOmScheduler.Schedule schedule;
+    case(_,_,_,_,_,_,_,true,_,_,_)
+      equation // do not schedule again because the number of procs was given
+        then
+          (scheduleIn,numProcIn,0);
+    case(_,_,_,_,_,_,_,false,_,_,_)
+      equation
+        true = numIterIn == 0; // the max number of schedules with increased num of procs
+        then
+          (scheduleIn,numProcIn,0);
+    case(_,_,_,_,_,_,_,false,_,_,_)
+      equation
+        (serTime,parTime,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
+        diff = speedUpMax -. speedUp;
+        //print("the new speedUp with "+&intString(numProcIn)+&" processors: "+&realString(speedUp)+&"\n");
+        true = diff <. maxDiff;
+        //print("the schedule is fine\n");
+      then
+        (scheduleIn,numProcIn,numIterIn);
+    else
+      equation
+        numProc = numProcIn+1; // increase the number of procs
+        numIt = numIterIn-1; // lower the counter of scheduling runs
+        scheduleAgain = intLe(numProc,maxNumProc);
+        //print("schedule again\n");
+        numProc = Util.if_(scheduleAgain,numProc,numProcIn);
+        numIt = Util.if_(scheduleAgain,numIt,0);
+        schedule= Debug.bcallret5(scheduleAgain,createSchedule,taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,numProc,scheduleIn);
+        (schedule,numProc,numIt) = repeatScheduleWithOtherNumProc1(taskGraphIn,taskGraphMetaIn,sccSimEqMappingIn,fileNamePrefix,cpCostsWoC,schedule,numProc,numFixed,maxNumProc,maxDiff,numIt);
+      then
+        (schedule,numProc,numIt);
+  end matchcontinue;
+end repeatScheduleWithOtherNumProc1;
+
+
 protected function setNumProc "sets the number of processors. its upper limit is the number of processsors provided by the system.
 if no n-flag is set, a ideal number is chosen
 author: Waurich TUD 2013-11"
@@ -281,9 +365,11 @@ author: Waurich TUD 2013-11"
   input Real cpCosts;
   input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
   output Integer numProcOut;
+  output Boolean numFixed;
 algorithm
-  numProcOut := match(numProcFlag,cpCosts,taskGraphMetaIn)
+  (numProcOut,numFixed) := match(numProcFlag,cpCosts,taskGraphMetaIn)
     local
+      Boolean isFixed;
       Integer numProcSys, numProc, numProcSched;
       Real serCosts, maxSpeedUp;
       String string1, string2;
@@ -294,19 +380,20 @@ algorithm
         numProcSched = realInt(realAdd(maxSpeedUp,1.0));
         numProcSys = System.numProcessors();
         numProc = intMin(numProcSched,numProcSys);
-        string1 = "Your system provides only"+&intString(numProcSys)+&" processors. You could achieve more speedup with "+&intString(numProcSched)+&"!\n";
-        string2 = "The model is simulated using"+&intString(numProcSched)+&"because thats the ideal number of threads\n";
-        string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);             
+        string1 = "Your system provides only "+&intString(numProcSys)+&" processors!\n";
+        string2 = "The model is simulated using "+&intString(numProcSched)+&" processors, because that might be a reasonable number of threads.\n";
+        string1 = Util.if_(intGt(numProcSched,numProcSys),string1,string2);          
+        isFixed =  Util.if_(intGt(numProcSched,numProcSys),true,false);  
         print(string1);
       then
-        numProc;
+        (numProc,isFixed);
     else
       equation
         numProcSys = System.numProcessors();
         numProc = Util.if_(intGt(numProcFlag,numProcSys),numProcSys,numProcFlag); // the system does not provide so many cores
         Debug.bcall(intGt(numProcFlag,numProcSys),print,"Warning: Your system provides only "+&intString(numProcSys)+&" processors!\n");
       then
-        numProc;
+        (numProc,true);
   end match;
 end setNumProc;
 

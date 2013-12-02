@@ -2028,9 +2028,7 @@ author:Waurich TUD 2013-11"
 algorithm
   (serialTimeOut,parallelTimeOut,speedUpOut,speedUpMaxOut) := matchcontinue(scheduleIn,cpCostsOption,numProc,taskGraphIn,taskGraphMetaIn)
     local
-      Boolean isODE;
       Real parTime, serTime, speedUp, speedUpMax, cpCosts;
-      String isOkString, isNotOkString;
       Schedule schedule;
     case(_,NONE(),_,_,_)
       equation
@@ -2038,7 +2036,6 @@ algorithm
         (_,parTime) = getFinishingTimesForSchedule(scheduleIn,numProc,taskGraphIn,taskGraphMetaIn);
         serTime = getSerialExecutionTime(taskGraphMetaIn);
         speedUp = serTime /. parTime;
-        print("The predicted SpeedUp with "+&intString(numProc)+&" processors is "+&realString(speedUp)+&".\n");
       then
         (serTime,parTime,speedUp,-1.0);
     case(_,SOME(cpCosts),_,_,_)
@@ -2048,21 +2045,50 @@ algorithm
         serTime = getSerialExecutionTime(taskGraphMetaIn);
         speedUp = serTime /. parTime;
         speedUpMax = serTime /. cpCosts;
-        isOkString = "The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+&realString(speedUp)+&" With a theoretical maxmimum speedUp of: "+&realString(speedUpMax)+&"\n";
-        isNotOkString = "Something is weird. The predicted SpeedUp is "+&realString(speedUp)+&" and the theoretical maximum speedUp is "+&realString(speedUpMax)+&"\n";
-        Debug.bcall(realGt(speedUp,speedUpMax),print,isNotOkString);
-        Debug.bcall(realLe(speedUp,speedUpMax),print,isOkString);
         //print("the serialCosts: "+&realString(serTime)+&"\n");
         //print("the parallelCosts: "+&realString(parTime)+&"\n");
         //print("the cpCosts: "+&realString(cpCosts)+&"\n");
       then
         (serTime,parTime,speedUp,speedUpMax); 
-    case(_,_,_,_,_)
+    else
       equation
       then
         (0.0,0.0,0.0,0.0);
   end matchcontinue;
 end predictExecutionTime;
+
+
+public function printPredictedExeTimeInfo "function to print the information about the predicted execution times.
+author:Waurich TUD 2013-11"
+  input Real serTime;
+  input Real parTime;
+  input Real speedUp;
+  input Real speedUpMax;
+  input Integer numProc;
+algorithm
+  _ := matchcontinue(serTime,parTime,speedUp,speedUpMax,numProc)
+    local
+      String isOkString, isNotOkString;
+    case(_,_,_,0.0,_)// possibly there is no ode-system that can be parallelized
+      equation
+      then
+        ();
+    case(_,_,_,_,_)
+      equation
+        true = speedUpMax ==. -1.0;
+        print("The predicted SpeedUp with "+&intString(numProc)+&" processors is "+&realString(speedUp)+&".\n");
+      then
+        ();
+    else
+      equation
+        isOkString = "The predicted SpeedUp with "+&intString(numProc)+&" processors is: "+&realString(speedUp)+&" With a theoretical maxmimum speedUp of: "+&realString(speedUpMax)+&"\n";
+        isNotOkString = "Something is weird. The predicted SpeedUp is "+&realString(speedUp)+&" and the theoretical maximum speedUp is "+&realString(speedUpMax)+&"\n";
+        Debug.bcall(realGt(speedUp,speedUpMax),print,isNotOkString);
+        Debug.bcall(realLe(speedUp,speedUpMax),print,isOkString);
+      then
+        ();
+  end matchcontinue;  
+end printPredictedExeTimeInfo;
 
 
 public function getSerialExecutionTime  "computes thes serial execution time by summing up all exeCosts of all tasks.
