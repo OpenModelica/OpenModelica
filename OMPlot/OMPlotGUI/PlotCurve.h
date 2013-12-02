@@ -47,6 +47,8 @@ private:
   QString mXVariable;
   QString mYVariable;
   bool mCustomColor;
+  qreal mWidth;
+  int mStyle;
 
   Plot *mpParentPlot;
 public:
@@ -55,6 +57,8 @@ public:
 
   Qt::PenStyle getPenStyle(int style);
   QwtPlotCurve::CurveStyle getCurveStyle(int style);
+  qreal getCurveWidth() {return mWidth;}
+  int getCurveStyle() {return mStyle;}
   void setXAxisVector(QVector<double> vector);
   void addXAxisValue(double value);
   const double* getXAxisVector() const;

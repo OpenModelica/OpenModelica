@@ -44,12 +44,14 @@ PlotCurve::PlotCurve(Plot *pParent)
 {   
   mpParentPlot = pParent;
   /* set curve width and style */
+  mWidth = mpParentPlot->getParentPlotWindow()->getCurveWidth();
+  mStyle = mpParentPlot->getParentPlotWindow()->getCurveStyle();
   QPen customPen = pen();
-  customPen.setWidthF(mpParentPlot->getParentPlotWindow()->getCurveWidth());
-  customPen.setStyle(getPenStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle()));
+  customPen.setWidthF(mWidth);
+  customPen.setStyle(getPenStyle(mStyle));
   setPen(customPen);
   if (mpParentPlot->getParentPlotWindow()->getCurveStyle() > 5)
-    setStyle(getCurveStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle()));
+    setStyle(getCurveStyle(mStyle));
 }
 
 PlotCurve::~PlotCurve()
