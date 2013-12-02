@@ -291,7 +291,7 @@ algorithm
   end matchcontinue;
 end getUsedBy;
 
-protected function getUsedBySub "
+public function getUsedBySub "
 Author BZ, 2009-10
 If inpu cl is 'A.B' it returns classes using A.B, but also classes that uses A.B.C.D and A.B.R, it returns all classes that equals or are a subpath of provided path.
 "
