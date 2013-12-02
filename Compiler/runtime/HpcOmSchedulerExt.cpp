@@ -33,7 +33,7 @@ void* HpcOmSchedulerExtImpl__readScheduleFromGraphMl(const char *filename)
 
 void* HpcOmSchedulerExtImpl__scheduleAdjList(std::list<long int> adjLst[])
 {
-	void *res = mk_nil();
+  void *res = mk_nil();
 
-	return res;
+  return res;
 }

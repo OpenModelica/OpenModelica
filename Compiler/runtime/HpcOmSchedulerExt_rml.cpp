@@ -54,7 +54,7 @@ RML_BEGIN_LABEL(HpcOmSchedulerExt__scheduleAdjList)
   std::cerr << "element count: " << nelts << std::endl;
 
   for(int i=0; i<nelts; i++) {
-	std::cerr << "bla" << std::endl;
+  std::cerr << "bla" << std::endl;
     void* adjLstE = RML_STRUCTDATA(rmlA0)[i]; //adjacence list entry
     std::list<long int> adjLst;
 
