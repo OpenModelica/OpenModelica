@@ -4236,6 +4236,10 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
     bool* conditions0<%index%> = new bool[_dimZeroFunc];
     bool* conditions1<%index%> = new bool[_dimZeroFunc];
     unsigned int iterations<%index%> = 0;
+    unsigned int dim<%index%> =   _algLoop<%index%>->getDimReal();
+    double* algloop<%index%>Vars = new double[dim<%index%>];
+    _algLoop<%index%>->getReal(algloop<%index%>Vars );
+    
     try
       {
         
@@ -4274,8 +4278,23 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls, SimCode simC
        delete[] conditions0<%index%>;
        delete[] conditions1<%index%>;
        if(restart<%index%>&& iterations<%index%> > 0)
-        throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) ); 
-     
+       {
+            try
+             {  //workaround: try to solve algoop discrete (evaluate all zero crossing conditions) since we do not have the information which zercrossing contains a algloop var
+                IContinuous::UPDATETYPE calltype = _callType;
+               _callType = IContinuous::DISCRETE;
+                 _algLoop<%index%>->setReal(algloop<%index%>Vars );
+                _algLoopSolver<%index%>->solve(command);
+               _callType = calltype;   
+             }
+             catch(std::exception &ex)
+             { 
+                delete[] algloop<%index%>Vars; 
+                throw std::invalid_argument("Nonlinear solver stopped at time " + boost::lexical_cast<string>(_simTime) + " with error: " + ex.what());
+             }
+        
+       }
+        delete[] algloop<%index%>Vars; 
       >>
     end match
       
