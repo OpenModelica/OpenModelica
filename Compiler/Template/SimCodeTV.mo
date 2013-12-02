@@ -82,7 +82,7 @@ package builtin
   
   function arrayList 
     replaceable type TypeVar subtypeof Any;    
-    input TypeVar[:] arr;
+    input array<TypeVar> arr;
     output list<TypeVar> lst;
   end arrayList;
   

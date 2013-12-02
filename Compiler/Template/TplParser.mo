@@ -1324,11 +1324,7 @@ algorithm
   end matchcontinue;
 end unqualImportPostfix;
 
-/*
 //optional, may fail
-typeSig:
-    typeSig_base:base  typeSig_array(base):ts  => ts
-*/
 public function typeSig
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -1341,13 +1337,12 @@ algorithm
     local
       list<String> chars;
       LineInfo linfo;
-      TplAbsyn.TypeSignature baseTS, ts;
+      TplAbsyn.TypeSignature ts;
 
     case (chars, linfo)
       equation
-        (chars, linfo, baseTS) = typeSig_base(chars, linfo);
+        (chars, linfo, ts) = typeSig_base(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, ts) = typeSig_array(chars, linfo, baseTS);
       then (chars, linfo, ts);
 
   end match;
@@ -1388,6 +1383,8 @@ typeSig_base:
   'Option' '<' typeSig '>'   =>  OPTION_TYPE(tof)
   |
   'tuple' '<' typeSig:ts  typeSig_restList:restLst  '>'  => TUPLE_TYPE(ts::restLst)
+  |
+  'array' '<' typeSig:tof '>'  =>  ARRAY_TYPE(tof)
   |
   pathIdent:pid  =>  NAMED_TYPE(pid)  // +specializations for String, Integer, .... => STRING_TYPE(), ...
 */
@@ -1436,6 +1433,15 @@ algorithm
         (chars, linfo) = interleaveExpectChar(chars, linfo, ">");
       then (chars, linfo, TplAbsyn.TUPLE_TYPE(tof::restLst));
 
+    case ("a"::"r"::"r"::"a"::"y" :: chars, linfo)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "<");
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, tof) = typeSigNoOpt(chars, linfo);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, ">");
+      then (chars, linfo, TplAbsyn.ARRAY_TYPE(tof));
+
     case (chars, linfo)
       equation
         (chars, linfo, pid) = pathIdent(chars, linfo);
@@ -1444,40 +1450,6 @@ algorithm
 
   end matchcontinue;
 end typeSig_base;
-
-/*
-typeSig_array(base):
-  '[' ':' ']'  typeSig_array(ARRAY_TYPE(base)):ts   =>  ts
-  |
-  _  =>  base
-*/
-public function typeSig_array
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input TplAbsyn.TypeSignature inBaseTypeSignature;
-
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output TplAbsyn.TypeSignature outTypeSignature;
-algorithm
-  (outChars, outLineInfo, outTypeSignature) := matchcontinue (inChars, inLineInfo, inBaseTypeSignature)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      TplAbsyn.TypeSignature ts, baseTS;
-
-    case ("[" :: chars, linfo, baseTS)
-      equation
-        (chars, linfo) = interleaveExpectChar(chars, linfo, ":");
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "]");
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, ts) = typeSig_array(chars, linfo, TplAbsyn.ARRAY_TYPE(baseTS));
-      then (chars, linfo, ts);
-
-    case (chars, linfo, baseTS) then (chars, linfo, baseTS);
-
-  end matchcontinue;
-end typeSig_array;
 
 /*
 typeSig_restList:
