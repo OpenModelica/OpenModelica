@@ -170,8 +170,41 @@ void SystemDefaultImplementation::getContinuousStates(double* z)
     }
 
 };
-
-
+ bool SystemDefaultImplementation::isConsistent()
+ {
+     if(IEvent* system = dynamic_cast<IEvent*>(this))
+     {
+         unsigned int dim = system->getDimZeroFunc();
+         bool* conditions0 = new bool[dim];
+         bool* conditions1 = new bool[dim];
+         getConditions(conditions0);
+         IContinuous::UPDATETYPE pre_call_type=_callType;
+         _callType = IContinuous::DISCRETE;
+         for(int i=0;i<dim;i++)
+         {
+                system->getCondition(i);
+         }
+        getConditions(conditions1);
+        bool isConsistent =  std::equal (conditions1, conditions1+_dimZeroFunc,conditions0);  
+       _callType = pre_call_type;
+        setConditions(conditions0);
+       delete[] conditions0;
+       delete[] conditions1;
+        return isConsistent;
+     }
+     else
+        return true;
+    
+    
+ }
+ void SystemDefaultImplementation::setConditions(bool* c)
+   {
+     memcpy(_conditions,c,_dimZeroFunc*sizeof(bool));
+   }
+  void SystemDefaultImplementation::getConditions(bool* c)
+   {
+     memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
+   }
 
 
 

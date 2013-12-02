@@ -63,6 +63,7 @@ private:
         *_x0,                    //old unknown variables
         *_x1,                    //old unknown variables
         *_x2,
+        *_x_restart,
         *_x_nom,                    //Nominal value of unknown variables
         *_x_ex,                 //extraplated unknown varibales
         *_x_scale,                 //current scale factor of unknown varibales
@@ -91,5 +92,6 @@ private:
     int _nfev;                              //NFEV is an integer output variable set to the number of calls to FCN with IFLAG = 1.
     int _njev;                              //NJEV is an integer output variable set to the number of calls to FCN with IFLAG = 2.
     const double _initial_factor;
+ 
 };
 

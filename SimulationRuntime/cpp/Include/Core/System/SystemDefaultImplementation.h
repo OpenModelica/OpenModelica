@@ -77,7 +77,8 @@ public:
     /// Provide the right hand side
     virtual void getRHS(double* f);
 
-
+    virtual void  setConditions(bool* c);
+    virtual void getConditions(bool* c);
     /// Provide boolean variables
     virtual void setBoolean(const bool* z);
 
@@ -110,6 +111,7 @@ protected:
      void storeDelay(unsigned int expr_id,double expr_value,double time);
      void storeTime(double time);
      double delay(unsigned int expr_id,double expr_value, double delayTime, double delayMax);
+     bool isConsistent();
     template<class T>
     T getStartValue(T variable,string key)
     {

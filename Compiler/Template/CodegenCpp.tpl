@@ -117,6 +117,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
        //Literals
         <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
      private:
+    
        //Function return variables
        <%functionHeaderBodies3(functions,simCode)%>
 
@@ -279,6 +280,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%giveZeroFunc1(zeroCrossings,simCode)%>
    <%setConditions(simCode)%>
    <%geConditions(simCode)%>
+   <%isConsistent(simCode)%>
    <%generateStepCompleted(listAppend(allEquations,initialEquations),simCode)%>
    <%generatehandleTimeEvent(sampleLookup,simCode)%>
    <%generateDimTimeEvent(listAppend(allEquations,initialEquations),simCode)%>
@@ -2164,11 +2166,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       ~<%lastIdentOfPath(modelInfo.name)%>();
 
        <%generateMethodDeclarationCode(simCode)%>
-  bool getCondition(unsigned int index);
+     virtual  bool getCondition(unsigned int index);
   private:
     //Methods:
     
-  
+     bool isConsistent();
     
      /*
      void initialAnalyticJacobian();
@@ -2438,6 +2440,10 @@ int  <%modelname%>Algloop<%index%>::getDimRHS( ) const
     return(AlgLoopDefaultImplementation::getDimRHS());
 };
 
+bool  <%modelname%>Algloop<%index%>::isConsistent( ) 
+{
+    return _system->isConsistent();
+};
 
 /// Provide variables with given index to the system
 void  <%modelname%>Algloop<%index%>::getReal(double* vars)
@@ -2529,7 +2535,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool isODE();
     // M is singular
     virtual bool isAlgebraic();
-    
+  
     
     virtual int getDimTimeEvent() const;
     //gibt die Time events (Startzeit und Frequenz) zurück
@@ -2618,6 +2624,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     /// Output routine (to be called by the solver after every successful integration step)
     virtual void getSystemMatrix(double* A_matrix);
     virtual bool isLinear();
+    virtual bool isConsistent();
     /// Set stream for output
     virtual void setOutput(ostream* outputStream)     ;
 
@@ -7285,7 +7292,7 @@ template setConditions(SimCode simCode)
 <<
  void <%lastIdentOfPath(modelInfo.name)%>::setConditions(bool* c)
   {
-    memcpy(_conditions,c,_dimZeroFunc*sizeof(bool));
+    SystemDefaultImplementation::setConditions(c);
   }
 >>
 end setConditions;
@@ -7297,10 +7304,22 @@ template geConditions(SimCode simCode)
 <<
  void <%lastIdentOfPath(modelInfo.name)%>::getConditions(bool* c)
   {
-    memcpy(c,_conditions,_dimZeroFunc*sizeof(bool));
+     SystemDefaultImplementation::getConditions(c);
   }
 >>
 end geConditions;
+
+template isConsistent(SimCode simCode)
+::=
+ match simCode
+  case SIMCODE(modelInfo = MODELINFO(__)) then
+<<
+ bool <%lastIdentOfPath(modelInfo.name)%>::isConsistent()
+  {
+     return SystemDefaultImplementation::isConsistent();
+  }
+>>
+end isConsistent;
 
 template saveConditions(SimCode simCode)
 ::=

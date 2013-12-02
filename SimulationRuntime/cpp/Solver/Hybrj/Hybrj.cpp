@@ -29,6 +29,7 @@ Hybrj::Hybrj(IAlgLoop* algLoop, INonLinSolverSettings* settings)
      ,_x_ex(NULL)
     ,_x_nom(NULL)
      ,_x_scale(NULL)
+     ,_x_restart(NULL)
      ,_initial_factor(100)
      ,_usescale(false)
 {
@@ -67,7 +68,7 @@ void Hybrj::stepCompleted(double time)
 void Hybrj::initialize()
 {
     _firstCall = false;
-
+   
     //(Re-) Initialization of algebraic loop
     _algLoop->initialize();
 
@@ -96,6 +97,7 @@ void Hybrj::initialize()
             if(_x_nom) delete[] _x_nom;
             if(_x_scale) delete[] _x_scale;
             if(_x_ex) delete[] _x_scale;
+            if(_x_restart) delete[] _x_restart;
             _x            = new double[_dimSys];
             _f            = new double[_dimSys];    
             _xHelp        = new double[_dimSys];
@@ -107,19 +109,21 @@ void Hybrj::initialize()
             _x_nom = new double[_dimSys];
             _x_scale = new double[_dimSys];
             _x_ex = new double[_dimSys];
+            _x_restart = new double[_dimSys];
             //ToDo: nominal variablen abfragen
              _algLoop->getReal(_x0);
              _algLoop->getReal(_x1);
               _algLoop->getReal(_x2);
             _algLoop->getReal(_x);
              _algLoop->getReal(_x_ex);
+              _algLoop->getReal(_x_restart);
             std::fill_n(_f,_dimSys,0.0);
               std::fill_n(_x_scale,_dimSys,1.0);
            std::fill_n(_x_nom,_dimSys,1.0);
           std::fill_n(_xHelp,_dimSys,0.0);
           std::fill_n(_fHelp,_dimSys,0.0);
           std::fill_n(_jac,_dimSys*_dimSys,0.0);
-          
+         
 
             _lr = (_dimSys*(_dimSys + 1)) / 2;
             _ldfjac= _dimSys;
@@ -184,6 +188,7 @@ void Hybrj::solve(const IContinuous::UPDATETYPE command)
         int iter_retry2 = 0;
         int info;
         _iterationStatus = CONTINUE;
+        bool isConsistent = true;
         while(_iterationStatus == CONTINUE)
         {
              /* Scaling x vector */
@@ -192,6 +197,13 @@ void Hybrj::solve(const IContinuous::UPDATETYPE command)
             __minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag, 
                 &_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf, 
                 _wa1, _wa2, _wa3, _wa4,_data);
+            //check if  the conditions of the system has changed 
+            if(isConsistent)
+            {
+               isConsistent = _algLoop->isConsistent();
+               if(!isConsistent)
+                  _algLoop->getReal(_x_restart);
+            }
             /* re-scaling x vector */
             if(_usescale)
                 std::transform (_x, _x+_dimSys, _x_scale, _x, std::multiplies<double>());
@@ -327,8 +339,12 @@ void Hybrj::solve(const IContinuous::UPDATETYPE command)
         }
         if((_iterationStatus == SOLVERERROR))
         {
-           /* std::cout << "error " << _fnorm << std::endl;*/
-            throw std::invalid_argument("Unsuccessful termination of HYBRJ, iteration is making no progress ");
+            if(!isConsistent)
+            {
+                    _algLoop->setReal(_x_restart);
+            }
+            else
+                 throw std::invalid_argument("Unsuccessful termination of HYBRJ, iteration is making no progress ");
             
 
         }

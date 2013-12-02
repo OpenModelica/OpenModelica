@@ -27,13 +27,13 @@ public:
     /// Provides current values of root/zero functions
     virtual void getZeroFunc(double* f) = 0;
     
-   
+    virtual void  setConditions(bool* c) =0;
     virtual void getConditions(bool* c)=0;
     virtual void saveDiscreteVars() = 0;
     /// Called to handle an event 
     virtual void handleEvent(const bool* events) = 0;
     ///Checks if a discrete variable has changed and triggered an event, returns true if a second event iteration is needed
     virtual bool checkForDiscreteEvents() = 0;    
-    
+    virtual  bool getCondition(unsigned int index) = 0;
 };
 
