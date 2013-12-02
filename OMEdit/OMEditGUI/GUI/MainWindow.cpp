@@ -1718,7 +1718,7 @@ void MainWindow::createActions()
   mpSimulateModelAction->setEnabled(false);
   connect(mpSimulateModelAction, SIGNAL(triggered()), SLOT(simulateModel()));
   // simulation setup action
-  mpSimulationSetupAction = new QAction(Helper::simulationSetup, this);
+  mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   mpSimulationSetupAction->setEnabled(false);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
@@ -2095,6 +2095,7 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->addAction(mpInstantiateModelAction);
   mpSimulationToolBar->addAction(mpCheckModelAction);
   mpSimulationToolBar->addAction(mpSimulateModelAction);
+  mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");

@@ -558,7 +558,7 @@ void LibraryTreeWidget::createActions()
   mpSimulateAction->setStatusTip(Helper::simulateTip);
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
   // simulation setup Action
-  mpSimulationSetupAction = new QAction(Helper::simulationSetup, this);
+  mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(simulationSetup()));
   // unload Action
