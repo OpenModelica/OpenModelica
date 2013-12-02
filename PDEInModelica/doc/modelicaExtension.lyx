@@ -717,13 +717,17 @@ domain
 \begin_inset space ~
 \end_inset
 
-class Any domain class extends built-in 
+type Any domain type extends built-in 
 \family typewriter
-class Domain
+type Domain
 \family default
-, that has one member 
+, that has two members 
 \family typewriter
 replaceable Region interior;
+\family default
+ and 
+\family typewriter
+parameter Integer ndim;
 \family default
 .
  Other domains extends this general domain and redeclares 
@@ -743,7 +747,7 @@ Region1D
 3D
 \family default
 .
- During translation are domains treated in different way than usual classes.
+ During translation are domains treated in special way.
 
 \family typewriter
  
@@ -752,7 +756,7 @@ There will be packege
 \family typewriter
 PDEDomains
 \family default
- containing common domains
+ containing library of common domains
 \family typewriter
  DomainLineSegment1D
 \family default
@@ -780,10 +784,19 @@ Needs OMC modification.
 \begin_layout Description
 
 \family typewriter
-Coordinate
+coordinate
 \family default
- type to define new coordinates - design of concept unfinished.
+ key-word (or modifier) to define new coordinates.
+ Syntaxe is
+\family typewriter
  
+\family default
+e.g.
+
+\family typewriter
+ coordinate Cartesian[3];
+\family default
+
 \begin_inset Newline newline
 \end_inset
 
@@ -813,7 +826,11 @@ shape
 
 function one-to-one map of points in k-dimensional interval (usualy cartesian
  product of intervals) to points in n-dimensional domain and thus deffine
- a coordinate system in domain 
+ a coordinate system in domain
+\begin_inset Newline newline
+\end_inset
+
+
 \begin_inset Note Note
 status open
 
@@ -1247,7 +1264,7 @@ in
 \begin_inset space ~
 \end_inset
 
-omega.left + omega.right;
+omega.left, omega.right;
 \family default
 
 \begin_inset Newline newline
@@ -1299,7 +1316,7 @@ region
 \begin_inset space ~
 \end_inset
 
-addition + operator can be used to add regions.
+addition?? + operator can be used to add regions.
  Can be used in domain record to form a new region, e.g.
  
 \family typewriter

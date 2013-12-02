@@ -1610,7 +1610,7 @@ key "membrane"
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula $\Omega_{m}=\left\{ (x,y)\vert x^{2}+y^{2}<r^{2}\right\} $
+\begin_inset Formula $\Omega_{m}=\left\{ (x_{m},y_{m})\vert x_{m}^{2}+y_{m}^{2}<r^{2}\right\} $
 \end_inset
 
 
@@ -1759,7 +1759,11 @@ p(x,y,z,0) & = & p_{0}\\
 \end_layout
 
 \begin_layout Paragraph*
-Position of membrane centre in room
+Position of membrane in the room
+\end_layout
+
+\begin_layout Subparagraph*
+Position of membrane centre
 \end_layout
 
 \begin_layout Standard
@@ -1782,6 +1786,23 @@ membrane lies in
 .
 \end_layout
 
+\begin_layout Subparagraph*
+Or coordinate transformation (shift)
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+x_{m} & =x+a_{x}\\
+y_{m} & =y+a_{y}\\
+a_{z} & ?=?z & \text{(holds just in }\Omega_{m})
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
 \begin_layout Paragraph*
 Equation connecting membrane and air
 \end_layout
@@ -1800,7 +1821,7 @@ Equation connecting membrane and air
 \begin_layout Standard
 \begin_inset CommandInset include
 LatexCommand lstinputlisting
-filename "/media/janek/AC6CB0776CB03DC0/Users/Jan/Work/EclipseWorkspace/OpenModelica/doc/PDEInModelica/models/membraneInAir.mo"
+filename "../models/membraneInAir.mo"
 lstparams "breaklines=true,caption={Vibrating membrane in air},captionpos=b,frame=tb,label={membraneInAir.mo}"
 
 \end_inset

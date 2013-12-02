@@ -311,7 +311,7 @@ end heatPid;
 
 \series bold
 4.3.1.
- Domains Geometry Deffinition
+ Domains Geometry Definition
 \end_layout
 
 \begin_layout Standard
@@ -372,7 +372,7 @@ This way of domain deffinition should be supplemented with Constructive
 \begin_layout Standard
 4.3.1.1 
 \series bold
-Domain Type
+Domain type
 \series default
  similar (built-in) - In both cases all domains extends general built-in
  
@@ -590,7 +590,7 @@ domain
 \family typewriter
 dom
 \family default
-) keywords as a alias for domain and region specified after 
+) keywords as an alias for domain and region specified after 
 \family typewriter
 in 
 \family default

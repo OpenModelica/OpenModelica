@@ -143,6 +143,24 @@ key "li2008solving"
 
 \end_layout
 
+\begin_layout Standard
+
+\lang british
+Solid modeling on Wikipedia.
+ 
+\begin_inset CommandInset citation
+LatexCommand cite
+key "SolidModeling"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+OO Modeling with PDE, Saldamli, Modelica work shop 2000
+\end_layout
+
 \begin_layout Chapter
 
 \lang british
@@ -268,8 +286,20 @@ x, y, z
 \family default
 ) when they are not ordered? And what if there are more coordinate systems
  defined (e.g.
- cartesian and polar)? The same problem holds for functions that set start
- values to fields.
+ cartesian and polar)? 
+\end_layout
+
+\begin_layout Itemize
+Avoid equations of coordinate transformations in equation section and write
+ somethink like
+\begin_inset Newline newline
+\end_inset
+
+Coordinate r (name = "polar", deffinition = sqrt(x^2 + y^2));
+\begin_inset Newline newline
+\end_inset
+
+?
 \end_layout
 
 \begin_layout Standard
@@ -403,6 +433,24 @@ left + right
  is different, and complicated -- requires conditions.
 \end_layout
 
+\begin_layout Itemize
+perhaps instead of 
+\family typewriter
+Region1D reg3 = reg1 + reg2;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+write
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+Region1D[] reg3 = {reg1, reg2};
+\end_layout
+
 \end_deeper
 \begin_layout Itemize
 Atribut 
@@ -454,7 +502,8 @@ div
 
 \begin_layout Itemize
 How should the shape, geometrical structure, mesh structure, etc.
- be described by an external file?
+ be described by an external file? Should be the file imported into the
+ Modelica language, or just loaded by the runtime.
 \end_layout
 
 \begin_layout Itemize
@@ -472,6 +521,12 @@ Allow higer derivatives? Perhaps allow only higher space derivatives, not
  time? Why are higher derivatives not allowed in current Modelica?
 \end_layout
 
+\begin_deeper
+\begin_layout Itemize
+rather allow
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 Allow some of this shortcuts to 
 \family typewriter
@@ -493,12 +548,14 @@ pder(u,omega.x) = ...
  //in omega ommited, information inferd from omega.x
 \end_layout
 
+\begin_deeper
 \begin_layout Itemize
-Field variables and equations written within domains?
+rather not
 \end_layout
 
+\end_deeper
 \begin_layout Itemize
-Multiple inheritance of domains -- should it be allowd, what is the meaning?
+Field variables and equations written within domains?
 \end_layout
 
 \begin_layout Itemize
@@ -513,6 +570,61 @@ normal(omega.region1)
  rather than 
 \family typewriter
 omega.region1.n
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+perhaps 
+\begin_inset Quotes eld
+\end_inset
+
+.
+\begin_inset Quotes erd
+\end_inset
+
+ notation is better as the normal vector is not a value but a function of
+ coordinates
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+field literal constructor:
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+field Real f = field (2*x+y for (omega.x,omega.y));
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+or
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+field Real f = field (2*dom.x+dom.y in omega.interior );
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+or
+\begin_inset Newline newline
+\end_inset
+
+
+\family typewriter
+field Real f = field (2* x+y for (x, y) in omega ) ;
+\family default
+
+\begin_inset Newline newline
+\end_inset
+
+?
 \end_layout
 
 \begin_layout Standard
@@ -531,6 +643,20 @@ height "1pt"
 Solved problems:
 \end_layout
 
+\begin_layout Itemize
+Multiple inheritance of domains -- should it be allowd, what is the meaning?
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+multiple inheritance is allowed in general, but resulting equations must
+ not be in conflict.
+ Deffinition of regions using intervals is also som kind of equation.
+ So we cannot inherit two domain calses that both defines e.g.
+ Region interior.
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 
 \series bold

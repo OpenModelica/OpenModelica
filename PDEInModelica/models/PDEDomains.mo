@@ -2,6 +2,11 @@
 
 package PDEDomains
   import C = Modelica.Constants;
+  type Domain  //Domain is built-in, but hes this "interface"
+    prameter Integer ndim;
+    replaceable Region interior;
+  end Domain
+
 //approach 1:
   class DomainLineSegment1D
     extends Domain;
@@ -15,7 +20,7 @@ package PDEDomains
     Region1D interior(shape = shapeFunc, interval = {0,1});
     Region0D left(shape = shapeFunc, interval = 0);
     Region0D right(shape = shapeFunc, interval = 1);
-    Region0D boundary = left + right; {left, right};
+    Region0D boundary = left + right; //{left, right};
   end DomainLineSegment1D;
 
 //approach 2:
@@ -45,10 +50,10 @@ package PDEDomains
     Coordinate x (name = "cartesian");
     Coordinate y (name = "cartesian");
     Coordinate r (name = "polar");
-    Coordinate theta (name = "polar");
+    Coordinate phi (name = "polar");
     equation
       r = sqrt(x^2 + y^2);
-      theta = arctg(y/x);
+      phi = arctg(y/x);
     Region2D interior(shape = shapeFunc, interval = {{0,1},{0,1}});
     Region1D right(shape = shapeFunc, interval = {1,{0,1}});
     Region1D bottom(shape = shapeFunc, interval = {{0,2},0});
@@ -64,7 +69,7 @@ package PDEDomains
     Coordinate x (name = "cartesian");
     Coordinate y (name = "cartesian");
 //    Coordinate r (name = "polar");
-//    Coordinate theta (name = "polar");
+//    Coordinate phi (name = "polar");
     parameter Real L1 = 1;  //rectangle length, assign implicit value
     parameter Real L2 = 1;  //rectangle height, assign implicit value
     parameter Real a1 = 0;  //x-coordinate of left side, implicitly 0
@@ -73,7 +78,7 @@ package PDEDomains
     parameter Real b2 = a2 + L2;  //y-coorinate of upper side
 //    equation
 //      r = sqrt(x^2 + y^2);
-//      theta = arctg(y/x);
+//      phi = arctg(y/x);
     Region2D interior (x in (a1,b1), y in (a2,b2));  //or rather (x,y) in (a1,b1)@(a2,b2)??
     Region1D right    (x = a, y in (a2,b2));
     Region1D bottom   (x in (a1,b1), y = b1);
@@ -95,13 +100,14 @@ package PDEDomains
       x:=cx + radius * r * cos(2 * C.pi * v);
       y:=cy + radius * r * sin(2 * C.pi * v);
     end shapeFunc;
-    Coordinate x (name="cartesian");
-    Coordinate y (name="cartesian";
+    coordinate x (name="cartesian");
+    coordinate y (name="cartesian";
+    coordinate cartesian[2] = {x,y};
     // Coordinate r (name="polar");
-    // Coordinate theta (name="polar");
+    // Coordinate phi (name="polar");
     // equation
     //   r = sqrt(x^2 + y^2);
-    //   theta = arctg(y/x);
+    //   phi = arctg(y/x);
     Region2D interior(shape = shapeFunc, interval = {{O,1},{O,1}});
     Region1D boundary(shape = shapeFunc, interval = {1,{0,1}});
   end DomainCircular2D;
@@ -112,16 +118,31 @@ package PDEDomains
     parameter Real radius = 1;
     parameter Real cx = 0;
     parameter Real cy = 0;
-    Coordinate x (name="cartesian");
-    Coordinate y (name="cartesian";
-    Coordinate r (name="polar");
-    Coordinate theta (name="polar");
+    coordinate x (name="cartesian");
+    coordinate y (name="cartesian";
+    coordinate r (name="polar");
+    coordinate phi (name="polar");
+    coordinate cartesian[2] = {x,y};
+    coordinate polar[2] = {r,phi};
     equation
-      x = r*cos(theta) + cx;
-      y = r*sin(theta) + cy;
-    Region2D interior(theta in (O,2*C.pi), r in (O,radius));
-    Region1D boundary(theta in (O,2*C.pi), r = radius);
+      x = r*cos(phi) + cx;
+      y = r*sin(phi) + cy;
+    Region2D interior(phi in (O,2*C.pi), r in (O,radius));
+    Region1D boundary(phi in (O,2*C.pi), r = radius);
   end DomainCircular2D;
+
+//approach 2:
+  type DomainElliptic2D
+    extends Domain(ndim=2);
+    parameter Real cx, cy, rx, ry; //x/y center, x/y radius
+    coordinate Real cartesian[ndim], x = cartesian[1], y = cartesian[2];
+    coordinate modPolar[ndim], r = modPolar[1], phi = modPolar[2]; 
+    equation
+      x = rx*r*cos(phi) + cx;
+      y = ry*r*sin(phi) + cy;
+    Region2D interior(phi in (O,2*C.pi), r in (O,1));
+    Region1D boundary(phi in (O,2*C.pi), r = 1);
+  end DomainElliptic2D
 
 //approach 1:
   class DomainBlock3D
@@ -132,9 +153,10 @@ package PDEDomains
       input Real vx, vy, vz;
       output Real x = ax + Lx * vx, y = ay + Ly * vy, z = az + Lz * vz;
     end shapeFunc;
-    Coordinate x (name="cartesian");
-    Coordinate y (name="cartesian");
-    Coordinate z (name="cartesian");
+    coordinate x (name="cartesian");
+    coordinate y (name="cartesian");
+    coordinate z (name="cartesian");
+    coordinate cartesian[3] = {x,y,z};
     Region3D interior(shape = shapeFunc, interval = {{0,1},{0,1},{0,1}});
     Region2D right(shape = shapeFunc, interval = {1,{0,1},{0,1}});
     Region2D bottom(shape = shapeFunc, interval = {{0,1},{0,1},1});
