@@ -133,7 +133,6 @@ class VariableTreeProxyModel : public QSortFilterProxyModel
   Q_OBJECT
 public:
   VariableTreeProxyModel(QObject *parent = 0);
-  void clearfilter();
 protected:
   bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
 };

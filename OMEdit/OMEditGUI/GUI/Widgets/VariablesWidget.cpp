@@ -619,11 +619,6 @@ VariableTreeProxyModel::VariableTreeProxyModel(QObject *parent)
 {
 }
 
-void VariableTreeProxyModel::clearfilter()
-{
-  invalidateFilter();
-}
-
 bool VariableTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
   if (!filterRegExp().isEmpty())
@@ -669,8 +664,6 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
   setIconSize(Helper::iconSize);
   setContextMenuPolicy(Qt::CustomContextMenu);
   setExpandsOnDoubleClick(false);
-  setSortingEnabled(true);
-  sortByColumn(0, Qt::AscendingOrder);
 }
 
 /*!
@@ -763,6 +756,7 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
 void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList,
                                                  SimulationOptions simulationOptions)
 {
+  mpVariablesTreeView->setSortingEnabled(false);
   /* Remove the simulation result if we already had it in tree */
   bool variableItemDeleted = mpVariablesTreeModel->removeVariableTreeItem(fileName);
   /* add the plot variables */
@@ -770,6 +764,8 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   /* update the plot variables tree */
   if (variableItemDeleted)
     variablesUpdated();
+  mpVariablesTreeView->setSortingEnabled(true);
+  mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
 }
 
 void VariablesWidget::variablesUpdated()
@@ -1166,15 +1162,13 @@ void VariablesWidget::showContextMenu(QPoint point)
 
 void VariablesWidget::findVariables()
 {
-  mpVariableTreeProxyModel->invalidate();
-  Qt::CaseSensitivity caseSensitivity = mpFindCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
-  mpVariableTreeProxyModel->setSortCaseSensitivity(caseSensitivity);
   QString findText = mpFindVariablesTextBox->text();
   if (mpFindVariablesTextBox->text().isEmpty() || (mpFindVariablesTextBox->text().compare(Helper::findVariables) == 0))
   {
     findText = "";
   }
   QRegExp::PatternSyntax syntax = QRegExp::PatternSyntax(mpFindSyntaxComboBox->itemData(mpFindSyntaxComboBox->currentIndex()).toInt());
+  Qt::CaseSensitivity caseSensitivity = mpFindCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive: Qt::CaseInsensitive;
   QRegExp regExp(findText, caseSensitivity, syntax);
   mpVariableTreeProxyModel->setFilterRegExp(regExp);
   /* expand all so that the filtered items can be seen. */
