@@ -44,4 +44,10 @@ public function readScheduleFromGraphMl
   external "C" res=HpcOmSchedulerExt_readScheduleFromGraphMl(filename) annotation(Library = "omcruntime");
 end readScheduleFromGraphMl;
 
+public function scheduleAdjList
+  input array<list<Integer>> adjList;
+  output list<Integer> res;
+  external "C" res=HpcOmSchedulerExt_scheduleAdjList(adjList) annotation(Library = "omcruntime");
+end scheduleAdjList;
+
 end HpcOmSchedulerExt;

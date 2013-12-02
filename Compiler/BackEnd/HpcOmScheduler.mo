@@ -1230,7 +1230,41 @@ algorithm
 end printLevelSchedule1;
 
 //--------------------
-// External Scheduling
+// External-C Scheduling
+//--------------------
+public function createExtCSchedule "function createExtSchedule
+  author: marcusw
+  Creates a scheduling by reading the required informations from a graphml-file."
+  input HpcOmTaskGraph.TaskGraph iTaskGraph;
+  input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
+  input Integer iNumberOfThreads;
+  input array<list<Integer>> iSccSimEqMapping; //Maps each scc to a list of simEqs
+  output Schedule oSchedule;
+protected
+  list<Integer> extInfo;
+  array<Integer> extInfoArr;
+  HpcOmTaskGraph.TaskGraph taskGraphT;
+  Schedule tmpSchedule;
+  array<list<Task>> threadTasks;
+  list<Integer> rootNodes;
+  array<tuple<Task, Integer>> allTasks;
+  list<tuple<Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
+  list<Task> nodeList;
+algorithm
+  oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping)
+    case(_,_,_,_)
+      equation
+        extInfo = HpcOmSchedulerExt.scheduleAdjList(iTaskGraph);
+      then fail();
+    else
+      equation
+        print("HpcOmScheduler.createExtCSchedule not every node has a scheduler-info.\n");
+      then fail();
+  end matchcontinue;
+end createExtCSchedule;
+
+//--------------------
+// External Scheduling //TODO: Rename to Yed Scheduling
 //--------------------
 public function createExtSchedule "function createExtSchedule
   author: marcusw

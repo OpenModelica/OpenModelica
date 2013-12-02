@@ -797,7 +797,7 @@ constant ConfigFlag CORBA_OBJECT_REFERENCE_FILE_PATH = CONFIG_FLAG(49, "corbaObj
 
 constant ConfigFlag HPCOM_SCHEDULER = CONFIG_FLAG(50, "hpcomScheduler",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the scheduler for task graph scheduling. Default: list scheduling."));
+  Util.gettext("Sets the scheduler for task graph scheduling (list | level | levelr | ext | mcp). Default: list."));
   
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("cellier"),
@@ -813,7 +813,7 @@ constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(51, "tearingHeuristic",
 
 constant ConfigFlag HPCOM_CODE = CONFIG_FLAG(52, "hpcomCode",
   NONE(), EXTERNAL(), STRING_FLAG("openmp"), NONE(),
-  Util.gettext("Sets the code-type produced by hpcom. Default: openmp."));
+  Util.gettext("Sets the code-type produced by hpcom (openmp | pthreads | pthreads_spin). Default: openmp."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are

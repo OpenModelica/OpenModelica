@@ -33,6 +33,7 @@ extern "C" {
 }
 
 #include "HpcOmSchedulerExt.cpp"
+#include <iostream>
 extern "C" {
 void HpcOmSchedulerExt_5finit(void)
 {
@@ -41,6 +42,34 @@ void HpcOmSchedulerExt_5finit(void)
 RML_BEGIN_LABEL(HpcOmSchedulerExt__readScheduleFromGraphMl)
 {
   rmlA0 = HpcOmSchedulerExtImpl__readScheduleFromGraphMl(RML_STRINGDATA(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(HpcOmSchedulerExt__scheduleAdjList)
+{
+  int nelts = (int)RML_HDRSLOTS(RML_GETHDR(rmlA0)); //number of elements in array
+  std::list<long int> adjLsts[nelts];
+
+  std::cerr << "element count: " << nelts << std::endl;
+
+  for(int i=0; i<nelts; i++) {
+	std::cerr << "bla" << std::endl;
+    void* adjLstE = RML_STRUCTDATA(rmlA0)[i]; //adjacence list entry
+    std::list<long int> adjLst;
+
+    while(RML_GETHDR(adjLstE) == RML_CONSHDR)
+    {
+      long int i1 = RML_UNTAGFIXNUM(RML_CAR(adjLstE));
+      adjLst.push_back(i1);
+      std::cerr << "elem: " << i1 << std::endl;
+      adjLstE = RML_CDR(adjLstE);
+    }
+
+    adjLsts[i] = adjLst;
+  }
+
+  rmlA0 = HpcOmSchedulerExtImpl__scheduleAdjList(adjLsts);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
