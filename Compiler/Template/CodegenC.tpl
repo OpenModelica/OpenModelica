@@ -2597,10 +2597,10 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, String modelName
                <<
                const char *<%symbolName(modelNamePrefix,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes)
                {
-                 const char *res[] = {<%resDesc%>};
+                 static const char *res[] = {<%resDesc%>};
                  <%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-                   'const int occurEqs<%i0%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
-                 const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'occurEqs<%i0%>' ; separator = ","%>};
+                   'static const int occurEqs<%i0%>[] = {<%listLength(occurEquLst)%><%occurEquLst |> i => ',<%i%>'%>};' ; separator = "\n"%>
+                 static const int *occurEqs[] = {<%zeroCrossings |> ZERO_CROSSING(__) hasindex i0 => 'occurEqs<%i0%>' ; separator = ","%>};
                  *out_EquationIndexes = occurEqs[i];
                  return res[i];
                }

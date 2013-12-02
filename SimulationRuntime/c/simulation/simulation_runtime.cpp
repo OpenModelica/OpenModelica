@@ -234,8 +234,9 @@ void setGlobalVerboseLevel(int argc, char**argv)
     useStream[LOG_NLS] = 1;
     
   /* print LOG_EVENTS if LOG_EVENTS_V if active */
-  if(useStream[LOG_EVENTS_V])
+  if(useStream[LOG_EVENTS_V]) {
     useStream[LOG_EVENTS] = 1;
+  }
 
   /* print LOG_NLS if LOG_NLS_JAC if active */
   if(useStream[LOG_NLS_JAC])

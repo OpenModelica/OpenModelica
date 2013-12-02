@@ -837,6 +837,14 @@ void initializeDataStruc(DATA *data)
 
   assertStreamPrint(0 != data->simulationInfo.extObjs, "error allocating external objects");
 
+  /* initial chattering info */
+  data->simulationInfo.chatteringInfo.numEventLimit = 100;
+  data->simulationInfo.chatteringInfo.lastSteps = (int*) calloc(data->simulationInfo.chatteringInfo.numEventLimit, sizeof(int));
+  data->simulationInfo.chatteringInfo.lastTimes = (double*) calloc(data->simulationInfo.chatteringInfo.numEventLimit, sizeof(double));
+  data->simulationInfo.chatteringInfo.currentIndex = 0;
+  data->simulationInfo.chatteringInfo.lastStepsNumStateEvents = 0;
+  data->simulationInfo.chatteringInfo.messageEmitted = 0;
+
   data->simulationInfo.lambda = 1.0;
   
   /* initial build calls terminal, initial */
@@ -982,6 +990,10 @@ void deInitializeDataStruc(DATA *data)
 
   /* free external objects buffer */
   free(data->simulationInfo.extObjs);
+
+  /* free chattering info */
+  free(data->simulationInfo.chatteringInfo.lastSteps);
+  free(data->simulationInfo.chatteringInfo.lastTimes);
 
   /* TODO: Make a free xml function */
   freeModelInfoXml(&data->modelData.modelDataXml);

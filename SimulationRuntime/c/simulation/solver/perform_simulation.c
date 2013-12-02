@@ -210,7 +210,7 @@ int prefixedName_performSimulation(DATA* data, SOLVER_INFO* solverInfo)
         currectJumpState = ERROR_EVENTSEARCH;
         infoStreamPrint(LOG_EVENTS, 1, "%s event at time %.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
         handleEvents(data, solverInfo->eventLst, &(solverInfo->currentTime), solverInfo);
-        messageClose(LOG_EVENTS);
+        if (ACTIVE_STREAM(LOG_EVENTS)) messageClose(LOG_EVENTS);
         currectJumpState = ERROR_SIMULATION;
 
         solverInfo->didEventStep = 1;

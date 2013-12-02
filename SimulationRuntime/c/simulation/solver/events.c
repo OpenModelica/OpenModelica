@@ -168,9 +168,11 @@ int checkForStateEvent(DATA* data, LIST *eventList)
  */
 int checkEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
-  if(checkForStateEvent(data, solverInfo->eventLst))
-    if(!solverInfo->solverRootFinding)
+  if (checkForStateEvent(data, solverInfo->eventLst)) {
+    if (!solverInfo->solverRootFinding) {
       findRoot(data, solverInfo->eventLst, &(solverInfo->currentTime));
+    }
+  }
 
   if(data->simulationInfo.sampleActivated == 1)
     return 1;
@@ -211,7 +213,7 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
         infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData.samplesInfo[i].index, data->modelData.samplesInfo[i].start, data->modelData.samplesInfo[i].interval);
       }
   }
-
+  data->simulationInfo.chatteringInfo.lastStepsNumStateEvents-=data->simulationInfo.chatteringInfo.lastSteps[data->simulationInfo.chatteringInfo.currentIndex];
   /* state event */
   if(listLen(eventLst)>0)
   {
@@ -227,9 +229,30 @@ void handleEvents(DATA* data, LIST* eventLst, double *eventTime, SOLVER_INFO* so
       }
     }
 
-    listClear(eventLst);
     solverInfo->stateEvents++;
+    data->simulationInfo.chatteringInfo.lastStepsNumStateEvents++;
+    data->simulationInfo.chatteringInfo.lastSteps[data->simulationInfo.chatteringInfo.currentIndex]=1;
+    data->simulationInfo.chatteringInfo.lastTimes[data->simulationInfo.chatteringInfo.currentIndex]=time;
+
+    if (!data->simulationInfo.chatteringInfo.messageEmitted && data->simulationInfo.chatteringInfo.lastStepsNumStateEvents == data->simulationInfo.chatteringInfo.numEventLimit) {
+      int numEventLimit = data->simulationInfo.chatteringInfo.numEventLimit;
+      int currentIndex = data->simulationInfo.chatteringInfo.currentIndex;
+      double t0 = data->simulationInfo.chatteringInfo.lastTimes[(currentIndex+1) % numEventLimit];
+      if (time - t0 < data->simulationInfo.stepSize) {
+        long ix = *((long*) listNodeData(listFirstNode(eventLst)));
+        const int *eq_indexes;
+        const char *exp_str = data->callback->zeroCrossingDescription(ix,&eq_indexes);
+        infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, eq_indexes, "Chattering detected around time %.12g..%.12g (%d state events in a row with a total time delta less than the step size %.12g). This can be a performance bottleneck. Use -lv LOG_EVENTS for more information. The zero-crossing was: %s", t0, time, numEventLimit, data->simulationInfo.stepSize, exp_str);
+        data->simulationInfo.chatteringInfo.messageEmitted = 1;
+      }
+    }
+
+    listClear(eventLst);
+  } else {
+    data->simulationInfo.chatteringInfo.lastSteps[data->simulationInfo.chatteringInfo.currentIndex]=0;
+    /* Setting time does not matter */
   }
+  data->simulationInfo.chatteringInfo.currentIndex = (data->simulationInfo.chatteringInfo.currentIndex+1) % data->simulationInfo.chatteringInfo.numEventLimit;
 
   /* update the whole system */
   updateDiscreteSystem(data);

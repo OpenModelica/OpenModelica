@@ -94,6 +94,16 @@ typedef struct SAMPLE_INFO
   double interval;
 } SAMPLE_INFO;
 
+typedef struct CHATTERING_INFO
+{
+  int numEventLimit;
+  int *lastSteps;
+  double *lastTimes;
+  int currentIndex;
+  int lastStepsNumStateEvents;
+  int messageEmitted;
+} CHATTERING_INFO;
+
 typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
 
 /* SPARSE_PATTERN
@@ -494,7 +504,9 @@ typedef struct SIMULATION_INFO
   double tStart;
   RINGBUFFER **delayStructure;
   const char *OPENMODELICAHOME;
-}SIMULATION_INFO;
+  
+  CHATTERING_INFO chatteringInfo;
+} SIMULATION_INFO;
 
 /* collects all dynamic model data like the variabel-values */
 typedef struct SIMULATION_DATA
