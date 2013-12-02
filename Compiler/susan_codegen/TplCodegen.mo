@@ -812,8 +812,9 @@ algorithm
     case ( txt,
            TplAbsyn.ARRAY_TYPE(ofType = i_ofType) )
       equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("array<"));
         txt = typeSig(txt, i_ofType);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("[:]"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(">"));
       then txt;
 
     case ( txt,

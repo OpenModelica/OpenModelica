@@ -124,7 +124,7 @@ end typedIdentsEx;
 template typeSig(TypeSignature it) ::=
   match it
   case LIST_TYPE(__)   then 'list<<%typeSig(ofType)%>>'
-  case ARRAY_TYPE(__)  then '<%typeSig(ofType)%>[:]'
+  case ARRAY_TYPE(__)  then 'array<<%typeSig(ofType)%>>'
   case OPTION_TYPE(__) then 'Option<<%typeSig(ofType)%>>'
   case TUPLE_TYPE(__)  then 'tuple<<%ofTypes |> it => typeSig(it);separator=", "%>>'
   case NAMED_TYPE(__)  then pathIdent(name)
