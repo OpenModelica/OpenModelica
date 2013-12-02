@@ -122,7 +122,7 @@ private:
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *displayUnit,
                               QString *description);
 signals:
-  void itemChecked(const QModelIndex &index);
+  void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
   void variableTreeItemRemoved(QString variable);
 public slots:
   void removeVariableTreeItem();
@@ -180,7 +180,7 @@ private:
   QString mFileName;
   QMdiSubWindow *mpLastActiveSubWindow;
 public slots:
-  void plotVariables(const QModelIndex &index, OMPlot::PlotWindow *pPlotWindow = 0);
+  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotWindow *pPlotWindow = 0);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);
   void findVariables();

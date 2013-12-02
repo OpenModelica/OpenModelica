@@ -286,7 +286,10 @@ bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value
   if (index.column() == 0 && role == Qt::CheckStateRole)
   {
     if (!signalsBlocked())
-      emit itemChecked(index);
+    {
+      CurveStylePage *pCurveStylePage = mpVariablesTreeView->getVariablesWidget()->getMainWindow()->getOptionsDialog()->getCurveStylePage();
+      emit itemChecked(index, pCurveStylePage->getCurveThickness(), pCurveStylePage->getCurvePattern());
+    }
   }
   emit dataChanged(index, index);
   return result;
@@ -751,7 +754,7 @@ VariablesWidget::VariablesWidget(MainWindow *pMainWindow)
   connect(mpCollapseAllButton, SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
   connect(mpVariablesTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
   connect(mpVariablesTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
-  connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex)), SLOT(plotVariables(QModelIndex)));
+  connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex,qreal,int)), SLOT(plotVariables(QModelIndex,qreal,int)));
   connect(mpVariablesTreeView, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   connect(pMainWindow->getPlotWindowContainer(), SIGNAL(subWindowActivated(QMdiSubWindow*)), this, SLOT(updateVariablesTree(QMdiSubWindow*)));
   connect(mpVariablesTreeModel, SIGNAL(variableTreeItemRemoved(QString)), pMainWindow->getPlotWindowContainer(), SLOT(updatePlotWindows(QString)));
@@ -790,7 +793,7 @@ void VariablesWidget::variablesUpdated()
           bool state = mpVariablesTreeModel->blockSignals(true);
           QModelIndex index = mpVariablesTreeModel->variablesTreeItemIndex(pVariableTreeItem);
           mpVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(index, pPlotWindow);
+          plotVariables(index, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotWindow);
           mpVariablesTreeModel->blockSignals(state);
         }
       }
@@ -807,10 +810,10 @@ void VariablesWidget::variablesUpdated()
           bool state = mpVariablesTreeModel->blockSignals(true);
           QModelIndex xIndex = mpVariablesTreeModel->variablesTreeItemIndex(pXVariableTreeItem);
           mpVariablesTreeModel->setData(xIndex, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(xIndex, pPlotWindow);
+          plotVariables(xIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotWindow);
           QModelIndex yIndex = mpVariablesTreeModel->variablesTreeItemIndex(pYVariableTreeItem);
           mpVariablesTreeModel->setData(yIndex, Qt::Checked, Qt::CheckStateRole);
-          plotVariables(yIndex, pPlotWindow);
+          plotVariables(yIndex, pPlotCurve->getCurveWidth(), pPlotCurve->getCurveStyle(), pPlotWindow);
           mpVariablesTreeModel->blockSignals(state);
         }
         else
@@ -936,7 +939,7 @@ void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash
   }
 }
 
-void VariablesWidget::plotVariables(const QModelIndex &index, PlotWindow *pPlotWindow)
+void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, PlotWindow *pPlotWindow)
 {
   if (index.column() > 0)
     return;
@@ -973,8 +976,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, PlotWindow *pPlotW
       if (pVariablesTreeItem->isChecked())
       {
         pPlotWindow->initializeFile(QString(pVariablesTreeItem->getFilePath()).append("/").append(pVariablesTreeItem->getFileName()));
-        pPlotWindow->setCurveWidth(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurveThickness());
-        pPlotWindow->setCurveStyle(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurvePattern());
+        pPlotWindow->setCurveWidth(curveThickness);
+        pPlotWindow->setCurveStyle(curveStyle);
         pPlotWindow->setVariablesList(QStringList(pVariablesTreeItem->getPlotVariable()));
         pPlotWindow->plot();
         pPlotWindow->fitInView();
@@ -1026,8 +1029,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, PlotWindow *pPlotW
             }
             mPlotParametricVariables.last().append(QStringList(pVariablesTreeItem->getPlotVariable()));
             pPlotWindow->initializeFile(QString(pVariablesTreeItem->getFilePath()).append("/").append(pVariablesTreeItem->getFileName()));
-            pPlotWindow->setCurveWidth(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurveThickness());
-            pPlotWindow->setCurveStyle(mpMainWindow->getOptionsDialog()->getCurveStylePage()->getCurvePattern());
+            pPlotWindow->setCurveWidth(curveThickness);
+            pPlotWindow->setCurveStyle(curveStyle);
             pPlotWindow->setVariablesList(mPlotParametricVariables.last());
             pPlotWindow->plotParametric();
             if (mPlotParametricVariables.size() > 1)
