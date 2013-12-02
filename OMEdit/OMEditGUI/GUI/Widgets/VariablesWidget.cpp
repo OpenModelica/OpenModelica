@@ -678,13 +678,17 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
 void VariablesTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
   QModelIndex index = indexAt(event->pos());
-  if (index.isValid() && index.column() == 0)
+  if (index.isValid() &&
+      index.column() == 0 &&
+      index.parent().isValid() &&
+      index.flags() & Qt::ItemIsUserCheckable &&
+      event->button() == Qt::LeftButton)
   {
     if (visualRect(index).contains(event->pos()))
     {
       index = mpVariablesWidget->getVariableTreeProxyModel()->mapToSource(index);
       VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-      if (pVariablesTreeItem)
+      if (pVariablesTreeItem && pVariablesTreeItem)
       {
         if (pVariablesTreeItem->isChecked())
           mpVariablesWidget->getVariablesTreeModel()->setData(index, Qt::Unchecked, Qt::CheckStateRole);
