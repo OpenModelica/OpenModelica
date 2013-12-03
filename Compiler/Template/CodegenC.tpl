@@ -48,13 +48,6 @@ package CodegenC
 import interface SimCodeTV;
 import CodegenUtil.*;
 
-template test(array<Integer> i, Boolean b) ::=
-  match b
-    case true then "true"
-    else "false"
-  end match
-end test;
-
 template escapeCComments(String stringWithCComments)
 "escape the C comments inside a string, replaces them with /* */->(* *)"
 ::= '<%System.stringReplace(System.stringReplace(stringWithCComments, "/*", "(*"), "*/", "*)")%>'

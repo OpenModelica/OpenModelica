@@ -3,13 +3,6 @@ package GraphvizDump
 import interface GraphvizDumpTV;
 import CodegenUtil.*;
 
-template test(array<Integer> i, Boolean b) ::=
-  match b
-    case true then "true"
-    else "false"
-  end match
-end test;
-
 template dumpBackendDAE(BackendDAE.BackendDAE backendDAE, String suffix)
 ::=
   match backendDAE
