@@ -1,6 +1,6 @@
 .PHONY : all
 
-all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenFMUCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo
+all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenFMUCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo GraphvizDump.mo NFInstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenXML.mo CodegenJava.mo CodegenJS.mo
 
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynDumpTpl template compilation ** "
@@ -69,6 +69,11 @@ CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl C
 
 ExpressionDumpTpl.mo : ExpressionDumpTpl.tpl ExpressionDumpTV.mo DAEDumpTpl.tpl
 	@echo " ** ExpressionDumpTpl template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+
+GraphvizDump.mo : GraphvizDump.tpl
+	@echo " ** GraphvizDump template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
 

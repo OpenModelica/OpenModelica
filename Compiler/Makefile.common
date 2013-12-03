@@ -195,6 +195,7 @@ CodegenUtil.mo \
 CodegenXML.mo \
 DAEDumpTpl.mo \
 ExpressionDumpTpl.mo \
+GraphvizDump.mo \
 NFInstDumpTpl.mo \
 SCodeDumpTpl.mo \
 SimCodeDump.mo \

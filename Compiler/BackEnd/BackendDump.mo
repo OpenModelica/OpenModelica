@@ -50,6 +50,7 @@ encapsulated package BackendDump
 public import BackendDAE;
 public import DAE;
 public import HashSet;
+public import Tpl;
 
 protected import Absyn;
 protected import BackendDAETransform;
@@ -66,6 +67,7 @@ protected import DumpHTML;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
+protected import GraphvizDump;
 protected import IOStream;
 protected import List;
 protected import SCode;
@@ -431,6 +433,43 @@ algorithm
     then ();
   end matchcontinue;
 end printSparsityPattern;
+
+// =============================================================================
+// section for all graphviz* functions
+//
+// =============================================================================
+
+public function graphvizBackendDAE
+  input BackendDAE.BackendDAE inBackendDAE;
+  input String inFileNameSuffix;
+protected
+  BackendDAE.BackendDAE dae;
+  BackendDAE.EqSystems eqSystems;
+  String fileNamePrefix;
+  String buffer;
+algorithm
+  dae := setIncidenceMatrix(inBackendDAE);
+  Tpl.tplNoret2(GraphvizDump.dumpBackendDAE, dae, inFileNameSuffix);
+end graphvizBackendDAE;
+
+protected function setIncidenceMatrix
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.EqSystems eqSystems;
+  BackendDAE.Shared shared;
+algorithm  
+  BackendDAE.DAE(eqSystems, shared) := inBackendDAE;
+  eqSystems := List.map(eqSystems, setIncidenceMatrix1);
+  outBackendDAE := BackendDAE.DAE(eqSystems, shared);
+end setIncidenceMatrix;
+
+protected function setIncidenceMatrix1
+  input BackendDAE.EqSystem inEqSystem;
+  output BackendDAE.EqSystem outEqSystem;
+algorithm  
+  (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(inEqSystem, BackendDAE.NORMAL(), NONE());
+end setIncidenceMatrix1;
 
 // =============================================================================
 // section for all dump* functions
@@ -3201,6 +3240,7 @@ algorithm
    _:=
   matchcontinue (inTpl)
     local
+      BackendDAE.BackendDAE dae;
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
       String str,strlow,headerline;
@@ -3221,7 +3261,7 @@ algorithm
       then
         ();
     
-    case ((headerline,BackendDAE.DAE(eqs,shared)))
+    case ((headerline,dae as BackendDAE.DAE(eqs,shared)))
       equation
         print(headerline); print(":\n");
         List.map_0(eqs,printEqSystem);
