@@ -1,5 +1,6 @@
 // Note: Run with +g=MetaModelica
 
+if regularFileExists("CustomCommands.mos") then runScript("CustomCommands.mos") else "";
 library:=$TypeName(Modelica);
 libraryVersion:="default";
 referenceFiles:=getInstallationDirectoryPath()+"/../testsuite/simulation/libraries/msl32/ReferenceFiles";

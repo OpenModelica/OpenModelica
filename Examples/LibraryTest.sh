@@ -31,6 +31,7 @@ HISTORY="$WWW/history"
 
 rm -rf "$WORKDIR"
 mkdir -p "$WORKDIR" "$WWW/$LIB_DIR" "$HISTORY"
+test ! -f "$LIB_DIR.mos" || cp "$LIB_DIR.mos" "$WORKDIR/CustomCommands.mos"
 cd "$WORKDIR"
 
 sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$LIB_VERSION\";/" "$TESTMODELS/BuildModelRecursive.mos" | \
