@@ -222,11 +222,13 @@ void messageXML(int type, int stream, int indentNext, char *msg, int subline, co
   printf("<message stream=\"%s\" type=\"%s\" text=\"", LOG_STREAM_NAME[stream], LOG_TYPE_DESC[type]);
   printEscapedXML(msg);
   if (indexes) {
-    printf("\">");
+    printf("\">\n");
     for (i=1; i<=*indexes; i++) {
-      printf("<used index=\"%d\" />", indexes[i]);
+      printf("<used index=\"%d\" />\n", indexes[i]);
     }
-    printf("</message>\n");
+    if (!indentNext) {
+      fputs("</message>\n",stdout);
+    }
   } else {
     fputs(indentNext ? "\">\n" : "\" />\n", stdout);
   }
@@ -278,6 +280,17 @@ void infoStreamPrint(int stream, int indentNext, const char *format, ...)
     va_start(args, format);
     vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
     messageFunction(LOG_TYPE_INFO, stream, indentNext, logBuffer, 0, NULL);
+  }
+}
+
+void warningStreamPrintWithEquationIndexes(int stream, int indentNext, const int *indexes, const char *format, ...)
+{
+  if (ACTIVE_WARNING_STREAM(stream)) {
+    char logBuffer[SIZE_LOG_BUFFER];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
+    messageFunction(LOG_TYPE_WARNING, stream, indentNext, logBuffer, 0, indexes);
   }
 }
 

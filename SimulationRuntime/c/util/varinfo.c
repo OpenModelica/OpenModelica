@@ -36,22 +36,23 @@
 
 void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time)
 {
+  int indexes[2] = {1,eq.id};
   switch(err)
   {
   case ERROR_AT_TIME:
-    warningStreamPrint(LOG_NLS, 0, "Error solving nonlinear system %s at time %g", eq.name, time);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "Error solving nonlinear system %s at time %g", eq.name, time);
     break;
   case NO_PROGRESS_START_POINT:
-    warningStreamPrint(LOG_NLS, 0, "Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)", eq.name, time);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "Solving nonlinear system %s: iteration not making progress, trying with different starting points (+%g)", eq.name, time);
     break;
   case NO_PROGRESS_FACTOR:
-    warningStreamPrint(LOG_NLS, 0, "Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g", eq.name, time);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "Solving nonlinear system %s: iteration not making progress, trying to decrease factor to %g", eq.name, time);
     break;
   case IMPROPER_INPUT:
-    warningStreamPrint(LOG_NLS, 0, "improper input parameters to nonlinear eq. syst: %s at time %g", eq.name, time);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "improper input parameters to nonlinear eq. syst: %s at time %g", eq.name, time);
     break;
   default:
-    warningStreamPrint(LOG_NLS, 0, "Unknown equation system error: %d %s %g", err, eq.name, time);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "Unknown equation system error: %d %s %g", err, eq.name, time);
     break;
   }
 }
