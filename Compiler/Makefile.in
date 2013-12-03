@@ -64,7 +64,7 @@ nodepend:
 	(cd omc_release && $(MAKE))
 
 omc_release: simcode builtin
-	(cd omc_release && $(MAKE) DAE.c && $(MAKE))
+	(cd omc_release && $(MAKE))
 
 clean:
 	@for d in $(SUBDIRS); do \

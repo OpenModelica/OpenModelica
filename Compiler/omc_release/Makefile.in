@@ -40,7 +40,11 @@ include $(srcdir)/Makefile.compiler_subdirs.common
 .testvariables:
 	# You're using the proper Unix Makefile. Thanks for making my life easier.
 
-$(PROG): $(SRCO) $(SUBDIRS)
+$(PROG):
+	$(MAKE) DAE.c
+	$(MAKE) $(SRCO) $(SUBDIRS)
 	$(OMPCC) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(FMILIB) -lstdc++
 
-nolink: .depend $(SRCO) $(SUBDIRS)
+nolink:
+	$(MAKE) DAE.c
+	$(MAKE) .depend $(SRCO) $(SUBDIRS)
