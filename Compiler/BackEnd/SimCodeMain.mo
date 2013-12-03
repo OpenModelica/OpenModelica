@@ -445,7 +445,7 @@ algorithm
     then ();
     
     case (_, _, "C") equation
-      Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, false);
+      Tpl.tplNoret2(SimCodeDump.dumpSimCode, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
       Tpl.tplNoret(CodegenC.translateModel, simCode);
     then ();
 
