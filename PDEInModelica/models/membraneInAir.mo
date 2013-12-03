@@ -3,7 +3,7 @@ model membraneInAir
 
   //room deffinitions:
   parameter Real lx = 5, ly = 4, lz = 3;
-  coordinates cartesian[3];
+  coordinates cartesian[3] = {x,y,z};
   DomainBlock3D room(cartesian = cartesian, Lx=lx, Ly=ly, Lz=lz);
 
   parameter Real p_0 = 101300;  //mean pressure
