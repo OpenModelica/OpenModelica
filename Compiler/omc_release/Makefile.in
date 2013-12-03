@@ -42,3 +42,5 @@ include $(srcdir)/Makefile.compiler_subdirs.common
 
 $(PROG): $(SRCO) $(SUBDIRS)
 	$(OMPCC) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(FMILIB) -lstdc++
+
+nolink: $(SRCO) $(SUBDIRS)

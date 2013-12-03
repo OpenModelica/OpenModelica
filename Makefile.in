@@ -48,9 +48,11 @@ settings:
 
 omc: @OMCTARGET@
 
-omc-rml: omc-diff interactive docs fmi fmil opencl_rt lis
-	(cd Compiler && $(MAKE) -f Makefile release)
+omc-rml: omc-diff interactive docs fmi fmil opencl_rt lis omc-rml-nolink
+	$(MAKE) -C Compiler -f Makefile release
 	$(MAKE) omlibrary
+omc-rml-nolink:
+	$(MAKE) -C Compiler/omc_release 
 
 boehm-gc-lib: @LIBGC@
 build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so mkbuilddirs
