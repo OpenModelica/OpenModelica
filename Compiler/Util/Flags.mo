@@ -371,6 +371,8 @@ constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(102, "graphvizDump", fa
   Util.gettext("activates additional graphviz dumps (as *.dot files). It can be used in addition to one of the following flags: {dumpinitialsystems}."));
 constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(103, "infoXmlOperations", false,
   Util.gettext("Enables output of the operations in the _info.xml file when translating models."));
+constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(104, "hpcomDump", false,
+  Util.gettext("dumps additional information on the parallel execution with hpcom"));
   
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -479,7 +481,8 @@ constant list<DebugFlag> allDebugFlags = {
   PARTLINTORNSYSTEM,
   DUMP_DISCRETEVARS_INFO,
   ADDITIONAL_GRAPHVIZ_DUMP,
-  INFO_XML_OPERATIONS
+  INFO_XML_OPERATIONS,
+  HPCOM_DUMP
 };
 
 // CONFIGURATION FLAGS

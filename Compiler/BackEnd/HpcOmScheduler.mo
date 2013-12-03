@@ -40,6 +40,7 @@ public import HpcOmTaskGraph;
 
 protected import BackendDAEUtil;
 protected import Debug;
+protected import Flags;
 protected import HpcOmSchedulerExt;
 protected import List;
 protected import Util;
@@ -2079,9 +2080,6 @@ algorithm
         serTime = getSerialExecutionTime(taskGraphMetaIn);
         speedUp = serTime /. parTime;
         speedUpMax = serTime /. cpCosts;
-        //print("the serialCosts: "+&realString(serTime)+&"\n");
-        //print("the parallelCosts: "+&realString(parTime)+&"\n");
-        //print("the cpCosts: "+&realString(cpCosts)+&"\n");
       then
         (serTime,parTime,speedUp,speedUpMax); 
     else
@@ -2119,6 +2117,8 @@ algorithm
         isNotOkString = "Something is weird. The predicted SpeedUp is "+&realString(speedUp)+&" and the theoretical maximum speedUp is "+&realString(speedUpMax)+&"\n";
         Debug.bcall(realGt(speedUp,speedUpMax),print,isNotOkString);
         Debug.bcall(realLe(speedUp,speedUpMax),print,isOkString);
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the parallelCosts: "+&realString(parTime)+&"\n");
       then
         ();
   end matchcontinue;  

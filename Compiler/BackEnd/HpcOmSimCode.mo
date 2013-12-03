@@ -56,7 +56,6 @@ protected import ComponentReference;
 protected import Debug;
 protected import Error;
 protected import Expression;
-protected import ExpressionDump;
 protected import Flags;
 protected import GlobalScript;
 protected import HpcOmTaskGraph;
@@ -233,8 +232,8 @@ algorithm
       //Apply filters
       //-------------
       (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true);
-      //HpcOmTaskGraph.printTaskGraph(taskGraph1);
-      //HpcOmTaskGraph.printTaskGraphMeta(taskGraphData1); 
+      Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraph1);
+      Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphData1);
       
       //Create schedule
       //---------------
@@ -247,11 +246,10 @@ algorithm
       HpcOmScheduler.printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProc);
       ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
       criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-      
+      Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
       
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
-      
       
       fileName = ("taskGraph"+&filenamePrefix+&"ODE_schedule.graphml");  
       HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphData1, fileName, criticalPathInfo, HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPaths)), HpcOmTaskGraph.convertNodeListToEdgeTuples(List.first(criticalPathsWoC)), sccSimEqMapping, schedulerInfo);
