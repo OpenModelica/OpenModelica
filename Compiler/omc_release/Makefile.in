@@ -46,6 +46,7 @@ $(PROG):
 	$(OMPCC) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(FMILIB) -lstdc++
 
 nolink:
+	$(MAKE) -C Template
 	$(MAKE) .depend
 	$(MAKE) DAE.c
 	$(MAKE) $(SRCO) $(SUBDIRS)

@@ -13,7 +13,7 @@ SUBDIRS	= runtime parser modpar
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 .SUFFIXES: .o .mo .h .c
-.PHONY: all vctarget absyn_subdir clean reallyclean nolink $(SUBDIRS)
+.PHONY: all vctarget absyn_subdir clean reallyclean nolink $(SUBDIRS) $(PROG)
 
 vpath %.mo $(FRONTEND_DIR)
 vpath %.mo $(BACKEND_DIR)
