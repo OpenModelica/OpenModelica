@@ -232,8 +232,8 @@ algorithm
       //Apply filters
       //-------------
       (taskGraph1,taskGraphData1) = applyFiltersToGraph(taskGraphOde,taskGraphDataOde,inBackendDAE,true);
-      Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraph1);
-      Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphData1);
+      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraph,taskGraph1);
+      //Debug.fcall(Flags.HPCOM_DUMP,HpcOmTaskGraph.printTaskGraphMeta,taskGraphData1);
       
       //Create schedule
       //---------------
@@ -241,13 +241,8 @@ algorithm
       (numProc,numFixed) = setNumProc(numProc,cpCostsWoC,taskGraphDataOde);
       schedule = createSchedule(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,numProc);
       (schedule,numProc) = repeatScheduleWithOtherNumProc(taskGraph1,taskGraphData1,sccSimEqMapping,filenamePrefix,cpCostsWoC,schedule,numProc,numFixed);
-      
-      (serTime,parTime,speedUp,speedUpMax) = HpcOmScheduler.predictExecutionTime(schedule,SOME(cpCostsWoC),numProc,taskGraph1,taskGraphData1);
-      HpcOmScheduler.printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProc);
-      ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraph1,taskGraphData1);
-      criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
-      Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
-      
+      criticalPathInfo = HpcOmScheduler.analyseScheduledTaskGraph(schedule,numProc,taskGraph1,taskGraphData1);
+            
       taskScheduleSimCode = HpcOmScheduler.convertScheduleToSimCodeSchedule(schedule);
       schedulerInfo = HpcOmScheduler.convertScheduleStrucToInfo(schedule,arrayLength(taskGraph));      
       

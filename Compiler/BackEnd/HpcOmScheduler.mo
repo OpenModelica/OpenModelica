@@ -2048,6 +2048,54 @@ algorithm
 end printSchedule;
 
 
+public function analyseScheduledTaskGraph"functions to analyse the scheduled task graph can be applied in here.
+author:Waurich TUD 2013-12"
+  input Schedule scheduleIn;
+  input Integer numProcIn;
+  input HpcOmTaskGraph.TaskGraph taskGraphIn;
+  input HpcOmTaskGraph.TaskGraphMeta taskGraphMetaIn;
+  output String criticalPathInfoOut;
+algorithm
+  criticalPathInfoOut := match(scheduleIn,numProcIn,taskGraphIn,taskGraphMetaIn)
+    local
+      list<String> lockIdc;
+      list<list<Integer>> levels;
+      list<list<Integer>> parallelSets;
+      list<list<Integer>> criticalPaths, criticalPathsWoC;
+      array<list<Task>> threadTasks;
+      Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
+      String criticalPathInfo;
+    case(LEVELSCHEDULE(eqsOfLevels=levels),_,_,_)
+      equation
+        //get the criticalPath
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
+        criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+        Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
+      then
+        criticalPathInfo;
+    case(THREADSCHEDULE(threadTasks=threadTasks,lockIdc=lockIdc),_,_,_)
+      equation
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the number of locks: "+&intString(listLength(lockIdc))+&"\n");
+        //get the criticalPath
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC),parallelSets) = HpcOmTaskGraph.longestPathMethod(taskGraphIn,taskGraphMetaIn);
+        criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+        Debug.fcall(Flags.HPCOM_DUMP,print,criticalPathInfo);
+        //predict speedup etc.
+        (serTime,parTime,speedUp,speedUpMax) = predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the parallelCosts: "+&realString(parTime)+&"\n");
+        Debug.fcall(Flags.HPCOM_DUMP,print,"the cpCosts: "+&realString(cpCostsWoC)+&"\n");
+        printPredictedExeTimeInfo(serTime,parTime,speedUp,speedUpMax,numProcIn);
+      then
+        criticalPathInfo;
+    case(EMPTYSCHEDULE(),_,_,_)
+      equation
+      then
+        "";
+  end match;
+end analyseScheduledTaskGraph;
+
+
 public function predictExecutionTime  "computes the theoretically execution time for the serial simulation and the parallel. a speedup ratio is determined by su=serTime/parTime.
 the max speedUp is computed via the serTime/criticalPathCosts.
 author:Waurich TUD 2013-11"
@@ -2117,8 +2165,6 @@ algorithm
         isNotOkString = "Something is weird. The predicted SpeedUp is "+&realString(speedUp)+&" and the theoretical maximum speedUp is "+&realString(speedUpMax)+&"\n";
         Debug.bcall(realGt(speedUp,speedUpMax),print,isNotOkString);
         Debug.bcall(realLe(speedUp,speedUpMax),print,isOkString);
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the serialCosts: "+&realString(serTime)+&"\n");
-        Debug.fcall(Flags.HPCOM_DUMP,print,"the parallelCosts: "+&realString(parTime)+&"\n");
       then
         ();
   end matchcontinue;  
