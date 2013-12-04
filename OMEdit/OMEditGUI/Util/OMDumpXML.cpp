@@ -187,7 +187,28 @@ OMVariable::OMVariable(const OMVariable &var)
     usedIn[i] = var.usedIn[i];
   }
   foreach (OMOperation *op, var.ops) {
-    ops.append(new OMOperation(*op));
+    if (dynamic_cast<OMOperationSimplify*>(op))
+      ops.append(new OMOperationSimplify(*dynamic_cast<OMOperationSimplify*>(op)));
+    else if (dynamic_cast<OMOperationScalarize*>(op))
+      ops.append(new OMOperationScalarize(*dynamic_cast<OMOperationScalarize*>(op)));
+    else if (dynamic_cast<OMOperationInline*>(op))
+      ops.append(new OMOperationInline(*dynamic_cast<OMOperationInline*>(op)));
+    else if (dynamic_cast<OMOperationSubstitution*>(op))
+      ops.append(new OMOperationSubstitution(*dynamic_cast<OMOperationSubstitution*>(op)));
+    else if (dynamic_cast<OMOperationSolved*>(op))
+      ops.append(new OMOperationSolved(*dynamic_cast<OMOperationSolved*>(op)));
+    else if (dynamic_cast<OMOperationLinearSolved*>(op))
+      ops.append(new OMOperationLinearSolved(*dynamic_cast<OMOperationLinearSolved*>(op)));
+    else if (dynamic_cast<OMOperationSolve*>(op))
+      ops.append(new OMOperationSolve(*dynamic_cast<OMOperationSolve*>(op)));
+    else if (dynamic_cast<OMOperationDifferentiate*>(op))
+      ops.append(new OMOperationDifferentiate(*dynamic_cast<OMOperationDifferentiate*>(op)));
+    else if (dynamic_cast<OMOperationResidual*>(op))
+      ops.append(new OMOperationResidual(*dynamic_cast<OMOperationResidual*>(op)));
+    else if (dynamic_cast<OMOperationDummyDerivative*>(op))
+      ops.append(new OMOperationDummyDerivative(*dynamic_cast<OMOperationDummyDerivative*>(op)));
+    else
+      ops.append(new OMOperation(*op));
   }
 }
 
@@ -211,7 +232,28 @@ OMEquation::OMEquation(const OMEquation &eq)
   defines = eq.defines;
   depends = eq.depends;
   foreach (OMOperation *op, eq.ops) {
-    ops.append(new OMOperation(*op));
+    if (dynamic_cast<OMOperationSimplify*>(op))
+      ops.append(new OMOperationSimplify(*dynamic_cast<OMOperationSimplify*>(op)));
+    else if (dynamic_cast<OMOperationScalarize*>(op))
+      ops.append(new OMOperationScalarize(*dynamic_cast<OMOperationScalarize*>(op)));
+    else if (dynamic_cast<OMOperationInline*>(op))
+      ops.append(new OMOperationInline(*dynamic_cast<OMOperationInline*>(op)));
+    else if (dynamic_cast<OMOperationSubstitution*>(op))
+      ops.append(new OMOperationSubstitution(*dynamic_cast<OMOperationSubstitution*>(op)));
+    else if (dynamic_cast<OMOperationSolved*>(op))
+      ops.append(new OMOperationSolved(*dynamic_cast<OMOperationSolved*>(op)));
+    else if (dynamic_cast<OMOperationLinearSolved*>(op))
+      ops.append(new OMOperationLinearSolved(*dynamic_cast<OMOperationLinearSolved*>(op)));
+    else if (dynamic_cast<OMOperationSolve*>(op))
+      ops.append(new OMOperationSolve(*dynamic_cast<OMOperationSolve*>(op)));
+    else if (dynamic_cast<OMOperationDifferentiate*>(op))
+      ops.append(new OMOperationDifferentiate(*dynamic_cast<OMOperationDifferentiate*>(op)));
+    else if (dynamic_cast<OMOperationResidual*>(op))
+      ops.append(new OMOperationResidual(*dynamic_cast<OMOperationResidual*>(op)));
+    else if (dynamic_cast<OMOperationDummyDerivative*>(op))
+      ops.append(new OMOperationDummyDerivative(*dynamic_cast<OMOperationDummyDerivative*>(op)));
+    else
+      ops.append(new OMOperation(*op));
   }
 }
 

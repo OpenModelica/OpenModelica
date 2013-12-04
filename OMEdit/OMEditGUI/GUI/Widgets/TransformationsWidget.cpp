@@ -47,21 +47,20 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
   mpPreviousToolButton->setText(Helper::previous);
   mpPreviousToolButton->setIcon(QIcon(":/Resources/icons/previous.png"));
   mpPreviousToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  mpPreviousToolButton->setDisabled(true);
-//  connect(mpPreviousToolButton, SIGNAL(clicked()), SLOT(previousDocumentation()));
+  connect(mpPreviousToolButton, SIGNAL(clicked()), SLOT(previousPage()));
   // create the next button
   mpNextToolButton = new QToolButton;
   mpNextToolButton->setText(Helper::next);
   mpNextToolButton->setIcon(QIcon(":/Resources/icons/next.png"));
   mpNextToolButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  mpNextToolButton->setDisabled(true);
-//  connect(mpNextToolButton, SIGNAL(clicked()), SLOT(nextDocumentation()));
+  connect(mpNextToolButton, SIGNAL(clicked()), SLOT(nextPage()));
   /* info xml file path label */
   mpInfoXMLFilePathLabel = new Label;
   /* create the stacked widget object */
   mpPagesWidget = new QStackedWidget;
   mpPagesWidget->addWidget(new VariablePage(this));
   mpInfoTextBox = new QPlainTextEdit;
+  mpInfoTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   /* set the layout */
   QGridLayout *pTopLayout = new QGridLayout;
   pTopLayout->setContentsMargins(0, 0, 0, 0);
@@ -98,21 +97,41 @@ void TransformationsWidget::showTransformations(QString fileName)
   mpInfoXMLFileHandler = new MyHandler(file);
   mpInfoXMLFilePathLabel->setText(fileName);
   /* clear the pages */
-  for (int i = 0 ; i < mpPagesWidget->count() ; i++)
+  int i = 0;
+  while(i < mpPagesWidget->count())
   {
     QWidget *pWidget = mpPagesWidget->widget(i);
     mpPagesWidget->removeWidget(pWidget);
     delete pWidget;
+    i = 0;   //Restart iteration
   }
   /* create a VariablePage and add it to the stacked pages */
-  VariablePage *pVariablePage = new VariablePage(this);
-  pVariablePage->initialize();
-  mpPagesWidget->addWidget(pVariablePage);
+  mpVariablePage = new VariablePage(this);
+  mpVariablePage->initialize();
+  mpPagesWidget->addWidget(mpVariablePage);
+  mpEquationPage = new EquationPage(this);
+  mpPagesWidget->addWidget(mpEquationPage);
 }
 
 void TransformationsWidget::showInfoText(QString message)
 {
   mpInfoTextBox->setPlainText(message);
+}
+
+void TransformationsWidget::previousPage()
+{
+  int index = mpPagesWidget->currentIndex();
+  if (index <= 0)
+    return;
+  mpPagesWidget->setCurrentIndex(--index);
+}
+
+void TransformationsWidget::nextPage()
+{
+  int index = mpPagesWidget->currentIndex();
+  if (index >= mpPagesWidget->count())
+    return;
+  mpPagesWidget->setCurrentIndex(++index);
 }
 
 VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
@@ -128,6 +147,7 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   mpVariablesTreeWidget->setColumnCount(2);
   mpVariablesTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpVariablesTreeWidget->setSortingEnabled(true);
+  mpVariablesTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   QStringList headerLabels;
   headerLabels << tr("Variable") << tr("Comment");
   mpVariablesTreeWidget->setHeaderLabels(headerLabels);
@@ -150,6 +170,7 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   mpTypesTreeWidget->setColumnCount(1);
   mpTypesTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpTypesTreeWidget->setSortingEnabled(true);
+  mpTypesTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpTypesTreeWidget->setHeaderLabel(tr("Types"));
   connect(mpTypesTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
           this, SLOT(typesItemChanged(QTreeWidgetItem*)));
@@ -164,11 +185,12 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   Label *pOperationsLabel = new Label(tr("Variable Operations"));
   mpOperationsTreeWidget = new QTreeWidget;
   mpOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpOperationsTreeWidget));
-  mpOperationsTreeWidget->setObjectName("OperationsTree");
+  mpOperationsTreeWidget->setObjectName("VariableOperationsTree");
   mpOperationsTreeWidget->setIndentation(Helper::treeIndentation);
   mpOperationsTreeWidget->setColumnCount(1);
   mpOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpOperationsTreeWidget->setSortingEnabled(true);
+  mpOperationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   mpOperationsTreeWidget->setHeaderLabel(tr("Operations"));
   connect(mpOperationsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
           this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
@@ -188,9 +210,11 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   mpDefinedInTreeWidget->setColumnCount(3);
   mpDefinedInTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpDefinedInTreeWidget->setSortingEnabled(true);
+  mpDefinedInTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   headerLabels.clear();
   headerLabels << Helper::index << Helper::type << Helper::equation;
   mpDefinedInTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpDefinedInTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showEquation(QTreeWidgetItem*,int)));
   connect(mpDefinedInTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
           this, SLOT(definedInItemChanged(QTreeWidgetItem*)));
   connect(mpDefinedInTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(definedInItemChanged(QTreeWidgetItem*)));
@@ -209,9 +233,11 @@ VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   mpUsedInTreeWidget->setColumnCount(3);
   mpUsedInTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpUsedInTreeWidget->setSortingEnabled(true);
+  mpUsedInTreeWidget->sortByColumn(0, Qt::AscendingOrder);
   headerLabels.clear();
   headerLabels << Helper::index << Helper::type << Helper::equation;
   mpUsedInTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpUsedInTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showEquation(QTreeWidgetItem*,int)));
   connect(mpUsedInTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
           this, SLOT(usedInItemChanged(QTreeWidgetItem*)));
   connect(mpUsedInTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(usedInItemChanged(QTreeWidgetItem*)));
@@ -286,7 +312,7 @@ void VariablePage::fetchOperations(OMVariable &variable)
     delete mpOperationsTreeWidget->topLevelItem(i);
     i = 0;   //Restart iteration
   }
-  /* add varibale types */
+  /* add operations */
   if (mpTransformationsWidget->getInfoXMLFileHandler()->hasOperationsEnabled)
   {
     foreach (OMOperation *op, variable.ops)
@@ -294,9 +320,9 @@ void VariablePage::fetchOperations(OMVariable &variable)
       QStringList values;
       values << op->toString();
       QString toolTip = op->toString();
-      QTreeWidgetItem *pTypesTreeItem = new QTreeWidgetItem(values);
-      pTypesTreeItem->setToolTip(0, toolTip);
-      mpOperationsTreeWidget->addTopLevelItem(pTypesTreeItem);
+      QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
+      pOperationTreeItem->setToolTip(0, toolTip);
+      mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
     }
   }
   else
@@ -305,9 +331,9 @@ void VariablePage::fetchOperations(OMVariable &variable)
     QStringList values;
     values << message;
     QString toolTip = message;
-    QTreeWidgetItem *pTypesTreeItem = new QTreeWidgetItem(values);
-    pTypesTreeItem->setToolTip(0, toolTip);
-    mpOperationsTreeWidget->addTopLevelItem(pTypesTreeItem);
+    QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
+    pOperationTreeItem->setToolTip(0, toolTip);
+    mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
   }
 }
 
@@ -418,5 +444,206 @@ void VariablePage::usedInItemChanged(QTreeWidgetItem *current)
   QString info = "Index : " + current->text(0) + "\n";
   info += "Type : " + current->text(1) + "\n";
   info += "Equation : " + current->text(2) + "\n";
+  mpTransformationsWidget->showInfoText(info);
+}
+
+void VariablePage::showEquation(QTreeWidgetItem *pVariableTreeItem, int column)
+{
+  Q_UNUSED(column);
+  if (!pVariableTreeItem)
+    return;
+  mpTransformationsWidget->getEquationPage()->fetchEquationData(pVariableTreeItem->text(0).toInt());
+  mpTransformationsWidget->nextPage();
+}
+
+EquationPage::EquationPage(TransformationsWidget *pTransformationsWidget)
+  : QWidget(pTransformationsWidget)
+{
+  mpTransformationsWidget = pTransformationsWidget;
+  /* defines tree widget */
+  Label *pDefinesLabel = new Label(tr("Defines"));
+  mpDefinesTreeWidget = new QTreeWidget;
+  mpDefinesTreeWidget->setItemDelegate(new ItemDelegate(mpDefinesTreeWidget));
+  mpDefinesTreeWidget->setObjectName("DefinesTree");
+  mpDefinesTreeWidget->setIndentation(0);
+  mpDefinesTreeWidget->setColumnCount(1);
+  mpDefinesTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpDefinesTreeWidget->setSortingEnabled(true);
+  mpDefinesTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  QStringList headerLabels;
+  headerLabels << tr("Variable");
+  mpDefinesTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpDefinesTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(definesItemChanged(QTreeWidgetItem*)));
+  connect(mpDefinesTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(definesItemChanged(QTreeWidgetItem*)));
+  QGridLayout *pDefinesGridLayout = new QGridLayout;
+  pDefinesGridLayout->setContentsMargins(0, 0, 0, 0);
+  pDefinesGridLayout->addWidget(pDefinesLabel, 0, 0);
+  pDefinesGridLayout->addWidget(mpDefinesTreeWidget, 1, 0);
+  QFrame *pDefinesFrame = new QFrame;
+  pDefinesFrame->setLayout(pDefinesGridLayout);
+  /* depends tree widget */
+  Label *pDependsLabel = new Label(tr("Depends"));
+  mpDependsTreeWidget = new QTreeWidget;
+  mpDependsTreeWidget->setItemDelegate(new ItemDelegate(mpDependsTreeWidget));
+  mpDependsTreeWidget->setObjectName("DependsTree");
+  mpDependsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpDependsTreeWidget->setColumnCount(1);
+  mpDependsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpDependsTreeWidget->setSortingEnabled(true);
+  mpDependsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  mpDependsTreeWidget->setHeaderLabel(tr("Variable"));
+  connect(mpDependsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(dependsItemChanged(QTreeWidgetItem*)));
+  connect(mpDependsTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(dependsItemChanged(QTreeWidgetItem*)));
+  QGridLayout *pDependsGridLayout = new QGridLayout;
+  pDependsGridLayout->setContentsMargins(0, 0, 0, 0);
+  pDependsGridLayout->addWidget(pDependsLabel, 0, 0);
+  pDependsGridLayout->addWidget(mpDependsTreeWidget, 1, 0);
+  QFrame *pDependsFrame = new QFrame;
+  pDependsFrame->setLayout(pDependsGridLayout);
+  /* operations tree widget */
+  Label *pOperationsLabel = new Label(tr("Equation Operations"));
+  mpOperationsTreeWidget = new QTreeWidget;
+  mpOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpOperationsTreeWidget));
+  mpOperationsTreeWidget->setObjectName("EquationOperationsTree");
+  mpOperationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpOperationsTreeWidget->setColumnCount(1);
+  mpOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpOperationsTreeWidget->setSortingEnabled(true);
+  mpOperationsTreeWidget->sortByColumn(0, Qt::AscendingOrder);
+  mpOperationsTreeWidget->setHeaderLabel(tr("Operations"));
+  connect(mpOperationsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
+  connect(mpOperationsTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
+  QGridLayout *pOperationsGridLayout = new QGridLayout;
+  pOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
+  pOperationsGridLayout->addWidget(pOperationsLabel, 0, 0);
+  pOperationsGridLayout->addWidget(mpOperationsTreeWidget, 1, 0);
+  QFrame *pOperationsFrame = new QFrame;
+  pOperationsFrame->setLayout(pOperationsGridLayout);
+  /* splitter */
+  QSplitter *pSplitter = new QSplitter;
+  pSplitter->setChildrenCollapsible(false);
+  pSplitter->setHandleWidth(4);
+  pSplitter->setContentsMargins(0, 0, 0, 0);
+  pSplitter->addWidget(pDefinesFrame);
+  pSplitter->addWidget(pDependsFrame);
+  pSplitter->addWidget(pOperationsFrame);
+  /* set the layout */
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(pSplitter, 0, 0);
+  setLayout(pMainLayout);
+}
+
+void EquationPage::fetchEquationData(int equationIndex)
+{
+  OMEquation equation = mpTransformationsWidget->getInfoXMLFileHandler()->getOMEquation(equationIndex);
+  /* fetch defines */
+  fetchDefines(equation);
+  /* fetch depends */
+  fetchDepends(equation);
+  /* fetch operations */
+  fetchOperations(equation);
+}
+
+void EquationPage::fetchDefines(OMEquation &equation)
+{
+  /* Clear the defines tree. */
+  int i = 0;
+  while(i < mpDefinesTreeWidget->topLevelItemCount())
+  {
+    qDeleteAll(mpDefinesTreeWidget->topLevelItem(i)->takeChildren());
+    delete mpDefinesTreeWidget->topLevelItem(i);
+    i = 0;   //Restart iteration
+  }
+  /* add defines */
+  foreach (QString define, equation.defines)
+  {
+    QStringList values;
+    values << define;
+    QString toolTip = define;
+    QTreeWidgetItem *pDefineTreeItem = new QTreeWidgetItem(values);
+    pDefineTreeItem->setToolTip(0, toolTip);
+    mpDefinesTreeWidget->addTopLevelItem(pDefineTreeItem);
+  }
+}
+
+void EquationPage::fetchDepends(OMEquation &equation)
+{
+  /* Clear the depends tree. */
+  int i = 0;
+  while(i < mpDependsTreeWidget->topLevelItemCount())
+  {
+    qDeleteAll(mpDependsTreeWidget->topLevelItem(i)->takeChildren());
+    delete mpDependsTreeWidget->topLevelItem(i);
+    i = 0;   //Restart iteration
+  }
+  /* add depends */
+  foreach (QString depend, equation.depends)
+  {
+    QStringList values;
+    values << depend;
+    QString toolTip = depend;
+    QTreeWidgetItem *pDependTreeItem = new QTreeWidgetItem(values);
+    pDependTreeItem->setToolTip(0, toolTip);
+    mpDependsTreeWidget->addTopLevelItem(pDependTreeItem);
+  }
+}
+
+void EquationPage::fetchOperations(OMEquation &equation)
+{
+  /* Clear the operations tree. */
+  int i = 0;
+  while(i < mpOperationsTreeWidget->topLevelItemCount())
+  {
+    qDeleteAll(mpOperationsTreeWidget->topLevelItem(i)->takeChildren());
+    delete mpOperationsTreeWidget->topLevelItem(i);
+    i = 0;   //Restart iteration
+  }
+  /* add operations */
+  if (mpTransformationsWidget->getInfoXMLFileHandler()->hasOperationsEnabled)
+  {
+    foreach (OMOperation *op, equation.ops)
+    {
+      QStringList values;
+      values << op->toString();
+      QString toolTip = op->toString();
+      QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
+      pOperationTreeItem->setToolTip(0, toolTip);
+      mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+    }
+  }
+  else
+  {
+    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG);
+    QStringList values;
+    values << message;
+    QString toolTip = message;
+    QTreeWidgetItem *pOperationTreeItem = new QTreeWidgetItem(values);
+    pOperationTreeItem->setToolTip(0, toolTip);
+    mpOperationsTreeWidget->addTopLevelItem(pOperationTreeItem);
+  }
+}
+
+void EquationPage::definesItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Variable : " + current->text(0);
+  mpTransformationsWidget->showInfoText(info);
+}
+
+void EquationPage::dependsItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Variable : " + current->text(0);
+  mpTransformationsWidget->showInfoText(info);
+}
+
+void EquationPage::operationsItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Operation : " + current->text(0);
   mpTransformationsWidget->showInfoText(info);
 }

@@ -42,6 +42,8 @@
 #include "OMDumpXML.h"
 
 class MainWindow;
+class VariablePage;
+class EquationPage;
 class TransformationsWidget : public QWidget
 {
   Q_OBJECT
@@ -49,6 +51,7 @@ public:
   TransformationsWidget(MainWindow *pMainWindow);
   MainWindow* getMainWindow() {return mpMainWindow;}
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
+  EquationPage* getEquationPage() {return mpEquationPage;}
   void showTransformations(QString fileName);
   void showInfoText(QString message);
 private:
@@ -58,7 +61,12 @@ private:
   QToolButton *mpNextToolButton;
   Label *mpInfoXMLFilePathLabel;
   QStackedWidget *mpPagesWidget;
+  VariablePage *mpVariablePage;
+  EquationPage *mpEquationPage;
   QPlainTextEdit *mpInfoTextBox;
+public slots:
+  void previousPage();
+  void nextPage();
 };
 
 class VariablePage : public QWidget
@@ -85,6 +93,27 @@ public slots:
   void operationsItemChanged(QTreeWidgetItem *current);
   void definedInItemChanged(QTreeWidgetItem *current);
   void usedInItemChanged(QTreeWidgetItem *current);
+  void showEquation(QTreeWidgetItem *pVariableTreeItem, int column);
+};
+
+class EquationPage : public QWidget
+{
+  Q_OBJECT
+public:
+  EquationPage(TransformationsWidget *pTransformationsWidget);
+  void fetchEquationData(int equationIndex);
+  void fetchDefines(OMEquation &equation);
+  void fetchDepends(OMEquation &equation);
+  void fetchOperations(OMEquation &equation);
+private:
+  TransformationsWidget *mpTransformationsWidget;
+  QTreeWidget *mpDefinesTreeWidget;
+  QTreeWidget *mpDependsTreeWidget;
+  QTreeWidget *mpOperationsTreeWidget;
+public slots:
+  void definesItemChanged(QTreeWidgetItem *current);
+  void dependsItemChanged(QTreeWidgetItem *current);
+  void operationsItemChanged(QTreeWidgetItem *current);
 };
 
 #endif // TRANSFORMATIONSWIDGET_H
