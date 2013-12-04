@@ -261,9 +261,8 @@ int check_nonlinear_solutions(DATA *data, int printFailingSystems)
   for(i=0; i<data->modelData.nNonLinearSystems; ++i) {
     if(nonlinsys[i].solved == 0)
     {
+      int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
       if (!printFailingSystems) return 1;
-      int index = nonlinsys[i].equationIndex;
-      int indexes[2] = {1,index};
       warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system fails: %s at t=%g", modelInfoXmlGetEquation(&data->modelData.modelDataXml, index).name, data->localData[0]->timeValue);
       if(data->simulationInfo.initial)
       {
