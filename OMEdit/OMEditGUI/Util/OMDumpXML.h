@@ -52,7 +52,7 @@ enum OMEquationType {
 
 const char* OMEquationTypeToString(int);
 
-class OMOperation : public QObject {
+class OMOperation {
 public:
   virtual QString toString();
 };
@@ -155,6 +155,8 @@ struct OMVariable {
   int definedIn[equationTypeSize];
   QList<int> usedIn[equationTypeSize];
   QList<OMOperation*> ops;
+  OMVariable();
+  OMVariable(const OMVariable& var);
   ~OMVariable();
 };
 
@@ -166,6 +168,8 @@ struct OMEquation {
   QStringList defines;
   QStringList depends;
   QList<OMOperation*> ops;
+  OMEquation();
+  OMEquation(const OMEquation& eq);
   ~OMEquation();
   QString toString();
 };
@@ -174,6 +178,7 @@ class MyHandler : private QXmlDefaultHandler {
 public:
   QHash<QString,OMVariable> variables;
   QList<OMEquation> equations;
+  bool hasOperationsEnabled;
   MyHandler(QFile &file);
   OMEquation getOMEquation(int index);
 private:

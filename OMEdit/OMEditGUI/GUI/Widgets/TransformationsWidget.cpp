@@ -60,14 +60,32 @@ TransformationsWidget::TransformationsWidget(MainWindow *pMainWindow)
   mpInfoXMLFilePathLabel = new Label;
   /* create the stacked widget object */
   mpPagesWidget = new QStackedWidget;
-  mpPagesWidget->addWidget(new TransformationPage(this));
+  mpPagesWidget->addWidget(new VariablePage(this));
+  mpInfoTextBox = new QPlainTextEdit;
+  /* set the layout */
+  QGridLayout *pTopLayout = new QGridLayout;
+  pTopLayout->setContentsMargins(0, 0, 0, 0);
+  pTopLayout->addWidget(mpPreviousToolButton, 0, 0);
+  pTopLayout->addWidget(mpNextToolButton, 0, 1);
+  pTopLayout->addWidget(mpInfoXMLFilePathLabel, 0, 2);
+  pTopLayout->addWidget(mpPagesWidget, 1, 0, 1, 3);
+  QFrame *pTopFrame = new QFrame;
+  pTopFrame->setLayout(pTopLayout);
+  /* splitter */
+  QSplitter *pSplitter = new QSplitter;
+  pSplitter->setOrientation(Qt::Vertical);
+  pSplitter->setChildrenCollapsible(false);
+  pSplitter->setHandleWidth(4);
+  pSplitter->setContentsMargins(0, 0, 0, 0);
+  pSplitter->addWidget(pTopFrame);
+  pSplitter->addWidget(mpInfoTextBox);
+  QList<int> sizes;
+  sizes << pTopFrame->height() << 50;
+  pSplitter->setSizes(sizes);
   /* set the layout */
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->addWidget(mpPreviousToolButton, 0, 0);
-  pMainLayout->addWidget(mpNextToolButton, 0, 1);
-  pMainLayout->addWidget(mpInfoXMLFilePathLabel, 0, 2);
-  pMainLayout->addWidget(mpPagesWidget, 1, 0, 1, 3);
+  pMainLayout->addWidget(pSplitter, 0, 0);
   setLayout(pMainLayout);
 }
 
@@ -86,13 +104,18 @@ void TransformationsWidget::showTransformations(QString fileName)
     mpPagesWidget->removeWidget(pWidget);
     delete pWidget;
   }
-  /* create a TransformationPage and add it to the stacked pages */
-  TransformationPage *pTransformationPage = new TransformationPage(this);
-  pTransformationPage->initialize();
-  mpPagesWidget->addWidget(pTransformationPage);
+  /* create a VariablePage and add it to the stacked pages */
+  VariablePage *pVariablePage = new VariablePage(this);
+  pVariablePage->initialize();
+  mpPagesWidget->addWidget(pVariablePage);
 }
 
-TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWidget)
+void TransformationsWidget::showInfoText(QString message)
+{
+  mpInfoTextBox->setPlainText(message);
+}
+
+VariablePage::VariablePage(TransformationsWidget *pTransformationsWidget)
   : QWidget(pTransformationsWidget)
 {
   mpTransformationsWidget = pTransformationsWidget;
@@ -108,7 +131,10 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   QStringList headerLabels;
   headerLabels << tr("Variable") << tr("Comment");
   mpVariablesTreeWidget->setHeaderLabels(headerLabels);
-  connect(mpVariablesTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchTypesDefinedInAndUsedIn(QTreeWidgetItem*,int)));
+  connect(mpVariablesTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(fetchVariableData(QTreeWidgetItem*,int)));
+  connect(mpVariablesTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(variablesItemChanged(QTreeWidgetItem*)));
+  connect(mpVariablesTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(variablesItemChanged(QTreeWidgetItem*)));
   QGridLayout *pVariablesGridLayout = new QGridLayout;
   pVariablesGridLayout->setContentsMargins(0, 0, 0, 0);
   pVariablesGridLayout->addWidget(pVariablesLabel, 0, 0);
@@ -125,12 +151,34 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   mpTypesTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpTypesTreeWidget->setSortingEnabled(true);
   mpTypesTreeWidget->setHeaderLabel(tr("Types"));
+  connect(mpTypesTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(typesItemChanged(QTreeWidgetItem*)));
+  connect(mpTypesTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(typesItemChanged(QTreeWidgetItem*)));
   QGridLayout *pTypesGridLayout = new QGridLayout;
   pTypesGridLayout->setContentsMargins(0, 0, 0, 0);
   pTypesGridLayout->addWidget(pTypesLabel, 0, 0);
   pTypesGridLayout->addWidget(mpTypesTreeWidget, 1, 0);
   QFrame *pTypesFrame = new QFrame;
   pTypesFrame->setLayout(pTypesGridLayout);
+  /* operations tree widget */
+  Label *pOperationsLabel = new Label(tr("Variable Operations"));
+  mpOperationsTreeWidget = new QTreeWidget;
+  mpOperationsTreeWidget->setItemDelegate(new ItemDelegate(mpOperationsTreeWidget));
+  mpOperationsTreeWidget->setObjectName("OperationsTree");
+  mpOperationsTreeWidget->setIndentation(Helper::treeIndentation);
+  mpOperationsTreeWidget->setColumnCount(1);
+  mpOperationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
+  mpOperationsTreeWidget->setSortingEnabled(true);
+  mpOperationsTreeWidget->setHeaderLabel(tr("Operations"));
+  connect(mpOperationsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
+  connect(mpOperationsTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(operationsItemChanged(QTreeWidgetItem*)));
+  QGridLayout *pOperationsGridLayout = new QGridLayout;
+  pOperationsGridLayout->setContentsMargins(0, 0, 0, 0);
+  pOperationsGridLayout->addWidget(pOperationsLabel, 0, 0);
+  pOperationsGridLayout->addWidget(mpOperationsTreeWidget, 1, 0);
+  QFrame *pOperationsFrame = new QFrame;
+  pOperationsFrame->setLayout(pOperationsGridLayout);
   /* Defined in tree widget */
   Label *pDefinedInLabel = new Label(tr("Defined In Equations"));
   mpDefinedInTreeWidget = new QTreeWidget;
@@ -143,6 +191,9 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   headerLabels.clear();
   headerLabels << Helper::index << Helper::type << Helper::equation;
   mpDefinedInTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpDefinedInTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(definedInItemChanged(QTreeWidgetItem*)));
+  connect(mpDefinedInTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(definedInItemChanged(QTreeWidgetItem*)));
   QGridLayout *pDefinedInGridLayout = new QGridLayout;
   pDefinedInGridLayout->setContentsMargins(0, 0, 0, 0);
   pDefinedInGridLayout->addWidget(pDefinedInLabel, 0, 0);
@@ -161,6 +212,9 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   headerLabels.clear();
   headerLabels << Helper::index << Helper::type << Helper::equation;
   mpUsedInTreeWidget->setHeaderLabels(headerLabels);
+  connect(mpUsedInTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
+          this, SLOT(usedInItemChanged(QTreeWidgetItem*)));
+  connect(mpUsedInTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(usedInItemChanged(QTreeWidgetItem*)));
   QGridLayout *pUsedInGridLayout = new QGridLayout;
   pUsedInGridLayout->setContentsMargins(0, 0, 0, 0);
   pUsedInGridLayout->addWidget(pUsedInLabel, 0, 0);
@@ -174,6 +228,7 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   pSplitter->setContentsMargins(0, 0, 0, 0);
   pSplitter->addWidget(pVariablesFrame);
   pSplitter->addWidget(pTypesFrame);
+  pSplitter->addWidget(pOperationsFrame);
   pSplitter->addWidget(pDefinedInFrame);
   pSplitter->addWidget(pUsedInFrame);
   /* set the layout */
@@ -183,7 +238,7 @@ TransformationPage::TransformationPage(TransformationsWidget *pTransformationsWi
   setLayout(pMainLayout);
 }
 
-void TransformationPage::initialize()
+void VariablePage::initialize()
 {
   QHashIterator<QString, OMVariable> variables(mpTransformationsWidget->getInfoXMLFileHandler()->variables);
   while (variables.hasNext())
@@ -199,7 +254,7 @@ void TransformationPage::initialize()
   }
 }
 
-void TransformationPage::fetchTypes(OMVariable &variable)
+void VariablePage::fetchTypes(OMVariable &variable)
 {
   /* Clear the types tree. */
   int i = 0;
@@ -210,29 +265,53 @@ void TransformationPage::fetchTypes(OMVariable &variable)
     i = 0;   //Restart iteration
   }
   /* add varibale types */
-  QTreeWidgetItem *pTypesTreeItem = 0;
   for (int i = 1; i < variable.types.size() ; i++)
   {
     QStringList values;
     values << variable.types.value(i);
     QString toolTip = variable.types.value(i);
-    if (pTypesTreeItem)
-    {
-      QTreeWidgetItem *pParentTypesTreeItem = pTypesTreeItem;
-      pTypesTreeItem = new QTreeWidgetItem(values);
-      pTypesTreeItem->setToolTip(0, toolTip);
-      pParentTypesTreeItem->addChild(pTypesTreeItem);
-    }
-    else
-    {
-      pTypesTreeItem = new QTreeWidgetItem(values);
-      pTypesTreeItem->setToolTip(0, toolTip);
-      mpTypesTreeWidget->addTopLevelItem(pTypesTreeItem);
-    }
+    QTreeWidgetItem *pTypesTreeItem = new QTreeWidgetItem(values);
+    pTypesTreeItem->setToolTip(0, toolTip);
+    mpTypesTreeWidget->addTopLevelItem(pTypesTreeItem);
   }
 }
 
-void TransformationPage::fetchDefinedInEquations(OMVariable &variable)
+void VariablePage::fetchOperations(OMVariable &variable)
+{
+  /* Clear the operations tree. */
+  int i = 0;
+  while(i < mpOperationsTreeWidget->topLevelItemCount())
+  {
+    qDeleteAll(mpOperationsTreeWidget->topLevelItem(i)->takeChildren());
+    delete mpOperationsTreeWidget->topLevelItem(i);
+    i = 0;   //Restart iteration
+  }
+  /* add varibale types */
+  if (mpTransformationsWidget->getInfoXMLFileHandler()->hasOperationsEnabled)
+  {
+    foreach (OMOperation *op, variable.ops)
+    {
+      QStringList values;
+      values << op->toString();
+      QString toolTip = op->toString();
+      QTreeWidgetItem *pTypesTreeItem = new QTreeWidgetItem(values);
+      pTypesTreeItem->setToolTip(0, toolTip);
+      mpOperationsTreeWidget->addTopLevelItem(pTypesTreeItem);
+    }
+  }
+  else
+  {
+    QString message = GUIMessages::getMessage(GUIMessages::SET_INFO_XML_FLAG);
+    QStringList values;
+    values << message;
+    QString toolTip = message;
+    QTreeWidgetItem *pTypesTreeItem = new QTreeWidgetItem(values);
+    pTypesTreeItem->setToolTip(0, toolTip);
+    mpOperationsTreeWidget->addTopLevelItem(pTypesTreeItem);
+  }
+}
+
+void VariablePage::fetchDefinedInEquations(OMVariable &variable)
 {
   /* Clear the defined in tree. */
   int i = 0;
@@ -259,7 +338,7 @@ void TransformationPage::fetchDefinedInEquations(OMVariable &variable)
   }
 }
 
-void TransformationPage::fetchUsedInEquations(OMVariable &variable)
+void VariablePage::fetchUsedInEquations(OMVariable &variable)
 {
   /* Clear the used in tree. */
   int i = 0;
@@ -286,7 +365,7 @@ void TransformationPage::fetchUsedInEquations(OMVariable &variable)
   }
 }
 
-void TransformationPage::fetchTypesDefinedInAndUsedIn(QTreeWidgetItem *pVariableTreeItem, int column)
+void VariablePage::fetchVariableData(QTreeWidgetItem *pVariableTreeItem, int column)
 {
   Q_UNUSED(column);
   if (!pVariableTreeItem)
@@ -295,8 +374,49 @@ void TransformationPage::fetchTypesDefinedInAndUsedIn(QTreeWidgetItem *pVariable
   QString variableName = pVariableTreeItem->text(0);
   OMVariable variable = mpTransformationsWidget->getInfoXMLFileHandler()->variables.value(variableName);
   fetchTypes(variable);
+  /* fetch operations */
+  fetchOperations(variable);
   /* fetch defined in equations */
   fetchDefinedInEquations(variable);
   /* fetch used in equations */
   fetchUsedInEquations(variable);
+}
+
+void VariablePage::variablesItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Variable : " + current->text(0) + "\nComment : " + current->text(1);
+  mpTransformationsWidget->showInfoText(info);
+}
+
+void VariablePage::typesItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Type : " + current->text(0);
+  mpTransformationsWidget->showInfoText(info);
+}
+
+void VariablePage::operationsItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Operation : " + current->text(0);
+  mpTransformationsWidget->showInfoText(info);
+}
+
+void VariablePage::definedInItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Index : " + current->text(0) + "\n";
+  info += "Type : " + current->text(1) + "\n";
+  info += "Equation : " + current->text(2) + "\n";
+  mpTransformationsWidget->showInfoText(info);
+}
+
+void VariablePage::usedInItemChanged(QTreeWidgetItem *current)
+{
+  if (!current) return;
+  QString info = "Index : " + current->text(0) + "\n";
+  info += "Type : " + current->text(1) + "\n";
+  info += "Equation : " + current->text(2) + "\n";
+  mpTransformationsWidget->showInfoText(info);
 }

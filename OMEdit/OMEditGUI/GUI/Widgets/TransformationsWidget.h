@@ -50,6 +50,7 @@ public:
   MainWindow* getMainWindow() {return mpMainWindow;}
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
   void showTransformations(QString fileName);
+  void showInfoText(QString message);
 private:
   MainWindow *mpMainWindow;
   MyHandler *mpInfoXMLFileHandler;
@@ -57,25 +58,33 @@ private:
   QToolButton *mpNextToolButton;
   Label *mpInfoXMLFilePathLabel;
   QStackedWidget *mpPagesWidget;
+  QPlainTextEdit *mpInfoTextBox;
 };
 
-class TransformationPage : public QWidget
+class VariablePage : public QWidget
 {
   Q_OBJECT
 public:
-  TransformationPage(TransformationsWidget *pTransformationsWidget);
+  VariablePage(TransformationsWidget *pTransformationsWidget);
   void initialize();
 private:
   TransformationsWidget *mpTransformationsWidget;
   QTreeWidget *mpVariablesTreeWidget;
   QTreeWidget *mpTypesTreeWidget;
+  QTreeWidget *mpOperationsTreeWidget;
   QTreeWidget *mpDefinedInTreeWidget;
   QTreeWidget *mpUsedInTreeWidget;
   void fetchTypes(OMVariable &variable);
+  void fetchOperations(OMVariable &variable);
   void fetchDefinedInEquations(OMVariable &variable);
   void fetchUsedInEquations(OMVariable &variable);
 public slots:
-  void fetchTypesDefinedInAndUsedIn(QTreeWidgetItem *pVariableTreeItem, int column);
+  void fetchVariableData(QTreeWidgetItem *pVariableTreeItem, int column);
+  void variablesItemChanged(QTreeWidgetItem *current);
+  void typesItemChanged(QTreeWidgetItem *current);
+  void operationsItemChanged(QTreeWidgetItem *current);
+  void definedInItemChanged(QTreeWidgetItem *current);
+  void usedInItemChanged(QTreeWidgetItem *current);
 };
 
 #endif // TRANSFORMATIONSWIDGET_H

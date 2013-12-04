@@ -423,6 +423,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case WRONG_MODIFIER:
       return tr("The Modifier '%1' format is invalid. The correct format is 'phi(start=1)'");
+    case SET_INFO_XML_FLAG:
+      return tr("The operations were not generated. You must set the +d=infoXmlOperations flag. Enable it via Tools->Options->Simulation->OMC Flags and simulate again.");
     default:
       return "";
   }

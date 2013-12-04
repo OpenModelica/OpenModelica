@@ -170,9 +170,48 @@ QString OMInfo::toString() {
   return result;
 }
 
+OMVariable::OMVariable()
+{
+
+}
+
+OMVariable::OMVariable(const OMVariable &var)
+{
+  name = var.name;
+  comment = var.comment;
+  info = var.info;
+  types = var.types;
+  for (int i = 0; i < equationTypeSize ; i++)
+  {
+    definedIn[i] = var.definedIn[i];
+    usedIn[i] = var.usedIn[i];
+  }
+  foreach (OMOperation *op, var.ops) {
+    ops.append(new OMOperation(*op));
+  }
+}
+
 OMVariable::~OMVariable() {
   foreach (OMOperation *op, ops) {
     delete op;
+  }
+}
+
+OMEquation::OMEquation()
+{
+
+}
+
+OMEquation::OMEquation(const OMEquation &eq)
+{
+  kind = eq.kind;
+  index = eq.index;
+  text = eq.text;
+  info = eq.info;
+  defines = eq.defines;
+  depends = eq.depends;
+  foreach (OMOperation *op, eq.ops) {
+    ops.append(new OMOperation(*op));
   }
 }
 
@@ -197,6 +236,7 @@ QString OMEquation::toString()
 
 MyHandler::MyHandler(QFile &file)
 {
+  hasOperationsEnabled = false;
   QXmlSimpleReader xmlReader;
   QXmlInputSource *source = new QXmlInputSource(&file);
   xmlReader.setContentHandler(this);
@@ -275,6 +315,7 @@ bool MyHandler::startElement( const QString & namespaceURI, const QString & loca
     currentEquation.depends.append(atts.value("name"));
   } else if (qName == "operations") {
     operations.clear();
+    hasOperationsEnabled = true;
   } else if (equationTags.contains(qName)) {
     texts.clear();
   } else if (operationTags.contains(qName)) {

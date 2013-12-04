@@ -264,7 +264,8 @@ public:
     FMU_GENERATED,
     XML_GENERATED,
     DELETE_CLASS_MSG,
-    WRONG_MODIFIER
+    WRONG_MODIFIER,
+    SET_INFO_XML_FLAG
   };
 
   static QString getMessage(int type);
