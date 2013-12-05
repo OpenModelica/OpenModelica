@@ -40,9 +40,6 @@ match component
   case OUTER_COMPONENT(__) then
     let outer_str = AbsynDumpTpl.dumpPath(name)
     'outer <%outer_str%>;'
-  case PACKAGE(__) then
-    let name_str = AbsynDumpTpl.dumpPath(name)
-    'package <%name_str%>;'
 end dumpComponent;
 
 template dumpElement(Element element)

@@ -127,15 +127,6 @@ algorithm
       then txt;
 
     case ( txt,
-           NFInstTypes.PACKAGE(name = i_name) )
-      equation
-        l_name__str = AbsynDumpTpl.dumpPath(Tpl.emptyTxt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("package "));
-        txt = Tpl.writeText(txt, l_name__str);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
-      then txt;
-
-    case ( txt,
            _ )
       then txt;
   end match;

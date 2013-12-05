@@ -181,11 +181,6 @@ public uniontype Component
     Option<Absyn.Path> innerName;
   end OUTER_COMPONENT;
 
-  record PACKAGE
-    Absyn.Path name;
-    Option<Component> parent; //NO_COMPONENT?
-  end PACKAGE;
-
   record COMPONENT_ALIAS
     Absyn.Path componentName;
   end COMPONENT_ALIAS;

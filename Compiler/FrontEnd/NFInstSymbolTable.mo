@@ -343,12 +343,6 @@ algorithm
       Absyn.Path name;
       SymbolTable st;
 
-    // PACKAGE isn't really a component, so we don't add it. But its class
-    // should be added, so return true anyway.
-    case (NFInstTypes.PACKAGE(name = _), st)
-      then st;
-
-    // For any other type of component, try to add it.
     case (_, st)
       equation
         name = NFInstUtil.getComponentName(inComponent);

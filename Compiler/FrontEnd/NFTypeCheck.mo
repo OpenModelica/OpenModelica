@@ -217,12 +217,6 @@ algorithm
     case (NFInstTypes.DELETED_COMPONENT(name = name), _, _, st)
       then (inComponent, st);
 
-    case (NFInstTypes.PACKAGE(name = name), _, _, st)
-      equation
-        comp = NFInstUtil.setComponentParent(inComponent, inParent);
-      then
-        (comp, st);
-
   end match;
 end checkComponent;
 
@@ -307,11 +301,7 @@ algorithm
       DAE.Dimensions dims;
 
     case (NONE(), _) then inDimensionsAcc;
-    case (SOME(c as NFInstTypes.PACKAGE(parent = _)), _)
-      equation
-        dims = getParentDimensions(NFInstUtil.getComponentParent(c), inDimensionsAcc);
-      then
-        dims;
+
     case (SOME(c), _)
       equation
         dims = NFInstUtil.getComponentTypeDimensions(c);

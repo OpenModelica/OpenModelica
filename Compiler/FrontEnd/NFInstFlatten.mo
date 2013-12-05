@@ -310,11 +310,6 @@ algorithm
       then
         (accum_el, st);
 
-    case (NFInstTypes.ELEMENT(component = NFInstTypes.PACKAGE(name = _)),
-        st, _, _, accum_el)
-      then
-        (inElement :: accum_el, st);
-
     case (el, st, _, _, accum_el)
       equation
         comp = NFInstUtil.getElementComponent(el);
@@ -386,15 +381,6 @@ algorithm
       list<String> rest_names;
       SymbolTable st;
       Boolean add_el;
-
-    case ((el as NFInstTypes.ELEMENT(component = NFInstTypes.PACKAGE(name = _))) :: rest_el,
-        _, _, _, st, accum_el)
-      equation
-        accum_el = el :: accum_el;
-        (accum_el, st) = flattenExtendedElements(rest_el, inNames,
-          inExtendPath, inClassPath, st, accum_el);
-      then
-        (accum_el, st);
 
     // Extended elements should not contain nested extended elements, since they
     // should have been flattened in instElementList. So we can assume that we

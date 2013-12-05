@@ -119,9 +119,6 @@ algorithm
       list<DAE.Var> vars;
       DAE.Var var;
 
-    case (NFInstTypes.ELEMENT(component = NFInstTypes.PACKAGE(name = _)), vars)
-      then vars;
-
     case (NFInstTypes.ELEMENT(component = comp, cls = cls), vars)
       equation
         var = componentToDaeVar(comp);
@@ -190,11 +187,6 @@ algorithm
       then
         fail();
 
-    case NFInstTypes.PACKAGE(name = _)
-      equation
-        print("PACKAGE\n");
-      then
-        fail();
   end match;
 end componentToDaeVar;
 
@@ -390,7 +382,6 @@ algorithm
     case NFInstTypes.CONDITIONAL_COMPONENT(name = name) then name;
     case NFInstTypes.DELETED_COMPONENT(name = name) then name;
     case NFInstTypes.OUTER_COMPONENT(name = name) then name;
-    case NFInstTypes.PACKAGE(name = name) then name;
 
   end match;
 end getComponentName;
@@ -431,9 +422,6 @@ algorithm
 
     case (NFInstTypes.OUTER_COMPONENT(_, inner_name), _)
       then NFInstTypes.OUTER_COMPONENT(inName, inner_name);
-
-    case (NFInstTypes.PACKAGE(_,p), _)
-      then NFInstTypes.PACKAGE(inName,p);
 
   end match;
 end setComponentName;
@@ -1731,7 +1719,6 @@ algorithm
       Option<Component> parent;
 
     case NFInstTypes.TYPED_COMPONENT(parent = parent) then parent;
-    case NFInstTypes.PACKAGE(parent = parent) then parent;
     else NONE();
 
   end match;
@@ -1742,7 +1729,7 @@ public function setComponentParent
   input Option<Component> inParent;
   output Component outComponent;
 algorithm
-  outComponent := matchcontinue(inComponent, inParent)
+  outComponent := match(inComponent, inParent)
     local
       Absyn.Path name;
       DAE.Type ty;
@@ -1750,17 +1737,12 @@ algorithm
       Binding binding;
       Absyn.Info info;
 
-    case (_, NONE()) then inComponent;
+    case (NFInstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info), SOME(_))
+      then NFInstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
 
-    case (NFInstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info), _)
-    then NFInstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
+    else inComponent;
 
-    case (NFInstTypes.PACKAGE(name, _), _)
-    then NFInstTypes.PACKAGE(name, inParent);
-
-    case (_, _) then inComponent;
-
-  end matchcontinue;
+  end match;
 end setComponentParent;
 
 public function makeTypedComponentCref

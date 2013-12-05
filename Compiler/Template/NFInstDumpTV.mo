@@ -218,10 +218,6 @@ package NFInstTypes
       Absyn.Path name;
       Option<Absyn.Path> innerName;
     end OUTER_COMPONENT;
-
-    record PACKAGE
-      Absyn.Path name;
-    end PACKAGE;
   end Component;
 
   uniontype Condition

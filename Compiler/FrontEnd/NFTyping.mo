@@ -215,14 +215,6 @@ algorithm
 
     case (NFInstTypes.TYPED_COMPONENT(name = _), _, _, st, _) then (inComponent, st);
 
-    case (NFInstTypes.PACKAGE(parent = NONE()), SOME(_), _, st, _)
-      equation
-        comp = NFInstUtil.setComponentParent(inComponent, inParent);
-      then
-        (comp, st);
-
-    case (NFInstTypes.PACKAGE(name = _), _, _, st, _) then (inComponent, st);
-
     case (NFInstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, _, st, _)
       equation
         comp = NFInstSymbolTable.lookupName(name, st);
