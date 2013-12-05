@@ -23,7 +23,10 @@ template dumpDependence(BackendDAE.BackendDAE backendDAE, String suffix)
     case dae as BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
       let systems = (eqs |> eqSystem as BackendDAE.EQSYSTEM(__) hasindex clusterID fromindex 1 =>
         let varDeclaration = (BackendVariable.varList(eqSystem.orderedVars) |> var as BackendDAE.VAR(__) hasindex varID fromindex 1 =>
-          'var<%clusterID%>_<%varID%> [label="<%crefStr(var.varName)%>"]'
+          if isStateVar(var) then
+            'var<%clusterID%>_<%varID%> [label="der(<%crefStr(var.varName)%>)", shape="box"]'
+          else
+            'var<%clusterID%>_<%varID%> [label="<%crefStr(var.varName)%>", shape="box"]'
           ;separator="\n")
         let eqDeclaration = (BackendEquation.equationList(eqSystem.orderedEqs) |> eq hasindex eqID fromindex 1 =>
           'eq<%clusterID%>_<%eqID%> [label="<%BackendDump.equationString(eq)%>", shape="box"]'
@@ -58,7 +61,8 @@ template dumpDependence2(Integer clusterID, Option<BackendDAE.IncidenceMatrix> m
     case SOME(incMatrix) then
       let incNodes = (arrayList(incMatrix) |> varList hasindex eqID fromindex 1 =>
         let foo = (varList |> varID =>
-          'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="dashed", arrowhead="none"];'
+          if intGt(varID, 0) then
+            'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="dashed", arrowhead="none"];'
           ;separator="\n")
         '<%foo%>'
         ;separator="\n")
@@ -73,7 +77,10 @@ template dumpMatching(BackendDAE.BackendDAE backendDAE, String suffix)
     case dae as BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
       let systems = (eqs |> eqSystem as BackendDAE.EQSYSTEM(__) hasindex clusterID fromindex 1 =>
         let varDeclaration = (BackendVariable.varList(eqSystem.orderedVars) |> var as BackendDAE.VAR(__) hasindex varID fromindex 1 =>
-          'var<%clusterID%>_<%varID%> [label="<%crefStr(var.varName)%>"]'
+          if isStateVar(var) then
+            'var<%clusterID%>_<%varID%> [label="der(<%crefStr(var.varName)%>)", shape="box"]'
+          else
+            'var<%clusterID%>_<%varID%> [label="<%crefStr(var.varName)%>", shape="box"]'
           ;separator="\n")
         let eqDeclaration = (BackendEquation.equationList(eqSystem.orderedEqs) |> eq hasindex eqID fromindex 1 =>
           <<
@@ -115,7 +122,8 @@ template connections(Integer clusterID, BackendDAE.Matching matching, Option<Bac
               if intEq(listGet(arrayList(ass2), eqID), varID) then
                 'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="bold", arrowhead="none"];'
               else
-                'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="dashed", arrowhead="none"];'
+                if intGt(varID, 0) then
+                  'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="dashed", arrowhead="none"];'
               ;separator="\n")
             '<%foo%>'
             ;separator="\n")
@@ -123,7 +131,8 @@ template connections(Integer clusterID, BackendDAE.Matching matching, Option<Bac
         else
           let incNodes = (arrayList(incMatrix) |> varList hasindex eqID fromindex 1 =>
             let foo = (varList |> varID =>
-              'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="dashed", arrowhead="none"];'
+              if intGt(varID, 0) then
+                'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="dashed", arrowhead="none"];'
               ;separator="\n")
             '<%foo%>'
             ;separator="\n")
@@ -135,7 +144,8 @@ template connections(Integer clusterID, BackendDAE.Matching matching, Option<Bac
       match matching
         case matching as BackendDAE.MATCHING(ass2=ass2) then
           let matchedNodes = (arrayList(ass2) |> varID hasindex eqID fromindex 1 =>
-            'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="bold", arrowhead="none"];'
+            if intGt(varID, 0) then
+              'var<%clusterID%>_<%varID%> -> eq<%clusterID%>_<%eqID%> [style="bold", arrowhead="none"];'
             ;separator="\n")
           <<
           // no incidence matrix
@@ -154,7 +164,7 @@ template dumpSorting(BackendDAE.BackendDAE backendDAE, String suffix)
     case dae as BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
       let systems = (eqs |> eqSystem as BackendDAE.EQSYSTEM(__) hasindex clusterID fromindex 1 =>
         let varDeclaration = (BackendVariable.varList(eqSystem.orderedVars) |> var as BackendDAE.VAR(__) hasindex varID fromindex 1 =>
-          'var<%clusterID%>_<%varID%> [label="<%crefStr(var.varName)%>"]'
+          'var<%clusterID%>_<%varID%> [label="<%crefStr(var.varName)%>", shape="box"]'
           ;separator="\n")
         let eqDeclaration = (BackendEquation.equationList(eqSystem.orderedEqs) |> eq hasindex eqID fromindex 1 =>
           'eq<%clusterID%>_<%eqID%> [label="<%BackendDump.equationString(eq)%>", shape="box"]'

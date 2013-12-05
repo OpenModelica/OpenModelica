@@ -188,7 +188,7 @@ algorithm
       // simplify system
       (initdae, Util.SUCCESS()) = BackendDAEUtil.postOptimizeDAE(initdae, pastOptModules, matchingAlgorithm, daeHandler);
       Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae, "solved initial system");
-      Debug.bcall2(Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, initdae, "initialization");
+      Debug.bcall2(Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) and Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP), BackendDump.graphvizBackendDAE, initdae, "dumpinitialsystem");
       
       // warn about selected default initial conditions
       b = List.isNotEmpty(dumpVars);

@@ -1,6 +1,12 @@
 interface package GraphvizDumpTV 
 
   package builtin
+    function intGt
+      input Integer a;
+      input Integer b;
+      output Boolean c;
+    end intGt;
+    
     function arrayList 
       replaceable type TypeVar subtypeof Any;    
       input array<TypeVar> arr;

@@ -368,7 +368,7 @@ constant DebugFlag PARTLINTORNSYSTEM = DEBUG_FLAG(100, "partlintornsystem", fals
 constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(101, "discreteinfo", false,
   Util.gettext("Enables dumping of discrete variables. Works only in combination with backenddaeinfo."));
 constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(102, "graphvizDump", false,
-  Util.gettext("activates additional graphviz dumps (as *.dot files). It can be used in addition to one of the following flags: {dumpinitialsystems}."));
+  Util.gettext("activates additional graphviz dumps (as *.dot files). It can be used in addition to one of the following flags: {dumpinitialsystems|dumpindxdae}."));
 constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(103, "infoXmlOperations", false,
   Util.gettext("Enables output of the operations in the _info.xml file when translating models."));
 constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(104, "hpcomDump", false,
