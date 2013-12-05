@@ -35,7 +35,7 @@ typedef struct {
 #endif
   ModelicaMatReader matReader;
   FILE *pltReader;
-  FILE *csvReader;
+  struct csv_data *csvReader;
 } SimulationResult_Globals;
 
 static SimulationResult_Globals simresglob = {
@@ -48,7 +48,7 @@ static void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
   switch (simresglob->curFormat) {
   case MATLAB4: omc_free_matlab4_reader(&simresglob->matReader); break;
   case PLT: fclose(simresglob->pltReader); break;
-  case CSV: fclose(simresglob->csvReader); break;
+  case CSV: omc_free_csv_reader(simresglob->csvReader); simresglob->csvReader=NULL; break;
   default: break;
   }
   simresglob->curFormat = UNKNOWN_PLOT;
@@ -103,7 +103,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     }
     break;
   case CSV:
-    simresglob->csvReader = fopen(filename, "r");
+    simresglob->csvReader = read_csv(filename);
     if (simresglob->csvReader==NULL) {
       msg[1] = filename;
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s"), msg, 2);
@@ -119,6 +119,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   simresglob->curFormat = format;
   simresglob->curFileName = strdup(filename);
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
+  stat(filename, &buf);
   simresglob->mtime = buf.st_mtime;
 #endif
   // fprintf(stderr, "SimulationResultsImpl__openFile(%s) => %s\n", filename, PlotFormatStr[curFormat]);
@@ -216,7 +217,7 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename,
     return size;
   }
   case CSV: {
-    size = read_csv_dataset_size(filename);
+    size = simresglob->csvReader ? simresglob->csvReader->numsteps : -1;
     msg[0] = filename;
     if (size == -1) c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to read readSimulationResultSize from file: %s\n"), msg, 1);
     return size;
@@ -246,15 +247,14 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
     return read_ptolemy_variables(filename);
   }
   case CSV: {
-    int length = 0;
-    char **variables = read_csv_variables(simresglob->csvReader,&length);
-    if (variables) {
+    if (simresglob->csvReader && simresglob->csvReader->variables) {
+      char **variables = simresglob->csvReader->variables;
       int i;
-      for (i=length-1; i>=0; i--) {
-        res = mk_cons(mk_scon(variables[i]),res);
-        GC_free(variables[i]);
+      for (i=simresglob->csvReader->numvars-1; i>=0; i--) {
+        if (variables[i][0] != '\0') {
+          res = mk_cons(mk_scon(variables[i]),res);
+        }
       }
-      GC_free(variables);
     }
     return res;
   }
@@ -349,7 +349,7 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
     while (RML_NILHDR != RML_GETHDR(vars)) {
       var = RML_STRINGDATA(RML_CAR(vars));
       vars = RML_CDR(vars);
-      vals = read_csv_dataset(filename,var,dimsize);
+      vals = simresglob->csvReader ? read_csv_dataset(simresglob->csvReader,var) : NULL;
       if (vals == NULL) {
         msg[1] = var;
         msg[0] = filename;

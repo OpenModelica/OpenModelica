@@ -32,10 +32,19 @@
 #ifndef OMC_READ_CSV_H
 #define OMC_READ_CSV_H
 
+struct csv_data {
+  char **variables;
+  double *data;
+  int numvars;
+  int numsteps;
+};
+
 int read_csv_dataset_size(const char* filename);
 
 char** read_csv_variables(FILE *fin, int *length);
 
-double* read_csv_dataset(const char *filename, const char *var, int dimsize);
+struct csv_data* read_csv(const char *filename);
+double* read_csv_dataset(struct csv_data *data, const char *var);
+void omc_free_csv_reader(struct csv_data *data);
 
 #endif

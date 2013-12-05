@@ -447,7 +447,7 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
   return reader->vars[ix];
 }
 
-static void transpose(double *m, int w, int h)
+void matrix_transpose(double *m, int w, int h)
 {
   int start, next, i;
   double tmp;
@@ -495,7 +495,7 @@ int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
       tmp[i] = ((float*)tmp)[i];
     }
   }
-  transpose(tmp,reader->nvar,reader->nrows);
+  matrix_transpose(tmp,reader->nvar,reader->nrows);
   /* Negative aliases */
   for (i=0; i<reader->nrows*reader->nvar; i++) {
     tmp[reader->nrows*reader->nvar + i] = -tmp[i];
