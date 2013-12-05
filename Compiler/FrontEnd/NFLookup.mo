@@ -126,8 +126,26 @@ protected
 algorithm
   (outEntry, outEnv, state) := lookupName(inName, inEnv, STATE_BEGIN(), inInfo,
     Error.LOOKUP_VARIABLE_ERROR);
+  state := fixEnumTypenameLookup(state, outEntry);
   validateEndState(state, STATE_COMP(), inName, inInfo);
 end lookupVariableName;
+
+protected function fixEnumTypenameLookup
+  input LookupState inState;
+  input Entry inEntry;
+  output LookupState outState;
+algorithm
+  outState := matchcontinue(inState, inEntry)
+    case (_, _)
+      equation
+        SCode.CLASS(classDef = SCode.ENUMERATION(enumLst = _)) =
+          NFEnv.entryElement(inEntry);
+      then
+        STATE_COMP();
+
+    else inState;
+  end matchcontinue;
+end fixEnumTypenameLookup;
 
 public function lookupFunctionName
   "Calls lookupName with the 'Function not found' error message."
@@ -990,6 +1008,7 @@ algorithm
       list<Modifier> ext_mods;
       SCode.Mod smod;
       Modifier mod;
+      String enum_name;
 
     case (SCode.PARTS(elementLst = elems), _, _, _, _, _, _, env)
       equation
@@ -1037,7 +1056,8 @@ algorithm
 
     case (SCode.ENUMERATION(enumLst = enums), _, _, _, _, _, _, env)
       equation
-        path = NFEnv.envPath(inEnv);
+        enum_name = NFEnv.scopeName(inEnv);
+        path = Absyn.IDENT(enum_name);
         env = insertEnumLiterals(enums, path, 1, env);
       then
         (env, {});
