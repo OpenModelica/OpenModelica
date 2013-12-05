@@ -198,7 +198,6 @@ match cref
   case CREF_FULLYQUALIFIED(__) then '.<%dumpCref(componentRef)%>'
   case WILD(__) then '/*_*/'
   case ALLWILD(__) then '__'
-  case CREF_INVALID(__) then 'INVALID(<%dumpCref(cref)%>'
 end dumpCref;
 
 template dumpFunctionArgs(Absyn.FunctionArgs args)

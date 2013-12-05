@@ -1631,9 +1631,6 @@ algorithm
       then
         cref;
 
-    // Otherwise, mark the cref as invalid, which is ok as long as it's not
-    // actually used anywhere.
-    //else then Absyn.CREF_INVALID(inCref);
     else inCref;
 
   end matchcontinue;

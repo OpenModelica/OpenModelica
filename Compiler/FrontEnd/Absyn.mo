@@ -990,12 +990,6 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
 
   record WILD end WILD;
   record ALLWILD end ALLWILD;
-
-  record CREF_INVALID
-    "Used to indicate a cref that could not be found, which is legal as long as
-    it's not used."
-    ComponentRef componentRef;
-  end CREF_INVALID;
 end ComponentRef;
 
 
@@ -2098,7 +2092,6 @@ algorithm
 
     case (ALLWILD(), _) then (inCref, inTuple);
     case (WILD(), _) then (inCref, inTuple);
-    case (CREF_INVALID(componentRef = _), _) then (inCref, inTuple);
   end match;
 end traverseExpBidirCref;
 
@@ -2599,8 +2592,6 @@ algorithm
       then s1;
     case (ALLWILD()) then "__";
     case (WILD()) then "_";
-    case (CREF_INVALID(componentRef = child))
-      then printComponentRefStr(child);
   end match;
 end printComponentRefStr;
 
@@ -3457,7 +3448,6 @@ algorithm
     case (BOOL(value = _),_,_) then {};
     case (CREF(componentRef = ALLWILD()),_,_) then {};
     case (CREF(componentRef = WILD()),_,_) then {};
-    case (CREF(componentRef = CREF_INVALID(componentRef = _)), _,_) then {};
     case (CREF(componentRef = cr),false,_) then {cr};
 
     case (CREF(componentRef = (cr)),true,_)
@@ -4871,7 +4861,6 @@ algorithm
       case(id, CREF_FULLYQUALIFIED(cref)) then findIteratorInCRef(id,cref);
       case (_,ALLWILD()) then {};
       case (_,WILD()) then {};
-      case (_, CREF_INVALID(componentRef = _)) then {};
   end match;
 end findIteratorInCRef;
 
@@ -5418,11 +5407,6 @@ algorithm
           cref2 = crefInsertSubscriptLstLst2(cref, subs);
         then
           crefMakeFullyQualified(cref2);
-      case (CREF_INVALID(componentRef = cref), subs)
-        equation
-          cref2 = crefInsertSubscriptLstLst2(cref, subs);
-        then
-          CREF_INVALID(cref2);
   end matchcontinue;
 end crefInsertSubscriptLstLst2;
 

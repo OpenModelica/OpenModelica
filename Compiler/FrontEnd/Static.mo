@@ -6479,15 +6479,6 @@ algorithm
         Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,prestr}, info);
       then fail();
 
-    case (_, _, Absyn.CREF_INVALID(componentRef = fn), _, _, _, _, _, _, _)
-      equation
-        fnstr = Absyn.printComponentRefStr(fn);
-        env_str = Env.printEnvPathStr(inEnv);
-        Error.addSourceMessage(Error.LOOKUP_FUNCTION_ERROR,
-          {fnstr, env_str}, info);
-      then
-        fail();
-
     /* Interactive mode */
     case (cache,env,fn,args,nargs,(impl as true),st,pre,_,_)
       equation

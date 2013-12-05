@@ -3597,21 +3597,6 @@ extern struct record_description Absyn_ComponentRef_ALLWILD__desc;
 static const MMC_DEFSTRUCTLIT(Absyn__ALLWILD__struct,1,7) {&Absyn_ComponentRef_ALLWILD__desc}};
 static void *Absyn__ALLWILD = MMC_REFSTRUCTLIT(Absyn__ALLWILD__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Absyn_ComponentRef_CREF__INVALID__desc_added
-#define Absyn_ComponentRef_CREF__INVALID__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_ComponentRef_CREF__INVALID__desc__fields[1] = {"componentRef"};
-ADD_METARECORD_DEFINITIONS struct record_description Absyn_ComponentRef_CREF__INVALID__desc = {
-  "Absyn_ComponentRef_CREF__INVALID",
-  "Absyn.ComponentRef.CREF_INVALID",
-  Absyn_ComponentRef_CREF__INVALID__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Absyn_ComponentRef_CREF__INVALID__desc;
-#endif
-#define Absyn__CREF_5fINVALID_3dBOX1 8
-#define Absyn__CREF_5fINVALID(componentRef) (mmc_mk_box2(8,&Absyn_ComponentRef_CREF__INVALID__desc,componentRef))
-#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Path_QUALIFIED__desc_added
 #define Absyn_Path_QUALIFIED__desc_added
 ADD_METARECORD_DEFINITIONS const char* Absyn_Path_QUALIFIED__desc__fields[2] = {"name","path"};

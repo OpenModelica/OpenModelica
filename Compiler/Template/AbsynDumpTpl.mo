@@ -983,7 +983,6 @@ algorithm
   match(in_txt, in_a_cref)
     local
       Tpl.Text txt;
-      Absyn.ComponentRef i_cref;
       Absyn.ComponentRef i_componentRef;
       list<Absyn.Subscript> i_subscripts;
       Absyn.Ident i_name;
@@ -1021,13 +1020,6 @@ algorithm
            Absyn.ALLWILD() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("__"));
-      then txt;
-
-    case ( txt,
-           (i_cref as Absyn.CREF_INVALID(componentRef = _)) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("INVALID("));
-        txt = dumpCref(txt, i_cref);
       then txt;
 
     case ( txt,

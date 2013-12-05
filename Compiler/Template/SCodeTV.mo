@@ -250,10 +250,6 @@ package Absyn
 
     record WILD end WILD;
     record ALLWILD end ALLWILD;
-
-    record CREF_INVALID
-      ComponentRef componentRef;
-    end CREF_INVALID;
   end ComponentRef;
 
   uniontype Path
