@@ -46,30 +46,49 @@ RML_BEGIN_LABEL(HpcOmSchedulerExt__readScheduleFromGraphMl)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(HpcOmSchedulerExt__scheduleAdjList)
+RML_BEGIN_LABEL(HpcOmSchedulerExt__scheduleMetis)
 {
-  int nelts = (int)RML_HDRSLOTS(RML_GETHDR(rmlA0)); //number of elements in array
-  std::list<std::list<long int> > adjLsts = std::list<std::list<long int> >();
+  int xadjNelts = (int)RML_HDRSLOTS(RML_GETHDR(rmlA0)); //number of elements in xadj-array
+  int adjncyNelts = (int)RML_HDRSLOTS(RML_GETHDR(rmlA1)); //number of elements in adjncy-array
+  int vwgtNelts = (int)RML_HDRSLOTS(RML_GETHDR(rmlA2)); //number of elements in vwgt-array
+  int adjwgtNelts = (int)RML_HDRSLOTS(RML_GETHDR(rmlA3)); //number of elements in adjwgt-array
 
-  std::cerr << "element count: " << nelts << std::endl;
+  int* xadj = (int *) malloc(xadjNelts*sizeof(int));
+  int* adjncy = (int *) malloc(adjncyNelts*sizeof(int));
+  int* vwgt = (int *) malloc(vwgtNelts*sizeof(int));
+  int* adjwgt = (int *) malloc(adjwgtNelts*sizeof(int));
 
-  for(int i=0; i<nelts; i++) {
-  std::cerr << "bla" << std::endl;
-    void* adjLstE = RML_STRUCTDATA(rmlA0)[i]; //adjacence list entry
-    std::list<long int> adjLst;
+  std::cerr << "xadj element count: " << xadjNelts << std::endl;
+  std::cerr << "adjncy element count: " << adjncyNelts << std::endl;
+  std::cerr << "vwgt element count: " << vwgtNelts << std::endl;
+  std::cerr << "adjwgt element count: " << adjwgtNelts << std::endl;
 
-    while(RML_GETHDR(adjLstE) == RML_CONSHDR)
-    {
-      long int i1 = RML_UNTAGFIXNUM(RML_CAR(adjLstE));
-      adjLst.push_back(i1);
-      std::cerr << "elem: " << i1 << std::endl;
-      adjLstE = RML_CDR(adjLstE);
-    }
-
-    adjLsts.push_back(adjLst);
+  //setup xadj
+  for(int i=0; i<xadjNelts; i++) {
+    int xadjElem = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA0)[i]);
+    std::cerr << "xadjElem: " << xadjElem << std::endl;
+    xadj[i] = xadjElem;
+  }
+  //setup adjncy
+  for(int i=0; i<adjncyNelts; i++) {
+    int adjncyElem = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA1)[i]);
+    std::cerr << "adjncyElem: " << adjncyElem << std::endl;
+    xadj[i] = adjncyElem;
+  }
+  //setup vwgt
+  for(int i=0; i<vwgtNelts; i++) {
+    int vwgtElem = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA2)[i]);
+    std::cerr << "vwgtElem: " << vwgtElem << std::endl;
+    xadj[i] = vwgtElem;
+  }
+  //setup adjwgt
+  for(int i=0; i<adjwgtNelts; i++) {
+    int adjwgtElem = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA3)[i]);
+    std::cerr << "adjwgtElem: " << adjwgtElem << std::endl;
+    xadj[i] = adjwgtElem;
   }
 
-  rmlA0 = HpcOmSchedulerExtImpl__scheduleAdjList(adjLsts);
+  rmlA0 = HpcOmSchedulerExtImpl__scheduleMetis(xadj, adjncy, vwgt, adjwgt, xadjNelts, adjncyNelts);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

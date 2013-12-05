@@ -1235,7 +1235,7 @@ end printLevelSchedule1;
 //--------------------
 public function createExtCSchedule "function createExtSchedule
   author: marcusw
-  Creates a scheduling by reading the required informations from a graphml-file."
+  Creates a scheduling by passing the arguments to metis."
   input HpcOmTaskGraph.TaskGraph iTaskGraph;
   input HpcOmTaskGraph.TaskGraphMeta iTaskGraphMeta;
   input Integer iNumberOfThreads;
@@ -1243,19 +1243,16 @@ public function createExtCSchedule "function createExtSchedule
   output Schedule oSchedule;
 protected
   list<Integer> extInfo;
-  array<Integer> extInfoArr;
-  HpcOmTaskGraph.TaskGraph taskGraphT;
-  Schedule tmpSchedule;
-  array<list<Task>> threadTasks;
-  list<Integer> rootNodes;
-  array<tuple<Task, Integer>> allTasks;
-  list<tuple<Task,Integer>> nodeList_refCount; //list of nodes which are ready to schedule
-  list<Task> nodeList;
+  array<Integer> xadj, adjncy, vwgt, adjwgt;
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping)
     case(_,_,_,_)
       equation
-        extInfo = HpcOmSchedulerExt.scheduleAdjList(iTaskGraph);
+        xadj = arrayCreate(1,1);
+        adjncy = arrayCreate(2,2);
+        vwgt = arrayCreate(3,3);
+        adjwgt = arrayCreate(4,4);
+        extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt);
       then fail();
     else
       equation
