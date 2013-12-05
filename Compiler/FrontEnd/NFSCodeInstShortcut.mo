@@ -44,6 +44,7 @@ encapsulated package NFSCodeInstShortcut
 
 public import Absyn;
 public import DAE;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import NFInstTypesOld;
 public import SCode;
@@ -172,7 +173,7 @@ algorithm
                 NFInstTypesOld.NOMOD(),
                 NFInstTypes.NO_PREFIXES(),
                 env,
-                NFInstTypes.EMPTY_PREFIX(SOME(path)),
+                NFInstPrefix.makeEmptyPrefix(path),
                 emptyInstInfo);
       then
         classes;
@@ -569,7 +570,7 @@ algorithm
     // functions, packages, classes
     case ((elem as SCode.CLASS(name = name),mod), _, _, _, _, _, _, _)
       equation
-        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+        prefix = NFInstPrefix.add(name, {}, inPrefix);
         fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
         false = listMember(fullName, inInstInfo);
         // add it
@@ -676,8 +677,8 @@ algorithm
 
         // Instantiate array dimensions and add them to the prefix.
         //(dims,functions) = instDimensions(ad, inEnv, inPrefix, info, functions);
-        //prefix = NFInstUtil.addPrefix(name, dims, inPrefix);
-        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+        //prefix = NFInstPrefix.add(name, dims, inPrefix);
+        prefix = NFInstPrefix.add(name, {}, inPrefix);
 
         // Check that it's legal to instantiate the class.
         NFSCodeCheck.checkInstanceRestriction(item, prefix, info);
@@ -690,7 +691,7 @@ algorithm
         mod = NFSCodeMod.mergeMod(cmod, mod);
 
         // Merge prefixes from the instance hierarchy.
-        //path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+        //path = NFInstPrefix.prefixPath(Absyn.IDENT(name), inPrefix);
         //prefs = NFInstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
         //pty = NFInstUtil.paramTypeFromPrefixes(prefs);
         prefs = inPrefixes;

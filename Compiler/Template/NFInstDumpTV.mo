@@ -86,7 +86,7 @@ package NFInstDump
   end dumpUntypedComponentDims;
 end NFInstDump;
 
-package NFInstTypes
+package NFInstPrefix
   uniontype Prefix
     record EMPTY_PREFIX
       Option<Absyn.Path> classPath;
@@ -98,7 +98,9 @@ package NFInstTypes
       Prefix restPrefix;
     end PREFIX;
   end Prefix;
+end NFInstPrefix;
 
+package NFInstTypes
   uniontype Element
     record ELEMENT
       Component component;

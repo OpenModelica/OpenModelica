@@ -95,6 +95,7 @@ NFExpandableConnectors.mo \
 NFInst.mo \
 NFInstDump.mo \
 NFInstFlatten.mo \
+NFInstPrefix.mo \
 NFInstSymbolTable.mo \
 NFInstTypes.mo \
 NFInstTypesOld.mo \

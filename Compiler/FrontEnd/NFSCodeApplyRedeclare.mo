@@ -44,6 +44,7 @@ encapsulated package NFSCodeApplyRedeclare
 
 public import Absyn;
 
+public import NFInstPrefix;
 public import NFInstTypes;
 public import NFInstTypesOld;
 public import SCode;
@@ -156,7 +157,7 @@ algorithm
         // printChanges(changes, 0);
 
         // print("Starting the new apply phase ...\n");
-        classes = applyChangesToProgram(inProgram, NFInstTypes.EMPTY_PREFIX(NONE()), Absyn.TOP(), inClassPath, changes);
+        classes = applyChangesToProgram(inProgram, NFInstPrefix.emptyPrefix, Absyn.TOP(), inClassPath, changes);
         // print("Done with the apply phase ...\n");
       then
         classes;

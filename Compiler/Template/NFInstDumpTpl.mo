@@ -12,6 +12,7 @@ public import NFConnect2;
 public import DAE;
 public import Expression;
 public import NFInstDump;
+public import NFInstPrefix;
 public import NFInstTypes;
 protected import AbsynDumpTpl;
 protected import ExpressionDumpTpl;
@@ -140,7 +141,7 @@ algorithm
   end match;
 end dumpComponent;
 
-protected function fun_11
+protected function fun_12
   input Tpl.Text in_txt;
   input Tpl.Text in_a_cls__str;
 
@@ -161,7 +162,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
       then txt;
   end match;
-end fun_11;
+end fun_12;
 
 public function dumpElement
   input Tpl.Text in_txt;
@@ -184,7 +185,7 @@ algorithm
       equation
         l_comp__str = dumpComponent(Tpl.emptyTxt, i_component);
         l_cls__str = dumpClass(Tpl.emptyTxt, i_cls);
-        l_sep__str = fun_11(Tpl.emptyTxt, l_cls__str);
+        l_sep__str = fun_12(Tpl.emptyTxt, l_cls__str);
         txt = Tpl.writeText(txt, l_comp__str);
         txt = Tpl.writeText(txt, l_sep__str);
         txt = Tpl.writeText(txt, l_cls__str);
@@ -210,7 +211,7 @@ algorithm
   end match;
 end dumpElement;
 
-protected function lm_13
+protected function lm_14
   input Tpl.Text in_txt;
   input list<NFInstTypes.Element> in_items;
 
@@ -232,12 +233,12 @@ algorithm
       equation
         txt = dumpElement(txt, i_comp);
         txt = Tpl.nextIter(txt);
-        txt = lm_13(txt, rest);
+        txt = lm_14(txt, rest);
       then txt;
   end match;
-end lm_13;
+end lm_14;
 
-protected function lm_14
+protected function lm_15
   input Tpl.Text in_txt;
   input list<NFInstTypes.Equation> in_items;
 
@@ -259,12 +260,12 @@ algorithm
       equation
         txt = dumpEquation(txt, i_ieq);
         txt = Tpl.nextIter(txt);
-        txt = lm_14(txt, rest);
+        txt = lm_15(txt, rest);
       then txt;
   end match;
-end lm_14;
+end lm_15;
 
-protected function lm_15
+protected function lm_16
   input Tpl.Text in_txt;
   input list<NFInstTypes.Equation> in_items;
 
@@ -286,12 +287,12 @@ algorithm
       equation
         txt = dumpEquation(txt, i_eq);
         txt = Tpl.nextIter(txt);
-        txt = lm_15(txt, rest);
+        txt = lm_16(txt, rest);
       then txt;
   end match;
-end lm_15;
+end lm_16;
 
-protected function fun_16
+protected function fun_17
   input Tpl.Text in_txt;
   input Tpl.Text in_a_comp__str;
 
@@ -315,9 +316,9 @@ algorithm
         txt = Tpl.popBlock(txt);
       then txt;
   end match;
-end fun_16;
+end fun_17;
 
-protected function fun_17
+protected function fun_18
   input Tpl.Text in_txt;
   input Tpl.Text in_a_eq__str;
 
@@ -338,9 +339,9 @@ algorithm
            _ )
       then txt;
   end match;
-end fun_17;
+end fun_18;
 
-protected function fun_18
+protected function fun_19
   input Tpl.Text in_txt;
   input Tpl.Text in_a_ieq__str;
   input Tpl.Text in_a_eq__str;
@@ -371,12 +372,12 @@ algorithm
         txt = Tpl.writeText(txt, i_ieq__str);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.popBlock(txt);
-        txt = fun_17(txt, a_eq__str);
+        txt = fun_18(txt, a_eq__str);
       then txt;
   end match;
-end fun_18;
+end fun_19;
 
-protected function fun_19
+protected function fun_20
   input Tpl.Text in_txt;
   input Tpl.Text in_a_eq__str;
 
@@ -406,7 +407,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("end equation;"));
       then txt;
   end match;
-end fun_19;
+end fun_20;
 
 public function dumpClass
   input Tpl.Text in_txt;
@@ -432,17 +433,17 @@ algorithm
            NFInstTypes.COMPLEX_CLASS(components = i_components, initialEquations = i_initialEquations, equations = i_equations) )
       equation
         l_comp__str = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_comp__str = lm_13(l_comp__str, i_components);
+        l_comp__str = lm_14(l_comp__str, i_components);
         l_comp__str = Tpl.popIter(l_comp__str);
         l_ieq__str = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_ieq__str = lm_14(l_ieq__str, i_initialEquations);
+        l_ieq__str = lm_15(l_ieq__str, i_initialEquations);
         l_ieq__str = Tpl.popIter(l_ieq__str);
         l_eq__str = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_eq__str = lm_15(l_eq__str, i_equations);
+        l_eq__str = lm_16(l_eq__str, i_equations);
         l_eq__str = Tpl.popIter(l_eq__str);
-        l_comp__seq__str = fun_16(Tpl.emptyTxt, l_comp__str);
-        l_ieq__seq__str = fun_18(Tpl.emptyTxt, l_ieq__str, l_eq__str);
-        l_eq__seq__str = fun_19(Tpl.emptyTxt, l_eq__str);
+        l_comp__seq__str = fun_17(Tpl.emptyTxt, l_comp__str);
+        l_ieq__seq__str = fun_19(Tpl.emptyTxt, l_ieq__str, l_eq__str);
+        l_eq__seq__str = fun_20(Tpl.emptyTxt, l_eq__str);
         txt = Tpl.writeText(txt, l_comp__seq__str);
         txt = Tpl.writeText(txt, l_ieq__seq__str);
         txt = Tpl.writeText(txt, l_eq__seq__str);
@@ -463,7 +464,7 @@ algorithm
   out_txt := ExpressionDumpTpl.dumpExp(txt, a_exp, "\"");
 end dumpExp;
 
-protected function fun_22
+protected function fun_23
   input Tpl.Text in_txt;
   input Option<DAE.Exp> in_a_range;
 
@@ -488,9 +489,9 @@ algorithm
            _ )
       then txt;
   end match;
-end fun_22;
+end fun_23;
 
-protected function lm_23
+protected function lm_24
   input Tpl.Text in_txt;
   input list<NFInstTypes.Equation> in_items;
 
@@ -512,10 +513,10 @@ algorithm
       equation
         txt = dumpEquation(txt, i_eq);
         txt = Tpl.nextIter(txt);
-        txt = lm_23(txt, rest);
+        txt = lm_24(txt, rest);
       then txt;
   end match;
-end lm_23;
+end lm_24;
 
 public function dumpEquation
   input Tpl.Text in_txt;
@@ -600,9 +601,9 @@ algorithm
            NFInstTypes.FOR_EQUATION(indexType = i_indexType, range = i_range, body = i_body, name = i_name, index = i_index) )
       equation
         l_ty__str = ExpressionDumpTpl.dumpType(Tpl.emptyTxt, i_indexType);
-        l_range__str = fun_22(Tpl.emptyTxt, i_range);
+        l_range__str = fun_23(Tpl.emptyTxt, i_range);
         l_eql__str = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_eql__str = lm_23(l_eql__str, i_body);
+        l_eql__str = lm_24(l_eql__str, i_body);
         l_eql__str = Tpl.popIter(l_eql__str);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("for {"));
         txt = Tpl.writeText(txt, l_ty__str);
@@ -728,7 +729,7 @@ algorithm
   end match;
 end dumpBinding;
 
-protected function fun_26
+protected function fun_27
   input Tpl.Text in_txt;
   input DAE.Dimensions in_a_dims;
 
@@ -752,9 +753,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("]"));
       then txt;
   end match;
-end fun_26;
+end fun_27;
 
-protected function fun_27
+protected function fun_28
   input Tpl.Text in_txt;
   input Tpl.Text in_a_rest__str;
 
@@ -777,11 +778,11 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("."));
       then txt;
   end match;
-end fun_27;
+end fun_28;
 
 public function dumpPrefix
   input Tpl.Text in_txt;
-  input NFInstTypes.Prefix in_a_prefix;
+  input NFInstPrefix.Prefix in_a_prefix;
 
   output Tpl.Text out_txt;
 algorithm
@@ -790,18 +791,18 @@ algorithm
     local
       Tpl.Text txt;
       String i_name;
-      NFInstTypes.Prefix i_restPrefix;
+      NFInstPrefix.Prefix i_restPrefix;
       DAE.Dimensions i_dims;
       Tpl.Text l_pre__str;
       Tpl.Text l_rest__str;
       Tpl.Text l_dims__str;
 
     case ( txt,
-           NFInstTypes.PREFIX(dims = i_dims, restPrefix = i_restPrefix, name = i_name) )
+           NFInstPrefix.PREFIX(dims = i_dims, restPrefix = i_restPrefix, name = i_name) )
       equation
-        l_dims__str = fun_26(Tpl.emptyTxt, i_dims);
+        l_dims__str = fun_27(Tpl.emptyTxt, i_dims);
         l_rest__str = dumpPrefix(Tpl.emptyTxt, i_restPrefix);
-        l_pre__str = fun_27(Tpl.emptyTxt, l_rest__str);
+        l_pre__str = fun_28(Tpl.emptyTxt, l_rest__str);
         txt = Tpl.writeText(txt, l_pre__str);
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeText(txt, l_dims__str);
@@ -813,7 +814,7 @@ algorithm
   end match;
 end dumpPrefix;
 
-protected function lm_29
+protected function lm_30
   input Tpl.Text in_txt;
   input list<NFConnect2.Connection> in_items;
 
@@ -835,10 +836,10 @@ algorithm
       equation
         txt = dumpConnection(txt, i_c);
         txt = Tpl.nextIter(txt);
-        txt = lm_29(txt, rest);
+        txt = lm_30(txt, rest);
       then txt;
   end match;
-end lm_29;
+end lm_30;
 
 public function dumpConnections
   input Tpl.Text in_txt;
@@ -857,7 +858,7 @@ algorithm
            NFConnect2.CONNECTIONS(connections = i_connections) )
       equation
         l_conn__str = Tpl.pushIter(Tpl.emptyTxt, Tpl.ITER_OPTIONS(0, NONE(), SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        l_conn__str = lm_29(l_conn__str, i_connections);
+        l_conn__str = lm_30(l_conn__str, i_connections);
         l_conn__str = Tpl.popIter(l_conn__str);
         txt = Tpl.writeText(txt, l_conn__str);
       then txt;

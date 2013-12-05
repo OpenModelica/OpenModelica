@@ -68,6 +68,7 @@ encapsulated package NFSCodeFlattenRedeclare
 public import Absyn;
 public import SCode;
 public import NFSCodeEnv;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import NFSCodeLookup;
 
@@ -298,7 +299,7 @@ algorithm
     case (_, _, _, _, NFSCodeLookup.INSERT_REDECLARES())
       equation
         (item, env, _) = replaceRedeclaredElementsInEnv(inRedeclares,
-          inClassItem, inClassEnv, inElementEnv, NFInstTypes.emptyPrefix);
+          inClassItem, inClassEnv, inElementEnv, NFInstPrefix.emptyPrefix);
       then
         (SOME(item), SOME(env));
 

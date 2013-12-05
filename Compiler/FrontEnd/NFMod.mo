@@ -51,7 +51,7 @@ protected import Error;
 protected import Flags;
 protected import List;
 protected import NFInstDump;
-protected import NFInstUtil;
+protected import NFInstPrefix;
 protected import SCodeDump;
 protected import Util;
 
@@ -67,37 +67,24 @@ public function translateMod
   input SCode.Mod inMod;
   input String inElementName;
   input Integer inDimensions;
-  input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
 protected
   Prefix prefix;
 algorithm
-  prefix := getElementModPrefix(inElementName, inPrefix);
-  outMod := translateMod2(inMod, inElementName, inDimensions, prefix, inEnv);
-  outMod := compactMod(outMod, inPrefix);
+  outMod := translateMod2(inMod, inElementName, inDimensions, inEnv);
+  prefix := NFEnv.scopePrefix(inEnv);
+  outMod := compactMod(outMod, (prefix, inElementName));
 end translateMod;
   
-protected function getElementModPrefix
-  input String inElementName;
-  input Prefix inPrefix;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := match(inElementName, inPrefix)
-    case ("", _) then inPrefix;
-    else NFInstUtil.restPrefix(inPrefix);
-  end match;
-end getElementModPrefix;
-
 public function translateMod2
   input SCode.Mod inMod;
   input String inElementName;
   input Integer inDimensions;
-  input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
 algorithm
-  outMod := match(inMod, inElementName, inDimensions, inPrefix, inEnv)
+  outMod := match(inMod, inElementName, inDimensions, inEnv)
     local
       SCode.Final fp;
       SCode.Each ep;
@@ -112,22 +99,22 @@ algorithm
       SCode.Replaceable repl;
       Option<ConstrainingClass> cc;
 
-    case (SCode.NOMOD(), _, _, _, _) then NFInstTypes.NOMOD();
+    case (SCode.NOMOD(), _, _, _) then NFInstTypes.NOMOD();
 
-    case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _, _)
+    case (SCode.MOD(fp, ep, submods, binding_exp, info), _, _, _)
       equation
-        binding = translateBinding(binding_exp, ep, inDimensions, inPrefix, inEnv, info);
-        mods = translateSubMods(submods, ep, inDimensions, inPrefix, inEnv);
+        binding = translateBinding(binding_exp, ep, inDimensions, inEnv, info);
+        mods = translateSubMods(submods, ep, inDimensions, inEnv);
       then
         NFInstTypes.MODIFIER(inElementName, fp, ep, binding, mods, info);
 
-    case (SCode.REDECL(fp, ep, el), _, _, _, _)
+    case (SCode.REDECL(fp, ep, el), _, _, _)
       equation
         smod = SCode.elementMod(el);
         el = SCode.setElementMod(el, SCode.NOMOD());
-        mod = translateMod2(smod, "", inDimensions, inPrefix, inEnv);
+        mod = translateMod2(smod, "", inDimensions, inEnv);
         repl = SCode.prefixesReplaceable(SCode.elementPrefixes(el));
-        cc = translateConstrainingClass(repl, inPrefix, inEnv);
+        cc = translateConstrainingClass(repl, inEnv);
       then
         NFInstTypes.REDECLARE(fp, ep, el, inEnv, mod, cc);
 
@@ -136,21 +123,20 @@ end translateMod2;
 
 protected function translateConstrainingClass
   input SCode.Replaceable inReplaceable;
-  input Prefix inPrefix;
   input Env inEnv;
   output Option<ConstrainingClass> outConstrainingClass;
 algorithm
-  outConstrainingClass := match(inReplaceable, inPrefix, inEnv)
+  outConstrainingClass := match(inReplaceable, inEnv)
     local
       SCode.ConstrainClass cc;
       Absyn.Path path;
       SCode.Mod smod;
       Modifier mod;
 
-    case (SCode.REPLACEABLE(cc = SOME(cc)), _, _)
+    case (SCode.REPLACEABLE(cc = SOME(cc)), _)
       equation
         SCode.CONSTRAINCLASS(constrainingClass = path, modifier = smod) = cc;
-        mod = translateMod2(smod, "", 0, inPrefix, inEnv);
+        mod = translateMod2(smod, "", 0, inEnv);
       then
         SOME(NFInstTypes.CONSTRAINING_CLASS(path, mod));
 
@@ -163,20 +149,18 @@ protected function translateSubMods
   input list<SCode.SubMod> inSubMods;
   input SCode.Each inEach;
   input Integer inDimensions;
-  input Prefix inPrefix;
   input Env inEnv;
   output list<Modifier> outSubMods;
 protected
   Integer pd;
 algorithm
   pd := Util.if_(SCode.eachBool(inEach), 0, inDimensions);
-  outSubMods := List.map3(inSubMods, translateSubMod, pd, inPrefix, inEnv);
+  outSubMods := List.map2(inSubMods, translateSubMod, pd, inEnv);
 end translateSubMods;
   
 protected function translateSubMod
   input SCode.SubMod inSubMod;
   input Integer inDimensions;
-  input Prefix inPrefix;
   input Env inEnv;
   output Modifier outMod;
 protected
@@ -184,51 +168,51 @@ protected
   SCode.Mod mod;
 algorithm
   SCode.NAMEMOD(name, mod) := inSubMod;
-  outMod := translateMod2(mod, name, inDimensions, inPrefix, inEnv);
+  outMod := translateMod2(mod, name, inDimensions, inEnv);
 end translateSubMod;
 
 protected function translateBinding
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
   input SCode.Each inEachPrefix;
   input Integer inDimensions;
-  input Prefix inPrefix;
   input Env inEnv;
   input Absyn.Info inInfo;
   output Binding outBinding;
 algorithm
-  outBinding := match(inBinding, inEachPrefix, inDimensions, inPrefix, inEnv, inInfo)
+  outBinding := match(inBinding, inEachPrefix, inDimensions, inEnv, inInfo)
     local
       Absyn.Exp bind_exp;
       Integer pd;
 
-    case (NONE(), _, _, _, _, _) then NFInstTypes.UNBOUND();
-
     // See propagateMod for how this works.
-    case (SOME((bind_exp, _)), _, _, _, _, _)
+    case (SOME((bind_exp, _)), _, _, _, _)
       equation
         pd = Util.if_(SCode.eachBool(inEachPrefix), -1, inDimensions);
       then
-        NFInstTypes.RAW_BINDING(bind_exp, inEnv, inPrefix, pd, inInfo);
+        NFInstTypes.RAW_BINDING(bind_exp, inEnv, pd, inInfo);
+
+    else NFInstTypes.UNBOUND();
 
   end match;
 end translateBinding;
 
 public function addModToEnv
   input Modifier inMod;
+  input list<EntryOrigin> inModOrigin;
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue(inMod, inEnv)
+  outEnv := matchcontinue(inMod, inModOrigin, inEnv)
     local
       list<tuple<String, Modifier>> mods;
       Env env;
 
-    case (NFInstTypes.NOMOD(), _) then inEnv;
+    case (NFInstTypes.NOMOD(), _, _) then inEnv;
 
-    case (_, _)
+    case (_, _, _)
       equation
         mods = splitMod(inMod);
-        env = List.fold(mods, addModToEnv2, inEnv);
+        env = List.fold1(mods, addModToEnv2, inModOrigin, inEnv);
       then
         env;
 
@@ -244,20 +228,21 @@ end addModToEnv;
 
 protected function addModToEnv2
   input tuple<String, Modifier> inMods;
+  input list<EntryOrigin> inModOrigin;
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inMods, inEnv)
+  outEnv := match(inMods, inModOrigin, inEnv)
     local
       String name;
       Modifier mod;
       Env env;
       Option<Entry> uentry;
 
-    case ((name, mod), env)
+    case ((name, mod), _, env)
       equation
         (env, uentry) = NFEnv.updateEntry(name, mod, NFEnv.setEntryModifier, inEnv);
-        checkModifiedElement(uentry, name, mod, inEnv);
+        checkModifiedElement(uentry, name, mod, inModOrigin, inEnv);
       then
         env;
 
@@ -268,9 +253,10 @@ protected function checkModifiedElement
   input Option<Entry> inEntry;
   input String inName;
   input Modifier inModifier;
+  input list<EntryOrigin> inModOrigin;
   input Env inEnv;
 algorithm
-  _ := match(inEntry, inName, inModifier, inEnv)
+  _ := match(inEntry, inName, inModifier, inModOrigin, inEnv)
     local
       String cls_name;
       Absyn.Info info;
@@ -278,7 +264,7 @@ algorithm
       SCode.Element el;
       Binding binding;
 
-    case (SOME(entry), _, _, _)
+    case (SOME(entry), _, _, _, _)
       equation
         el = NFEnv.entryElement(entry);
         binding = modifierBinding(inModifier);
@@ -290,7 +276,7 @@ algorithm
     // The modified element couldn't be found, print an error.
     else
       equation
-        cls_name = NFEnv.scopeName(inEnv);
+        cls_name = getModOriginPath(inModOrigin, inEnv);
         info = modifierInfo(inModifier);
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
           {inName, cls_name}, info);
@@ -299,6 +285,22 @@ algorithm
 
   end match;
 end checkModifiedElement;
+
+protected function getModOriginPath
+  input list<EntryOrigin> inModOrigin;
+  input Env inEnv;
+  output String outString;
+algorithm
+  outString := match(inModOrigin, inEnv)
+    local
+      Absyn.Path path;
+
+    case (NFInstTypes.INHERITED_ORIGIN(baseClass = path) :: _, _)
+      then Absyn.pathString(path);
+
+    else NFEnv.scopeName(inEnv);
+  end match;
+end getModOriginPath;
 
 protected function checkClassModifier
   "This function checks that a modifier isn't trying to replace a class, i.e.
@@ -666,10 +668,10 @@ end mergeSubMod_tail2;
 
 protected function compactMod
   input Modifier inModifier;
-  input Prefix inPrefix;
+  input tuple<Prefix, String> inModName;
   output Modifier outModifier;
 algorithm
-  outModifier := match(inModifier, inPrefix)
+  outModifier := match(inModifier, inModName)
     local
       String name;
       SCode.Final fp;
@@ -680,7 +682,7 @@ algorithm
 
     case (NFInstTypes.MODIFIER(name, fp, ep, binding, submods, info), _)
       equation
-        submods = compactSubMods(submods, inPrefix);
+        submods = compactSubMods(submods, inModName);
       then
         NFInstTypes.MODIFIER(name, fp, ep, binding, submods, info);
 
@@ -691,22 +693,22 @@ end compactMod;
 
 protected function compactSubMods
   input list<Modifier> inSubMods;
-  input Prefix inPrefix;
+  input tuple<Prefix, String> inModName;
   output list<Modifier> outSubMods;
 protected
   list<tuple<String, Modifier>> mods;
 algorithm
-  mods := List.fold1(inSubMods, compactSubMod, inPrefix, {});
+  mods := List.fold1(inSubMods, compactSubMod, inModName, {});
   outSubMods := List.map(mods, Util.tuple22);
 end compactSubMods;
 
 protected function compactSubMod
   input Modifier inSubMod;
-  input Prefix inPrefix;
+  input tuple<Prefix, String> inModName;
   input list<tuple<String, Modifier>> inAccumMods;
   output list<tuple<String, Modifier>> outSubMods;
 algorithm
-  outSubMods := match(inSubMod, inPrefix, inAccumMods)
+  outSubMods := match(inSubMod, inModName, inAccumMods)
     local
       String name;
       list<tuple<String, Modifier>> mods;
@@ -718,7 +720,7 @@ algorithm
       equation
         name = modifierName(inSubMod);
 
-        (mods, found) = List.findMap3(inAccumMods, compactSubMod2, name, inSubMod, inPrefix);
+        (mods, found) = List.findMap3(inAccumMods, compactSubMod2, name, inSubMod, inModName);
       then
         List.consOnTrue(not found, (name, inSubMod), mods);
 
@@ -729,11 +731,11 @@ protected function compactSubMod2
   input tuple<String, Modifier> inExistingMod;
   input String inName;
   input Modifier inNewMod;
-  input Prefix inPrefix;
+  input tuple<Prefix, String> inModName;
   output tuple<String, Modifier> outMod;
   output Boolean outFound;
 algorithm
-  (outMod, outFound) := matchcontinue(inExistingMod, inName, inNewMod, inPrefix)
+  (outMod, outFound) := matchcontinue(inExistingMod, inName, inNewMod, inModName)
     local
       String name;
       Modifier mod;
@@ -746,7 +748,7 @@ algorithm
 
     case ((name, mod), _, _, _)
       equation
-        mod = mergeModsInSameScope(mod, inNewMod, name, inPrefix);
+        mod = mergeModsInSameScope(mod, inNewMod, name, inModName);
       then
         ((name, mod), true);
 
@@ -785,10 +787,10 @@ protected function mergeModsInSameScope
   input Modifier inMod1;
   input Modifier inMod2;
   input String inElementName;
-  input Prefix inPrefix;
+  input tuple<Prefix, String> inModName;
   output Modifier outMod;
 algorithm
-  outMod := match(inMod1, inMod2, inElementName, inPrefix)
+  outMod := match(inMod1, inMod2, inElementName, inModName)
     local
       SCode.Final fp;
       SCode.Each ep;
@@ -796,12 +798,13 @@ algorithm
       Binding binding;
       String name, comp_str;
       Absyn.Info info1, info2;
+      Prefix prefix;
 
     // The second modifier has no binding, use the binding from the first.
     case (NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info1),
           NFInstTypes.MODIFIER(subModifiers = submods2, binding = NFInstTypes.UNBOUND()), _, _)
       equation
-        submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
+        submods1 = List.fold2(submods1, mergeSubModInSameScope, inModName,
           inElementName, submods2);
       then
         NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info1);
@@ -810,17 +813,17 @@ algorithm
     case (NFInstTypes.MODIFIER(subModifiers = submods1, binding = NFInstTypes.UNBOUND()),
           NFInstTypes.MODIFIER(name, fp, ep, binding, submods2, info2), _, _)
       equation
-        submods1 = List.fold2(submods1, mergeSubModInSameScope, inPrefix,
+        submods1 = List.fold2(submods1, mergeSubModInSameScope, inModName,
           inElementName, submods2);
       then
         NFInstTypes.MODIFIER(name, fp, ep, binding, submods1, info2);
 
     // Both modifiers have bindings, show duplicate modification error.
-    else
+    case (_, _, _, (prefix, comp_str))
       equation
         info1 = modifierInfo(inMod1);
         info2 = modifierInfo(inMod2);
-        comp_str = NFInstDump.prefixStr(inPrefix);
+        comp_str = NFInstPrefix.prefixStr(comp_str, prefix);
         Error.addMultiSourceMessage(Error.DUPLICATE_MODIFICATIONS,
           {inElementName, comp_str}, {info2, info1});
       then
@@ -831,7 +834,7 @@ end mergeModsInSameScope;
 
 protected function mergeSubModInSameScope
   input Modifier inSubMod;
-  input Prefix inPrefix;
+  input tuple<Prefix, String> inModName;
   input String inElementName;
   input list<Modifier> inSubMods;
   output list<Modifier> outSubMods;
@@ -839,7 +842,7 @@ protected
   Boolean found;
 algorithm
   (outSubMods, found) := List.findMap3(inSubMods, mergeSubModInSameScope2,
-    inSubMod, inPrefix, inElementName);
+    inSubMod, inModName, inElementName);
   outSubMods := List.consOnTrue(not found, inSubMod, outSubMods);
 end mergeSubModInSameScope;
 
@@ -848,13 +851,13 @@ protected function mergeSubModInSameScope2
    have the same name."
   input Modifier inExistingMod;
   input Modifier inNewMod;
-  input Prefix inPrefix;
+  input tuple<Prefix, String> inModName;
   input String inElementName;
   output Modifier outMod;
   output Boolean outFound;
 algorithm
   (outMod, outFound) :=
-  matchcontinue(inExistingMod, inNewMod, inPrefix, inElementName)
+  matchcontinue(inExistingMod, inNewMod, inModName, inElementName)
     local
       String id1, id2;
       Modifier mod;
@@ -869,7 +872,7 @@ algorithm
     case (NFInstTypes.MODIFIER(name = id1), _, _, _)
       equation
         id1 = inElementName +& "." +& id1;
-        mod = mergeModsInSameScope(inExistingMod, inNewMod, id1, inPrefix);
+        mod = mergeModsInSameScope(inExistingMod, inNewMod, id1, inModName);
       then
         (mod, true);
 
@@ -942,7 +945,6 @@ algorithm
     local
       Absyn.Exp bind_exp;
       Env env;
-      Prefix prefix;
       Integer pd;
       Absyn.Info info;
 
@@ -950,11 +952,11 @@ algorithm
     case (NFInstTypes.RAW_BINDING(propagatedDims = -1), _) then inBinding;
 
     // A normal binding, increment with the dimension count.
-    case (NFInstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info), _)
+    case (NFInstTypes.RAW_BINDING(bind_exp, env, pd, info), _)
       equation
         pd = pd + inDimensions;
       then
-        NFInstTypes.RAW_BINDING(bind_exp, env, prefix, pd, info);
+        NFInstTypes.RAW_BINDING(bind_exp, env, pd, info);
 
     else inBinding;
   end match;

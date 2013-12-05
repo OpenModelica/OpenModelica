@@ -65,7 +65,6 @@ public type FunctionTable = HashTablePathToFunction.HashTable;
 public type Modifier = NFInstTypes.Modifier;
 public type ParamType = NFInstTypes.ParamType;
 public type Prefixes = NFInstTypes.Prefixes;
-public type Prefix = NFInstTypes.Prefix;
 public type Statement = NFInstTypes.Statement;
 public type SymbolTable = NFInstSymbolTable.SymbolTable;
 public type Context = NFTyping.Context;

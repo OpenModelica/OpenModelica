@@ -42,6 +42,7 @@ encapsulated package NFSCodeAnalyseRedeclare
 "
 
 public import Absyn;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import NFInstTypesOld;
 public import SCode;
@@ -67,7 +68,7 @@ public type Program = SCode.Program;
 public type Env = NFSCodeEnv.Env;
 public type Modifier = NFInstTypesOld.Modifier;
 public type ParamType = NFInstTypes.ParamType;
-public type Prefix = NFInstTypes.Prefix;
+public type Prefix = NFInstPrefix.Prefix;
 public type Scope = Absyn.Within;
 public type Item = NFSCodeEnv.Item;
 public type Redeclarations = list<NFSCodeEnv.Redeclaration>;
@@ -158,7 +159,7 @@ algorithm
                        item,
                        env,
                        NFInstTypesOld.NOMOD(),
-                       NFInstTypes.EMPTY_PREFIX(SOME(path)),
+                       NFInstPrefix.makeEmptyPrefix(path),
                        emptyIScopes,
                        emptyInstStack);
 
@@ -581,7 +582,7 @@ algorithm
         print("Ignoring: " +& SCodeDump.unparseElementStr(elem) +& "\n\t" +&
         "in env: " +& NFSCodeEnv.getEnvName(inEnv) +& "\n\t" +&
         "inst stack: " +& stringDelimitList(List.map(inInstStack, Absyn.pathString), "\n\t") +& "\n\t" +&
-        "prefix:" +& Absyn.pathString(NFInstUtil.prefixToPath(inPrefix)) +& "\n");
+        "prefix:" +& Absyn.pathString(NFInstPrefix.toPath(inPrefix)) +& "\n");
       then
         (inIScopesAcc, inExtends, inInstStack);
   end matchcontinue;
@@ -641,7 +642,7 @@ algorithm
 
         (item, env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, env);
 
-        prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
+        prefix = NFInstPrefix.add(name, {}, inPrefix);
 
         // Check that it's legal to instantiate the class.
         NFSCodeCheck.checkInstanceRestriction(item, prefix, info);
@@ -1598,7 +1599,7 @@ algorithm
 
     case (CO(p,n))
       equation
-        s = NFInstUtil.prefixToStrNoEmpty(p) +& "/" +& Absyn.pathString(n);
+        s = NFInstPrefix.toStr(p) +& "/" +& Absyn.pathString(n);
       then {"CO",s};
 
     case (EX(n))

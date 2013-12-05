@@ -39,6 +39,7 @@ encapsulated package NFEnv
 "
 public import Absyn;
 public import SCode;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import NFEnvAvlTree;
 
@@ -47,7 +48,6 @@ protected import Dump;
 protected import Error;
 protected import Flags;
 protected import List;
-protected import NFBuiltin;
 protected import Util;
 
 public type EntryOrigin = NFInstTypes.EntryOrigin;
@@ -57,7 +57,7 @@ public type Frame = NFInstTypes.Frame;
 public type Env = NFInstTypes.Env;
 public type AvlTree = NFEnvAvlTree.AvlTree;
 public type Modifier = NFInstTypes.Modifier;
-public type Prefix = NFInstTypes.Prefix;
+public type Prefix = NFInstPrefix.Prefix;
 
 public constant Env emptyEnv = {};
 public constant Integer tmpTickIndex = 2;
@@ -959,6 +959,17 @@ algorithm
   end match;
 end envPath2;
 
+public function envPrefix
+  "Converts the scope names of the environment to a Prefix."
+  input Env inEnv;
+  output Prefix outPrefix;
+protected
+  list<String> scopes;
+algorithm
+  scopes := scopeNames(inEnv);
+  outPrefix := NFInstPrefix.fromStringList(scopes);
+end envPrefix;
+
 public function prefixIdentWithEnv
   input String inIdent;
   input Env inEnv;
@@ -1072,7 +1083,7 @@ protected
   Option<Prefix> prefix;
 algorithm
   prefix := scopePrefixOpt(inEnv);
-  outPrefix := Util.getOptionOrDefault(prefix, NFInstTypes.emptyPrefix);
+  outPrefix := Util.getOptionOrDefault(prefix, NFInstPrefix.emptyPrefix);
 end scopePrefix;
 
 public function setScopePrefix

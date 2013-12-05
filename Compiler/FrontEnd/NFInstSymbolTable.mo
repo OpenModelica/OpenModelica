@@ -65,7 +65,6 @@ public type Binding = NFInstTypes.Binding;
 public type Component = NFInstTypes.Component;
 public type Modifier = NFInstTypes.Modifier;
 public type Prefixes = NFInstTypes.Prefixes;
-public type Prefix = NFInstTypes.Prefix;
 public type Statement = NFInstTypes.Statement;
 public type Key = Absyn.Path;
 public type Value = NFInstTypes.Component;

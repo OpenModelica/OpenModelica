@@ -41,6 +41,7 @@ encapsulated package NFSCodeDependency
 
 public import Absyn;
 public import SCode;
+public import NFInstPrefix;
 public import NFSCodeEnv;
 
 public type Env = NFSCodeEnv.Env;
@@ -225,7 +226,7 @@ algorithm
         (item, type_env) = lookupClass(type_path, inEnv, info, inErrorType);
         redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv, NFInstTypes.emptyPrefix);
+          redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);
         (item, env) = lookupNameInItem(inName, item, type_env, inErrorType);
       then
         (item, env);
@@ -561,7 +562,8 @@ algorithm
         (ty_item, ty_env, _) = NFSCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
         redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (ty_item, ty_env, repls) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstTypes.EMPTY_PREFIX(NONE()));
+        (ty_item, ty_env, repls) =
+        NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstPrefix.emptyPrefix);
         analyseItemIfRedeclares(repls, ty_item, ty_env); 
         analyseModifier(mods, inEnv, ty_env, inInfo);
       then
@@ -887,7 +889,8 @@ algorithm
         ty_env = NFSCodeEnv.mergeItemEnv(ty_item, ty_env);
         NFSCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env, ty_item, inEnv);
         redecls = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (ty_item, ty_env, repls) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstTypes.EMPTY_PREFIX(NONE()));
+        (ty_item, ty_env, repls) =
+        NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, ty_item, ty_env, inEnv, NFInstPrefix.emptyPrefix);
         // analyseItemIfRedeclares(repls, ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
         analyseOptExp(cond_exp, inEnv, info);

@@ -43,6 +43,7 @@ public import Absyn;
 public import DAE;
 public import SCode;
 public import NFSCodeEnv;
+public import NFInstPrefix;
 public import NFInstTypes;
 
 public type Dimension = NFInstTypes.Dimension;
@@ -54,7 +55,7 @@ public type DaePrefixes = NFInstTypes.DaePrefixes;
 public type Equation = NFInstTypes.Equation;
 public type Statement = NFInstTypes.Statement;
 public type FunctionSlot = NFInstTypes.FunctionSlot;
-public type Prefix = NFInstTypes.Prefix;
+public type Prefix = NFInstPrefix.Prefix;
 
 public uniontype Element
   record ELEMENT

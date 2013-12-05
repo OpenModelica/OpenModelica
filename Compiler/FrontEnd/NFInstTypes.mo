@@ -42,24 +42,10 @@ encapsulated package NFInstTypes
 public import Absyn;
 public import NFConnect2;
 public import DAE;
+public import NFInstPrefix;
 public import SCode;
 
-//public import NFEnv;
-
-public uniontype Prefix
-  record EMPTY_PREFIX
-    Option<Absyn.Path> classPath "The path of the class the prefix originates from.";
-  end EMPTY_PREFIX;
-
-  record PREFIX
-    String name;
-    DAE.Dimensions dims;
-    Prefix restPrefix;
-  end PREFIX;
-end Prefix;
-
-public constant Prefix emptyPrefix = EMPTY_PREFIX(NONE());
-public constant Prefix functionPrefix = EMPTY_PREFIX(NONE());
+public type Prefix = NFInstPrefix.Prefix;
 
 public uniontype Element
   record ELEMENT
@@ -136,7 +122,6 @@ public uniontype Binding
   record RAW_BINDING
     Absyn.Exp bindingExp;
     Env env;
-    Prefix prefix;
     Integer propagatedDims "See NFSCodeMod.propagateMod.";
     Absyn.Info info;
   end RAW_BINDING;

@@ -43,6 +43,7 @@ public import Absyn;
 public import ClassInf;
 public import DAE;
 public import NFInstSymbolTable;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import SCode;
 public import NFEnv;
@@ -71,7 +72,7 @@ public type Function = NFInstTypes.Function;
 public type Modifier = NFInstTypes.Modifier;
 public type ParamType = NFInstTypes.ParamType;
 public type Prefixes = NFInstTypes.Prefixes;
-public type Prefix = NFInstTypes.Prefix;
+public type Prefix = NFInstPrefix.Prefix;
 public type Statement = NFInstTypes.Statement;
 public type SymbolTable = NFInstSymbolTable.SymbolTable;
 
@@ -1218,177 +1219,6 @@ algorithm
   end matchcontinue;
 end mergeConnectorType;
 
-public function addPrefix
-  input String inName;
-  input list<DAE.Dimension> inDimensions;
-  input Prefix inPrefix;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := NFInstTypes.PREFIX(inName, inDimensions, inPrefix);
-end addPrefix;
-
-public function addPathPrefix
-  input Absyn.Path inPath;
-  input Prefix inPrefix;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := pathPrefix2(inPath, inPrefix);
-end addPathPrefix;
-
-public function prefixCref
-  input DAE.ComponentRef inCref;
-  input Prefix inPrefix;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := match(inCref, inPrefix)
-    local
-      String name;
-      Prefix rest_prefix;
-      DAE.ComponentRef cref;
-
-    case (_, NFInstTypes.EMPTY_PREFIX(classPath = _)) then inCref;
-
-    case (_, NFInstTypes.PREFIX(name = name,
-        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
-      then DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
-
-    case (_, NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        cref = DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
-      then
-        prefixCref(cref, rest_prefix);
-
-  end match;
-end prefixCref;
-
-public function prefixToCref
-  input Prefix inPrefix;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := match(inPrefix)
-    local
-      String name;
-      Prefix rest_prefix;
-      DAE.ComponentRef cref;
-
-    case (NFInstTypes.PREFIX(name = name,
-        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
-      then
-        DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
-
-    case (NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        cref = DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
-      then
-        prefixCref(cref, rest_prefix);
-
-  end match;
-end prefixToCref;
-
-public function prefixPath
-  input Absyn.Path inPath;
-  input Prefix inPrefix;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(inPath, inPrefix)
-    local
-      String name;
-      Prefix rest_prefix;
-      Absyn.Path path;
-
-    case (_, NFInstTypes.EMPTY_PREFIX(classPath = _)) then inPath;
-    case (_, NFInstTypes.PREFIX(name = name,
-        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _)))
-      then
-        Absyn.QUALIFIED(name, inPath);
-
-    case (_, NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        path = Absyn.QUALIFIED(name, inPath);
-      then
-        prefixPath(path, rest_prefix);
-
-  end match;
-end prefixPath;
-
-public function prefixToPath
-  input Prefix inPrefix;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(inPrefix)
-    local
-      String name;
-      Prefix rest_prefix;
-      Absyn.Path path;
-
-    case NFInstTypes.PREFIX(name = name,
-        restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _))
-      then Absyn.IDENT(name);
-
-    case NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        path = Absyn.IDENT(name);
-      then
-        prefixPath(path, rest_prefix);
-
-  end match;
-end prefixToPath;
-
-public function pathPrefix
-  input Absyn.Path inPath;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := pathPrefix2(inPath, NFInstTypes.emptyPrefix);
-end pathPrefix;
-
-protected function pathPrefix2
-  input Absyn.Path inPath;
-  input Prefix inPrefix;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := match(inPath, inPrefix)
-    local
-      Absyn.Path path;
-      String name;
-
-    case (Absyn.QUALIFIED(name, path), _)
-      then pathPrefix2(path, NFInstTypes.PREFIX(name, {}, inPrefix));
-
-    case (Absyn.IDENT(name), _)
-      then NFInstTypes.PREFIX(name, {}, inPrefix);
-
-    case (Absyn.FULLYQUALIFIED(path), _)
-      then pathPrefix2(path, inPrefix);
-
-  end match;
-end pathPrefix2;
-
-public function envPrefix
-  input Env inEnv;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := matchcontinue(inEnv)
-    local
-      Absyn.Path path;
-
-    case _
-      equation
-        path = NFEnv.envPath(inEnv);
-      then
-        pathPrefix(path);
-
-    else NFInstTypes.emptyPrefix;
-
-  end matchcontinue;
-end envPrefix;
-
-public function restPrefix
-  input Prefix inPrefix;
-  output Prefix outRestPrefix;
-algorithm
-  NFInstTypes.PREFIX(restPrefix = outRestPrefix) := inPrefix;
-end restPrefix;
-
 public function prefixElement
   input Element inElement;
   input Prefix inPrefix;
@@ -1425,7 +1255,7 @@ protected
   Absyn.Path name;
 algorithm
   name := getComponentName(inComponent);
-  name := prefixPath(name, inPrefix);
+  name := NFInstPrefix.prefixPath(name, inPrefix);
   outComponent := setComponentName(inComponent, name);
 end prefixComponent;
 
@@ -2106,75 +1936,6 @@ algorithm
 
   end match;
 end getClassName;
-
-public function prefixToStr
-  input Prefix inPrefix;
-  output String outStr;
-algorithm
-  outStr := match(inPrefix)
-    local
-      String name, str;
-      Prefix rest_prefix;
-      Absyn.Path path;
-
-    case NFInstTypes.EMPTY_PREFIX(classPath = NONE()) then "E()";
-
-    case NFInstTypes.EMPTY_PREFIX(classPath = SOME(path))
-      equation
-        str = "E(" +& Absyn.pathLastIdent(path) +& ")";
-      then
-        str;
-
-    case NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        str = prefixToStr(rest_prefix) +& "." +& name;
-      then
-        str;
-
-  end match;
-end prefixToStr;
-
-public function prefixToStrNoEmpty
-  input Prefix inPrefix;
-  output String outStr;
-algorithm
-  outStr := match(inPrefix)
-    local
-      String name, str;
-      Prefix rest_prefix;
-
-    case NFInstTypes.EMPTY_PREFIX(classPath = _) then "";
-
-    case NFInstTypes.PREFIX(name = name,
-         restPrefix = NFInstTypes.EMPTY_PREFIX(classPath = _))
-      then
-        name;
-
-    case NFInstTypes.PREFIX(name = name, restPrefix = rest_prefix)
-      equation
-        str = prefixToStrNoEmpty(rest_prefix) +& "." +& name;
-      then
-        str;
-
-  end match;
-end prefixToStrNoEmpty;
-
-public function prefixFirstName
-  input Prefix inPrefix;
-  output String outStr;
-algorithm
-  outStr := match(inPrefix)
-    local
-      String name, str;
-      Prefix rest_prefix;
-      Absyn.Path path;
-
-    case NFInstTypes.EMPTY_PREFIX(classPath = _) then "";
-    case NFInstTypes.PREFIX(name = name) then name;
-
-  end match;
-end prefixFirstName;
-
 
 public function isModifiableElement
   input Element inElement;

@@ -41,6 +41,7 @@ encapsulated package NFLookup
 public import Absyn;
 public import Error;
 public import NFEnv;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import NFMod;
 public import SCode;
@@ -53,7 +54,7 @@ public type Env = NFEnv.Env;
 public type Entry = NFEnv.Entry;
 public type EntryOrigin = NFEnv.EntryOrigin;
 public type Modifier = NFInstTypes.Modifier;
-public type Prefix = NFInstTypes.Prefix;
+public type Prefix = NFInstPrefix.Prefix;
 
 protected constant Modifier NOMOD = NFInstTypes.NOMOD();
 
@@ -1003,7 +1004,7 @@ algorithm
         //env = NFRedeclare.applyRedeclares(inMods, env);
         env = populateEnvWithImports(imps, env, false);
         env = populateEnvWithExtends(exts, inOrigins, 1, env, env);
-        env = NFMod.addModToEnv(inModifier, env);
+        env = NFMod.addModToEnv(inModifier, origin, env);
         ext_mods = NFMod.partitionExtendsMods(env, listLength(exts));
       then
         (env, ext_mods);
@@ -1019,7 +1020,7 @@ algorithm
       equation
         // Apply the modifier from the derived declaration.
         // TODO: The prefix and dimensions are wrong.
-        mod = NFMod.translateMod(smod, "", 0, NFInstTypes.emptyPrefix, inEnv);
+        mod = NFMod.translateMod(smod, "", 0, inEnv);
         mod = NFMod.mergeMod(inModifier, mod);
 
         (entry, env) = lookupTypeSpec(ty, inEnv, inInfo);
@@ -1304,9 +1305,9 @@ algorithm
         // Check entry: not var, not replaceable
         // Create an environment for the base class if needed.
         (el as SCode.CLASS(classDef = cdef)) = NFEnv.entryElement(entry);
-        mod = NFMod.translateMod(smod, "", 0, NFInstTypes.emptyPrefix, inEnv);
+        mod = NFMod.translateMod(smod, "", 0, inEnv);
         env = openClassScope(el, NONE(), env);
-        (env, _) = populateEnvWithClassDef(cdef, mod,
+        (env, _) = populateEnvWithClassDef(cdef, NFInstTypes.NOMOD(),
           SCode.PUBLIC(), {}, env, elementSplitterExtends, info, env);
         // Populate the accumulated environment with the inherited elements.
         origin = NFEnv.makeInheritedOrigin(inExtends, inIndex, env);

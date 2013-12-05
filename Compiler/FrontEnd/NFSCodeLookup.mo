@@ -42,6 +42,7 @@ encapsulated package NFSCodeLookup
 
 public import Absyn;
 public import Error;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import SCode;
 public import NFSCodeEnv;
@@ -988,7 +989,7 @@ algorithm
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv, NFInstTypes.emptyPrefix);
+          redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);
         (item, path, env) = lookupNameInItem(inName, item, type_env);
       then
         (item, path, env);
@@ -1040,7 +1041,7 @@ algorithm
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = NFSCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
         (item, type_env, _) = NFSCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
-          redeclares, item, type_env, inEnv, NFInstTypes.emptyPrefix);
+          redeclares, item, type_env, inEnv, NFInstPrefix.emptyPrefix);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
         (item, cref);

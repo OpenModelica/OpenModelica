@@ -42,6 +42,7 @@ encapsulated package NFInst
 public import Absyn;
 public import NFConnect2;
 public import DAE;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import HashTablePathToFunction;
 public import SCode;
@@ -89,7 +90,7 @@ public type FunctionHashTable = HashTablePathToFunction.HashTable;
 public type Modifier = NFInstTypes.Modifier;
 public type ParamType = NFInstTypes.ParamType;
 public type Prefixes = NFInstTypes.Prefixes;
-public type Prefix = NFInstTypes.Prefix;
+public type Prefix = NFInstPrefix.Prefix;
 public type Statement = NFInstTypes.Statement;
 
 protected type Entry = NFEnv.Entry;
@@ -141,7 +142,7 @@ algorithm
         constants = NFInstSymbolTable.create();
         (cls, _, _, (constants, functions)) = instClassEntry(inClassPath, top_cls,
           NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(), env,
-          NFInstTypes.EMPTY_PREFIX(SOME(inClassPath)), (constants, functions));
+          NFInstPrefix.makeEmptyPrefix(inClassPath), (constants, functions));
 
         //builtin_el = instBuiltinElements((constants, functions));
 
@@ -237,10 +238,15 @@ protected function instClassEntry
   output Globals outGlobals;
 protected
   SCode.Element el;
+  Modifier mod;
+  Entry entry;
+  Env env;
 algorithm
-  el := NFEnv.entryElement(inEntry);
+  mod := NFEnv.entryModifier(inEntry);
+  (entry, _, _) := redeclareComponent(inEntry, mod, inEnv);
+  el := NFEnv.entryElement(entry);
   (outClass, outType, outPrefixes, outGlobals) :=
-    instClassEntry_impl(inTypePath, el, inEntry, inClassMod, inPrefixes, inEnv,
+    instClassEntry_impl(inTypePath, el, entry, inClassMod, inPrefixes, inEnv,
       inPrefix, inGlobals);
 end instClassEntry;
 
@@ -337,7 +343,7 @@ algorithm
         // Merge the modifiers and instantiate the inherited class.
         dims = Absyn.typeSpecDimensions(dty);
         dim_count = listLength(dims);
-        mod = NFMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
+        mod = NFMod.translateMod(smod, "", dim_count, inEnv);
         mod = NFMod.mergeMod(NFEnv.entryModifier(inEntry), mod);
         mod = NFMod.mergeMod(inClassMod, mod);
 
@@ -564,12 +570,11 @@ algorithm
       DAE.Exp inst_exp;
       DAE.Binding binding;
       Env env;
-      Prefix prefix;
       Globals globals;
       Absyn.Info info;
 
     case (NFInstTypes.MODIFIER(name = ident, subModifiers = {}, binding =
-        NFInstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
+        NFInstTypes.RAW_BINDING(bindingExp = bind_exp, env = env), info = info), _, globals)
       equation
         ty = getBasicTypeAttributeType(inTypeName, ident, info);
         (inst_exp, globals) = instExp(bind_exp, env, info, globals);
@@ -771,6 +776,8 @@ algorithm
 
     case SCode.COMPONENT(modifications = mod) then mod;
 
+    else SCode.NOMOD();
+
   end match;
 end getRedeclaredModifier;
 
@@ -916,8 +923,8 @@ algorithm
     case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path = tpath)), _, _, _)
       equation
         prefix = NFEnv.scopePrefix(inEnv);
-        prefix = NFInstUtil.addPrefix(name, {}, prefix);
-        path = NFInstUtil.prefixToPath(prefix);
+        prefix = NFInstPrefix.add(name, {}, prefix);
+        path = NFInstPrefix.toPath(prefix);
         comp = NFInstTypes.OUTER_COMPONENT(path, NONE());
       then
         NFInstTypes.ELEMENT(comp, NFInstTypes.BASIC_TYPE(tpath));
@@ -960,7 +967,7 @@ algorithm
 
         (cls_entry, env) = NFLookup.lookupClassName(tpath, inEnv, info);
         prefix = NFEnv.scopePrefix(inEnv);
-        path = NFInstUtil.prefixPath(Absyn.IDENT(name), prefix);
+        path = NFInstPrefix.prefixPath(Absyn.IDENT(name), prefix);
 
         (cls, ty, cls_prefs, globals) = instClassEntry(tpath, cls_entry, NFInstTypes.NOMOD(),
           inPrefixes, env, prefix, globals);
@@ -1020,14 +1027,14 @@ algorithm
         // Instantiate array dimensions and add them to the prefix.
         prefix = NFEnv.scopePrefix(inEnv);
         (dims, globals) = instDimensions(ad, inEnv, info, globals);
-        comp_prefix = NFInstUtil.addPrefix(name, dims, prefix);
+        comp_prefix = NFInstPrefix.add(name, dims, prefix);
 
         // Check that it's legal to instantiate the class.
         //NFSCodeCheck.checkInstanceRestriction(cls_entry, prefix, info);
 
         // Translate the component's modification.
         dim_count = listLength(ad);
-        emod = NFMod.translateMod(smod, name, dim_count, comp_prefix, mod_env);
+        emod = NFMod.translateMod(smod, name, dim_count, mod_env);
         omod = NFMod.propagateMod(inOuterModifier, dim_count);
 
         // TODO: Update inElementMod with prefix and dim_count. Need to get
@@ -1035,7 +1042,7 @@ algorithm
         mod = NFMod.mergeMod(omod, emod);
 
         // Merge prefixes from the instance hierarchy.
-        path = NFInstUtil.prefixPath(Absyn.IDENT(name), prefix);
+        path = NFInstPrefix.prefixPath(Absyn.IDENT(name), prefix);
         prefs = NFInstUtil.mergePrefixesFromComponent(path, inElement, inPrefixes);
         pty = NFInstUtil.paramTypeFromPrefixes(prefs);
 
@@ -1099,7 +1106,7 @@ algorithm
         (entry, env) = NFLookup.lookupBaseClassName(path, inEnv, info);
         prefs = NFInstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
         prefix = NFEnv.scopePrefix(inEnv);
-        mod = NFMod.translateMod(smod, "", 0, prefix, inEnv);
+        mod = NFMod.translateMod(smod, "", 0, inEnv);
         mod = NFMod.mergeMod(inModifier, mod);
 
         (cls, ty, _, globals) =
@@ -1192,12 +1199,11 @@ algorithm
       Absyn.Exp aexp;
       DAE.Exp dexp;
       Env env;
-      Prefix prefix;
       Integer pl, cd;
       Absyn.Info info;
       Globals globals;
 
-    case (NFInstTypes.RAW_BINDING(aexp, env, prefix, pl, info), cd, globals)
+    case (NFInstTypes.RAW_BINDING(aexp, env, pl, info), cd, globals)
       equation
         (dexp, globals) = instExp(aexp, env, info, globals);
       then
@@ -2020,13 +2026,16 @@ algorithm
       Absyn.Path path;
       Globals globals;
 
+    // Wildcards should not be prefixed.
     case (Absyn.WILD(), _, _, _) then (DAE.WILD(), inGlobals);
     case (Absyn.ALLWILD(), _, _, _) then (DAE.WILD(), inGlobals);
 
     case (_, _, _, globals)
       equation
+        // Convert the Absyn.ComponentRef to an untyped DAE.ComponentRef.
         (cref, globals) = instCref2(inCref, inEnv, inInfo, globals);
         path = Absyn.crefToPathIgnoreSubs(inCref);
+        // Apply a prefix to the cref to make it uniquely identifiable.
         (cref, globals) = prefixCref(cref, path, inEnv, inInfo, globals);
       then
         (cref, globals);
@@ -2109,20 +2118,23 @@ algorithm
       Prefix prefix;
       SCode.Element elem;
 
+    // Builting names should not be prefixed.
     case (_, Absyn.IDENT(name_str), _, _, _)
       equation
         _ = NFLookup.lookupBuiltinSimpleName(name_str);
       then
         (inCref, inGlobals);
 
+    // Fully qualified names are already prefixed.
     case (_, Absyn.FULLYQUALIFIED(_), _, _, _)
       equation
         (entry, env) = NFLookup.lookupVariableName(inCrefPath, inEnv, inInfo);
-        prefix = NFInstUtil.envPrefix(env);
+        prefix = NFEnv.envPrefix(env);
         globals = instPackageConstant(entry, env, SOME(prefix), inInfo, inGlobals);
       then
         (inCref, globals);
 
+    // Any other cref needs to have a prefix applied.
     case (_, _, _, _, _)
       equation
         // Look up the first identifier in the cref and figure out the correct
@@ -2149,7 +2161,7 @@ end prefixCref;
 
 protected function makeNamePrefix
   "Creates a name prefix given the prefix from the environment where the first
-    part of the name was found."
+   part of the name was found."
   input Option<Prefix> inPrefix;
   input Env inEnv;
   output Prefix outPrefix;
@@ -2161,7 +2173,7 @@ algorithm
     // The current scope has a prefix, use it.
     case (SOME(prefix), _) then prefix;
     // The current scope has no prefix, use the environment to make one.
-    case (NONE(), _) then NFInstUtil.envPrefix(inEnv);
+    case (NONE(), _) then NFEnv.envPrefix(inEnv);
 
   end match;
 end makeNamePrefix;
@@ -2188,7 +2200,7 @@ algorithm
         DAE.CREF_ITER(id, iterIndex, ty, subs);
 
     // For all other crefs, apply the given prefix.
-    else NFInstUtil.prefixCref(inCref, inPrefix);
+    else NFInstPrefix.prefixCref(inCref, inPrefix);
 
   end matchcontinue;
 end prefixCref2;
@@ -2202,36 +2214,48 @@ protected function makePackageConstantPrefix
   input Env inBaseEnv;
   output Option<Prefix> outPrefix;
 algorithm
-  outPrefix := match(inIsClass, inPrefix, inEnv, inBaseEnv)
+  outPrefix := matchcontinue(inIsClass, inPrefix, inEnv, inBaseEnv)
     local
       Prefix prefix;
       list<String> env_strl, base_env_strl;
 
-    // A class in a scope with a prefix, the cref should refer to a package
-    // constant. Add the difference of the environment the cref was found in and
-    // the environment where the first identifier of the cref was found in to
-    // the scope's prefix.
+    // The first part of the cref refers to a class and the scope has a prefix.
+    // This happens when for example a cref refer to a package constant in a
+    // local class. Add the difference of the environment the cref was found in
+    // and the environment where the first identifier of the cref was found in
+    // to the scope's prefix.
     case (true, SOME(prefix), _, _) 
       equation
         env_strl = NFEnv.scopeNames(inEnv);
         base_env_strl = NFEnv.scopeNames(inBaseEnv);
         (env_strl, _) =
           List.removeEqualPrefix(env_strl, base_env_strl, stringEq);
-        prefix = List.fold1(env_strl, NFInstUtil.addPrefix, {}, prefix);
+        prefix = NFInstPrefix.toPackagePrefix(prefix);
+        prefix = NFInstPrefix.addStringList(env_strl, prefix);
       then
         SOME(prefix);
 
-    // A non-class in a scope with a prefix, not a package constant.
+    // A component in a scope with a package prefix, i.e. a package constant
+    // which should be instantiated because it's a dependency of another package
+    // constant (due to e.g. a binding or modifier). Use the given prefix.
+    case (false, SOME(prefix), _, _)
+      equation
+        true = NFInstPrefix.isPackagePrefix(prefix);
+      then
+        inPrefix;
+
+    // A component in a scope with a non-package prefix, not a package constant.
     case (false, SOME(_), _, _) then NONE();
 
-    // Anything in a scope without a prefix is a package constant.
-    else 
+    // Anything in a scope without a prefix is a package constant that should be
+    // prefixed with the environment path.
+    case (_, NONE(), _, _)
       equation
-        prefix = NFInstUtil.envPrefix(inEnv);
+        prefix = NFEnv.envPrefix(inEnv);
       then
         SOME(prefix);
 
-  end match;
+  end matchcontinue;
 end makePackageConstantPrefix;
 
 protected function instPackageConstant
@@ -2252,8 +2276,10 @@ algorithm
       Element elem;
       Env env;
 
+    // No prefix => not a package constant. Nothing should be done.
     case (_, _, NONE(), _, _) then inGlobals;
 
+    // A prefix => a package constant. Instantiate the given entry.
     case (_, _, SOME(prefix), _, _)
       equation
         env = NFEnv.setScopePrefix(prefix, inEnv);
@@ -2267,6 +2293,7 @@ algorithm
 end instPackageConstant;
         
 protected function prefixPath
+  "Prefixes a path so that it can be uniquely identified."
   input Absyn.Path inPath;
   input Env inCurrentEnv;
   output Absyn.Path outPath;
@@ -2277,19 +2304,23 @@ algorithm
       Option<Prefix> opt_prefix;
       Prefix prefix;
       Env env;
-      Entry entry;
       Absyn.Path path;
 
+    // Fully qualified paths doesn't need to be prefixed.
     case (Absyn.FULLYQUALIFIED(_), _) then inPath;
 
     else
       equation
+        // Look up the first identifier in the path to get the environment where
+        // it's defined.
         first_id = Absyn.pathFirstIdent(inPath);
-        (entry, env) = NFLookup.lookupSimpleNameUnresolved(first_id, inCurrentEnv);
+        (_, env) = NFLookup.lookupSimpleNameUnresolved(first_id, inCurrentEnv);
 
+        // Use the found environment to figure out the correct prefix and apply
+        // it to the path.
         opt_prefix = NFEnv.scopePrefixOpt(env);
         prefix = makeNamePrefix(opt_prefix, env);
-        path = NFInstUtil.prefixPath(inPath, prefix);
+        path = NFInstPrefix.prefixPath(inPath, prefix);
       then
         path;
 
@@ -2456,7 +2487,7 @@ algorithm
       equation
         (cls, ty, _, globals) = instClassEntry(inPath, inEntry,
           NFInstTypes.NOMOD(), NFInstTypes.NO_PREFIXES(), inEnv,
-          NFInstTypes.emptyPrefix, inGlobals);
+          NFInstPrefix.makeEmptyPrefix(inPath), inGlobals);
       then
         (cls, ty, globals);
 

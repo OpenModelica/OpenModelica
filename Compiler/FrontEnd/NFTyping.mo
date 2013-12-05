@@ -44,6 +44,7 @@ public import NFConnect2;
 public import DAE;
 public import HashTablePathToFunction;
 public import NFInstSymbolTable;
+public import NFInstPrefix;
 public import NFInstTypes;
 public import SCode;
 
@@ -80,7 +81,7 @@ public type FunctionTable = HashTablePathToFunction.HashTable;
 public type Modifier = NFInstTypes.Modifier;
 public type ParamType = NFInstTypes.ParamType;
 public type Prefixes = NFInstTypes.Prefixes;
-public type Prefix = NFInstTypes.Prefix;
+public type Prefix = NFInstPrefix.Prefix;
 public type Statement = NFInstTypes.Statement;
 public type SymbolTable = NFInstSymbolTable.SymbolTable;
 public type FunctionHashTable = HashTablePathToFunction.HashTable;
@@ -1770,7 +1771,7 @@ algorithm
 
     case (_, _, _, _)
       equation
-        cref = NFInstUtil.prefixCref(inCref, inPrefix);
+        cref = NFInstPrefix.prefixCref(inCref, inPrefix);
         (comp, pre_comp) = lookupConnectorCref2(cref, inSymbolTable);
       then
         (cref, comp, pre_comp);
