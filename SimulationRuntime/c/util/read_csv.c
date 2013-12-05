@@ -247,11 +247,11 @@ struct csv_data* read_csv(const char *filename)
   if (body.error) {
     return NULL;
   }
-  matrix_transpose(body.res,body.row_length,body.size);
   res->variables = variables;
   res->data = body.res;
   res->numvars = body.row_length;
   res->numsteps = body.size / body.row_length;
+  matrix_transpose(res->data,res->numvars,res->numsteps);
   /* printf("num vars %d in %s num steps %d\n", body.row_length, filename, res->numsteps); */
   return res;
 }
