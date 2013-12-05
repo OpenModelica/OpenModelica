@@ -643,10 +643,10 @@ int initializeResultData(DATA* simData, string result_file_cstr, int cpuTime)
   if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
     /* Default is set to noemit */
   } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
-    sim_result.init = csv_init;
-    sim_result.emit = csv_emit;
-    /* sim_result.writeParameterData = csv_writeParameterData; */
-    sim_result.free = csv_free;
+    sim_result.init = omc_csv_init;
+    sim_result.emit = omc_csv_emit;
+    /* sim_result.writeParameterData = omc_csv_writeParameterData; */
+    sim_result.free = omc_csv_free;
   } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
     sim_result.init = mat4_init;
     sim_result.emit = mat4_emit;

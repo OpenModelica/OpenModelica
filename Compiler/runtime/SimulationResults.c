@@ -6,6 +6,7 @@
 #include "ptolemyio.h"
 #include "read_csv.h"
 #include <math.h>
+#include <gc.h>
 #include "omc_msvc.h" /* For INFINITY and NAN */
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
 #include <time.h>
@@ -245,12 +246,15 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
     return read_ptolemy_variables(filename);
   }
   case CSV: {
-    char **variables = read_csv_variables(simresglob->csvReader);
+    int length = 0;
+    char **variables = read_csv_variables(simresglob->csvReader,&length);
     if (variables) {
-      while (*variables) {
-        res = mk_cons(mk_scon(*variables),res);
-        variables++;
+      int i;
+      for (i=length-1; i>=0; i--) {
+        res = mk_cons(mk_scon(variables[i]),res);
+        GC_free(variables[i]);
       }
+      GC_free(variables);
     }
     return res;
   }

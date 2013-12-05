@@ -38,9 +38,9 @@
 extern "C" {
 #endif /* cplusplus */
 
-void csv_init(simulation_result *self,DATA *data);
-void csv_emit(simulation_result *self,DATA *data);
-void csv_free(simulation_result *self,DATA *data);
+void omc_csv_init(simulation_result *self,DATA *data);
+void omc_csv_emit(simulation_result *self,DATA *data);
+void omc_csv_free(simulation_result *self,DATA *data);
 
 #ifdef __cplusplus
 }

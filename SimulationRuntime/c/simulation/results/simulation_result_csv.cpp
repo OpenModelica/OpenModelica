@@ -49,7 +49,7 @@
 
 extern "C" {
 
-void csv_emit(simulation_result *self, DATA *data)
+void omc_csv_emit(simulation_result *self, DATA *data)
 {
   FILE *fout = (FILE*) self->storage;
   const char* format = "%.16g,";
@@ -107,7 +107,7 @@ void csv_emit(simulation_result *self, DATA *data)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void csv_init(simulation_result *self, DATA *data)
+void omc_csv_init(simulation_result *self, DATA *data)
 {
   int i;
   const MODEL_DATA *mData = &(data->modelData);
@@ -141,7 +141,7 @@ void csv_init(simulation_result *self, DATA *data)
   self->storage = fout;
 }
 
-void csv_free(simulation_result *self, DATA *data)
+void omc_csv_free(simulation_result *self, DATA *data)
 {
   FILE *fout = (FILE*) self->storage;
   rt_tick(SIM_TIMER_OUTPUT);

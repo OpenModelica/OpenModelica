@@ -34,7 +34,7 @@
 
 int read_csv_dataset_size(const char* filename);
 
-char** read_csv_variables(FILE *fin);
+char** read_csv_variables(FILE *fin, int *length);
 
 double* read_csv_dataset(const char *filename, const char *var, int dimsize);
 
