@@ -523,7 +523,7 @@ template simulationFile(SimCode simCode, String guid)
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>(DATA *data, double* gout, double* t);
     extern int <%symbolName(modelNamePrefixStr,"function_updateRelations")%>(DATA *data, int evalZeroCross);
     extern int <%symbolName(modelNamePrefixStr,"checkForDiscreteChanges")%>(DATA *data);
-    extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i);
+    extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
     extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(void* data);
