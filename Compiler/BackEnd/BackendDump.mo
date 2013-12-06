@@ -452,6 +452,19 @@ algorithm
   Tpl.tplNoret2(GraphvizDump.dumpBackendDAE, dae, inFileNameSuffix);
 end graphvizBackendDAE;
 
+public function graphvizIncidenceMatrix
+  input BackendDAE.BackendDAE inBackendDAE;
+  input String inFileNameSuffix;
+protected
+  BackendDAE.BackendDAE dae;
+  BackendDAE.EqSystems eqSystems;
+  String fileNamePrefix;
+  String buffer;
+algorithm
+  dae := setIncidenceMatrix(inBackendDAE);
+  Tpl.tplNoret2(GraphvizDump.dumpIncidenceMatrix, dae, inFileNameSuffix);
+end graphvizIncidenceMatrix;
+
 protected function setIncidenceMatrix
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;

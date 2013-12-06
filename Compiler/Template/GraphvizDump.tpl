@@ -6,8 +6,8 @@ import CodegenUtil.*;
 template dumpBackendDAE(BackendDAE.BackendDAE backendDAE, String suffix)
 ::=
   match backendDAE
-    case dae as BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
-      let _ = textFile(dumpDependence(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_dependence.dot')
+    case dae as BackendDAE.DAE(shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
+      let _ = dumpIncidenceMatrix(dae, suffix)
       let _ = textFile(dumpMatching(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_matching.dot')
       //let _ = textFile(dumpSorting(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_sorting.dot')
       
@@ -16,6 +16,15 @@ template dumpBackendDAE(BackendDAE.BackendDAE backendDAE, String suffix)
       ''
   end match
 end dumpBackendDAE;
+
+template dumpIncidenceMatrix(BackendDAE.BackendDAE backendDAE, String suffix)
+::=
+  match backendDAE
+    case dae as BackendDAE.DAE(shared=BackendDAE.SHARED(info=info as BackendDAE.EXTRA_INFO(__))) then
+      let _ = textFile(dumpDependence(dae, suffix), '<%info.fileNamePrefix%>_<%suffix%>_dependence.dot')
+      ''
+  end match
+end dumpIncidenceMatrix;
 
 template dumpDependence(BackendDAE.BackendDAE backendDAE, String suffix)
 ::=
