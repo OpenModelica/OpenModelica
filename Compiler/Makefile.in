@@ -39,7 +39,7 @@ SUBDIRS	= runtime modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h
-.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release simcode builtin OpenModelicaBootstrappingHeader.h
+.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release simcode builtin
 
 #all : debug
 all : release

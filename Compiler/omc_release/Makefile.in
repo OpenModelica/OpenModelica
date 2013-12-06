@@ -42,11 +42,13 @@ include $(srcdir)/Makefile.compiler_subdirs.common
 
 $(PROG):
 	$(MAKE) DAE.c
-	$(MAKE) $(SRCO) $(SUBDIRS)
+	$(MAKE) allobjs $(SUBDIRS)
 	$(OMPCC) $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(FMILIB) -lstdc++
 
 nolink:
 	$(MAKE) -C Template
 	$(MAKE) .depend
 	$(MAKE) DAE.c
-	$(MAKE) $(SRCO) $(SUBDIRS)
+	$(MAKE) allobjs $(SUBDIRS)
+
+allobjs: $(SRCO)
